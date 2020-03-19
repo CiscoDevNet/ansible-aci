@@ -55,4 +55,4 @@ documentation: https://docs.ansible.com/ansible/2.7/scenario_guides/guide_aci.ht
 homepage: https://github.com/CiscoDevNet/ansible-aci
 
 # The URL to the collection issue tracker
-issues: https://github.com/CiscoDevNet/ansible-aci
+issues: https://github.com/CiscoDevNet/ansible-aci/issues
