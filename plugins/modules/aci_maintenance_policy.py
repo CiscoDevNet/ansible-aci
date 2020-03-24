@@ -191,7 +191,7 @@ url:
 '''
 
 
-from ansible_collections.cisco.aci.plugins.module_utils.network.aci.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
 
 
