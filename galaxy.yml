@@ -1,0 +1,25 @@
+---
+namespace: cisco
+name: aci
+# The version of the collection. Must be compatible with semantic versioning
+version: 0.0.6
+readme: README.md
+authors:
+- Dag Wieers (@dagwieers) <dag@wieers.com>
+- Swetha Chunduri (@schunduri)
+- Jacob McGill (@jmcgill298)
+- Rob Huelga (@RobW3LGA)
+- Bruno Calogero <brunocalogero@hotmail.com>
+- Simon Metzger <smnmtzgr@gmail.com>
+- Tim Knipper <tim.knipper@gmail.com>
+- Apoorva Gururaja (@aciguru)
+- Devarshi Shah (@devarshishah3)
+- Ramses Smeyers (@rsmeyers)
+- Lionel Hercot (@lhercot) <lhercot@cisco.com>
+description: Ansible Modules for Cisco ACI
+license_file: 'LICENSE'
+tags: [cisco, aci]
+repository: https://github.com/CiscoDevNet/ansible-aci
+documentation: https://docs.ansible.com/ansible/2.7/scenario_guides/guide_aci.html
+homepage: https://github.com/CiscoDevNet/ansible-aci
+issues: https://github.com/CiscoDevNet/ansible-aci/issues
