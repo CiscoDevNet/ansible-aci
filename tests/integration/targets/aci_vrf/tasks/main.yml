@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: ensure tenant exists for tests to kick off
-  aci_tenant: &aci_tenant_present
+  cisco.aci.aci_tenant: &aci_tenant_present
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -22,7 +22,7 @@
   register: tenant_present
 
 - name: create vrf - check mode works
-  aci_vrf: &aci_vrf_present
+  cisco.aci.aci_vrf: &aci_vrf_present
     <<: *aci_tenant_present
     vrf: anstest
     description: Ansible Test
@@ -30,31 +30,31 @@
   register: vrf_present_check_mode
 
 - name: create vrf - creation works
-  aci_vrf:
+  cisco.aci.aci_vrf:
     <<: *aci_vrf_present
   register: vrf_present
 
 - name: create vrf again - idempotency works
-  aci_vrf:
+  cisco.aci.aci_vrf:
     <<: *aci_vrf_present
   register: vrf_present_idempotent
 
 - name: update vrf - update works
-  aci_vrf:
+  cisco.aci.aci_vrf:
     <<: *aci_vrf_present
     description: Ansible Test Update
     policy_control_preference: unenforced
   register: vrf_update
 
 - name: create another vrf - check more params
-  aci_vrf:
+  cisco.aci.aci_vrf:
     <<: *aci_vrf_present
     vrf: anstest2
     policy_control_direction: egress
   register: vrf_present_2
 
 - name: create vrf without all necessary params - failure message works
-  aci_vrf:
+  cisco.aci.aci_vrf:
     <<: *aci_vrf_present
     tenant: "{{ fake_var | default(omit) }}"
   ignore_errors: yes
@@ -79,26 +79,26 @@
       - 'vrf_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
 
 - name: get all vrf
-  aci_vrf: &aci_query
+  cisco.aci.aci_vrf: &aci_query
     <<: *aci_tenant_present
     state: query
     tenant: "{{ fake_var | default(omit) }}"
   register: query_all
 
 - name: get all in tenant
-  aci_vrf:
+  cisco.aci.aci_vrf:
     <<: *aci_query
     tenant: anstest
   register: query_tenant
 
 - name: get all with name
-  aci_vrf:
+  cisco.aci.aci_vrf:
     <<: *aci_query
     vrf: anstest
   register: query_vrf_vrf
 
 - name: get vrf
-  aci_vrf:
+  cisco.aci.aci_vrf:
     <<: *aci_vrf_present
     state: query
   register: query_vrf
@@ -126,29 +126,29 @@
       - '"tn-anstest/ctx-anstest.json" in query_vrf.url'
 
 - name: delete vrf - check mode works
-  aci_vrf: &aci_vrf_absent
+  cisco.aci.aci_vrf: &aci_vrf_absent
     <<: *aci_vrf_present
     state: absent
   check_mode: yes
   register: vrf_absent_check_mode
 
 - name: delete vrf - delete works
-  aci_vrf:
+  cisco.aci.aci_vrf:
     <<: *aci_vrf_absent
   register: vrf_absent
 
 - name: delete vrf again - idempotency works
-  aci_vrf:
+  cisco.aci.aci_vrf:
     <<: *aci_vrf_absent
   register: vrf_absent_idempotent
 
 - name: delete vrf - cleanup
-  aci_vrf:
+  cisco.aci.aci_vrf:
     <<: *aci_vrf_absent
     name: anstest2
 
 - name: delete vrf missing param - fails properly
-  aci_vrf:
+  cisco.aci.aci_vrf:
     <<: *aci_vrf_absent
     vrf: "{{ fakevar | default(omit) }}"
   ignore_errors: yes
@@ -168,7 +168,7 @@
       - 'vrf_absent_missing_param.msg == "state is absent but all of the following are missing: vrf"'
 
 - name: delete tenant - cleanup before ending tests
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_tenant_present
     state: absent
   when: tenant_present is changed

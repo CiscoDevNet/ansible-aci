@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: ensure tenant does not exist for tests to kick off
-  aci_tenant: &aci_tenant_absent
+  cisco.aci.aci_tenant: &aci_tenant_absent
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -21,31 +21,31 @@
     tenant: anstest
 
 - name: create a snapshot
-  aci_config_snapshot: &create_snapshot
+  cisco.aci.aci_config_snapshot: &create_snapshot
     <<: *aci_tenant_absent
     state: present
     tenant: "{{ fakevar | default(omit) }}"
     export_policy: anstest
 
 - name: create a tenant - use for rollback
-  aci_tenant: &aci_tenant
+  cisco.aci.aci_tenant: &aci_tenant
     <<: *create_snapshot
     export_policy: "{{ fakevar | default(omit) }}"
     tenant: anstest
   register: tenant_present
 
 - name: create a new snapshot
-  aci_config_snapshot:
+  cisco.aci.aci_config_snapshot:
     <<: *create_snapshot
 
 - name: get snapshots
-  aci_config_snapshot:
+  cisco.aci.aci_config_snapshot:
     <<: *create_snapshot
     state: query
   register: snapshots
 
 - name: compare snapshots
-  aci_config_rollback: &preview_rollback
+  cisco.aci.aci_config_rollback: &preview_rollback
     <<: *create_snapshot
     state: preview
     compare_export_policy: anstest
@@ -54,7 +54,7 @@
   register: rollback_preview
 
 - name: rollback to snapshot
-  aci_config_rollback: &aci_rollback
+  cisco.aci.aci_config_rollback: &aci_rollback
     <<: *create_snapshot
     state: rollback
     snapshot: "{{ snapshots.current.0.configSnapshotCont.children[-1].configSnapshot.attributes.name }}"
@@ -62,7 +62,7 @@
   register: rollback_missing_param
 
 - name: rollback to snapshot
-  aci_config_rollback:
+  cisco.aci.aci_config_rollback:
     <<: *aci_rollback
     import_policy: anstest
     import_type: replace
@@ -74,7 +74,7 @@
     seconds: 15
 
 - name: ensure tenant doesn't exist after rollback
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_tenant_absent
   register: tenant_removed
 

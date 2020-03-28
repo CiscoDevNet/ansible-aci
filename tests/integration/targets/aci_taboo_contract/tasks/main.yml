@@ -6,7 +6,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove taboo contract
-  aci_taboo_contract: &taboo_contract_absent
+  cisco.aci.aci_taboo_contract: &taboo_contract_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -19,7 +19,7 @@
     state: absent
 
 - name: Add tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -33,7 +33,7 @@
 
 # ADD TABOO CONTRACT
 - name: Add taboo contract (check_mode)
-  aci_taboo_contract: &taboo_contract_present
+  cisco.aci.aci_taboo_contract: &taboo_contract_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -48,7 +48,7 @@
   register: cm_add_taboo_contract
 
 - name: Add taboo contract (normal mode)
-  aci_taboo_contract: *taboo_contract_present
+  cisco.aci.aci_taboo_contract: *taboo_contract_present
   register: nm_add_taboo_contract
 
 - name: Verify add_taboo_contract
@@ -66,12 +66,12 @@
     - nm_add_taboo_contract.current.0.vzTaboo.attributes.name == 'taboo_contract_test'
 
 - name: Add taboo_contract again (check_mode)
-  aci_taboo_contract: *taboo_contract_present
+  cisco.aci.aci_taboo_contract: *taboo_contract_present
   check_mode: yes
   register: cm_add_taboo_contract_again
 
 - name: Add taboo contract again (normal mode)
-  aci_taboo_contract: *taboo_contract_present
+  cisco.aci.aci_taboo_contract: *taboo_contract_present
   register: nm_add_taboo_contract_again
 
 - name: Verify add_taboo_contract_again
@@ -84,14 +84,14 @@
 
 # CHANGE TABOO CONTRACT
 - name: Change description of taboo contract (check_mode)
-  aci_taboo_contract:
+  cisco.aci.aci_taboo_contract:
     <<: *taboo_contract_present
     description: Ansible test taboo contract
   check_mode: yes
   register: cm_add_taboo_contract_descr
 
 - name: Change description of taboo contract (normal mode)
-  aci_taboo_contract:
+  cisco.aci.aci_taboo_contract:
     <<: *taboo_contract_present
     description: Ansible test taboo contract
   register: nm_add_taboo_contract_descr
@@ -109,14 +109,14 @@
     - nm_add_taboo_contract_descr.current.0.vzTaboo.attributes.name == 'taboo_contract_test'
 
 - name: Change description of taboo contract again (check_mode)
-  aci_taboo_contract:
+  cisco.aci.aci_taboo_contract:
     <<: *taboo_contract_present
     description: Ansible test taboo contract
   check_mode: yes
   register: cm_add_taboo_contract_descr_again
 
 - name: Change description of taboo contract again (normal mode)
-  aci_taboo_contract:
+  cisco.aci.aci_taboo_contract:
     <<: *taboo_contract_present
     description: Ansible test taboo contract
   register: nm_add_taboo_contract_descr_again
@@ -131,12 +131,12 @@
 
 # ADD TABOO CONTRACT AGAIN
 - name: Add taboo contract again with no description (check_mode)
-  aci_taboo_contract: *taboo_contract_present
+  cisco.aci.aci_taboo_contract: *taboo_contract_present
   check_mode: yes
   register: cm_add_taboo_contract_again_no_descr
 
 - name: Add taboo contract again with no description (normal mode)
-  aci_taboo_contract: *taboo_contract_present
+  cisco.aci.aci_taboo_contract: *taboo_contract_present
   register: nm_add_taboo_contract_again_no_descr
 
 - name: Verify add_taboo_contract_again_no_descr
@@ -149,7 +149,7 @@
 
 # QUERY ALL TABOO CONTRACTS
 - name: Query all taboo contracts (check_mode)
-  aci_taboo_contract: &taboo_contract_query
+  cisco.aci.aci_taboo_contract: &taboo_contract_query
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -162,7 +162,7 @@
   register: cm_query_all_taboo_contracts
 
 - name: Query all taboo contracts (normal mode)
-  aci_taboo_contract: *taboo_contract_query
+  cisco.aci.aci_taboo_contract: *taboo_contract_query
   register: nm_query_all_taboo_contracts
 
 - name: Verify query_all_taboo_contracts
@@ -176,7 +176,7 @@
 
 # QUERY A TABOO CONTRACT
 - name: Query our taboo contract
-  aci_taboo_contract:
+  cisco.aci.aci_taboo_contract:
     <<: *taboo_contract_query
     tenant: ansible_test
     taboo_contract: taboo_contract_test
@@ -184,7 +184,7 @@
   register: cm_query_taboo_contract
 
 - name: Query our taboo contract
-  aci_taboo_contract:
+  cisco.aci.aci_taboo_contract:
     <<: *taboo_contract_query
     tenant: ansible_test
     taboo_contract: taboo_contract_test
@@ -203,12 +203,12 @@
 
 # REMOVE TABOO CONTRACT
 - name: Remove taboo contract (check_mode)
-  aci_taboo_contract: *taboo_contract_absent
+  cisco.aci.aci_taboo_contract: *taboo_contract_absent
   check_mode: yes
   register: cm_remove_taboo_contract
 
 - name: Remove taboo contract (normal mode)
-  aci_taboo_contract: *taboo_contract_absent
+  cisco.aci.aci_taboo_contract: *taboo_contract_absent
   register: nm_remove_taboo_contract
 
 - name: Verify remove_taboo_contract
@@ -220,12 +220,12 @@
     - nm_remove_taboo_contract.current == []
 
 - name: Remove taboo contract again (check_mode)
-  aci_taboo_contract: *taboo_contract_absent
+  cisco.aci.aci_taboo_contract: *taboo_contract_absent
   check_mode: yes
   register: cm_remove_taboo_contract_again
 
 - name: Remove taboo contract again (normal mode)
-  aci_taboo_contract: *taboo_contract_absent
+  cisco.aci.aci_taboo_contract: *taboo_contract_absent
   register: nm_remove_taboo_contract_again
 
 - name: Verify remove_taboo_contract_again
@@ -241,7 +241,7 @@
 
 # QUERY NON-EXISTING TABOO CONTRACT
 - name: Query non-existing taboo contract (check_mode)
-  aci_taboo_contract:
+  cisco.aci.aci_taboo_contract:
     <<: *taboo_contract_query
     tenant: ansible_test
     taboo_contract: taboo_contract_test
@@ -249,7 +249,7 @@
   register: cm_query_non_taboo_contract
 
 - name: Query non-existing taboo contract (normal mode)
-  aci_taboo_contract:
+  cisco.aci.aci_taboo_contract:
     <<: *taboo_contract_query
     tenant: ansible_test
     taboo_contract: taboo_contract_test
@@ -267,7 +267,7 @@
 
 # PROVOKE ERRORS
 - name: Error when required parameter is missing
-  aci_taboo_contract:
+  cisco.aci.aci_taboo_contract:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'

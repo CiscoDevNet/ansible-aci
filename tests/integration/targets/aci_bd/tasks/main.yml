@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: ensure tenant exists for tests to kick off
-  aci_tenant: &aci_tenant_present
+  cisco.aci.aci_tenant: &aci_tenant_present
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -22,25 +22,25 @@
   register: tenant_present
 
 - name: ensure vrf exists for tests to kick off
-  aci_vrf: &aci_vrf_present
+  cisco.aci.aci_vrf: &aci_vrf_present
     <<: *aci_tenant_present
     vrf: anstest
   register: vrf_present
 
 - name: ensure bd anstest does not exist
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_tenant_present
     bd: anstest
     state: absent
 
 - name: ensure bd anstest2 does not exist
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_tenant_present
     bd: anstest2
     state: absent
 
 - name: create bd - check mode works
-  aci_bd: &aci_bd_present
+  cisco.aci.aci_bd: &aci_bd_present
     <<: *aci_tenant_present
     bd: anstest
     description: Ansible Test
@@ -48,24 +48,24 @@
   register: bd_present_check_mode
 
 - name: create bd - creation works
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_bd_present
   register: bd_present
 
 - name: create bd again - idempotency works
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_bd_present
   register: bd_present_idempotent
 
 - name: update bd - update works
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_bd_present
     vrf: anstest
     description: Ansible Test Update
   register: bd_update
 
 - name: create another bd - check more params
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_bd_present
     bd: anstest2
     ip_learning: "no"
@@ -77,7 +77,7 @@
   register: bd_present_2
 
 - name: create bd without all necessary params - failure message works
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_bd_present
     tenant: "{{ fake_var | default(omit) }}"
   ignore_errors: yes
@@ -103,26 +103,26 @@
       - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
 
 - name: get all bd
-  aci_bd: &aci_query
+  cisco.aci.aci_bd: &aci_query
     <<: *aci_tenant_present
     state: query
     tenant: "{{ fake_var | default(omit) }}"
   register: query_all
 
 - name: get all in tenant
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_query
     tenant: anstest
   register: query_tenant
 
 - name: get all with name
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_query
     bd: anstest
   register: query_bd_bd
 
 - name: get bd
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_bd_present
     state: query
   register: query_bd
@@ -152,29 +152,29 @@
       - '"tn-anstest/BD-anstest.json" in query_bd.url'
 
 - name: delete bd - check mode works
-  aci_bd: &aci_bd_absent
+  cisco.aci.aci_bd: &aci_bd_absent
     <<: *aci_bd_present
     state: absent
   check_mode: yes
   register: bd_absent_check_mode
 
 - name: delete bd - delete works
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_bd_absent
   register: bd_absent
 
 - name: delete bd again - idempotency works
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_bd_absent
   register: bd_absent_idempotent
 
 - name: delete bd - cleanup
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_bd_absent
     name: anstest2
 
 - name: delete bd missing param - fails properly
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_bd_absent
     bd: "{{ fakevar | default(omit) }}"
   ignore_errors: yes
@@ -193,13 +193,13 @@
       - 'bd_absent_missing_param.msg == "state is absent but all of the following are missing: bd"'
 
 - name: delete vrf - cleanup before ending tests
-  aci_vrf:
+  cisco.aci.aci_vrf:
     <<: *aci_vrf_present
     state: absent
   when: vrf_present is changed
 
 - name: delete tenant - cleanup before ending tests
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_tenant_present
     state: absent
   when: tenant_present is changed

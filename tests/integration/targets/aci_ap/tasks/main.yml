@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: ensure tenant exists for tests to kick off
-  aci_tenant: &aci_tenant_present
+  cisco.aci.aci_tenant: &aci_tenant_present
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -22,13 +22,13 @@
   register: tenant_present
 
 - name: ensure ap does not exist initially
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_tenant_present
     ap: anstest
     state: absent
 
 - name: create ap - check mode works
-  aci_ap: &aci_ap_present
+  cisco.aci.aci_ap: &aci_ap_present
     <<: *aci_tenant_present
     ap: anstest
     description: Ansible Test
@@ -36,28 +36,28 @@
   register: ap_present_check_mode
 
 - name: create ap - creation works
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_ap_present
   register: ap_present
 
 - name: create ap - extra for query
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_tenant_present
     ap: anstest2
  
 - name: create ap - idempotency works
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_ap_present
   register: ap_present_idempotent
 
 - name: update ap - update works
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_ap_present
     description: Ansible Test Update
   register: ap_present_update
 
 - name: create ap - creation works
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_tenant_present
   ignore_errors: yes
   register: ap_present_missing_param
@@ -79,25 +79,25 @@
       - 'ap_present_missing_param.msg == "state is present but all of the following are missing: ap"'
 
 - name: get ap - query specific ap
-  aci_ap: &aci_ap_query
+  cisco.aci.aci_ap: &aci_ap_query
     <<: *aci_ap_present
     state: query
   register: query_ap
 
 - name: get all ap for tenant - query tenant aps
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_ap_query
     ap: "{{ fakevar | default(omit) }}"
   register: query_ap_tenant
 
 - name: get all ap by name - query ap name
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_ap_query
     tenant: "{{ fakevar | default(omit) }}"
   register: query_ap_ap
 
 - name: get all aps - query general
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_ap_query
     tenant: "{{ fakevar | default(omit) }}"
     ap: "{{ fakevar | default(omit) }}"
@@ -125,31 +125,31 @@
       - '"class/fvAp.json" in query_all.url'
 
 - name: delete ap - check_mode works
-  aci_ap: &aci_ap_absent
+  cisco.aci.aci_ap: &aci_ap_absent
     <<: *aci_ap_present
     state: absent
   check_mode: yes
   register: ap_delete_check_mode
 
 - name: delete ap - delete works
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_ap_absent
   register: ap_delete
 
 - name: delete ap - delete idempotency works
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_ap_absent
   register: ap_delete_idempotent
 
 - name: delete ap - missing param error
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_ap_absent
     tenant: "{{ fakevar | default(omit) }}"
   ignore_errors: yes
   register: ap_delete_missing_param
 
 - name: delete ap remove ap used for query
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_ap_absent
     ap: anstest2
 
@@ -167,7 +167,7 @@
       - 'ap_delete_missing_param.msg == "state is absent but all of the following are missing: tenant"'
 
 - name: delete tenant - cleanup before ending tests
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_tenant_present
     state: absent
   when: tenant_present is changed

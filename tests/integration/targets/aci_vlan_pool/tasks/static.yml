@@ -5,7 +5,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove static vlan pool
-  aci_vlan_pool: &static_vlan_pool_absent
+  cisco.aci.aci_vlan_pool: &static_vlan_pool_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -20,7 +20,7 @@
 
 # ADD VLAN POOL
 - name: Add static vlan pool (check_mode)
-  aci_vlan_pool: &static_vlan_pool_present
+  cisco.aci.aci_vlan_pool: &static_vlan_pool_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -35,7 +35,7 @@
   register: cm_add_static_vlan_pool
 
 - name: Add static vlan pool (normal mode)
-  aci_vlan_pool: *static_vlan_pool_present
+  cisco.aci.aci_vlan_pool: *static_vlan_pool_present
   register: nm_add_static_vlan_pool
 
 - name: Verify add_static_vlan_pool
@@ -54,12 +54,12 @@
     - nm_add_static_vlan_pool.current.0.fvnsVlanInstP.attributes.name == 'anstest'
 
 - name: Add static_vlan_pool again (check_mode)
-  aci_vlan_pool: *static_vlan_pool_present
+  cisco.aci.aci_vlan_pool: *static_vlan_pool_present
   check_mode: yes
   register: cm_add_static_vlan_pool_again
 
 - name: Add static vlan pool again (normal mode)
-  aci_vlan_pool: *static_vlan_pool_present
+  cisco.aci.aci_vlan_pool: *static_vlan_pool_present
   register: nm_add_static_vlan_pool_again
 
 - name: Verify add_static_vlan_pool_again
@@ -72,14 +72,14 @@
 
 # CHANGE VLAN POOL
 - name: Change description of static vlan pool (check_mode)
-  aci_vlan_pool:
+  cisco.aci.aci_vlan_pool:
     <<: *static_vlan_pool_present
     description: Ansible test static vlan pool
   check_mode: yes
   register: cm_add_static_vlan_pool_descr
 
 - name: Change description of static vlan pool (normal mode)
-  aci_vlan_pool:
+  cisco.aci.aci_vlan_pool:
     <<: *static_vlan_pool_present
     description: Ansible test static vlan pool
   register: nm_add_static_vlan_pool_descr
@@ -98,14 +98,14 @@
     - nm_add_static_vlan_pool_descr.current.0.fvnsVlanInstP.attributes.name == 'anstest'
 
 - name: Change description of static vlan pool again (check_mode)
-  aci_vlan_pool:
+  cisco.aci.aci_vlan_pool:
     <<: *static_vlan_pool_present
     description: Ansible test static vlan pool
   check_mode: yes
   register: cm_add_static_vlan_pool_descr_again
 
 - name: Change description of static vlan pool again (normal mode)
-  aci_vlan_pool:
+  cisco.aci.aci_vlan_pool:
     <<: *static_vlan_pool_present
     description: Ansible test static vlan pool
   register: nm_add_static_vlan_pool_descr_again
@@ -120,12 +120,12 @@
 
 # ADD VLAN POOL AGAIN
 - name: Add static vlan pool again with no description (check_mode)
-  aci_vlan_pool: *static_vlan_pool_present
+  cisco.aci.aci_vlan_pool: *static_vlan_pool_present
   check_mode: yes
   register: cm_add_static_vlan_pool_again_no_descr
 
 - name: Add static vlan pool again with no description (normal mode)
-  aci_vlan_pool: *static_vlan_pool_present
+  cisco.aci.aci_vlan_pool: *static_vlan_pool_present
   register: nm_add_static_vlan_pool_again_no_descr
 
 - name: Verify add_static_vlan_pool_again_no_descr
@@ -138,7 +138,7 @@
 
 # QUERY ALL VLAN POOLS
 - name: Query all static vlan pools (check_mode)
-  aci_vlan_pool: &static_vlan_pool_query
+  cisco.aci.aci_vlan_pool: &static_vlan_pool_query
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -151,7 +151,7 @@
   register: cm_query_all_static_vlan_pools
 
 - name: Query all static vlan pools (normal mode)
-  aci_vlan_pool: *static_vlan_pool_query
+  cisco.aci.aci_vlan_pool: *static_vlan_pool_query
   register: nm_query_all_static_vlan_pools
 
 - name: Verify query_all_static_vlan_pools
@@ -165,7 +165,7 @@
 
 # QUERY A VLAN POOL
 - name: Query our static vlan pool
-  aci_vlan_pool:
+  cisco.aci.aci_vlan_pool:
     <<: *static_vlan_pool_query
     pool: anstest
     pool_allocation_mode: static
@@ -173,7 +173,7 @@
   register: cm_query_static_vlan_pool
 
 - name: Query our static vlan pool
-  aci_vlan_pool:
+  cisco.aci.aci_vlan_pool:
     <<: *static_vlan_pool_query
     pool: anstest
     pool_allocation_mode: static
@@ -193,12 +193,12 @@
 
 # REMOVE VLAN POOL
 - name: Remove static vlan pool (check_mode)
-  aci_vlan_pool: *static_vlan_pool_absent
+  cisco.aci.aci_vlan_pool: *static_vlan_pool_absent
   check_mode: yes
   register: cm_remove_static_vlan_pool
 
 - name: Remove static vlan pool (normal mode)
-  aci_vlan_pool: *static_vlan_pool_absent
+  cisco.aci.aci_vlan_pool: *static_vlan_pool_absent
   register: nm_remove_static_vlan_pool
 
 - name: Verify remove_static_vlan_pool
@@ -210,12 +210,12 @@
     - nm_remove_static_vlan_pool.current == []
 
 - name: Remove static vlan pool again (check_mode)
-  aci_vlan_pool: *static_vlan_pool_absent
+  cisco.aci.aci_vlan_pool: *static_vlan_pool_absent
   check_mode: yes
   register: cm_remove_static_vlan_pool_again
 
 - name: Remove static vlan pool again (normal mode)
-  aci_vlan_pool: *static_vlan_pool_absent
+  cisco.aci.aci_vlan_pool: *static_vlan_pool_absent
   register: nm_remove_static_vlan_pool_again
 
 - name: Verify remove_static_vlan_pool_again
@@ -231,7 +231,7 @@
 
 # QUERY NON-EXISTING VLAN POOL
 - name: Query non-existing static vlan pool (check_mode)
-  aci_vlan_pool:
+  cisco.aci.aci_vlan_pool:
     <<: *static_vlan_pool_query
     pool: anstest
     pool_allocation_mode: static
@@ -239,7 +239,7 @@
   register: cm_query_non_static_vlan_pool
 
 - name: Query non-existing static vlan pool (normal mode)
-  aci_vlan_pool:
+  cisco.aci.aci_vlan_pool:
     <<: *static_vlan_pool_query
     pool: anstest
     pool_allocation_mode: static
@@ -257,7 +257,7 @@
 
 # PROVOKE ERRORS
 - name: Error when required parameter is missing
-  aci_vlan_pool:
+  cisco.aci.aci_vlan_pool:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -276,7 +276,7 @@
     - 'error_on_missing_required_param.msg == "state is present but all of the following are missing: pool"'
 
 - name: Error when together parameter is missing
-  aci_vlan_pool:
+  cisco.aci.aci_vlan_pool:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'

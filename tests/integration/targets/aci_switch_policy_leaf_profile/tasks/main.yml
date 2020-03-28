@@ -11,7 +11,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove leaf profile
-  aci_switch_policy_leaf_profile: &aci_switch_policy_leaf_profile_absent
+  cisco.aci.aci_switch_policy_leaf_profile: &aci_switch_policy_leaf_profile_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -25,7 +25,7 @@
 
 # ADD LEAF PROFILE
 - name: Add switch policy leaf profile (check_mode)
-  aci_switch_policy_leaf_profile: &aci_switch_policy_leaf_profile_present
+  cisco.aci.aci_switch_policy_leaf_profile: &aci_switch_policy_leaf_profile_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -39,16 +39,16 @@
   register: cm_add_switch_leaf_profile
 
 - name: Add leaf profile (normal mode)
-  aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_present
+  cisco.aci.aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_present
   register: nm_add_switch_leaf_profile
 
 - name: Add leaf profile again (check_mode)
-  aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_present
+  cisco.aci.aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_present
   check_mode: yes
   register: cm_add_switch_leaf_profile_again
 
 - name: Add leaf profile again (normal mode)
-  aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_present
+  cisco.aci.aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_present
   register: nm_add_switch_leaf_profile_again
 
 - name: Verify add_switch_leaf_profile
@@ -62,27 +62,27 @@
 
 # CHANGE SWITCH LEAF PROFILE
 - name: Change description of leaf profile (check_mode)
-  aci_switch_policy_leaf_profile:
+  cisco.aci.aci_switch_policy_leaf_profile:
     <<: *aci_switch_policy_leaf_profile_present
     description: Ansible test leaf profile
   check_mode: yes
   register: cm_add_switch_leaf_profile_descr
 
 - name: Change description of leaf profile (normal mode)
-  aci_switch_policy_leaf_profile:
+  cisco.aci.aci_switch_policy_leaf_profile:
     <<: *aci_switch_policy_leaf_profile_present
     description: Ansible test leaf profile
   register: nm_add_switch_leaf_profile_descr
 
 - name: Change description of leaf profile again (check_mode)
-  aci_switch_policy_leaf_profile:
+  cisco.aci.aci_switch_policy_leaf_profile:
     <<: *aci_switch_policy_leaf_profile_present
     description: Ansible test leaf profile
   check_mode: yes
   register: cm_add_switch_leaf_profile_descr_again
 
 - name: Change description of leaf profile again (normal mode)
-  aci_switch_policy_leaf_profile:
+  cisco.aci.aci_switch_policy_leaf_profile:
     <<: *aci_switch_policy_leaf_profile_present
     description: Ansible test leaf profile
   register: nm_add_switch_leaf_profile_descr_again
@@ -98,12 +98,12 @@
 
 # ADD LEAF PROFILE AGAIN
 - name: Add leaf profile again with no description (check_mode)
-  aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_present
+  cisco.aci.aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_present
   check_mode: yes
   register: cm_add_switch_leaf_profile_again_no_descr
 
 - name: Add leaf profile again with no description (normal mode)
-  aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_present
+  cisco.aci.aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_present
   register: nm_add_switch_leaf_profile_again_no_descr
 
 - name: Verify add_switch_leaf_profile_again_no_descr
@@ -115,7 +115,7 @@
 
 # QUERY ALL LEAF PROFILES
 - name: Query all profiles (check_mode)
-  aci_switch_policy_leaf_profile: &aci_switch_policy_leaf_profile_query
+  cisco.aci.aci_switch_policy_leaf_profile: &aci_switch_policy_leaf_profile_query
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -128,7 +128,7 @@
   register: cm_query_all_switch_leaf_profiles
 
 - name: Query all switch_leaf_profiles (normal mode)
-  aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_query
+  cisco.aci.aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_query
   register: nm_query_all_switch_leaf_profiles
 
 - name: Verify query_all_switch_leaf_profiles
@@ -142,14 +142,14 @@
 
 # QUERY A LEAF PROFILE
 - name: Query our switch_leaf_profile
-  aci_switch_policy_leaf_profile:
+  cisco.aci.aci_switch_policy_leaf_profile:
     <<: *aci_switch_policy_leaf_profile_query
     leaf_profile: ansible_test
   check_mode: yes
   register: cm_query_switch_leaf_profile
 
 - name: Query our switch_leaf_profile
-  aci_switch_policy_leaf_profile:
+  cisco.aci.aci_switch_policy_leaf_profile:
     <<: *aci_switch_policy_leaf_profile_query
     leaf_profile: ansible_test
   register: nm_query_switch_leaf_profile
@@ -164,21 +164,21 @@
 
 # REMOVE LEAF PROFILE
 - name: Remove switch_leaf_profile (check_mode)
-  aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_absent
+  cisco.aci.aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_absent
   check_mode: yes
   register: cm_remove_switch_leaf_profile
 
 - name: Remove switch_leaf_profile (normal mode)
-  aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_absent
+  cisco.aci.aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_absent
   register: nm_remove_switch_leaf_profile
 
 - name: Remove switch_leaf_profile again (check_mode)
-  aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_absent
+  cisco.aci.aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_absent
   check_mode: yes
   register: cm_remove_switch_leaf_profile_again
 
 - name: Remove switch_leaf_profile again (normal mode)
-  aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_absent
+  cisco.aci.aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_absent
   register: nm_remove_switch_leaf_profile_again
 
 - name: Verify remove_switch_leaf_profile
@@ -192,14 +192,14 @@
 
 # QUERY NON-EXISTING LEAF PROFILE
 - name: Query non-existing switch_leaf_profile (check_mode)
-  aci_switch_policy_leaf_profile:
+  cisco.aci.aci_switch_policy_leaf_profile:
     <<: *aci_switch_policy_leaf_profile_query
     leaf_profile: ansible_test
   check_mode: yes
   register: cm_query_non_switch_leaf_profile
 
 - name: Query non-existing switch_leaf_profile (normal mode)
-  aci_switch_policy_leaf_profile:
+  cisco.aci.aci_switch_policy_leaf_profile:
     <<: *aci_switch_policy_leaf_profile_query
     leaf_profile: ansible_test
   register: nm_query_non_switch_leaf_profile

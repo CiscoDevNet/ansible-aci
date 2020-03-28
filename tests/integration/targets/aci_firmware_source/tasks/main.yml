@@ -6,7 +6,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove firmware source
-  aci_firmware_source: &source_absent
+  cisco.aci.aci_firmware_source: &source_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -69,7 +69,7 @@
 
 # QUERY ALL SOURCES
 - name: Query all sources (check_mode)
-  aci_firmware_source: &source_query
+  cisco.aci.aci_firmware_source: &source_query
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -82,7 +82,7 @@
   register: cm_query_all_sources
 
 - name: Query all sources (normal mode)
-  aci_firmware_source: *source_query
+  cisco.aci.aci_firmware_source: *source_query
   register: nm_query_all_sources
 
 - name: Verify query_all_sources
@@ -178,7 +178,7 @@
 
 # PROVOKE ERRORS
 - name: Error when required parameter is missing
-  aci_firmware_source:
+  cisco.aci.aci_firmware_source:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'

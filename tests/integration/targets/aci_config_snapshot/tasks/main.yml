@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: create a snapshot - creation works
-  aci_config_snapshot: &create_snapshot
+  cisco.aci.aci_config_snapshot: &create_snapshot
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -25,21 +25,21 @@
   register: create
 
 - name: update snapshot to include secure and use xml - update works
-  aci_config_snapshot:
+  cisco.aci.aci_config_snapshot:
     <<: *create_snapshot
     include_secure: yes
     format: xml
   register: create_update
 
 - name: create a snapshot invalid max_count - error message
-  aci_config_snapshot:
+  cisco.aci.aci_config_snapshot:
     <<: *create_snapshot
     max_count: 11
   ignore_errors: yes
   register: invalid_max_count
 
 - name: create a snapshot invalid max_count - error message
-  aci_config_snapshot:
+  cisco.aci.aci_config_snapshot:
     <<: *create_snapshot
     export_policy: "{{ fake_var | default(omit) }}"
   ignore_errors: yes
@@ -60,7 +60,7 @@
       - 'missing_param.msg == "state is present but all of the following are missing: export_policy"'
 
 - name: query with export_policy
-  aci_config_snapshot: &query_snapshot
+  cisco.aci.aci_config_snapshot: &query_snapshot
     <<: *create_snapshot
     state: query
   register: query_export
@@ -70,20 +70,20 @@
     test_snapshot: "{{ query_export.current.0.configSnapshotCont.children.0.configSnapshot.attributes.rn.strip('snapshot-') }}"
 
 - name: query with export_policy and snapshot
-  aci_config_snapshot: &query_both
+  cisco.aci.aci_config_snapshot: &query_both
     <<: *query_snapshot
     snapshot: "{{ test_snapshot }}"
   register: query_export_snapshot
 
 - name: query with snapshot - module add run- to snapshot
-  aci_config_snapshot:
+  cisco.aci.aci_config_snapshot:
     <<: *query_snapshot
     export_policy: "{{ fake_var | default(omit) }}"
     snapshot: "{{ test_snapshot.strip('run-') }}"
   register: query_snapshot
 
 - name: query no params
-  aci_config_snapshot:
+  cisco.aci.aci_config_snapshot:
     <<: *query_snapshot
     export_policy: "{{ fake_var | default(omit) }}"
   register: query_all
@@ -110,18 +110,18 @@
       - query_all.current | length > 1
 
 - name: delete works
-  aci_config_snapshot: &delete
+  cisco.aci.aci_config_snapshot: &delete
     <<: *query_both
     state: absent
   register: delete_snapshot
 
 - name: delete works - idempotency
-  aci_config_snapshot:
+  cisco.aci.aci_config_snapshot:
     <<: *delete
   register: delete_idempotent
 
 - name: delete missing param
-  aci_config_snapshot:
+  cisco.aci.aci_config_snapshot:
     <<: *delete
     snapshot: "{{ fake_var | default(omit) }}"
   ignore_errors: yes

@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Ensure static path to epg is deleted for test kick off
-  aci_static_binding_to_epg: &aci_static_binding_to_epg_absent
+  cisco.aci.aci_static_binding_to_epg: &aci_static_binding_to_epg_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -27,7 +27,7 @@
     state: absent
 
 - name: Ensure tenant exists for tests to kick off
-  aci_tenant: &aci_tenant_present
+  cisco.aci.aci_tenant: &aci_tenant_present
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -40,19 +40,19 @@
   register: tenant_present
 
 - name: Ensure ap exists
-  aci_ap: &aci_ap_present
+  cisco.aci.aci_ap: &aci_ap_present
     <<: *aci_tenant_present
     ap: anstest
   register: ap_present
 
 - name: Ensure epg exists
-  aci_epg: &aci_epg_present
+  cisco.aci.aci_epg: &aci_epg_present
     <<: *aci_ap_present
     epg: anstest
   register: epg_present
 
 - name: Bind static-binding to epg - check mode works
-  aci_static_binding_to_epg: &aci_static_binding_to_epg_present
+  cisco.aci.aci_static_binding_to_epg: &aci_static_binding_to_epg_present
     <<: *aci_epg_present
     encap_id: 222
     deploy_immediacy: lazy
@@ -65,49 +65,49 @@
   register: provide_present_check_mode
 
 - name: Bind static-binding to epg - provide works (creation w/o check-mode)
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     <<: *aci_static_binding_to_epg_present
   ignore_errors: yes
   register: provide_present
 
 - name: Bind static-binding to epg - primary_encap_id works
-  aci_static_binding_to_epg: &primary_encap_id_present
+  cisco.aci.aci_static_binding_to_epg: &primary_encap_id_present
     <<: *aci_static_binding_to_epg_present
     primary_encap_id: 50
   register: primary_ecap_id_present
 
 - name: Bind contract to epg - idempotency works again
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     <<: *primary_encap_id_present
   register: idempotent_present
 
 - name: Bind contract to epg - update description (check mode)
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     <<: *primary_encap_id_present
     description: Binding description
   check_mode: yes
   register: description_cm
 
 - name: Bind contract to epg - update description (run mode)
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     <<: *primary_encap_id_present
     description: Binding description
   register: description
 
 - name: Bind contract to epg - update description (check mode)
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     <<: *primary_encap_id_present
     description: Binding description
   register: idempotent_description_cm
 
 - name: Bind contract to epg - update description (run mode)
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     <<: *primary_encap_id_present
     description: Binding description
   register: idempotent_description
 
 - name: Missing required param - failure message works
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     <<: *aci_tenant_present
   ignore_errors: yes
   register: missing_required_present
@@ -132,13 +132,13 @@
 
 
 - name: Query specific binding
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     <<: *primary_encap_id_present
     state: query
   register: query_static_binding
 
 - name: Query all bindings
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     <<: *aci_tenant_present
     state: query
   register: query_all
@@ -154,19 +154,19 @@
 
 
 - name: Delete provide binding - deletion works
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     <<: *primary_encap_id_present
     state: absent
   register: provide_absent
 
 - name: Delete provide binding - idempotency works
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     <<: *primary_encap_id_present
     state: absent
   register: provide_absent_idempotent
 
 - name: Missing param - failure message works
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     <<: *aci_tenant_present
     state: absent
   ignore_errors: yes
@@ -184,20 +184,20 @@
       - 'missing_param_absent.msg == "state is absent but all of the following are missing: ap, epg, interface, leafs, pod_id"'
 
 - name: Cleanup binding
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     <<: *aci_static_binding_to_epg_absent
 
 - name: Cleanup epg
-  aci_epg:
+  cisco.aci.aci_epg:
     <<: *aci_epg_present
     state: absent
 
 - name: Cleanup ap
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_ap_present
     state: absent
 
 - name: Cleanup tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_tenant_present
     state: absent

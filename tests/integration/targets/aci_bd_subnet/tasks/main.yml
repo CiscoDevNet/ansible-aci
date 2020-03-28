@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: ensure tenant exists for tests to kick off
-  aci_tenant: &aci_tenant_present
+  cisco.aci.aci_tenant: &aci_tenant_present
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -22,26 +22,26 @@
   register: tenant_present
 
 - name: ensure bd exists for tests to kick off
-  aci_bd: &aci_bd_present
+  cisco.aci.aci_bd: &aci_bd_present
     <<: *aci_tenant_present
     bd: anstest
   register: bd_present
 
 - name: ensure subnet does not exist for tests to kick off
-  aci_bd_subnet: &aci_subnet_absent
+  cisco.aci.aci_bd_subnet: &aci_subnet_absent
     <<: *aci_bd_present
     state: absent
     gateway: 10.100.100.1
     mask: 24
 
 - name: ensure subnet does not exist for tests to kick off
-  aci_bd_subnet: &aci_subnet2_absent
+  cisco.aci.aci_bd_subnet: &aci_subnet2_absent
     <<: *aci_subnet_absent
     gateway: 10.100.101.1
     mask: 25
 
 - name: create subnet - check mode works
-  aci_bd_subnet: &aci_subnet_present
+  cisco.aci.aci_bd_subnet: &aci_subnet_present
     <<: *aci_subnet_absent
     state: present
     subnet_name: anstest
@@ -50,12 +50,12 @@
   register: create_check_mode
 
 - name: create subnet - creation works
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_subnet_present
   register: create_subnet
 
 - name: create new subnet - creation works
-  aci_bd_subnet: &aci_subnet2_present
+  cisco.aci.aci_bd_subnet: &aci_subnet2_present
     <<: *aci_subnet2_absent
     state: present
     descr: Ansible Test
@@ -65,26 +65,26 @@
   register: create_subnet2
 
 - name: create subnet again - idempotency works
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_subnet2_present
   register: create_idempotency
 
 - name: modify subnet - update works
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_subnet_present
     scope: [shared, public]
     subnet_control: querier_ip
   register: modify_subnet
 
 - name: create subnet with bad scope - failure message works
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_subnet_present
     scope: [private, public]
   register: create_bad_scope
   ignore_errors: yes
 
 - name: create subnet without all necessary params - failure message works
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_subnet_present
     bd: "{{ fake_var | default(omit) }}"
   register: create_incomplete_data
@@ -114,52 +114,52 @@
       - 'create_incomplete_data.msg == "state is present but all of the following are missing: bd"'
 
 - name: get all subnets
-  aci_bd_subnet: &aci_query
+  cisco.aci.aci_bd_subnet: &aci_query
     <<: *aci_tenant_present
     state: query
     tenant: "{{ fake_var | default(omit) }}"
   register: get_all
 
 - name: get all in tenant
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_query
     tenant: anstest
   register: get_all_tenant
 
 - name: get all in bd
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_query
     bd: anstest
   register: get_all_bd
 
 - name: get all tenant and bd
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_bd_present
     state: query
   register: get_all_tenant_bd
 
 - name: get subnet in tenant
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_subnet_present
     state: query
     bd: "{{ fake_var | default(omit) }}"
   register: get_subnet_tenant
 
 - name: get subnet in bd
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_subnet_present
     state: query
     tenant: "{{ fake_var | default(omit) }}"
   register: get_subnet_bd
 
 - name: get specific subnet
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_subnet_present
     state: query
   register: get_subnet
 
 - name: get all subnets matching gateway
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_subnet_present
     state: query
     tenant: "{{ fake_var | default(omit) }}"
@@ -194,22 +194,22 @@
       - '"class/fvSubnet.json" in get_subnets_gateway.url'
 
 - name: delete subnet - check mode works
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_subnet_absent
   check_mode: yes
   register: delete_check_mode
 
 - name: delete subnet - delete works
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_subnet_absent
   register: delete_subnet
 
 - name: delete subnet - cleanup
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_subnet2_absent
 
 - name: delete subnet again - idempotency works
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     <<: *aci_subnet2_absent
   register: delete_idempotency
 
@@ -225,13 +225,13 @@
       - delete_idempotency.previous == []
 
 - name: delete bd - cleanup before ending tests
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_bd_present
     state: absent
   when: bd_present is changed
 
 - name: delete tenant - cleanup before ending tests
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_tenant_present
     state: absent
   when: tenant_present is changed

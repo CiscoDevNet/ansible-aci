@@ -10,7 +10,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Add tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -22,7 +22,7 @@
     state: present
 
 - name: Remove filter
-  aci_filter: &filter_absent
+  cisco.aci.aci_filter: &filter_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -36,7 +36,7 @@
 
 # ADD FILTER
 - name: Add filter (check_mode)
-  aci_filter: &filter_present
+  cisco.aci.aci_filter: &filter_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -51,16 +51,16 @@
   register: cm_add_filter
 
 - name: Add filter again (check_mode)
-  aci_filter: *filter_present
+  cisco.aci.aci_filter: *filter_present
   check_mode: yes
   register: cm_add_filter_again
 
 - name: Add filter (normal mode)
-  aci_filter: *filter_present
+  cisco.aci.aci_filter: *filter_present
   register: nm_add_filter
 
 - name: Add filter again (normal mode)
-  aci_filter: *filter_present
+  cisco.aci.aci_filter: *filter_present
   register: nm_add_filter_again
 
 - name: Verify add_filter
@@ -73,27 +73,27 @@
 
 # CHANGE FILTER
 - name: Change description of filter (check_mode)
-  aci_filter:
+  cisco.aci.aci_filter:
     <<: *filter_present
     description: Ansible test filter
   check_mode: yes
   register: cm_add_filter_descr
 
 - name: Change description of filter again (check_mode)
-  aci_filter:
+  cisco.aci.aci_filter:
     <<: *filter_present
     description: Ansible test filter
   check_mode: yes
   register: cm_add_filter_descr_again
 
 - name: Change description of filter (normal mode)
-  aci_filter:
+  cisco.aci.aci_filter:
     <<: *filter_present
     description: Ansible test filter
   register: nm_add_filter_descr
 
 - name: Change description of filter again (normal mode)
-  aci_filter:
+  cisco.aci.aci_filter:
     <<: *filter_present
     description: Ansible test filter
   register: nm_add_filter_descr_again
@@ -108,12 +108,12 @@
 
 # ADD FILTER AGAIN
 - name: Add filter again with no description (check_mode)
-  aci_filter: *filter_present
+  cisco.aci.aci_filter: *filter_present
   check_mode: yes
   register: cm_add_filter_again_no_descr
 
 - name: Add filter again with no description (normal mode)
-  aci_filter: *filter_present
+  cisco.aci.aci_filter: *filter_present
   register: nm_add_filter_again_no_descr
 
 - name: Verify add_filter_again_no_descr
@@ -124,7 +124,7 @@
 
 # QUERY ALL FILTERS
 - name: Query all filters (check_mode)
-  aci_filter: &filter_query
+  cisco.aci.aci_filter: &filter_query
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -137,7 +137,7 @@
   register: cm_query_all_filters
 
 - name: Query all filters (normal mode)
-  aci_filter: *filter_query
+  cisco.aci.aci_filter: *filter_query
   register: nm_query_all_filters
 
 - name: Verify query_all_filters
@@ -150,7 +150,7 @@
 
 # QUERY A FILTER
 - name: Query our filter
-  aci_filter:
+  cisco.aci.aci_filter:
     <<: *filter_query
     tenant: ansible_test
     filter: filter_test
@@ -158,7 +158,7 @@
   register: cm_query_filter
 
 - name: Query our filter
-  aci_filter:
+  cisco.aci.aci_filter:
     <<: *filter_query
     tenant: ansible_test
     filter: filter_test
@@ -173,21 +173,21 @@
 
 # REMOVE FILTER
 - name: Remove filter (check_mode)
-  aci_filter: *filter_absent
+  cisco.aci.aci_filter: *filter_absent
   check_mode: yes
   register: cm_remove_filter
 
 - name: Remove filter again (check_mode)
-  aci_filter: *filter_absent
+  cisco.aci.aci_filter: *filter_absent
   check_mode: yes
   register: cm_remove_filter_again
 
 - name: Remove filter (normal mode)
-  aci_filter: *filter_absent
+  cisco.aci.aci_filter: *filter_absent
   register: nm_remove_filter
 
 - name: Remove filter again (normal mode)
-  aci_filter: *filter_absent
+  cisco.aci.aci_filter: *filter_absent
   register: nm_remove_filter_again
 
 - name: Verify remove_filter
@@ -201,7 +201,7 @@
 # QUERY NON-EXISTING FILTER
 # FIXME: Should this fail or return empty values ?
 - name: Query non-existing filter (check_mode)
-  aci_filter:
+  cisco.aci.aci_filter:
     <<: *filter_query
     tenant: ansible_test
     filter: filter_test
@@ -209,7 +209,7 @@
   register: cm_query_non_filter
 
 - name: Query non-existing filter (normal mode)
-  aci_filter:
+  cisco.aci.aci_filter:
     <<: *filter_query
     tenant: ansible_test
     filter: filter_test

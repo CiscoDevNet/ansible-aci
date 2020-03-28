@@ -6,7 +6,7 @@
 
 # PROVOKE ERRORS
 - name: Error on name resolution
-  aci_rest:
+  cisco.aci.aci_rest:
     host: foo.bar.cisco.com
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -35,7 +35,7 @@
     - "'filter_string' not in error_on_name_resolution"
 
 - name: Error when required parameter is missing
-  aci_rest:
+  cisco.aci.aci_rest:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -63,7 +63,7 @@
     - "'filter_string' not in error_on_missing_required_param"
 
 - name: Error when attributes are missing
-  aci_rest:
+  cisco.aci.aci_rest:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -94,7 +94,7 @@
     - "'filter_string' not in error_on_missing_attributes"
 
 - name: Error when input does not validate
-  aci_rest:
+  cisco.aci.aci_rest:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -127,7 +127,7 @@
     - "'filter_string' not in error_on_input_validation"
 
 - name: Error when invalid attributes are used
-  aci_rest:
+  cisco.aci.aci_rest:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -160,7 +160,7 @@
     - "'filter_string' not in error_on_invalid_attributes"
 
 - name: Error on invalid object
-  aci_rest:
+  cisco.aci.aci_rest:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'

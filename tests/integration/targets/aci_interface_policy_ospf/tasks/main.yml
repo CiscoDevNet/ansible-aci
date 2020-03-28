@@ -11,7 +11,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Ensure tenant exists for tests to kick off
-  aci_tenant: &aci_tenant_present
+  cisco.aci.aci_tenant: &aci_tenant_present
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -24,7 +24,7 @@
   register: tenant_present
 
 - name: Remove OSPF interface policy
-  aci_interface_policy_ospf: &interface_policy_ospf_absent
+  cisco.aci.aci_interface_policy_ospf: &interface_policy_ospf_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -39,7 +39,7 @@
 
 # ADD OSPF INTERFACE POLICY
 - name: Add ospf interface policy (check_mode)
-  aci_interface_policy_ospf: &interface_policy_ospf_present
+  cisco.aci.aci_interface_policy_ospf: &interface_policy_ospf_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -54,16 +54,16 @@
   register: cm_add_ospf_interface_policy
 
 - name: Add ospf interface policy (normal mode)
-  aci_interface_policy_ospf: *interface_policy_ospf_present
+  cisco.aci.aci_interface_policy_ospf: *interface_policy_ospf_present
   register: nm_add_ospf_interface_policy
 
 - name: Add ospf interface policy again (check_mode)
-  aci_interface_policy_ospf: *interface_policy_ospf_present
+  cisco.aci.aci_interface_policy_ospf: *interface_policy_ospf_present
   check_mode: yes
   register: cm_add_ospf_interface_policy_again
 
 - name: Add ospf interface policy again (normal mode)
-  aci_interface_policy_ospf: *interface_policy_ospf_present
+  cisco.aci.aci_interface_policy_ospf: *interface_policy_ospf_present
   register: nm_add_ospf_interface_policy_again
 
 - name: Verify add_ospf_interface_policy
@@ -77,27 +77,27 @@
 
 # CHANGE OSPF INTERFACE POLICY
 - name: Change description of ospf interface policy (check_mode)
-  aci_interface_policy_ospf:
+  cisco.aci.aci_interface_policy_ospf:
     <<: *interface_policy_ospf_present
     description: Ansible test ospf interface policy
   check_mode: yes
   register: cm_add_ospf_descr
 
 - name: Change description of ospf interface policy (normal mode)
-  aci_interface_policy_ospf:
+  cisco.aci.aci_interface_policy_ospf:
     <<: *interface_policy_ospf_present
     description: Ansible test ospf interface policy
   register: nm_add_ospf_descr
 
 - name: Change description of ospf interface policy again (check_mode)
-  aci_interface_policy_ospf:
+  cisco.aci.aci_interface_policy_ospf:
     <<: *interface_policy_ospf_present
     description: Ansible test ospf interface policy
   check_mode: yes
   register: cm_add_ospf_descr_again
 
 - name: Change description of ospf interface policy again (normal mode)
-  aci_interface_policy_ospf:
+  cisco.aci.aci_interface_policy_ospf:
     <<: *interface_policy_ospf_present
     description: Ansible test ospf interface policy
   register: nm_add_ospf_descr_again
@@ -113,12 +113,12 @@
 
 # ADD OSPF INTERFACE POLICY AGAIN
 - name: Add ospf interface policy again with no description (check_mode)
-  aci_interface_policy_ospf: *interface_policy_ospf_present
+  cisco.aci.aci_interface_policy_ospf: *interface_policy_ospf_present
   check_mode: yes
   register: cm_add_ospf_again_no_descr
 
 - name: Add ospf interface policy again with no description (normal mode)
-  aci_interface_policy_ospf: *interface_policy_ospf_present
+  cisco.aci.aci_interface_policy_ospf: *interface_policy_ospf_present
   register: nm_add_ospf_again_no_descr
 
 - name: Verify add_ospf_again_no_descr
@@ -130,7 +130,7 @@
 
 # QUERY ALL OSPF INTERFACE POLICIES
 - name: Query all ospf interface policies (check_mode)
-  aci_interface_policy_ospf: &interface_policy_ospf_query
+  cisco.aci.aci_interface_policy_ospf: &interface_policy_ospf_query
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -144,7 +144,7 @@
   register: cm_query_all_ospfs
 
 - name: Query all ospfs (normal mode)
-  aci_interface_policy_ospf: *interface_policy_ospf_query
+  cisco.aci.aci_interface_policy_ospf: *interface_policy_ospf_query
   register: nm_query_all_ospfs
 
 - name: Verify query_all_ospfs
@@ -158,7 +158,7 @@
 
 # QUERY A OSPF INTERFACE POLICY
 - name: Query our ospf
-  aci_interface_policy_ospf:
+  cisco.aci.aci_interface_policy_ospf:
     <<: *interface_policy_ospf_query
     tenant: anstest
     ospf: ansible_ospf
@@ -166,7 +166,7 @@
   register: cm_query_ospf
 
 - name: Query our ospf
-  aci_interface_policy_ospf:
+  cisco.aci.aci_interface_policy_ospf:
     <<: *interface_policy_ospf_query
     tenant: anstest
     ospf: ansible_ospf
@@ -182,21 +182,21 @@
 
 # REMOVE OSPF INTERFACE POLICY
 - name: Remove ospf (check_mode)
-  aci_interface_policy_ospf: *interface_policy_ospf_absent
+  cisco.aci.aci_interface_policy_ospf: *interface_policy_ospf_absent
   check_mode: yes
   register: cm_remove_ospf
 
 - name: Remove ospf (normal mode)
-  aci_interface_policy_ospf: *interface_policy_ospf_absent
+  cisco.aci.aci_interface_policy_ospf: *interface_policy_ospf_absent
   register: nm_remove_ospf
 
 - name: Remove ospf again (check_mode)
-  aci_interface_policy_ospf: *interface_policy_ospf_absent
+  cisco.aci.aci_interface_policy_ospf: *interface_policy_ospf_absent
   check_mode: yes
   register: cm_remove_ospf_again
 
 - name: Remove ospf again (normal mode)
-  aci_interface_policy_ospf: *interface_policy_ospf_absent
+  cisco.aci.aci_interface_policy_ospf: *interface_policy_ospf_absent
   register: nm_remove_ospf_again
 
 - name: Verify remove_ospf
@@ -210,14 +210,14 @@
 
 # QUERY NON-EXISTING OSPF INTERFACE POLICY
 - name: Query non-existing ospf (check_mode)
-  aci_interface_policy_ospf:
+  cisco.aci.aci_interface_policy_ospf:
     <<: *interface_policy_ospf_query
     ospf: ansible_ospf
   check_mode: yes
   register: cm_query_non_ospf
 
 - name: Query non-existing ospf (normal mode)
-  aci_interface_policy_ospf:
+  cisco.aci.aci_interface_policy_ospf:
     <<: *interface_policy_ospf_query
     ospf: ansible_ospf
   register: nm_query_non_ospf

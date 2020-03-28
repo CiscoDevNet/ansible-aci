@@ -10,7 +10,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove CDP Test Policy
-  aci_interface_policy_cdp:
+  cisco.aci.aci_interface_policy_cdp:
     name: Ansible_CDP_Test_Policy
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
@@ -25,7 +25,7 @@
 
 
 - name: Create CDP Test Policy
-  aci_interface_policy_cdp:
+  cisco.aci.aci_interface_policy_cdp:
     name: Ansible_CDP_Test_Policy
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
@@ -45,7 +45,7 @@
 
 
 - name: test for idempotency
-  aci_interface_policy_cdp:
+  cisco.aci.aci_interface_policy_cdp:
     name: Ansible_CDP_Test_Policy
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
@@ -65,7 +65,7 @@
 
 
 - name: Create CDP Disable Test Policy
-  aci_interface_policy_cdp:
+  cisco.aci.aci_interface_policy_cdp:
     name: Ansible_CDP_Test_Policy
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
@@ -87,7 +87,7 @@
 
 
 - name: Query CDP Policy
-  aci_interface_policy_cdp:
+  cisco.aci.aci_interface_policy_cdp:
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"

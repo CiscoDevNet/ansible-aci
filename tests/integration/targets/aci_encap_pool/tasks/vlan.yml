@@ -1,6 +1,6 @@
 ---
 - name: ensure vlan pool does not exist for tests to kick off
-  aci_encap_pool: &aci_pool_absent_static
+  cisco.aci.aci_encap_pool: &aci_pool_absent_static
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -14,12 +14,12 @@
     pool_allocation_mode: static
 
 - name: ensure vlan pool does not exist for tests to kick off
-  aci_encap_pool: &aci_pool_absent_dynamic
+  cisco.aci.aci_encap_pool: &aci_pool_absent_dynamic
     <<: *aci_pool_absent_static
     pool_allocation_mode: dynamic
 
 - name: create static vlan pool - check mode works
-  aci_encap_pool: &aci_pool_present_static
+  cisco.aci.aci_encap_pool: &aci_pool_present_static
     <<: *aci_pool_absent_static
     state: present
     descr: Ansible Test
@@ -33,7 +33,7 @@
       - 'create_check_mode.sent == {"fvnsVlanInstP": {"attributes": {"allocMode": "static", "descr": "Ansible Test", "name": "anstest"}}}'
 
 - name: create static vlan pool - creation works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_present_static
   register: create_static
 
@@ -45,7 +45,7 @@
       - create_static.sent == create_check_mode.sent
 
 - name: create dynamic vlan pool - creation works
-  aci_encap_pool: &aci_pool_present_dynamic
+  cisco.aci.aci_encap_pool: &aci_pool_present_dynamic
     <<: *aci_pool_absent_dynamic
     state: present
     descr: Ansible Test
@@ -59,7 +59,7 @@
       - 'create_dynamic.sent == {"fvnsVlanInstP": {"attributes": {"allocMode": "dynamic", "descr": "Ansible Test", "name": "anstest"}}}'
 
 - name: create static vlan pool again - idempotency works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_present_static
   register: idempotent_static
 
@@ -71,7 +71,7 @@
       - idempotent_static.sent == {}
 
 - name: create dynamic vlan pool again - idempotency works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_present_dynamic
   register: idempotent_dynamic
 
@@ -83,7 +83,7 @@
       - idempotent_dynamic.sent == {}
  
 - name: update static vlan pool - update works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_present_static
     descr: Ansible Test Change
   register: update_static
@@ -95,7 +95,7 @@
       - 'update_static.sent == {"fvnsVlanInstP": {"attributes": {"descr": "Ansible Test Change"}}}'
 
 - name: update dynamic vlan pool - update works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_present_dynamic
     descr: Ansible Test Change
   register: update_dynamic
@@ -107,7 +107,7 @@
       - 'update_dynamic.sent == {"fvnsVlanInstP": {"attributes": {"descr": "Ansible Test Change"}}}'
 
 - name: missing param - failure message works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_present_dynamic
     pool_allocation_mode: "{{ fake_var | default(omit) }}"
   ignore_errors: yes
@@ -120,7 +120,7 @@
       - "vlan_alloc_fail.msg == 'ACI requires parameter \\'pool_allocation_mode\\' for \\'pool_type\\' of \\'vlan\\' and \\'vsan\\' when parameter \\'pool\\' is provided'"
 
 - name: missing param - failure message works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_present_dynamic
     pool: "{{ fake_var | default(omit) }}"
   ignore_errors: yes
@@ -133,7 +133,7 @@
       - 'vlan_pool_fail.msg == "state is present but all of the following are missing: pool"'
  
 - name: missing param - failure message works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_present_dynamic
     pool_type: "{{ fake_var | default(omit) }}"
   ignore_errors: yes
@@ -146,7 +146,7 @@
       - 'vlan_pool_type_fail.msg == "missing required arguments: pool_type"'
 
 - name: get all vlan pools - get class works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_absent_static
     state: query
     pool: "{{ fake_var | default(omit) }}"
@@ -161,7 +161,7 @@
       - get_all_pools.current | length > 1
 
 - name: get created static vlan pool - get mo works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_absent_static
     state: query
   register: get_static_pool
@@ -176,7 +176,7 @@
       - get_static_pool.current.0.fvnsVlanInstP.attributes.name == "anstest"
 
 - name: get created dynamic vlan pool - get mo works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_absent_dynamic
     state: query
   register: get_dynamic_pool
@@ -191,7 +191,7 @@
       - get_dynamic_pool.current.0.fvnsVlanInstP.attributes.name == "anstest"
 
 - name: get created dynamic vlan pool - get mo works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_absent_dynamic
     state: query
     pool_type: "{{ fake_var | default(omit) }}"
@@ -205,7 +205,7 @@
       - 'vlan_query_pool_type_fail.msg == "missing required arguments: pool_type"'
 
 - name: delete static vlan pool - deletion works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_absent_static
   register: delete_static
 
@@ -218,7 +218,7 @@
       - delete_static.previous.0.fvnsVlanInstP.attributes.name == "anstest"
 
 - name: delete dynamic vlan pool - check mode works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_absent_dynamic
   check_mode: yes
   register: delete_check_mode
@@ -229,7 +229,7 @@
       - delete_check_mode is changed
 
 - name: delete dynamic vlan pool - deletion works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_absent_dynamic
   register: delete_dynamic
 
@@ -242,7 +242,7 @@
       - delete_dynamic.previous.0.fvnsVlanInstP.attributes.name == "anstest"
 
 - name: delete static vlan pool again - idempotency works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_absent_static
   register: idempotent_delete_static
 
@@ -253,7 +253,7 @@
       - idempotent_delete_static.previous == []
 
 - name: delete dynamic vlan pool again - idempotency works
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_absent_dynamic
   register: idempotent_delete_dynamic
 

@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: ensure tenant exists for tests to kick off
-  aci_tenant: &aci_tenant_present
+  cisco.aci.aci_tenant: &aci_tenant_present
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -22,13 +22,13 @@
   register: tenant_present
 
 - name: ensure contract exists for tests to kick off
-  aci_contract: &aci_contract_present
+  cisco.aci.aci_contract: &aci_contract_present
     <<: *aci_tenant_present
     contract: anstest
   register: contract_present
 
 - name: create subject - check mode works
-  aci_contract_subject: &aci_subject_present
+  cisco.aci.aci_contract_subject: &aci_subject_present
     <<: *aci_contract_present
     subject: anstest
     description: Ansible Test
@@ -36,17 +36,17 @@
   register: subject_present_check_mode
 
 - name: create subject - creation works
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_subject_present
   register: subject_present
 
 - name: create subject - idempotency works
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_subject_present
   register: subject_present_idempotent
 
 - name: update subject - update works
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_subject_present
     description: Ansible Test
     reverse_filter: "yes"
@@ -55,7 +55,7 @@
   register: subject_update
 
 - name: create subject - try additional params
-  aci_contract_subject: &aci_subject_present_2
+  cisco.aci.aci_contract_subject: &aci_subject_present_2
     <<: *aci_contract_present
     subject: anstest2
     reverse_filter: "no"
@@ -64,7 +64,7 @@
   register: subject_present_2
 
 - name: missing param - failure message works
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_tenant_present
   ignore_errors: yes
   register: present_missing_param
@@ -88,51 +88,51 @@
       - 'present_missing_param.msg == "state is present but all of the following are missing: contract, subject"'
 
 - name: query tenant contract subject
-  aci_contract_subject: &aci_query_subject
+  cisco.aci.aci_contract_subject: &aci_query_subject
     <<: *aci_subject_present
     state: query
   register: query_tenant_contract_subject
 
 - name: query tenant contract
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_query_subject
     subject: "{{ fakevar | default(omit) }}"
   register: query_tenant_contract
 
 - name: query tenant subject
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_query_subject
     contract: "{{ fakevar | default(omit) }}"
   register: query_tenant_subject
 
 - name: query contract subject
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_query_subject
     tenant: "{{ fakevar | default(omit) }}"
   register: query_contract_subject
 
 - name: query tenant
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_tenant_present
     state: query
   register: query_tenant
 
 - name: query contract
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_contract_present
     state: query
     tenant: "{{ fakevar | default(omit) }}"
   register: query_contract
 
 - name: query subject
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_query_subject
     tenant: "{{ fakevar | default(omit) }}"
     contract: "{{ fakevar | default(omit) }}"
   register: query_subject
 
 - name: query all
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_tenant_present
     state: query
     tenant: "{{ fakevar | default(omit) }}"
@@ -187,29 +187,29 @@
       - '"class/vzSubj.json" in query_all.url'
 
 - name: delete subject - check mode works
-  aci_contract_subject: &aci_subject_absent
+  cisco.aci.aci_contract_subject: &aci_subject_absent
     <<: *aci_subject_present
     state: absent
   check_mode: yes
   register: subject_absent_check_mode
 
 - name: delete subject - deletion works
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_subject_absent
   register: subject_absent
 
 - name: delete subject - idempotency works
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_subject_absent
   register: subject_absent_idempotent
 
 - name: delete subject - cleanup
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_subject_present_2
     state: absent
 
 - name: missing params - failure message works
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_subject_absent
     subject: "{{ fakevar | default(omit) }}"
   ignore_errors: yes
@@ -229,13 +229,13 @@
       - 'absent_missing_param.msg == "state is absent but all of the following are missing: subject"'
 
 - name: cleanup contract
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_contract_present
     state: absent
   when: contract_present is changed
 
 - name: cleanup tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_tenant_present
     state: absent
   when: tenant_present is changed

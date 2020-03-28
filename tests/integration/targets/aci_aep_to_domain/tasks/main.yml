@@ -6,7 +6,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove AEP to domain binding
-  aci_aep_to_domain: &binding_absent
+  cisco.aci.aci_aep_to_domain: &binding_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -20,7 +20,7 @@
     state: absent
 
 - name: Create AEP
-  aci_aep:
+  cisco.aci.aci_aep:
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -33,7 +33,7 @@
     state: present
 
 - name: Create physical domain
-  aci_domain:
+  cisco.aci.aci_domain:
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -48,7 +48,7 @@
 
 # ADD BINDING
 - name: Add AEP to domain binding (check_mode)
-  aci_aep_to_domain: &binding_present
+  cisco.aci.aci_aep_to_domain: &binding_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -64,7 +64,7 @@
   register: cm_add_binding
 
 - name: Add AEP to domain binding (normal mode)
-  aci_aep_to_domain: *binding_present
+  cisco.aci.aci_aep_to_domain: *binding_present
   register: nm_add_binding
 
 - name: Verify add_binding
@@ -78,12 +78,12 @@
     - 'nm_add_binding.current == [{"infraRsDomP": {"attributes": {"dn": "uni/infra/attentp-test_aep/rsdomP-[uni/phys-phys_dom]", "tDn": "uni/phys-phys_dom"}}}]'
 
 - name: Add AEP to domain binding again (check_mode)
-  aci_aep_to_domain: *binding_present
+  cisco.aci.aci_aep_to_domain: *binding_present
   check_mode: yes
   register: cm_add_binding_again
 
 - name: Add AEP to domain binding again (normal mode)
-  aci_aep_to_domain: *binding_present
+  cisco.aci.aci_aep_to_domain: *binding_present
   register: nm_add_binding_again
 
 - name: Verify add_binding_again
@@ -95,7 +95,7 @@
 
 # QUERY ALL BINDINGS
 - name: Query all AEP to domain bindings (check_mode)
-  aci_aep_to_domain: &binding_query
+  cisco.aci.aci_aep_to_domain: &binding_query
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -108,7 +108,7 @@
   register: cm_query_all_bindings
 
 - name: Query all AEP to domain bindings (normal mode)
-  aci_aep_to_domain: *binding_query
+  cisco.aci.aci_aep_to_domain: *binding_query
   register: nm_query_all_bindings
 
 - name: Verify query_all_bindings
@@ -122,7 +122,7 @@
 
 # QUERY A BINDING
 - name: Query our AEP to domain binding (check_mode)
-  aci_aep_to_domain:
+  cisco.aci.aci_aep_to_domain:
     <<: *binding_query
     aep: test_aep
     domain: phys_dom
@@ -131,7 +131,7 @@
   register: cm_query_binding
 
 - name: Query our AEP to domain binding (normal mode)
-  aci_aep_to_domain:
+  cisco.aci.aci_aep_to_domain:
     <<: *binding_query
     aep: test_aep
     domain: phys_dom
@@ -151,12 +151,12 @@
 
 # REMOVE BINDING
 - name: Remove AEP to domain binding (check_mode)
-  aci_aep_to_domain: *binding_absent
+  cisco.aci.aci_aep_to_domain: *binding_absent
   check_mode: yes
   register: cm_remove_binding
 
 - name: Remove AEP to domain binding (normal mode)
-  aci_aep_to_domain: *binding_absent
+  cisco.aci.aci_aep_to_domain: *binding_absent
   register: nm_remove_binding
 
 - name: Verify remove_binding
@@ -168,12 +168,12 @@
     - nm_remove_binding.current == []
 
 - name: Remove AEP to domain binding again (check_mode)
-  aci_aep_to_domain: *binding_absent
+  cisco.aci.aci_aep_to_domain: *binding_absent
   check_mode: yes
   register: cm_remove_binding_again
 
 - name: Remove AEP to domain binding again (normal mode)
-  aci_aep_to_domain: *binding_absent
+  cisco.aci.aci_aep_to_domain: *binding_absent
   register: nm_remove_binding_again
 
 - name: Verify remove_binding_again
@@ -185,7 +185,7 @@
 
 # QUERY NON-EXISTING BINDING
 - name: Query non-existing AEP to domain binding (check_mode)
-  aci_aep_to_domain:
+  cisco.aci.aci_aep_to_domain:
     <<: *binding_query
     aep: test_aep
     domain: phys_dom
@@ -194,7 +194,7 @@
   register: cm_query_non_binding
 
 - name: Query non-existing AEP to domain binding (normal mode)
-  aci_aep_to_domain:
+  cisco.aci.aci_aep_to_domain:
     <<: *binding_query
     aep: test_aep
     domain: phys_dom

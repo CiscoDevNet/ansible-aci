@@ -5,7 +5,7 @@
 
 # Remove VMM domain
 - name: Remove VMM domain (normal mode)
-  aci_domain: &domain_absent
+  cisco.aci.aci_domain: &domain_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -21,7 +21,7 @@
 
 # ADD VMM domain for testing
 - name: Add VMM domain (normal mode)
-  aci_domain: &domain_present
+  cisco.aci.aci_domain: &domain_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -42,7 +42,7 @@
 
 # REMOVE credential
 - name: Remove credential (check mode)
-  aci_vmm_credential: &credential_absent
+  cisco.aci.aci_vmm_credential: &credential_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -61,7 +61,7 @@
   register: cm_remove_credential
 
 - name: Remove vmware VMM credential (normal mode)
-  aci_vmm_credential: *credential_absent
+  cisco.aci.aci_vmm_credential: *credential_absent
   register: nm_remove_credential
 
 - name: Verify remove_credential
@@ -72,7 +72,7 @@
 
 # ADD credential
 - name: Add vmware VMM credential (check mode)
-  aci_vmm_credential: &credential_present
+  cisco.aci.aci_vmm_credential: &credential_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -92,12 +92,12 @@
 
 # NOTE: Setting password is not idempotent
 - name: Add vmware VMM credential (normal mode)
-  aci_vmm_credential: *credential_present
+  cisco.aci.aci_vmm_credential: *credential_present
   register: nm_add_credential
 
 # NOTE: Setting password is not idempotent
 - name: Add vmware VMM credential again (check mode)
-  aci_vmm_credential: *credential_present
+  cisco.aci.aci_vmm_credential: *credential_present
   check_mode: yes
   register: cm_add_credential_again
 
@@ -114,7 +114,7 @@
 
 # MODIFY credential
 - name: Modify vmware VMM credential (check mode)
-  aci_vmm_credential: &credential_mod
+  cisco.aci.aci_vmm_credential: &credential_mod
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -133,7 +133,7 @@
   register: cm_mod_credential
 
 - name: Modify vmware VMM credential (normal mode)
-  aci_vmm_credential: *credential_mod
+  cisco.aci.aci_vmm_credential: *credential_mod
   register: nm_mod_credential
 
 - name: Verify mod_credential
@@ -147,7 +147,7 @@
     - nm_mod_credential.current.0.vmmUsrAccP.attributes.name == 'vmm_cred'
 
 - name: Query existing vmware VMM credential (check mode)
-  aci_vmm_credential: &query_existing_cred
+  cisco.aci.aci_vmm_credential: &query_existing_cred
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -163,11 +163,11 @@
   register: cm_query_credential
 
 - name: Query existing vmware VMM credential (normal mode)
-  aci_vmm_credential: *query_existing_cred
+  cisco.aci.aci_vmm_credential: *query_existing_cred
   register: nm_query_credential
 
 - name: Query non-existent vmware VMM credential
-  aci_vmm_credential:
+  cisco.aci.aci_vmm_credential:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -182,7 +182,7 @@
   register: nm_query_fake_credential
 
 - name: Query all vmware VMM credentials (check mode)
-  aci_vmm_credential: &query_all_creds
+  cisco.aci.aci_vmm_credential: &query_all_creds
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -196,7 +196,7 @@
   register: cm_query_all_credential
 
 - name: Query all vmware VMM credentials (normal mode)
-  aci_vmm_credential: *query_all_creds
+  cisco.aci.aci_vmm_credential: *query_all_creds
   register: nm_query_all_credential
 
 - name: Verify query_credential
@@ -214,16 +214,16 @@
     - nm_query_all_credential.current.0.vmmUsrAccP.attributes.name == 'vmm_cred'
 
 - name: Remove credential (check_mode)
-  aci_vmm_credential: *credential_absent
+  cisco.aci.aci_vmm_credential: *credential_absent
   check_mode: yes
   register: cm_remove_credential_again
 
 - name: Remove credential (normal_mode)
-  aci_vmm_credential: *credential_absent
+  cisco.aci.aci_vmm_credential: *credential_absent
   register: nm_remove_credential_again
 
 - name: Remove credential (normal_mode)
-  aci_vmm_credential: *credential_absent
+  cisco.aci.aci_vmm_credential: *credential_absent
   register: nm_remove_credential_final
 
 - name: Verify remove_credential
@@ -235,5 +235,5 @@
 
 # Remove VMM domain after testing
 - name: Remove VMM domain (normal_mode)
-  aci_domain: *domain_absent
+  cisco.aci.aci_domain: *domain_absent
   register: nm_remove_domain_again

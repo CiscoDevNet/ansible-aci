@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: ensure tenant exists for tests to kick off
-  aci_tenant: &aci_tenant_present
+  cisco.aci.aci_tenant: &aci_tenant_present
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -22,19 +22,19 @@
   register: tenant_present
 
 - name: ensure ap exists for tests to kick off
-  aci_ap: &aci_ap_present
+  cisco.aci.aci_ap: &aci_ap_present
     <<: *aci_tenant_present
     ap: anstest
   register: ap_present
 
 - name: ensure epg exists for tests to kick off
-  aci_epg: &aci_epg_present
+  cisco.aci.aci_epg: &aci_epg_present
     <<: *aci_ap_present
     epg: anstest
   register: epg_present
 
 - name: ensure phys domain exists for tests to kick off
-  aci_rest: &aci_rest_phys_domain
+  cisco.aci.aci_rest: &aci_rest_phys_domain
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -48,14 +48,14 @@
   register: phys_domain_post
 
 - name: ensure vmm domain exists for tests to kick off
-  aci_rest: &aci_rest_vmm_domain
+  cisco.aci.aci_rest: &aci_rest_vmm_domain
     <<: *aci_rest_phys_domain
     path: api/mo/uni/vmmp-VMware/dom-anstest.json
     content: {"vmmDomP": {"attributes": {}}}
   register: vmm_domain_post
 
 - name: bind phys domain to epg - check mode works
-  aci_epg_to_domain: &aci_epg_to_domain_present
+  cisco.aci.aci_epg_to_domain: &aci_epg_to_domain_present
     <<: *aci_epg_present
     domain: anstest
     domain_type: phys
@@ -63,23 +63,23 @@
   register: phys_check_mode_present
 
 - name: bind phys domain to epg - creation works
-  aci_epg_to_domain:
+  cisco.aci.aci_epg_to_domain:
     <<: *aci_epg_to_domain_present
   register: phys_present
 
 - name: bind phys domain to epg - idempotency works
-  aci_epg_to_domain:
+  cisco.aci.aci_epg_to_domain:
     <<: *aci_epg_to_domain_present 
   register: phys_idempotent
 
 - name: bind phys domain to epg - update works
-  aci_epg_to_domain:
+  cisco.aci.aci_epg_to_domain:
     <<: *aci_epg_to_domain_present
     deploy_immediacy: immediate
   register: phys_update
 
 - name: bind vmm domain to epg - creation works
-  aci_epg_to_domain: &aci_epg_to_domain_vmm_present
+  cisco.aci.aci_epg_to_domain: &aci_epg_to_domain_vmm_present
     <<: *aci_epg_to_domain_present
     domain_type: vmm
     vm_provider: vmware
@@ -87,21 +87,21 @@
   register: vmm_present
 
 - name: bind vmm domain to epg - missing params
-  aci_epg_to_domain:
+  cisco.aci.aci_epg_to_domain:
     <<: *aci_epg_to_domain_vmm_present
     vm_provider: "{{ fake_var | default(omit) }}"
   ignore_errors: yes
   register: present_missing_params
 
 - name: bind vmm domain to epg - invalid vlan
-  aci_epg_to_domain:
+  cisco.aci.aci_epg_to_domain:
     <<: *aci_epg_to_domain_present
     encap: 4097
   ignore_errors: yes
   register: invalid_vlan
 
 - name: bind vmm domain to epg - incompatible params
-  aci_epg_to_domain:
+  cisco.aci.aci_epg_to_domain:
     <<: *aci_epg_to_domain_present
     vm_provider: vmware
   ignore_errors: yes
@@ -130,7 +130,7 @@
       - incompatible_params.msg == "Domain type 'phys' cannot have a 'vm_provider'"
 
 - name: get domain epg binding
-  aci_epg_to_domain: &aci_epg_domain_query
+  cisco.aci.aci_epg_to_domain: &aci_epg_domain_query
     <<: *aci_tenant_present
     state: query
     tenant: "{{ fake_var | default(omit) }}"
@@ -144,30 +144,30 @@
       - '"class/fvRsDomAtt.json" in binding_query.url'
 
 - name: delete domain epg binding - check mode
-  aci_epg_to_domain: &aci_epg_to_domain_absent
+  cisco.aci.aci_epg_to_domain: &aci_epg_to_domain_absent
     <<: *aci_epg_to_domain_present
     state: absent
   check_mode: yes
   register: epg_domain_check_mode_absent
 
 - name: delete phys domain epg binding - delete works
-  aci_epg_to_domain:
+  cisco.aci.aci_epg_to_domain:
     <<: *aci_epg_to_domain_absent
   register: epg_domain_absent
 
 - name: delete vmm domain epg binding - delete works
-  aci_epg_to_domain:
+  cisco.aci.aci_epg_to_domain:
     <<: *aci_epg_to_domain_vmm_present
     state: absent
   register: epg_vmm_domain_absent
 
 - name: delete domain epg binding - idempotency works
-  aci_epg_to_domain:
+  cisco.aci.aci_epg_to_domain:
     <<: *aci_epg_to_domain_absent
   register: idempotency_absent
 
 - name: delete domain epg binding - missing param
-  aci_epg_to_domain:
+  cisco.aci.aci_epg_to_domain:
     <<: *aci_tenant_present
     state: absent
   ignore_errors: true
@@ -187,31 +187,31 @@
       - 'absent_missing_param.msg == "state is absent but all of the following are missing: ap, domain, domain_type, epg"'
 
 - name: remove vmm domain - cleanup
-  aci_rest:
+  cisco.aci.aci_rest:
     <<: *aci_rest_vmm_domain
     method: delete
   when: vmm_domain_post is changed
 
 - name: remove phys domain - cleanup
-  aci_rest:
+  cisco.aci.aci_rest:
     <<: *aci_rest_phys_domain
     method: delete
   when: phys_domain_post is changed
 
 - name: remove epg - cleanup
-  aci_epg:
+  cisco.aci.aci_epg:
     <<: *aci_epg_present
     state: absent
   when: epg_present is changed
 
 - name: remove ap - cleanup
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_ap_present
     state: absent
   when: ap_present is changed
 
 - name: remove tenant - cleanup
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_tenant_present
     state: absent
   when: tenant_present is changed

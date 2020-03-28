@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: ensure tenant exists for tests to kick off
-  aci_tenant: &aci_tenant_present
+  cisco.aci.aci_tenant: &aci_tenant_present
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -22,19 +22,19 @@
   register: tenant_present
 
 - name: ensure bd exists for tests to kick off
-  aci_bd: &aci_bd_present
+  cisco.aci.aci_bd: &aci_bd_present
     <<: *aci_tenant_present
     bd: anstest
   register: bd_present
 
 - name: ensure ap exists for tests to kick off
-  aci_ap: &aci_ap_present
+  cisco.aci.aci_ap: &aci_ap_present
     <<: *aci_tenant_present
     ap: anstest
   register: ap_present
 
 - name: create epg - check mode works
-  aci_epg: &aci_epg_present
+  cisco.aci.aci_epg: &aci_epg_present
     <<: *aci_ap_present
     epg: anstest
     bd: anstest
@@ -43,30 +43,30 @@
   register: epg_present_check_mode
 
 - name: create epg - creation works
-  aci_epg:
+  cisco.aci.aci_epg:
     <<: *aci_epg_present
   register: epg_present
 
 - name: create epg - idempotency works
-  aci_epg:
+  cisco.aci.aci_epg:
     <<: *aci_epg_present
   register: epg_present_idempotent
 
 - name: update epg - update works
-  aci_epg:
+  cisco.aci.aci_epg:
     <<: *aci_epg_present
     description: Ansible Test Update
   register: epg_present_update
 
 - name: create epg - missing param
-  aci_epg:
+  cisco.aci.aci_epg:
     <<: *aci_epg_present
     ap: "{{ fakevar | default(omit) }}"
   ignore_errors: yes
   register: epg_present_missing_param
 
 - name: create epg - used for query
-  aci_epg:
+  cisco.aci.aci_epg:
     <<: *aci_epg_present
     epg: anstest2
 
@@ -87,13 +87,13 @@
       - 'epg_present_missing_param.msg == "state is present but all of the following are missing: ap"'
 
 - name: get specific epg
-  aci_epg:
+  cisco.aci.aci_epg:
     <<: *aci_epg_present
     state: query
   register: epg_query
 
 - name: get all epgs
-  aci_epg:
+  cisco.aci.aci_epg:
     <<: *aci_tenant_present
     state: query
     tenant: "{{ fakevar | default(omit) }}"
@@ -112,29 +112,29 @@
       - '"class/fvAEPg.json" in epg_query_all.url'
 
 - name: delete epg - check mode works
-  aci_epg: &aci_epg_absent
+  cisco.aci.aci_epg: &aci_epg_absent
     <<: *aci_epg_present
     state: absent
   check_mode: yes
   register: delete_epg_check_mode
 
 - name: delete epg - delete works
-  aci_epg:
+  cisco.aci.aci_epg:
     <<: *aci_epg_absent
   register: delete_epg
 
 - name: delete epg - idempotency works
-  aci_epg:
+  cisco.aci.aci_epg:
     <<: *aci_epg_absent
   register: delete_epg_idempotent
 
 - name: delete epg - cleanup extra epg
-  aci_epg:
+  cisco.aci.aci_epg:
     <<: *aci_epg_absent
     epg: anstest2
 
 - name: delete epg - missing param fails
-  aci_epg:
+  cisco.aci.aci_epg:
     <<: *aci_epg_absent
     tenant: "{{ fakevar | default(omit) }}"
   ignore_errors: yes
@@ -153,19 +153,19 @@
       - 'delete_epg_missing_param.msg == "state is absent but all of the following are missing: tenant"'
 
 - name: cleanup bd
-  aci_bd:
+  cisco.aci.aci_bd:
     <<: *aci_bd_present
     state: absent
   when: bd_present.previous == []
 
 - name: cleanup ap
-  aci_ap:
+  cisco.aci.aci_ap:
     <<: *aci_ap_present
     state: absent
   when: ap_present.previous == []
 
 - name: cleanup tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_tenant_present
     state: absent
   when: tenant_present.previous == []

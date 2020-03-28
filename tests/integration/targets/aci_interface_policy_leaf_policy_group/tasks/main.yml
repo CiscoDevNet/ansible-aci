@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Making sure interface_policy_leaf_policy_group doesn't exist at beginning of test (PC)
-  aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_link_absent
+  cisco.aci.aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_link_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -22,7 +22,7 @@
     state: absent
 
 - name: Making sure interface_policy_leaf_policy_group doesn't exist at beginning of test (VPC)
-  aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_node_absent
+  cisco.aci.aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_node_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -35,7 +35,7 @@
     state: absent
 
 - name: Making sure interface_policy_leaf_policy_group doesn't exist at beginning of test (Leaf Access Port)
-  aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_leaf_absent
+  cisco.aci.aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_leaf_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -51,7 +51,7 @@
 # ==== TESTING Port Channel (PC), lag_type: link ====
 
 - name: Adding a interface policy leaf policy group (PC) - check mode works
-  aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_link_present
+  cisco.aci.aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_link_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -68,17 +68,17 @@
   register: intf_policy_leaf_polgrp_check_mode_present
 
 - name: Adding a interface policy leaf policy group (PC) - creation works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_link_present
   register: intf_policy_leaf_polgrp_present
 
 - name: Adding a interface policy leaf policy group (PC) - idempotency works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_link_present
   register: intf_policy_leaf_polgrp_idempotent
 
 - name: Adding a interface policy leaf policy group description (PC) - update works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_link_present
     description: policygroup description
   register: intf_policy_leaf_polgrp_update
@@ -97,7 +97,7 @@
     - 'intf_policy_leaf_polgrp_update.sent == {"infraAccBndlGrp": {"attributes": {"descr": "policygroup description"}}}'
 
 - name: Query interface policy leaf policy group (PC)
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -118,23 +118,23 @@
       - '"/api/mo/uni/infra/funcprof/accbundle-policygroupname_link.json" in binding_query.url'
 
 - name: Remove interface policy leaf policy group (PC) - check mode
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_link_absent
   check_mode: yes
   register: intf_policy_leaf_polgrp_check_mode_absent
 
 - name: Remove interface policy leaf policy group (PC) - delete works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_link_absent
   register: intf_policy_leaf_polgrp_absent
 
 - name: Remove interface policy leaf policy group (PC) - idempotency works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_link_absent
   register: intf_policy_leaf_polgrp_absent_idempotent
 
 - name: Remove interface policy leaf policy group (PC) - check mode
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -166,11 +166,11 @@
 # ==== START TESTING Virtual Port Channel (VPC), lag_type: node ====
 
 - name: Making sure interface_policy_leaf_policy_group doesn't exist at beginning of test (VPC)
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_node_absent
 
 - name: Adding a interface policy leaf policy group (VPC) - check mode works
-  aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_node_present
+  cisco.aci.aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_node_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -187,17 +187,17 @@
   register: intf_policy_leaf_polgrp_check_mode_present
 
 - name: Adding a interface policy leaf policy group (VPC) - creation works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_node_present
   register: intf_policy_leaf_polgrp_present
 
 - name: Adding a interface policy leaf policy group (VPC) - idempotency works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_node_present
   register: intf_policy_leaf_polgrp_idempotent
 
 - name: Adding a interface policy leaf policy group description (VPC) - update works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_node_present
     description: policygroup description
   register: intf_policy_leaf_polgrp_update
@@ -216,7 +216,7 @@
     - 'intf_policy_leaf_polgrp_update.sent == {"infraAccBndlGrp": {"attributes": {"descr": "policygroup description"}}}'
 
 - name: Query interface policy leaf policy group (VPC)
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -238,12 +238,12 @@
 
 # Add lag_type link to see what we get back
 - name: Adding a interface policy leaf policy group (PC) - creation works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_link_present
   register: intf_policy_leaf_polgrp_present
 
 - name: Query interface policy leaf policy group (VPC)
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -264,23 +264,23 @@
       - '"/api/class/infraAccBndlGrp.json" in binding_query_node_all.url'
 
 - name: Remove interface policy leaf policy group (VPC) - check mode
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_node_absent
   check_mode: yes
   register: intf_policy_leaf_polgrp_check_mode_absent
 
 - name: Remove interface policy leaf policy group (VPC) - delete works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_node_absent
   register: intf_policy_leaf_polgrp_absent
 
 - name: Remove interface policy leaf policy group (VPC) - idempotency works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_node_absent
   register: intf_policy_leaf_polgrp_absent_idempotent
 
 - name: Remove interface policy leaf policy group (VPC) - check mode
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -312,11 +312,11 @@
 # ==== START TESTING Virtual Port Channel (VPC), lag_type: leaf ====
 
 - name: Making sure interface_policy_leaf_policy_group doesn't exist at beginning of test (Leaf Access Port)
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_leaf_absent
 
 - name: Adding a interface policy leaf policy group (Leaf Access Port) - check mode works
-  aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_leaf_present
+  cisco.aci.aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_leaf_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -333,17 +333,17 @@
   register: intf_policy_leaf_polgrp_check_mode_present
 
 - name: Adding a interface policy leaf policy group (Leaf Access Port) - creation works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_leaf_present
   register: intf_policy_leaf_polgrp_present
 
 - name: Adding a interface policy leaf policy group (Leaf Access Port) - idempotency works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_leaf_present
   register: intf_policy_leaf_polgrp_idempotent
 
 - name: Adding a interface policy leaf policy group description (Leaf Access Port) - update works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_leaf_present
     description: policygroup description
   register: intf_policy_leaf_polgrp_update
@@ -370,7 +370,7 @@
     - 'intf_policy_leaf_polgrp_update.sent == {"infraAccPortGrp": {"attributes": {"descr": "policygroup description"}}}'
 
 - name: Query interface policy leaf policy group (Leaf Access Port)
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -391,23 +391,23 @@
       - '"/api/mo/uni/infra/funcprof/accportgrp-policygroupname_leaf.json" in binding_query.url'
 
 - name: Remove interface policy leaf policy group (Leaf Access Port) - check mode
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_leaf_absent
   check_mode: yes
   register: intf_policy_leaf_polgrp_check_mode_absent
 
 - name: Remove interface policy leaf policy group (Leaf Access Port) - delete works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_leaf_absent
   register: intf_policy_leaf_polgrp_absent
 
 - name: Remove interface policy leaf policy group (Leaf Access Port) - idempotency works
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_leaf_absent
   register: intf_policy_leaf_polgrp_absent_idempotent
 
 - name: Remove interface policy leaf policy group (Leaf Access Port) - check mode
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'

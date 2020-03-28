@@ -1,6 +1,6 @@
 ---
 - name: ensure vlan pool does not exist for tests to kick off
-  aci_encap_pool: &aci_pool_absent_static
+  cisco.aci.aci_encap_pool: &aci_pool_absent_static
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"

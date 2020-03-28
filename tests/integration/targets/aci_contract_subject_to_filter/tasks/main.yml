@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: ensure tenant exists for tests to kick off
-  aci_tenant: &aci_tenant_present
+  cisco.aci.aci_tenant: &aci_tenant_present
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -22,31 +22,31 @@
   register: tenant_present
 
 - name: ensure filter exists for tests to kick off
-  aci_filter: &aci_filter_present
+  cisco.aci.aci_filter: &aci_filter_present
     <<: *aci_tenant_present
     filter: anstest
   register: filter_present
 
 - name: ensure filter exists for tests to kick off
-  aci_filter: &aci_filter_present_2
+  cisco.aci.aci_filter: &aci_filter_present_2
     <<: *aci_tenant_present
     filter: anstest2
   register: filter_present_2
 
 - name: ensure contract exists for tests to kick off
-  aci_contract: &aci_contract_present
+  cisco.aci.aci_contract: &aci_contract_present
     <<: *aci_tenant_present
     contract: anstest
   register: contract_present
 
 - name: ensure subject exists for tests to kick off
-  aci_contract_subject: &aci_subject_present
+  cisco.aci.aci_contract_subject: &aci_subject_present
     <<: *aci_contract_present
     subject: anstest
   register: subject_present
 
 - name: create subject filter binding - check mode works
-  aci_contract_subject_to_filter: &aci_subject_filter_present
+  cisco.aci.aci_contract_subject_to_filter: &aci_subject_filter_present
     <<: *aci_subject_present
     filter: anstest
     log: log
@@ -54,29 +54,29 @@
   register: subject_filter_present_check_mode
 
 - name: create subject filter binding - creation works
-  aci_contract_subject_to_filter:
+  cisco.aci.aci_contract_subject_to_filter:
     <<: *aci_subject_filter_present
   register: subject_filter_present
 
 - name: create subject filter binding - additional testing
-  aci_contract_subject_to_filter: &aci_subject_filter_present_2
+  cisco.aci.aci_contract_subject_to_filter: &aci_subject_filter_present_2
     <<: *aci_subject_filter_present
     filter: anstest2
   register: subject_filter_present_2
 
 - name: create subject filter binding - idempotency works
-  aci_contract_subject_to_filter:
+  cisco.aci.aci_contract_subject_to_filter:
     <<: *aci_subject_filter_present
   register: subject_filter_present_idempotent
 
 - name: update subject filter binding - update works
-  aci_contract_subject_to_filter:
+  cisco.aci.aci_contract_subject_to_filter:
     <<: *aci_subject_filter_present
     log: none
   register: subject_filter_update
 
 - name: missing param - failure message works
-  aci_contract_subject_to_filter:
+  cisco.aci.aci_contract_subject_to_filter:
     <<: *aci_tenant_present
   ignore_errors: yes
   register: present_missing_param
@@ -99,14 +99,14 @@
       - 'present_missing_param.msg == "state is present but all of the following are missing: contract, filter, subject"'
 
 - name: query all
-  aci_contract_subject_to_filter:
+  cisco.aci.aci_contract_subject_to_filter:
     <<: *aci_tenant_present
     state: query
     tenant: "{{ fakevar | default(omit) }}"
   register: query_all
 
 - name: query binding
-  aci_contract_subject_to_filter:
+  cisco.aci.aci_contract_subject_to_filter:
     <<: *aci_subject_filter_present
     state: query
   register: query_binding
@@ -121,31 +121,31 @@
       - query_binding.current != []
 
 - name: delete subject filter binding - check mode works
-  aci_contract_subject_to_filter: &aci_subject_filter_absent
+  cisco.aci.aci_contract_subject_to_filter: &aci_subject_filter_absent
     <<: *aci_subject_filter_present
     state: absent
   check_mode: yes
   register: subject_filter_absent_check_mode
 
 - name: delete subject filter binding - deletion works
-  aci_contract_subject_to_filter:
+  cisco.aci.aci_contract_subject_to_filter:
     <<: *aci_subject_filter_absent
   register: subject_filter_absent
 
 - name: delete subject filter binding - idempotency works
-  aci_contract_subject_to_filter:
+  cisco.aci.aci_contract_subject_to_filter:
     <<: *aci_subject_filter_absent
   register: subject_filter_absent_idempotent
 
 - name: missing param - failure message works
-  aci_contract_subject_to_filter:
+  cisco.aci.aci_contract_subject_to_filter:
     <<: *aci_subject_filter_absent
     filter: "{{ fakevar | default(omit) }}"
   ignore_errors: yes
   register: absent_missing_param
 
 - name: cleanup subject filter binding
-  aci_contract_subject_to_filter:
+  cisco.aci.aci_contract_subject_to_filter:
     <<: *aci_subject_filter_present_2
     state: absent
 
@@ -163,31 +163,31 @@
       - 'absent_missing_param.msg == "state is absent but all of the following are missing: filter"'
 
 - name: cleanup subject
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     <<: *aci_subject_present
     state: absent
   when: subject_present is changed
 
 - name: cleanup contract
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_contract_present
     state: absent
   when: contract_present is changed
 
 - name: cleanup filter
-  aci_filter:
+  cisco.aci.aci_filter:
     <<: *aci_filter_present
     state: absent
   when: filter_present is changed
 
 - name: cleanup filter
-  aci_filter:
+  cisco.aci.aci_filter:
     <<: *aci_filter_present_2
     state: absent
   when: filter_present_2 is changed
 
 - name: cleanup tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_tenant_present
     state: absent
   when: tenant_present is changed

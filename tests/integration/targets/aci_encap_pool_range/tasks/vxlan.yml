@@ -1,5 +1,5 @@
 - name: ensure vxlan pool exists for tests to kick off
-  aci_encap_pool: &aci_pool_present
+  cisco.aci.aci_encap_pool: &aci_pool_present
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -13,7 +13,7 @@
     state: present
 
 - name: cleanup vxlan pool
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     <<: *aci_pool_present
     state: absent
   when: pool_present is changed

@@ -6,7 +6,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove VMM domain
-  aci_domain: &domain_absent
+  cisco.aci.aci_domain: &domain_absent
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -22,7 +22,7 @@
 
 # ADD DOMAIN
 - name: Add VMM domain (check_mode)
-  aci_domain: &domain_present
+  cisco.aci.aci_domain: &domain_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -38,7 +38,7 @@
   register: cm_add_domain
 
 - name: Add VMM domain (normal mode)
-  aci_domain: *domain_present
+  cisco.aci.aci_domain: *domain_present
   register: nm_add_domain
 
 - name: Verify add_domain
@@ -53,12 +53,12 @@
     - nm_add_domain.current.0.vmmDomP.attributes.name == 'vmm_dom'
 
 - name: Add VMM domain again (check_mode)
-  aci_domain: *domain_present
+  cisco.aci.aci_domain: *domain_present
   check_mode: yes
   register: cm_add_domain_again
 
 - name: Add physical domain again (normal mode)
-  aci_domain: *domain_present
+  cisco.aci.aci_domain: *domain_present
   register: nm_add_domain_again
 
 - name: Verify add_domain_again
@@ -70,7 +70,7 @@
 
 # QUERY ALL DOMAINS
 - name: Query all VMM domains (check_mode)
-  aci_domain: &domain_query
+  cisco.aci.aci_domain: &domain_query
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -85,7 +85,7 @@
   register: cm_query_all_domains
 
 - name: Query all VMM domains (normal mode)
-  aci_domain: *domain_query
+  cisco.aci.aci_domain: *domain_query
   register: nm_query_all_domains
 
 - name: Verify query_all_domains
@@ -99,7 +99,7 @@
 
 # QUERY A DOMAIN
 - name: Query our VMM domain (check_mode)
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *domain_query
     domain: vmm_dom
     vm_provider: vmware
@@ -107,7 +107,7 @@
   register: cm_query_domain
 
 - name: Query our VMM domain (normal mode)
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *domain_query
     domain: vmm_dom
     vm_provider: vmware
@@ -125,12 +125,12 @@
 
 # REMOVE DOMAIN
 - name: Remove VMM domain (check_mode)
-  aci_domain: *domain_absent
+  cisco.aci.aci_domain: *domain_absent
   check_mode: yes
   register: cm_remove_domain
 
 - name: Remove VMM domain (normal mode)
-  aci_domain: *domain_absent
+  cisco.aci.aci_domain: *domain_absent
   register: nm_remove_domain
 
 - name: Verify remove_domain
@@ -144,12 +144,12 @@
     - nm_remove_domain.current == []
 
 - name: Remove VMM domain again (check_mode)
-  aci_domain: *domain_absent
+  cisco.aci.aci_domain: *domain_absent
   check_mode: yes
   register: cm_remove_domain_again
 
 - name: Remove VMM domain again (normal mode)
-  aci_domain: *domain_absent
+  cisco.aci.aci_domain: *domain_absent
   register: nm_remove_domain_again
 
 - name: Verify remove_domain_again
@@ -161,7 +161,7 @@
 
 # QUERY NON-EXISTING DOMAIN
 - name: Query non-existing VMM domain (check_mode)
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *domain_query
     domain: vmm_dom
     vm_provider: vmware
@@ -169,7 +169,7 @@
   register: cm_query_non_domain
 
 - name: Query non-existing VMM domain (normal mode)
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *domain_query
     domain: vmm_dom
     vm_provider: vmware

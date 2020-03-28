@@ -11,7 +11,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove any pre-existing certificate
-  aci_aaa_user_certificate: &cert_absent
+  cisco.aci.aci_aaa_user_certificate: &cert_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -26,7 +26,7 @@
 
 # ADD USER CERTIFICATE
 - name: Add user certificate (check_mode)
-  aci_aaa_user_certificate: &cert_present
+  cisco.aci.aci_aaa_user_certificate: &cert_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -42,16 +42,16 @@
   register: cm_add_cert
 
 - name: Add user certificate (normal mode)
-  aci_aaa_user_certificate: *cert_present
+  cisco.aci.aci_aaa_user_certificate: *cert_present
   register: nm_add_cert
 
 - name: Add user certificate again (check mode)
-  aci_aaa_user_certificate: *cert_present
+  cisco.aci.aci_aaa_user_certificate: *cert_present
   check_mode: yes
   register: cm_add_cert_again
 
 - name: Add user certificate again (normal mode)
-  aci_aaa_user_certificate: *cert_present
+  cisco.aci.aci_aaa_user_certificate: *cert_present
   register: nm_add_cert_again
 
 - name: Verify add_cert
@@ -65,7 +65,7 @@
 
 # QUERY ALL USER CERTIFICATES
 - name: Query all user certificates using signature-based authentication (check_mode)
-  aci_aaa_user_certificate: &cert_query
+  cisco.aci.aci_aaa_user_certificate: &cert_query
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     #password: '{{ aci_password }}'
@@ -80,7 +80,7 @@
   register: cm_query_all_certs
 
 - name: Query all user certificates using signature-based authentication (normal mode)
-  aci_aaa_user_certificate: *cert_query
+  cisco.aci.aci_aaa_user_certificate: *cert_query
   register: nm_query_all_certs
 
 - name: Verify query_all_certs
@@ -94,14 +94,14 @@
 
 # QUERY OUR USER CERTIFICATE
 - name: Query our certificate using signature-based authentication (check_mode)
-  aci_aaa_user_certificate:
+  cisco.aci.aci_aaa_user_certificate:
     <<: *cert_query
     certificate_name: admin
   check_mode: yes
   register: cm_query_cert
 
 - name: Query our certificate using signature-based authentication (normal mode)
-  aci_aaa_user_certificate:
+  cisco.aci.aci_aaa_user_certificate:
     <<: *cert_query
     certificate_name: admin
   register: nm_query_cert
@@ -116,21 +116,21 @@
 
 # REMOVE CERTIFICATE
 - name: Remove certificate (check_mode)
-  aci_aaa_user_certificate: *cert_absent
+  cisco.aci.aci_aaa_user_certificate: *cert_absent
   check_mode: yes
   register: cm_remove_cert
 
 - name: Remove certificate (normal mode)
-  aci_aaa_user_certificate: *cert_absent
+  cisco.aci.aci_aaa_user_certificate: *cert_absent
   register: nm_remove_cert
 
 - name: Remove certificate again (check_mode)
-  aci_aaa_user_certificate: *cert_absent
+  cisco.aci.aci_aaa_user_certificate: *cert_absent
   check_mode: yes
   register: cm_remove_cert_again
 
 - name: Remove certificate again (normal mode)
-  aci_aaa_user_certificate: *cert_absent
+  cisco.aci.aci_aaa_user_certificate: *cert_absent
   register: nm_remove_cert_again
 
 - name: Verify remove_cert

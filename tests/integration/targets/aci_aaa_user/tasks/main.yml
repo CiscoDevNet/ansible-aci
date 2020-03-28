@@ -11,7 +11,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove any pre-existing user
-  aci_aaa_user: &user_absent
+  cisco.aci.aci_aaa_user: &user_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -25,7 +25,7 @@
 
 # ADD USER
 - name: Add user (check_mode)
-  aci_aaa_user: &user_present
+  cisco.aci.aci_aaa_user: &user_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -47,18 +47,18 @@
 
 # NOTE: Setting password is not idempotent, see #35544
 - name: Add user (normal mode)
-  aci_aaa_user:
+  cisco.aci.aci_aaa_user:
     <<: *user_present
     aaa_password: 12!Ab:cD!34
   register: nm_add_user
 
 - name: Add user again (check mode)
-  aci_aaa_user: *user_present
+  cisco.aci.aci_aaa_user: *user_present
   check_mode: yes
   register: cm_add_user_again
 
 - name: Add user again (normal mode)
-  aci_aaa_user: *user_present
+  cisco.aci.aci_aaa_user: *user_present
   register: nm_add_user_again
 
 - name: Verify add user
@@ -74,7 +74,7 @@
 
 # MODIFY USER
 - name: Modify user (check_mode)
-  aci_aaa_user: &user_changed
+  cisco.aci.aci_aaa_user: &user_changed
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -92,16 +92,16 @@
   register: cm_modify_user
 
 - name: Modify user (normal mode)
-  aci_aaa_user: *user_changed
+  cisco.aci.aci_aaa_user: *user_changed
   register: nm_modify_user
 
 - name: Modify user again (check mode)
-  aci_aaa_user: *user_changed
+  cisco.aci.aci_aaa_user: *user_changed
   check_mode: yes
   register: cm_modify_user_again
 
 - name: Modify user again (normal mode)
-  aci_aaa_user: *user_changed
+  cisco.aci.aci_aaa_user: *user_changed
   register: nm_modify_user_again
 
 - name: Verify modify user
@@ -117,7 +117,7 @@
 
 # CLEAR PASSWORD HISTORY
 - name: Clear password history (check_mode)
-  aci_aaa_user: &clear_password_history
+  cisco.aci.aci_aaa_user: &clear_password_history
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -131,16 +131,16 @@
   register: cm_clear_password_history
 
 - name: Clear password history (normal mode)
-  aci_aaa_user: *clear_password_history
+  cisco.aci.aci_aaa_user: *clear_password_history
   register: nm_clear_password_history
 
 - name: Clear password history (check mode)
-  aci_aaa_user: *clear_password_history
+  cisco.aci.aci_aaa_user: *clear_password_history
   check_mode: yes
   register: cm_clear_password_history_again
 
 - name: Clear password history (normal mode)
-  aci_aaa_user: *clear_password_history
+  cisco.aci.aci_aaa_user: *clear_password_history
   register: nm_clear_password_history_again
 
 - name: Verify clear password history
@@ -155,7 +155,7 @@
 
 # QUERY ALL USERS
 - name: Query all users (check_mode)
-  aci_aaa_user: &user_query
+  cisco.aci.aci_aaa_user: &user_query
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -169,7 +169,7 @@
   register: cm_query_all_users
 
 - name: Query all users (normal mode)
-  aci_aaa_user: *user_query
+  cisco.aci.aci_aaa_user: *user_query
   register: nm_query_all_users
 
 - name: Verify query_all_users
@@ -183,13 +183,13 @@
 
 # QUERY OUR USER
 - name: Query our user (check_mode)
-  aci_aaa_user:
+  cisco.aci.aci_aaa_user:
     <<: *user_query
   check_mode: yes
   register: cm_query_user
 
 - name: Query our user (normal mode)
-  aci_aaa_user:
+  cisco.aci.aci_aaa_user:
     <<: *user_query
   register: nm_query_user
 
@@ -209,21 +209,21 @@
 
 # REMOVE USER
 - name: Remove user (check_mode)
-  aci_aaa_user: *user_absent
+  cisco.aci.aci_aaa_user: *user_absent
   check_mode: yes
   register: cm_remove_user
 
 - name: Remove user (normal mode)
-  aci_aaa_user: *user_absent
+  cisco.aci.aci_aaa_user: *user_absent
   register: nm_remove_user
 
 - name: Remove user again (check_mode)
-  aci_aaa_user: *user_absent
+  cisco.aci.aci_aaa_user: *user_absent
   check_mode: yes
   register: cm_remove_user_again
 
 - name: Remove user again (normal mode)
-  aci_aaa_user: *user_absent
+  cisco.aci.aci_aaa_user: *user_absent
   register: nm_remove_user_again
 
 - name: Verify remove_user

@@ -6,7 +6,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove domain to VLAN pool binding
-  aci_domain_to_vlan_pool: &binding_absent
+  cisco.aci.aci_domain_to_vlan_pool: &binding_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -21,7 +21,7 @@
     state: absent
 
 - name: Remove physical domain
-  aci_domain:
+  cisco.aci.aci_domain:
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -34,7 +34,7 @@
     state: absent
 
 - name: Create VLAN pool
-  aci_vlan_pool:
+  cisco.aci.aci_vlan_pool:
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -50,7 +50,7 @@
 
 # ADD BINDING
 - name: Add domain to VLAN pool binding (check_mode)
-  aci_domain_to_vlan_pool: &binding_present
+  cisco.aci.aci_domain_to_vlan_pool: &binding_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -67,7 +67,7 @@
   register: cm_add_binding
 
 - name: Add domain to VLAN pool binding (normal mode)
-  aci_domain_to_vlan_pool: *binding_present
+  cisco.aci.aci_domain_to_vlan_pool: *binding_present
   register: nm_add_binding
 
 - name: Verify add_binding
@@ -81,12 +81,12 @@
     - 'nm_add_binding.current == [{"physDomP": {"attributes": {"dn": "uni/phys-phys_dom", "name": "phys_dom", "nameAlias": "", "ownerKey": "", "ownerTag": ""}, "children": [{"infraRsVlanNs": {"attributes": {"tDn": "uni/infra/vlanns-[test_pool]-dynamic"}}}]}}]'
 
 - name: Add domain to VLAN pool binding again (check_mode)
-  aci_domain_to_vlan_pool: *binding_present
+  cisco.aci.aci_domain_to_vlan_pool: *binding_present
   check_mode: yes
   register: cm_add_binding_again
 
 - name: Add domain to VLAN pool binding again (normal mode)
-  aci_domain_to_vlan_pool: *binding_present
+  cisco.aci.aci_domain_to_vlan_pool: *binding_present
   register: nm_add_binding_again
 
 - name: Verify add_binding_again
@@ -98,7 +98,7 @@
 
 # QUERY ALL BINDINGS
 - name: Query all domain to VLAN pool bindings (check_mode)
-  aci_domain_to_vlan_pool: &binding_query
+  cisco.aci.aci_domain_to_vlan_pool: &binding_query
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -113,7 +113,7 @@
   register: cm_query_all_bindings
 
 - name: Query all domain to VLAN pool bindings (normal mode)
-  aci_domain_to_vlan_pool: *binding_query
+  cisco.aci.aci_domain_to_vlan_pool: *binding_query
   register: nm_query_all_bindings
 
 - name: Verify query_all_bindings
@@ -127,7 +127,7 @@
 
 # QUERY A BINDING
 - name: Query our domain to VLAN pool binding (check_mode)
-  aci_domain_to_vlan_pool:
+  cisco.aci.aci_domain_to_vlan_pool:
     <<: *binding_query
     domain: phys_dom
     pool: test_pool
@@ -136,7 +136,7 @@
   register: cm_query_binding
 
 - name: Query our domain to VLAN pool binding (normal mode)
-  aci_domain_to_vlan_pool:
+  cisco.aci.aci_domain_to_vlan_pool:
     <<: *binding_query
     domain: phys_dom
     pool: test_pool
@@ -157,12 +157,12 @@
 
 # REMOVE BINDING
 - name: Remove domain to VLAN pool binding (check_mode)
-  aci_domain_to_vlan_pool: *binding_absent
+  cisco.aci.aci_domain_to_vlan_pool: *binding_absent
   check_mode: yes
   register: cm_remove_binding
 
 - name: Remove domain to VLAN pool binding (normal mode)
-  aci_domain_to_vlan_pool: *binding_absent
+  cisco.aci.aci_domain_to_vlan_pool: *binding_absent
   register: nm_remove_binding
 
 - name: Verify remove_binding
@@ -174,12 +174,12 @@
     - nm_remove_binding.current == []
 
 - name: Remove domain to VLAN pool binding again (check_mode)
-  aci_domain_to_vlan_pool: *binding_absent
+  cisco.aci.aci_domain_to_vlan_pool: *binding_absent
   check_mode: yes
   register: cm_remove_binding_again
 
 - name: Remove domain to VLAN pool binding again (normal mode)
-  aci_domain_to_vlan_pool: *binding_absent
+  cisco.aci.aci_domain_to_vlan_pool: *binding_absent
   register: nm_remove_binding_again
 
 - name: Verify remove_binding_again
@@ -191,7 +191,7 @@
 
 # QUERY NON-EXISTING BINDING
 - name: Query non-existing domain to VLAN pool binding (check_mode)
-  aci_domain_to_vlan_pool:
+  cisco.aci.aci_domain_to_vlan_pool:
     <<: *binding_query
     domain: phys_dom
     pool: test_pool
@@ -200,7 +200,7 @@
   register: cm_query_non_binding
 
 - name: Query non-existing domain to VLAN pool binding (normal mode)
-  aci_domain_to_vlan_pool:
+  cisco.aci.aci_domain_to_vlan_pool:
     <<: *binding_query
     domain: phys_dom
     pool: test_pool

@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: ensure tenant exists for tests to kick off
-  aci_tenant: &aci_tenant_present
+  cisco.aci.aci_tenant: &aci_tenant_present
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -22,7 +22,7 @@
   register: tenant_present
 
 - name: create contract - check mode works
-  aci_contract: &aci_contract_present
+  cisco.aci.aci_contract: &aci_contract_present
     <<: *aci_tenant_present
     contract: anstest
     description: Ansible Test
@@ -30,28 +30,28 @@
   register: present_check_mode
 
 - name: create contract - creation works
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_contract_present
   register: contract_present
 
 - name: create contract - idempotency works
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_contract_present
   register: present_idempotent
 
 - name: update contract - update works
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_contract_present
     scope: application-profile
   register: present_update
 
 - name: create contract - used for query
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_contract_present
     contract: anstest2
 
 - name: missing param - failure message works
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_tenant_present
   ignore_errors: yes
   register: present_missing_param
@@ -72,25 +72,25 @@
       - 'present_missing_param.msg == "state is present but all of the following are missing: contract"'
 
 - name: query contract
-  aci_contract: &aci_contract_query
+  cisco.aci.aci_contract: &aci_contract_query
     <<: *aci_contract_present
     state: query
   register: query_contract
 
 - name: query all in tenant
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_contract_query
     contract: "{{ fakevar | default(omit) }}"
   register: query_tenant
 
 - name: query all with name
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_contract_query
     tenant: "{{ fakevar | default(omit) }}"
   register: query_name
 
 - name: query all
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_contract_query
     tenant: "{{ fakevar | default(omit) }}"
     contract: "{{ fakevar | default(omit) }}"
@@ -116,29 +116,29 @@
       - '"class/vzBrCP.json" in query_all.url'
 
 - name: delete contract - check mode works
-  aci_contract: &aci_contract_absent
+  cisco.aci.aci_contract: &aci_contract_absent
     <<: *aci_contract_present
     state: absent
   check_mode: yes
   register: absent_check_mode
 
 - name: delete contract - deletion works
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_contract_absent
   register: contract_absent
 
 - name: delete contract - idempotency works
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_contract_absent
   register: absent_idempotent
 
 - name: delete contract - cleanup second contract
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_contract_absent
     contract: anstest2
 
 - name: missing param - fail message works
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_contract_absent
     tenant: "{{ fakevar | default(omit) }}"
   ignore_errors: yes
@@ -157,7 +157,7 @@
       - 'absent_missing_param.msg == "state is absent but all of the following are missing: tenant"'
 
 - name: cleanup tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_tenant_present
     state: absent
   when: tenant_present is changed

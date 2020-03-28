@@ -6,7 +6,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove tenant
-  aci_rest: &tenant_absent
+  cisco.aci.aci_rest: &tenant_absent
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -19,7 +19,7 @@
 
 # ADD TENANT
 - name: Add tenant (normal mode)
-  aci_rest: &tenant_present
+  cisco.aci.aci_rest: &tenant_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -40,7 +40,7 @@
   register: nm_add_tenant
 
 - name: Add tenant again (normal mode)
-  aci_rest: *tenant_present
+  cisco.aci.aci_rest: *tenant_present
   register: nm_add_tenant_again
 
 - name: Verify add_tenant
@@ -51,7 +51,7 @@
 
 # CHANGE TENANT
 - name: Change description of tenant (normal mode)
-  aci_rest: &tenant_changed
+  cisco.aci.aci_rest: &tenant_changed
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -73,7 +73,7 @@
   register: nm_add_tenant_descr
 
 - name: Change description of tenant again (normal mode)
-  aci_rest: *tenant_changed
+  cisco.aci.aci_rest: *tenant_changed
   register: nm_add_tenant_descr_again
 
 - name: Verify add_tenant_descr
@@ -84,7 +84,7 @@
 
 # ADD TENANT AGAIN
 - name: Add tenant again with no description (normal mode)
-  aci_rest: *tenant_present
+  cisco.aci.aci_rest: *tenant_present
   register: nm_add_tenant_again_no_descr
 
 - name: Verify add_tenant_again_no_descr
@@ -94,7 +94,7 @@
 
 # QUERY ALL TENANTS
 - name: Query all tenants (normal mode)
-  aci_rest: &tenant_query_all
+  cisco.aci.aci_rest: &tenant_query_all
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -113,7 +113,7 @@
 
 # QUERY A TENANT
 - name: Query our tenant
-  aci_rest: &tenant_query
+  cisco.aci.aci_rest: &tenant_query
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -132,11 +132,11 @@
 
 # REMOVE TENANT
 - name: Remove tenant (normal mode)
-  aci_rest: *tenant_absent
+  cisco.aci.aci_rest: *tenant_absent
   register: nm_remove_tenant
 
 - name: Remove tenant again (normal mode)
-  aci_rest: *tenant_absent
+  cisco.aci.aci_rest: *tenant_absent
   register: nm_remove_tenant_again
 
 - name: Verify remove_tenant
@@ -147,7 +147,7 @@
 
 # QUERY NON-EXISTING TENANT
 - name: Query non-existing tenant (normal mode)
-  aci_rest: *tenant_query
+  cisco.aci.aci_rest: *tenant_query
   register: nm_query_non_tenant
 
 - name: Verify query_non_tenant
