@@ -83,8 +83,13 @@ class AciRest(unittest.TestCase):
         if sys.version_info < (2, 7):
             return
 
-        xml_response = '''<?xml version="1.0" encoding="UTF-8"?><imdata totalCount="1">
-        <error code="401" text="Username or password is incorrect - FAILED local authentication"/>
+        xml_response = '''<?xml version="1.0" encoding="UTF-8"?>
+        <imdata totalCount="1">
+        <error
+            code="401"
+            text="Username or password is incorrect - FAILED local
+authentication"
+        />
         </imdata>
         '''
         aci.response_xml(xml_response)
@@ -219,11 +224,11 @@ class AciRest(unittest.TestCase):
         if sys.version_info < (2, 7):
             return
 
-        xml_response = '''
-        <?xml version="1.0" encoding="UTF-8"?><imdata totalCount="1">
+        xml_response = '''<?xml version="1.0" encoding="UTF-8"?><imdata totalCount="1">
         <error
             code="401"
-            text="Username or password is incorrect - FAILED local authentication"
+            text="Username or password is incorrect - FAILED local
+authentication"
         />
         </imdata>
         '''
@@ -267,7 +272,13 @@ class AciRest(unittest.TestCase):
                 "None"
             ),
         elif etree.LXML_VERSION < (4, 0, 0, 0):
-            error_text = to_native(u"Unable to parse output as XML, see 'raw' output. None (line 0)", errors='surrogate_or_strict')
+            error_text = to_native(
+                (
+                    u"Unable to parse output as XML, see 'raw' output. "
+                    u"None (line 0)"
+                ),
+                errors='surrogate_or_strict'
+            )
         elif PY2:
             error_text = (
                 "Unable to parse output as XML, see 'raw' output. "
