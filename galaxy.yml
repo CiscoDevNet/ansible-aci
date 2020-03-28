@@ -18,8 +18,24 @@ authors:
 - Lionel Hercot (@lhercot) <lhercot@cisco.com>
 description: Ansible Modules for Cisco ACI
 license_file: 'LICENSE'
-tags: [cisco, aci]
+tags: 
+- cisco
+- aci
+- cloud
+- collection
+- networking
+- sdn
 repository: https://github.com/CiscoDevNet/ansible-aci
-documentation: https://docs.ansible.com/ansible/2.7/scenario_guides/guide_aci.html
+documentation: https://docs.ansible.com/ansible/latest/scenario_guides/guide_aci.html
 homepage: https://github.com/CiscoDevNet/ansible-aci
 issues: https://github.com/CiscoDevNet/ansible-aci/issues
+
+
+
+
+
+
+
+
+
+
