@@ -82,7 +82,7 @@ author:
 
 EXAMPLES = r'''
 - name: Associate an access port block (single port) to an interface selector
-  aci_access_port_block_to_access_port:
+  cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -95,7 +95,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Associate an access port block (port range) to an interface selector
-  aci_access_port_block_to_access_port:
+  cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -108,7 +108,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove an access port block from an interface selector
-  aci_access_port_block_to_access_port:
+  cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -121,7 +121,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query Specific access port block under given access port selector
-  aci_access_port_block_to_access_port:
+  cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -133,7 +133,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all access port blocks under given leaf interface profile
-  aci_access_port_block_to_access_port:
+  cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -143,7 +143,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all access port blocks in the fabric
-  aci_access_port_block_to_access_port:
+  cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
     password: SomeSecretPassword

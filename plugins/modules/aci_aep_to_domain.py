@@ -66,7 +66,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add AEP to domain binding
-  aci_aep_to_domain: &binding_present
+  cisco.aci.aci_aep_to_domain: &binding_present
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -77,7 +77,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove AEP to domain binding
-  aci_aep_to_domain: &binding_absent
+  cisco.aci.aci_aep_to_domain: &binding_absent
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -88,7 +88,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query our AEP to domain binding
-  aci_aep_to_domain:
+  cisco.aci.aci_aep_to_domain:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -100,7 +100,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all AEP to domain bindings
-  aci_aep_to_domain: &binding_query
+  cisco.aci.aci_aep_to_domain: &binding_query
     host: apic
     username: admin
     password: SomeSecretPassword

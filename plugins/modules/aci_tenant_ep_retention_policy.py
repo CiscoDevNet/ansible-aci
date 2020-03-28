@@ -96,7 +96,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new EPR policy
-  aci_tenant_ep_retention_policy:
+  cisco.aci.aci_tenant_ep_retention_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -112,7 +112,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove an EPR policy
-  aci_tenant_ep_retention_policy:
+  cisco.aci.aci_tenant_ep_retention_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -122,7 +122,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query an EPR policy
-  aci_tenant_ep_retention_policy:
+  cisco.aci.aci_tenant_ep_retention_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -133,7 +133,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all EPR policies
-  aci_tenant_ep_retention_policy:
+  cisco.aci.aci_tenant_ep_retention_policy:
     host: apic
     username: admin
     password: SomeSecretPassword

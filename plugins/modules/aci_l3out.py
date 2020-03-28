@@ -100,7 +100,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new L3Out
-  aci_l3out:
+  cisco.aci.aci_l3out:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -114,7 +114,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Delete L3Out
-  aci_l3out:
+  cisco.aci.aci_l3out:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -124,7 +124,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query L3Out information
-  aci_l3out:
+  cisco.aci.aci_l3out:
     host: apic
     username: admin
     password: SomeSecretPassword

@@ -70,7 +70,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add vPC Protection Group
-  aci_switch_policy_vpc_protection_group:
+  cisco.aci.aci_switch_policy_vpc_protection_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -82,7 +82,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove Explicit vPC Protection Group
-  aci_switch_policy_vpc_protection_group:
+  cisco.aci.aci_switch_policy_vpc_protection_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -91,7 +91,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query vPC Protection Groups
-  aci_switch_policy_vpc_protection_group:
+  cisco.aci.aci_switch_policy_vpc_protection_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -100,7 +100,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query our vPC Protection Group
-  aci_switch_policy_vpc_protection_group:
+  cisco.aci.aci_switch_policy_vpc_protection_group:
     host: apic
     username: admin
     password: SomeSecretPassword

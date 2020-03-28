@@ -83,7 +83,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new ExtEpg
-  aci_l3out_extepg:
+  cisco.aci.aci_l3out_extepg:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -95,7 +95,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Delete ExtEpg
-  extepg:
+  cisco.aci.aci_extepg:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -106,7 +106,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query ExtEpg information
-  aci_l3out_extepg:
+  cisco.aci.aci_l3out_extepg:
     host: apic
     username: admin
     password: SomeSecretPassword

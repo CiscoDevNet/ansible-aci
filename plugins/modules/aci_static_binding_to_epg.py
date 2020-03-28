@@ -125,7 +125,7 @@ author:
 
 EXAMPLES = r'''
 - name: Deploy Static Path binding for given EPG
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -143,7 +143,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove Static Path binding for given EPG
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -158,7 +158,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Get specific Static Path binding for given EPG
-  aci_static_binding_to_epg:
+  cisco.aci.aci_static_binding_to_epg:
     host: apic
     username: admin
     password: SomeSecretPassword

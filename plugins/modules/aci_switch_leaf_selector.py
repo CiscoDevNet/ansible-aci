@@ -85,7 +85,7 @@ author:
 
 EXAMPLES = r'''
 - name: adding a switch policy leaf profile selector associated Node Block range (w/ policy group)
-  aci_switch_leaf_selector:
+  cisco.aci.aci_switch_leaf_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -99,7 +99,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: adding a switch policy leaf profile selector associated Node Block range (w/o policy group)
-  aci_switch_leaf_selector:
+  cisco.aci.aci_switch_leaf_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -112,7 +112,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Removing a switch policy leaf profile selector
-  aci_switch_leaf_selector:
+  cisco.aci.aci_switch_leaf_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -122,7 +122,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Querying a switch policy leaf profile selector
-  aci_switch_leaf_selector:
+  cisco.aci.aci_switch_leaf_selector:
     host: apic
     username: admin
     password: SomeSecretPassword

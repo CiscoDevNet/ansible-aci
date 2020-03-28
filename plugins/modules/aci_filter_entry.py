@@ -115,8 +115,9 @@ author:
 - Jacob McGill (@jmcgill298)
 '''
 
+# FIXME: Add more, better examples
 EXAMPLES = r'''
-- aci_filter_entry:
+- cisco.aci.aci_filter_entry:
     host: "{{ inventory_hostname }}"
     username: "{{ user }}"
     password: "{{ pass }}"

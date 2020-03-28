@@ -49,9 +49,10 @@ author:
     - Steven Gerhart (@sgerhart)
 '''
 
-EXAMPLES = '''
+# FIXME: Add more, better examples
+EXAMPLES = r'''
     - name: firmware group
-      aci_firmware_group:
+      cisco.aci.aci_firmware_group:
         host: "{{ inventory_hostname }}"
         username: "{{ user }}"
         password: "{{ pass }}"

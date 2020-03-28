@@ -126,7 +126,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new physical domain to EPG binding
-  aci_epg_to_domain:
+  cisco.aci.aci_epg_to_domain:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -139,7 +139,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove an existing physical domain to EPG binding
-  aci_epg_to_domain:
+  cisco.aci.aci_epg_to_domain:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -152,7 +152,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a specific physical domain to EPG binding
-  aci_epg_to_domain:
+  cisco.aci.aci_epg_to_domain:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -166,7 +166,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all domain to EPG bindings
-  aci_epg_to_domain:
+  cisco.aci.aci_epg_to_domain:
     host: apic
     username: admin
     password: SomeSecretPassword

@@ -91,7 +91,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new VLAN pool range
-  aci_encap_pool_range:
+  cisco.aci.aci_encap_pool_range:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -106,7 +106,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove a VLAN pool range
-  aci_encap_pool_range:
+  cisco.aci.aci_encap_pool_range:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -120,7 +120,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a VLAN range
-  aci_encap_pool_range:
+  cisco.aci.aci_encap_pool_range:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -135,7 +135,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query a VLAN pool for ranges by range_name
-  aci_encap_pool_range:
+  cisco.aci.aci_encap_pool_range:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -146,7 +146,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query a VLAN pool for ranges by range_start
-  aci_encap_pool_range:
+  cisco.aci.aci_encap_pool_range:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -157,7 +157,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query a VLAN pool for ranges by range_start and range_end
-  aci_encap_pool_range:
+  cisco.aci.aci_encap_pool_range:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -169,7 +169,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all VLAN pool ranges
-  aci_encap_pool_range:
+  cisco.aci.aci_encap_pool_range:
     host: apic
     username: admin
     password: SomeSecretPassword

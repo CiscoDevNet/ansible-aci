@@ -98,7 +98,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new contract subject
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -113,7 +113,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Remove a contract subject
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -124,7 +124,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a contract subject
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -136,7 +136,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all contract subjects
-  aci_contract_subject:
+  cisco.aci.aci_contract_subject:
     host: apic
     username: admin
     password: SomeSecretPassword

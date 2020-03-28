@@ -127,7 +127,7 @@ author:
 
 EXAMPLES = r'''
 - name: Create a tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -136,7 +136,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Create a bridge domain
-  aci_bd:
+  cisco.aci.aci_bd:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -146,7 +146,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Create a subnet
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -158,7 +158,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Create a subnet with options
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -175,7 +175,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Update a subnets scope to private and shared
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -188,7 +188,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Get all subnets
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -196,7 +196,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Get all subnets of specific gateway in specified tenant
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -208,7 +208,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Get specific subnet
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -221,7 +221,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Delete a subnet
-  aci_bd_subnet:
+  cisco.aci.aci_bd_subnet:
     host: apic
     username: admin
     password: SomeSecretPassword

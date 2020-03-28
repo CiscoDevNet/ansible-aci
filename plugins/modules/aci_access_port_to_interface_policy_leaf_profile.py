@@ -122,7 +122,7 @@ author:
 
 EXAMPLES = r'''
 - name: Associate an Interface Access Port Selector to an Interface Policy Leaf Profile with a Policy Group
-  aci_access_port_to_interface_policy_leaf_profile:
+  cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -136,7 +136,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Associate an interface access port selector to an Interface Policy Leaf Profile (w/o policy group) (check if this works)
-  aci_access_port_to_interface_policy_leaf_profile:
+  cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -149,7 +149,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove an interface access port selector associated with an Interface Policy Leaf Profile
-  aci_access_port_to_interface_policy_leaf_profile:
+  cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -159,7 +159,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query Specific access_port_selector under given leaf_interface_profile
-  aci_access_port_to_interface_policy_leaf_profile:
+  cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
     host: apic
     username: admin
     password: SomeSecretPassword

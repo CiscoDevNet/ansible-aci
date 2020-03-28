@@ -67,8 +67,9 @@ author:
 - Jacob McGill (@jmcgill298)
 '''
 
+# FIXME: Add more, better examples
 EXAMPLES = r'''
-- aci_tenant_span_src_group:
+- cisco.aci.aci_tenant_span_src_group:
     host: apic
     username: admin
     password: SomeSecretPassword

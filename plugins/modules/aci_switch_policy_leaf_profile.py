@@ -53,7 +53,7 @@ author:
 
 EXAMPLES = r'''
 - name: creating a Leaf Profile with description
-  aci_switch_policy_leaf_profile:
+  cisco.aci.aci_switch_policy_leaf_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -63,7 +63,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Deleting a Leaf Profile
-  aci_switch_policy_leaf_profile:
+  cisco.aci.aci_switch_policy_leaf_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -72,7 +72,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a Leaf Profile
-  aci_switch_policy_leaf_profile:
+  cisco.aci.aci_switch_policy_leaf_profile:
     host: apic
     username: admin
     password: SomeSecretPassword

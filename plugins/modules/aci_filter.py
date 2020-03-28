@@ -63,7 +63,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new filter to a tenant
-  aci_filter:
+  cisco.aci.aci_filter:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -74,7 +74,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove a filter for a tenant
-  aci_filter:
+  cisco.aci.aci_filter:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -84,7 +84,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a filter of a tenant
-  aci_filter:
+  cisco.aci.aci_filter:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -95,7 +95,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all filters for a tenant
-  aci_filter:
+  cisco.aci.aci_filter:
     host: apic
     username: admin
     password: SomeSecretPassword

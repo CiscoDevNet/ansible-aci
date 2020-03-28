@@ -53,7 +53,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new leaf_interface_profile
-  aci_interface_policy_leaf_profile:
+  cisco.aci.aci_interface_policy_leaf_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -63,7 +63,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove a leaf_interface_profile
-  aci_interface_policy_leaf_profile:
+  cisco.aci.aci_interface_policy_leaf_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -72,7 +72,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove all leaf_interface_profiles
-  aci_interface_policy_leaf_profile:
+  cisco.aci.aci_interface_policy_leaf_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -80,7 +80,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a leaf_interface_profile
-  aci_interface_policy_leaf_profile:
+  cisco.aci.aci_interface_policy_leaf_profile:
     host: apic
     username: admin
     password: SomeSecretPassword

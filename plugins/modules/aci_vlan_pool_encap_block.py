@@ -85,7 +85,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new VLAN encap block
-  aci_vlan_pool_encap_block:
+  cisco.aci.aci_vlan_pool_encap_block:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -96,7 +96,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove a VLAN encap block
-  aci_vlan_pool_encap_block:
+  cisco.aci.aci_vlan_pool_encap_block:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -107,7 +107,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a VLAN encap block
-  aci_vlan_pool_encap_block:
+  cisco.aci.aci_vlan_pool_encap_block:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -119,7 +119,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query a VLAN pool for encap blocks
-  aci_vlan_pool_encap_block:
+  cisco.aci.aci_vlan_pool_encap_block:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -129,7 +129,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all VLAN encap blocks
-  aci_vlan_pool_encap_block:
+  cisco.aci.aci_vlan_pool_encap_block:
     host: apic
     username: admin
     password: SomeSecretPassword

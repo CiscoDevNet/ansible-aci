@@ -71,7 +71,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add fabric node
-  aci_fabric_node:
+  cisco.aci.aci_fabric_node:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -82,7 +82,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove fabric node
-  aci_fabric_node:
+  cisco.aci.aci_fabric_node:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -92,7 +92,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query fabric nodes
-  aci_fabric_node:
+  cisco.aci.aci_fabric_node:
     host: apic
     username: admin
     password: SomeSecretPassword

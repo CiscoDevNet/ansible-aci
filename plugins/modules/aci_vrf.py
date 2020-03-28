@@ -71,7 +71,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new VRF to a tenant
-  aci_vrf:
+  cisco.aci.aci_vrf:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -84,7 +84,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove a VRF for a tenant
-  aci_vrf:
+  cisco.aci.aci_vrf:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -94,7 +94,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a VRF of a tenant
-  aci_vrf:
+  cisco.aci.aci_vrf:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -105,7 +105,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all VRFs
-  aci_vrf:
+  cisco.aci.aci_vrf:
     host: apic
     username: admin
     password: SomeSecretPassword

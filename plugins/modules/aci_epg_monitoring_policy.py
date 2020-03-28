@@ -62,7 +62,7 @@ author:
 
 # FIXME: Add more, better examples
 EXAMPLES = r'''
-- aci_epg_monitoring_policy:
+- cisco.aci.aci_epg_monitoring_policy:
     host: '{{ hostname }}'
     username: '{{ username }}'
     password: '{{ password }}'

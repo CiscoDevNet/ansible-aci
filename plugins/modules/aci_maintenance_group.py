@@ -48,9 +48,10 @@ author:
     - Steven Gerhart (@sgerhart)
 '''
 
-EXAMPLES = '''
+# FIXME: Add more, better examples
+EXAMPLES = r'''
 - name: maintenance group
-  aci_maintenance_group:
+  cisco.aci.aci_maintenance_group:
     host: "{{ inventory_hostname }}"
     username: "{{ user }}"
     password: "{{ pass }}"

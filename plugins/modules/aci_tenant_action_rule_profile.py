@@ -60,7 +60,7 @@ author:
 
 # FIXME: Add more, better examples
 EXAMPLES = r'''
-- aci_tenant_action_rule_profile:
+- cisco.aci.aci_tenant_action_rule_profile:
     host: apic
     username: admin
     password: SomeSecretPassword

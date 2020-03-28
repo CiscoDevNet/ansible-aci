@@ -74,7 +74,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add credential to VMware VMM domain
-  aci_vmm_credential:
+  cisco.aci.aci_vmm_credential:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -87,7 +87,7 @@ EXAMPLES = r'''
     state: present
 
 - name: Remove credential from VMware VMM domain
-  aci_vmm_credential:
+  cisco.aci.aci_vmm_credential:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -97,7 +97,7 @@ EXAMPLES = r'''
     state: absent
 
 - name: Query a specific VMware VMM credential
-  aci_vmm_credential:
+  cisco.aci.aci_vmm_credential:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -109,7 +109,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all VMware VMM credentials
-  aci_vmm_credential:
+  cisco.aci.aci_vmm_credential:
     host: apic
     username: admin
     password: SomeSecretPassword

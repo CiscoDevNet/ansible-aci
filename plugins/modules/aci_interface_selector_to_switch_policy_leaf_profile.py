@@ -51,7 +51,7 @@ author:
 
 EXAMPLES = r'''
 - name: Associating an interface selector profile to a switch policy leaf profile
-  aci_interface_selector_to_switch_policy_leaf_profile:
+  cisco.aci.aci_interface_selector_to_switch_policy_leaf_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -61,7 +61,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove an interface selector profile associated with a switch policy leaf profile
-  aci_interface_selector_to_switch_policy_leaf_profile:
+  cisco.aci.aci_interface_selector_to_switch_policy_leaf_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -71,7 +71,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query an interface selector profile associated with a switch policy leaf profile
-  aci_interface_selector_to_switch_policy_leaf_profile:
+  cisco.aci.aci_interface_selector_to_switch_policy_leaf_profile:
     host: apic
     username: admin
     password: SomeSecretPassword

@@ -64,7 +64,7 @@ author:
 
 # FIXME: Add more, better examples
 EXAMPLES = r'''
-- aci_interface_policy_port_security:
+- cisco.aci.aci_interface_policy_port_security:
     host: '{{ inventory_hostname }}'
     username: '{{ username }}'
     password: '{{ password }}'

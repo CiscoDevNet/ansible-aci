@@ -94,7 +94,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r'''
 - name: Associate an access sub port block (single port) to an interface selector
-  aci_access_sub_port_block_to_access_port:
+  cisco.aci.aci_access_sub_port_block_to_access_port:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -109,7 +109,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Associate an access sub port block (port range) to an interface selector
-  aci_access_sub_port_block_to_access_port:
+  cisco.aci.aci_access_sub_port_block_to_access_port:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -124,7 +124,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove an access sub port block from an interface selector
-  aci_access_sub_port_block_to_access_port:
+  cisco.aci.aci_access_sub_port_block_to_access_port:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -139,7 +139,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query Specific access sub port block under given access port selector
-  aci_access_sub_port_block_to_access_port:
+  cisco.aci.aci_access_sub_port_block_to_access_port:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -151,7 +151,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all access sub port blocks under given leaf interface profile
-  aci_access_sub_port_block_to_access_port:
+  cisco.aci.aci_access_sub_port_block_to_access_port:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -161,7 +161,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all access sub port blocks in the fabric
-  aci_access_sub_port_block_to_access_port:
+  cisco.aci.aci_access_sub_port_block_to_access_port:
     host: apic
     username: admin
     password: SomeSecretPassword

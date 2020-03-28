@@ -52,9 +52,9 @@ author:
     - Steven Gerhart (@sgerhart)
 '''
 
-EXAMPLES = '''
+EXAMPLES = r'''
     - name: add firmware group node
-      aci_firmware_group_node:
+      cisco.aci.aci_firmware_group_node:
         host: "{{ inventory_hostname }}"
         username: "{{ user }}"
         password: "{{ pass }}"
@@ -63,7 +63,7 @@ EXAMPLES = '''
         node: 1001
         state: present
     - name: Remove firmware group node
-      aci_firmware_group_node:
+      cisco.aci.aci_firmware_group_node:
         host: "{{ inventory_hostname }}"
         username: "{{ user }}"
         password: "{{ pass }}"

@@ -97,7 +97,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new EPG
-  aci_epg:
+  cisco.aci.aci_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -130,7 +130,7 @@ EXAMPLES = r'''
       bd: database_bd
 
 - name: Remove an EPG
-  aci_epg:
+  cisco.aci.aci_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -142,7 +142,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query an EPG
-  aci_epg:
+  cisco.aci.aci_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -154,7 +154,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all EPGs
-  aci_epg:
+  cisco.aci.aci_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -163,7 +163,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all EPGs with a Specific Name
-  aci_epg:
+  cisco.aci.aci_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -174,7 +174,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all EPGs of an App Profile
-  aci_epg:
+  cisco.aci.aci_epg:
     host: apic
     username: admin
     password: SomeSecretPassword

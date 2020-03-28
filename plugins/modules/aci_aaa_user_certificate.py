@@ -67,7 +67,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a certificate to user
-  aci_aaa_user_certificate:
+  cisco.aci.aci_aaa_user_certificate:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -78,7 +78,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove a certificate of a user
-  aci_aaa_user_certificate:
+  cisco.aci.aci_aaa_user_certificate:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -88,7 +88,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a certificate of a user
-  aci_aaa_user_certificate:
+  cisco.aci.aci_aaa_user_certificate:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -99,7 +99,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all certificates of a user
-  aci_aaa_user_certificate:
+  cisco.aci.aci_aaa_user_certificate:
     host: apic
     username: admin
     password: SomeSecretPassword

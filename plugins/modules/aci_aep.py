@@ -61,7 +61,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new AEP
-  aci_aep:
+  cisco.aci.aci_aep:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -71,7 +71,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove an existing AEP
-  aci_aep:
+  cisco.aci.aci_aep:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -80,7 +80,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query all AEPs
-  aci_aep:
+  cisco.aci.aci_aep:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -89,7 +89,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query a specific AEP
-  aci_aep:
+  cisco.aci.aci_aep:
     host: apic
     username: admin
     password: SomeSecretPassword

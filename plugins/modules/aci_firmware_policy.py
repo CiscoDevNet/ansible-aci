@@ -61,9 +61,10 @@ author:
     - Steven Gerhart (@sgerhart)
 '''
 
-EXAMPLES = '''
+# FIXME: Add more, better examples
+EXAMPLES = r'''
    - name: firmware policy
-     aci_firmware_policy:
+     cisco.aci.aci_firmware_policy:
         host: "{{ inventory_hostname }}"
         username: "{{ user }}"
         password: "{{ pass }}"

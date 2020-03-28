@@ -72,9 +72,10 @@ author:
 - Steven Gerhart (@sgerhart)
 '''
 
+# FIXME: Add more, better examples
 EXAMPLES = r'''
 - name: Ensure maintenance policy is present
-  aci_maintenance_policy:
+  cisco.aci.aci_maintenance_policy:
     host: '{{ inventory_hostname }}'
     username: '{{ user }}'
     password: '{{ pass }}'

@@ -144,7 +144,7 @@ author:
 
 EXAMPLES = r'''
 - name: Ensure ospf interface policy exists
-  aci_interface_policy_ospf:
+  cisco.aci.aci_interface_policy_ospf:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -154,7 +154,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Ensure ospf interface policy does not exist
-  aci_interface_policy_ospf:
+  cisco.aci.aci_interface_policy_ospf:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -164,7 +164,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query an ospf interface policy
-  aci_interface_policy_ospf:
+  cisco.aci.aci_interface_policy_ospf:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -175,7 +175,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all ospf interface policies in tenant production
-  aci_interface_policy_ospf:
+  cisco.aci.aci_interface_policy_ospf:
     host: apic
     username: admin
     password: SomeSecretPassword

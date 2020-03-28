@@ -145,7 +145,7 @@ author:
 
 EXAMPLES = r'''
 - name: Create a Port Channel (PC) Interface Policy Group
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -158,7 +158,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Create a Virtual Port Channel (VPC) Interface Policy Group (no description)
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -170,7 +170,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Create a Leaf Access Port Policy Group (no description)
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -182,7 +182,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query all Leaf Access Port Policy Groups of type link
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -192,7 +192,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query a specific Lead Access Port Policy Group
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -203,7 +203,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Delete an Interface policy Leaf Policy Group
-  aci_interface_policy_leaf_policy_group:
+  cisco.aci.aci_interface_policy_leaf_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword

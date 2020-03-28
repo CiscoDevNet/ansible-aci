@@ -59,7 +59,7 @@ author:
 
 EXAMPLES = r'''
 - name: Create CDP Test Policy
-  aci_interface_policy_cdp:
+  cisco.aci.aci_interface_policy_cdp:
     name: Ansible_CDP_Test_Policy
     host: apic.example.com
     username: admin
@@ -67,7 +67,7 @@ EXAMPLES = r'''
     state: present
 
 - name: Remove CDP Test Policy
-  aci_interface_policy_cdp:
+  cisco.aci.aci_interface_policy_cdp:
     name: Ansible_CDP_Test_Policy
     host: apic.example.com
     username: admin
@@ -76,7 +76,7 @@ EXAMPLES = r'''
     state: absent
 
 - name: Query CDP Policy
-  aci_interface_policy_cdp:
+  cisco.aci.aci_interface_policy_cdp:
     host: apic.example.com
     username: admin
     password: adminpass

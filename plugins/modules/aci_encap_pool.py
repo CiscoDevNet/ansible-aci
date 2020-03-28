@@ -68,7 +68,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new vlan pool
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -79,7 +79,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove a vlan pool
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -89,7 +89,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a vlan pool
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -100,7 +100,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all vlan pools
-  aci_encap_pool:
+  cisco.aci.aci_encap_pool:
     host: apic
     username: admin
     password: SomeSecretPassword

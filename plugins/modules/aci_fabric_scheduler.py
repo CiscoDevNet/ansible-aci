@@ -90,9 +90,9 @@ author:
     - Steven Gerhart (@sgerhart)
 '''
 
-EXAMPLES = '''
+EXAMPLES = r'''
    - name: Simple Scheduler (Empty)
-     aci_fabric_scheduler:
+     cisco.aci.aci_fabric_scheduler:
         host: "{{ inventory_hostname }}"
         username: "{{ user }}"
         password: "{{ pass }}"
@@ -100,7 +100,7 @@ EXAMPLES = '''
         name: simpleScheduler
         state: present
    - name: Remove Simple Scheduler
-     aci_fabric_scheduler:
+     cisco.aci.aci_fabric_scheduler:
         host: "{{ inventory_hostname }}"
         username: "{{ user }}"
         password: "{{ pass }}"
@@ -108,7 +108,7 @@ EXAMPLES = '''
         name: simpleScheduler
         state: absent
    - name: One Time Scheduler
-     aci_fabric_scheduler:
+     cisco.aci.aci_fabric_scheduler:
         host: "{{ inventory_hostname }}"
         username: "{{ user }}"
         password: "{{ pass }}"
@@ -120,7 +120,7 @@ EXAMPLES = '''
         date: "2018-11-20T24:00:00"
         state: present
    - name: Recurring Scheduler
-     aci_fabric_scheduler:
+     cisco.aci.aci_fabric_scheduler:
         host: "{{ inventory_hostname }}"
         username: "{{ user }}"
         password: "{{ pass }}"

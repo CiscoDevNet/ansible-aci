@@ -71,7 +71,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add firmware source
-  aci_firmware_source:
+  cisco.aci.aci_firmware_source:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -82,7 +82,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove firmware source
-  aci_firmware_source:
+  cisco.aci.aci_firmware_source:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -91,7 +91,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a specific firmware source
-  aci_firmware_source:
+  cisco.aci.aci_firmware_source:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -101,7 +101,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all firmware sources
-  aci_firmware_source:
+  cisco.aci.aci_firmware_source:
     host: apic
     username: admin
     password: SomeSecretPassword

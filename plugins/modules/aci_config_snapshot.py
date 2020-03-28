@@ -75,7 +75,7 @@ author:
 
 EXAMPLES = r'''
 - name: Create a Snapshot
-  aci_config_snapshot:
+  cisco.aci.aci_config_snapshot:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -86,7 +86,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query all Snapshots
-  aci_config_snapshot:
+  cisco.aci.aci_config_snapshot:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -95,7 +95,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query Snapshots associated with a particular Export Policy
-  aci_config_snapshot:
+  cisco.aci.aci_config_snapshot:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -105,7 +105,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Delete a Snapshot
-  aci_config_snapshot:
+  cisco.aci.aci_config_snapshot:
     host: apic
     username: admin
     password: SomeSecretPassword

@@ -77,7 +77,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a tenant using certificate authentication
-  aci_rest:
+  cisco.aci.aci_rest:
     host: apic
     username: admin
     private_key: pki/admin.key
@@ -87,7 +87,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Add a tenant from a templated payload file from templates/
-  aci_rest:
+  cisco.aci.aci_rest:
     host: apic
     username: admin
     private_key: pki/admin.key
@@ -97,7 +97,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Add a tenant using inline YAML
-  aci_rest:
+  cisco.aci.aci_rest:
     host: apic
     username: admin
     private_key: pki/admin.key
@@ -112,7 +112,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Add a tenant using a JSON string
-  aci_rest:
+  cisco.aci.aci_rest:
     host: apic
     username: admin
     private_key: pki/admin.key
@@ -131,7 +131,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Add a tenant using an XML string
-  aci_rest:
+  cisco.aci.aci_rest:
     host: apic
     username: admin
     private_key: pki/{{ aci_username }}.key
@@ -142,7 +142,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Get tenants using password authentication
-  aci_rest:
+  cisco.aci.aci_rest:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -152,7 +152,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Configure contracts
-  aci_rest:
+  cisco.aci.aci_rest:
     host: apic
     username: admin
     private_key: pki/admin.key
@@ -162,7 +162,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Register leaves and spines
-  aci_rest:
+  cisco.aci.aci_rest:
     host: apic
     username: admin
     private_key: pki/admin.key
@@ -178,7 +178,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Wait for all controllers to become ready
-  aci_rest:
+  cisco.aci.aci_rest:
     host: apic
     username: admin
     private_key: pki/admin.key

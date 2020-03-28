@@ -85,7 +85,7 @@ author:
 EXAMPLES = r'''
 ---
 - name: Create a Snapshot
-  aci_config_snapshot:
+  cisco.aci.aci_config_snapshot:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -94,7 +94,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query Existing Snapshots
-  aci_config_snapshot:
+  cisco.aci.aci_config_snapshot:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -103,7 +103,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Compare Snapshot Files
-  aci_config_rollback:
+  cisco.aci.aci_config_rollback:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -115,7 +115,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Rollback Configuration
-  aci_config_rollback:
+  cisco.aci.aci_config_rollback:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -126,7 +126,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Rollback Configuration
-  aci_config_rollback:
+  cisco.aci.aci_config_rollback:
     host: apic
     username: admin
     password: SomeSecretPassword

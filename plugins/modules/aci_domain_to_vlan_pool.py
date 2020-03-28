@@ -72,7 +72,7 @@ author:
 
 EXAMPLES = r'''
 - name: Bind a VMM domain to VLAN pool
-  aci_domain_to_vlan_pool:
+  cisco.aci.aci_domain_to_vlan_pool:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -85,7 +85,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove a VMM domain to VLAN pool binding
-  aci_domain_to_vlan_pool:
+  cisco.aci.aci_domain_to_vlan_pool:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -98,7 +98,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Bind a physical domain to VLAN pool
-  aci_domain_to_vlan_pool:
+  cisco.aci.aci_domain_to_vlan_pool:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -110,7 +110,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Bind a physical domain to VLAN pool
-  aci_domain_to_vlan_pool:
+  cisco.aci.aci_domain_to_vlan_pool:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -122,7 +122,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query an domain to VLAN pool binding
-  aci_domain_to_vlan_pool:
+  cisco.aci.aci_domain_to_vlan_pool:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -135,7 +135,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all domain to VLAN pool bindings
-  aci_domain_to_vlan_pool:
+  cisco.aci.aci_domain_to_vlan_pool:
     host: apic
     username: admin
     password: SomeSecretPassword

@@ -105,7 +105,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a user
-  aci_aaa_user:
+  cisco.aci.aci_aaa_user:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -121,7 +121,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove a user
-  aci_aaa_user:
+  cisco.aci.aci_aaa_user:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -130,7 +130,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a user
-  aci_aaa_user:
+  cisco.aci.aci_aaa_user:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -140,7 +140,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all users
-  aci_aaa_user:
+  cisco.aci.aci_aaa_user:
     host: apic
     username: admin
     password: SomeSecretPassword

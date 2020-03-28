@@ -63,7 +63,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new AP
-  aci_ap:
+  cisco.aci.aci_ap:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -74,7 +74,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove an AP
-  aci_ap:
+  cisco.aci.aci_ap:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -84,7 +84,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query an AP
-  aci_ap:
+  cisco.aci.aci_ap:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -95,7 +95,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all APs
-  aci_ap:
+  cisco.aci.aci_ap:
     host: apic
     username: admin
     password: SomeSecretPassword

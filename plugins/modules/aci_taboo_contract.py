@@ -69,7 +69,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add taboo contract
-  aci_taboo_contract:
+  cisco.aci.aci_taboo_contract:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -79,7 +79,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove taboo contract
-  aci_taboo_contract:
+  cisco.aci.aci_taboo_contract:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -89,7 +89,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query all taboo contracts
-  aci_taboo_contract:
+  cisco.aci.aci_taboo_contract:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -98,7 +98,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query a specific taboo contract
-  aci_taboo_contract:
+  cisco.aci.aci_taboo_contract:
     host: apic
     username: admin
     password: SomeSecretPassword

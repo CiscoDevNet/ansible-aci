@@ -78,7 +78,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add domain to VLAN pool binding
-  aci_domain_to_encap_pool:
+  cisco.aci.aci_domain_to_encap_pool:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -91,7 +91,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove domain to VLAN pool binding
-  aci_domain_to_encap_pool:
+  cisco.aci.aci_domain_to_encap_pool:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -104,7 +104,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query our domain to VLAN pool binding
-  aci_domain_to_encap_pool:
+  cisco.aci.aci_domain_to_encap_pool:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -117,7 +117,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all domain to VLAN pool bindings
-  aci_domain_to_encap_pool:
+  cisco.aci.aci_domain_to_encap_pool:
     host: apic
     username: admin
     password: SomeSecretPassword

@@ -152,7 +152,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add Bridge Domain
-  aci_bd:
+  cisco.aci.aci_bd:
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
@@ -165,7 +165,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Add an FC Bridge Domain
-  aci_bd:
+  cisco.aci.aci_bd:
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
@@ -179,7 +179,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Modify a Bridge Domain
-  aci_bd:
+  cisco.aci.aci_bd:
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
@@ -192,7 +192,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query All Bridge Domains
-  aci_bd:
+  cisco.aci.aci_bd:
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
@@ -202,7 +202,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query a Bridge Domain
-  aci_bd:
+  cisco.aci.aci_bd:
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
@@ -214,7 +214,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Delete a Bridge Domain
-  aci_bd:
+  cisco.aci.aci_bd:
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"

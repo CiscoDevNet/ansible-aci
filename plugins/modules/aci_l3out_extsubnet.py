@@ -92,7 +92,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new External Subnet
-  aci_l3out_extsubnet:
+  cisco.aci.aci_l3out_extsubnet:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -106,7 +106,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Delete External Subnet
-  aci_l3out_extsubnet:
+  cisco.aci.aci_l3out_extsubnet:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -118,7 +118,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query ExtEpg information
-  aci_l3out_extsubnet:
+  cisco.aci.aci_l3out_extsubnet:
     host: apic
     username: admin
     password: SomeSecretPassword

@@ -67,8 +67,9 @@ author:
 - Dag Wieers (@dagwieers)
 '''
 
+# FIXME: Add more, better examples
 EXAMPLES = r'''
-- aci_interface_policy_l2:
+- cisco.aci.aci_interface_policy_l2:
     host: '{{ hostname }}'
     username: '{{ username }}'
     password: '{{ password }}'

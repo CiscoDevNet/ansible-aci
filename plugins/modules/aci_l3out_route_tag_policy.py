@@ -68,7 +68,7 @@ author:
 
 # FIXME: Add more, better examples
 EXAMPLES = r'''
-- aci_l3out_route_tag_policy:
+- cisco.aci.aci_l3out_route_tag_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
