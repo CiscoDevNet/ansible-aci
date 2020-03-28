@@ -36,7 +36,8 @@ def stdin(mocker, request):
 
     fake_stdin = BytesIO(to_bytes(args, errors='surrogate_or_strict'))
     if PY3:
-        mocker.patch('ansible.module_utils.basic.sys.stdin', mocker.MagicMock())
+        mocker.patch('ansible.module_utils.basic.sys.stdin',
+                     mocker.MagicMock())
         mocker.patch('ansible.module_utils.basic.sys.stdin.buffer', fake_stdin)
     else:
         mocker.patch('ansible.module_utils.basic.sys.stdin', fake_stdin)
