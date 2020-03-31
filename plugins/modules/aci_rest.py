@@ -169,7 +169,7 @@ EXAMPLES = r'''
     validate_certs: no
     method: post
     path: /api/mo/uni/controller/nodeidentpol.xml
-    content: |
+    content:
       <fabricNodeIdentPol>
         <fabricNodeIdentP name="{{ item.name }}" nodeId="{{ item.nodeid }}" status="{{ item.status }}" serial="{{ item.serial }}"/>
       </fabricNodeIdentPol>

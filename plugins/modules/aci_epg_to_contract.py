@@ -253,7 +253,7 @@ ACI_CLASS_MAPPING = dict(
 PROVIDER_MATCH_MAPPING = dict(
     all='All',
     at_least_one='AtleastOne',
-    at_most_one='tmostOne',
+    at_most_one='AtmostOne',
     none='None',
 )
 
