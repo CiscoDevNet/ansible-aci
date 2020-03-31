@@ -385,3 +385,9 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/git,linux,pydev,python,windows,pycharm+all,jupyternotebook,vim,webstorm,emacs,dotenv
+
+# vsCode
+.vscode
+
+# Ansible Collection tarball
+cisco-aci-*.tar.gz
