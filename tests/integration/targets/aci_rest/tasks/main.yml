@@ -20,8 +20,9 @@
 - include_tasks: json_string.yml
   tags: json_string
 
-- include_tasks: xml_string.yml
-  tags: xml_string
+# FIXME: Find why this lxml import does not work properly.
+# - include_tasks: xml_string.yml
+#   tags: xml_string
 
 - include_tasks: error_handling.yml
   tags: error_handling

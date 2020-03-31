@@ -21,6 +21,15 @@
     tenant: anstest
   register: tenant_present
 
+- name: ensure vrf does not exist yet for tests to kick off
+  cisco.aci.aci_vrf:
+    <<: *aci_tenant_present
+    vrf: "{{ item }}"
+    state: absent
+  with_items:
+    - anstest
+    - anstest2
+
 - name: create vrf - check mode works
   cisco.aci.aci_vrf: &aci_vrf_present
     <<: *aci_tenant_present
@@ -119,7 +128,7 @@
       - query_vrf_vrf is not changed
       - query_vrf_vrf.current != []
       - query_vrf_vrf.current.0.fvCtx.attributes.name == "anstest"
-      - '"query-target-filter=eq(fvCtx.name, \"anstest\")" in query_vrf_vrf.filter_string'
+      - '"query-target-filter=eq(fvCtx.name,\"anstest\")" in query_vrf_vrf.filter_string'
       - '"class/fvCtx.json" in query_vrf_vrf.url'
       - query_vrf is not changed
       - query_vrf.current | length == 1

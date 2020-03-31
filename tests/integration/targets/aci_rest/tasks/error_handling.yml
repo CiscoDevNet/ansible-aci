@@ -27,7 +27,7 @@
   assert:
     that:
     - error_on_name_resolution is failed
-    - "error_on_name_resolution.msg == 'Connection failed for https://foo.bar.cisco.com/api/aaaLogin.json. Request failed: <urlopen error [Errno -2] Name or service not known>'"
+    - "error_on_name_resolution.msg == 'Connection failed for https://foo.bar.cisco.com/api/aaaLogin.json. Request failed: <urlopen error [Errno 8] nodename nor servname provided, or not known>'"
     - "'current' not in error_on_name_resolution"
     - "'previous' not in error_on_name_resolution"
     - "'sent' not in error_on_name_resolution"

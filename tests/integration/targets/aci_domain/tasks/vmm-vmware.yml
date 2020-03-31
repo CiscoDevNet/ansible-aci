@@ -41,7 +41,7 @@
   cisco.aci.aci_domain: *domain_present
   register: nm_add_domain
 
-- name: Verify add_domain
+- name: Verify VMM add_domain
   assert:
     that:
     - cm_add_domain is changed
@@ -57,11 +57,11 @@
   check_mode: yes
   register: cm_add_domain_again
 
-- name: Add physical domain again (normal mode)
+- name: Add VMM domain again (normal mode)
   cisco.aci.aci_domain: *domain_present
   register: nm_add_domain_again
 
-- name: Verify add_domain_again
+- name: Verify VMM add_domain_again
   assert:
     that:
     - cm_add_domain_again is not changed
@@ -113,7 +113,7 @@
     vm_provider: vmware
   register: nm_query_domain
 
-- name: Verify query_domain
+- name: Verify VMM query_domain
   assert:
     that:
     - cm_query_domain is not changed
@@ -133,7 +133,7 @@
   cisco.aci.aci_domain: *domain_absent
   register: nm_remove_domain
 
-- name: Verify remove_domain
+- name: Verify VMM remove_domain
   assert:
     that:
     - cm_remove_domain is changed
@@ -152,7 +152,7 @@
   cisco.aci.aci_domain: *domain_absent
   register: nm_remove_domain_again
 
-- name: Verify remove_domain_again
+- name: Verify VMM remove_domain_again
   assert:
     that:
     - cm_remove_domain_again is not changed
@@ -175,7 +175,7 @@
     vm_provider: vmware
   register: nm_query_non_domain
 
-- name: Verify query_non_domain
+- name: Verify VMM query_non_domain
   assert:
     that:
     - cm_query_non_domain is not changed

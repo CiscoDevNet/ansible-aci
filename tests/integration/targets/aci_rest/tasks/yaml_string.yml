@@ -29,7 +29,7 @@
     output_level: '{{ aci_output_level | default("info") }}'
     path: /api/mo/uni.json
     method: post
-    content: |
+    content:
       fvTenant:
         attributes:
           name: ansible_test
@@ -57,7 +57,7 @@
     output_level: '{{ aci_output_level | default("info") }}'
     path: /api/mo/uni.json
     method: post
-    content: |
+    content:
       fvTenant:
         attributes:
           name: ansible_test

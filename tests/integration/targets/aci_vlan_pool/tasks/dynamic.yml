@@ -206,7 +206,7 @@
     that:
     - cm_remove_dynamic_vlan_pool is changed
     - nm_remove_dynamic_vlan_pool is changed
-    - 'cm_remove_dynamic_vlan_pool.current == cm_remove_dynamic_vlan_pool.previous == nm_remove_dynamic_vlan_pool.previous == [{"fvnsVlanInstP": {"attributes": {"allocMode": "dynamic", "descr": "Ansible test dynamic vlan pool", "dn": "uni/infra/vlanns-[anstest]-dynamic", "name": "anstest", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - 'cm_remove_dynamic_vlan_pool.current == cm_remove_dynamic_vlan_pool.previous == nm_remove_dynamic_vlan_pool.previous == [{"fvnsVlanInstP": {"attributes": {"allocMode": "dynamic", "annotation": "", "descr": "Ansible test dynamic vlan pool", "dn": "uni/infra/vlanns-[anstest]-dynamic", "name": "anstest", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
     - nm_remove_dynamic_vlan_pool.current == []
 
 - name: Remove dynamic vlan pool again (check_mode)

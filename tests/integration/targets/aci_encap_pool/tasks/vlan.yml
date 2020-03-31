@@ -67,7 +67,7 @@
   assert:
     that:
       - idempotent_static is not changed
-      - 'idempotent_static.previous == [{"fvnsVlanInstP": {"attributes": {"allocMode": "static", "descr": "Ansible Test", "dn": "uni/infra/vlanns-[anstest]-static", "name": "anstest", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+      - 'idempotent_static.previous == [{"fvnsVlanInstP": {"attributes": {"allocMode": "static", "annotation": "", "descr": "Ansible Test", "dn": "uni/infra/vlanns-[anstest]-static", "name": "anstest", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
       - idempotent_static.sent == {}
 
 - name: create dynamic vlan pool again - idempotency works
@@ -79,7 +79,7 @@
   assert:
     that:
       - idempotent_dynamic is not changed
-      - 'idempotent_dynamic.previous == [{"fvnsVlanInstP": {"attributes": {"allocMode": "dynamic", "descr": "Ansible Test", "dn": "uni/infra/vlanns-[anstest]-dynamic", "name": "anstest", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+      - 'idempotent_dynamic.previous == [{"fvnsVlanInstP": {"attributes": {"allocMode": "dynamic", "annotation": "", "descr": "Ansible Test", "dn": "uni/infra/vlanns-[anstest]-dynamic", "name": "anstest", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
       - idempotent_dynamic.sent == {}
  
 - name: update static vlan pool - update works

@@ -39,7 +39,7 @@
   cisco.aci.aci_domain: *domain_present
   register: nm_add_domain
 
-- name: Verify add_domain
+- name: Verify L3 add_domain
   assert:
     that:
     - cm_add_domain is changed
@@ -47,7 +47,7 @@
     - 'cm_add_domain.sent == nm_add_domain.sent == {"l3extDomP": {"attributes": {"name": "l3_dom"}}}'
     - 'cm_add_domain.proposed == nm_add_domain.proposed == {"l3extDomP": {"attributes": {"name": "l3_dom"}}}'
     - cm_add_domain.current == cm_add_domain.previous == nm_add_domain.previous == []
-    - 'nm_add_domain.current == [{"l3extDomP": {"attributes": {"dn": "uni/l3dom-l3_dom", "name": "l3_dom", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - 'nm_add_domain.current == [{"l3extDomP": {"attributes": {"annotation": "", "dn": "uni/l3dom-l3_dom", "name": "l3_dom", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
 
 - name: Add L3 domain again (check_mode)
   cisco.aci.aci_domain: *domain_present
@@ -58,7 +58,7 @@
   cisco.aci.aci_domain: *domain_present
   register: nm_add_domain_again
 
-- name: Verify add_domain_again
+- name: Verify L3 add_domain_again
   assert:
     that:
     - cm_add_domain_again is not changed
@@ -107,7 +107,7 @@
     domain: l3_dom
   register: nm_query_domain
 
-- name: Verify query_domain
+- name: Verify L3 query_domain
   assert:
     that:
     - cm_query_domain is not changed
@@ -127,12 +127,12 @@
   cisco.aci.aci_domain: *domain_absent
   register: nm_remove_domain
 
-- name: Verify remove_domain
+- name: Verify L3 remove_domain
   assert:
     that:
     - cm_remove_domain is changed
     - nm_remove_domain is changed
-    - 'cm_remove_domain.current == cm_remove_domain.previous == nm_remove_domain.previous == [{"l3extDomP": {"attributes": {"dn": "uni/l3dom-l3_dom", "name": "l3_dom", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - 'cm_remove_domain.current == cm_remove_domain.previous == nm_remove_domain.previous == [{"l3extDomP": {"attributes": {"annotation": "", "dn": "uni/l3dom-l3_dom", "name": "l3_dom", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
     - nm_remove_domain.current == []
 
 - name: Remove L3 domain again (check_mode)
@@ -144,7 +144,7 @@
   cisco.aci.aci_domain: *domain_absent
   register: nm_remove_domain_again
 
-- name: Verify remove_domain_again
+- name: Verify L3 remove_domain_again
   assert:
     that:
     - cm_remove_domain_again is not changed
@@ -165,7 +165,7 @@
     domain: l3_dom
   register: nm_query_non_domain
 
-- name: Verify query_non_domain
+- name: Verify L3 query_non_domain
   assert:
     that:
     - cm_query_non_domain is not changed

@@ -75,7 +75,7 @@
     - 'cm_add_binding.sent == nm_add_binding.sent == {"infraRsDomP": {"attributes": {"tDn": "uni/phys-phys_dom"}}}'
     - 'cm_add_binding.proposed == nm_add_binding.proposed == {"infraRsDomP": {"attributes": {"tDn": "uni/phys-phys_dom"}}}'
     - cm_add_binding.current == cm_add_binding.previous == nm_add_binding.previous == []
-    - 'nm_add_binding.current == [{"infraRsDomP": {"attributes": {"dn": "uni/infra/attentp-test_aep/rsdomP-[uni/phys-phys_dom]", "tDn": "uni/phys-phys_dom"}}}]'
+    - 'nm_add_binding.current == [{"infraRsDomP": {"attributes": {"annotation": "", "dn": "uni/infra/attentp-test_aep/rsdomP-[uni/phys-phys_dom]", "tDn": "uni/phys-phys_dom"}}}]'
 
 - name: Add AEP to domain binding again (check_mode)
   cisco.aci.aci_aep_to_domain: *binding_present
@@ -164,7 +164,7 @@
     that:
     - cm_remove_binding is changed
     - nm_remove_binding is changed
-    - 'cm_remove_binding.current == cm_remove_binding.previous == nm_remove_binding.previous == [{"infraRsDomP": {"attributes": {"dn": "uni/infra/attentp-test_aep/rsdomP-[uni/phys-phys_dom]", "tDn": "uni/phys-phys_dom"}}}]'
+    - 'cm_remove_binding.current == cm_remove_binding.previous == nm_remove_binding.previous == [{"infraRsDomP": {"attributes": {"annotation": "", "dn": "uni/infra/attentp-test_aep/rsdomP-[uni/phys-phys_dom]", "tDn": "uni/phys-phys_dom"}}}]'
     - nm_remove_binding.current == []
 
 - name: Remove AEP to domain binding again (check_mode)

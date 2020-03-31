@@ -216,7 +216,7 @@
     that:
     - cm_remove_taboo_contract is changed
     - nm_remove_taboo_contract is changed
-    - 'cm_remove_taboo_contract.current == cm_remove_taboo_contract.previous == nm_remove_taboo_contract.previous == [{"vzTaboo": {"attributes": {"descr": "Ansible test taboo contract", "dn": "uni/tn-ansible_test/taboo-taboo_contract_test", "name": "taboo_contract_test", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - 'cm_remove_taboo_contract.current == cm_remove_taboo_contract.previous == nm_remove_taboo_contract.previous == [{"vzTaboo": {"attributes": {"annotation": "", "descr": "Ansible test taboo contract", "dn": "uni/tn-ansible_test/taboo-taboo_contract_test", "name": "taboo_contract_test", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
     - nm_remove_taboo_contract.current == []
 
 - name: Remove taboo contract again (check_mode)

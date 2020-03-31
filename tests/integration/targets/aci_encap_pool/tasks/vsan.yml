@@ -12,3 +12,5 @@
     pool_type: vsan
     pool_allocation_mode: static
     state: absent
+
+# FIXME Add Test to this integration
