@@ -17,6 +17,7 @@ short_description: Manage contexts or VRFs (fv:Ctx)
 description:
 - Manage contexts or VRFs on Cisco ACI fabrics.
 - Each context is a private network associated to a tenant, i.e. VRF.
+- Enable Preferred Groups for VRF
 options:
   tenant:
     description:
@@ -54,6 +55,16 @@ options:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
+  preferred_group:
+    description:
+    - Enables preferred groups for the VRF under vzAny
+    type: str
+    choices: [enabled, disabled]
+  match_type:
+    description:
+    - Configures match type for contracts under vzAny
+    type: str
+    choices: [ all, at_least_one, at_most_one, none]
 extends_documentation_fragment:
 - cisco.aci.aci
 
@@ -222,6 +233,13 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
+MATCH_TYPE_MAPPING = dict(
+    all='All',
+    at_least_one='AtleastOne',
+    at_most_one='AtmostOne',
+    none='None',
+)
+
 
 def main():
     argument_spec = aci_argument_spec()
@@ -232,6 +250,8 @@ def main():
         policy_control_direction=dict(type='str', choices=['egress', 'ingress']),
         policy_control_preference=dict(type='str', choices=['enforced', 'unenforced']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        preferred_group=dict(type='str', choices=['enabled', 'disabled']),
+        match_type=dict(type='str', choices=['all', 'at_least_one', 'at_most_one', 'none']),
         name_alias=dict(type='str'),
     )
 
@@ -251,6 +271,11 @@ def main():
     tenant = module.params.get('tenant')
     vrf = module.params.get('vrf')
     name_alias = module.params.get('name_alias')
+    preferred_group = module.params.get('preferred_group')
+    match_type = module.params.get('match_type')
+
+    if match_type is not None:
+        match_type = MATCH_TYPE_MAPPING[match_type]
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -266,6 +291,7 @@ def main():
             module_object=vrf,
             target_filter={'name': vrf},
         ),
+        child_classes=['vzAny']
     )
 
     aci.get_existing()
@@ -280,7 +306,10 @@ def main():
                 name=vrf,
                 nameAlias=name_alias,
             ),
-        )
+            child_configs=[
+               {"vzAny":{"attributes":{"prefGrMemb": preferred_group, "matchT": match_type}}},
+            ],
+          )
 
         aci.get_diff(aci_class='fvCtx')
 
