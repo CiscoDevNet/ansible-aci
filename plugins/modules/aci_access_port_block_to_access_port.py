@@ -18,27 +18,32 @@ short_description: Manage port blocks of Fabric interface policy leaf profile in
 description:
 - Manage port blocks of Fabric interface policy leaf profile interface selectors on Cisco ACI fabrics.
 options:
-  leaf_interface_profile:
+  interface_profile:
     description:
     - The name of the Fabric access policy leaf interface profile.
     type: str
     required: yes
-    aliases: [ leaf_interface_profile_name ]
+    aliases: [ interface_profile_name ]
   access_port_selector:
     description:
     -  The name of the Fabric access policy leaf interface profile access port selector.
     type: str
     required: yes
     aliases: [ name, access_port_selector_name ]
-  leaf_port_blk:
+  fex_port:
+    description:
+    - Determines if the port resides on a fex
+    type: bool
+    default: no
+  port_blk:
     description:
     - The name of the Fabric access policy leaf interface profile access port block.
     type: str
     required: yes
-    aliases: [ leaf_port_blk_name ]
-  leaf_port_blk_description:
+    aliases: [ port_blk_name ]
+  port_blk_description:
     description:
-    - The description to assign to the C(leaf_port_blk).
+    - The description to assign to the C(port_blk).
     type: str
   from_port:
     description:
@@ -86,9 +91,23 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretPassword
-    leaf_interface_profile: leafintprfname
+    interface_profile: intprfname
     access_port_selector: accessportselectorname
-    leaf_port_blk: leafportblkname
+    port_blk: portblkname
+    from_port: 13
+    to_port: 13
+    state: present
+  delegate_to: localhost
+
+- name: Associate an access port block (single port) to an interface selector on a fex
+  cisco.aci.aci_access_port_block_to_access_port:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    interface_profile: intprfname
+    access_port_selector: accessportselectorname
+    fex_port: yes
+    port_blk: portblkname
     from_port: 13
     to_port: 13
     state: present
@@ -99,9 +118,9 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretPassword
-    leaf_interface_profile: leafintprfname
+    interface_profile: intprfname
     access_port_selector: accessportselectorname
-    leaf_port_blk: leafportblkname
+    port_blk: portblkname
     from_port: 13
     to_port: 16
     state: present
@@ -112,9 +131,9 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretPassword
-    leaf_interface_profile: leafintprfname
+    interface_profile: intprfname
     access_port_selector: accessportselectorname
-    leaf_port_blk: leafportblkname
+    port_blk: portblkname
     from_port: 13
     to_port: 13
     state: absent
@@ -125,9 +144,9 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretPassword
-    leaf_interface_profile: leafintprfname
+    interface_profile: intprfname
     access_port_selector: accessportselectorname
-    leaf_port_blk: leafportblkname
+    port_blk: portblkname
     state: query
   delegate_to: localhost
   register: query_result
@@ -137,7 +156,7 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretPassword
-    leaf_interface_profile: leafintprfname
+    interface_profile: intprfname
     state: query
   delegate_to: localhost
   register: query_result
@@ -264,10 +283,11 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        leaf_interface_profile=dict(type='str', aliases=['leaf_interface_profile_name']),  # Not required for querying all objects
+        interface_profile=dict(type='str', aliases=['interface_profile_name']),  # Not required for querying all objects
         access_port_selector=dict(type='str', aliases=['name', 'access_port_selector_name']),  # Not required for querying all objects
-        leaf_port_blk=dict(type='str', aliases=['leaf_port_blk_name']),  # Not required for querying all objects
-        leaf_port_blk_description=dict(type='str'),
+        fex_port=dict(type=bool, default=False),   # This parameter is not required for querying all objects
+        port_blk=dict(type='str', aliases=['port_blk_name']),  # Not required for querying all objects
+        port_blk_description=dict(type='str'),
         from_port=dict(type='str', aliases=['from', 'fromPort', 'from_port_range']),
         to_port=dict(type='str', aliases=['to', 'toPort', 'to_port_range']),
         from_card=dict(type='str', aliases=['from_card_range']),
@@ -279,15 +299,16 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['access_port_selector', 'leaf_port_blk', 'leaf_interface_profile']],
-            ['state', 'present', ['access_port_selector', 'leaf_port_blk', 'from_port', 'to_port', 'leaf_interface_profile']],
+            ['state', 'absent', ['access_port_selector', 'port_blk', 'interface_profile']],
+            ['state', 'present', ['access_port_selector', 'port_blk', 'from_port', 'to_port', 'interface_profile']],
         ],
     )
 
-    leaf_interface_profile = module.params.get('leaf_interface_profile')
+    interface_profile = module.params.get('interface_profile')
     access_port_selector = module.params.get('access_port_selector')
-    leaf_port_blk = module.params.get('leaf_port_blk')
-    leaf_port_blk_description = module.params.get('leaf_port_blk_description')
+    fex_port = module.params.get('fex_port')
+    port_blk = module.params.get('port_blk')
+    port_blk_description = module.params.get('port_blk_description')
     from_port = module.params.get('from_port')
     to_port = module.params.get('to_port')
     from_card = module.params.get('from_card')
@@ -295,12 +316,13 @@ def main():
     state = module.params.get('state')
 
     aci = ACIModule(module)
-    aci.construct_url(
+    if fex_port is True:
+      aci.construct_url(
         root_class=dict(
-            aci_class='infraAccPortP',
-            aci_rn='infra/accportprof-{0}'.format(leaf_interface_profile),
-            module_object=leaf_interface_profile,
-            target_filter={'name': leaf_interface_profile},
+            aci_class='infraFexP',
+            aci_rn='infra/fexprof-{0}'.format(interface_profile),
+            module_object=interface_profile,
+            target_filter={'name': interface_profile},
         ),
         subclass_1=dict(
             aci_class='infraHPortS',
@@ -311,9 +333,31 @@ def main():
         ),
         subclass_2=dict(
             aci_class='infraPortBlk',
-            aci_rn='portblk-{0}'.format(leaf_port_blk),
-            module_object=leaf_port_blk,
-            target_filter={'name': leaf_port_blk},
+            aci_rn='portblk-{0}'.format(port_blk),
+            module_object=port_blk,
+            target_filter={'name': port_blk},
+        ),
+    )
+    else:
+      aci.construct_url(
+        root_class=dict(
+            aci_class='infraAccPortP',
+            aci_rn='infra/accportprof-{0}'.format(interface_profile),
+            module_object=interface_profile,
+            target_filter={'name': interface_profile},
+        ),
+        subclass_1=dict(
+            aci_class='infraHPortS',
+            # NOTE: normal rn: hports-{name}-typ-{type}, hence here hardcoded to range for purposes of module
+            aci_rn='hports-{0}-typ-range'.format(access_port_selector),
+            module_object=access_port_selector,
+            target_filter={'name': access_port_selector},
+        ),
+        subclass_2=dict(
+            aci_class='infraPortBlk',
+            aci_rn='portblk-{0}'.format(port_blk),
+            module_object=port_blk,
+            target_filter={'name': port_blk},
         ),
     )
 
@@ -323,8 +367,8 @@ def main():
         aci.payload(
             aci_class='infraPortBlk',
             class_config=dict(
-                descr=leaf_port_blk_description,
-                name=leaf_port_blk,
+                descr=port_blk_description,
+                name=port_blk,
                 fromPort=from_port,
                 toPort=to_port,
                 fromCard=from_card,
