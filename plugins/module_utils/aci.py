@@ -75,8 +75,10 @@ def aci_argument_spec():
         port=dict(type='int', required=False),
         username=dict(type='str', default='admin', aliases=['user'], fallback=(env_fallback, ['ACI_USERNAME'])),
         password=dict(type='str', no_log=True, fallback=(env_fallback, ['ACI_PASSWORD'])),
-        private_key=dict(type='str', aliases=['cert_key'], no_log=True, fallback=(env_fallback, ['ACI_PRIVATE_KEY'])),  # Beware, this is not the same as client_key !
-        certificate_name=dict(type='str', aliases=['cert_name']),  # Beware, this is not the same as client_cert !
+        # Beware, this is not the same as client_key !
+        private_key=dict(type='str', aliases=['cert_key'], no_log=True, fallback=(env_fallback, ['ACI_PRIVATE_KEY'])),
+        # Beware, this is not the same as client_cert !
+        certificate_name=dict(type='str', aliases=['cert_name']),
         output_level=dict(type='str', default='normal', choices=['debug', 'info', 'normal']),
         timeout=dict(type='int', default=30),
         use_proxy=dict(type='bool', default=True),
