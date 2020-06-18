@@ -45,6 +45,7 @@ from ansible.module_utils.parsing.convert_bool import boolean
 from ansible.module_utils.urls import fetch_url
 from ansible.module_utils._text import to_bytes, to_native
 from ansible.module_utils.six.moves.urllib.parse import parse_qsl, urlsplit
+from ansible.module_utils.basic import env_fallback
 
 # Optional, only used for APIC signature-based authentication
 try:
@@ -70,17 +71,17 @@ except ImportError:
 
 def aci_argument_spec():
     return dict(
-        host=dict(type='str', required=True, aliases=['hostname']),
+        host=dict(type='str', required=True, aliases=['hostname'], fallback=(env_fallback, ['ACI_HOST'])),
         port=dict(type='int', required=False),
-        username=dict(type='str', default='admin', aliases=['user']),
-        password=dict(type='str', no_log=True),
-        private_key=dict(type='str', aliases=['cert_key'], no_log=True),  # Beware, this is not the same as client_key !
+        username=dict(type='str', default='admin', aliases=['user'], fallback=(env_fallback, ['ACI_USERNAME'])),
+        password=dict(type='str', no_log=True, fallback=(env_fallback, ['ACI_PASSWORD'])),
+        private_key=dict(type='str', aliases=['cert_key'], no_log=True, fallback=(env_fallback, ['ACI_PRIVATE_KEY'])),  # Beware, this is not the same as client_key !
         certificate_name=dict(type='str', aliases=['cert_name']),  # Beware, this is not the same as client_cert !
         output_level=dict(type='str', default='normal', choices=['debug', 'info', 'normal']),
         timeout=dict(type='int', default=30),
         use_proxy=dict(type='bool', default=True),
         use_ssl=dict(type='bool', default=True),
-        validate_certs=dict(type='bool', default=True),
+        validate_certs=dict(type='bool', default=True, fallback=(env_fallback, ['ACI_VALIDATE_CERTS'])),
         output_path=dict(type='str'),
         annotation=dict(type='str'),
         owner_key=dict(type='str'),
