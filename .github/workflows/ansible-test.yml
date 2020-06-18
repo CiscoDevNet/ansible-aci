@@ -1,0 +1,162 @@
+name: CI
+on:
+  push:
+    branches: master
+  pull_request:
+  schedule:
+  # * is a special character in YAML so you have to quote this string
+  - cron:  '0 8 * * *'
+jobs:
+  build:
+    name: Build collection
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+    
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+    - name: Install ansible-base (v2.9.9)
+      run: pip install https://github.com/ansible/ansible/archive/v2.9.9.tar.gz --disable-pip-version-check
+
+    - name: Build a collection tarball
+      run: ansible-galaxy collection build --output-path "${GITHUB_WORKSPACE}/.cache/collection-tarballs"
+
+    - name: Store migrated collection artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: collection
+        path: .cache/collection-tarballs
+
+  sanity:
+    name: Sanity in ubuntu-latest
+    needs:
+    - build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+    - name: Install ansible-base (v2.9.9)
+      run: pip install https://github.com/ansible/ansible/archive/v2.9.9.tar.gz --disable-pip-version-check
+
+    - name: Install coverage (v4.5.4)
+      run: pip install coverage==4.5.4
+
+    - name: Download migrated collection artifacts
+      uses: actions/download-artifact@v1
+      with:
+        name: collection
+        path: .cache/collection-tarballs
+
+    - name: Install the collection tarball
+      run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
+
+    - name: Run sanity tests
+      run: ansible-test sanity --docker -v --color --truncate 0 --coverage
+      working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+    
+    - name: Generate coverage report
+      run: ansible-test coverage xml -v --requirements --group-by command --group-by version
+      working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+
+    - name: Push coverate report to codecov.io
+      run: bash <(curl -s https://codecov.io/bash) -s 'tests/output/reports/' -F integration
+      working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+
+  units:
+    name: Units in ubuntu-latest
+    needs:
+    - build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+    - name: Install ansible-base (v2.9.9)
+      run: pip install https://github.com/ansible/ansible/archive/v2.9.9.tar.gz --disable-pip-version-check
+
+    - name: Install coverage (v4.5.4)
+      run: pip install coverage==4.5.4
+
+    - name: Download migrated collection artifacts
+      uses: actions/download-artifact@v1
+      with:
+        name: collection
+        path: .cache/collection-tarballs
+
+    - name: Install the collection tarball
+      run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
+
+    - name: Run unit tests
+      run: ansible-test units --docker -v --color --truncate 0 --python 3.7 --coverage
+      working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+
+    - name: Generate coverage report.
+      run: ansible-test coverage xml -v --requirements --group-by command --group-by version
+      working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+
+    - uses: codecov/codecov-action@v1
+      with:
+        fail_ci_if_error: false
+        file: /home/runner/.ansible/collections/ansible_collections/cisco/aci/tests/output/reports/coverage.xml
+
+  integration:
+    name: Integration in ubuntu-latest
+    needs:
+    - build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+    - name: Install ansible-base (v2.9.9)
+      run: pip install https://github.com/ansible/ansible/archive/v2.9.9.tar.gz --disable-pip-version-check
+
+    - name: Install coverage (v4.5.4)
+      run: pip install coverage==4.5.4
+
+    - name: Download migrated collection artifacts
+      uses: actions/download-artifact@v1
+      with:
+        name: collection
+        path: .cache/collection-tarballs
+
+    - name: Install the collection tarball
+      run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
+
+    - name: Requesting integration mutex
+      uses: nev7n/wait_for_response@v1
+      with:
+        url: ${{ format('https://8v7s765ibh.execute-api.us-west-1.amazonaws.com/v1/ansible-aci?repo={0}', github.repository) }}
+        responseCode: 200
+        timeout: 2000000
+        interval: 5000
+
+    - name: Run integration tests on Python 3.7
+      run: ansible-test network-integration --docker -v --color --retry-on-error --python 3.7 --truncate 0 --continue-on-error --coverage
+      working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+
+    - name: Releasing integration mutex
+      uses: nev7n/wait_for_response@v1
+      if: always()
+      with:
+        url: ${{ format('https://8v7s765ibh.execute-api.us-west-1.amazonaws.com/v1/ansible-aci/release?repo={0}', github.repository) }}
+        responseCode: 200
+      
+    - name: Generate coverage report
+      run: ansible-test coverage xml -v --requirements --group-by command --group-by version
+      working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+
+    - name: Push coverate report to codecov.io
+      run: bash <(curl -s https://codecov.io/bash) -s 'tests/output/reports/' -F integration
+      working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
