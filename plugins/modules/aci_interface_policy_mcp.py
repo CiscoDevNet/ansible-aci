@@ -57,7 +57,8 @@ author:
 
 # FIXME: Add more, better examples
 EXAMPLES = r'''
-- cisco.aci.aci_interface_policy_mcp:
+- name: Add a MCP interface policy
+  cisco.aci.aci_interface_policy_mcp:
     host: '{{ hostname }}'
     username: '{{ username }}'
     password: '{{ password }}'

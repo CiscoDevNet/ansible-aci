@@ -58,7 +58,8 @@ author:
 
 # FIXME: Add more, better examples
 EXAMPLES = r'''
-- cisco.aci.aci_interface_policy_fc:
+- name: Add Fibre Channel interface policy
+  cisco.aci.aci_interface_policy_fc:
     host: '{{ hostname }}'
     username: '{{ username }}'
     password: '{{ password }}'

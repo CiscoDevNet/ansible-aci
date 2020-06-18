@@ -62,7 +62,8 @@ author:
 
 # FIXME: Add more, better examples
 EXAMPLES = r'''
-- cisco.aci.aci_interface_policy_lldp:
+- name: Add a LLDP interface policy
+  cisco.aci.aci_interface_policy_lldp:
     host: '{{ hostname }}'
     username: '{{ username }}'
     password: '{{ password }}'
