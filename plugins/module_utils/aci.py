@@ -11,6 +11,7 @@
 # Copyright: (c) 2017, Jacob McGill (@jmcgill298)
 # Copyright: (c) 2017, Swetha Chunduri (@schunduri)
 # Copyright: (c) 2019, Rob Huelga (@RobW3LGA)
+# Copyright: (c) 2020, Lionel Hercot (@lhercot) <lhercot@cisco.com>
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without modification,
@@ -43,6 +44,7 @@ from copy import deepcopy
 from ansible.module_utils.parsing.convert_bool import boolean
 from ansible.module_utils.urls import fetch_url
 from ansible.module_utils._text import to_bytes, to_native
+from ansible.module_utils.six.moves.urllib.parse import parse_qsl, urlsplit
 
 # Optional, only used for APIC signature-based authentication
 try:
@@ -79,6 +81,7 @@ def aci_argument_spec():
         use_proxy=dict(type='bool', default=True),
         use_ssl=dict(type='bool', default=True),
         validate_certs=dict(type='bool', default=True),
+        output_path=dict(type='str'),
     )
 
 
@@ -104,6 +107,7 @@ class ACIModule(object):
 
         # debug output
         self.filter_string = ''
+        self.obj_filter = None
         self.method = None
         self.path = None
         self.response = None
@@ -650,6 +654,7 @@ class ACIModule(object):
             # State is absent or present
             self.path = 'api/mo/uni/{0}.json'.format(obj_rn)
             self.update_qs({'rsp-prop-include': 'config-only'})
+            self.obj_filter = obj_filter
         elif mo is None:
             # Query for all objects of the module's class (filter by properties)
             self.path = 'api/class/{0}.json'.format(obj_class)
@@ -675,6 +680,7 @@ class ACIModule(object):
             # State is absent or present
             self.path = 'api/mo/uni/{0}/{1}.json'.format(parent_rn, obj_rn)
             self.update_qs({'rsp-prop-include': 'config-only'})
+            self.obj_filter = obj_filter
         elif parent_obj is None and mo is None:
             # Query for all objects of the module's class
             self.path = 'api/class/{0}.json'.format(obj_class)
@@ -712,6 +718,7 @@ class ACIModule(object):
             # State is absent or present
             self.path = 'api/mo/uni/{0}/{1}/{2}.json'.format(root_rn, parent_rn, obj_rn)
             self.update_qs({'rsp-prop-include': 'config-only'})
+            self.obj_filter = obj_filter
         elif root_obj is None and parent_obj is None and mo is None:
             # Query for all objects of the module's class
             self.path = 'api/class/{0}.json'.format(obj_class)
@@ -785,6 +792,7 @@ class ACIModule(object):
             # State is absent or present
             self.path = 'api/mo/uni/{0}/{1}/{2}/{3}.json'.format(root_rn, sec_rn, parent_rn, obj_rn)
             self.update_qs({'rsp-prop-include': 'config-only'})
+            self.obj_filter = obj_filter
         # TODO: Add all missing cases
         elif root_obj is None:
             self.child_classes.add(obj_class)
@@ -1098,6 +1106,7 @@ class ACIModule(object):
             if self.params.get('state') in ('absent', 'present'):
                 if self.params.get('output_level') in ('debug', 'info'):
                     self.result['previous'] = self.existing
+                self.dump_json()
 
         # Return the gory details when we need it
         if self.params.get('output_level') == 'debug':
@@ -1162,3 +1171,27 @@ class ACIModule(object):
 
         self.result.update(**kwargs)
         self.module.fail_json(msg=msg, **self.result)
+
+    def dump_json(self):
+        if self.params.get('state') in ('absent', 'present'):
+            dn_path = (self.url).split('/mo/')[-1]
+            if dn_path[-5:] == '.json':
+                dn_path = dn_path[:-5]
+            mo = {}
+            if(self.proposed):
+                mo = self.proposed
+                for aci_class in mo:
+                    mo[aci_class]['attributes']['dn'] = dn_path
+                    if self.obj_filter is not None:
+                        if 'tDn' in self.obj_filter:
+                            mo[aci_class]['attributes']['tDn'] = self.obj_filter['tDn']
+
+            elif(self.params.get('state') == 'absent' and self.existing):
+                for aci_class in self.existing[0]:
+                    mo[aci_class] = dict(attributes=dict(dn=dn_path, status="deleted"))
+
+            self.result['mo'] = mo
+            output_path = self.params.get('output_path')
+            if(output_path is not None):
+                with open(output_path, "a") as output_file:
+                    json.dump([mo], output_file)
