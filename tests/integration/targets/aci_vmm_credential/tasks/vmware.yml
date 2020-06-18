@@ -106,8 +106,14 @@
     that:
     - cm_add_credential is changed
     - nm_add_credential is changed
-    - 'cm_add_credential.sent == nm_add_credential.sent == {"vmmUsrAccP": {"attributes": {"descr": "my_new_cred", "name": "vmm_cred", "pwd": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER", "usr": "myUsername"}}}'
-    - 'cm_add_credential.proposed == nm_add_credential.proposed == {"vmmUsrAccP": {"attributes": {"descr": "my_new_cred", "name": "vmm_cred", "pwd": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER", "usr": "myUsername"}}}'
+    - cm_add_credential.sent.vmmUsrAccP.attributes.descr == nm_add_credential.sent.vmmUsrAccP.attributes.descr == 'my_new_cred'
+    - cm_add_credential.sent.vmmUsrAccP.attributes.name == nm_add_credential.sent.vmmUsrAccP.attributes.name == 'vmm_cred'
+    - cm_add_credential.sent.vmmUsrAccP.attributes.pwd == nm_add_credential.sent.vmmUsrAccP.attributes.pwd == 'VALUE_SPECIFIED_IN_NO_LOG_PARAMETER'
+    - cm_add_credential.sent.vmmUsrAccP.attributes.usr == nm_add_credential.sent.vmmUsrAccP.attributes.usr == 'myUsername'
+    - cm_add_credential.proposed.vmmUsrAccP.attributes.descr == nm_add_credential.proposed.vmmUsrAccP.attributes.descr == 'my_new_cred'
+    - cm_add_credential.proposed.vmmUsrAccP.attributes.name == nm_add_credential.proposed.vmmUsrAccP.attributes.name == 'vmm_cred'
+    - cm_add_credential.proposed.vmmUsrAccP.attributes.pwd == nm_add_credential.proposed.vmmUsrAccP.attributes.pwd == 'VALUE_SPECIFIED_IN_NO_LOG_PARAMETER'
+    - cm_add_credential.proposed.vmmUsrAccP.attributes.usr == nm_add_credential.proposed.vmmUsrAccP.attributes.usr == 'myUsername'
     - cm_add_credential.current == cm_add_credential.previous == nm_add_credential.previous == []
     - nm_add_credential.current.0.vmmUsrAccP.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/usracc-vmm_cred'
     - nm_add_credential.current.0.vmmUsrAccP.attributes.name == 'vmm_cred'
@@ -141,8 +147,13 @@
     that:
     - cm_mod_credential is changed
     - nm_mod_credential is changed
-    - 'cm_mod_credential.sent == nm_mod_credential.sent == {"vmmUsrAccP": {"attributes": {"descr": "my_updated_descr", "pwd": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER", "usr": "myNewUsername"}}}'
-    - 'cm_mod_credential.proposed == nm_mod_credential.proposed == {"vmmUsrAccP": {"attributes": {"descr": "my_updated_descr", "name": "vmm_cred", "pwd": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER", "usr": "myNewUsername"}}}'
+    - cm_mod_credential.sent.vmmUsrAccP.attributes.descr == nm_mod_credential.sent.vmmUsrAccP.attributes.descr == 'my_updated_descr'
+    - cm_mod_credential.sent.vmmUsrAccP.attributes.pwd == nm_mod_credential.sent.vmmUsrAccP.attributes.pwd == 'VALUE_SPECIFIED_IN_NO_LOG_PARAMETER'
+    - cm_mod_credential.sent.vmmUsrAccP.attributes.usr == nm_mod_credential.sent.vmmUsrAccP.attributes.usr == 'myNewUsername'
+    - cm_mod_credential.proposed.vmmUsrAccP.attributes.descr == nm_mod_credential.proposed.vmmUsrAccP.attributes.descr == 'my_updated_descr'
+    - cm_mod_credential.proposed.vmmUsrAccP.attributes.name == nm_mod_credential.proposed.vmmUsrAccP.attributes.name == 'vmm_cred'
+    - cm_mod_credential.proposed.vmmUsrAccP.attributes.pwd == nm_mod_credential.proposed.vmmUsrAccP.attributes.pwd == 'VALUE_SPECIFIED_IN_NO_LOG_PARAMETER'
+    - cm_mod_credential.proposed.vmmUsrAccP.attributes.usr == nm_mod_credential.proposed.vmmUsrAccP.attributes.usr == 'myNewUsername'
     - nm_mod_credential.current.0.vmmUsrAccP.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/usracc-vmm_cred'
     - nm_mod_credential.current.0.vmmUsrAccP.attributes.name == 'vmm_cred'
 

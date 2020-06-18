@@ -46,8 +46,8 @@
     that:
     - cm_add_domain is changed
     - nm_add_domain is changed
-    - 'cm_add_domain.sent == nm_add_domain.sent == {"vmmDomP": {"attributes": {"name": "vmm_dom"}}}'
-    - 'cm_add_domain.proposed == nm_add_domain.proposed == {"vmmDomP": {"attributes": {"name": "vmm_dom"}}}'
+    - cm_add_domain.sent.vmmDomP.attributes.name == nm_add_domain.sent.vmmDomP.attributes.name == 'vmm_dom'
+    - cm_add_domain.proposed.vmmDomP.attributes.name == nm_add_domain.proposed.vmmDomP.attributes.name == 'vmm_dom'
     - cm_add_domain.current == cm_add_domain.previous == nm_add_domain.previous == []
     - nm_add_domain.current.0.vmmDomP.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom'
     - nm_add_domain.current.0.vmmDomP.attributes.name == 'vmm_dom'

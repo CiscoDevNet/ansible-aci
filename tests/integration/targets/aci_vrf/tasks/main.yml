@@ -73,7 +73,8 @@
   assert:
     that:
       - vrf_present_check_mode is changed
-      - 'vrf_present_check_mode.sent == {"fvCtx": {"attributes": {"descr": "Ansible Test", "name": "anstest"}}}'
+      - vrf_present_check_mode.sent.fvCtx.attributes.descr == 'Ansible Test'
+      - vrf_present_check_mode.sent.fvCtx.attributes.name == 'anstest'
       - vrf_present is changed
       - vrf_present.sent == vrf_present_check_mode.sent
       - vrf_present.previous == []
@@ -82,10 +83,13 @@
       - vrf_update is changed
       - vrf_update.previous != []
       - vrf_update.sent != vrf_update.proposed
-      - 'vrf_update.sent == {"fvCtx": {"attributes": {"descr": "Ansible Test Update", "pcEnfPref": "unenforced"}}}'
-      - 'vrf_present_2.sent.fvCtx.attributes == {"name": "anstest2", "pcEnfDir": "egress", "descr": "Ansible Test"}'
+      - vrf_update.sent.fvCtx.attributes.descr == 'Ansible Test Update'
+      - vrf_update.sent.fvCtx.attributes.pcEnfPref == 'unenforced'
+      - vrf_present_2.sent.fvCtx.attributes.name == 'anstest2'
+      - vrf_present_2.sent.fvCtx.attributes.pcEnfDir == 'egress'
+      - vrf_present_2.sent.fvCtx.attributes.descr == 'Ansible Test'
       - vrf_present_missing_param is failed
-      - 'vrf_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
+      - vrf_present_missing_param.msg == 'state is present but all of the following are missing{{":"}} tenant'
 
 - name: get all vrf
   cisco.aci.aci_vrf: &aci_query

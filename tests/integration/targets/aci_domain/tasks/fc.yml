@@ -44,10 +44,11 @@
     that:
     - cm_add_domain is changed
     - nm_add_domain is changed
-    - 'cm_add_domain.sent == nm_add_domain.sent == {"fcDomP": {"attributes": {"name": "fc_dom"}}}'
-    - 'cm_add_domain.proposed == nm_add_domain.proposed == {"fcDomP": {"attributes": {"name": "fc_dom"}}}'
+    - cm_add_domain.sent.fcDomP.attributes.name == nm_add_domain.sent.fcDomP.attributes.name == 'fc_dom'
+    - cm_add_domain.proposed.fcDomP.attributes.name == nm_add_domain.proposed.fcDomP.attributes.name == 'fc_dom'
     - cm_add_domain.current == cm_add_domain.previous == nm_add_domain.previous == []
-    - 'nm_add_domain.current == [{"fcDomP": {"attributes": {"annotation": "", "dn": "uni/fc-fc_dom", "name": "fc_dom", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - nm_add_domain.current.0.fcDomP.attributes.name == 'fc_dom'
+    - nm_add_domain.current.0.fcDomP.attributes.dn == 'uni/fc-fc_dom'
 
 - name: Add FC domain again (check_mode)
   cisco.aci.aci_domain: *domain_present
@@ -132,7 +133,8 @@
     that:
     - cm_remove_domain is changed
     - nm_remove_domain is changed
-    - 'cm_remove_domain.current == cm_remove_domain.previous == nm_remove_domain.previous == [{"fcDomP": {"attributes": {"annotation": "", "dn": "uni/fc-fc_dom", "name": "fc_dom", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - cm_remove_domain.current.0.fcDomP.attributes.name == cm_remove_domain.previous.0.fcDomP.attributes.name == nm_remove_domain.previous.0.fcDomP.attributes.name == 'fc_dom'
+    - cm_remove_domain.current.0.fcDomP.attributes.dn == cm_remove_domain.previous.0.fcDomP.attributes.dn == nm_remove_domain.previous.0.fcDomP.attributes.dn == 'uni/fc-fc_dom'
     - nm_remove_domain.current == []
 
 - name: Remove FC domain again (check_mode)

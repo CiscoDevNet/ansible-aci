@@ -113,7 +113,12 @@
     that:
       - entry_present_check_mode is changed
       - entry_present_check_mode.previous == []
-      - 'entry_present_check_mode.sent == {"vzEntry": {"attributes": {"dFromPort": "http","dToPort": "88","descr": "Ansible Test","etherT": "ip","name": "anstest","prot": "tcp"}}}'
+      - entry_present_check_mode.sent.vzEntry.attributes.dFromPort == 'http'
+      - entry_present_check_mode.sent.vzEntry.attributes.dToPort == '88'
+      - entry_present_check_mode.sent.vzEntry.attributes.descr == 'Ansible Test'
+      - entry_present_check_mode.sent.vzEntry.attributes.etherT == 'ip'
+      - entry_present_check_mode.sent.vzEntry.attributes.name == 'anstest'
+      - entry_present_check_mode.sent.vzEntry.attributes.prot == 'tcp'
       - entry_present is changed
       - entry_present.previous == []
       - entry_present.sent == entry_present_check_mode.sent
@@ -124,11 +129,20 @@
       - entry_present_update.previous != []
       - entry_present_update.sent != entry_present_update.proposed
       - entry_present_2 is changed
-      - 'entry_present_2.sent.vzEntry.attributes == {"arpOpc": "reply",  "etherT": "arp", "name": "anstest2"}'
+      - entry_present_2.sent.vzEntry.attributes.arpOpc == 'reply'
+      - entry_present_2.sent.vzEntry.attributes.etherT == 'arp'
+      - entry_present_2.sent.vzEntry.attributes.name == 'anstest2'
       - entry_present_3 is changed
-      - 'entry_present_3.sent.vzEntry.attributes == {"etherT": "ip", "icmpv4T": "echo", "name": "anstest3", "prot": "icmp"}'
+      - entry_present_3.sent.vzEntry.attributes.etherT == 'ip'
+      - entry_present_3.sent.vzEntry.attributes.icmpv4T == 'echo'
+      - entry_present_3.sent.vzEntry.attributes.name == 'anstest3'
+      - entry_present_3.sent.vzEntry.attributes.prot == 'icmp'
       - entry_present_4 is changed
-      - 'entry_present_4.sent.vzEntry.attributes == {"dFromPort": "1000", "dToPort": "1000", "etherT": "ip", "name": "anstest4", "prot": "udp"}'
+      - entry_present_4.sent.vzEntry.attributes.dFromPort == '1000'
+      - entry_present_4.sent.vzEntry.attributes.dToPort == '1000'
+      - entry_present_4.sent.vzEntry.attributes.etherT == 'ip'
+      - entry_present_4.sent.vzEntry.attributes.name == 'anstest4'
+      - entry_present_4.sent.vzEntry.attributes.prot == 'udp'
       - present_missing_param is failed
       - 'present_missing_param.msg == "state is present but all of the following are missing: entry"'
       - present_incompatible_params is failed

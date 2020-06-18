@@ -83,7 +83,7 @@
 - name: Assert that CDP is Disabled
   assert:
     that:
-      - 'cdp_disable.current.0.cdpIfPol.attributes.adminSt == "disabled"'
+      - cdp_disable.current.0.cdpIfPol.attributes.adminSt == 'disabled'
 
 
 - name: Query CDP Policy

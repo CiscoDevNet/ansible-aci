@@ -90,11 +90,14 @@
     - intf_policy_leaf_polgrp_check_mode_present is changed
     - intf_policy_leaf_polgrp_present is changed
     - intf_policy_leaf_polgrp_present.previous == []
-    - 'intf_policy_leaf_polgrp_present.sent ==  {"infraAccBndlGrp": {"attributes": {"lagT": "link","name": "policygroupname_link"},"children": [{"infraRsFcIfPol": {"attributes": {"tnFcIfPolName": "fiberchannelpolicy"}}},{"infraRsHIfPol": {"attributes": {"tnFabricHIfPolName": "linklevelpolicy"}}}]}}'
+    - intf_policy_leaf_polgrp_present.sent.infraAccBndlGrp.attributes.lagT == 'link'
+    - intf_policy_leaf_polgrp_present.sent.infraAccBndlGrp.attributes.name == 'policygroupname_link'
+    - intf_policy_leaf_polgrp_present.sent.infraAccBndlGrp.children.0.infraRsFcIfPol.attributes.tnFcIfPolName == 'fiberchannelpolicy'
+    - intf_policy_leaf_polgrp_present.sent.infraAccBndlGrp.children.1.infraRsHIfPol.attributes.tnFabricHIfPolName == 'linklevelpolicy'
     - intf_policy_leaf_polgrp_idempotent is not changed
     - intf_policy_leaf_polgrp_idempotent.sent == {}
     - intf_policy_leaf_polgrp_update is changed
-    - 'intf_policy_leaf_polgrp_update.sent == {"infraAccBndlGrp": {"attributes": {"descr": "policygroup description"}}}'
+    - intf_policy_leaf_polgrp_update.sent.infraAccBndlGrp.attributes.descr == 'policygroup description'
 
 - name: Query interface policy leaf policy group (PC)
   cisco.aci.aci_interface_policy_leaf_policy_group:
@@ -209,11 +212,15 @@
     - intf_policy_leaf_polgrp_check_mode_present is changed
     - intf_policy_leaf_polgrp_present is changed
     - intf_policy_leaf_polgrp_present.previous == []
-    - 'intf_policy_leaf_polgrp_present.sent ==  {"infraAccBndlGrp": {"attributes": {"lagT": "node","name": "policygroupname_node"},"children": [{"infraRsFcIfPol": {"attributes": {"tnFcIfPolName": "fiberchannelpolicy"}}},{"infraRsHIfPol": {"attributes": {"tnFabricHIfPolName": "linklevelpolicy"}}}]}}'
+    - intf_policy_leaf_polgrp_present.sent.infraAccBndlGrp.attributes.lagT == 'node'
+    - intf_policy_leaf_polgrp_present.sent.infraAccBndlGrp.attributes.name == 'policygroupname_node'
+    - intf_policy_leaf_polgrp_present.sent.infraAccBndlGrp.children.0.infraRsFcIfPol.attributes.tnFcIfPolName == 'fiberchannelpolicy'
+    - intf_policy_leaf_polgrp_present.sent.infraAccBndlGrp.children.1.infraRsHIfPol.attributes.tnFabricHIfPolName == 'linklevelpolicy'
+    - intf_policy_leaf_polgrp_present.sent.infraAccBndlGrp.attributes.name == 'policygroupname_node'
     - intf_policy_leaf_polgrp_idempotent is not changed
     - intf_policy_leaf_polgrp_idempotent.sent == {}
     - intf_policy_leaf_polgrp_update is changed
-    - 'intf_policy_leaf_polgrp_update.sent == {"infraAccBndlGrp": {"attributes": {"descr": "policygroup description"}}}'
+    - intf_policy_leaf_polgrp_update.sent.infraAccBndlGrp.attributes.descr == 'policygroup description'
 
 - name: Query interface policy leaf policy group (VPC)
   cisco.aci.aci_interface_policy_leaf_policy_group:
@@ -363,11 +370,13 @@
     - intf_policy_leaf_polgrp_check_mode_present is changed
     - intf_policy_leaf_polgrp_present is changed
     - intf_policy_leaf_polgrp_present.previous == []
-    - 'intf_policy_leaf_polgrp_present.sent ==  {"infraAccPortGrp": {"attributes": {"name": "policygroupname_leaf"},"children": [{"infraRsFcIfPol": {"attributes": {"tnFcIfPolName": "fiberchannelpolicy"}}},{"infraRsHIfPol": {"attributes": {"tnFabricHIfPolName": "linklevelpolicy"}}}]}}'
+    - intf_policy_leaf_polgrp_present.sent.infraAccPortGrp.attributes.name == 'policygroupname_leaf'
+    - intf_policy_leaf_polgrp_present.sent.infraAccPortGrp.children.0.infraRsFcIfPol.attributes.tnFcIfPolName == 'fiberchannelpolicy'
+    - intf_policy_leaf_polgrp_present.sent.infraAccPortGrp.children.1.infraRsHIfPol.attributes.tnFabricHIfPolName == 'linklevelpolicy'
     - intf_policy_leaf_polgrp_idempotent is not changed
     - intf_policy_leaf_polgrp_idempotent.sent == {}
     - intf_policy_leaf_polgrp_update is changed
-    - 'intf_policy_leaf_polgrp_update.sent == {"infraAccPortGrp": {"attributes": {"descr": "policygroup description"}}}'
+    - intf_policy_leaf_polgrp_update.sent.infraAccPortGrp.attributes.descr == 'policygroup description'
 
 - name: Query interface policy leaf policy group (Leaf Access Port)
   cisco.aci.aci_interface_policy_leaf_policy_group:

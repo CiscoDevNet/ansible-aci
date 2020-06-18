@@ -48,20 +48,24 @@
     state: query
   register: snapshots
 
+- name: sort snapshot list
+  set_fact:
+    sorted_snapshots: '{{ snapshots.current.0.configSnapshotCont.children | sort(attribute="configSnapshot.attributes.createTime", reverse=True) }}'
+
 - name: compare snapshots
   cisco.aci.aci_config_rollback: &preview_rollback
     <<: *create_snapshot
     state: preview
     compare_export_policy: anstest
-    compare_snapshot: "{{ snapshots.current.0.configSnapshotCont.children[-1].configSnapshot.attributes.name }}"
-    snapshot: "{{ snapshots.current.0.configSnapshotCont.children[-2].configSnapshot.attributes.name }}"
+    compare_snapshot: "{{ sorted_snapshots[0].configSnapshot.attributes.name }}"
+    snapshot: "{{ sorted_snapshots[1].configSnapshot.attributes.name }}"
   register: rollback_preview
 
-- name: rollback to snapshot
+- name: rollback to snapshot with missing parameters
   cisco.aci.aci_config_rollback: &aci_rollback
     <<: *create_snapshot
     state: rollback
-    snapshot: "{{ snapshots.current.0.configSnapshotCont.children[-1].configSnapshot.attributes.name }}"
+    snapshot: "{{ sorted_snapshots[1].configSnapshot.attributes.name }}"
   ignore_errors: yes
   register: rollback_missing_param
 
@@ -82,11 +86,15 @@
     <<: *aci_tenant_absent
   register: tenant_removed
 
+- debug:
+    msg: '{{ rollback_preview }}'
+
 - name: rollback assertions
   assert:
     that:
       - rollback_preview is not changed
-      - '"<fvTenant name=\"anstest\" rn=\"tn-anstest\" status=\"deleted\">" in rollback_preview.preview'
+      - rollback_preview.preview.polUni.children[0].fvTenant.attributes.name == 'anstest'
+      - rollback_preview.preview.polUni.children[0].fvTenant.attributes.status == 'created'
       - '"snapshots.diff.xml" in rollback_preview.url'
       - rollback_missing_param is failed
       - 'rollback_missing_param.msg == "state is rollback but all of the following are missing: import_policy"'

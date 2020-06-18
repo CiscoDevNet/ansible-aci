@@ -46,7 +46,11 @@
   assert:
     that:
       - range_present_check_mode is changed
-      - 'range_present_check_mode.sent == {"fvnsEncapBlk": {"attributes": {"allocMode": "inherit", "descr": "Ansible Test", "from": "vlan-20", "name": "anstest", "to": "vlan-40"}}}'
+      - range_present_check_mode.sent.fvnsEncapBlk.attributes.allocMode == 'inherit'
+      - range_present_check_mode.sent.fvnsEncapBlk.attributes.descr == 'Ansible Test'
+      - range_present_check_mode.sent.fvnsEncapBlk.attributes.name == 'anstest'
+      - range_present_check_mode.sent.fvnsEncapBlk.attributes.from == 'vlan-20'
+      - range_present_check_mode.sent.fvnsEncapBlk.attributes.to == 'vlan-40'
 
 - name: create vlan pool range - creation works
   cisco.aci.aci_encap_pool_range:

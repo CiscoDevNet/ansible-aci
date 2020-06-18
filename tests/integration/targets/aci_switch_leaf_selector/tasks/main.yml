@@ -68,11 +68,15 @@
     - sw_leaf_selec_check_mode_present is changed
     - sw_leaf_selec_present is changed
     - sw_leaf_selec_present.previous == []
-    - 'sw_leaf_selec_present.sent ==  {"infraLeafS": {"attributes": {"name": "leaf_selector_name"}, "children": [{"infraNodeBlk": {"attributes": {"from_": "1011", "name": "node_blk_name", "to_": "1011"}}}]}}'
+    - sw_leaf_selec_present.sent.infraLeafS.attributes.name == 'leaf_selector_name'
+    - sw_leaf_selec_present.sent.infraLeafS.children.0.infraNodeBlk.attributes.from_ == '1011'
+    - sw_leaf_selec_present.sent.infraLeafS.children.0.infraNodeBlk.attributes.to_ == '1011'
+    - sw_leaf_selec_present.sent.infraLeafS.children.0.infraNodeBlk.attributes.name == 'node_blk_name'
     - sw_leaf_selec_idempotent is not changed
     - sw_leaf_selec_idempotent.sent == {}
     - sw_leaf_selec_update is changed
-    - 'sw_leaf_selec_update.sent == {"infraLeafS": {"attributes": {},"children": [{"infraRsAccNodePGrp": {"attributes": {"tDn": "uni/infra/funcprof/accnodepgrp-anstest_policygroupname"}}}]}}'
+    - sw_leaf_selec_update.sent.infraLeafS.attributes == {}
+    - sw_leaf_selec_update.sent.infraLeafS.children.0.infraRsAccNodePGrp.attributes.tDn == 'uni/infra/funcprof/accnodepgrp-anstest_policygroupname'
 
 - name: Query Specific switch policy leaf profile selector
   cisco.aci.aci_switch_leaf_selector:

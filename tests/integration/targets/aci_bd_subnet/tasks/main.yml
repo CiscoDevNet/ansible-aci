@@ -94,20 +94,23 @@
   assert:
     that:
       - create_check_mode is changed
-      - 'create_check_mode.sent == {"fvSubnet": {"attributes": {"descr": "Ansible Test", "ip": "10.100.100.1/24", "name": "anstest"}}}'
+      - create_check_mode.sent.fvSubnet.attributes.descr == create_subnet.sent.fvSubnet.attributes.descr == 'Ansible Test'
+      - create_check_mode.sent.fvSubnet.attributes.ip == create_subnet.sent.fvSubnet.attributes.ip == '10.100.100.1/24'
+      - create_check_mode.sent.fvSubnet.attributes.name == create_subnet.sent.fvSubnet.attributes.name == 'anstest'
       - create_subnet is changed
-      - 'create_subnet.sent == {"fvSubnet": {"attributes": {"descr": "Ansible Test", "ip": "10.100.100.1/24", "name": "anstest"}}}'
       - create_subnet.previous == []
       - create_subnet2 is changed
       - create_subnet2.sent == create_subnet2.proposed
       - create_subnet2.sent.fvSubnet.attributes.scope == "private,shared"
-      - 'create_subnet2.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes == {"tnL3extOutName": "default", "tnRtctrlProfileName": "default"}'
+      - create_subnet2.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes.tnL3extOutName == 'default'
+      - create_subnet2.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes.tnRtctrlProfileName == 'default'
       - create_idempotency is not changed
       - create_idempotency.previous != []
       - modify_subnet is changed
       - modify_subnet.previous != []
       - modify_subnet.sent != modify_subnet.proposed
-      - 'modify_subnet.sent == {"fvSubnet": {"attributes": {"ctrl": "querier", "scope": "public,shared"}}}'
+      - modify_subnet.sent.fvSubnet.attributes.ctrl == 'querier'
+      - modify_subnet.sent.fvSubnet.attributes.scope == 'public,shared'
       - create_bad_scope is failed
       - create_bad_scope.msg.startswith("Parameter 'scope' cannot be both 'private' and 'public'")
       - create_incomplete_data is failed

@@ -53,7 +53,9 @@
       - create.sent.configExportP.attributes.adminSt == "triggered"
       - create_update is not failed
       - create_update is changed
-      - 'create_update.sent == {"configExportP": {"attributes": {"adminSt": "triggered", "format": "xml", "includeSecureFields": "yes"}}}'
+      - create_update.sent.configExportP.attributes.adminSt == 'triggered'
+      - create_update.sent.configExportP.attributes.format == 'xml'
+      - create_update.sent.configExportP.attributes.includeSecureFields == 'yes'
       - invalid_max_count is failed
       - invalid_max_count.msg == "Parameter 'max_count' must be a number between 1 and 10"
       - missing_param is failed
@@ -132,7 +134,7 @@
     that:
       - delete_snapshot is not failed
       - delete_snapshot is changed
-      - 'delete_snapshot.sent == {"configSnapshot": {"attributes": {"retire": "yes"}}}'
+      - delete_snapshot.sent.configSnapshot.attributes.retire == 'yes'
       - delete_snapshot.previous != []
       - delete_snapshot.previous.0.configSnapshot.attributes.name == test_snapshot
       - delete_idempotent is not failed

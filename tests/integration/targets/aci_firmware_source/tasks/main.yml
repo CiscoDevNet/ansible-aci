@@ -44,8 +44,12 @@
 #    that:
 #    - cm_add_source is changed
 #    - nm_add_source is changed
-#    - 'cm_add_source.sent == nm_add_source.sent == {"firmwareOSource": {"attributes": {"name": "aci-msft-pkg-3.1.1i.zip", "proto": "http", "url": "foobar.cisco.com/download/cisco/aci/aci-msft-pkg-3.1.1i.zip"}}}'
-#    - 'cm_add_source.proposed == nm_add_source.proposed == {"firmwareOSource": {"attributes": {"name": "aci-msft-pkg-3.1.1i.zip", "proto": "http", "url": "foobar.cisco.com/download/cisco/aci/aci-msft-pkg-3.1.1i.zip"}}}'
+#    - cm_add_source.sent.firmwareOSource.attributes.name == nm_add_source.sent.firmwareOSource.attributes.name == 'aci-msft-pkg-3.1.1i.zip'
+#    - cm_add_source.sent.firmwareOSource.attributes.proto == nm_add_source.sent.firmwareOSource.attributes.proto == 'http'
+#    - cm_add_source.sent.firmwareOSource.attributes.url == nm_add_source.sent.firmwareOSource.attributes.url == 'foobar.cisco.com/download/cisco/aci/aci-msft-pkg-3.1.1i.zip'
+#    - cm_add_source.proposed.firmwareOSource.attributes.name == nm_add_source.proposed.firmwareOSource.attributes.name == 'aci-msft-pkg-3.1.1i.zip'
+#    - cm_add_source.proposed.firmwareOSource.attributes.proto == nm_add_source.proposed.firmwareOSource.attributes.proto == 'http'
+#    - cm_add_source.proposed.firmwareOSource.attributes.url == nm_add_source.proposed.firmwareOSource.attributes.url == 'foobar.cisco.com/download/cisco/aci/aci-msft-pkg-3.1.1i.zip'
 #    - cm_add_source.current == cm_add_source.previous == nm_add_source.previous == []
 #    - nm_add_source.current.0.firmwareOSource.attributes.name == 'aci-msft-pkg-3.1.1i.zip'
 #    - nm_add_source.current.0.firmwareOSource.attributes.proto == 'http'
@@ -134,7 +138,8 @@
 #    that:
 #    - cm_remove_source is changed
 #    - nm_remove_source is changed
-#    - 'cm_remove_source.current == cm_remove_source.previous == nm_remove_source.previous == [{"infraRsDomP": {"attributes": {"dn": "uni/infra/attentp-test_aep/rsdomP-[uni/phys-phys_dom]", "tDn": "uni/phys-phys_dom"}}}]'
+#    - cm_remove_source.current.0.infraRsDomP.attributes.dn == cm_remove_source.previous.0.infraRsDomP.attributes.dn == nm_remove_source.previous.0.infraRsDomP.attributes.dn == 'uni/infra/attentp-test_aep/rsdomP-[uni/phys-phys_dom]'
+#    - cm_remove_source.current.0.infraRsDomP.attributes.tDn == cm_remove_source.previous.0.infraRsDomP.attributes.tDn == nm_remove_source.previous.0.infraRsDomP.attributes.tDn == 'uni/phys-phys_dom'
 #    - nm_remove_source.current == []
 #
 #- name: Remove source again (check_mode)

@@ -44,10 +44,11 @@
     that:
     - cm_add_domain is changed
     - nm_add_domain is changed
-    - 'cm_add_domain.sent == nm_add_domain.sent == {"physDomP": {"attributes": {"name": "phys_dom"}}}'
-    - 'cm_add_domain.proposed == nm_add_domain.proposed == {"physDomP": {"attributes": {"name": "phys_dom"}}}'
+    - cm_add_domain.sent.physDomP.attributes.name == nm_add_domain.sent.physDomP.attributes.name == 'phys_dom'
+    - cm_add_domain.proposed.physDomP.attributes.name  == nm_add_domain.proposed.physDomP.attributes.name  == 'phys_dom'
     - cm_add_domain.current == cm_add_domain.previous == nm_add_domain.previous == []
-    - 'nm_add_domain.current == [{"physDomP": {"attributes": {"annotation": "", "dn": "uni/phys-phys_dom", "name": "phys_dom", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - nm_add_domain.current.0.physDomP.attributes.name == 'phys_dom'
+    - nm_add_domain.current.0.physDomP.attributes.dn == 'uni/phys-phys_dom'
 
 - name: Add physical domain again (check_mode)
   cisco.aci.aci_domain: *domain_present
@@ -132,7 +133,8 @@
     that:
     - cm_remove_domain is changed
     - nm_remove_domain is changed
-    - 'cm_remove_domain.current == cm_remove_domain.previous == nm_remove_domain.previous == [{"physDomP": {"attributes": {"annotation": "", "dn": "uni/phys-phys_dom", "name": "phys_dom", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - cm_remove_domain.current.0.physDomP.attributes.name == cm_remove_domain.previous.0.physDomP.attributes.name == nm_remove_domain.previous.0.physDomP.attributes.name == 'phys_dom'
+    - cm_remove_domain.current.0.physDomP.attributes.dn == cm_remove_domain.previous.0.physDomP.attributes.dn == nm_remove_domain.previous.0.physDomP.attributes.dn == 'uni/phys-phys_dom'
     - nm_remove_domain.current == []
 
 - name: Remove physical domain again (check_mode)

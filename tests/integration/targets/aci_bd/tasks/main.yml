@@ -87,7 +87,8 @@
   assert:
     that:
       - bd_present_check_mode is changed
-      - 'bd_present_check_mode.sent == {"fvBD": {"attributes": {"descr": "Ansible Test", "name": "anstest"}}}'
+      - bd_present_check_mode.sent.fvBD.attributes.descr == 'Ansible Test'
+      - bd_present_check_mode.sent.fvBD.attributes.name == 'anstest'
       - bd_present is changed
       - bd_present.sent == bd_present_check_mode.sent
       - bd_present.previous == []
@@ -96,9 +97,16 @@
       - bd_update is changed
       - bd_update.previous != []
       - bd_update.sent != bd_update.proposed
-      - 'bd_update.sent == {"fvBD": {"attributes": {"descr": "Ansible Test Update"}, "children": [{"fvRsCtx": {"attributes": {"tnFvCtxName": "anstest"}}}]}}'
-      - 'bd_present_2.sent.fvBD.attributes == {"arpFlood": "yes", "descr": "Ansible Test", "ipLearning": "no", "multiDstPktAct": "drop", "name": "anstest2",
-      "unicastRoute": "no", "unkMacUcastAct": "flood", "unkMcastAct": "opt-flood"}'
+      - bd_update.sent.fvBD.attributes.descr == 'Ansible Test Update'
+      - bd_update.sent.fvBD.children.0.fvRsCtx.attributes.tnFvCtxName == 'anstest' 
+      - bd_present_2.sent.fvBD.attributes.arpFlood == 'yes'
+      - bd_present_2.sent.fvBD.attributes.descr == 'Ansible Test'
+      - bd_present_2.sent.fvBD.attributes.ipLearning == 'no'
+      - bd_present_2.sent.fvBD.attributes.multiDstPktAct == 'drop'
+      - bd_present_2.sent.fvBD.attributes.name == 'anstest2'
+      - bd_present_2.sent.fvBD.attributes.unicastRoute == 'no'
+      - bd_present_2.sent.fvBD.attributes.unkMacUcastAct == 'flood'
+      - bd_present_2.sent.fvBD.attributes.unkMcastAct == 'opt-flood'
       - bd_present_missing_param is failed
       - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
 

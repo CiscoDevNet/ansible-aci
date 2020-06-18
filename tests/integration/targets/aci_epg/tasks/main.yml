@@ -82,7 +82,7 @@
       - epg_present_idempotent is not changed
       - epg_present_idempotent.sent == {}
       - epg_present_update is changed
-      - 'epg_present_update.sent == {"fvAEPg": {"attributes": {"descr": "Ansible Test Update"}}}'
+      - epg_present_update.sent.fvAEPg.attributes.descr == 'Ansible Test Update'
       - epg_present_missing_param is failed
       - 'epg_present_missing_param.msg == "state is present but all of the following are missing: ap"'
 
