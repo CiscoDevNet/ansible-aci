@@ -69,7 +69,8 @@ author:
 
 # FIXME: Add more, better examples
 EXAMPLES = r'''
-- cisco.aci.aci_interface_policy_l2:
+- name: Add a Layer 2 interface policy
+  cisco.aci.aci_interface_policy_l2:
     host: '{{ hostname }}'
     username: '{{ username }}'
     password: '{{ password }}'
