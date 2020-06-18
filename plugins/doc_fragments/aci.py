@@ -15,6 +15,7 @@ options:
   host:
     description:
     - IP Address or hostname of APIC resolvable by Ansible control host.
+    - If the value is not specified in the task, the value of environment variable C(ACI_HOST) will be used instead.
     type: str
     required: yes
     aliases: [ hostname ]
@@ -26,6 +27,7 @@ options:
   username:
     description:
     - The username to use for authentication.
+    - If the value is not specified in the task, the value of environment variable C(ACI_USERNAME) will be used instead.
     type: str
     default: admin
     aliases: [ user ]
@@ -33,12 +35,14 @@ options:
     description:
     - The password to use for authentication.
     - This option is mutual exclusive with C(private_key). If C(private_key) is provided too, it will be used instead.
+    - If the value is not specified in the task, the value of environment variable C(ACI_PASSWORD) will be used instead.
     type: str
   private_key:
     description:
     - Either a PEM-formatted private key file or the private key content used for signature-based authentication.
     - This value also influences the default C(certificate_name) that is used.
     - This option is mutual exclusive with C(password). If C(password) is provided too, it will be ignored.
+    - If the value is not specified in the task, the value of environment variable C(ACI_PRIVATE_KEY) will be used instead.
     type: str
     aliases: [ cert_key ]
   certificate_name:
@@ -76,6 +80,7 @@ options:
     description:
     - If C(no), SSL certificates will not be validated.
     - This should only set to C(no) when used on personally controlled sites using self-signed certificates.
+    - If the value is not specified in the task, the value of environment variable C(ACI_VALIDATE_CERTS) will be used instead.
     type: bool
     default: yes
   output_path:
