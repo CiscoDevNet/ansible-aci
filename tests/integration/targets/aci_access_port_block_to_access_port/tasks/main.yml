@@ -27,6 +27,12 @@
     access_port_selector: anstest_accessportselector
 
 # TODO: Ensure that leaf Policy Group Exists (module missing) (infra:AccPortGrp)
+# Ensure block does not exist.
+- name: Bind an Access Port Block to an Interface Access Port Selector - check mode works
+  cisco.aci.aci_access_port_block_to_access_port:
+    <<: *aci_access_port_to_interface_policy_leaf_profile_present
+    leaf_port_blk: anstest_leafportblkname
+    state: absent
 
 - name: Bind an Access Port Block to an Interface Access Port Selector - check mode works
   cisco.aci.aci_access_port_block_to_access_port: &aci_access_port_block_to_access_port_present
@@ -55,18 +61,20 @@
   register: accessportblock_to_accessport_update
 
 # TODO: also test for errors
-- name: present assertions
+- name: present assertions - create / indempotency / update works
   assert:
     that:
     - accessportblock_to_accessport_check_mode_present is changed
     - accessportblock_to_accessport_present is changed
     - accessportblock_to_accessport_present.previous == []
-    - 'accessportblock_to_accessport_present.sent == {"infraPortBlk": {"attributes": {"descr": "anstest_leafportblkdesc", "name": "anstest_leafportblkname", "fromPort": "13", "toPort": "16"}}}'
+    - accessportblock_to_accessport_present.sent.infraPortBlk.attributes.descr == 'anstest_leafportblkdesc'
+    - accessportblock_to_accessport_present.sent.infraPortBlk.attributes.name == 'anstest_leafportblkname'
+    - accessportblock_to_accessport_present.sent.infraPortBlk.attributes.fromPort == '13'
+    - accessportblock_to_accessport_present.sent.infraPortBlk.attributes.toPort == '16'
     - accessportblock_to_accessport_idempotent is not changed
     - accessportblock_to_accessport_idempotent.sent == {}
     - accessportblock_to_accessport_update is changed
-    - 'accessportblock_to_accessport_update.sent == {"infraPortBlk": {"attributes": {"toPort": "15"}}}'
-
+    - accessportblock_to_accessport_update.sent.infraPortBlk.attributes.toPort == '15'
 
 - name: Query Specific port block and access_port_selector binding
   cisco.aci.aci_access_port_block_to_access_port:
@@ -74,7 +82,7 @@
     state: query
   register: binding_query
 
-- name: present assertions
+- name: query assertions
   assert:
     that:
       - binding_query is not changed

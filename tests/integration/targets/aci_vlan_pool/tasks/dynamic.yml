@@ -43,8 +43,10 @@
     that:
     - cm_add_dynamic_vlan_pool is changed
     - nm_add_dynamic_vlan_pool is changed
-    - 'cm_add_dynamic_vlan_pool.sent == nm_add_dynamic_vlan_pool.sent == {"fvnsVlanInstP": {"attributes": {"allocMode": "dynamic", "name": "anstest"}}}'
-    - 'cm_add_dynamic_vlan_pool.proposed == nm_add_dynamic_vlan_pool.proposed == {"fvnsVlanInstP": {"attributes": {"allocMode": "dynamic", "name": "anstest"}}}'
+    - cm_add_dynamic_vlan_pool.sent.fvnsVlanInstP.attributes.allocMode == nm_add_dynamic_vlan_pool.sent.fvnsVlanInstP.attributes.allocMode == 'dynamic'
+    - cm_add_dynamic_vlan_pool.sent.fvnsVlanInstP.attributes.name == nm_add_dynamic_vlan_pool.sent.fvnsVlanInstP.attributes.name == 'anstest'
+    - cm_add_dynamic_vlan_pool.proposed.fvnsVlanInstP.attributes.allocMode == nm_add_dynamic_vlan_pool.proposed.fvnsVlanInstP.attributes.allocMode == 'dynamic'
+    - cm_add_dynamic_vlan_pool.proposed.fvnsVlanInstP.attributes.name == nm_add_dynamic_vlan_pool.proposed.fvnsVlanInstP.attributes.name == 'anstest'
     - cm_add_dynamic_vlan_pool.previous == nm_add_dynamic_vlan_pool.previous == []
     # NOTE: We cannot fix this easily
     - cm_add_dynamic_vlan_pool.current == []
@@ -89,8 +91,10 @@
     that:
     - cm_add_dynamic_vlan_pool_descr is changed
     - nm_add_dynamic_vlan_pool_descr is changed
-    - 'cm_add_dynamic_vlan_pool_descr.sent == nm_add_dynamic_vlan_pool_descr.sent == {"fvnsVlanInstP": {"attributes": {"descr": "Ansible test dynamic vlan pool"}}}'
-    - 'cm_add_dynamic_vlan_pool_descr.proposed == nm_add_dynamic_vlan_pool_descr.proposed == {"fvnsVlanInstP": {"attributes": {"allocMode": "dynamic", "descr": "Ansible test dynamic vlan pool", "name": "anstest"}}}'
+    - cm_add_dynamic_vlan_pool_descr.sent.fvnsVlanInstP.attributes.descr == nm_add_dynamic_vlan_pool_descr.sent.fvnsVlanInstP.attributes.descr == 'Ansible test dynamic vlan pool'
+    - cm_add_dynamic_vlan_pool_descr.proposed.fvnsVlanInstP.attributes.allocMode == nm_add_dynamic_vlan_pool_descr.proposed.fvnsVlanInstP.attributes.allocMode == 'dynamic'
+    - cm_add_dynamic_vlan_pool_descr.proposed.fvnsVlanInstP.attributes.descr == nm_add_dynamic_vlan_pool_descr.proposed.fvnsVlanInstP.attributes.descr == 'Ansible test dynamic vlan pool'
+    - cm_add_dynamic_vlan_pool_descr.proposed.fvnsVlanInstP.attributes.name == nm_add_dynamic_vlan_pool_descr.proposed.fvnsVlanInstP.attributes.name == 'anstest'
     - cm_add_dynamic_vlan_pool_descr.previous == nm_add_dynamic_vlan_pool_descr.previous == cm_add_dynamic_vlan_pool_descr.current == nm_add_dynamic_vlan_pool.current
     - nm_add_dynamic_vlan_pool_descr.current.0.fvnsVlanInstP.attributes.allocMode == 'dynamic'
     - nm_add_dynamic_vlan_pool_descr.current.0.fvnsVlanInstP.attributes.descr == 'Ansible test dynamic vlan pool'
@@ -206,7 +210,10 @@
     that:
     - cm_remove_dynamic_vlan_pool is changed
     - nm_remove_dynamic_vlan_pool is changed
-    - 'cm_remove_dynamic_vlan_pool.current == cm_remove_dynamic_vlan_pool.previous == nm_remove_dynamic_vlan_pool.previous == [{"fvnsVlanInstP": {"attributes": {"allocMode": "dynamic", "annotation": "", "descr": "Ansible test dynamic vlan pool", "dn": "uni/infra/vlanns-[anstest]-dynamic", "name": "anstest", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - cm_remove_dynamic_vlan_pool.current.0.fvnsVlanInstP.attributes.allocMode == cm_remove_dynamic_vlan_pool.previous.0.fvnsVlanInstP.attributes.allocMode == nm_remove_dynamic_vlan_pool.previous.0.fvnsVlanInstP.attributes.allocMode == 'dynamic'
+    - cm_remove_dynamic_vlan_pool.current.0.fvnsVlanInstP.attributes.descr == cm_remove_dynamic_vlan_pool.previous.0.fvnsVlanInstP.attributes.descr == nm_remove_dynamic_vlan_pool.previous.0.fvnsVlanInstP.attributes.descr == 'Ansible test dynamic vlan pool'
+    - cm_remove_dynamic_vlan_pool.current.0.fvnsVlanInstP.attributes.dn == cm_remove_dynamic_vlan_pool.previous.0.fvnsVlanInstP.attributes.dn == nm_remove_dynamic_vlan_pool.previous.0.fvnsVlanInstP.attributes.dn == 'uni/infra/vlanns-[anstest]-dynamic'
+    - cm_remove_dynamic_vlan_pool.current.0.fvnsVlanInstP.attributes.name == cm_remove_dynamic_vlan_pool.previous.0.fvnsVlanInstP.attributes.name == nm_remove_dynamic_vlan_pool.previous.0.fvnsVlanInstP.attributes.name == 'anstest'
     - nm_remove_dynamic_vlan_pool.current == []
 
 - name: Remove dynamic vlan pool again (check_mode)

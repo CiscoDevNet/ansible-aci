@@ -55,7 +55,11 @@
   assert:
     that:
       - encap_block_present_check_mode is changed
-      - 'encap_block_present_check_mode.sent == {"fvnsEncapBlk": {"attributes": {"allocMode": "inherit", "descr": "Ansible Test", "from": "vlan-20", "name": "anstest", "to": "vlan-40"}}}'
+      - encap_block_present_check_mode.sent.fvnsEncapBlk.attributes.allocMode == 'inherit'
+      - encap_block_present_check_mode.sent.fvnsEncapBlk.attributes.descr == 'Ansible Test'
+      - encap_block_present_check_mode.sent.fvnsEncapBlk.attributes.from == 'vlan-20'
+      - encap_block_present_check_mode.sent.fvnsEncapBlk.attributes.to == 'vlan-40'
+      - encap_block_present_check_mode.sent.fvnsEncapBlk.attributes.name == 'anstest'
 
 - name: Create vlan pool encap_block - creation works
   cisco.aci.aci_vlan_pool_encap_block:

@@ -82,7 +82,7 @@
     - intftoleaf_check_mode_present is changed
     - intftoleaf_present is changed
     - intftoleaf_present.previous == []
-    - 'intftoleaf_present.sent == {"infraRsAccPortP": {"attributes": {"tDn": "uni/infra/accportprof-leafintprftest"}}}'
+    - intftoleaf_present.sent.infraRsAccPortP.attributes.tDn == 'uni/infra/accportprof-leafintprftest'
     - intftoleaf_idempotent is not changed
     - intftoleaf_idempotent.sent == {}
 

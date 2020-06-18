@@ -30,7 +30,9 @@
   assert:
     that:
       - create_check_mode is changed
-      - 'create_check_mode.sent == {"fvnsVlanInstP": {"attributes": {"allocMode": "static", "descr": "Ansible Test", "name": "anstest"}}}'
+      - create_check_mode.sent.fvnsVlanInstP.attributes.allocMode == 'static'
+      - create_check_mode.sent.fvnsVlanInstP.attributes.descr == 'Ansible Test'
+      - create_check_mode.sent.fvnsVlanInstP.attributes.name == 'anstest'
 
 - name: create static vlan pool - creation works
   cisco.aci.aci_encap_pool:
@@ -56,7 +58,9 @@
     that:
       - create_dynamic is changed
       - create_dynamic.previous == []
-      - 'create_dynamic.sent == {"fvnsVlanInstP": {"attributes": {"allocMode": "dynamic", "descr": "Ansible Test", "name": "anstest"}}}'
+      - create_dynamic.sent.fvnsVlanInstP.attributes.allocMode == 'dynamic'
+      - create_dynamic.sent.fvnsVlanInstP.attributes.descr == 'Ansible Test'
+      - create_dynamic.sent.fvnsVlanInstP.attributes.name == 'anstest'
 
 - name: create static vlan pool again - idempotency works
   cisco.aci.aci_encap_pool:
@@ -67,7 +71,10 @@
   assert:
     that:
       - idempotent_static is not changed
-      - 'idempotent_static.previous == [{"fvnsVlanInstP": {"attributes": {"allocMode": "static", "annotation": "", "descr": "Ansible Test", "dn": "uni/infra/vlanns-[anstest]-static", "name": "anstest", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+      - idempotent_static.previous.0.fvnsVlanInstP.attributes.allocMode == 'static'
+      - idempotent_static.previous.0.fvnsVlanInstP.attributes.descr == 'Ansible Test'
+      - idempotent_static.previous.0.fvnsVlanInstP.attributes.dn == 'uni/infra/vlanns-[anstest]-static'
+      - idempotent_static.previous.0.fvnsVlanInstP.attributes.name == 'anstest'
       - idempotent_static.sent == {}
 
 - name: create dynamic vlan pool again - idempotency works
@@ -79,7 +86,10 @@
   assert:
     that:
       - idempotent_dynamic is not changed
-      - 'idempotent_dynamic.previous == [{"fvnsVlanInstP": {"attributes": {"allocMode": "dynamic", "annotation": "", "descr": "Ansible Test", "dn": "uni/infra/vlanns-[anstest]-dynamic", "name": "anstest", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+      - idempotent_dynamic.previous.0.fvnsVlanInstP.attributes.allocMode == 'dynamic'
+      - idempotent_dynamic.previous.0.fvnsVlanInstP.attributes.descr == 'Ansible Test'
+      - idempotent_dynamic.previous.0.fvnsVlanInstP.attributes.dn == 'uni/infra/vlanns-[anstest]-dynamic'
+      - idempotent_dynamic.previous.0.fvnsVlanInstP.attributes.name == 'anstest'
       - idempotent_dynamic.sent == {}
  
 - name: update static vlan pool - update works
@@ -92,7 +102,7 @@
   assert:
     that:
       - update_static is changed
-      - 'update_static.sent == {"fvnsVlanInstP": {"attributes": {"descr": "Ansible Test Change"}}}'
+      - update_static.sent.fvnsVlanInstP.attributes.descr == 'Ansible Test Change'
 
 - name: update dynamic vlan pool - update works
   cisco.aci.aci_encap_pool:
@@ -104,7 +114,7 @@
   assert:
     that:
       - update_dynamic is changed
-      - 'update_dynamic.sent == {"fvnsVlanInstP": {"attributes": {"descr": "Ansible Test Change"}}}'
+      - update_dynamic.sent.fvnsVlanInstP.attributes.descr == 'Ansible Test Change'
 
 - name: missing param - failure message works
   cisco.aci.aci_encap_pool:

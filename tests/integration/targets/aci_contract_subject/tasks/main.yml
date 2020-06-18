@@ -73,7 +73,8 @@
   assert:
     that:
       - subject_present_check_mode is changed
-      - 'subject_present_check_mode.sent == {"vzSubj": {"attributes": {"descr": "Ansible Test", "name": "anstest"}}}'
+      - subject_present_check_mode.sent.vzSubj.attributes.descr == 'Ansible Test'
+      - subject_present_check_mode.sent.vzSubj.attributes.name == 'anstest'
       - subject_present is changed
       - subject_present.previous == []
       - subject_present.sent == subject_present_check_mode.sent
@@ -81,9 +82,13 @@
       - subject_present_idempotent.previous != []
       - subject_update is changed
       - subject_update.sent != subject_update.proposed
-      - 'subject_update.sent.vzSubj.attributes == {"prio": "level2", "provMatchT": "AtmostOne"}'
+      - subject_update.sent.vzSubj.attributes.prio == 'level2'
+      - subject_update.sent.vzSubj.attributes.provMatchT == 'AtmostOne'
       - subject_present_2 is changed
-      - 'subject_present_2.sent.vzSubj.attributes == {"consMatchT": "All", "name": "anstest2", "prio": "level3", "revFltPorts": "no"}'
+      - subject_present_2.sent.vzSubj.attributes.consMatchT == 'All'
+      - subject_present_2.sent.vzSubj.attributes.name == 'anstest2'
+      - subject_present_2.sent.vzSubj.attributes.prio == 'level3'
+      - subject_present_2.sent.vzSubj.attributes.revFltPorts == 'no'
       - present_missing_param is failed
       - 'present_missing_param.msg == "state is present but all of the following are missing: contract, subject"'
 

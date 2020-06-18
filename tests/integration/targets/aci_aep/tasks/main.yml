@@ -48,8 +48,9 @@
     - cm_add_aep is changed
     - nm_add_aep is changed
     - nm_add_aep.previous == nm_add_aep.previous == cm_add_aep.current == []
-    - 'nm_add_aep.current == [{"infraAttEntityP": {"attributes": {"annotation": "", "descr": "", "dn": "uni/infra/attentp-ansible_test", "name": "ansible_test", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
-    - 'cm_add_aep.proposed == nm_add_aep.proposed == cm_add_aep.sent == nm_add_aep.sent == {"infraAttEntityP": {"attributes": {"name": "ansible_test"}}}'
+    - nm_add_aep.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
+    - nm_add_aep.current[0].infraAttEntityP.attributes.name == 'ansible_test'
+    - cm_add_aep.proposed.infraAttEntityP.attributes.name == nm_add_aep.proposed.infraAttEntityP.attributes.name == cm_add_aep.sent.infraAttEntityP.attributes.name == nm_add_aep.sent.infraAttEntityP.attributes.name == 'ansible_test'
 
 - name: Add AEP again (check_mode)
   cisco.aci.aci_aep: *aep_present
@@ -65,8 +66,9 @@
     that:
     - cm_add_aep_again is not changed
     - nm_add_aep_again is not changed
-    - 'nm_add_aep_again.previous == nm_add_aep_again.previous == cm_add_aep_again.current == nm_add_aep_again.current == [{"infraAttEntityP": {"attributes": {"annotation": "", "descr": "", "dn": "uni/infra/attentp-ansible_test", "name": "ansible_test", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
-    - 'cm_add_aep_again.proposed == nm_add_aep_again.proposed == {"infraAttEntityP": {"attributes": {"name": "ansible_test"}}}'
+    - nm_add_aep_again.previous[0].infraAttEntityP.attributes.dn == nm_add_aep_again.previous[0].infraAttEntityP.attributes.dn == cm_add_aep_again.current[0].infraAttEntityP.attributes.dn == nm_add_aep_again.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
+    - nm_add_aep_again.previous[0].infraAttEntityP.attributes.name == nm_add_aep_again.previous[0].infraAttEntityP.attributes.name == cm_add_aep_again.current[0].infraAttEntityP.attributes.name == nm_add_aep_again.current[0].infraAttEntityP.attributes.name == 'ansible_test'
+    - cm_add_aep_again.proposed.infraAttEntityP.attributes.name == nm_add_aep_again.proposed.infraAttEntityP.attributes.name == 'ansible_test'
     - cm_add_aep_again.sent == nm_add_aep_again.sent == {}
 
 
@@ -89,10 +91,14 @@
     that:
     - cm_add_aep_descr is changed
     - nm_add_aep_descr is changed
-    - 'cm_add_aep_descr.proposed == nm_add_aep_descr.proposed == {"infraAttEntityP": {"attributes": {"descr": "Ansible test AEP", "name": "ansible_test"}}}'
-    - 'cm_add_aep_descr.sent == nm_add_aep_descr.sent == {"infraAttEntityP": {"attributes": {"descr": "Ansible test AEP"}}}'
-    - 'cm_add_aep_descr.previous == nm_add_aep_descr.previous == cm_add_aep_descr.current == [{"infraAttEntityP": {"attributes": {"annotation": "", "descr": "", "dn": "uni/infra/attentp-ansible_test", "name": "ansible_test", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
-    - 'nm_add_aep_descr.current == [{"infraAttEntityP": {"attributes": {"annotation": "", "descr": "Ansible test AEP", "dn": "uni/infra/attentp-ansible_test", "name": "ansible_test", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - cm_add_aep_descr.proposed.infraAttEntityP.attributes.descr == nm_add_aep_descr.proposed.infraAttEntityP.attributes.descr == 'Ansible test AEP'
+    - cm_add_aep_descr.proposed.infraAttEntityP.attributes.name == nm_add_aep_descr.proposed.infraAttEntityP.attributes.name == 'ansible_test'
+    - cm_add_aep_descr.sent.infraAttEntityP.attributes.descr == nm_add_aep_descr.sent.infraAttEntityP.attributes.descr == 'Ansible test AEP'
+    - cm_add_aep_descr.previous.0.infraAttEntityP.attributes.dn == nm_add_aep_descr.previous.0.infraAttEntityP.attributes.dn == cm_add_aep_descr.current.0.infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
+    - cm_add_aep_descr.previous.0.infraAttEntityP.attributes.name == nm_add_aep_descr.previous.0.infraAttEntityP.attributes.name == cm_add_aep_descr.current.0.infraAttEntityP.attributes.name == 'ansible_test'
+    - nm_add_aep_descr.current.0.infraAttEntityP.attributes.descr == 'Ansible test AEP'
+    - nm_add_aep_descr.current.0.infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
+    - nm_add_aep_descr.current.0.infraAttEntityP.attributes.name == 'ansible_test'
 
 - name: Change description of AEP again (check_mode)
   cisco.aci.aci_aep:
@@ -112,9 +118,12 @@
     that:
     - cm_add_aep_descr_again is not changed
     - nm_add_aep_descr_again is not changed
-    - 'cm_add_aep_descr_again.proposed == nm_add_aep_descr_again.proposed == {"infraAttEntityP": {"attributes": {"descr": "Ansible test AEP", "name": "ansible_test"}}}'
-    - 'cm_add_aep_descr_again.sent == nm_add_aep_descr_again.sent == {}'
-    - 'cm_add_aep_descr_again.previous == nm_add_aep_descr_again.previous == cm_add_aep_descr_again.current == nm_add_aep_descr_again.current == [{"infraAttEntityP": {"attributes": {"annotation": "", "descr": "Ansible test AEP", "dn": "uni/infra/attentp-ansible_test", "name": "ansible_test", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - cm_add_aep_descr_again.proposed.infraAttEntityP.attributes.descr == nm_add_aep_descr_again.proposed.infraAttEntityP.attributes.descr == 'Ansible test AEP'
+    - cm_add_aep_descr_again.proposed.infraAttEntityP.attributes.name == nm_add_aep_descr_again.proposed.infraAttEntityP.attributes.name == 'ansible_test'
+    - cm_add_aep_descr_again.sent == nm_add_aep_descr_again.sent == {}
+    - cm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.descr == nm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.descr == cm_add_aep_descr_again.current[0].infraAttEntityP.attributes.descr == nm_add_aep_descr_again.current[0].infraAttEntityP.attributes.descr == 'Ansible test AEP'
+    - cm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.dn == nm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.dn == cm_add_aep_descr_again.current[0].infraAttEntityP.attributes.dn == nm_add_aep_descr_again.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
+    - cm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.name == nm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.name == cm_add_aep_descr_again.current[0].infraAttEntityP.attributes.name == nm_add_aep_descr_again.current[0].infraAttEntityP.attributes.name == 'ansible_test'
 
 
 # ADD AEP AGAIN
@@ -132,9 +141,11 @@
     that:
     - cm_add_aep_again_no_descr is not changed
     - nm_add_aep_again_no_descr is not changed
-    - 'cm_add_aep_again_no_descr.proposed == nm_add_aep_again_no_descr.proposed == {"infraAttEntityP": {"attributes": {"name": "ansible_test"}}}'
+    - cm_add_aep_again_no_descr.proposed.infraAttEntityP.attributes.name == nm_add_aep_again_no_descr.proposed.infraAttEntityP.attributes.name == 'ansible_test'
     - cm_add_aep_again_no_descr.sent == nm_add_aep_again_no_descr.sent == {}
-    - 'cm_add_aep_again_no_descr.previous == nm_add_aep_again_no_descr.previous == cm_add_aep_again_no_descr.current == nm_add_aep_again_no_descr.current == [{"infraAttEntityP": {"attributes": {"annotation": "", "descr": "Ansible test AEP", "dn": "uni/infra/attentp-ansible_test", "name": "ansible_test", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - cm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.descr == nm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.descr == cm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.descr == nm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.descr == 'Ansible test AEP'
+    - cm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.dn == nm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.dn == cm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.dn == nm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
+    - cm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.name == nm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.name == cm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.name == nm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.name == 'ansible_test'
 
 
 # QUERY ALL AEPS
@@ -206,7 +217,9 @@
     - nm_remove_aep is changed
     - cm_remove_aep.proposed == nm_remove_aep.proposed == {}
     - cm_remove_aep.sent == nm_remove_aep.sent == {}
-    - 'cm_remove_aep.previous == nm_remove_aep.previous == cm_remove_aep.current == [{"infraAttEntityP": {"attributes": {"annotation": "", "descr": "Ansible test AEP", "dn": "uni/infra/attentp-ansible_test", "name": "ansible_test", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - cm_remove_aep.previous[0].infraAttEntityP.attributes.name == nm_remove_aep.previous[0].infraAttEntityP.attributes.name == cm_remove_aep.current[0].infraAttEntityP.attributes.name == 'ansible_test'
+    - cm_remove_aep.previous[0].infraAttEntityP.attributes.descr == nm_remove_aep.previous[0].infraAttEntityP.attributes.descr == cm_remove_aep.current[0].infraAttEntityP.attributes.descr == 'Ansible test AEP'
+    - cm_remove_aep.previous[0].infraAttEntityP.attributes.dn == nm_remove_aep.previous[0].infraAttEntityP.attributes.dn == cm_remove_aep.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
     - nm_remove_aep.current == []
 
 - name: Remove AEP again (check_mode)

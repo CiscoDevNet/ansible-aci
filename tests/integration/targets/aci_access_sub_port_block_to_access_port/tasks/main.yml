@@ -63,11 +63,15 @@
     - accesssubportblock_to_accessport_check_mode_present is changed
     - accesssubportblock_to_accessport_present is changed
     - accesssubportblock_to_accessport_present.previous == []
-    - 'accesssubportblock_to_accessport_present.sent == {"infraSubPortBlk": {"attributes": {"descr": "anstest_leafportblkdesc", "name": "anstest_leafportblkname", "fromPort": "13", "toPort": "13", "fromSubPort": "1", "toSubPort": "3"}}}'
+    - accesssubportblock_to_accessport_present.sent.infraSubPortBlk.attributes.descr == 'anstest_leafportblkdesc'
+    - accesssubportblock_to_accessport_present.sent.infraSubPortBlk.attributes.name == 'anstest_leafportblkname'
+    - accesssubportblock_to_accessport_present.sent.infraSubPortBlk.attributes.fromPort == accesssubportblock_to_accessport_present.sent.infraSubPortBlk.attributes.toPort == '13'
+    - accesssubportblock_to_accessport_present.sent.infraSubPortBlk.attributes.fromSubPort == '1'
+    - accesssubportblock_to_accessport_present.sent.infraSubPortBlk.attributes.toSubPort == '3'
     - accesssubportblock_to_accessport_idempotent is not changed
     - accesssubportblock_to_accessport_idempotent.sent == {}
     - accesssubportblock_to_accessport_update is changed
-    - 'accesssubportblock_to_accessport_update.sent == {"infraSubPortBlk": {"attributes": {"toSubPort": "2"}}}'
+    - accesssubportblock_to_accessport_update.sent.infraSubPortBlk.attributes.toSubPort == '2'
 
 
 - name: Query Specific sub port block and access_port_selector binding

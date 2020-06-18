@@ -56,8 +56,8 @@
     that:
     - cm_add_taboo_contract is changed
     - nm_add_taboo_contract is changed
-    - 'cm_add_taboo_contract.sent == nm_add_taboo_contract.sent == {"vzTaboo": {"attributes": {"name": "taboo_contract_test"}}}'
-    - 'cm_add_taboo_contract.proposed == nm_add_taboo_contract.proposed == {"vzTaboo": {"attributes": {"name": "taboo_contract_test"}}}'
+    - cm_add_taboo_contract.sent.vzTaboo.attributes.name == nm_add_taboo_contract.sent.vzTaboo.attributes.name == 'taboo_contract_test'
+    - cm_add_taboo_contract.proposed.vzTaboo.attributes.name == nm_add_taboo_contract.proposed.vzTaboo.attributes.name == 'taboo_contract_test'
     - cm_add_taboo_contract.previous == nm_add_taboo_contract.previous == []
     # NOTE: We cannot fix this easily
     - cm_add_taboo_contract.current == []
@@ -101,8 +101,9 @@
     that:
     - cm_add_taboo_contract_descr is changed
     - nm_add_taboo_contract_descr is changed
-    - 'cm_add_taboo_contract_descr.sent == nm_add_taboo_contract_descr.sent == {"vzTaboo": {"attributes": {"descr": "Ansible test taboo contract"}}}'
-    - 'cm_add_taboo_contract_descr.proposed == nm_add_taboo_contract_descr.proposed == {"vzTaboo": {"attributes": {"descr": "Ansible test taboo contract", "name": "taboo_contract_test"}}}'
+    - cm_add_taboo_contract_descr.sent.vzTaboo.attributes.descr == nm_add_taboo_contract_descr.sent.vzTaboo.attributes.descr == 'Ansible test taboo contract'
+    - cm_add_taboo_contract_descr.proposed.vzTaboo.attributes.descr == nm_add_taboo_contract_descr.proposed.vzTaboo.attributes.descr == 'Ansible test taboo contract'
+    - cm_add_taboo_contract_descr.proposed.vzTaboo.attributes.name == nm_add_taboo_contract_descr.proposed.vzTaboo.attributes.name == 'taboo_contract_test'
     - cm_add_taboo_contract_descr.previous == nm_add_taboo_contract_descr.previous == cm_add_taboo_contract_descr.current == nm_add_taboo_contract.current
     - nm_add_taboo_contract_descr.current.0.vzTaboo.attributes.descr == 'Ansible test taboo contract'
     - nm_add_taboo_contract_descr.current.0.vzTaboo.attributes.dn == 'uni/tn-ansible_test/taboo-taboo_contract_test'
@@ -216,7 +217,9 @@
     that:
     - cm_remove_taboo_contract is changed
     - nm_remove_taboo_contract is changed
-    - 'cm_remove_taboo_contract.current == cm_remove_taboo_contract.previous == nm_remove_taboo_contract.previous == [{"vzTaboo": {"attributes": {"annotation": "", "descr": "Ansible test taboo contract", "dn": "uni/tn-ansible_test/taboo-taboo_contract_test", "name": "taboo_contract_test", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - cm_remove_taboo_contract.current.0.vzTaboo.attributes.descr == cm_remove_taboo_contract.previous.0.vzTaboo.attributes.descr == nm_remove_taboo_contract.previous.0.vzTaboo.attributes.descr == 'Ansible test taboo contract'
+    - cm_remove_taboo_contract.current.0.vzTaboo.attributes.name == cm_remove_taboo_contract.previous.0.vzTaboo.attributes.name == nm_remove_taboo_contract.previous.0.vzTaboo.attributes.name == 'taboo_contract_test'
+    - cm_remove_taboo_contract.current.0.vzTaboo.attributes.dn == cm_remove_taboo_contract.previous.0.vzTaboo.attributes.dn == nm_remove_taboo_contract.previous.0.vzTaboo.attributes.dn == 'uni/tn-ansible_test/taboo-taboo_contract_test'
     - nm_remove_taboo_contract.current == []
 
 - name: Remove taboo contract again (check_mode)

@@ -44,10 +44,11 @@
     that:
     - cm_add_domain is changed
     - nm_add_domain is changed
-    - 'cm_add_domain.sent == nm_add_domain.sent == {"l3extDomP": {"attributes": {"name": "l3_dom"}}}'
-    - 'cm_add_domain.proposed == nm_add_domain.proposed == {"l3extDomP": {"attributes": {"name": "l3_dom"}}}'
+    - cm_add_domain.sent.l3extDomP.attributes.name == nm_add_domain.sent.l3extDomP.attributes.name == 'l3_dom'
+    - cm_add_domain.proposed.l3extDomP.attributes.name == nm_add_domain.proposed.l3extDomP.attributes.name == 'l3_dom'
     - cm_add_domain.current == cm_add_domain.previous == nm_add_domain.previous == []
-    - 'nm_add_domain.current == [{"l3extDomP": {"attributes": {"annotation": "", "dn": "uni/l3dom-l3_dom", "name": "l3_dom", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - nm_add_domain.current.0.l3extDomP.attributes.name == 'l3_dom'
+    - nm_add_domain.current.0.l3extDomP.attributes.dn == 'uni/l3dom-l3_dom'
 
 - name: Add L3 domain again (check_mode)
   cisco.aci.aci_domain: *domain_present
@@ -132,7 +133,8 @@
     that:
     - cm_remove_domain is changed
     - nm_remove_domain is changed
-    - 'cm_remove_domain.current == cm_remove_domain.previous == nm_remove_domain.previous == [{"l3extDomP": {"attributes": {"annotation": "", "dn": "uni/l3dom-l3_dom", "name": "l3_dom", "nameAlias": "", "ownerKey": "", "ownerTag": ""}}}]'
+    - cm_remove_domain.current.0.l3extDomP.attributes.name == cm_remove_domain.previous.0.l3extDomP.attributes.name == nm_remove_domain.previous.0.l3extDomP.attributes.name == 'l3_dom'
+    - cm_remove_domain.current.0.l3extDomP.attributes.dn == cm_remove_domain.previous.0.l3extDomP.attributes.dn == nm_remove_domain.previous.0.l3extDomP.attributes.dn == 'uni/l3dom-l3_dom'
     - nm_remove_domain.current == []
 
 - name: Remove L3 domain again (check_mode)

@@ -1,4 +1,6 @@
-lh-dmz1-pod1-apicsim ansible_host=173.36.219.25 ansible_connection=local aci_hostname=173.36.219.25 aci_username=admin aci_password=NotTheCurrentPassword
+lh-dmz1-pod3-sim-v32 ansible_host=173.36.219.67 ansible_connection=local aci_hostname=173.36.219.67 aci_username=ansible_github_ci aci_password=jZqwpB*r9&5mx3mn8e5
+lh-dmz1-pod3-sim-v42 ansible_host=173.36.219.68 ansible_connection=local aci_hostname=173.36.219.68 aci_username=ansible_github_ci aci_password=jZqwpB*r9&5mx3mn8e5
 
 [aci]
-lh-dmz1-pod1-apicsim
+lh-dmz1-pod3-sim-v32
+lh-dmz1-pod3-sim-v42
