@@ -55,9 +55,9 @@ extends_documentation_fragment:
 
 notes:
 - The C(aaa_user) must exist before using this module in your playbook.
-  The M(aci_aaa_user) module can be used for this.
+  The M(cisco.aci.aci_aaa_user) module can be used for this.
 seealso:
-- module: aci_aaa_user
+- module: cisco.aci.aci_aaa_user
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(aaa:UserCert).
   link: https://developer.cisco.com/docs/apic-mim-ref/

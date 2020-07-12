@@ -86,11 +86,11 @@ extends_documentation_fragment:
 
 notes:
 - The C(tenant) and C(domain) and C(vrf) used must exist before using this module in your playbook.
-  The M(aci_tenant) and M(aci_domain) and M(aci_vrf) modules can be used for this.
+  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_domain) and M(cisco.aci.aci_vrf) modules can be used for this.
 seealso:
-- module: aci_tenant
-- module: aci_domain
-- module: aci_vrf
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_domain
+- module: cisco.aci.aci_vrf
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(l3ext:Out).
   link: https://developer.cisco.com/docs/apic-mim-ref/

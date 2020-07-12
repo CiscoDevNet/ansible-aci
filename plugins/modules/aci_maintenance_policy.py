@@ -67,7 +67,7 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 notes:
-- A scheduler is required for this module, which could have been created using the M(aci_fabric_scheduler) module or via the UI.
+- A scheduler is required for this module, which could have been created using the M(cisco.aci.aci_fabric_scheduler) module or via the UI.
 author:
 - Steven Gerhart (@sgerhart)
 '''

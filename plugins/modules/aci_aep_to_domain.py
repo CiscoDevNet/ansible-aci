@@ -53,10 +53,10 @@ extends_documentation_fragment:
 
 notes:
 - The C(aep) and C(domain) parameters should exist before using this module.
-  The M(aci_aep) and M(aci_domain) can be used for these.
+  The M(cisco.aci.aci_aep) and M(cisco.aci.aci_domain) can be used for these.
 seealso:
-- module: aci_aep
-- module: aci_domain
+- module: cisco.aci.aci_aep
+- module: cisco.aci.aci_domain
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(infra:RsDomP).
   link: https://developer.cisco.com/docs/apic-mim-ref/

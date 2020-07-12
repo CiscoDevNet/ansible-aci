@@ -74,7 +74,7 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 seealso:
-- module: aci_config_snapshot
+- module: cisco.aci.aci_config_snapshot
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(config:ImportP).
   link: https://developer.cisco.com/docs/apic-mim-ref/

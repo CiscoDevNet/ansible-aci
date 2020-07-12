@@ -43,7 +43,7 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 seealso:
-- module: aci_switch_policy_leaf_profile
+- module: cisco.aci.aci_switch_policy_leaf_profile
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(infra:NodeP).
   link: https://developer.cisco.com/docs/apic-mim-ref/

@@ -45,14 +45,14 @@ options:
     - When used instead of C(src), sets the payload of the API request directly.
     - This may be convenient to template simple requests.
     - For anything complex use the C(template) lookup plugin (see examples)
-      or the M(template) module with parameter C(src).
+      or the M(ansible.builtin.template) module with parameter C(src).
     type: raw
   src:
     description:
     - Name of the absolute path of the filename that includes the body
       of the HTTP request being sent to the ACI fabric.
     - If you require a templated payload, use the C(content) parameter
-      together with the C(template) lookup plugin, or use M(template).
+      together with the C(template) lookup plugin, or use M(ansible.builtin.template).
     type: path
     aliases: [ config_file ]
 extends_documentation_fragment:
@@ -67,7 +67,7 @@ notes:
   More information in :ref:`the ACI documentation <aci_guide_known_issues>`.
 - XML payloads require the C(lxml) and C(xmljson) python libraries. For JSON payloads nothing special is needed.
 seealso:
-- module: aci_tenant
+- module: cisco.aci.aci_tenant
 - name: Cisco APIC REST API Configuration Guide
   description: More information about the APIC REST API.
   link: http://www.cisco.com/c/en/us/td/docs/switches/datacenter/aci/apic/sw/2-x/rest_cfg/2_1_x/b_Cisco_APIC_REST_API_Configuration_Guide.html

@@ -57,10 +57,11 @@ extends_documentation_fragment:
 
 notes:
 - The C(tenant), C(contract), C(subject), and C(filter_name) must exist before using this module in your playbook.
-  The M(aci_tenant), M(aci_contract), M(aci_contract_subject), and M(aci_filter) modules can be used for these.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_contract), M(cisco.aci.aci_contract_subject), and M(cisco.aci.aci_filter)
+  modules can be used for these.
 seealso:
-- module: aci_contract_subject
-- module: aci_filter
+- module: cisco.aci.aci_contract_subject
+- module: cisco.aci.aci_filter
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(vz:RsSubjFiltAtt).
   link: https://developer.cisco.com/docs/apic-mim-ref/

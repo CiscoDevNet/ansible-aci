@@ -95,7 +95,7 @@ notes:
   of the APIC REST API. The vendor has been informed.
   More information in :ref:`the ACI documentation <aci_guide_known_issues>`.
 seealso:
-- module: aci_aaa_user_certificate
+- module: cisco.aci.aci_aaa_user_certificate
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(aaa:User).
   link: https://developer.cisco.com/docs/apic-mim-ref/
