@@ -17,6 +17,11 @@ short_description: Manage End Point Groups (EPG) objects (fv:AEPg)
 description:
 - Manage End Point Groups (EPG) on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   tenant:
     description:
     - Name of an existing tenant.
@@ -297,6 +302,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         epg=dict(type='str', aliases=['epg_name', 'name']),  # Not required for querying all objects
         bd=dict(type='str', aliases=['bd_name', 'bridge_domain']),
         ap=dict(type='str', aliases=['app_profile', 'app_profile_name']),  # Not required for querying all objects
@@ -322,6 +328,7 @@ def main():
     aci = ACIModule(module)
 
     epg = module.params.get('epg')
+    annotation = module.params.get('annotation')
     bd = module.params.get('bd')
     description = module.params.get('description')
     priority = module.params.get('priority')

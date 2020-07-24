@@ -17,6 +17,11 @@ short_description: Manage physical, virtual, bridged, routed or FC domain profil
 description:
 - Manage physical, virtual, bridged, routed or FC domain profiles on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   domain:
     description:
     - Name of the physical, virtual, bridged routed or FC domain profile.
@@ -280,6 +285,7 @@ VSWITCH_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         domain_type=dict(type='str', required=True, choices=['fc', 'l2dom', 'l3dom', 'phys', 'vmm'], aliases=['type']),
         domain=dict(type='str', aliases=['domain_name', 'domain_profile', 'name']),  # Not required for querying all objects
         dscp=dict(type='str',
@@ -305,6 +311,7 @@ def main():
     )
 
     dscp = module.params.get('dscp')
+    annotation = module.params.get('annotation')
     domain = module.params.get('domain')
     domain_type = module.params.get('domain_type')
     encap_mode = module.params.get('encap_mode')

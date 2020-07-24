@@ -17,6 +17,11 @@ short_description: Manage Subnets (fv:Subnet)
 description:
 - Manage Subnets on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   bd:
     description:
     - The name of the Bridge Domain.
@@ -352,6 +357,7 @@ SUBNET_CONTROL_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         bd=dict(type='str', aliases=['bd_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         enable_vip=dict(type='bool'),
@@ -382,6 +388,7 @@ def main():
     aci = ACIModule(module)
 
     description = module.params.get('description')
+    annotation = module.params.get('annotation')
     enable_vip = aci.boolean(module.params.get('enable_vip'))
     tenant = module.params.get('tenant')
     bd = module.params.get('bd')

@@ -17,6 +17,11 @@ short_description: Manage encap ranges assigned to pools (fvns:EncapBlk, fvns:Vs
 description:
 - Manage vlan, vxlan, and vsan ranges that are assigned to pools on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   allocation_mode:
     description:
     - The method used for allocating encaps to resources.
@@ -306,6 +311,7 @@ ACI_POOL_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         pool_type=dict(type='str', required=True, aliases=['type'], choices=['vlan', 'vxlan', 'vsan']),
         allocation_mode=dict(type='str', aliases=['mode'], choices=['dynamic', 'inherit', 'static']),
         description=dict(type='str', aliases=['descr']),
@@ -328,6 +334,7 @@ def main():
     )
 
     allocation_mode = module.params.get('allocation_mode')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     pool = module.params.get('pool')
     pool_allocation_mode = module.params.get('pool_allocation_mode')

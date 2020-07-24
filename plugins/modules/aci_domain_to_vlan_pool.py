@@ -18,6 +18,11 @@ short_description: Bind Domain to VLAN Pools (infra:RsVlanNs)
 description:
 - Bind Domain to VLAN Pools on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   domain:
     description:
     - Name of the domain being associated with the VLAN Pool.
@@ -267,6 +272,7 @@ VM_PROVIDER_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         domain_type=dict(type='str', required=True, choices=['fc', 'l2dom', 'l3dom', 'phys', 'vmm']),
         domain=dict(type='str', aliases=['domain_name', 'domain_profile']),  # Not required for querying all objects
         pool=dict(type='str', aliases=['pool_name', 'vlan_pool']),  # Not required for querying all objects
@@ -286,6 +292,7 @@ def main():
     )
 
     domain = module.params.get('domain')
+    annotation = module.params.get('annotation')
     domain_type = module.params.get('domain_type')
     pool = module.params.get('pool')
     pool_allocation_mode = module.params.get('pool_allocation_mode')

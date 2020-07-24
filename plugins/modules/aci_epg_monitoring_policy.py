@@ -17,6 +17,11 @@ short_description: Manage monitoring policies (mon:EPGPol)
 description:
 - Manage monitoring policies on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   monitoring_policy:
     description:
     - The name of the monitoring policy.
@@ -184,6 +189,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         monitoring_policy=dict(type='str', aliases=['name']),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
@@ -201,6 +207,7 @@ def main():
     )
 
     monitoring_policy = module.params.get('monitoring_policy')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     state = module.params.get('state')
     tenant = module.params.get('tenant')

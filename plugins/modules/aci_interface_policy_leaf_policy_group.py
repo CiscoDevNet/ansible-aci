@@ -18,6 +18,11 @@ short_description: Manage fabric interface policy leaf policy groups (infra:AccB
 description:
 - Manage fabric interface policy leaf policy groups on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   policy_group:
     description:
     - Name of the leaf policy group to be added/deleted.
@@ -325,6 +330,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         # NOTE: Since this module needs to include both infra:AccBndlGrp (for PC and VPC) and infra:AccPortGrp (for leaf access port policy group):
         # NOTE: I'll allow the user to make the choice here (link(PC), node(VPC), leaf(leaf-access port policy group))
         lag_type=dict(type='str', required=True, aliases=['lag_type_name'], choices=['leaf', 'link', 'node']),
@@ -360,6 +366,7 @@ def main():
     )
 
     policy_group = module.params.get('policy_group')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     lag_type = module.params.get('lag_type')
     link_level_policy = module.params.get('link_level_policy')

@@ -17,6 +17,11 @@ short_description: Manage contract resources (vz:BrCP)
 description:
 - Manage Contract resources on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   contract:
     description:
     - The name of the contract.
@@ -238,6 +243,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         contract=dict(type='str', aliases=['contract_name', 'name']),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
@@ -261,6 +267,7 @@ def main():
     )
 
     contract = module.params.get('contract')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     scope = module.params.get('scope')
     priority = module.params.get('priority')

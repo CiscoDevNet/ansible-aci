@@ -18,6 +18,11 @@ description:
 - Connect to external virtual and physical domains by using
   attachable Access Entity Profiles (AEP) on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   aep:
     description:
     - The name of the Attachable Access Entity Profile.
@@ -211,6 +216,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         aep=dict(type='str', aliases=['name', 'aep_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         infra_vlan=dict(type='bool', aliases=['infrastructure_vlan']),
@@ -228,6 +234,7 @@ def main():
     )
 
     aep = module.params.get('aep')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     infra_vlan = module.params.get('infra_vlan')
     state = module.params.get('state')

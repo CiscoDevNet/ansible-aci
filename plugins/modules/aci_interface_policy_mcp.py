@@ -17,6 +17,11 @@ short_description: Manage MCP interface policies (mcp:IfPol)
 description:
 - Manage MCP interface policies on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   mcp:
     description:
     - The name of the MCP interface.
@@ -180,6 +185,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         mcp=dict(type='str', aliases=['mcp_interface', 'name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         admin_state=dict(type='bool'),
@@ -199,6 +205,7 @@ def main():
     aci = ACIModule(module)
 
     mcp = module.params.get('mcp')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     admin_state = aci.boolean(module.params.get('admin_state'), 'enabled', 'disabled')
     state = module.params.get('state')

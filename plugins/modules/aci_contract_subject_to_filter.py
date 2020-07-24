@@ -17,6 +17,11 @@ short_description: Bind Contract Subjects to Filters (vz:RsSubjFiltAtt)
 description:
 - Bind Contract Subjects to Filters on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   contract:
     description:
     - The name of the contract.
@@ -233,6 +238,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         contract=dict(type='str', aliases=['contract_name']),  # Not required for querying all objects
         filter=dict(type='str', aliases=['filter_name']),  # Not required for querying all objects
         subject=dict(type='str', aliases=['contract_subject', 'subject_name']),  # Not required for querying all objects
@@ -251,6 +257,7 @@ def main():
     )
 
     contract = module.params.get('contract')
+    annotation = module.params.get('annotation')
     filter_name = module.params.get('filter')
     log = module.params.get('log')
     subject = module.params.get('subject')

@@ -18,6 +18,11 @@ description:
 - Manage contexts or VRFs on Cisco ACI fabrics.
 - Each context is a private network associated to a tenant, i.e. VRF.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   tenant:
     description:
     - The name of the Tenant the VRF should belong to.
@@ -226,6 +231,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         vrf=dict(type='str', aliases=['context', 'name', 'vrf_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
@@ -245,6 +251,7 @@ def main():
     )
 
     description = module.params.get('description')
+    annotation = module.params.get('annotation')
     policy_control_direction = module.params.get('policy_control_direction')
     policy_control_preference = module.params.get('policy_control_preference')
     state = module.params.get('state')

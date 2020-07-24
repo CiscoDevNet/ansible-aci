@@ -18,6 +18,11 @@ short_description: Manage Fabric Node Members (fabric:NodeIdentP)
 description:
 - Manage Fabric Node Members on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   pod_id:
     description:
     - The pod id of the new Fabric Node Member.
@@ -216,6 +221,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         node_id=dict(type='int'),  # Not required for querying all objects
         pod_id=dict(type='int'),
@@ -236,6 +242,7 @@ def main():
     )
 
     pod_id = module.params.get('pod_id')
+    annotation = module.params.get('annotation')
     serial = module.params.get('serial')
     node_id = module.params.get('node_id')
     switch = module.params.get('switch')

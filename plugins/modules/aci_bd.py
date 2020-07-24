@@ -17,6 +17,11 @@ short_description: Manage Bridge Domains (BD) objects (fv:BD)
 description:
 - Manages Bridge Domains (BD) on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   arp_flooding:
     description:
     - Determines if the Bridge Domain should flood ARP traffic.
@@ -337,6 +342,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         arp_flooding=dict(type='bool'),
         bd=dict(type='str', aliases=['bd_name', 'name']),  # Not required for querying all objects
         bd_type=dict(type='str', choices=['ethernet', 'fc']),
@@ -373,6 +379,7 @@ def main():
     aci = ACIModule(module)
 
     arp_flooding = aci.boolean(module.params.get('arp_flooding'))
+    annotation = module.params.get('annotation')
     bd = module.params.get('bd')
     bd_type = module.params.get('bd_type')
     if bd_type == 'ethernet':

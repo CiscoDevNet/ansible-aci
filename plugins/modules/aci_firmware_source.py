@@ -18,6 +18,11 @@ short_description: Manage firmware image sources (firmware:OSource)
 description:
 - Manage firmware image sources on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   source:
     description:
     - The identifying name for the outside source of images, such as an HTTP or SCP server.
@@ -223,6 +228,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         source=dict(type='str', aliases=['name', 'source_name']),  # Not required for querying all objects
         polling_interval=dict(type='int'),
         url=dict(type='str'),
@@ -243,6 +249,7 @@ def main():
     )
 
     polling_interval = module.params.get('polling_interval')
+    annotation = module.params.get('annotation')
     url_protocol = module.params.get('url_protocol')
     state = module.params.get('state')
     source = module.params.get('source')

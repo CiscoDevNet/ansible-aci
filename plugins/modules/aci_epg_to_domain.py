@@ -17,6 +17,11 @@ short_description: Bind EPGs to Domains (fv:RsDomAtt)
 description:
 - Bind EPGs to Physical and Virtual Domains on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   allow_useg:
     description:
     - Allows micro-segmentation.
@@ -297,6 +302,7 @@ VM_PROVIDER_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         allow_useg=dict(type='str', choices=['encap', 'useg']),
         ap=dict(type='str', aliases=['app_profile', 'app_profile_name']),  # Not required for querying all objects
         deploy_immediacy=dict(type='str', choices=['immediate', 'lazy']),
@@ -327,6 +333,7 @@ def main():
     aci = ACIModule(module)
 
     allow_useg = module.params.get('allow_useg')
+    annotation = module.params.get('annotation')
     ap = module.params.get('ap')
     deploy_immediacy = module.params.get('deploy_immediacy')
     domain = module.params.get('domain')

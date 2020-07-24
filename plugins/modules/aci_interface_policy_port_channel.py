@@ -17,6 +17,11 @@ short_description: Manage port channel interface policies (lacp:LagPol)
 description:
 - Manage port channel interface policies on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   port_channel:
     description:
     - Name of the port channel.
@@ -231,6 +236,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         port_channel=dict(type='str', aliases=['name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         min_links=dict(type='int'),
@@ -255,6 +261,7 @@ def main():
     )
 
     port_channel = module.params.get('port_channel')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     min_links = module.params.get('min_links')
     if min_links is not None and min_links not in range(1, 17):

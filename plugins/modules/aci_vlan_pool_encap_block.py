@@ -19,6 +19,11 @@ short_description: Manage encap blocks assigned to VLAN pools (fvns:EncapBlk)
 description:
 - Manage VLAN encap blocks that are assigned to VLAN pools on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   allocation_mode:
     description:
     - The method used for allocating encaps to resources.
@@ -250,6 +255,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         pool=dict(type='str', aliases=['pool_name']),  # Not required for querying all objects
         block_name=dict(type='str', aliases=['name']),  # Not required for querying all objects
         block_end=dict(type='int', aliases=['end']),  # Not required for querying all objects
@@ -271,6 +277,7 @@ def main():
     )
 
     allocation_mode = module.params.get('allocation_mode')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     pool = module.params.get('pool')
     pool_allocation_mode = module.params.get('pool_allocation_mode')

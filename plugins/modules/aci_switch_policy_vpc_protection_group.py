@@ -18,6 +18,11 @@ short_description: Manage switch policy explicit vPC protection groups (fabric:E
 description:
 - Manage switch policy explicit vPC protection groups on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   protection_group:
     description:
     - The name of the Explicit vPC Protection Group.
@@ -222,6 +227,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         protection_group=dict(type='str', aliases=['name', 'protection_group_name']),  # Not required for querying all objects
         protection_group_id=dict(type='int', aliases=['id']),
         vpc_domain_policy=dict(type='str', aliases=['vpc_domain_policy_name']),
@@ -241,6 +247,7 @@ def main():
     )
 
     protection_group = module.params.get('protection_group')
+    annotation = module.params.get('annotation')
     protection_group_id = module.params.get('protection_group_id')
     vpc_domain_policy = module.params.get('vpc_domain_policy')
     switch_1_id = module.params.get('switch_1_id')

@@ -19,6 +19,11 @@ short_description: Manage VLAN pools (fvns:VlanInstP)
 description:
 - Manage VLAN pools on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   pool_allocation_mode:
     description:
     - The method used for allocating VLANs to resources.
@@ -215,6 +220,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         pool=dict(type='str', aliases=['name', 'pool_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         pool_allocation_mode=dict(type='str', aliases=['allocation_mode', 'mode'], choices=['dynamic', 'static']),
@@ -232,6 +238,7 @@ def main():
     )
 
     description = module.params.get('description')
+    annotation = module.params.get('annotation')
     pool = module.params.get('pool')
     pool_allocation_mode = module.params.get('pool_allocation_mode')
     state = module.params.get('state')

@@ -17,6 +17,11 @@ short_description: Manage route tag policies (l3ext:RouteTagPol)
 description:
 - Manage route tag policies on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   rtp:
     description:
     - The name of the route tag policy.
@@ -191,6 +196,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         rtp=dict(type='str', aliases=['name', 'rtp_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
@@ -209,6 +215,7 @@ def main():
     )
 
     rtp = module.params.get('rtp')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     tag = module.params.get('tag')
     state = module.params.get('state')

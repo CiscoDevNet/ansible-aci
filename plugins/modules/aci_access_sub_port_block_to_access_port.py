@@ -24,6 +24,11 @@ seealso:
 author:
 - Simon Metzger (@smnmtzgr)
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   leaf_interface_profile:
     description:
     - The name of the Fabric access policy leaf interface profile.
@@ -282,6 +287,7 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         leaf_interface_profile=dict(type='str', aliases=['leaf_interface_profile_name']),  # Not required for querying all objects
         access_port_selector=dict(type='str', aliases=['name', 'access_port_selector_name']),  # Not required for querying all objects
         leaf_port_blk=dict(type='str', aliases=['leaf_port_blk_name']),  # Not required for querying all objects
@@ -305,6 +311,7 @@ def main():
     )
 
     leaf_interface_profile = module.params.get('leaf_interface_profile')
+    annotation = module.params.get('annotation')
     access_port_selector = module.params.get('access_port_selector')
     leaf_port_blk = module.params.get('leaf_port_blk')
     leaf_port_blk_description = module.params.get('leaf_port_blk_description')

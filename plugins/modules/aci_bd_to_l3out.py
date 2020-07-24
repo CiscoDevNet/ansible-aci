@@ -17,6 +17,11 @@ short_description: Bind Bridge Domain to L3 Out (fv:RsBDToOut)
 description:
 - Bind Bridge Domain to L3 Out on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   bd:
     description:
     - The name of the Bridge Domain.
@@ -176,6 +181,7 @@ SUBNET_CONTROL_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         bd=dict(type='str', aliases=['bd_name', 'bridge_domain']),  # Not required for querying all objects
         l3out=dict(type='str'),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
@@ -193,6 +199,7 @@ def main():
     )
 
     bd = module.params.get('bd')
+    annotation = module.params.get('annotation')
     l3out = module.params.get('l3out')
     state = module.params.get('state')
     tenant = module.params.get('tenant')

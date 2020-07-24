@@ -18,6 +18,11 @@ short_description: Manage maintenance group nodes
 description:
 - Manage maintenance group nodes
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   group:
     description:
     - The maintenance group name that you want to add the node to.
@@ -182,6 +187,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         group=dict(type='str'),  # Not required for querying all objects
         node=dict(type='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
@@ -198,6 +204,7 @@ def main():
     )
 
     state = module.params.get('state')
+    annotation = module.params.get('annotation')
     group = module.params.get('group')
     node = module.params.get('node')
     name_alias = module.params.get('name_alias')

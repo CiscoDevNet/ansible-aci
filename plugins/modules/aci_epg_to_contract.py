@@ -20,6 +20,11 @@ notes:
 - The C(tenant), C(app_profile), C(EPG), and C(Contract) used must exist before using this module in your playbook.
   The M(aci_tenant), M(aci_ap), M(aci_epg), and M(aci_contract) modules can be used for this.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   ap:
     description:
     - Name of an existing application network profile, that will contain the EPGs.
@@ -261,6 +266,7 @@ PROVIDER_MATCH_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         contract_type=dict(type='str', required=True, choices=['consumer', 'provider']),
         ap=dict(type='str', aliases=['app_profile', 'app_profile_name']),  # Not required for querying all objects
         epg=dict(type='str', aliases=['epg_name']),  # Not required for querying all objects
@@ -281,6 +287,7 @@ def main():
     )
 
     ap = module.params.get('ap')
+    annotation = module.params.get('annotation')
     contract = module.params.get('contract')
     contract_type = module.params.get('contract_type')
     epg = module.params.get('epg')

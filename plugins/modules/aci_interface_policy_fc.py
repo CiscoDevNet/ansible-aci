@@ -17,6 +17,11 @@ short_description: Manage Fibre Channel interface policies (fc:IfPol)
 description:
 - Manage ACI Fiber Channel interface policies on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   fc_policy:
     description:
     - The name of the Fiber Channel interface policy.
@@ -182,6 +187,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         fc_policy=dict(type='str', aliases=['name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         port_mode=dict(type='str', choices=['f', 'np']),  # No default provided on purpose
@@ -199,6 +205,7 @@ def main():
     )
 
     fc_policy = module.params.get('fc_policy')
+    annotation = module.params.get('annotation')
     port_mode = module.params.get('port_mode')
     description = module.params.get('description')
     state = module.params.get('state')

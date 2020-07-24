@@ -17,6 +17,11 @@ short_description: Manage Layer 3 Outside (L3Out) objects (l3ext:Out)
 description:
 - Manage Layer 3 Outside (L3Out) on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   tenant:
     description:
     - Name of an existing tenant.
@@ -247,6 +252,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         l3out=dict(type='str', aliases=['l3out_name', 'name']),  # Not required for querying all objects
         domain=dict(type='str', aliases=['ext_routed_domain_name', 'routed_domain']),
@@ -275,6 +281,7 @@ def main():
     aci = ACIModule(module)
 
     l3out = module.params.get('l3out')
+    annotation = module.params.get('annotation')
     domain = module.params.get('domain')
     dscp = module.params.get('dscp')
     description = module.params.get('description')

@@ -18,6 +18,11 @@ short_description: Bind static paths to EPGs (fv:RsPathAtt)
 description:
 - Bind static paths to EPGs on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   tenant:
     description:
     - Name of an existing tenant.
@@ -305,6 +310,7 @@ INTERFACE_TYPE_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         ap=dict(type='str', aliases=['app_profile', 'app_profile_name']),  # Not required for querying all objects
         epg=dict(type='str', aliases=['epg_name']),  # Not required for querying all objects
@@ -333,6 +339,7 @@ def main():
     )
 
     tenant = module.params.get('tenant')
+    annotation = module.params.get('annotation')
     ap = module.params.get('ap')
     epg = module.params.get('epg')
     description = module.params.get('description')

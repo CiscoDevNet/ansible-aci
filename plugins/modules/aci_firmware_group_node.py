@@ -44,6 +44,11 @@ options:
         description:
             - The alias for the current object. This relates to the nameAlias field in ACI.
         type: str
+    annotation:
+        description:
+            - User-defined string for annotating the MO.
+        type: str
+        required: no
 extends_documentation_fragment:
 - cisco.aci.aci
 
@@ -190,6 +195,7 @@ def main():
         node=dict(type='str', aliases=['node']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
+        annotation=dict(type='str'),  # Not required for querying all objects
     )
 
     module = AnsibleModule(
@@ -202,6 +208,7 @@ def main():
     )
 
     state = module.params.get('state')
+    annotation = module.params.get('annotation')
     group = module.params.get('group')
     node = module.params.get('node')
     name_alias = module.params.get('name_alias')

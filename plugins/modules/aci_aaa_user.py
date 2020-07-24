@@ -20,6 +20,11 @@ description:
 requirements:
 - python-dateutil
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   aaa_password:
     description:
     - The password of the locally-authenticated user.
@@ -268,6 +273,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         aaa_password=dict(type='str', no_log=True),
         aaa_password_lifetime=dict(type='int'),
         aaa_password_update_required=dict(type='bool'),
@@ -301,6 +307,7 @@ def main():
         module.fail_json(msg='dateutil required for this module')
 
     aaa_password = module.params.get('aaa_password')
+    annotation = module.params.get('annotation')
     aaa_password_lifetime = module.params.get('aaa_password_lifetime')
     aaa_password_update_required = aci.boolean(module.params.get('aaa_password_update_required'))
     aaa_user = module.params.get('aaa_user')

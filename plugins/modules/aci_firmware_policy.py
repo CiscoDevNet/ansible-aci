@@ -25,6 +25,11 @@ description:
     - referenced by the firmware group. You will assign the firmware and specify if you want to ignore the compatibility
     - check
 options:
+    annotation:
+        description:
+            - User-defined string for annotating the MO.
+        type: str
+        required: no
     name:
         description:
             - Name of the firmware policy
@@ -189,6 +194,7 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         name=dict(type='str', aliases=['name']),  # Not required for querying all objects
         version=dict(type='str', aliases=['version']),
         ignoreCompat=dict(type='bool'),
@@ -206,6 +212,7 @@ def main():
     )
 
     state = module.params.get('state')
+    annotation = module.params.get('annotation')
     name = module.params.get('name')
     version = module.params.get('version')
     name_alias = module.params.get('name_alias')

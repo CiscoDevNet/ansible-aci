@@ -18,6 +18,11 @@ short_description: Bind interface selector profiles to switch policy leaf profil
 description:
 - Bind interface selector profiles to switch policy leaf profiles on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   leaf_profile:
     description:
     - Name of the Leaf Profile to which we add a Selector.
@@ -194,6 +199,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         leaf_profile=dict(type='str', aliases=['leaf_profile_name']),  # Not required for querying all objects
         interface_selector=dict(type='str', aliases=['interface_profile_name', 'interface_selector_name', 'name']),  # Not required for querying all objects
         state=dict(type='str', default='present', choices=['absent', 'present', 'query'])
@@ -209,6 +215,7 @@ def main():
     )
 
     leaf_profile = module.params.get('leaf_profile')
+    annotation = module.params.get('annotation')
     # WARNING: interface_selector accepts non existing interface_profile names and they appear on APIC gui with a state of "missing-target"
     interface_selector = module.params.get('interface_selector')
     state = module.params.get('state')

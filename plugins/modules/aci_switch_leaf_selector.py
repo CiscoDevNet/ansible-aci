@@ -18,6 +18,11 @@ short_description: Bind leaf selectors to switch policy leaf profiles (infra:Lea
 description:
 - Bind leaf selectors (with node block range and policy group) to switch policy leaf profiles on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   description:
     description:
     - The description to assign to the C(leaf).
@@ -245,6 +250,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update({
+        'annotation': dict(type='str'),  # Not required for querying all objects
         'description': dict(type='str'),
         'leaf_profile': dict(type='str', aliases=['leaf_profile_name']),  # Not required for querying all objects
         'leaf': dict(type='str', aliases=['name', 'leaf_name', 'leaf_profile_leaf_name', 'leaf_selector_name']),  # Not required for querying all objects
@@ -268,6 +274,7 @@ def main():
     )
 
     description = module.params.get('description')
+    annotation = module.params.get('annotation')
     leaf_profile = module.params.get('leaf_profile')
     leaf = module.params.get('leaf')
     leaf_node_blk = module.params.get('leaf_node_blk')

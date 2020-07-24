@@ -17,6 +17,11 @@ short_description: Manage virtual domain credential profiles (vmm:UsrAccP)
 description:
 - Manage virtual domain credential profiles on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   name:
     description:
     - Name of the credential profile.
@@ -242,6 +247,7 @@ VM_PROVIDER_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         name=dict(type='str', aliases=['credential_name', 'credential_profile']),
         credential_password=dict(type='str', no_log=True),
         credential_username=dict(type='str'),
@@ -262,6 +268,7 @@ def main():
     )
 
     name = module.params.get('name')
+    annotation = module.params.get('annotation')
     credential_password = module.params.get('credential_password')
     credential_username = module.params.get('credential_username')
     description = module.params.get('description')

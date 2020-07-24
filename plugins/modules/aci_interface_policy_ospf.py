@@ -18,6 +18,11 @@ short_description: Manage OSPF interface policies (ospf:IfPol)
 description:
 - Manage OSPF interface policies on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   tenant:
     description:
     - The name of the Tenant the OSPF interface policy should belong to.
@@ -297,6 +302,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         ospf=dict(type='str', aliases=['ospf_interface', 'name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
@@ -325,6 +331,7 @@ def main():
     aci = ACIModule(module)
 
     tenant = module.params.get('tenant')
+    annotation = module.params.get('annotation')
     ospf = module.params.get('ospf')
     description = module.params.get('description')
     name_alias = module.params.get('name_alias')

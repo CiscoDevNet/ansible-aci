@@ -19,6 +19,11 @@ description:
 - Creating new Snapshots is done using the configExportP class.
 - Removing Snapshots is done using the configSnapshot class.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   description:
     description:
     - The description for the Config Export Policy.
@@ -227,6 +232,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         export_policy=dict(type='str', aliases=['name']),  # Not required for querying all objects
         format=dict(type='str', choices=['json', 'xml']),
@@ -248,6 +254,7 @@ def main():
     aci = ACIModule(module)
 
     description = module.params.get('description')
+    annotation = module.params.get('annotation')
     export_policy = module.params.get('export_policy')
     file_format = module.params.get('format')
     include_secure = aci.boolean(module.params.get('include_secure'))

@@ -18,6 +18,11 @@ short_description: Manage switch policy leaf profiles (infra:NodeP)
 description:
 - Manage switch policy leaf profiles on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   leaf_profile:
     description:
     - The name of the Leaf Profile.
@@ -194,6 +199,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         leaf_profile=dict(type='str', aliases=['name', 'leaf_profile_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
@@ -210,6 +216,7 @@ def main():
     )
 
     leaf_profile = module.params.get('leaf_profile')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     state = module.params.get('state')
     name_alias = module.params.get('name_alias')

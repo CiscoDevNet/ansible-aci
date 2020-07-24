@@ -20,6 +20,11 @@ notes:
 description:
     - This modules creates an ACI maintenance group
 options:
+    annotation:
+        description:
+            - User-defined string for annotating the MO.
+        type: str
+        required: no
     group:
         description:
             - This is the name of the group
@@ -173,6 +178,7 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         group=dict(type='str'),  # Not required for querying all objects
         policy=dict(type='str'),  # Not required for querying all objects
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
@@ -189,6 +195,7 @@ def main():
     )
 
     state = module.params.get('state')
+    annotation = module.params.get('annotation')
     group = module.params.get('group')
     policy = module.params.get('policy')
     name_alias = module.params.get('name_alias')

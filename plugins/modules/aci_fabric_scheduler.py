@@ -23,6 +23,11 @@ description:
     -   With the module you can create schedule policies that can be a shell, onetime execution or recurring
 
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   name:
     description:
     - The name of the Scheduler.
@@ -248,6 +253,7 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         name=dict(type='str', aliases=['name', 'scheduler_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         windowname=dict(type='str', aliases=['windowname']),
@@ -273,6 +279,7 @@ def main():
     )
 
     state = module.params.get('state')
+    annotation = module.params.get('annotation')
     name = module.params.get('name')
     windowname = module.params.get('windowname')
     recurring = module.params.get('recurring')

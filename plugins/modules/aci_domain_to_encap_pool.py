@@ -21,6 +21,11 @@ notes:
 - The C(domain) and C(encap_pool) parameters should exist before using this module.
   The M(aci_domain) and M(aci_encap_pool) can be used for these.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   domain:
     description:
     - Name of the domain being associated with the Encap Pool.
@@ -266,6 +271,7 @@ POOL_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         domain_type=dict(type='str', required=True, choices=['fc', 'l2dom', 'l3dom', 'phys', 'vmm']),
         pool_type=dict(type='str', required=True, choices=['vlan', 'vsan', 'vxlan']),
         domain=dict(type='str', aliases=['domain_name', 'domain_profile']),  # Not required for querying all objects
@@ -286,6 +292,7 @@ def main():
     )
 
     domain = module.params.get('domain')
+    annotation = module.params.get('annotation')
     domain_type = module.params.get('domain_type')
     pool = module.params.get('pool')
     pool_allocation_mode = module.params.get('pool_allocation_mode')

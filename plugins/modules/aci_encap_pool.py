@@ -17,6 +17,11 @@ short_description: Manage encap pools (fvns:VlanInstP, fvns:VxlanInstP, fvns:Vsa
 description:
 - Manage vlan, vxlan, and vsan pools on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   description:
     description:
     - Description for the C(pool).
@@ -237,6 +242,7 @@ ACI_POOL_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         pool_type=dict(type='str', required=True, aliases=['type'], choices=['vlan', 'vsan', 'vxlan']),
         description=dict(type='str', aliases=['descr']),
         pool=dict(type='str', aliases=['name', 'pool_name']),  # Not required for querying all objects
@@ -255,6 +261,7 @@ def main():
     )
 
     description = module.params.get('description')
+    annotation = module.params.get('annotation')
     pool = module.params.get('pool')
     pool_type = module.params.get('pool_type')
     pool_allocation_mode = module.params.get('pool_allocation_mode')

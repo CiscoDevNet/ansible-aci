@@ -19,6 +19,11 @@ short_description: Manage firmware maintenance policies
 description:
 - Manage maintenance policies that defines behavior during an ACI upgrade.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   name:
     description:
     - The name for the maintenance policy.
@@ -199,6 +204,7 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         name=dict(type='str', aliases=['maintenance_policy']),  # Not required for querying all objects
         runmode=dict(type='str', default='pauseOnlyOnFailures', choices=['pauseOnlyOnFailures', 'pauseNever']),
         graceful=dict(type='bool'),
@@ -221,6 +227,7 @@ def main():
     aci = ACIModule(module)
 
     state = module.params.get('state')
+    annotation = module.params.get('annotation')
     name = module.params.get('name')
     runmode = module.params.get('runmode')
     scheduler = module.params.get('scheduler')

@@ -17,6 +17,11 @@ short_description: Manage top level Application Profile (AP) objects (fv:Ap)
 description:
 - Manage top level Application Profile (AP) objects on Cisco ACI fabrics
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   tenant:
     description:
     - The name of an existing tenant.
@@ -216,6 +221,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         ap=dict(type='str', aliases=['app_profile', 'app_profile_name', 'name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
@@ -233,6 +239,7 @@ def main():
     )
 
     ap = module.params.get('ap')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     state = module.params.get('state')
     tenant = module.params.get('tenant')

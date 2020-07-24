@@ -17,6 +17,11 @@ short_description: Manage initial Contract Subjects (vz:Subj)
 description:
 - Manage initial Contract Subjects on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   tenant:
     description:
     - The name of the tenant.
@@ -264,6 +269,7 @@ MATCH_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         contract=dict(type='str', aliases=['contract_name']),  # Not required for querying all objects
         subject=dict(type='str', aliases=['contract_subject', 'name', 'subject_name']),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
@@ -291,6 +297,7 @@ def main():
     aci = ACIModule(module)
 
     subject = module.params.get('subject')
+    annotation = module.params.get('annotation')
     priority = module.params.get('priority')
     reverse_filter = aci.boolean(module.params.get('reverse_filter'))
     contract = module.params.get('contract')

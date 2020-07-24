@@ -18,6 +18,11 @@ short_description: Manage AAA user certificates (aaa:UserCert)
 description:
 - Manage AAA user certificates on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   aaa_user:
     description:
     - The name of the user to add a certificate to.
@@ -232,6 +237,7 @@ ACI_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         aaa_user=dict(type='str', required=True),
         aaa_user_type=dict(type='str', default='user', choices=['appuser', 'user']),
         certificate=dict(type='str', aliases=['cert_data', 'certificate_data']),
@@ -250,6 +256,7 @@ def main():
     )
 
     aaa_user = module.params.get('aaa_user')
+    annotation = module.params.get('annotation')
     aaa_user_type = module.params.get('aaa_user_type')
     certificate = module.params.get('certificate')
     certificate_name = module.params.get('certificate_name')

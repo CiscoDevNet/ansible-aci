@@ -17,6 +17,11 @@ short_description: Manage External Network Instance Profile (ExtEpg) objects (l3
 description:
 - Manage External Network Instance Profile (ExtEpg) objects (l3extInstP:instP)
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   tenant:
     description:
     - Name of an existing tenant.
@@ -230,6 +235,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         l3out=dict(type='str', aliases=['l3out_name']),  # Not required for querying all objects
         extepg=dict(type='str', aliases=['extepg_name', 'name']),  # Not required for querying all objects
@@ -255,6 +261,7 @@ def main():
     aci = ACIModule(module)
 
     tenant = module.params.get('tenant')
+    annotation = module.params.get('annotation')
     l3out = module.params.get('l3out')
     extepg = module.params.get('extepg')
     description = module.params.get('description')

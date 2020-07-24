@@ -17,6 +17,11 @@ short_description: Manage tenants (fv:Tenant)
 description:
 - Manage tenants on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   tenant:
     description:
     - The name of the tenant.
@@ -207,6 +212,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['name', 'tenant_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
@@ -223,6 +229,7 @@ def main():
     )
 
     description = module.params.get('description')
+    annotation = module.params.get('annotation')
     state = module.params.get('state')
     tenant = module.params.get('tenant')
     name_alias = module.params.get('name_alias')

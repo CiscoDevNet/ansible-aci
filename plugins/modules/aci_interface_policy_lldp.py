@@ -17,6 +17,11 @@ short_description: Manage LLDP interface policies (lldp:IfPol)
 description:
 - Manage LLDP interface policies on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   lldp_policy:
     description:
     - The LLDP interface policy name.
@@ -186,6 +191,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         lldp_policy=dict(type='str', aliases=['name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         receive_state=dict(type='bool'),
@@ -206,6 +212,7 @@ def main():
     aci = ACIModule(module)
 
     lldp_policy = module.params.get('lldp_policy')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     receive_state = aci.boolean(module.params.get('receive_state'), 'enabled', 'disabled')
     transmit_state = aci.boolean(module.params.get('transmit_state'), 'enabled', 'disabled')

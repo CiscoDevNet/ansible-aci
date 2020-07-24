@@ -21,6 +21,11 @@ short_description: This module creates a firmware group
 description:
     - This module creates a firmware group, so that you can apply firmware policy to nodes.
 options:
+    annotation:
+        description:
+            - User-defined string for annotating the MO.
+        type: str
+        required: no
     group:
         description:
             - This the name of the firmware group
@@ -174,6 +179,7 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         group=dict(type='str', aliases=['group']),  # Not required for querying all objects
         firmwarepol=dict(type='str'),  # Not required for querying all objects
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
@@ -190,6 +196,7 @@ def main():
     )
 
     state = module.params.get('state')
+    annotation = module.params.get('annotation')
     group = module.params.get('group')
     firmwarepol = module.params.get('firmwarepol')
     name_alias = module.params.get('name_alias')

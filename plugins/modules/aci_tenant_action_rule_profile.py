@@ -17,6 +17,11 @@ short_description: Manage action rule profiles (rtctrl:AttrP)
 description:
 - Manage action rule profiles on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   action_rule:
     description:
     - The name of the action rule profile.
@@ -182,6 +187,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         action_rule=dict(type='str', aliases=['action_rule_name', 'name']),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
@@ -199,6 +205,7 @@ def main():
     )
 
     action_rule = module.params.get('action_rule')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     state = module.params.get('state')
     tenant = module.params.get('tenant')

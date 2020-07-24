@@ -18,6 +18,11 @@ short_description: Bind AEPs to Physical or Virtual Domains (infra:RsDomP)
 description:
 - Bind AEPs to Physical or Virtual Domains on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   aep:
     description:
     - The name of the Attachable Access Entity Profile.
@@ -231,6 +236,7 @@ VM_PROVIDER_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         aep=dict(type='str', aliases=['aep_name']),  # Not required for querying all objects
         domain=dict(type='str', aliases=['domain_name', 'domain_profile']),  # Not required for querying all objects
         domain_type=dict(type='str', choices=['fc', 'l2dom', 'l3dom', 'phys', 'vmm'], aliases=['type']),  # Not required for querying all objects
@@ -252,6 +258,7 @@ def main():
     )
 
     aep = module.params.get('aep')
+    annotation = module.params.get('annotation')
     domain = module.params.get('domain')
     domain_type = module.params.get('domain_type')
     vm_provider = module.params.get('vm_provider')

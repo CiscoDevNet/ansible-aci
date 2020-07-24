@@ -18,6 +18,11 @@ description:
 - Manages top level filter objects on Cisco ACI fabrics.
 - This modules does not manage filter entries, see M(aci_filter_entry) for this functionality.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   filter:
     description:
     - The name of the filter.
@@ -217,6 +222,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         filter=dict(type='str', aliases=['name', 'filter_name']),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
@@ -234,6 +240,7 @@ def main():
     )
 
     filter_name = module.params.get('filter')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     state = module.params.get('state')
     tenant = module.params.get('tenant')

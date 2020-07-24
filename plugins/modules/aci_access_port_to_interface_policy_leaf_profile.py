@@ -18,6 +18,11 @@ short_description: Manage Fabric interface policy leaf profile interface selecto
 description:
 - Manage Fabric interface policy leaf profile interface selectors on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   leaf_interface_profile:
     description:
     - The name of the Fabric access policy leaf interface profile.
@@ -290,6 +295,7 @@ INTERFACE_TYPE_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         leaf_interface_profile=dict(type='str', aliases=['leaf_interface_profile_name']),  # Not required for querying all objects
         access_port_selector=dict(type='str', aliases=['name', 'access_port_selector_name']),  # Not required for querying all objects
         description=dict(type='str'),
@@ -314,6 +320,7 @@ def main():
     )
 
     leaf_interface_profile = module.params.get('leaf_interface_profile')
+    annotation = module.params.get('annotation')
     access_port_selector = module.params.get('access_port_selector')
     description = module.params.get('description')
     leaf_port_blk = module.params.get('leaf_port_blk')

@@ -17,6 +17,11 @@ short_description: Manage port security (l2:PortSecurityPol)
 description:
 - Manage port security on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   port_security:
     description:
     - The name of the port security.
@@ -188,6 +193,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         port_security=dict(type='str', aliases=['name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         max_end_points=dict(type='int'),
@@ -206,6 +212,7 @@ def main():
     )
 
     port_security = module.params.get('port_security')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     max_end_points = module.params.get('max_end_points')
     port_security_timeout = module.params.get('port_security_timeout')

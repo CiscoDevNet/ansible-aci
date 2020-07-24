@@ -17,6 +17,11 @@ short_description: Manage filter entries (vz:Entry)
 description:
 - Manage filter entries for a filter on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   arp_flag:
     description:
     - The arp flag to use when the ether_type is arp.
@@ -258,6 +263,7 @@ ICMP6_MAPPING = dict(dst_unreachable='dst-unreach', echo_request='echo-req', ech
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         arp_flag=dict(type='str', choices=VALID_ARP_FLAGS),
         description=dict(type='str', aliases=['descr']),
         dst_port=dict(type='str'),
@@ -287,6 +293,7 @@ def main():
     aci = ACIModule(module)
 
     arp_flag = module.params.get('arp_flag')
+    annotation = module.params.get('annotation')
     if arp_flag is not None:
         arp_flag = ARP_FLAG_MAPPING.get(arp_flag)
     description = module.params.get('description')

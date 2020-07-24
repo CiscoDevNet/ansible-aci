@@ -18,6 +18,11 @@ description:
 - Provides rollback and rollback preview functionality for Cisco ACI fabrics.
 - Config Rollbacks are done using snapshots C(aci_snapshot) with the configImportP class.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   compare_export_policy:
     description:
     - The export policy that the C(compare_snapshot) is associated to.
@@ -204,6 +209,7 @@ except ImportError:
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         compare_export_policy=dict(type='str'),
         compare_snapshot=dict(type='str'),
         description=dict(type='str', aliases=['descr']),
@@ -228,6 +234,7 @@ def main():
     aci = ACIModule(module)
 
     description = module.params.get('description')
+    annotation = module.params.get('annotation')
     export_policy = module.params.get('export_policy')
     fail_on_decrypt = aci.boolean(module.params.get('fail_on_decrypt'))
     import_mode = module.params.get('import_mode')

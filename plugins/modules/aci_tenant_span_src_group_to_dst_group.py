@@ -17,6 +17,11 @@ short_description: Bind SPAN source groups to destination groups (span:SpanLbl)
 description:
 - Bind SPAN source groups to associated destination groups on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   description:
     description:
     - The description for Span source group to destination group binding.
@@ -188,6 +193,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         dst_group=dict(type='str'),  # Not required for querying all objects
         src_group=dict(type='str'),  # Not required for querying all objects
@@ -206,6 +212,7 @@ def main():
     )
 
     description = module.params.get('description')
+    annotation = module.params.get('annotation')
     dst_group = module.params.get('dst_group')
     src_group = module.params.get('src_group')
     state = module.params.get('state')

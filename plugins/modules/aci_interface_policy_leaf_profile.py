@@ -18,6 +18,11 @@ short_description: Manage fabric interface policy leaf profiles (infra:AccPortP)
 description:
 - Manage fabric interface policy leaf profiles on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   leaf_interface_profile:
     description:
     - The name of the Fabric access policy leaf interface profile.
@@ -202,6 +207,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         leaf_interface_profile=dict(type='str', aliases=['name', 'leaf_interface_profile_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
@@ -218,6 +224,7 @@ def main():
     )
 
     leaf_interface_profile = module.params.get('leaf_interface_profile')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     state = module.params.get('state')
     name_alias = module.params.get('name_alias')

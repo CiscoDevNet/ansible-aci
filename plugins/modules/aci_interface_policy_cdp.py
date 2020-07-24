@@ -19,6 +19,11 @@ short_description: Manage CDP interface policies (cdp:IfPol)
 description:
 - Manage CDP interface policies on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   cdp_policy:
     description:
     - The CDP interface policy name.
@@ -197,6 +202,7 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         cdp_policy=dict(type='str', required=False, aliases=['cdp_interface', 'name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         admin_state=dict(type='bool'),
@@ -216,6 +222,7 @@ def main():
     aci = ACIModule(module)
 
     cdp_policy = module.params.get('cdp_policy')
+    annotation = module.params.get('annotation')
     description = module.params.get('description')
     admin_state = aci.boolean(module.params.get('admin_state'), 'enabled', 'disabled')
     state = module.params.get('state')

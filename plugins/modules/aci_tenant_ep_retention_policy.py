@@ -17,6 +17,11 @@ short_description: Manage End Point (EP) retention protocol policies (fv:EpRetPo
 description:
 - Manage End Point (EP) retention protocol policies on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   tenant:
     description:
     - The name of an existing tenant.
@@ -259,6 +264,7 @@ BOUNCE_TRIG_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         epr_policy=dict(type='str', aliases=['epr_name', 'name']),  # Not required for querying all objects
         bounce_age=dict(type='int'),
@@ -282,6 +288,7 @@ def main():
     )
 
     epr_policy = module.params.get('epr_policy')
+    annotation = module.params.get('annotation')
     bounce_age = module.params.get('bounce_age')
     if bounce_age is not None and bounce_age != 0 and bounce_age not in range(150, 65536):
         module.fail_json(msg="The bounce_age must be a value of 0 or between 150 and 65535")

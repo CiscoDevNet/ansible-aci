@@ -17,6 +17,11 @@ short_description: Manage Layer 2 interface policies (l2:IfPol)
 description:
 - Manage Layer 2 interface policies on Cisco ACI fabrics.
 options:
+  annotation:
+    description:
+    - User-defined string for annotating the MO.
+    type: str
+    required: no
   l2_policy:
     description:
     - The name of the Layer 2 interface policy.
@@ -199,6 +204,7 @@ QINQ_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
+        annotation=dict(type='str'),  # Not required for querying all objects
         l2_policy=dict(type='str', aliases=['name']),  # Not required for querying all policies
         description=dict(type='str', aliases=['descr']),
         vlan_scope=dict(type='str', choices=['global', 'portlocal']),  # No default provided on purpose
@@ -220,6 +226,7 @@ def main():
     aci = ACIModule(module)
 
     l2_policy = module.params.get('l2_policy')
+    annotation = module.params.get('annotation')
     vlan_scope = module.params.get('vlan_scope')
     qinq = module.params.get('qinq')
     if qinq is not None:
