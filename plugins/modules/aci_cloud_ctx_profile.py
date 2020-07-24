@@ -1,12 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: aci_cloudCtxProfile 
+module: aci_cloud_ctx_profile
 short_description: Manage Cloud Context Profile (cloud:CtxProfile)
 description:
 - Mo doc not defined in techpub!!!
@@ -19,21 +21,22 @@ version_added: '2.7'
 options:
   descr:
     description:
-    - configuration item description. 
+    - configuration item description.
     type: str
   name:
     description:
-    - object name 
+    - object name
     type: str
-    aliases: [ cloud_context_profile ] 
+    aliases: [ cloud_context_profile ]
   nameAlias:
     description:
     - Mo doc not defined in techpub!!!
     type: str
   type:
     description:
-    - component type 
-    choices: [ regular, shadow ] 
+    - component type
+    choices: [ regular, shadow ]
+    type: str
   tenant:
     description:
     - tenant name
@@ -54,14 +57,16 @@ options:
     description:
     - whether vpn gateway router is enabled or not
     type: bool
-  state: 
+  state:
     description:
     - Use C(present) or C(absent) for adding or removing.
     - Use C(query) for listing an object or multiple objects.
     choices: [ absent, present, query ]
+    type: str
     default: present
 
-extends_documentation_fragment: aci
+extends_documentation_fragment:
+- cisco.aci.aci
 '''
 
 EXAMPLES = r'''
@@ -105,28 +110,31 @@ RETURN = r'''
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
 
+
 def main():
     argument_spec = aci_argument_spec()
-    argument_spec.update({ 
-        'descr': dict(type='str',),
-        'name': dict(type='str', aliases=['cloud_context_profile']),
-        'nameAlias': dict(type='str',),
-        'type': dict(type='str', choices=['regular', 'shadow'], ),
-        'tenant': dict(type='str',),
-        'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        'primary_cidr': dict(type='str',),
-        # FIXME: didn't find the flow_log in UI
-        # 'flow_log': dict(type='str'),
-        'vrf': dict(type='str'),
-        'region': dict(type='str'),
-        'vpn_gateway': dict(type='bool', default=False)
-    })
+    argument_spec.update(
+        {
+            'descr': dict(type='str',),
+            'name': dict(type='str', aliases=['cloud_context_profile']),
+            'nameAlias': dict(type='str',),
+            'type': dict(type='str', choices=['regular', 'shadow'], ),
+            'tenant': dict(type='str',),
+            'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
+            'primary_cidr': dict(type='str',),
+            # FIXME: didn't find the flow_log in UI
+            # 'flow_log': dict(type='str'),
+            'vrf': dict(type='str'),
+            'region': dict(type='str'),
+            'vpn_gateway': dict(type='bool', default=False)
+        }
+    )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[ 
-            ['state', 'absent', ['name', 'tenant']], 
+        required_if=[
+            ['state', 'absent', ['name', 'tenant']],
             ['state', 'present', ['name', 'tenant', 'vrf', 'region', 'primary_cidr']],
         ],
     )
@@ -138,7 +146,7 @@ def main():
     tenant = module.params['tenant']
     state = module.params['state']
     primary_cidr = module.params['primary_cidr']
-    child_configs=[]
+    child_configs = []
 
     vrf = module.params['vrf']
     region = module.params['region']
@@ -146,59 +154,57 @@ def main():
     if vrf:
         child_configs.append({'cloudRsToCtx': {'attributes': {'tnFvCtxName': vrf}}})
     if region:
-        child_configs.append( 
-          {
-            'cloudRsCtxProfileToRegion': {
-              'attributes': {
-                'tDn': "uni/clouddomp/provp-aws/region-{}".format(region)
-              }
+        child_configs.append(
+            {
+                'cloudRsCtxProfileToRegion': {
+                    'attributes': {
+                        'tDn': "uni/clouddomp/provp-aws/region-{0}".format(region)
+                    }
+                }
             }
-          }
         )
     if vpn_gateway:
         child_configs.append(
-          {
-            "cloudRouterP": {
-              "attributes": {
-                "name": "default"
-                },
-                "children": [{
-                  "cloudIntNetworkP": {
+            {
+                "cloudRouterP": {
                     "attributes": {
-                      "name": "default"
-                    }
-                  }
-                }]
+                        "name": "default"
+                    },
+                    "children": [{
+                        "cloudIntNetworkP": {
+                            "attributes": {
+                                "name": "default"
+                            }
+                        }
+                    }]
+                }
             }
-          }
         )
     child_configs.append(
-      {
-        'cloudCidr': {
-          'attributes': {
-            "addr": primary_cidr,
-				    "primary": "yes"
-          }
+        {
+            'cloudCidr': {
+                'attributes': {
+                    "addr": primary_cidr,
+                    "primary": "yes"
+                }
+            }
         }
-      }
     )
     aci = ACIModule(module)
     aci.construct_url(
         root_class={
             'aci_class': 'fvTenant',
-            'aci_rn': 'tn-{}'.format(tenant),
-            'target_filter': 'eq(fvTenant.name, "{}")'.format(tenant),
+            'aci_rn': 'tn-{0}'.format(tenant),
+            'target_filter': 'eq(fvTenant.name, "{0}")'.format(tenant),
             'module_object': tenant
-        }, 
+        },
         subclass_1={
             'aci_class': 'cloudCtxProfile',
-            'aci_rn': 'ctxprofile-{}'.format(name),
-            'target_filter': 'eq(cloudCtxProfile.name, "{}")'.format(name),
+            'aci_rn': 'ctxprofile-{0}'.format(name),
+            'target_filter': 'eq(cloudCtxProfile.name, "{0}")'.format(name),
             'module_object': name
         },
-        
-        child_classes=['cloudRsToCtx','cloudRsCtxProfileToRegion', 'cloudRouterP', 'cloudCidr']
-        
+        child_classes=['cloudRsToCtx', 'cloudRsCtxProfileToRegion', 'cloudRouterP', 'cloudCidr']
     )
 
     aci.get_existing()
@@ -216,13 +222,13 @@ def main():
         )
 
         aci.get_diff(aci_class='cloudCtxProfile')
-
         aci.post_config()
 
     elif state == 'absent':
         aci.delete_config()
 
     aci.exit_json()
+
 
 if __name__ == "__main__":
     main()
