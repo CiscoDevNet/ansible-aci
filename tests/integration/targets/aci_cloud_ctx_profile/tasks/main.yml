@@ -1,0 +1,240 @@
+# Test code for the ACI modules
+# Copyright: (c) 2020, Cindy Zhao (@cizhao) <cizhao@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# CLEAN ENVIRONMENT
+- name: Set vars
+  set_fact: 
+    mso_info: &mso_info
+      host: "54.176.140.90"
+      username: "ansible_github_ci"
+      password: "sJ94G92#8dq2hx*K4qh"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: ensure tenant exists for tests to kick off
+  aci_tenant:
+    <<: *mso_info
+    state: present
+    tenant: anstest
+  register: tenant_present
+
+- name: ensure aci cloud context profile does not exists
+  aci_cloud_ctx_profile:
+    <<: *mso_info
+    tenant: anstest
+    name: ctx_profile_1
+    state: absent
+  register: rm_ctx_profile_1
+
+- name: Verify rm_ctx_profile_1
+  assert:
+    that:
+    - rm_ctx_profile_1.current == []
+
+- name: ensure aci cloud context profile 2 does not exists
+  aci_cloud_ctx_profile:
+    <<: *mso_info
+    tenant: anstest
+    name: ctx_profile_2
+    state: absent
+  register: rm_ctx_profile_2
+
+- name: Verify rm_ctx_profile_2
+  assert:
+    that:
+    - rm_ctx_profile_2.current == []
+
+- name: create aci cloud context profile (check mode)
+  aci_cloud_ctx_profile:
+    <<: *mso_info
+    tenant: anstest
+    name: ctx_profile_1
+    vrf: ctx_profile_vrf_1
+    region: us-east-1
+    primary_cidr: '10.10.10.1/16'
+    state: present
+  check_mode: yes
+  register: cm_add_aci_ctx_profile
+
+- name: create aci cloud context profile (normal mode)
+  aci_cloud_ctx_profile:
+    <<: *mso_info
+    tenant: anstest
+    name: ctx_profile_1
+    vrf: ctx_profile_vrf_1
+    region: us-east-1
+    primary_cidr: '10.10.10.1/16'
+    state: present
+  register: nm_add_aci_ctx_profile
+
+- name: Verify cm_add_aci_ctx_profile and nm_add_aci_ctx_profile
+  assert:
+    that:
+    - cm_add_aci_ctx_profile is changed
+    - nm_add_aci_ctx_profile is changed
+    - cm_add_aci_ctx_profile.previous == []
+    - nm_add_aci_ctx_profile.previous == []
+    # current
+    - cm_add_aci_ctx_profile.proposed.cloudCtxProfile.attributes.name == "ctx_profile_1"
+    - cm_add_aci_ctx_profile.proposed.cloudCtxProfile.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1"
+    - cm_add_aci_ctx_profile.proposed.cloudCtxProfile.children[0].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
+    - cm_add_aci_ctx_profile.proposed.cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-east-1"
+    - cm_add_aci_ctx_profile.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.addr == "10.10.10.1/16"
+    - cm_add_aci_ctx_profile.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.primary == "yes"
+    - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
+    - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1"
+    - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
+    - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-east-1"
+    - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.10.10.1/16"
+    - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
+
+- name: add aci cloud context profile again (check_mode)
+  aci_cloud_ctx_profile:
+    <<: *mso_info
+    tenant: anstest
+    name: ctx_profile_1
+    vrf: ctx_profile_vrf_1
+    region: us-east-1
+    primary_cidr: '10.10.10.1/16'
+    state: present
+  check_mode: yes
+  register: cm_add_aci_ctx_profile_again
+
+- name: add aci cloud context profile again (normal_mode)
+  aci_cloud_ctx_profile:
+    <<: *mso_info
+    tenant: anstest
+    name: ctx_profile_1
+    vrf: ctx_profile_vrf_1
+    region: us-east-1
+    primary_cidr: '10.10.10.1/16'
+    state: present
+  register: nm_add_aci_ctx_profile_again
+
+- name: Verify cm_add_aci_ctx_profile_again and nm_add_aci_ctx_profile_again
+  assert:
+    that:
+    - cm_add_aci_ctx_profile_again is not changed
+    - nm_add_aci_ctx_profile_again is not changed
+    - cm_add_aci_ctx_profile_again.previous == nm_add_aci_ctx_profile_again.previous
+    - cm_add_aci_ctx_profile_again.current == nm_add_aci_ctx_profile_again.current
+    - cm_add_aci_ctx_profile_again.previous[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
+    - cm_add_aci_ctx_profile_again.previous[0].cloudCtxProfile.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1"
+    - cm_add_aci_ctx_profile_again.previous[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
+    - cm_add_aci_ctx_profile_again.previous[0].cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-east-1"
+    - cm_add_aci_ctx_profile_again.previous[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.10.10.1/16"
+    - cm_add_aci_ctx_profile_again.previous[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
+    - nm_add_aci_ctx_profile_again.current[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
+    - nm_add_aci_ctx_profile_again.current[0].cloudCtxProfile.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1"
+    - nm_add_aci_ctx_profile_again.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
+    - nm_add_aci_ctx_profile_again.current[0].cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-east-1"
+    - nm_add_aci_ctx_profile_again.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.10.10.1/16"
+    - nm_add_aci_ctx_profile_again.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
+
+- name: add another aci cloud context profile (check_mode)
+  aci_cloud_ctx_profile:
+    <<: *mso_info
+    tenant: anstest
+    name: ctx_profile_2
+    vrf: ctx_profile_vrf_2
+    region: us-west-1
+    primary_cidr: '10.0.10.1/16'
+    state: present
+  check_mode: yes
+  register: cm_add_another_aci_ctx_profile
+
+- name: add another aci cloud context profile (normal_mode)
+  aci_cloud_ctx_profile:
+    <<: *mso_info
+    tenant: anstest
+    name: ctx_profile_2
+    vrf: ctx_profile_vrf_2
+    region: us-west-1
+    primary_cidr: '10.0.10.1/16'
+    state: present
+  register: nm_add_another_aci_ctx_profile
+
+- name: Verify cm_add_another_aci_ctx_profile and nm_add_another_aci_ctx_profile
+  assert:
+    that:
+      - cm_add_another_aci_ctx_profile is changed
+      - nm_add_another_aci_ctx_profile is changed
+      - cm_add_another_aci_ctx_profile.previous == []
+      - nm_add_another_aci_ctx_profile.previous == []
+      # current
+      - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.attributes.name == "ctx_profile_2"
+      - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_2"
+      - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.children[0].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_2"
+      - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-west-1"
+      - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.addr == "10.0.10.1/16"
+      - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.primary == "yes"
+      - nm_add_another_aci_ctx_profile.current[0].cloudCtxProfile.attributes.name == "ctx_profile_2"
+      - nm_add_another_aci_ctx_profile.current[0].cloudCtxProfile.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_2"
+      - nm_add_another_aci_ctx_profile.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_2"
+      - nm_add_another_aci_ctx_profile.current[0].cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-west-1"
+      - nm_add_another_aci_ctx_profile.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.0.10.1/16"
+      - nm_add_another_aci_ctx_profile.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
+
+- name: change setting of ctx_profile_2
+  aci_cloud_ctx_profile:
+    <<: *mso_info
+    tenant: anstest
+    name: ctx_profile_2
+    vrf: ctx_profile_vrf_2
+    region: us-west-1
+    primary_cidr: '10.0.10.1/16'
+    vpn_gateway: true
+    state: present
+  register: change_ctx_profile_2
+
+- name: Verify change_ctx_profile_2
+  assert:
+    that:
+    - change_ctx_profile_2 is changed
+    - change_ctx_profile_2.previous[0].cloudCtxProfile.attributes.name == "ctx_profile_2"
+    - change_ctx_profile_2.previous[0].cloudCtxProfile.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_2"
+    - change_ctx_profile_2.previous[0].cloudCtxProfile.children | length == 3
+    - change_ctx_profile_2.current[0].cloudCtxProfile.attributes.name == "ctx_profile_2"
+    - change_ctx_profile_2.current[0].cloudCtxProfile.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_2"
+    - change_ctx_profile_2.current[0].cloudCtxProfile.children | length == 4
+    - change_ctx_profile_2.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.0.10.1/16"
+    - change_ctx_profile_2.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
+    - change_ctx_profile_2.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_2"
+    - change_ctx_profile_2.current[0].cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-west-1"
+    - change_ctx_profile_2.current[0].cloudCtxProfile.children[3].cloudRouterP.children | length == 3
+
+- name: query aci cloud context profile ctx_profile_1 
+  aci_cloud_ctx_profile:
+    <<: *mso_info
+    tenant: anstest
+    name: ctx_profile_1
+    state: query
+  register: query_aci_cloud_profile_1
+
+- name: query aci cloud context profile ctx_profile_2
+  aci_cloud_ctx_profile:
+    <<: *mso_info
+    tenant: anstest
+    name: ctx_profile_2
+    state: query
+  register: query_aci_cloud_profile_2
+
+- name: Verify query_aci_cloud_profile_1 and query_aci_cloud_profile_2
+  assert:
+    that:
+    - query_aci_cloud_profile_1 is not changed
+    - query_aci_cloud_profile_2 is not changed
+    - query_aci_cloud_profile_1.current[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
+    - query_aci_cloud_profile_1.current[0].cloudCtxProfile.children | length == 3
+    - query_aci_cloud_profile_2.current[0].cloudCtxProfile.attributes.name == "ctx_profile_2"
+    - query_aci_cloud_profile_2.current[0].cloudCtxProfile.children | length == 4
+
