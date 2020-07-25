@@ -67,7 +67,7 @@
     <<: *aci_info 
     tenant: ansible_tenant
     l3Out: ansible_l3out
-    extepg : ansible_extEpg
+    extepg: ansible_extEpg
     contract: ansible_contract
     contract_type: provider
     state: present
@@ -83,7 +83,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     l3Out: ansible_l3out
-    extepg : ansible_extEpg
+    extepg: ansible_extEpg
     contract: ansible_contract
     contract_type: provider
     state: query
@@ -100,7 +100,7 @@
     <<: *aci_info 
     tenant: ansible_tenant
     l3Out: ansible_l3out
-    extepg : ansible_extEpg
+    extepg: ansible_extEpg
     contract: ansible_contract
     contract_type: provider
     state: absent
@@ -116,7 +116,7 @@
     <<: *aci_info 
     tenant: ansible_tenant
     l3Out: ansible_l3out
-    extepg : ansible_extEpg
+    extepg: ansible_extEpg
     contract: ansible_contract
     contract_type: consumer
     provider_match: all
