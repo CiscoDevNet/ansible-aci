@@ -237,4 +237,3 @@
     - query_aci_cloud_profile_1.current[0].cloudCtxProfile.children | length == 3
     - query_aci_cloud_profile_2.current[0].cloudCtxProfile.attributes.name == "ctx_profile_2"
     - query_aci_cloud_profile_2.current[0].cloudCtxProfile.children | length == 4
-
