@@ -1,90 +1,116 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Copyright: (c) 2020, kudtarkar1 (@kudtarkar1) <63087374+kudtarkar1@users.noreply.github.com>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
+ANSIBLE_METADATA = {'metadata_version': '1.1',
+                    'status': ['preview'],
+                    'supported_by': 'community'}
+
 DOCUMENTATION = r'''
 ---
-module: aci_l3out_extepg_to_contract:
-short_descrption: Bind External End Point Groups to Contracts 
-descrption: 
-- Bind ExtEPGs to Contracts on ACI fabrics.
-Version_added: 
-Options:
+module: aci_l3out_extepg_to_contract
+short_description: Binds External End Point Groups to Contracts
+description:
+- Binds ExtEPGs to Contracts on Cisco ACI fabrics.
+options:
   tenant:
-    descrption:
+    description:
     - Name of existing tenant.
     type: str
-    aliases: [tenant_name]
   l3Out:
-    descrption:
-    - The name of the L3Outs
+    description:
+    - Name of the L3Out.
     type: str
-    aliases: [l3out_name]
   extepg:
-    descrption:
-    - The name of the external end point groups
+    description:
+    - Name of the external end point group.
     type: str
-    aliases: [extepg_name]
   contract:
-    descrption:
-    - The name of the contract
+    description:
+    - Name of the contract.
     type: str
   contract_type:
-    descrption:
-    - The type of contract(provider or contract)
-  state:
-    descrption:
-    - Use pesent or absent for adding and removing
-    - Use query for listing an object or multiple ojbects
+    description:
+    - The type of contract.
     type: str
-    choices: [present, absent, query]
-extends_documentation_fragment: aci
-note:
-- The tenant, l3Out,extepg, contract should exist before using this module
+    choices: ['consumer', 'provider']
+  priority:
+    description:
+    - This has four levels of priority.
+    type: str
+    choices: ['level1', 'level2', 'level3', 'unspecified']
+  provider_match:
+    description:
+    - This is configurable for provided contracts.
+    type: str
+    choices: ['all', 'at_least_one', 'at_most_one', 'none']
+  state:
+    description:
+    - Use C(present) or C(absent) for adding or removing.
+    - Use C(query) for listing an object or multiple objects.
+    type: str
+    choices: [ absent, present, query ]
+    default: present
+extends_documentation_fragment:
+- cisco.aci.aci
+
+notes:
+- The C(tenant), C(l3Out), C(extepg) and C(contract) must exist before using this module in your playbook.
+  The M(aci_tenant), M(aci_l3out), M(aci_l3out_extepg) and M(aci_contract) modules can be used for this.
+seealso:
+- name: APIC Management Information Model reference
+  description: More information about the internal APIC class B(tenant), B(l3extInstP) and B(l3extOut).
+  link: https://developer.cisco.com/docs/apic-mim-ref/
+author:
+- kudtarkar1 (@kudtarkar1)
 '''
-
-
 
 EXAMPLES = r'''
-- name: Bind External End Point Groups to Contracts 
-      aci_l3out_epg_to_contract:
-        host: "Host IP"
-        username: admin
-        password: SomeSecretePassword
-        tenant: Auto-Demo
-        l3Out: l3out
-        extepg : testEpg
-        contract: contract1
-        contract_type: provider
-        state: present
-      delegate_to: localhost
-- name: Remove existing contract to External End Point Groups
-      aci_l3out_epg_to_contract:
-        host: "Host IP"
-        username: admin
-        password: SomeSecretePassword
-        tenant: Auto-Demo
-        l3Out: l3out
-        extepg : testEpg
-        contract: contract1
-        contract_type: provider
-        state: absent
-      delegate_to: localhost
-        
-- name: Query the OOB mgmt ipv4 address  
-      aci_l3out_epg_to_contract:
-        host: "Host IP"
-        username: admin
-        password: SomeSecretePassword
-        tenant: Auto-Demo
-        l3Out: l3out
-        extepg : testEpg
-        contract: contract1
-        contract_type: provider
-        state: query
-      delegate_to: localhost
-      register: query_result
-'''
+- name: Bind External End Point Groups to Contracts
+  cisco.aci.aci_l3out_epg_to_contract:
+    host: apic
+    username: admin
+    password: SomeSecretePassword
+    tenant: Auto-Demo
+    l3Out: l3out
+    extepg : testEpg
+    contract: contract1
+    contract_type: provider
+    state: present
+  delegate_to: localhost
 
+- name: Remove existing contract to External End Point Groups
+  cisco.aco.aci_l3out_epg_to_contract:
+    host: apic
+    username: admin
+    password: SomeSecretePassword
+    tenant: Auto-Demo
+    l3Out: l3out
+    extepg : testEpg
+    contract: contract1
+    contract_type: provider
+    state: absent
+  delegate_to: localhost
+
+- name: Query the External End Point Groups
+  cisco.aci.aci_l3out_epg_to_contract:
+    host: apic
+    username: admin
+    password: SomeSecretePassword
+    tenant: Auto-Demo
+    l3Out: l3out
+    extepg : testEpg
+    contract: contract1
+    contract_type: provider
+    state: query
+  delegate_to: localhost
+  register: query_result
+'''
 
 RETURN = r'''
    current:
@@ -191,118 +217,115 @@ RETURN = r'''
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
    '''
 
-
-
-
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.network.aci.aci import ACIModule, aci_argument_spec
- 
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+
 ACI_CLASS_MAPPING = dict(
-       consumer={
-           'class': 'fvRsCons',
-           'rn': 'rscons-',
-       },
-       provider={
-           'class': 'fvRsProv',
-           'rn': 'rsprov-',
-       },
+    consumer={
+        'class': 'fvRsCons',
+        'rn': 'rscons-',
+    },
+    provider={
+        'class': 'fvRsProv',
+        'rn': 'rsprov-',
+    },
 )
-   
+
 PROVIDER_MATCH_MAPPING = dict(
-       all='All',
-       at_least_one='AtleastOne',
-       at_most_one='tmostOne',
-       none='None',
+    all='All',
+    at_least_one='AtleastOne',
+    at_most_one='tmostOne',
+    none='None',
 )
-   
-   
+
+
 def main():
-       argument_spec = aci_argument_spec()
-       argument_spec.update(
-           contract_type=dict(type='str', required=True, choices=['consumer', 'provider']),
-           l3Out=dict(type='str', aliases=['l3Out_name']), 
-           contract=dict(type='str', aliases=['contract_name']),  
-           priority=dict(type='str', choices=['level1', 'level2', 'level3', 'unspecified']),
-           provider_match=dict(type='str', choices=['all', 'at_least_one', 'at_most_one', 'none']),
-           state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-           tenant=dict(type='str', aliases=['tenant_name']),
-           extepg=dict(type='str',aliases=['externalEpg_name'])  
+    argument_spec = aci_argument_spec()
+    argument_spec.update(
+        contract_type=dict(type='str', required=True, choices=['consumer', 'provider']),
+        l3Out=dict(type='str'),
+        contract=dict(type='str'),
+        priority=dict(type='str', choices=['level1', 'level2', 'level3', 'unspecified']),
+        provider_match=dict(type='str', choices=['all', 'at_least_one', 'at_most_one', 'none']),
+        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        tenant=dict(type='str'),
+        extepg=dict(type='str'),
+    )
+    module = AnsibleModule(
+        argument_spec=argument_spec,
+        supports_check_mode=True,
+        required_if=[
+            ['state', 'absent', ['extepg', 'contract', 'l3Out', 'tenant']],
+            ['state', 'present', ['extepg', 'contract', 'l3Out', 'tenant']],
+        ],
+    )
+
+    l3Out = module.params['l3Out']
+    contract = module.params['contract']
+    contract_type = module.params['contract_type']
+    extepg = module.params['extepg']
+    priority = module.params['priority']
+    provider_match = module.params['provider_match']
+    if provider_match is not None:
+        provider_match = PROVIDER_MATCH_MAPPING[provider_match]
+    state = module.params['state']
+    tenant = module.params['tenant']
+
+    aci_class = ACI_CLASS_MAPPING[contract_type]["class"]
+    aci_rn = ACI_CLASS_MAPPING[contract_type]["rn"]
+
+    if contract_type == "consumer" and provider_match is not None:
+        module.fail_json(msg="the 'provider_match' is only configurable for Provided Contracts")
+
+    aci = ACIModule(module)
+    aci.construct_url(
+        root_class=dict(
+            aci_class='fvTenant',
+            aci_rn='tn-{0}'.format(tenant),
+            module_object=tenant,
+            target_filter={'name': tenant},
+        ),
+        subclass_1=dict(
+            aci_class='l3extOut',
+            aci_rn='out-{0}'.format(l3Out),
+            module_object=l3Out,
+            target_filter={'name': l3Out},
+        ),
+        subclass_2=dict(
+            aci_class='l3extInstP',
+            aci_rn='instP-{0}'.format(extepg),
+            module_object=extepg,
+            target_filter={'name': extepg},
+        ),
+        subclass_3=dict(
+            aci_class=aci_class,
+            aci_rn='{0}{1}'.format(aci_rn, contract),
+            module_object=contract,
+            target_filter={'tnVzBrCPName': contract},
+        ),
+    )
+
+    aci.get_existing()
+
+    if state == 'present':
+        aci.payload(
+            aci_class=aci_class,
+            class_config=dict(
+                matchT=provider_match,
+                prio=priority,
+                tnVzBrCPName=contract,
+            ),
         )
-       module = AnsibleModule(
-           argument_spec=argument_spec,
-          supports_check_mode=True,
-          required_if=[
-              ['state', 'absent', ['extepg', 'contract', 'l3Out', 'tenant']],
-              ['state', 'present', ['extepg', 'contract', 'l3Out', 'tenant']],
-          ],
-        )
-   
-       l3Out = module.params['l3Out']
-       contract = module.params['contract']
-       contract_type = module.params['contract_type']
-       extepg = module.params['extepg']
-       priority = module.params['priority']
-       provider_match = module.params['provider_match']
-       if provider_match is not None:
-           provider_match = PROVIDER_MATCH_MAPPING[provider_match]
-       state = module.params['state']
-       tenant = module.params['tenant']
-   
-       aci_class = ACI_CLASS_MAPPING[contract_type]["class"]
-       aci_rn = ACI_CLASS_MAPPING[contract_type]["rn"]
-   
-       if contract_type == "consumer" and provider_match is not None:
-           module.fail_json(msg="the 'provider_match' is only configurable for Provided Contracts")
-   
-       aci = ACIModule(module)
-       aci.construct_url(
-           root_class=dict(
-               aci_class='fvTenant',
-               aci_rn='tn-{0}'.format(tenant),
-               module_object=tenant,
-               target_filter={'name': tenant},
-           ),
-           subclass_1=dict(
-               aci_class='l3extOut',
-               aci_rn='out-{0}'.format(l3Out),
-               module_object=l3Out,
-               target_filter={'name': l3Out},
-           ),
-           subclass_2=dict(
-               aci_class='l3extInstP',
-               aci_rn='instP-{0}'.format(extepg),
-               module_object=extepg,
-               target_filter={'name': extepg},
-           ),
-           subclass_3=dict(
-               aci_class=aci_class,
-               aci_rn='{0}{1}'.format(aci_rn, contract),
-               module_object=contract,
-               target_filter={'tnVzBrCPName': contract},
-           ),
-       )
-   
-       aci.get_existing()
-   
-       if state == 'present':
-           aci.payload(
-               aci_class=aci_class,
-               class_config=dict(
-                   matchT=provider_match,
-                   prio=priority,
-                   tnVzBrCPName=contract,
-               ),
-           )
-   
-           aci.get_diff(aci_class=aci_class)
-   
-           aci.post_config()
-   
-       elif state == 'absent':
-           aci.delete_config()
-   
-       aci.exit_json()
-   
-   
+
+        aci.get_diff(aci_class=aci_class)
+
+        aci.post_config()
+
+    elif state == 'absent':
+        aci.delete_config()
+
+    aci.exit_json()
+
+
 if __name__ == "__main__":
-       main()
+    main()
