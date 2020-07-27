@@ -83,6 +83,8 @@ def aci_argument_spec():
         validate_certs=dict(type='bool', default=True),
         output_path=dict(type='str'),
         annotation=dict(type='str'),
+        owner_key=dict(type='str'),
+        owner_tag=dict(type='str'),
     )
 
 
@@ -1042,6 +1044,10 @@ class ACIModule(object):
         proposed = dict((k, str(v)) for k, v in class_config.items() if v is not None)
         if self.params.get('annotation') is not None:
             proposed['annotation'] = self.params.get('annotation')
+        if self.params.get('owner_key') is not None:
+            proposed['ownerKey'] = self.params.get('owner_key')
+        if self.params.get('owner_tag') is not None:
+            proposed['ownerTag'] = self.params.get('owner_tag')
         self.proposed = {aci_class: {'attributes': proposed}}
 
         # add child objects to proposed
