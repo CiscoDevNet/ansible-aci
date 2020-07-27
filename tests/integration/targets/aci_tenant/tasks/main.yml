@@ -37,6 +37,8 @@
     tenant: ansible_test
     state: present
     annotation: ansible_test
+    owner_key: ansible_key
+    owner_tag: ansible_tag
   check_mode: yes
   register: cm_add_tenant
 
@@ -62,29 +64,39 @@
     - nm_add_tenant_again is not changed
     - nm_add_tenant.current[0].fvTenant.attributes.annotation == 'ansible_test'
     - cm_add_tenant.proposed.fvTenant.attributes.annotation == 'ansible_test'
+    - nm_add_tenant.current[0].fvTenant.attributes.ownerKey == 'ansible_key'
+    - cm_add_tenant.proposed.fvTenant.attributes.ownerKey == 'ansible_key'
+    - nm_add_tenant.current[0].fvTenant.attributes.ownerTag == 'ansible_tag'
+    - cm_add_tenant.proposed.fvTenant.attributes.ownerTag == 'ansible_tag'
 
 
 # CHANGE TENANT
-- name: Change description and annotation of tenant (check_mode)
+- name: Change description and annotation/owner_tag/owner_key of tenant (check_mode)
   cisco.aci.aci_tenant:
     <<: *tenant_present
     description: Ansible test tenant
     annotation: ansible_test_changed
+    owner_key: ansible_key_changed
+    owner_tag: ansible_tag_changed
   check_mode: yes
   register: cm_add_tenant_descr
 
-- name: Change description and annotation of tenant (normal mode)
+- name: Change description and annotation/owner_tag/owner_key of tenant (normal mode)
   cisco.aci.aci_tenant:
     <<: *tenant_present
     description: Ansible test tenant
     annotation: ansible_test_changed
+    owner_key: ansible_key_changed
+    owner_tag: ansible_tag_changed
   register: nm_add_tenant_descr
 
-- name: Change description and annotation of tenant again (check_mode)
+- name: Change description and annotation/owner_tag/owner_key of tenant again (check_mode)
   cisco.aci.aci_tenant:
     <<: *tenant_present
     description: Ansible test tenant
     annotation: ansible_test_changed
+    owner_key: ansible_key_changed
+    owner_tag: ansible_tag_changed
   check_mode: yes
   register: cm_add_tenant_descr_again
 
@@ -93,6 +105,8 @@
     <<: *tenant_present
     description: Ansible test tenant
     annotation: ansible_test_changed
+    owner_key: ansible_key_changed
+    owner_tag: ansible_tag_changed
   register: nm_add_tenant_descr_again
 
 - name: Verify add_tenant_descr
@@ -106,6 +120,14 @@
     - nm_add_tenant_descr.current[0].fvTenant.attributes.annotation == 'ansible_test_changed'
     - cm_add_tenant_descr_again.proposed.fvTenant.attributes.annotation == 'ansible_test_changed'
     - nm_add_tenant_descr_again.current[0].fvTenant.attributes.annotation == 'ansible_test_changed'
+    - nm_add_tenant_descr.current[0].fvTenant.attributes.ownerKey == 'ansible_key_changed'
+    - cm_add_tenant_descr.proposed.fvTenant.attributes.ownerKey == 'ansible_key_changed'
+    - nm_add_tenant_descr_again.current[0].fvTenant.attributes.ownerKey == 'ansible_key_changed'
+    - cm_add_tenant_descr_again.proposed.fvTenant.attributes.ownerKey == 'ansible_key_changed'
+    - nm_add_tenant_descr.current[0].fvTenant.attributes.ownerTag == 'ansible_tag_changed'
+    - cm_add_tenant_descr.proposed.fvTenant.attributes.ownerTag == 'ansible_tag_changed'
+    - nm_add_tenant_descr_again.current[0].fvTenant.attributes.ownerTag == 'ansible_tag_changed'
+    - cm_add_tenant_descr_again.proposed.fvTenant.attributes.ownerTag == 'ansible_tag_changed'
 
 
 # ADD TENANT AGAIN
@@ -113,6 +135,8 @@
   cisco.aci.aci_tenant:
     <<: *tenant_present
     annotation: ansible_test_changed
+    owner_key: ansible_key_changed
+    owner_tag: ansible_tag_changed
   check_mode: yes
   register: cm_add_tenant_again_no_descr
 
@@ -120,6 +144,8 @@
   cisco.aci.aci_tenant:
     <<: *tenant_present
     annotation: ansible_test_changed
+    owner_key: ansible_key_changed
+    owner_tag: ansible_tag_changed
   register: nm_add_tenant_again_no_descr
 
 - name: Verify add_tenant_again_no_descr
@@ -178,6 +204,10 @@
     - cm_query_tenant == nm_query_tenant
     - cm_query_tenant.current[0].fvTenant.attributes.annotation == 'ansible_test_changed'
     - nm_query_tenant.current[0].fvTenant.attributes.annotation == 'ansible_test_changed'
+    - nm_query_tenant.current[0].fvTenant.attributes.ownerKey == 'ansible_key_changed'
+    - cm_query_tenant.current[0].fvTenant.attributes.ownerKey == 'ansible_key_changed'
+    - nm_query_tenant.current[0].fvTenant.attributes.ownerTag == 'ansible_tag_changed'
+    - cm_query_tenant.current[0].fvTenant.attributes.ownerTag == 'ansible_tag_changed'
 
 
 # REMOVE TENANT

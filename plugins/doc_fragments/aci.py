@@ -88,6 +88,17 @@ options:
     description:
     - User-defined string for annotating an object.
     type: str
+  owner_key:
+    description:
+    - User-defined string for the ownerKey attribute of an ACI object.
+    - This attribute represents a key for enabling clients to own their data for entity correlation.
+    type: str
+  owner_tag:
+    description:
+    - User-defined string for the ownerTag attribute of an ACI object.
+    - This attribute represents a tag for enabling clients to add their own data.
+    - For example, to indicate who created this object.
+    type: str
 seealso:
 - ref: aci_guide
   description: Detailed information on how to manage your ACI infrastructure using Ansible.
