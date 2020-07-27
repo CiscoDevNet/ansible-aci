@@ -1,5 +1,6 @@
 # Test code for the ACI modules
 # Copyright: (c) 2017, Dag Wieers (@dagwieers) <dag@wieers.com>
+# Copyright: (c) 2020, Lionel Hercot (@lhercot) <lhercot@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -35,6 +36,7 @@
     output_level: '{{ aci_output_level | default("info") }}'
     tenant: ansible_test
     state: present
+    annotation: ansible_test
   check_mode: yes
   register: cm_add_tenant
 
@@ -58,33 +60,39 @@
     - nm_add_tenant is changed
     - cm_add_tenant_again is not changed
     - nm_add_tenant_again is not changed
+    - nm_add_tenant.current[0].fvTenant.attributes.annotation == 'ansible_test'
+    - cm_add_tenant.proposed.fvTenant.attributes.annotation == 'ansible_test'
 
 
 # CHANGE TENANT
-- name: Change description of tenant (check_mode)
+- name: Change description and annotation of tenant (check_mode)
   cisco.aci.aci_tenant:
     <<: *tenant_present
     description: Ansible test tenant
+    annotation: ansible_test_changed
   check_mode: yes
   register: cm_add_tenant_descr
 
-- name: Change description of tenant (normal mode)
+- name: Change description and annotation of tenant (normal mode)
   cisco.aci.aci_tenant:
     <<: *tenant_present
     description: Ansible test tenant
+    annotation: ansible_test_changed
   register: nm_add_tenant_descr
 
-- name: Change description of tenant again (check_mode)
+- name: Change description and annotation of tenant again (check_mode)
   cisco.aci.aci_tenant:
     <<: *tenant_present
     description: Ansible test tenant
+    annotation: ansible_test_changed
   check_mode: yes
   register: cm_add_tenant_descr_again
 
-- name: Change description of tenant again (normal mode)
+- name: Change description and annotation of tenant again (normal mode)
   cisco.aci.aci_tenant:
     <<: *tenant_present
     description: Ansible test tenant
+    annotation: ansible_test_changed
   register: nm_add_tenant_descr_again
 
 - name: Verify add_tenant_descr
@@ -94,16 +102,24 @@
     - nm_add_tenant_descr is changed
     - cm_add_tenant_descr_again is not changed
     - nm_add_tenant_descr_again is not changed
+    - cm_add_tenant_descr.proposed.fvTenant.attributes.annotation == 'ansible_test_changed'
+    - nm_add_tenant_descr.current[0].fvTenant.attributes.annotation == 'ansible_test_changed'
+    - cm_add_tenant_descr_again.proposed.fvTenant.attributes.annotation == 'ansible_test_changed'
+    - nm_add_tenant_descr_again.current[0].fvTenant.attributes.annotation == 'ansible_test_changed'
 
 
 # ADD TENANT AGAIN
 - name: Add tenant again with no description (check_mode)
-  cisco.aci.aci_tenant: *tenant_present
+  cisco.aci.aci_tenant:
+    <<: *tenant_present
+    annotation: ansible_test_changed
   check_mode: yes
   register: cm_add_tenant_again_no_descr
 
 - name: Add tenant again with no description (normal mode)
-  cisco.aci.aci_tenant: *tenant_present
+  cisco.aci.aci_tenant:
+    <<: *tenant_present
+    annotation: ansible_test_changed
   register: nm_add_tenant_again_no_descr
 
 - name: Verify add_tenant_again_no_descr
@@ -160,6 +176,8 @@
     - cm_query_tenant is not changed
     - nm_query_tenant is not changed
     - cm_query_tenant == nm_query_tenant
+    - cm_query_tenant.current[0].fvTenant.attributes.annotation == 'ansible_test_changed'
+    - nm_query_tenant.current[0].fvTenant.attributes.annotation == 'ansible_test_changed'
 
 
 # REMOVE TENANT

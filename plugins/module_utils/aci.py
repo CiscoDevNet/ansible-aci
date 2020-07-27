@@ -1040,6 +1040,8 @@ class ACIModule(object):
                               MOs should have their own module.
         """
         proposed = dict((k, str(v)) for k, v in class_config.items() if v is not None)
+        if self.params.get('annotation') is not None:
+            proposed['annotation'] = self.params.get('annotation')
         self.proposed = {aci_class: {'attributes': proposed}}
 
         # add child objects to proposed
