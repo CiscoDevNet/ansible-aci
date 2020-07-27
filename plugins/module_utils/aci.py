@@ -82,6 +82,7 @@ def aci_argument_spec():
         use_ssl=dict(type='bool', default=True),
         validate_certs=dict(type='bool', default=True),
         output_path=dict(type='str'),
+        annotation=dict(type='str'),
     )
 
 
