@@ -106,7 +106,7 @@ author:
 
 # FIXME: Add more, better examples
 EXAMPLES = r'''
-- name: Add aport channel interface policy
+- name: Add a port channel interface policy
   cisco.aci.aci_interface_policy_port_channel:
     host: '{{ inventory_hostname }}'
     username: '{{ username }}'
