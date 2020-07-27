@@ -58,17 +58,27 @@ author:
 '''
 
 EXAMPLES = r'''
-- name: Create CDP Test Policy
+- name: Create CDP Interface Policy to enable CDP
   cisco.aci.aci_interface_policy_cdp:
-    name: Ansible_CDP_Test_Policy
+    name: Ansible_CDP_Interface_Policy
     host: apic.example.com
     username: admin
     password: adminpass
+    admin_state: true
     state: present
 
-- name: Remove CDP Test Policy
+- name: Create CDP Interface Policy to disable CDP
   cisco.aci.aci_interface_policy_cdp:
-    name: Ansible_CDP_Test_Policy
+    name: Ansible_CDP_Interface_Policy
+    host: apic.example.com
+    username: admin
+    password: adminpass
+    admin_state: false
+    state: present
+
+- name: Remove CDP Interface Policy
+  cisco.aci.aci_interface_policy_cdp:
+    name: Ansible_CDP_Interface_Policy
     host: apic.example.com
     username: admin
     password: adminpass

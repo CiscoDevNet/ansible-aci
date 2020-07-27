@@ -153,11 +153,13 @@ EXAMPLES = r'''
     policy_group: policygroupname
     description: policygroupname description
     link_level_policy: whateverlinklevelpolicy
-    fibre_channel_interface_policy: whateverfcpolicy
+    cdp_policy: whatevercdppolicy
+    lldp_policy: whateverlldppolicy
+    port_channel_policy: whateverlacppolicy
     state: present
   delegate_to: localhost
 
-- name: Create a Virtual Port Channel (VPC) Interface Policy Group (no description)
+- name: Create a Virtual Port Channel (VPC) Interface Policy Group
   cisco.aci.aci_interface_policy_leaf_policy_group:
     host: apic
     username: admin
@@ -165,11 +167,13 @@ EXAMPLES = r'''
     lag_type: node
     policy_group: policygroupname
     link_level_policy: whateverlinklevelpolicy
-    fibre_channel_interface_policy: whateverfcpolicy
+    cdp_policy: whatevercdppolicy
+    lldp_policy: whateverlldppolicy
+    port_channel_policy: whateverlacppolicy
     state: present
   delegate_to: localhost
 
-- name: Create a Leaf Access Port Policy Group (no description)
+- name: Create a Leaf Access Port Policy Group
   cisco.aci.aci_interface_policy_leaf_policy_group:
     host: apic
     username: admin
@@ -177,7 +181,8 @@ EXAMPLES = r'''
     lag_type: leaf
     policy_group: policygroupname
     link_level_policy: whateverlinklevelpolicy
-    fibre_channel_interface_policy: whateverfcpolicy
+    cdp_policy: whatevercdppolicy
+    lldp_policy: whateverlldppolicy
     state: present
   delegate_to: localhost
 
@@ -207,7 +212,7 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretPassword
-    lag_type: type_name
+    lag_type: leaf
     policy_group: policygroupname
     state: absent
   delegate_to: localhost
