@@ -14,27 +14,17 @@ notes:
 - More information about the internal APIC class B(cloud:Cidr) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 author:
-- Devarshi Shah (@devarshishah3)
-version_added: '2.7'
+- nirav (@nirav.katarmal)
 options: 
   addr:
     description:
     - peer address 
-  annotation:
-    description:
-    - Mo doc not defined in techpub!!! 
   descr:
     description:
     - configuration item description. 
   nameAlias:
     description:
     - Mo doc not defined in techpub!!! 
-  ownerKey:
-    description:
-    - key for enabling clients to own their data 
-  ownerTag:
-    description:
-    - tag for enabling clients to add their own data 
   primary:
     description:
     - Mo doc not defined in techpub!!! 
