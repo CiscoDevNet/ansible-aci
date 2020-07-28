@@ -33,12 +33,12 @@
     description: Ansible tenant
     state: present
 
-- name: Add a new L3Out
+- name: Add a new l3out
   aci_l3out:
     <<: *aci_info
     tenant: ansible_tenant
     name: ansible_l3out
-    description: L3Out for Ansible tenant
+    description: l3out for Ansible tenant
     domain: ansible_dom
     route_control: export
     vrf: ansible_vrf
@@ -51,22 +51,14 @@
     tenant: ansible_tenant
     l3out: ansible_l3out
     name: ansible_extEpg
-    description: ExtEpg for Ansible L3Out
-    state: present
-
-- name: Add a new contract
-  aci_contract:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    contract: ansible_contract
-    scope: application-profile
+    description: ExtEpg for Ansible l3out
     state: present
   
-- name: Bind External End Point Groups to Contracts 
+- name: Bind External End Point Groups to Contracts
   aci_l3out_extepg_to_contract:
     <<: *aci_info 
     tenant: ansible_tenant
-    l3Out: ansible_l3out
+    l3out: ansible_l3out
     extepg: ansible_extEpg
     contract: ansible_contract
     contract_type: provider
@@ -82,7 +74,7 @@
   aci_l3out_extepg_to_contract:
     <<: *aci_info
     tenant: ansible_tenant
-    l3Out: ansible_l3out
+    l3out: ansible_l3out
     extepg: ansible_extEpg
     contract: ansible_contract
     contract_type: provider
@@ -99,7 +91,7 @@
   aci_l3out_extepg_to_contract:
     <<: *aci_info 
     tenant: ansible_tenant
-    l3Out: ansible_l3out
+    l3out: ansible_l3out
     extepg: ansible_extEpg
     contract: ansible_contract
     contract_type: provider
@@ -115,7 +107,7 @@
   aci_l3out_extepg_to_contract:
     <<: *aci_info 
     tenant: ansible_tenant
-    l3Out: ansible_l3out
+    l3out: ansible_l3out
     extepg: ansible_extEpg
     contract: ansible_contract
     contract_type: consumer

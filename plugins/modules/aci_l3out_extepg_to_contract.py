@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2020, kudtarkar1 (@kudtarkar1) <63087374+kudtarkar1@users.noreply.github.com>
+# Copyright: (c) 2020, Sudhakar Shet Kudtarkar (@kudtarkar1)
+# Copyright: (c) 2020, Shreyas Srish <ssrish@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,18 +15,19 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_l3out_extepg_to_contract
-short_description: Binds External End Point Groups to Contracts
+short_description: Bind Contracts to External End Point Groups (EPGs)
 description:
-- Binds ExtEPGs to Contracts on Cisco ACI fabrics.
+- Bind Contracts to External End Point Groups (EPGs) on ACI fabrics.
 options:
   tenant:
     description:
     - Name of existing tenant.
     type: str
-  l3Out:
+  l3out:
     description:
-    - Name of the L3Out.
+    - Name of the l3out.
     type: str
+    aliases: ['l3out_name']
   extepg:
     description:
     - Name of the external end point group.
@@ -60,8 +62,8 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 notes:
-- The C(tenant), C(l3Out), C(extepg) and C(contract) must exist before using this module in your playbook.
-  The M(aci_tenant), M(aci_l3out), M(aci_l3out_extepg) and M(aci_contract) modules can be used for this.
+- The C(tenant), C(l3out) and C(extepg) must exist before using this module in your playbook.
+  The M(aci_tenant), M(aci_l3out) and M(aci_l3out_extepg) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(tenant), B(l3extInstP) and B(l3extOut).
@@ -77,7 +79,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretePassword
     tenant: Auto-Demo
-    l3Out: l3out
+    l3out: l3out
     extepg : testEpg
     contract: contract1
     contract_type: provider
@@ -90,7 +92,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretePassword
     tenant: Auto-Demo
-    l3Out: l3out
+    l3out: l3out
     extepg : testEpg
     contract: contract1
     contract_type: provider
@@ -102,11 +104,16 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretePassword
-    tenant: Auto-Demo
-    l3Out: l3out
-    extepg : testEpg
-    contract: contract1
-    contract_type: provider
+    l3out: l3out
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query all the External End Point Groups
+  cisco.aci.aci_l3out_epg_to_contract:
+    host: apic
+    username: admin
+    password: SomeSecretePassword
     state: query
   delegate_to: localhost
   register: query_result
@@ -243,7 +250,7 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         contract_type=dict(type='str', required=True, choices=['consumer', 'provider']),
-        l3Out=dict(type='str'),
+        l3out=dict(type='str', aliases=['l3out_name']),
         contract=dict(type='str'),
         priority=dict(type='str', choices=['level1', 'level2', 'level3', 'unspecified']),
         provider_match=dict(type='str', choices=['all', 'at_least_one', 'at_most_one', 'none']),
@@ -255,12 +262,12 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['extepg', 'contract', 'l3Out', 'tenant']],
-            ['state', 'present', ['extepg', 'contract', 'l3Out', 'tenant']],
+            ['state', 'absent', ['extepg', 'contract', 'l3out', 'tenant']],
+            ['state', 'present', ['extepg', 'contract', 'l3out', 'tenant']],
         ],
     )
 
-    l3Out = module.params['l3Out']
+    l3out = module.params['l3out']
     contract = module.params['contract']
     contract_type = module.params['contract_type']
     extepg = module.params['extepg']
@@ -287,9 +294,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class='l3extOut',
-            aci_rn='out-{0}'.format(l3Out),
-            module_object=l3Out,
-            target_filter={'name': l3Out},
+            aci_rn='out-{0}'.format(l3out),
+            module_object=l3out,
+            target_filter={'name': l3out},
         ),
         subclass_2=dict(
             aci_class='l3extInstP',
