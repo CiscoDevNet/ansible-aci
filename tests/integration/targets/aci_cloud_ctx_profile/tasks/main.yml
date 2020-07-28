@@ -12,22 +12,22 @@
 - name: Set vars
   set_fact: 
     mso_info: &mso_info
-      host: "54.176.140.90"
-      username: "ansible_github_ci"
-      password: "sJ94G92#8dq2hx*K4qh"
+      host: '{{ aws_aci_hostname }}'
+      username: '{{ aws_aci_username }}'
+      password: '{{ aws_aci_password }}'
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
 
-- name: ensure tenant exists for tests to kick off
+- name: Ensure tenant exists for tests to kick off
   aci_tenant:
     <<: *mso_info
     state: present
     tenant: anstest
   register: tenant_present
 
-- name: ensure aci cloud context profile does not exists
+- name: Ensure aci cloud context profile does not exists
   aci_cloud_ctx_profile:
     <<: *mso_info
     tenant: anstest
@@ -40,7 +40,7 @@
     that:
     - rm_ctx_profile_1.current == []
 
-- name: ensure aci cloud context profile 2 does not exists
+- name: Ensure aci cloud context profile 2 does not exists
   aci_cloud_ctx_profile:
     <<: *mso_info
     tenant: anstest
@@ -53,7 +53,7 @@
     that:
     - rm_ctx_profile_2.current == []
 
-- name: create aci cloud context profile (check mode)
+- name: Create aci cloud context profile (check mode)
   aci_cloud_ctx_profile:
     <<: *mso_info
     tenant: anstest
@@ -65,7 +65,7 @@
   check_mode: yes
   register: cm_add_aci_ctx_profile
 
-- name: create aci cloud context profile (normal mode)
+- name: Create aci cloud context profile (normal mode)
   aci_cloud_ctx_profile:
     <<: *mso_info
     tenant: anstest
@@ -83,7 +83,6 @@
     - nm_add_aci_ctx_profile is changed
     - cm_add_aci_ctx_profile.previous == []
     - nm_add_aci_ctx_profile.previous == []
-    # current
     - cm_add_aci_ctx_profile.proposed.cloudCtxProfile.attributes.name == "ctx_profile_1"
     - cm_add_aci_ctx_profile.proposed.cloudCtxProfile.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1"
     - cm_add_aci_ctx_profile.proposed.cloudCtxProfile.children[0].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
@@ -97,7 +96,7 @@
     - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.10.10.1/16"
     - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
 
-- name: add aci cloud context profile again (check_mode)
+- name: Add aci cloud context profile again (check_mode)
   aci_cloud_ctx_profile:
     <<: *mso_info
     tenant: anstest
@@ -109,7 +108,7 @@
   check_mode: yes
   register: cm_add_aci_ctx_profile_again
 
-- name: add aci cloud context profile again (normal_mode)
+- name: Add aci cloud context profile again (normal_mode)
   aci_cloud_ctx_profile:
     <<: *mso_info
     tenant: anstest
@@ -140,7 +139,7 @@
     - nm_add_aci_ctx_profile_again.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.10.10.1/16"
     - nm_add_aci_ctx_profile_again.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
 
-- name: add another aci cloud context profile (check_mode)
+- name: Add another aci cloud context profile (check_mode)
   aci_cloud_ctx_profile:
     <<: *mso_info
     tenant: anstest
@@ -152,7 +151,7 @@
   check_mode: yes
   register: cm_add_another_aci_ctx_profile
 
-- name: add another aci cloud context profile (normal_mode)
+- name: Add another aci cloud context profile (normal_mode)
   aci_cloud_ctx_profile:
     <<: *mso_info
     tenant: anstest
@@ -170,7 +169,6 @@
       - nm_add_another_aci_ctx_profile is changed
       - cm_add_another_aci_ctx_profile.previous == []
       - nm_add_another_aci_ctx_profile.previous == []
-      # current
       - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.attributes.name == "ctx_profile_2"
       - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_2"
       - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.children[0].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_2"
@@ -184,7 +182,7 @@
       - nm_add_another_aci_ctx_profile.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.0.10.1/16"
       - nm_add_another_aci_ctx_profile.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
 
-- name: change setting of ctx_profile_2
+- name: Change setting of ctx_profile_2
   aci_cloud_ctx_profile:
     <<: *mso_info
     tenant: anstest
@@ -212,7 +210,7 @@
     - change_ctx_profile_2.current[0].cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-west-1"
     - change_ctx_profile_2.current[0].cloudCtxProfile.children[3].cloudRouterP.children | length == 3
 
-- name: query aci cloud context profile ctx_profile_1 
+- name: Query aci cloud context profile ctx_profile_1 
   aci_cloud_ctx_profile:
     <<: *mso_info
     tenant: anstest
@@ -220,7 +218,7 @@
     state: query
   register: query_aci_cloud_profile_1
 
-- name: query aci cloud context profile ctx_profile_2
+- name: Query aci cloud context profile ctx_profile_2
   aci_cloud_ctx_profile:
     <<: *mso_info
     tenant: anstest
@@ -237,3 +235,31 @@
     - query_aci_cloud_profile_1.current[0].cloudCtxProfile.children | length == 3
     - query_aci_cloud_profile_2.current[0].cloudCtxProfile.attributes.name == "ctx_profile_2"
     - query_aci_cloud_profile_2.current[0].cloudCtxProfile.children | length == 4
+
+- name: Query all aci cloud context profiles
+  aci_cloud_ctx_profile:
+    <<: *mso_info
+    tenant: anstest
+    state: query
+  register: query_all
+
+- name: Verify query_all
+  assert:
+    that:
+    - query_all is not changed
+    - query_all.current | length == 1
+    - query_all.current.0.fvTenant.children | length == 2
+
+- name: Remove aci cloud context profile
+  aci_cloud_ctx_profile:
+    <<: *mso_info
+    tenant: anstest
+    name: ctx_profile_1
+    state: absent
+  register: rm_ctx_profile
+
+- name: Verify rm_ctx_profile
+  assert:
+    that:
+    - rm_ctx_profile.current == []
+    - rm_ctx_profile.previous.0.cloudCtxProfile.attributes.name == "ctx_profile_1"
