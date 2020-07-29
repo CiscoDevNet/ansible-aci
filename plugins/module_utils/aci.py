@@ -72,19 +72,19 @@ except ImportError:
 def aci_argument_spec():
     return dict(
         host=dict(type='str', required=True, aliases=['hostname'], fallback=(env_fallback, ['ACI_HOST'])),
-        port=dict(type='int', required=False),
+        port=dict(type='int', required=False, fallback=(env_fallback, ['ACI_PORT'])),
         username=dict(type='str', default='admin', aliases=['user'], fallback=(env_fallback, ['ACI_USERNAME'])),
         password=dict(type='str', no_log=True, fallback=(env_fallback, ['ACI_PASSWORD'])),
         # Beware, this is not the same as client_key !
         private_key=dict(type='str', aliases=['cert_key'], no_log=True, fallback=(env_fallback, ['ACI_PRIVATE_KEY'])),
         # Beware, this is not the same as client_cert !
-        certificate_name=dict(type='str', aliases=['cert_name']),
-        output_level=dict(type='str', default='normal', choices=['debug', 'info', 'normal']),
-        timeout=dict(type='int', default=30),
-        use_proxy=dict(type='bool', default=True),
-        use_ssl=dict(type='bool', default=True),
+        certificate_name=dict(type='str', aliases=['cert_name'], fallback=(env_fallback, ['ACI_CERTIFICATE_NAME'])),
+        output_level=dict(type='str', default='normal', choices=['debug', 'info', 'normal'], fallback=(env_fallback, ['ACI_OUTPUT_LEVEL'])),
+        timeout=dict(type='int', default=30), fallback=(env_fallback, ['ACI_TIMEOUT']),
+        use_proxy=dict(type='bool', default=True, fallback=(env_fallback, ['ACI_USE_PROXY'])),
+        use_ssl=dict(type='bool', default=True, fallback=(env_fallback, ['ACI_USE_SSL'])),
         validate_certs=dict(type='bool', default=True, fallback=(env_fallback, ['ACI_VALIDATE_CERTS'])),
-        output_path=dict(type='str'),
+        output_path=dict(type='str'), fallback=(env_fallback, ['ACI_OUTPUT_PATH']),
         annotation=dict(type='str'),
         owner_key=dict(type='str'),
         owner_tag=dict(type='str'),
