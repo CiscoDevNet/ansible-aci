@@ -1,0 +1,302 @@
+# Test code for the ACI modules
+# Copyright: (c) 2020, Cindy Zhao (@cizhao)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# CLEAN ENVIRONMENT
+- name: Set vars
+  set_fact: 
+    mso_info: &mso_info
+      host: '{{ aws_aci_hostname }}'
+      username: '{{ aws_aci_username }}'
+      password: '{{ aws_aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Ensure tenant doesn't exist
+  aci_tenant:
+    <<: *mso_info
+    state: absent
+    tenant: anstest
+  register: tenant_absent
+
+- name: Ensure tenant exists for tests to kick off
+  aci_tenant:
+    <<: *mso_info
+    state: present
+    tenant: anstest
+  register: tenant_present
+
+- name: Ensure aci cloud context profile does not exists
+  aci_cloud_ctx_profile:
+    <<: *mso_info
+    tenant: anstest
+    name: ctx_profile_1
+    state: absent
+  register: rm_ctx_profile_1
+
+- name: Create aci cloud context profile
+  aci_cloud_ctx_profile:
+    <<: *mso_info
+    tenant: anstest
+    name: ctx_profile_1
+    vrf: ctx_profile_vrf_1
+    region: us-east-1
+    primary_cidr: '10.10.10.1/16'
+    state: present
+  register: nm_add_aci_ctx_profile
+
+- name: Create non_primary cidr (check_mode)
+  aci_cloud_cidr:
+    <<: *mso_info
+    tenant: anstest
+    address: 10.0.0.1/16
+    cloud_context_profile: ctx_profile_1
+    state: present
+  check_mode: yes
+  register: cm_non_primary_cidr
+
+- name: Create non_primary cidr (normal_mode)
+  aci_cloud_cidr:
+    <<: *mso_info
+    tenant: anstest
+    address: 10.0.0.1/16
+    cloud_context_profile: ctx_profile_1
+    state: present
+  register: nm_non_primary_cidr
+
+- name: Verify cm_non_primary_cidr and nm_non_primary_cidr
+  assert:
+    that:
+    - cm_non_primary_cidr is changed
+    - nm_non_primary_cidr is changed
+    - cm_non_primary_cidr.previous == []
+    - nm_non_primary_cidr.previous == []
+    - cm_non_primary_cidr.proposed.cloudCidr.attributes.addr == "10.0.0.1/16"
+    - cm_non_primary_cidr.proposed.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.1/16]"
+    - cm_non_primary_cidr.proposed.cloudCidr.attributes.primary == "no"
+    - nm_non_primary_cidr.current.0.cloudCidr.attributes.addr == "10.0.0.1/16"
+    - nm_non_primary_cidr.current.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.1/16]"
+    - nm_non_primary_cidr.current.0.cloudCidr.attributes.primary == "no"
+
+- name: Create non_primary cidr again
+  aci_cloud_cidr:
+    <<: *mso_info
+    tenant: anstest
+    address: 10.0.0.1/16
+    cloud_context_profile: ctx_profile_1
+    state: present
+  register: nm_non_primary_cidr_again
+
+- name: Verify nm_non_primary_cidr_again
+  assert:
+    that:
+    - nm_non_primary_cidr_again is not changed
+    - nm_non_primary_cidr_again.previous.0.cloudCidr.attributes.addr == "10.0.0.1/16"
+    - nm_non_primary_cidr_again.previous.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.1/16]"
+    - nm_non_primary_cidr_again.previous.0.cloudCidr.attributes.primary == "no"
+    - nm_non_primary_cidr_again.current.0.cloudCidr.attributes.addr == "10.0.0.1/16"
+    - nm_non_primary_cidr_again.current.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.1/16]"
+    - nm_non_primary_cidr_again.current.0.cloudCidr.attributes.primary == "no"
+
+- name: Change primary cidr to non_primary (check_mode)
+  aci_cloud_cidr:
+    <<: *mso_info
+    tenant: anstest
+    address: 10.10.10.1/16
+    cloud_context_profile: ctx_profile_1
+    state: present
+  check_mode: yes
+  register: cm_change_to_non_primary_cidr
+
+- name: Change primary cidr to non_primary (normal_mode)
+  aci_cloud_cidr:
+    <<: *mso_info
+    tenant: anstest
+    address: 10.10.10.1/16
+    cloud_context_profile: ctx_profile_1
+    state: present
+  ignore_errors: yes
+  register: nm_change_to_non_primary_cidr
+
+- name: Verify cm_primary_cidr and nm_primary_cidr
+  assert:
+    that:
+    - nm_change_to_non_primary_cidr.msg == "APIC Error 1{{':'}} Invalid Configuration {{':'}} Exactly one Primary CIDR expected for{{':'}} uni/tn-anstest/ctxprofile-ctx_profile_1, but found{{':'}} 0"
+    - cm_change_to_non_primary_cidr.proposed.cloudCidr.attributes.primary == "no"
+    - cm_change_to_non_primary_cidr.previous.0.cloudCidr.attributes.primary == cm_change_to_non_primary_cidr.current.0.cloudCidr.attributes.primary == "yes"
+
+- name: Remove primary cidr (check_mode)
+  aci_cloud_cidr:
+    <<: *mso_info
+    tenant: anstest
+    address: 10.10.10.1/16
+    cloud_context_profile: ctx_profile_1
+    state: absent
+  check_mode: yes
+  register: cm_remove_primary_cidr
+
+- name: Remove primary cidr (normal_mode)
+  aci_cloud_cidr:
+    <<: *mso_info
+    tenant: anstest
+    address: 10.10.10.1/16
+    cloud_context_profile: ctx_profile_1
+    state: absent
+  ignore_errors: yes
+  register: nm_remove_primary_cidr
+
+- name: Verify cm_remove_primary_cidr and nm_remove_primary_cidr
+  assert:
+    that:
+    - nm_remove_primary_cidr.msg == "APIC Error 1{{':'}} Invalid Configuration {{':'}} Exactly one Primary CIDR expected for{{':'}} uni/tn-anstest/ctxprofile-ctx_profile_1, but found{{':'}} 0"
+    - cm_remove_primary_cidr.proposed == {}
+    - cm_remove_primary_cidr.previous.0.cloudCidr.attributes.primary == cm_remove_primary_cidr.current.0.cloudCidr.attributes.primary == "yes"
+
+- name: Create second non_primary cidr
+  aci_cloud_cidr:
+    <<: *mso_info
+    tenant: anstest
+    address: 10.18.0.1/16
+    cloud_context_profile: ctx_profile_1
+    state: present
+  register: nm_add_second_non_primary_cidr
+
+- name: Verify nm_add_second_non_primary_cidr
+  assert:
+    that:
+    - nm_add_second_non_primary_cidr is changed
+    - nm_add_second_non_primary_cidr.previous == []
+    - nm_add_second_non_primary_cidr.current.0.cloudCidr.attributes.addr == "10.18.0.1/16"
+    - nm_add_second_non_primary_cidr.current.0.cloudCidr.attributes.primary == "no"
+    - nm_add_second_non_primary_cidr.current.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.18.0.1/16]"
+
+- name: Change setting of second non_primary cidr
+  aci_cloud_cidr:
+    <<: *mso_info
+    tenant: anstest
+    address: 10.18.0.1/16
+    cloud_context_profile: ctx_profile_1
+    description: This is not a primary cidr
+    name_alias: cidr_block_range
+    state: present
+  register: change_non_primary_cidr
+
+- name: Verify change_non_primary_cidr
+  assert:
+    that:
+    - change_non_primary_cidr is changed
+    - change_non_primary_cidr.current.0.cloudCidr.attributes.addr == "10.18.0.1/16"
+    - change_non_primary_cidr.current.0.cloudCidr.attributes.descr == "This is not a primary cidr"
+    - change_non_primary_cidr.current.0.cloudCidr.attributes.nameAlias == "cidr_block_range"
+    - change_non_primary_cidr.current.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.18.0.1/16]"
+
+- name: Query all cidrs
+  aci_cloud_cidr:
+    <<: *mso_info
+    tenant: anstest
+    cloud_context_profile: ctx_profile_1
+    state: query
+  register: query_all
+
+- name: Verify query_all
+  assert:
+    that:
+    - query_all is not changed
+    - query_all.current.0.cloudCtxProfile.attributes.name == "ctx_profile_1"
+    - query_all.current.0.cloudCtxProfile.children | length == 3
+    - query_all.current.0.cloudCtxProfile.children.0.cloudCidr.attributes.addr == "10.18.0.1/16"
+    - query_all.current.0.cloudCtxProfile.children.0.cloudCidr.attributes.primary == "no"
+    - query_all.current.0.cloudCtxProfile.children.1.cloudCidr.attributes.addr == "10.0.0.1/16"
+    - query_all.current.0.cloudCtxProfile.children.1.cloudCidr.attributes.primary == "no"
+    - query_all.current.0.cloudCtxProfile.children.2.cloudCidr.attributes.addr == "10.10.10.1/16"
+    - query_all.current.0.cloudCtxProfile.children.2.cloudCidr.attributes.primary == "yes"
+
+- name: Query primary cidr
+  aci_cloud_cidr:
+    <<: *mso_info
+    tenant: anstest
+    cloud_context_profile: ctx_profile_1
+    address: 10.10.10.1/16
+    state: query
+  register: query_primary
+
+- name: Verify query_primary
+  assert:
+    that:
+    - query_primary is not changed
+    - query_primary.current.0.cloudCidr.attributes.addr == "10.10.10.1/16"
+    - query_primary.current.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.10.10.1/16]"
+    - query_primary.current.0.cloudCidr.attributes.primary == "yes"
+
+- name: Query non_primary cidr
+  aci_cloud_cidr:
+    <<: *mso_info
+    tenant: anstest
+    cloud_context_profile: ctx_profile_1
+    address: 10.0.0.1/16
+    state: query
+  register: query_non_primary
+
+- name: Verify query_non_primary
+  assert:
+    that:
+    - query_non_primary is not changed
+    - query_non_primary.current.0.cloudCidr.attributes.addr == "10.0.0.1/16"
+    - query_non_primary.current.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.1/16]"
+    - query_non_primary.current.0.cloudCidr.attributes.primary == "no"
+
+- name: Query non_exsisting cidr
+  aci_cloud_cidr:
+    <<: *mso_info
+    tenant: anstest
+    cloud_context_profile: ctx_profile_1
+    address: non_exsisting
+    state: query
+  ignore_errors: yes
+  register: query_non_existing
+
+- name: Verify query_non_existing
+  assert:
+    that:
+    - query_non_existing.msg == "APIC Error 104{{':'}} Invalid RN cidr-[non_exsisting]"
+
+- name: Remove non_primary cidr(check_mode)
+  aci_cloud_cidr:
+    <<: *mso_info
+    tenant: anstest
+    address: 10.0.0.1/16
+    cloud_context_profile: ctx_profile_1
+    state: absent
+  check_mode: yes
+  register: cm_remove_non_primary_cidr
+
+- name: Remove non_primary cidr(normal_mode)
+  aci_cloud_cidr:
+    <<: *mso_info
+    tenant: anstest
+    address: 10.0.0.1/16
+    cloud_context_profile: ctx_profile_1
+    state: absent
+  register: nm_remove_non_primary_cidr
+
+- name: Verify cm_remove_non_primary_cidr and nm_remove_non_primary_cidr
+  assert:
+    that:
+    - cm_remove_non_primary_cidr is changed
+    - nm_remove_non_primary_cidr is changed
+    - cm_remove_non_primary_cidr.proposed == {}
+    - nm_remove_non_primary_cidr.current == []
+    - cm_remove_non_primary_cidr.previous.0.cloudCidr.attributes.addr == "10.0.0.1/16"
+    - cm_remove_non_primary_cidr.previous.0.cloudCidr.attributes.primary == "no"
+    - cm_remove_non_primary_cidr.previous.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.1/16]"
+    - nm_remove_non_primary_cidr.previous.0.cloudCidr.attributes.addr == "10.0.0.1/16"
+    - nm_remove_non_primary_cidr.previous.0.cloudCidr.attributes.primary == "no"
+    - nm_remove_non_primary_cidr.previous.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.1/16]"
