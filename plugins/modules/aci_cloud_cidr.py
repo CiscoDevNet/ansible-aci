@@ -11,12 +11,13 @@ __metaclass__ = type
 DOCUMENTATION = r'''
 ---
 module: aci_cloud_cidr
-short_description: Manage Cloud CIDR on Cisco Cloud ACI.
+short_description: Manage CIDR under Cloud Context Profile (cloud:Cidr)
 description:
-- Mo doc not defined in techpub!!!
+-  Manage Cloud CIDR on Cisco Cloud ACI.
 notes:
 - More information about the internal APIC class B(cloud:Cidr) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
+- This module is only used to manage non_primary Cloud Cidr, the primary Cidr is created by aci_cloud_ctx_profile module.
 author:
 - Nirav (@nirav)
 - Cindy Zhao (@cizhao)
@@ -32,12 +33,6 @@ options:
   name_alias:
     description:
     - An alias for the name of the current object. This relates to the nameAlias field in ACI and is used to rename object without changing the DN.
-    type: str
-  primary:
-    description:
-    - Whether this is the primary CIDR
-    choices: [ 'yes', 'no' ]
-    default: 'no'
     type: str
   tenant:
     description:
@@ -59,6 +54,155 @@ extends_documentation_fragment:
 - cisco.aci.aci
 '''
 
+EXAMPLES = r'''
+- name: Create non_primary cidr
+  aci_cloud_cidr:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: tenantName
+    address: 10.10.10.1/16
+    cloud_context_profile: ctxProfileName
+    state: present
+  delegate_to: localhost
+
+- name: Remove non_primary cidr
+  aci_cloud_cidr:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: tenantName
+    address: 10.10.10.1/16
+    cloud_context_profile: ctxProfileName
+    state: absent
+  delegate_to: localhost
+
+- name: Query all cidrs under given cloud context profile
+  aci_cloud_cidr:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: tenantName
+    cloud_context_profile: ctxProfileName
+    state: query
+  delegate_to: localhost
+
+- name: Query specific cidr under given cloud context profile
+  aci_cloud_cidr:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: tenantName
+    cloud_context_profile: ctxProfileName
+    address: 10.10.10.1/16
+    state: query
+  delegate_to: localhost
+'''
+
+RETURN = r'''
+current:
+  description: The existing configuration from the APIC after the module has finished
+  returned: success
+  type: list
+  sample:
+    [
+        {
+            "fvTenant": {
+                "attributes": {
+                    "descr": "Production environment",
+                    "dn": "uni/tn-production",
+                    "name": "production",
+                    "nameAlias": "",
+                    "ownerKey": "",
+                    "ownerTag": ""
+                }
+            }
+        }
+    ]
+error:
+  description: The error information as returned from the APIC
+  returned: failure
+  type: dict
+  sample:
+    {
+        "code": "122",
+        "text": "unknown managed object class foo"
+    }
+raw:
+  description: The raw output returned by the APIC REST API (xml or json)
+  returned: parse error
+  type: str
+  sample: '<?xml version="1.0" encoding="UTF-8"?><imdata totalCount="1"><error code="122" text="unknown managed object class foo"/></imdata>'
+sent:
+  description: The actual/minimal configuration pushed to the APIC
+  returned: info
+  type: list
+  sample:
+    {
+        "fvTenant": {
+            "attributes": {
+                "descr": "Production environment"
+            }
+        }
+    }
+previous:
+  description: The original configuration from the APIC before the module has started
+  returned: info
+  type: list
+  sample:
+    [
+        {
+            "fvTenant": {
+                "attributes": {
+                    "descr": "Production",
+                    "dn": "uni/tn-production",
+                    "name": "production",
+                    "nameAlias": "",
+                    "ownerKey": "",
+                    "ownerTag": ""
+                }
+            }
+        }
+    ]
+proposed:
+  description: The assembled configuration from the user-provided parameters
+  returned: info
+  type: dict
+  sample:
+    {
+        "fvTenant": {
+            "attributes": {
+                "descr": "Production environment",
+                "name": "production"
+            }
+        }
+    }
+filter_string:
+  description: The filter string used for the request
+  returned: failure or debug
+  type: str
+  sample: ?rsp-prop-include=config-only
+method:
+  description: The HTTP method used for the request to the APIC
+  returned: failure or debug
+  type: str
+  sample: POST
+response:
+  description: The HTTP response from the APIC
+  returned: failure or debug
+  type: str
+  sample: OK (30 bytes)
+status:
+  description: The HTTP status from the APIC
+  returned: failure or debug
+  type: int
+  sample: 200
+url:
+  description: The HTTP url used for the request to the APIC
+  returned: failure or debug
+  type: str
+  sample: https://10.11.12.13/api/mo/uni/tn-production.json
+'''
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
@@ -70,7 +214,6 @@ def main():
         address=dict(type='str',),
         description=dict(type='str',),
         name_alias=dict(type='str',),
-        primary=dict(type='str', default='no', choices=['no', 'yes']),
         tenant=dict(type='str'),
         cloud_context_profile=dict(type='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
@@ -88,7 +231,6 @@ def main():
     address = module.params.get('address')
     description = module.params.get('description')
     name_alias = module.params.get('name_alias')
-    primary = module.params.get('primary')
     tenant = module.params.get('tenant')
     cloud_context_profile = module.params.get('cloud_context_profile')
     state = module.params.get('state')
@@ -128,7 +270,7 @@ def main():
                 addr=address,
                 descr=description,
                 nameAlias=name_alias,
-                primary=primary,
+                primary='no',
             ),
             child_configs=child_configs
         )
