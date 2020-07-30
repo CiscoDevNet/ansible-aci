@@ -70,6 +70,22 @@
     that:
     - bind_extepg_provider_contract.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
 
+- name: Bind second External End Point Groups to Contracts
+  aci_l3out_extepg_to_contract:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    contract: ansible_contract2
+    contract_type: provider
+    state: present
+  register: bind_extepg_provider_contract_2
+
+- name: Verify bind_extepg_provider_contract_2
+  assert:
+    that:
+    - bind_extepg_provider_contract_2.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract2"
+
 - name: Query the External End Point Groups
   aci_l3out_extepg_to_contract:
     <<: *aci_info
@@ -86,6 +102,13 @@
     that:
     - query_extepg is not changed
     - query_extepg.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
+
+- name: Query all the External End Point Groups
+  aci_l3out_extepg_to_contract:
+    <<: *aci_info
+    contract_type: provider
+    state: query
+  register: query_all
 
 - name: Remove existing contract to External End Point Groups
   aci_l3out_extepg_to_contract:

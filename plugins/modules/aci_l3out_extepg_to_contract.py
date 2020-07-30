@@ -32,6 +32,7 @@ options:
     description:
     - Name of the external end point group.
     type: str
+    aliases: ['extepg_name', 'external_epg']
   contract:
     description:
     - Name of the contract.
@@ -66,7 +67,7 @@ notes:
   The M(aci_tenant), M(aci_l3out) and M(aci_l3out_extepg) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(tenant), B(l3extInstP) and B(l3extOut).
+  description: More information about the internal APIC class B(fvtenant), B(l3extInstP) and B(l3extOut).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - kudtarkar1 (@kudtarkar1)
@@ -104,7 +105,11 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretePassword
-    l3out: l3out
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    contract: ansible_contract
+    contract_type: provider
     state: query
   delegate_to: localhost
   register: query_result
@@ -114,6 +119,7 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretePassword
+    contract_type: provider
     state: query
   delegate_to: localhost
   register: query_result
@@ -256,7 +262,7 @@ def main():
         provider_match=dict(type='str', choices=['all', 'at_least_one', 'at_most_one', 'none']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         tenant=dict(type='str'),
-        extepg=dict(type='str'),
+        extepg=dict(type='str', aliases=['extepg_name', 'external_epg']),
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
