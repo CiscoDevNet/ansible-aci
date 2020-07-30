@@ -15,13 +15,13 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_l2out
-short_description: Manage layer2(L2Out) objects.
+short_description: Manage Layer2 Out (L2Out) objects.
 description:
-- Manage outer layer2 on Cisco ACI fabric.
+- Manage Layer2 Out configuration on Cisco ACI fabrics.
 options:
   tenant:
     description:
-    - Name of existing tenant.
+    - Name of an existing tenant.
     type: str
   l2out:
     description:
@@ -30,11 +30,11 @@ options:
     aliases: [ 'name' ]
   description:
     description:
-    - The description of outer layer2.
+    - Description for the L2Out.
     type: str
   bd:
     description:
-    - Name of the Bridge domain which is associted with L2Out.
+    - Name of the Bridge domain which is associted with the L2Out.
     type: str
   domain:
     description:
@@ -42,11 +42,11 @@ options:
     type: str
   vlan:
     description:
-    - Vlan which being associated with L2
-    type: str
-  targetDscp:
+    - The VLAN which is being associated with the L2Out.
+    type: int
+  target_dscp:
     description:
-    - target what
+    - Description of the target
     type: str
   state:
     description:
@@ -55,22 +55,27 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
+  name_alias:
+    description:
+    - The alias for the current object. This relates to the nameAlias field in ACI.
+    type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 
 notes:
-- The C(tenant), C(bd) must exist before using this module in your playbook.
-  The M(aci_tenant), M(aci_bd) modules can be used for this.
+- The C(tenant) must exist before using this module in your playbook.
+  The M(aci_tenant) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(tenant), B(bd).
+  description: More information about the internal APIC class B(fvTenant).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- kudtarkar1 (@kudtarkar1)
+- Sudhakar Shet Kudtarkar (@kudtarkar1)
+- Shreyas Srish (@shrsr)
 '''
 
 EXAMPLES = r'''
-- name: Add New L2Out
+- name: Add a New L2Out
   cisco.aci.aci_l2out:
     host: apic
     username: admin
@@ -80,28 +85,26 @@ EXAMPLES = r'''
     description: via Ansible
     bd: bd1
     domain: l2Dom
-    vlan: vlan-3200
+    vlan: 3200
     state: present
     delegate_to: localhost
 
-- name: Remove L2Out
+- name: Remove an L2Out
   cisco.aci.aci_l2out:
     host: apic
     username: admin
     password: SomeSecretePassword
     tenant: Auto-Demo
     l2out: l2out
-    bd: bd1
-    domain: l2Dom
-    vlan: vlan-3200
     state: absent
     delegate_to: localhost
 
-- name: Query L2Out
+- name: Query an L2Out
   cisco.aci.aci_l2out:
     host: apic
     username: admin
     password: SomeSecretePassword
+    tenant: Auto-Demo
     l2out: l2out
     state: query
     delegate_to: localhost
@@ -232,18 +235,19 @@ def main():
         bd=dict(type='str'),
         l2out=dict(type='str', aliases=['name']),
         domain=dict(type='str'),
-        vlan=dict(type='str'),
+        vlan=dict(type='int'),
         description=dict(type='str'),
-        targetDscp=dict(type='str'),
+        target_dscp=dict(type='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         tenant=dict(type='str'),
+        name_alias=dict(type='str'),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['bd', 'l2out', 'tenant', 'domain', 'vlan']],
+            ['state', 'absent', ['l2out', 'tenant']],
             ['state', 'present', ['bd', 'l2out', 'tenant', 'domain', 'vlan']],
         ],
     )
@@ -255,8 +259,9 @@ def main():
     vlan = module.params['vlan']
     state = module.params['state']
     tenant = module.params['tenant']
-    targetDscp = module.params['targetDscp']
+    target_dscp = module.params['target_dscp']
     child_classes = ['l2extRsEBd', 'l2extRsL2DomAtt', 'l2extLNodeP']
+    name_alias = module.params.get('name_alias')
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -276,21 +281,29 @@ def main():
     )
 
     aci.get_existing()
-    child_configs = [
-        dict(l2extRsL2DomAtt=dict(attributes=dict(
-            tDn='uni/l2dom-{0}'.format(domain)))),
-        dict(l2extRsEBd=dict(attributes=dict(
-            tnFvBDName=bd, encap=vlan)))
-    ]
 
     if state == 'present':
+        child_configs = [
+            dict(l2extRsL2DomAtt=dict(attributes=dict(
+                tDn='uni/l2dom-{0}'.format(domain)
+            )
+            )
+            ),
+            dict(l2extRsEBd=dict(attributes=dict(
+                tnFvBDName=bd, encap='vlan-{0}'.format(vlan)
+            )
+            )
+            )
+        ]
+
         aci.payload(
             aci_class='l2extOut',
             class_config=dict(
                 name=l2out,
                 descr=description,
                 dn='uni/tn-{0}/l2out-{1}'.format(tenant, l2out),
-                targetDscp=targetDscp
+                targetDscp=target_dscp,
+                nameAlias=name_alias
             ),
             child_configs=child_configs,
         )

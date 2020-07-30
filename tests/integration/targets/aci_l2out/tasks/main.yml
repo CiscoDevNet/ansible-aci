@@ -33,23 +33,15 @@
     description: Ansible tenant
     state: present
 
-- name: Add Bridge Domain
-  aci_bd:
-    <<: *aci_info
-    tenant: ansible_tenant
-    bd: absible_bd
-    mac_address: 00:22:BD:F8:19:FE
-    state: present
-
 - name: Add New L2Out
   aci_l2out:
     <<: *aci_info
     tenant: ansible_tenant
     l2out: ansible_l2out
     description: Test deployment 
-    bd: absible_bd
+    bd: ansible_bd
     domain: l2Dom
-    vlan: vlan-3200
+    vlan: 3200
     state: present
   register: add_l2out
 
@@ -65,9 +57,9 @@
     tenant: ansible_tenant
     l2out: ansible_l2out
     description: Test deployment 
-    bd: absible_bd
+    bd: ansible_bd
     domain: l2Dom
-    vlan: vlan-3200
+    vlan: 3200
     state: present
   register: add_l2out_again
 
@@ -82,9 +74,9 @@
     tenant: ansible_tenant
     l2out: ansible_l2out_2
     description: Test deployment 
-    bd: absible_bd
+    bd: ansible_bd
     domain: l2Dom
-    vlan: vlan-3200
+    vlan: 3200
     state: present
   register: add_l2out_2
 
@@ -97,6 +89,7 @@
 - name: Query L2Out  
   aci_l2out:
     <<: *aci_info
+    tenant: ansible_tenant
     l2out: ansible_l2out
     state: query
   register: query_l2out
@@ -124,9 +117,6 @@
     <<: *aci_info
     tenant: ansible_tenant
     l2out: ansible_l2out
-    bd: absible_bd
-    domain: l2Dom
-    vlan: vlan-3200
     state: absent
   register: remove_l2out
 
