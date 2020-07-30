@@ -97,17 +97,20 @@ options:
   annotation:
     description:
     - User-defined string for annotating an object.
+    - If the value is not specified in the task, the value of environment variable C(ACI_ANNOTATION) will be used instead.
     type: str
   owner_key:
     description:
     - User-defined string for the ownerKey attribute of an ACI object.
     - This attribute represents a key for enabling clients to own their data for entity correlation.
+    - If the value is not specified in the task, the value of environment variable C(ACI_OWNER_KEY) will be used instead.
     type: str
   owner_tag:
     description:
     - User-defined string for the ownerTag attribute of an ACI object.
     - This attribute represents a tag for enabling clients to add their own data.
     - For example, to indicate who created this object.
+    - If the value is not specified in the task, the value of environment variable C(ACI_OWNER_TAG) will be used instead.
     type: str
 seealso:
 - ref: aci_guide
