@@ -14,10 +14,6 @@ module: aci_cloud_cidr
 short_description: Manage CIDR under Cloud Context Profile (cloud:Cidr)
 description:
 -  Manage Cloud CIDR on Cisco Cloud ACI.
-notes:
-- More information about the internal APIC class B(cloud:Cidr) from
-  L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
-- This module is only used to manage non_primary Cloud Cidr, the primary Cidr is created by aci_cloud_ctx_profile module.
 author:
 - Nirav (@nirav)
 - Cindy Zhao (@cizhao)
@@ -26,6 +22,7 @@ options:
     description:
     - CIDR ip and its submask.
     type: str
+    aliases: [ cidr ]
   description:
     description:
     - Description of the Cloud CIDR.
@@ -38,10 +35,12 @@ options:
     description:
     - The name of the Tenant.
     type: str
+    required: yes
   cloud_context_profile:
     description:
     - The name of the Cloud Context Profile.
     type: str
+    required: yes
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -49,36 +48,40 @@ options:
     choices: [ absent, present, query ]
     default: present
     type: str
-
 extends_documentation_fragment:
 - cisco.aci.aci
+
+notes:
+- This module is only used to manage non_primary Cloud CIDR, see M(aci_cloud_ctx_profile) to create the primary CIDR.
+- More information about the internal APIC class B(cloud:Cidr) from
+  L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 '''
 
 EXAMPLES = r'''
-- name: Create non_primary cidr
-  aci_cloud_cidr:
+- name: Create non_primary CIDR
+  cisco.aci.aci_cloud_cidr:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: tenantName
-    address: 10.10.10.1/16
+    address: 10.10.0.0/16
     cloud_context_profile: ctxProfileName
     state: present
   delegate_to: localhost
 
-- name: Remove non_primary cidr
-  aci_cloud_cidr:
+- name: Remove non_primary CIDR
+  cisco.aci.aci_cloud_cidr:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: tenantName
-    address: 10.10.10.1/16
+    address: 10.10.0.0/16
     cloud_context_profile: ctxProfileName
     state: absent
   delegate_to: localhost
 
-- name: Query all cidrs under given cloud context profile
-  aci_cloud_cidr:
+- name: Query all CIDRs under given cloud context profile
+  cisco.aci.aci_cloud_cidr:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -87,14 +90,14 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
 
-- name: Query specific cidr under given cloud context profile
-  aci_cloud_cidr:
+- name: Query specific CIDR under given cloud context profile
+  cisco.aci.aci_cloud_cidr:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: tenantName
     cloud_context_profile: ctxProfileName
-    address: 10.10.10.1/16
+    address: 10.10.0.0/16
     state: query
   delegate_to: localhost
 '''
@@ -211,11 +214,11 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        address=dict(type='str',),
-        description=dict(type='str',),
-        name_alias=dict(type='str',),
-        tenant=dict(type='str'),
-        cloud_context_profile=dict(type='str'),
+        address=dict(type='str', aliases=['cidr']),
+        description=dict(type='str'),
+        name_alias=dict(type='str'),
+        tenant=dict(type='str', required=True),
+        cloud_context_profile=dict(type='str', required=True),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
 
@@ -223,8 +226,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['address', 'tenant', 'cloud_context_profile', ]],
-            ['state', 'present', ['address', 'tenant', 'cloud_context_profile', ]],
+            ['state', 'absent', ['address']],
+            ['state', 'present', ['address']],
         ],
     )
 
