@@ -20,7 +20,7 @@ author:
 options:
   address:
     description:
-    - CIDR ip and its submask.
+    - CIDR ip and its netmask.
     type: str
     aliases: [ cidr ]
   description:
