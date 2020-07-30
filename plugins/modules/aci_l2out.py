@@ -44,10 +44,6 @@ options:
     description:
     - The VLAN which is being associated with the L2Out.
     type: int
-  target_dscp:
-    description:
-    - Description of the target
-    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -75,7 +71,7 @@ author:
 '''
 
 EXAMPLES = r'''
-- name: Add a New L2Out
+- name: Add a new L2Out
   cisco.aci.aci_l2out:
     host: apic
     username: admin
@@ -110,11 +106,12 @@ EXAMPLES = r'''
     delegate_to: localhost
     register: query_result
 
-- name: Query all
+- name: Query all L2Outs in a specific tenant
   cisco.aci.aci_l2out:
     host: apic
     username: admin
     password: SomeSecretePassword
+    tenant: Auto-Demo
     state: query
     delegate_to: localhost
     register: query_result
@@ -237,7 +234,6 @@ def main():
         domain=dict(type='str'),
         vlan=dict(type='int'),
         description=dict(type='str'),
-        target_dscp=dict(type='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         tenant=dict(type='str'),
         name_alias=dict(type='str'),
@@ -252,16 +248,15 @@ def main():
         ],
     )
 
-    bd = module.params['bd']
-    l2out = module.params['l2out']
-    description = module.params['description']
-    domain = module.params['domain']
-    vlan = module.params['vlan']
-    state = module.params['state']
-    tenant = module.params['tenant']
-    target_dscp = module.params['target_dscp']
-    child_classes = ['l2extRsEBd', 'l2extRsL2DomAtt', 'l2extLNodeP']
+    bd = module.params.get('bd')
+    l2out = module.params.get('l2out')
+    description = module.params.get('description')
+    domain = module.params.get('domain')
+    vlan = module.params.get('vlan')
+    state = module.params.get('state')
+    tenant = module.params.get('tenant')
     name_alias = module.params.get('name_alias')
+    child_classes = ['l2extRsEBd', 'l2extRsL2DomAtt', 'l2extLNodeP']
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -284,15 +279,19 @@ def main():
 
     if state == 'present':
         child_configs = [
-            dict(l2extRsL2DomAtt=dict(attributes=dict(
-                tDn='uni/l2dom-{0}'.format(domain)
-            )
-            )
+            dict(
+                l2extRsL2DomAtt=dict(
+                    attributes=dict(
+                        tDn='uni/l2dom-{0}'.format(domain)
+                    )
+                )
             ),
-            dict(l2extRsEBd=dict(attributes=dict(
-                tnFvBDName=bd, encap='vlan-{0}'.format(vlan)
-            )
-            )
+            dict(
+                l2extRsEBd=dict(
+                    attributes=dict(
+                        tnFvBDName=bd, encap='vlan-{0}'.format(vlan)
+                    )
+                )
             )
         ]
 
@@ -302,7 +301,6 @@ def main():
                 name=l2out,
                 descr=description,
                 dn='uni/tn-{0}/l2out-{1}'.format(tenant, l2out),
-                targetDscp=target_dscp,
                 nameAlias=name_alias
             ),
             child_configs=child_configs,
