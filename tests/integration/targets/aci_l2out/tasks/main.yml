@@ -33,7 +33,7 @@
     description: Ansible tenant
     state: present
 
-- name: Add New L2Out
+- name: Add a new L2Out
   aci_l2out:
     <<: *aci_info
     tenant: ansible_tenant
@@ -51,7 +51,7 @@
     - add_l2out.current.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out"
     - add_l2out.current.0.l2extOut.attributes.name == "ansible_l2out"
 
-- name: Add New L2Out again
+- name: Add the L2Out again
   aci_l2out:
     <<: *aci_info
     tenant: ansible_tenant
@@ -68,7 +68,7 @@
     that:
     - add_l2out_again is not changed
 
-- name: Add New L2Out 
+- name: Add a new L2Out 
   aci_l2out:
     <<: *aci_info
     tenant: ansible_tenant
@@ -86,7 +86,7 @@
     - add_l2out_2.current.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out_2"
     - add_l2out_2.current.0.l2extOut.attributes.name == "ansible_l2out_2"
 
-- name: Query L2Out  
+- name: Query the L2Out  
   aci_l2out:
     <<: *aci_info
     tenant: ansible_tenant
@@ -101,9 +101,10 @@
     - query_l2out.current.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out"
     - query_l2out.current.0.l2extOut.attributes.name == "ansible_l2out"
 
-- name: Query all
+- name: Query all l2outs under a specific tenant
   aci_l2out:
     <<: *aci_info
+    tenant: ansible_tenant
     state: query
   register: query_l2out_all
 
@@ -112,7 +113,7 @@
     that:
     - query_l2out_all is not changed
 
-- name: Remove L2Out 
+- name: Remove the L2Out 
   aci_l2out:
     <<: *aci_info
     tenant: ansible_tenant
