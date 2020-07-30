@@ -84,10 +84,10 @@ def aci_argument_spec():
         use_proxy=dict(type='bool', default=True, fallback=(env_fallback, ['ACI_USE_PROXY'])),
         use_ssl=dict(type='bool', default=True, fallback=(env_fallback, ['ACI_USE_SSL'])),
         validate_certs=dict(type='bool', default=True, fallback=(env_fallback, ['ACI_VALIDATE_CERTS'])),
-        output_path=dict(type='str'), fallback=(env_fallback, ['ACI_OUTPUT_PATH']),
-        annotation=dict(type='str'),
-        owner_key=dict(type='str'),
-        owner_tag=dict(type='str'),
+        output_path=dict(type='str', fallback=(env_fallback, ['ACI_OUTPUT_PATH'])),
+        annotation=dict(type='str', fallback=(env_fallback, ['ACI_ANNOTATION'])),
+        owner_key=dict(type='str', fallback=(env_fallback, ['ACI_OWNER_KEY'])),
+        owner_tag=dict(type='str', fallback=(env_fallback, ['ACI_OWNER_TAG'])),
     )
 
 
