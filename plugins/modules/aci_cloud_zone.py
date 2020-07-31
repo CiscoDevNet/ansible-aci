@@ -48,7 +48,7 @@ extends_documentation_fragment:
 '''
 
 EXAMPLES = r'''
-- name: Query all zones under region
+- name: Query all zones in a region
   cisco.aci.aci_cloud_zone:
     host: apic
     username: userName
@@ -195,10 +195,10 @@ def main():
         supports_check_mode=True,
     )
 
-    name = module.params['name']
-    cloud = module.params['cloud']
-    region = module.params['region']
-    state = module.params['state']
+    name = module.params.get('name')
+    cloud = module.params.get('cloud')
+    region = module.params.get('region')
+    state = module.params.get('state')
 
     aci = ACIModule(module)
     aci.construct_url(
