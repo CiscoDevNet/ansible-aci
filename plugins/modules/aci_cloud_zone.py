@@ -29,7 +29,7 @@ options:
     type: str
   cloud:
     description:
-    - The vendor of the controller
+    - The cloud provider.
     choices: [ aws, azure ]
     type: str
   region:
