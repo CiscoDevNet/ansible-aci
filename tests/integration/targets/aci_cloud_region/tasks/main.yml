@@ -23,7 +23,7 @@
 - name: Query all regions
   aci_cloud_region:
     <<: *mso_info
-    cloud_provider_profile_vendor: 'aws'
+    cloud: 'aws'
     state: query
   register: query_all
 
@@ -33,12 +33,12 @@
     - query_all is not changed
     - query_all.current.0.cloudProvP.attributes.dn == "uni/clouddomp/provp-aws"
     - query_all.current.0.cloudProvP.attributes.vendor == "aws"
-    - query_all.current.0.cloudProvP.children | length == 17
+    - query_all.current.0.cloudProvP.children | length > 10
 
 - name: Query a specific region
   aci_cloud_region:
     <<: *mso_info
-    cloud_provider_profile_vendor: 'aws'
+    cloud: 'aws'
     region: eu-west-2
     state: query
   register: query_region
@@ -54,7 +54,7 @@
 - name: Query non_existing region
   aci_cloud_region:
     <<: *mso_info
-    cloud_provider_profile_vendor: 'aws'
+    cloud: 'aws'
     region: non_existing
     state: query
   register: query_non_existing_region

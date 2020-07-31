@@ -23,10 +23,10 @@ options:
     - The name of the cloud provider's region.
     aliases: [ name ]
     type: str
-  cloud_provider_profile_vendor:
+  cloud:
     description:
     - The vendor of the controller
-    choices: [ aws ]
+    choices: [ aws, azure ]
     type: str
     required: yes
   state:
@@ -52,7 +52,7 @@ EXAMPLES = r'''
     username: userName
     password: somePassword
     validate_certs: no
-    cloud_provider_profile_vendor: 'aws'
+    cloud: 'aws'
     state: query
   delegate_to: localhost
 
@@ -62,7 +62,7 @@ EXAMPLES = r'''
     username: userName
     password: somePassword
     validate_certs: no
-    cloud_provider_profile_vendor: 'aws'
+    cloud: 'aws'
     region: eu-west-2
     state: query
   delegate_to: localhost
@@ -181,7 +181,7 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         region=dict(type='str', aliases=["name"]),
-        cloud_provider_profile_vendor=dict(type='str', choices=['aws'], required=True),
+        cloud=dict(type='str', choices=['aws', 'azure'], required=True),
         state=dict(type='str', default='query', choices=['query']),
     )
 
@@ -191,16 +191,16 @@ def main():
     )
 
     region = module.params.get('region')
-    cloud_provider_profile_vendor = module.params.get('cloud_provider_profile_vendor')
+    cloud = module.params.get('cloud')
     state = module.params.get('state')
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
             aci_class='cloudProvP',
-            aci_rn='clouddomp/provp-{0}'.format(cloud_provider_profile_vendor),
-            target_filter='eq(cloudProvP.vendor, "{0}")'.format(cloud_provider_profile_vendor),
-            module_object=cloud_provider_profile_vendor
+            aci_rn='clouddomp/provp-{0}'.format(cloud),
+            target_filter='eq(cloudProvP.vendor, "{0}")'.format(cloud),
+            module_object=cloud
         ),
         subclass_1=dict(
             aci_class='cloudRegion',
