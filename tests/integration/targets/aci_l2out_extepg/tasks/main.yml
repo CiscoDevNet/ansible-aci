@@ -1,0 +1,144 @@
+# Test code for the ACI modules
+# Copyright: (c) 2020, Shreyas Srish (@shrsr)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact: 
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  aci_tenant:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Add a new tenant
+  aci_tenant:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    description: Ansible tenant
+    state: present
+
+- name: Add New L2Out 
+  aci_l2out:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l2out: ansible_l2out
+    description: Ansible Test
+    bd: ansible_bd
+    domain: l2Dom
+    vlan: 3200
+    state: present
+  register: add_l2out
+
+- name: Add another L2Out 
+  aci_l2out:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l2out: ansible_l2out_2
+    description: Ansible Test
+    bd: ansible_bd
+    domain: l2Dom
+    vlan: 3200
+    state: present
+  register: add_l2out_2
+
+- name: Add L2 external end point group 
+  aci_l2out_extepg:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    l2out: ansible_l2out
+    extepg: ansible_extepg
+    description: Ansible external epg
+    preferred_group: True
+    state: present
+  register: l2extepg
+
+- name: Verify l2extepg
+  assert:
+    that:
+    - l2extepg.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
+
+- name: Add L2 external end point group again
+  aci_l2out_extepg:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    l2out: ansible_l2out
+    extepg: ansible_extepg
+    description: Ansible external epg
+    preferred_group: True
+    state: present
+  register: l2extepg_again
+
+- name: Verify l2extepg_again
+  assert:
+    that:
+    - l2extepg_again is not changed
+    - l2extepg.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
+
+- name: Add another L2 external end point group
+  aci_l2out_extepg:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    l2out: ansible_l2out_2
+    extepg: ansible_extepg_2
+    description: Ansible external epg
+    preferred_group: True
+    state: present
+  register: l2extepg_2
+
+- name: Verify l2extepg_2
+  assert:
+    that:
+    - l2extepg_2.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out_2/instP-ansible_extepg_2"
+
+- name: Query the L2 external end point group
+  aci_l2out_extepg:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    l2out: ansible_l2out
+    extepg: ansible_extepg
+    state: query
+  register: query_l2extepg
+
+- name: Query all L2 external epg in a tenant
+  aci_l2out_extepg:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: query
+  register: query_all
+
+- name: Verify query_all
+  assert:
+    that:
+    - query_all is not changed
+
+- name: Remove L2 external end point group
+  aci_l2out_extepg:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l2out: ansible_l2out
+    extepg: ansible_extepg
+    preferred_group: True
+    state: absent
+  register: remove_l2extepg
+
+- name: Verify remove_l2extepg
+  assert:
+    that:
+    - remove_l2extepg is changed
+    - remove_l2extepg.previous.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
