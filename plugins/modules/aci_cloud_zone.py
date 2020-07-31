@@ -1,129 +1,232 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2020, nkatarmal-crest <nirav.katarmal@crestdatasys.com>
+# Copyright: (c) 2020, Cindy Zhao <cizhao@cisco.com>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: aci_cloudZone 
+module: aci_cloud_zone
 short_description: Manage Cloud Availability Zone (cloud:Zone)
 description:
-- Mo doc not defined in techpub!!!
+-  Manage Cloud Availability Zone on Cisco Cloud ACI.
 notes:
 - More information about the internal APIC class B(cloud:Zone) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
+- This module is used to query Cloud Availability Zone.
 author:
-- Devarshi Shah (@devarshishah3)
-version_added: '2.7'
-options: 
-  annotation:
-    description:
-    - Mo doc not defined in techpub!!! 
+- Nirav (@nirav)
+- Cindy Zhao (@cizhao)
+options:
   name:
     description:
-    - object name 
-    aliases: [ cloud_availability_zone ] 
-  nameAlias:
+    - object name
+    aliases: [ zone ]
+    type: str
+  cloud:
     description:
-    - Mo doc not defined in techpub!!! 
-  cloud_provider_profile_vendor:
+    - The vendor of the controller
+    choices: [ aws, azure ]
+    type: str
+  region:
     description:
-    - vendor of the controller 
-    choices: [ aws ] 
-  cloud_providers_region:
+    - The name of the cloud provider's region.
+    type: str
+  state:
     description:
-    - object name 
-  state: 
-    description:
-    - Use C(present) or C(absent) for adding or removing.
     - Use C(query) for listing an object or multiple objects.
-    choices: [ absent, present, query ]
-    default: present 
+    choices: [ query ]
+    default: query
+    type: str
 
-extends_documentation_fragment: aci
+extends_documentation_fragment:
+- cisco.aci.aci
+'''
+
+EXAMPLES = r'''
+- name: Query all zones under region
+  cisco.aci.aci_cloud_zone:
+    host: apic
+    username: userName
+    password: somePassword
+    validate_certs: no
+    cloud: 'aws'
+    region: regionName
+    state: query
+  delegate_to: localhost
+
+- name: Query a specific zone
+  cisco.aci.aci_cloud_zone:
+    host: apic
+    username: userName
+    password: somePassword
+    validate_certs: no
+    cloud: 'aws'
+    region: regionName
+    zone: zoneName
+    state: query
+  delegate_to: localhost
+'''
+
+RETURN = r'''
+current:
+  description: The existing configuration from the APIC after the module has finished
+  returned: success
+  type: list
+  sample:
+    [
+        {
+            "fvTenant": {
+                "attributes": {
+                    "descr": "Production environment",
+                    "dn": "uni/tn-production",
+                    "name": "production",
+                    "nameAlias": "",
+                    "ownerKey": "",
+                    "ownerTag": ""
+                }
+            }
+        }
+    ]
+error:
+  description: The error information as returned from the APIC
+  returned: failure
+  type: dict
+  sample:
+    {
+        "code": "122",
+        "text": "unknown managed object class foo"
+    }
+raw:
+  description: The raw output returned by the APIC REST API (xml or json)
+  returned: parse error
+  type: str
+  sample: '<?xml version="1.0" encoding="UTF-8"?><imdata totalCount="1"><error code="122" text="unknown managed object class foo"/></imdata>'
+sent:
+  description: The actual/minimal configuration pushed to the APIC
+  returned: info
+  type: list
+  sample:
+    {
+        "fvTenant": {
+            "attributes": {
+                "descr": "Production environment"
+            }
+        }
+    }
+previous:
+  description: The original configuration from the APIC before the module has started
+  returned: info
+  type: list
+  sample:
+    [
+        {
+            "fvTenant": {
+                "attributes": {
+                    "descr": "Production",
+                    "dn": "uni/tn-production",
+                    "name": "production",
+                    "nameAlias": "",
+                    "ownerKey": "",
+                    "ownerTag": ""
+                }
+            }
+        }
+    ]
+proposed:
+  description: The assembled configuration from the user-provided parameters
+  returned: info
+  type: dict
+  sample:
+    {
+        "fvTenant": {
+            "attributes": {
+                "descr": "Production environment",
+                "name": "production"
+            }
+        }
+    }
+filter_string:
+  description: The filter string used for the request
+  returned: failure or debug
+  type: str
+  sample: ?rsp-prop-include=config-only
+method:
+  description: The HTTP method used for the request to the APIC
+  returned: failure or debug
+  type: str
+  sample: POST
+response:
+  description: The HTTP response from the APIC
+  returned: failure or debug
+  type: str
+  sample: OK (30 bytes)
+status:
+  description: The HTTP status from the APIC
+  returned: failure or debug
+  type: int
+  sample: 200
+url:
+  description: The HTTP url used for the request to the APIC
+  returned: failure or debug
+  type: str
+  sample: https://10.11.12.13/api/mo/uni/tn-production.json
 '''
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
 
+
 def main():
     argument_spec = aci_argument_spec()
-    argument_spec.update({ 
-        'annotation': dict(type='str',),
-        'name': dict(type='str', aliases=['cloud_availability_zone']),
-        'nameAlias': dict(type='str',),
-        'cloud_provider_profile_vendor': dict(type='str', choices=['aws'], ),
-        'cloud_providers_region': dict(type='str',),
-        'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
-
-    })
+    argument_spec.update(
+        name=dict(type='str', aliases=['zone']),
+        cloud=dict(type='str', choices=['aws', 'azure'], required=True),
+        region=dict(type='str', required=True),
+        state=dict(type='str', default='query', choices=['query']),
+    )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[ 
-            ['state', 'absent', ['name', 'cloud_provider_profile_vendor', 'cloud_providers_region', ]], 
-            ['state', 'present', ['name', 'cloud_provider_profile_vendor', 'cloud_providers_region', ]],
-        ],
     )
-    
-    annotation = module.params['annotation']
+
     name = module.params['name']
-    nameAlias = module.params['nameAlias']
-    cloud_provider_profile_vendor = module.params['cloud_provider_profile_vendor']
-    cloud_providers_region = module.params['cloud_providers_region']
+    cloud = module.params['cloud']
+    region = module.params['region']
     state = module.params['state']
-    child_configs=[]
-    
 
     aci = ACIModule(module)
     aci.construct_url(
-        root_class={
-            'aci_class': 'cloudProvP',
-            'aci_rn': 'clouddomp/provp-{}'.format(cloud_provider_profile_vendor),
-            'target_filter': 'eq(cloudProvP.vendor, "{}")'.format(cloud_provider_profile_vendor),
-            'module_object': cloud_provider_profile_vendor
-        }, 
-        subclass_1={
-            'aci_class': 'cloudRegion',
-            'aci_rn': 'region-{}'.format(cloud_providers_region),
-            'target_filter': 'eq(cloudRegion.name, "{}")'.format(cloud_providers_region),
-            'module_object': cloud_providers_region
-        }, 
-        subclass_2={
-            'aci_class': 'cloudZone',
-            'aci_rn': 'zone-{}'.format(name),
-            'target_filter': 'eq(cloudZone.name, "{}")'.format(name),
-            'module_object': name
-        }, 
-        
+        root_class=dict(
+            aci_class='cloudProvP',
+            aci_rn='clouddomp/provp-{0}'.format(cloud),
+            target_filter='eq(cloudProvP.vendor, "{0}")'.format(cloud),
+            module_object=cloud
+        ),
+        subclass_1=dict(
+            aci_class='cloudRegion',
+            aci_rn='region-{0}'.format(region),
+            target_filter='eq(cloudRegion.name, "{0}")'.format(region),
+            module_object=region
+        ),
+        subclass_2=dict(
+            aci_class='cloudZone',
+            aci_rn='zone-{0}'.format(name),
+            target_filter='eq(cloudZone.name, "{0}")'.format(name),
+            module_object=name
+        ),
         child_classes=[]
-        
     )
 
     aci.get_existing()
 
-    if state == 'present':
-        aci.payload(
-            aci_class='cloudZone',
-            class_config={ 
-                'annotation': annotation,
-                'name': name,
-                'nameAlias': nameAlias,
-            },
-            child_configs=child_configs
-           
-        )
-
-        aci.get_diff(aci_class='cloudZone')
-
-        aci.post_config()
-
-    elif state == 'absent':
-        aci.delete_config()
-
     aci.exit_json()
+
 
 if __name__ == "__main__":
     main()
