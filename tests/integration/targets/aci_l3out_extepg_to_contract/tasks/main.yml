@@ -126,7 +126,7 @@
     that:
     - remove_contract_extepg.previous.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
 
-- name: Bind External End Point Groups to Contracts 
+- name: Bind External End Point Groups to Contracts
   aci_l3out_extepg_to_contract:
     <<: *aci_info 
     tenant: ansible_tenant

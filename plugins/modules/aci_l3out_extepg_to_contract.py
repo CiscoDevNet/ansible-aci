@@ -70,7 +70,8 @@ seealso:
   description: More information about the internal APIC class B(fvtenant), B(l3extInstP) and B(l3extOut).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- kudtarkar1 (@kudtarkar1)
+- Sudhakar Shet Kudtarkar (@kudtarkar1)
+- Shreyas Srish (@shrsr)
 '''
 
 EXAMPLES = r'''
@@ -273,19 +274,19 @@ def main():
         ],
     )
 
-    l3out = module.params['l3out']
-    contract = module.params['contract']
-    contract_type = module.params['contract_type']
-    extepg = module.params['extepg']
-    priority = module.params['priority']
-    provider_match = module.params['provider_match']
+    l3out = module.params.get('l3out')
+    contract = module.params.get('contract')
+    contract_type = module.params.get('contract_type')
+    extepg = module.params.get('extepg')
+    priority = module.params.get('priority')
+    provider_match = module.params.get('provider_match')
     if provider_match is not None:
-        provider_match = PROVIDER_MATCH_MAPPING[provider_match]
-    state = module.params['state']
-    tenant = module.params['tenant']
+        provider_match = PROVIDER_MATCH_MAPPING.get(provider_match)
+    state = module.params.get('state')
+    tenant = module.params.get('tenant')
 
-    aci_class = ACI_CLASS_MAPPING[contract_type]["class"]
-    aci_rn = ACI_CLASS_MAPPING[contract_type]["rn"]
+    aci_class = ACI_CLASS_MAPPING.get(contract_type)["class"]
+    aci_rn = ACI_CLASS_MAPPING.get(contract_type)["rn"]
 
     if contract_type == "consumer" and provider_match is not None:
         module.fail_json(msg="the 'provider_match' is only configurable for Provided Contracts")
