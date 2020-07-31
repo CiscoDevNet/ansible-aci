@@ -16,9 +16,9 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_l2out_extepg
-short_description: Manage External Network Instance objects (l2extInstP).
+short_description: Manage External Network Instance (L2Out External EPG) objects (l2extInstP).
 description:
-- Manage External Network Instance objects (l2extInstP) on ACI fabrics.
+- Manage External Network Instance (L2Out External EPG) objects (l2extInstP) on ACI fabrics.
 options:
   tenant:
     description:
@@ -32,17 +32,23 @@ options:
     description:
     - Name of the external end point group.
     type: str
-    aliases: [ extepg_name ]
+    aliases: [ external_epg ]
   description:
     description:
     - Description for the l2out.
     type: str
   preferred_group:
     description:
-    - This depicts whether EPG is part of the Preferred Group and can communicate without contracts.
+    - This depicts whether this External EPG is part of the Preferred Group and can communicate without contracts.
     - This is convenient for migration scenarios, or when ACI is used for network automation but not for policy.
     - The APIC defaults to C(no) when unset during creation.
     type: bool
+  qos_class:
+    description:
+    - The bandwidth level for Quality of service.
+    type: str
+    choices: [ level1, level2, level3, level4, level5, level6, Unspecified ]
+    default: level3
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -227,10 +233,11 @@ def main():
     argument_spec.update(
         l2out=dict(type='str'),
         description=dict(type='str'),
-        extepg=dict(type='str', aliases=['extepg_name']),
+        extepg=dict(type='str', aliases=['external_epg']),
         preferred_group=dict(type='bool'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        tenant=dict(type='str')
+        tenant=dict(type='str'),
+        qos_class=dict(type='str', default='level3', choices=['level1', 'level2', 'level3', 'level4', 'level5', 'level6', 'Unspecified']),
     )
 
     module = AnsibleModule(
@@ -250,6 +257,7 @@ def main():
     state = module.params.get('state')
     tenant = module.params.get('tenant')
     extepg = module.params.get('extepg')
+    qos_class = module.params.get('qos_class')
 
     aci.construct_url(
         root_class=dict(
@@ -281,6 +289,7 @@ def main():
             class_config=dict(
                 name=extepg,
                 descr=description,
+                prio=qos_class,
                 dn='uni/tn-{0}/l2out-{1}/instP-{2}'.format(tenant, l2out, extepg),
                 prefGrMemb=preferred_group
             ),

@@ -120,6 +120,17 @@
     <<: *aci_info 
     tenant: ansible_tenant
     state: query
+  register: query_all_in_tenant
+
+- name: Verify query_all_in_tenant
+  assert:
+    that:
+    - query_all_in_tenant is not changed
+
+- name: Query all L2 external epgs
+  aci_l2out_extepg:
+    <<: *aci_info
+    state: query
   register: query_all
 
 - name: Verify query_all
