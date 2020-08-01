@@ -1,0 +1,62 @@
+# Test code for the ACI modules
+# Copyright: (c) 2020, Lionel Hercot (@lhercot) <lhercot@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# CLEAN ENVIRONMENT
+- name: Set vars
+  set_fact: 
+    mso_info: &mso_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Query all controllers system information
+  aci_system:
+    <<: *mso_info
+    state: query
+  register: query_all
+
+- name: Verify query_all
+  assert:
+    that:
+    - query_all is not changed
+    - query_all.current.0.topSystem.attributes.id == "1"
+    - '"version" in query_all.current.0.topSystem.attributes'
+
+
+- name: Query a specific controller system information
+  aci_system:
+    <<: *mso_info
+    id: 1
+    state: query
+  register: query_controller
+
+- name: Verify query_controller
+  assert:
+    that:
+    - query_controller is not changed
+    - query_controller.current.0.topSystem.attributes.id == "1"
+    - '"version" in query_controller.current.0.topSystem.attributes'
+
+- name: Query non_existing controller
+  aci_system:
+    <<: *mso_info
+    id: 99
+    state: query
+  register: query_non_existing
+
+- name: Verify query_non_existing
+  assert:
+    that:
+    - query_non_existing is not changed
+    - query_non_existing.current == []
