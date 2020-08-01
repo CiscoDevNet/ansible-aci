@@ -32,7 +32,7 @@ options:
     description:
     - Name of the external end point group.
     type: str
-    aliases: [ external_epg ]
+    aliases: [ external_epg, extepg_name, name ]
   description:
     description:
     - Description for the l2out.
@@ -48,7 +48,6 @@ options:
     - The bandwidth level for Quality of service.
     type: str
     choices: [ level1, level2, level3, level4, level5, level6, Unspecified ]
-    default: level3
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -233,11 +232,11 @@ def main():
     argument_spec.update(
         l2out=dict(type='str'),
         description=dict(type='str'),
-        extepg=dict(type='str', aliases=['external_epg']),
+        extepg=dict(type='str', aliases=['external_epg', 'extepg_name', 'name']),
         preferred_group=dict(type='bool'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         tenant=dict(type='str'),
-        qos_class=dict(type='str', default='level3', choices=['level1', 'level2', 'level3', 'level4', 'level5', 'level6', 'Unspecified']),
+        qos_class=dict(type='str', choices=['level1', 'level2', 'level3', 'level4', 'level5', 'level6', 'Unspecified']),
     )
 
     module = AnsibleModule(
@@ -284,16 +283,17 @@ def main():
     aci.get_existing()
 
     if state == 'present':
+        config = dict(
+            name=extepg,
+            descr=description,
+            dn='uni/tn-{0}/l2out-{1}/instP-{2}'.format(tenant, l2out, extepg),
+            prefGrMemb=preferred_group
+        )
+        if qos_class:
+            config.update(prio=qos_class)
         aci.payload(
+            class_config=config,
             aci_class='l2extInstP',
-            class_config=dict(
-                name=extepg,
-                descr=description,
-                prio=qos_class,
-                dn='uni/tn-{0}/l2out-{1}/instP-{2}'.format(tenant, l2out, extepg),
-                prefGrMemb=preferred_group
-            ),
-
         )
 
         aci.get_diff(aci_class='l2extInstP')

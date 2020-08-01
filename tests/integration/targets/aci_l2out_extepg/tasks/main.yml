@@ -97,6 +97,7 @@
     l2out: ansible_l2out_2
     extepg: ansible_extepg_2
     description: Ansible external epg
+    qos_class: level6
     preferred_group: True
     state: present
   register: l2extepg_2
