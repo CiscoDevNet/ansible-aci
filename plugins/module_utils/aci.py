@@ -661,7 +661,8 @@ class ACIModule(object):
         elif mo is None:
             # Query for all objects of the module's class (filter by properties)
             self.path = 'api/class/{0}.json'.format(obj_class)
-            self.update_qs({'query-target-filter': self.build_filter(obj_class, obj_filter)})
+            if obj_filter is not None:
+                self.update_qs({'query-target-filter': self.build_filter(obj_class, obj_filter)})
         else:
             # Query for a specific object in the module's class
             self.path = 'api/mo/uni/{0}.json'.format(obj_rn)
