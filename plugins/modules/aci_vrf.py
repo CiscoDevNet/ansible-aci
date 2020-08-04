@@ -92,6 +92,7 @@ EXAMPLES = r'''
     policy_control_direction: ingress
     state: present
   delegate_to: localhost
+
 - name: Remove a VRF for a tenant
   cisco.aci.aci_vrf:
     host: apic
@@ -101,6 +102,7 @@ EXAMPLES = r'''
     tenant: lab_tenant
     state: absent
   delegate_to: localhost
+
 - name: Query a VRF of a tenant
   cisco.aci.aci_vrf:
     host: apic
@@ -111,6 +113,7 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
+
 - name: Query all VRFs
   cisco.aci.aci_vrf:
     host: apic
@@ -303,9 +306,9 @@ def main():
                 nameAlias=name_alias,
             ),
             child_configs=[
-               {"vzAny":{"attributes":{"prefGrMemb": preferred_group, "matchT": match_type}}},
+                {"vzAny": {"attributes": {"prefGrMemb": preferred_group, "matchT": match_type}}},
             ],
-          )
+        )
 
         aci.get_diff(aci_class='fvCtx')
 

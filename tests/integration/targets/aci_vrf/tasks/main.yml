@@ -60,6 +60,8 @@
     <<: *aci_vrf_present
     vrf: anstest2
     policy_control_direction: egress
+    preferred_group: enabled
+    match_type: all
   register: vrf_present_2
 
 - name: create vrf without all necessary params - failure message works
