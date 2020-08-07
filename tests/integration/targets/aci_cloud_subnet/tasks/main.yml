@@ -20,222 +20,298 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
 
-- name: Ensure tenant doesn't exist
-  aci_tenant:
-    <<: *aci_info
-    state: absent
-    tenant: anstest
-  register: tenant_absent
+- include_tasks: aws.yml
+- include_tasks: azure.yml
+# - name: Ensure tenant doesn't exist
+#   aci_tenant:
+#     <<: *aci_info
+#     state: absent
+#     tenant: anstest
+#   register: tenant_absent
 
-- name: Ensure tenant exists for tests to kick off
-  aci_tenant:
-    <<: *aci_info
-    state: present
-    tenant: anstest
-  register: tenant_present
+# - name: Ensure tenant exists for tests to kick off
+#   aci_tenant:
+#     <<: *aci_info
+#     state: present
+#     tenant: anstest
+#   register: tenant_present
 
-- name: Ensure aci cloud context profile does not exists
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    tenant: anstest
-    name: ctx_profile_1
-    state: absent
-  register: rm_ctx_profile_1
+# - name: Ensure aci cloud context profile does not exists
+#   aci_cloud_ctx_profile:
+#     <<: *aci_info
+#     tenant: anstest
+#     name: ctx_profile_1
+#     state: absent
+#   register: rm_ctx_profile_1
 
-- name: Create aci cloud context profile
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    tenant: anstest
-    name: ctx_profile_1
-    vrf: ctx_profile_vrf_1
-    region: us-west-1
-    primary_cidr: '10.10.0.0/16'
-    state: present
-  register: nm_add_aci_ctx_profile
+# - name: Create aci cloud context profile
+#   aci_cloud_ctx_profile:
+#     <<: *aci_info
+#     tenant: anstest
+#     name: ctx_profile_1
+#     vrf: ctx_profile_vrf_1
+#     region: us-west-1
+#     primary_cidr: '10.10.0.0/16'
+#     state: present
+#   register: nm_add_aci_ctx_profile
 
-- name: Create aci cloud subnet (check_mode)
-  aci_cloud_subnet:
-    <<: *aci_info
-    tenant: anstest
-    cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.10.0.0/16'
-    cloud_zone_attach: us-west-1a
-    address: 10.10.0.1
-    description: test description
-  check_mode: yes
-  register: cm_add_subnet
+# # - name: Create azure cloud context profile
+# #   aci_cloud_ctx_profile:
+# #     <<: *aci_info
+# #     host: '{{ azure_aci_hostname }}'
+# #     username: '{{ azure_aci_username }}'
+# #     password: '{{ azure_aci_password }}'
+# #     tenant: WoS
+# #     name: ctx_profile_1
+# #     vrf: ctx_profile_vrf_1
+# #     region: westus
+# #     primary_cidr: '10.10.0.0/16'
+# #     state: present
+# #   register: nm_add_azure_ctx_profile
 
-- name: Create aci cloud subnet (normal_mode)
-  aci_cloud_subnet:
-    <<: *aci_info
-    tenant: anstest
-    cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.10.0.0/16'
-    cloud_zone_attach: us-west-1a
-    address: 10.10.0.1
-    description: test description
-  register: nm_add_subnet
+# - name: Create aci cloud subnet (check_mode)
+#   aci_cloud_subnet:
+#     <<: *aci_info
+#     tenant: anstest
+#     cloud_context_profile: ctx_profile_1
+#     cloud_cidr: '10.10.0.0/16'
+#     cloud_zone_attach: us-west-1a
+#     address: 10.10.0.1
+#     description: test description
+#   check_mode: yes
+#   register: cm_add_subnet
 
-- name: Verify cm_add_subnet and nm_add_subnet
-  assert:
-    that:
-    - cm_add_subnet is changed
-    - nm_add_subnet is changed
-    - cm_add_subnet.previous == []
-    - nm_add_subnet.previous == []
-    - cm_add_subnet.proposed.cloudSubnet.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.10.0.0/16]/subnet-[10.10.0.1]"
-    - cm_add_subnet.proposed.cloudSubnet.attributes.descr == "test description"
-    - cm_add_subnet.proposed.cloudSubnet.attributes.ip == "10.10.0.1"
-    - nm_add_subnet.current.0.cloudSubnet.attributes.descr == "test description"
-    - nm_add_subnet.current.0.cloudSubnet.attributes.ip == "10.10.0.1"
-    - nm_add_subnet.current.0.cloudSubnet.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.10.0.0/16]/subnet-[10.10.0.1]"
+# - name: Create aci cloud subnet (normal_mode)
+#   aci_cloud_subnet:
+#     <<: *aci_info
+#     tenant: anstest
+#     cloud_context_profile: ctx_profile_1
+#     cloud_cidr: '10.10.0.0/16'
+#     cloud_zone_attach: us-west-1a
+#     address: 10.10.0.1
+#     description: test description
+#   register: nm_add_subnet
 
-- name: Create aci cloud subnet again (check_mode)
-  aci_cloud_subnet:
-    <<: *aci_info
-    tenant: anstest
-    cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.10.0.0/16'
-    cloud_zone_attach: us-west-1a
-    address: 10.10.0.1
-    description: test description
-  check_mode: yes
-  register: cm_add_subnet_again
+# - name: Create azure cloud subnet (normal_mode)
+#   aci_cloud_subnet:
+#     <<: *aci_info
+#     host: '{{ azure_aci_hostname }}'
+#     username: '{{ azure_aci_username }}'
+#     password: '{{ azure_aci_password }}'
+#     tenant: WoS
+#     cloud_context_profile: ctx_profile_1
+#     cloud_cidr: '10.10.0.0/16'
+#     address: 10.10.0.1
+#     description: test azure description
+#   register: nm_add_azure_subnet
 
-- name: Create aci cloud subnet again (normal_mode)
-  aci_cloud_subnet:
-    <<: *aci_info
-    tenant: anstest
-    cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.10.0.0/16'
-    cloud_zone_attach: us-west-1a
-    address: 10.10.0.1
-    description: test description
-  register: nm_add_subnet_again
+# - name: Create another azure cloud subnet (normal_mode)
+#   aci_cloud_subnet:
+#     <<: *aci_info
+#     host: '{{ azure_aci_hostname }}'
+#     username: '{{ azure_aci_username }}'
+#     password: '{{ azure_aci_password }}'
+#     tenant: WoS
+#     cloud_context_profile: ctx_profile_1
+#     cloud_cidr: '10.10.0.0/16'
+#     address: 10.10.0.2
+#   register: nm_add_azure_subnet_2
 
-- name: Verify cm_add_subnet_again and nm_add_subnet_again
-  assert:
-    that:
-    - cm_add_subnet_again is not changed
-    - nm_add_subnet_again is not changed
+# - name: Query azure cloud subnet
+#   aci_cloud_subnet:
+#     <<: *aci_info
+#     host: '{{ azure_aci_hostname }}'
+#     username: '{{ azure_aci_username }}'
+#     password: '{{ azure_aci_password }}'
+#     tenant: WoS
+#     cloud_context_profile: ctx_profile_1
+#     cloud_cidr: '10.10.0.0/16'
+#     state: query
 
-- name: Change cloud subnet
-  aci_cloud_subnet:
-    <<: *aci_info
-    tenant: anstest
-    cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.10.0.0/16'
-    cloud_zone_attach: us-west-1a
-    name: subnet_1
-    address: 10.10.0.1
-    description: change test description
-    scope: public
-    usage: infra-router
-  register: nm_change_subnet
+# - name: Query azure cloud subnet
+#   aci_cloud_subnet:
+#     <<: *aci_info
+#     host: '{{ azure_aci_hostname }}'
+#     username: '{{ azure_aci_username }}'
+#     password: '{{ azure_aci_password }}'
+#     tenant: WoS
+#     cloud_context_profile: ctx_profile_1
+#     cloud_cidr: '10.10.0.0/16'
+#     address: 10.10.0.1
+#     state: query
 
-- name: Verify nm_change_subnet
-  assert:
-    that:
-    - nm_change_subnet is changed
-    - nm_change_subnet.previous.0.cloudSubnet.attributes.name == ""
-    - nm_change_subnet.previous.0.cloudSubnet.attributes.scope == "private"
-    - nm_change_subnet.previous.0.cloudSubnet.attributes.usage == "user"
-    - nm_change_subnet.previous.0.cloudSubnet.attributes.ip == "10.10.0.1"
-    - nm_change_subnet.previous.0.cloudSubnet.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.10.0.0/16]/subnet-[10.10.0.1]"
-    - nm_change_subnet.current.0.cloudSubnet.attributes.name == "subnet_1"
-    - nm_change_subnet.current.0.cloudSubnet.attributes.scope == "public"
-    - nm_change_subnet.current.0.cloudSubnet.attributes.usage == "infra-router"
-    - nm_change_subnet.current.0.cloudSubnet.attributes.ip == "10.10.0.1"
-    - nm_change_subnet.current.0.cloudSubnet.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.10.0.0/16]/subnet-[10.10.0.1]"
+# - name: Remove azure cloud subnet (normal_mode)
+#   aci_cloud_subnet:
+#     <<: *aci_info
+#     host: '{{ azure_aci_hostname }}'
+#     username: '{{ azure_aci_username }}'
+#     password: '{{ azure_aci_password }}'
+#     tenant: WoS
+#     cloud_context_profile: ctx_profile_1
+#     cloud_cidr: '10.10.0.0/16'
+#     address: 10.10.0.1
+#     state: absent
 
-- name: Create another aci cloud subnet (normal_mode)
-  aci_cloud_subnet:
-    <<: *aci_info
-    tenant: anstest
-    cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.10.0.0/16'
-    cloud_zone_attach: us-west-1a
-    address: 10.10.0.2
-    subnet: subnet_2
-  register: nm_add_subnet_2
+# - name: Verify cm_add_subnet and nm_add_subnet
+#   assert:
+#     that:
+#     - cm_add_subnet is changed
+#     - nm_add_subnet is changed
+#     - cm_add_subnet.previous == []
+#     - nm_add_subnet.previous == []
+#     - cm_add_subnet.proposed.cloudSubnet.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.10.0.0/16]/subnet-[10.10.0.1]"
+#     - cm_add_subnet.proposed.cloudSubnet.attributes.descr == "test description"
+#     - cm_add_subnet.proposed.cloudSubnet.attributes.ip == "10.10.0.1"
+#     - nm_add_subnet.current.0.cloudSubnet.attributes.descr == "test description"
+#     - nm_add_subnet.current.0.cloudSubnet.attributes.ip == "10.10.0.1"
+#     - nm_add_subnet.current.0.cloudSubnet.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.10.0.0/16]/subnet-[10.10.0.1]"
 
-- name: Verify nm_add_subnet_2
-  assert:
-    that:
-    - nm_add_subnet_2 is changed
-    - nm_add_subnet_2.previous == []
-    - nm_add_subnet_2.current.0.cloudSubnet.attributes.name == "subnet_2"
-    - nm_add_subnet_2.current.0.cloudSubnet.attributes.ip == "10.10.0.2"
-    - nm_add_subnet_2.current.0.cloudSubnet.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.10.0.0/16]/subnet-[10.10.0.2]"
+# - name: Create aci cloud subnet again (check_mode)
+#   aci_cloud_subnet:
+#     <<: *aci_info
+#     tenant: anstest
+#     cloud_context_profile: ctx_profile_1
+#     cloud_cidr: '10.10.0.0/16'
+#     cloud_zone_attach: us-west-1a
+#     address: 10.10.0.1
+#     description: test description
+#   check_mode: yes
+#   register: cm_add_subnet_again
 
-- name: Query all subnets
-  aci_cloud_subnet:
-    <<: *aci_info
-    tenant: anstest
-    cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.10.0.0/16'
-    state: query
-  register: query_all
+# - name: Create aci cloud subnet again (normal_mode)
+#   aci_cloud_subnet:
+#     <<: *aci_info
+#     tenant: anstest
+#     cloud_context_profile: ctx_profile_1
+#     cloud_cidr: '10.10.0.0/16'
+#     cloud_zone_attach: us-west-1a
+#     address: 10.10.0.1
+#     description: test description
+#   register: nm_add_subnet_again
 
-- name: Verify query_all
-  assert:
-    that:
-    - query_all is not changed
-    - query_all.current.0.cloudCidr.attributes.addr == "10.10.0.0/16"
-    - query_all.current.0.cloudCidr.children | length == 2
-    - query_all.current.0.cloudCidr.children.0.cloudSubnet.attributes.name == "subnet_2"
-    - query_all.current.0.cloudCidr.children.0.cloudSubnet.attributes.ip == "10.10.0.2"
-    - query_all.current.0.cloudCidr.children.1.cloudSubnet.attributes.name == "subnet_1"
-    - query_all.current.0.cloudCidr.children.1.cloudSubnet.attributes.ip == "10.10.0.1"
+# - name: Verify cm_add_subnet_again and nm_add_subnet_again
+#   assert:
+#     that:
+#     - cm_add_subnet_again is not changed
+#     - nm_add_subnet_again is not changed
 
-- name: Query subnet 1
-  aci_cloud_subnet:
-    <<: *aci_info
-    tenant: anstest
-    cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.10.0.0/16'
-    address: 10.10.0.1
-    state: query
-  register: query_subnet_1
+# - name: Change cloud subnet
+#   aci_cloud_subnet:
+#     <<: *aci_info
+#     tenant: anstest
+#     cloud_context_profile: ctx_profile_1
+#     cloud_cidr: '10.10.0.0/16'
+#     cloud_zone_attach: us-west-1a
+#     name: subnet_1
+#     address: 10.10.0.1
+#     description: change test description
+#     scope: public
+#     usage: infra-router
+#   register: nm_change_subnet
 
-- name: Verify query_subnet_1
-  assert:
-    that:
-    - query_subnet_1 is not changed
-    - query_subnet_1.current.0.cloudSubnet.attributes.name == "subnet_1"
-    - query_subnet_1.current.0.cloudSubnet.attributes.ip == "10.10.0.1"
-    - query_subnet_1.current.0.cloudSubnet.attributes.descr == "change test description"
-    - query_subnet_1.current.0.cloudSubnet.attributes.scope == "public"
-    - query_subnet_1.current.0.cloudSubnet.attributes.usage == "infra-router"
-    - query_subnet_1.current.0.cloudSubnet.children.0.cloudRsZoneAttach.attributes.tDn == "uni/clouddomp/provp-aws/region-us-west-1/zone-us-west-1a"
+# - name: Verify nm_change_subnet
+#   assert:
+#     that:
+#     - nm_change_subnet is changed
+#     - nm_change_subnet.previous.0.cloudSubnet.attributes.name == ""
+#     - nm_change_subnet.previous.0.cloudSubnet.attributes.scope == "private"
+#     - nm_change_subnet.previous.0.cloudSubnet.attributes.usage == "user"
+#     - nm_change_subnet.previous.0.cloudSubnet.attributes.ip == "10.10.0.1"
+#     - nm_change_subnet.previous.0.cloudSubnet.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.10.0.0/16]/subnet-[10.10.0.1]"
+#     - nm_change_subnet.current.0.cloudSubnet.attributes.name == "subnet_1"
+#     - nm_change_subnet.current.0.cloudSubnet.attributes.scope == "public"
+#     - nm_change_subnet.current.0.cloudSubnet.attributes.usage == "infra-router"
+#     - nm_change_subnet.current.0.cloudSubnet.attributes.ip == "10.10.0.1"
+#     - nm_change_subnet.current.0.cloudSubnet.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.10.0.0/16]/subnet-[10.10.0.1]"
 
-- name: Remove subnet_2 (check_mode)
-  aci_cloud_subnet:
-    <<: *aci_info
-    tenant: anstest
-    cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.10.0.0/16'
-    address: 10.10.0.2
-    state: absent
-  check_mode: yes
-  register: cm_remove_subnet
+# - name: Create another aci cloud subnet (normal_mode)
+#   aci_cloud_subnet:
+#     <<: *aci_info
+#     tenant: anstest
+#     cloud_context_profile: ctx_profile_1
+#     cloud_cidr: '10.10.0.0/16'
+#     cloud_zone_attach: us-west-1a
+#     address: 10.10.0.2
+#     subnet: subnet_2
+#   register: nm_add_subnet_2
 
-- name: Remove subnet_2 (normal_mode)
-  aci_cloud_subnet:
-    <<: *aci_info
-    tenant: anstest
-    cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.10.0.0/16'
-    address: 10.10.0.2
-    state: absent
-  register: nm_remove_subnet
+# - name: Verify nm_add_subnet_2
+#   assert:
+#     that:
+#     - nm_add_subnet_2 is changed
+#     - nm_add_subnet_2.previous == []
+#     - nm_add_subnet_2.current.0.cloudSubnet.attributes.name == "subnet_2"
+#     - nm_add_subnet_2.current.0.cloudSubnet.attributes.ip == "10.10.0.2"
+#     - nm_add_subnet_2.current.0.cloudSubnet.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.10.0.0/16]/subnet-[10.10.0.2]"
 
-- name: Verify cm_remove_subnet and nm_remove_subnet
-  assert:
-    that:
-    - cm_remove_subnet is changed
-    - nm_remove_subnet is changed
-    - cm_remove_subnet.proposed == {}
-    - nm_remove_subnet.current == []
-    - nm_remove_subnet.previous.0.cloudSubnet.attributes.ip == "10.10.0.2"
-    - cm_remove_subnet.previous.0.cloudSubnet.attributes.ip == "10.10.0.2"
+# - name: Query all subnets
+#   aci_cloud_subnet:
+#     <<: *aci_info
+#     tenant: anstest
+#     cloud_context_profile: ctx_profile_1
+#     cloud_cidr: '10.10.0.0/16'
+#     state: query
+#   register: query_all
+
+# - name: Verify query_all
+#   assert:
+#     that:
+#     - query_all is not changed
+#     - query_all.current.0.cloudCidr.attributes.addr == "10.10.0.0/16"
+#     - query_all.current.0.cloudCidr.children | length == 2
+#     - query_all.current.0.cloudCidr.children.0.cloudSubnet.attributes.name == "subnet_2"
+#     - query_all.current.0.cloudCidr.children.0.cloudSubnet.attributes.ip == "10.10.0.2"
+#     - query_all.current.0.cloudCidr.children.1.cloudSubnet.attributes.name == "subnet_1"
+#     - query_all.current.0.cloudCidr.children.1.cloudSubnet.attributes.ip == "10.10.0.1"
+
+# - name: Query subnet 1
+#   aci_cloud_subnet:
+#     <<: *aci_info
+#     tenant: anstest
+#     cloud_context_profile: ctx_profile_1
+#     cloud_cidr: '10.10.0.0/16'
+#     address: 10.10.0.1
+#     state: query
+#   register: query_subnet_1
+
+# - name: Verify query_subnet_1
+#   assert:
+#     that:
+#     - query_subnet_1 is not changed
+#     - query_subnet_1.current.0.cloudSubnet.attributes.name == "subnet_1"
+#     - query_subnet_1.current.0.cloudSubnet.attributes.ip == "10.10.0.1"
+#     - query_subnet_1.current.0.cloudSubnet.attributes.descr == "change test description"
+#     - query_subnet_1.current.0.cloudSubnet.attributes.scope == "public"
+#     - query_subnet_1.current.0.cloudSubnet.attributes.usage == "infra-router"
+#     - query_subnet_1.current.0.cloudSubnet.children.0.cloudRsZoneAttach.attributes.tDn == "uni/clouddomp/provp-aws/region-us-west-1/zone-us-west-1a"
+
+# - name: Remove subnet_2 (check_mode)
+#   aci_cloud_subnet:
+#     <<: *aci_info
+#     tenant: anstest
+#     cloud_context_profile: ctx_profile_1
+#     cloud_cidr: '10.10.0.0/16'
+#     address: 10.10.0.2
+#     state: absent
+#   check_mode: yes
+#   register: cm_remove_subnet
+
+# - name: Remove subnet_2 (normal_mode)
+#   aci_cloud_subnet:
+#     <<: *aci_info
+#     tenant: anstest
+#     cloud_context_profile: ctx_profile_1
+#     cloud_cidr: '10.10.0.0/16'
+#     address: 10.10.0.2
+#     state: absent
+#   register: nm_remove_subnet
+
+# - name: Verify cm_remove_subnet and nm_remove_subnet
+#   assert:
+#     that:
+#     - cm_remove_subnet is changed
+#     - nm_remove_subnet is changed
+#     - cm_remove_subnet.proposed == {}
+#     - nm_remove_subnet.current == []
+#     - nm_remove_subnet.previous.0.cloudSubnet.attributes.ip == "10.10.0.2"
+#     - cm_remove_subnet.previous.0.cloudSubnet.attributes.ip == "10.10.0.2"
