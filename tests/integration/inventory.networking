@@ -9,3 +9,6 @@ lh-dmz1-pod3-sim-v42
 aws_aci_hostname=54.176.140.90
 aws_aci_username=ansible_github_ci
 aws_aci_password=sJ94G92#8dq2hx*K4qh
+azure_aci_hostname=104.42.26.226
+azure_aci_username=ansible_github_ci
+azure_aci_password=sJ94G92#8dq2hx*K4qh
