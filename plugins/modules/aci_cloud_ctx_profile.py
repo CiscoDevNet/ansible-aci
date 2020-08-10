@@ -54,6 +54,11 @@ options:
     description:
     - Determine if a VPN Gateway Router will be deployed or not.
     type: bool
+  cloud:
+    description:
+    - The vendor of the controller
+    choices: [ aws, azure ]
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -76,6 +81,7 @@ EXAMPLES = r'''
     name: cloud_ctx_profile
     vrf: VRF1
     region: us-west-1
+    cloud: aws
     primary_cidr: '10.0.10.1/16'
     state: present
   delegate_to: localhost
@@ -232,7 +238,8 @@ def main():
         # flow_log=dict(type='str'),
         vrf=dict(type='str'),
         region=dict(type='str'),
-        vpn_gateway=dict(type='bool', default=False)
+        vpn_gateway=dict(type='bool', default=False),
+        cloud=dict(type='str', choices=['aws', 'azure'])
     )
 
     module = AnsibleModule(
@@ -240,7 +247,7 @@ def main():
         supports_check_mode=True,
         required_if=[
             ['state', 'absent', ['name', 'tenant']],
-            ['state', 'present', ['name', 'tenant', 'vrf', 'region', 'primary_cidr']],
+            ['state', 'present', ['name', 'tenant', 'vrf', 'region', 'primary_cidr', 'cloud']],
         ],
     )
 
@@ -255,6 +262,7 @@ def main():
     vrf = module.params.get('vrf')
     region = module.params.get('region')
     vpn_gateway = module.params.get('vpn_gateway')
+    cloud = module.params.get('cloud')
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -280,7 +288,7 @@ def main():
         child_configs.append(dict(
             cloudRsCtxProfileToRegion=dict(
                 attributes=dict(
-                    tDn="uni/clouddomp/provp-aws/region-{0}".format(region)
+                    tDn="uni/clouddomp/provp-{0}/region-{1}".format(cloud, region)
                 )
             )
         ))
