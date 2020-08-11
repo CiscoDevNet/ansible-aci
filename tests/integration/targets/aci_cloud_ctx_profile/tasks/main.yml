@@ -132,7 +132,6 @@
     - item.proposed.cloudCtxProfile.attributes.name == "ctx_profile_1"
     - item.proposed.cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1"
     - item.proposed.cloudCtxProfile.children[0].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
-    # - item.proposed.cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-east-1"
     - item.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.addr == "10.100.0.0/16"
     - item.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.primary == "yes"
   loop: "{{cm_add_aci_ctx_profile.results}}"
@@ -145,7 +144,6 @@
     - item.current[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
     - item.current[0].cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1"
     - item.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
-    # - item.current[0].cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-east-1"
     - item.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.100.0.0/16"
     - item.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
   loop: "{{nm_add_aci_ctx_profile.results}}"
@@ -174,7 +172,6 @@
     - item.previous[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
     - item.previous[0].cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1"
     - item.previous[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
-    # - item.previous[0].cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-east-1"
     - item.previous[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.100.0.0/16"
     - item.previous[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
   loop: "{{cm_add_aci_ctx_profile_again.results}}"
@@ -202,7 +199,6 @@
     - item.current[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
     - item.current[0].cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1"
     - item.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
-    # - item.current[0].cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-east-1"
     - item.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.100.0.0/16"
     - item.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
   loop: "{{nm_add_aci_ctx_profile_again.results}}"
@@ -232,7 +228,6 @@
     - item.proposed.cloudCtxProfile.attributes.name == "ctx_profile_2"
     - item.proposed.cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_2"
     - item.proposed.cloudCtxProfile.children[0].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_2"
-    # - item.proposed.cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-west-1"
     - item.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.addr == "10.101.0.0/16"
     - item.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.primary == "yes"
   loop: "{{cm_add_another_aci_ctx_profile.results}}"
@@ -261,24 +256,9 @@
       - item.current[0].cloudCtxProfile.attributes.name == "ctx_profile_2"
       - item.current[0].cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_2"
       - item.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_2"
-      # - item.current[0].cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-west-1"
       - item.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.101.0.0/16"
       - item.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
   loop: "{{nm_add_another_aci_ctx_profile.results}}"
-
-# - name: Change setting of aws ctx_profile_2
-#   aci_cloud_ctx_profile:
-#     host: "{{aws_aci_hostname}}"
-#     username: "{{aws_aci_username}}"
-#     password: "{{aws_aci_password}}"
-#     tenant: ansible_test
-#     name: ctx_profile_2
-#     vrf: ctx_profile_vrf_2
-#     region: us-west-1
-#     primary_cidr: '10.101.0.0/16'
-#     vpn_gateway: true
-#     state: present
-#   register: change_ctx_profile_2
 
 - name: Change setting of aws ctx_profile_2
   aci_cloud_ctx_profile:
@@ -312,21 +292,21 @@
     - change_ctx_profile_2.current[0].cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-west-1"
     - change_ctx_profile_2.current[0].cloudCtxProfile.children[3].cloudRouterP.children | length == 3
 
-- name: Change setting of azure ctx_profile_2
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    host: "{{azure_aci_hostname}}"
-    username: "{{azure_aci_username}}"
-    password: "{{azure_aci_password}}"
-    tenant: ansible_test
-    cloud: azure
-    name: ctx_profile_2
-    vrf: ctx_profile_vrf_2
-    region: westus2
-    primary_cidr: '10.101.0.0/16'
-    vpn_gateway: true
-    state: present
-  ignore_errors: yes
+# - name: Change setting of azure ctx_profile_2
+#   aci_cloud_ctx_profile:
+#     <<: *aci_info
+#     host: "{{azure_aci_hostname}}"
+#     username: "{{azure_aci_username}}"
+#     password: "{{azure_aci_password}}"
+#     tenant: ansible_test
+#     cloud: azure
+#     name: ctx_profile_2
+#     vrf: ctx_profile_vrf_2
+#     region: westus2
+#     primary_cidr: '10.101.0.0/16'
+#     vpn_gateway: true
+#     state: present
+#   ignore_errors: yes
 
 - name: Query aci cloud context profile ctx_profile_1 
   aci_cloud_ctx_profile:

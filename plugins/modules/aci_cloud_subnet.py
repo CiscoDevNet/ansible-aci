@@ -63,7 +63,13 @@ options:
   cloud_zone_attach:
     description:
     - The cloud zone which is attached to the given cloud context profile.
+    - Only used when it is an aws cloud apic.
     type: str
+  vNet_gateway:
+    description:
+    - Determine if a vNet Gateway Router will be deployed or not.
+    - Only used when it is an azure cloud apic.
+    type: bool
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -234,6 +240,7 @@ def main():
         name_alias=dict(type='str'),
         scope=dict(type='str', choices=['private', 'public', 'shared']),
         usage=dict(type='str', choices=['infra-router', 'user']),
+        vNet_gateway=dict(type='bool', default=False),
         tenant=dict(type='str', required=True),
         cloud_context_profile=dict(type='str', required=True),
         cloud_cidr=dict(type='str', required=True),
@@ -256,6 +263,7 @@ def main():
     name_alias = module.params.get('name_alias')
     scope = module.params.get('scope')
     usage = module.params.get('usage')
+    vNet_gateway = module.params.get('vNet_gateway')
     tenant = module.params.get('tenant')
     cloud_context_profile = module.params.get('cloud_context_profile')
     cloud_cidr = module.params.get('cloud_cidr')
@@ -295,10 +303,15 @@ def main():
     aci.get_existing()
 
     if state == 'present':
+        # in aws cloud apic
         if cloud_zone_attach:
             region = cloud_zone_attach[:-1]
             tDn = 'uni/clouddomp/provp-aws/region-{0}/zone-{1}'.format(region, cloud_zone_attach)
             child_configs.append({'cloudRsZoneAttach': {'attributes': {'tDn': tDn}}})
+        # in azure cloud apic
+        if vNet_gateway:
+            usage = 'gateway'
+
         aci.payload(
             aci_class='cloudSubnet',
             class_config=dict(
