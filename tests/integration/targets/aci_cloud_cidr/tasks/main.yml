@@ -50,6 +50,7 @@
     vrf: ctx_profile_vrf_1
     region: us-east-1
     primary_cidr: '10.10.0.0/16'
+    cloud: aws
     state: present
   register: nm_add_aci_ctx_profile
 
