@@ -193,7 +193,7 @@
   register: nm_add_subnet_3
   loop: "{{ cloud }}"
 
-- name: Change cloud subnet
+- name: Specify subnet as VpnGateway enabled
   aci_cloud_subnet:
     <<: *aci_info
     host: "{{ item.aci_hostname }}"
@@ -212,148 +212,137 @@
   loop: "{{ cloud }}"
 
 # Enable vpn_gateway router in cloud ctx profile
-- name: Create aci cloud context profile (normal mode)
-  aci_cloud_ctx_profile:
+- name: Enable VpnGateway
+  aci_cloud_vpn_gateway:
     <<: *aci_info
     host: "{{ item.aci_hostname }}"
     username: "{{ item.aci_username }}"
     password: "{{ item.aci_password }}"
     tenant: ansible_test
-    cloud: "{{ item.cloud_type }}"
-    name: ctx_profile_1
-    vrf: ctx_profile_vrf_1
-    region: "{{ item.cloud_region }}"
-    primary_cidr: '10.50.0.0/16'
-    vpn_gateway: true
+    cloud_context_profile: ctx_profile_1
     state: present
-  register: nm_change_aci_ctx_profile
   loop: "{{ cloud }}"
 
 # Try to disable vpn_gateway router again in cloud ctx profile
-- name: Create aci cloud context profile (normal mode)
-  aci_cloud_ctx_profile:
+- name: Disable VpnGateway
+  aci_cloud_vpn_gateway:
     <<: *aci_info
     host: "{{ item.aci_hostname }}"
     username: "{{ item.aci_username }}"
     password: "{{ item.aci_password }}"
     tenant: ansible_test
-    cloud: "{{ item.cloud_type }}"
-    name: ctx_profile_1
-    vrf: ctx_profile_vrf_1
-    region: "{{ item.cloud_region }}"
-    primary_cidr: '10.50.0.0/16'
-    state: present
-  register: nm_change_aci_ctx_profile
+    cloud_context_profile: ctx_profile_1
+    state: absent
   loop: "{{ cloud }}"
 
-# - name: Query all subnets
-#   aci_cloud_subnet:
-#     <<: *aci_info
-#     host: "{{ item.aci_hostname }}"
-#     username: "{{ item.aci_username }}"
-#     password: "{{ item.aci_password }}"
-#     tenant: ansible_test
-#     cloud_context_profile: ctx_profile_1
-#     cloud_cidr: '10.50.0.0/16'
-#     state: query
-#   register: query_all
-#   loop: "{{ cloud }}"
+- name: Query all subnets
+  aci_cloud_subnet:
+    <<: *aci_info
+    host: "{{ item.aci_hostname }}"
+    username: "{{ item.aci_username }}"
+    password: "{{ item.aci_password }}"
+    tenant: ansible_test
+    cloud_context_profile: ctx_profile_1
+    cloud_cidr: '10.50.0.0/16'
+    state: query
+  register: query_all
+  loop: "{{ cloud }}"
 
-# - name: Verify query_all
-#   assert:
-#     that:
-#     - item is not changed
-#     - item.current.0.cloudCidr.attributes.addr == "10.50.0.0/16"
-#     - item.current.0.cloudCidr.children | length == 3
-#   loop: "{{ query_all.results }}"
+- name: Verify query_all
+  assert:
+    that:
+    - item is not changed
+    - item.current.0.cloudCidr.attributes.addr == "10.50.0.0/16"
+    - item.current.0.cloudCidr.children | length == 3
+  loop: "{{ query_all.results }}"
 
-# - name: Query a specific subnet
-#   aci_cloud_subnet:
-#     <<: *aci_info
-#     host: "{{ item.aci_hostname }}"
-#     username: "{{ item.aci_username }}"
-#     password: "{{ item.aci_password }}"
-#     tenant: ansible_test
-#     cloud_context_profile: ctx_profile_1
-#     cloud_cidr: '10.50.0.0/16'
-#     address: 10.50.0.1
-#     state: query
-#   register: query_subnet_1
-#   loop: "{{ cloud }}"
+- name: Query a specific subnet
+  aci_cloud_subnet:
+    <<: *aci_info
+    host: "{{ item.aci_hostname }}"
+    username: "{{ item.aci_username }}"
+    password: "{{ item.aci_password }}"
+    tenant: ansible_test
+    cloud_context_profile: ctx_profile_1
+    cloud_cidr: '10.50.0.0/16'
+    address: 10.50.0.1
+    state: query
+  register: query_subnet_1
+  loop: "{{ cloud }}"
 
-# - name: Verify query_subnet_1
-#   assert:
-#     that:
-#     - item is not changed
-#     - item.current.0.cloudSubnet.attributes.ip == "10.50.0.1"
-#     # - item.current.0.cloudSubnet.attributes.usage == "gateway"
-#     - item.current.0.cloudSubnet.attributes.scope == "public"
-#     - item.current.0.cloudSubnet.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.50.0.0/16]/subnet-[10.50.0.1]"
-#   loop: "{{ query_subnet_1.results }}"
+- name: Verify query_subnet_1
+  assert:
+    that:
+    - item is not changed
+    - item.current.0.cloudSubnet.attributes.ip == "10.50.0.1"
+    # - item.current.0.cloudSubnet.attributes.usage == "gateway"
+    - item.current.0.cloudSubnet.attributes.scope == "public"
+    - item.current.0.cloudSubnet.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.50.0.0/16]/subnet-[10.50.0.1]"
+  loop: "{{ query_subnet_1.results }}"
 
-# - name: Remove subnet 3 (check_mode)
-#   aci_cloud_subnet:
-#     <<: *aci_info
-#     host: "{{ item.aci_hostname }}"
-#     username: "{{ item.aci_username }}"
-#     password: "{{ item.aci_password }}"
-#     tenant: ansible_test
-#     cloud_context_profile: ctx_profile_1
-#     cloud_cidr: '10.50.0.0/16'
-#     address: 10.50.0.3
-#     state: absent
-#   check_mode: yes
-#   register: cm_remove_subnet_3
-#   loop: "{{ cloud }}"
+- name: Remove subnet 3 (check_mode)
+  aci_cloud_subnet:
+    <<: *aci_info
+    host: "{{ item.aci_hostname }}"
+    username: "{{ item.aci_username }}"
+    password: "{{ item.aci_password }}"
+    tenant: ansible_test
+    cloud_context_profile: ctx_profile_1
+    cloud_cidr: '10.50.0.0/16'
+    address: 10.50.0.3
+    state: absent
+  check_mode: yes
+  register: cm_remove_subnet_3
+  loop: "{{ cloud }}"
 
-# - name: Verify cm_remove_subnet_3
-#   assert:
-#     that:
-#     - item is changed
-#     - item.proposed == {}
-#     - item.previous.0.cloudSubnet.attributes.ip == "10.50.0.3"
-#   loop: "{{ cm_remove_subnet_3.results }}"
+- name: Verify cm_remove_subnet_3
+  assert:
+    that:
+    - item is changed
+    - item.proposed == {}
+    - item.previous.0.cloudSubnet.attributes.ip == "10.50.0.3"
+  loop: "{{ cm_remove_subnet_3.results }}"
 
-# - name: Remove subnet 3 (normal_mode)
-#   aci_cloud_subnet:
-#     <<: *aci_info
-#     host: "{{ item.aci_hostname }}"
-#     username: "{{ item.aci_username }}"
-#     password: "{{ item.aci_password }}"
-#     tenant: ansible_test
-#     cloud_context_profile: ctx_profile_1
-#     cloud_cidr: '10.50.0.0/16'
-#     address: 10.50.0.3
-#     state: absent
-#   register: nm_remove_subnet_3
-#   loop: "{{ cloud }}"
+- name: Remove subnet 3 (normal_mode)
+  aci_cloud_subnet:
+    <<: *aci_info
+    host: "{{ item.aci_hostname }}"
+    username: "{{ item.aci_username }}"
+    password: "{{ item.aci_password }}"
+    tenant: ansible_test
+    cloud_context_profile: ctx_profile_1
+    cloud_cidr: '10.50.0.0/16'
+    address: 10.50.0.3
+    state: absent
+  register: nm_remove_subnet_3
+  loop: "{{ cloud }}"
 
-# - name: Verify nm_remove_subnet_3
-#   assert:
-#     that:
-#     - item is changed
-#     - item.current == []
-#     - item.previous.0.cloudSubnet.attributes.ip == "10.50.0.3"
-#   loop: "{{ nm_remove_subnet_3.results }}"
+- name: Verify nm_remove_subnet_3
+  assert:
+    that:
+    - item is changed
+    - item.current == []
+    - item.previous.0.cloudSubnet.attributes.ip == "10.50.0.3"
+  loop: "{{ nm_remove_subnet_3.results }}"
 
-# - name: Remove subnet 3 again
-#   aci_cloud_subnet:
-#     <<: *aci_info
-#     host: "{{ item.aci_hostname }}"
-#     username: "{{ item.aci_username }}"
-#     password: "{{ item.aci_password }}"
-#     tenant: ansible_test
-#     cloud_context_profile: ctx_profile_1
-#     cloud_cidr: '10.50.0.0/16'
-#     address: 10.50.0.3
-#     state: absent
-#   register: nm_remove_subnet_3_again
-#   loop: "{{ cloud }}"
+- name: Remove subnet 3 again
+  aci_cloud_subnet:
+    <<: *aci_info
+    host: "{{ item.aci_hostname }}"
+    username: "{{ item.aci_username }}"
+    password: "{{ item.aci_password }}"
+    tenant: ansible_test
+    cloud_context_profile: ctx_profile_1
+    cloud_cidr: '10.50.0.0/16'
+    address: 10.50.0.3
+    state: absent
+  register: nm_remove_subnet_3_again
+  loop: "{{ cloud }}"
 
-# - name: Verify nm_remove_subnet_3_again
-#   assert:
-#     that:
-#     - item is not changed
-#     - item.previous == []
-#     - item.current == []
-#   loop: "{{ nm_remove_subnet_3_again.results }}"
+- name: Verify nm_remove_subnet_3_again
+  assert:
+    that:
+    - item is not changed
+    - item.previous == []
+    - item.current == []
+  loop: "{{ nm_remove_subnet_3_again.results }}"

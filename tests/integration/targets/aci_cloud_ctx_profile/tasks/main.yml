@@ -215,6 +215,7 @@
     vrf: ctx_profile_vrf_2
     region: "{{item.region_2}}"
     primary_cidr: '10.101.0.0/16'
+    description: "add ctx_profile_2"
     state: present
   check_mode: yes
   register: cm_add_another_aci_ctx_profile
@@ -230,6 +231,7 @@
     - item.proposed.cloudCtxProfile.children[0].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_2"
     - item.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.addr == "10.101.0.0/16"
     - item.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.primary == "yes"
+    - item.proposed.cloudCtxProfile.attributes.descr == "add ctx_profile_2"
   loop: "{{cm_add_another_aci_ctx_profile.results}}"
 
 - name: Add another aci cloud context profile (normal_mode)
@@ -244,6 +246,7 @@
     vrf: ctx_profile_vrf_2
     region: "{{item.region_2}}"
     primary_cidr: '10.101.0.0/16'
+    description: "add ctx_profile_2"
     state: present
   register: nm_add_another_aci_ctx_profile
   loop: "{{cloud}}"
@@ -258,55 +261,8 @@
       - item.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_2"
       - item.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.101.0.0/16"
       - item.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
+      - item.current[0].cloudCtxProfile.attributes.descr == "add ctx_profile_2"
   loop: "{{nm_add_another_aci_ctx_profile.results}}"
-
-- name: Change setting of aws ctx_profile_2
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    host: "{{aws_aci_hostname}}"
-    username: "{{aws_aci_username}}"
-    password: "{{aws_aci_password}}"
-    tenant: ansible_test
-    cloud: aws
-    name: ctx_profile_2
-    vrf: ctx_profile_vrf_2
-    region: us-west-1
-    primary_cidr: '10.101.0.0/16'
-    vpn_gateway: true
-    state: present
-  register: change_ctx_profile_2
-
-- name: Verify change_ctx_profile_2
-  assert:
-    that:
-    - change_ctx_profile_2 is changed
-    - change_ctx_profile_2.previous[0].cloudCtxProfile.attributes.name == "ctx_profile_2"
-    - change_ctx_profile_2.previous[0].cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_2"
-    - change_ctx_profile_2.previous[0].cloudCtxProfile.children | length == 3
-    - change_ctx_profile_2.current[0].cloudCtxProfile.attributes.name == "ctx_profile_2"
-    - change_ctx_profile_2.current[0].cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_2"
-    - change_ctx_profile_2.current[0].cloudCtxProfile.children | length == 4
-    - change_ctx_profile_2.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.101.0.0/16"
-    - change_ctx_profile_2.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
-    - change_ctx_profile_2.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_2"
-    - change_ctx_profile_2.current[0].cloudCtxProfile.children[1].cloudRsCtxProfileToRegion.attributes.tDn == "uni/clouddomp/provp-aws/region-us-west-1"
-    - change_ctx_profile_2.current[0].cloudCtxProfile.children[3].cloudRouterP.children | length == 3
-
-# - name: Change setting of azure ctx_profile_2
-#   aci_cloud_ctx_profile:
-#     <<: *aci_info
-#     host: "{{azure_aci_hostname}}"
-#     username: "{{azure_aci_username}}"
-#     password: "{{azure_aci_password}}"
-#     tenant: ansible_test
-#     cloud: azure
-#     name: ctx_profile_2
-#     vrf: ctx_profile_vrf_2
-#     region: westus2
-#     primary_cidr: '10.101.0.0/16'
-#     vpn_gateway: true
-#     state: present
-#   ignore_errors: yes
 
 - name: Query aci cloud context profile ctx_profile_1 
   aci_cloud_ctx_profile:

@@ -10,50 +10,23 @@ __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: aci_cloud_ctx_profile
-short_description:  Manage Cloud Context Profile (cloud:CtxProfile)
+module: aci_cloud_vpn_gateway
+short_description:  Manage cloudRouterP in Cloud Context Profile (cloud:cloudRouterP)
 description:
-- Manage the Cloud Context Profile objects on Cisco Cloud ACI.
+- Manage cloudRouterP objects on Cisco Cloud ACI.
 notes:
-- More information about the internal APIC class B(cloud:CtxProfile) from
+- More information about the internal APIC class B(cloud:cloudRouterP) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 author:
-- Nirav (@crestdatasys)
 - Cindy Zhao (@cizhao)
 options:
-  name:
-    description:
-    - The name of the Cloud Context Profile
-    type: str
-    aliases: [ cloud_context_profile ]
-  description:
-    description:
-    - Description of the Cloud Context Profile
-    type: str
-  name_alias:
-    description:
-    - An alias for the name of the current object. This relates to the nameAlias field in ACI and is used to rename object without changing the DN
-    type: str
   tenant:
     description:
-    - The name of the Tenant.
+    - The name of tenant.
     type: str
-  primary_cidr:
+  cloud_context_profile:
     description:
-    - The subnet with netmask to use as primary CIDR block for the Cloud Context Profile.
-    type: str
-  vrf:
-    description:
-    - The name of the VRF.
-    type: str
-  region:
-    description:
-    - The name of the cloud region in which to deploy the network construct.
-    type: str
-  cloud:
-    description:
-    - The vendor of the controller
-    choices: [ aws, azure ]
+    - The name of cloud context profile.
     type: str
   state:
     description:
@@ -61,54 +34,40 @@ options:
     - Use C(query) for listing an object or multiple objects.
     choices: [ absent, present, query ]
     type: str
-    default: present
+    default: query
 
 extends_documentation_fragment:
 - cisco.aci.aci
 '''
 
 EXAMPLES = r'''
-- name: Add a new aci cloud ctx profile
-  cisco.aci.aci_cloud_ctx_profile:
+- name: Enable VpnGateway
+  cisco.aci.aci_cloud_vpn_gateway:
     host: apic_host
     username: admin
     password: SomeSecretPassword
-    tenant: tenant_1
-    name: cloud_ctx_profile
-    vrf: VRF1
-    region: us-west-1
-    cloud: aws
-    primary_cidr: '10.0.10.1/16'
+    tenant: ansible_test
+    cloud_context_profile: ctx_profile_1
     state: present
   delegate_to: localhost
 
-- name: Remove an aci cloud ctx profile
-  cisco.aci.aci_cloud_ctx_profile:
+- name: Disable VpnGateway
+  cisco.aci.aci_cloud_vpn_gateway:
     host: apic_host
     username: admin
     password: SomeSecretPassword
-    tenant: tenant_1
-    name: cloud_ctx_profile
+    tenant: ansible_test
+    cloud_context_profile: ctx_profile_1
     state: absent
   delegate_to: localhost
 
-- name: Query a specific aci cloud ctx profile
-  cisco.aci.aci_cloud_ctx_profile:
+- name: Query VpnGateway
+  cisco.aci.aci_cloud_vpn_gateway:
     host: apic_host
     username: admin
     password: SomeSecretPassword
-    tenant: anstest
-    name: ctx_profile_1
-    state: query
-  delegate_to: localhost
-
-- name: Query all aci cloud ctx profile
-  cisco.aci.aci_cloud_ctx_profile:
-    host: apic_host
-    username: admin
-    password: SomeSecretPassword
-    tenant: anstest
-    state: query
+    tenant: ansible_test
+    cloud_context_profile: ctx_profile_1
   delegate_to: localhost
 '''
 
@@ -224,39 +183,20 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        description=dict(type='str',),
-        name=dict(type='str', aliases=['cloud_context_profile']),
-        name_alias=dict(type='str',),
-        tenant=dict(type='str',),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        primary_cidr=dict(type='str',),
-        # FIXME: didn't find the flow_log in UI
-        # flow_log=dict(type='str'),
-        vrf=dict(type='str'),
-        region=dict(type='str'),
-        cloud=dict(type='str', choices=['aws', 'azure'])
+        tenant=dict(type='str', required=True),
+        cloud_context_profile=dict(type='str', required=True),
+        state=dict(type='str', default='query', choices=['absent', 'present', 'query']),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[
-            ['state', 'absent', ['name', 'tenant']],
-            ['state', 'present', ['name', 'tenant', 'vrf', 'region', 'primary_cidr', 'cloud']],
-        ],
     )
 
-    description = module.params.get('description')
-    name = module.params.get('name')
-    name_alias = module.params.get('name_alias')
     tenant = module.params.get('tenant')
+    cloud_context_profile = module.params.get('cloud_context_profile')
     state = module.params.get('state')
-    primary_cidr = module.params.get('primary_cidr')
     child_configs = []
-
-    vrf = module.params.get('vrf')
-    region = module.params.get('region')
-    cloud = module.params.get('cloud')
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -268,44 +208,38 @@ def main():
         ),
         subclass_1=dict(
             aci_class='cloudCtxProfile',
-            aci_rn='ctxprofile-{0}'.format(name),
-            target_filter='eq(cloudCtxProfile.name, "{0}")'.format(name),
-            module_object=name
+            aci_rn='ctxprofile-{0}'.format(cloud_context_profile),
+            target_filter='eq(cloudCtxProfile.name, "{0}")'.format(cloud_context_profile),
+            module_object=cloud_context_profile
         ),
-        child_classes=['cloudRsToCtx', 'cloudRsCtxProfileToRegion', 'cloudRouterP', 'cloudCidr']
+        subclass_2=dict(
+            aci_class='cloudRouterP',
+            aci_rn="routerp-default",
+            target_filter='eq(cloudRouterP.name, "default")',
+            module_object="default"
+        ),
+        child_classes=['cloudRsToVpnGwPol', 'cloudRsToHostRouterPol', 'cloudIntNetworkP']
     )
 
     aci.get_existing()
 
     if state == 'present':
-        child_configs.append(dict(cloudRsToCtx=dict(attributes=dict(tnFvCtxName=vrf))))
         child_configs.append(dict(
-            cloudRsCtxProfileToRegion=dict(
+            cloudIntNetworkP=dict(
                 attributes=dict(
-                    tDn="uni/clouddomp/provp-{0}/region-{1}".format(cloud, region)
-                )
-            )
-        ))
-        child_configs.append(dict(
-            cloudCidr=dict(
-                attributes=dict(
-                    addr=primary_cidr,
-                    primary="yes"
+                    name="default"
                 )
             )
         ))
         aci.payload(
-            aci_class='cloudCtxProfile',
+            aci_class='cloudRouterP',
             class_config=dict(
-                descr=description,
-                name=name,
-                name_alias=name_alias,
-                type='regular',
+                name="default"
             ),
             child_configs=child_configs
         )
 
-        aci.get_diff(aci_class='cloudCtxProfile')
+        aci.get_diff(aci_class='cloudRouterP')
         aci.post_config()
 
     elif state == 'absent':
