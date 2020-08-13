@@ -1,0 +1,150 @@
+# Test code for the ACI modules
+# Copyright: (c) 2020, Cindy Zhao (@cizhao) <cizhao@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set cloud
+  set_fact:
+    cloud:
+      - aci_hostname: "{{ aws_aci_hostname }}"
+        aci_username: "{{ aws_aci_username }}"
+        aci_password: "{{ aws_aci_password }}"
+        cloud_type: aws
+        cloud_region: us-west-1
+        cloud_zone: us-west-1a
+      - aci_hostname: "{{ azure_aci_hostname }}"
+        aci_username: "{{ azure_aci_username }}"
+        aci_password: "{{ azure_aci_password }}"
+        cloud_type: azure
+        cloud_region: westus
+        vNet_gateway: true
+
+# CLEAN ENVIRONMENT
+- name: Set vars
+  set_fact: 
+    aci_info: &aci_info
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Ensure tenant doesn't exist
+  aci_tenant:
+    <<: *aci_info
+    state: absent
+    tenant: ansible_test
+    host: "{{ item.aci_hostname }}"
+    username: "{{ item.aci_username }}"
+    password: "{{ item.aci_password }}"
+  register: tenant_absent
+  loop: "{{ cloud }}"
+
+- name: Ensure tenant exists for tests to kick off
+  aci_tenant:
+    <<: *aci_info
+    state: present
+    tenant: ansible_test
+    host: "{{ item.aci_hostname }}"
+    username: "{{ item.aci_username }}"
+    password: "{{ item.aci_password }}"
+  register: tenant_present
+  loop: "{{ cloud }}"
+
+- name: Ensure aci cloud context profile does not exists
+  aci_cloud_ctx_profile:
+    <<: *aci_info
+    host: "{{item.aci_hostname}}"
+    username: "{{item.aci_username}}"
+    password: "{{item.aci_password}}"
+    tenant: ansible_test
+    name: ctx_profile_1
+    state: absent
+  register: rm_ctx_profile_1
+  loop: "{{ cloud }}"
+
+- name: Verify rm_ctx_profile_1
+  assert:
+    that:
+    - item.current == []
+  loop: "{{ rm_ctx_profile_1.results }}"
+
+- name: Create aci cloud context profile (normal mode)
+  aci_cloud_ctx_profile:
+    <<: *aci_info
+    host: "{{ item.aci_hostname }}"
+    username: "{{ item.aci_username }}"
+    password: "{{ item.aci_password }}"
+    tenant: ansible_test
+    cloud: "{{ item.cloud_type }}"
+    name: ctx_profile_1
+    vrf: ctx_profile_vrf_1
+    region: "{{ item.cloud_region }}"
+    primary_cidr: '10.50.0.0/16'
+    state: present
+  register: nm_add_aci_ctx_profile
+  loop: "{{ cloud }}"
+
+- name: Create aci cloud subnet with VpnGateway enabled (normal_mode)
+  aci_cloud_subnet:
+    <<: *aci_info
+    host: "{{ item.aci_hostname }}"
+    username: "{{ item.aci_username }}"
+    password: "{{ item.aci_password }}"
+    tenant: ansible_test
+    cloud_context_profile: ctx_profile_1
+    cloud_cidr: '10.50.0.0/16'
+    cloud_zone_attach: "{{ item.cloud_zone | default(omit) }}"
+    address: 10.50.0.1
+    description: specify this subnet as VpnGateway router
+    vNet_gateway: "{{ item.vNet_gateway | default(omit)}}"
+    scope: public
+  register: nm_add_subnet
+  loop: "{{ cloud }}"
+
+- name: Enable VpnGateway
+  aci_cloud_vpn_gateway:
+    <<: *aci_info
+    host: "{{ item.aci_hostname }}"
+    username: "{{ item.aci_username }}"
+    password: "{{ item.aci_password }}"
+    tenant: ansible_test
+    cloud_context_profile: ctx_profile_1
+    state: present
+  loop: "{{ cloud }}"
+
+- name: Disable VpnGateway
+  aci_cloud_vpn_gateway:
+    <<: *aci_info
+    host: "{{ item.aci_hostname }}"
+    username: "{{ item.aci_username }}"
+    password: "{{ item.aci_password }}"
+    tenant: ansible_test
+    cloud_context_profile: ctx_profile_1
+    state: absent
+  loop: "{{ cloud }}"
+
+- name: Enable VpnGateway again
+  aci_cloud_vpn_gateway:
+    <<: *aci_info
+    host: "{{ item.aci_hostname }}"
+    username: "{{ item.aci_username }}"
+    password: "{{ item.aci_password }}"
+    tenant: ansible_test
+    cloud_context_profile: ctx_profile_1
+    state: present
+  loop: "{{ cloud }}"
+
+- name: Query VpnGateway
+  aci_cloud_vpn_gateway:
+    <<: *aci_info
+    host: "{{ item.aci_hostname }}"
+    username: "{{ item.aci_username }}"
+    password: "{{ item.aci_password }}"
+    tenant: ansible_test
+    cloud_context_profile: ctx_profile_1
+  loop: "{{ cloud }}"
