@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2019, Vasily Prokopov (@vasilyprokopov)
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -68,17 +69,43 @@ author:
 '''
 
 EXAMPLES = r'''
-- aci_interface_policy_link_level:
-    host: '{{ inventory_hostname }}'
-    username: '{{ username }}'
-    password: '{{ password }}'
-    link_level_policy: '{{ link_level_policy }}'
-    description: '{{ description }}'
+- name: Add a Link Level Policy
+  aci_interface_policy_link_level:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    link_level_policy: link_level_policy_test
+    description: via Ansible
     auto_negotiation: on
-    speed: '{{ speed }}'
-    link_debounce_interval: '{{ link_debounce_interval }}'
-    forwarding_error_correction: '{{ forwarding_error_correction }}'
+    speed: 100M
+    link_debounce_interval: 100
+    forwarding_error_correction: cl91-rs-fec
     state: present
+  delegate_to: localhost
+
+- name: Remove a Link Level Policy
+  aci_interface_policy_link_level:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    link_level_policy: ansible_test
+    state: absent
+
+- name: Query a Link Level Policie
+  aci_interface_policy_link_level:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    link_level_policy: link_level_policy_test
+    state: query
+  delegate_to: localhost
+
+- name: Query all Link Level Policies
+  aci_interface_policy_link_level:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
   delegate_to: localhost
 '''
 
