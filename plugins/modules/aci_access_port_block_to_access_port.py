@@ -24,7 +24,7 @@ options:
     - The name of the Fabric access policy leaf interface profile.
     type: str
     required: yes
-    aliases: [ leaf_interface_profile_name, leaf_interface_profile ]
+    aliases: [ leaf_interface_profile_name, leaf_interface_profile,  interface_profile_name  ]
   access_port_selector:
     description:
     -  The name of the Fabric access policy leaf interface profile access port selector.
@@ -97,9 +97,9 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretPassword
-    leaf_interface_profile: leafintprfname
+    interface_profile: leafintprfname
     access_port_selector: accessportselectorname
-    leaf_port_blk: leafportblkname
+    port_blk: leafportblkname
     from_port: 13
     to_port: 13
     state: present
@@ -110,9 +110,9 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretPassword
-    leaf_interface_profile: leafintprfname
+    interface_profile: leafintprfname
     access_port_selector: accessportselectorname
-    leaf_port_blk: leafportblkname
+    port_blk: leafportblkname
     from_port: 13
     to_port: 16
     state: present
@@ -124,9 +124,9 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     type: fex
-    leaf_interface_profile: leafintprfname_fex
+    interface_profile: leafintprfname_fex
     access_port_selector: accessportselectorname_fex
-    leaf_port_blk: leafportblkname_fex
+    port_blk: leafportblkname_fex
     from_port: 13
     to_port: 13
     state: present
@@ -138,9 +138,9 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     type: fex
-    leaf_interface_profile: leafintprfname_fex
+    interface_profile: leafintprfname_fex
     access_port_selector: accessportselectorname_fex
-    leaf_port_blk: leafportblkname_fex
+    port_blk: leafportblkname_fex
     from_port: 13
     to_port: 16
     state: present
@@ -151,9 +151,9 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretPassword
-    leaf_interface_profile: leafintprfname
+    interface_profile: leafintprfname
     access_port_selector: accessportselectorname
-    leaf_port_blk: leafportblkname
+    port_blk: leafportblkname
     from_port: 13
     to_port: 13
     state: absent
@@ -165,9 +165,9 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     type: fex
-    leaf_interface_profile: leafintprfname_fex
+    interface_profile: leafintprfname_fex
     access_port_selector: accessportselectorname_fex
-    leaf_port_blk: leafportblkname_fex
+    port_blk: leafportblkname_fex
     from_port: 13
     to_port: 13
     state: absent
@@ -178,9 +178,9 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretPassword
-    leaf_interface_profile: leafintprfname
+    interface_profile: leafintprfname
     access_port_selector: accessportselectorname
-    leaf_port_blk: leafportblkname
+    port_blk: leafportblkname
     state: query
   delegate_to: localhost
   register: query_result
@@ -191,9 +191,9 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     type: fex
-    leaf_interface_profile: leafintprfname_fex
+    interface_profile: leafintprfname_fex
     access_port_selector: accessportselectorname_fex
-    leaf_port_blk: leafportblkname_fex
+    port_blk: leafportblkname_fex
     state: query
   delegate_to: localhost
   register: query_result
@@ -203,7 +203,7 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretPassword
-    leaf_interface_profile: leafintprfname
+    interface_profile: leafintprfname
     state: query
   delegate_to: localhost
   register: query_result
@@ -214,7 +214,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     type: fex
-    leaf_interface_profile: leafintprfname_fex
+    interface_profile: leafintprfname_fex
     state: query
   delegate_to: localhost
   register: query_result
@@ -351,7 +351,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        interface_profile=dict(type='str', aliases=['leaf_interface_profile_name', 'leaf_interface_profile']),  # Not required for querying all objects
+        interface_profile=dict(type='str', aliases=['leaf_interface_profile_name', 'leaf_interface_profile', 'interface_profile_name']),
         access_port_selector=dict(type='str', aliases=['name', 'access_port_selector_name']),  # Not required for querying all objects
         port_blk=dict(type='str', aliases=['leaf_port_blk_name', 'leaf_port_blk']),  # Not required for querying all objects
         port_blk_description=dict(type='str', aliases=['leaf_port_blk_description']),
@@ -384,11 +384,12 @@ def main():
     type_port = module.params.get('type')
 
     aci = ACIModule(module)
-    class_rn = 'infraFexP/fexprof' if type_port == 'fex' else 'infraAccPortP/accportprof'
+    aci_class = 'infraFexP' if type_port == 'fex' else 'infraAccPortP'
+    aci_rn = 'fexprof' if type_port == 'fex' else 'accportprof'
     aci.construct_url(
         root_class=dict(
-            aci_class=class_rn.split('/')[0],
-            aci_rn='infra/' + class_rn.split('/')[1] + '-{0}'.format(interface_profile),
+            aci_class=aci_class,
+            aci_rn='infra/' + aci_rn + '-{0}'.format(interface_profile),
             module_object=interface_profile,
             target_filter={'name': interface_profile},
         ),
