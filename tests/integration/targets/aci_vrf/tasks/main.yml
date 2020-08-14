@@ -90,7 +90,7 @@
       - vrf_present_2.sent.fvCtx.attributes.name == 'anstest2'
       - vrf_present_2.sent.fvCtx.attributes.pcEnfDir == 'egress'
       - vrf_present_2.sent.fvCtx.attributes.descr == 'Ansible Test'
-      - vrf_present_2.current.0.fvCtx.children.0.vzAny.attributes.matchT == 'all'
+      - vrf_present_2.current.0.fvCtx.children.0.vzAny.attributes.matchT == 'All'
       - vrf_present_2.current.0.fvCtx.children.0.vzAny.attributes.prefGrMemb == 'enabled'
       - vrf_present_missing_param is failed
       - vrf_present_missing_param.msg == 'state is present but all of the following are missing{{":"}} tenant'
