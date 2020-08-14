@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2020, Dag Wieers (@dagwieers)
+# Copyright: (c) 2020, sig9org (@sig9org)
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -17,7 +18,6 @@ module: aci_bd_dhcp_label
 short_description: Manage DHCP Labels (dhcp:Lbl)
 description:
 - Manage DHCP Labels on Cisco ACI fabrics.
-version_added: '2.10'
 options:
   bd:
     description:
@@ -38,6 +38,8 @@ options:
     description:
     - The DHCP option is used to supply DHCP clients with configuration parameters
       such as a domain, name server, subnet, and network address.
+    - Name of the DHCP Option Policy to be associated with the DCHP Relay Policy.
+      This policy need to be present in the same tenant as the bridge domain.
     type: str
   scope:
     description:
@@ -73,33 +75,34 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - sig9 (@sig9org)
+- Dag Wieers (@dagwieers)
 '''
 
 EXAMPLES = r'''
 - name: Create a new DHCP Relay Label to a Bridge Domain
-  aci_bd_dhcp_label:
+  cisco.aci.aci_bd_dhcp_label:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
     bd: database
     dhcp_label: label1
-    owner: infra
+    scope: infra
     state: present
 
 - name: Query a DHCP Relay Label of a Bridge Domain
-  aci_bd_dhcp_label:
+  cisco.aci.aci_bd_dhcp_label:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
     bd: database
     dhcp_label: label1
-    owner: infra
+    scope: infra
     state: query
 
 - name: Query all DHCP Relay Labels of a Bridge Domain
-  aci_bd_dhcp_label:
+  cisco.aci.aci_bd_dhcp_label:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -108,14 +111,14 @@ EXAMPLES = r'''
     state: query
 
 - name: Remove a DHCP Relay Label for a Bridge Domain
-  aci_bd_dhcp_label:
+  cisco.aci.aci_bd_dhcp_label:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
     bd: database
     dhcp_label: label1
-    owner: infra
+    scope: infra
     state: absent
 '''
 
@@ -244,8 +247,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['bd', 'tenant', 'dhcp_label', 'owner']],
-            ['state', 'present', ['bd', 'tenant', 'dhcp_label', 'owner']],
+            ['state', 'absent', ['bd', 'tenant', 'dhcp_label', 'scope']],
+            ['state', 'present', ['bd', 'tenant', 'dhcp_label', 'scope']],
         ],
     )
 
