@@ -22,7 +22,7 @@
         aci_password: "{{ azure_aci_password }}"
         cloud_type: azure
         cloud_region: westus
-        vNet_gateway: true
+        vnet_gateway: true
 
 # CLEAN ENVIRONMENT
 - name: Set vars
@@ -97,8 +97,8 @@
     password: "{{ item.aci_password }}"
     tenant: ansible_test
     cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.50.0.0/16'
-    cloud_zone_attach: "{{ item.cloud_zone | default(omit) }}"
+    cidr: '10.50.0.0/16'
+    availability_zone: "{{ item.cloud_zone | default(omit) }}"
     address: 10.50.0.1
     description: test description
   check_mode: yes
@@ -113,8 +113,8 @@
     password: "{{ item.aci_password }}"
     tenant: ansible_test
     cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.50.0.0/16'
-    cloud_zone_attach: "{{ item.cloud_zone | default(omit) }}"
+    cidr: '10.50.0.0/16'
+    availability_zone: "{{ item.cloud_zone | default(omit) }}"
     address: 10.50.0.1
     description: test description
   register: nm_add_subnet
@@ -138,8 +138,8 @@
     password: "{{ item.aci_password }}"
     tenant: ansible_test
     cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.50.0.0/16'
-    cloud_zone_attach: "{{ item.cloud_zone | default(omit) }}"
+    cidr: '10.50.0.0/16'
+    availability_zone: "{{ item.cloud_zone | default(omit) }}"
     address: 10.50.0.1
     description: test description
   register: nm_add_subnet_again
@@ -159,8 +159,8 @@
     password: "{{ item.aci_password }}"
     tenant: ansible_test
     cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.50.0.0/16'
-    cloud_zone_attach: "{{ item.cloud_zone | default(omit) }}"
+    cidr: '10.50.0.0/16'
+    availability_zone: "{{ item.cloud_zone | default(omit) }}"
     address: 10.50.0.2
     description: another subnet
   register: nm_add_another_subnet
@@ -186,8 +186,8 @@
     password: "{{ item.aci_password }}"
     tenant: ansible_test
     cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.50.0.0/16'
-    cloud_zone_attach: "{{ item.cloud_zone | default(omit) }}"
+    cidr: '10.50.0.0/16'
+    availability_zone: "{{ item.cloud_zone | default(omit) }}"
     address: 10.50.0.3
     name: subnet_3
   register: nm_add_subnet_3
@@ -201,13 +201,13 @@
     password: "{{ item.aci_password }}"
     tenant: ansible_test
     cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.50.0.0/16'
-    cloud_zone_attach: "{{ item.cloud_zone | default(omit) }}"
+    cidr: '10.50.0.0/16'
+    availability_zone: "{{ item.cloud_zone | default(omit) }}"
     address: 10.50.0.1
     # name: subnet_1
     description: change subnet 1
-    vNet_gateway: "{{ item.vNet_gateway | default(omit)}}"
-    scope: public
+    vnet_gateway: "{{ item.vnet_gateway | default(omit)}}"
+    #scope: public
   register: nm_change_subnet_1
   loop: "{{ cloud }}"
 
@@ -243,7 +243,7 @@
     password: "{{ item.aci_password }}"
     tenant: ansible_test
     cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.50.0.0/16'
+    cidr: '10.50.0.0/16'
     state: query
   register: query_all
   loop: "{{ cloud }}"
@@ -264,7 +264,7 @@
     password: "{{ item.aci_password }}"
     tenant: ansible_test
     cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.50.0.0/16'
+    cidr: '10.50.0.0/16'
     address: 10.50.0.1
     state: query
   register: query_subnet_1
@@ -275,8 +275,7 @@
     that:
     - item is not changed
     - item.current.0.cloudSubnet.attributes.ip == "10.50.0.1"
-    # - item.current.0.cloudSubnet.attributes.usage == "gateway"
-    - item.current.0.cloudSubnet.attributes.scope == "public"
+    - item.current.0.cloudSubnet.attributes.scope == "private"
     - item.current.0.cloudSubnet.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.50.0.0/16]/subnet-[10.50.0.1]"
   loop: "{{ query_subnet_1.results }}"
 
@@ -288,7 +287,7 @@
     password: "{{ item.aci_password }}"
     tenant: ansible_test
     cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.50.0.0/16'
+    cidr: '10.50.0.0/16'
     address: 10.50.0.3
     state: absent
   check_mode: yes
@@ -311,7 +310,7 @@
     password: "{{ item.aci_password }}"
     tenant: ansible_test
     cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.50.0.0/16'
+    cidr: '10.50.0.0/16'
     address: 10.50.0.3
     state: absent
   register: nm_remove_subnet_3
@@ -333,7 +332,7 @@
     password: "{{ item.aci_password }}"
     tenant: ansible_test
     cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.50.0.0/16'
+    cidr: '10.50.0.0/16'
     address: 10.50.0.3
     state: absent
   register: nm_remove_subnet_3_again

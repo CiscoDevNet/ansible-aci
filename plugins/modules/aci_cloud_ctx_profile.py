@@ -52,7 +52,7 @@ options:
     type: str
   cloud:
     description:
-    - The vendor of the controller
+    - The cloud vendor in which the controller runs.
     choices: [ aws, azure ]
     type: str
   state:

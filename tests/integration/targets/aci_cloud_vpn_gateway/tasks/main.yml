@@ -22,7 +22,7 @@
         aci_password: "{{ azure_aci_password }}"
         cloud_type: azure
         cloud_region: westus
-        vNet_gateway: true
+        vnet_gateway: true
 
 # CLEAN ENVIRONMENT
 - name: Set vars
@@ -97,12 +97,11 @@
     password: "{{ item.aci_password }}"
     tenant: ansible_test
     cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.50.0.0/16'
-    cloud_zone_attach: "{{ item.cloud_zone | default(omit) }}"
+    cidr: '10.50.0.0/16'
+    availability_zone: "{{ item.cloud_zone | default(omit) }}"
     address: 10.50.0.1
     description: specify this subnet as VpnGateway router
-    vNet_gateway: "{{ item.vNet_gateway | default(omit)}}"
-    scope: public
+    vnet_gateway: "{{ item.vnet_gateway | default(omit)}}"
   register: nm_add_subnet
   loop: "{{ cloud }}"
 
@@ -147,4 +146,12 @@
     password: "{{ item.aci_password }}"
     tenant: ansible_test
     cloud_context_profile: ctx_profile_1
+  register: query_vpn_gateway
   loop: "{{ cloud }}"
+
+- name: Verify VpnGateway
+  assert:
+    that:
+    - item is not changed
+    - item.current.0.cloudRouterP.children | length == 3
+  loop: "{{ query_vpn_gateway.results }}"

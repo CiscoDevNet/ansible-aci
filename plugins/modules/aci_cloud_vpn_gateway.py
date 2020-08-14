@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2020, nkatarmal-crest <nirav.katarmal@crestdatasys.com>
 # Copyright: (c) 2020, Cindy Zhao <cizhao@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
