@@ -25,7 +25,6 @@ options:
     description:
     - The name of the Cloud Subnet.
     type: str
-    aliases: [subnet]
   description:
     description:
     - Description of the Cloud Subnet.
@@ -34,19 +33,10 @@ options:
     description:
     - Ip address of the Cloud Subnet.
     type: str
+    aliases: [subnet]
   name_alias:
     description:
     - An alias for the name of the current object. This relates to the nameAlias field in ACI and is used to rename object without changing the DN.
-    type: str
-  scope:
-    description:
-    - capability domain
-    choices: [ private, public, shared ]
-    type: str
-  usage:
-    description:
-    - usage of the port
-    choices: [ infra-router, user ]
     type: str
   tenant:
     description:
@@ -56,16 +46,16 @@ options:
     description:
     - The name of cloud context profile.
     type: str
-  cloud_cidr:
+  cidr:
     description:
     - Address of cloud cidr.
     type: str
-  cloud_zone_attach:
+  availability_zone:
     description:
     - The cloud zone which is attached to the given cloud context profile.
     - Only used when it is an aws cloud apic.
     type: str
-  vNet_gateway:
+  vnet_gateway:
     description:
     - Determine if a vNet Gateway Router will be deployed or not.
     - Only used when it is an azure cloud apic.
@@ -91,8 +81,8 @@ EXAMPLES = r'''
     validate_certs: no
     tenant: anstest
     cloud_context_profile: aws_cloudCtxProfile
-    cloud_cidr: '10.10.0.0/16'
-    cloud_zone_attach: us-west-1a
+    cidr: '10.10.0.0/16'
+    availability_zone: us-west-1a
     address: 10.10.0.1
   delegate_to: localhost
 
@@ -104,7 +94,7 @@ EXAMPLES = r'''
     validate_certs: no
     tenant: anstest
     cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.10.0.0/16'
+    cidr: '10.10.0.0/16'
     address: 10.10.0.1
     state: query
   delegate_to: localhost
@@ -117,7 +107,7 @@ EXAMPLES = r'''
     validate_certs: no
     tenant: anstest
     cloud_context_profile: ctx_profile_1
-    cloud_cidr: '10.10.0.0/16'
+    cidr: '10.10.0.0/16'
     state: query
   delegate_to: localhost
 '''
@@ -238,14 +228,12 @@ def main():
         description=dict(type='str'),
         address=dict(type='str'),
         name_alias=dict(type='str'),
-        scope=dict(type='str', choices=['private', 'public', 'shared']),
-        usage=dict(type='str', choices=['infra-router', 'user']),
-        vNet_gateway=dict(type='bool', default=False),
+        vnet_gateway=dict(type='bool', default=False),
         tenant=dict(type='str', required=True),
         cloud_context_profile=dict(type='str', required=True),
-        cloud_cidr=dict(type='str', required=True),
+        cidr=dict(type='str', required=True),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        cloud_zone_attach=dict(type='str'),
+        availability_zone=dict(type='str'),
     )
 
     module = AnsibleModule(
@@ -261,14 +249,12 @@ def main():
     description = module.params.get('description')
     address = module.params.get('address')
     name_alias = module.params.get('name_alias')
-    scope = module.params.get('scope')
-    usage = module.params.get('usage')
-    vNet_gateway = module.params.get('vNet_gateway')
+    vnet_gateway = module.params.get('vnet_gateway')
     tenant = module.params.get('tenant')
     cloud_context_profile = module.params.get('cloud_context_profile')
-    cloud_cidr = module.params.get('cloud_cidr')
+    cidr = module.params.get('cidr')
     state = module.params.get('state')
-    cloud_zone_attach = module.params.get('cloud_zone_attach')
+    availability_zone = module.params.get('availability_zone')
     child_configs = []
 
     aci = ACIModule(module)
@@ -287,9 +273,9 @@ def main():
         ),
         subclass_2=dict(
             aci_class='cloudCidr',
-            aci_rn='cidr-[{0}]'.format(cloud_cidr),
-            target_filter='eq(cloudCidr.addr, "{0}")'.format(cloud_cidr),
-            module_object=cloud_cidr
+            aci_rn='cidr-[{0}]'.format(cidr),
+            target_filter='eq(cloudCidr.addr, "{0}")'.format(cidr),
+            module_object=cidr
         ),
         subclass_3=dict(
             aci_class='cloudSubnet',
@@ -304,13 +290,15 @@ def main():
 
     if state == 'present':
         # in aws cloud apic
-        if cloud_zone_attach:
-            region = cloud_zone_attach[:-1]
-            tDn = 'uni/clouddomp/provp-aws/region-{0}/zone-{1}'.format(region, cloud_zone_attach)
+        if availability_zone:
+            region = availability_zone[:-1]
+            tDn = 'uni/clouddomp/provp-aws/region-{0}/zone-{1}'.format(region, availability_zone)
             child_configs.append({'cloudRsZoneAttach': {'attributes': {'tDn': tDn}}})
         # in azure cloud apic
-        if vNet_gateway:
+        if vnet_gateway:
             usage = 'gateway'
+        else:
+            usage = 'user'
 
         aci.payload(
             aci_class='cloudSubnet',
@@ -319,7 +307,7 @@ def main():
                 descr=description,
                 ip=address,
                 nameAlias=name_alias,
-                scope=scope,
+                scope='private',
                 usage=usage,
             ),
             child_configs=child_configs
