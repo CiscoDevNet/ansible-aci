@@ -306,7 +306,7 @@ def main():
                 nameAlias=name_alias,
             ),
             child_configs=[
-                {"vzAny": {"attributes": {"prefGrMemb": preferred_group, "matchT": match_type}}},
+                dict(vzAny=dict(attributes=dict(prefGrMemb=preferred_group, matchT=match_type))),
             ],
         )
 
