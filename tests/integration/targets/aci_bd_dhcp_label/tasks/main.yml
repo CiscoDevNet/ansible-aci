@@ -1,0 +1,147 @@
+# Test code for the ACI modules
+# Copyright: (c) 2020, Shreyas Srish (@shrsr)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact: 
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  aci_tenant:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Add a new tenant
+  aci_tenant:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    description: Ansible tenant
+    state: present
+
+- name: create bd - creation works
+  aci_bd:
+    <<: *aci_info
+    tenant: ansible_tenant
+    bd: database
+  register: bd_present
+
+#CREATE LABELS
+- name: Create a new DHCP Relay Label to a Bridge Domain - check mode
+  aci_bd_dhcp_label:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    bd: database
+    dhcp_label: label1
+    owner: infra
+    state: present
+  check_mode: yes
+  register: cm_dhcp_label1
+
+- name: Verify creation of label1 in check mode
+  assert:
+    that:
+    - cm_dhcp_label1 is changed
+    - cm_dhcp_label1.sent.dhcpLbl.attributes.name == 'label1'
+
+- name: Create a new DHCP Relay Label to a Bridge Domain - normal mode
+  aci_bd_dhcp_label:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    bd: database
+    dhcp_label: label1
+    owner: infra
+    state: present
+  register: nm_dhcp_label1
+
+- name: Verify creation of label1
+  assert:
+    that:
+    - nm_dhcp_label1 is changed
+    - nm_dhcp_label1.current.0.dhcpLbl.attributes.dn == 'uni/tn-ansible_tenant/BD-database/dhcplbl-label1'
+    - nm_dhcp_label1.current.0.dhcpLbl.attributes.name == 'label1'
+
+- name: Create another DHCP Relay Label to a Bridge Domain - normal mode
+  aci_bd_dhcp_label:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    bd: database
+    dhcp_label: label2
+    owner: infra
+    state: present
+  register: nm_dhcp_label2
+
+- name: Verify creation of label2
+  assert:
+    that:
+    - nm_dhcp_label2 is changed
+    - nm_dhcp_label2.current.0.dhcpLbl.attributes.dn == 'uni/tn-ansible_tenant/BD-database/dhcplbl-label2'
+    - nm_dhcp_label2.current.0.dhcpLbl.attributes.name == 'label2'
+
+#QUERY LABELS
+- name: Query a DHCP Relay Label of a Bridge Domain
+  aci_bd_dhcp_label:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    bd: database
+    dhcp_label: label1
+    owner: infra
+    state: query
+  register: query_dhcp_label1
+
+- name: Verify query of label
+  assert:
+    that:
+    - query_dhcp_label1 is not changed
+    - query_dhcp_label1.current.0.dhcpLbl.attributes.dn == 'uni/tn-ansible_tenant/BD-database/dhcplbl-label1'
+
+- name: Query all DHCP Relay Labels of a Bridge Domain
+  aci_bd_dhcp_label:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    bd: database
+    state: query
+  register: query_all_labels
+
+- name: Verify query all of labels
+  assert:
+    that:
+    - query_all_labels is not changed
+
+#REMOVE LABELS
+- name: Remove a DHCP Relay Label for a Bridge Domain
+  aci_bd_dhcp_label:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    bd: database
+    dhcp_label: label1
+    owner: infra
+    state: absent
+  register: delete_dhcp_label
+
+- name: Verify deletion of label
+  assert:
+    that:
+    - delete_dhcp_label is changed
+    - delete_dhcp_label.current == []
+
+# CLEAN ENVIRONMENT AGAIN
+- name: Remove the ansible_tenant
+  aci_tenant:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent

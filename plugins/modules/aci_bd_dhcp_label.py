@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2020, Dag Wieers (@dagwieers)
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -95,6 +96,15 @@ EXAMPLES = r'''
     bd: database
     dhcp_label: label1
     owner: infra
+    state: query
+
+- name: Query all DHCP Relay Labels of a Bridge Domain
+  aci_bd_dhcp_label:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: production
+    bd: database
     state: query
 
 - name: Remove a DHCP Relay Label for a Bridge Domain
