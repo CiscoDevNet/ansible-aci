@@ -212,7 +212,7 @@ def main():
     state = module.params.get('state')
     name_alias = module.params.get('name_alias')
 
-    class_config = []
+    child_configs = []
 
     aci.construct_url(
         root_class=dict(
@@ -239,20 +239,21 @@ def main():
     aci.get_existing()
 
     if state == 'present':
-        aci.payload(
-            aci_class='fvAEPg',
-            class_config=dict(
-                name=epg,
-                nameAlias=name_alias,
-            ),
-            child_configs.append(dict(
+        child_configs.append(dict(
                 fvRsSecInherited=dict(
                     attributes=dict(
                         tDn="uni/tn-{0}/ap-{1}/epg-{2}".format(tenant, contract_master_ap, contract_master_epg),
                         status="created"
                     )
                 )
-            )),
+            ))
+        aci.payload(
+            aci_class='fvAEPg',
+            class_config=dict(
+                name=epg,
+                nameAlias=name_alias,
+            ),
+            child_configs=child_configs
         )
 
         aci.get_diff(aci_class='fvAEPg')
