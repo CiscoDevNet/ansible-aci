@@ -384,8 +384,11 @@ def main():
     type_port = module.params.get('type')
 
     aci = ACIModule(module)
-    aci_class = 'infraFexP' if type_port == 'fex' else 'infraAccPortP'
-    aci_rn = 'fexprof' if type_port == 'fex' else 'accportprof'
+    aci_class = 'infraAccPortP'
+    aci_rn = 'accportprof'
+    if type_port == 'fex':
+        aci_class = 'infraFexP'
+        aci_rn = 'fexprof'
     aci.construct_url(
         root_class=dict(
             aci_class=aci_class,
