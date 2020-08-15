@@ -212,6 +212,8 @@ def main():
     state = module.params.get('state')
     name_alias = module.params.get('name_alias')
 
+    contract_master = 'uni/tn-{0}/ap-{1}/epg-{2}'.format(tenant, contract_master_ap, contract_master_epg)
+
     child_configs = []
 
     aci.construct_url(
@@ -233,30 +235,27 @@ def main():
             module_object=epg,
             target_filter={'name': epg},
         ),
-        child_classes=['fvRsSecInherited'],
+        subclass_3=dict(
+            aci_class='fvRsSecInherited',
+            aci_rn='rssecInherited-[{0}]'.format(contract_master),
+            module_object=contract_master,
+            target_filter={'tDn': contract_master},
+        ),
+        child_classes=[],
     )
 
     aci.get_existing()
 
     if state == 'present':
-        child_configs.append(dict(
-                fvRsSecInherited=dict(
-                    attributes=dict(
-                        tDn="uni/tn-{0}/ap-{1}/epg-{2}".format(tenant, contract_master_ap, contract_master_epg),
-                        status="created"
-                    )
-                )
-            ))
         aci.payload(
-            aci_class='fvAEPg',
+            aci_class='fvRsSecInherited',
             class_config=dict(
-                name=epg,
-                nameAlias=name_alias,
+                tDn=contract_master
             ),
             child_configs=child_configs
         )
 
-        aci.get_diff(aci_class='fvAEPg')
+        aci.get_diff(aci_class='fvRsSecInherited')
 
         aci.post_config()
 
