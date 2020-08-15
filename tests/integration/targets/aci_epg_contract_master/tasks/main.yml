@@ -1,0 +1,88 @@
+# Test code for the ACI modules
+# Copyright: (c) 2020, Cindy Zhao (@cizhao)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# CLEAN ENVIRONMENT
+- name: Set vars
+  set_fact: 
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Ensure tenant doesn't exist
+  aci_tenant:
+    <<: *aci_info
+    state: absent
+    tenant: anstest
+  register: tenant_absent
+
+- name: Ensure tenant exists for tests to kick off
+  aci_tenant: &aci_tenant_present
+    <<: *aci_info
+    state: present
+    tenant: anstest
+  register: tenant_present
+
+- name: ensure contracts exist for tests to kick off
+  cisco.aci.aci_contract:
+    <<: *aci_tenant_present
+    contract: "{{ item }}"
+  with_items: ["anstest_http", "anstest_https", "anstest_db"]
+
+
+- name: ensure bd exists for tests to kick off
+  cisco.aci.aci_bd: &aci_bd_present
+    <<: *aci_tenant_present
+    bd: anstest
+  register: bd_present
+
+- name: ensure ap exists for tests to kick off
+  cisco.aci.aci_ap: &aci_ap_present
+    <<: *aci_tenant_present
+    ap: anstest
+  register: ap_present
+
+- name: create epg
+  cisco.aci.aci_epg: &aci_epg_present
+    <<: *aci_ap_present
+    epg: anstest
+  register: epg_present
+
+- name: bind provider contract to epg
+  cisco.aci.aci_epg_to_contract: &aci_epg_provide_present
+    <<: *aci_epg_present
+    contract_type: provider
+    contract: anstest_http
+  register: provide_present
+
+- name: bind consumer contract to epg
+  cisco.aci.aci_epg_to_contract: &aci_epg_consume_present
+    <<: *aci_epg_present
+    contract_type: consumer
+    contract: anstest_https
+  register: consume_present
+
+- name: create epg 2
+  cisco.aci.aci_epg:
+    <<: *aci_ap_present
+    epg: anstest_2
+  register: epg2_present
+
+- name: specify contract master
+  cisco.aci.aci_epg_contract_master:
+    <<: *aci_epg_present
+    epg: anstest_2
+    contract_master_ap: anstest
+    contract_master_epg: anstest
+    state: present
