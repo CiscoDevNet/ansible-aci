@@ -36,10 +36,10 @@ options:
     aliases: [ name ]
   dhcp_option:
     description:
-    - The DHCP option is used to supply DHCP clients with configuration parameters
-      such as a domain, name server, subnet, and network address.
     - Name of the DHCP Option Policy to be associated with the DCHP Relay Policy.
       This policy need to be present in the same tenant as the bridge domain.
+    - The DHCP option is used to supply DHCP clients with configuration parameters
+      such as a domain, name server, subnet, and network address.
     type: str
   scope:
     description:
