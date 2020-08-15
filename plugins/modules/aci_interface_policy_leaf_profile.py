@@ -274,8 +274,11 @@ def main():
     type_profile = module.params.get('type')
 
     aci = ACIModule(module)
-    aci_class = 'infraFexP' if type_profile == 'fex' else 'infraAccPortP'
-    aci_rn = 'fexprof' if type_profile == 'fex' else 'accportprof'
+    aci_class = 'infraAccPortP'
+    aci_rn = 'accportprof'
+    if type_profile == 'fex':
+        aci_class = 'infraFexP'
+        aci_rn = 'fexprof'
     aci.construct_url(
         root_class=dict(
             aci_class=aci_class,

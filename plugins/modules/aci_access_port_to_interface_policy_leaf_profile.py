@@ -35,7 +35,7 @@ options:
     description:
     - The description to assign to the C(access_port_selector)
     type: str
-  leaf_port_blk:
+  port_blk:
     description:
     - B(Deprecated)
     - Starting with Ansible 2.8 we recommend using M(aci_access_port_block_to_access_port) instead.
@@ -44,7 +44,7 @@ options:
     - The name of the Fabric access policy leaf interface profile access port block.
     type: str
     required: yes
-    aliases: [ leaf_port_blk_name ]
+    aliases: [ leaf_port_blk_name, leaf_port_blk, port_blk_name ]
   leaf_port_blk_description:
     description:
     - B(Deprecated)
@@ -139,7 +139,7 @@ EXAMPLES = r'''
     password: SomeSecretPassword
     interface_profile: leafintprfname
     access_port_selector: accessportselectorname
-    leaf_port_blk: leafportblkname
+    port_blk: leafportblkname
     from_port: 13
     to_port: 16
     policy_group: policygroupname
@@ -153,7 +153,7 @@ EXAMPLES = r'''
     password: SomeSecretPassword
     interface_profile: leafintprfname
     access_port_selector: accessportselectorname
-    leaf_port_blk: leafportblkname
+    port_blk: leafportblkname
     from_port: 13
     to_port: 16
     state: present
@@ -325,7 +325,7 @@ def main():
         interface_profile=dict(type='str', aliases=['leaf_interface_profile_name', 'leaf_interface_profile', 'interface_profile_name']),
         access_port_selector=dict(type='str', aliases=['name', 'access_port_selector_name']),  # Not required for querying all objects
         description=dict(type='str'),
-        leaf_port_blk=dict(type='str', aliases=['leaf_port_blk_name']),
+        port_blk=dict(type='str', aliases=['leaf_port_blk_name', 'leaf_port_blk', 'port_blk_name']),
         leaf_port_blk_description=dict(type='str'),
         from_port=dict(type='str', aliases=['from', 'fromPort', 'from_port_range']),
         to_port=dict(type='str', aliases=['to', 'toPort', 'to_port_range']),
@@ -349,7 +349,7 @@ def main():
     interface_profile = module.params.get('interface_profile')
     access_port_selector = module.params.get('access_port_selector')
     description = module.params.get('description')
-    leaf_port_blk = module.params.get('leaf_port_blk')
+    port_blk = module.params.get('port_blk')
     leaf_port_blk_description = module.params.get('leaf_port_blk_description')
     from_port = module.params.get('from_port')
     to_port = module.params.get('to_port')
@@ -365,7 +365,7 @@ def main():
         infraPortBlk=dict(
             attributes=dict(
                 descr=leaf_port_blk_description,
-                name=leaf_port_blk,
+                name=port_blk,
                 fromPort=from_port,
                 toPort=to_port,
                 fromCard=from_card,
@@ -385,8 +385,11 @@ def main():
         ))
 
     aci = ACIModule(module)
-    aci_class = 'infraFexP' if type_profile == 'fex' else 'infraAccPortP'
-    aci_rn = 'fexprof' if type_profile == 'fex' else 'accportprof'
+    aci_class = 'infraAccPortP'
+    aci_rn = 'accportprof'
+    if type_profile == 'fex':
+        aci_class = 'infraFexP'
+        aci_rn = 'fexprof'
     aci.construct_url(
         root_class=dict(
             aci_class=aci_class,
