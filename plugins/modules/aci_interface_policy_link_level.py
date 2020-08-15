@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2019, Vasily Prokopov (@vasilyprokopov)
-# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
@@ -16,8 +16,7 @@ DOCUMENTATION = r'''
 module: aci_interface_policy_link_level
 short_description: Manage Link Level interface policies (fabric:HIfPol)
 description:
-- The host interface policy specifies the layer 1 parameters of host facing ports.
-version_added: '2.10'
+- The link level interface policy specifies the layer 1 parameters of switch interfaces.
 options:
   link_level_policy:
     description:
@@ -35,23 +34,27 @@ options:
     - Auto-negotiation enables devices to automatically exchange information over a link about speed and duplex abilities.
     - The APIC defaults to C(on) when unset during creation.
     type: bool
+    default: true
   speed:
     description:
     - Determines the interface policy administrative port speed.
     - The APIC defaults to C(inherit) when unset during creation.
     type: str
-    choices: [ unknown, 100M, 1G, 10G, 25G, 40G, 100G, inherit ]
+    choices: [ 100M, 1G, 10G, 25G, 40G, 50G, 100G, 200G, 400G, inherit ]
+    default: inherit
   link_debounce_interval:
     description:
     - Enables the debounce timer for physical interface ports and sets it for a specified amount of time in milliseconds.
     - The APIC defaults to C(100) when unset during creation.
     type: int
+    default: 100
   forwarding_error_correction:
     description:
     - Determines the forwarding error correction (FEC) mode.
     - The APIC defaults to C(inherit) when unset during creation.
     type: str
-    choices: [ cl91-rs-fec, cl74-fc-fec, disable-fec, ieee-rs-fec, cons16-rs-fec ]
+    choices: [ inherit, kp-fec, cl91-rs-fec, cl74-fc-fec, disable-fec, ieee-rs-fec, cons16-rs-fec ]
+    default: inherit
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -91,7 +94,7 @@ EXAMPLES = r'''
     link_level_policy: ansible_test
     state: absent
 
-- name: Query a Link Level Policie
+- name: Query a Link Level Policy
   aci_interface_policy_link_level:
     host: apic
     username: admin
@@ -223,10 +226,11 @@ def main():
     argument_spec.update(
         link_level_policy=dict(type='str', aliases=['name']),
         description=dict(type='str', aliases=['descr']),
-        auto_negotiation=dict(type='bool'),
-        speed=dict(type='str', choices=['unknown', '100M', '1G', '10G', '25G', '40G', '100G', 'inherit']),
-        link_debounce_interval=dict(type='int'),
-        forwarding_error_correction=dict(type='str', choices=['cl91-rs-fec', 'cl74-fc-fec', 'disable-fec', 'ieee-rs-fec', 'cons16-rs-fec']),
+        auto_negotiation=dict(type='bool', default='true'),
+        speed=dict(type='str', default='inherit', choices=['100M', '1G', '10G', '25G', '40G', '50G', '100G', '200G', '400G', 'inherit']),
+        link_debounce_interval=dict(type='int', default='100'),
+        forwarding_error_correction=dict(type='str', default='inherit',
+                                         choices=['inherit', 'kp-fec', 'cl91-rs-fec', 'cl74-fc-fec', 'disable-fec', 'ieee-rs-fec', 'cons16-rs-fec']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
 
