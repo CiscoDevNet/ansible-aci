@@ -193,3 +193,10 @@
     - remove_contract_master is changed
     - remove_contract_master.current == []
 
+# Clean up environment
+- name: Ensure tenant doesn't exist
+  aci_tenant:
+    <<: *aci_info
+    state: absent
+    tenant: anstest
+  register: tenant_absent
