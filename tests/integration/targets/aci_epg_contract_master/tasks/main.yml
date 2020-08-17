@@ -40,49 +40,156 @@
     contract: "{{ item }}"
   with_items: ["anstest_http", "anstest_https", "anstest_db"]
 
-
-- name: ensure bd exists for tests to kick off
-  cisco.aci.aci_bd: &aci_bd_present
-    <<: *aci_tenant_present
-    bd: anstest
-  register: bd_present
-
 - name: ensure ap exists for tests to kick off
   cisco.aci.aci_ap: &aci_ap_present
     <<: *aci_tenant_present
-    ap: anstest
+    ap: "{{ item }}"
   register: ap_present
+  loop:
+    - anstest
+    - anstest_2
 
 - name: create epg
   cisco.aci.aci_epg: &aci_epg_present
-    <<: *aci_ap_present
+    <<: *aci_tenant_present
+    ap: anstest
     epg: anstest
   register: epg_present
 
 - name: bind provider contract to epg
-  cisco.aci.aci_epg_to_contract: &aci_epg_provide_present
+  cisco.aci.aci_epg_to_contract:
     <<: *aci_epg_present
     contract_type: provider
     contract: anstest_http
-  register: provide_present
 
 - name: bind consumer contract to epg
   cisco.aci.aci_epg_to_contract: &aci_epg_consume_present
     <<: *aci_epg_present
     contract_type: consumer
     contract: anstest_https
-  register: consume_present
 
-- name: create epg 2
+- name: bind consumer contract to epg
+  cisco.aci.aci_epg_to_contract:
+    <<: *aci_epg_consume_present
+    contract_type: consumer
+    contract: anstest_db
+
+- name: create epgs
   cisco.aci.aci_epg:
-    <<: *aci_ap_present
-    epg: anstest_2
-  register: epg2_present
+    <<: *aci_tenant_present
+    ap: "{{ item.ap }}"
+    epg: "{{ item.epg }}"
+  register: inherited_epg_present
+  loop:
+    - {ap: 'anstest', epg: 'anstest_2'}
+    - {ap: 'anstest_2', epg: 'anstest_4'}
+    - {ap: 'anstest_2', epg: 'anstest_3'}
 
-- name: specify contract master
+- name: bind provider contract to epg_4
+  cisco.aci.aci_epg_to_contract:
+    <<: *aci_tenant_present
+    ap: anstest_2
+    epg: anstest_4
+    contract_type: provider
+    contract: anstest_http
+
+- name: add contract master
   cisco.aci.aci_epg_contract_master:
-    <<: *aci_epg_present
-    epg: anstest_2
+    <<: *aci_tenant_present
+    ap: "{{ item.ap }}"
+    epg: "{{ item.epg }}"
     contract_master_ap: anstest
     contract_master_epg: anstest
     state: present
+  register: add_contract_master
+  loop:
+    - {ap: 'anstest', epg: 'anstest_2'}
+    - {ap: 'anstest_2', epg: 'anstest_3'}
+
+- name: Verify add_contract_master
+  assert:
+    that:
+    - item is changed
+    - item.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-anstest/ap-anstest/epg-anstest"
+  loop: "{{ add_contract_master.results }}"
+
+- name: add another contract master
+  cisco.aci.aci_epg_contract_master:
+    <<: *aci_tenant_present
+    ap: "{{ item.ap }}"
+    epg: "{{ item.epg }}"
+    contract_master_ap: anstest_2
+    contract_master_epg: anstest_4
+    state: present
+  register: add_another_contract_master
+  loop:
+    - {ap: 'anstest', epg: 'anstest_2'}
+    - {ap: 'anstest_2', epg: 'anstest_3'}
+- name: Verify add_another_contract_master
+  assert:
+    that:
+    - item is changed
+    - item.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-anstest/ap-anstest_2/epg-anstest_4"
+  loop: "{{ add_another_contract_master.results }}"
+
+# Query all contract master  ! does not work
+- name: Query all contract master
+  cisco.aci.aci_epg_contract_master:
+    <<: *aci_tenant_present
+    ap: anstest
+    epg: anstest_2
+    state: query
+  register: query_all
+
+# Query specific contract master
+- name: Query specific contract master
+  cisco.aci.aci_epg_contract_master:
+    <<: *aci_tenant_present
+    ap: anstest
+    epg: anstest_2
+    contract_master_ap: anstest_2
+    contract_master_epg: anstest_4
+    state: query
+  register: query_specific_contract_master
+
+- name: Verify query_specific_contract_master
+  assert:
+    that:
+    - query_specific_contract_master is not changed
+    - query_specific_contract_master.current.0.fvRsSecInherited.attributes.dn == "uni/tn-anstest/ap-anstest/epg-anstest_2/rssecInherited-[uni/tn-anstest/ap-anstest_2/epg-anstest_4]"
+    - query_specific_contract_master.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-anstest/ap-anstest_2/epg-anstest_4"
+
+# Query specific contract master
+- name: Query another specific contract master
+  cisco.aci.aci_epg_contract_master:
+    <<: *aci_tenant_present
+    ap: anstest
+    epg: anstest_2
+    contract_master_ap: anstest
+    contract_master_epg: anstest
+    state: query
+  register: query_another_specific_contract_master
+
+- name: Verify query_another_specific_contract_master
+  assert:
+    that:
+    - query_another_specific_contract_master is not changed
+    - query_another_specific_contract_master.current.0.fvRsSecInherited.attributes.dn == "uni/tn-anstest/ap-anstest/epg-anstest_2/rssecInherited-[uni/tn-anstest/ap-anstest/epg-anstest]"
+    - query_another_specific_contract_master.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-anstest/ap-anstest/epg-anstest"
+
+- name: Remove specific contract master
+  cisco.aci.aci_epg_contract_master:
+    <<: *aci_tenant_present
+    ap: anstest
+    epg: anstest_2
+    contract_master_ap: anstest
+    contract_master_epg: anstest
+    state: absent
+  register: remove_contract_master
+
+- name: Verify remove_contract_master
+  assert:
+    that:
+    - remove_contract_master is changed
+    - remove_contract_master.current == []
+

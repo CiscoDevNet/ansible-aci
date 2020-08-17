@@ -13,9 +13,9 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_epg_contract_master
-short_description: Manage End Point Groups (EPG) objects (fv:AEPg)
+short_description: Manage End Point Groups (EPG) contract master objects (fv:RsSecInherited)
 description:
-- Manage End Point Groups (EPG) on Cisco ACI fabrics.
+- Manage End Point Groups (EPG) contract master on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -70,6 +70,44 @@ author:
 '''
 
 EXAMPLES = r'''
+- name: Add contract master
+  cisco.aci.aci_epg_contract_master:
+    host: apic_host
+    username: admin
+    password: SomeSecretPassword
+    tenant: anstest
+    ap: apName
+    epg: epgName
+    contract_master_ap: ap
+    contract_master_epg: epg
+    state: present
+  delegate_to: localhost
+
+- name: Remove contract master
+  cisco.aci.aci_epg_contract_master:
+    host: apic_host
+    username: admin
+    password: SomeSecretPassword
+    tenant: anstest
+    ap: apName
+    epg: epgName
+    contract_master_ap: ap
+    contract_master_epg: epg
+    state: absent
+  delegate_to: localhost
+
+- name: Query contract master
+  cisco.aci.aci_epg_contract_master:
+    host: apic_host
+    username: admin
+    password: SomeSecretPassword
+    tenant: anstest
+    ap: apName
+    epg: epgName
+    contract_master_ap: ap
+    contract_master_epg: epg
+    state: query
+  delegate_to: localhost
 '''
 
 RETURN = r'''
