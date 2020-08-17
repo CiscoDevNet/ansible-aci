@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2020, Cindy Zhao <cizhao@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,10 +13,10 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_epg_contract_master
-short_description: Manage End Point Groups (EPG) contract master objects (fv:RsSecInherited)
+module: aci_epg_to_contract_master
+short_description: Manage End Point Group (EPG) contract master relationships (fv:RsSecInherited)
 description:
-- Manage End Point Groups (EPG) contract master on Cisco ACI fabrics.
+- Manage End Point Groups (EPG) contract master relationships on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -71,7 +72,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add contract master
-  cisco.aci.aci_epg_contract_master:
+  cisco.aci.aci_epg_to_contract_master:
     host: apic_host
     username: admin
     password: SomeSecretPassword
@@ -84,7 +85,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove contract master
-  cisco.aci.aci_epg_contract_master:
+  cisco.aci.aci_epg_to_contract_master:
     host: apic_host
     username: admin
     password: SomeSecretPassword
@@ -97,7 +98,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query contract master
-  cisco.aci.aci_epg_contract_master:
+  cisco.aci.aci_epg_to_contract_master:
     host: apic_host
     username: admin
     password: SomeSecretPassword

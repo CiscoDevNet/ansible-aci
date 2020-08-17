@@ -94,7 +94,7 @@
     contract: anstest_http
 
 - name: add contract master
-  cisco.aci.aci_epg_contract_master:
+  cisco.aci.aci_epg_to_contract_master:
     <<: *aci_tenant_present
     ap: "{{ item.ap }}"
     epg: "{{ item.epg }}"
@@ -114,7 +114,7 @@
   loop: "{{ add_contract_master.results }}"
 
 - name: add another contract master
-  cisco.aci.aci_epg_contract_master:
+  cisco.aci.aci_epg_to_contract_master:
     <<: *aci_tenant_present
     ap: "{{ item.ap }}"
     epg: "{{ item.epg }}"
@@ -134,7 +134,7 @@
 
 # Query all contract master  ! does not work
 - name: Query all contract master
-  cisco.aci.aci_epg_contract_master:
+  cisco.aci.aci_epg_to_contract_master:
     <<: *aci_tenant_present
     ap: anstest
     epg: anstest_2
@@ -143,7 +143,7 @@
 
 # Query specific contract master
 - name: Query specific contract master
-  cisco.aci.aci_epg_contract_master:
+  cisco.aci.aci_epg_to_contract_master:
     <<: *aci_tenant_present
     ap: anstest
     epg: anstest_2
@@ -161,7 +161,7 @@
 
 # Query specific contract master
 - name: Query another specific contract master
-  cisco.aci.aci_epg_contract_master:
+  cisco.aci.aci_epg_to_contract_master:
     <<: *aci_tenant_present
     ap: anstest
     epg: anstest_2
@@ -178,7 +178,7 @@
     - query_another_specific_contract_master.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-anstest/ap-anstest/epg-anstest"
 
 - name: Remove specific contract master
-  cisco.aci.aci_epg_contract_master:
+  cisco.aci.aci_epg_to_contract_master:
     <<: *aci_tenant_present
     ap: anstest
     epg: anstest_2
