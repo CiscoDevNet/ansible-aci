@@ -42,11 +42,11 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 seealso:
-- module: aci_ap
-- module: aci_bd
-- module: aci_contract
-- module: aci_filter
-- module: aci_vrf
+- module: cisco.aci.aci_ap
+- module: cisco.aci.aci_bd
+- module: cisco.aci.aci_contract
+- module: cisco.aci.aci_filter
+- module: cisco.aci.aci_vrf
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fv:Tenant).
   link: https://developer.cisco.com/docs/apic-mim-ref/

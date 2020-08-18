@@ -50,8 +50,8 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 seealso:
-- module: aci_encap_pool
-- module: aci_vlan_pool_encap_block
+- module: cisco.aci.aci_encap_pool
+- module: cisco.aci.aci_vlan_pool_encap_block
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fvns:VlanInstP).
   link: https://developer.cisco.com/docs/apic-mim-ref/

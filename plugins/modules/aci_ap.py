@@ -47,11 +47,11 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 notes:
-- This module does not manage EPGs, see M(aci_epg) to do this.
+- This module does not manage EPGs, see M(cisco.aci.aci_epg) to do this.
 - The used C(tenant) must exist before using this module in your playbook.
-  The M(aci_tenant) module can be used for this.
+  The M(cisco.aci.aci_tenant) module can be used for this.
 seealso:
-- module: aci_tenant
+- module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fv:Ap).
   link: https://developer.cisco.com/docs/apic-mim-ref/

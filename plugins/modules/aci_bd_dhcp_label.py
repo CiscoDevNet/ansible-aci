@@ -66,10 +66,10 @@ notes:
   The scope is the C(owner) of the relay server and the DHCP option policy supplies DHCP clients
   with configuration parameters such as domain, nameserver, and subnet router addresses.
 - The C(tenant) and C(bd) used must exist before using this module in your playbook.
-  The M(aci_tenant) module and M(aci_bd) can be used for these.
+  The M(cisco.aci.aci_tenant) module and M(cisco.aci.aci_bd) can be used for these.
 seealso:
-- module: aci_bd
-- module: aci_tenant
+- module: cisco.aci.aci_bd
+- module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(dhcp:Lbl).
   link: https://developer.cisco.com/docs/apic-mim-ref/

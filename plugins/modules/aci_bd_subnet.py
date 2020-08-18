@@ -115,10 +115,10 @@ notes:
 - The C(gateway) parameter is the root key used to access the Subnet (not name), so the C(gateway)
   is required when the state is C(absent) or C(present).
 - The C(tenant) and C(bd) used must exist before using this module in your playbook.
-  The M(aci_tenant) module and M(aci_bd) can be used for these.
+  The M(cisco.aci.aci_tenant) module and M(cisco.aci.aci_bd) can be used for these.
 seealso:
-- module: aci_bd
-- module: aci_tenant
+- module: cisco.aci.aci_bd
+- module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fv:Subnet).
   link: https://developer.cisco.com/docs/apic-mim-ref/

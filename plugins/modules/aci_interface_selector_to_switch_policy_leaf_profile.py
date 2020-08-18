@@ -39,9 +39,9 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 notes:
-- This module requires an existing leaf profile, the module M(aci_switch_policy_leaf_profile) can be used for this.
+- This module requires an existing leaf profile, the module M(cisco.aci.aci_switch_policy_leaf_profile) can be used for this.
 seealso:
-- module: aci_switch_policy_leaf_profile
+- module: cisco.aci.aci_switch_policy_leaf_profile
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(infra:RsAccPortP).
   link: https://developer.cisco.com/docs/apic-mim-ref/

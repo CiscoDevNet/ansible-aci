@@ -78,7 +78,7 @@ extends_documentation_fragment:
 
 notes:
 - The C(interface_profile) and C(access_port_selector) must exist before using this module in your playbook.
-  The M(aci_interface_policy_leaf_profile) and M(aci_access_port_to_interface_policy_leaf_profile) modules can be used for this.
+  The M(cisco.aci.aci_interface_policy_leaf_profile) and M(cisco.aci.aci_access_port_to_interface_policy_leaf_profile) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes B(infra:HPortS) and B(infra:PortBlk).

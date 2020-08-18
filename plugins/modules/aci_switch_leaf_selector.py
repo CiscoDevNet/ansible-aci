@@ -71,10 +71,10 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 notes:
-- This module is to be used with M(aci_switch_policy_leaf_profile).
+- This module is to be used with M(cisco.aci.aci_switch_policy_leaf_profile).
   One first creates a leaf profile (infra:NodeP) and then creates an associated selector (infra:LeafS),
 seealso:
-- module: aci_switch_policy_leaf_profile
+- module: cisco.aci.aci_switch_policy_leaf_profile
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes B(infra:LeafS),
                B(infra:NodeBlk) and B(infra:RsAccNodePGrp).

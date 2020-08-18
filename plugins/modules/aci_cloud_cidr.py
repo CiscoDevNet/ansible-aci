@@ -52,7 +52,7 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 notes:
-- This module is only used to manage non_primary Cloud CIDR, see M(aci_cloud_ctx_profile) to create the primary CIDR.
+- This module is only used to manage non_primary Cloud CIDR, see M(cisco.aci.aci_cloud_ctx_profile) to create the primary CIDR.
 - More information about the internal APIC class B(cloud:Cidr) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 '''

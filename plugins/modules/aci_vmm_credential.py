@@ -64,7 +64,7 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 seealso:
-- module: aci_domain
+- module: cisco.aci.aci_domain
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes B(vmm:DomP)
   link: https://developer.cisco.com/docs/apic-mim-ref/
