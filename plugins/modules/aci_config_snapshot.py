@@ -65,7 +65,7 @@ notes:
 - 'Snapshot files use the following naming structure: ce_<config export policy name>-<yyyy>-<mm>-<dd>T<hh>:<mm>:<ss>.<mss>+<hh>:<mm>.'
 - 'Snapshot objects use the following naming structure: run-<yyyy>-<mm>-<dd>T<hh>-<mm>-<ss>.'
 seealso:
-- module: aci_config_rollback
+- module: cisco.aci.aci_config_rollback
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes B(config:Snapshot) and B(config:ExportP).
   link: https://developer.cisco.com/docs/apic-mim-ref/

@@ -65,7 +65,7 @@ extends_documentation_fragment:
 
 notes:
 - The C(tenant), C(l3out) and C(extepg) must exist before using this module in your playbook.
-  The M(aci_tenant), M(aci_l3out) and M(aci_l3out_extepg) modules can be used for this.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out) and M(cisco.aci.aci_l3out_extepg) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fvtenant), B(l3extInstP) and B(l3extOut).

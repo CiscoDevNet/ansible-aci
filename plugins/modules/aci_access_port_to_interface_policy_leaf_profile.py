@@ -36,7 +36,7 @@ options:
   port_blk:
     description:
     - B(Deprecated)
-    - Starting with Ansible 2.8 we recommend using M(aci_access_port_block_to_access_port) instead.
+    - Starting with Ansible 2.8 we recommend using M(cisco.aci.aci_access_port_block_to_access_port) instead.
     - The parameter will be removed in Ansible 2.12.
     - HORIZONTALLINE
     - The name of the Fabric access policy leaf interface profile access port block.
@@ -45,7 +45,7 @@ options:
   leaf_port_blk_description:
     description:
     - B(Deprecated)
-    - Starting with Ansible 2.8 we recommend using M(aci_access_port_block_to_access_port) instead.
+    - Starting with Ansible 2.8 we recommend using M(cisco.aci.aci_access_port_block_to_access_port) instead.
     - The parameter will be removed in Ansible 2.12.
     - HORIZONTALLINE
     - The description to assign to the C(leaf_port_blk)
@@ -53,7 +53,7 @@ options:
   from_port:
     description:
     - B(Deprecated)
-    - Starting with Ansible 2.8 we recommend using M(aci_access_port_block_to_access_port) instead.
+    - Starting with Ansible 2.8 we recommend using M(cisco.aci.aci_access_port_block_to_access_port) instead.
     - The parameter will be removed in Ansible 2.12.
     - HORIZONTALLINE
     - The beginning (from-range) of the port range block for the leaf access port block.
@@ -62,7 +62,7 @@ options:
   to_port:
     description:
     - B(Deprecated)
-    - Starting with Ansible 2.8 we recommend using M(aci_access_port_block_to_access_port) instead.
+    - Starting with Ansible 2.8 we recommend using M(cisco.aci.aci_access_port_block_to_access_port) instead.
     - The parameter will be removed in Ansible 2.12.
     - HORIZONTALLINE
     - The end (to-range) of the port range block for the leaf access port block.
@@ -71,7 +71,7 @@ options:
   from_card:
     description:
     - B(Deprecated)
-    - Starting with Ansible 2.8 we recommend using M(aci_access_port_block_to_access_port) instead.
+    - Starting with Ansible 2.8 we recommend using M(cisco.aci.aci_access_port_block_to_access_port) instead.
     - The parameter will be removed in Ansible 2.12.
     - HORIZONTALLINE
     - The beginning (from-range) of the card range block for the leaf access port block.
@@ -80,7 +80,7 @@ options:
   to_card:
     description:
     - B(Deprecated)
-    - Starting with Ansible 2.8 we recommend using M(aci_access_port_block_to_access_port) instead.
+    - Starting with Ansible 2.8 we recommend using M(cisco.aci.aci_access_port_block_to_access_port) instead.
     - The parameter will be removed in Ansible 2.12.
     - HORIZONTALLINE
     - The end (to-range) of the card range block for the leaf access port block.
@@ -115,9 +115,9 @@ extends_documentation_fragment:
 
 notes:
 - The C(interface_profile) must exist before using this module in your playbook.
-  The M(aci_interface_policy_leaf_profile) modules can be used for this.
+  The M(cisco.aci.aci_interface_policy_leaf_profile) modules can be used for this.
 seealso:
-- module: aci_access_port_block_to_access_port
+- module: cisco.aci.aci_access_port_block_to_access_port
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes B(infra:HPortS), B(infra:RsAccBaseGrp) and B(infra:PortBlk).
   link: https://developer.cisco.com/docs/apic-mim-ref/

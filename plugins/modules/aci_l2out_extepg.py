@@ -60,7 +60,7 @@ extends_documentation_fragment:
 
 notes:
 - The C(tenant) and C(l2out) must exist before using this module in your playbook.
-  The M(aci_tenant) and M(aci_l2out) modules can be used for this.
+  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l2out) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fvtenant) and B(l2extOut).

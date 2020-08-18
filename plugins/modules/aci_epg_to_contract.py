@@ -18,7 +18,7 @@ description:
 - Bind EPGs to Contracts on Cisco ACI fabrics.
 notes:
 - The C(tenant), C(app_profile), C(EPG), and C(Contract) used must exist before using this module in your playbook.
-  The M(aci_tenant), M(aci_ap), M(aci_epg), and M(aci_contract) modules can be used for this.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_ap), M(cisco.aci.aci_epg), and M(cisco.aci.aci_contract) modules can be used for this.
 options:
   ap:
     description:
@@ -69,9 +69,9 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 seealso:
-- module: aci_ap
-- module: aci_epg
-- module: aci_contract
+- module: cisco.aci.aci_ap
+- module: cisco.aci.aci_epg
+- module: cisco.aci.aci_contract
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes B(fv:RsCons) and B(fv:RsProv).
   link: https://developer.cisco.com/docs/apic-mim-ref/

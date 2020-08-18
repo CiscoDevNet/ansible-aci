@@ -109,14 +109,14 @@ extends_documentation_fragment:
 
 notes:
 - The C(tenant), C(ap), C(epg), and C(domain) used must exist before using this module in your playbook.
-  The M(aci_tenant) M(aci_ap), M(aci_epg) M(aci_domain) modules can be used for this.
+  The M(cisco.aci.aci_tenant) M(cisco.aci.aci_ap), M(cisco.aci.aci_epg) M(cisco.aci.aci_domain) modules can be used for this.
 - OpenStack VMM domains must not be created using this module. The OpenStack VMM domain is created directly
   by the Cisco APIC Neutron plugin as part of the installation and configuration.
   This module can be used to query status of an OpenStack VMM domain.
 seealso:
-- module: aci_ap
-- module: aci_epg
-- module: aci_domain
+- module: cisco.aci.aci_ap
+- module: cisco.aci.aci_epg
+- module: cisco.aci.aci_domain
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fv:RsDomAtt).
   link: https://developer.cisco.com/docs/apic-mim-ref/

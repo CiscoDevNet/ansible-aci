@@ -80,8 +80,8 @@ extends_documentation_fragment:
 notes:
 - The C(pool) must exist in order to add or delete a range.
 seealso:
-- module: aci_encap_pool
-- module: aci_vlan_pool_encap_block
+- module: cisco.aci.aci_encap_pool
+- module: cisco.aci.aci_vlan_pool_encap_block
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes B(fvns:EncapBlk) and B(fvns:VsanEncapBlk).
   link: https://developer.cisco.com/docs/apic-mim-ref/
