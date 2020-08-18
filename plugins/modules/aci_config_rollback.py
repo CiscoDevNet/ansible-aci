@@ -35,7 +35,6 @@ options:
     description:
     - The export policy that the C(snapshot) is associated to.
     type: str
-    required: yes
   fail_on_decrypt:
     description:
     - Determines if the APIC should fail the rollback if unable to decrypt secured data.

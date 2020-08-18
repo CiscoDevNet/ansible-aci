@@ -21,7 +21,6 @@ options:
     description:
     - Name of the port channel.
     type: str
-    required: yes
     aliases: [ name ]
   description:
     description:

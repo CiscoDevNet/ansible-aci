@@ -41,6 +41,7 @@ options:
     description:
     - The type of contract.
     type: str
+    required: yes
     choices: ['consumer', 'provider']
   priority:
     description:

@@ -21,25 +21,21 @@ options:
     description:
     - Name of an existing tenant.
     type: str
-    required: yes
     aliases: [ tenant_name ]
   l3out:
     description:
     - Name of an existing L3Out.
     type: str
-    required: yes
     aliases: [ l3out_name ]
   extepg:
     description:
     - Name of an existing ExtEpg.
     type: str
-    required: yes
     aliases: [ extepg_name ]
   network:
     description:
     - The network address for the Subnet.
     type: str
-    required: yes
     aliases: [ address, ip ]
   subnet_name:
     description:
@@ -61,6 +57,7 @@ options:
     - The C(shared-security) option configures the classifier for the subnets in the VRF where the routes are leaked.
     - The APIC defaults to C(import-security) when unset during creation.
     type: list
+    elements: str
     choices: [ export-rtctrl, import-security, shared-rtctrl, shared-security ]
   state:
     description:
@@ -249,7 +246,7 @@ def main():
         network=dict(type='str', aliases=['address', 'ip']),
         description=dict(type='str', aliases=['descr']),
         subnet_name=dict(type='str', aliases=['name']),
-        scope=dict(type='list', choices=['export-rtctrl', 'import-security', 'shared-rtctrl', 'shared-security']),
+        scope=dict(type='list', elements='str', choices=['export-rtctrl', 'import-security', 'shared-rtctrl', 'shared-security']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
     )

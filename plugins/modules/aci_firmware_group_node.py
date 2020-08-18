@@ -27,12 +27,10 @@ options:
         description:
             - This is the name of the firmware group
         type: str
-        required: true
     node:
         description:
             - The node to be added to the firmware group - the value equals the NodeID
         type: str
-        required: true
     state:
         description:
             - Use C(present) or C(absent) for adding or removing.
@@ -186,8 +184,8 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        group=dict(type='str', aliases=['group']),  # Not required for querying all objects
-        node=dict(type='str', aliases=['node']),
+        group=dict(type='str'),  # Not required for querying all objects
+        node=dict(type='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
     )

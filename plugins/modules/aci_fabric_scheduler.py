@@ -27,8 +27,7 @@ options:
     description:
     - The name of the Scheduler.
     type: str
-    required: yes
-    aliases: [ name, scheduler_name ]
+    aliases: [ scheduler_name ]
   description:
     description:
     - Description for the Scheduler.
@@ -248,13 +247,13 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        name=dict(type='str', aliases=['name', 'scheduler_name']),  # Not required for querying all objects
+        name=dict(type='str', aliases=['scheduler_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
-        windowname=dict(type='str', aliases=['windowname']),
+        windowname=dict(type='str'),
         recurring=dict(type='bool'),
         concurCap=dict(type='int'),  # Number of devices it will run against concurrently
         maxTime=dict(type='str'),  # The amount of minutes a process will be able to run (unlimited or dd:hh:mm:ss)
-        date=dict(type='str', aliases=['date']),  # The date the process will run YYYY-MM-DDTHH:MM:SS
+        date=dict(type='str'),  # The date the process will run YYYY-MM-DDTHH:MM:SS
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         hour=dict(type='int'),
         minute=dict(type='int'),

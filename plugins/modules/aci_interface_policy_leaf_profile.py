@@ -23,7 +23,6 @@ options:
     description:
     - The name of the Fabric access policy leaf interface profile.
     type: str
-    required: yes
     aliases: [ name, leaf_interface_profile_name, leaf_interface_profile, interface_profile_name ]
   description:
     description:

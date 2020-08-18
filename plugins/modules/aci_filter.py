@@ -22,7 +22,6 @@ options:
     description:
     - The name of the filter.
     type: str
-    required: yes
     aliases: [ filter_name, name ]
   description:
     description:
@@ -33,7 +32,6 @@ options:
     description:
     - The name of the tenant.
     type: str
-    required: yes
     aliases: [ tenant_name ]
   state:
     description:

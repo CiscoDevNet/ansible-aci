@@ -22,7 +22,6 @@ options:
     description:
     - The identifying name for the outside source of images, such as an HTTP or SCP server.
     type: str
-    required: yes
     aliases: [ name, source_name ]
   polling_interval:
     description:

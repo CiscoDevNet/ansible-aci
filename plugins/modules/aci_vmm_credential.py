@@ -248,7 +248,7 @@ def main():
         description=dict(type='str', aliases=['descr']),
         domain=dict(type='str', aliases=['domain_name', 'domain_profile']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        vm_provider=dict(type='str', choices=VM_PROVIDER_MAPPING.keys()),
+        vm_provider=dict(type='str', choices=list(VM_PROVIDER_MAPPING.keys())),
         name_alias=dict(type='str'),
     )
 

@@ -11,7 +11,7 @@
 # CLEAN ENVIRONMENT
 - name: Set vars
   set_fact: 
-    mso_info: &mso_info
+    aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
       password: '{{ aci_password }}'
@@ -22,7 +22,7 @@
 
 - name: Query system information
   aci_system:
-    <<: *mso_info
+    <<: *aci_info
     id: 1
     state: query
   register: version
@@ -30,7 +30,7 @@
 # QUERY OBJECTS
 - name: Query cloud provider object
   aci_cloud_provider:
-    <<: *mso_info
+    <<: *aci_info
     state: query
   register: query_cloud
   when: version.current.0.topSystem.attributes.version is version('4.1', '>=')

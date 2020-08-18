@@ -11,7 +11,7 @@
 # CLEAN ENVIRONMENT
 - name: Set vars
   set_fact: 
-    mso_info: &mso_info
+    aci_info: &aci_info
       host: '{{ aws_aci_hostname }}'
       username: '{{ aws_aci_username }}'
       password: '{{ aws_aci_password }}'
@@ -22,7 +22,7 @@
 
 - name: Query all regions
   aci_cloud_region:
-    <<: *mso_info
+    <<: *aci_info
     cloud: 'aws'
     state: query
   register: query_all
@@ -37,7 +37,7 @@
 
 - name: Query a specific region
   aci_cloud_region:
-    <<: *mso_info
+    <<: *aci_info
     cloud: 'aws'
     region: eu-west-2
     state: query
@@ -53,7 +53,7 @@
 
 - name: Query non_existing region
   aci_cloud_region:
-    <<: *mso_info
+    <<: *aci_info
     cloud: 'aws'
     region: non_existing
     state: query

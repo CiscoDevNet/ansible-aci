@@ -23,7 +23,6 @@ options:
     description:
     - The CDP interface policy name.
     type: str
-    required: yes
     aliases: [ cdp_interface, name ]
   description:
     description:

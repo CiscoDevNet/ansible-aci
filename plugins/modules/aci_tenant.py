@@ -21,7 +21,6 @@ options:
     description:
     - The name of the tenant.
     type: str
-    required: yes
     aliases: [ name, tenant_name ]
   description:
     description:

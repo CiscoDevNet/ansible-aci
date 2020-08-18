@@ -50,7 +50,6 @@ options:
     description:
     - The name of the tenant.
     type: str
-    required: yes
     aliases: [ tenant_name ]
 extends_documentation_fragment:
 - cisco.aci.aci

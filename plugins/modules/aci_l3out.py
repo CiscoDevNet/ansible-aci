@@ -21,25 +21,21 @@ options:
     description:
     - Name of an existing tenant.
     type: str
-    required: yes
     aliases: [ tenant_name ]
   l3out:
     description:
     - Name of L3Out being created.
     type: str
-    required: yes
     aliases: [ l3out_name, name ]
   vrf:
     description:
     - Name of the VRF being associated with the L3Out.
     type: str
-    required: yes
     aliases: [ vrf_name ]
   domain:
     description:
     - Name of the external L3 domain being associated with the L3Out.
     type: str
-    required: yes
     aliases: [ ext_routed_domain_name, routed_domain ]
   dscp:
     description:
@@ -52,12 +48,14 @@ options:
     description:
     - Route Control enforcement direction. The only allowed values are export or import,export.
     type: list
+    elements: str
     choices: [ export, import ]
     aliases: [ route_control_enforcement ]
   l3protocol:
     description:
     - Routing protocol for the L3Out
     type: list
+    elements: str
     choices: [ bgp, eigrp, ospf, pim, static ]
   asn:
     description:
@@ -252,12 +250,12 @@ def main():
         domain=dict(type='str', aliases=['ext_routed_domain_name', 'routed_domain']),
         vrf=dict(type='str', aliases=['vrf_name']),
         description=dict(type='str', aliases=['descr']),
-        route_control=dict(type='list', choices=['export', 'import'], aliases=['route_control_enforcement']),
+        route_control=dict(type='list', elements='str', choices=['export', 'import'], aliases=['route_control_enforcement']),
         dscp=dict(type='str',
                   choices=['AF11', 'AF12', 'AF13', 'AF21', 'AF22', 'AF23', 'AF31', 'AF32', 'AF33', 'AF41', 'AF42',
                            'AF43', 'CS0', 'CS1', 'CS2', 'CS3', 'CS4', 'CS5', 'CS6', 'CS7', 'EF', 'VA', 'unspecified'],
                   aliases=['target']),
-        l3protocol=dict(type='list', choices=['bgp', 'eigrp', 'ospf', 'pim', 'static']),
+        l3protocol=dict(type='list', elements='str', choices=['bgp', 'eigrp', 'ospf', 'pim', 'static']),
         asn=dict(type='int', aliases=['as_number']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),

@@ -32,10 +32,12 @@ options:
     - The cloud provider.
     choices: [ aws, azure ]
     type: str
+    required: yes
   region:
     description:
     - The name of the cloud provider's region.
     type: str
+    required: yes
   state:
     description:
     - Use C(query) for listing an object or multiple objects.

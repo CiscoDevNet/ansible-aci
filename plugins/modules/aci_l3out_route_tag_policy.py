@@ -21,7 +21,6 @@ options:
     description:
     - The name of the route tag policy.
     type: str
-    required: yes
     aliases: [ name, rtp_name ]
   description:
     description:
@@ -32,7 +31,6 @@ options:
     description:
     - The name of the tenant.
     type: str
-    required: yes
     aliases: [ tenant_name ]
   tag:
     description:

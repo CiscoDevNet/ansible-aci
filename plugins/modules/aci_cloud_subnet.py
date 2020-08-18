@@ -42,14 +42,17 @@ options:
     description:
     - The name of tenant.
     type: str
+    required: yes
   cloud_context_profile:
     description:
     - The name of cloud context profile.
     type: str
+    required: yes
   cidr:
     description:
     - Address of cloud cidr.
     type: str
+    required: yes
   availability_zone:
     description:
     - The cloud zone which is attached to the given cloud context profile.

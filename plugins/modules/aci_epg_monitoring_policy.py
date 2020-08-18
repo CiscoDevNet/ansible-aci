@@ -21,7 +21,6 @@ options:
     description:
     - The name of the monitoring policy.
     type: str
-    required: yes
     aliases: [ name ]
   description:
     description:
@@ -32,7 +31,6 @@ options:
     description:
     - The name of the tenant.
     type: str
-    required: yes
     aliases: [ tenant_name ]
   state:
     description:

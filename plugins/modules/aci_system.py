@@ -169,7 +169,7 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        id=dict(type='int', aliases=["controller, node"]),
+        id=dict(type='int', aliases=['controller', 'node']),
         state=dict(type='str', default='query', choices=['query']),
     )
 

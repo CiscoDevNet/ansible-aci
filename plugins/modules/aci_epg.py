@@ -26,13 +26,11 @@ options:
     description:
     - Name of an existing application network profile, that will contain the EPGs.
     type: str
-    required: yes
     aliases: [ app_profile, app_profile_name ]
   epg:
     description:
     - Name of the end point group.
     type: str
-    required: yes
     aliases: [ epg_name, name ]
   bd:
     description:

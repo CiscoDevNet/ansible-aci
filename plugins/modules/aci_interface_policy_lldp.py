@@ -21,7 +21,6 @@ options:
     description:
     - The LLDP interface policy name.
     type: str
-    required: yes
     aliases: [ name ]
   description:
     description:
