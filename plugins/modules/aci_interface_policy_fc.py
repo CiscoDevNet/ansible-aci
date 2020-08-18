@@ -21,7 +21,6 @@ options:
     description:
     - The name of the Fiber Channel interface policy.
     type: str
-    required: yes
     aliases: [ name ]
   description:
     description:

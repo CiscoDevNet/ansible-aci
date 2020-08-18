@@ -60,7 +60,7 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
-extends_documentation_fragment: aci
+extends_documentation_fragment: cisco.aci.aci
 notes:
 - A DHCP relay label contains a C(name) for the label, the C(scope), and a DHCP option policy.
   The scope is the C(owner) of the relay server and the DHCP option policy supplies DHCP clients
@@ -228,7 +228,7 @@ url:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.network.aci.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 
 def main():

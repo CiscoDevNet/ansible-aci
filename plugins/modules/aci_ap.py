@@ -21,13 +21,11 @@ options:
     description:
     - The name of an existing tenant.
     type: str
-    required: yes
     aliases: [ tenant_name ]
   ap:
     description:
     - The name of the application network profile.
     type: str
-    required: yes
     aliases: [ app_profile, app_profile_name, name ]
   description:
     description:

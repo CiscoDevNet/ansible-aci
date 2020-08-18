@@ -24,19 +24,16 @@ options:
     description:
     - The name of the Fabric access policy leaf interface profile.
     type: str
-    required: yes
     aliases: [ leaf_interface_profile_name, leaf_interface_profile,  interface_profile_name  ]
   access_port_selector:
     description:
     -  The name of the Fabric access policy leaf interface profile access port selector.
     type: str
-    required: yes
     aliases: [ name, access_port_selector_name ]
   port_blk:
     description:
     - The name of the Fabric access policy leaf interface profile access port block.
     type: str
-    required: yes
     aliases: [ leaf_port_blk_name, leaf_port_blk ]
   port_blk_description:
     description:
@@ -47,13 +44,11 @@ options:
     description:
     - The beginning (from-range) of the port range block for the leaf access port block.
     type: str
-    required: yes
     aliases: [ from, fromPort, from_port_range ]
   to_port:
     description:
     - The end (to-range) of the port range block for the leaf access port block.
     type: str
-    required: yes
     aliases: [ to, toPort, to_port_range ]
   from_card:
     description:

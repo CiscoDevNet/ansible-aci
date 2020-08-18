@@ -22,13 +22,11 @@ options:
     description:
     - The maintenance group name that you want to add the node to.
     type: str
-    required: true
   node:
     description:
     - The node to be added to the maintenance group.
     - The value equals the nodeid.
     type: str
-    required: true
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.

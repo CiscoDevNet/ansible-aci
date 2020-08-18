@@ -21,19 +21,16 @@ options:
     description:
     - Name of an existing tenant.
     type: str
-    required: yes
     aliases: [ tenant_name ]
   l3out:
     description:
     - Name of an existing L3Out.
     type: str
-    required: yes
     aliases: [ l3out_name ]
   extepg:
     description:
     - Name of ExtEpg being created.
     type: str
-    required: yes
     aliases: [ extepg_name, name ]
   description:
     description:

@@ -21,7 +21,6 @@ options:
     description:
     - The name of the MCP interface.
     type: str
-    required: yes
     aliases: [ mcp_interface, name ]
   description:
     description:

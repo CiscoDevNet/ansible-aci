@@ -30,6 +30,7 @@ options:
     description:
     - Determines if the Domain is physical (phys) or virtual (vmm).
     type: str
+    required: yes
     choices: [ fc, l2dom, l3dom, phys, vmm ]
   pool:
     description:

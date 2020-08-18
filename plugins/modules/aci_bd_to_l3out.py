@@ -185,7 +185,6 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_together=[['gateway', 'mask']],
         required_if=[
             ['state', 'present', ['bd', 'l3out', 'tenant']],
             ['state', 'absent', ['bd', 'l3out', 'tenant']],

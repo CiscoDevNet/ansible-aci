@@ -87,6 +87,7 @@ options:
     - When C(interface_type) is C(vpc), then C(leafs) is a list with both leaf IDs.
     - The C(leafs) value is usually something like '101' or '101-102' depending on C(connection_type).
     type: list
+    elements: str
     aliases: [ leaves, nodes, paths, switches ]
   interface:
     description:
@@ -316,7 +317,7 @@ def main():
                             aliases=['interface_mode_name', 'mode']),
         interface_type=dict(type='str', default='switch_port', choices=['fex', 'port_channel', 'switch_port', 'vpc']),
         pod_id=dict(type='int', aliases=['pod', 'pod_number']),  # Not required for querying all objects
-        leafs=dict(type='list', aliases=['leaves', 'nodes', 'paths', 'switches']),  # Not required for querying all objects
+        leafs=dict(type='list', elements='str', aliases=['leaves', 'nodes', 'paths', 'switches']),  # Not required for querying all objects
         interface=dict(type='str'),  # Not required for querying all objects
         extpaths=dict(type='int'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),

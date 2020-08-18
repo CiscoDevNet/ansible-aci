@@ -22,7 +22,6 @@ options:
     description:
     - The name of the Link Level interface policy.
     type: str
-    required: yes
     aliases: [ name ]
   description:
     description:
@@ -62,7 +61,7 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
-extends_documentation_fragment: aci
+extends_documentation_fragment: cisco.aci.aci
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fabric:HIfPol).
@@ -218,7 +217,7 @@ url:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.network.aci.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 
 def main():

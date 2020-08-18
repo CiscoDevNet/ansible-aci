@@ -21,7 +21,6 @@ options:
     description:
     - The name of the port security.
     type: str
-    required: yes
     aliases: [ name ]
   description:
     description:

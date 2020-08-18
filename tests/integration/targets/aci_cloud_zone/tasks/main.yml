@@ -11,10 +11,10 @@
 # CLEAN ENVIRONMENT
 - name: Set vars
   set_fact:
-    mso_info: &mso_info
-      host: '{{ aws_aci_hostname }}'
-      username: '{{ aws_aci_username }}'
-      password: '{{ aws_aci_password }}'
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
@@ -22,7 +22,7 @@
 
 - name: Query all zones under us-west-1
   aci_cloud_zone:
-    <<: *mso_info
+    <<: *aci_info
     cloud: 'aws'
     region: us-west-1
     state: query
@@ -37,7 +37,7 @@
 
 - name: Query a specific zone under region us-west-1
   aci_cloud_zone:
-    <<: *mso_info
+    <<: *aci_info
     cloud: 'aws'
     region: us-west-1
     zone: us-west-1a
@@ -46,7 +46,7 @@
 
 - name: Query another specific zone under region us-west-1
   aci_cloud_zone:
-    <<: *mso_info
+    <<: *aci_info
     cloud: 'aws'
     region: us-west-1
     zone: us-west-1b
@@ -65,7 +65,7 @@
 
 - name: Query non_existing zone under region us-west-1
   aci_cloud_zone:
-    <<: *mso_info
+    <<: *aci_info
     cloud: 'aws'
     region: us-west-1
     zone: non_existing
@@ -74,7 +74,7 @@
 
 - name: Query zone under non_existing region
   aci_cloud_zone:
-    <<: *mso_info
+    <<: *aci_info
     cloud: 'aws'
     region: non_existing
     zone: us-west-1a

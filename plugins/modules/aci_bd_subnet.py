@@ -73,6 +73,7 @@ options:
     - The value is a list of options, C(private) and C(public) are mutually exclusive, but both can be used with C(shared).
     - The APIC defaults to C(private) when unset during creation.
     type: list
+    elements: str
     choices:
       - private
       - public
@@ -362,7 +363,7 @@ def main():
         preferred=dict(type='bool'),
         route_profile=dict(type='str'),
         route_profile_l3_out=dict(type='str'),
-        scope=dict(type='list', choices=['private', 'public', 'shared']),
+        scope=dict(type='list', elements='str', choices=['private', 'public', 'shared']),
         subnet_control=dict(type='str', choices=['nd_ra', 'no_gw', 'querier_ip', 'unspecified']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects

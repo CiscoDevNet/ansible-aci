@@ -24,12 +24,10 @@ options:
         description:
             - This is the name of the group
         type: str
-        required: true
     policy:
         description:
             - This is the name of the policy that was created using aci_maintenance_policy
         type: str
-        required: true
     state:
         description:
             - Use C(present) or C(absent) for adding or removing.

@@ -29,7 +29,6 @@ options:
         description:
             - Name of the firmware policy
         type: str
-        required: true
     version:
         description:
             - The version of the firmware associated with this policy. This value is very import as well as constructing
@@ -37,7 +36,6 @@ options:
             - each version will have a "Full Version" column, this is the value you need to use. So, if the Full Version
             - is 13.1(1i), the value for this field would be n9000-13.1(1i)
         type: str
-        required: true
     ignoreCompat:
         description:
             - Check if compatibility checks should be ignored
@@ -189,8 +187,8 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        name=dict(type='str', aliases=['name']),  # Not required for querying all objects
-        version=dict(type='str', aliases=['version']),
+        name=dict(type='str'),  # Not required for querying all objects
+        version=dict(type='str'),
         ignoreCompat=dict(type='bool'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),

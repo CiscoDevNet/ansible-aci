@@ -22,7 +22,6 @@ options:
     description:
     - The name of the Tenant the OSPF interface policy should belong to.
     type: str
-    required: yes
     aliases: [ tenant_name ]
   ospf:
     description:
@@ -30,7 +29,6 @@ options:
     - This name can be between 1 and 64 alphanumeric characters.
     - Note that you cannot change this name after the object has been saved.
     type: str
-    required: yes
     aliases: [ ospf_interface, name ]
   description:
     description:
@@ -73,6 +71,7 @@ options:
       will not establish adjacencies or send routing updates. However the
       interface is announced as part of the routing network.
     type: list
+    elements: str
     choices: [ advert-subnet, bfd, mtu-ignore, passive ]
   dead_interval:
     description:
@@ -302,7 +301,7 @@ def main():
         description=dict(type='str', aliases=['descr']),
         network_type=dict(type='str', choices=['bcast', 'p2p']),
         cost=dict(type='int'),
-        controls=dict(type='list', choices=['advert-subnet', 'bfd', 'mtu-ignore', 'passive']),
+        controls=dict(type='list', elements='str', choices=['advert-subnet', 'bfd', 'mtu-ignore', 'passive']),
         dead_interval=dict(type='int'),
         hello_interval=dict(type='int'),
         prefix_suppression=dict(type='bool'),

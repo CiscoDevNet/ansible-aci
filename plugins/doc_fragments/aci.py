@@ -34,14 +34,12 @@ options:
     - The password to use for authentication.
     - This option is mutual exclusive with C(private_key). If C(private_key) is provided too, it will be used instead.
     type: str
-    required: yes
   private_key:
     description:
     - Either a PEM-formatted private key file or the private key content used for signature-based authentication.
     - This value also influences the default C(certificate_name) that is used.
     - This option is mutual exclusive with C(password). If C(password) is provided too, it will be ignored.
     type: str
-    required: yes
     aliases: [ cert_key ]
   certificate_name:
     description:

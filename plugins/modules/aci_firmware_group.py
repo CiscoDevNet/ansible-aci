@@ -25,7 +25,6 @@ options:
         description:
             - This the name of the firmware group
         type: str
-        required: true
     firmwarepol:
         description:
             - This is the name of the firmware policy, which was create by aci_firmware_policy. It is important that
@@ -174,7 +173,7 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        group=dict(type='str', aliases=['group']),  # Not required for querying all objects
+        group=dict(type='str'),  # Not required for querying all objects
         firmwarepol=dict(type='str'),  # Not required for querying all objects
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
