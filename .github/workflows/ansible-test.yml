@@ -10,6 +10,9 @@ jobs:
   build:
     name: Build collection
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ansible: [2.9.12, 2.10.0]
     steps:
     - name: Check out code
       uses: actions/checkout@v2
@@ -19,8 +22,8 @@ jobs:
       with:
         python-version: 3.7
 
-    - name: Install ansible-base (v2.9.9)
-      run: pip install https://github.com/ansible/ansible/archive/v2.9.9.tar.gz --disable-pip-version-check
+    - name: Install ansible-base (v${{ matrix.ansible }})
+      run: pip install https://github.com/ansible/ansible/archive/v${{ matrix.ansible }}.tar.gz --disable-pip-version-check
 
     - name: Build a collection tarball
       run: ansible-galaxy collection build --output-path "${GITHUB_WORKSPACE}/.cache/collection-tarballs"
@@ -36,14 +39,17 @@ jobs:
     needs:
     - build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ansible: [2.9.12, 2.10.0]
     steps:
     - name: Set up Python 3.7
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
 
-    - name: Install ansible-base (v2.9.9)
-      run: pip install https://github.com/ansible/ansible/archive/v2.9.9.tar.gz --disable-pip-version-check
+    - name: Install ansible-base (v${{ matrix.ansible }})
+      run: pip install https://github.com/ansible/ansible/archive/v${{ matrix.ansible }}.tar.gz --disable-pip-version-check
 
     - name: Install coverage (v4.5.4)
       run: pip install coverage==4.5.4
@@ -74,14 +80,17 @@ jobs:
     needs:
     - build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ansible: [2.9.12, 2.10.0]
     steps:
     - name: Set up Python 3.7
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
 
-    - name: Install ansible-base (v2.9.9)
-      run: pip install https://github.com/ansible/ansible/archive/v2.9.9.tar.gz --disable-pip-version-check
+    - name: Install ansible-base (v${{ matrix.ansible }})
+      run: pip install https://github.com/ansible/ansible/archive/v${{ matrix.ansible }}.tar.gz --disable-pip-version-check
 
     - name: Install coverage (v4.5.4)
       run: pip install coverage==4.5.4
@@ -119,8 +128,8 @@ jobs:
       with:
         python-version: 3.7
 
-    - name: Install ansible-base (v2.9.9)
-      run: pip install https://github.com/ansible/ansible/archive/v2.9.9.tar.gz --disable-pip-version-check
+    - name: Install ansible-base (v2.9.12)
+      run: pip install https://github.com/ansible/ansible/archive/v2.9.12.tar.gz --disable-pip-version-check
 
     - name: Install coverage (v4.5.4)
       run: pip install coverage==4.5.4
