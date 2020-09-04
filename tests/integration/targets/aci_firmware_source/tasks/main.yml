@@ -123,7 +123,7 @@
   assert:
     that:
     - cm_query_source is not changed
-    -  nm_query_source is not changed
+    - nm_query_source is not changed
     - cm_query_source == nm_query_source
     - nm_query_source.current.0.firmwareOSource.attributes.dn == 'uni/fabric/fwrepop/osrc-ansible_test_1'
     - nm_query_source.current.0.firmwareOSource.attributes.name == 'ansible_test_1'
