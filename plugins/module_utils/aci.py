@@ -107,6 +107,7 @@ class ACIModule(object):
         self.config = dict()
         self.original = None
         self.proposed = dict()
+        self.stdout = None
 
         # debug output
         self.filter_string = ''
@@ -603,7 +604,7 @@ class ACIModule(object):
 
         self._deep_url_path_builder(url_path_object)
 
-    def construct_url(self, root_class, subclass_1=None, subclass_2=None, subclass_3=None, child_classes=None):
+    def construct_url(self, root_class, subclass_1=None, subclass_2=None, subclass_3=None, child_classes=None, config_only=True):
         """
         This method is used to retrieve the appropriate URL path and filter_string to make the request to the APIC.
 
@@ -627,13 +628,13 @@ class ACIModule(object):
             self.child_classes = set(child_classes)
 
         if subclass_3 is not None:
-            self._construct_url_4(root_class, subclass_1, subclass_2, subclass_3)
+            self._construct_url_4(root_class, subclass_1, subclass_2, subclass_3, config_only)
         elif subclass_2 is not None:
-            self._construct_url_3(root_class, subclass_1, subclass_2)
+            self._construct_url_3(root_class, subclass_1, subclass_2, config_only)
         elif subclass_1 is not None:
-            self._construct_url_2(root_class, subclass_1)
+            self._construct_url_2(root_class, subclass_1, config_only)
         else:
-            self._construct_url_1(root_class)
+            self._construct_url_1(root_class, config_only)
 
         if self.params.get('port') is not None:
             self.url = '{protocol}://{host}:{port}/{path}'.format(path=self.path, **self.module.params)
@@ -644,7 +645,7 @@ class ACIModule(object):
             # Append child_classes to filter_string if filter string is empty
             self.update_qs({'rsp-subtree': 'full', 'rsp-subtree-class': ','.join(sorted(self.child_classes))})
 
-    def _construct_url_1(self, obj):
+    def _construct_url_1(self, obj, config_only=True):
         """
         This method is used by construct_url when the object is the top-level class.
         """
@@ -656,7 +657,8 @@ class ACIModule(object):
         if self.module.params.get('state') in ('absent', 'present'):
             # State is absent or present
             self.path = 'api/mo/uni/{0}.json'.format(obj_rn)
-            self.update_qs({'rsp-prop-include': 'config-only'})
+            if config_only:
+                self.update_qs({'rsp-prop-include': 'config-only'})
             self.obj_filter = obj_filter
         elif mo is None:
             # Query for all objects of the module's class (filter by properties)
@@ -667,7 +669,7 @@ class ACIModule(object):
             # Query for a specific object in the module's class
             self.path = 'api/mo/uni/{0}.json'.format(obj_rn)
 
-    def _construct_url_2(self, parent, obj):
+    def _construct_url_2(self, parent, obj, config_only=True):
         """
         This method is used by construct_url when the object is the second-level class.
         """
@@ -683,7 +685,8 @@ class ACIModule(object):
         if self.module.params.get('state') in ('absent', 'present'):
             # State is absent or present
             self.path = 'api/mo/uni/{0}/{1}.json'.format(parent_rn, obj_rn)
-            self.update_qs({'rsp-prop-include': 'config-only'})
+            if config_only:
+                self.update_qs({'rsp-prop-include': 'config-only'})
             self.obj_filter = obj_filter
         elif parent_obj is None and mo is None:
             # Query for all objects of the module's class
@@ -701,7 +704,7 @@ class ACIModule(object):
             # Query for specific object in the module's class
             self.path = 'api/mo/uni/{0}/{1}.json'.format(parent_rn, obj_rn)
 
-    def _construct_url_3(self, root, parent, obj):
+    def _construct_url_3(self, root, parent, obj, config_only=True):
         """
         This method is used by construct_url when the object is the third-level class.
         """
@@ -721,7 +724,8 @@ class ACIModule(object):
         if self.module.params.get('state') in ('absent', 'present'):
             # State is absent or present
             self.path = 'api/mo/uni/{0}/{1}/{2}.json'.format(root_rn, parent_rn, obj_rn)
-            self.update_qs({'rsp-prop-include': 'config-only'})
+            if config_only:
+                self.update_qs({'rsp-prop-include': 'config-only'})
             self.obj_filter = obj_filter
         elif root_obj is None and parent_obj is None and mo is None:
             # Query for all objects of the module's class
@@ -768,7 +772,7 @@ class ACIModule(object):
             # Query for a specific object of the module's class
             self.path = 'api/mo/uni/{0}/{1}/{2}.json'.format(root_rn, parent_rn, obj_rn)
 
-    def _construct_url_4(self, root, sec, parent, obj):
+    def _construct_url_4(self, root, sec, parent, obj, config_only=True):
         """
         This method is used by construct_url when the object is the fourth-level class.
         """
@@ -795,7 +799,8 @@ class ACIModule(object):
         if self.module.params.get('state') in ('absent', 'present'):
             # State is absent or present
             self.path = 'api/mo/uni/{0}/{1}/{2}/{3}.json'.format(root_rn, sec_rn, parent_rn, obj_rn)
-            self.update_qs({'rsp-prop-include': 'config-only'})
+            if config_only:
+                self.update_qs({'rsp-prop-include': 'config-only'})
             self.obj_filter = obj_filter
         # TODO: Add all missing cases
         elif root_obj is None:
@@ -988,6 +993,7 @@ class ACIModule(object):
         # Handle APIC response
         if info.get('status') == 200:
             self.existing = json.loads(resp.read())['imdata']
+            #self.existing = json.loads(resp.read())
         else:
             try:
                 # APIC error
@@ -1127,6 +1133,8 @@ class ACIModule(object):
             self.result['response'] = self.response
             self.result['status'] = self.status
             self.result['url'] = self.url
+        if self.stdout:
+            self.result['stdout'] = self.stdout
 
         if 'state' in self.params:
             self.original = self.existing
@@ -1157,6 +1165,8 @@ class ACIModule(object):
             if self.params.get('state') in ('absent', 'present'):
                 if self.params.get('output_level') in ('debug', 'info'):
                     self.result['previous'] = self.existing
+                if self.stdout:
+                    self.result['stdout'] = self.stdout
 
             # Return the gory details when we need it
             if self.params.get('output_level') == 'debug':
