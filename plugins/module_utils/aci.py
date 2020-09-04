@@ -993,7 +993,6 @@ class ACIModule(object):
         # Handle APIC response
         if info.get('status') == 200:
             self.existing = json.loads(resp.read())['imdata']
-            #self.existing = json.loads(resp.read())
         else:
             try:
                 # APIC error
