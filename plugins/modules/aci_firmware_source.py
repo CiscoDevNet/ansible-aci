@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2018, Dag Wieers (dagwieers) <dag@wieers.com>
+# Copyright: (c) 2020, Cindy Zhao (cizhao) <cizhao@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -253,11 +254,24 @@ def main():
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
+            aci_class='fabricInst',
+            aci_rn='fabric',
+            module_object='fabric',
+            target_filter={'name': 'fabric'},
+        ),
+        subclass_1=dict(
+            aci_class='firmwareRepoP',
+            aci_rn='fwrepop',
+            module_object='fwrepop',
+            target_filter={'name': 'fwrepop'},
+        ),
+        subclass_2=dict(
             aci_class='firmwareOSource',
-            aci_rn='fabric/fwrepop',
+            aci_rn='osrc-{0}'.format(source),
             module_object=source,
             target_filter={'name': source},
         ),
+        config_only=False,
     )
     aci.get_existing()
 
