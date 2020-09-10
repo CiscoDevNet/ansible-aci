@@ -249,7 +249,7 @@ def main():
         network=dict(type='str', aliases=['address', 'ip']),
         description=dict(type='str', aliases=['descr']),
         subnet_name=dict(type='str', aliases=['name']),
-        scope=dict(type='list', elements='str', default=['import-security'], choices=['export-rtctrl', 'import-security', 'shared-rtctrl', 'shared-security']),
+        scope=dict(type='list', elements='str', required=True, default=['import-security'], choices=['export-rtctrl', 'import-security', 'shared-rtctrl', 'shared-security']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
     )
