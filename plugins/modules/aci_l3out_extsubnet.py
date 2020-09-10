@@ -56,7 +56,6 @@ options:
     - The C(shared-rtctrl) option controls which external prefixes are advertised to other tenants for shared services.
     - The C(shared-security) option configures the classifier for the subnets in the VRF where the routes are leaked.
     - The APIC defaults to C(import-security) when unset during creation.
-    required: yes
     default: [ import-security ]
     type: list
     elements: str
@@ -249,7 +248,7 @@ def main():
         network=dict(type='str', aliases=['address', 'ip']),
         description=dict(type='str', aliases=['descr']),
         subnet_name=dict(type='str', aliases=['name']),
-        scope=dict(type='list', elements='str', required=True, default=['import-security'], choices=['export-rtctrl', 'import-security', 'shared-rtctrl', 'shared-security']),
+        scope=dict(type='list', elements='str', default=['import-security'], choices=['export-rtctrl', 'import-security', 'shared-rtctrl', 'shared-security']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
     )
