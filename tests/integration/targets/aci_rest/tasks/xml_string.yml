@@ -30,11 +30,21 @@
     path: /api/mo/uni.xml
     method: post
     content:
-      <fvTenant name="ansible_test"/>
+      {
+          "fvTenant": {
+              "attributes": {
+                  "name": "ansible_test"
+              }
+          }
+      }
   register: nm_add_tenant
 
 - name: Add tenant again (normal mode)
-  cisco.aci.aci_rest: *tenant_present
+  cisco.aci.aci_rest: 
+    <<: *tenant_present
+    path: /api/mo/uni.xml
+    content:
+      <fvTenant name="ansible_test"/>
   register: nm_add_tenant_again
 
 - name: Verify add_tenant
@@ -56,11 +66,21 @@
     path: /api/mo/uni.xml
     method: post
     content:
-      <fvTenant name="ansible_test" descr="Ansible test tenant"/>
+      fvTenant:
+        attributes:
+          name: ansible_test
+          descr: Ansible test tenant
   register: nm_add_tenant_descr
 
 - name: Change description of tenant again (normal mode)
-  cisco.aci.aci_rest: *tenant_changed
+  cisco.aci.aci_rest:
+    <<: *tenant_changed
+    path: /api/mo/uni.xml
+    content:
+      fvTenant:
+        attributes:
+          name: ansible_test
+          descr: Ansible test tenant
   register: nm_add_tenant_descr_again
 
 - name: Verify add_tenant_descr
@@ -71,7 +91,11 @@
 
 # ADD TENANT AGAIN
 - name: Add tenant again with no description (normal mode)
-  cisco.aci.aci_rest: *tenant_present
+  cisco.aci.aci_rest:
+    <<: *tenant_present
+    path: /api/mo/uni.xml
+    content:
+      <fvTenant name="ansible_test"/>
   register: nm_add_tenant_again_no_descr
 
 - name: Verify add_tenant_again_no_descr
