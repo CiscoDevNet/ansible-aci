@@ -1,5 +1,6 @@
 # Test code for the ACI modules
 # Copyright: (c) 2017, Dag Wieers (@dagwieers) <dag@wieers.com>
+# Copyright: (c) 2020, Cindy Zhao (@cizhao) <cizhao@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -20,9 +21,8 @@
 - include_tasks: json_string.yml
   tags: json_string
 
-# FIXME: Find why this lxml import does not work properly.
-# - include_tasks: xml_string.yml
-#   tags: xml_string
+- include_tasks: xml_string.yml
+  tags: xml_string
 
 - include_tasks: error_handling.yml
   tags: error_handling

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2017, Dag Wieers (@dagwieers) <dag@wieers.com>
+# Copyright: (c) 2020, Cindy Zhao (@cizhao) <cizhao@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -73,6 +74,7 @@ seealso:
   link: http://www.cisco.com/c/en/us/td/docs/switches/datacenter/aci/apic/sw/2-x/rest_cfg/2_1_x/b_Cisco_APIC_REST_API_Configuration_Guide.html
 author:
 - Dag Wieers (@dagwieers)
+- Cindy Zhao (@cizhao)
 '''
 
 EXAMPLES = r'''
@@ -251,7 +253,7 @@ except Exception:
 
 # Optional, only used for XML payload
 try:
-    import lxml.etree  # noqa
+    from lxml import etree  # noqa
     HAS_LXML_ETREE = True
 except ImportError:
     HAS_LXML_ETREE = False
@@ -384,13 +386,11 @@ def main():
     elif rest_type == 'xml' and HAS_LXML_ETREE:
         if content and isinstance(content, dict) and HAS_XMLJSON_COBRA:
             # Validate inline YAML/JSON
-            # FIXME: Converting from a dictionary to XML is unsupported at this time
-            # payload = etree.tostring(payload)
-            pass
+            payload = etree.tostring(cobra.etree(payload)[0])
         elif payload and isinstance(payload, str):
             try:
                 # Validate XML string
-                payload = lxml.etree.tostring(lxml.etree.fromstring(payload))
+                payload = etree.tostring(etree.fromstring(payload))
             except Exception as e:
                 module.fail_json(msg='Failed to parse provided XML payload: %s' % to_text(e), payload=payload)
 
