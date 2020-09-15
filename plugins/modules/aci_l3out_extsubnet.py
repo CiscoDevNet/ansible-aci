@@ -22,16 +22,19 @@ options:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
+    required: yes
   l3out:
     description:
     - Name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
+    required: yes
   extepg:
     description:
     - Name of an existing ExtEpg.
     type: str
     aliases: [ extepg_name ]
+    required: yes
   network:
     description:
     - The network address for the Subnet.
@@ -116,7 +119,7 @@ EXAMPLES = r'''
     state: absent
   delegate_to: localhost
 
-- name: Query ExtEpg information
+- name: Query ExtEpg Subnet information
   cisco.aci.aci_l3out_extsubnet:
     host: apic
     username: admin
@@ -242,9 +245,9 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
-        l3out=dict(type='str', aliases=['l3out_name']),  # Not required for querying all objects
-        extepg=dict(type='str', aliases=['extepg_name', 'name']),  # Not required for querying all objects
+        tenant=dict(type='str', required=True, aliases=['tenant_name']),
+        l3out=dict(type='str', required=True, aliases=['l3out_name']),
+        extepg=dict(type='str', required=True, aliases=['extepg_name', 'name']),
         network=dict(type='str', aliases=['address', 'ip']),
         description=dict(type='str', aliases=['descr']),
         subnet_name=dict(type='str', aliases=['name']),
