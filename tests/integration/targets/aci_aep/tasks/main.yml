@@ -19,9 +19,12 @@
     use_ssl: '{{ aci_use_ssl | default(true) }}'
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
-    aep: ansible_test
+    aep: '{{ item }}'
     state: absent
-
+  loop:
+    - ansible_test
+    - ansible_test2
+    - ansible_test3
 
 # ADD AEP
 - name: Add AEP (check_mode)
@@ -34,6 +37,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     aep: ansible_test
+    infra_vlan: true
     state: present
   check_mode: yes
   register: cm_add_aep
@@ -41,6 +45,20 @@
 - name: Add AEP (normal mode)
   cisco.aci.aci_aep: *aep_present
   register: nm_add_aep
+
+- name: Add another AEP (normal mode)
+  cisco.aci.aci_aep:
+    <<: *aep_present
+    aep: ansible_test2
+    infra_vlan: true
+  register: nm_add_aep2
+
+- name: Add another AEP (normal mode)
+  cisco.aci.aci_aep:
+    <<: *aep_present
+    aep: ansible_test3
+    infra_vlan: false
+  register: nm_add_aep3
 
 - name: Verify add_aep
   assert:
@@ -51,6 +69,22 @@
     - nm_add_aep.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
     - nm_add_aep.current[0].infraAttEntityP.attributes.name == 'ansible_test'
     - cm_add_aep.proposed.infraAttEntityP.attributes.name == nm_add_aep.proposed.infraAttEntityP.attributes.name == cm_add_aep.sent.infraAttEntityP.attributes.name == nm_add_aep.sent.infraAttEntityP.attributes.name == 'ansible_test'
+    - nm_add_aep2.current[0].infraAttEntityP.children[0].infraProvAcc.attributes.name == 'provacc'
+    - nm_add_aep3.current[0].infraAttEntityP | length == 1
+
+- name: Change AEP infra(normal mode)
+  cisco.aci.aci_aep:
+    <<: *aep_present
+    aep: ansible_test2
+    infra_vlan: false
+  register: nm_add_aep_true_to_false
+
+- name: Change AEP infra 2(normal mode)
+  cisco.aci.aci_aep:
+    <<: *aep_present
+    aep: ansible_test2
+    infra_vlan: false
+  register: nm_add_aep_true_to_false2
 
 - name: Add AEP again (check_mode)
   cisco.aci.aci_aep: *aep_present
@@ -70,7 +104,8 @@
     - nm_add_aep_again.previous[0].infraAttEntityP.attributes.name == nm_add_aep_again.previous[0].infraAttEntityP.attributes.name == cm_add_aep_again.current[0].infraAttEntityP.attributes.name == nm_add_aep_again.current[0].infraAttEntityP.attributes.name == 'ansible_test'
     - cm_add_aep_again.proposed.infraAttEntityP.attributes.name == nm_add_aep_again.proposed.infraAttEntityP.attributes.name == 'ansible_test'
     - cm_add_aep_again.sent == nm_add_aep_again.sent == {}
-
+    - nm_add_aep_true_to_false.current[0].infraAttEntityP | length == 1
+    - nm_add_aep_true_to_false2.current[0].infraAttEntityP | length == 1
 
 # CHANGE AEP
 - name: Change description of AEP (check_mode)
@@ -202,12 +237,16 @@
 
 # REMOVE AEP
 - name: Remove AEP (check_mode)
-  cisco.aci.aci_aep: *aep_absent
+  cisco.aci.aci_aep:
+    <<: *aep_absent
+    aep: ansible_test
   check_mode: yes
   register: cm_remove_aep
 
 - name: Remove AEP (normal mode)
-  cisco.aci.aci_aep: *aep_absent
+  cisco.aci.aci_aep:
+    <<: *aep_absent
+    aep: ansible_test
   register: nm_remove_aep
 
 - name: Verify remove_aep
@@ -223,12 +262,16 @@
     - nm_remove_aep.current == []
 
 - name: Remove AEP again (check_mode)
-  cisco.aci.aci_aep: *aep_absent
+  cisco.aci.aci_aep:
+    <<: *aep_absent
+    aep: ansible_test
   check_mode: yes
   register: cm_remove_aep_again
 
 - name: Remove AEP again (normal mode)
-  cisco.aci.aci_aep: *aep_absent
+  cisco.aci.aci_aep:
+    <<: *aep_absent
+    aep: ansible_test
   register: nm_remove_aep_again
 
 - name: Verify remove_aep_again
