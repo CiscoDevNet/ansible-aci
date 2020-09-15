@@ -54,12 +54,157 @@
     description: ExtEpg for Ansible l3out
     state: present
 
-- name: Add a subnet
+- name: Add a subnet (check mode)
   cisco.aci.aci_l3out_extsubnet:
     <<: *aci_info
     tenant: ansible_tenant
     l3out: ansible_l3out
     extepg: ansible_extEpg
     subnet_name: test
-    network: 0.0.0.0/0
+    network: 192.0.2.0/24
     state: present
+  check_mode: yes
+  register: cm_add_subnet
+
+- name: Add a subnet (normal mode)
+  cisco.aci.aci_l3out_extsubnet:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    subnet_name: test
+    network: 192.0.2.0/24
+    state: present
+  register: nm_add_subnet
+
+- name: Verify cm_add_subnet and nm_add_subnet
+  assert:
+    that:
+      - cm_add_subnet is changed
+      - nm_add_subnet is changed
+      - cm_add_subnet.proposed.l3extSubnet.attributes.ip == "192.0.2.0/24"
+      - cm_add_subnet.proposed.l3extSubnet.attributes.name == "test"
+      - cm_add_subnet.proposed.l3extSubnet.attributes.scope == "import-security"
+      - nm_add_subnet.current.0.l3extSubnet.attributes.ip == "192.0.2.0/24"
+      - nm_add_subnet.current.0.l3extSubnet.attributes.name == "test"
+      - nm_add_subnet.current.0.l3extSubnet.attributes.scope == "import-security"
+
+- name: Add subnet again
+  cisco.aci.aci_l3out_extsubnet:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    subnet_name: test
+    network: 192.0.2.0/24
+    state: present
+  register: nm_add_subnet_again
+
+- name: Verify nm_add_subnet_again
+  assert:
+    that:
+      - nm_add_subnet_again is not changed
+
+- name: Change subnet (check_mode)
+  cisco.aci.aci_l3out_extsubnet:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    network: 192.0.2.0/24
+    subnet_name: ansible_test
+    description: description for subnet
+    scope: [ shared-security, import-security ]
+    state: present
+  check_mode: yes
+  register: cm_change_subnet
+
+- name: Change subnet (check_mode)
+  cisco.aci.aci_l3out_extsubnet:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    network: 192.0.2.0/24
+    subnet_name: ansible_test
+    description: description for subnet
+    scope: [ shared-security, import-security ]
+    state: present
+  register: nm_change_subnet
+
+- name: Verify cm_change_subnet and nm_change_subnet
+  assert:
+    that:
+      - cm_change_subnet is changed
+      - nm_change_subnet is changed
+      - cm_change_subnet.previous.0.l3extSubnet.attributes.descr == nm_change_subnet.previous.0.l3extSubnet.attributes.descr == ""
+      - cm_change_subnet.previous.0.l3extSubnet.attributes.name == nm_change_subnet.previous.0.l3extSubnet.attributes.name == "test"
+      - cm_change_subnet.previous.0.l3extSubnet.attributes.scope == nm_change_subnet.previous.0.l3extSubnet.attributes.scope == "import-security"
+      - cm_change_subnet.proposed.l3extSubnet.attributes.descr == "description for subnet"
+      - cm_change_subnet.proposed.l3extSubnet.attributes.name == "ansible_test"
+      - cm_change_subnet.proposed.l3extSubnet.attributes.scope == "import-security,shared-security"
+      - nm_change_subnet.current.0.l3extSubnet.attributes.descr == "description for subnet"
+      - nm_change_subnet.current.0.l3extSubnet.attributes.name == "ansible_test"
+      - nm_change_subnet.current.0.l3extSubnet.attributes.scope == "import-security,shared-security"
+
+- name: Add another subnet (normal mode)
+  cisco.aci.aci_l3out_extsubnet:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    network: 192.1.2.0/24
+    state: present
+  register: nm_add_another_subnet
+
+- name: Verify nm_add_another_subnet
+  assert:
+    that:
+      - nm_add_another_subnet is changed
+      - nm_add_another_subnet.current.0.l3extSubnet.attributes.ip == "192.1.2.0/24"
+
+- name: Query all subnets
+  cisco.aci.aci_l3out_extsubnet:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    state: query
+  register: query_all
+
+- name: Query specific subnet
+  cisco.aci.aci_l3out_extsubnet:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    network: 192.0.2.0/24
+    state: query
+  register: query_subnet
+
+- name: Verify query_all and query_subnet
+  assert:
+    that:
+      - query_all is not changed
+      - query_subnet is not changed
+      - query_all.current.0.l3extInstP.children | length == 2
+      - query_subnet.current.0.l3extSubnet.attributes.name == "ansible_test"
+      - query_subnet.current.0.l3extSubnet.attributes.ip == "192.0.2.0/24"
+
+- name: Remove subnet
+  cisco.aci.aci_l3out_extsubnet:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    network: 192.0.2.0/24
+    state: absent
+  register: rm_subnet
+
+- name: Verify rm_subnet
+  assert:
+    that:
+      - rm_subnet is changed
+      - rm_subnet.current == []
+      - rm_subnet.previous.0.l3extSubnet.attributes.ip == "192.0.2.0/24"
+      - rm_subnet.previous.0.l3extSubnet.attributes.name == "ansible_test"
