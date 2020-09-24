@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2020, Jacob McGill <jmcgill298>
+# Copyright: (c) 2020, Shreyas Srish <ssrish@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -97,6 +99,12 @@ options:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
+  promiscuous:
+    description:
+    - Allow/Disallow promiscuous mode in vmm domain
+    type: str
+    choices: [ accept, reject ]
+    default: reject
   vm_provider:
     description:
     - The VM platform for VMM Domains.
@@ -122,6 +130,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jacob McGill (@jmcgill298)
+- Shreyas Srish (@shrsr)
 '''
 
 EXAMPLES = r'''
@@ -312,6 +321,7 @@ def main():
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         vm_provider=dict(type='str', choices=['cloudfoundry', 'kubernetes', 'microsoft', 'openshift', 'openstack', 'redhat', 'vmware']),
+        promiscuous=dict(type='str', default='reject', choices=['accept', 'reject']),
     )
 
     module = AnsibleModule(
@@ -332,6 +342,7 @@ def main():
     domain = module.params.get('domain')
     domain_type = module.params.get('domain_type')
     vm_provider = module.params.get('vm_provider')
+    promiscuous = module.params.get('promiscuous')
     encap = module.params.get('encap')
     if encap is not None:
         if encap in range(1, 4097):
@@ -365,6 +376,14 @@ def main():
     else:
         epg_domain = None
 
+    child_configs = [dict(
+        vmmSecP=dict(
+            attributes=dict(
+                allowPromiscuous=promiscuous,
+            ),
+        ),
+    )]
+
     aci.construct_url(
         root_class=dict(
             aci_class='fvTenant',
@@ -390,6 +409,7 @@ def main():
             module_object=epg_domain,
             target_filter={'tDn': epg_domain},
         ),
+        child_classes=['vmmSecP'],
     )
 
     aci.get_existing()
@@ -407,6 +427,7 @@ def main():
                 primaryEncap=primary_encap,
                 resImedcy=resolution_immediacy,
             ),
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class='fvRsDomAtt')
