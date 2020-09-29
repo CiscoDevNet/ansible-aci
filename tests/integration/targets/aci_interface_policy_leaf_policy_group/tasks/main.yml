@@ -336,7 +336,9 @@
     link_level_policy: linklevelpolicy
     fibre_channel_interface_policy: fiberchannelpolicy
     state: present
+    port_channel_policy: ''
   check_mode: yes
+  ignore_errors: yes
   register: intf_policy_leaf_polgrp_check_mode_present
 
 - name: Adding a interface policy leaf policy group (Leaf Access Port) - creation works
@@ -377,6 +379,9 @@
     - intf_policy_leaf_polgrp_idempotent.sent == {}
     - intf_policy_leaf_polgrp_update is changed
     - intf_policy_leaf_polgrp_update.sent.infraAccPortGrp.attributes.descr == 'policygroup description'
+    - intf_policy_leaf_polgrp_check_mode_present.msg == 'port_channel_policy is not a valid parameter for leaf(leaf-access port policy group), if used assign "null" to it(port_channel_policy = null).'
+
+
 
 - name: Query interface policy leaf policy group (Leaf Access Port)
   cisco.aci.aci_interface_policy_leaf_policy_group:
@@ -441,5 +446,5 @@
       - intf_policy_leaf_polgrp_absent_idempotent.previous == []
       - intf_policy_leaf_polgrp_absent_missing_param is failed
       - 'intf_policy_leaf_polgrp_absent_missing_param.msg == "missing required arguments: lag_type"'
-
+      
 # ==== END TESTING Virtual Port Channel (VPC), lag_type: leaf ====
