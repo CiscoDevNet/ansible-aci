@@ -210,9 +210,9 @@ def main():
     port_security_timeout = module.params.get('port_security_timeout')
     name_alias = module.params.get('name_alias')
     if max_end_points is not None and max_end_points not in range(12001):
-        module.fail_json(msg='The "max_end_points" must be between 0 and 12000')
+        module.fail_json(msg='The max_end_points must be between 0 and 12000')
     if port_security_timeout is not None and port_security_timeout not in range(60, 3601):
-        module.fail_json(msg='The "port_security_timeout" must be between 60 and 3600')
+        module.fail_json(msg='The port_security_timeout must be between 60 and 3600')
     state = module.params.get('state')
 
     aci = ACIModule(module)
@@ -235,6 +235,7 @@ def main():
                 descr=description,
                 maximum=max_end_points,
                 nameAlias=name_alias,
+                timeout=port_security_timeout,
             ),
         )
 
