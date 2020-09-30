@@ -1020,6 +1020,7 @@ class ACIModule(object):
                     # Return the one that is a subset match
                     if set(proposed_config.items()).issubset(set(existing_config.items())):
                         break
+                    existing_config = None
 
         return child_class, proposed_config, existing_config
 
