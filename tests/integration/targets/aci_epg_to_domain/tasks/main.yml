@@ -104,7 +104,17 @@
     domain_type: vmm
     vm_provider: vmware
     resolution_immediacy: pre-provision
-  register: vmm_present
+    promiscuous: accept
+  register: vmm_present_promiscuous_accept
+
+- name: bind vmm domain to epg - creation works
+  cisco.aci.aci_epg_to_domain:
+    <<: *aci_epg_to_domain_present
+    domain_type: vmm
+    vm_provider: vmware
+    resolution_immediacy: pre-provision
+    promiscuous: reject
+  register: vmm_present_promiscuous_reject
 
 - name: bind vmm domain to epg - missing params
   cisco.aci.aci_epg_to_domain:
@@ -158,10 +168,13 @@
       - phys_idempotent.sent == {}
       - phys_update is changed
       - phys_update.sent.fvRsDomAtt.attributes.instrImedcy == 'immediate'
-      - vmm_present is changed
-      - vmm_present.sent.fvRsDomAtt.attributes.resImedcy == 'pre-provision'
-      - vmm_present.sent.fvRsDomAtt.attributes.switchingMode == 'native'
-      - '"[uni/vmmp-VMware/dom-anstest].json" in vmm_present.url'
+      - vmm_present_promiscuous_accept is changed
+      - vmm_present_promiscuous_reject is changed
+      - vmm_present_promiscuous_accept.current.0.fvRsDomAtt.children.0.vmmSecP.attributes.allowPromiscuous == 'accept'
+      - vmm_present_promiscuous_reject.current.0.fvRsDomAtt.children.0.vmmSecP.attributes.allowPromiscuous == 'reject'
+      - vmm_present_promiscuous_accept.sent.fvRsDomAtt.attributes.resImedcy == 'pre-provision'
+      - vmm_present_promiscuous_accept.sent.fvRsDomAtt.attributes.switchingMode == 'native'
+      - '"[uni/vmmp-VMware/dom-anstest].json" in vmm_present_promiscuous_accept.url'
       - present_missing_params is failed
       - 'present_missing_params.msg == "domain_type is vmm but all of the following are missing: vm_provider"'
       - invalid_vlan is failed
