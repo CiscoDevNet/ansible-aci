@@ -242,6 +242,7 @@ url:
 
 import json
 import os
+import ast
 
 try:
     from ansible.module_utils.six.moves.urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
@@ -329,8 +330,6 @@ def main():
         method=dict(type='str', default='get', choices=['delete', 'get', 'post'], aliases=['action']),
         src=dict(type='path', aliases=['config_file']),
         content=dict(type='raw'),
-        output_path=dict(type='str'),
-
     )
 
     module = AnsibleModule(
@@ -371,7 +370,7 @@ def main():
         with open(src, 'r') as config_object:
             # TODO: Would be nice to template this, requires action-plugin
             payload = config_object.read()
-            pld = json.loads(payload.replace("\'", '"'))
+            payload_output_file = json.loads(payload)
 
     # Validate payload
     if rest_type == 'json':
@@ -440,9 +439,8 @@ def main():
 
     output_path = aci.params.get('output_path')
     if(output_path is not None):
-        with open(output_path, "w") as output_file:
-            json.dump([pld], output_file)
-
+        with open(output_path, "a") as output_file:
+            json.dump([payload_output_file], output_file)
 
     # Report success
     aci.exit_json(**aci.result)
