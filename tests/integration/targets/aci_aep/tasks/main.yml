@@ -65,6 +65,8 @@
     that:
     - cm_add_aep is changed
     - nm_add_aep is changed
+    - nm_add_aep2 is changed
+    - nm_add_aep3 is changed
     - nm_add_aep.previous == nm_add_aep.previous == cm_add_aep.current == []
     - nm_add_aep.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
     - nm_add_aep.current[0].infraAttEntityP.attributes.name == 'ansible_test'
@@ -79,12 +81,12 @@
     infra_vlan: false
   register: nm_add_aep_true_to_false
 
-- name: Change AEP infra 2(normal mode)
+- name: Change AEP infra again(normal mode)
   cisco.aci.aci_aep:
     <<: *aep_present
     aep: ansible_test2
     infra_vlan: false
-  register: nm_add_aep_true_to_false2
+  register: nm_add_aep_true_to_false_again
 
 - name: Add AEP again (check_mode)
   cisco.aci.aci_aep: *aep_present
@@ -100,12 +102,13 @@
     that:
     - cm_add_aep_again is not changed
     - nm_add_aep_again is not changed
+    - nm_add_aep_again is not changed
     - nm_add_aep_again.previous[0].infraAttEntityP.attributes.dn == nm_add_aep_again.previous[0].infraAttEntityP.attributes.dn == cm_add_aep_again.current[0].infraAttEntityP.attributes.dn == nm_add_aep_again.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
     - nm_add_aep_again.previous[0].infraAttEntityP.attributes.name == nm_add_aep_again.previous[0].infraAttEntityP.attributes.name == cm_add_aep_again.current[0].infraAttEntityP.attributes.name == nm_add_aep_again.current[0].infraAttEntityP.attributes.name == 'ansible_test'
     - cm_add_aep_again.proposed.infraAttEntityP.attributes.name == nm_add_aep_again.proposed.infraAttEntityP.attributes.name == 'ansible_test'
     - cm_add_aep_again.sent == nm_add_aep_again.sent == {}
     - nm_add_aep_true_to_false.current[0].infraAttEntityP | length == 1
-    - nm_add_aep_true_to_false2.current[0].infraAttEntityP | length == 1
+    - nm_add_aep_true_to_false_again.current[0].infraAttEntityP | length == 1
 
 # CHANGE AEP
 - name: Change description of AEP (check_mode)
