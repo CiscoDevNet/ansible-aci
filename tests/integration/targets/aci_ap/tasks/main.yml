@@ -1,5 +1,6 @@
 # Test code for the ACI modules
 # Copyright: (c) 2017, Jacob McGill (@jmcgill298)
+# Copyright: (c) 2020, Shreyas Srish (@shrsr)
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -21,6 +22,18 @@
     tenant: anstest
   register: tenant_present
 
+- name: ensure monitoring policy exists
+  cisco.aci.aci_epg_monitoring_policy:
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+    monitoring_policy: check
+    tenant: anstest
+
 - name: ensure ap does not exist initially
   cisco.aci.aci_ap:
     <<: *aci_tenant_present
@@ -32,6 +45,7 @@
     <<: *aci_tenant_present
     ap: anstest
     description: Ansible Test
+    monitoring_policy: check
   check_mode: yes
   register: ap_present_check_mode
 
@@ -68,6 +82,7 @@
       - ap_present_check_mode is changed
       - ap_present is changed
       - ap_present.previous == []
+      - ap_present.current.0.fvAp.children.0.fvRsApMonPol.attributes.tnMonEPGPolName == 'check'
       - ap_present.sent == ap_present_check_mode.sent
       - ap_present.sent.fvAp.attributes.descr == 'Ansible Test'
       - ap_present.sent.fvAp.attributes.name == 'anstest'
@@ -110,6 +125,7 @@
       - query_ap is not changed
       - query_ap.current | length == 1
       - query_ap.current.0.fvAp.attributes.name == "anstest"
+      - query_ap.current.0.fvAp.children.0.fvRsApMonPol.attributes.tnMonEPGPolName == 'check'
       - '"tn-anstest/ap-anstest.json" in query_ap.url'
       - query_ap_tenant is not changed
       - query_ap_tenant.current | length == 1

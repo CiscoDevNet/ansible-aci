@@ -66,6 +66,10 @@ options:
     - This is very convenient for migration scenarios, or when ACI is used for network automation but not for policy.
     - The APIC defaults to C(no) when unset during creation.
     type: bool
+  monitoring_policy:
+    description:
+    - The name of the monitoring policy.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -91,6 +95,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Swetha Chunduri (@schunduri)
+- Shreyas Srish (@shrsr)
 '''
 
 EXAMPLES = r'''
@@ -104,6 +109,7 @@ EXAMPLES = r'''
     epg: web_epg
     description: Web Intranet EPG
     bd: prod_bd
+    monitoring_policy: default
     preferred_group: yes
     state: present
   delegate_to: localhost
@@ -136,6 +142,7 @@ EXAMPLES = r'''
     tenant: production
     app_profile: intranet
     epg: web_epg
+    monitoring_policy: default
     state: absent
   delegate_to: localhost
 
@@ -306,6 +313,7 @@ def main():
         preferred_group=dict(type='bool'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
+        monitoring_policy=dict(type='str')
     )
 
     module = AnsibleModule(
@@ -330,6 +338,10 @@ def main():
     tenant = module.params.get('tenant')
     ap = module.params.get('ap')
     name_alias = module.params.get('name_alias')
+    monitoring_policy = module.params.get('monitoring_policy')
+
+    child_configs = [dict(fvRsBd=dict(attributes=dict(tnFvBDName=bd)))]
+    child_configs.append(dict(fvRsAEPgMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy))))
 
     aci.construct_url(
         root_class=dict(
@@ -350,7 +362,7 @@ def main():
             module_object=epg,
             target_filter={'name': epg},
         ),
-        child_classes=['fvRsBd'],
+        child_classes=['fvRsBd', 'fvRsAEPgMonPol'],
     )
 
     aci.get_existing()
@@ -367,13 +379,7 @@ def main():
                 prefGrMemb=preferred_group,
                 nameAlias=name_alias,
             ),
-            child_configs=[dict(
-                fvRsBd=dict(
-                    attributes=dict(
-                        tnFvBDName=bd,
-                    ),
-                ),
-            )],
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class='fvAEPg')

@@ -32,6 +32,10 @@ options:
     - Description for the AP.
     type: str
     aliases: [ descr ]
+  monitoring_policy:
+    description:
+    - The name of the monitoring policy.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -57,6 +61,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Swetha Chunduri (@schunduri)
+- Shreyas Srish (@shrsr)
 '''
 
 EXAMPLES = r'''
@@ -68,6 +73,7 @@ EXAMPLES = r'''
     tenant: production
     ap: default
     description: default ap
+    monitoring_policy: default
     state: present
   delegate_to: localhost
 
@@ -219,6 +225,7 @@ def main():
         description=dict(type='str', aliases=['descr']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
+        monitoring_policy=dict(type='str')
     )
 
     module = AnsibleModule(
@@ -235,6 +242,9 @@ def main():
     state = module.params.get('state')
     tenant = module.params.get('tenant')
     name_alias = module.params.get('name_alias')
+    monitoring_policy = module.params.get('monitoring_policy')
+
+    child_configs = [dict(fvRsApMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy)))]
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -250,6 +260,7 @@ def main():
             module_object=ap,
             target_filter={'name': ap},
         ),
+        child_classes=['fvRsApMonPol'],
     )
 
     aci.get_existing()
@@ -262,6 +273,7 @@ def main():
                 descr=description,
                 nameAlias=name_alias,
             ),
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class='fvAp')
