@@ -1,5 +1,6 @@
 # Test code for the ACI modules
 # Copyright: (c) 2017, Jacob McGill (@jmcgill298)
+# Copyright: (c) 2020, Shreyas Srish (@shrsr)
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -21,6 +22,18 @@
     tenant: anstest
   register: tenant_present
 
+- name: ensure monitoring policy exists
+  cisco.aci.aci_epg_monitoring_policy:
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+    monitoring_policy: check
+    tenant: anstest
+
 - name: ensure bd exists for tests to kick off
   cisco.aci.aci_bd: &aci_bd_present
     <<: *aci_tenant_present
@@ -39,6 +52,7 @@
     epg: anstest
     bd: anstest
     description: Ansible Test
+    monitoring_policy: check
   check_mode: yes
   register: epg_present_check_mode
 
@@ -77,6 +91,7 @@
       - epg_present_check_mode.previous == []
       - epg_present_check_mode.sent.fvAEPg.attributes != {}
       - epg_present_check_mode.sent.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == "anstest"
+      - epg_present_check_mode.sent.fvAEPg.children.1.fvRsAEPgMonPol.attributes.tnMonEPGPolName == 'check'
       - epg_present is changed
       - epg_present.sent == epg_present_check_mode.sent
       - epg_present_idempotent is not changed
@@ -105,10 +120,11 @@
       - epg_query is not changed
       - epg_query.current | length == 1
       - epg_query.current.0.fvAEPg.attributes.name == "anstest"
+      - epg_query.current.0.fvAEPg.children.1.fvRsAEPgMonPol.attributes.tnMonEPGPolName == 'check'
       - '"tn-anstest/ap-anstest/epg-anstest.json" in epg_query.url'
       - epg_query_all is not changed
       - epg_query_all.current | length > 1
-      - '"rsp-subtree-class=fvRsBd" in epg_query_all.filter_string'
+      - '"?rsp-subtree=full&rsp-subtree-class=fvRsAEPgMonPol,fvRsBd" in epg_query_all.filter_string'
       - '"class/fvAEPg.json" in epg_query_all.url'
 
 - name: delete epg - check mode works
