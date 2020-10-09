@@ -1,0 +1,122 @@
+# Test code for the ACI modules
+# Copyright: (c) 2020, Shreyas Srish (@shrsr)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact: 
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  aci_tenant:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Add a new tenant
+  aci_tenant:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    description: Ansible tenant
+    state: present
+
+- name: Add a new l3out
+  aci_l3out:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_l3out
+    description: l3out for Ansible tenant
+    domain: ansible_dom
+    route_control: export
+    vrf: ansible_vrf
+    l3protocol: ospf
+    state: present
+
+- name: Add a new Logical Node
+  aci_l3out_logical_node:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    name: ansible_logical_node
+    description: Logical Node for Ansible l3out
+    state: present
+  
+- name: Add a new Logical Node
+aci_l3out_logical_node_fabric_node:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    fabric_node: ansible_fabric_node
+    name: ansible_fabric_node
+    description: Logical Node for Ansible l3out
+    state: present
+
+- name: Bind External End Point Groups to Contracts
+  aci_l3out_extepg_to_contract:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_logical_node
+    contract: ansible_contract
+    contract_type: provider
+    state: present
+  register: bind_extepg_provider_contract
+
+- name: Verify bind_extepg_provider_contract
+  assert:
+    that:
+    - bind_extepg_provider_contract.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
+
+- name: Bind second External End Point Groups to Contracts
+  aci_l3out_extepg_to_contract:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    contract: ansible_contract2
+    contract_type: provider
+    state: present
+  register: bind_extepg_provider_contract_2
+
+- name: Verify bind_extepg_provider_contract_2
+  assert:
+    that:
+    - bind_extepg_provider_contract_2.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract2"
+
+- name: Query the External End Point Groups
+  aci_l3out_extepg_to_contract:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    contract: ansible_contract
+    contract_type: provider
+    state: query
+  register: query_extepg
+
+- name: Verify query_extepg
+  assert:
+    that:
+    - query_extepg is not changed
+    - query_extepg.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
+
+- name: Query all the External End Point Groups
+  aci_l3out_extepg_to_contract:
+    <<: *aci_info
+    contract_type: provider
+    state: query
+  register: query_all
+
