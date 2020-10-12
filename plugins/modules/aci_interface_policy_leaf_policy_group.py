@@ -390,7 +390,7 @@ def main():
     if lag_type == 'leaf' and port_channel_policy is not None:
         aci.fail_json('port_channel_policy is not a valid parameter for leaf\
         (leaf access port policy group), if used\
-        assign null to it (port_channel_policy = null).')
+        assign null to it (port_channel_policy = null or None).')
 
     if lag_type == 'leaf':
         aci_class_name = 'infraAccPortGrp'
