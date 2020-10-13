@@ -604,7 +604,7 @@ class ACIModule(object):
 
         self._deep_url_path_builder(url_path_object)
 
-    def construct_url(self, root_class, subclass_1=None, subclass_2=None, subclass_3=None, subclass_4=None, subclass_5=None, child_classes=None, config_only=True):
+    def construct_url(self, root_class, subclass_1=None, subclass_2=None, subclass_3=None, child_classes=None, config_only=True):
         """
         This method is used to retrieve the appropriate URL path and filter_string to make the request to the APIC.
 
@@ -612,15 +612,11 @@ class ACIModule(object):
         :param sublass_1: The second-level class dictionary containing aci_class, aci_rn, target_filter, and module_object keys.
         :param sublass_2: The third-level class dictionary containing aci_class, aci_rn, target_filter, and module_object keys.
         :param sublass_3: The fourth-level class dictionary containing aci_class, aci_rn, target_filter, and module_object keys.
-        :type subclass_4: The fifth-level class dictionary containing aci_class, aci_rn, target_filter, and module_object keys.
-        :type subclass_5: The sixth-level class dictionary containing aci_class, aci_rn, target_filter, and module_object keys.
         :param child_classes: The list of child classes that the module supports along with the object.
         :type root_class: dict
         :type subclass_1: dict
         :type subclass_2: dict
         :type subclass_3: dict
-        :type subclass_4: dict
-        :type subclass_5: dict
         :type child_classes: list
         :return: The path and filter_string needed to build the full URL.
         """
@@ -631,11 +627,7 @@ class ACIModule(object):
         else:
             self.child_classes = set(child_classes)
 
-        if subclass_5 is not None:
-            self._construct_url_6(root_class, subclass_1, subclass_2, subclass_3, subclass_4, subclass_5, config_only)
-        elif subclass_4 is not None:
-            self._construct_url_5(root_class, subclass_1, subclass_2, subclass_3, subclass_4, config_only)
-        elif subclass_3 is not None:
+        if subclass_3 is not None:
             self._construct_url_4(root_class, subclass_1, subclass_2, subclass_3, config_only)
         elif subclass_2 is not None:
             self._construct_url_3(root_class, subclass_1, subclass_2, config_only)
@@ -838,155 +830,6 @@ class ACIModule(object):
             # Query for a specific object of the module's class
             self.path = 'api/mo/uni/{0}/{1}/{2}/{3}.json'.format(root_rn, sec_rn, parent_rn, obj_rn)
 
-    def _construct_url_5(self, root, ter, sec, parent, obj, config_only=True):
-        """
-        This method is used by construct_url when the object is the fourth-level class.
-        """
-        root_class = root.get('aci_class')
-        root_rn = root.get('aci_rn')
-        root_filter = root.get('target_filter')
-        root_obj = root.get('module_object')
-        ter_class = ter.get('aci_class')
-        ter_rn = ter.get('aci_rn')
-        ter_filter = ter.get('target_filter')
-        ter_obj = ter.get('module_object')
-        sec_class = sec.get('aci_class')
-        sec_rn = sec.get('aci_rn')
-        sec_filter = sec.get('target_filter')
-        sec_obj = sec.get('module_object')
-        parent_class = parent.get('aci_class')
-        parent_rn = parent.get('aci_rn')
-        parent_filter = parent.get('target_filter')
-        parent_obj = parent.get('module_object')
-        obj_class = obj.get('aci_class')
-        obj_rn = obj.get('aci_rn')
-        obj_filter = obj.get('target_filter')
-        mo = obj.get('module_object')
-
-        if self.child_classes is None:
-            self.child_classes = [obj_class]
-
-        if self.module.params.get('state') in ('absent', 'present'):
-            # State is absent or present
-            self.path = 'api/mo/uni/{0}/{1}/{2}/{3}{4}.json'.format(root_rn, ter_rn, sec_rn, parent_rn, obj_rn)
-            if config_only:
-                self.update_qs({'rsp-prop-include': 'config-only'})
-            self.obj_filter = obj_filter
-        # TODO: Add all missing cases
-        elif root_obj is None:
-            self.child_classes.add(obj_class)
-            self.path = 'api/class/{0}.json'.format(obj_class)
-            self.update_qs({'query-target-filter': self.build_filter(obj_class, obj_filter)})
-        elif ter_obj is None:
-            self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}.json'.format(root_rn)
-            # NOTE: No need to select by root_filter
-            # self.update_qs({'query-target-filter': self.build_filter(root_class, root_filter)})
-            # TODO: Filter by ter_filter, parent and obj_filter
-            self.update_qs({'rsp-subtree-filter': self.build_filter(obj_class, obj_filter)})
-        elif sec_obj is None:
-            self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}{1}.json'.format(root_rn, ter_rn)
-            # NOTE: No need to select by ter_filter
-            # self.update_qs({'query-target-filter': self.build_filter(ter_class, ter_filter)})
-            # TODO: Filter by sec_filter, parent and obj_filter
-            self.update_qs({'rsp-subtree-filter': self.build_filter(obj_class, obj_filter)})
-        elif parent_obj is None:
-            self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}/{1}{2}.json'.format(root_rn, ter_rn, sec_rn)
-            # NOTE: No need to select by sec_filter
-            # self.update_qs({'query-target-filter': self.build_filter(sec_class, sec_filter)})
-            # TODO: Filter by parent_filter and obj_filter
-            self.update_qs({'rsp-subtree-filter': self.build_filter(obj_class, obj_filter)})
-        elif mo is None:
-            self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}/{1}/{2}{3}.json'.format(root_rn, ter_rn, sec_rn, parent_rn)
-            # NOTE: No need to select by parent_filter
-            # self.update_qs({'query-target-filter': self.build_filter(parent_class, parent_filter)})
-        else:
-            # Query for a specific object of the module's class
-            self.path = 'api/mo/uni/{0}/{1}/{2}/{3}{4}.json'.format(root_rn, ter_rn, sec_rn, parent_rn, obj_rn)
-
-    def _construct_url_6(self, root, quad, ter, sec, parent, obj, config_only=True):
-        """
-        This method is used by construct_url when the object is the fourth-level class.
-        """
-        root_class = root.get('aci_class')
-        root_rn = root.get('aci_rn')
-        root_filter = root.get('target_filter')
-        root_obj = root.get('module_object')
-        quad_class = quad.get('aci_class')
-        quad_rn = quad.get('aci_rn')
-        quad_filter = quad.get('target_filter')
-        quad_obj = quad.get('module_object')
-        ter_class = ter.get('aci_class')
-        ter_rn = ter.get('aci_rn')
-        ter_filter = ter.get('target_filter')
-        ter_obj = ter.get('module_object')
-        sec_class = sec.get('aci_class')
-        sec_rn = sec.get('aci_rn')
-        sec_filter = sec.get('target_filter')
-        sec_obj = sec.get('module_object')
-        parent_class = parent.get('aci_class')
-        parent_rn = parent.get('aci_rn')
-        parent_filter = parent.get('target_filter')
-        parent_obj = parent.get('module_object')
-        obj_class = obj.get('aci_class')
-        obj_rn = obj.get('aci_rn')
-        obj_filter = obj.get('target_filter')
-        mo = obj.get('module_object')
-
-        if self.child_classes is None:
-            self.child_classes = [obj_class]
-
-        if self.module.params.get('state') in ('absent', 'present'):
-            # State is absent or present
-            self.path = 'api/mo/uni/{0}/{1}/{2}/{3}{4}{5}.json'.format(root_rn, quad_rn, ter_rn, sec_rn, parent_rn, obj_rn)
-            if config_only:
-                self.update_qs({'rsp-prop-include': 'config-only'})
-            self.obj_filter = obj_filter
-        # TODO: Add all missing cases
-        elif root_obj is None:
-            self.child_classes.add(obj_class)
-            self.path = 'api/class/{0}.json'.format(obj_class)
-            self.update_qs({'query-target-filter': self.build_filter(obj_class, obj_filter)})
-        elif quad_obj is None:
-            self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}.json'.format(root_rn)
-            # NOTE: No need to select by root_filter
-            # self.update_qs({'query-target-filter': self.build_filter(root_class, root_filter)})
-            # TODO: Filter by quad_filter, parent and obj_filter
-            self.update_qs({'rsp-subtree-filter': self.build_filter(obj_class, obj_filter)})
-        elif ter_obj is None:
-            self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}{1}.json'.format(root_rn, quad_rn)
-            # NOTE: No need to select by quad_filter
-            # self.update_qs({'query-target-filter': self.build_filter(quad_class, quad_filter)})
-            # TODO: Filter by ter_filter, parent and obj_filter
-            self.update_qs({'rsp-subtree-filter': self.build_filter(obj_class, obj_filter)})
-        elif sec_obj is None:
-            self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}{1}{2}.json'.format(root_rn, quad_rn, ter_rn)
-            # NOTE: No need to select by ter_filter
-            # self.update_qs({'query-target-filter': self.build_filter(ter_class, ter_filter)})
-            # TODO: Filter by sec_filter, parent and obj_filter
-            self.update_qs({'rsp-subtree-filter': self.build_filter(obj_class, obj_filter)})
-        elif parent_obj is None:
-            self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}/{1}{2}{3}.json'.format(root_rn, quad_rn, ter_rn, sec_rn)
-            # NOTE: No need to select by sec_filter
-            # self.update_qs({'query-target-filter': self.build_filter(sec_class, sec_filter)})
-            # TODO: Filter by parent_filter and obj_filter
-            self.update_qs({'rsp-subtree-filter': self.build_filter(obj_class, obj_filter)})
-        elif mo is None:
-            self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}/{1}/{2}{3}{4}.json'.format(root_rn, quad_rn, ter_rn, sec_rn, parent_rn)
-            # NOTE: No need to select by parent_filter
-            # self.update_qs({'query-target-filter': self.build_filter(parent_class, parent_filter)})
-        else:
-            # Query for a specific object of the module's class
-            self.path = 'api/mo/uni/{0}/{1}/{2}/{3}{4}{5}.json'.format(root_rn, quad_rn, ter_rn, sec_rn, parent_rn, obj_rn)
-    
     def delete_config(self):
         """
         This method is used to handle the logic when the modules state is equal to absent. The method only pushes a change if
