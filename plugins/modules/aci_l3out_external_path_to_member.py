@@ -68,6 +68,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Rostyslav Davydenko (@rost-d)
+- Anvitha Jain(@anvitha-jain)
 '''
 
 EXAMPLES = r'''
