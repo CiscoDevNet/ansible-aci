@@ -339,13 +339,6 @@
   check_mode: yes
   register: intf_policy_leaf_polgrp_check_mode_present
 
-- name: Adding a interface policy leaf policy group (Leaf Access Port) - parameter works
-  cisco.aci.aci_interface_policy_leaf_policy_group:
-    <<: *aci_interface_policy_leaf_policy_group_leaf_present
-    port_channel_policy: null
-  ignore_errors: yes
-  register: intf_policy_leaf_polgrp_parameter
-
 - name: Adding a interface policy leaf policy group (Leaf Access Port) - creation works
   cisco.aci.aci_interface_policy_leaf_policy_group:
     <<: *aci_interface_policy_leaf_policy_group_leaf_present
@@ -362,13 +355,19 @@
     description: policygroup description
   register: intf_policy_leaf_polgrp_update
 
-- name: hello
-  debug:
-    msg: "{{ intf_policy_leaf_polgrp_present.sent }}"
+- name: Adding a interface policy leaf policy group (Leaf Access Port) - null parameter works
+  cisco.aci.aci_interface_policy_leaf_policy_group:
+    <<: *aci_interface_policy_leaf_policy_group_leaf_present
+    port_channel_policy: null
+  ignore_errors: yes
+  register: intf_policy_leaf_polgrp_parameter
 
-- name: hello
-  debug:
-    msg: "{{ intf_policy_leaf_polgrp_update.sent }}"
+- name: Adding a interface policy leaf policy group (Leaf Access Port) - port_channel_policy not supported error
+  cisco.aci.aci_interface_policy_leaf_policy_group:
+    <<: *aci_interface_policy_leaf_policy_group_leaf_present
+    port_channel_policy: "default"
+  ignore_errors: yes
+  register: intf_policy_leaf_polgrp_pc_policy_error
 
 # TODO: also test for errors
 - name: present assertions
@@ -384,9 +383,8 @@
     - intf_policy_leaf_polgrp_idempotent.sent == {}
     - intf_policy_leaf_polgrp_update is changed
     - intf_policy_leaf_polgrp_update.sent.infraAccPortGrp.attributes.descr == 'policygroup description'
-    - intf_policy_leaf_polgrp_parameter.msg == 'port_channel_policy is not a valid parameter for leaf (leaf-access port policy group), if used, assign "null" to it (port_channel_policy = null).'
-
-
+    - intf_policy_leaf_polgrp_parameter is not changed
+    - intf_policy_leaf_polgrp_pc_policy_error.msg == 'port_channel_policy is not a valid parameter for leaf (leaf access port policy group), if used assign null to it (port_channel_policy{{":"}} null).'
 
 - name: Query interface policy leaf policy group (Leaf Access Port)
   cisco.aci.aci_interface_policy_leaf_policy_group:
