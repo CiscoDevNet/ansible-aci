@@ -1,0 +1,171 @@
+# Test code for the ACI modules
+# Copyright: (c) 2020, Shreyas Srish <ssrish@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact: 
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+
+
+# CLEAN ENVIRONMENT
+- name: Remove policy port security
+  aci_interface_policy_port_security:
+    <<: *aci_info
+    port_security: '{{ item }}'
+    state: absent
+  loop:
+  - security1
+  - security2
+  - security3
+
+# ADD
+- name: Add a port security interface policy - check mode
+  aci_interface_policy_port_security:
+    <<: *aci_info
+    port_security: security1
+    description: security 1
+    max_end_points: 300
+    port_security_timeout: 190
+    state: present
+  check_mode: yes
+  register: port_security1_cm
+
+- name: Add a port security interface policy - normal mode
+  aci_interface_policy_port_security:
+    <<: *aci_info
+    port_security: security1
+    description: security 1
+    max_end_points: 300
+    port_security_timeout: 190
+    state: present
+  register: port_security1_nm
+
+- name: Add a port security interface policy again - normal mode
+  aci_interface_policy_port_security:
+    <<: *aci_info
+    port_security: security1
+    description: security 1
+    max_end_points: 300
+    port_security_timeout: 190
+    state: present
+  register: port_security1_nm_again
+
+- name: Add a port security interface policy - normal mode
+  aci_interface_policy_port_security:
+    <<: *aci_info
+    port_security: security2
+    description: security 2
+    max_end_points: 300
+    port_security_timeout: 10
+    state: present
+  ignore_errors: yes
+  register: port_security1_nm_error_timeout
+
+- name: Add a port security interface policy - normal mode
+  aci_interface_policy_port_security:
+    <<: *aci_info
+    port_security: security3
+    description: security 3
+    max_end_points: 15000
+    port_security_timeout: 60
+    state: present
+  ignore_errors: yes
+  register: port_security1_nm_error_max
+
+- name: Add a port security interface policy again for security 3- normal mode
+  aci_interface_policy_port_security:
+    <<: *aci_info
+    port_security: security3
+    description: security 3
+    max_end_points: 12000
+    port_security_timeout: 60
+    state: present
+  ignore_errors: yes
+  register: port_security1_nm_with_no_error
+
+- name: Verify present cases
+  assert:
+    that:
+    - port_security1_cm is changed
+    - port_security1_nm is changed
+    - port_security1_cm.proposed.l2PortSecurityPol.attributes.dn == "uni/infra/portsecurityP-security1"
+    - port_security1_cm.proposed.l2PortSecurityPol.attributes.name == "security1"
+    - port_security1_cm.proposed.l2PortSecurityPol.attributes.timeout == "190"
+    - port_security1_cm.proposed.l2PortSecurityPol.attributes.maximum == "300"
+    - port_security1_cm.proposed.l2PortSecurityPol.attributes.descr == "security 1"
+    - port_security1_nm.current.0.l2PortSecurityPol.attributes.dn == "uni/infra/portsecurityP-security1"
+    - port_security1_nm.current.0.l2PortSecurityPol.attributes.name == "security1"
+    - port_security1_nm.current.0.l2PortSecurityPol.attributes.timeout == "190"
+    - port_security1_nm.current.0.l2PortSecurityPol.attributes.maximum == "300"
+    - port_security1_nm.current.0.l2PortSecurityPol.attributes.descr == "security 1"
+    - port_security1_nm_again is not changed
+    - port_security1_nm_error_timeout.msg == "The port_security_timeout must be between 60 and 3600"
+    - port_security1_nm_error_max.msg == "The max_end_points must be between 0 and 12000"
+
+# QUERY
+- name: Query a port security interface policy - normal mode
+  aci_interface_policy_port_security:
+    <<: *aci_info
+    port_security: security1
+    state: query
+  register: port_security1_query
+
+- name: Query all port security interface policies - normal mode
+  aci_interface_policy_port_security:
+    <<: *aci_info
+    state: query
+  register: port_all_query
+
+- name: Verify query cases
+  assert:
+    that:
+    - port_security1_query is not changed
+    - port_all_query is not changed
+    - port_security1_query.current.0.l2PortSecurityPol.attributes.dn == "uni/infra/portsecurityP-security1"
+    - port_security1_query.current.0.l2PortSecurityPol.attributes.name == "security1"
+    - port_security1_query.current.0.l2PortSecurityPol.attributes.timeout == "190"
+    - port_security1_query.current.0.l2PortSecurityPol.attributes.maximum == "300"
+    - port_security1_query.current.0.l2PortSecurityPol.attributes.descr == "security 1"
+    - port_all_query.current|length >= 1
+
+# REMOVE
+- name: Remove a port security interface policy - normal mode
+  aci_interface_policy_port_security:
+    <<: *aci_info
+    port_security: security1
+    state: absent
+  register: port_security1_remove
+
+- name: Verify remove cases
+  assert:
+    that:
+    - port_security1_remove is changed
+    - port_security1_remove.previous.0.l2PortSecurityPol.attributes.dn == "uni/infra/portsecurityP-security1"
+    - port_security1_remove.previous.0.l2PortSecurityPol.attributes.name == "security1"
+    - port_security1_remove.previous.0.l2PortSecurityPol.attributes.timeout == "190"
+    - port_security1_remove.previous.0.l2PortSecurityPol.attributes.maximum == "300"
+    - port_security1_remove.previous.0.l2PortSecurityPol.attributes.descr == "security 1"
+
+# CLEAN END
+- name: Remove all policy port securities
+  aci_interface_policy_port_security:
+    <<: *aci_info
+    port_security: '{{ item }}'
+    state: absent
+  loop:
+  - security1
+  - security2
+  - security3
