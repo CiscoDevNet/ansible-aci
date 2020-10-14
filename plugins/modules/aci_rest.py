@@ -67,7 +67,8 @@ notes:
   This is a known APIC problem and has been reported to the vendor. A workaround for this issue exists.
   More information in :ref:`the ACI documentation <aci_guide_known_issues>`.
 - XML payloads require the C(lxml) and C(xmljson) python libraries. For JSON payloads nothing special is needed.
-- If you don’t have any attributes, it may be necessary to add: attributes: {} as the APIC does expect the entry to precede any children.
+- If you do not have any attributes, it may be necessary to add the "attributes" key with an empty dictionnary "{}" for value
+  as the APIC does expect the entry to precede any children.
 seealso:
 - module: cisco.aci.aci_tenant
 - name: Cisco APIC REST API Configuration Guide
