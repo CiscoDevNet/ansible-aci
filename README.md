@@ -40,6 +40,46 @@ Once the collection is installed, you can use it in a playbook by specifying the
       bd: prod_bd
     delegate_to: localhost
 ```
+
+## Update
+Getting the latest/nightly collection build
+
+### First Approach
+Clone the ansible-aci repository.
+```
+git clone https://github.com/CiscoDevNet/ansible-aci.git
+```
+
+Go to the ansible-aci directory
+```
+cd ansible-aci
+```
+
+Pull the latest master on your aci
+```
+git pull origin master
+```
+
+Build and Install a collection from source
+```
+ansible-galaxy collection build --force
+ansible-galaxy collection install cisco-aci-* --force
+```
+
+### Second Approach
+Go to: https://github.com/CiscoDevNet/ansible-aci/actions
+
+Select the latest CI build
+
+Under Artifacts download collection and unzip it using Terminal or Console.
+
+*Note: The collection file is a zip file containing a tar.gz file. We recommend using CLI because some GUI-based unarchiver might unarchive both nested archives in one go.*
+
+Install the unarchived tar.gz file
+```
+ansible-galaxy collection install cisco-aci-1.0.0.tar.gz —-force
+```
+
 ### See Also:
 
 * [Ansible Using collections](https://docs.ansible.com/ansible/latest/user_guide/collections_using.html) for more details.
