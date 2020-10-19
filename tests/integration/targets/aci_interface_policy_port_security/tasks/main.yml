@@ -36,20 +36,57 @@
 - name: Add a new L3Out
   aci_l3out:
     <<: *aci_info
-    tenant: production
-    name: prod_l3out
-    description: L3Out for production tenant
-    domain: l3dom_prod
-    vrf: prod
+    tenant: ansible_tenant
+    name: ansible_l3out
+    description: L3Out for ansible_tenant tenant
+    domain: ansible_dom
+    vrf: ansible_vrf
     l3protocol: ospf
     route_control: export
     state: present
   delegate_to: localhost
 
-- name: Query all relationships
-  aci_l3out_external_path_to_member:
+- name: Create a VPC member
+  aci_l3out_logical_interface_vpc_member:
     <<: *aci_info
-    tenant: production
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    logical_node: ansible_LNode
+    logical_interface: ansible_LInterface
+    path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_one]
+    side: A
+    state: present
+  delegate_to: localhost
+
+- name: Query a specific VPC member under ansible_l3out
+  aci_l3out_logical_interface_vpc_member:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    logical_node: ansible_LNode
+    logical_interface: ansible_LInterface
+    path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_one]
+    side: A
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query all relationships
+  aci_l3out_logical_interface_vpc_member:
+    <<: *aci_info
+    tenant: ansible_tenant
     state: query
   ignore_errors: yes
   register: query_result
+
+- name: Remove a VPC member
+  aci_l3out_logical_interface_vpc_member:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    logical_node: ansible_LNode
+    logical_interface: ansible_LInterface
+    path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_one]
+    side: A
+    state: absent
+  delegate_to: localhost
