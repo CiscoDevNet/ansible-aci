@@ -1,0 +1,89 @@
+# Test code for the ACI modules
+# Copyright: (c) 2020, Anvitha Jain (@anvitha-jain)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact: 
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+    
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  aci_tenant:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Add a new tenant
+  aci_tenant:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    description: Ansible tenant
+    state: present
+
+- name: Add a new L3Out
+  aci_l3out:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_l3out
+    description: L3Out for ansible_tenant tenant
+    domain: ansible_dom
+    vrf: ansible_vrf
+    l3protocol: ospf
+    route_control: export
+    state: present
+  delegate_to: localhost
+
+- name: Create static routes
+  aci_l3out_static_routes:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    logical_node: nodeName
+    node_id: node-[nodeId]  # ex: node-101 or just 101
+    pod_id: pod-[podId]  # ex: pod-1 or just 1
+    prefix: 10.10.0.0/16
+  delegate_to: localhost
+
+- name: Query for a specific MO under l3out
+  cisco.aci.aci_l3out_static_routes:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    logical_node: nodeName
+    node_id: nodeId
+    pod_id: podId
+    prefix: 10.10.0.0/16
+  delegate_to: localhost
+
+  register: query_result
+- name: Query all relationships
+  aci_l3out_static_routes:
+    <<: *aci_info
+    tenant: production
+    state: query
+  ignore_errors: yes
+  register: query_result
+
+- name: Delete static routes
+  cisco.aci.aci_l3out_static_routes:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    logical_node: nodeName
+    node_id: node-[nodeId]
+    pod_id: pod-[podId]
+    prefix: 10.10.0.0/16
+  delegate_to: localhost

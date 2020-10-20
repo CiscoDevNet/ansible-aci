@@ -45,10 +45,6 @@ options:
     description:
     - Existing nodeId.
     type: int
-  fabric_node:
-    description:
-    - Name of an existing fabric node.
-    type: str
   prefix:
     description:
     - Configure IP and next hop IP for the routed outside network.
@@ -275,8 +271,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'present', ['prefix', 'fabric_node', 'logical_node', 'l3out', 'tenant']],  # fabric_node OR(nodeid, pod_id)?
-            ['state', 'absent', ['prefix', 'fabric_node', 'logical_node', 'l3out', 'tenant']],  # fabric_node OR(nodeid, pod_id)?
+            ['state', 'present', ['prefix', 'node_id', 'pod_id', 'logical_node', 'l3out', 'tenant']],
+            ['state', 'absent', ['prefix', 'node_id', 'pod_id', 'logical_node', 'l3out', 'tenant']],
         ],
     )
 
@@ -324,7 +320,7 @@ def main():
         ),
         subclass_4=dict(
             aci_class='ipRouteP',
-            aci_rn='rt-[{0}]'.format(prefix),
+            aci_rn='/rt-[{0}]'.format(prefix),
             module_object=prefix,
             target_filter={'name': prefix},
         ),

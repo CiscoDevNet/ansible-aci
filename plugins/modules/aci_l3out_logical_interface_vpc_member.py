@@ -14,13 +14,13 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_l3out_logical_interface_vpc_member
-short_description: Manage Member Node objects (l3extMember:Member)
+short_description: Manage Member Node objects (l3ext:l3extMember)
 description:
-- Manage Member Node objects (l3extMember:Member)
+- Manage Member Node objects (l3ext:l3extMember)
 options:
   description:
     description:
-    - The description for the logical interface VPC member .
+    - The description for the logical interface VPC member.
     type: str
     aliases: [ descr ]
   tenant:
@@ -45,11 +45,10 @@ options:
     description:
     - DN of existing path endpoints for VPC policy group used to reach external L3 network.
     type: str
-  ip:
+  side:
     description:
-    - Provides per node IP address configuration.
+    - Provides the side of member.
     type: str
-    aliases: [ address ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -87,8 +86,8 @@ EXAMPLES = r'''
     l3out: l3out
     logical_node: nodeName
     logical_interface: interfaceName
-    path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_name]  # check?
-    ip: 10.10.0.0/16
+    path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_name]
+    side: A
     state: present
   delegate_to: localhost
 
@@ -102,7 +101,7 @@ EXAMPLES = r'''
     logical_node: nodeName
     logical_interface: interfaceName
     path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_name]
-    ip: 10.10.0.0/16
+    side: A
     state: absent
   delegate_to: localhost
 
@@ -126,7 +125,7 @@ EXAMPLES = r'''
     logical_node: nodeName
     logical_interface: interfaceName
     path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_name]
-    ip: 10.10.0.0/16
+    side: A
     state: query
   delegate_to: localhost
   register: query_result
@@ -249,7 +248,7 @@ def main():
         logical_node=dict(type='str'),  # Not required for querying all objects
         logical_interface=dict(type='str'),
         path_dn=dict(type='str'),
-        ip=dict(type='str', aliases=['address']),
+        side=dict(type='str'),
         description=dict(type='str', aliases=['descr']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
@@ -259,8 +258,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'present', ['ip', 'path_dn', 'logical_interface', 'logical_node', 'l3out', 'tenant']],
-            ['state', 'absent', ['ip', 'path_dn', 'logical_interface', 'logical_node', 'l3out', 'tenant']],
+            ['state', 'present', ['side', 'path_dn', 'logical_interface', 'logical_node', 'l3out', 'tenant']],
+            ['state', 'absent', ['side', 'path_dn', 'logical_interface', 'logical_node', 'l3out', 'tenant']],
         ],
     )
 
@@ -271,7 +270,7 @@ def main():
     logical_node = module.params.get('logical_node')
     logical_interface = module.params.get('logical_interface')
     path_dn = module.params.get('path_dn')
-    ip = module.params.get('ip')
+    side = module.params.get('side')
     description = module.params.get('description')
     state = module.params.get('state')
     name_alias = module.params.get('name_alias')
@@ -303,15 +302,15 @@ def main():
         ),
         subclass_4=dict(
             aci_class='l3extRsPathL3OutAtt',
-            aci_rn='rspathL3OutAtt-[{0}]'.format(path_dn),
+            aci_rn='/rspathL3OutAtt-[{0}]'.format(path_dn),
             module_object=path_dn,
             target_filter={'name': path_dn},
         ),
         subclass_5=dict(
             aci_class='l3extMember',
-            aci_rn='rt-[{0}]'.format(ip),
-            module_object=ip,
-            target_filter={'name': ip},
+            aci_rn='/mem-{0}'.format(side),
+            module_object=side,
+            target_filter={'name': side},
         ),
     )
 
@@ -321,7 +320,7 @@ def main():
         aci.payload(
             aci_class='l3extMember',
             class_config=dict(
-                name=ip,
+                name=side,
                 descr=description,
                 nameAlias=name_alias,
             ),
