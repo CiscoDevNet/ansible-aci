@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2020, Anvitha Jain(@anvitha-jain) <anvjain@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -13,10 +14,15 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_l3out_static_routes
-short_description: Manage External Subnet objects (l3extSubnet:extsubnet)
+short_description: Manage Static routes object (l3ext:ipRouteP)
 description:
-- Manage External Subnet objects (l3extSubnet:extsubnet)
+- Manage External Subnet objects (l3ext:ipRouteP)
 options:
+  description:
+    description:
+    - The description for the static routes.
+    type: str
+    aliases: [ descr ]
   tenant:
     description:
     - Name of an existing tenant.
@@ -31,20 +37,43 @@ options:
     description:
     - Name of an existing logical node profile.
     type: str
+  pod_id:
+    description:
+    - Existing podId.
+    type: int
+  node_id:
+    description:
+    - Existing nodeId.
+    type: int
   fabric_node:
     description:
     - Name of an existing fabric node.
     type: str
-  static_route:
+  prefix:
     description:
     - Configure IP and next hop IP for the routed outside network.
     type: str
-    aliases: [ address, ip ]
+    aliases: [ route ]
+  track_policy:
+    description:
+    - Relation definition for static route to TrackList.
+    type: str
+  preference:
+    description:
+    - Administrative preference value for the route.
+    type: int
+  bfd:
+    description:
+    - Determines if bfd is required for route control.
+    - The APIC defaults to C(no) when unset during creation.
+    type: bool
   state:
     description:
+    - Use C(present) or C(absent) for adding or removing.
     - Use C(query) for listing an object or multiple objects.
     type: str
-    default: query
+    choices: [ absent, present, query ]
+    default: present
   name_alias:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
@@ -53,39 +82,59 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 notes:
-- The C(tenant) and C(domain) and C(vrf) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_domain) and M(cisco.aci.aci_vrf) modules can be used for this.
+- The C(tenant), C(l3out), C(logical_node), C(fabric_node) and C(prefix) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l3out) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
-- module: cisco.aci.aci_domain
-- module: cisco.aci.aci_vrf
+- module: cisco.aci.aci_l3out
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(l3ext:Out).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Rostyslav Davydenko (@rost-d)
 - Anvitha Jain(@anvitha-jain)
 '''
 
 EXAMPLES = r'''
-- name: Add a new L3Out
-  cisco.aci.aci_l3out:
+- name: Create static routes
+  cisco.aci.aci_l3out_static_routes:
     host: apic
     username: admin
     password: SomeSecretPassword
-    tenant: production
-    l3out: prod_l3out
-    name: prod_l3out
-    description: L3Out for production tenant
-    domain: l3dom_prod
-    vrf: prod
-    l3protocol: ospf
-    route_control: export
-    state: present
+    tenant: tenantName
+    l3out: l3out
+    logical_node: nodeName
+    node_id: node-[nodeId]
+    pod_id: pod-[podId]
+    prefix: 10.10.0.0/16
   delegate_to: localhost
 
+- name: Delete static routes
+  cisco.aci.aci_l3out_static_routes:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: tenantName
+    l3out: l3out
+    logical_node: nodeName
+    node_id: node-[nodeId]
+    pod_id: pod-[podId]
+    prefix: 10.10.0.0/16
+  delegate_to: localhost
 
-- name: Query ExtEpg information
+- name: Query for a specific MO under l3out
+  cisco.aci.aci_l3out_static_routes:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: tenantName
+    l3out: l3out
+    logical_node: nodeName
+    node_id: nodeId
+    pod_id: podId
+    prefix: 10.10.0.0/16
+  delegate_to: localhost
+
+- name: Query for all static routes
   cisco.aci.aci_l3out_static_routes:
     host: apic
     username: admin
@@ -211,9 +260,14 @@ def main():
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         l3out=dict(type='str', aliases=['l3out_name']),  # Not required for querying all objects
         logical_node=dict(type='str'),  # Not required for querying all objects
-        fabric_node=dict(type='str'),
-        static_route=dict(type='str', aliases=['address', 'ip']),
-        state=dict(type='str', default='query'),
+        pod_id=dict(type='int'),
+        node_id=dict(type='int'),
+        prefix=dict(type='str', aliases=['route']),
+        track_policy=dict(type='str'),
+        preference=dict(type='int'),
+        bfd=dict(type='bool'),
+        description=dict(type='str', aliases=['descr']),
+        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
     )
 
@@ -221,8 +275,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'present', ['static_route']],
-            ['state', 'absent', ['static_route']],
+            ['state', 'present', ['prefix', 'fabric_node', 'logical_node', 'l3out', 'tenant']],  # fabric_node OR(nodeid, pod_id)?
+            ['state', 'absent', ['prefix', 'fabric_node', 'logical_node', 'l3out', 'tenant']],  # fabric_node OR(nodeid, pod_id)?
         ],
     )
 
@@ -231,8 +285,17 @@ def main():
     tenant = module.params.get('tenant')
     l3out = module.params.get('l3out')
     logical_node = module.params.get('logical_node')
-    fabric_node = module.params.get('fabric_node')
-    static_route = module.params.get('static_route')
+    node_id = module.params.get('node_id')
+    pod_id = module.params.get('pod_id')
+    prefix = module.params.get('prefix')
+    track_policy = module.params.get('track_policy')
+    preference = module.params.get('preference')
+    bfd = module.params.get('bfd')
+    description = module.params.get('description')
+    state = module.params.get('state')
+    name_alias = module.params.get('name_alias')
+
+    fabric_node = 'topology/pod-{0}/node-{1}'.format(pod_id, node_id)
 
     aci.construct_url(
         root_class=dict(
@@ -261,13 +324,43 @@ def main():
         ),
         subclass_4=dict(
             aci_class='ipRouteP',
-            aci_rn='rt-[{0}]'.format(static_route),
-            module_object=static_route,
-            target_filter={'name': static_route},
+            aci_rn='rt-[{0}]'.format(prefix),
+            module_object=prefix,
+            target_filter={'name': prefix},
         ),
+        child_classes=['ipNexthopP', 'ipRsRouteTrack']
     )
 
     aci.get_existing()
+
+    if state == 'present':
+        child_configs = []
+        class_config = dict(
+            name=prefix,
+            descr=description,
+            ip=prefix,
+            pref=preference,
+            nameAlias=name_alias,
+        )
+        if bfd:
+            class_config['rtCtrl'] = bfd
+
+        if track_policy:
+            tDn = 'uni/tn-{0}/tracklist-{1}'.format(tenant, track_policy)
+            child_configs.append({'ipRsRouteTrack': {'attributes': {'tDn': tDn}}})
+
+        aci.payload(
+            aci_class='ipRouteP',
+            class_config=class_config,
+            child_configs=child_configs
+        ),
+
+        aci.get_diff(aci_class='ipRouteP')
+
+        aci.post_config()
+
+    elif state == 'absent':
+        aci.delete_config()
 
     aci.exit_json()
 

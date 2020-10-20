@@ -605,7 +605,8 @@ class ACIModule(object):
 
         self._deep_url_path_builder(url_path_object)
 
-    def construct_url(self, root_class, subclass_1=None, subclass_2=None, subclass_3=None,
+    def construct_url(
+            self, root_class, subclass_1=None, subclass_2=None, subclass_3=None,
             subclass_4=None, subclass_5=None, child_classes=None, config_only=True):
 
         """

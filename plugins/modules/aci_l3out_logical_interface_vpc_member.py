@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2020, Anvitha Jain(@anvitha-jain) <anvjain@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,11 +13,16 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_l3out_external_path_to_member
-short_description: Manage External Subnet objects (l3extSubnet:extsubnet)
+module: aci_l3out_logical_interface_vpc_member
+short_description: Manage Member Node objects (l3extMember:Member)
 description:
-- Manage External Subnet objects (l3extSubnet:extsubnet)
+- Manage Member Node objects (l3extMember:Member)
 options:
+  description:
+    description:
+    - The description for the logical interface VPC member .
+    type: str
+    aliases: [ descr ]
   tenant:
     description:
     - Name of an existing tenant.
@@ -35,20 +41,22 @@ options:
     description:
     - Name of an existing logical interface.
     type: str
-  leaf_port:
+  path_dn:
     description:
-    - Path endpoints used to reach external L3 network.
+    - DN of existing path endpoints for VPC policy group used to reach external L3 network.
     type: str
-  member_node:
+  ip:
     description:
     - Provides per node IP address configuration.
     type: str
-    aliases: [ address, ip ]
+    aliases: [ address ]
   state:
     description:
+    - Use C(present) or C(absent) for adding or removing.
     - Use C(query) for listing an object or multiple objects.
     type: str
-    default: query
+    choices: [ absent, present, query ]
+    default: present
   name_alias:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
@@ -57,44 +65,68 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 notes:
-- The C(tenant) and C(domain) and C(vrf) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_domain) and M(cisco.aci.aci_vrf) modules can be used for this.
+The C(tenant), C(l3out), C(logical_node), C(logical_interface), C(path_dn) and C(member) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l3out) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
-- module: cisco.aci.aci_domain
-- module: cisco.aci.aci_vrf
+- module: cisco.aci.aci_l3out
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(l3ext:Out).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Rostyslav Davydenko (@rost-d)
 - Anvitha Jain(@anvitha-jain)
 '''
 
 EXAMPLES = r'''
-- name: Add a new L3Out
-  cisco.aci.aci_l3out:
+- name: Create a VPC member
+  cisco.aci.aci_l3out_logical_interface_vpc_member:
     host: apic
     username: admin
     password: SomeSecretPassword
-    tenant: production
-    l3out: prod_l3out
-    name: prod_l3out
-    description: L3Out for production tenant
-    domain: l3dom_prod
-    vrf: prod
-    l3protocol: ospf
-    route_control: export
+    tenant: tenantName
+    l3out: l3out
+    logical_node: nodeName
+    logical_interface: interfaceName
+    path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_name]  # check?
+    ip: 10.10.0.0/16
     state: present
   delegate_to: localhost
 
+- name: Delete a VPC member
+  cisco.aci.aci_l3out_logical_interface_vpc_member:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: tenantName
+    l3out: l3out
+    logical_node: nodeName
+    logical_interface: interfaceName
+    path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_name]
+    ip: 10.10.0.0/16
+    state: absent
+  delegate_to: localhost
 
-- name: Query ExtEpg information
-  cisco.aci.aci_l3out_external_path_to_member:
+- name: Query all VPC members
+  cisco.aci.aci_l3out_logical_interface_vpc_member:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific VPC member under l3out
+  cisco.aci.aci_l3out_logical_interface_vpc_member:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: tenantName
+    l3out: l3out
+    logical_node: nodeName
+    logical_interface: interfaceName
+    path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_name]
+    ip: 10.10.0.0/16
     state: query
   delegate_to: localhost
   register: query_result
@@ -216,9 +248,10 @@ def main():
         l3out=dict(type='str', aliases=['l3out_name']),  # Not required for querying all objects
         logical_node=dict(type='str'),  # Not required for querying all objects
         logical_interface=dict(type='str'),
-        leaf_port=dict(type='str'),
-        member_node=dict(type='str', aliases=['address', 'ip']),
-        state=dict(type='str', default='query'),
+        path_dn=dict(type='str'),
+        ip=dict(type='str', aliases=['address']),
+        description=dict(type='str', aliases=['descr']),
+        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
     )
 
@@ -226,8 +259,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'present', ['member_node']],
-            ['state', 'absent', ['member_node']],
+            ['state', 'present', ['ip', 'path_dn', 'logical_interface', 'logical_node', 'l3out', 'tenant']],
+            ['state', 'absent', ['ip', 'path_dn', 'logical_interface', 'logical_node', 'l3out', 'tenant']],
         ],
     )
 
@@ -237,8 +270,11 @@ def main():
     l3out = module.params.get('l3out')
     logical_node = module.params.get('logical_node')
     logical_interface = module.params.get('logical_interface')
-    leaf_port = module.params.get('leaf_port')
-    member_node = module.params.get('member_node')
+    path_dn = module.params.get('path_dn')
+    ip = module.params.get('ip')
+    description = module.params.get('description')
+    state = module.params.get('state')
+    name_alias = module.params.get('name_alias')
 
     aci.construct_url(
         root_class=dict(
@@ -267,19 +303,36 @@ def main():
         ),
         subclass_4=dict(
             aci_class='l3extRsPathL3OutAtt',
-            aci_rn='rspathL3OutAtt-[{0}]'.format(leaf_port),
-            module_object=leaf_port,
-            target_filter={'name': leaf_port},
+            aci_rn='rspathL3OutAtt-[{0}]'.format(path_dn),
+            module_object=path_dn,
+            target_filter={'name': path_dn},
         ),
         subclass_5=dict(
             aci_class='l3extMember',
-            aci_rn='rt-[{0}]'.format(member_node),
-            module_object=member_node,
-            target_filter={'name': member_node},
+            aci_rn='rt-[{0}]'.format(ip),
+            module_object=ip,
+            target_filter={'name': ip},
         ),
     )
 
     aci.get_existing()
+
+    if state == 'present':
+        aci.payload(
+            aci_class='l3extMember',
+            class_config=dict(
+                name=ip,
+                descr=description,
+                nameAlias=name_alias,
+            ),
+        )
+
+        aci.get_diff(aci_class='l3extMember')
+
+        aci.post_config()
+
+    elif state == 'absent':
+        aci.delete_config()
 
     aci.exit_json()
 
