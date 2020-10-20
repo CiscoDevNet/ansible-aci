@@ -46,29 +46,55 @@
     state: present
   delegate_to: localhost
 
-- name: Create static routes
+- name: Add a new logical node
+  cisco.aci.aci_rest:
+    <<: *aci_info
+    path: /api/mo/uni/tn-ansible_tenant/out-ansible_l3out.json
+    method: post
+    content:
+      {
+          "l3extLNodeP": {
+              "attributes": {
+                  "dn": "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-lNode",
+                  "name": "lNode",
+              },
+              "children": [{
+                  "l3extRsNodeL3OutAtt": {
+                      "attributes": {
+                          "rtrId": "10.1.0.1",
+                          "rtrIdLoopBack": "yes",
+                          "tDn": "topology/pod-1/node-101",
+                      }
+                  }
+              }]
+          }
+      }
+
+- name: Add static routes
   aci_l3out_static_routes:
     <<: *aci_info
     tenant: ansible_tenant
     l3out: ansible_l3out
-    logical_node: nodeName
-    node_id: node-[nodeId]  # ex: node-101 or just 101
-    pod_id: pod-[podId]  # ex: pod-1 or just 1
-    prefix: 10.10.0.0/16
+    logical_node: lNode
+    node_id: 101
+    pod_id: 1 
+    prefix: 10.1.0.1/24
+    state: present
   delegate_to: localhost
 
 - name: Query for a specific MO under l3out
-  cisco.aci.aci_l3out_static_routes:
+  aci_l3out_static_routes:
     <<: *aci_info
     tenant: ansible_tenant
     l3out: ansible_l3out
-    logical_node: nodeName
-    node_id: nodeId
-    pod_id: podId
-    prefix: 10.10.0.0/16
+    logical_node: lNode
+    node_id: 101
+    pod_id: 1
+    prefix: 10.1.0.1/24
+    state: query
   delegate_to: localhost
-
   register: query_result
+
 - name: Query all relationships
   aci_l3out_static_routes:
     <<: *aci_info
@@ -77,13 +103,14 @@
   ignore_errors: yes
   register: query_result
 
-- name: Delete static routes
-  cisco.aci.aci_l3out_static_routes:
+- name: Remove static routes
+  aci_l3out_static_routes:
     <<: *aci_info
     tenant: ansible_tenant
     l3out: ansible_l3out
-    logical_node: nodeName
-    node_id: node-[nodeId]
-    pod_id: pod-[podId]
-    prefix: 10.10.0.0/16
+    logical_node: lNode
+    node_id: 101
+    pod_id: 1
+    prefix: 10.1.0.1/24
+    state: absent
   delegate_to: localhost

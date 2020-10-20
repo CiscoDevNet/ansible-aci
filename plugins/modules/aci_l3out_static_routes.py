@@ -99,8 +99,8 @@ EXAMPLES = r'''
     tenant: tenantName
     l3out: l3out
     logical_node: nodeName
-    node_id: node-[nodeId]
-    pod_id: pod-[podId]
+    node_id: 101
+    pod_id: 1
     prefix: 10.10.0.0/16
   delegate_to: localhost
 
@@ -112,8 +112,8 @@ EXAMPLES = r'''
     tenant: tenantName
     l3out: l3out
     logical_node: nodeName
-    node_id: node-[nodeId]
-    pod_id: pod-[podId]
+    node_id: 101
+    pod_id: 1
     prefix: 10.10.0.0/16
   delegate_to: localhost
 
@@ -125,8 +125,8 @@ EXAMPLES = r'''
     tenant: tenantName
     l3out: l3out
     logical_node: nodeName
-    node_id: nodeId
-    pod_id: podId
+    node_id: 101
+    pod_id: 1
     prefix: 10.10.0.0/16
   delegate_to: localhost
 
@@ -332,7 +332,6 @@ def main():
     if state == 'present':
         child_configs = []
         class_config = dict(
-            name=prefix,
             descr=description,
             ip=prefix,
             pref=preference,

@@ -621,6 +621,8 @@ class ACIModule(object):
         :type subclass_1: dict
         :type subclass_2: dict
         :type subclass_3: dict
+        :type subclass_4: dict
+        :type subclass_5: dict
         :type child_classes: list
         :return: The path and filter_string needed to build the full URL.
         """
@@ -632,9 +634,9 @@ class ACIModule(object):
             self.child_classes = set(child_classes)
 
         if subclass_5 is not None:
-            self._construct_url_6(root_class, subclass_1, subclass_2, subclass_3, config_only)
+            self._construct_url_6(root_class, subclass_1, subclass_2, subclass_3, subclass_4, subclass_5, config_only)
         elif subclass_4 is not None:
-            self._construct_url_5(root_class, subclass_1, subclass_2, subclass_3, config_only)
+            self._construct_url_5(root_class, subclass_1, subclass_2, subclass_3, subclass_4, config_only)
         elif subclass_3 is not None:
             self._construct_url_4(root_class, subclass_1, subclass_2, subclass_3, config_only)
         elif subclass_2 is not None:

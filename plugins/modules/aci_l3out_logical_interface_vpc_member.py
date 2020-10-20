@@ -14,9 +14,9 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_l3out_logical_interface_vpc_member
-short_description: Manage Member Node objects (l3ext:l3extMember)
+short_description: Manage Member Node objects (l3extMember:Member)
 description:
-- Manage Member Node objects (l3ext:l3extMember)
+- Manage Member Node objects (l3extMember:Member)
 options:
   description:
     description:
@@ -64,7 +64,7 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 notes:
-The C(tenant), C(l3out), C(logical_node), C(logical_interface), C(path_dn) and C(member) used must exist before using this module in your playbook.
+- The C(tenant), C(l3out), C(logical_node), C(logical_interface), C(path_dn) and C(member) used must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l3out) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
