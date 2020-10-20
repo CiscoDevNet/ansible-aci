@@ -607,6 +607,7 @@ class ACIModule(object):
 
     def construct_url(self, root_class, subclass_1=None, subclass_2=None, subclass_3=None,
             subclass_4=None, subclass_5=None, child_classes=None, config_only=True):
+
         """
         This method is used to retrieve the appropriate URL path and filter_string to make the request to the APIC.
 
