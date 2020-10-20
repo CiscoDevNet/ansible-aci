@@ -621,8 +621,6 @@ class ACIModule(object):
         :type subclass_1: dict
         :type subclass_2: dict
         :type subclass_3: dict
-        :type subclass_4: dict
-        :type subclass_5: dict
         :type child_classes: list
         :return: The path and filter_string needed to build the full URL.
         """
