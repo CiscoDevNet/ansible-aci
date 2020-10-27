@@ -47,3 +47,116 @@
     breakout_map: 10g-4x
     state: present
   register: nm_create_brkout_port
+
+- name: Verify cm_create_brkout_port and nm_create_brkout_port
+  assert:
+    that:
+      - cm_create_brkout_port is changed
+      - cm_create_brkout_port.previous == []
+      - cm_create_brkout_port.proposed.infraBrkoutPortGrp.attributes.name == "ansible_breakout_port"
+      - cm_create_brkout_port.proposed.infraBrkoutPortGrp.attributes.dn == "uni/infra/funcprof/brkoutportgrp-ansible_breakout_port"
+      - cm_create_brkout_port.proposed.infraBrkoutPortGrp.attributes.descr == "description for ansible_breakout_port"
+      - cm_create_brkout_port.proposed.infraBrkoutPortGrp.attributes.brkoutMap == "10g-4x"
+      - nm_create_brkout_port is changed
+      - nm_create_brkout_port.previous == []
+      - nm_create_brkout_port.current.0.infraBrkoutPortGrp.attributes.name == "ansible_breakout_port"
+      - nm_create_brkout_port.current.0.infraBrkoutPortGrp.attributes.dn == "uni/infra/funcprof/brkoutportgrp-ansible_breakout_port"
+      - nm_create_brkout_port.current.0.infraBrkoutPortGrp.attributes.descr == "description for ansible_breakout_port"
+      - nm_create_brkout_port.current.0.infraBrkoutPortGrp.attributes.brkoutMap == "10g-4x"
+
+- name: Create leaf breakout port group again (normal_mode)
+  cisco.aci.aci_interface_policy_leaf_breakout_port_group:
+    <<: *aci_info
+    breakout_port_group: ansible_breakout_port
+    description: description for ansible_breakout_port
+    breakout_map: 10g-4x
+    state: present
+  register: nm_create_brkout_port_again
+
+- name: Verify nm_create_brkout_port_again
+  assert:
+    that:
+      - nm_create_brkout_port_again is not changed
+
+- name: Create another leaf breakout port group
+  cisco.aci.aci_interface_policy_leaf_breakout_port_group:
+    <<: *aci_info
+    breakout_port_group: ansible_breakout_port_2
+    state: present
+  register: nm_create_another_brkout_port
+
+- name: Verify nm_create_another_brkout_port
+  assert:
+    that:
+      - nm_create_another_brkout_port is changed
+      - nm_create_another_brkout_port.previous == []
+      - nm_create_another_brkout_port.proposed.infraBrkoutPortGrp.attributes.name == "ansible_breakout_port_2"
+      - nm_create_another_brkout_port.proposed.infraBrkoutPortGrp.attributes.dn == "uni/infra/funcprof/brkoutportgrp-ansible_breakout_port_2"
+      - nm_create_another_brkout_port.current.0.infraBrkoutPortGrp.attributes.dn == "uni/infra/funcprof/brkoutportgrp-ansible_breakout_port_2"
+      - nm_create_another_brkout_port.current.0.infraBrkoutPortGrp.attributes.brkoutMap == "none"
+      - nm_create_another_brkout_port.current.0.infraBrkoutPortGrp.attributes.name == "ansible_breakout_port_2"
+
+- name: Query all breakout ports
+  cisco.aci.aci_interface_policy_leaf_breakout_port_group:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Verify query_all
+  assert:
+    that:
+      query_all.current | length >= 2
+
+- name: Query specific breakout port
+  cisco.aci.aci_interface_policy_leaf_breakout_port_group:
+    <<: *aci_info
+    breakout_port_group: ansible_breakout_port
+    state: query
+  register: query_one
+
+- name: Verify query_one
+  assert:
+    that:
+      - query_one is not changed
+      - query_one.current.0.infraBrkoutPortGrp.attributes.name == "ansible_breakout_port"
+
+- name: Update breakout port
+  cisco.aci.aci_interface_policy_leaf_breakout_port_group:
+    <<: *aci_info
+    breakout_port_group: ansible_breakout_port
+    breakout_map: none
+    description: ""
+    state: present
+  register: change_ansible_breakout_port
+
+- name: Verify change_ansible_breakout_port
+  assert:
+    that:
+      - change_ansible_breakout_port is changed
+      - change_ansible_breakout_port.current.0.infraBrkoutPortGrp.attributes.brkoutMap == "none"
+      - change_ansible_breakout_port.current.0.infraBrkoutPortGrp.attributes.descr == ""
+
+- name: Delete breakout port
+  cisco.aci.aci_interface_policy_leaf_breakout_port_group:
+    <<: *aci_info
+    breakout_port_group: ansible_breakout_port
+    state: absent
+  register: rm_breakout_port
+
+- name: Verify rm_breakout_port
+  assert:
+    that:
+      - rm_breakout_port is changed
+      - rm_breakout_port.current == []
+
+- name: Query removed breakout port
+  cisco.aci.aci_interface_policy_leaf_breakout_port_group:
+    <<: *aci_info
+    breakout_port_group: ansible_breakout_port
+    state: query
+  register: query_removed_breakout_port
+
+- name: Verify query_removed_breakout_port
+  assert:
+    that:
+      - query_removed_breakout_port.current == []
