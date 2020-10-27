@@ -80,7 +80,7 @@ def aci_argument_spec():
         # Beware, this is not the same as client_cert !
         certificate_name=dict(type='str', aliases=['cert_name'], fallback=(env_fallback, ['ACI_CERTIFICATE_NAME'])),
         output_level=dict(type='str', default='normal', choices=['debug', 'info', 'normal'], fallback=(env_fallback, ['ACI_OUTPUT_LEVEL'])),
-        timeout=dict(type='int', default=30), fallback=(env_fallback, ['ACI_TIMEOUT'])),
+        timeout=dict(type='int', default=30, fallback=(env_fallback, ['ACI_TIMEOUT'])),
         use_proxy=dict(type='bool', default=True, fallback=(env_fallback, ['ACI_USE_PROXY'])),
         use_ssl=dict(type='bool', default=True, fallback=(env_fallback, ['ACI_USE_SSL'])),
         validate_certs=dict(type='bool', default=True, fallback=(env_fallback, ['ACI_VALIDATE_CERTS'])),
