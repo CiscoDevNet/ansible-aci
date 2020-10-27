@@ -29,10 +29,9 @@ options:
     type: str
     aliases: [ descr ]
   breakout_map:
-    desciption:
+    description:
     - The mapping of breakout port.
     type: str
-    choices: [100g-2x, 100g-4x, 10g-4x, 25g-4x, 50g-8x, none]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -205,7 +204,7 @@ def main():
     argument_spec.update(
         breakout_port_group=dict(type='str', aliases=['name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
-        breakout_map=dict(type='str', choices=['100g-2x', '100g-4x', '10g-4x', '25g-4x', '50g-8x', 'none']),
+        breakout_map=dict(type='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
 
@@ -222,7 +221,6 @@ def main():
     description = module.params.get('description')
     breakout_map = module.params.get('breakout_map')
     state = module.params.get('state')
-
 
     aci = ACIModule(module)
     aci.construct_url(
