@@ -225,7 +225,7 @@ def main():
         description=dict(type='str', aliases=['descr']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
-        monitoring_policy=dict(type='str')
+        monitoring_policy=dict(type='str'),
     )
 
     module = AnsibleModule(
