@@ -51,10 +51,6 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
-  name_alias:
-    description:
-    - The alias for the current object. This relates to the nameAlias field in ACI.
-    type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 
@@ -229,7 +225,6 @@ def main():
         contract_master_ap=dict(type='str'),
         contract_master_epg=dict(type='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
     )
 
     module = AnsibleModule(
@@ -249,7 +244,6 @@ def main():
     contract_master_ap = module.params.get('contract_master_ap')
     contract_master_epg = module.params.get('contract_master_epg')
     state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
 
     contract_master = 'uni/tn-{0}/ap-{1}/epg-{2}'.format(tenant, contract_master_ap, contract_master_epg)
 

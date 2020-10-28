@@ -246,7 +246,6 @@ url:
 
 import json
 import os
-import ast
 
 try:
     from ansible.module_utils.six.moves.urllib.parse import parse_qsl, urlencode, urlparse, urlunparse

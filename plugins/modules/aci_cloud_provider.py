@@ -162,8 +162,6 @@ def main():
         supports_check_mode=True,
     )
 
-    state = module.params.get('state')
-
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(

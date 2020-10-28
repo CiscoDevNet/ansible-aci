@@ -179,7 +179,6 @@ def main():
     )
 
     id = module.params.get('id')
-    state = module.params.get('state')
 
     aci = ACIModule(module)
     aci.construct_url(
