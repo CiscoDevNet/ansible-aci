@@ -313,7 +313,7 @@ def main():
         preferred_group=dict(type='bool'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
-        monitoring_policy=dict(type='str')
+        monitoring_policy=dict(type='str'),
     )
 
     module = AnsibleModule(
@@ -340,8 +340,10 @@ def main():
     name_alias = module.params.get('name_alias')
     monitoring_policy = module.params.get('monitoring_policy')
 
-    child_configs = [dict(fvRsBd=dict(attributes=dict(tnFvBDName=bd)))]
-    child_configs.append(dict(fvRsAEPgMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy))))
+    child_configs = [
+        dict(fvRsBd=dict(attributes=dict(tnFvBDName=bd))), 
+        dict(fvRsAEPgMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy)))
+    ]
 
     aci.construct_url(
         root_class=dict(
