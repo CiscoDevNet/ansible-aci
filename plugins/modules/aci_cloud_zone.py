@@ -200,7 +200,6 @@ def main():
     name = module.params.get('name')
     cloud = module.params.get('cloud')
     region = module.params.get('region')
-    state = module.params.get('state')
 
     aci = ACIModule(module)
     aci.construct_url(

@@ -41,10 +41,8 @@ import json
 import os
 from copy import deepcopy
 
-from ansible.module_utils.parsing.convert_bool import boolean
 from ansible.module_utils.urls import fetch_url
 from ansible.module_utils._text import to_bytes, to_native
-from ansible.module_utils.six.moves.urllib.parse import parse_qsl, urlsplit
 from ansible.module_utils.basic import env_fallback
 
 # Optional, only used for APIC signature-based authentication
@@ -676,9 +674,7 @@ class ACIModule(object):
         """
         This method is used by construct_url when the object is the second-level class.
         """
-        parent_class = parent.get('aci_class')
         parent_rn = parent.get('aci_rn')
-        parent_filter = parent.get('target_filter')
         parent_obj = parent.get('module_object')
         obj_class = obj.get('aci_class')
         obj_rn = obj.get('aci_rn')
@@ -711,9 +707,7 @@ class ACIModule(object):
         """
         This method is used by construct_url when the object is the third-level class.
         """
-        root_class = root.get('aci_class')
         root_rn = root.get('aci_rn')
-        root_filter = root.get('target_filter')
         root_obj = root.get('module_object')
         parent_class = parent.get('aci_class')
         parent_rn = parent.get('aci_rn')
@@ -779,17 +773,11 @@ class ACIModule(object):
         """
         This method is used by construct_url when the object is the fourth-level class.
         """
-        root_class = root.get('aci_class')
         root_rn = root.get('aci_rn')
-        root_filter = root.get('target_filter')
         root_obj = root.get('module_object')
-        sec_class = sec.get('aci_class')
         sec_rn = sec.get('aci_rn')
-        sec_filter = sec.get('target_filter')
         sec_obj = sec.get('module_object')
-        parent_class = parent.get('aci_class')
         parent_rn = parent.get('aci_rn')
-        parent_filter = parent.get('target_filter')
         parent_obj = parent.get('module_object')
         obj_class = obj.get('aci_class')
         obj_rn = obj.get('aci_rn')
