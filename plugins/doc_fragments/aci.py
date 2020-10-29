@@ -28,7 +28,7 @@ options:
   username:
     description:
     - The username to use for authentication.
-    - If the value is not specified in the task, the value of environment variable C(ACI_USERNAME) will be used instead.
+    - If the value is not specified in the task, the value of environment variables C(ACI_USERNAME) or C(ANSIBLE_NET_USERNAME) will be used instead.
     type: str
     default: admin
     aliases: [ user ]
@@ -36,7 +36,7 @@ options:
     description:
     - The password to use for authentication.
     - This option is mutual exclusive with C(private_key). If C(private_key) is provided too, it will be used instead.
-    - If the value is not specified in the task, the value of environment variable C(ACI_PASSWORD) will be used instead.
+    - If the value is not specified in the task, the value of environment variables C(ACI_PASSWORD) or C(ANSIBLE_NET_PASSWORD) will be used instead.
     type: str
   private_key:
     description:

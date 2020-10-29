@@ -71,8 +71,8 @@ def aci_argument_spec():
     return dict(
         host=dict(type='str', required=True, aliases=['hostname'], fallback=(env_fallback, ['ACI_HOST'])),
         port=dict(type='int', required=False, fallback=(env_fallback, ['ACI_PORT'])),
-        username=dict(type='str', default='admin', aliases=['user'], fallback=(env_fallback, ['ACI_USERNAME'])),
-        password=dict(type='str', no_log=True, fallback=(env_fallback, ['ACI_PASSWORD'])),
+        username=dict(type='str', default='admin', aliases=['user'], fallback=(env_fallback, ['ACI_USERNAME', 'ANSIBLE_NET_USERNAME'])),
+        password=dict(type='str', no_log=True, fallback=(env_fallback, ['ACI_PASSWORD', 'ANSIBLE_NET_PASSWORD'])),
         # Beware, this is not the same as client_key !
         private_key=dict(type='str', aliases=['cert_key'], no_log=True, fallback=(env_fallback, ['ACI_PRIVATE_KEY'])),
         # Beware, this is not the same as client_cert !
