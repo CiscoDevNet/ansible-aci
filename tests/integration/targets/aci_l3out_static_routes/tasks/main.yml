@@ -82,6 +82,20 @@
     state: present
   delegate_to: localhost
 
+- name: Add static routes bfd
+  aci_l3out_static_routes:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    logical_node: lNode
+    node_id: 101
+    pod_id: 1
+    bfd: bfd
+    track_policy: test
+    prefix: 10.1.0.1/24
+    state: present
+  delegate_to: localhost
+
 - name: Query for a specific MO under l3out
   aci_l3out_static_routes:
     <<: *aci_info

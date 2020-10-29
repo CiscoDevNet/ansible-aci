@@ -261,7 +261,7 @@ def main():
         prefix=dict(type='str', aliases=['route']),
         track_policy=dict(type='str'),
         preference=dict(type='int'),
-        bfd=dict(type='bool'),
+        bfd=dict(type='str', choices=['bfd', 'null']),
         description=dict(type='str', aliases=['descr']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
@@ -337,10 +337,10 @@ def main():
             pref=preference,
             nameAlias=name_alias,
         )
-        if bfd:
+        if bfd is not None:
             class_config['rtCtrl'] = bfd
 
-        if track_policy:
+        if track_policy is not None:
             tDn = 'uni/tn-{0}/tracklist-{1}'.format(tenant, track_policy)
             child_configs.append({'ipRsRouteTrack': {'attributes': {'tDn': tDn}}})
 
