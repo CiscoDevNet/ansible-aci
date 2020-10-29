@@ -293,6 +293,9 @@ def main():
     name_alias = module.params.get('name_alias')
 
     fabric_node = 'topology/pod-{0}/node-{1}'.format(pod_id, node_id)
+    child_classes = ['ipNexthopP']
+    if track_policy is not None:
+        child_classes.append('ipRsRouteTrack')
 
     aci.construct_url(
         root_class=dict(
@@ -325,7 +328,7 @@ def main():
             module_object=prefix,
             target_filter={'name': prefix},
         ),
-        child_classes=['ipNexthopP', 'ipRsRouteTrack']
+        child_classes=child_classes
     )
 
     aci.get_existing()
