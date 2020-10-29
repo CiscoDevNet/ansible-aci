@@ -61,8 +61,9 @@ options:
   bfd:
     description:
     - Determines if bfd is required for route control.
-    - The APIC defaults to C(no) when unset during creation.
-    type: bool
+    - The APIC defaults to C(null) when unset during creation.
+    type: str
+    choices: [ bfd, null ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -261,7 +262,7 @@ def main():
         prefix=dict(type='str', aliases=['route']),
         track_policy=dict(type='str'),
         preference=dict(type='int'),
-        bfd=dict(type='str', choices=['bfd', 'null']),
+        bfd=dict(type='str', choices=['bfd', None]),
         description=dict(type='str', aliases=['descr']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
