@@ -82,6 +82,13 @@
     state: present
   delegate_to: localhost
 
+- name: Query system information
+  aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 - name: Add static routes bfd
   aci_l3out_static_routes:
     <<: *aci_info
@@ -95,6 +102,7 @@
     prefix: 10.1.0.1/24
     state: present
   delegate_to: localhost
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: Query for a specific MO under l3out
   aci_l3out_static_routes:
