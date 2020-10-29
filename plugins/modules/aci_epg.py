@@ -341,7 +341,7 @@ def main():
     monitoring_policy = module.params.get('monitoring_policy')
 
     child_configs = [
-        dict(fvRsBd=dict(attributes=dict(tnFvBDName=bd))), 
+        dict(fvRsBd=dict(attributes=dict(tnFvBDName=bd))),
         dict(fvRsAEPgMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy)))
     ]
 
