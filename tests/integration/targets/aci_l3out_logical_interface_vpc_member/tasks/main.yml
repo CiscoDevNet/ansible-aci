@@ -1,0 +1,120 @@
+# Test code for the ACI modules
+# Copyright: (c) 2020, Anvitha Jain (@anvitha-jain)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact: 
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+    
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  aci_tenant:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Add a new tenant
+  aci_tenant:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    description: Ansible tenant
+    state: present
+
+- name: Add a new L3Out
+  aci_l3out:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_l3out
+    description: L3Out for ansible_tenant tenant
+    domain: ansible_dom
+    vrf: ansible_vrf
+    l3protocol: ospf
+    route_control: export
+    state: present
+
+- name: Add a new logical node
+  cisco.aci.aci_rest:
+    <<: *aci_info
+    path: /api/mo/uni/tn-ansible_tenant/out-ansible_l3out.json
+    method: post
+    content:
+      {
+          "l3extLNodeP": {
+              "attributes": {
+                  "dn": "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_LNode",
+                  "name": "ansible_LNode"
+              },
+              "children": [{
+                  "l3extLIfP": {
+                      "attributes": {
+                          "name": "ansible_LInterface"
+                      },
+                      "children": [{
+                          "l3extRsPathL3OutAtt": {
+                              "attributes": {
+                                  "addr": "0.0.0.0",
+                                  "encap": "vlan-100",
+                                  "ifInstT": "ext-svi",
+                                  "tDn": "topology/pod-1/protpaths-101-102/pathep-[policy_group_one]"
+                              }
+                          }
+                      }]
+                  }
+              }]
+          }
+      }
+
+- name: Add a VPC member
+  aci_l3out_logical_interface_vpc_member:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    logical_node: ansible_LNode
+    logical_interface: ansible_LInterface
+    path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_one]
+    side: A
+    state: present
+
+- name: Query a specific VPC member under ansible_l3out
+  aci_l3out_logical_interface_vpc_member:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    logical_node: ansible_LNode
+    logical_interface: ansible_LInterface
+    path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_one]
+    side: A
+    state: query
+  register: query_result
+
+- name: Query all relationships
+  aci_l3out_logical_interface_vpc_member:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: query
+  ignore_errors: yes
+  register: query_result
+
+- name: Remove a VPC member
+  aci_l3out_logical_interface_vpc_member:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    logical_node: ansible_LNode
+    logical_interface: ansible_LInterface
+    path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_one]
+    side: A
+    state: absent
