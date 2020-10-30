@@ -51,7 +51,7 @@
     use_ssl: '{{ aci_use_ssl | default(true) }}'
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
-    aaa_user: admin
+    aaa_user: '{{ aci_username }}'
     certificate_name: admin
     certificate: "{{ lookup('file', 'pki/admin.crt') }}"
     state: present
@@ -79,7 +79,7 @@
     - cm_add_cert_again is not changed
     - nm_add_cert_again is not changed
 
-- name: Add other certificates
+- name: Add rsa_user certificates
   cisco.aci.aci_aaa_user_certificate:
     <<: *cert_present
     certificate_name: "{{ item }}"
@@ -88,6 +88,12 @@
   loop:
     - user
     - rsa_user
+
+- name: Add admin certificate with user name
+  cisco.aci.aci_aaa_user_certificate:
+    <<: *cert_present
+    certificate_name: '{{ aci_username }}'
+    state: present
 
 # QUERY ALL USER CERTIFICATES
 - name: Query all user certificates using signature-based authentication (check_mode)
@@ -100,7 +106,7 @@
     use_ssl: '{{ aci_use_ssl | default(true) }}'
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
-    aaa_user: admin
+    aaa_user: '{{ aci_username }}'
     state: query
   check_mode: yes
   register: cm_query_all_certs
@@ -127,7 +133,7 @@
   assert:
     that:
       - nm_query_all_rsa is not changed
-      - nm_query_all_rsa.current.0.aaaUser.children | length >= 2
+      - nm_query_all_rsa.current.0.aaaUser.children | length >= 4
 
 - name: Query all certificates using signature-based authentication (private key content for admin certificate)
   cisco.aci.aci_aaa_user_certificate:
