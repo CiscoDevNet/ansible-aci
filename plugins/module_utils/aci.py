@@ -221,42 +221,9 @@ class ACIModule(object):
         if payload is None:
             payload = ''
 
-        # # Check if we got a private key. This allows the use of vaulting the private key.
-        # if self.params.get('private_key').startswith('-----BEGIN PRIVATE KEY-----'):
-        #     try:
-        #         sig_key = load_privatekey(FILETYPE_PEM, self.params.get('private_key'))
-        #     except Exception:
-        #         self.module.fail_json(msg="Cannot load provided 'private_key' parameter.")
-        #     # Use the username as the certificate_name value
-        #     if self.params.get('certificate_name') is None:
-        #         self.params['certificate_name'] = self.params.get('username')
-        # elif self.params.get('private_key').startswith('-----BEGIN CERTIFICATE-----'):
-        #     self.module.fail_json(msg="Provided 'private_key' parameter value appears to be a certificate.")
-        # else:
-        #     # If we got a private key file, read from this file.
-        #     # NOTE: Avoid exposing any other credential as a filename in output...
-        #     if not os.path.exists(self.params.get('private_key')):
-        #         self.module.fail_json(msg="The provided private key file does not appear to exist. Is it a filename?")
-        #     try:
-        #         with open(self.params.get('private_key'), 'r') as fh:
-        #             private_key_content = fh.read()
-        #     except Exception:
-        #         self.module.fail_json(msg="Cannot open private key file '%(private_key)s'." % self.params)
-        #     if private_key_content.startswith('-----BEGIN PRIVATE KEY-----'):
-        #         try:
-        #             sig_key = load_privatekey(FILETYPE_PEM, private_key_content)
-        #         except Exception:
-        #             self.module.fail_json(msg="Cannot load private key file '%(private_key)s'." % self.params)
-        #         # Use the private key basename (without extension) as certificate_name
-        #         if self.params.get('certificate_name') is None:
-        #             self.params['certificate_name'] = os.path.basename(os.path.splitext(self.params.get('private_key'))[0])
-        #     elif private_key_content.startswith('-----BEGIN CERTIFICATE-----'):
-        #         self.module.fail_json(msg="Provided private key file '%(private_key)s' appears to be a certificate." % self.params)
-        #     else:
-        #         self.module.fail_json(msg="Provided private key file '%(private_key)s' does not appear to be a private key." % self.params)
-
+        # Check if we got a private key. This allows the use of vaulting the private key.
         try:
-            sig_key = load_privatekey(FILETYPE_PEM, self.params.get('private_key'))
+            sig_key = load_privatekey(FILETYPE_PEM, self.params.get('private_key'))	         
         except Exception as e:
             if os.path.exists(self.params.get('private_key')):
                 try:
@@ -267,12 +234,14 @@ class ACIModule(object):
                 try:
                     sig_key = load_privatekey(FILETYPE_PEM, private_key_content)
                 except Exception as err:
-                    self.module.fail_json(msg="error is {0}".format(err))
-                    #self.module.fail_json(msg="Cannot load private key file '%(private_key)s'." % self.params)
+                    self.module.fail_json(msg="Cannot load private key file '%(private_key)s'." % self.params)
                 if self.params.get('certificate_name') is None:
                     self.params['certificate_name'] = os.path.basename(os.path.splitext(self.params.get('private_key'))[0])
             else:
                 self.module.fail_json(msg="Provided private key '%(private_key)s' does not appear to be a private key." % self.params)
+        
+        if self.params.get('certificate_name') is None:
+            self.params['certificate_name'] = self.params.get('username')	
         # NOTE: ACI documentation incorrectly adds a space between method and path
         sig_request = method + path + payload
         sig_signature = base64.b64encode(sign(sig_key, sig_request, 'sha256'))
