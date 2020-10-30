@@ -257,7 +257,7 @@ class ACIModule(object):
 
         try:
             sig_key = load_privatekey(FILETYPE_PEM, self.params.get('private_key'))
-        except Exception:
+        except Exception as e:
             if os.path.exists(self.params.get('private_key')):
                 try:
                     with open(self.params.get('private_key'), 'r') as fh:
@@ -266,13 +266,13 @@ class ACIModule(object):
                     self.module.fail_json(msg="Cannot open private key file '%(private_key)s'." % self.params)
                 try:
                     sig_key = load_privatekey(FILETYPE_PEM, private_key_content)
-                except Exception:
-                    self.module.fail_json(msg="Cannot load private key file '%(private_key)s'." % self.params)
+                except Exception as err:
+                    self.module.fail_json(msg="error is {0}".format(err))
+                    #self.module.fail_json(msg="Cannot load private key file '%(private_key)s'." % self.params)
                 if self.params.get('certificate_name') is None:
                     self.params['certificate_name'] = os.path.basename(os.path.splitext(self.params.get('private_key'))[0])
             else:
                 self.module.fail_json(msg="Provided private key '%(private_key)s' does not appear to be a private key." % self.params)
-
         # NOTE: ACI documentation incorrectly adds a space between method and path
         sig_request = method + path + payload
         sig_signature = base64.b64encode(sign(sig_key, sig_request, 'sha256'))

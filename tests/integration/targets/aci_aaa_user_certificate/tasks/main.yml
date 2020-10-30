@@ -33,9 +33,13 @@
     use_ssl: '{{ aci_use_ssl | default(true) }}'
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
-    aaa_user: admin
-    certificate_name: admin
+    aaa_user: '{{ aci_username }}'
+    certificate_name: "{{ item }}"
     state: absent
+  loop:
+    - admin
+    - user
+    - rsa_user
 
 # ADD USER CERTIFICATE
 - name: Add user certificate (check_mode)
@@ -75,6 +79,15 @@
     - cm_add_cert_again is not changed
     - nm_add_cert_again is not changed
 
+- name: Add other certificates
+  cisco.aci.aci_aaa_user_certificate:
+    <<: *cert_present
+    certificate_name: "{{ item }}"
+    certificate: "{{ lookup('file', 'pki/rsa_user.crt') }}"
+    state: present
+  loop:
+    - user
+    - rsa_user
 
 # QUERY ALL USER CERTIFICATES
 - name: Query all user certificates using signature-based authentication (check_mode)
@@ -104,6 +117,17 @@
     # NOTE: Order of certs is not stable between calls
     #- cm_query_all_certs == nm_query_all_certs
 
+- name: Query all user certificates using signature-based authentication (ansible rsa private key)
+  cisco.aci.aci_aaa_user_certificate:
+    <<: *cert_query
+    private_key: '{{ role_path }}/pki/rsa_user.key'
+  register: nm_query_all_rsa
+
+- name: Verify nm_query_all_rsa
+  assert:
+    that:
+      - nm_query_all_rsa is not changed
+      - nm_query_all_rsa.current.0.aaaUser.children | length >= 2
 
 # QUERY OUR USER CERTIFICATE
 - name: Query our certificate using signature-based authentication (check_mode)
@@ -126,24 +150,60 @@
     - nm_query_cert is not changed
     - cm_query_cert == nm_query_cert
 
+- name: Query our certificate using signature-based authentication(invalid private key)
+  cisco.aci.aci_aaa_user_certificate:
+    <<: *cert_query
+    private_key: '{{ role_path }}/pki/admin_invalid.key'
+    certificate_name: admin
+  register: query_cert_invalid_key
+  ignore_errors: yes
+
+- name: Query our certificate using signature-based authentication (ansible rsa private key)
+  cisco.aci.aci_aaa_user_certificate:
+    <<: *cert_query
+    private_key: '{{ role_path }}/pki/rsa_ansible.key'
+    certificate_name: admin
+  register: query_cert_openssh_rsa_key
+  ignore_errors: yes
+
+- name: Query our certificate using signature-based authentication (valid rsa private key)
+  cisco.aci.aci_aaa_user_certificate:
+    <<: *cert_query
+    private_key: '{{ role_path }}/pki/rsa_user.key'
+    certificate_name: "{{ item }}"
+  register: query_cert_ansible_rsa_key
+  loop:
+    - "rsa_user"
+    - "user"
+    #- "admin"
 
 # REMOVE CERTIFICATE
 - name: Remove certificate (check_mode)
-  cisco.aci.aci_aaa_user_certificate: *cert_absent
+  cisco.aci.aci_aaa_user_certificate: &cert_delete
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    aaa_user: '{{ aci_username }}'
+    certificate_name: admin
+    state: absent
   check_mode: yes
   register: cm_remove_cert
 
 - name: Remove certificate (normal mode)
-  cisco.aci.aci_aaa_user_certificate: *cert_absent
+  cisco.aci.aci_aaa_user_certificate: *cert_delete
   register: nm_remove_cert
 
 - name: Remove certificate again (check_mode)
-  cisco.aci.aci_aaa_user_certificate: *cert_absent
+  cisco.aci.aci_aaa_user_certificate: *cert_delete
   check_mode: yes
   register: cm_remove_cert_again
 
 - name: Remove certificate again (normal mode)
-  cisco.aci.aci_aaa_user_certificate: *cert_absent
+  cisco.aci.aci_aaa_user_certificate: *cert_delete
   register: nm_remove_cert_again
 
 - name: Verify remove_cert
