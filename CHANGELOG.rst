@@ -5,6 +5,62 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v1.1.0
+======
+
+Release Summary
+---------------
+
+Release v1.1.0 of the ``cisco.mso`` collection on 2020-10-30.
+This changelog describes all changes made to the modules and plugins included in this collection since v1.0.1. 
+
+Minor Changes
+-------------
+
+- Ability to add monitoring policy to epgs and anps
+- Add Ansible Network ENV to fallback
+- Add aci_l3out_external_path_to_member.py & aci_l3out_static_routes modules
+- Add env_fallback for common connection params
+- Add env_fallback for the rest of the argument spec
+- Add new Subclass path support
+- Add new module and test file for leaf breakout port group
+- Added failure message to aci_interface_policy_leaf_policy_group
+- Update README.md
+- Update inventory
+- aci_epg_to_domain addition of promiscuous mode (#79)
+- aci_interface_policy_port_security addition of attribute:timeout (#80)
+
+Bugfixes
+--------
+
+- Existing_config variable is not reset during loop
+- Fix galaxy import warnings
+- Fix how validity of private key/private key file is checked to support new types
+- Fix incorrect domain types in aci_domain_to_encap_pool module
+
+v1.0.1
+======
+
+Release Summary
+---------------
+
+Release v1.0.1 of the ``cisco.mso`` collection on 2020-10-13.
+This changelog describes all changes made to the modules and plugins included in this collection since v1.0.0. 
+
+Minor Changes
+-------------
+
+- Enable/Disable infra vlan in aci_aep and its test module
+- Set scope default value in aci_l3out_extsubnet
+
+Bugfixes
+--------
+
+- Fix convertion of json/yaml payload to xml in aci_rest
+- Fix dump of config for aci_rest
+- Fix issue of "current" in firmware_source module
+- Fix sanity issue in aci_rest and bump version to v1.0.1
+
 v1.0.0
 ======
 
