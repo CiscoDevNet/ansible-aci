@@ -366,23 +366,27 @@ def main():
     if domain_type in ['l2dom', 'phys'] and vm_provider is not None:
         module.fail_json(msg="Domain type '%s' cannot have a 'vm_provider'" % domain_type)
 
+
+    child_classes = None
+    child_configs = None
+
     # Compile the full domain for URL building
     if domain_type == 'vmm':
         epg_domain = 'uni/vmmp-{0}/dom-{1}'.format(VM_PROVIDER_MAPPING[vm_provider], domain)
+        child_configs = [dict(
+          vmmSecP=dict(
+            attributes=dict(
+              allowPromiscuous=promiscuous,
+            ),
+          ),
+        )]
+        child_classes=['vmmSecP']
     elif domain_type == 'l2dom':
         epg_domain = 'uni/l2dom-{0}'.format(domain)
     elif domain_type == 'phys':
         epg_domain = 'uni/phys-{0}'.format(domain)
     else:
         epg_domain = None
-
-    child_configs = [dict(
-        vmmSecP=dict(
-            attributes=dict(
-                allowPromiscuous=promiscuous,
-            ),
-        ),
-    )]
 
     aci.construct_url(
         root_class=dict(
@@ -409,7 +413,7 @@ def main():
             module_object=epg_domain,
             target_filter={'tDn': epg_domain},
         ),
-        child_classes=['vmmSecP'],
+        child_classes=child_classes,
     )
 
     aci.get_existing()
