@@ -821,7 +821,7 @@ class ACIModule(object):
         """
         This method is used by construct_url when the object is the fourth-level class.
         """
-        
+
         root_rn = root.get('aci_rn')
         root_obj = root.get('module_object')
         ter_rn = ter.get('aci_rn')
