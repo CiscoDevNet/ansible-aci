@@ -19,34 +19,34 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: debug
 
-# Clean Environment    
-- name: Remove physical domain
+# Clean Environment
+- name: Remove domains
   aci_domain:
     <<: *aci_info 
-    domain: phys_dom
-    domain_type: phys
+    domain: '{{ item.name }}'
+    domain_type: '{{ item.type }}'
     state: absent
+  loop:
+    - { name: phys_dom, type: phys }
+    - { name: fc_dom, type: fc }
+    - { name: l2_dom, type: l2dom }
+    - { name: l3_dom, type: l3dom }
 
-- name: Remove FC domain
+- name: Remove domains
   aci_domain:
     <<: *aci_info 
-    domain: fc_dom
-    domain_type: fc
+    domain: vmm_dom
+    domain_type: vmm
+    vm_provider: '{{ item.name }}'
     state: absent
-
-- name: Remove l2dom domain
-  aci_domain:
-    <<: *aci_info 
-    domain: l2_dom
-    domain_type: l2dom
-    state: absent
-
-- name: Remove l3dom domain
-  aci_domain:
-    <<: *aci_info 
-    domain: l3_dom
-    domain_type: l3dom
-    state: absent
+  loop:
+    - { name: vmware }
+    - { name: microsoft }
+    - { name: cloudfoundry }
+    - { name: openshift }
+    - { name: openstack }
+    - { name: redhat }
+    - { name: kubernetes }
 
 - name: Remove vmm domain
   aci_domain:
@@ -274,6 +274,18 @@
     state: present
   register: vmm_vmware
 
+- name: Add domain to encap pool binding (domain_type=vmm, vm_provider=vmware) again
+  aci_domain_to_encap_pool:
+    <<: *aci_info 
+    domain: vmm_dom
+    domain_type: vmm
+    pool: test_pool
+    pool_type: vlan
+    pool_allocation_mode: dynamic
+    vm_provider: vmware
+    state: present
+  register: vmm_vmware_idemp
+
 - name: Add domain to encap pool binding (phys with vm_provider)
   aci_domain_to_encap_pool:
     <<: *aci_info 
@@ -324,6 +336,7 @@
     - vmm_openstack is changed
     - vmm_redhat is changed
     - vmm_vmware is changed
+    - vmm_vmware_idemp is not changed
     - phys_vlan.current.0.physDomP.children.0.infraRsVlanNs.attributes.tDn =='uni/infra/vlanns-[test_pool]-dynamic'
     - fc_vsan.current.0.fcDomP.children.0.fcRsVsanNs.attributes.tDn == 'uni/infra/vsanns-[test_pool]-dynamic'
     - l2dom.current.0.l2extDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-static'
@@ -384,10 +397,10 @@
 - name: Verify Query
   assert:
     that:
-    - query_phys.current.0.physDomP.children.0.infraRsVlanNs.attributes.tDn =='uni/infra/vlanns-[test_pool]-dynamic'
-    - query_fc.current.0.fcDomP.children.0.fcRsVsanNs.attributes.tDn == 'uni/infra/vsanns-[test_pool]-dynamic'
-    - query_l2dom.current.0.l2extDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-static'
-    - query_l3dom.current.0.l3extDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-static'
+    - query_phys.current | length >= 1
+    - query_fc.current | length >= 1
+    - query_l2dom.current | length >= 1
+    - query_l3dom.current | length >= 1
     - query_vmm.current | length >= 7
 
 # REMOVE
@@ -535,86 +548,30 @@
     - remove_vmm_vmware.previous.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
 
 # Clean Environment Again
-- name: Remove physical domain
+- name: Remove domains
   aci_domain:
     <<: *aci_info 
-    domain: phys_dom
-    domain_type: phys
+    domain: '{{ item.name }}'
+    domain_type: '{{ item.type }}'
     state: absent
+  loop:
+    - { name: phys_dom, type: phys }
+    - { name: fc_dom, type: fc }
+    - { name: l2_dom, type: l2dom }
+    - { name: l3_dom, type: l3dom }
 
-- name: Remove FC domain
-  aci_domain:
-    <<: *aci_info 
-    domain: fc_dom
-    domain_type: fc
-    state: absent
-
-- name: Remove l2dom domain
-  aci_domain:
-    <<: *aci_info 
-    domain: l2_dom
-    domain_type: l2dom
-    state: absent
-
-- name: Remove l3dom domain
-  aci_domain:
-    <<: *aci_info 
-    domain: l3_dom
-    domain_type: l3dom
-    state: absent
-
-- name: Remove vmm domain
+- name: Remove domains
   aci_domain:
     <<: *aci_info 
     domain: vmm_dom
     domain_type: vmm
-    vm_provider: vmware
+    vm_provider: '{{ item.name }}'
     state: absent
-
-- name: Remove vmm domain
-  aci_domain:
-    <<: *aci_info 
-    domain: vmm_dom
-    domain_type: vmm
-    vm_provider: microsoft
-    state: absent
-
-- name: Remove vmm domain
-  aci_domain:
-    <<: *aci_info 
-    domain: vmm_dom
-    domain_type: vmm
-    vm_provider: kubernetes
-    state: absent
-
-- name: Remove vmm domain
-  aci_domain:
-    <<: *aci_info 
-    domain: vmm_dom
-    domain_type: vmm
-    vm_provider: cloudfoundry
-    state: absent
-
-- name: Remove vmm domain
-  aci_domain:
-    <<: *aci_info 
-    domain: vmm_dom
-    domain_type: vmm
-    vm_provider: openstack
-    state: absent
-
-- name: Remove vmm domain
-  aci_domain:
-    <<: *aci_info 
-    domain: vmm_dom
-    domain_type: vmm
-    vm_provider: openshift
-    state: absent
-
-- name: Remove vmm domain
-  aci_domain:
-    <<: *aci_info 
-    domain: vmm_dom
-    domain_type: vmm
-    vm_provider: redhat
-    state: absent
+  loop:
+    - { name: vmware }
+    - { name: microsoft }
+    - { name: cloudfoundry }
+    - { name: openshift }
+    - { name: openstack }
+    - { name: redhat }
+    - { name: kubernetes }
