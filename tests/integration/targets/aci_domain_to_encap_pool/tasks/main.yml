@@ -323,6 +323,28 @@
   ignore_errors: yes
   register: vmm_vmware_vxlan
 
+- name: Add domain to encap pool binding (phys, pool_type=vlan) missing domain_type
+  aci_domain_to_encap_pool:
+    <<: *aci_info 
+    domain: phys_dom
+    pool: test_pool
+    pool_type: vlan
+    pool_allocation_mode: dynamic
+    state: present
+  ignore_errors: yes
+  register: phys_missing_domain_type
+
+- name: Add domain to encap pool binding (phys, pool_type=vlan) missing pool_type
+  aci_domain_to_encap_pool:
+    <<: *aci_info 
+    domain: phys_dom
+    domain_type: phys
+    pool: test_pool
+    pool_allocation_mode: dynamic
+    state: present
+  ignore_errors: yes
+  register: phys_missing_pool_type
+
 - name: Verify add operation
   assert:
     that:
@@ -351,11 +373,22 @@
     - phys_vlan_with_vmm.msg is match("Domain type '[0-9a-zA-Z]*' cannot have a 'vm_provider'")
     - vmm_vmware_vxlan.msg is match("vxlan pools do not support setting the allocation_mode; please remove this parameter from the task")
     - phys_vlan_no_alloc.msg is match("ACI requires the 'pool_allocation_mode' for 'pool_type' of 'vlan' and 'vsan' when 'pool' is provided")
+    - phys_missing_pool_type.msg is match("missing required arguments{{':'}} pool_type")
+    - phys_missing_domain_type.msg is match("missing required arguments{{':'}} domain_type")
 
 # QUERY
+- name: Query all
+  aci_domain_to_encap_pool:
+    <<: *aci_info
+    domain_type: phys
+    pool_type: vlan
+    state: query
+  register: query_all
+
 - name: Query phys
   aci_domain_to_encap_pool:
-    <<: *aci_info 
+    <<: *aci_info
+    domain: phys_dom
     domain_type: phys
     pool_type: vlan
     state: query
@@ -364,6 +397,7 @@
 - name: Query fc
   aci_domain_to_encap_pool:
     <<: *aci_info 
+    domain: fc_dom
     domain_type: fc
     pool_type: vsan
     state: query
@@ -372,6 +406,7 @@
 - name: Query l2dom
   aci_domain_to_encap_pool:
     <<: *aci_info 
+    domain: l2_dom
     domain_type: l2dom
     pool_type: vlan
     state: query
@@ -379,7 +414,8 @@
 
 - name: Query l3dom
   aci_domain_to_encap_pool:
-    <<: *aci_info 
+    <<: *aci_info
+    domain: l3_dom 
     domain_type: l3dom
     pool_type: vlan
     state: query
@@ -387,21 +423,99 @@
 
 - name: Query vmm
   aci_domain_to_encap_pool:
-    <<: *aci_info 
+    <<: *aci_info
+    domain: vmm_dom
     domain_type: vmm
     pool_type: vlan
     vm_provider: microsoft
     state: query
-  register: query_vmm
+  register: query_vmm_microsoft
+
+- name: Query vmm
+  aci_domain_to_encap_pool:
+    <<: *aci_info
+    domain: vmm_dom
+    domain_type: vmm
+    pool_type: vlan
+    vm_provider: cloudfoundry
+    state: query
+  register: query_vmm_cloudfoundry
+
+- name: Query vmm
+  aci_domain_to_encap_pool:
+    <<: *aci_info
+    domain: vmm_dom
+    domain_type: vmm
+    pool_type: vlan
+    vm_provider: kubernetes
+    state: query
+  register: query_vmm_kubernetes
+
+- name: Query vmm
+  aci_domain_to_encap_pool:
+    <<: *aci_info
+    domain: vmm_dom
+    domain_type: vmm
+    pool_type: vlan
+    vm_provider: openshift
+    state: query
+  register: query_vmm_openshift
+
+- name: Query vmm
+  aci_domain_to_encap_pool:
+    <<: *aci_info
+    domain: vmm_dom
+    domain_type: vmm
+    pool_type: vlan
+    vm_provider: openstack
+    state: query
+  register: query_vmm_openstack
+
+- name: Query vmm
+  aci_domain_to_encap_pool:
+    <<: *aci_info
+    domain: vmm_dom
+    domain_type: vmm
+    pool_type: vlan
+    vm_provider: redhat
+    state: query
+  register: query_vmm_redhat
+
+- name: Query vmm
+  aci_domain_to_encap_pool:
+    <<: *aci_info
+    domain: vmm_dom
+    domain_type: vmm
+    pool_type: vlan
+    vm_provider: vmware
+    state: query
+  register: query_vmm_vmware
+
+- name: Query vmm
+  aci_domain_to_encap_pool:
+    <<: *aci_info
+    domain: vmm_dom
+    domain_type: vmm
+    pool_type: vlan
+    vm_provider: vmware
+    state: query
+  register: query_vmm_vmware
 
 - name: Verify Query
   assert:
     that:
-    - query_phys.current | length >= 1
-    - query_fc.current | length >= 1
-    - query_l2dom.current | length >= 1
-    - query_l3dom.current | length >= 1
-    - query_vmm.current | length >= 7
+    - query_all | length >=1
+    - query_phys.current.0.physDomP.children.0.infraRsVlanNs.attributes.tDn =='uni/infra/vlanns-[test_pool]-dynamic'
+    - query_fc.current.0.fcDomP.children.0.fcRsVsanNs.attributes.tDn == 'uni/infra/vsanns-[test_pool]-dynamic'
+    - query_l2dom.current.0.l2extDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-static'
+    - query_l3dom.current.0.l3extDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-static'
+    - query_vmm_cloudfoundry.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
+    - query_vmm_kubernetes.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
+    - query_vmm_microsoft.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
+    - query_vmm_openshift.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
+    - query_vmm_openstack.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
+    - query_vmm_redhat.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
+    - query_vmm_vmware.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
 
 # REMOVE
 - name: Remove phys
