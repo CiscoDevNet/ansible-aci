@@ -5,6 +5,27 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v1.1.1
+======
+
+Release Summary
+---------------
+
+Release v1.1.1 of the ``cisco.mso`` collection on 2020-11-23.
+This changelog describes all changes made to the modules and plugins included in this collection since v1.1.0. 
+
+Minor Changes
+-------------
+
+- Add test file for aci_domain_to_encap_pool
+- aci_epg_to_domain moving child configs & classes to each domain type
+
+Bugfixes
+--------
+
+- Fix galaxy import warnings
+- Fix sanity issue in aci_epg_to_domain
+
 v1.1.0
 ======
 
