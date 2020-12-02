@@ -8,9 +8,19 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
+- name: Set vars
+  set_fact: 
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
 
 # CLEAN ENVIRONMENT
-- name: Making sure running user has correct cert
+- name: Making sure current user has correct cert
   cisco.aci.aci_aaa_user_certificate:
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
@@ -20,7 +30,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     aaa_user: '{{ aci_username }}'
-    certificate_name: admin
+    name: admin
     certificate: "{{ lookup('file', 'pki/admin.crt') }}"
     state: present
 
@@ -34,7 +44,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     aaa_user: '{{ aci_username }}'
-    certificate_name: "{{ item }}"
+    name: "{{ item }}"
     state: absent
   loop:
     - admin
@@ -52,7 +62,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     aaa_user: '{{ aci_username }}'
-    certificate_name: admin
+    name: admin
     certificate: "{{ lookup('file', 'pki/admin.crt') }}"
     state: present
   check_mode: yes
@@ -82,7 +92,7 @@
 - name: Add rsa_user certificates
   cisco.aci.aci_aaa_user_certificate:
     <<: *cert_present
-    certificate_name: "{{ item }}"
+    name: "{{ item }}"
     certificate: "{{ lookup('file', 'pki/rsa_user.crt') }}"
     state: present
   loop:
@@ -92,7 +102,7 @@
 - name: Add admin certificate with user name
   cisco.aci.aci_aaa_user_certificate:
     <<: *cert_present
-    certificate_name: '{{ aci_username }}'
+    name: '{{ aci_username }}'
     state: present
 
 # QUERY ALL USER CERTIFICATES
@@ -101,6 +111,7 @@
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     #password: '{{ aci_password }}'
+    certificate_name: admin
     private_key: '{{ role_path }}/pki/admin.key'
     validate_certs: '{{ aci_validate_certs | default(false) }}'
     use_ssl: '{{ aci_use_ssl | default(true) }}'
@@ -127,6 +138,7 @@
   cisco.aci.aci_aaa_user_certificate:
     <<: *cert_query
     private_key: '{{ role_path }}/pki/rsa_user.key'
+    certificate_name: rsa_user
   register: nm_query_all_rsa
 
 - name: Verify nm_query_all_rsa
@@ -161,14 +173,14 @@
 - name: Query our certificate using signature-based authentication (check_mode)
   cisco.aci.aci_aaa_user_certificate:
     <<: *cert_query
-    certificate_name: admin
+    name: admin
   check_mode: yes
   register: cm_query_cert
 
 - name: Query our certificate using signature-based authentication (normal mode)
   cisco.aci.aci_aaa_user_certificate:
     <<: *cert_query
-    certificate_name: admin
+    name: admin
   register: nm_query_cert
 
 - name: Verify query_cert
@@ -182,7 +194,7 @@
   cisco.aci.aci_aaa_user_certificate:
     <<: *cert_query
     private_key: '{{ role_path }}/pki/admin_invalid.key'
-    certificate_name: admin
+    name: admin
   register: query_cert_invalid_key
   ignore_errors: yes
 
@@ -190,16 +202,16 @@
   cisco.aci.aci_aaa_user_certificate:
     <<: *cert_query
     private_key: '{{ role_path }}/pki/admin.crt'
-    certificate_name: admin
-  register: query_cert_invalid_key
+    name: admin
+  register: query_cert_valid_key
   ignore_errors: yes
-
 
 - name: Query our certificate using signature-based authentication (ansible rsa private key file)
   cisco.aci.aci_aaa_user_certificate:
     <<: *cert_query
     private_key: '{{ role_path }}/pki/rsa_ansible.key'
-    certificate_name: admin
+    certificate_name: rsa_user
+    name: rsa_user
   register: query_cert_openssh_rsa_key
   ignore_errors: yes
 
@@ -207,12 +219,12 @@
   cisco.aci.aci_aaa_user_certificate:
     <<: *cert_query
     private_key: '{{ role_path }}/pki/rsa_user.key'
-    certificate_name: "{{ item }}"
+    certificate_name: rsa_user
+    name: "{{ item }}"
   register: query_cert_ansible_rsa_key
   loop:
     - "rsa_user"
     - "user"
-    #- "admin"
 
 - name: Query our certificate using signature-based authentication (private key content for rsa_user certificate)
   cisco.aci.aci_aaa_user_certificate:
@@ -234,12 +246,12 @@
       /9beBPTS8cJdWHvCRE149H/ZCUxqjFZriJzFYvi0xor85eK8/3V7xaWtTkK25i3+
       xWk+sA3DYYDPGM8=
       -----END PRIVATE KEY-----
-    certificate_name: "{{ item }}"
+    certificate_name: rsa_user
+    name: "{{ item }}"
   register: query_cert_key_content
   loop:
     - "rsa_user"
     - "user"
-    #- "admin"
 
 # REMOVE CERTIFICATE
 - name: Remove certificate (check_mode)
@@ -252,7 +264,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     aaa_user: '{{ aci_username }}'
-    certificate_name: admin
+    name: admin
     state: absent
   check_mode: yes
   register: cm_remove_cert
@@ -277,3 +289,58 @@
     - nm_remove_cert is changed
     - cm_remove_cert_again is not changed
     - nm_remove_cert_again is not changed
+
+# Checking if changing certification_name to name throws an error. (#82)
+- name: Making sure current user has correct cert
+  aci_aaa_user_certificate:
+    <<: *aci_info
+    aaa_user: '{{ aci_username }}'
+    name: admin
+    certificate: "{{ lookup('file', 'pki/admin.crt') }}"
+    state: present
+
+- name: Remove user ansible_test
+  aci_aaa_user:
+      <<: *aci_info 
+      aaa_user: ansible_test
+      state: absent
+
+- name: Add user ansible_test
+  aci_aaa_user:
+    <<: *aci_info 
+    aaa_user: ansible_test
+    aaa_password: ansible_5351
+    expiration: never
+    expires: no
+    state: present
+
+- name: Add user certificate
+  aci_aaa_user_certificate:
+    <<: *aci_info 
+    aaa_user: ansible_test
+    name: test
+    certificate: "{{ lookup('file', 'pki/admin.crt') }}"
+    state: present
+
+- name: Query test certificate
+  aci_aaa_user_certificate:
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    certificate_name: admin
+    private_key: '{{ role_path }}/pki/admin.key'
+    aaa_user: ansible_test
+    name: test
+    state: query
+  register: query_test
+
+- name: Verify query_test
+  assert:
+    that:
+    - query_test is not changed
+
+- name: Remove user to clean environment for next test on ci
+  aci_aaa_user:
+    <<: *aci_info 
+    aaa_user: ansible_test
+    state: absent

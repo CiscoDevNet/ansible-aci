@@ -34,7 +34,7 @@ options:
     - The PEM format public key extracted from the X.509 certificate.
     type: str
     aliases: [ cert_data, certificate_data ]
-  certificate_name:
+  name:
     description:
     - The name of the user certificate entry in ACI.
     type: str
@@ -72,7 +72,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     aaa_user: admin
-    certificate_name: admin
+    name: admin
     certificate_data: '{{ lookup("file", "pki/admin.crt") }}'
     state: present
   delegate_to: localhost
@@ -83,7 +83,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     aaa_user: admin
-    certificate_name: admin
+    name: admin
     state: absent
   delegate_to: localhost
 
@@ -93,7 +93,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     aaa_user: admin
-    certificate_name: admin
+    name: admin
     state: query
   delegate_to: localhost
   register: query_result
@@ -235,7 +235,7 @@ def main():
         aaa_user=dict(type='str', required=True),
         aaa_user_type=dict(type='str', default='user', choices=['appuser', 'user']),
         certificate=dict(type='str', aliases=['cert_data', 'certificate_data']),
-        certificate_name=dict(type='str', aliases=['cert_name']),  # Not required for querying all objects
+        name=dict(type='str'),  # Not required for querying all objects
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
     )
@@ -244,15 +244,15 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['aaa_user', 'certificate_name']],
-            ['state', 'present', ['aaa_user', 'certificate', 'certificate_name']],
+            ['state', 'absent', ['aaa_user', 'name']],
+            ['state', 'present', ['aaa_user', 'certificate', 'name']],
         ],
     )
 
     aaa_user = module.params.get('aaa_user')
     aaa_user_type = module.params.get('aaa_user_type')
     certificate = module.params.get('certificate')
-    certificate_name = module.params.get('certificate_name')
+    name = module.params.get('name')
     state = module.params.get('state')
     name_alias = module.params.get('name_alias')
 
@@ -266,9 +266,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class='aaaUserCert',
-            aci_rn='usercert-{0}'.format(certificate_name),
-            module_object=certificate_name,
-            target_filter={'name': certificate_name},
+            aci_rn='usercert-{0}'.format(name),
+            module_object=name,
+            target_filter={'name': name},
         ),
     )
     aci.get_existing()
@@ -278,7 +278,7 @@ def main():
             aci_class='aaaUserCert',
             class_config=dict(
                 data=certificate,
-                name=certificate_name,
+                name=name,
                 nameAlias=name_alias,
 
             ),
