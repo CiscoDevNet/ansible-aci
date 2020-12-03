@@ -110,7 +110,6 @@
   cisco.aci.aci_aaa_user_certificate: &cert_query
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
-    #password: '{{ aci_password }}'
     certificate_name: admin
     private_key: '{{ role_path }}/pki/admin.key'
     validate_certs: '{{ aci_validate_certs | default(false) }}'
