@@ -1,0 +1,261 @@
+# Test code for the ACI modules
+# Copyright: (c) 2020, Shreyas Srish (@shrsr)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact: 
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+
+# Clean Environment
+- name: Remove ipv4 address to mgmt interface in-band
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: in_band
+    node_id: 1102
+    node_name: "leaf1102"
+    ipv4_address: "3.1.1.2/24"
+    ipv4_gw: "3.1.1.1"
+    state: absent
+
+- name: Remove ipv4 address to mgmt interface output of band
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: out_of_band
+    node_id: 1103
+    node_name: "leaf113"
+    ipv4_address: "3.1.1.3/24"
+    ipv4_gw: "3.1.1.1"
+    state: absent
+
+- name: Remove another ipv4 address to mgmt interface in-band 
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: in_band
+    node_id: 1104
+    node_name: "leaf1104"
+    ipv4_address: "2.1.1.4/24"
+    ipv4_gw: "2.1.1.1"
+    state: absent
+
+- name: Remove another ipv4 address to mgmt interface output of band
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: out_of_band
+    node_id: 1103
+    node_name: "leaf113"
+    ipv4_address: "2.1.1.3/24"
+    ipv4_gw: "2.1.1.1"
+    state: absent
+
+# Add operations
+- name: Add ipv4 address to mgmt interface input-band in check mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: in_band
+    node_id: 1102
+    node_name: "leaf110"
+    ipv4_address: "3.1.1.2/24"
+    ipv4_gw: "3.1.1.1"
+    state: present
+  check_mode: yes
+  register: cm_add_inb
+
+- name: Add ipv4 address to mgmt interface output of band in check mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: out_of_band
+    node_id: 1103
+    node_name: "leaf113"
+    ipv4_address: '3.1.1.3/24'
+    ipv4_gw: "3.1.1.1"
+    state: present
+  check_mode: yes
+  register: cm_add_oob
+
+- name: Add ipv4 address to mgmt interface input-band in normal mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: in_band
+    node_id: 1102
+    node_name: "leaf110"
+    ipv4_address: "3.1.1.2/24"
+    ipv4_gw: "3.1.1.1"
+    state: present
+  register: nm_add_inb
+      
+- name: Add ipv4 address to mgmt interface output of band in normal mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: out_of_band
+    node_id: 1103
+    node_name: "leaf113"
+    ipv4_address: "3.1.1.3/24"
+    ipv4_gw: "3.1.1.1"
+    state: present
+  register: nm_add_oob
+
+- name: Add ipv4 address to mgmt interface input-band in normal mode again
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: in_band
+    node_id: 1102
+    node_name: "leaf110"
+    ipv4_address: "3.1.1.2/24"
+    ipv4_gw: "3.1.1.1"
+    state: present
+  register: nm_add_inb_again
+
+- name: Add ipv4 address to mgmt interface output of band in normal mode again
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: out_of_band
+    node_id: 1103
+    node_name: "leaf113"
+    ipv4_address: "3.1.1.3/24"
+    ipv4_gw: "3.1.1.1"
+    state: present
+  register: nm_add_oob_again
+
+- name: Add another ipv4 address to mgmt interface input-band in normal mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: in_band
+    node_id: 1104
+    node_name: "leaf114"
+    ipv4_address: "2.1.1.4/24"
+    ipv4_gw: "2.1.1.1"
+    state: present
+  register: nm_add_inb_2
+
+- name: Add another ipv4 address to mgmt interface out of band in normal mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: out_of_band
+    node_id: 1103
+    node_name: "leaf113"
+    ipv4_address: "2.1.1.3/24"
+    ipv4_gw: "2.1.1.1"
+    state: present
+  register: nm_add_oob_2
+
+- name: Verify add operations
+  assert:
+    that:
+    - cm_add_inb is changed
+    - cm_add_inb.sent.mgmtRsInBStNode.attributes.addr == '3.1.1.2/24'
+    - cm_add_oob is changed
+    - cm_add_oob.sent.mgmtRsOoBStNode.attributes.addr == '3.1.1.3/24'
+    - nm_add_inb is changed
+    - nm_add_inb.current.0.mgmtRsInBStNode.attributes.addr == '3.1.1.2/24'
+    - nm_add_oob is changed
+    - nm_add_oob.current.0.mgmtRsOoBStNode.attributes.addr == '3.1.1.3/24'
+    - nm_add_inb_2 is changed
+    - nm_add_inb_2.current.0.mgmtRsInBStNode.attributes.addr == '2.1.1.4/24'
+    - nm_add_oob_2 is changed
+    - nm_add_oob_2.current.0.mgmtRsOoBStNode.attributes.addr == '2.1.1.3/24'
+    - nm_add_inb_again is not changed
+    - nm_add_oob_again is not changed
+
+
+- name: Query ipv4 address to mgmt interface input-band in normal mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: in_band
+    node_id: 1101
+    node_name: "leaf110"
+    ipv4_address: "3.1.1.2/24"
+    ipv4_gw: "3.1.1.1"
+    state: query
+  register: nm_query_oob_2
+
+- name: Query ipv4 address to mgmt interface out_of_band in normal mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: out_of_band
+    node_id: 1103
+    node_name: "leaf113"
+    ipv4_address: "3.1.1.3/24"
+    ipv4_gw: "3.1.1.1"
+    state: query
+  register: nm_query_oob_2
+
+- name: Query operations
+  assert:
+    that:
+    - nm_query_oob_2 is not changed
+    - nm_query_oob_2 is not changed
+
+- name: Remove ipv4 address to mgmt interface in-band 
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: in_band
+    node_id: 1104
+    node_name: "leaf1104"
+    ipv4_address: "2.1.1.4/24"
+    ipv4_gw: "2.1.1.1"
+    state: absent
+  register: remove_in_band
+
+- name: Remove ipv4 address to mgmt interface output of band
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: default
+    pod_id: 1
+    type: out_of_band
+    node_id: 1103
+    node_name: "leaf113"
+    ipv4_address: "2.1.1.3/24"
+    ipv4_gw: "2.1.1.1"
+    state: absent
+  register: remove_out_of_band
+
+- name: Verify remove operations
+  assert:
+    that:
+    - remove_in_band is changed
+    - remove_in_band.previous.0.mgmtRsInBStNode.attributes.addr == '2.1.1.4/24'
+    - remove_out_of_band is changed
+    - remove_out_of_band.previous.0.mgmtRsOoBStNode.attributes.addr == '2.1.1.3/24'
