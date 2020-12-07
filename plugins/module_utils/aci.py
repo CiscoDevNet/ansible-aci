@@ -224,7 +224,7 @@ class ACIModule(object):
         # Check if we got a private key. This allows the use of vaulting the private key.
         try:
             sig_key = load_privatekey(FILETYPE_PEM, self.params.get('private_key'))
-        except Exception as e:
+        except Exception:
             if os.path.exists(self.params.get('private_key')):
                 try:
                     with open(self.params.get('private_key'), 'r') as fh:
@@ -233,7 +233,7 @@ class ACIModule(object):
                     self.module.fail_json(msg="Cannot open private key file '%(private_key)s'." % self.params)
                 try:
                     sig_key = load_privatekey(FILETYPE_PEM, private_key_content)
-                except Exception as err:
+                except Exception:
                     self.module.fail_json(msg="Cannot load private key file '%(private_key)s'." % self.params)
                 if self.params.get('certificate_name') is None:
                     self.params['certificate_name'] = os.path.basename(os.path.splitext(self.params.get('private_key'))[0])
@@ -821,21 +821,14 @@ class ACIModule(object):
         """
         This method is used by construct_url when the object is the fourth-level class.
         """
-        root_class = root.get('aci_class')
+
         root_rn = root.get('aci_rn')
-        root_filter = root.get('target_filter')
         root_obj = root.get('module_object')
-        ter_class = ter.get('aci_class')
         ter_rn = ter.get('aci_rn')
-        ter_filter = ter.get('target_filter')
         ter_obj = ter.get('module_object')
-        sec_class = sec.get('aci_class')
         sec_rn = sec.get('aci_rn')
-        sec_filter = sec.get('target_filter')
         sec_obj = sec.get('module_object')
-        parent_class = parent.get('aci_class')
         parent_rn = parent.get('aci_rn')
-        parent_filter = parent.get('target_filter')
         parent_obj = parent.get('module_object')
         obj_class = obj.get('aci_class')
         obj_rn = obj.get('aci_rn')
@@ -890,25 +883,15 @@ class ACIModule(object):
         """
         This method is used by construct_url when the object is the fourth-level class.
         """
-        root_class = root.get('aci_class')
         root_rn = root.get('aci_rn')
-        root_filter = root.get('target_filter')
         root_obj = root.get('module_object')
-        quad_class = quad.get('aci_class')
         quad_rn = quad.get('aci_rn')
-        quad_filter = quad.get('target_filter')
         quad_obj = quad.get('module_object')
-        ter_class = ter.get('aci_class')
         ter_rn = ter.get('aci_rn')
-        ter_filter = ter.get('target_filter')
         ter_obj = ter.get('module_object')
-        sec_class = sec.get('aci_class')
         sec_rn = sec.get('aci_rn')
-        sec_filter = sec.get('target_filter')
         sec_obj = sec.get('module_object')
-        parent_class = parent.get('aci_class')
         parent_rn = parent.get('aci_rn')
-        parent_filter = parent.get('target_filter')
         parent_obj = parent.get('module_object')
         obj_class = obj.get('aci_class')
         obj_rn = obj.get('aci_rn')
