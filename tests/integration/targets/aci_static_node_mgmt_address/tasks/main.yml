@@ -169,7 +169,7 @@
     - nm_add_inb_2 is changed
     - nm_add_inb_2.current.0.mgmtRsInBStNode.attributes.addr == '2.1.1.4/24'
     - nm_add_oob_2 is changed
-    - nm_add_oob_2.current.0.mgmtRsOoBStNode.attributes.addr == '2.1.1.3/24'
+    - nm_add_oob_2.current.0.mgmtRsOoBStNode.attributes.addr == '4.1.1.3/24'
     - nm_add_inb_again is not changed
     - nm_add_oob_again is not changed
 
