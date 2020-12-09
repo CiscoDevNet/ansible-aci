@@ -22,8 +22,7 @@ options:
     type: str
   pod_id:
     description:
-    - The pod number which is part of the tDN
-    - pod_id is an integer
+    - The pod number of the leaf, spine or APIC
     type: int
   node_name:
     description:
@@ -31,20 +30,23 @@ options:
     type: str
   node_id:
     description:
-    - ACI Fabric's node id of a given node
+    - ACI Fabric's node id of a leaf, spine or APIC
     type: int
   ipv4_address:
     description:
-    - ipv4 address of in band/out of band  mgmt
+    - ipv4 address of in band/out of band mgmt
     type: str
+    aliases: [ ip ]
   ipv4_gw:
     description:
-    - GW address of in band/out of band  mgmt
+    - Gateway address of in band / out of band mgmt network
     type: str
+    aliases: [ gw ]
   ipv6_address:
     description:
     -  ipv6 address of in band/out of band  mgmt
     type: str
+    aliases: [ ipv6 ]
   ipv6_gw:
     description:
     - GW address of in band/out of band mgmt
@@ -64,6 +66,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+
 author:
 - Sudhakar Shet Kudtarkar (@kudtarkar1)
 - Lionel Hercot (@lhercot)
@@ -128,6 +131,25 @@ EXAMPLES = r'''
     node_name: "leaf110"
     ipv4_address: "3.1.1.2/24"
     ipv4_gw: "3.1.1.1"
+    state: query
+  delegate_to: localhost
+
+- name: Query all addresses in epg out of band
+  cisco.aci.aci_static_node_mgmt_address:
+    host: "Host IP"
+    username: admin
+    password: SomeSecretePassword
+    epg: default
+    type: out_of_band
+    state: query
+  delegate_to: localhost
+
+- name: Query all in band addresses
+  cisco.aci.aci_static_node_mgmt_address:
+    host: "Host IP"
+    username: admin
+    password: SomeSecretePassword
+    type: in_band
     state: query
   delegate_to: localhost
 '''
@@ -240,10 +262,6 @@ RETURN = r'''
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
-NODE_MAPPING = dict(
-    node_path='topology/pod-{pod_id}/node-{node_id}'
-)
-
 
 def main():
     argument_spec = aci_argument_spec()
@@ -253,9 +271,9 @@ def main():
         node_name=dict(type='str'),
         type=dict(type='str', choices=['in_band', 'out_of_band'], required=True),
         epg=dict(type='str'),
-        ipv4_address=dict(type='str'),
-        ipv4_gw=dict(type='str'),
-        ipv6_address=dict(type='str'),
+        ipv4_address=dict(type='str', aliases=['ip']),
+        ipv4_gw=dict(type='str', aliases=['gw']),
+        ipv6_address=dict(type='str', aliases=['ipv6']),
         ipv6_gw=dict(type='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
@@ -264,7 +282,7 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['node_id', 'node_name', 'epg', 'ipv4_address', 'ipv4_gw']],
+            ['state', 'absent', ['node_id', 'node_name', 'epg']],
             ['state', 'present', ['node_id', 'node_name', 'epg', 'ipv4_address', 'ipv4_gw']]
         ]
     )
@@ -278,7 +296,6 @@ def main():
     ipv6_address = module.params.get('ipv6_address')
     ipv6_gw = module.params.get('ipv6_gw')
     state = module.params.get('state')
-    tenant = 'mgmt'
 
     class_map = dict(
         in_band=list([
@@ -291,15 +308,17 @@ def main():
         ]),
     )
 
-    static_path = 'topology/pod-{0}/node-{1}'.format(pod_id, node_id)
+    static_path = None
+    if pod_id is not None and node_id is not None:
+        static_path = 'topology/pod-{0}/node-{1}'.format(pod_id, node_id)
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
             aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
-            module_object=tenant,
-            target_filter={'name': tenant},
+            aci_rn='tn-mgmt',
+            module_object='mgmt',
+            target_filter={'name': 'mgmt'},
         ),
         subclass_1=dict(
             aci_class='mgmtMgmtP',
