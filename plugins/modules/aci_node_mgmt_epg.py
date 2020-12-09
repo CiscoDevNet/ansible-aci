@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2020, Sudhakar Shet Kudtarkar (@kudtarkar1)
-# Copyright: (c) 2020, Lionel Hercot <lhercot@cisco.com>
 # Copyright: (c) 2020, Shreyas Srish <ssrish@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -11,48 +9,30 @@ __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: aci_static_node_mgmt_address
-short_description: In band or Out of band management IP address
+module: aci_node_mgmt_epg
+short_description: In band or Out of band management EPGs
 description:
-- Cisco ACI Fabric Node IP address
+- Cisco ACI Fabric Node EPGs
 options:
   epg:
     description:
     - The name of the end point group
     type: str
-  pod_id:
-    description:
-    - The pod number of the leaf, spine or APIC
-    type: int
-  node_id:
-    description:
-    - ACI Fabric's node id of a leaf, spine or APIC
-    type: int
-  ipv4_address:
-    description:
-    - ipv4 address of in band/out of band mgmt
-    type: str
-    aliases: [ ip ]
-  ipv4_gw:
-    description:
-    - Gateway address of in band / out of band mgmt network
-    type: str
-    aliases: [ gw ]
-  ipv6_address:
-    description:
-    -  ipv6 address of in band/out of band  mgmt
-    type: str
-    aliases: [ ipv6 ]
-  ipv6_gw:
-    description:
-    - GW address of in band/out of band mgmt
-    type: str
+    aliases: [ name ]
   type:
     description:
     - type of management interface
     type: str
     choices: [ in_band, out_of_band ]
     required: true
+  bd:
+    description:
+    - The in-band bridge domain
+    type: str
+  encap:
+    description:
+    - The in-band access encapsulation
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -64,85 +44,52 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 author:
-- Sudhakar Shet Kudtarkar (@kudtarkar1)
-- Lionel Hercot (@lhercot)
 - Shreyas Srish (@shrsr)
 '''
 
 EXAMPLES = r'''
-- name: Add ipv4 address to in band mgmt interface
-  cisco.aci.aci_static_node_mgmt_address:
+- name: Add in band mgmt epg
+  cisco.aci.aci_node_mgmt_epg:
     host: "Host IP"
     username: admin
     password: SomeSecretePassword
     epg: default
-    pod_id: 1
     type: in_band
-    node_id: 1102
-    ipv4_address: "3.1.1.2/24"
-    ipv4_gw: "3.1.1.1"
+    encap: vlan-1
+    bd: bd1
     state: present
   delegate_to: localhost
 
-- name: Add ipv4 address to out of band mgmt interface
-  cisco.aci.aci_static_node_mgmt_address:
-    host: "Host IP"
-    username: admin
-    password: SomeSecretePassword
-    epg: default
-    pod_id: 1
-    band_type: out_of_band
-    node_id: 1102
-    ipv4_address: "3.1.1.2/24"
-    ipv4_gw: "3.1.1.1"
-    state: present
-  delegate_to: localhost
-
-- name: Remove ipv4 address to in band mgmt interface
-  cisco.aci.aci_static_node_mgmt_address:
-    host: "Host IP"
-    username: admin
-    password: SomeSecretePassword
-    epg: default
-    pod_id: 1
-    type: in_band
-    node_id: 1102
-    ipv4_address: "3.1.1.2/24"
-    ipv4_gw: "3.1.1.1"
-    state: absent
-  delegate_to: localhost
-
-- name: Query the in band mgmt ipv4 address
-  cisco.aci.aci_static_node_mgmt_address:
-    host: "Host IP"
-    username: admin
-    password: SomeSecretePassword
-    epg: default
-    pod_id: 1
-    type: in_band
-    node_id: 1102
-    ipv4_address: "3.1.1.2/24"
-    ipv4_gw: "3.1.1.1"
-    state: query
-  delegate_to: localhost
-
-- name: Query all addresses in epg out of band25wf
-  cisco.aci.aci_static_node_mgmt_address:
+- name: Add out of band mgmt epg
+  cisco.aci.aci_node_mgmt_epg:
     host: "Host IP"
     username: admin
     password: SomeSecretePassword
     epg: default
     type: out_of_band
-    state: query
+    state: present
   delegate_to: localhost
 
-- name: Query all in band addresses
-  cisco.aci.aci_static_node_mgmt_address:
+- name: Query in band mgmt epg
+  cisco.aci.aci_node_mgmt_epg:
     host: "Host IP"
     username: admin
     password: SomeSecretePassword
-    type: in_band
+    epg: default
+    band_type: in_band
+    encap: vlan-1
+    bd: bd1
     state: query
+  delegate_to: localhost
+
+- name: Remove in band mgmt epg
+  cisco.aci.aci_node_mgmt_epg:
+    host: "Host IP"
+    username: admin
+    password: SomeSecretePassword
+    epg: default
+    type: in_band
+    state: absent
   delegate_to: localhost
 '''
 
@@ -258,14 +205,10 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        node_id=dict(type='int'),
-        pod_id=dict(type='int'),
         type=dict(type='str', choices=['in_band', 'out_of_band'], required=True),
-        epg=dict(type='str'),
-        ipv4_address=dict(type='str', aliases=['ip']),
-        ipv4_gw=dict(type='str', aliases=['gw']),
-        ipv6_address=dict(type='str', aliases=['ipv6']),
-        ipv6_gw=dict(type='str'),
+        epg=dict(type='str', aliases=['name']),
+        bd=dict(type='str'),
+        encap=dict(type='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
 
@@ -273,35 +216,35 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['node_id', 'epg']],
-            ['state', 'present', ['node_id', 'epg', 'ipv4_address', 'ipv4_gw']]
+            ['state', 'absent', ['epg']],
+            ['state', 'present', ['epg']],
+            ['type', 'in_band', ['bd', 'encap']]
         ]
     )
 
-    pod_id = module.params.get('pod_id')
-    node_id = module.params.get('node_id')
     type = module.params.get('type')
     epg = module.params.get('epg')
-    ipv4_address = module.params.get('ipv4_address')
-    ipv4_gw = module.params.get('ipv4_gw')
-    ipv6_address = module.params.get('ipv6_address')
-    ipv6_gw = module.params.get('ipv6_gw')
+    bd = module.params.get('bd')
+    encap = module.params.get('encap')
     state = module.params.get('state')
+
+    child_configs = [
+        dict(
+            mgmtRsMgmtBD=dict(
+                attributes=dict(
+                    tnFvBDName=bd,
+                ),
+            ),
+        )]
 
     class_map = dict(
         in_band=list([
-            dict(aci_class='mgmtInb', aci_rn='inb-{0}'),
-            dict(aci_class='mgmtRsInBStNode', aci_rn='rsinBStNode-[{0}]')
+            dict(aci_class='mgmtInB', aci_rn='inb-{0}'),
         ]),
         out_of_band=list([
-            dict(aci_class='mgmtOob', aci_rn='oob-{0}'),
-            dict(aci_class='mgmtRsOoBStNode', aci_rn='rsooBStNode-[{0}]')
+            dict(aci_class='mgmtOoB', aci_rn='oob-{0}'),
         ]),
     )
-
-    static_path = None
-    if pod_id is not None and node_id is not None:
-        static_path = 'topology/pod-{0}/node-{1}'.format(pod_id, node_id)
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -312,7 +255,7 @@ def main():
             target_filter={'name': 'mgmt'},
         ),
         subclass_1=dict(
-            aci_class='mgmtMgmtP',
+            aci_class='mgmtp',
             aci_rn='mgmtp-default',
             module_object='default',
             target_filter={'name': 'default'},
@@ -323,27 +266,21 @@ def main():
             module_object=epg,
             target_filter={'name': epg},
         ),
-        subclass_3=dict(
-            aci_class=class_map.get(type)[1]['aci_class'],
-            aci_rn=class_map.get(type)[1]['aci_rn'].format(static_path),
-            module_object=static_path,
-            target_filter={'name': static_path},
-        ),
+        child_classes=['mgmtRsMgmtBD'],
     )
 
     aci.get_existing()
 
     if state == 'present':
         aci.payload(
-            aci_class=class_map.get(type)[1]['aci_class'],
+            aci_class=class_map.get(type)[0]['aci_class'],
             class_config=dict(
-                addr=ipv4_address,
-                gw=ipv4_gw,
-                v6Addr=ipv6_address,
-                v6Gw=ipv6_gw
+                name=epg,
+                encap=encap,
             ),
+            child_configs=child_configs,
         )
-        aci.get_diff(aci_class=class_map.get(type)[1]['aci_class'])
+        aci.get_diff(aci_class=class_map.get(type)[0]['aci_class'])
 
         aci.post_config()
 
