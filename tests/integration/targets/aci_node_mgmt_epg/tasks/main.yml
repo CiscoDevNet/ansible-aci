@@ -111,6 +111,26 @@
     state: present
   register: add_nm_outofband_2
 
+- name: Add another node mgmt in_band epg in normal mode with change made to bd
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband-2
+    encap: vlan-2
+    bd: bd4
+    state: present
+  register: add_nm_inband_bd4
+
+- name: Add another node mgmt in_band epg in normal mode with change made to encap
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband-2
+    encap: vlan-4
+    bd: bd4
+    state: present
+  register: add_nm_inband_encap4
+
 - name: Verify add operations
   assert:
     that:
@@ -133,6 +153,10 @@
     - add_nm_inband_2.current.0.mgmtInB.children.0.mgmtRsMgmtBD.attributes.tnFvBDName == 'bd2'
     - add_nm_outofband_2 is changed
     - add_nm_outofband_2.current.0.mgmtOoB.attributes.name == 'ansible-outofband-2'
+    - add_nm_inband_bd4 is changed
+    - add_nm_inband_bd4.current.0.mgmtInB.children.0.mgmtRsMgmtBD.attributes.tnFvBDName == 'bd4'
+    - add_nm_inband_encap4 is changed
+    - add_nm_inband_encap4.current.0.mgmtInB.attributes.encap == 'vlan-4'
 
 # Query operations
 - name: Query node mgmt in_band epg
