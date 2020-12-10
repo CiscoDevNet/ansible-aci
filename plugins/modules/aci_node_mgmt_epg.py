@@ -27,11 +27,11 @@ options:
     required: true
   bd:
     description:
-    - The in-band bridge domain
+    - The in-band bridge domain which is used when type is in band
     type: str
   encap:
     description:
-    - The in-band access encapsulation
+    - The in-band access encapsulation which is used when type is in band
     type: str
   state:
     description:
@@ -79,6 +79,24 @@ EXAMPLES = r'''
     band_type: in_band
     encap: vlan-1
     bd: bd1
+    state: query
+  delegate_to: localhost
+
+- name: Query all in band mgmt epg
+  cisco.aci.aci_node_mgmt_epg:
+    host: "Host IP"
+    username: admin
+    password: SomeSecretePassword
+    band_type: in_band
+    state: query
+  delegate_to: localhost
+
+- name: Query all out of band mgmt epg
+  cisco.aci.aci_node_mgmt_epg:
+    host: "Host IP"
+    username: admin
+    password: SomeSecretePassword
+    band_type: out_of_band
     state: query
   delegate_to: localhost
 
@@ -217,8 +235,7 @@ def main():
         supports_check_mode=True,
         required_if=[
             ['state', 'absent', ['epg']],
-            ['state', 'present', ['epg']],
-            ['type', 'in_band', ['bd', 'encap']]
+            ['state', 'present', ['epg']]
         ]
     )
 
@@ -228,14 +245,19 @@ def main():
     encap = module.params.get('encap')
     state = module.params.get('state')
 
-    child_configs = [
-        dict(
-            mgmtRsMgmtBD=dict(
-                attributes=dict(
-                    tnFvBDName=bd,
+    child_configs = []
+    child_class = []
+    if type == 'in_band':
+        child_configs = [
+            dict(
+                mgmtRsMgmtBD=dict(
+                    attributes=dict(
+                        tnFvBDName=bd,
+                    ),
                 ),
-            ),
-        )]
+            )]
+
+        child_class = ['mgmtRsMgmtBD']
 
     class_map = dict(
         in_band=list([
@@ -255,7 +277,7 @@ def main():
             target_filter={'name': 'mgmt'},
         ),
         subclass_1=dict(
-            aci_class='mgmtp',
+            aci_class='mgmtMgmtP',
             aci_rn='mgmtp-default',
             module_object='default',
             target_filter={'name': 'default'},
@@ -266,7 +288,7 @@ def main():
             module_object=epg,
             target_filter={'name': epg},
         ),
-        child_classes=['mgmtRsMgmtBD'],
+        child_classes=child_class,
     )
 
     aci.get_existing()
