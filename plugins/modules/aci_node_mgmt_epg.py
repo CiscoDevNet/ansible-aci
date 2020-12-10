@@ -27,11 +27,11 @@ options:
     required: true
   bd:
     description:
-    - The in-band bridge domain which is used when type is in band
+    - The in-band bridge domain which is used when type is in_band
     type: str
   encap:
     description:
-    - The in-band access encapsulation which is used when type is in band
+    - The in-band access encapsulation which is used when type is in_band
     type: str
   state:
     description:
@@ -76,7 +76,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretePassword
     epg: default
-    band_type: in_band
+    type: in_band
     encap: vlan-1
     bd: bd1
     state: query
@@ -87,7 +87,7 @@ EXAMPLES = r'''
     host: "Host IP"
     username: admin
     password: SomeSecretePassword
-    band_type: in_band
+    type: in_band
     state: query
   delegate_to: localhost
 
@@ -96,7 +96,7 @@ EXAMPLES = r'''
     host: "Host IP"
     username: admin
     password: SomeSecretePassword
-    band_type: out_of_band
+    type: out_of_band
     state: query
   delegate_to: localhost
 
