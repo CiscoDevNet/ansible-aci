@@ -5,13 +5,34 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.0.0
+======
+
+Release Summary
+---------------
+
+Release v2.0.0 of the ``cisco.aci`` collection on 2020-12-15.
+This changelog describes all changes made to the modules and plugins included in this collection since v1.1.1. 
+
+Major Changes
+-------------
+
+- Change certificate_name to name in aci_aaa_user_certificate module for query operation
+
+Minor Changes
+-------------
+
+- Add aci_node_mgmt_epg module to manage in band or out of band management EPGs
+- Add aci_static_node_mgmt_address module & test file
+- Add test file for aci_node_mgmt_epg
+
 v1.1.1
 ======
 
 Release Summary
 ---------------
 
-Release v1.1.1 of the ``cisco.mso`` collection on 2020-11-23.
+Release v1.1.1 of the ``cisco.aci`` collection on 2020-11-23.
 This changelog describes all changes made to the modules and plugins included in this collection since v1.1.0. 
 
 Minor Changes
@@ -32,7 +53,7 @@ v1.1.0
 Release Summary
 ---------------
 
-Release v1.1.0 of the ``cisco.mso`` collection on 2020-10-30.
+Release v1.1.0 of the ``cisco.aci`` collection on 2020-10-30.
 This changelog describes all changes made to the modules and plugins included in this collection since v1.0.1. 
 
 Minor Changes
@@ -65,7 +86,7 @@ v1.0.1
 Release Summary
 ---------------
 
-Release v1.0.1 of the ``cisco.mso`` collection on 2020-10-13.
+Release v1.0.1 of the ``cisco.aci`` collection on 2020-10-13.
 This changelog describes all changes made to the modules and plugins included in this collection since v1.0.0. 
 
 Minor Changes
