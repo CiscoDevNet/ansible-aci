@@ -23,7 +23,6 @@ Minor Changes
 -------------
 
 - Add aci_node_mgmt_epg module to manage in band or out of band management EPGs
-- Add aci_static_node_inb_mgmt_address module & test file
 - Add aci_static_node_mgmt_address module & test file
 - Add test file for aci_node_mgmt_epg
 
