@@ -343,9 +343,3 @@
     <<: *aci_info
     aaa_user: ansible_test
     state: absent
-
-- name: Query our certificate using signature-based authentication (normal mode)
-  cisco.aci.aci_aaa_user_certificate:
-    <<: *cert_query
-    name: admin
-  register: nm_query_cert
