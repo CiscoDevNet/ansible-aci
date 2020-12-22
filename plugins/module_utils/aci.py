@@ -53,7 +53,7 @@ try:
 except ImportError:
     HAS_OPENSSL = False
 
-# Signature-based authentication using Cryptography
+# Signature-based authentication using cryptography
 try:
     from cryptography.hazmat.primitives import serialization, hashes
     from cryptography.hazmat.primitives.asymmetric import padding
@@ -141,6 +141,7 @@ class ACIModule(object):
             self.params['output_level'] = 'debug'
 
         if self.params.get('private_key'):
+            # Perform signature-based authentication, no need to log on separately
             if not HAS_CRYPTOGRAPHY and not HAS_OPENSSL:
                 self.module.fail_json(
                     msg='Cannot use signature-based authentication because cryptography (preferred) or pyopenssl are not available')
