@@ -167,7 +167,7 @@
 
 # Remove Tenant after testing
 - name: Remove tenant (normal_mode)
-  cisco.aci.aci_domain:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     tenant: ansible_tenant
     state: absent
