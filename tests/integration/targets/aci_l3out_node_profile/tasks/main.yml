@@ -164,7 +164,6 @@
     tenant: ansible_tenant
     l3out: ansible_l3out
     state: absent
-  delegate_to: localhost
 
 # Remove Tenant after testing
 - name: Remove tenant (normal_mode)
