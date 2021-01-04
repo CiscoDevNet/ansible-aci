@@ -17,11 +17,11 @@ short_description: Manage Layer 3 Outside (L3Out) node profiles ######(l3extLNod
 description:
 - Manage Layer 3 Outside (L3Out) node profiles on Cisco ACI fabrics.
 options:
-  name:
+  node_profile:
     description:
     - Name of the node profile.
     type: str
-    aliases: [ node_profile_name, node_profile ]
+    aliases: [ node_profile_name, name ]
   description:
     description:
     - Description for the node profile.
