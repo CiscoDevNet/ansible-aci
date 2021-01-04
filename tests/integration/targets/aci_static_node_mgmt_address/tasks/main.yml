@@ -1,0 +1,315 @@
+# Test code for the ACI modules
+# Copyright: (c) 2020, Shreyas Srish (@shrsr)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact: 
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+
+# Clean Environment
+- name: Remove node mgmt in_band epg
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband
+    encap: vlan-1
+    bd: bd1
+    state: absent
+
+- name: Remove node mgmt out_of_band epg
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: out_of_band
+    epg: ansible-outofband
+    state: absent
+
+# Add operations
+- name: Add node mgmt in_band epg
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband
+    encap: vlan-1
+    bd: bd1
+    state: present
+
+- name: Add node mgmt out_of_band epg
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: out_of_band
+    epg: ansible-outofband
+    state: present
+
+- name: Add ipv4 address to mgmt interface in band in check mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-inband
+    pod_id: 1
+    type: in_band
+    node_id: 110
+    ipv4_address: "3.1.1.2/24"
+    ipv4_gw: "3.1.1.1"
+    state: present
+  check_mode: yes
+  register: cm_add_inb
+
+- name: Add ipv4 address to mgmt interface out of band in check mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-outofband
+    pod_id: 1
+    type: out_of_band
+    node_id: 110
+    ipv4_address: '3.1.1.3/24'
+    ipv4_gw: "3.1.1.1"
+    state: present
+  check_mode: yes
+  register: cm_add_oob
+
+- name: Add ipv4 address to mgmt interface in band in normal mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-inband
+    pod_id: 1
+    type: in_band
+    node_id: 110
+    ipv4_address: "3.1.1.2/24"
+    ipv4_gw: "3.1.1.1"
+    state: present
+  register: nm_add_inb
+      
+- name: Add ipv4 address to mgmt interface out of band in normal mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-outofband
+    pod_id: 1
+    type: out_of_band
+    node_id: 110
+    ipv4_address: "3.1.1.3/24"
+    ipv4_gw: "3.1.1.1"
+    state: present
+  register: nm_add_oob
+
+- name: Add ipv4 address to mgmt interface in band in normal mode again
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-inband
+    pod_id: 1
+    type: in_band
+    node_id: 110
+    ipv4_address: "3.1.1.2/24"
+    ipv4_gw: "3.1.1.1"
+    state: present
+  register: nm_add_inb_again
+
+- name: Add ipv4 address to mgmt interface out of band in normal mode again
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-outofband
+    pod_id: 1
+    type: out_of_band
+    node_id: 110
+    ipv4_address: "3.1.1.3/24"
+    ipv4_gw: "3.1.1.1"
+    state: present
+  register: nm_add_oob_again
+
+- name: Add another ipv4 address to mgmt interface in band in normal mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-inband
+    pod_id: 1
+    type: in_band
+    node_id: 111
+    ipv4_address: "2.1.1.4/24"
+    ipv4_gw: "2.1.1.1"
+    state: present
+  register: nm_add_inb_2
+
+- name: Add another ipv4 address to mgmt interface out of band in normal mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-outofband
+    pod_id: 1
+    type: out_of_band
+    node_id: 111
+    ipv4_address: "4.1.1.3/24"
+    ipv4_gw: "4.1.1.1"
+    state: present
+  register: nm_add_oob_2
+
+- name: Verify add operations
+  assert:
+    that:
+    - cm_add_inb is changed
+    - cm_add_inb.sent.mgmtRsInBStNode.attributes.addr == '3.1.1.2/24'
+    - cm_add_oob is changed
+    - cm_add_oob.sent.mgmtRsOoBStNode.attributes.addr == '3.1.1.3/24'
+    - nm_add_inb is changed
+    - nm_add_inb.current.0.mgmtRsInBStNode.attributes.addr == '3.1.1.2/24'
+    - nm_add_oob is changed
+    - nm_add_oob.current.0.mgmtRsOoBStNode.attributes.addr == '3.1.1.3/24'
+    - nm_add_inb_2 is changed
+    - nm_add_inb_2.current.0.mgmtRsInBStNode.attributes.addr == '2.1.1.4/24'
+    - nm_add_oob_2 is changed
+    - nm_add_oob_2.current.0.mgmtRsOoBStNode.attributes.addr == '4.1.1.3/24'
+    - nm_add_inb_again is not changed
+    - nm_add_oob_again is not changed
+
+- name: Query ipv4 address to mgmt interface in band in normal mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-inband
+    pod_id: 1
+    type: in_band
+    node_id: 110
+    ipv4_address: "3.1.1.2/24"
+    ipv4_gw: "3.1.1.1"
+    state: query
+  register: nm_query_inb
+
+- name: Query ipv4 address to mgmt interface out_of_band in normal mode
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-outofband
+    pod_id: 1
+    type: out_of_band
+    node_id: 110
+    ipv4_address: "3.1.1.3/24"
+    ipv4_gw: "3.1.1.1"
+    state: query
+  register: nm_query_oob
+
+- name: Query all addresses in epg in band
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-inband
+    type: in_band
+    state: query
+  register: query_all_epg_inb
+
+- name: Query all addresses in epg out of band
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-outofband
+    type: out_of_band
+    state: query
+  register: query_all_epg_oob
+
+- name: Query all in band addresses
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    type: in_band
+    state: query
+  register: query_all_inb
+
+- name: Query all out_of_band addresses
+  aci_static_node_mgmt_address:
+    <<: *aci_info
+    type: out_of_band
+    state: query
+  register: query_all_oob
+
+- name: Verify query operations
+  assert:
+    that:
+    - nm_query_inb is not changed
+    - nm_query_oob is not changed
+    - nm_query_inb.current.0.mgmtRsInBStNode.attributes.addr == '3.1.1.2/24'
+    - nm_query_oob.current.0.mgmtRsOoBStNode.attributes.addr == '3.1.1.3/24'
+    - query_all_epg_inb.current.0.mgmtInB.attributes.dn == 'uni/tn-mgmt/mgmtp-default/inb-ansible-inband'
+    - query_all_epg_inb.current.0.mgmtInB.children | length == 2
+    - query_all_epg_oob.current.0.mgmtOoB.attributes.dn == 'uni/tn-mgmt/mgmtp-default/oob-ansible-outofband'
+    - query_all_epg_oob.current.0.mgmtOoB.children | length == 2
+    - query_all_inb.current.0.mgmtMgmtP.children.0.mgmtInB.children | length == 2
+    - query_all_oob.current.0.mgmtMgmtP.children.0.mgmtOoB.children | length == 2
+
+- name: Remove ipv4 address to mgmt interface in-band 
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-inband
+    pod_id: 1
+    type: in_band
+    node_id: 111
+    ipv4_address: "2.1.1.4/24"
+    ipv4_gw: "2.1.1.1"
+    state: absent
+  register: remove_in_band
+
+- name: Remove ipv4 address to mgmt interface out of band
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-outofband
+    pod_id: 1
+    type: out_of_band
+    node_id: 111
+    ipv4_address: "4.1.1.3/24"
+    ipv4_gw: "4.1.1.1"
+    state: absent
+  register: remove_out_of_band
+
+- name: Remove ipv4 address to mgmt interface in-band again
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-inband
+    pod_id: 1
+    type: in_band
+    node_id: 111
+    ipv4_address: "2.1.1.4/24"
+    ipv4_gw: "2.1.1.1"
+    state: absent
+  register: remove_in_band_again
+
+- name: Remove ipv4 address to mgmt interface out of band again
+  aci_static_node_mgmt_address:
+    <<: *aci_info 
+    epg: ansible-outofband
+    pod_id: 1
+    type: out_of_band
+    node_id: 111
+    ipv4_address: "4.1.1.3/24"
+    ipv4_gw: "4.1.1.1"
+    state: absent
+  register: remove_out_of_band_again
+
+- name: Verify remove operations
+  assert:
+    that:
+    - remove_in_band is changed
+    - remove_in_band.previous.0.mgmtRsInBStNode.attributes.addr == '2.1.1.4/24'
+    - remove_out_of_band is changed
+    - remove_out_of_band.previous.0.mgmtRsOoBStNode.attributes.addr == '4.1.1.3/24'
+    - remove_out_of_band_again is not changed
+    - remove_out_of_band_again.previous == []
+    - remove_in_band_again is not changed
+    - remove_in_band_again.previous == []
+
+# Clean environment for other ci test cases
+- name: Remove node mgmt in_band epg
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband
+    encap: vlan-1
+    bd: bd1
+    state: absent
+
+- name: Remove node mgmt out_of_band epg
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: out_of_band
+    epg: ansible-outofband
+    state: absent

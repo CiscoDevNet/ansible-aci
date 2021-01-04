@@ -1,0 +1,255 @@
+# Test code for the ACI modules
+# Copyright: (c) 2020, Shreyas Srish (@shrsr)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact: 
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+
+# Clean Environment
+- name: Remove node mgmt in_band epg
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband
+    encap: vlan-1
+    bd: bd1
+    state: absent
+
+- name: Remove node mgmt out_of_band epg
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: out_of_band
+    epg: ansible-outofband
+    state: absent
+
+# Add operations
+- name: Add node mgmt in_band epg in check mode
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband
+    encap: vlan-1
+    bd: bd1
+    state: present
+  check_mode: yes
+  register: add_cm_inband
+
+- name: Add node mgmt out_of_band epg in check mode
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: out_of_band
+    epg: ansible-outofband
+    state: present
+  check_mode: yes
+  register: add_cm_outofband
+
+- name: Add node mgmt in_band epg in normal mode
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband
+    encap: vlan-1
+    bd: bd1
+    state: present
+  register: add_nm_inband
+
+- name: Add node mgmt out_of_band epg in normal mode
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: out_of_band
+    epg: ansible-outofband
+    state: present
+  register: add_nm_outofband
+
+- name: Add node mgmt in_band epg in normal mode again
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband
+    encap: vlan-1
+    bd: bd1
+    state: present
+  register: add_nm_inband_again
+
+- name: Add node mgmt out_of_band epg in normal mode again
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: out_of_band
+    epg: ansible-outofband
+    state: present
+  register: add_nm_outofband_again
+
+- name: Add another node mgmt in_band epg in normal mode
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband-2
+    encap: vlan-2
+    bd: bd2
+    state: present
+  register: add_nm_inband_2
+
+- name: Add another node mgmt out_of_band epg in normal mode
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: out_of_band
+    epg: ansible-outofband-2
+    state: present
+  register: add_nm_outofband_2
+
+- name: Add another node mgmt in_band epg in normal mode with change made to bd
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband-2
+    encap: vlan-2
+    bd: bd4
+    state: present
+  register: add_nm_inband_bd4
+
+- name: Add another node mgmt in_band epg in normal mode with change made to encap
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband-2
+    encap: vlan-4
+    bd: bd4
+    state: present
+  register: add_nm_inband_encap4
+
+- name: Verify add operations
+  assert:
+    that:
+    - add_cm_inband is changed
+    - add_cm_inband.sent.mgmtInB.attributes.name == 'ansible-inband'
+    - add_cm_inband.sent.mgmtInB.children.0.mgmtRsMgmtBD.attributes.tnFvBDName == 'bd1'
+    - add_cm_outofband is changed
+    - add_cm_outofband.sent.mgmtOoB.attributes.name == 'ansible-outofband'
+    - add_nm_inband is changed
+    - add_nm_inband.current.0.mgmtInB.attributes.name == 'ansible-inband'
+    - add_nm_inband.current.0.mgmtInB.children.0.mgmtRsMgmtBD.attributes.tnFvBDName == 'bd1'
+    - add_nm_outofband is changed
+    - add_nm_outofband.current.0.mgmtOoB.attributes.name == 'ansible-outofband'
+    - add_nm_inband_again is not changed
+    - add_nm_inband_again.current.0.mgmtInB.attributes.name == 'ansible-inband'
+    - add_nm_outofband_again is not changed
+    - add_nm_outofband_again.current.0.mgmtOoB.attributes.name == 'ansible-outofband'
+    - add_nm_inband_2 is changed
+    - add_nm_inband_2.current.0.mgmtInB.attributes.name == 'ansible-inband-2'
+    - add_nm_inband_2.current.0.mgmtInB.children.0.mgmtRsMgmtBD.attributes.tnFvBDName == 'bd2'
+    - add_nm_outofband_2 is changed
+    - add_nm_outofband_2.current.0.mgmtOoB.attributes.name == 'ansible-outofband-2'
+    - add_nm_inband_bd4 is changed
+    - add_nm_inband_bd4.current.0.mgmtInB.children.0.mgmtRsMgmtBD.attributes.tnFvBDName == 'bd4'
+    - add_nm_inband_encap4 is changed
+    - add_nm_inband_encap4.current.0.mgmtInB.attributes.encap == 'vlan-4'
+
+# Query operations
+- name: Query node mgmt in_band epg
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband
+    encap: vlan-1
+    bd: bd1
+    state: query
+  register: query_inband
+
+- name: Query node mgmt out_of_band epg
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: out_of_band
+    epg: ansible-outofband
+    state: query
+  register: query_outofband
+
+- name: Query all in band
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    state: query
+  register: query_all_inband
+
+- name: Query all out of band
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: out_of_band
+    state: query
+  register: query_all_outofband
+
+- name: Verify query operations
+  assert:
+    that:
+    - query_inband is not changed
+    - query_inband.current.0.mgmtInB.attributes.name == 'ansible-inband'
+    - query_inband.current.0.mgmtInB.children.0.mgmtRsMgmtBD.attributes.tnFvBDName == 'bd1'
+    - query_outofband is not changed
+    - query_outofband.current.0.mgmtOoB.attributes.name == 'ansible-outofband'
+    - query_all_inband.current.0.mgmtMgmtP.children | length == 2
+    - query_all_outofband.current.0.mgmtMgmtP.children | length == 2
+
+# Remove operations
+- name: Remove node mgmt in_band epg
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband-2
+    state: absent
+  register: remove_inband_2
+
+- name: Remove node mgmt out_of_band epg
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: out_of_band
+    epg: ansible-outofband-2
+    state: absent
+  register: remove_outofband_2
+
+- name: Remove node mgmt in_band epg again
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband-2
+    state: absent
+  register: remove_inband_2_again
+
+- name: Verify remove operations
+  assert:
+    that:
+    - remove_inband_2 is changed
+    - remove_inband_2.previous.0.mgmtInB.attributes.name == 'ansible-inband-2'
+    - remove_outofband_2 is changed
+    - remove_outofband_2.previous.0.mgmtOoB.attributes.name == 'ansible-outofband-2'
+    - remove_inband_2_again is not changed
+    - remove_inband_2_again.previous == []
+
+# Clean environment for other ci test cases
+- name: Remove node mgmt in_band epg
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: in_band
+    epg: ansible-inband
+    encap: vlan-1
+    bd: bd1
+    state: absent
+
+- name: Remove node mgmt out_of_band epg
+  aci_node_mgmt_epg:
+    <<: *aci_info 
+    type: out_of_band
+    epg: ansible-outofband
+    state: absent

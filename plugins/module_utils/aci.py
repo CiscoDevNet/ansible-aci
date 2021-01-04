@@ -12,6 +12,7 @@
 # Copyright: (c) 2017, Swetha Chunduri (@schunduri)
 # Copyright: (c) 2019, Rob Huelga (@RobW3LGA)
 # Copyright: (c) 2020, Lionel Hercot (@lhercot) <lhercot@cisco.com>
+# Copyright: (c) 2020, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without modification,
@@ -51,6 +52,15 @@ try:
     HAS_OPENSSL = True
 except ImportError:
     HAS_OPENSSL = False
+
+# Signature-based authentication using cryptography
+try:
+    from cryptography.hazmat.primitives import serialization, hashes
+    from cryptography.hazmat.primitives.asymmetric import padding
+    from cryptography.hazmat.backends import default_backend
+    HAS_CRYPTOGRAPHY = True
+except ImportError:
+    HAS_CRYPTOGRAPHY = False
 
 # Optional, only used for XML payload
 try:
@@ -132,8 +142,9 @@ class ACIModule(object):
 
         if self.params.get('private_key'):
             # Perform signature-based authentication, no need to log on separately
-            if not HAS_OPENSSL:
-                self.module.fail_json(msg='Cannot use signature-based authentication because pyopenssl is not available')
+            if not HAS_CRYPTOGRAPHY and not HAS_OPENSSL:
+                self.module.fail_json(
+                    msg='Cannot use signature-based authentication because cryptography (preferred) or pyopenssl are not available')
             elif self.params.get('password') is not None:
                 self.module.warn("When doing ACI signatured-based authentication, providing parameter 'password' is not required")
         elif self.params.get('password'):
@@ -223,16 +234,26 @@ class ACIModule(object):
 
         # Check if we got a private key. This allows the use of vaulting the private key.
         try:
-            sig_key = load_privatekey(FILETYPE_PEM, self.params.get('private_key'))
+            if HAS_CRYPTOGRAPHY:
+                key = self.params.get('private_key').encode()
+                sig_key = serialization.load_pem_private_key(key, password=None, backend=default_backend(),)
+            else:
+                sig_key = load_privatekey(FILETYPE_PEM, self.params.get('private_key'))
         except Exception:
             if os.path.exists(self.params.get('private_key')):
                 try:
-                    with open(self.params.get('private_key'), 'r') as fh:
+                    permission = 'r'
+                    if HAS_CRYPTOGRAPHY:
+                        permission = 'rb'
+                    with open(self.params.get('private_key'), permission) as fh:
                         private_key_content = fh.read()
                 except Exception:
                     self.module.fail_json(msg="Cannot open private key file '%(private_key)s'." % self.params)
                 try:
-                    sig_key = load_privatekey(FILETYPE_PEM, private_key_content)
+                    if HAS_CRYPTOGRAPHY:
+                        sig_key = serialization.load_pem_private_key(private_key_content, password=None, backend=default_backend(),)
+                    else:
+                        sig_key = load_privatekey(FILETYPE_PEM, private_key_content)
                 except Exception:
                     self.module.fail_json(msg="Cannot load private key file '%(private_key)s'." % self.params)
                 if self.params.get('certificate_name') is None:
@@ -244,12 +265,15 @@ class ACIModule(object):
             self.params['certificate_name'] = self.params.get('username')
         # NOTE: ACI documentation incorrectly adds a space between method and path
         sig_request = method + path + payload
-        sig_signature = base64.b64encode(sign(sig_key, sig_request, 'sha256'))
+        if HAS_CRYPTOGRAPHY:
+            sig_signature = sig_key.sign(sig_request.encode(), padding.PKCS1v15(), hashes.SHA256())
+        else:
+            sig_signature = sign(sig_key, sig_request, 'sha256')
         sig_dn = 'uni/userext/user-%(username)s/usercert-%(certificate_name)s' % self.params
         self.headers['Cookie'] = 'APIC-Certificate-Algorithm=v1.0; ' +\
                                  'APIC-Certificate-DN=%s; ' % sig_dn +\
                                  'APIC-Certificate-Fingerprint=fingerprint; ' +\
-                                 'APIC-Request-Signature=%s' % to_native(sig_signature)
+                                 'APIC-Request-Signature=%s' % to_native(base64.b64encode(sig_signature))
 
     def response_json(self, rawoutput):
         ''' Handle APIC JSON response output '''

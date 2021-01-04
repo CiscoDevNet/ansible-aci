@@ -56,7 +56,7 @@ releases:
       minor_changes:
       - Enable/Disable infra vlan in aci_aep and its test module
       - Set scope default value in aci_l3out_extsubnet
-      release_summary: 'Release v1.0.1 of the ``cisco.mso`` collection on 2020-10-13.
+      release_summary: 'Release v1.0.1 of the ``cisco.aci`` collection on 2020-10-13.
 
         This changelog describes all changes made to the modules and plugins included
         in this collection since v1.0.0. '
@@ -82,7 +82,7 @@ releases:
       - Update inventory
       - aci_epg_to_domain addition of promiscuous mode (#79)
       - aci_interface_policy_port_security addition of attribute:timeout (#80)
-      release_summary: 'Release v1.1.0 of the ``cisco.mso`` collection on 2020-10-30.
+      release_summary: 'Release v1.1.0 of the ``cisco.aci`` collection on 2020-10-30.
 
         This changelog describes all changes made to the modules and plugins included
         in this collection since v1.0.1. '
@@ -95,8 +95,22 @@ releases:
       minor_changes:
       - Add test file for aci_domain_to_encap_pool
       - aci_epg_to_domain moving child configs & classes to each domain type
-      release_summary: 'Release v1.1.1 of the ``cisco.mso`` collection on 2020-11-23.
+      release_summary: 'Release v1.1.1 of the ``cisco.aci`` collection on 2020-11-23.
 
         This changelog describes all changes made to the modules and plugins included
         in this collection since v1.1.0. '
     release_date: '2020-11-23'
+  2.0.0:
+    changes:
+      major_changes:
+      - Change certificate_name to name in aci_aaa_user_certificate module for query
+        operation
+      minor_changes:
+      - Add aci_node_mgmt_epg module to manage in band or out of band management EPGs
+      - Add aci_static_node_mgmt_address module & test file
+      - Add test file for aci_node_mgmt_epg
+      release_summary: 'Release v2.0.0 of the ``cisco.aci`` collection on 2020-12-15.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v1.1.1. '
+    release_date: '2020-12-15'
