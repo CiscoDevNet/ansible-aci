@@ -38,6 +38,10 @@
     state: present
     tenant: ansible_tenant
     l3out: ansible_l3out
+    domain: ansible_dom
+    route_control: export
+    vrf: ansible_vrf
+    l3protocol: ospf
   register: l3out_present
 
 - name: Add L3out node profile (check mode)
@@ -61,18 +65,10 @@
     that:
     - cm_add_node_profile is changed
     - nm_add_node_profile is changed
-    - cm_remove_node_profile is changed
-    - nm_remove_node_profile is changed
     - cm_add_node_profile.sent.l3extLNodeP.attributes.descr == nm_add_node_profile.sent.l3extLNodeP.attributes.descr == 'Node profile for Ansible testing'
     - cm_add_node_profile.sent.l3extLNodeP.attributes.name == nm_add_node_profile.sent.l3extLNodeP.attributes.name == 'ansible_node_profile'
-    - cm_add_node_profile.sent.l3extLNodeP.attributes.pwd == nm_add_node_profile.sent.l3extLNodeP.attributes.dscp == 'CS0'
-    - cm_add_node_profile.sent.l3extLNodeP.attributes.usr == nm_add_node_profile.sent.l3extLNodeP.attributes.tenant == 'ansible_tenant'
-    - cm_add_node_profile.sent.l3extLNodeP.attributes.usr == nm_add_node_profile.sent.l3extLNodeP.attributes.l3out == 'ansible_l3out'
     - cm_add_node_profile.proposed.l3extLNodeP.attributes.descr == nm_add_node_profile.proposed.l3extLNodeP.attributes.descr == 'Node profile for Ansible testing'
     - cm_add_node_profile.proposed.l3extLNodeP.attributes.name == nm_add_node_profile.proposed.l3extLNodeP.attributes.name == 'ansible_node_profile'
-    - cm_add_node_profile.proposed.l3extLNodeP.attributes.pwd == nm_add_node_profile.proposed.l3extLNodeP.attributes.dscp == 'CS0'
-    - cm_add_node_profile.proposed.l3extLNodeP.attributes.usr == nm_add_node_profile.proposed.l3extLNodeP.attributes.tenant == 'ansible_tenant'
-    - cm_add_node_profile.sent.l3extLNodeP.attributes.usr == nm_add_node_profile.sent.l3extLNodeP.attributes.l3out == 'ansible_l3out'
     - cm_add_node_profile.current == cm_add_node_profile.previous == nm_add_node_profile.previous == []
     - nm_add_node_profile.current.0.l3extLNodeP.attributes.dn == 'uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile'
     - nm_add_node_profile.current.0.l3extLNodeP.attributes.name == 'ansible_node_profile'
@@ -103,7 +99,7 @@
     - nm_mod_node_profile.current.0.l3extLNodeP.attributes.name == 'ansible_node_profile'
 
 - name: Query existing node profile (check mode)
-  cisco.aci.aci_vmm_credential: &query_existing_node_profile
+  cisco.aci.aci_l3out_node_profile: &query_existing_node_profile
     <<: *aci_info
     node_profile: ansible_node_profile
     l3out: ansible_l3out
@@ -113,11 +109,11 @@
   register: cm_query_node_profile
 
 - name: Query existing node profile (normal mode)
-  cisco.aci.aci_vmm_credential: *query_existing_node_profile
+  cisco.aci.aci_l3out_node_profile: *query_existing_node_profile
   register: nm_query_node_profile
 
-- name: Query non-existent vmware VMM credential
-  cisco.aci.aci_vmm_credential:
+- name: Query non-existent node profile
+  cisco.aci.aci_l3out_node_profile:
     <<: *aci_info
     node_profile: ansible_fake_node_profile
     l3out: ansible_l3out
@@ -150,7 +146,7 @@
   cisco.aci.aci_l3out_node_profile: *aci_node_profile_absent
   register: nm_remove_node_profile
 
-- name: Remove node profile (normal mode)
+- name: Remove node profile (normal mode) again
   cisco.aci.aci_l3out_node_profile: *aci_node_profile_absent
   register: nm_remove_node_profile_again
 
@@ -158,13 +154,21 @@
   assert:
     that:
     - cm_remove_node_profile is changed
-    - cm_remove_node_profile is changed
-    - cm_remove_node_profile_again is not changed
+    - nm_remove_node_profile is changed
+    - nm_remove_node_profile_again is not changed
 
 # Remove L3out after testing
 - name: Remove L3out (normal_mode)
-  cisco.aci.aci_domain: *aci_l3out_present
+  cisco.aci.aci_l3out:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    state: absent
+  delegate_to: localhost
 
 # Remove Tenant after testing
 - name: Remove tenant (normal_mode)
-  cisco.aci.aci_domain: *aci_tenant_present
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
