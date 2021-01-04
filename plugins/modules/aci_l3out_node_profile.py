@@ -217,7 +217,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        node_profile=dict(type='str', aliases=['name', 'node_profile_name', 'profile_name']),
+        node_profile=dict(type='str', aliases=['name', 'node_profile_name']),
         tenant=dict(type='str', aliases=['tenant_name']),
         l3out=dict(type='str', aliases=['l3out_name']),
         description=dict(type='str', aliases=['descr']),
