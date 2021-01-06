@@ -24,17 +24,23 @@
   aci_node_mgmt_epg:
     <<: *aci_info 
     type: in_band
-    epg: ansible-inband
+    epg: "{{ item }}"
     encap: vlan-1
     bd: bd1
     state: absent
+  loop:
+  - ansible-inband
+  - ansible-inband-2
 
 - name: Remove node mgmt out_of_band epg
   aci_node_mgmt_epg:
     <<: *aci_info 
     type: out_of_band
-    epg: ansible-outofband
+    epg: "{{ item }}"
     state: absent
+  loop:
+  - ansible-outofband
+  - ansible-outofband-2
 
 # Add operations
 - name: Add node mgmt in_band epg in check mode
@@ -200,7 +206,7 @@
     - query_outofband is not changed
     - query_outofband.current.0.mgmtOoB.attributes.name == 'ansible-outofband'
     - query_all_inband.current.0.mgmtMgmtP.children | length == 2
-    - query_all_outofband.current.0.mgmtMgmtP.children | length == 2
+    - query_all_outofband.current.0.mgmtMgmtP.children | length == 3
 
 # Remove operations
 - name: Remove node mgmt in_band epg
@@ -236,20 +242,3 @@
     - remove_outofband_2.previous.0.mgmtOoB.attributes.name == 'ansible-outofband-2'
     - remove_inband_2_again is not changed
     - remove_inband_2_again.previous == []
-
-# Clean environment for other ci test cases
-- name: Remove node mgmt in_band epg
-  aci_node_mgmt_epg:
-    <<: *aci_info 
-    type: in_band
-    epg: ansible-inband
-    encap: vlan-1
-    bd: bd1
-    state: absent
-
-- name: Remove node mgmt out_of_band epg
-  aci_node_mgmt_epg:
-    <<: *aci_info 
-    type: out_of_band
-    epg: ansible-outofband
-    state: absent
