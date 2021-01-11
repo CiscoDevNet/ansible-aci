@@ -1,4 +1,5 @@
 # Test code for the ACI modules
+# Copyright: (c) 2021, Jason Juenger (@jasonjuenger)
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -45,7 +46,7 @@
   register: l3out_present
 
 - name: Add L3out node profile (check mode)
-  cisco.aci.aci_l3out_node_profile: &aci_node_profile_present
+  cisco.aci.aci_l3out_logical_node_profile: &aci_node_profile_present
     <<: *aci_info
     node_profile: ansible_node_profile
     description: 'Node profile for Ansible testing'
@@ -57,14 +58,26 @@
   register: cm_add_node_profile
 
 - name: Add L3out node profile (normal mode)
-  cisco.aci.aci_l3out_node_profile: *aci_node_profile_present
+  cisco.aci.aci_l3out_logical_node_profile: *aci_node_profile_present
   register: nm_add_node_profile
+
+- name: Add another L3out node profile (normal mode)
+    <<: *aci_info
+    node_profile: ansible_node_profile2
+    description: 'Second node profile for Ansible testing'
+    dscp: CS0
+    l3out: ansible_l3out
+    tenant: ansible_tenant
+    state: present
+  check_mode: yes
+  register: nm_add_second_node_profile
 
 - name: Verify add_node_profile
   assert:
     that:
     - cm_add_node_profile is changed
     - nm_add_node_profile is changed
+    - nm_add_second_node_profile is changed
     - cm_add_node_profile.sent.l3extLNodeP.attributes.descr == nm_add_node_profile.sent.l3extLNodeP.attributes.descr == 'Node profile for Ansible testing'
     - cm_add_node_profile.sent.l3extLNodeP.attributes.name == nm_add_node_profile.sent.l3extLNodeP.attributes.name == 'ansible_node_profile'
     - cm_add_node_profile.proposed.l3extLNodeP.attributes.descr == nm_add_node_profile.proposed.l3extLNodeP.attributes.descr == 'Node profile for Ansible testing'
@@ -72,9 +85,11 @@
     - cm_add_node_profile.current == cm_add_node_profile.previous == nm_add_node_profile.previous == []
     - nm_add_node_profile.current.0.l3extLNodeP.attributes.dn == 'uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile'
     - nm_add_node_profile.current.0.l3extLNodeP.attributes.name == 'ansible_node_profile'
+    - nm_add_second_node_profile.current.0.l3extLNodeP.attributes.dn == 'uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile2'
+    - nm_add_second_node_profile.current.0.l3extLNodeP.attributes.name == 'ansible_node_profile2'
 
 - name: Modify node profile (check mode)
-  cisco.aci.aci_l3out_node_profile: &aci_node_profile_modify
+  cisco.aci.aci_l3out_logical_node_profile: &aci_node_profile_modify
     <<: *aci_info
     node_profile: ansible_node_profile
     description: 'my_updated_descr'
@@ -85,7 +100,7 @@
   register: cm_mod_node_profile
 
 - name: Modify node profile (normal mode)
-  cisco.aci.aci_l3out_node_profile: *aci_node_profile_modify
+  cisco.aci.aci_l3out_logical_node_profile: *aci_node_profile_modify
   register: nm_mod_node_profile
 
 - name: Verify mod_node_profile
@@ -99,7 +114,7 @@
     - nm_mod_node_profile.current.0.l3extLNodeP.attributes.name == 'ansible_node_profile'
 
 - name: Query existing node profile (check mode)
-  cisco.aci.aci_l3out_node_profile: &query_existing_node_profile
+  cisco.aci.aci_l3out_logical_node_profile: &query_existing_node_profile
     <<: *aci_info
     node_profile: ansible_node_profile
     l3out: ansible_l3out
@@ -109,11 +124,11 @@
   register: cm_query_node_profile
 
 - name: Query existing node profile (normal mode)
-  cisco.aci.aci_l3out_node_profile: *query_existing_node_profile
+  cisco.aci.aci_l3out_logical_node_profile: *query_existing_node_profile
   register: nm_query_node_profile
 
 - name: Query non-existent node profile
-  cisco.aci.aci_l3out_node_profile:
+  cisco.aci.aci_l3out_logical_node_profile:
     <<: *aci_info
     node_profile: ansible_fake_node_profile
     l3out: ansible_l3out
@@ -122,18 +137,28 @@
   check_mode: yes
   register: nm_query_fake_node_profile
 
+- name: Query all node profile for L3out
+  cisco.aci.aci_l3out_logical_node_profile:
+    <<: *aci_info
+    l3out: ansible_l3out
+    tenant: ansible_tenant
+    state: query
+  register: nm_query_all_node_profiles
+
 - name: Verify query_node_profile
   assert:
     that:
     - cm_query_node_profile is not changed
     - nm_query_node_profile is not changed
     - nm_query_fake_node_profile is not changed
+    - nm_all_node_profiles is not changed
     - cm_query_node_profile.current.0.l3extLNodeP.attributes.name == 'ansible_node_profile'
     - nm_query_node_profile.current.0.l3extLNodeP.attributes.name == 'ansible_node_profile'
     - nm_query_fake_node_profile.current == []
+    - nm_query_all_node_profiles.current == ['ansible_node_profile', 'ansible_node_profile2']
 
 - name: Remove node profile (check mode)
-  cisco.aci.aci_l3out_node_profile: &aci_node_profile_absent
+  cisco.aci.aci_l3out_logical_node_profile: &aci_node_profile_absent
     <<: *aci_info
     node_profile: ansible_node_profile
     l3out: ansible_l3out
@@ -143,19 +168,35 @@
   register: cm_remove_node_profile
 
 - name: Remove node profile (normal mode)
-  cisco.aci.aci_l3out_node_profile: *aci_node_profile_absent
+  cisco.aci.aci_l3out_logical_node_profile: *aci_node_profile_absent
   register: nm_remove_node_profile
 
 - name: Remove node profile (normal mode) again
-  cisco.aci.aci_l3out_node_profile: *aci_node_profile_absent
+  cisco.aci.aci_l3out_logical_node_profile: *aci_node_profile_absent
   register: nm_remove_node_profile_again
+
+- name: Remove second node profile (check mode)
+  cisco.aci.aci_l3out_logical_node_profile: &aci_second_node_profile_absent
+    <<: *aci_info
+    node_profile: ansible_node_profile
+    l3out: ansible_l3out
+    tenant: ansible_tenant
+    state: absent
+  check_mode: yes
+  register: cm_remove_second_node_profile
+
+- name: Remove second node profile (normal mode)
+  cisco.aci.aci_l3out_logical_node_profile: *aci_second_node_profile_absent
+  register: nm_remove_second_node_profile
 
 - name: Verify remove_node_profile
   assert:
     that:
     - cm_remove_node_profile is changed
+    - cm_remove_second_node_profile is changed
     - nm_remove_node_profile is changed
     - nm_remove_node_profile_again is not changed
+    - nm_remove_second_node_profile is changed
 
 # Remove L3out after testing
 - name: Remove L3out (normal_mode)
