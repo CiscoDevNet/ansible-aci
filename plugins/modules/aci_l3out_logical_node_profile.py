@@ -12,10 +12,10 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_l3out_node_profile
-short_description: Manage Layer 3 Outside (L3Out) node profiles ######(l3extLNodeP:lnodep)
+module: aci_l3out_logical_node_profile
+short_description: Manage Layer 3 Outside (L3Out) logical node profiles (l3extLNodeP:lnodep)
 description:
-- Manage Layer 3 Outside (L3Out) node profiles on Cisco ACI fabrics.
+- Manage Layer 3 Outside (L3Out) logical node profiles on Cisco ACI fabrics.
 options:
   node_profile:
     description:
@@ -69,7 +69,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new node profile
-  cisco.aci.aci_l3out_node_profile:
+  cisco.aci.aci_l3out_logical_node_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -82,7 +82,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Delete a node profile
-  cisco.aci.aci_l3out_node_profile:
+  cisco.aci.aci_l3out_logical_node_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -93,11 +93,22 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a node profile
-  cisco.aci.aci_l3out_node_profile:
+  cisco.aci.aci_l3out_logical_node_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
     node_profile: my_node_profile
+    l3out: my_l3out
+    tenant: my_tenant
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query all node profile for L3out
+  cisco.aci.aci_l3out_logical_node_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
     l3out: my_l3out
     tenant: my_tenant
     state: query
