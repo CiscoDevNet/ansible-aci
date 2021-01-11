@@ -70,7 +70,6 @@
     l3out: ansible_l3out
     tenant: ansible_tenant
     state: present
-  check_mode: yes
   register: nm_add_second_node_profile
 
 - name: Verify add_node_profile
@@ -152,11 +151,12 @@
     - cm_query_node_profile is not changed
     - nm_query_node_profile is not changed
     - nm_query_fake_node_profile is not changed
-    - nm_all_node_profiles is not changed
+    - nm_query_all_node_profiles is not changed
     - cm_query_node_profile.current.0.l3extLNodeP.attributes.name == 'ansible_node_profile'
     - nm_query_node_profile.current.0.l3extLNodeP.attributes.name == 'ansible_node_profile'
     - nm_query_fake_node_profile.current == []
-    - nm_query_all_node_profiles.current == ['ansible_node_profile', 'ansible_node_profile2']
+    - nm_query_all_node_profiles.current.0.l3extOut.children.0.l3extLNodeP.attributes.name == 'ansible_node_profile2'
+    - nm_query_all_node_profiles.current.0.l3extOut.children.1.l3extLNodeP.attributes.name == 'ansible_node_profile'
 
 - name: Remove node profile (check mode)
   cisco.aci.aci_l3out_logical_node_profile: &aci_node_profile_absent
@@ -179,7 +179,7 @@
 - name: Remove second node profile (check mode)
   cisco.aci.aci_l3out_logical_node_profile: &aci_second_node_profile_absent
     <<: *aci_info
-    node_profile: ansible_node_profile
+    node_profile: ansible_node_profile2
     l3out: ansible_l3out
     tenant: ansible_tenant
     state: absent
