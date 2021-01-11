@@ -62,6 +62,7 @@
   register: nm_add_node_profile
 
 - name: Add another L3out node profile (normal mode)
+  cisco.aci.aci_l3out_logical_node_profile:
     <<: *aci_info
     node_profile: ansible_node_profile2
     description: 'Second node profile for Ansible testing'
