@@ -64,7 +64,7 @@ jobs:
       run: pip install galaxy-importer
 
     - name: Create galaxy-importer directory
-      run: mkdir -p /etc/galaxy-importer
+      run: sudo mkdir -p /etc/galaxy-importer
 
     - name: Create galaxy-importer.cfg
       run: cp /home/runner/.ansible/collections/ansible_collections/cisco/aci/.github/workflows/galaxy-importer.cfg /etc/galaxy-importer/galaxy-importer.cfg
