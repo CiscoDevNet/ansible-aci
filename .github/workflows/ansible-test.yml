@@ -69,8 +69,10 @@ jobs:
     - name: Create galaxy-importer.cfg
       run: sudo cp /home/runner/.ansible/collections/ansible_collections/cisco/aci/.github/workflows/galaxy-importer.cfg /etc/galaxy-importer/galaxy-importer.cfg
 
-    - name: Run galaxy-importer check
-      run: python -m galaxy_importer.main /home/runner/.ansible/collections/ansible_collections/cisco/aci/cisco-aci-*
+    # - name: Run galaxy-importer check
+    #   run: python -m galaxy_importer.main /home/runner/.ansible/collections/ansible_collections/cisco/aci/cisco-aci-*
+    - name: cat galaxy-importer.cfg
+      run: cat /etc/galaxy-importer/galaxy-importer.cfg
 
     - name: Print galaxy-importer check result
       run: cat importer_result.json
