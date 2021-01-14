@@ -75,8 +75,8 @@ jobs:
     - name: Store galaxy_importer check log file
       uses: actions/upload-artifact@v1
       with:
-        name: importer_log
-        path: .cache/collection-tarballs
+        name: galaxy-importer check log
+        path: .cache/collection-tarballs/importer_result.json
 
   sanity:
     name: Sanity in ubuntu-latest
