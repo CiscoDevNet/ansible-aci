@@ -72,6 +72,10 @@ jobs:
     - name: Run galaxy-importer check
       run: python -m galaxy_importer.main .cache/collection-tarballs/cisco-*.tar.gz
 
+    - name: Print galaxy-importer check result
+      run: cat importer_result.json
+      working-directory: .cache/collection-tarballs
+
     - name: Store galaxy_importer check log file
       uses: actions/upload-artifact@v1
       with:
