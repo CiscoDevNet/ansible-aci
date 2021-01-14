@@ -73,8 +73,8 @@ jobs:
       run: python -m galaxy_importer.main .cache/collection-tarballs/cisco-*.tar.gz
 
     - name: Check
-      run: ls
-      working-directory: .cache/collection-tarballs
+      run: sudo ls -lR | grep filename
+      working-directory: .cache
 
     # - name: Print galaxy-importer check result
     #   run: cat importer_result.json
