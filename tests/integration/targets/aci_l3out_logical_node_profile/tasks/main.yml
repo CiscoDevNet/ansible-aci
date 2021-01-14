@@ -21,20 +21,20 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     tenant: ansible_tenant
     state: absent
 
 - name: Create tenant for tests
-  cisco.aci.aci_tenant: &aci_tenant_present
+  cisco.aci.aci_tenant:
     <<: *aci_info
     state: present
     tenant: ansible_tenant
   register: tenant_present
 
 - name: Create L3out for tests
-  cisco.aci.aci_l3out: &aci_l3out_present
+  cisco.aci.aci_l3out:
     <<: *aci_info
     state: present
     tenant: ansible_tenant
