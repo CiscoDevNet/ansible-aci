@@ -50,7 +50,7 @@
     <<: *aci_info
     node_profile: ansible_node_profile
     description: 'Node profile for Ansible testing'
-    dscp: CS0
+    target_dscp: CS0
     l3out: ansible_l3out
     tenant: ansible_tenant
     state: present
@@ -66,7 +66,7 @@
     <<: *aci_info
     node_profile: ansible_node_profile2
     description: 'Second node profile for Ansible testing'
-    dscp: CS0
+    target_dscp: CS0
     l3out: ansible_l3out
     tenant: ansible_tenant
     state: present
