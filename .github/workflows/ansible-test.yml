@@ -39,17 +39,14 @@ jobs:
     needs:
     - build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        ansible: [2.9.12, 2.10.0]
     steps:
     - name: Set up Python 3.7
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
 
-    - name: Install ansible-base (v${{ matrix.ansible }})
-      run: pip install https://github.com/ansible/ansible/archive/v${{ matrix.ansible }}.tar.gz --disable-pip-version-check
+    - name: Install ansible-base (v2.9.12)
+      run: pip install https://github.com/ansible/ansible/archive/v2.9.12.tar.gz --disable-pip-version-check
 
     - name: Download migrated collection artifacts
       uses: actions/download-artifact@v1
@@ -75,7 +72,7 @@ jobs:
     - name: Store galaxy_importer check log file
       uses: actions/upload-artifact@v1
       with:
-        name: galaxy-importer check log
+        name: galaxy-importer-log
         path: .cache/collection-tarballs/importer_result.json
 
   sanity:
