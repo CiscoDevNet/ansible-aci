@@ -70,11 +70,11 @@ jobs:
       run: sudo cp /home/runner/.ansible/collections/ansible_collections/cisco/aci/.github/workflows/galaxy-importer.cfg /etc/galaxy-importer/galaxy-importer.cfg
 
     - name: Run galaxy-importer check
-      run: python -m galaxy_importer.main .cache/collection-tarballs/cisco-*.tar.gz && cat ./importer_result.json
+      run: python -m galaxy_importer.main .cache/collection-tarballs/cisco-*.tar.gz && sudo cp ./importer_result.json .cache/collection-tarballs/importer_result.json
 
     - name: Print galaxy-importer check result
       run: cat importer_result.json
-      working-directory: ./importer_result.json
+      working-directory: .cache/collection-tarballs
 
     - name: Store galaxy_importer check log file
       uses: actions/upload-artifact@v1
