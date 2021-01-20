@@ -70,7 +70,7 @@ jobs:
       run: python -m galaxy_importer.main .cache/collection-tarballs/cisco-*.tar.gz | tee .cache/collection-tarballs/log.txt && sudo cp ./importer_result.json .cache/collection-tarballs/importer_result.json
 
     - name: Check warning
-      run: if grep -E 'WARNING|ERROR' .cache/collection-tarballs/log.txt; then return 1; else return 0; fi
+      run: if grep -E 'WARNING|ERROR' .cache/collection-tarballs/log.txt; then exit 1; else exit 0; fi
 
     - name: Store galaxy_importer check log file
       uses: actions/upload-artifact@v1
