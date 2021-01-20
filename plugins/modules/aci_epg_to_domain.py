@@ -71,6 +71,11 @@ options:
     - Name of the end point group.
     type: str
     aliases: [ epg_name, name ]
+  enhanced_lagpolicy:
+    description:
+    - Name of the VMM Domain Enhanced Lag Policy.
+    type: str
+    aliases: [ lagpolicy ]
   netflow:
     description:
     - Determines if netflow should be enabled.
@@ -315,6 +320,7 @@ def main():
         encap_mode=dict(type='str', choices=['auto', 'vlan', 'vxlan']),
         switching_mode=dict(type='str', default='native', choices=['AVE', 'native']),
         epg=dict(type='str', aliases=['name', 'epg_name']),  # Not required for querying all objects
+        enhanced_lagpolicy=dict(type='str', aliases=['lagpolicy']),
         netflow=dict(type='bool'),
         primary_encap=dict(type='int'),
         resolution_immediacy=dict(type='str', choices=['immediate', 'lazy', 'pre-provision']),
@@ -352,6 +358,7 @@ def main():
     encap_mode = module.params.get('encap_mode')
     switching_mode = module.params.get('switching_mode')
     epg = module.params.get('epg')
+    enhanced_lagpolicy = module.params.get('enhanced_lagpolicy')
     netflow = aci.boolean(module.params.get('netflow'), 'enabled', 'disabled')
     primary_encap = module.params.get('primary_encap')
     if primary_encap is not None:
@@ -372,8 +379,16 @@ def main():
     # Compile the full domain for URL building
     if domain_type == 'vmm':
         epg_domain = 'uni/vmmp-{0}/dom-{1}'.format(VM_PROVIDER_MAPPING[vm_provider], domain)
-        child_configs = [dict(vmmSecP=dict(attributes=dict(allowPromiscuous=promiscuous)))]
-        child_classes = ['vmmSecP']
+        vmmSecP = [dict(vmmSecP=dict(attributes=dict(allowPromiscuous=promiscuous)))]
+        if enhanced_lagpolicy is not None:
+            lagpolicy = epg_domain + '/vswitchpolcontent/enlacplagp-{0}'.format(enhanced_lagpolicy)
+            fvAEPgLagPolAtt = dict(fvAEPgLagPolAtt=dict(attributes=dict(annotation=''),children=[dict(fvRsVmmVSwitchEnhancedLagPol=dict(attributes=dict(annotation='',tDn=lagpolicy)))]))
+            child_configs = [vmmSecP,fvAEPgLagPolAtt]
+            child_classes = ['vmmSecP','fvAEPgLagPolAtt']
+        else:
+            child_configs = [vmmSecP]
+            child_classes = ['vmmSecP']
+
     elif domain_type == 'l2dom':
         epg_domain = 'uni/l2dom-{0}'.format(domain)
     elif domain_type == 'phys':
