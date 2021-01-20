@@ -42,11 +42,13 @@ __metaclass__ = type
 import base64
 import json
 import os
+import inspect
 from copy import deepcopy
 
 from ansible.module_utils.urls import fetch_url
 from ansible.module_utils._text import to_bytes, to_native
 from ansible.module_utils.basic import env_fallback
+from ansible.module_utils.connection import Connection
 
 # Optional, only used for APIC signature-based authentication
 try:
@@ -85,12 +87,16 @@ except ImportError:
 
 def aci_argument_spec():
     return dict(
+<<<<<<< HEAD
         host=dict(
             type="str",
             required=True,
             aliases=["hostname"],
             fallback=(env_fallback, ["ACI_HOST"]),
         ),
+=======
+        host=dict(type="str", required=False, aliases=["hostname"], fallback=(env_fallback, ["ACI_HOST"])),
+>>>>>>> 6341500 (retry w/o conflict)
         port=dict(type="int", required=False, fallback=(env_fallback, ["ACI_PORT"])),
         username=dict(
             type="str",
@@ -337,17 +343,19 @@ class ACIModule(object):
             self.module.warn("Enable debug output because ANSIBLE_DEBUG was set.")
             self.params["output_level"] = "debug"
 
-        if self.params.get("private_key"):
-            # Perform signature-based authentication, no need to log on separately
-            if not HAS_CRYPTOGRAPHY and not HAS_OPENSSL:
-                self.module.fail_json(msg="Cannot use signature-based authentication because cryptography (preferred) or pyopenssl are not available")
-            elif self.params.get("password") is not None:
-                self.module.warn("When doing ACI signatured-based authentication, providing parameter 'password' is not required")
-        elif self.params.get("password"):
-            # Perform password-based authentication, log on using password
-            self.login()
-        else:
-            self.module.fail_json(msg="Either parameter 'password' or 'private_key' is required for authentication")
+        if self.module._socket_path is None:
+            if self.params.get("private_key"):
+                # Perform signature-based authentication, no need to log on separately
+                if not HAS_CRYPTOGRAPHY and not HAS_OPENSSL:
+                    self.module.fail_json(
+                        msg="Cannot use signature-based authentication because cryptography (preferred) or pyopenssl are not available")
+                elif self.params.get("password") is not None:
+                    self.module.warn("When doing ACI signatured-based authentication, providing parameter 'password' is not required")
+            elif self.params.get("password"):
+                # Perform password-based authentication, log on using password
+                self.login()
+            else:
+                self.module.fail_json(msg="Either parameter 'password' or 'private_key' is required for authentication")
 
     def boolean(self, value, true="yes", false="no"):
         """Return an acceptable value back"""
@@ -499,7 +507,10 @@ class ACIModule(object):
     def response_json(self, rawoutput):
         """Handle APIC JSON response output"""
         try:
-            jsondata = json.loads(rawoutput)
+             if isinstance(rawoutput, dict):
+                 jsondata = rawoutput
+             else:
+                 jsondata = json.loads(rawoutput)
         except Exception as e:
             # Expose RAW output for troubleshooting
             self.error = dict(code=-1, text="Unable to parse output as JSON, see 'raw' output. %s" % e)
@@ -1235,9 +1246,9 @@ class ACIModule(object):
 
         elif not self.module.check_mode:
             # Sign and encode request as to APIC's wishes
-            if self.params["private_key"]:
-                self.cert_auth(method="DELETE")
+            self.call("DELETE")
 
+<<<<<<< HEAD
             resp, info = fetch_url(
                 self.module,
                 self.url,
@@ -1263,6 +1274,8 @@ class ACIModule(object):
                 except KeyError:
                     # Connection error
                     self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
+=======
+>>>>>>> 6341500 (retry w/o conflict)
         else:
             self.result["changed"] = True
             self.method = "DELETE"
@@ -1386,6 +1399,7 @@ class ACIModule(object):
         that this method can be used to supply the existing configuration when using the get_diff method. The response, status,
         and existing configuration will be added to the self.result dictionary.
         """
+<<<<<<< HEAD
         uri = self.url + self.filter_string
 
         # Sign and encode request as to APIC's wishes
@@ -1415,6 +1429,9 @@ class ACIModule(object):
             except KeyError:
                 # Connection error
                 self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
+=======
+        self.call("GET")
+>>>>>>> 6341500 (retry w/o conflict)
 
     @staticmethod
     def get_nested_config(proposed_child, existing_children):
@@ -1534,6 +1551,7 @@ class ACIModule(object):
             return
         elif not self.module.check_mode:
             # Sign and encode request as to APIC's wishes
+<<<<<<< HEAD
             url = self.url
             if parent_class is not None:
                 if self.params.get("port") is not None:
@@ -1570,6 +1588,9 @@ class ACIModule(object):
                 except KeyError:
                     # Connection error
                     self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
+=======
+            self.call("POST")
+>>>>>>> da2af7d (retry w/o conflict)
         else:
             self.result["changed"] = True
             self.method = "POST"
@@ -1680,6 +1701,7 @@ class ACIModule(object):
                     if self.result.get("changed") is True:
                         json.dump([mo], output_file)
 
+<<<<<<< HEAD
     def delete_config_request(self, path):
         self._config_request(path, "absent")
         self.result["changed"] = True
@@ -1707,3 +1729,58 @@ def ospf_spec():
         multipod_internal=dict(type="str", choices=["no", "yes"]),
         name_alias=dict(type="str"),
     )
+=======
+    def call(self, method):
+        if method == 'GET':
+            call_path = self.path + self.filter_string
+            call_url = self.url + self.filter_string
+            data = None
+        elif method == 'POST':
+            call_path = self.path
+            call_url = self.url
+            data = json.dumps(self.config)
+        elif method == 'DELETE':
+            call_path = self.path
+            call_url = self.url
+            data = None
+        resp = None
+        if self.module._socket_path:
+            conn = Connection(self.module._socket_path)
+            info = conn.send_request(method, '/' + call_path, data)
+        else:
+            if self.params.get('private_key'):
+                self.cert_auth(method=method, path=call_path, payload=data)
+            resp, info = fetch_url(self.module, call_url,
+                                   data=data,
+                                   headers=self.headers,
+                                   method=method,
+                                   timeout=self.params.get('timeout'),
+                                   use_proxy=self.params.get('use_proxy'))
+        self.response = info.get('msg')
+        self.status = info.get('status')
+        self.method = method
+
+        # Handle APIC response
+        if info.get('status') == 200:
+            if method == 'POST' or method == 'DELETE':
+                self.result['changed'] = True
+            try:
+                if method == 'GET':
+                    self.existing = json.loads(resp.read())['imdata']
+                else:
+                    self.response_json(resp.read())
+            except AttributeError:
+                if method == 'GET':
+                    self.existing = info['body']['imdata']
+                else:
+                    self.response_json(info)
+        else:
+            try:
+                # APIC error
+                self.response_json(info['body'])
+                self.fail_json(msg='APIC Error %(code)s: %(text)s' % self.error)
+            except KeyError:
+                # Connection error
+                self.fail_json(msg='Connection failed for %(url)s. %(msg)s' % info)
+
+>>>>>>> da2af7d (retry w/o conflict)
