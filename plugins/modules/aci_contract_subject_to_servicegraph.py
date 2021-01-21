@@ -1,5 +1,9 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
-__metaclass__ = type
 
 ANSIBLE_METADATA = {'metadata_version': '0.9',
                     'status': ['preview'],
@@ -191,7 +195,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant = dict(type = 'str'), 
+        tenant = dict(type = 'str'),
         contract = dict(type = 'str'),
         subject = dict(type = 'str'),
         servicegraph = dict(type = 'str'),
@@ -214,7 +218,7 @@ def main():
     subject = module.params.get('subject')
     servicegraph = module.params.get('servicegraph')
     state = module.params.get('state')
- 
+
     aci.construct_url(
         root_class = dict(
             aci_class = 'fvTenant',
@@ -262,4 +266,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
