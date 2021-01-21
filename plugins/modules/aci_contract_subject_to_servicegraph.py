@@ -4,8 +4,6 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
-from ansible.module_utils.basic import AnsibleModule
 __metaclass__ = type
 
 ANSIBLE_METADATA = {'metadata_version': '1.1',
@@ -45,7 +43,7 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 author:
-- Marcel Zehnder (https://github.com/maercu)
+- Marcel Zehnder (@maercu)
 '''
 
 EXAMPLES = r'''
@@ -190,6 +188,9 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 '''
 
+
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible.module_utils.basic import AnsibleModule
 
 def main():
     argument_spec = aci_argument_spec()
