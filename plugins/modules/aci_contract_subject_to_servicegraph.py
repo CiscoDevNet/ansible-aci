@@ -4,10 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible.module_utils.basic import AnsibleModule
+__metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '0.9',
+ANSIBLE_METADATA = {'metadata_version': '1.1',
                     'status': ['preview'],
-                    'supported_by': 'not certified'}
+                    'supported_by': 'certified'}
 
 DOCUMENTATION = r'''
 ---
@@ -188,23 +191,20 @@ url:
 '''
 
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
-
-
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant = dict(type = 'str'),
-        contract = dict(type = 'str'),
-        subject = dict(type = 'str'),
-        servicegraph = dict(type = 'str'),
-        state = dict(type = 'str', default = 'present', choices = ['absent', 'present', 'query'])
+        tenant=dict(type='str'),
+        contract=dict(type='str'),
+        subject=dict(type='str'),
+        servicegraph=dict(type='str'),
+        state=dict(type='str', default='present',
+                   choices=['absent', 'present', 'query'])
     )
 
     module = AnsibleModule(
-        argument_spec = argument_spec,
-        supports_check_mode = True,
+        argument_spec=argument_spec,
+        supports_check_mode=True,
         required_if=[
             ['state', 'absent', ['contract', 'servicegraph', 'subject', 'tenant']],
             ['state', 'present', ['contract', 'servicegraph', 'subject', 'tenant']],
@@ -220,29 +220,29 @@ def main():
     state = module.params.get('state')
 
     aci.construct_url(
-        root_class = dict(
-            aci_class = 'fvTenant',
-            aci_rn = f'tn-{tenant}',
-            module_object = tenant,
-            target_filter = {'name': tenant},
+        root_class=dict(
+            aci_class='fvTenant',
+            aci_rn=f'tn-{tenant}',
+            module_object=tenant,
+            target_filter={'name': tenant},
         ),
-        subclass_1 = dict(
-            aci_class = 'vzBrCP',
-            aci_rn = f'brc-{contract}',
+        subclass_1=dict(
+            aci_class='vzBrCP',
+            aci_rn=f'brc-{contract}',
             module_object=contract,
             target_filter={'name': contract}
         ),
-        subclass_2 = dict(
-            aci_class = 'vzSubj',
-            aci_rn = f'subj-{subject}',
-            module_object = subject,
-            target_filter = {'name': subject}
+        subclass_2=dict(
+            aci_class='vzSubj',
+            aci_rn=f'subj-{subject}',
+            module_object=subject,
+            target_filter={'name': subject}
         ),
-        subclass_3 = dict(
-            aci_class = 'vzRsSubjGraphAtt',
-            aci_rn = 'rsSubjGraphAtt',
-            module_object = servicegraph,
-            target_filter = {'name': servicegraph}
+        subclass_3=dict(
+            aci_class='vzRsSubjGraphAtt',
+            aci_rn='rsSubjGraphAtt',
+            module_object=servicegraph,
+            target_filter={'name': servicegraph}
         ),
     )
 
@@ -250,11 +250,11 @@ def main():
 
     if state == 'present':
         aci.payload(
-            aci_class = 'vzRsSubjGraphAtt',
-            class_config = dict(tnVnsAbsGraphName = servicegraph)
+            aci_class='vzRsSubjGraphAtt',
+            class_config=dict(tnVnsAbsGraphName=servicegraph)
         )
 
-        aci.get_diff(aci_class = 'vzRsSubjGraphAtt')
+        aci.get_diff(aci_class='vzRsSubjGraphAtt')
 
         aci.post_config()
 
