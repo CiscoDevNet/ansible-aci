@@ -426,7 +426,7 @@ def main():
     resp = None
     if module._socket_path:
         conn = Connection(aci.module._socket_path)
-        info = conn.send_request(aci.method, '/' + path, payload)
+        info = conn.send_request(aci.method, '/{0}'.format(path), payload)
     else:
         resp, info = fetch_url(module, aci.url,
                               data=payload,

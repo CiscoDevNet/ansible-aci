@@ -321,6 +321,7 @@ class ACIModule(object):
         self.original = None
         self.proposed = dict()
         self.stdout = None
+        self.get_auth = None
 
         # debug output
         self.filter_string = ""
@@ -343,15 +344,15 @@ class ACIModule(object):
             self.module.warn("Enable debug output because ANSIBLE_DEBUG was set.")
             self.params["output_level"] = "debug"
 
-        if self.module._socket_path is None:
-            if self.params.get("private_key"):
-                # Perform signature-based authentication, no need to log on separately
-                if not HAS_CRYPTOGRAPHY and not HAS_OPENSSL:
-                    self.module.fail_json(
-                        msg="Cannot use signature-based authentication because cryptography (preferred) or pyopenssl are not available")
-                elif self.params.get("password") is not None:
-                    self.module.warn("When doing ACI signatured-based authentication, providing parameter 'password' is not required")
-            elif self.params.get("password"):
+        if self.params.get("private_key"):
+            # Perform signature-based authentication, no need to log on separately
+            if not HAS_CRYPTOGRAPHY and not HAS_OPENSSL:
+                self.module.fail_json(
+                    msg="Cannot use signature-based authentication because cryptography (preferred) or pyopenssl are not available")
+            elif self.params.get("password") is not None:
+                self.module.warn("When doing ACI signatured-based authentication, providing parameter 'password' is not required")
+        elif self.module._socket_path is None:
+            if self.params.get("password"):
                 # Perform password-based authentication, log on using password
                 self.login()
             else:
@@ -1744,12 +1745,14 @@ def ospf_spec():
             call_url = self.url
             data = None
         resp = None
+        if self.params.get('private_key'):
+                self.cert_auth(method=method, path=call_path, payload=data)
+
         if self.module._socket_path:
             conn = Connection(self.module._socket_path)
-            info = conn.send_request(method, '/' + call_path, data)
+            conn.get_auth(self.get_auth)
+            info = conn.send_request(method, '/{0}'.format(call_path), data)
         else:
-            if self.params.get('private_key'):
-                self.cert_auth(method=method, path=call_path, payload=data)
             resp, info = fetch_url(self.module, call_url,
                                    data=data,
                                    headers=self.headers,
@@ -1773,7 +1776,7 @@ def ospf_spec():
                 if method == 'GET':
                     self.existing = info['body']['imdata']
                 else:
-                    self.response_json(info)
+                    self.response_json(info.get('body'))
         else:
             try:
                 # APIC error

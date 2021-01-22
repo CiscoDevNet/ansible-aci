@@ -53,9 +53,14 @@ class HttpApi(HttpApiBase):
         self.headers = {
             'Content-Type': "application/json"
         }
+        self.auth = None
+
+    def get_auth(self, auth):
+        self.auth = auth
          
     def login(self, username, password):
         ''' Log in to APIC '''
+            
         # Perform login request
         method = 'POST'
         path = '/api/aaaLogin.json'
@@ -89,15 +94,19 @@ class HttpApi(HttpApiBase):
         ''' This method handles all APIC REST API requests other then login '''
         if json is None:
             json = {}
+
+        if self.auth is not None:
+            self.connection._auth = {'Cookie': '{0}'
+                                     .format(self.auth)}
       
-            # Perform some very basic path input validation.
+        # Perform some very basic path input validation.
         path = str(path)
         if path[0] != '/':
             msg = 'Value of <path> does not appear to be formated properly'
             raise ConnectionError(self._return_info(None, method, path, msg))
+        
         response, rdata = self.connection.send(path, json, method=method,
-                                                headers=self.headers,
-                                                force_basic_auth=True)
+                                                headers=self.headers)
         
         if path.find('.json') != -1:
             return self._verify_response(response, method, path, rdata, rest_type='json')
