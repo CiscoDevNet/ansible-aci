@@ -1750,7 +1750,7 @@ def ospf_spec():
 
         if self.module._socket_path:
             conn = Connection(self.module._socket_path)
-            conn.get_auth(self.get_auth)
+            conn.get_auth(self.get_auth, self.params.get('host'), self.params.get('username'), self.params.get('password'))
             info = conn.send_request(method, '/{0}'.format(call_path), data)
         else:
             resp, info = fetch_url(self.module, call_url,

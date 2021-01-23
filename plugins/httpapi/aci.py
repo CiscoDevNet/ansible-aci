@@ -54,9 +54,15 @@ class HttpApi(HttpApiBase):
             'Content-Type': "application/json"
         }
         self.auth = None
+        self.aci_host = None
+        self.aci_user = None
+        self.aci_pass = None
 
-    def get_auth(self, auth):
+    def get_auth(self, auth, host, username, password):
         self.auth = auth
+        self.aci_host = host
+        self.aci_user = username
+        self.aci_pass = password
          
     def login(self, username, password):
         ''' Log in to APIC '''
@@ -86,7 +92,7 @@ class HttpApi(HttpApiBase):
             msg = 'Error on attempt to logout from APIC. {0}'.format(e)
             raise ConnectionError(self._return_info(None, method, path, msg))
 
-        self._verify_response(response, method, path, response_data, rest_type='json')
+        self._verify_response(response, method, path, response_data)
         # Clean up tokens
         self.connection._auth = None
 
@@ -98,7 +104,16 @@ class HttpApi(HttpApiBase):
         if self.auth is not None:
             self.connection._auth = {'Cookie': '{0}'
                                      .format(self.auth)}
-      
+
+        if self.aci_host is not None:
+            self.connection.set_option("host", self.aci_host)
+
+        if self.aci_user is not None:
+            self.connection.set_option("remote_user", self.aci_user)
+
+        if self.aci_pass is not None:
+            self.connection.set_option("password", self.aci_pass)
+
         # Perform some very basic path input validation.
         path = str(path)
         if path[0] != '/':
@@ -108,21 +123,18 @@ class HttpApi(HttpApiBase):
         response, rdata = self.connection.send(path, json, method=method,
                                                 headers=self.headers)
         
-        if path.find('.json') != -1:
-            return self._verify_response(response, method, path, rdata, rest_type='json')
-        else:
-            return self._verify_response(response, method, path, rdata, rest_type='xml')
+        return self._verify_response(response, method, path, rdata)
 
-    def _verify_response(self, response, method, path, rdata, rest_type):
+    def _verify_response(self, response, method, path, rdata):
         ''' Process the return code and response object from APIC '''
         resp_value = self._get_response_value(rdata)
-        if rest_type == 'json':
+        if path.find('.json') != -1:
             respond_data = self._response_to_json(resp_value)
         else:
             respond_data = resp_value
         response_code = response.getcode()
         path = response.geturl()
-        msg = str(response)
+        msg = response.msg
         return self._return_info(response_code, method, path, msg, respond_data)
 
     def _get_response_value(self, response_data):
