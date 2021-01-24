@@ -18,7 +18,7 @@ __metaclass__ = type
 
 DOCUMENTATION = """
 ---
-author: 
+author:
 - Lionel Hercot (lhercot)
 - Shreyas Srish (shrsr)
 httpapi: aci
@@ -63,10 +63,10 @@ class HttpApi(HttpApiBase):
         self.aci_host = host
         self.aci_user = username
         self.aci_pass = password
-         
+
     def login(self, username, password):
         ''' Log in to APIC '''
-            
+
         # Perform login request
         method = 'POST'
         path = '/api/aaaLogin.json'
@@ -119,10 +119,9 @@ class HttpApi(HttpApiBase):
         if path[0] != '/':
             msg = 'Value of <path> does not appear to be formated properly'
             raise ConnectionError(self._return_info(None, method, path, msg))
-        
-        response, rdata = self.connection.send(path, json, method=method,
-                                                headers=self.headers)
-        
+
+        response, rdata = self.connection.send(path, json, method=method, headers=self.headers)
+
         return self._verify_response(response, method, path, rdata)
 
     def _verify_response(self, response, method, path, rdata):

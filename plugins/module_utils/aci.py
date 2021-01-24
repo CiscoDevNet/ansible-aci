@@ -13,7 +13,11 @@
 # Copyright: (c) 2019, Rob Huelga (@RobW3LGA)
 # Copyright: (c) 2020, Lionel Hercot (@lhercot) <lhercot@cisco.com>
 # Copyright: (c) 2020, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
+<<<<<<< HEAD
 # Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+=======
+# Copyright: (c) 2020, Shreyas Srish (@shrsr) <ssrish@cisco.com>
+>>>>>>> 02c53f6 (Check Sanity)
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without modification,
@@ -508,10 +512,10 @@ class ACIModule(object):
     def response_json(self, rawoutput):
         """Handle APIC JSON response output"""
         try:
-             if isinstance(rawoutput, dict):
-                 jsondata = rawoutput
-             else:
-                 jsondata = json.loads(rawoutput)
+            if isinstance(rawoutput, dict):
+                jsondata = rawoutput
+            else:
+                jsondata = json.loads(rawoutput)
         except Exception as e:
             # Expose RAW output for troubleshooting
             self.error = dict(code=-1, text="Unable to parse output as JSON, see 'raw' output. %s" % e)
@@ -1746,7 +1750,7 @@ def ospf_spec():
             data = None
         resp = None
         if self.params.get('private_key'):
-                self.cert_auth(method=method, path=call_path, payload=data)
+            self.cert_auth(method=method, path=call_path, payload=data)
 
         if self.module._socket_path:
             conn = Connection(self.module._socket_path)
@@ -1785,5 +1789,8 @@ def ospf_spec():
             except KeyError:
                 # Connection error
                 self.fail_json(msg='Connection failed for %(url)s. %(msg)s' % info)
+<<<<<<< HEAD
 
 >>>>>>> da2af7d (retry w/o conflict)
+=======
+>>>>>>> 02c53f6 (Check Sanity)

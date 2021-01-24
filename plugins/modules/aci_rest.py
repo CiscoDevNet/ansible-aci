@@ -429,11 +429,11 @@ def main():
         info = conn.send_request(aci.method, '/{0}'.format(path), payload)
     else:
         resp, info = fetch_url(module, aci.url,
-                              data=payload,
-                              headers=aci.headers,
-                              method=aci.method,
-                              timeout=aci.params.get('timeout'),
-                              use_proxy=aci.params.get('use_proxy'))
+                               data=payload,
+                               headers=aci.headers,
+                               method=aci.method,
+                               timeout=aci.params.get('timeout'),
+                               use_proxy=aci.params.get('use_proxy'))
 
     aci.response = info.get("msg")
     aci.status = info.get("status")
