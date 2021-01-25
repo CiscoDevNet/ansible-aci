@@ -71,11 +71,11 @@ options:
     - Name of the end point group.
     type: str
     aliases: [ epg_name, name ]
-  enhanced_lagpolicy:
+  enhanced_lag_policy:
     description:
     - Name of the VMM Domain Enhanced Lag Policy.
     type: str
-    aliases: [ lagpolicy ]
+    aliases: [ lag_policy ]
   netflow:
     description:
     - Determines if netflow should be enabled.
@@ -320,7 +320,7 @@ def main():
         encap_mode=dict(type='str', choices=['auto', 'vlan', 'vxlan']),
         switching_mode=dict(type='str', default='native', choices=['AVE', 'native']),
         epg=dict(type='str', aliases=['name', 'epg_name']),  # Not required for querying all objects
-        enhanced_lagpolicy=dict(type='str', aliases=['lagpolicy']),
+        enhanced_lag_policy=dict(type='str', aliases=['lag_policy']),
         netflow=dict(type='bool'),
         primary_encap=dict(type='int'),
         resolution_immediacy=dict(type='str', choices=['immediate', 'lazy', 'pre-provision']),
@@ -358,7 +358,7 @@ def main():
     encap_mode = module.params.get('encap_mode')
     switching_mode = module.params.get('switching_mode')
     epg = module.params.get('epg')
-    enhanced_lagpolicy = module.params.get('enhanced_lagpolicy')
+    enhanced_lag_policy = module.params.get('enhanced_lag_policy')
     netflow = aci.boolean(module.params.get('netflow'), 'enabled', 'disabled')
     primary_encap = module.params.get('primary_encap')
     if primary_encap is not None:
@@ -379,19 +379,16 @@ def main():
     # Compile the full domain for URL building
     if domain_type == 'vmm':
         epg_domain = 'uni/vmmp-{0}/dom-{1}'.format(VM_PROVIDER_MAPPING[vm_provider], domain)
+        child_configs = [dict(vmmSecP=dict(attributes=dict(allowPromiscuous=promiscuous)))]		
+        child_classes = ['vmmSecP']
 
-        if enhanced_lagpolicy is not None:
-            lagpolicy = epg_domain + '/vswitchpolcontent/enlacplagp-{0}'.format(enhanced_lagpolicy)
-            child_configs = [ 
-                dict(vmmSecP=dict(attributes=dict(allowPromiscuous=promiscuous))),
+        if enhanced_lag_policy is not None:
+            lag_policy = epg_domain + '/vswitchpolcontent/enlacplagp-{0}'.format(enhanced_lag_policy)
+            child_configs = child_configs.append(
                 dict(fvAEPgLagPolAtt=dict(attributes=dict(annotation=''),
-                children=[dict(fvRsVmmVSwitchEnhancedLagPol=dict(attributes=dict(annotation='',tDn=lagpolicy)))]))
-            ]
-            child_classes = ['vmmSecP', 'fvAEPgLagPolAtt']
-
-        else:
-            child_configs = dict(vmmSecP=dict(attributes=dict(allowPromiscuous=promiscuous)))
-            child_classes = ['vmmSecP']
+                children=[dict(fvRsVmmVSwitchEnhancedLagPol=dict(attributes=dict(annotation='',tDn=lag_policy)))]))
+            )
+            child_classes = child_classes.append('fvAEPgLagPolAtt')
 
     elif domain_type == 'l2dom':
         epg_domain = 'uni/l2dom-{0}'.format(domain)
