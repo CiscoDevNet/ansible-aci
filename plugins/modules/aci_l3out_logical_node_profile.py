@@ -37,13 +37,13 @@ options:
     - Name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
-  target_dscp:
+  dscp:
     description:
     - The target Differentiated Service (DSCP) value.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
     choices: [ AF11, AF12, AF13, AF21, AF22, AF23, AF31, AF32, AF33, AF41, AF42, AF43, CS0, CS1, CS2, CS3, CS4, CS5, CS6, CS7, EF, VA, unspecified ]
-    aliases: [ target ]
+    aliases: [ target_dscp ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -77,7 +77,7 @@ EXAMPLES = r'''
     description: node profile for my_l3out
     l3out: my_l3out
     tenant: my_tenant
-    target_dscp: CS0
+    dscp: CS0
     state: present
   delegate_to: localhost
 
@@ -232,11 +232,11 @@ def main():
         tenant=dict(type='str', aliases=['tenant_name']),
         l3out=dict(type='str', aliases=['l3out_name']),
         description=dict(type='str', aliases=['descr']),
-        target_dscp=dict(type='str',
+        dscp=dict(type='str',
                          choices=['AF11', 'AF12', 'AF13', 'AF21', 'AF22', 'AF23', 'AF31', 'AF32', 'AF33', 'AF41',
                                   'AF42', 'AF43', 'CS0', 'CS1', 'CS2', 'CS3', 'CS4', 'CS5', 'CS6', 'CS7', 'EF', 'VA',
                                   'unspecified'],
-                         aliases=['target']),
+                         aliases=['target_dscp']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
     )
@@ -254,7 +254,7 @@ def main():
     tenant = module.params.get('tenant')
     l3out = module.params.get('l3out')
     description = module.params.get('description')
-    target_dscp = module.params.get('target_dscp')
+    dscp = module.params.get('dscp')
     state = module.params.get('state')
     name_alias = module.params.get('name_alias')
 
@@ -289,7 +289,7 @@ def main():
             class_config=dict(
                 descr=description,
                 name=node_profile,
-                targetDscp=target_dscp,
+                targetDscp=dscp,
                 nameAlias=name_alias,
             ),
         )
