@@ -156,6 +156,14 @@
   ignore_errors: yes
   register: incompatible_params
 
+- name: bind vmm domain to epg - enhanced_lag_policy
+  cisco.aci.aci_epg_to_domain:
+    <<: *aci_epg_to_domain_present
+    domain_type: vmm
+    vm_provider: vmware
+    enhanced_lag_policy: vmm_lag_policy
+  register: valid_vlan
+
 - name: present assertions
   assert:
     that:
