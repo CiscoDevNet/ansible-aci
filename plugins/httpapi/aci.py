@@ -24,10 +24,9 @@ author:
 httpapi: aci
 short_description: Ansible ACI HTTPAPI Plugin.
 description:
-  - This APIC plugin provides the HTTPAPI transport methods needed to initiate
+  - This ACI plugin provides the HTTPAPI transport methods needed to initiate
     a connection to the ACI controller, send API requests and process the
     response from the controller.
-version_added: "2.1.0"
 """
 
 
@@ -42,19 +41,24 @@ class HttpApi(HttpApiBase):
 
     def __init__(self, *args, **kwargs):
         super(HttpApi, self).__init__(*args, **kwargs)
-        self.headers = {
-            'Content-Type': "application/json"
-        }
-        self.auth = None
         self.aci_host = None
+        self.aci_port = None
         self.aci_user = None
         self.aci_pass = None
+        self.auth = None
+        self.aci_proxy = None
+        self.aci_ssl = None
+        self.aci_validate_certs = None
 
-    def get_auth(self, auth, host, username, password):
-        self.auth = auth
+    def set_auth(self, auth, host, username, password, port, use_ssl, use_proxy, validate_certs):
         self.aci_host = host
+        self.aci_port = port
         self.aci_user = username
         self.aci_pass = password
+        self.auth = auth
+        self.aci_proxy = use_proxy
+        self.aci_ssl = use_ssl
+        self.aci_validate_certs = validate_certs
 
     def login(self, username, password):
         ''' Log in to APIC '''
@@ -65,7 +69,7 @@ class HttpApi(HttpApiBase):
         payload = {'aaaUser': {'attributes': {'name': username, 'pwd': password}}}
         data = json.dumps(payload)
         try:
-            response, response_data = self.connection.send(path, data, method=method, headers=self.headers, timeout=10)
+            response, response_data = self.connection.send(path, data, method=method)
             response_value = self._get_response_value(response_data)
             self.connection._auth = {'Cookie': 'APIC-Cookie={0}'
                                      .format(self._response_to_json(response_value).get('imdata')[0]['aaaLogin']['attributes']['token'])}
@@ -79,7 +83,7 @@ class HttpApi(HttpApiBase):
         path = '/api/aaaLogout.json'
 
         try:
-            response, response_data = self.connection.send(path, {}, method=method, headers=self.headers, force_basic_auth=True)
+            response, response_data = self.connection.send(path, {}, method=method)
         except Exception as e:
             msg = 'Error on attempt to logout from APIC. {0}'.format(e)
             raise ConnectionError(self._return_info(None, method, path, msg))
@@ -93,12 +97,11 @@ class HttpApi(HttpApiBase):
         if json is None:
             json = {}
 
-        if self.auth is not None:
-            self.connection._auth = {'Cookie': '{0}'
-                                     .format(self.auth)}
-
         if self.aci_host is not None:
             self.connection.set_option("host", self.aci_host)
+
+        if self.aci_port is not None:
+            self.connection.set_option("port", self.aci_port)
 
         if self.aci_user is not None:
             self.connection.set_option("remote_user", self.aci_user)
@@ -106,13 +109,25 @@ class HttpApi(HttpApiBase):
         if self.aci_pass is not None:
             self.connection.set_option("password", self.aci_pass)
 
+        if self.auth is not None:
+            self.connection._auth = {'Cookie': '{0}'.format(self.auth)}
+
+        if self.aci_proxy is not None:
+            self.connection.set_option("use_proxy", self.aci_proxy)
+
+        if self.aci_ssl is not None:
+            self.connection.set_option("use_ssl", self.aci_ssl)
+
+        if self.aci_validate_certs is not None:
+            self.connection.set_option("validate_certs", self.aci_validate_certs)
+
         # Perform some very basic path input validation.
         path = str(path)
         if path[0] != '/':
             msg = 'Value of <path> does not appear to be formated properly'
             raise ConnectionError(self._return_info(None, method, path, msg))
 
-        response, rdata = self.connection.send(path, json, method=method, headers=self.headers)
+        response, rdata = self.connection.send(path, json, method=method)
 
         return self._verify_response(response, method, path, rdata)
 
@@ -125,7 +140,10 @@ class HttpApi(HttpApiBase):
             respond_data = resp_value
         response_code = response.getcode()
         path = response.geturl()
-        msg = response.msg
+        if response_code == 400:
+            msg = str(response)
+        else:
+            msg = '{0} ({1} bytes)'.format(response.msg, len(resp_value))
         return self._return_info(response_code, method, path, msg, respond_data)
 
     def _get_response_value(self, response_data):

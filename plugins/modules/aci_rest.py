@@ -426,6 +426,8 @@ def main():
     resp = None
     if module._socket_path:
         conn = Connection(aci.module._socket_path)
+        conn.set_auth(aci.headers.get('Cookie'), aci.params.get('host'), aci.params.get('username'), aci.params.get('password'),
+                          aci.params.get('port'), aci.params.get('use_ssl'), aci.params.get('use_proxy'), aci.params.get('validate_certs'))
         info = conn.send_request(aci.method, '/{0}'.format(path), payload)
     else:
         resp, info = fetch_url(module, aci.url,
