@@ -384,11 +384,11 @@ def main():
 
         if enhanced_lag_policy is not None:
             lag_policy = epg_domain + '/vswitchpolcontent/enlacplagp-{0}'.format(enhanced_lag_policy)
-            child_configs = child_configs.append(
+            child_configs.append(
                 dict(fvAEPgLagPolAtt=dict(attributes=dict(annotation=''),
                 children=[dict(fvRsVmmVSwitchEnhancedLagPol=dict(attributes=dict(annotation='',tDn=lag_policy)))]))
             )
-            child_classes = child_classes.append('fvAEPgLagPolAtt')
+            child_classes.append('fvAEPgLagPolAtt')
 
     elif domain_type == 'l2dom':
         epg_domain = 'uni/l2dom-{0}'.format(domain)
