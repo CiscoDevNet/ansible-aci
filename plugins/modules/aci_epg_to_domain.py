@@ -383,7 +383,7 @@ def main():
         child_classes = ['vmmSecP']
 
         if enhanced_lag_policy is not None:
-            lag_policy = epg_domain + '/vswitchpolcontent/enlacplagp-{0}'.format(enhanced_lag_policy)
+            lag_policy = epg_domain + '/vswitchpolcont/enlacplagp-{0}'.format(enhanced_lag_policy)
             child_configs.append(
                 dict(fvAEPgLagPolAtt=dict(attributes=dict(annotation=''),
                 children=[dict(fvRsVmmVSwitchEnhancedLagPol=dict(attributes=dict(annotation='',tDn=lag_policy)))]))
