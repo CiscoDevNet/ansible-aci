@@ -46,6 +46,7 @@ class HttpApi(HttpApiBase):
         self.aci_user = None
         self.aci_pass = None
         self.auth = None
+        self.check_auth_from_private_key = None
         self.aci_proxy = None
         self.aci_ssl = None
         self.aci_validate_certs = None
@@ -93,9 +94,12 @@ class HttpApi(HttpApiBase):
         self.connection._auth = None
 
     def send_request(self, method, path, json=None):
-        ''' This method handles all APIC REST API requests other then login '''
+        ''' This method handles all APIC REST API requests other than login '''
         if json is None:
             json = {}
+
+        if self.connection._connected is True and self.aci_host != self.connection.get_option("host"):
+            self.connection._connected = False
 
         if self.aci_host is not None:
             self.connection.set_option("host", self.aci_host)
@@ -111,6 +115,7 @@ class HttpApi(HttpApiBase):
 
         if self.auth is not None:
             self.connection._auth = {'Cookie': '{0}'.format(self.auth)}
+            self.check_auth_from_private_key = {'Cookie': '{0}'.format(self.auth)}
 
         if self.aci_proxy is not None:
             self.connection.set_option("use_proxy", self.aci_proxy)
@@ -120,6 +125,9 @@ class HttpApi(HttpApiBase):
 
         if self.aci_validate_certs is not None:
             self.connection.set_option("validate_certs", self.aci_validate_certs)
+
+        if self.auth is None and self.check_auth_from_private_key is not None:
+            self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
 
         # Perform some very basic path input validation.
         path = str(path)

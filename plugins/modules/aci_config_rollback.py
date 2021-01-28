@@ -198,6 +198,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_bytes
 from ansible.module_utils.urls import fetch_url
+from ansible.module_utils.connection import Connection
 
 # Optional, only used for rollback preview
 try:
@@ -285,6 +286,7 @@ def main():
 
     elif state == "preview":
         aci.url = "%(protocol)s://%(host)s/mqapi2/snapshots.diff.xml" % module.params
+        aci.path = "mqapi2/snapshots.diff.xml"
         aci.filter_string = (
             "?s1dn=uni/backupst/snapshots-[uni/fabric/configexp-%(export_policy)s]/snapshot-%(snapshot)s&"
             "s2dn=uni/backupst/snapshots-[uni/fabric/configexp-%(compare_export_policy)s]/snapshot-%(compare_snapshot)s"
@@ -301,19 +303,48 @@ def get_preview(aci):
     This function is used to generate a preview between two snapshots and add the parsed results to the aci module return data.
     """
     uri = aci.url + aci.filter_string
-    resp, info = fetch_url(
-        aci.module, uri, headers=aci.headers, method="GET", timeout=aci.module.params.get("timeout"), use_proxy=aci.module.params.get("use_proxy")
-    )
+    path = aci.path + aci.filter_string
+    resp = None
+    if aci.module._socket_path:
+        conn = Connection(aci.module._socket_path)
+        conn.set_auth(
+            aci.headers.get("Cookie"),
+            aci.module.params.get("host"),
+            aci.module.params.get("username"),
+            aci.module.params.get("password"),
+            aci.module.params.get("port"),
+            aci.module.params.get("use_ssl"),
+            aci.module.params.get("use_proxy"),
+            aci.module.params.get("validate_certs"),
+        )
+        info = conn.send_request("GET", "/{0}".format(path))
+    else:
+        resp, info = fetch_url(
+            aci.module,
+            uri,
+            headers=aci.headers,
+            method="GET",
+            timeout=aci.module.params.get("timeout"),
+            use_proxy=aci.module.params.get("use_proxy"),
+        )
     aci.method = "GET"
     aci.response = info.get("msg")
     aci.status = info.get("status")
 
     # Handle APIC response
     if info.get("status") == 200:
-        xml_to_json(aci, resp.read())
+        try:
+            xml_to_json(aci, resp.read())
+        except AttributeError:
+            xml_to_json(aci, info.get("body"))
     else:
-        aci.result["raw"] = resp.read()
-        aci.fail_json(msg="Request failed: %(code)s %(text)s (see 'raw' output)" % aci.error)
+        try:
+            aci.result["raw"] = resp.read()
+        except AttributeError:
+            aci.result["raw"] = info.get("body")
+        aci.fail_json(
+            msg="Request failed: %(code)s %(text)s (see 'raw' output)" % aci.error
+        )
 
 
 def xml_to_json(aci, response_data):
