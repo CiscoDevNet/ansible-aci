@@ -317,7 +317,8 @@ def get_preview(aci):
             aci.module.params.get("use_proxy"),
             aci.module.params.get("validate_certs"),
         )
-        info = conn.send_request("GET", "/{0}".format(path))
+        conn.set_params(aci.headers.get('Cookie'), aci.params)
+        info = conn.send_request('GET', '/{0}'.format(path), None)
     else:
         resp, info = fetch_url(
             aci.module,

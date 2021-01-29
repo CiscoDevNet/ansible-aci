@@ -31,6 +31,9 @@ description:
 
 
 import json
+import re
+import pickle
+import ipaddress
 
 from ansible.module_utils._text import to_text
 from ansible.module_utils.connection import ConnectionError
@@ -50,20 +53,29 @@ class HttpApi(HttpApiBase):
         self.aci_proxy = None
         self.aci_ssl = None
         self.aci_validate_certs = None
+        self.backup_hosts = None
+        self.host_counter = 0
 
-    def set_auth(self, auth, host, username, password, port, use_ssl, use_proxy, validate_certs):
-        self.aci_host = host
-        self.aci_port = port
-        self.aci_user = username
-        self.aci_pass = password
+    def set_params(self, auth, params):
+        self.aci_host = params.get('host')
+        self.aci_port = params.get('port')
+        self.aci_user = params.get('username')
+        self.aci_pass = params.get('password')
         self.auth = auth
-        self.aci_proxy = use_proxy
-        self.aci_ssl = use_ssl
-        self.aci_validate_certs = validate_certs
+        self.aci_proxy = params.get('use_proxy')
+        self.aci_ssl = params.get('use_ssl')
+        self.aci_validate_certs = params.get('validate_certs')
+
+    def set_backup_hosts(self):
+        try:
+            list_of_hosts = re.sub(r'[[\]]', '', self.connection.get_option("host")).split(",")
+            ipaddress.ip_address(list_of_hosts[0])
+            return list_of_hosts
+        except Exception:
+            return []
 
     def login(self, username, password):
         ''' Log in to APIC '''
-
         # Perform login request
         method = 'POST'
         path = '/api/aaaLogin.json'
@@ -75,9 +87,8 @@ class HttpApi(HttpApiBase):
             self.connection._auth = {'Cookie': 'APIC-Cookie={0}'
                                      .format(self._response_to_json(response_value).get('imdata')[0]['aaaLogin']['attributes']['token'])}
 
-        except Exception as e:
-            msg = 'Error on attempt to connect and authenticate with user: {0} to APIC: {1}. {2} '.format(username, self.connection.get_option("host"), e)
-            raise ConnectionError(msg)
+        except Exception:
+            self.handle_error()
 
     def logout(self):
         method = 'POST'
@@ -88,46 +99,58 @@ class HttpApi(HttpApiBase):
         except Exception as e:
             msg = 'Error on attempt to logout from APIC. {0}'.format(e)
             raise ConnectionError(self._return_info(None, method, path, msg))
-
-        self._verify_response(response, method, path, response_data)
-        # Clean up tokens
         self.connection._auth = None
+        self._verify_response(response, method, path, response_data)
 
-    def send_request(self, method, path, json=None):
+    def send_request(self, method, path, json):
         ''' This method handles all APIC REST API requests other than login '''
         if json is None:
             json = {}
+        # Case1: List of hosts is provided
+        self.backup_hosts = self.set_backup_hosts()
+        if not self.backup_hosts:
+            # Case 1: Used for multiple hosts present in the playbook
+            if self.connection._connected is True and self.aci_host != self.connection.get_option("host"):
+                self.connection._connected = False
 
-        if self.connection._connected is True and self.aci_host != self.connection.get_option("host"):
-            self.connection._connected = False
+            if self.aci_host is not None:
+                self.connection.set_option("host", self.aci_host)
 
-        if self.aci_host is not None:
-            self.connection.set_option("host", self.aci_host)
+            if self.aci_port is not None:
+                self.connection.set_option("port", self.aci_port)
 
-        if self.aci_port is not None:
-            self.connection.set_option("port", self.aci_port)
+            if self.aci_user is not None:
+                self.connection.set_option("remote_user", self.aci_user)
 
-        if self.aci_user is not None:
-            self.connection.set_option("remote_user", self.aci_user)
+            if self.aci_pass is not None:
+                self.connection.set_option("password", self.aci_pass)
 
-        if self.aci_pass is not None:
-            self.connection.set_option("password", self.aci_pass)
+            if self.auth is not None:
+                self.connection._auth = {'Cookie': '{0}'.format(self.auth)}
+                self.check_auth_from_private_key = {'Cookie': '{0}'.format(self.auth)}
 
-        if self.auth is not None:
-            self.connection._auth = {'Cookie': '{0}'.format(self.auth)}
-            self.check_auth_from_private_key = {'Cookie': '{0}'.format(self.auth)}
+            if self.aci_proxy is not None:
+                self.connection.set_option("use_proxy", self.aci_proxy)
 
-        if self.aci_proxy is not None:
-            self.connection.set_option("use_proxy", self.aci_proxy)
+            if self.aci_ssl is not None:
+                self.connection.set_option("use_ssl", self.aci_ssl)
 
-        if self.aci_ssl is not None:
-            self.connection.set_option("use_ssl", self.aci_ssl)
+            if self.aci_validate_certs is not None:
+                self.connection.set_option("validate_certs", self.aci_validate_certs)
 
-        if self.aci_validate_certs is not None:
-            self.connection.set_option("validate_certs", self.aci_validate_certs)
-
-        if self.auth is None and self.check_auth_from_private_key is not None:
-            self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
+            # Case2: Switch using private key to credential authentication when private key is not specified
+            if self.auth is None and self.check_auth_from_private_key is not None:
+                self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
+        else:
+            try:
+                with open('my_hosts.pk', 'rb') as fi:
+                    self.host_counter = pickle.load(fi)
+            except FileNotFoundError:
+                pass
+            try:
+                self.connection.set_option("host", self.backup_hosts[self.host_counter])
+            except IndexError:
+                pass
 
         # Perform some very basic path input validation.
         path = str(path)
@@ -136,8 +159,20 @@ class HttpApi(HttpApiBase):
             raise ConnectionError(self._return_info(None, method, path, msg))
 
         response, rdata = self.connection.send(path, json, method=method)
-
         return self._verify_response(response, method, path, rdata)
+
+    def handle_error(self):
+        self.host_counter += 1
+        if self.host_counter == len(self.backup_hosts):
+            raise ConnectionError("No hosts left in cluster to continue operation")
+        with open('my_hosts.pk', 'wb') as fi:
+            pickle.dump(self.host_counter, fi)
+        try:
+            self.connection.set_option("host", self.backup_hosts[self.host_counter])
+        except IndexError:
+            pass
+        self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
+        return True
 
     def _verify_response(self, response, method, path, rdata):
         ''' Process the return code and response object from APIC '''

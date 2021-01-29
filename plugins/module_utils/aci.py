@@ -324,6 +324,7 @@ class ACIModule(object):
         self.original = None
         self.proposed = dict()
         self.stdout = None
+        self.counter = 0
 
         # debug output
         self.filter_string = ""
@@ -1752,9 +1753,9 @@ def ospf_spec():
 
         if self.module._socket_path:
             conn = Connection(self.module._socket_path)
-            conn.set_auth(self.headers.get('Cookie'), self.params.get('host'), self.params.get('username'), self.params.get('password'),
-                          self.params.get('port'), self.params.get('use_ssl'), self.params.get('use_proxy'), self.params.get('validate_certs'))
+            conn.set_params(self.headers.get('Cookie'), self.params)
             info = conn.send_request(method, '/{0}'.format(call_path), data)
+            self.url = info.get('url')
         else:
             resp, info = fetch_url(self.module, call_url,
                                    data=data,
