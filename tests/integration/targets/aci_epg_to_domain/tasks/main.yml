@@ -156,12 +156,44 @@
   ignore_errors: yes
   register: incompatible_params
 
+- name: Create enhanced lag policy
+  cisco.aci.aci_rest: &enhanced_lag_policy_present
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    path: api/node/mo/uni/vmmp-VMware/dom-anstest/vswitchpolcont.json
+    method: post
+    content: |
+      {
+        "vmmVSwitchPolicyCont": {
+          "attributes": {
+            "dn": "uni/vmmp-VMware/dom-anstest/vswitchpolcont",
+            "status": "created,modified"
+          },
+          "children": [{
+                "lacpEnhancedLagPol": {
+                    "attributes": {
+                        "lbmode": "src-dst-ip",
+                        "mode": "active",
+                        "name": "enhanced",
+                        "numLinks": "2"
+                    }
+                }
+          }]
+        }
+      }
+  register: add_enhanced_lag_policy
+
 - name: bind vmm domain to epg - enhanced_lag_policy
   cisco.aci.aci_epg_to_domain:
     <<: *aci_epg_to_domain_present
     domain_type: vmm
     vm_provider: vmware
-    enhanced_lag_policy: vmm_lag_policy
+    enhanced_lag_policy: enhanced
   register: valid_vlan
 
 - name: present assertions
