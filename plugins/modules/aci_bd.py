@@ -139,7 +139,7 @@ options:
     description:
     - The Route Profile to associate with the Bridge Domain.
     type: str
-  route_profile_l3_out:
+  route_profile_l3out:
     description:
     - The L3 Out that contains the associated Route Profile.
     type: str
@@ -367,7 +367,7 @@ def main():
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         vrf=dict(type='str', aliases=['vrf_name']),
         route_profile=dict(type='str'),
-        route_profile_l3_out=dict(type='str'),
+        route_profile_l3out=dict(type='str'),
         name_alias=dict(type='str'),
     )
 
@@ -410,7 +410,7 @@ def main():
     tenant = module.params.get('tenant')
     vrf = module.params.get('vrf')
     route_profile = module.params.get('route_profile')
-    route_profile_l3_out = module.params.get('route_profile_l3_out')
+    route_profile_l3out = module.params.get('route_profile_l3out')
     name_alias = module.params.get('name_alias')
 
     aci.construct_url(
@@ -456,7 +456,7 @@ def main():
                 {'fvRsIgmpsn': {'attributes': {'tnIgmpSnoopPolName': igmp_snoop_policy}}},
                 {'fvRsBDToNdP': {'attributes': {'tnNdIfPolName': ipv6_nd_policy}}},
                 {'fvRsBdToEpRet': {'attributes': {'resolveAct': endpoint_retention_action, 'tnFvEpRetPolName': endpoint_retention_policy}}},
-                {'fvRsBDToProfile': {'attributes': {'tnL3extOutName': route_profile_l3_out, 'tnRtctrlProfileName': route_profile}}},
+                {'fvRsBDToProfile': {'attributes': {'tnL3extOutName': route_profile_l3out, 'tnRtctrlProfileName': route_profile}}},
             ],
         )
 
