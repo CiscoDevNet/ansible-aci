@@ -194,7 +194,7 @@
     domain_type: vmm
     vm_provider: vmware
     enhanced_lag_policy: enhanced
-  register: valid_vlan
+  register: enhanced_lag_policy
 
 - name: present assertions
   assert:
@@ -224,6 +224,8 @@
       - invalid_vlan_primary_encap.msg == "Valid VLAN assignments are from 1 to 4096"
       - '"[uni/l2dom-anstest].json" in l2_present.url'
       - valid_vlan_primary_encap.current.0.fvRsDomAtt.attributes.dn == "uni/tn-anstest/ap-anstest/epg-anstest/rsdomAtt-[uni/phys-anstest]"
+      - enhanced_lag_policy.current.0.fvRsDomAtt.children | length == 2
+      - enhanced_lag_policy.current.0.fvRsDomAtt.children.0.fvAEPgLagPolAtt.children.0.fvRsVmmVSwitchEnhancedLagPol.attributes.tDn == "uni/vmmp-VMware/dom-anstest/vswitchpolcont/enlacplagp-enhanced"
 
 - name: get domain epg binding
   cisco.aci.aci_epg_to_domain: &aci_epg_domain_query
