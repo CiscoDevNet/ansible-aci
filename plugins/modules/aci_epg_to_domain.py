@@ -379,14 +379,14 @@ def main():
     # Compile the full domain for URL building
     if domain_type == 'vmm':
         epg_domain = 'uni/vmmp-{0}/dom-{1}'.format(VM_PROVIDER_MAPPING[vm_provider], domain)
-        child_configs = [dict(vmmSecP=dict(attributes=dict(allowPromiscuous=promiscuous)))]		
+        child_configs = [dict(vmmSecP=dict(attributes=dict(allowPromiscuous=promiscuous)))]
         child_classes = ['vmmSecP']
 
         if enhanced_lag_policy is not None:
             lag_policy = epg_domain + '/vswitchpolcont/enlacplagp-{0}'.format(enhanced_lag_policy)
             child_configs.append(
                 dict(fvAEPgLagPolAtt=dict(attributes=dict(annotation=''),
-                children=[dict(fvRsVmmVSwitchEnhancedLagPol=dict(attributes=dict(annotation='',tDn=lag_policy)))]))
+                     children=[dict(fvRsVmmVSwitchEnhancedLagPol=dict(attributes=dict(annotation='', tDn=lag_policy)))]))
             )
             child_classes.append('fvAEPgLagPolAtt')
 
