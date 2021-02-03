@@ -157,9 +157,12 @@ class HttpApi(HttpApiBase):
         if path[0] != '/':
             msg = 'Value of <path> does not appear to be formated properly'
             raise ConnectionError(self._return_info(None, method, path, msg))
-
-        response, rdata = self.connection.send(path, json, method=method)
-        return self._verify_response(response, method, path, rdata)
+        response = None
+        try:
+            response, rdata = self.connection.send(path, json, method=method)
+            return self._verify_response(response, method, path, rdata)
+        except Exception:
+            self.handle_error()
 
     def handle_error(self):
         self.host_counter += 1

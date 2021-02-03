@@ -1755,7 +1755,11 @@ def ospf_spec():
             conn = Connection(self.module._socket_path)
             conn.set_params(self.headers.get('Cookie'), self.params)
             info = conn.send_request(method, '/{0}'.format(call_path), data)
-            self.url = info.get('url')
+            try:
+                self.url = info.get('url')
+            except Exception:
+                info = conn.send_request(method, '/{0}'.format(call_path), data)
+                self.url = info.get('url')
         else:
             resp, info = fetch_url(self.module, call_url,
                                    data=data,
