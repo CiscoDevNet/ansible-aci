@@ -1,0 +1,150 @@
+# Test code for the ACI modules
+# Copyright: (c) 2017, Jacob McGill (@jmcgill298)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: ensure tenant exists for tests to kick off
+  cisco.aci.aci_tenant: &aci_tenant_present
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    tenant: anstest
+    state: present
+  register: tenant_present
+
+- name: ensure contract exists for tests to kick off
+  cisco.aci.aci_contract: &aci_contract_present
+    <<: *aci_tenant_present
+    contract: anstest
+  register: contract_present
+
+- name: ensure subject exists for tests to kick off
+  cisco.aci.aci_contract_subject: &aci_subject_present
+    <<: *aci_contract_present
+    subject: anstest
+  register: subject_present
+
+- name: create subject service graph binding - check mode works
+  cisco.aci.aci_contract_subject_to_servicegraph: &aci_subject_servicegraph_present
+    <<: *aci_subject_present
+    servicegraph: anstest
+  check_mode: yes
+  register: subject_servicegraph_present_check_mode
+
+- name: create subject servicegraph binding - creation works
+  cisco.aci.aci_contract_subject_to_servicegraph:
+    <<: *aci_subject_servicegraph_present
+  register: subject_servicegraph_present
+
+- name: create subject servicegraph binding - idempotency works
+  cisco.aci.aci_contract_subject_to_servicegraph:
+    <<: *aci_subject_servicegraph_present
+  register: subject_servicegraph_present_idempotent
+
+- name: update subject servicegraph binding - update works
+  cisco.aci.aci_contract_subject_to_servicegraph:
+    <<: *aci_subject_servicegraph_present
+    servicegraph: anstest2
+  register: subject_servicegraph_update
+
+- name: missing param - failure message works
+  cisco.aci.aci_contract_subject_to_servicegraph:
+    <<: *aci_tenant_present
+  ignore_errors: yes
+  register: present_missing_param
+
+- name: present assertions
+  assert:
+    that:
+      - subject_servicegraph_present_check_mode is changed
+      - subject_servicegraph_present_check_mode.previous == []
+      - subject_servicegraph_present_check_mode.sent.vzRsSubjGraphAtt.attributes.tnVnsAbsGraphName == 'anstest'
+      - subject_servicegraph_present is changed
+      - subject_servicegraph_present.previous == []
+      - subject_servicegraph_present.sent == subject_servicegraph_present_check_mode.sent
+      - subject_servicegraph_present_idempotent is not changed
+      - subject_servicegraph_present_idempotent.previous != []
+      - subject_servicegraph_update is changed
+      - subject_servicegraph_update.sent.vzRsSubjGraphAtt.attributes.tnVnsAbsGraphName == 'anstest2'
+      - present_missing_param is failed
+      - 'present_missing_param.msg == "state is present but all of the following are missing: contract, servicegraph, subject"'
+
+- name: query all
+  cisco.aci.aci_contract_subject_to_servicegraph:
+    <<: *aci_tenant_present
+    state: query
+    tenant: "{{ fakevar | default(omit) }}"
+  register: query_all
+
+- name: query binding
+  cisco.aci.aci_contract_subject_to_servicegraph:
+    <<: *aci_subject_servicegraph_present
+    state: query
+  register: query_binding
+
+- name: query assertions
+  assert:
+    that:
+      - query_all is not changed
+      - query_all.current | length > 1
+      - query_all.current.0.vzRsSubjGraphAtt is defined
+      - query_binding is not changed
+      - query_binding.current != []
+
+- name: delete subject servicgraph binding - check mode works
+  cisco.aci.aci_contract_subject_to_servicegraph: &aci_subject_servicegraph_absent
+    <<: *aci_subject_servicegraph_present
+    state: absent
+  check_mode: yes
+  register: subject_servicegraph_absent_check_mode
+
+- name: delete subject servicegraph binding - deletion works
+  cisco.aci.aci_contract_subject_to_servicegraph:
+    <<: *aci_subject_servicegraph_absent
+  register: subject_servicegraph_absent
+
+- name: delete subject servicegraph binding - idempotency works
+  cisco.aci.aci_contract_subject_to_servicegraph:
+    <<: *aci_subject_servicegraph_absent
+  register: subject_servicegraph_absent_idempotent
+
+- name: missing param - failure message works
+  cisco.aci.aci_contract_subject_to_servicegraph:
+    <<: *aci_subject_servicegraph_absent
+    servicegraph: "{{ fakevar | default(omit) }}"
+  ignore_errors: yes
+  register: absent_missing_param
+
+- name: absent assertions
+  assert:
+    that:
+      - subject_servicegraph_absent_check_mode is changed
+      - subject_servicegraph_absent_check_mode.proposed == {}
+      - subject_servicegraph_absent_check_mode.previous != []
+      - subject_servicegraph_absent is changed
+      - subject_servicegraph_absent.previous != []
+      - subject_servicegraph_absent_idempotent is not changed
+      - subject_servicegraph_absent_idempotent.previous == []
+      - absent_missing_param is failed
+      - 'absent_missing_param.msg == "state is absent but all of the following are missing: servicegraph"'
+
+- name: cleanup contract
+  cisco.aci.aci_contract:
+    <<: *aci_contract_present
+    state: absent
+  when: contract_present is changed
+
+- name: cleanup tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_tenant_present
+    state: absent
+  when: tenant_present is changed
