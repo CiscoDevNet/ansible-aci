@@ -117,6 +117,10 @@ options:
     - Support for CloudFoundry, OpenShift and Red Hat was added in ACI v3.1.
     type: str
     choices: [ cloudfoundry, kubernetes, microsoft, openshift, openstack, redhat, vmware ]
+  custom_epg_name:
+    description:
+    - The custom epg name in VMM domain association.
+    type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 
@@ -328,6 +332,7 @@ def main():
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         vm_provider=dict(type='str', choices=['cloudfoundry', 'kubernetes', 'microsoft', 'openshift', 'openstack', 'redhat', 'vmware']),
         promiscuous=dict(type='str', default='reject', choices=['accept', 'reject']),
+        custom_epg_name=dict(type='str'),
     )
 
     module = AnsibleModule(
@@ -349,6 +354,7 @@ def main():
     domain_type = module.params.get('domain_type')
     vm_provider = module.params.get('vm_provider')
     promiscuous = module.params.get('promiscuous')
+    custom_epg_name = module.params.get('custom_epg_name')
     encap = module.params.get('encap')
     if encap is not None:
         if encap in range(1, 4097):
@@ -439,6 +445,7 @@ def main():
                 netflowPref=netflow,
                 primaryEncap=primary_encap,
                 resImedcy=resolution_immediacy,
+                customEpgName=custom_epg_name,
             ),
             child_configs=child_configs,
         )
