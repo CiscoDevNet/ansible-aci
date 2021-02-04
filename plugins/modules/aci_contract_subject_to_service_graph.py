@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_contract_subject_to_servicegraph
+module: aci_contract_subject_to_service_graph
 short_description: Bind contract subject to service graph (vz:RsSubjGraphAtt).
 description:
 - Bind contract subject to service graph.
@@ -48,7 +48,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new contract subject to service graph binding
-  cisco.aci.aci_contract_subject_to_subject:
+  cisco.aci.aci_contract_subject_to_service_graph
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -59,7 +59,7 @@ EXAMPLES = r'''
     state: present
   delegate_to: localhost
 - name: Remove an existing contract subject to service graph binding
-  cisco.aci.aci_contract_subject_to_subject:
+  cisco.aci.aci_contract_subject_to_service_graph
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -70,7 +70,7 @@ EXAMPLES = r'''
     state: absent
   delegate_to: localhost
 - name: Query a specific contract subject to service graph binding
-  cisco.aci.aci_contract_subject_to_subject:
+  cisco.aci.aci_contract_subject_to_service_graph
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -224,19 +224,19 @@ def main():
     aci.construct_url(
         root_class=dict(
             aci_class='fvTenant',
-            aci_rn=f'tn-{tenant}',
+            aci_rn='tn-{0}'.format(tenant),
             module_object=tenant,
             target_filter={'name': tenant},
         ),
         subclass_1=dict(
             aci_class='vzBrCP',
-            aci_rn=f'brc-{contract}',
+            aci_rn='brc-{0}'.format(contract),
             module_object=contract,
             target_filter={'name': contract}
         ),
         subclass_2=dict(
             aci_class='vzSubj',
-            aci_rn=f'subj-{subject}',
+            aci_rn='subj-{0}'.format(subject),
             module_object=subject,
             target_filter={'name': subject}
         ),
