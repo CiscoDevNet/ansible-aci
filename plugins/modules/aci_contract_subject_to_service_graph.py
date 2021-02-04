@@ -48,7 +48,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new contract subject to service graph binding
-  cisco.aci.aci_contract_subject_to_service_graph
+  cisco.aci.aci_contract_subject_to_service_graph:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -59,7 +59,7 @@ EXAMPLES = r'''
     state: present
   delegate_to: localhost
 - name: Remove an existing contract subject to service graph binding
-  cisco.aci.aci_contract_subject_to_service_graph
+  cisco.aci.aci_contract_subject_to_service_graph:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -70,7 +70,7 @@ EXAMPLES = r'''
     state: absent
   delegate_to: localhost
 - name: Query a specific contract subject to service graph binding
-  cisco.aci.aci_contract_subject_to_service_graph
+  cisco.aci.aci_contract_subject_to_service_graph:
     host: apic
     username: admin
     password: SomeSecretPassword
