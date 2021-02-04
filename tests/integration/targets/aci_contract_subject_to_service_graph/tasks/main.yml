@@ -76,7 +76,7 @@
       - subject_servicegraph_update is changed
       - subject_servicegraph_update.sent.vzRsSubjGraphAtt.attributes.tnVnsAbsGraphName == 'anstest2'
       - present_missing_param is failed
-      - 'present_missing_param.msg == "state is present but all of the following are missing: contract, servicegraph, subject"'
+      - 'present_missing_param.msg == "state is present but all of the following are missing: contract, service_graph, subject"'
 
 - name: query all
   cisco.aci.aci_contract_subject_to_service_graph:
