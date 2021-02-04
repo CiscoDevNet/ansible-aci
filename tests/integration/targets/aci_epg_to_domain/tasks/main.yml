@@ -196,6 +196,14 @@
     enhanced_lag_policy: enhanced
   register: enhanced_lag_policy
 
+- name: change custom epg name
+  cisco.aci.aci_epg_to_domain:
+    <<: *aci_epg_to_domain_present
+    domain_type: vmm
+    vm_provider: vmware
+    custom_epg_name: anstest_epg
+  register: custom_epg_name
+
 - name: present assertions
   assert:
     that:
@@ -226,6 +234,7 @@
       - valid_vlan_primary_encap.current.0.fvRsDomAtt.attributes.dn == "uni/tn-anstest/ap-anstest/epg-anstest/rsdomAtt-[uni/phys-anstest]"
       - enhanced_lag_policy.current.0.fvRsDomAtt.children | length == 2
       - enhanced_lag_policy.current.0.fvRsDomAtt.children.0.fvAEPgLagPolAtt.children.0.fvRsVmmVSwitchEnhancedLagPol.attributes.tDn == "uni/vmmp-VMware/dom-anstest/vswitchpolcont/enlacplagp-enhanced"
+      - custom_epg_name.current.0.fvRsDomAtt.attributes.customEpgName == "anstest_epg"
 
 - name: get domain epg binding
   cisco.aci.aci_epg_to_domain: &aci_epg_domain_query
