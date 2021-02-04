@@ -21,6 +21,14 @@
     state: present
   register: tenant_present
 
+# CLEAN ENVIRONMENT
+- name: ensure contract is removed
+  cisco.aci.aci_contract:
+    <<: *aci_tenant_present
+    contract: anstest
+    state: absent
+  ignore_errors: yes
+
 - name: ensure contract exists for tests to kick off
   cisco.aci.aci_contract: &aci_contract_present
     <<: *aci_tenant_present
@@ -34,27 +42,27 @@
   register: subject_present
 
 - name: create subject service graph binding - check mode works
-  cisco.aci.aci_contract_subject_to_service_graph: &aci_subject_servicegraph_present
+  cisco.aci.aci_contract_subject_to_service_graph: &aci_subject_service_graph_present
     <<: *aci_subject_present
     service_graph: anstest
   check_mode: yes
-  register: subject_servicegraph_present_check_mode
+  register: subject_service_graph_present_check_mode
 
-- name: create subject servicegraph binding - creation works
+- name: create subject service graph binding - creation works
   cisco.aci.aci_contract_subject_to_service_graph:
-    <<: *aci_subject_servicegraph_present
-  register: subject_servicegraph_present
+    <<: *aci_subject_service_graph_present
+  register: subject_service_graph_present
 
-- name: create subject servicegraph binding - idempotency works
+- name: create subject service graph binding - idempotency works
   cisco.aci.aci_contract_subject_to_service_graph:
-    <<: *aci_subject_servicegraph_present
-  register: subject_servicegraph_present_idempotent
+    <<: *aci_subject_service_graph_present
+  register: subject_service_graph_present_idempotent
 
-- name: update subject servicegraph binding - update works
+- name: update subject service graph binding - update works
   cisco.aci.aci_contract_subject_to_service_graph:
-    <<: *aci_subject_servicegraph_present
+    <<: *aci_subject_service_graph_present
     service_graph: anstest2
-  register: subject_servicegraph_update
+  register: subject_service_graph_update
 
 - name: missing param - failure message works
   cisco.aci.aci_contract_subject_to_service_graph:
@@ -65,16 +73,16 @@
 - name: present assertions
   assert:
     that:
-      - subject_servicegraph_present_check_mode is changed
-      - subject_servicegraph_present_check_mode.previous == []
-      - subject_servicegraph_present_check_mode.sent.vzRsSubjGraphAtt.attributes.tnVnsAbsGraphName == 'anstest'
-      - subject_servicegraph_present is changed
-      - subject_servicegraph_present.previous == []
-      - subject_servicegraph_present.sent == subject_servicegraph_present_check_mode.sent
-      - subject_servicegraph_present_idempotent is not changed
-      - subject_servicegraph_present_idempotent.previous != []
-      - subject_servicegraph_update is changed
-      - subject_servicegraph_update.sent.vzRsSubjGraphAtt.attributes.tnVnsAbsGraphName == 'anstest2'
+      - subject_service_graph_present_check_mode is changed
+      - subject_service_graph_present_check_mode.previous == []
+      - subject_service_graph_present_check_mode.sent.vzRsSubjGraphAtt.attributes.tnVnsAbsGraphName == 'anstest'
+      - subject_service_graph_present is changed
+      - subject_service_graph_present.previous == []
+      - subject_service_graph_present.sent == subject_service_graph_present_check_mode.sent
+      - subject_service_graph_present_idempotent is not changed
+      - subject_service_graph_present_idempotent.previous != []
+      - subject_service_graph_update is changed
+      - subject_service_graph_update.sent.vzRsSubjGraphAtt.attributes.tnVnsAbsGraphName == 'anstest2'
       - present_missing_param is failed
       - 'present_missing_param.msg == "state is present but all of the following are missing: contract, service_graph, subject"'
 
@@ -87,7 +95,7 @@
 
 - name: query binding
   cisco.aci.aci_contract_subject_to_service_graph:
-    <<: *aci_subject_servicegraph_present
+    <<: *aci_subject_service_graph_present
     state: query
   register: query_binding
 
@@ -100,26 +108,26 @@
       - query_binding is not changed
       - query_binding.current != []
 
-- name: delete subject servicgraph binding - check mode works
-  cisco.aci.aci_contract_subject_to_service_graph: &aci_subject_servicegraph_absent
-    <<: *aci_subject_servicegraph_present
+- name: delete subject service graph binding - check mode works
+  cisco.aci.aci_contract_subject_to_service_graph: &aci_subject_service_graph_absent
+    <<: *aci_subject_service_graph_present
     state: absent
   check_mode: yes
-  register: subject_servicegraph_absent_check_mode
+  register: subject_service_graph_absent_check_mode
 
-- name: delete subject servicegraph binding - deletion works
+- name: delete subject service graph binding - deletion works
   cisco.aci.aci_contract_subject_to_service_graph:
-    <<: *aci_subject_servicegraph_absent
-  register: subject_servicegraph_absent
+    <<: *aci_subject_service_graph_absent
+  register: subject_service_graph_absent
 
-- name: delete subject servicegraph binding - idempotency works
+- name: delete subject service graph binding - idempotency works
   cisco.aci.aci_contract_subject_to_service_graph:
-    <<: *aci_subject_servicegraph_absent
-  register: subject_servicegraph_absent_idempotent
+    <<: *aci_subject_service_graph_absent
+  register: subject_service_graph_absent_idempotent
 
 - name: missing param - failure message works
   cisco.aci.aci_contract_subject_to_service_graph:
-    <<: *aci_subject_servicegraph_absent
+    <<: *aci_subject_service_graph_absent
     service_graph: "{{ fakevar | default(omit) }}"
   ignore_errors: yes
   register: absent_missing_param
@@ -127,13 +135,13 @@
 - name: absent assertions
   assert:
     that:
-      - subject_servicegraph_absent_check_mode is changed
-      - subject_servicegraph_absent_check_mode.proposed == {}
-      - subject_servicegraph_absent_check_mode.previous != []
-      - subject_servicegraph_absent is changed
-      - subject_servicegraph_absent.previous != []
-      - subject_servicegraph_absent_idempotent is not changed
-      - subject_servicegraph_absent_idempotent.previous == []
+      - subject_service_graph_absent_check_mode is changed
+      - subject_service_graph_absent_check_mode.proposed == {}
+      - subject_service_graph_absent_check_mode.previous != []
+      - subject_service_graph_absent is changed
+      - subject_service_graph_absent.previous != []
+      - subject_service_graph_absent_idempotent is not changed
+      - subject_service_graph_absent_idempotent.previous == []
       - absent_missing_param is failed
       - 'absent_missing_param.msg == "state is absent but all of the following are missing: service_graph"'
 
