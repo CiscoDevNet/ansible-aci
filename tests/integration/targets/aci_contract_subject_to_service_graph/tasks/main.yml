@@ -36,7 +36,7 @@
 - name: create subject service graph binding - check mode works
   cisco.aci.aci_contract_subject_to_service_graph: &aci_subject_servicegraph_present
     <<: *aci_subject_present
-    servicegraph: anstest
+    service_graph: anstest
   check_mode: yes
   register: subject_servicegraph_present_check_mode
 
@@ -53,7 +53,7 @@
 - name: update subject servicegraph binding - update works
   cisco.aci.aci_contract_subject_to_service_graph:
     <<: *aci_subject_servicegraph_present
-    servicegraph: anstest2
+    service_graph: anstest2
   register: subject_servicegraph_update
 
 - name: missing param - failure message works
@@ -120,7 +120,7 @@
 - name: missing param - failure message works
   cisco.aci.aci_contract_subject_to_service_graph:
     <<: *aci_subject_servicegraph_absent
-    servicegraph: "{{ fakevar | default(omit) }}"
+    service_graph: "{{ fakevar | default(omit) }}"
   ignore_errors: yes
   register: absent_missing_param
 
@@ -135,7 +135,7 @@
       - subject_servicegraph_absent_idempotent is not changed
       - subject_servicegraph_absent_idempotent.previous == []
       - absent_missing_param is failed
-      - 'absent_missing_param.msg == "state is absent but all of the following are missing: servicegraph"'
+      - 'absent_missing_param.msg == "state is absent but all of the following are missing: service_graph"'
 
 - name: cleanup contract
   cisco.aci.aci_contract:

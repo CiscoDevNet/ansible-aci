@@ -29,7 +29,7 @@ options:
     description:
     - The contract subject name.
     type: str
-  servicegraph:
+  service_graph:
     description:
     - The service graph name.
     type: str
@@ -55,7 +55,7 @@ EXAMPLES = r'''
     tenant: production
     contract: web_to_db
     subject: test
-    servicegraph: '{{ servicegraph }}'
+    service_graph: '{{ service_graph }}'
     state: present
   delegate_to: localhost
 - name: Remove an existing contract subject to service graph binding
@@ -66,7 +66,7 @@ EXAMPLES = r'''
     tenant: production
     contract: web_to_db
     subject: test
-    servicegraph: '{{ servicegraph }}'
+    service_graph: '{{ service_graph }}'
     state: absent
   delegate_to: localhost
 - name: Query a specific contract subject to service graph binding
@@ -77,7 +77,7 @@ EXAMPLES = r'''
     tenant: production
     contract: web_to_db
     subject: test
-    servicegraph: '{{ servicegraph }}'
+    service_graph: '{{ service_graph }}'
     state: query
   delegate_to: localhost
   register: query_result
@@ -199,7 +199,7 @@ def main():
         tenant=dict(type='str'),
         contract=dict(type='str'),
         subject=dict(type='str'),
-        servicegraph=dict(type='str'),
+        service_graph=dict(type='str'),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query'])
     )
@@ -208,8 +208,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['contract', 'servicegraph', 'subject', 'tenant']],
-            ['state', 'present', ['contract', 'servicegraph', 'subject', 'tenant']],
+            ['state', 'absent', ['contract', 'service_graph', 'subject', 'tenant']],
+            ['state', 'present', ['contract', 'service_graph', 'subject', 'tenant']],
         ]
     )
 
@@ -218,7 +218,7 @@ def main():
     tenant = module.params.get('tenant')
     contract = module.params.get('contract')
     subject = module.params.get('subject')
-    servicegraph = module.params.get('servicegraph')
+    service_graph = module.params.get('service_graph')
     state = module.params.get('state')
 
     aci.construct_url(
@@ -243,8 +243,8 @@ def main():
         subclass_3=dict(
             aci_class='vzRsSubjGraphAtt',
             aci_rn='rsSubjGraphAtt',
-            module_object=servicegraph,
-            target_filter={'name': servicegraph}
+            module_object=service_graph,
+            target_filter={'name': service_graph}
         ),
     )
 
@@ -253,7 +253,7 @@ def main():
     if state == 'present':
         aci.payload(
             aci_class='vzRsSubjGraphAtt',
-            class_config=dict(tnVnsAbsGraphName=servicegraph)
+            class_config=dict(tnVnsAbsGraphName=service_graph)
         )
 
         aci.get_diff(aci_class='vzRsSubjGraphAtt')
