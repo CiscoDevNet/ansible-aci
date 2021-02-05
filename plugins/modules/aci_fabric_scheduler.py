@@ -39,7 +39,6 @@ options:
       oneTime execution it would be "False". For a shell just exclude this option from
       the task
     type: bool
-    default: 'no'
   windowname:
     description:
        - This is the name for your what recurring or oneTime execution

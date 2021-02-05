@@ -63,6 +63,7 @@ options:
     - Determine if a vNet Gateway Router will be deployed or not.
     - Only used when it is an azure cloud apic.
     type: bool
+    default: false
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
