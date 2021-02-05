@@ -21,6 +21,13 @@
     state: present
   register: tenant_present
 
+- name: Query system information
+  aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 - name: ensure ap exists for tests to kick off
   cisco.aci.aci_ap: &aci_ap_present
     <<: *aci_tenant_present
@@ -203,6 +210,13 @@
     vm_provider: vmware
     custom_epg_name: anstest_epg
   register: custom_epg_name
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+
+- name: Verify custom epg name
+  assert:
+    that:
+      - custom_epg_name.current.0.fvRsDomAtt.attributes.customEpgName == "anstest_epg"
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: present assertions
   assert:
