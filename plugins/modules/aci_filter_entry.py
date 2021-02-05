@@ -56,7 +56,7 @@ options:
     - The Ethernet type.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
-    choices: [ arp, fcoe, ip, ipv6, mac_security, mpls_ucast, trill, unspecified ]
+    choices: [ arp, fcoe, ip, ipv4, ipv6, mac_security, mpls_ucast, trill, unspecified ]
   filter:
     description:
     - The name of Filter that the entry should belong to.
@@ -240,7 +240,7 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 VALID_ARP_FLAGS = ['arp_reply', 'arp_request', 'unspecified']
-VALID_ETHER_TYPES = ['arp', 'fcoe', 'ip', 'ipv6', 'mac_security', 'mpls_ucast', 'trill', 'unspecified']
+VALID_ETHER_TYPES = ['arp', 'fcoe', 'ip', 'ipv4', 'ipv6', 'mac_security', 'mpls_ucast', 'trill', 'unspecified']
 VALID_ICMP_TYPES = ['dst_unreachable', 'echo', 'echo_reply', 'src_quench', 'time_exceeded', 'unspecified']
 VALID_ICMP6_TYPES = ['dst_unreachable', 'echo_request', 'echo_reply', 'neighbor_advertisement',
                      'neighbor_solicitation', 'redirect', 'time_exceeded', 'unspecified']
