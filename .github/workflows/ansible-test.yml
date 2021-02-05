@@ -17,10 +17,10 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v2
     
-    - name: Set up Python 3.9
+    - name: Set up Python 3.8
       uses: actions/setup-python@v1
       with:
-        python-version: 3.9
+        python-version: 3.8
 
     - name: Install ansible-base (v${{ matrix.ansible }})
       run: pip install https://github.com/ansible/ansible/archive/v${{ matrix.ansible }}.tar.gz --disable-pip-version-check
@@ -40,13 +40,13 @@ jobs:
     - build
     runs-on: ubuntu-latest
     steps:
-    - name: Set up Python 3.7
+    - name: Set up Python 3.8
       uses: actions/setup-python@v1
       with:
-        python-version: 3.7
+        python-version: 3.8
 
-    - name: Install ansible-base (v2.9.12)
-      run: pip install https://github.com/ansible/ansible/archive/v2.9.12.tar.gz --disable-pip-version-check
+    - name: Install ansible-base (v2.9.17)
+      run: pip install https://github.com/ansible/ansible/archive/v2.9.17.tar.gz --disable-pip-version-check
 
     - name: Download migrated collection artifacts
       uses: actions/download-artifact@v1
@@ -87,10 +87,10 @@ jobs:
       matrix:
         ansible: [2.9.17, 2.10.5]
     steps:
-    - name: Set up Python 3.9
+    - name: Set up Python 3.8
       uses: actions/setup-python@v1
       with:
-        python-version: 3.9
+        python-version: 3.8
 
     - name: Install ansible-base (v${{ matrix.ansible }})
       run: pip install https://github.com/ansible/ansible/archive/v${{ matrix.ansible }}.tar.gz --disable-pip-version-check
@@ -128,10 +128,10 @@ jobs:
       matrix:
         ansible: [2.9.17, 2.10.5]
     steps:
-    - name: Set up Python 3.9
+    - name: Set up Python 3.8
       uses: actions/setup-python@v1
       with:
-        python-version: 3.9
+        python-version: 3.8
 
     - name: Install ansible-base (v${{ matrix.ansible }})
       run: pip install https://github.com/ansible/ansible/archive/v${{ matrix.ansible }}.tar.gz --disable-pip-version-check
@@ -149,7 +149,7 @@ jobs:
       run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
 
     - name: Run unit tests
-      run: ansible-test units --docker -v --color --truncate 0 --python 3.9 --coverage
+      run: ansible-test units --docker -v --color --truncate 0 --python 3.8 --coverage
       working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
     - name: Generate coverage report.
@@ -167,10 +167,10 @@ jobs:
     - build
     runs-on: ubuntu-latest
     steps:
-    - name: Set up Python 3.9
+    - name: Set up Python 3.8
       uses: actions/setup-python@v1
       with:
-        python-version: 3.9
+        python-version: 3.8
 
     - name: Install ansible-base (v2.9.17)
       run: pip install https://github.com/ansible/ansible/archive/v2.9.17.tar.gz --disable-pip-version-check
@@ -195,8 +195,8 @@ jobs:
         timeout: 2000000
         interval: 5000
 
-    - name: Run integration tests on Python 3.9
-      run: ansible-test network-integration --docker -v --color --retry-on-error --python 3.9 --truncate 0 --continue-on-error --coverage
+    - name: Run integration tests on Python 3.8
+      run: ansible-test network-integration --docker -v --color --retry-on-error --python 3.8 --truncate 0 --continue-on-error --coverage
       working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
     - name: Releasing integration mutex
