@@ -1,0 +1,225 @@
+# Test code for the aep_to_epg ACI module
+# Author: Marcel Zehnder (@maercu)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# CLEAN ENVIRONMENT
+- name: Remove test aep before we kickoff
+  cisco.aci.aci_aep: &aep_absent
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    aep: epg2aep
+    state: absent
+
+# SETUP TEST AEP AND EPGS
+- name: Create AEP
+  cisco.aci.aci_aep: &aep_present
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    aep: epg2aep
+    state: present
+
+- name: Create Tenant
+  cisco.aci.aci_tenant: &tenant_present
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    tenant: epg2aep
+    state: present
+
+- name: Configure VRF
+  cisco.aci.aci_vrf:
+    <<: *tenant_present
+    vrf: epg2aep
+
+- name: Configure BD
+  cisco.aci.aci_bd:
+    <<: *tenant_present
+    vrf: epg2aep
+    bd: epg2aep
+
+- name: Configure Ap
+  cisco.aci.aci_ap:
+    <<: *tenant_present
+    ap: ap
+
+- name: Configure EPG
+  cisco.aci.aci_epg:
+    <<: *tenant_present
+    ap: ap
+    epg: '{{ item }}'
+    bd: epg2aep
+  loop:
+    - epg1
+    - epg2
+
+# ADD ASSOCIATION
+- name: Add EPG to AEP association (check_mode)
+  cisco.aci.aci_aep_to_epg: &assoc_present
+    <<: *aep_present
+    tenant: epg2aep
+    ap: ap
+    epg: epg1
+    encap_id: 1984
+    mode: trunk
+  check_mode: yes
+  register: cm_add_assoc
+
+- name: Add EPG to AEP association (normal mode)
+  cisco.aci.aci_aep_to_epg:
+    <<: *assoc_present
+  register: nm_add_assoc
+
+- name: Verify add_assoc
+  assert:
+    that:
+    - cm_add_assoc is changed
+    - nm_add_assoc is changed
+    - cm_add_assoc.previous == nm_add_assoc.previous == []
+    - cm_add_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.encap == nm_add_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.encap == 'vlan-1984'
+    - cm_add_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.mode == nm_add_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.mode == 'regular'
+    - cm_add_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.tDn == nm_add_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.tDn == 'uni/tn-epg2aep/ap-ap/epg-epg1'
+
+- name: Add EPG to AEP association again, check if idempotency works (check_mode)
+  cisco.aci.aci_aep_to_epg:
+    <<: *assoc_present
+  check_mode: yes
+  register: cm_add_assoc_again
+
+- name: Add EPG to AEP association again, check if idempotency works (normal_mode)
+  cisco.aci.aci_aep_to_epg:
+    <<: *assoc_present
+  register: nm_add_assoc_again
+
+- name: Verify add_assoc_again
+  assert:
+    that:
+    - cm_add_assoc_again is not changed
+    - nm_add_assoc_again is not changed
+
+# UPDATE ASSOCIATION
+- name: Change encap (check_mode)
+  cisco.aci.aci_aep_to_epg: &assoc_update
+    <<: *assoc_present
+    encap_id: 1985
+  check_mode: yes
+  register: cm_update_assoc
+
+- name: Change encap (normal_mode)
+  cisco.aci.aci_aep_to_epg:
+    <<: *assoc_update
+  register: nm_update_assoc
+
+- name: Verify update_assoc
+  assert:
+    that:
+    - cm_update_assoc is changed
+    - nm_update_assoc is changed
+    - cm_update_assoc.previous == nm_update_assoc.previous != []
+    - cm_update_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.encap == nm_update_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.encap == 'vlan-1985'
+
+# ADD ANOTHER ASSOCIATION
+- name: Add another EPG to AEP association
+  cisco.aci.aci_aep_to_epg:
+    <<: *assoc_present
+    epg: epg2
+    encap_id: 1990
+
+# QUERY ALL ASSOCIATIONS
+- name: Query all EPG to AEP association
+  cisco.aci.aci_aep_to_epg: 
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    state: query
+  register: query_all_assocs
+
+- name: Verify query_all_assocs
+  assert:
+    that:
+    - query_all_assocs is not changed
+    - query_all_assocs.current|length >= 1
+
+# QUERY A SPECIFIC ASSOCIATIONS
+- name: Query a specific EPG to AEP association
+  cisco.aci.aci_aep_to_epg:
+    <<: *assoc_update
+    state: query
+  register: query_spec_assoc
+
+- name: Verify query_spec_assoc
+  assert:
+    that:
+    - query_spec_assoc is not changed
+    - query_spec_assoc.current|length == 1
+
+# REMOVE ASSOCIATION
+- name: Remove EPG to AEP association (check_mode)
+  cisco.aci.aci_aep_to_epg: &assoc_remove
+    <<: *assoc_update
+    state: absent
+  check_mode: yes
+  register: cm_remove_spec_assoc
+
+- name: Remove EPG to AEP association (normal mode)
+  cisco.aci.aci_aep_to_epg:
+    <<: *assoc_remove
+  register: nm_remove_spec_assoc
+
+- name: Verify remove_spec_assoc
+  assert:
+    that:
+    - cm_remove_spec_assoc is changed
+    - nm_remove_spec_assoc is changed
+    - nm_remove_spec_assoc.current == []
+
+- name: Remove EPG to AEP association again (normal mode)
+  cisco.aci.aci_aep_to_epg:
+    <<: *assoc_remove
+  register: nm_remove_spec_assoc_again
+
+- name: Verify remove_spec_assoc_again
+  assert:
+    that:
+    - nm_remove_spec_assoc_again is not changed
+
+
+# QUERY NON-EXISTING ASSOCIATION
+- name: Query non-existing EPG to AEP association (normal mode)
+  cisco.aci.aci_aep_to_epg:
+    <<: *assoc_update
+    state: query
+  register: nm_query_non_exist
+
+- name: Verify nm_query_non_exist
+  assert:
+    that:
+    - nm_query_non_exist is not changed
+    - nm_query_non_exist.current == []
+
+# CLEANUP 
+- name: Cleanup AEP
+  cisco.aci.aci_aep: 
+    <<: *aep_absent
+
+- name: Delete Tenant
+  cisco.aci.aci_tenant:
+    <<: *tenant_present
+    state: absent
