@@ -8,316 +8,247 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
-- name: Set cloud
-  set_fact:
-    cloud:
-      - aci_hostname: "{{aws_aci_hostname}}"
-        aci_username: "{{aws_aci_username}}"
-        aci_password: "{{aws_aci_password}}"
-        cloud_type: aws
-        region: us-east-1
-        region_2: us-west-1
-      - aci_hostname: "{{azure_aci_hostname}}"
-        aci_username: "{{azure_aci_username}}"
-        aci_password: "{{azure_aci_password}}"
-        cloud_type: azure
-        region: westus
-        region_2: westus2
-
 # CLEAN ENVIRONMENT
 - name: Set vars
   set_fact:
     aci_info: &aci_info
+      host: "{{aci_hostname}}"
+      username: "{{aci_username}}"
+      password: "{{aci_password}}"
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
 
-- name: Ensure tenant doesn't exist
-  aci_tenant:
-    <<: *aci_info
-    state: absent
-    tenant: ansible_test
-    host: "{{item.aci_hostname}}"
-    username: "{{item.aci_username}}"
-    password: "{{item.aci_password}}"
-  register: tenant_absent
-  loop: "{{cloud}}"
+- name: Verify only Cloud Sites are in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Ensure tenant exists for tests to kick off
-  aci_tenant:
-    <<: *aci_info
-    state: present
-    tenant: ansible_test
-    host: "{{item.aci_hostname}}"
-    username: "{{item.aci_username}}"
-    password: "{{item.aci_password}}"
-  register: tenant_present
-  loop: "{{cloud}}"
+- block:  # block specifies execution of tasks within, based on conditions
+  - name: Ensure tenant doesn't exist
+    aci_tenant:
+      <<: *aci_info
+      state: absent
+      tenant: ansible_test
+    register: tenant_absent
 
-- name: Ensure aci cloud context profile does not exists
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    host: "{{item.aci_hostname}}"
-    username: "{{item.aci_username}}"
-    password: "{{item.aci_password}}"
-    tenant: ansible_test
-    name: ctx_profile_1
-    state: absent
-  register: rm_ctx_profile_1
-  loop: "{{cloud}}"
+  - name: Ensure tenant exists for tests to kick off
+    aci_tenant:
+      <<: *aci_info
+      state: present
+      tenant: ansible_test
+    register: tenant_present
 
-- name: Verify rm_ctx_profile_1
-  assert:
-    that:
-    - item.current == []
-  loop: "{{rm_ctx_profile_1.results}}"
+  - name: Ensure aci cloud context profile does not exists
+    aci_cloud_ctx_profile:
+      <<: *aci_info
+      tenant: ansible_test
+      name: ctx_profile_1
+      state: absent
+    register: rm_ctx_profile_1
 
-- name: Ensure aci cloud context profile 2 does not exists
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    host: "{{item.aci_hostname}}"
-    username: "{{item.aci_username}}"
-    password: "{{item.aci_password}}"
-    tenant: ansible_test
-    name: ctx_profile_2
-    state: absent
-  register: rm_ctx_profile_2
-  loop: "{{cloud}}"
+  - name: Verify rm_ctx_profile_1
+    assert:
+      that:
+      - rm_ctx_profile_1.current == []
 
-- name: Verify rm_ctx_profile_2
-  assert:
-    that:
-    - item.current == []
-  loop: "{{rm_ctx_profile_2.results}}"
+  - name: Ensure aci cloud context profile 2 does not exists
+    aci_cloud_ctx_profile:
+      <<: *aci_info
+      tenant: ansible_test
+      name: ctx_profile_2
+      state: absent
+    register: rm_ctx_profile_2
 
-- name: Create aci cloud context profile (check mode)
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    host: "{{item.aci_hostname}}"
-    username: "{{item.aci_username}}"
-    password: "{{item.aci_password}}"
-    tenant: ansible_test
-    cloud: "{{item.cloud_type}}"
-    name: ctx_profile_1
-    vrf: ctx_profile_vrf_1
-    region: us-east-1
-    primary_cidr: '10.100.0.0/16'
-    state: present
-  check_mode: yes
-  register: cm_add_aci_ctx_profile
-  loop: "{{cloud}}"
+  - name: Verify rm_ctx_profile_2
+    assert:
+      that:
+      - rm_ctx_profile_2.current == []
 
-- name: Create aci cloud context profile (normal mode)
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    host: "{{item.aci_hostname}}"
-    username: "{{item.aci_username}}"
-    password: "{{item.aci_password}}"
-    tenant: ansible_test
-    cloud: "{{item.cloud_type}}"
-    name: ctx_profile_1
-    vrf: ctx_profile_vrf_1
-    region: "{{item.region}}"
-    primary_cidr: '10.100.0.0/16'
-    state: present
-  register: nm_add_aci_ctx_profile
-  loop: "{{cloud}}"
+  - name: Create aci cloud context profile (check mode)
+    aci_cloud_ctx_profile:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud: "{{cloud_type}}"
+      name: ctx_profile_1
+      vrf: ctx_profile_vrf_1
+      region: us-east-1
+      primary_cidr: '10.100.0.0/16'
+      state: present
+    check_mode: yes
+    register: cm_add_aci_ctx_profile
 
-- name: Verify cm_add_aci_ctx_profile
-  assert:
-    that:
-    - item is changed
-    - item.previous == []
-    - item.proposed.cloudCtxProfile.attributes.name == "ctx_profile_1"
-    - item.proposed.cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1"
-    - item.proposed.cloudCtxProfile.children[0].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
-    - item.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.addr == "10.100.0.0/16"
-    - item.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.primary == "yes"
-  loop: "{{cm_add_aci_ctx_profile.results}}"
+  - name: Create aci cloud context profile (normal mode)
+    aci_cloud_ctx_profile:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud: "{{cloud_type}}"
+      name: ctx_profile_1
+      vrf: ctx_profile_vrf_1
+      region: "{{region}}"
+      primary_cidr: '10.100.0.0/16'
+      state: present
+    register: nm_add_aci_ctx_profile
 
-- name: Verify nm_add_aci_ctx_profile
-  assert:
-    that:
-    - item is changed
-    - item.previous == []
-    - item.current[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
-    - item.current[0].cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1"
-    - item.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
-    - item.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.100.0.0/16"
-    - item.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
-  loop: "{{nm_add_aci_ctx_profile.results}}"
+  - name: Verify cm_add_aci_ctx_profile
+    assert:
+      that:
+      - cm_add_aci_ctx_profile is changed
+      - cm_add_aci_ctx_profile.previous == []
+      - cm_add_aci_ctx_profile.proposed.cloudCtxProfile.attributes.name == "ctx_profile_1"
+      - cm_add_aci_ctx_profile.proposed.cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1"
+      - cm_add_aci_ctx_profile.proposed.cloudCtxProfile.children[0].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
+      - cm_add_aci_ctx_profile.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.addr == "10.100.0.0/16"
+      - cm_add_aci_ctx_profile.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.primary == "yes"
 
-- name: Add aci cloud context profile again (check_mode)
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    host: "{{item.aci_hostname}}"
-    username: "{{item.aci_username}}"
-    password: "{{item.aci_password}}"
-    tenant: ansible_test
-    cloud: "{{item.cloud_type}}"
-    name: ctx_profile_1
-    vrf: ctx_profile_vrf_1
-    region: "{{item.region}}"
-    primary_cidr: '10.100.0.0/16'
-    state: present
-  check_mode: yes
-  register: cm_add_aci_ctx_profile_again
-  loop: "{{cloud}}"
+  - name: Verify nm_add_aci_ctx_profile
+    assert:
+      that:
+      - nm_add_aci_ctx_profile is changed
+      - nm_add_aci_ctx_profile.previous == []
+      - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
+      - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1"
+      - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
+      - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.100.0.0/16"
+      - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
 
-- name: Verify cm_add_aci_ctx_profile_again
-  assert:
-    that:
-    - item is not changed
-    - item.previous[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
-    - item.previous[0].cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1"
-    - item.previous[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
-    - item.previous[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.100.0.0/16"
-    - item.previous[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
-  loop: "{{cm_add_aci_ctx_profile_again.results}}"
+  - name: Add aci cloud context profile again (check_mode)
+    aci_cloud_ctx_profile:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud: "{{cloud_type}}"
+      name: ctx_profile_1
+      vrf: ctx_profile_vrf_1
+      region: "{{region}}"
+      primary_cidr: '10.100.0.0/16'
+      state: present
+    check_mode: yes
+    register: cm_add_aci_ctx_profile_again
 
-- name: Add aci cloud context profile again (normal_mode)
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    host: "{{item.aci_hostname}}"
-    username: "{{item.aci_username}}"
-    password: "{{item.aci_password}}"
-    tenant: ansible_test
-    cloud: "{{item.cloud_type}}"
-    name: ctx_profile_1
-    vrf: ctx_profile_vrf_1
-    region: "{{item.region}}"
-    primary_cidr: '10.100.0.0/16'
-    state: present
-  register: nm_add_aci_ctx_profile_again
-  loop: "{{cloud}}"
+  - name: Verify cm_add_aci_ctx_profile_again
+    assert:
+      that:
+      - cm_add_aci_ctx_profile_again is not changed
+      - cm_add_aci_ctx_profile_again.previous[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
+      - cm_add_aci_ctx_profile_again.previous[0].cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1"
+      - cm_add_aci_ctx_profile_again.previous[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
+      - cm_add_aci_ctx_profile_again.previous[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.100.0.0/16"
+      - cm_add_aci_ctx_profile_again.previous[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
 
-- name: Verify nm_add_aci_ctx_profile_again
-  assert:
-    that:
-    - item is not changed
-    - item.current[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
-    - item.current[0].cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1"
-    - item.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
-    - item.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.100.0.0/16"
-    - item.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
-  loop: "{{nm_add_aci_ctx_profile_again.results}}"
 
-- name: Add another aci cloud context profile (check_mode)
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    host: "{{item.aci_hostname}}"
-    username: "{{item.aci_username}}"
-    password: "{{item.aci_password}}"
-    tenant: ansible_test
-    cloud: "{{item.cloud_type}}"
-    name: ctx_profile_2
-    vrf: ctx_profile_vrf_2
-    region: "{{item.region_2}}"
-    primary_cidr: '10.101.0.0/16'
-    description: "add ctx_profile_2"
-    state: present
-  check_mode: yes
-  register: cm_add_another_aci_ctx_profile
-  loop: "{{cloud}}"
+  - name: Add aci cloud context profile again (normal_mode)
+    aci_cloud_ctx_profile:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud: "{{cloud_type}}"
+      name: ctx_profile_1
+      vrf: ctx_profile_vrf_1
+      region: "{{region}}"
+      primary_cidr: '10.100.0.0/16'
+      state: present
+    register: nm_add_aci_ctx_profile_again
 
-- name: Verify cm_add_another_aci_ctx_profile
-  assert:
-    that:
-    - item is changed
-    - item.previous == []
-    - item.proposed.cloudCtxProfile.attributes.name == "ctx_profile_2"
-    - item.proposed.cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_2"
-    - item.proposed.cloudCtxProfile.children[0].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_2"
-    - item.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.addr == "10.101.0.0/16"
-    - item.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.primary == "yes"
-    - item.proposed.cloudCtxProfile.attributes.descr == "add ctx_profile_2"
-  loop: "{{cm_add_another_aci_ctx_profile.results}}"
+  - name: Verify nm_add_aci_ctx_profile_again
+    assert:
+      that:
+      - nm_add_aci_ctx_profile_again is not changed
+      - nm_add_aci_ctx_profile_again.current[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
+      - nm_add_aci_ctx_profile_again.current[0].cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1"
+      - nm_add_aci_ctx_profile_again.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"
+      - nm_add_aci_ctx_profile_again.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.100.0.0/16"
+      - nm_add_aci_ctx_profile_again.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
 
-- name: Add another aci cloud context profile (normal_mode)
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    host: "{{item.aci_hostname}}"
-    username: "{{item.aci_username}}"
-    password: "{{item.aci_password}}"
-    tenant: ansible_test
-    cloud: "{{item.cloud_type}}"
-    name: ctx_profile_2
-    vrf: ctx_profile_vrf_2
-    region: "{{item.region_2}}"
-    primary_cidr: '10.101.0.0/16'
-    description: "add ctx_profile_2"
-    state: present
-  register: nm_add_another_aci_ctx_profile
-  loop: "{{cloud}}"
+  - name: Add another aci cloud context profile (check_mode)
+    aci_cloud_ctx_profile:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud: "{{cloud_type}}"
+      name: ctx_profile_2
+      vrf: ctx_profile_vrf_2
+      region: "{{region_2}}"
+      primary_cidr: '10.101.0.0/16'
+      description: "add ctx_profile_2"
+      state: present
+    check_mode: yes
+    register: cm_add_another_aci_ctx_profile
 
-- name: Verify nm_add_another_aci_ctx_profile
-  assert:
-    that:
-      - item is changed
-      - item.previous == []
-      - item.current[0].cloudCtxProfile.attributes.name == "ctx_profile_2"
-      - item.current[0].cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_2"
-      - item.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_2"
-      - item.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.101.0.0/16"
-      - item.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
-      - item.current[0].cloudCtxProfile.attributes.descr == "add ctx_profile_2"
-  loop: "{{nm_add_another_aci_ctx_profile.results}}"
+  - name: Verify cm_add_another_aci_ctx_profile
+    assert:
+      that:
+      - cm_add_another_aci_ctx_profile is changed
+      - cm_add_another_aci_ctx_profile.previous == []
+      - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.attributes.name == "ctx_profile_2"
+      - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_2"
+      - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.children[0].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_2"
+      - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.addr == "10.101.0.0/16"
+      - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.primary == "yes"
+      - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.attributes.descr == "add ctx_profile_2"
 
-- name: Query aci cloud context profile ctx_profile_1 
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    host: "{{item.aci_hostname}}"
-    username: "{{item.aci_username}}"
-    password: "{{item.aci_password}}"
-    tenant: ansible_test
-    name: ctx_profile_1
-    state: query
-  register: query_aci_cloud_profile_1
-  loop: "{{cloud}}"
+  - name: Add another aci cloud context profile (normal_mode)
+    aci_cloud_ctx_profile:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud: "{{cloud_type}}"
+      name: ctx_profile_2
+      vrf: ctx_profile_vrf_2
+      region: "{{region_2}}"
+      primary_cidr: '10.101.0.0/16'
+      description: "add ctx_profile_2"
+      state: present
+    register: nm_add_another_aci_ctx_profile
 
-- name: Verify query_aci_cloud_profile_1
-  assert:
-    that:
-    - item is not changed
-    - item.current[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
-    - item.current[0].cloudCtxProfile.children | length == 3
-  loop: "{{query_aci_cloud_profile_1.results}}"
+  - name: Verify nm_add_another_aci_ctx_profile
+    assert:
+      that:
+        - nm_add_another_aci_ctx_profile is changed
+        - nm_add_another_aci_ctx_profile.previous == []
+        - nm_add_another_aci_ctx_profile.current[0].cloudCtxProfile.attributes.name == "ctx_profile_2"
+        - nm_add_another_aci_ctx_profile.current[0].cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_2"
+        - nm_add_another_aci_ctx_profile.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_2"
+        - nm_add_another_aci_ctx_profile.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.addr == "10.101.0.0/16"
+        - nm_add_another_aci_ctx_profile.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
+        - nm_add_another_aci_ctx_profile.current[0].cloudCtxProfile.attributes.descr == "add ctx_profile_2"
 
-- name: Query all aci cloud context profiles
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    host: "{{item.aci_hostname}}"
-    username: "{{item.aci_username}}"
-    password: "{{item.aci_password}}"
-    tenant: ansible_test
-    state: query
-  register: query_all
-  loop: "{{cloud}}"
+  - name: Query aci cloud context profile ctx_profile_1
+    aci_cloud_ctx_profile:
+      <<: *aci_info
+      tenant: ansible_test
+      name: ctx_profile_1
+      state: query
+    register: query_aci_cloud_profile_1
 
-- name: Verify query_all
-  assert:
-    that:
-    - item is not changed
-    - item.current | length == 1
-    - item.current.0.fvTenant.children | length == 2
-  loop: "{{query_all.results}}"
+  - name: Verify query_aci_cloud_profile_1
+    assert:
+      that:
+      - query_aci_cloud_profile_1 is not changed
+      - query_aci_cloud_profile_1.current[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
+      - query_aci_cloud_profile_1.current[0].cloudCtxProfile.children | length == 3
 
-- name: Remove aci cloud context profile
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    host: "{{item.aci_hostname}}"
-    username: "{{item.aci_username}}"
-    password: "{{item.aci_password}}"
-    tenant: ansible_test
-    name: ctx_profile_1
-    state: absent
-  register: rm_ctx_profile
-  loop: "{{cloud}}"
+  - name: Query all aci cloud context profiles
+    aci_cloud_ctx_profile:
+      <<: *aci_info
+      tenant: ansible_test
+      state: query
+    register: query_all
 
-- name: Verify rm_ctx_profile
-  assert:
-    that:
-    - item.current == []
-    - item.previous.0.cloudCtxProfile.attributes.name == "ctx_profile_1"
-  loop: "{{rm_ctx_profile.results}}"
+  - name: Verify query_all
+    assert:
+      that:
+      - query_all is not changed
+      - query_all.current | length == 1
+      - query_all.current.0.fvTenant.children | length == 2
+
+  - name: Remove aci cloud context profile
+    aci_cloud_ctx_profile:
+      <<: *aci_info
+      tenant: ansible_test
+      name: ctx_profile_1
+      state: absent
+    register: rm_ctx_profile
+
+  - name: Verify rm_ctx_profile
+    assert:
+      that:
+      - rm_ctx_profile.current == []
+      - rm_ctx_profile.previous.0.cloudCtxProfile.attributes.name == "ctx_profile_1"
+
+  when: query_cloud.current | length > 0   # This condition will skip execution for non-cloud sites
