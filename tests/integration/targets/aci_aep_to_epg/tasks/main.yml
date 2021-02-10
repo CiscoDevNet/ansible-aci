@@ -2,41 +2,35 @@
 # Author: Marcel Zehnder (@maercu)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
 # CLEAN ENVIRONMENT
 - name: Remove test aep before we kickoff
   cisco.aci.aci_aep: &aep_absent
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     aep: epg2aep
     state: absent
 
 # SETUP TEST AEP AND EPGS
 - name: Create AEP
   cisco.aci.aci_aep: &aep_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     aep: epg2aep
     state: present
 
 - name: Create Tenant
   cisco.aci.aci_tenant: &tenant_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     tenant: epg2aep
     state: present
 
@@ -73,8 +67,8 @@
     tenant: epg2aep
     ap: ap
     epg: epg1
-    encap_id: 1984
-    mode: trunk
+    encap: 1984
+    interface_mode: trunk
   check_mode: yes
   register: cm_add_assoc
 
@@ -114,7 +108,7 @@
 - name: Change encap (check_mode)
   cisco.aci.aci_aep_to_epg: &assoc_update
     <<: *assoc_present
-    encap_id: 1985
+    encap: 1985
   check_mode: yes
   register: cm_update_assoc
 
@@ -136,18 +130,12 @@
   cisco.aci.aci_aep_to_epg:
     <<: *assoc_present
     epg: epg2
-    encap_id: 1990
+    encap: 1990
 
 # QUERY ALL ASSOCIATIONS
 - name: Query all EPG to AEP association
   cisco.aci.aci_aep_to_epg: 
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     state: query
   register: query_all_assocs
 

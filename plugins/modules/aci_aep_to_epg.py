@@ -37,17 +37,17 @@ options:
     - The name of the end point group.
     type: str
     aliases: [ epg_name ]
-  encap_id:
+  encap:
     description:
     - The VLAN associated with this application EPG.
     type: int
-    aliases: [ vlan, vlan_id ]
-  primary_encap_id:
+    aliases: [ vlan, vlan_id, encap_id ]
+  primary_encap:
     description:
     - The primary VLAN associated with this EPG
     type: int
-    aliases: [ primary_vlan, primary_vlan_id ]
-  mode:
+    aliases: [ primary_vlan, primary_vlan_id, primary_encap_id ]
+  interface_mode:
     description:
     - Determines how layer 2 tags will be read from and added to frames.
     - Values C(802.1p) and C(native) are identical.
@@ -56,7 +56,7 @@ options:
     - The APIC defaults to C(trunk) when unset during creation.
     type: str
     choices: [ 802.1p, access, native, regular, tagged, trunk, untagged ]
-    aliases: [ mode_name ]
+    aliases: [ mode, mode_name, interface_mode_name ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -72,7 +72,7 @@ author:
 
 EXAMPLES = r'''
 - name: Associate EPG with AEP
-  cisco.aci.aci_static_binding_to_aep:
+  cisco.aci.aci_aep_to_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -86,7 +86,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Associate EPG with AEP
-  cisco.aci.aci_static_binding_to_aep:
+  cisco.aci.aci_aep_to_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -100,7 +100,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Get specific EPG with AEP association
-  cisco.aci.aci_static_binding_to_aep:
+  cisco.aci.aci_aep_to_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -115,7 +115,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Get all EPG with AEP association
-  cisco.aci.aci_static_binding_to_aep:
+  cisco.aci.aci_aep_to_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -230,11 +230,11 @@ url:
 '''
 
 
-from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible.module_utils.basic import AnsibleModule
 
 
-mode_MAPPING = {
+INTERFACE_MODE_MAPPING = {
     '802.1p': 'native',
     'access': 'untagged',
     'native': 'native',
@@ -253,12 +253,12 @@ def main():
         tenant=dict(type='str', aliases=['tenant_name']),
         ap=dict(type='str', aliases=['app_profile', 'app_profile_name']),
         epg=dict(type='str', aliases=['epg_name']),
-        encap_id=dict(type='int', aliases=['vlan', 'vlan_id']),
-        primary_encap_id=dict(type='int', aliases=[
-                              'primary_vlan', 'primary_vlan_id']),
-        mode=dict(type='str', choices=['802.1p', 'access', 'native',
-                                       'regular', 'tagged', 'trunk',
-                                       'untagged'], aliases=['mode_name']),
+        encap=dict(type='int', aliases=['vlan', 'vlan_id', 'encap_id']),
+        primary_encap=dict(type='int', aliases=[
+            'primary_vlan', 'primary_vlan_id', 'primary_encap_id']),
+        interface_mode=dict(type='str', choices=['802.1p', 'access', 'native',
+                                                 'regular', 'tagged', 'trunk',
+                                                 'untagged'], aliases=['mode_name', 'mode', 'interface_mode_name']),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query'])
     )
@@ -276,19 +276,19 @@ def main():
     tenant = module.params.get('tenant')
     ap = module.params.get('ap')
     epg = module.params.get('epg')
-    encap_id = module.params.get('encap_id')
-    primary_encap_id = module.params.get('primary_encap_id')
-    mode = module.params.get('mode')
+    encap = module.params.get('encap')
+    primary_encap = module.params.get('primary_encap')
+    interface_mode = module.params.get('interface_mode')
     state = module.params.get('state')
 
-    if mode is not None:
-        mode = mode_MAPPING[mode]
+    if interface_mode is not None:
+        interface_mode = INTERFACE_MODE_MAPPING[interface_mode]
 
-    if encap_id is not None:
-        encap_id = 'vlan-{0}'.format(encap_id)
+    if encap is not None:
+        encap = 'vlan-{0}'.format(encap)
 
-    if primary_encap_id is not None:
-        primary_encap_id = 'vlan-{0}'.format(primary_encap_id)
+    if primary_encap is not None:
+        primary_encap = 'vlan-{0}'.format(primary_encap)
 
     epg_mo = None
     if tenant is not None and ap is not None and epg is not None:
@@ -318,9 +318,9 @@ def main():
             dict(
                 infraRsFuncToEpg=dict(
                     attributes=dict(
-                        encap=encap_id,
-                        primaryEncap=primary_encap_id,
-                        mode=mode,
+                        encap=encap,
+                        primaryEncap=primary_encap,
+                        mode=interface_mode,
                         tDn=epg_mo
                     )
                 )
