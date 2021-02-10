@@ -81,7 +81,7 @@ EXAMPLES = r'''
     ap: ap1
     epg: epg1
     encap_id: 222
-    mode: access
+    interface_mode: access
     state: present
   delegate_to: localhost
 
@@ -95,7 +95,7 @@ EXAMPLES = r'''
     ap: ap1
     epg: epg1
     encap_id: 222
-    mode: access
+    interface_mode: access
     state: absent
   delegate_to: localhost
 
@@ -109,7 +109,7 @@ EXAMPLES = r'''
     ap: ap1
     epg: epg1
     encap_id: 222
-    mode: access
+    interface_mode: access
     state: query
   delegate_to: localhost
   register: query_result
@@ -268,7 +268,7 @@ def main():
         supports_check_mode=True,
         required_if=[
             ['state', 'absent', ['aep', 'epg', 'ap', 'tenant']],
-            ['state', 'present', ['mode', 'encap_id', 'aep', 'epg', 'ap', 'tenant']],
+            ['state', 'present', ['interface_mode', 'encap', 'aep', 'epg', 'ap', 'tenant']],
         ]
     )
 
