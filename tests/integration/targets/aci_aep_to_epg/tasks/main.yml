@@ -125,7 +125,7 @@
     - nm_update_assoc is changed
     - cm_update_assoc.previous == nm_update_assoc.previous != []
     - cm_update_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.encap == nm_update_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.encap == 'vlan-1985'
-    - cm_update_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.primary_encap == nm_update_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.primary_encap == 'vlan-1986'
+    - cm_update_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.primaryEncap == nm_update_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.primaryEncap == 'vlan-1986'
 
 # ADD ANOTHER ASSOCIATION
 - name: Add another EPG to AEP association
