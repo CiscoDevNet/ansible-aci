@@ -20,10 +20,11 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
 
-- name: Verify only Cloud Sites are in use.
+- name: Verify Cloud and Non-Cloud Sites in use.
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- block:  # block specifies execution of tasks within, based on conditions
+- name: Execute tasks only for cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
   - name: Ensure tenant doesn't exist
     aci_tenant:
       <<: *aci_info

@@ -103,7 +103,7 @@
     - cm_query_all_sources is not changed
     - nm_query_all_sources is not changed
     - cm_query_all_sources == nm_query_all_sources
-    - nm_query_all_sources.current.0.firmwareRepoP.children | length == 2
+    - nm_query_all_sources.current.0.firmwareRepoP.children | length >= 2
 
 # QUERY A SOURCE
 - name: Query our source (check_mode)

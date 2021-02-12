@@ -8,340 +8,254 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
-- name: Set cloud
-  set_fact:
-    cloud:
-      - aci_hostname: "{{ aws_aci_hostname }}"
-        aci_username: "{{ aws_aci_username }}"
-        aci_password: "{{ aws_aci_password }}"
-        cloud_type: aws
-        cloud_region: us-west-1
-        cloud_zone: us-west-1a
-      - aci_hostname: "{{ azure_aci_hostname }}"
-        aci_username: "{{ azure_aci_username }}"
-        aci_password: "{{ azure_aci_password }}"
-        cloud_type: azure
-        cloud_region: westus
-        vnet_gateway: true
-
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact: 
+  set_fact:
     aci_info: &aci_info
+      host: "{{aci_hostname}}"
+      username: "{{aci_username}}"
+      password: "{{aci_password}}"
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
 
-- name: Ensure tenant doesn't exist
-  aci_tenant:
-    <<: *aci_info
-    state: absent
-    tenant: ansible_test
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-  register: tenant_absent
-  loop: "{{ cloud }}"
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Ensure tenant exists for tests to kick off
-  aci_tenant:
-    <<: *aci_info
-    state: present
-    tenant: ansible_test
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-  register: tenant_present
-  loop: "{{ cloud }}"
+- name: Execute tasks only for cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Ensure tenant doesn't exist
+    aci_tenant:
+      <<: *aci_info
+      state: absent
+      tenant: ansible_test
+    register: tenant_absent
 
-- name: Ensure aci cloud context profile does not exists
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    host: "{{item.aci_hostname}}"
-    username: "{{item.aci_username}}"
-    password: "{{item.aci_password}}"
-    tenant: ansible_test
-    name: ctx_profile_1
-    state: absent
-  register: rm_ctx_profile_1
-  loop: "{{ cloud }}"
+  - name: Ensure tenant exists for tests to kick off
+    aci_tenant:
+      <<: *aci_info
+      state: present
+      tenant: ansible_test
+    register: tenant_present
 
-- name: Verify rm_ctx_profile_1
-  assert:
-    that:
-    - item.current == []
-  loop: "{{ rm_ctx_profile_1.results }}"
+  - name: Ensure aci cloud context profile does not exists
+    aci_cloud_ctx_profile:
+      <<: *aci_info
+      tenant: ansible_test
+      name: ctx_profile_1
+      state: absent
+    register: rm_ctx_profile_1
 
-- name: Create aci cloud context profile (normal mode)
-  aci_cloud_ctx_profile:
-    <<: *aci_info
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-    tenant: ansible_test
-    cloud: "{{ item.cloud_type }}"
-    name: ctx_profile_1
-    vrf: ctx_profile_vrf_1
-    region: "{{ item.cloud_region }}"
-    primary_cidr: '10.50.0.0/16'
-    state: present
-  register: nm_add_aci_ctx_profile
-  loop: "{{ cloud }}"
+  - name: Verify rm_ctx_profile_1
+    assert:
+      that:
+      - rm_ctx_profile_1.current == []
 
-- name: Create aci cloud subnet (check_mode)
-  aci_cloud_subnet:
-    <<: *aci_info
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-    tenant: ansible_test
-    cloud_context_profile: ctx_profile_1
-    cidr: '10.50.0.0/16'
-    availability_zone: "{{ item.cloud_zone | default(omit) }}"
-    address: 10.50.0.1
-    description: test description
-  check_mode: yes
-  register: cm_add_subnet
-  loop: "{{ cloud }}"
+  - name: Create aci cloud context profile (normal mode)
+    aci_cloud_ctx_profile:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud: "{{ cloud_type }}"
+      name: ctx_profile_1
+      vrf: ctx_profile_vrf_1
+      region: "{{ region_2 }}"
+      primary_cidr: '10.50.0.0/16'
+      state: present
+    register: nm_add_aci_ctx_profile
 
-- name: Create aci cloud subnet (normal_mode)
-  aci_cloud_subnet:
-    <<: *aci_info
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-    tenant: ansible_test
-    cloud_context_profile: ctx_profile_1
-    cidr: '10.50.0.0/16'
-    availability_zone: "{{ item.cloud_zone | default(omit) }}"
-    address: 10.50.0.1
-    description: test description
-  register: nm_add_subnet
-  loop: "{{ cloud }}"
+  - name: Create aci cloud subnet (check_mode)
+    aci_cloud_subnet:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud_context_profile: ctx_profile_1
+      cidr: '10.50.0.0/16'
+      availability_zone: "{{ availability_zone | default(omit) }}"
+      address: 10.50.0.1
+      description: test description
+    check_mode: yes
+    register: cm_add_subnet
 
-- name: Verify cm_add_subnet
-  assert:
-    that:
-    - item is changed
-    - item.previous == []
-    - item.proposed.cloudSubnet.attributes.ip == "10.50.0.1"
-    - item.proposed.cloudSubnet.attributes.descr == "test description"
-    - item.proposed.cloudSubnet.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.50.0.0/16]/subnet-[10.50.0.1]"
-  loop: "{{ cm_add_subnet.results }}"
+  - name: Create aci cloud subnet (normal_mode)
+    aci_cloud_subnet:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud_context_profile: ctx_profile_1
+      cidr: '10.50.0.0/16'
+      availability_zone: "{{ availability_zone | default(omit) }}"
+      address: 10.50.0.1
+      description: test description
+    register: nm_add_subnet
 
-- name: Create aci cloud subnet again (normal_mode)
-  aci_cloud_subnet:
-    <<: *aci_info
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-    tenant: ansible_test
-    cloud_context_profile: ctx_profile_1
-    cidr: '10.50.0.0/16'
-    availability_zone: "{{ item.cloud_zone | default(omit) }}"
-    address: 10.50.0.1
-    description: test description
-  register: nm_add_subnet_again
-  loop: "{{ cloud }}"
+  - name: Verify cm_add_subnet
+    assert:
+      that:
+      - cm_add_subnet is changed
+      - cm_add_subnet.previous == []
+      - cm_add_subnet.proposed.cloudSubnet.attributes.ip == "10.50.0.1"
+      - cm_add_subnet.proposed.cloudSubnet.attributes.descr == "test description"
+      - cm_add_subnet.proposed.cloudSubnet.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.50.0.0/16]/subnet-[10.50.0.1]"
 
-- name: Verify nm_add_subnet_again
-  assert:
-    that:
-    - item is not changed
-  loop: "{{ nm_add_subnet_again.results }}"
+  - name: Create aci cloud subnet again (normal_mode)
+    aci_cloud_subnet:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud_context_profile: ctx_profile_1
+      cidr: '10.50.0.0/16'
+      availability_zone: "{{ availability_zone | default(omit) }}"
+      address: 10.50.0.1
+      description: test description
+    register: nm_add_subnet_again
 
-- name: Create another cloud subnet (normal_mode)
-  aci_cloud_subnet:
-    <<: *aci_info
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-    tenant: ansible_test
-    cloud_context_profile: ctx_profile_1
-    cidr: '10.50.0.0/16'
-    availability_zone: "{{ item.cloud_zone | default(omit) }}"
-    address: 10.50.0.2
-    description: another subnet
-  register: nm_add_another_subnet
-  loop: "{{ cloud }}"
+  - name: Verify nm_add_subnet_again
+    assert:
+      that:
+      - nm_add_subnet_again is not changed
 
-- name: Verify nm_add_another_subnet
-  assert:
-    that:
-    - item is changed
-    - item.previous == []
-    - item.current.0.cloudSubnet.attributes.descr == "another subnet"
-    - item.current.0.cloudSubnet.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.50.0.0/16]/subnet-[10.50.0.2]"
-    - item.current.0.cloudSubnet.attributes.ip == "10.50.0.2"
-    - item.current.0.cloudSubnet.attributes.scope == "private"
-    - item.current.0.cloudSubnet.attributes.usage == "user"
-  loop: "{{ nm_add_another_subnet.results }}"
+  - name: Create another cloud subnet (normal_mode)
+    aci_cloud_subnet:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud_context_profile: ctx_profile_1
+      cidr: '10.50.0.0/16'
+      availability_zone: "{{ availability_zone | default(omit) }}"
+      address: 10.50.0.2
+      description: another subnet
+    register: nm_add_another_subnet
 
-- name: Create cloud subnet 3(normal_mode)
-  aci_cloud_subnet:
-    <<: *aci_info
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-    tenant: ansible_test
-    cloud_context_profile: ctx_profile_1
-    cidr: '10.50.0.0/16'
-    availability_zone: "{{ item.cloud_zone | default(omit) }}"
-    address: 10.50.0.3
-    name: subnet_3
-  register: nm_add_subnet_3
-  loop: "{{ cloud }}"
+  - name: Verify nm_add_another_subnet
+    assert:
+      that:
+      - nm_add_another_subnet is changed
+      - nm_add_another_subnet.previous == []
+      - nm_add_another_subnet.current.0.cloudSubnet.attributes.descr == "another subnet"
+      - nm_add_another_subnet.current.0.cloudSubnet.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.50.0.0/16]/subnet-[10.50.0.2]"
 
-- name: Specify subnet as VpnGateway enabled
-  aci_cloud_subnet:
-    <<: *aci_info
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-    tenant: ansible_test
-    cloud_context_profile: ctx_profile_1
-    cidr: '10.50.0.0/16'
-    availability_zone: "{{ item.cloud_zone | default(omit) }}"
-    address: 10.50.0.1
-    # name: subnet_1
-    description: change subnet 1
-    vnet_gateway: "{{ item.vnet_gateway | default(omit)}}"
-    #scope: public
-  register: nm_change_subnet_1
-  loop: "{{ cloud }}"
+  - name: Create cloud subnet 3(normal_mode)
+    aci_cloud_subnet:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud_context_profile: ctx_profile_1
+      cidr: '10.50.0.0/16'
+      availability_zone: "{{ availability_zone | default(omit) }}"
+      address: 10.50.0.3
+      name: subnet_3
+    register: nm_add_subnet_3
 
-# Enable vpn_gateway router in cloud ctx profile
-- name: Enable VpnGateway
-  aci_cloud_vpn_gateway:
-    <<: *aci_info
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-    tenant: ansible_test
-    cloud_context_profile: ctx_profile_1
-    state: present
-  loop: "{{ cloud }}"
+  - name: Specify subnet as VpnGateway enabled
+    aci_cloud_subnet:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud_context_profile: ctx_profile_1
+      cidr: '10.50.0.0/16'
+      availability_zone: "{{ availability_zone | default(omit) }}"
+      address: 10.50.0.1
+      # name: subnet_1
+      description: change subnet 1
+      vnet_gateway: "{{ vnet_gateway | default(omit)}}"
+      #scope: public
+    register: nm_change_subnet_1
 
-# Try to disable vpn_gateway router again in cloud ctx profile
-- name: Disable VpnGateway
-  aci_cloud_vpn_gateway:
-    <<: *aci_info
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-    tenant: ansible_test
-    cloud_context_profile: ctx_profile_1
-    state: absent
-  loop: "{{ cloud }}"
+  # Enable vpn_gateway router in cloud ctx profile
+  - name: Enable VpnGateway
+    aci_cloud_vpn_gateway:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud_context_profile: ctx_profile_1
+      state: present
 
-- name: Query all subnets
-  aci_cloud_subnet:
-    <<: *aci_info
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-    tenant: ansible_test
-    cloud_context_profile: ctx_profile_1
-    cidr: '10.50.0.0/16'
-    state: query
-  register: query_all
-  loop: "{{ cloud }}"
+  # Try to disable vpn_gateway router again in cloud ctx profile
+  - name: Disable VpnGateway
+    aci_cloud_vpn_gateway:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud_context_profile: ctx_profile_1
+      state: absent
 
-- name: Verify query_all
-  assert:
-    that:
-    - item is not changed
-    - item.current.0.cloudCidr.attributes.addr == "10.50.0.0/16"
-    - item.current.0.cloudCidr.children | length == 3
-  loop: "{{ query_all.results }}"
+  - name: Query all subnets
+    aci_cloud_subnet:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud_context_profile: ctx_profile_1
+      cidr: '10.50.0.0/16'
+      state: query
+    register: query_all
 
-- name: Query a specific subnet
-  aci_cloud_subnet:
-    <<: *aci_info
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-    tenant: ansible_test
-    cloud_context_profile: ctx_profile_1
-    cidr: '10.50.0.0/16'
-    address: 10.50.0.1
-    state: query
-  register: query_subnet_1
-  loop: "{{ cloud }}"
+  - name: Verify query_all
+    assert:
+      that:
+      - query_all is not changed
+      - query_all.current.0.cloudCidr.attributes.addr == "10.50.0.0/16"
+      - query_all.current.0.cloudCidr.children | length == 3
 
-- name: Verify query_subnet_1
-  assert:
-    that:
-    - item is not changed
-    - item.current.0.cloudSubnet.attributes.ip == "10.50.0.1"
-    - item.current.0.cloudSubnet.attributes.scope == "private"
-    - item.current.0.cloudSubnet.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.50.0.0/16]/subnet-[10.50.0.1]"
-  loop: "{{ query_subnet_1.results }}"
+  - name: Query a specific subnet
+    aci_cloud_subnet:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud_context_profile: ctx_profile_1
+      cidr: '10.50.0.0/16'
+      address: 10.50.0.1
+      state: query
+    register: query_subnet_1
 
-- name: Remove subnet 3 (check_mode)
-  aci_cloud_subnet:
-    <<: *aci_info
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-    tenant: ansible_test
-    cloud_context_profile: ctx_profile_1
-    cidr: '10.50.0.0/16'
-    address: 10.50.0.3
-    state: absent
-  check_mode: yes
-  register: cm_remove_subnet_3
-  loop: "{{ cloud }}"
+  - name: Verify query_subnet_1
+    assert:
+      that:
+      - query_subnet_1 is not changed
+      - query_subnet_1.current.0.cloudSubnet.attributes.ip == "10.50.0.1"
+      - query_subnet_1.current.0.cloudSubnet.attributes.scope == "private"
+      - query_subnet_1.current.0.cloudSubnet.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.50.0.0/16]/subnet-[10.50.0.1]"
 
-- name: Verify cm_remove_subnet_3
-  assert:
-    that:
-    - item is changed
-    - item.proposed == {}
-    - item.previous.0.cloudSubnet.attributes.ip == "10.50.0.3"
-  loop: "{{ cm_remove_subnet_3.results }}"
+  - name: Remove subnet 3 (check_mode)
+    aci_cloud_subnet:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud_context_profile: ctx_profile_1
+      cidr: '10.50.0.0/16'
+      address: 10.50.0.3
+      state: absent
+    check_mode: yes
+    register: cm_remove_subnet_3
 
-- name: Remove subnet 3 (normal_mode)
-  aci_cloud_subnet:
-    <<: *aci_info
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-    tenant: ansible_test
-    cloud_context_profile: ctx_profile_1
-    cidr: '10.50.0.0/16'
-    address: 10.50.0.3
-    state: absent
-  register: nm_remove_subnet_3
-  loop: "{{ cloud }}"
+  - name: Verify cm_remove_subnet_3
+    assert:
+      that:
+      - cm_remove_subnet_3 is changed
+      - cm_remove_subnet_3.proposed == {}
+      - cm_remove_subnet_3.previous.0.cloudSubnet.attributes.ip == "10.50.0.3"
 
-- name: Verify nm_remove_subnet_3
-  assert:
-    that:
-    - item is changed
-    - item.current == []
-    - item.previous.0.cloudSubnet.attributes.ip == "10.50.0.3"
-  loop: "{{ nm_remove_subnet_3.results }}"
+  - name: Remove subnet 3 (normal_mode)
+    aci_cloud_subnet:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud_context_profile: ctx_profile_1
+      cidr: '10.50.0.0/16'
+      address: 10.50.0.3
+      state: absent
+    register: nm_remove_subnet_3
 
-- name: Remove subnet 3 again
-  aci_cloud_subnet:
-    <<: *aci_info
-    host: "{{ item.aci_hostname }}"
-    username: "{{ item.aci_username }}"
-    password: "{{ item.aci_password }}"
-    tenant: ansible_test
-    cloud_context_profile: ctx_profile_1
-    cidr: '10.50.0.0/16'
-    address: 10.50.0.3
-    state: absent
-  register: nm_remove_subnet_3_again
-  loop: "{{ cloud }}"
+  - name: Verify nm_remove_subnet_3
+    assert:
+      that:
+      - nm_remove_subnet_3 is changed
+      - nm_remove_subnet_3.current == []
+      - nm_remove_subnet_3.previous.0.cloudSubnet.attributes.ip == "10.50.0.3"
 
-- name: Verify nm_remove_subnet_3_again
-  assert:
-    that:
-    - item is not changed
-    - item.previous == []
-    - item.current == []
-  loop: "{{ nm_remove_subnet_3_again.results }}"
+  - name: Remove subnet 3 again
+    aci_cloud_subnet:
+      <<: *aci_info
+      tenant: ansible_test
+      cloud_context_profile: ctx_profile_1
+      cidr: '10.50.0.0/16'
+      address: 10.50.0.3
+      state: absent
+    register: nm_remove_subnet_3_again
+
+  - name: Verify nm_remove_subnet_3_again
+    assert:
+      that:
+      - nm_remove_subnet_3_again is not changed
+      - nm_remove_subnet_3_again.previous == []
+      - nm_remove_subnet_3_again.current == []
+
+  when: query_cloud.current | length > 0   # This condition will skip execution for non-cloud sites
