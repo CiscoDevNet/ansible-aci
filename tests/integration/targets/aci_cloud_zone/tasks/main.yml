@@ -12,79 +12,88 @@
 - name: Set vars
   set_fact:
     aci_info: &aci_info
-      host: '{{ aws_aci_hostname }}'
-      username: '{{ aws_aci_username }}'
-      password: '{{ aws_aci_password }}'
+      host: "{{aci_hostname}}"
+      username: "{{aci_username}}"
+      password: "{{aci_password}}"
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
 
-- name: Query all zones under us-west-1
-  aci_cloud_zone:
-    <<: *aci_info
-    cloud: 'aws'
-    region: us-west-1
-    state: query
-  register: query_all
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Verify query_all
-  assert:
-    that:
-    - query_all is not changed
-    - query_all.current.0.cloudRegion.attributes.name == "us-west-1"
-    - query_all.current.0.cloudRegion.children | length >= 2
+- name: Execute tasks only for cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Query all zones under us-west-1
+    aci_cloud_zone:
+      <<: *aci_info
+      cloud: 'aws'
+      region: us-west-1
+      state: query
+    register: query_all
 
-- name: Query a specific zone under region us-west-1
-  aci_cloud_zone:
-    <<: *aci_info
-    cloud: 'aws'
-    region: us-west-1
-    zone: us-west-1a
-    state: query
-  register: query_zone_1
+  - name: Verify query_all
+    assert:
+      that:
+      - query_all is not changed
+      - query_all.current.0.cloudRegion.attributes.name == "us-west-1"
+      - query_all.current.0.cloudRegion.children | length >= 2
+    when: query_all.current != []
 
-- name: Query another specific zone under region us-west-1
-  aci_cloud_zone:
-    <<: *aci_info
-    cloud: 'aws'
-    region: us-west-1
-    zone: us-west-1b
-    state: query
-  register: query_zone_2
+  - name: Query a specific zone under region us-west-1
+    aci_cloud_zone:
+      <<: *aci_info
+      cloud: 'aws'
+      region: us-west-1
+      zone: us-west-1a
+      state: query
+    register: query_zone_1
 
-- name: Verify query_zone_1 and query_zone_2
-  assert:
-    that:
-    - query_zone_1 is not changed
-    - query_zone_2 is not changed
-    - query_zone_1.current.0.cloudZone.attributes.name == "us-west-1a"
-    - query_zone_1.current.0.cloudZone.attributes.dn == "uni/clouddomp/provp-aws/region-us-west-1/zone-us-west-1a"
-    - query_zone_2.current.0.cloudZone.attributes.name == "us-west-1b"
-    - query_zone_2.current.0.cloudZone.attributes.dn == "uni/clouddomp/provp-aws/region-us-west-1/zone-us-west-1b"
+  - name: Query another specific zone under region us-west-1
+    aci_cloud_zone:
+      <<: *aci_info
+      cloud: 'aws'
+      region: us-west-1
+      zone: us-west-1b
+      state: query
+    register: query_zone_2
 
-- name: Query non_existing zone under region us-west-1
-  aci_cloud_zone:
-    <<: *aci_info
-    cloud: 'aws'
-    region: us-west-1
-    zone: non_existing
-    state: query
-  register: query_non_existing_zone
+  - name: Verify query_zone_1 and query_zone_2
+    assert:
+      that:
+      - query_zone_1 is not changed
+      - query_zone_2 is not changed
+      - query_zone_1.current.0.cloudZone.attributes.name == "us-west-1a"
+      - query_zone_1.current.0.cloudZone.attributes.dn == "uni/clouddomp/provp-aws/region-us-west-1/zone-us-west-1a"
+      - query_zone_2.current.0.cloudZone.attributes.name == "us-west-1b"
+      - query_zone_2.current.0.cloudZone.attributes.dn == "uni/clouddomp/provp-aws/region-us-west-1/zone-us-west-1b"
+    when: query_zone_1.current != []  and query_zone_2.current != []
 
-- name: Query zone under non_existing region
-  aci_cloud_zone:
-    <<: *aci_info
-    cloud: 'aws'
-    region: non_existing
-    zone: us-west-1a
-    state: query
-  register: query_non_existing_region
+  - name: Query non_existing zone under region us-west-1
+    aci_cloud_zone:
+      <<: *aci_info
+      cloud: 'aws'
+      region: us-west-1
+      zone: non_existing
+      state: query
+    register: query_non_existing_zone
 
-- name: Verify query_non_existing_zone
-  assert:
-    that:
-    - query_non_existing_zone is not changed
-    - query_non_existing_zone.current == []
-    - query_non_existing_region is not changed
-    - query_non_existing_region.current == []
+  - name: Query zone under non_existing region
+    aci_cloud_zone:
+      <<: *aci_info
+      cloud: 'aws'
+      region: non_existing
+      zone: us-west-1a
+      state: query
+    register: query_non_existing_region
+
+  - name: Verify query_non_existing_zone
+    assert:
+      that:
+      - query_non_existing_zone is not changed
+      - query_non_existing_zone.current == []
+      - query_non_existing_region is not changed
+      - query_non_existing_region.current == []
+
+  when: query_cloud.current | length > 0   # This condition will skip execution for non-cloud sites

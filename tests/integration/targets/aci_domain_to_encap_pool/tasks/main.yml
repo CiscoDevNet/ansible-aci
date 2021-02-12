@@ -81,6 +81,9 @@
     state: present
   register: fc_domain
 
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
 - name: Add vmm domain
   aci_domain:
     <<: *aci_info 
@@ -89,6 +92,7 @@
     vm_provider: vmware
     state: present
   register: vmm_domain
+  when: query_cloud.current == []
 
 - name: Add domain to encap pool binding (phys, pool_type=vlan)
   aci_domain_to_encap_pool:
@@ -145,6 +149,7 @@
     vm_provider: cloudfoundry
     state: present
   register: vmm_cloudfoundry
+  when: query_cloud.current == []
 
 - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=kubernetes)
   aci_domain_to_encap_pool:
@@ -169,6 +174,7 @@
     vm_provider: microsoft
     state: present
   register: vmm_microsoft
+  when: query_cloud.current == []
 
 - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=openshift)
   aci_domain_to_encap_pool:
@@ -181,6 +187,7 @@
     vm_provider: openshift
     state: present
   register: vmm_openshift
+  when: query_cloud.current == []
 
 - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=openstack)
   aci_domain_to_encap_pool:
@@ -193,6 +200,7 @@
     vm_provider: openstack
     state: present
   register: vmm_openstack
+  when: query_cloud.current == []
 
 - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=redhat)
   aci_domain_to_encap_pool:
@@ -205,6 +213,7 @@
     vm_provider: redhat
     state: present
   register: vmm_redhat
+  when: query_cloud.current == []
 
 - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=vmware)
   aci_domain_to_encap_pool:
@@ -217,6 +226,7 @@
     vm_provider: vmware
     state: present
   register: vmm_vmware
+  when: query_cloud.current == []
 
 - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=vmware) again
   aci_domain_to_encap_pool:
@@ -229,6 +239,7 @@
     vm_provider: vmware
     state: present
   register: vmm_vmware_idemp
+  when: query_cloud.current == []
 
 - name: Add domain to encap pool binding (phys with vm_provider)
   aci_domain_to_encap_pool:
@@ -319,6 +330,7 @@
     - phys_vlan_no_alloc.msg is match("ACI requires the 'pool_allocation_mode' for 'pool_type' of 'vlan' and 'vsan' when 'pool' is provided")
     - phys_missing_pool_type.msg is match("missing required arguments{{':'}} pool_type")
     - phys_missing_domain_type.msg is match("missing required arguments{{':'}} domain_type")
+  when: query_cloud.current == []
 
 # QUERY
 - name: Query all
@@ -460,6 +472,7 @@
     - query_vmm_openstack.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
     - query_vmm_redhat.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
     - query_vmm_vmware.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
+  when: query_cloud.current == []
 
 # REMOVE
 - name: Remove phys
@@ -604,6 +617,7 @@
     - remove_vmm_openstack.previous.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
     - remove_vmm_redhat.previous.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
     - remove_vmm_vmware.previous.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
+  when: query_cloud.current == []
 
 # Clean Environment Again
 - name: Remove domains

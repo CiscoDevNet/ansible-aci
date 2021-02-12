@@ -69,13 +69,17 @@
     dst_port_end: 90
   register: entry_present_update
 
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
 - name: create filter entry - test different types
   cisco.aci.aci_filter_entry:
     <<: *aci_filter_present
     entry: anstest2
     ether_type: arp
     arp_flag: arp_reply
-  register: entry_present_2
+  register: entry_present_2 
+  when: query_cloud.current == []
 
 - name: create filter entry - test different types
   cisco.aci.aci_filter_entry:
@@ -147,6 +151,7 @@
       - 'present_missing_param.msg == "state is present but all of the following are missing: entry"'
       - present_incompatible_params is failed
       - present_incompatible_params.msg.startswith("Parameter")
+  when: query_cloud.current == []
 
 - name: query tenant filter entry
   cisco.aci.aci_filter_entry: &aci_query_entry
@@ -242,6 +247,7 @@
       - query_all.current | length > 1
       - query_all.current.0.vzEntry is defined
       - '"class/vzEntry.json" in query_all.url'
+  when: query_cloud.current == []
 
 - name: delete entry - check mode works
   cisco.aci.aci_filter_entry: &aci_entry_absent
