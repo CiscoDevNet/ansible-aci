@@ -79,7 +79,9 @@
     ether_type: arp
     arp_flag: arp_reply
   register: entry_present_2 
-  when: query_cloud.current == []
+  when:
+  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
+  - query_cloud.current == []
 
 - name: create filter entry - test different types
   cisco.aci.aci_filter_entry:
@@ -132,10 +134,6 @@
       - entry_present_update is changed
       - entry_present_update.previous != []
       - entry_present_update.sent != entry_present_update.proposed
-      - entry_present_2 is changed
-      - entry_present_2.sent.vzEntry.attributes.arpOpc == 'reply'
-      - entry_present_2.sent.vzEntry.attributes.etherT == 'arp'
-      - entry_present_2.sent.vzEntry.attributes.name == 'anstest2'
       - entry_present_3 is changed
       - entry_present_3.sent.vzEntry.attributes.etherT == 'ip'
       - entry_present_3.sent.vzEntry.attributes.icmpv4T == 'echo'
@@ -151,7 +149,17 @@
       - 'present_missing_param.msg == "state is present but all of the following are missing: entry"'
       - present_incompatible_params is failed
       - present_incompatible_params.msg.startswith("Parameter")
-  when: query_cloud.current == []
+
+- name: present assertions for arp
+  assert:
+    that:
+      - entry_present_2 is changed
+      - entry_present_2.sent.vzEntry.attributes.arpOpc == 'reply'
+      - entry_present_2.sent.vzEntry.attributes.etherT == 'arp'
+      - entry_present_2.sent.vzEntry.attributes.name == 'anstest2'
+  when:
+  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
+  - query_cloud.current == []
 
 - name: query tenant filter entry
   cisco.aci.aci_filter_entry: &aci_query_entry
@@ -204,7 +212,7 @@
     entry: "{{ fakevar | default(omit) }}"
   register: query_all
 
-- name: query assertions
+- name: query assertions for all
   assert:
     that:
       - query_tenant_filter_entry is not changed
@@ -226,7 +234,6 @@
       - query_tenant_filter is not changed
       - query_tenant_filter.current | length == 1
       - query_tenant_filter.current.0.vzFilter.attributes.name == "anstest"
-      - query_tenant_filter.current.0.vzFilter.children | length == 4
       - '"rsp-subtree-class=vzEntry" in query_tenant_filter.filter_string'
       - '"tn-anstest/flt-anstest.json" in query_tenant_filter.url'
       - query_entry is not changed
@@ -247,7 +254,15 @@
       - query_all.current | length > 1
       - query_all.current.0.vzEntry is defined
       - '"class/vzEntry.json" in query_all.url'
-  when: query_cloud.current == []
+
+
+- name: query assertions for only Non-Cloud
+  assert:
+    that:
+      - query_tenant_filter.current.0.vzFilter.children | length == 4
+  when:
+  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
+  - query_cloud.current == []
 
 - name: delete entry - check mode works
   cisco.aci.aci_filter_entry: &aci_entry_absent

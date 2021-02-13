@@ -24,6 +24,9 @@
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for cloud sites
+  when:
+  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
+  - query_cloud.current | length > 0   # This condition will skip execution for non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Ensure tenant doesn't exist
     aci_tenant:
@@ -257,5 +260,3 @@
       - nm_remove_subnet_3_again is not changed
       - nm_remove_subnet_3_again.previous == []
       - nm_remove_subnet_3_again.current == []
-
-  when: query_cloud.current | length > 0   # This condition will skip execution for non-cloud sites

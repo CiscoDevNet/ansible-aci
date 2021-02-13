@@ -23,8 +23,12 @@
 - name: Verify Cloud and Non-Cloud Sites in use.
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Execute only cloud site tasks
+- name: Execute tasks only for cloud sites
+  when:
+  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
+  - query_cloud.current | length > 0   # This condition will skip execution for non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
+
   - name: ensure tenant exists for tests to kick off
     cisco.aci.aci_tenant: &aci_tenant_present
       <<: *aci_info
@@ -271,9 +275,8 @@
       state: absent
     when: tenant_present is changed
 
-  when: query_cloud.current | length > 0   # This condition will skip execution for non-cloud sites
-
 - name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []
   block:
   - name: ensure phys domain exists for tests to kick off
     cisco.aci.aci_rest: &aci_rest_phys_domain
@@ -340,5 +343,3 @@
       <<: *aci_rest_l2dom_domain
       method: delete
     when: l2dom_domain_post is changed
-
-  when: query_cloud.current == []
