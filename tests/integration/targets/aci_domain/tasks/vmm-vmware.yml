@@ -22,6 +22,9 @@
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
+  when:
+  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
+  - query_cloud.current == []
   block:
   # ADD DOMAIN
   - name: Add VMM domain (check_mode)
@@ -184,5 +187,3 @@
       - nm_query_non_domain is not changed
       - cm_query_non_domain == nm_query_non_domain
       - nm_query_non_domain.current == []
-
-  when: query_cloud.current == []

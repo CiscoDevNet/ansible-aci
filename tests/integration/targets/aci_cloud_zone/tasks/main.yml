@@ -24,6 +24,9 @@
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for cloud sites
+  when:
+  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
+  - query_cloud.current | length > 0   # This condition will skip execution for non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Query all zones under us-west-1
     aci_cloud_zone:
@@ -95,5 +98,3 @@
       - query_non_existing_zone.current == []
       - query_non_existing_region is not changed
       - query_non_existing_region.current == []
-
-  when: query_cloud.current | length > 0   # This condition will skip execution for non-cloud sites

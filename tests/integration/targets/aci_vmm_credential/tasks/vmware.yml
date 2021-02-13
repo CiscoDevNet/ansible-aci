@@ -23,6 +23,9 @@
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
+  when:
+  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
+  - query_cloud.current == []
   block:
   # ADD VMM domain for testing
   - name: Add VMM domain (normal mode)
@@ -253,5 +256,3 @@
   - name: Remove VMM domain (normal_mode)
     cisco.aci.aci_domain: *domain_absent
     register: nm_remove_domain_again
-
-  when: query_cloud.current == []
