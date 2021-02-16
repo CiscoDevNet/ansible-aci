@@ -31,8 +31,8 @@
   - name: Query all zones under us-west-1
     aci_cloud_zone:
       <<: *aci_info
-      cloud: 'aws'
-      region: us-west-1
+      cloud: "{{cloud_type}}"
+      region: "{{region_2}}"
       state: query
     register: query_all
 
@@ -40,24 +40,23 @@
     assert:
       that:
       - query_all is not changed
-      - query_all.current.0.cloudRegion.attributes.name == "us-west-1"
-      - query_all.current.0.cloudRegion.children | length >= 2
-    when: query_all.current != []
+      - query_all.current.0.cloudRegion.attributes.name == "{{region_2}}"
+      - query_all.current.0.cloudRegion.children | length >= 1
 
   - name: Query a specific zone under region us-west-1
     aci_cloud_zone:
       <<: *aci_info
-      cloud: 'aws'
-      region: us-west-1
-      zone: us-west-1a
+      cloud: "{{cloud_type}}"
+      region: "{{region_2}}"
+      zone: "{{availability_zone | default(omit)}}"
       state: query
     register: query_zone_1
 
   - name: Query another specific zone under region us-west-1
     aci_cloud_zone:
       <<: *aci_info
-      cloud: 'aws'
-      region: us-west-1
+      cloud: "{{cloud_type}}"
+      region: "{{region_2}}"
       zone: us-west-1b
       state: query
     register: query_zone_2
@@ -67,17 +66,17 @@
       that:
       - query_zone_1 is not changed
       - query_zone_2 is not changed
-      - query_zone_1.current.0.cloudZone.attributes.name == "us-west-1a"
-      - query_zone_1.current.0.cloudZone.attributes.dn == "uni/clouddomp/provp-aws/region-us-west-1/zone-us-west-1a"
+      - query_zone_1.current.0.cloudZone.attributes.name == "{{availability_zone}}"
+      - query_zone_1.current.0.cloudZone.attributes.dn == "uni/clouddomp/provp-{{cloud_type}}/region-{{region_2}}/zone-us-west-1a"
       - query_zone_2.current.0.cloudZone.attributes.name == "us-west-1b"
-      - query_zone_2.current.0.cloudZone.attributes.dn == "uni/clouddomp/provp-aws/region-us-west-1/zone-us-west-1b"
+      - query_zone_2.current.0.cloudZone.attributes.dn == "uni/clouddomp/provp-{{cloud_type}}/region-{{region_2}}/zone-us-west-1b"
     when: query_zone_1.current != []  and query_zone_2.current != []
 
   - name: Query non_existing zone under region us-west-1
     aci_cloud_zone:
       <<: *aci_info
-      cloud: 'aws'
-      region: us-west-1
+      cloud: "{{cloud_type}}"
+      region: "{{region_2}}"
       zone: non_existing
       state: query
     register: query_non_existing_zone
@@ -85,9 +84,9 @@
   - name: Query zone under non_existing region
     aci_cloud_zone:
       <<: *aci_info
-      cloud: 'aws'
+      cloud: "{{cloud_type}}"
       region: non_existing
-      zone: us-west-1a
+      zone: "{{availability_zone | default(omit)}}"
       state: query
     register: query_non_existing_region
 
