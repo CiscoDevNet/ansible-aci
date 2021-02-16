@@ -31,7 +31,7 @@
   - name: Query all regions
     aci_cloud_region:
       <<: *aci_info
-      cloud: 'aws'
+      cloud: "{{cloud_type}}"
       state: query
     register: query_all
 
@@ -39,15 +39,15 @@
     assert:
       that:
       - query_all is not changed
-      - query_all.current.0.cloudProvP.attributes.dn == "uni/clouddomp/provp-aws"
-      - query_all.current.0.cloudProvP.attributes.vendor == "aws"
+      - query_all.current.0.cloudProvP.attributes.dn == "uni/clouddomp/provp-{{cloud_type}}"
+      - query_all.current.0.cloudProvP.attributes.vendor == "{{cloud_type}}"
       - query_all.current.0.cloudProvP.children | length > 10
     when: query_all.current != []
 
   - name: Query a specific region
     aci_cloud_region:
       <<: *aci_info
-      cloud: 'aws'
+      cloud: "{{cloud_type}}"
       region: eu-west-2
       state: query
     register: query_region
@@ -57,14 +57,14 @@
       that:
       - query_region is not changed
       - query_region.current.0.cloudRegion.attributes.adminSt == "unmanaged"
-      - query_region.current.0.cloudRegion.attributes.dn == "uni/clouddomp/provp-aws/region-eu-west-2"
+      - query_region.current.0.cloudRegion.attributes.dn == "uni/clouddomp/provp-{{cloud_type}}/region-eu-west-2"
       - query_region.current.0.cloudRegion.attributes.name == "eu-west-2"
     when: query_region.current != []
 
   - name: Query non_existing region
     aci_cloud_region:
       <<: *aci_info
-      cloud: 'aws'
+      cloud: "{{cloud_type}}"
       region: non_existing
       state: query
     register: query_non_existing_region

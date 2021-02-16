@@ -75,7 +75,7 @@
       cloud: "{{cloud_type}}"
       name: ctx_profile_1
       vrf: ctx_profile_vrf_1
-      region: us-east-1
+      region: "{{region}}"
       primary_cidr: '10.100.0.0/16'
       state: present
     check_mode: yes
