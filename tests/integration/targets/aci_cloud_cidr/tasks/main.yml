@@ -12,9 +12,9 @@
 - name: Set vars
   set_fact:
     aci_info: &aci_info
-      host: "{{aci_hostname}}"
-      username: "{{aci_username}}"
-      password: "{{aci_password}}"
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
@@ -24,9 +24,7 @@
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for cloud sites
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current | length > 0   # This condition will skip execution for non-cloud sites  # This condition will skip execution for non-cloud sites
+  when: query_cloud.current | length > 0  # This condition will execute only cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Ensure tenant doesn't exist
     aci_tenant:
@@ -56,9 +54,9 @@
       tenant: anstest
       name: ctx_profile_1
       vrf: ctx_profile_vrf_1
-      region: "{{region_2}}"
+      region: "{{ region_2 }}"
       primary_cidr: '10.10.0.0/16'
-      cloud: "{{cloud_type}}"
+      cloud: "{{ cloud_type }}"
       state: present
     register: nm_add_aci_ctx_profile
 

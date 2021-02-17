@@ -12,9 +12,9 @@
 - name: Set vars
   set_fact:
     aci_info: &aci_info
-      host: "{{aci_hostname}}"
-      username: "{{aci_username}}"
-      password: "{{aci_password}}"
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
@@ -24,14 +24,12 @@
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for cloud sites
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current | length > 0   # This condition will skip execution for non-cloud sites
+  when: query_cloud.current | length > 0  # This condition will execute only cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Query all regions
     aci_cloud_region:
       <<: *aci_info
-      cloud: "{{cloud_type}}"
+      cloud: "{{ cloud_type }}"
       state: query
     register: query_all
 
@@ -47,8 +45,8 @@
   - name: Query a specific region
     aci_cloud_region:
       <<: *aci_info
-      cloud: "{{cloud_type}}"
-      region: eu-west-2
+      cloud: "{{ cloud_type }}"
+      region: "{{ region_2 }}"
       state: query
     register: query_region
 
@@ -56,15 +54,15 @@
     assert:
       that:
       - query_region is not changed
-      - query_region.current.0.cloudRegion.attributes.adminSt == "unmanaged"
-      - query_region.current.0.cloudRegion.attributes.dn == "uni/clouddomp/provp-{{cloud_type}}/region-eu-west-2"
-      - query_region.current.0.cloudRegion.attributes.name == "eu-west-2"
+      - query_region.current.0.cloudRegion.attributes.adminSt == "managed"
+      - query_region.current.0.cloudRegion.attributes.dn == "uni/clouddomp/provp-{{cloud_type}}/region-{{region_2}}"
+      - query_region.current.0.cloudRegion.attributes.name == "{{region_2}}"
     when: query_region.current != []
 
   - name: Query non_existing region
     aci_cloud_region:
       <<: *aci_info
-      cloud: "{{cloud_type}}"
+      cloud: "{{ cloud_type }}"
       region: non_existing
       state: query
     register: query_non_existing_region
