@@ -8,27 +8,27 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
+# CLEAN ENVIRONMENT
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
 - name: ensure tenant exists for tests to kick off
   cisco.aci.aci_tenant:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     tenant: anstest
     state: absent
 
 - name: ensure tenant exists for tests to kick off
   cisco.aci.aci_tenant: &aci_tenant_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
+    <<: *aci_info
     tenant: anstest
     state: present
   register: tenant_present
@@ -79,9 +79,7 @@
     ether_type: arp
     arp_flag: arp_reply
   register: entry_present_2 
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current == []
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
 - name: create filter entry - test different types
   cisco.aci.aci_filter_entry:
@@ -157,9 +155,7 @@
       - entry_present_2.sent.vzEntry.attributes.arpOpc == 'reply'
       - entry_present_2.sent.vzEntry.attributes.etherT == 'arp'
       - entry_present_2.sent.vzEntry.attributes.name == 'anstest2'
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current == []
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
 - name: query tenant filter entry
   cisco.aci.aci_filter_entry: &aci_query_entry
@@ -260,9 +256,7 @@
   assert:
     that:
       - query_tenant_filter.current.0.vzFilter.children | length == 4
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current == []
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
 - name: delete entry - check mode works
   cisco.aci.aci_filter_entry: &aci_entry_absent

@@ -12,9 +12,9 @@
 - name: Set vars
   set_fact:
     aci_info: &aci_info
-      host: "{{aci_hostname}}"
-      username: "{{aci_username}}"
-      password: "{{aci_password}}"
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
@@ -24,15 +24,13 @@
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for cloud sites
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current | length > 0   # This condition will skip execution for non-cloud sites
+  when: query_cloud.current | length > 0  # This condition will execute only cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Query all zones under us-west-1
     aci_cloud_zone:
       <<: *aci_info
-      cloud: "{{cloud_type}}"
-      region: "{{region_2}}"
+      cloud: "{{ cloud_type }}"
+      region: "{{ region_2 }}"
       state: query
     register: query_all
 
@@ -46,17 +44,17 @@
   - name: Query a specific zone under region us-west-1
     aci_cloud_zone:
       <<: *aci_info
-      cloud: "{{cloud_type}}"
-      region: "{{region_2}}"
-      zone: "{{availability_zone | default(omit)}}"
+      cloud: "{{ cloud_type }}"
+      region: "{{ region_2 }}"
+      zone: "{{ availability_zone | default(omit) }}"
       state: query
     register: query_zone_1
 
   - name: Query another specific zone under region us-west-1
     aci_cloud_zone:
       <<: *aci_info
-      cloud: "{{cloud_type}}"
-      region: "{{region_2}}"
+      cloud: "{{ cloud_type }}"
+      region: "{{ region_2 }}"
       zone: us-west-1b
       state: query
     register: query_zone_2
@@ -75,8 +73,8 @@
   - name: Query non_existing zone under region us-west-1
     aci_cloud_zone:
       <<: *aci_info
-      cloud: "{{cloud_type}}"
-      region: "{{region_2}}"
+      cloud: "{{ cloud_type }}"
+      region: "{{ region_2 }}"
       zone: non_existing
       state: query
     register: query_non_existing_zone
@@ -84,9 +82,9 @@
   - name: Query zone under non_existing region
     aci_cloud_zone:
       <<: *aci_info
-      cloud: "{{cloud_type}}"
+      cloud: "{{ cloud_type }}"
       region: non_existing
-      zone: "{{availability_zone | default(omit)}}"
+      zone: "{{ availability_zone | default(omit) }}"
       state: query
     register: query_non_existing_region
 

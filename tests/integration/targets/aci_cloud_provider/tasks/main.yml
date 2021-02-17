@@ -10,11 +10,11 @@
 
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact: 
+  set_fact:
     aci_info: &aci_info
-      host: "{{aci_hostname}}"
-      username: "{{aci_username}}"
-      password: "{{aci_password}}"
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
@@ -35,6 +35,12 @@
   register: query_cloud
   when: version.current.0.topSystem.attributes.version is version('4.1', '>=')
 
+- name: Set vars
+  set_fact:
+    query_cloud:
+      current: []
+  when: version.current.0.topSystem.attributes.version is version('4.1', '<')
+
 - name: Verify query_cloud for all sites
   assert:
     that:
@@ -47,5 +53,4 @@
     - query_cloud.current.0.cloudProvP.attributes.environment == "public-cloud"
     - '"vendor" in query_cloud.current.0.cloudProvP.attributes'
   when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current | length > 0
+  - query_cloud.current | length > 0  # This condition will execute only cloud sites

@@ -22,9 +22,7 @@
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current == []
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
   block:
   # ADD DOMAIN
   - name: Add VMM domain (check_mode)

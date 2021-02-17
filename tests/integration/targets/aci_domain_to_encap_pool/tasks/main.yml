@@ -92,9 +92,7 @@
     vm_provider: vmware
     state: present
   register: vmm_domain
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current == []
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
 - name: Add domain to encap pool binding (phys, pool_type=vlan)
   aci_domain_to_encap_pool:
@@ -151,9 +149,7 @@
     vm_provider: cloudfoundry
     state: present
   register: vmm_cloudfoundry
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current == []
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
 - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=kubernetes)
   aci_domain_to_encap_pool:
@@ -178,9 +174,7 @@
     vm_provider: microsoft
     state: present
   register: vmm_microsoft
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current == []
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
 - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=openshift)
   aci_domain_to_encap_pool:
@@ -193,9 +187,7 @@
     vm_provider: openshift
     state: present
   register: vmm_openshift
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current == []
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
 - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=openstack)
   aci_domain_to_encap_pool:
@@ -208,9 +200,7 @@
     vm_provider: openstack
     state: present
   register: vmm_openstack
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current == []
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
 - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=redhat)
   aci_domain_to_encap_pool:
@@ -223,9 +213,7 @@
     vm_provider: redhat
     state: present
   register: vmm_redhat
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current == []
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
 - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=vmware)
   aci_domain_to_encap_pool:
@@ -238,9 +226,7 @@
     vm_provider: vmware
     state: present
   register: vmm_vmware
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current == []
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
 - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=vmware) again
   aci_domain_to_encap_pool:
@@ -253,9 +239,7 @@
     vm_provider: vmware
     state: present
   register: vmm_vmware_idemp
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current == []
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
 - name: Add domain to encap pool binding (phys with vm_provider)
   aci_domain_to_encap_pool:
@@ -316,7 +300,7 @@
   ignore_errors: yes
   register: phys_missing_pool_type
 
-- name: Verify add operation for Non-Cloud Sites
+- name: Verify add operation for All Sites
   assert:
     that:
     - phys_vlan is changed
@@ -335,7 +319,7 @@
     - phys_missing_pool_type.msg is match("missing required arguments{{':'}} pool_type")
     - phys_missing_domain_type.msg is match("missing required arguments{{':'}} domain_type")
 
-- name: Verify add operation for Cloud Sites
+- name: Verify add operation for Non-Cloud Sites
   assert:
     that:
     - vmm_cloudfoundry is changed
@@ -350,9 +334,7 @@
     - vmm_openstack.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
     - vmm_redhat.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
     - vmm_vmware.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current == []
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
 # QUERY
 - name: Query all
@@ -499,9 +481,7 @@
     - query_vmm_openstack.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
     - query_vmm_redhat.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
     - query_vmm_vmware.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current == []
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
 # REMOVE
 - name: Remove phys
@@ -632,7 +612,7 @@
     state: absent
   register: remove_vmm_vmware
 
-- name: Verify Remove for Non-Cloud Sites
+- name: Verify Remove for All Sites
   assert:
     that:
     - remove_phys.previous.0.physDomP.children.0.infraRsVlanNs.attributes.tDn =='uni/infra/vlanns-[test_pool]-dynamic'
@@ -641,7 +621,7 @@
     - remove_l3dom.previous.0.l3extDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-static'
     - remove_vmm_kubernetes.previous.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
 
-- name: Verify Remove for Cloud Sites
+- name: Verify Remove for Non-Cloud Sites
   assert:
     that:
     - remove_vmm_cloudfoundry.previous.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
@@ -650,9 +630,7 @@
     - remove_vmm_openstack.previous.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
     - remove_vmm_redhat.previous.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
     - remove_vmm_vmware.previous.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
-  when:
-  - version.current.0.topSystem.attributes.version is version('4.1', '>=')
-  - query_cloud.current == []
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
 # Clean Environment Again
 - name: Remove domains
