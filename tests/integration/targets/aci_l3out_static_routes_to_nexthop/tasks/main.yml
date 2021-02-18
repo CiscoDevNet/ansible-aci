@@ -1,0 +1,154 @@
+# Author: Marcel Zehnder (@maercu)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove test tenant before we kickoff
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
+    tenant: l3outtest
+    state: absent
+
+# SETUP ENVIRONMENT
+- name: Create domain
+  cisco.aci.aci_domain: &domain_present
+    <<: *aci_info
+    domain: l3outtest
+    domain_type: l3dom
+    state: present
+
+- name: Create tenant
+  cisco.aci.aci_tenant: &tenant_present
+    <<: *tenant_absent
+    state: present
+
+- name: Configure VRF
+  cisco.aci.aci_vrf: &vrf_present
+    <<: *tenant_present
+    vrf: l3outtest
+
+- name: Create L3Out
+  cisco.aci.aci_l3out:
+    <<: *vrf_present
+    l3out: l3outtest
+    domain: l3outtest
+    route_control: export 
+
+- name: Crete node profile
+  cisco.aci.aci_l3out_logical_node_profile: &np_present
+    <<: *tenant_present
+    l3out: l3outtest
+    node_profile: NODES
+
+- name: Add node
+  cisco.aci.aci_l3out_logical_node_profile_to_node: &node_present
+    <<: *np_present
+    pod_id: 1
+    node_id: 111
+    router_id: 111.111.111.111
+
+- name: Add static route
+  cisco.aci.aci_l3out_static_routes:  &prefix_present
+    <<: *np_present
+    pod_id: 1
+    node_id: 111
+    prefix: 10.10.0.0/16
+
+# MODULE CHECKS
+- name: Add a nexthop (check mode)
+  cisco.aci.aci_l3out_static_routes_to_nexthop:  &nh_present
+    <<: *prefix_present
+    nexthop: 1.1.1.1
+  check_mode: yes
+  register: cm_add_nh
+
+- name: Add a nexthop (normal mode)
+  cisco.aci.aci_l3out_static_routes_to_nexthop: 
+    <<: *nh_present
+  register: nm_add_nh
+
+- name: Verify nm_add_nh
+  assert:
+    that:
+    - cm_add_nh is changed
+    - nm_add_nh is changed
+    - cm_add_nh.previous == nm_add_nh.previous == []
+    - cm_add_nh.sent.ipNexthopP.attributes.nhAddr == nm_add_nh.sent.ipNexthopP.attributes.nhAddr == '1.1.1.1'
+
+- name: Add nexthop  again, check if idempotency works
+  cisco.aci.aci_l3out_static_routes_to_nexthop: 
+    <<: *nh_present
+  register: add_nh_again
+
+- name: Verify add_nh_again
+  assert:
+    that:
+    - add_nh_again is not changed
+
+# ADD ANOTHER NH
+- name: Add another nexthop
+  cisco.aci.aci_l3out_static_routes_to_nexthop: 
+    <<: *nh_present
+    nexthop: 1.1.1.2
+
+# QUERY ALL NHs
+- name: Query all nodes
+  cisco.aci.aci_l3out_static_routes_to_nexthop: 
+    <<: *aci_info
+    state: query
+  register: query_all_nhs
+
+- name: Verify query_all_nhs
+  assert:
+    that:
+    - query_all_nhs is not changed
+    - query_all_nhs.current|length >= 1
+
+# QUERY A SPECIFIC NH
+- name: Query a specific nexthop
+  cisco.aci.aci_l3out_static_routes_to_nexthop: 
+    <<: *nh_present
+    state: query
+  register: query_spec_nh
+
+- name: Verify query_spec_node
+  assert:
+    that:
+    - query_spec_nh is not changed
+    - query_spec_nh.current|length == 1
+
+# REMOVE NH
+- name: Remove node
+  cisco.aci.aci_l3out_static_routes_to_nexthop: 
+    <<: *nh_present
+    state: absent
+  register: remove_nh
+
+- name: Verify remove_nh
+  assert:
+    that:
+    - remove_nh is changed
+    - remove_nh.current == []
+
+# CLEANUP 
+- name: Delete tenant
+  cisco.aci.aci_tenant: 
+    <<: *tenant_absent
+    tenant: l3outtest
+    state: absent
+
+- name: Delete domain
+  cisco.aci.aci_domain: 
+    <<: *domain_present
+    state: absent

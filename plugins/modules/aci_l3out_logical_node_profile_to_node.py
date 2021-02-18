@@ -12,21 +12,11 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_l3out_logical_node_profile
-short_description: Manage Layer 3 Outside (L3Out) logical node profiles (l3extLNodeP:lnodep)
+module: aci_l3out_logical_node_profile_to_node
+short_description: Manage Layer 3 Outside (L3Out) logical node profile nodes (l3ext:RsNodeL3OutAtt)
 description:
-- Manage Layer 3 Outside (L3Out) logical node profiles on Cisco ACI fabrics.
+- Bind nodes to node profiles on Cisco ACI fabrics.
 options:
-  node_profile:
-    description:
-    - Name of the node profile.
-    type: str
-    aliases: [ node_profile_name, name, logical_node ]
-  description:
-    description:
-    - Description for the node profile.
-    type: str
-    aliases: [ descr ]
   tenant:
     description:
     - Name of an existing tenant.
@@ -37,13 +27,29 @@ options:
     - Name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
-  dscp:
+  node_profile:
     description:
-    - The target Differentiated Service (DSCP) value.
-    - The APIC defaults to C(unspecified) when unset during creation.
+    - Name of the node profile.
     type: str
-    choices: [ AF11, AF12, AF13, AF21, AF22, AF23, AF31, AF32, AF33, AF41, AF42, AF43, CS0, CS1, CS2, CS3, CS4, CS5, CS6, CS7, EF, VA, unspecified ]
-    aliases: [ target_dscp ]
+    aliases: [ node_profile_name, logical_node ]
+  pod_id:
+    description:
+    - Existing podId.
+    type: int
+  node_id:
+    description:
+    - Existing nodeId.
+    type: int
+  router_id:
+    description:
+    - Router ID in dotted decimal notation.
+    type: str
+  router_id_as_loopback:
+    description:
+    - Configure the router ID as a loopback IP.
+    type: str
+    choices: [ yes, no ]
+    default: no
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -51,66 +57,66 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
-  name_alias:
-    description:
-    - The alias for the current object. This relates to the nameAlias field in ACI.
-    type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 
 seealso:
 - module: aci_l3out
+- module: aci_l3out_locgical_node_profile
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes B(vmm:DomP)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Jason Juenger (@jasonjuenger)
+- Marcel Zehnder (@maercu)
 '''
 
 EXAMPLES = r'''
-- name: Add a new node profile
-  cisco.aci.aci_l3out_logical_node_profile:
+- name: Add a new node to a node profile
+  cisco.aci.aci_l3out_logical_node_profile_to_node:
     host: apic
     username: admin
     password: SomeSecretPassword
-    node_profile: my_node_profile
-    description: node profile for my_l3out
-    l3out: my_l3out
     tenant: my_tenant
-    dscp: CS0
+    l3out: my_l3out
+    node_profile: my_node_profile
+    pod_id: 1
+    node_id: 111
+    router_id: 111.111.111.111
     state: present
   delegate_to: localhost
 
-- name: Delete a node profile
-  cisco.aci.aci_l3out_logical_node_profile:
+- name: Delete a node from a node profile
+  cisco.aci.aci_l3out_logical_node_profile_to_node:
     host: apic
     username: admin
     password: SomeSecretPassword
-    node_profile: my_node_profile
-    l3out: my_l3out
     tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    pod_id: 1
+    node_id: 111
     state: absent
   delegate_to: localhost
 
-- name: Query a node profile
-  cisco.aci.aci_l3out_logical_node_profile:
+- name: Query a node 
+  cisco.aci.aci_l3out_logical_node_profile_to_node:
     host: apic
     username: admin
     password: SomeSecretPassword
-    node_profile: my_node_profile
-    l3out: my_l3out
     tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    pod_id: 1
+    node_id: 111
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Query all node profile for L3out
-  cisco.aci.aci_l3out_logical_node_profile:
+- name: Query all nodes
+  cisco.aci.aci_l3out_logical_node_profile_to_node:
     host: apic
     username: admin
     password: SomeSecretPassword
-    l3out: my_l3out
-    tenant: my_tenant
     state: query
   delegate_to: localhost
   register: query_result
@@ -221,42 +227,50 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 '''
 
-from ansible.module_utils.basic import AnsibleModule
+
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible.module_utils.basic import AnsibleModule
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        node_profile=dict(type='str', aliases=['name', 'node_profile_name', 'logical_node']),
         tenant=dict(type='str', aliases=['tenant_name']),
         l3out=dict(type='str', aliases=['l3out_name']),
-        description=dict(type='str', aliases=['descr']),
-        dscp=dict(type='str',
-                  choices=['AF11', 'AF12', 'AF13', 'AF21', 'AF22', 'AF23', 'AF31', 'AF32', 'AF33', 'AF41',
-                           'AF42', 'AF43', 'CS0', 'CS1', 'CS2', 'CS3', 'CS4', 'CS5', 'CS6', 'CS7', 'EF', 'VA',
-                           'unspecified'],
-                  aliases=['target_dscp']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        node_profile=dict(type='str', aliases=[
+                          'node_profile_name', 'logical_node']),
+        pod_id=dict(type='int'),
+        node_id=dict(type='int'),
+        router_id=dict(type='str'),
+        router_id_as_loopback=dict(
+            type='str', default='yes', choices=['yes', 'no']),
+        state=dict(type='str', default='present',
+                   choices=['absent', 'present', 'query'])
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['tenant', 'l3out', 'node_profile']],
-            ['state', 'present', ['tenant', 'l3out', 'node_profile']],
-        ],
+            ['state', 'absent', ['tenant', 'l3out',
+                                 'node_profile', 'pod_id', 'node_id']],
+            ['state', 'present', ['tenant', 'l3out',
+                                  'node_profile', 'pod_id', 'node_id']]
+        ]
     )
 
-    node_profile = module.params.get('node_profile')
     tenant = module.params.get('tenant')
     l3out = module.params.get('l3out')
-    description = module.params.get('description')
-    dscp = module.params.get('dscp')
+    node_profile = module.params.get('node_profile')
+    pod_id = module.params.get('pod_id')
+    node_id = module.params.get('node_id')
+    router_id = module.params.get('router_id')
+    router_id_as_loopback = module.params.get('router_id_as_loopback')
     state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
+
+    tdn = None
+    if pod_id is not None and node_id is not None:
+        tdn = 'topology/pod-{0}/node-{1}'.format(pod_id, node_id)
 
     aci = ACIModule(module)
 
@@ -279,22 +293,27 @@ def main():
             module_object=node_profile,
             target_filter={'name': node_profile},
         ),
+        subclass_3=dict(
+            aci_class='l3extRsNodeL3OutAtt',
+            aci_rn='rsnodeL3OutAtt-[{0}]'.format(tdn),
+            module_object=tdn,
+            target_filter={'name': tdn},
+        )
     )
 
     aci.get_existing()
 
     if state == 'present':
         aci.payload(
-            aci_class='l3extLNodeP',
+            aci_class='l3extRsNodeL3OutAtt',
             class_config=dict(
-                descr=description,
-                name=node_profile,
-                targetDscp=dscp,
-                nameAlias=name_alias,
-            ),
+                rtrId=router_id,
+                rtrIdLoopBack=router_id_as_loopback,
+                tDn=tdn
+            )
         )
 
-        aci.get_diff(aci_class='l3extLNodeP')
+        aci.get_diff(aci_class='l3extRsNodeL3OutAtt')
 
         aci.post_config()
 
