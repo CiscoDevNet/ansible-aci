@@ -49,7 +49,7 @@ options:
     - Configure the router ID as a loopback IP.
     type: str
     choices: [ 'yes', 'no' ]
-    default: no
+    default: 'yes'
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
