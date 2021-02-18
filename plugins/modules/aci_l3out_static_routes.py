@@ -37,6 +37,7 @@ options:
     description:
     - Name of an existing logical node profile.
     type: str
+    aliases: [ node_profile, node_profile_name ]
   pod_id:
     description:
     - Existing podId.
@@ -256,7 +257,7 @@ def main():
     argument_spec.update(
         tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
         l3out=dict(type='str', aliases=['l3out_name']),  # Not required for querying all objects
-        logical_node=dict(type='str'),  # Not required for querying all objects
+        logical_node=dict(type='str', aliases=['node_profile', 'node_profile_name']),  # Not required for querying all objects
         pod_id=dict(type='int'),
         node_id=dict(type='int'),
         prefix=dict(type='str', aliases=['route']),
@@ -318,7 +319,7 @@ def main():
         ),
         subclass_3=dict(
             aci_class='l3extRsNodeL3OutAtt',
-            aci_rn='/rsnodeL3OutAtt-[{0}]'.format(fabric_node),
+            aci_rn='rsnodeL3OutAtt-[{0}]'.format(fabric_node),
             module_object=fabric_node,
             target_filter={'name': fabric_node},
         ),
