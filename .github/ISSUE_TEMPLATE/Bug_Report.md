@@ -1,7 +1,7 @@
 ---
 name: 🐛 Bug Report
 about: If something isn't working as expected 🤔.
-
+labels: bug/documentation/question
 ---
 
 <!--- Please keep this note for the community --->
@@ -14,9 +14,9 @@ about: If something isn't working as expected 🤔.
 
 <!--- Thank you for keeping this note for the community --->
 
-### Affected Resource(s)/ Module name(es):
+### Affected Module Name(s):
 
-<!--- Please list the affected resources or module names. --->
+<!--- Please list the affected module name(s). --->
 
 * aci_XXXXX
 
@@ -24,12 +24,9 @@ about: If something isn't working as expected 🤔.
 
 * V x.x.x and on-prem/cloud-aws/cloud-azure/all.
 
-### Affected Resource(s)
+### cisco.mso collection
 
-<!--- Please list the affected resources and data sources. --->
-
-* aci_XXXXX
-
+* cisco.mso x.x.x
 
 ### Output/ Error message
 
@@ -56,7 +53,7 @@ Please provide the generated error message.
 
 ### Important Factoids
 
-<!--- Are there anything atypical about your accounts that we should know? For example: Running in EC2 Classic? --->
+<!--- Are there anything atypical about your accounts that we should know? For example: Same task runs on different version of APIC? --->
 
 ### References
 

@@ -1,7 +1,8 @@
 ---
 name: 🚀 Feature Request
-about: I have a suggestion (and might want to implement myself 🙂)!
+about: I have a suggestion (might want to implement it myself 🙂)!
 labels: enhancement
+additional label: new_module/new_plugin/documentation/feature
 ---
 
 <!--- Please keep this note for the community --->
@@ -20,9 +21,9 @@ labels: enhancement
 
 * xxxx
 
-### New or Affected Resource(s) + ACI Class(es):
+### New or Affected Module(s):
 
-<!--- Please list the new or affected resources and data sources. --->
+<!--- Please list the new or affected module(s). --->
 
 * aci_XXXXX + fv:XXXX
 
@@ -30,6 +31,9 @@ labels: enhancement
 
 * V x.x.x and on-prem/cloud-aws/cloud-azure/all.
 
+### cisco.mso collection
+
+* cisco.mso x.x.x
 
 ### References
 
