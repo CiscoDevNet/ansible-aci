@@ -102,7 +102,7 @@ EXAMPLES = r'''
     state: absent
   delegate_to: localhost
 
-- name: Query a nexthop 
+- name: Query a nexthop
   cisco.aci.aci_l3out_static_routes_to_nexthop:
     host: apic
     username: admin
