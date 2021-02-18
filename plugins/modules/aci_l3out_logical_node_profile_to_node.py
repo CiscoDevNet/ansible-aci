@@ -48,7 +48,7 @@ options:
     description:
     - Configure the router ID as a loopback IP.
     type: str
-    choices: [ yes, no ]
+    choices: [ 'yes', 'no' ]
     default: no
   state:
     description:
@@ -98,7 +98,7 @@ EXAMPLES = r'''
     state: absent
   delegate_to: localhost
 
-- name: Query a node 
+- name: Query a node
   cisco.aci.aci_l3out_logical_node_profile_to_node:
     host: apic
     username: admin
