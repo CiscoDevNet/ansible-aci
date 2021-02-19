@@ -87,6 +87,13 @@
   cisco.aci.aci_l3out_logical_interface_profile: &intf_update
     <<: *intf_present
     nd_policy: NDTEST
+  register: update_intf
+
+- name: Verify update_intf
+  assert:
+    that:
+    - update_intf is changed
+    - update_intf.previous != []
 
 # ADD ANOTHER PROFILE
 - name: Add another profile

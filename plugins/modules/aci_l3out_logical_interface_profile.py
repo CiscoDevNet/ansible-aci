@@ -306,7 +306,8 @@ def main():
         ]
         aci.payload(
             aci_class='l3extLIfP',
-            class_config=dict(name=interface_profile)
+            class_config=dict(name=interface_profile),
+            child_configs=child_configs
         )
 
         aci.get_diff(aci_class='l3extLIfP')
