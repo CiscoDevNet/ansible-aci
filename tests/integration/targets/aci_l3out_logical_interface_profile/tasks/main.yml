@@ -139,13 +139,3 @@
     that:
     - remove_profile is changed
     - remove_profile.current == []
-
-# CLEANUP
-- name: Delete tenant
-  cisco.aci.aci_tenant:
-    <<: *tenant_absent
-
-- name: Delete domain
-  cisco.aci.aci_domain:
-    <<: *domain_present
-    state: absent
