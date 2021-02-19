@@ -140,15 +140,3 @@
     that:
     - remove_nh is changed
     - remove_nh.current == []
-
-# CLEANUP 
-- name: Delete tenant
-  cisco.aci.aci_tenant: 
-    <<: *tenant_absent
-    tenant: l3outtest
-    state: absent
-
-- name: Delete domain
-  cisco.aci.aci_domain: 
-    <<: *domain_present
-    state: absent
