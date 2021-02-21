@@ -121,14 +121,14 @@
     state: query
   register: query_spec_profile
 
-- name: Verify query_squery_spec_profilepec_node
+- name: Verify query_spec_profile
   assert:
     that:
     - query_spec_profile is not changed
     - query_spec_profile.current|length == 1
 
 # REMOVE PROFILE
-- name: Remove noprofilede
+- name: Remove interface profile
   cisco.aci.aci_l3out_logical_interface_profile:
     <<: *intf_update
     state: absent
