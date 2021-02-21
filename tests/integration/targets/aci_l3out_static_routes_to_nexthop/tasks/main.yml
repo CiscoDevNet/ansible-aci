@@ -129,7 +129,7 @@
     - query_spec_nh.current|length == 1
 
 # REMOVE NH
-- name: Remove node
+- name: Remove nexthop
   cisco.aci.aci_l3out_static_routes_to_nexthop: 
     <<: *nh_present
     state: absent
