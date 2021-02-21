@@ -1,0 +1,169 @@
+# Author: Marcel Zehnder (@maercu)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove test tenant1 before we kickoff
+  cisco.aci.aci_tenant: &tenant1_absent
+    <<: *aci_info
+    tenant: vzanytn1
+    state: absent
+
+- name: Remove test tenant2 before we kickoff
+  cisco.aci.aci_tenant: &tenant2_absent
+    <<: *aci_info
+    tenant: vzanytn2
+    state: absent
+
+# SETUP ENVIRONMENT
+- name: Create tenant1
+  cisco.aci.aci_tenant: &tenant1_present
+    <<: *tenant1_absent
+    state: present
+
+- name: Configure source contract for cif
+  cisco.aci.aci_contract:
+    <<: *tenant1_present
+    contract: cifsrc
+
+- name: Create tenant2
+  cisco.aci.aci_tenant: &tenant2_present
+    <<: *tenant2_absent
+    state: present
+  
+- name: Create VRF
+  cisco.aci.aci_vrf: &vrf_present
+    <<: *tenant2_present
+    vrf: vzanyvrf
+
+- name: Configure contract
+  cisco.aci.aci_contract:
+    <<: *tenant2_present
+    contract: '{{ item }}'
+  loop:
+    - testcp
+    - testcp2
+
+- name: Create contract interface in test tenant
+  cisco.aci.aci_contract_export:
+    <<: *tenant1_present
+    contract: cifsrc
+    destination_tenant: vzanytn2
+    name: testcif
+
+# BEGIN WITH TESTS
+- name: Attach contract as provider to vzAny (check_mode)
+  cisco.aci.aci_vzany_to_contract: &prov_present
+    <<: *vrf_present
+    contract: testcp
+    contract_type: provider
+  check_mode: yes
+  register: cm_vzany_prov
+
+- name: Attach contract as provider to vzAny (normal_mode)
+  cisco.aci.aci_vzany_to_contract:
+    <<: *prov_present
+  register: nm_vzany_prov
+
+- name: Verify vzany_prov
+  assert:
+    that:
+    - cm_vzany_prov is changed
+    - nm_vzany_prov is changed
+    - cm_vzany_prov.previous == nm_vzany_prov.previous == []
+    - cm_vzany_prov.sent.vzRsAnyToProv.attributes.tnVzBrCPName == nm_vzany_prov.sent.vzRsAnyToProv.attributes.tnVzBrCPName == 'testcp'
+  
+- name: Attach contract again, check if idempotency works
+  cisco.aci.aci_vzany_to_contract:
+    <<: *prov_present
+  register: add_prov_again
+
+- name: Verify add_prov_again
+  assert:
+    that:
+    - add_prov_again is not changed
+
+# ATTACH ANOTHER PROVIDER
+- name: Attach another contract as provider to vzAny
+  cisco.aci.aci_vzany_to_contract: &prov2_present
+    <<: *prov_present
+    contract: testcp2
+
+# ATTACH CONTRACT AS CONSUMER
+- name: Attach contract as consumer to vzAny 
+  cisco.aci.aci_vzany_to_contract: &cons_present
+    <<: *prov_present
+    contract_type: consumer
+  
+# ATTACH CONTRACT INTERFACE (AS CONSUMER)
+- name: Attach contract interface to vzAny 
+  cisco.aci.aci_vzany_to_contract: &cif_present
+    <<: *prov_present
+    contract: testcif
+    contract_type: interface
+
+# QUERY ALL PROVIDERS
+- name: Query all providers
+  cisco.aci.aci_vzany_to_contract:
+    <<: *aci_info
+    state: query
+    contract_type: provider
+  register: query_all_provs
+
+- name: Verify query_all_provs
+  assert:
+    that:
+    - query_all_provs is not changed
+    - query_all_provs.current|length >= 2
+
+# QUERY A SPECIFIC CONTRACT BINDING
+- name: Query a specific binding
+  cisco.aci.aci_vzany_to_contract:
+    <<: *cons_present
+    state: query
+  register: query_spec_bind
+
+- name: Verify query_spec_bind
+  assert:
+    that:
+    - query_spec_bind is not changed
+    - query_spec_bind.current|length == 1
+
+# REMOVE ALL BINDINGS
+- name: Remove provider 
+  cisco.aci.aci_vzany_to_contract:
+    <<: *prov_present
+    state: absent
+  register: del_prov
+
+- name: Remove consumer 
+  cisco.aci.aci_vzany_to_contract:
+    <<: *cons_present
+    state: absent
+  register: del_cons
+
+- name: Remove interface 
+  cisco.aci.aci_vzany_to_contract:
+    <<: *cif_present
+    state: absent
+  register: del_cif
+
+- name: Verify remove_intf
+  assert:
+    that:
+    - del_prov is changed
+    - del_cons is changed
+    - del_cif is changed
+    - del_prov.current ==  del_cons.current ==  del_cif.current ==[]
+    
