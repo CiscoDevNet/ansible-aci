@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_l3out_logical_node_profile_to_node
+module: aci_l3out_logical_node
 short_description: Manage Layer 3 Outside (L3Out) logical node profile nodes (l3ext:RsNodeL3OutAtt)
 description:
 - Bind nodes to node profiles on Cisco ACI fabrics.
@@ -62,7 +62,7 @@ extends_documentation_fragment:
 
 seealso:
 - module: aci_l3out
-- module: aci_l3out_locgical_node_profile
+- module: aci_l3out_logical_node_profile
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes B(vmm:DomP)
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -72,7 +72,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new node to a node profile
-  cisco.aci.aci_l3out_logical_node_profile_to_node:
+  cisco.aci.aci_l3out_logical_node:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -86,7 +86,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Delete a node from a node profile
-  cisco.aci.aci_l3out_logical_node_profile_to_node:
+  cisco.aci.aci_l3out_logical_node:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -99,7 +99,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a node
-  cisco.aci.aci_l3out_logical_node_profile_to_node:
+  cisco.aci.aci_l3out_logical_node:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -113,7 +113,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all nodes
-  cisco.aci.aci_l3out_logical_node_profile_to_node:
+  cisco.aci.aci_l3out_logical_node:
     host: apic
     username: admin
     password: SomeSecretPassword

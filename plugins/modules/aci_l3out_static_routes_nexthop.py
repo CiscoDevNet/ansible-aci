@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_l3out_static_routes_to_nexthop
+module: aci_l3out_static_routes_nexthop
 short_description: Manage nexthops for static routes (ip:NexthopP)
 description:
 - Manage nexthops for static routes.
@@ -61,8 +61,8 @@ extends_documentation_fragment:
 
 seealso:
 - module: aci_l3out
-- module: aci_l3out_locgical_node_profile
-- module: aci_l3out_locgical_node_profile_to_node
+- module: aci_l3out_logical_node_profile
+- module: aci_l3out_logical_node_profile_to_node
 - module: aci_l3out_static_routes
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes B(vmm:DomP)
@@ -73,7 +73,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new nexthop to a prefix
-  cisco.aci.aci_l3out_static_routes_to_nexthop:
+  cisco.aci.aci_l3out_static_routes_nexthop:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -88,7 +88,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Delete a nexthop from a prefix
-  cisco.aci.aci_l3out_static_routes_to_nexthop:
+  cisco.aci.aci_l3out_static_routes_nexthop:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -103,7 +103,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a nexthop
-  cisco.aci.aci_l3out_static_routes_to_nexthop:
+  cisco.aci.aci_l3out_static_routes_nexthop:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -119,7 +119,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all nexthops
-  cisco.aci.aci_l3out_static_routes_to_nexthop:
+  cisco.aci.aci_l3out_static_routes_nexthop:
     host: apic
     username: admin
     password: SomeSecretPassword
