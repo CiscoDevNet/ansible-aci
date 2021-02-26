@@ -52,7 +52,7 @@
     node_profile: NODES
 
 - name: Add node
-  cisco.aci.aci_l3out_logical_node_profile_to_node: &node_present
+  cisco.aci.aci_l3out_logical_node: &node_present
     <<: *np_present
     pod_id: 1
     node_id: 111
@@ -67,14 +67,14 @@
 
 # MODULE CHECKS
 - name: Add a nexthop (check mode)
-  cisco.aci.aci_l3out_static_routes_to_nexthop:  &nh_present
+  cisco.aci.aci_l3out_static_routes_nexthop:  &nh_present
     <<: *prefix_present
     nexthop: 1.1.1.1
   check_mode: yes
   register: cm_add_nh
 
 - name: Add a nexthop (normal mode)
-  cisco.aci.aci_l3out_static_routes_to_nexthop: 
+  cisco.aci.aci_l3out_static_routes_nexthop: 
     <<: *nh_present
   register: nm_add_nh
 
@@ -87,7 +87,7 @@
     - cm_add_nh.sent.ipNexthopP.attributes.nhAddr == nm_add_nh.sent.ipNexthopP.attributes.nhAddr == '1.1.1.1'
 
 - name: Add nexthop  again, check if idempotency works
-  cisco.aci.aci_l3out_static_routes_to_nexthop: 
+  cisco.aci.aci_l3out_static_routes_nexthop: 
     <<: *nh_present
   register: add_nh_again
 
@@ -98,13 +98,13 @@
 
 # ADD ANOTHER NH
 - name: Add another nexthop
-  cisco.aci.aci_l3out_static_routes_to_nexthop: 
+  cisco.aci.aci_l3out_static_routes_nexthop: 
     <<: *nh_present
     nexthop: 1.1.1.2
 
 # QUERY ALL NHs
 - name: Query all nodes
-  cisco.aci.aci_l3out_static_routes_to_nexthop: 
+  cisco.aci.aci_l3out_static_routes_nexthop: 
     <<: *aci_info
     state: query
   register: query_all_nhs
@@ -117,7 +117,7 @@
 
 # QUERY A SPECIFIC NH
 - name: Query a specific nexthop
-  cisco.aci.aci_l3out_static_routes_to_nexthop: 
+  cisco.aci.aci_l3out_static_routes_nexthop: 
     <<: *nh_present
     state: query
   register: query_spec_nh
@@ -130,7 +130,7 @@
 
 # REMOVE NH
 - name: Remove nexthop
-  cisco.aci.aci_l3out_static_routes_to_nexthop: 
+  cisco.aci.aci_l3out_static_routes_nexthop: 
     <<: *nh_present
     state: absent
   register: remove_nh

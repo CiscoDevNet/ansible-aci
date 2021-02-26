@@ -53,7 +53,7 @@
 
 # BEGIN WITH TESTS
 - name: Add node (check_mode)
-  cisco.aci.aci_l3out_logical_node_profile_to_node: &node_present
+  cisco.aci.aci_l3out_logical_node: &node_present
     <<: *np_present
     pod_id: 1
     node_id: 111
@@ -63,7 +63,7 @@
   register: cm_add_node
 
 - name: Add node (normal mode)
-  cisco.aci.aci_l3out_logical_node_profile_to_node: 
+  cisco.aci.aci_l3out_logical_node: 
     <<: *node_present
   register: nm_add_node
 
@@ -78,7 +78,7 @@
     - cm_add_node.sent.l3extRsNodeL3OutAtt.attributes.tDn == nm_add_node.sent.l3extRsNodeL3OutAtt.attributes.tDn == 'topology/pod-1/node-111'
 
 - name: Add node  again, check if idempotency works
-  cisco.aci.aci_l3out_logical_node_profile_to_node: 
+  cisco.aci.aci_l3out_logical_node: 
     <<: *node_present
   register: add_node_again
 
@@ -89,7 +89,7 @@
 
 # UPDATE NODE
 - name: Change roouter id
-  cisco.aci.aci_l3out_logical_node_profile_to_node: &node_update
+  cisco.aci.aci_l3out_logical_node: &node_update
     <<: *node_present
     router_id: 11.11.11.11
   register: update_node
@@ -103,14 +103,14 @@
 
 # ADD ANOTHER NODE
 - name: Add another node
-  cisco.aci.aci_l3out_logical_node_profile_to_node: 
+  cisco.aci.aci_l3out_logical_node: 
     <<: *node_present
     node_id: 112
     router_id: 12.12.12.12
 
 # QUERY ALL NODES
 - name: Query all nodes
-  cisco.aci.aci_l3out_logical_node_profile_to_node: 
+  cisco.aci.aci_l3out_logical_node: 
     <<: *aci_info
     state: query
   register: query_all_nodes
@@ -123,7 +123,7 @@
 
 # QUERY A SPECIFIC NODE
 - name: Query a specific node
-  cisco.aci.aci_l3out_logical_node_profile_to_node:
+  cisco.aci.aci_l3out_logical_node:
     <<: *node_update
     state: query
   register: query_spec_node
@@ -136,7 +136,7 @@
 
 # REMOVE NODE
 - name: Remove node
-  cisco.aci.aci_l3out_logical_node_profile_to_node:
+  cisco.aci.aci_l3out_logical_node:
     <<: *node_update
     state: absent
   register: remove_node
