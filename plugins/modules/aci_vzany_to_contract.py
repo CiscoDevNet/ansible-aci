@@ -32,10 +32,11 @@ options:
     - The name of the contract or contract interface.
     type: str
     aliases: [ contract_name ]
-  contract_type:
+  type:
     description:
     - Determines if this is a provided or consumed contract or a consumed contract interface.
     type: str
+    aliases: [ contract_type ]
     required: yes
     choices: [ provider, consumer, interface ]
   state:
@@ -68,7 +69,7 @@ EXAMPLES = r'''
     tenant: vzatest
     vrf: vzatest
     contract: vzatest_http
-    contract_type: provider
+    type: provider
     state: present
   delegate_to: localhost
 
@@ -80,7 +81,7 @@ EXAMPLES = r'''
     tenant: vzatest
     vrf: vzatest
     contract: vzatest_http
-    contract_type: provider
+    type: provider
     state: absent
   delegate_to: localhost
 
@@ -92,7 +93,7 @@ EXAMPLES = r'''
     tenant: vzatest
     vrf: vzatest
     contract: vzatest_http
-    contract_type: provider
+    type: provider
     state: query
   delegate_to: localhost
   register: query_result
@@ -102,7 +103,7 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretPassword
-    contract_type: provider
+    type: provider
     state: query
   delegate_to: localhost
   register: query_result
@@ -214,8 +215,8 @@ url:
 '''
 
 
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 
 ACI_CLASS_MAPPING = dict(
@@ -243,8 +244,8 @@ def main():
         tenant=dict(type='str', aliases=['tenant_name']),
         vrf=dict(type='str', aliases=['context', 'vrf_name']),
         contract=dict(type='str', aliases=['contract_name']),
-        contract_type=dict(type='str', required=True, choices=[
-                           'provider', 'consumer', 'interface']),
+        type=dict(type='str', required=True, choices=[
+            'provider', 'consumer', 'interface'], aliases=['contract_type']),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query'])
     )
@@ -253,21 +254,20 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['contract_type', 'contract', 'vrf', 'tenant']],
-            ['state', 'present', ['contract_type', 'contract', 'vrf', 'tenant']],
-            ['state', 'query', ['contract_type']]
+            ['state', 'absent', ['contract', 'vrf', 'tenant']],
+            ['state', 'present', ['contract', 'vrf', 'tenant']]
         ]
     )
 
     tenant = module.params.get('tenant')
     vrf = module.params.get('vrf')
     contract = module.params.get('contract')
-    contract_type = module.params.get('contract_type')
+    type = module.params.get('type')
     state = module.params.get('state')
 
-    aci_class = ACI_CLASS_MAPPING[contract_type]['class']
-    aci_rn = ACI_CLASS_MAPPING[contract_type]['rn']
-    aci_target_attribute = ACI_CLASS_MAPPING[contract_type]['target_attribute']
+    aci_class = ACI_CLASS_MAPPING[type]['class']
+    aci_rn = ACI_CLASS_MAPPING[type]['rn']
+    aci_target_attribute = ACI_CLASS_MAPPING[type]['target_attribute']
 
     aci = ACIModule(module)
     aci.construct_url(
