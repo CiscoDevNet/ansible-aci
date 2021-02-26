@@ -61,7 +61,7 @@ extends_documentation_fragment:
 
 seealso:
 - module: aci_l3out
-- module: aci_l3out_locgical_node_profile
+- module: aci_l3out_logical_node_profile
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -291,7 +291,9 @@ def main():
             target_filter={'name': interface_profile},
         ),
         child_classes=['l3extRsNdIfPol',
-                       'l3extRsIngressQosDppPol', 'l3extRsEgressQosDppPol']
+                       'l3extRsIngressQosDppPol',
+                       'l3extRsEgressQosDppPol'
+        ]
     )
 
     aci.get_existing()
