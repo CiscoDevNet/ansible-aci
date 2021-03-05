@@ -97,6 +97,12 @@ options:
     - The APIC defaults to C(flood) when unset during creation.
     type: str
     choices: [ flood, opt-flood ]
+  ipv6_l3_unknown_multicast:
+    description:
+    - Determines the forwarding method to use for IPv6 unknown multicast destinations.
+    - The APIC defaults to C(flood) when unset during creation.
+    type: str
+    choices: [ flood, opt-flood ]
   limit_ip_learn:
     description:
     - Determines if the BD should limit IP learning to only subnets owned by the Bridge Domain.
@@ -360,6 +366,7 @@ def main():
         ipv6_nd_policy=dict(type='str'),
         l2_unknown_unicast=dict(type='str', choices=['proxy', 'flood']),
         l3_unknown_multicast=dict(type='str', choices=['flood', 'opt-flood']),
+        ipv6_l3_unknown_multicast=dict(type='str', choices=['flood', 'opt-flood']),
         limit_ip_learn=dict(type='bool'),
         mac_address=dict(type='str', aliases=['mac']),
         multi_dest=dict(type='str', choices=['bd-flood', 'drop', 'encap-flood']),
@@ -403,6 +410,7 @@ def main():
     ipv6_nd_policy = module.params.get('ipv6_nd_policy')
     l2_unknown_unicast = module.params.get('l2_unknown_unicast')
     l3_unknown_multicast = module.params.get('l3_unknown_multicast')
+    ipv6_l3_unknown_multicast = module.params.get('ipv6_l3_unknown_multicast')
     limit_ip_learn = aci.boolean(module.params.get('limit_ip_learn'))
     mac_address = module.params.get('mac_address')
     multi_dest = module.params.get('multi_dest')
@@ -449,6 +457,7 @@ def main():
                 unicastRoute=enable_routing,
                 unkMacUcastAct=l2_unknown_unicast,
                 unkMcastAct=l3_unknown_multicast,
+                v6unkMcastAct=ipv6_l3_unknown_multicast,
                 nameAlias=name_alias,
             ),
             child_configs=[
