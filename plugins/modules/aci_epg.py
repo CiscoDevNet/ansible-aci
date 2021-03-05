@@ -70,6 +70,10 @@ options:
     description:
     - The name of the monitoring policy.
     type: str
+  custom_qos_policy:
+    description:
+    - The name of the custom Quality of Service policy.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -314,6 +318,7 @@ def main():
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
         monitoring_policy=dict(type='str'),
+        custom_qos_policy=dict(type='str'),
     )
 
     module = AnsibleModule(
@@ -339,10 +344,12 @@ def main():
     ap = module.params.get('ap')
     name_alias = module.params.get('name_alias')
     monitoring_policy = module.params.get('monitoring_policy')
+    custom_qos_policy = module.params.get('custom_qos_policy')
 
     child_configs = [
         dict(fvRsBd=dict(attributes=dict(tnFvBDName=bd))),
-        dict(fvRsAEPgMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy)))
+        dict(fvRsAEPgMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy))),
+        dict(fvRsCustQosPol=dict(attributes=dict(tnQosCustomPolName=custom_qos_policy)))
     ]
 
     aci.construct_url(
@@ -364,7 +371,7 @@ def main():
             module_object=epg,
             target_filter={'name': epg},
         ),
-        child_classes=['fvRsBd', 'fvRsAEPgMonPol'],
+        child_classes=['fvRsBd', 'fvRsAEPgMonPol', 'fvRsCustQosPol'],
     )
 
     aci.get_existing()
