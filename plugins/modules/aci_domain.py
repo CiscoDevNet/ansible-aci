@@ -194,7 +194,7 @@ raw:
   returned: parse error
   type: str
   sample: '<?xml version="1.0" encoding="UTF-8"?><imdata totalCount="1"><error code="122" text="unknown managed object class foo"/></imdata>'
-mo:
+sent:
   description: The actual/minimal configuration pushed to the APIC
   returned: info
   type: list
