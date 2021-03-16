@@ -287,6 +287,7 @@ VSWITCH_MAPPING = dict(
 
 BOOL_TO_ACI_MAPPING = {True: 'yes', False: 'no', None: None}
 
+
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
@@ -321,7 +322,7 @@ def main():
     domain_type = module.params.get('domain_type')
     encap_mode = module.params.get('encap_mode')
     add_infra_pg = BOOL_TO_ACI_MAPPING[module.params.get('add_infra_pg')]
-    tag_collection  = BOOL_TO_ACI_MAPPING[module.params.get('tag_collection')]
+    tag_collection = BOOL_TO_ACI_MAPPING[module.params.get('tag_collection')]
     multicast_address = module.params.get('multicast_address')
     vm_provider = module.params.get('vm_provider')
     vswitch = module.params.get('vswitch')
