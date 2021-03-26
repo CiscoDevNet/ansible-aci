@@ -258,7 +258,12 @@ VM_PROVIDER_MAPPING = dict(
 )
 
 VM_SCOPE_MAPPING = dict(
+    cloudfoundry='cloudfoundry',
+    kubernetes='kubernetes',
     microsoft='MicrosoftSCVMM',
+    openshift='openshift',
+    openstack='openstack',
+    redhat='rhev',
     vmware='vm',
 )
 
