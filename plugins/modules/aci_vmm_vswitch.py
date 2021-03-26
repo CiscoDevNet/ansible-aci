@@ -32,13 +32,14 @@ options:
     type: str
   mtu_policy:
     description:
+    - VMWare only.
     - Name of the fabric access MTU policy.
     type: str
   domain:
     description:
     - Name of the virtual domain profile.
     type: str
-    aliases: [ domain_name, domain_profile, name ]
+    aliases: [ domain_name, domain_profile ]
     required: true
   enhanced_lag:
     description:
@@ -86,6 +87,38 @@ options:
         description:
         - Number of uplinks, must be between 2 and 8.
         type: int
+  stp_policy:
+    description:
+    - SCVMM only.
+    - Name of the STP policy.
+    type: str
+  netflow_exporter:
+    description:
+    - Parameters for the netflow exporter policy
+    type: dict
+    suboptions:
+      name:
+        description:
+        - Name of the netflow exporter policy
+        type: str
+        required: true
+      active_flow_timeout:
+        description:
+        - Specifies the delay in seconds that NetFlow waits after the active flow is initiated, after which NetFlow sends the collected data.
+        - The range is from 60 to 3600. The default value is 60
+        type: int
+      idle_flow_timeout:
+        description:
+        - Specifies the delay in seconds that NetFlow waits after the idle flow is initiated, after which NetFlow sends the collected data.
+        - The range is from 10 to 600. The default value is 15.
+        type: int
+      sampling_rate:
+        description:
+        - (VDS only) Specifies how many packets that NetFlow will drop after every collected packet.
+          If you specify a value of 0, then NetFlow does not drop any packets.
+        - The range is from 0 to 1000. The default value is 0.
+        type: int
+
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -296,6 +329,13 @@ enhanced_lag_spec = dict(
     number_uplinks=dict(type='int'),
 )
 
+netflow_spec = dict(
+    name=dict(type='str', required=True),
+    active_flow_timeout=dict(type='int'),
+    idle_flow_timeout=dict(type='int'),
+    sampling_rate=dict(type='int'),
+)
+
 
 def main():
     argument_spec = aci_argument_spec()
@@ -304,7 +344,9 @@ def main():
         lldp_policy=dict(type='str'),
         cdp_policy=dict(type='str'),
         mtu_policy=dict(type='str'),
+        stp_policy=dict(type='str'),
         enhanced_lag=dict(type='list', elements='dict', options=enhanced_lag_spec),
+        netflow_exporter=dict(type='dict', options=netflow_spec),
         domain=dict(type='str', required=True, aliases=['domain_name', 'domain_profile']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         vm_provider=dict(type='str', choices=list(VM_PROVIDER_MAPPING.keys())),
@@ -324,6 +366,8 @@ def main():
     lldp_policy = module.params.get('lldp_policy')
     cdp_policy = module.params.get('cdp_policy')
     mtu_policy = module.params.get('mtu_policy')
+    stp_policy = module.params.get('stp_policy')
+    netflow_exporter = module.params.get('netflow_exporter')
     enhanced_lag = module.params.get('enhanced_lag')
     domain = module.params.get('domain')
     state = module.params.get('state')
@@ -352,6 +396,8 @@ def main():
             'vmmRsVswitchOverrideLldpIfPol',
             'vmmRsVswitchOverrideLacpPol',
             'vmmRsVswitchOverrideCdpIfPol',
+            'vmmRsVswitchOverrideStpPol',
+            'vmmRsVswitchExporterPol',
             'lacpEnhancedLagPol'
         ]
     )
@@ -379,6 +425,19 @@ def main():
         if mtu_policy is not None:
             children.append(dict(vmmRsVswitchOverrideMtuPol=dict(attributes=dict(
                 tDn='uni/fabric/l2pol-{0}'.format(mtu_policy)
+            ))))
+
+        if stp_policy is not None:
+            children.append(dict(vmmRsVswitchOverrideMtuPol=dict(attributes=dict(
+                tDn='uni/infra/ifPol-{0}'.format(stp_policy)
+            ))))
+
+        if isinstance(netflow_exporter, dict):
+            children.append(dict(vmmRsVswitchExporterPol=dict(attributes=dict(
+                tDn='uni/infra/vmmexporterpol-{0}'.format(netflow_exporter['name']),
+                activeFlowTimeOut=netflow_exporter['active_flow_timeout'],
+                idleFlowTimeOut=netflow_exporter['idle_flow_timeout'],
+                samplingRate=netflow_exporter['sampling_rate'],
             ))))
 
         if isinstance(enhanced_lag, list):
