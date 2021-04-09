@@ -17,7 +17,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      output_level: debug
 
 - name: Query system information
   aci_system:
@@ -119,7 +119,7 @@
     arp_flooding: "yes"
     route_profile_l3out: ansible_l3out
     route_profile: ansible_l3out_route
-  register: bd_present_2
+  register: bd_present_2b
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: create bd without all necessary params - failure message works
@@ -129,7 +129,7 @@
   ignore_errors: yes
   register: bd_present_missing_param
 
-- name: present asserts
+- name: present asserts (<v4.2)
   assert:
     that:
       - bd_present_check_mode is changed
@@ -158,11 +158,38 @@
       - bd_present_2.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
       - bd_present_missing_param is failed
       - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
+  when: version.current.0.topSystem.attributes.version is version('4.2', '<')
 
-- name: present asserts v6 Unknown Multicast (>v4.2)
+- name: present asserts (>v4.2)
   assert:
     that:
-      - bd_present_2.sent.fvBD.attributes.v6unkMcastAct == 'opt-flood'
+      - bd_present_check_mode is changed
+      - bd_present_check_mode.sent.fvBD.attributes.descr == 'Ansible Test'
+      - bd_present_check_mode.sent.fvBD.attributes.name == 'anstest'
+      - bd_present is changed
+      - bd_present.sent == bd_present_check_mode.sent
+      - bd_present.previous == []
+      - bd_present_idempotent is not changed
+      - bd_present_idempotent.previous != []
+      - bd_update is changed
+      - bd_update.previous != []
+      - bd_update.sent != bd_update.proposed
+      - bd_update.sent.fvBD.attributes.descr == 'Ansible Test Update'
+      - bd_update.sent.fvBD.children.0.fvRsCtx.attributes.tnFvCtxName == 'anstest' 
+      - bd_present_2b.sent.fvBD.attributes.arpFlood == 'yes'
+      - bd_present_2b.sent.fvBD.attributes.descr == 'Ansible Test'
+      - bd_present_2b.sent.fvBD.attributes.ipLearning == 'no'
+      - bd_present_2b.sent.fvBD.attributes.multiDstPktAct == 'drop'
+      - bd_present_2b.sent.fvBD.attributes.name == 'anstest2'
+      - bd_present_2b.sent.fvBD.attributes.unicastRoute == 'no'
+      - bd_present_2b.sent.fvBD.attributes.unkMacUcastAct == 'flood'
+      - bd_present_2b.sent.fvBD.attributes.unkMcastAct == 'opt-flood'
+      - bd_present_2b.sent.fvBD.attributes.v6unkMcastAct == 'opt-flood'
+      - bd_present_2b.sent.fvBD.attributes.type == 'regular'
+      - bd_present_2b.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
+      - bd_present_2b.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
+      - bd_present_missing_param is failed
+      - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: get all bd

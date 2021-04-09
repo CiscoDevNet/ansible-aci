@@ -122,8 +122,8 @@
       - epg_query is not changed
       - epg_query.current | length == 1
       - epg_query.current.0.fvAEPg.attributes.name == "anstest"
-      - epg_query.current.0.fvAEPg.children.1.fvRsAEPgMonPol.attributes.tnMonEPGPolName == 'check'
-      - epg_query.current.0.fvAEPg.children.2.fvRsCustQosPol.attributes.tnQosCustomPolName == 'check'
+      - epg_query.current.0.fvAEPg.children.1.fvRsCustQosPol.attributes.tnQosCustomPolName == 'check'
+      - epg_query.current.0.fvAEPg.children.2.fvRsAEPgMonPol.attributes.tnMonEPGPolName == 'check'
       - '"tn-anstest/ap-anstest/epg-anstest.json" in epg_query.url'
       - epg_query_all is not changed
       - epg_query_all.current | length > 1
