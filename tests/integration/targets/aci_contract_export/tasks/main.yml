@@ -1,0 +1,139 @@
+# Author: Marcel Zehnder (@maercu)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove test tenant1 before we kickoff
+  cisco.aci.aci_tenant: &tenant1_absent
+    <<: *aci_info
+    tenant: contracttn1
+    state: absent
+
+- name: Remove test tenant2 before we kickoff
+  cisco.aci.aci_tenant: &tenant2_absent
+    <<: *aci_info
+    tenant: contracttn2
+    state: absent
+
+# SETUP ENVIRONMENT
+- name: Create tenant1
+  cisco.aci.aci_tenant: &tenant1_present
+    <<: *tenant1_absent
+    state: present
+
+- name: Create tenant2
+  cisco.aci.aci_tenant: &tenant2_present
+    <<: *tenant2_absent
+    state: present
+
+- name: Configure source contracts 
+  cisco.aci.aci_contract:
+    <<: *tenant1_present
+    contract: '{{ item }}'
+    scope: global
+  loop:
+    - src_contract1
+    - src_contract2
+
+# BEGIN WITH TESTS
+- name: Create contract interface (check_mode)
+  cisco.aci.aci_contract_export: &cif_present
+    <<: *tenant1_present
+    contract: src_contract1
+    destination_tenant: contracttn2
+    name: testcif1
+  check_mode: yes
+  register: cm_add_intf
+
+- name: Create contract interface (normal_mode)
+  cisco.aci.aci_contract_export:
+    <<: *cif_present
+  register: nm_add_intf
+
+- name: Verify add_intf
+  assert:
+    that:
+    - cm_add_intf is changed
+    - nm_add_intf is changed
+    - cm_add_intf.previous == nm_add_intf.previous == []
+    - cm_add_intf.sent.vzCPIf.attributes.name == nm_add_intf.sent.vzCPIf.attributes.name == 'testcif1'
+  
+- name: Create interface again, check if idempotency works
+  cisco.aci.aci_contract_export:
+    <<: *cif_present
+  register: add_intf_again
+
+- name: Verify add_intf_again
+  assert:
+    that:
+    - add_intf_again is not changed
+
+# UPDATE CONTRACT INTERFACEE
+- name: Update interface
+  cisco.aci.aci_contract_export: &cif_update
+    <<: *cif_present
+    description: newdescription
+  register: update_intf
+
+- name: Verify update_intf
+  assert:
+    that:
+    - update_intf is changed
+    - update_intf.previous != []
+
+# CREATE ANOTHER CONTRACT INTERFACE
+- name: Add another profile
+  cisco.aci.aci_contract_export:
+    <<: *cif_present
+    name: testcif2
+    contract: src_contract2
+  
+# QUERY ALL INTERFACES
+- name: Query all interfaces
+  cisco.aci.aci_contract_export:
+    <<: *aci_info
+    state: query
+  register: query_all_intfs
+
+- name: Verify query_all_intfs
+  assert:
+    that:
+    - query_all_intfs is not changed
+    - query_all_intfs.current|length > 1
+
+# QUERY A SPECIFIC INTERFACE
+- name: Query a specific interface
+  cisco.aci.aci_contract_export:
+    <<: *cif_update
+    state: query
+  register: query_spec_intf
+
+- name: Verify query_spec_intf
+  assert:
+    that:
+    - query_spec_intf is not changed
+    - query_spec_intf.current|length == 1
+
+# REMOVE INTERFACE
+- name: Remove interface
+  cisco.aci.aci_contract_export:
+    <<: *cif_update
+    state: absent
+  register: remove_intf
+
+- name: Verify remove_intf
+  assert:
+    that:
+    - remove_intf is changed
+    - remove_intf.current == []
