@@ -8,15 +8,27 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Query system information
+  aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 - name: ensure tenant exists for tests to kick off
   cisco.aci.aci_tenant: &aci_tenant_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
+    <<: *aci_info
     state: present
     tenant: anstest
   register: tenant_present
@@ -84,6 +96,23 @@
     ip_learning: "no"
     l2_unknown_unicast: flood
     l3_unknown_multicast: opt-flood
+    multi_dest: drop
+    enable_routing: "no"
+    arp_flooding: "yes"
+    route_profile_l3out: ansible_l3out
+    route_profile: ansible_l3out_route
+  register: bd_present_2
+  when: version.current.0.topSystem.attributes.version is version('4.2', '<')
+
+- name: create another bd - check more params (>v4.2)
+  cisco.aci.aci_bd:
+    <<: *aci_bd_present
+    bd: anstest2
+    bd_type: ethernet
+    endpoint_move_detect: default
+    ip_learning: "no"
+    l2_unknown_unicast: flood
+    l3_unknown_multicast: opt-flood
     ipv6_l3_unknown_multicast: opt-flood
     multi_dest: drop
     enable_routing: "no"
@@ -91,6 +120,7 @@
     route_profile_l3out: ansible_l3out
     route_profile: ansible_l3out_route
   register: bd_present_2
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: create bd without all necessary params - failure message works
   cisco.aci.aci_bd:
@@ -123,12 +153,17 @@
       - bd_present_2.sent.fvBD.attributes.unicastRoute == 'no'
       - bd_present_2.sent.fvBD.attributes.unkMacUcastAct == 'flood'
       - bd_present_2.sent.fvBD.attributes.unkMcastAct == 'opt-flood'
-      - bd_present_2.sent.fvBD.attributes.v6unkMcastAct == 'opt-flood'
       - bd_present_2.sent.fvBD.attributes.type == 'regular'
       - bd_present_2.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
       - bd_present_2.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
       - bd_present_missing_param is failed
       - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
+
+- name: present asserts v6 Unknown Multicast (>v4.2)
+  assert:
+    that:
+      - bd_present_2.sent.fvBD.attributes.v6unkMcastAct == 'opt-flood'
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: get all bd
   cisco.aci.aci_bd: &aci_query

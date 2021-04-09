@@ -440,26 +440,30 @@ def main():
     aci.get_existing()
 
     if state == 'present':
+        class_config = dict(
+            arpFlood=arp_flooding,
+            descr=description,
+            epClear=endpoint_clear,
+            epMoveDetectMode=endpoint_move_detect,
+            ipLearning=ip_learning,
+            limitIpLearnToSubnets=limit_ip_learn,
+            mac=mac_address,
+            mcastAllow=enable_multicast,
+            multiDstPktAct=multi_dest,
+            name=bd,
+            type=bd_type,
+            unicastRoute=enable_routing,
+            unkMacUcastAct=l2_unknown_unicast,
+            unkMcastAct=l3_unknown_multicast,
+            nameAlias=name_alias,
+        )
+
+        if ipv6_l3_unknown_multicast is not None:
+            class_config['v6unkMcastAct'] = ipv6_l3_unknown_multicast
+
         aci.payload(
             aci_class='fvBD',
-            class_config=dict(
-                arpFlood=arp_flooding,
-                descr=description,
-                epClear=endpoint_clear,
-                epMoveDetectMode=endpoint_move_detect,
-                ipLearning=ip_learning,
-                limitIpLearnToSubnets=limit_ip_learn,
-                mac=mac_address,
-                mcastAllow=enable_multicast,
-                multiDstPktAct=multi_dest,
-                name=bd,
-                type=bd_type,
-                unicastRoute=enable_routing,
-                unkMacUcastAct=l2_unknown_unicast,
-                unkMcastAct=l3_unknown_multicast,
-                v6unkMcastAct=ipv6_l3_unknown_multicast,
-                nameAlias=name_alias,
-            ),
+            class_config=class_config,
             child_configs=[
                 {'fvRsCtx': {'attributes': {'tnFvCtxName': vrf}}},
                 {'fvRsIgmpsn': {'attributes': {'tnIgmpSnoopPolName': igmp_snoop_policy}}},
