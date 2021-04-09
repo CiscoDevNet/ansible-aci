@@ -348,9 +348,13 @@ def main():
 
     child_configs = [
         dict(fvRsBd=dict(attributes=dict(tnFvBDName=bd))),
-        dict(fvRsAEPgMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy))),
-        dict(fvRsCustQosPol=dict(attributes=dict(tnQosCustomPolName=custom_qos_policy)))
+        dict(fvRsAEPgMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy)))
     ]
+
+    if custom_qos_policy is not None:
+        child_configs.append(
+            dict(fvRsCustQosPol=dict(attributes=dict(tnQosCustomPolName=custom_qos_policy)))
+        )
 
     aci.construct_url(
         root_class=dict(
