@@ -864,7 +864,7 @@ class ACIModule(object):
 
         if self.module.params.get('state') in ('absent', 'present'):
             # State is absent or present
-            self.path = 'api/mo/uni/{0}/{1}/{2}/{3}{4}.json'.format(root_rn, ter_rn, sec_rn, parent_rn, obj_rn)
+            self.path = 'api/mo/uni/{0}/{1}/{2}/{3}/{4}.json'.format(root_rn, ter_rn, sec_rn, parent_rn, obj_rn)
             if config_only:
                 self.update_qs({'rsp-prop-include': 'config-only'})
             self.obj_filter = obj_filter
@@ -882,26 +882,26 @@ class ACIModule(object):
             self.update_qs({'rsp-subtree-filter': self.build_filter(obj_class, obj_filter)})
         elif sec_obj is None:
             self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}{1}.json'.format(root_rn, ter_rn)
+            self.path = 'api/mo/uni/{0}/{1}.json'.format(root_rn, ter_rn)
             # NOTE: No need to select by ter_filter
             # self.update_qs({'query-target-filter': self.build_filter(ter_class, ter_filter)})
             # TODO: Filter by sec_filter, parent and obj_filter
             self.update_qs({'rsp-subtree-filter': self.build_filter(obj_class, obj_filter)})
         elif parent_obj is None:
             self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}/{1}{2}.json'.format(root_rn, ter_rn, sec_rn)
+            self.path = 'api/mo/uni/{0}/{1}/{2}.json'.format(root_rn, ter_rn, sec_rn)
             # NOTE: No need to select by sec_filter
             # self.update_qs({'query-target-filter': self.build_filter(sec_class, sec_filter)})
             # TODO: Filter by parent_filter and obj_filter
             self.update_qs({'rsp-subtree-filter': self.build_filter(obj_class, obj_filter)})
         elif mo is None:
             self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}/{1}/{2}{3}.json'.format(root_rn, ter_rn, sec_rn, parent_rn)
+            self.path = 'api/mo/uni/{0}/{1}/{2}/{3}.json'.format(root_rn, ter_rn, sec_rn, parent_rn)
             # NOTE: No need to select by parent_filter
             # self.update_qs({'query-target-filter': self.build_filter(parent_class, parent_filter)})
         else:
             # Query for a specific object of the module's class
-            self.path = 'api/mo/uni/{0}/{1}/{2}/{3}{4}.json'.format(root_rn, ter_rn, sec_rn, parent_rn, obj_rn)
+            self.path = 'api/mo/uni/{0}/{1}/{2}/{3}/{4}.json'.format(root_rn, ter_rn, sec_rn, parent_rn, obj_rn)
 
     def _construct_url_6(self, root, quad, ter, sec, parent, obj, config_only=True):
         """
@@ -927,7 +927,7 @@ class ACIModule(object):
 
         if self.module.params.get('state') in ('absent', 'present'):
             # State is absent or present
-            self.path = 'api/mo/uni/{0}/{1}/{2}/{3}{4}{5}.json'.format(root_rn, quad_rn, ter_rn, sec_rn, parent_rn, obj_rn)
+            self.path = 'api/mo/uni/{0}/{1}/{2}/{3}/{4}/{5}.json'.format(root_rn, quad_rn, ter_rn, sec_rn, parent_rn, obj_rn)
             if config_only:
                 self.update_qs({'rsp-prop-include': 'config-only'})
             self.obj_filter = obj_filter
@@ -945,33 +945,33 @@ class ACIModule(object):
             self.update_qs({'rsp-subtree-filter': self.build_filter(obj_class, obj_filter)})
         elif ter_obj is None:
             self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}{1}.json'.format(root_rn, quad_rn)
+            self.path = 'api/mo/uni/{0}/{1}.json'.format(root_rn, quad_rn)
             # NOTE: No need to select by quad_filter
             # self.update_qs({'query-target-filter': self.build_filter(quad_class, quad_filter)})
             # TODO: Filter by ter_filter, parent and obj_filter
             self.update_qs({'rsp-subtree-filter': self.build_filter(obj_class, obj_filter)})
         elif sec_obj is None:
             self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}{1}{2}.json'.format(root_rn, quad_rn, ter_rn)
+            self.path = 'api/mo/uni/{0}/{1}/{2}.json'.format(root_rn, quad_rn, ter_rn)
             # NOTE: No need to select by ter_filter
             # self.update_qs({'query-target-filter': self.build_filter(ter_class, ter_filter)})
             # TODO: Filter by sec_filter, parent and obj_filter
             self.update_qs({'rsp-subtree-filter': self.build_filter(obj_class, obj_filter)})
         elif parent_obj is None:
             self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}/{1}{2}{3}.json'.format(root_rn, quad_rn, ter_rn, sec_rn)
+            self.path = 'api/mo/uni/{0}/{1}/{2}/{3}.json'.format(root_rn, quad_rn, ter_rn, sec_rn)
             # NOTE: No need to select by sec_filter
             # self.update_qs({'query-target-filter': self.build_filter(sec_class, sec_filter)})
             # TODO: Filter by parent_filter and obj_filter
             self.update_qs({'rsp-subtree-filter': self.build_filter(obj_class, obj_filter)})
         elif mo is None:
             self.child_classes.add(obj_class)
-            self.path = 'api/mo/uni/{0}/{1}/{2}{3}{4}.json'.format(root_rn, quad_rn, ter_rn, sec_rn, parent_rn)
+            self.path = 'api/mo/uni/{0}/{1}/{2}/{3}/{4}.json'.format(root_rn, quad_rn, ter_rn, sec_rn, parent_rn)
             # NOTE: No need to select by parent_filter
             # self.update_qs({'query-target-filter': self.build_filter(parent_class, parent_filter)})
         else:
             # Query for a specific object of the module's class
-            self.path = 'api/mo/uni/{0}/{1}/{2}/{3}{4}{5}.json'.format(root_rn, quad_rn, ter_rn, sec_rn, parent_rn, obj_rn)
+            self.path = 'api/mo/uni/{0}/{1}/{2}/{3}/{4}/{5}.json'.format(root_rn, quad_rn, ter_rn, sec_rn, parent_rn, obj_rn)
 
     def delete_config(self):
         """
