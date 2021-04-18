@@ -21,12 +21,11 @@
     state: present
   register: tenant_present
 
-- name: create contract - check mode works
+- name: create contract
   cisco.aci.aci_contract: &aci_contract_present
     <<: *aci_tenant_present
     contract: anstest
-    description: Ansible Test
-  check_mode: yes
+    scope: global
   register: present_check_mode
 
 - name: create contract - creation works
