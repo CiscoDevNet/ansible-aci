@@ -84,7 +84,7 @@ def aci_argument_spec():
         username=dict(type='str', default='admin', aliases=['user'], fallback=(env_fallback, ['ACI_USERNAME', 'ANSIBLE_NET_USERNAME'])),
         password=dict(type='str', no_log=True, fallback=(env_fallback, ['ACI_PASSWORD', 'ANSIBLE_NET_PASSWORD'])),
         # Beware, this is not the same as client_key !
-        private_key=dict(type='str', aliases=['cert_key'], no_log=True, fallback=(env_fallback, ['ACI_PRIVATE_KEY'])),
+        private_key=dict(type='str', aliases=['cert_key'], no_log=True, fallback=(env_fallback, ['ACI_PRIVATE_KEY', 'ANSIBLE_NET_SSH_KEYFILE'])),
         # Beware, this is not the same as client_cert !
         certificate_name=dict(type='str', aliases=['cert_name'], fallback=(env_fallback, ['ACI_CERTIFICATE_NAME'])),
         output_level=dict(type='str', default='normal', choices=['debug', 'info', 'normal'], fallback=(env_fallback, ['ACI_OUTPUT_LEVEL'])),
