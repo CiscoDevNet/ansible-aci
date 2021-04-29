@@ -43,7 +43,7 @@ options:
     - Either a PEM-formatted private key file or the private key content used for signature-based authentication.
     - This value also influences the default C(certificate_name) that is used.
     - This option is mutual exclusive with C(password). If C(password) is provided too, it will be ignored.
-    - If the value is not specified in the task, the value of environment variable C(ACI_PRIVATE_KEY) will be used instead.
+    - If the value is not specified in the task, the value of environment variable C(ACI_PRIVATE_KEY) or C(ANSIBLE_NET_SSH_KEYFILE) will be used instead.
     type: str
     aliases: [ cert_key ]
   certificate_name:
