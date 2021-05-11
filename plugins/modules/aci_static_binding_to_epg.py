@@ -49,8 +49,9 @@ options:
     description:
     - Determines the primary encapsulation ID associating the C(epg)
       with the interface path when using micro-segmentation.
-    - Accepted values are any valid encap ID for specified encap, currently ranges between C(1) and C(4096).
-    type: int
+    - Accepted values are any valid encap ID for specified encap, currently ranges between C(1) and C(4096) and C(unknown.
+    - C(unknown) is the default value and using C(unknown) disables the Micro-Segmentation.
+    type: str
     aliases: [ primary_vlan, primary_vlan_id ]
   deploy_immediacy:
     description:
@@ -311,7 +312,7 @@ def main():
         epg=dict(type='str', aliases=['epg_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         encap_id=dict(type='int', aliases=['vlan', 'vlan_id']),
-        primary_encap_id=dict(type='int', aliases=['primary_vlan', 'primary_vlan_id']),
+        primary_encap_id=dict(type='str', aliases=['primary_vlan', 'primary_vlan_id']),
         deploy_immediacy=dict(type='str', choices=['immediate', 'lazy']),
         interface_mode=dict(type='str', choices=['802.1p', 'access', 'native', 'regular', 'tagged', 'trunk', 'untagged'],
                             aliases=['interface_mode_name', 'mode']),
@@ -344,6 +345,9 @@ def main():
     interface_type = module.params.get('interface_type')
     pod_id = module.params.get('pod_id')
     leafs = module.params.get('leafs')
+
+    aci = ACIModule(module)
+
     if leafs is not None:
         # Process leafs, and support dash-delimited leafs
         leafs = []
@@ -352,28 +356,34 @@ def main():
             leafs.extend(str(leaf).split('-'))
         if len(leafs) == 1:
             if interface_type == 'vpc':
-                module.fail_json(msg='A interface_type of "vpc" requires 2 leafs')
+                aci.fail_json(msg='A interface_type of "vpc" requires 2 leafs')
             leafs = leafs[0]
         elif len(leafs) == 2:
             if interface_type != 'vpc':
-                module.fail_json(msg='The interface_types "switch_port", "port_channel", and "fex" \
+                aci.fail_json(msg='The interface_types "switch_port", "port_channel", and "fex" \
                     do not support using multiple leafs for a single binding')
             leafs = "-".join(leafs)
         else:
-            module.fail_json(msg='The "leafs" parameter must not have more than 2 entries')
+            aci.fail_json(msg='The "leafs" parameter must not have more than 2 entries')
     interface = module.params.get('interface')
     extpaths = module.params.get('extpaths')
     state = module.params.get('state')
 
     if encap_id is not None:
         if encap_id not in range(1, 4097):
-            module.fail_json(msg='Valid VLAN assigments are from 1 to 4096')
+            aci.fail_json(msg='Valid VLAN assignments are from 1 to 4096')
         encap_id = 'vlan-{0}'.format(encap_id)
 
     if primary_encap_id is not None:
-        if primary_encap_id not in range(1, 4097):
-            module.fail_json(msg='Valid VLAN assigments are from 1 to 4096')
-        primary_encap_id = 'vlan-{0}'.format(primary_encap_id)
+        try:
+            primary_encap_id = int(primary_encap_id)
+            if isinstance(primary_encap_id, int) and primary_encap_id in range(1, 4097):
+              primary_encap_id = 'vlan-{0}'.format(primary_encap_id)
+            else:
+                aci.fail_json(msg='Valid VLAN assignments are from 1 to 4096 or unknown.')
+        except Exception as e:
+          if isinstance(primary_encap_id, str) and primary_encap_id != 'unknown':
+              aci.fail_json(msg='Valid VLAN assignments are from 1 to 4096 or unknown. %s' % e)
 
     static_path = INTERFACE_TYPE_MAPPING[interface_type].format(pod_id=pod_id, leafs=leafs, extpaths=extpaths, interface=interface)
 
@@ -384,7 +394,6 @@ def main():
     if interface_mode is not None:
         interface_mode = INTERFACE_MODE_MAPPING[interface_mode]
 
-    aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
             aci_class='fvTenant',
