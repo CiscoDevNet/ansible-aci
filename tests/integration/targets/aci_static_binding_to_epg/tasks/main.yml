@@ -155,17 +155,24 @@
       - '"uni/tn-anstest.json" in query_all.url'
 
 # Testing when primary_encap_id = unknown
-- name: Bind static-binding to epg - primary_encap_id works
+- name: Bind static-binding to epg - unknown primary_encap_id
   cisco.aci.aci_static_binding_to_epg:
     <<: *aci_static_binding_to_epg_present
     primary_encap_id: 'unknown'
   register: primary_ecap_id_unknown
 
-- name: Bind static-binding to epg - primary_encap_id works
+- name: Bind static-binding to epg - omit primary_encap_id
   cisco.aci.aci_static_binding_to_epg:
     <<: *aci_static_binding_to_epg_present
     primary_encap_id: "{{ item['primary_encap'] | default(omit) }}"
   register: primary_ecap_id_omit
+
+- name: Bind static-binding to epg - out of range primary_encap_id
+  cisco.aci.aci_static_binding_to_epg:
+    <<: *aci_static_binding_to_epg_present
+    primary_encap_id: 4098
+  ignore_errors: yes
+  register: primary_ecap_id_range
 
 - name: primary_ecap_id assertions
   assert:
@@ -173,7 +180,9 @@
       - primary_ecap_id_unknown is changed
       - primary_ecap_id_unknown.sent.fvRsPathAtt.attributes.primaryEncap == 'unknown'
       - primary_ecap_id_omit is not changed
-      - primary_ecap_id_omit.sent== {}
+      - primary_ecap_id_omit.sent == {}
+      - primary_ecap_id_range is not changed
+      - primary_ecap_id_range.msg == 'Valid VLAN assignments are from 1 to 4096 or unknown.'
 
 - name: Delete provide binding - deletion works
   cisco.aci.aci_static_binding_to_epg:

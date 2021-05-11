@@ -49,7 +49,8 @@ options:
     description:
     - Determines the primary encapsulation ID associating the C(epg)
       with the interface path when using micro-segmentation.
-    - Accepted values are any valid encap ID for specified encap, currently ranges between C(1) and C(4096) and 'unknown'.
+    - Accepted values are any valid encap ID for specified encap, currently ranges between C(1) and C(4096) and C(unknown.
+    - C(unknown) is the default value and using C(unknown) disables the Micro-Segmentation.
     type: str
     aliases: [ primary_vlan, primary_vlan_id ]
   deploy_immediacy:
@@ -355,22 +356,22 @@ def main():
             leafs.extend(str(leaf).split('-'))
         if len(leafs) == 1:
             if interface_type == 'vpc':
-                module.fail_json(msg='A interface_type of "vpc" requires 2 leafs')
+                aci.fail_json(msg='A interface_type of "vpc" requires 2 leafs')
             leafs = leafs[0]
         elif len(leafs) == 2:
             if interface_type != 'vpc':
-                module.fail_json(msg='The interface_types "switch_port", "port_channel", and "fex" \
+                aci.fail_json(msg='The interface_types "switch_port", "port_channel", and "fex" \
                     do not support using multiple leafs for a single binding')
             leafs = "-".join(leafs)
         else:
-            module.fail_json(msg='The "leafs" parameter must not have more than 2 entries')
+            aci.fail_json(msg='The "leafs" parameter must not have more than 2 entries')
     interface = module.params.get('interface')
     extpaths = module.params.get('extpaths')
     state = module.params.get('state')
 
     if encap_id is not None:
         if encap_id not in range(1, 4097):
-            module.fail_json(msg='Valid VLAN assignments are from 1 to 4096')
+            aci.fail_json(msg='Valid VLAN assignments are from 1 to 4096')
         encap_id = 'vlan-{0}'.format(encap_id)
 
     if primary_encap_id is not None:
@@ -378,6 +379,8 @@ def main():
             primary_encap_id = int(primary_encap_id)
             if isinstance(primary_encap_id, int) and primary_encap_id in range(1, 4097):
               primary_encap_id = 'vlan-{0}'.format(primary_encap_id)
+            else:
+                aci.fail_json(msg='Valid VLAN assignments are from 1 to 4096 or unknown.')
         except Exception as e:
           if isinstance(primary_encap_id, str) and primary_encap_id != 'unknown':
               aci.fail_json(msg='Valid VLAN assignments are from 1 to 4096 or unknown. %s' % e)
