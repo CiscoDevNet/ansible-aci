@@ -77,7 +77,7 @@ author:
 
 EXAMPLES = r'''
 - name: Bind a contract to an external EPG
-  cisco.aci.aci_l3out_epg_to_contract:
+  cisco.aci.aci_l3out_extepg_to_contract:
     host: apic
     username: admin
     password: SomeSecretePassword
@@ -90,7 +90,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Remove existing contract from an external EPG
-  cisco.aco.aci_l3out_epg_to_contract:
+  cisco.aci.aci_l3out_extepg_to_contract:
     host: apic
     username: admin
     password: SomeSecretePassword
@@ -103,7 +103,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query a contract bound to an external EPG
-  cisco.aci.aci_l3out_epg_to_contract:
+  cisco.aci.aci_l3out_extepg_to_contract:
     host: apic
     username: admin
     password: SomeSecretePassword
@@ -117,7 +117,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all contracts relationships
-  cisco.aci.aci_l3out_epg_to_contract:
+  cisco.aci.aci_l3out_extepg_to_contract:
     host: apic
     username: admin
     password: SomeSecretePassword
