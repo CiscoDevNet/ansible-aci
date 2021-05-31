@@ -73,7 +73,7 @@ options:
     description:
     - The type of interface for the static EPG deployment.
     type: str
-    choices: [ fex, port_channel, switch_port, vpc ]
+    choices: [ fex, port_channel, switch_port, vpc, fex_port_channel, fex_vpc ]
     default: switch_port
   pod_id:
     description:
@@ -98,9 +98,11 @@ options:
   extpaths:
     description:
     - The C(extpaths) integer value part of the tDn.
-    - C(extpaths) is only used if C(interface_type) is C(fex).
+    - C(extpaths) is only used if C(interface_type) is C(fex) or C(fex_vpc).
+    - When C(interface_type) is C(fex_vpc), then C(extpaths) is a list with both fex IDs.
     - Usually something like C(1011).
-    type: int
+    type: list
+    elements: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -123,6 +125,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Bruno Calogero (@brunocalogero)
+- Marcel Zehnder (@maercu)
 '''
 
 EXAMPLES = r'''
@@ -296,6 +299,8 @@ INTERFACE_MODE_MAPPING = {
 
 INTERFACE_TYPE_MAPPING = dict(
     fex='topology/pod-{pod_id}/paths-{leafs}/extpaths-{extpaths}/pathep-[eth{interface}]',
+    fex_port_channel='topology/pod-{pod_id}/paths-{leafs}/extpaths-{extpaths}/pathep-[{interface}]',
+    fex_vpc='topology/pod-{pod_id}/protpaths-{leafs}/extprotpaths-{extpaths}/pathep-[{interface}]',
     port_channel='topology/pod-{pod_id}/paths-{leafs}/pathep-[{interface}]',
     switch_port='topology/pod-{pod_id}/paths-{leafs}/pathep-[eth{interface}]',
     vpc='topology/pod-{pod_id}/protpaths-{leafs}/pathep-[{interface}]',
@@ -316,11 +321,11 @@ def main():
         deploy_immediacy=dict(type='str', choices=['immediate', 'lazy']),
         interface_mode=dict(type='str', choices=['802.1p', 'access', 'native', 'regular', 'tagged', 'trunk', 'untagged'],
                             aliases=['interface_mode_name', 'mode']),
-        interface_type=dict(type='str', default='switch_port', choices=['fex', 'port_channel', 'switch_port', 'vpc']),
+        interface_type=dict(type='str', default='switch_port', choices=['fex', 'port_channel', 'switch_port', 'vpc', 'fex_port_channel', 'fex_vpc']),
         pod_id=dict(type='int', aliases=['pod', 'pod_number']),  # Not required for querying all objects
         leafs=dict(type='list', elements='str', aliases=['leaves', 'nodes', 'paths', 'switches']),  # Not required for querying all objects
         interface=dict(type='str'),  # Not required for querying all objects
-        extpaths=dict(type='int'),
+        extpaths=dict(type='list', elements='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
 
@@ -329,6 +334,8 @@ def main():
         supports_check_mode=True,
         required_if=[
             ['interface_type', 'fex', ['extpaths']],
+            ['interface_type', 'fex_vpc', ['extpaths']],
+            ['interface_type', 'fex_port_channel', ['extpaths']],
             ['state', 'absent', ['ap', 'epg', 'interface', 'leafs', 'pod_id', 'tenant']],
             ['state', 'present', ['ap', 'encap_id', 'epg', 'interface', 'leafs', 'pod_id', 'tenant']],
         ],
@@ -345,6 +352,9 @@ def main():
     interface_type = module.params.get('interface_type')
     pod_id = module.params.get('pod_id')
     leafs = module.params.get('leafs')
+    interface = module.params.get('interface')
+    extpaths = module.params.get('extpaths')
+    state = module.params.get('state')
 
     aci = ACIModule(module)
 
@@ -365,9 +375,24 @@ def main():
             leafs = "-".join(leafs)
         else:
             aci.fail_json(msg='The "leafs" parameter must not have more than 2 entries')
-    interface = module.params.get('interface')
-    extpaths = module.params.get('extpaths')
-    state = module.params.get('state')
+    
+    if extpaths is not None:
+        # Process extpaths, and support dash-delimited extpaths
+        extpaths = []
+        for extpaths in module.params.get('extpaths'):
+            # Users are likely to use integers for extpaths IDs, which would raise an exception when using the join method
+            extpaths.extend(str(extpaths).split('-'))
+        if len(extpaths) == 1:
+            if interface_type == 'fex_vpc':
+                aci.fail_json(msg='A interface_type of "fex_vpc" requires 2 extpaths')
+            extpaths = extpaths[0]
+        elif len(extpaths) == 2:
+            if interface_type != 'fex_vpc':
+                aci.fail_json(msg='The interface_types "switch_port", "port_channel", "fex" \
+                    and "fex_port_channel" do not support using multiple extpaths for a single binding')
+            extpaths = "-".join(extpaths)
+        else:
+            aci.fail_json(msg='The "extpaths" parameter must not have more than 2 entries')
 
     if encap_id is not None:
         if encap_id not in range(1, 4097):
