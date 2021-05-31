@@ -98,7 +98,7 @@ options:
   extpaths:
     description:
     - The C(extpaths) integer value part of the tDn.
-    - C(extpaths) is only used if C(interface_type) is C(fex) or C(fex_vpc).
+    - C(extpaths) is only used if C(interface_type) is C(fex), C(fex_vpc) or C(fex_port_channel).
     - When C(interface_type) is C(fex_vpc), then C(extpaths) is a list with both fex IDs.
     - Usually something like C(1011).
     type: list
