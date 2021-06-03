@@ -306,13 +306,13 @@ def main():
         ),
         subclass_4=dict(
             aci_class='ipRouteP',
-            aci_rn='/rt-[{0}]'.format(prefix),
+            aci_rn='rt-[{0}]'.format(prefix),
             module_object=prefix,
             target_filter={'name': prefix}
         ),
         subclass_5=dict(
             aci_class='ipNexthopP',
-            aci_rn='/nh-[{0}]'.format(nexthop),
+            aci_rn='nh-[{0}]'.format(nexthop),
             module_object=nexthop,
             target_filter={'name': nexthop}
         )
