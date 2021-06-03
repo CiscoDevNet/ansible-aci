@@ -325,7 +325,7 @@ def main():
         ),
         subclass_4=dict(
             aci_class='ipRouteP',
-            aci_rn='/rt-[{0}]'.format(prefix),
+            aci_rn='rt-[{0}]'.format(prefix),
             module_object=prefix,
             target_filter={'name': prefix},
         ),

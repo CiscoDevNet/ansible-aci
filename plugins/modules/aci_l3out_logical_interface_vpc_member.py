@@ -296,19 +296,19 @@ def main():
         ),
         subclass_3=dict(
             aci_class='l3extLIfP',
-            aci_rn='/lifp-{0}'.format(logical_interface),
+            aci_rn='lifp-{0}'.format(logical_interface),
             module_object=logical_interface,
             target_filter={'name': logical_interface},
         ),
         subclass_4=dict(
             aci_class='l3extRsPathL3OutAtt',
-            aci_rn='/rspathL3OutAtt-[{0}]'.format(path_dn),
+            aci_rn='rspathL3OutAtt-[{0}]'.format(path_dn),
             module_object=path_dn,
             target_filter={'name': path_dn},
         ),
         subclass_5=dict(
             aci_class='l3extMember',
-            aci_rn='/mem-{0}'.format(side),
+            aci_rn='mem-{0}'.format(side),
             module_object=side,
             target_filter={'name': side},
         ),
