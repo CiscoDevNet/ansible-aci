@@ -45,8 +45,8 @@ jobs:
       with:
         python-version: 3.8
 
-    - name: Install ansible-base (v2.9.17)
-      run: pip install https://github.com/ansible/ansible/archive/v2.9.17.tar.gz --disable-pip-version-check
+    - name: Install ansible-base (v2.11.0)
+      run: pip install https://github.com/ansible/ansible/archive/v2.11.0.tar.gz --disable-pip-version-check
 
     - name: Download migrated collection artifacts
       uses: actions/download-artifact@v1
@@ -78,6 +78,7 @@ jobs:
         name: galaxy-importer-log
         path: .cache/collection-tarballs/importer_result.json
 
+
   sanity:
     name: Sanity in ubuntu-latest
     needs:
@@ -108,7 +109,7 @@ jobs:
       run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
 
     - name: Run sanity tests
-      run: ansible-test sanity --docker -v --color --truncate 0 --coverage
+      run: ansible-test sanity --docker -v --color --truncate 0
       working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
     
     - name: Generate coverage report
@@ -148,18 +149,18 @@ jobs:
     - name: Install the collection tarball
       run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
 
-    - name: Run unit tests
-      run: ansible-test units --docker -v --color --truncate 0 --python 3.8 --coverage
-      working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+    # - name: Run unit tests
+    #   run: ansible-test units --docker -v --color --truncate 0 --python 3.8 --coverage
+    #   working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
-    - name: Generate coverage report.
-      run: ansible-test coverage xml -v --requirements --group-by command --group-by version
-      working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+    # - name: Generate coverage report.
+    #   run: ansible-test coverage xml -v --requirements --group-by command --group-by version
+    #   working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
-    - uses: codecov/codecov-action@v1
-      with:
-        fail_ci_if_error: false
-        file: /home/runner/.ansible/collections/ansible_collections/cisco/aci/tests/output/reports/coverage.xml
+    # - uses: codecov/codecov-action@v1
+    #   with:
+    #     fail_ci_if_error: false
+    #     file: /home/runner/.ansible/collections/ansible_collections/cisco/aci/tests/output/reports/coverage.xml
 
   integration:
     name: Integration in ubuntu-latest
