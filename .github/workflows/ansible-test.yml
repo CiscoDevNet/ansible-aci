@@ -149,18 +149,18 @@ jobs:
     - name: Install the collection tarball
       run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
 
-    # - name: Run unit tests
-    #   run: ansible-test units --docker -v --color --truncate 0 --python 3.8 --coverage
-    #   working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+    - name: Run unit tests
+      run: ansible-test units --docker -v --color --truncate 0 --python 3.8 --coverage
+      working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
-    # - name: Generate coverage report.
-    #   run: ansible-test coverage xml -v --requirements --group-by command --group-by version
-    #   working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+    - name: Generate coverage report.
+      run: ansible-test coverage xml -v --requirements --group-by command --group-by version
+      working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
-    # - uses: codecov/codecov-action@v1
-    #   with:
-    #     fail_ci_if_error: false
-    #     file: /home/runner/.ansible/collections/ansible_collections/cisco/aci/tests/output/reports/coverage.xml
+    - uses: codecov/codecov-action@v1
+      with:
+        fail_ci_if_error: false
+        file: /home/runner/.ansible/collections/ansible_collections/cisco/aci/tests/output/reports/coverage.xml
 
   integration:
     name: Integration in ubuntu-latest

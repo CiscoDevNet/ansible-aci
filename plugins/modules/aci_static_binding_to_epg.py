@@ -378,12 +378,12 @@ def main():
         try:
             primary_encap_id = int(primary_encap_id)
             if isinstance(primary_encap_id, int) and primary_encap_id in range(1, 4097):
-              primary_encap_id = 'vlan-{0}'.format(primary_encap_id)
+                primary_encap_id = 'vlan-{0}'.format(primary_encap_id)
             else:
                 aci.fail_json(msg='Valid VLAN assignments are from 1 to 4096 or unknown.')
         except Exception as e:
-          if isinstance(primary_encap_id, str) and primary_encap_id != 'unknown':
-              aci.fail_json(msg='Valid VLAN assignments are from 1 to 4096 or unknown. %s' % e)
+            if isinstance(primary_encap_id, str) and primary_encap_id != 'unknown':
+                aci.fail_json(msg='Valid VLAN assignments are from 1 to 4096 or unknown. %s' % e)
 
     static_path = INTERFACE_TYPE_MAPPING[interface_type].format(pod_id=pod_id, leafs=leafs, extpaths=extpaths, interface=interface)
 
