@@ -1,0 +1,137 @@
+# Test code for the ACI modules
+# Copyright: (c) 2017, Jacob McGill (@jmcgill298)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+    test_vars: &test_vars
+      pod_id: 1
+      node_id: 107
+      interface: eth1/33
+
+- name: Query system information
+  aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Clean test environment with enabled interface
+  cisco.aci.aci_outofsvc_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars
+    state: absent
+
+- name: Query outofsvc_interface_blacklist
+  cisco.aci.aci_outofsvc_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars
+    state: query
+  register: disable_int_check
+
+- name: Verify that outofsvc_interface_blacklist is not present
+  assert:
+    that:
+    - disable_int_check.current == []
+
+- name: Disable interface in check mode
+  cisco.aci.aci_outofsvc_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars
+    state: present
+  check_mode: yes
+  register: disable_int_check
+
+- name: Verify that outofsvc_interface_blacklist is not created after check mode
+  assert:
+    that:
+    - disable_int_check.current == []
+
+- name: Disable interface
+  cisco.aci.aci_outofsvc_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars
+    state: present
+  register: disable_int
+
+- name: Verify that outofsvc_interface_blacklist is created
+  assert:
+    that:
+    - disable_int.current.0.fabricRsOosPath.attributes.dn == "uni/fabric/outofsvc/rsoosPath-[topology/pod-1/paths-107/pathep-[eth1/33]]"
+    - disable_int.current.0.fabricRsOosPath.attributes.lc == "blacklist"
+
+- name: Disable interface again
+  cisco.aci.aci_outofsvc_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars
+    state: present
+  register: disable_int_again
+
+- name: Verify that outofsvc_interface_blacklist remains created after disabling again
+  assert:
+    that:
+    - disable_int_again is not changed
+
+- name: Query interface
+  cisco.aci.aci_outofsvc_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars
+    state: query
+  register: query_int
+
+- name: Verify that outofsvc_interface_blacklist remains created after query
+  assert:
+    that:
+    - query_int is not changed
+
+- name: Enable interface in check mode
+  cisco.aci.aci_outofsvc_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars
+    state: absent
+  check_mode: yes
+  register: enable_int_check
+
+- name: Verify that outofsvc_interface_blacklist remains created after check mode
+  assert:
+    that:
+    - disable_int.current.0.fabricRsOosPath.attributes.dn == "uni/fabric/outofsvc/rsoosPath-[topology/pod-1/paths-107/pathep-[eth1/33]]"
+    - disable_int.current.0.fabricRsOosPath.attributes.lc == "blacklist"
+
+- name: Enable interface
+  cisco.aci.aci_outofsvc_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars
+    state: absent
+  register: enable_int
+
+- name: Verify that outofsvc_interface_blacklist is deleted
+  assert:
+    that:
+    - enable_int.current == []
+
+- name: Enable interface
+  cisco.aci.aci_outofsvc_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars
+    state: absent
+  register: enable_int_again
+
+- name: Verify that outofsvc_interface_blacklist remains deleted after enabling again
+  assert:
+    that:
+    - enable_int_again is not changed
