@@ -214,7 +214,7 @@ def main():
     # Set rn based on node type determined by looking at interface input
     if len(interface.split("/")) > 2:
         fex_id = interface.split("/")[0].lstrip("eth")
-        fex_int = "eth{}".format('/'.join(interface.split("/")[1:3]))
+        fex_int = "eth{0}".format('/'.join(interface.split("/")[1:3]))
         rn = 'fabric/outofsvc/rsoosPath-[topology/pod-{0}/paths-{1}/extpaths-{2}/pathep-[{3}]]'.format(pod_id,
                                                                                                        node_id,
                                                                                                        fex_id,
