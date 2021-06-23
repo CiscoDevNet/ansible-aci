@@ -27,7 +27,7 @@ options:
     type: int
   interface:
     description:
-    - Name of the interface eq. eth1/49
+    - Name of the interface eq. eth1/49 | FEX eq. eth123/1/33
     type: str
   state:
     description:
@@ -211,10 +211,21 @@ def main():
     interface = module.params.get('interface')
     state = module.params.get('state')
 
+    # Set rn based on node type determined by looking at interface input
+    if len(interface.split("/")) > 2:
+        fex_id = interface.split("/")[0].lstrip("eth")
+        fex_int = "eth{}".format('/'.join(interface.split("/")[1:3]))
+        rn = 'fabric/outofsvc/rsoosPath-[topology/pod-{0}/paths-{1}/extpaths-{2}/pathep-[{3}]]'.format(pod_id,
+                                                                                                       node_id,
+                                                                                                       fex_id,
+                                                                                                       fex_int)
+    else:
+        rn = 'fabric/outofsvc/rsoosPath-[topology/pod-{0}/paths-{1}/pathep-[{2}]]'.format(pod_id, node_id, interface)
+
     aci.construct_url(
         root_class=dict(
             aci_class='fabricRsOosPath',
-            aci_rn='fabric/outofsvc/rsoosPath-[topology/pod-{0}/paths-{1}/pathep-[{2}]]'.format(pod_id, node_id, interface)
+            aci_rn=rn
         )
     )
 
