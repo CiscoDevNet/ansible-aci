@@ -21,14 +21,17 @@ options:
     description:
     - ID of the pod eq. 1
     type: int
+    required: true
   node_id:
     description:
     - ID of the node eq. 105
     type: int
+    required: true
   interface:
     description:
     - Name of the interface eq. eth1/49 | FEX eq. eth123/1/33
     type: str
+    required: true
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
