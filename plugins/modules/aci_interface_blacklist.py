@@ -12,26 +12,33 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_outofsvc_interface_blacklist
+module: aci_interface_blacklist
 short_description: Enabling or Disabling physical interfaces.
 description:
-- Manages enabling and disabling physical interfaces on Cisco ACI fabrics.
+- Enables or Disables physical interfaces on Cisco ACI fabrics.
 options:
   pod_id:
     description:
-    - ID of the pod eq. 1
+    - The pod number.
+    - C(pod_id) is usually an integer below C(12)
     type: int
-    required: true
+    aliases: [ pod, pod_number ]
   node_id:
     description:
-    - ID of the node eq. 105
+    - The switch ID that the C(interface) belongs to.
+    - The C(node_id) value is usually something like '101'.
     type: int
-    required: true
+    aliases: [ leaf, spine, node ]
   interface:
     description:
-    - Name of the interface eq. eth1/49 | FEX eq. eth123/1/33
+    - The name of the C(interface) that is targeted.
+    - Usually an interface name with the following format C(1/7).
     type: str
-    required: true
+  fex_id:
+    description:
+    - The fex ID that the C(interface) belongs to.
+    - The C(fex_id) value is usually something like '123'.
+    type: int
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -48,38 +55,64 @@ author:
 
 EXAMPLES = r'''
 - name: Disable Interface
-  cisco.aci.aci_outofsvc_interface_blacklist:
+  cisco.aci.aci_interface_blacklist:
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
     validate_certs: no
     pod_id: 1
     node_id: 105
-    interface: eth1/49
+    interface: 1/49
     state: present
   delegate_to: localhost
 
 - name: Enable Interface
-  cisco.aci.aci_outofsvc_interface_blacklist:
+  cisco.aci.aci_interface_blacklist:
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
     validate_certs: no
     pod_id: 1
     node_id: 105
-    interface: eth1/49
+    interface: 1/49
+    state: absent
+  delegate_to: localhost
+
+- name: Disable Interface on Fex
+  cisco.aci.aci_interface_blacklist:
+    host: "{{ inventory_hostname }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    validate_certs: no
+    pod_id: 1
+    node_id: 105
+    fex_id: 123
+    interface: 1/49
+    state: present
+  delegate_to: localhost
+
+- name: Enable Interface on Fex
+  cisco.aci.aci_interface_blacklist:
+    host: "{{ inventory_hostname }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    validate_certs: no
+    pod_id: 1
+    node_id: 105
+    fex_id: 123
+    interface: 1/49
     state: absent
   delegate_to: localhost
 
 - name: Query Interface
-  cisco.aci.aci_outofsvc_interface_blacklist:
+  cisco.aci.aci_interface_blacklist:
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
     validate_certs: no
     pod_id: 1
     node_id: 105
-    interface: eth1/49
+    interface: 1/49
     state: query
   delegate_to: localhost
 '''
@@ -196,15 +229,20 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        pod_id=dict(type='int', required=True),
-        node_id=dict(type='int', required=True),
-        interface=dict(type='str', required=True),
+        pod_id=dict(type='int', aliases=['pod', 'pod_number']),
+        node_id=dict(type='int', aliases=['leaf', 'spine', 'node']),
+        fex_id=dict(type='int'),
+        interface=dict(type='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
+        required_if=[
+            ['state', 'absent', ['pod_id', 'node_id', 'interface']],
+            ['state', 'present', ['pod_id', 'node_id', 'interface']],
+        ],
     )
 
     aci = ACIModule(module)
@@ -212,23 +250,31 @@ def main():
     pod_id = module.params.get('pod_id')
     node_id = module.params.get('node_id')
     interface = module.params.get('interface')
+    fex_id = module.params.get('fex_id')
     state = module.params.get('state')
 
-    # Set rn based on node type determined by looking at interface input
-    if len(interface.split("/")) > 2:
-        fex_id = interface.split("/")[0].lstrip("eth")
-        fex_int = "eth{0}".format('/'.join(interface.split("/")[1:3]))
-        rn = 'fabric/outofsvc/rsoosPath-[topology/pod-{0}/paths-{1}/extpaths-{2}/pathep-[{3}]]'.format(pod_id,
-                                                                                                       node_id,
-                                                                                                       fex_id,
-                                                                                                       fex_int)
+    if fex_id:
+        rn = 'rsoosPath-[topology/pod-{0}/paths-{1}/extpaths-{2}/pathep-eth[{3}]]'.format(pod_id, node_id, fex_id,
+                                                                                          interface)
     else:
-        rn = 'fabric/outofsvc/rsoosPath-[topology/pod-{0}/paths-{1}/pathep-[{2}]]'.format(pod_id, node_id, interface)
+        rn = 'rsoosPath-[topology/pod-{0}/paths-{1}/pathep-eth[{2}]]'.format(pod_id, node_id, interface)
 
     aci.construct_url(
         root_class=dict(
+            aci_class='fabricInst',
+            aci_rn='fabric',
+            module_object='fabric',
+            target_filter={'name': 'fabric'},
+        ),
+        subclass_1=dict(
+            aci_class='fabricOOServicePol',
+            aci_rn='outofsvc',
+            module_object='outofsvc',
+            target_filter={'name': 'default'},
+        ),
+        subclass_2=dict(
             aci_class='fabricRsOosPath',
-            aci_rn=rn
+            aci_rn=rn,
         )
     )
 
@@ -238,7 +284,7 @@ def main():
         aci.payload(
             aci_class='fabricRsOosPath',
             class_config=dict(
-                lc="blacklist",
+                lc='blacklist',
             ),
         )
 
