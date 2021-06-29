@@ -81,7 +81,7 @@
   assert:
     that:
     - disable_leaf_int.current|length == 1
-    - disable_leaf_int.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/pathep-[eth[1/33]]"
+    - disable_leaf_int.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/pathep-[eth1/33]"
     - disable_leaf_int.current.0.fabricRsOosPath.attributes.lc == "blacklist"
 
 - name: Leaf - Disable interface again
@@ -96,7 +96,7 @@
     that:
     - disable_leaf_int_again is not changed
     - disable_leaf_int_again.current|length == 1
-    - disable_leaf_int_again.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/pathep-[eth[1/33]]"
+    - disable_leaf_int_again.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/pathep-[eth1/33]"
     - disable_leaf_int_again.current.0.fabricRsOosPath.attributes.lc == "blacklist"
 
 - name: Leaf - Query interface
@@ -111,7 +111,7 @@
     that:
     - query_leaf_int_disabled is not changed
     - query_leaf_int_disabled.current|length == 1
-    - query_leaf_int_disabled.current.0.fabricOOServicePol.children.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/pathep-[eth[1/33]]"
+    - query_leaf_int_disabled.current.0.fabricOOServicePol.children.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/pathep-[eth1/33]"
     - query_leaf_int_disabled.current.0.fabricOOServicePol.children.0.fabricRsOosPath.attributes.lc == "blacklist"
 
 - name: Leaf - Enable interface in check mode
@@ -126,7 +126,7 @@
   assert:
     that:
     - enable_leaf_int_check.current|length == 1
-    - enable_leaf_int_check.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/pathep-[eth[1/33]]"
+    - enable_leaf_int_check.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/pathep-[eth1/33]"
     - enable_leaf_int_check.current.0.fabricRsOosPath.attributes.lc == "blacklist"
 
 - name: Leaf - Enable interface
@@ -196,7 +196,7 @@
   assert:
     that:
     - disable_spine_int.current|length == 1
-    - disable_spine_int.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1201/pathep-[eth[1/33]]"
+    - disable_spine_int.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1201/pathep-[eth1/33]"
     - disable_spine_int.current.0.fabricRsOosPath.attributes.lc == "blacklist"
 
 - name: Spine - Disable interface again
@@ -211,7 +211,7 @@
     that:
     - disable_spine_int_again is not changed
     - disable_spine_int_again.current|length == 1
-    - disable_spine_int_again.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1201/pathep-[eth[1/33]]"
+    - disable_spine_int_again.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1201/pathep-[eth1/33]"
     - disable_spine_int_again.current.0.fabricRsOosPath.attributes.lc == "blacklist"
 
 - name: Spine - Query interface
@@ -226,7 +226,7 @@
     that:
     - query_spine_int_disabled is not changed
     - query_spine_int_disabled.current|length == 1
-    - query_spine_int_disabled.current.0.fabricOOServicePol.children.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1201/pathep-[eth[1/33]]"
+    - query_spine_int_disabled.current.0.fabricOOServicePol.children.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1201/pathep-[eth1/33]"
     - query_spine_int_disabled.current.0.fabricOOServicePol.children.0.fabricRsOosPath.attributes.lc == "blacklist"
 
 - name: Spine - Enable interface in check mode
@@ -241,7 +241,7 @@
   assert:
     that:
     - enable_spine_int_check.current|length == 1
-    - enable_spine_int_check.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1201/pathep-[eth[1/33]]"
+    - enable_spine_int_check.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1201/pathep-[eth1/33]"
     - enable_spine_int_check.current.0.fabricRsOosPath.attributes.lc == "blacklist"
 
 - name: Spine - Enable interface
@@ -311,7 +311,7 @@
   assert:
     that:
     - disable_fex_int.current|length == 1
-    - disable_fex_int.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/extpaths-123/pathep-[eth[1/33]]"
+    - disable_fex_int.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/extpaths-123/pathep-[eth1/33]"
     - disable_fex_int.current.0.fabricRsOosPath.attributes.lc == "blacklist"
 
 - name: Fex - Disable interface again
@@ -326,7 +326,7 @@
     that:
     - disable_fex_int_again is not changed
     - disable_fex_int_again.current|length == 1
-    - disable_fex_int_again.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/extpaths-123/pathep-[eth[1/33]]"
+    - disable_fex_int_again.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/extpaths-123/pathep-[eth1/33]"
     - disable_fex_int_again.current.0.fabricRsOosPath.attributes.lc == "blacklist"
 
 - name: Fex - Query interface
@@ -341,7 +341,7 @@
     that:
     - query_fex_int_disabled is not changed
     - query_fex_int_disabled.current|length == 1
-    - query_fex_int_disabled.current.0.fabricOOServicePol.children.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/extpaths-123/pathep-[eth[1/33]]"
+    - query_fex_int_disabled.current.0.fabricOOServicePol.children.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/extpaths-123/pathep-[eth1/33]"
     - query_fex_int_disabled.current.0.fabricOOServicePol.children.0.fabricRsOosPath.attributes.lc == "blacklist"
 
 - name: Fex - Enable interface in check mode
@@ -356,7 +356,7 @@
   assert:
     that:
     - enable_fex_int_check.current|length == 1
-    - enable_fex_int_check.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/extpaths-123/pathep-[eth[1/33]]"
+    - enable_fex_int_check.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/extpaths-123/pathep-[eth1/33]"
     - enable_fex_int_check.current.0.fabricRsOosPath.attributes.lc == "blacklist"
 
 - name: Fex - Enable interface
