@@ -1,0 +1,115 @@
+# Test code for the ACI modules
+# Copyright: (c) 2017, Jacob McGill (@jmcgill298)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+    test_vars_leaf: &test_vars_leaf
+      pod_id: 1
+      node_id: 1101
+      interface: 1/33
+      description: testing
+    test_vars_spine: &test_vars_spine
+      pod_id: 1
+      node_id: 1201
+      interface: 1/33
+      description: testing
+    test_vars_fex: &test_vars_fex
+      pod_id: 1
+      node_id: 1101
+      interface: 1/33
+      fex_id: 123
+      description: testing
+
+- name: Query system information
+  aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Leaf - Clean test environment with no description interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_leaf
+    state: absent
+
+- name: Leaf - Query interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_leaf
+    state: query
+
+- name: Leaf - Set description on interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_leaf
+    state: present
+
+- name: Leaf - Clean test environment with no description interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_leaf
+    state: absent
+
+- name: Spine - Clean test environment with no description interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_spine
+    state: absent
+
+- name: Spine - Query interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_spine
+    state: query
+
+- name: Spine - Set description on interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_spine
+    state: present
+
+- name: Spine - Clean test environment with no description interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_spine
+    state: absent
+
+- name: Fex - Clean test environment with no description interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_fex
+    state: absent
+
+- name: Fex - Query interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_fex
+    state: query
+
+- name: Fex - Set description on interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_fex
+    state: present
+
+- name: Fex - Clean test environment with no description interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_fex
+    state: absent
