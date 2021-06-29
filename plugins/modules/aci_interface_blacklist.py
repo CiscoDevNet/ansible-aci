@@ -254,10 +254,10 @@ def main():
     state = module.params.get('state')
 
     if fex_id:
-        rn = 'rsoosPath-[topology/pod-{0}/paths-{1}/extpaths-{2}/pathep-eth[{3}]]'.format(pod_id, node_id, fex_id,
+        rn = 'rsoosPath-[topology/pod-{0}/paths-{1}/extpaths-{2}/pathep-[eth{3}]]'.format(pod_id, node_id, fex_id,
                                                                                           interface)
     else:
-        rn = 'rsoosPath-[topology/pod-{0}/paths-{1}/pathep-eth[{2}]]'.format(pod_id, node_id, interface)
+        rn = 'rsoosPath-[topology/pod-{0}/paths-{1}/pathep-[eth{2}]]'.format(pod_id, node_id, interface)
 
     aci.construct_url(
         root_class=dict(
