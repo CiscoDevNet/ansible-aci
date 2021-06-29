@@ -39,6 +39,10 @@ options:
     - The fex ID that the C(interface) belongs to.
     - The C(fex_id) value is usually something like '123'.
     type: int
+  description:
+    description:
+    - The C(description) that should be attached to the C(interface).
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -229,6 +233,7 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 import json
+
 
 def main():
     argument_spec = aci_argument_spec()
