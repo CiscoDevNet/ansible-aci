@@ -369,11 +369,6 @@ def main():
 
     # We include the payload as it may be templated
     payload = content
-    if file_exists:
-        with open(src, 'r') as config_object:
-            # TODO: Would be nice to template this, requires action-plugin
-            payload = config_object.read()
-            payload_output_file = json.loads(payload)
 
     # Validate payload
     if rest_type == 'json':
@@ -396,6 +391,15 @@ def main():
                 payload = etree.tostring(etree.fromstring(payload))
             except Exception as e:
                 module.fail_json(msg='Failed to parse provided XML payload: %s' % to_text(e), payload=payload)
+
+    # CHANGED: Move from 372
+    if file_exists:
+        with open(src, 'r') as config_object:
+            # TODO: Would be nice to template this, requires action-plugin
+            payload = config_object.read()
+            payload_output_file = json.loads(payload)
+    elif payload:
+      payload_output_file = json.loads(payload)
 
     # Perform actual request using auth cookie (Same as aci.request(), but also supports XML)
     if 'port' in aci.params and aci.params.get('port') is not None:
@@ -438,10 +442,11 @@ def main():
     aci.result['imdata'] = aci.imdata
     aci.result['totalCount'] = aci.totalCount
 
-    output_path = aci.params.get('output_path')
-    if(output_path is not None):
-        with open(output_path, "a") as output_file:
-            json.dump([payload_output_file], output_file)
+    if aci.params.get('method') != 'get':
+      output_path = aci.params.get('output_path')
+      if(output_path is not None):
+          with open(output_path, "a") as output_file:
+              json.dump([payload_output_file], output_file)
 
     # Report success
     aci.exit_json(**aci.result)
