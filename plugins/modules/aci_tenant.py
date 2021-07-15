@@ -16,6 +16,7 @@ module: aci_tenant
 short_description: Manage tenants (fv:Tenant)
 description:
 - Manage tenants on Cisco ACI fabrics.
+- Description for the demo.
 options:
   tenant:
     description:
