@@ -25,11 +25,13 @@ options:
   console_logging:
     description:
     - Log events to console
+    type: str
     choices: [ enabled, disabled ]
   console_log_severity:
     description:
     - Severity of events to log to console
-    choices [ alerts, critical, debugging, emergencies, error, information, notifications, warnings]
+    type: str
+    choices: [ alerts, critical, debugging, emergencies, error, information, notifications, warnings ]
   local_file_logging:
     description:
     - Log to local file
@@ -38,7 +40,8 @@ options:
   local_file_log_severity:
     description:
     - Severity of events to log to local file
-    choices [ alerts, critical, debugging, emergencies, error, information, notifications, warnings]
+    type: str
+    choices: [ alerts, critical, debugging, emergencies, error, information, notifications, warnings ]
   format:
     description:
     - Format of the syslog messages. If omitted when creating a group, ACI defaults to using aci format.
