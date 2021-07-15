@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_syslog_group
-short_description: Manage Syslog groups (syslog:Group).
+short_description: Manage Syslog groups (syslog:Group, syslog:Console, syslog:File and syslog:Prof).
 description:
 - Manage syslog groups
 options:
