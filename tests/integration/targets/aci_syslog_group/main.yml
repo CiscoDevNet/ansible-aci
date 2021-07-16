@@ -93,7 +93,7 @@
     console_logging: disabled
     console_log_severity: emergencies
     include_ms: no
-    include_timezone: no
+    include_time_zone: no
     state: present
   register: update_syslog_group
 
