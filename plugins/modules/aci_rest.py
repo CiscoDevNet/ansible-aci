@@ -441,10 +441,10 @@ def main():
     aci.result['totalCount'] = aci.totalCount
 
     if aci.params.get('method') != 'get':
-      output_path = aci.params.get('output_path')
-      if(output_path is not None):
-          with open(output_path, "a") as output_file:
-              json.dump([payload_output_file], output_file)
+        output_path = aci.params.get('output_path')
+        if(output_path is not None):
+            with open(output_path, "a") as output_file:
+                json.dump([payload_output_file], output_file)
 
     # Report success
     aci.exit_json(**aci.result)
