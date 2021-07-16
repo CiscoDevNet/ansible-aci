@@ -50,13 +50,11 @@ options:
   include_ms:
     description:
     - Include milliseconds in log timestamps
-    type: str
-    choices: [ yes, no ]
+    type: bool
   include_time_zone:
     description:
     - Include timezone in log timestamps
-    type: str
-    choices: [ yes, no ]
+    type: bool
   name:
     description:
     - Name of the syslog group
@@ -259,10 +257,10 @@ def main():
         local_file_log_severity=dict(type='str',
                                      choices=['alerts', 'critical', 'debugging',
                                               'emergencies', 'error',
-                                              'information','notifications',
+                                              'information', 'notifications',
                                               'warnings']),
-        include_ms=dict(type='str', choices=['yes', 'no']),
-        include_time_zone=dict(type='str', choices=['yes', 'no']),
+        include_ms=dict(type='bool'),
+        include_time_zone=dict(type='bool'),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query'])
     )
@@ -285,8 +283,8 @@ def main():
     console_log_severity = module.params.get('console_log_severity')
     local_file_logging = module.params.get('local_file_logging')
     local_file_log_severity = module.params.get('local_file_log_severity')
-    include_ms = module.params.get('include_ms')
-    include_time_zone = module.params.get('include_time_zone')
+    include_ms = aci.boolean(module.params.get('include_ms'))
+    include_time_zone = aci.boolean(module.params.get('include_time_zone'))
     state = module.params.get('state')
 
     aci.construct_url(
