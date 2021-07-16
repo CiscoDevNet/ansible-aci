@@ -308,7 +308,7 @@ def main():
                 format=format,
                 includeMilliSeconds=include_ms,
                 includeTimeZone=include_time_zone,
-                ),
+            ),
             child_configs=[
                 dict(
                     syslogProf=dict(
