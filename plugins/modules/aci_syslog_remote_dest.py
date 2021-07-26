@@ -22,6 +22,7 @@ options:
     - Administrative state of the syslog remote destination
     type: str
     choices: [ enabled, disabled ]
+    default: enabled
   description:
     description:
     - Description of the remote destination
@@ -78,7 +79,7 @@ seealso:
   description: More information about the internal APIC classes B(syslog:RemoteDest).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Tim Cragg (@timcragg)
+- Tim Cragg
 '''
 
 EXAMPLES = r'''
@@ -301,42 +302,30 @@ def main():
     if state == 'present':
         if mgmt_epg:
             tdn = 'uni/tn-mgmt/mgmtp-default/{0}'.format(mgmt_epg)
-            aci.payload(
-                aci_class='syslogRemoteDest',
-                class_config=dict(
-                    adminState=admin_state,
-                    descr=description,
-                    format=format,
-                    forwardingFacility=facility,
-                    host=destination,
-                    name=name,
-                    port=syslog_port,
-                    severity=severity,
-                    ),
-                child_configs=[
-                    dict(
-                        fileRsARemoteHostToEpg=dict(
-                            attributes=dict(
-                                tDn=tdn
-                            ),
+        else:
+            tdn = None
+        aci.payload(
+            aci_class='syslogRemoteDest',
+            class_config=dict(
+                adminState=admin_state,
+                descr=description,
+                format=format,
+                forwardingFacility=facility,
+                host=destination,
+                name=name,
+                port=syslog_port,
+                severity=severity,
+                ),
+            child_configs=[
+                dict(
+                    fileRsARemoteHostToEpg=dict(
+                        attributes=dict(
+                            tDn=tdn
                         ),
                     ),
-                ],
-            )
-        else:
-            aci.payload(
-                aci_class='syslogRemoteDest',
-                class_config=dict(
-                    adminState=admin_state,
-                    descr=description,
-                    format=format,
-                    forwardingFacility=facility,
-                    host=destination,
-                    name=name,
-                    port=syslog_port,
-                    severity=severity,
-                    ),
-                )
+                ),
+            ],
+        )
 
         aci.get_diff(aci_class='syslogRemoteDest')
 
