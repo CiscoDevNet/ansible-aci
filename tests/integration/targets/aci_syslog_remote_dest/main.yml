@@ -24,7 +24,7 @@
 - name: Remove ansible_syslog_src if it already exists
   aci_syslog_remote_dest:
     <<: *aci_info
-    name: ansible_syslog_remote_dest
+    group: ansible_syslog_group
     destination: "10.20.30.40"
     state: absent
 
@@ -38,11 +38,11 @@
 
 # ADD syslog remote destination
 - name: Add syslog remote destination
-  aci_syslog_src:
+  aci_syslog_remote_dest:
     <<: *aci_info
     group: ansible_syslog_group
     destination: "10.20.30.40"
-    name: remote destination name
+    name: remote_destination_name
     facility: local1
     syslog_port: 5678
     description: ansible syslog remote destination
@@ -57,7 +57,7 @@
   assert:
     that:
     - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group/rdst-10.20.30.40"
-    - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.name == "remote destination name"
+    - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.name == "remote_destination_name"
     - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.descr == "ansible syslog remote destination"
     - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.format == "aci"
     - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.forwardingFacility == "local1"
@@ -69,7 +69,7 @@
 - name: Verify that ansible_syslog_remote_dest children have correct attributes
   assert:
     that:
-    - add_syslog_src.current.0.syslogRemoteDest.children.0.fileRsARemoteHostToEpg.attributes.tDn == "uni/tn-mgmt/mgmtp-default/oob-default"
+    - add_syslog_remote_dest.current.0.syslogRemoteDest.children.0.fileRsARemoteHostToEpg.attributes.tDn == "uni/tn-mgmt/mgmtp-default/oob-default"
 
 # ADD syslog remote dest again to check idempotency
 - name: Add syslog remote dest
@@ -77,7 +77,7 @@
     <<: *aci_info
     group: ansible_syslog_group
     destination: "10.20.30.40"
-    name: remote destination name
+    name: remote_destination_name
     facility: local1
     syslog_port: 5678
     description: ansible syslog remote destination
@@ -99,7 +99,7 @@
     <<: *aci_info
     group: ansible_syslog_group
     destination: "10.20.30.40"
-    name: new remote destination name
+    name: new_remote_destination_name
     facility: local7
     syslog_port: 5679
     description: new ansible syslog remote destination
@@ -114,7 +114,7 @@
   assert:
     that:
     - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group/rdst-10.20.30.40"
-    - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.name == "new remote destination name"
+    - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.name == "new_remote_destination_name"
     - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.descr == "new ansible syslog remote destination"
     - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.format == "nxos"
     - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.forwardingFacility == "local7"
@@ -135,8 +135,9 @@
 - name: Verify the attributes under query_syslog_src
   assert:
     that:
+    - query_syslog_remote_dest is not changed
     - query_syslog_remote_dest.current.0.syslogRemoteDest.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group/rdst-10.20.30.40"
-    - query_syslog_remote_dest.current.0.syslogRemoteDest.attributes.name == "new remote destination name"
+    - query_syslog_remote_dest.current.0.syslogRemoteDest.attributes.name == "new_remote_destination_name"
     - query_syslog_remote_dest.current.0.syslogRemoteDest.attributes.descr == "new ansible syslog remote destination"
     - query_syslog_remote_dest.current.0.syslogRemoteDest.attributes.format == "nxos"
     - query_syslog_remote_dest.current.0.syslogRemoteDest.attributes.forwardingFacility == "local7"
@@ -165,11 +166,11 @@
     state: absent
   register: remove_syslog_remote_dest
 
-- name: Verify remove_syslog_src
+- name: Verify remove_syslog_remote_dest
   assert:
     that:
     - remove_syslog_remote_dest is changed
-    - remove_syslog_remote_dest.current.0.syslogRemoteDest.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group/rdst-10.20.30.40"
+    - remove_syslog_remote_dest.previous.0.syslogRemoteDest.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group/rdst-10.20.30.40"
 
 # DELETE syslog group
 - name: Remove syslog group
