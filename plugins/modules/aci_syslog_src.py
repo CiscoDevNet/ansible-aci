@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2020, Shreyas Srish <ssrish@cisco.com>
+# Copyright: (c) 2020, Tim Cragg <tcragg@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -52,7 +52,7 @@ seealso:
   description: More information about the internal APIC class B(syslog:Src).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Tim Cragg
+- Tim Cragg (@timcragg)
 '''
 
 EXAMPLES = r'''
@@ -240,7 +240,7 @@ def main():
     aci.construct_url(
         root_class=dict(
             aci_class='syslogSrc',
-            aci_rn='fabric/moncommon/slsrc-{}'.format(name),
+            aci_rn='fabric/moncommon/slsrc-{0}'.format(name),
             module_object=name,
             target_filter={'name': name},
         ),
@@ -263,7 +263,7 @@ def main():
                     dict(
                         syslogRsDestGroup=dict(
                             attributes=dict(
-                                tDn='uni/fabric/slgroup-{}'.format(destination_group)
+                                tDn='uni/fabric/slgroup-{0}'.format(destination_group)
                             ),
                         ),
                     ),
@@ -281,7 +281,7 @@ def main():
                     dict(
                         syslogRsDestGroup=dict(
                             attributes=dict(
-                                tDn='uni/fabric/slgroup-{}'.format(destination_group)
+                                tDn='uni/fabric/slgroup-{0}'.format(destination_group)
                             ),
                         ),
                     ),
