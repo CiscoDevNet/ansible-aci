@@ -250,9 +250,9 @@ def main():
         mgmt_epg=dict(type='str'),
         syslog_port=dict(type='int'),
         severity=dict(type='str', choices=['alerts', 'critical', 'debugging',
-                                          'emergencies', 'error',
-                                          'information', 'notifications',
-                                          'warnings']),
+                                           'emergencies', 'error',
+                                           'information', 'notifications',
+                                           'warnings']),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query'])
     )
@@ -314,7 +314,7 @@ def main():
                 name=name,
                 port=syslog_port,
                 severity=severity,
-                ),
+            ),
             child_configs=[
                 dict(
                     fileRsARemoteHostToEpg=dict(
