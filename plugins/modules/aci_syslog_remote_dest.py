@@ -284,7 +284,7 @@ def main():
         root_class=dict(
             aci_class='syslogGroup',
             aci_rn='fabric/slgroup-{0}'.format(group),
-            module_object=name,
+            module_object=group,
             target_filter={'name': group},
         ),
         subclass_1=dict(
