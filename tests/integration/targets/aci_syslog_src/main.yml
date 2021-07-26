@@ -118,7 +118,7 @@
     - query_syslog_src.current.0.syslogSrc.attributes.incl == "faults"
     - query_syslog_src.current.0.syslogSrc.attributes.minSev == "information"
 
-- name: Query all syslog sources under a specific tenant
+- name: Query all syslog sources
   aci_syslog_src:
     <<: *aci_info
     state: query
