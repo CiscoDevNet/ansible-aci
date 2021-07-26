@@ -130,7 +130,7 @@
     - query_syslog_src_all is not changed
 
 # DELETE syslog source
-- name: Remove the L2Out
+- name: Remove the syslog source
   aci_syslog_src:
     <<: *aci_info
     name: ansible_syslog_src
