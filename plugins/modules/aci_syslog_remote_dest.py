@@ -22,7 +22,6 @@ options:
     - Administrative state of the syslog remote destination
     type: str
     choices: [ enabled, disabled ]
-    default: enabled
   description:
     description:
     - Description of the remote destination
@@ -79,7 +78,7 @@ seealso:
   description: More information about the internal APIC classes B(syslog:RemoteDest).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Tim Cragg
+- Tim Cragg (@timcragg)
 '''
 
 EXAMPLES = r'''
@@ -250,7 +249,7 @@ def main():
         group=dict(type='str', aliases=['syslog_group', 'syslog_group_name']),
         mgmt_epg=dict(type='str'),
         syslog_port=dict(type='int'),
-        severity=dict(type='str',choices=['alerts', 'critical', 'debugging',
+        severity=dict(type='str', choices=['alerts', 'critical', 'debugging',
                                           'emergencies', 'error',
                                           'information', 'notifications',
                                           'warnings']),
