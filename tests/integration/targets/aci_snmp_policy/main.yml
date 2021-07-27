@@ -92,7 +92,7 @@
 - name: Query snmp policy
   aci_snmp_policy:
     <<: *aci_info
-    group: ansible_snmp_policy
+    name: ansible_snmp_policy
     state: query
   register: query_snmp_policy
 
