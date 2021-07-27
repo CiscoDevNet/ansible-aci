@@ -259,7 +259,7 @@ def main():
                 contact=contact,
                 descr=description,
                 loc=location
-                ),
+            ),
         )
 
         aci.get_diff(aci_class='snmpPol')
