@@ -67,7 +67,7 @@
     - add_snmp_policy_again is not changed
 
 # MODIFY snmp policy
-- name: Add snmp policy
+- name: Update snmp policy
   aci_snmp_policy:
     <<: *aci_info
     name: ansible_snmp_policy
