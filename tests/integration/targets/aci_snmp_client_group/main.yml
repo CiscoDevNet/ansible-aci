@@ -52,11 +52,15 @@
     - add_snmp_client_group.current.0.snmpClientGrpP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/clgrp-ansible_snmp_client_group"
     - add_snmp_client_group.current.0.snmpClientGrpP.attributes.name == "ansible_snmp_client_group"
     - add_snmp_client_group.current.0.snmpClientGrpP.attributes.descr == "client group descr"
-    - add_snmp_client_group.current.0.snmpClientGrpP.attributes.epgDn == "uni/tn-mgmt/mgmtp-default/oob-default"
+
+- name: Verify that children of ansible_snmp_client_group have been created with correct values
+  assert:
+    that:
+      - add_snmp_client_group.current.0.snmpClientGrpP.children.0.snmpRsEpg.attributes.tDn == "uni/tn-mgmt/mgmtp-default/oob-default"
 
 # ADD snmp client group again to check idempotency
 - name: Add snmp client group again
-  aci_snmp_policy:
+  aci_snmp_client_group:
     <<: *aci_info
     policy: ansible_snmp_policy
     client_group: ansible_snmp_client_group
