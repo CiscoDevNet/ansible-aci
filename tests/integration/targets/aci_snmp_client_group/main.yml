@@ -137,8 +137,7 @@
 
 # DELETE snmp policy
 - name: Remove the snmp policy
-  - name: Add snmp policy
-    aci_snmp_policy:
-      <<: *aci_info
-      name: ansible_snmp_policy
-      state: absent
+  aci_snmp_policy:
+    <<: *aci_info
+    name: ansible_snmp_policy
+    state: absent
