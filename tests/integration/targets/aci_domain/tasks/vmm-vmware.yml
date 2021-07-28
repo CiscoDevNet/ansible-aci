@@ -78,6 +78,7 @@
       tag_collection: true
     check_mode: yes
     register: cm_update_domain
+    when: version.current.0.topSystem.attributes.version is version('4.1', '>=')
 
   - name: Update VMM domain with tag collection and infra port groups (normal mode)
     cisco.aci.aci_domain:
@@ -85,6 +86,7 @@
       add_infra_pg: true
       tag_collection: true
     register: nm_update_domain
+    when: version.current.0.topSystem.attributes.version is version('4.1', '>=')
 
   - name: Verify update_domain
     assert:
@@ -95,6 +97,7 @@
       - cm_update_domain.proposed.vmmDomP.attributes.configInfraPg == nm_update_domain.current.0.vmmDomP.attributes.configInfraPg == 'yes'
       - cm_update_domain.previous.0.vmmDomP.attributes.enableTag == nm_update_domain.previous.0.vmmDomP.attributes.enableTag == 'no'
       - cm_update_domain.proposed.vmmDomP.attributes.enableTag == nm_update_domain.current.0.vmmDomP.attributes.enableTag == 'yes'
+    when: version.current.0.topSystem.attributes.version is version('4.1', '>=')
 
   # QUERY ALL DOMAINS
   - name: Query all VMM domains (check_mode)
