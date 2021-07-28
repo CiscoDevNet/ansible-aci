@@ -379,9 +379,9 @@ def main():
     if extpaths is not None:
         # Process extpaths, and support dash-delimited extpaths
         extpaths = []
-        for extpaths in module.params.get('extpaths'):
+        for extpath in module.params.get('extpaths'):
             # Users are likely to use integers for extpaths IDs, which would raise an exception when using the join method
-            extpaths.extend(str(extpaths).split('-'))
+            extpaths.extend(str(extpath).split('-'))
         if len(extpaths) == 1:
             if interface_type == 'fex_vpc':
                 aci.fail_json(msg='A interface_type of "fex_vpc" requires 2 extpaths')
