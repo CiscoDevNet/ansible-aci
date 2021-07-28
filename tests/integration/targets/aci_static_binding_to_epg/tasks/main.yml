@@ -31,6 +31,20 @@
     interface: '1/7'
     state: absent
 
+- name: Ensure static path to epg is deleted
+  cisco.aci.aci_static_binding_to_epg:
+    <<: *aci_static_binding_to_epg_absent
+    interface_type: fex_port_channel
+    extpaths: 1011
+
+# - name: Ensure static path to epg is deleted
+#   cisco.aci.aci_static_binding_to_epg:
+#     <<: *aci_static_binding_to_epg_absent
+#     interface_type: fex_vpc
+#     extpaths:
+#       - 1012
+#       - 1010
+
 - name: Ensure tenant exists for tests to kick off
   cisco.aci.aci_tenant: &aci_tenant_present
     <<: *aci_info
@@ -174,6 +188,13 @@
   ignore_errors: yes
   register: primary_ecap_id_range
 
+- name: Bind static-binding to epg - out of range encap_id
+  cisco.aci.aci_static_binding_to_epg:
+    <<: *aci_static_binding_to_epg_present
+    encap_id: 4098
+  ignore_errors: yes
+  register: encap_id_range
+
 - name: primary_ecap_id assertions
   assert:
     that:
@@ -183,6 +204,69 @@
       - primary_ecap_id_omit.sent == {}
       - primary_ecap_id_range is not changed
       - primary_ecap_id_range.msg == 'Valid VLAN assignments are from 1 to 4096 or unknown.'
+      - encap_id_range.msg == 'Valid VLAN assignments are from 1 to 4096'
+
+- name: Bind static-binding to epg - interface type fex_port_channel (check_mode)
+  cisco.aci.aci_static_binding_to_epg:
+    <<: *aci_static_binding_to_epg_present
+    interface_type: fex_port_channel
+    extpaths: 1011
+  check_mode: yes
+  register: cm_fex_port_channel
+
+- name: Bind static-binding to epg - interface type fex_port_channel (normal mode)
+  cisco.aci.aci_static_binding_to_epg:
+    <<: *aci_static_binding_to_epg_present
+    interface_type: fex_port_channel
+    extpaths: 1011
+  register: nm_fex_port_channel
+
+- name: Bind static-binding to epg - interface type fex_vpc - incorrect extpaths (normal mode)
+  cisco.aci.aci_static_binding_to_epg:
+    <<: *aci_static_binding_to_epg_present
+    interface_type: fex_vpc
+    extpaths:
+      - 1012
+  ignore_errors: yes
+
+- name: Bind static-binding to epg - interface type fex_vpc (normal mode)
+  cisco.aci.aci_static_binding_to_epg:
+    <<: *aci_static_binding_to_epg_present
+    interface_type: fex_vpc
+    extpaths:
+      - 1011
+      - 1012
+  register: nm_fex_vpc
+
+- name: Bind static-binding to epg - multiple extpaths (check_mode)
+  cisco.aci.aci_static_binding_to_epg:
+    <<: *aci_static_binding_to_epg_present
+    interface_type: fex_port_channel
+    extpaths:
+      - 1012
+      - 1010
+  check_mode: yes
+  ignore_errors: yes
+  register: cm_multiple_extpaths
+
+- name: Bind static-binding to epg - multiple extpaths (normal mode)
+  cisco.aci.aci_static_binding_to_epg:
+    <<: *aci_static_binding_to_epg_present
+    interface_type: fex_port_channel
+    extpaths:
+      - 1012
+      - 1010
+  ignore_errors: yes
+  register: nm_multiple_extpaths
+
+- name: Verify interface type and extpaths
+  assert:
+    that:
+      - cm_fex_port_channel is changed
+      - nm_fex_port_channel is changed
+      - cm_fex_port_channel.previous == nm_fex_port_channel.previous == []
+      - cm_fex_port_channel.proposed.fvRsPathAtt.attributes.dn == 'uni/tn-anstest/ap-anstest/epg-anstest/rspathAtt-[topology/pod-1/paths-101/extpaths-1011/pathep-[1/7]]'
+      - nm_fex_port_channel.current.0.fvRsPathAtt.attributes.dn == 'uni/tn-anstest/ap-anstest/epg-anstest/rspathAtt-[topology/pod-1/paths-101/extpaths-1011/pathep-[1/7]]'
 
 - name: Delete provide binding - deletion works
   cisco.aci.aci_static_binding_to_epg:
