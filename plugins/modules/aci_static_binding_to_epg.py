@@ -365,11 +365,11 @@ def main():
             # Users are likely to use integers for leaf IDs, which would raise an exception when using the join method
             leafs.extend(str(leaf).split('-'))
         if len(leafs) == 1:
-            if interface_type == 'vpc':
+            if interface_type in ['vpc', 'fex_vpc']:
                 aci.fail_json(msg='A interface_type of "vpc" requires 2 leafs')
             leafs = leafs[0]
         elif len(leafs) == 2:
-            if interface_type != 'vpc':
+            if interface_type not in ['vpc', 'fex_vpc']:
                 aci.fail_json(msg='The interface_types "switch_port", "port_channel", and "fex" \
                     do not support using multiple leafs for a single binding')
             leafs = "-".join(leafs)
@@ -388,7 +388,7 @@ def main():
             extpaths = extpaths[0]
         elif len(extpaths) == 2:
             if interface_type != 'fex_vpc':
-                aci.fail_json(msg='The interface_types "switch_port", "port_channel", "fex" \
+                aci.fail_json(msg='The interface_types "fex" \
                     and "fex_port_channel" do not support using multiple extpaths for a single binding')
             extpaths = "-".join(extpaths)
         else:
