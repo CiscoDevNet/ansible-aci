@@ -375,7 +375,7 @@ def main():
             leafs = "-".join(leafs)
         else:
             aci.fail_json(msg='The "leafs" parameter must not have more than 2 entries')
-    
+
     if extpaths is not None:
         # Process extpaths, and support dash-delimited extpaths
         extpaths = []
