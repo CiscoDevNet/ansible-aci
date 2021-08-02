@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_vmm_controller_to_domain
+module: aci_vmm_controller
 short_description: Manage Controller to domain association for virtual domains profiles (vmm:DomP)
 description:
 - Manage vCenter virtual domains on Cisco ACI fabrics.
@@ -92,7 +92,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add controller to VMware VMM domain
-  cisco.aci.aci_vmm_controller_to_domain:
+  cisco.aci.aci_vmm_controller:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -106,7 +106,7 @@ EXAMPLES = r'''
     state: present
 
 - name: Remove controller from VMware VMM domain
-  cisco.aci.aci_vmm_controller_to_domain:
+  cisco.aci.aci_vmm_controller:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -116,7 +116,7 @@ EXAMPLES = r'''
     state: absent
 
 - name: Query a specific VMware VMM controller
-  cisco.aci.aci_vmm_controller_to_domain:
+  cisco.aci.aci_vmm_controller:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -128,7 +128,7 @@ EXAMPLES = r'''
   register: query_result
 
 - name: Query all VMware VMM controller
-  cisco.aci.aci_vmm_controller_to_domain:
+  cisco.aci.aci_vmm_controller:
     host: apic
     username: admin
     password: SomeSecretPassword
