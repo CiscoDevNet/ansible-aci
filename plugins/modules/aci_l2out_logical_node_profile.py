@@ -31,7 +31,6 @@ options:
     description:
     - Name of the node profile.
     type: str
-    default: default
     aliases: [ node_profile_name, logical_node ]
   state:
     description:
@@ -174,7 +173,7 @@ def main():
     argument_spec.update( # See comments in aci_static_binding_to_epg module.
         tenant=dict(type='str', aliases=['tenant_name']),
         l2out=dict(type='str', aliases=['l2out_name']),
-        node_profile=dict(type='str', default='default', aliases=['node_profile_name', 'logical_node']),
+        node_profile=dict(type='str', aliases=['node_profile_name', 'logical_node']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query'])
     )
 
