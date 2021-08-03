@@ -1,0 +1,183 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Cindy Zhao (@cizhao)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: info
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
+
+- name: Create tenant for tests
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    state: present
+    tenant: ansible_tenant
+  register: tenant_present
+
+- name: Create L2out for tests
+  cisco.aci.aci_l2out:
+    <<: *aci_info
+    state: present
+    tenant: ansible_tenant
+    l2out: ansible_l2out
+    bd: ansible_bd
+    domain: ansible_dom
+    vlan: 3200
+  register: l2out_present
+
+- name: Add L2out node profile (check mode)
+  cisco.aci.aci_l2out_logical_node_profile: &aci_node_profile_present
+    <<: *aci_info
+    node_profile: ansible_node_profile
+    l2out: ansible_l2out
+    tenant: ansible_tenant
+    state: present
+  check_mode: yes
+  register: cm_add_node_profile
+
+- name: Add L2out node profile (normal mode)
+  cisco.aci.aci_l2out_logical_node_profile: *aci_node_profile_present
+  register: nm_add_node_profile
+
+- name: Add another L2out node profile (normal mode)
+  cisco.aci.aci_l2out_logical_node_profile:
+    <<: *aci_info
+    node_profile: ansible_node_profile2
+    l2out: ansible_l2out
+    tenant: ansible_tenant
+    state: present
+  register: nm_add_second_node_profile
+
+- name: Verify add_node_profile
+  assert:
+    that:
+    - cm_add_node_profile is changed
+    - nm_add_node_profile is changed
+    - nm_add_second_node_profile is changed
+    - cm_add_node_profile.sent.l2extLNodeP.attributes.name == nm_add_node_profile.sent.l2extLNodeP.attributes.name == 'ansible_node_profile'
+    - cm_add_node_profile.proposed.l2extLNodeP.attributes.name == nm_add_node_profile.proposed.l2extLNodeP.attributes.name == 'ansible_node_profile'
+    - cm_add_node_profile.current == cm_add_node_profile.previous == nm_add_node_profile.previous == []
+    - nm_add_node_profile.current.0.l2extLNodeP.attributes.dn == 'uni/tn-ansible_tenant/l2out-ansible_l2out/lnodep-ansible_node_profile'
+    - nm_add_node_profile.current.0.l2extLNodeP.attributes.name == 'ansible_node_profile'
+    - nm_add_second_node_profile.current.0.l2extLNodeP.attributes.dn == 'uni/tn-ansible_tenant/l2out-ansible_l2out/lnodep-ansible_node_profile2'
+    - nm_add_second_node_profile.current.0.l2extLNodeP.attributes.name == 'ansible_node_profile2'
+
+- name: Query existing node profile (check mode)
+  cisco.aci.aci_l2out_logical_node_profile: &query_existing_node_profile
+    <<: *aci_info
+    node_profile: ansible_node_profile
+    l2out: ansible_l2out
+    tenant: ansible_tenant
+    state: query
+  check_mode: yes
+  register: cm_query_node_profile
+
+- name: Query existing node profile (normal mode)
+  cisco.aci.aci_l2out_logical_node_profile: *query_existing_node_profile
+  register: nm_query_node_profile
+
+- name: Query non-existent node profile
+  cisco.aci.aci_l2out_logical_node_profile:
+    <<: *aci_info
+    node_profile: ansible_fake_node_profile
+    l2out: ansible_l2out
+    tenant: ansible_tenant
+    state: query
+  check_mode: yes
+  register: nm_query_fake_node_profile
+
+- name: Query all node profile for L2out
+  cisco.aci.aci_l2out_logical_node_profile:
+    <<: *aci_info
+    l2out: ansible_l2out
+    tenant: ansible_tenant
+    state: query
+  register: nm_query_all_node_profiles
+
+- name: Verify query_node_profile
+  assert:
+    that:
+    - cm_query_node_profile is not changed
+    - nm_query_node_profile is not changed
+    - nm_query_fake_node_profile is not changed
+    - nm_query_all_node_profiles is not changed
+    - cm_query_node_profile.current.0.l2extLNodeP.attributes.name == 'ansible_node_profile'
+    - nm_query_node_profile.current.0.l2extLNodeP.attributes.name == 'ansible_node_profile'
+    - nm_query_fake_node_profile.current == []
+    - nm_query_all_node_profiles.current.0.l2extOut.children.0.l2extLNodeP.attributes.name == 'ansible_node_profile2'
+    - nm_query_all_node_profiles.current.0.l2extOut.children.1.l2extLNodeP.attributes.name == 'ansible_node_profile'
+
+- name: Remove node profile (check mode)
+  cisco.aci.aci_l2out_logical_node_profile: &aci_node_profile_absent
+    <<: *aci_info
+    node_profile: ansible_node_profile
+    l2out: ansible_l2out
+    tenant: ansible_tenant
+    state: absent
+  check_mode: yes
+  register: cm_remove_node_profile
+
+- name: Remove node profile (normal mode)
+  cisco.aci.aci_l2out_logical_node_profile: *aci_node_profile_absent
+  register: nm_remove_node_profile
+
+- name: Remove node profile (normal mode) again
+  cisco.aci.aci_l2out_logical_node_profile: *aci_node_profile_absent
+  register: nm_remove_node_profile_again
+
+- name: Remove second node profile (check mode)
+  cisco.aci.aci_l2out_logical_node_profile: &aci_second_node_profile_absent
+    <<: *aci_info
+    node_profile: ansible_node_profile2
+    l2out: ansible_l2out
+    tenant: ansible_tenant
+    state: absent
+  check_mode: yes
+  register: cm_remove_second_node_profile
+
+- name: Remove second node profile (normal mode)
+  cisco.aci.aci_l2out_logical_node_profile: *aci_second_node_profile_absent
+  register: nm_remove_second_node_profile
+
+- name: Verify remove_node_profile
+  assert:
+    that:
+    - cm_remove_node_profile is changed
+    - cm_remove_second_node_profile is changed
+    - nm_remove_node_profile is changed
+    - nm_remove_node_profile_again is not changed
+    - nm_remove_second_node_profile is changed
+
+# Remove L2out after testing
+- name: Remove L2out (normal_mode)
+  cisco.aci.aci_l2out:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l2out: ansible_l2out
+    state: absent
+
+# Remove Tenant after testing
+- name: Remove tenant (normal_mode)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
