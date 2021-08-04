@@ -102,7 +102,7 @@ EXAMPLES = r'''
     tenant: my_tenant
     l3out: my_l3out
     node_profile: my_node_profile
-    nterface_profile: my_interface_profile
+    interface_profile: my_interface_profile
     state: query
   delegate_to: localhost
   register: query_result

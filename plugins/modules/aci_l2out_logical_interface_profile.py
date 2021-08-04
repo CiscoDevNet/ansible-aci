@@ -37,7 +37,6 @@ options:
     description:
     - Name of the interface profile.
     type: str
-    default: default
     aliases: [ name, interface_profile_name, logical_interface ]
   state:
     description:
@@ -181,7 +180,7 @@ def main():
         tenant=dict(type='str', aliases=['tenant_name']),
         l2out=dict(type='str', aliases=['l2out_name']),
         node_profile=dict(type='str', default='default', aliases=['node_profile_name', 'logical_node']),
-        interface_profile=dict(type='str', default='default', aliases=['name', 'interface_profile_name', 'logical_interface']),
+        interface_profile=dict(type='str', aliases=['name', 'interface_profile_name', 'logical_interface']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query'])
     )
 
