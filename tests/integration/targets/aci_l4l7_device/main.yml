@@ -49,7 +49,7 @@
     domain_type: phys
     state: present
 
-# ADD service graph template
+# ADD L4-L7 DEVICE
 - name: Create L4-L7 Device
   aci_l4l7_device:
     <<: *aci_info
