@@ -1,0 +1,229 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain if it already exists
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+# CREATE DOMAIN
+- name: Create ansible_phys_domain
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: present
+
+# ADD service graph template
+- name: Create L4-L7 Device
+  aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    domain: ansible_phys_dom
+    func_type: GoTo
+    context_aware: single
+    is_copy: no
+    managed: no
+    dev_type: physical
+    svc_type: adc
+    trunking: no
+    prom_mode: yes
+    state: present
+  register: create_l4l7_device
+
+- name: Verify L4-L7 device has been created
+  assert:
+    that:
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.name == "ansible_device"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.contextAware == "single-Context"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.devtype == "PHYSICAL"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.funcType == "GoTo"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.isCopy == "no"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.managed == "no"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.promMode == "yes"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.svcType == "ADC"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "no"
+
+- name: Verify domain binding object has been created
+  assert:
+    that:
+    - create_l4l7_device.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/phys-ansible_phys_dom"
+
+# ADD device again to check idempotence
+- name: Create L4-L7 device again
+  aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    domain: ansible_phys_dom
+    func_type: GoTo
+    context_aware: single
+    is_copy: no
+    managed: no
+    dev_type: physical
+    svc_type: adc
+    trunking: no
+    prom_mode: yes
+    state: present
+  register: create_l4l7_device_again
+
+- name: Verify L4-L7 device has been created
+  assert:
+    that:
+    - create_l4l7_device_again is not changed
+    - create_l4l7_device_again.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+    - create_l4l7_device_again.current.0.vnsLDevVip.attributes.name == "ansible_device"
+    - create_l4l7_device_again.current.0.vnsLDevVip.attributes.contextAware == "single-Context"
+    - create_l4l7_device_again.current.0.vnsLDevVip.attributes.devtype == "PHYSICAL"
+    - create_l4l7_device_again.current.0.vnsLDevVip.attributes.funcType == "GoTo"
+    - create_l4l7_device_again.current.0.vnsLDevVip.attributes.isCopy == "no"
+    - create_l4l7_device_again.current.0.vnsLDevVip.attributes.managed == "no"
+    - create_l4l7_device_again.current.0.vnsLDevVip.attributes.promMode == "yes"
+    - create_l4l7_device_again.current.0.vnsLDevVip.attributes.svcType == "ADC"
+    - create_l4l7_device_again.current.0.vnsLDevVip.attributes.trunking == "no"
+
+- name: Verify domain binding object has been created
+  assert:
+    that:
+    - create_l4l7_device_again.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/phys-ansible_phys_dom"
+
+# MODIFY L4-L7 Device
+- name: Update L4-L7 device
+  aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    domain: ansible_phys_dom
+    func_type: GoThrough
+    context_aware: multi
+    is_copy: no
+    managed: no
+    dev_type: physical
+    svc_type: fw
+    trunking: yes
+    prom_mode: no
+    state: present
+  register: update_l4l7_device
+
+- name: Verify L4-L7 device has been updated
+  assert:
+    that:
+    - update_l4l7_device is changed
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.name == "ansible_device"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.contextAware == "multi-Context"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.devtype == "PHYSICAL"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.funcType == "GoThrough"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.isCopy == "no"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.managed == "no"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.promMode == "no"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.svcType == "FW"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "yes"
+
+- name: Verify domain binding object
+  assert:
+    that:
+    - update_l4l7_device.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/phys-ansible_phys_dom"
+
+# QUERY service graph template
+- name: Query L4-L7 Service Graph Template
+  aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    state: query
+  register: query_l4l7_device
+
+- name: Verify L4-L7 Service Graph Template attributes
+  assert:
+    that:
+    - query_l4l7_device is not changed
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.name == "ansible_device"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.contextAware == "multi-Context"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.devtype == "PHYSICAL"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.funcType == "GoThrough"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.isCopy == "no"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.managed == "no"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.promMode == "no"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.svcType == "FW"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "yes"
+
+- name: Query all L4-L7 Service Graph Templates
+  aci_l4l7_device:
+    <<: *aci_info
+    state: query
+  register: query_l4l7_device_all
+
+- name: Verify L4-L7 Device attributes
+  assert:
+    that:
+      query_l4l7_device_all is not changed
+
+# DELETE service graph template
+- name: Delete L4-L7 Device
+  aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    state: absent
+  register: remove_l4l7_device
+
+- name: Verify L4-L7 Service Graph Template deletion
+  assert:
+    that:
+    - remove_l4l7_device is changed
+    - remove_l4l7_device.current == []
+    - remove_l4l7_device.previous.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+    - remove_l4l7_device.previous.0.vnsLDevVip.attributes.name == "ansible_device"
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
