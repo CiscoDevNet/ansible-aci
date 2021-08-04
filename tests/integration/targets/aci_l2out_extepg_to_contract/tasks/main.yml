@@ -71,6 +71,7 @@
 - name: Verify l2extepg
   assert:
     that:
+    - l2extepg is changed
     - l2extepg.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
 
 - name: Add L2 external end point group again
@@ -105,6 +106,7 @@
 - name: Verify l2extepg_2
   assert:
     that:
+    - l2extepg_2 is changed
     - l2extepg_2.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out_2/instP-ansible_extepg_2"
 
 - name: Bind External End Point Groups to Contracts
@@ -121,6 +123,7 @@
 - name: Verify bind_extepg_provider_contract
   assert:
     that:
+    - bind_extepg_provider_contract is changed
     - bind_extepg_provider_contract.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg/rsprov-ansible_contract"
 
 - name: Bind second External End Point Groups to Contracts
@@ -137,6 +140,7 @@
 - name: Verify bind_extepg_provider_contract
   assert:
     that:
+    - bind_extepg_provider_contract is changed
     - bind_extepg_provider_contract.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out_2/instP-ansible_extepg_2/rsprov-ansible_contract2"
 
 - name: Query the External End Point Groups
@@ -163,6 +167,12 @@
     state: query
   register: query_all
 
+- name: Verify query_extepg
+  assert:
+    that:
+    - query_extepg is not changed
+    - query_extepg.current | length > 0
+
 - name: Remove existing contract to External End Point Groups
   aci_l2out_extepg_to_contract:
     <<: *aci_info
@@ -177,6 +187,8 @@
 - name: Verify remove_contract_extepg
   assert:
     that:
+    - remove_contract_extepg is changed
+    - remove_contract_extepg.current == []
     - remove_contract_extepg.previous.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg/rsprov-ansible_contract"
 
 - name: Bind External End Point Groups to Contracts
@@ -195,4 +207,5 @@
 - name: Verify bind_extepg_consumer_contract
   assert:
     that:
+    - bind_extepg_consumer_contract is not changed
     - bind_extepg_consumer_contract.msg == "the 'provider_match' is only configurable for Provided Contracts"
