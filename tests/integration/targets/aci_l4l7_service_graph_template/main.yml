@@ -93,7 +93,7 @@
       query_sgt_all is not changed
 
 # DELETE service graph template
-- name: Query L4-L7 Service Graph Template
+- name: Remove L4-L7 Service Graph Template
   aci_l4l7_service_graph_template:
     <<: *aci_info
     tenant: ansible_tenant
