@@ -52,6 +52,10 @@ options:
     - IPG name for Port-channels and vPCs
     - Port number for single ports
     type: str
+  encap:
+    description:
+    - encapsulation on the interface
+    type: str
   addr:
     description:
     - IP address.
@@ -59,10 +63,12 @@ options:
   interface_type:
     description:
     - Type of interface to build.
+    type: str
     choices: [ l3-port, sub-interface, ext-svi ]
   mode:
     description:
     - Interface mode, only used if instance_type is ext-svi
+    type:str
     choices: [ regular, native, untagged ]
   state:
     description:
