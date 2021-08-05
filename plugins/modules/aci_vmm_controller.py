@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2021, Manuel Widmer <mawidmer@cisco.com>
+# Copyright: (c) 2021, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -290,7 +291,6 @@ def main():
         required_if=[
             ['state', 'absent', ['domain', 'vm_provider', 'name']],
             ['state', 'present', ['domain', 'vm_provider', 'name']],
-            # ['state', 'query', ['vm_provider']]
         ],
     )
 
@@ -307,25 +307,29 @@ def main():
     vm_provider = module.params.get('vm_provider')
 
     controller_class = 'vmmCtrlrP'
-    controller_mo = 'uni/vmmp-{0}/dom-{1}/ctrlr-{2}'.format(VM_PROVIDER_MAPPING.get(vm_provider), domain, name)
-    controller_rn = 'vmmp-{0}/dom-{1}/ctrlr-{2}'.format(VM_PROVIDER_MAPPING.get(vm_provider), domain, name)
-
-    # Ensure that querying all objects works when only domain is provided
-    if name is None:
-        controller_mo = None
 
     aci = ACIModule(module)
+
     aci.construct_url(
-        root_class=dict(
-            aci_class=controller_class,
-            aci_rn=controller_rn,
-            module_object=controller_mo,
-            # target_filter=None
-        ),
-        child_classes=[
-            'vmmRsMgmtEPg',
-            'vmmRsAcc',
-        ]
+      root_class=dict(
+          aci_class='vmmProvP',
+          aci_rn='vmmp-{0}'.format(VM_PROVIDER_MAPPING.get(vm_provider)),
+          module_object=vm_provider,
+          target_filter={'name': vm_provider},
+      ),
+      subclass_1=dict(
+          aci_class='vmmDomP',
+          aci_rn='dom-{0}'.format(domain),
+          module_object=domain,
+          target_filter={'name': domain},
+      ),
+      subclass_2=dict(
+          aci_class='vmmCtrlrP',
+          aci_rn='ctrlr-{0}'.format(name),
+          module_object=name,
+          target_filter={'name': 'name'},
+      ),
+      child_classes=[ 'vmmRsMgmtEPg', 'vmmRsAcc' ],
     )
 
     aci.get_existing()
