@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2021, Manuel Widmer <mawidmer@cisco.com>
+# Copyright: (c) 2021, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -13,7 +14,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_vmm_vswitch
+module: aci_vmm_vswitch_policy
 short_description: Manage vSwitch policy for VmWare virtual domains profiles (vmm:DomP)
 description:
 - Manage vSwitch policy for VmWare vmm domains on Cisco ACI fabrics.
@@ -118,7 +119,6 @@ options:
           If you specify a value of 0, then NetFlow does not drop any packets.
         - The range is from 0 to 1000. The default value is 0.
         type: int
-
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -126,10 +126,6 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
-  name_alias:
-    description:
-    - The alias for the current object. This relates to the nameAlias field in ACI.
-    type: str
   vm_provider:
     description:
     - The VM platform for VMM Domains.
@@ -151,7 +147,7 @@ author:
 
 EXAMPLES = r'''
 - name: Add a vSwitch policy with LLDP
-  cisco.aci.aci_vmm_vswitch:
+  cisco.aci.aci_vmm_vswitch_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -161,7 +157,7 @@ EXAMPLES = r'''
     state: present
 
 - name: Add a vSwitch policy with link aggregation
-  cisco.aci.aci_vmm_vswitch:
+  cisco.aci.aci_vmm_vswitch_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -177,7 +173,7 @@ EXAMPLES = r'''
     state: present
 
 - name: Remove vSwitch Policy from VMware VMM domain
-  cisco.aci.aci_vmm_vswitch:
+  cisco.aci.aci_vmm_vswitch_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -186,7 +182,7 @@ EXAMPLES = r'''
     state: absent
 
 - name: Query the vSwitch policy of the VMWare domain
-  cisco.aci.aci_vmm_vswitch:
+  cisco.aci.aci_vmm_vswitch_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -347,18 +343,17 @@ def main():
         stp_policy=dict(type='str'),
         enhanced_lag=dict(type='list', elements='dict', options=enhanced_lag_spec),
         netflow_exporter=dict(type='dict', options=netflow_spec),
-        domain=dict(type='str', required=True, aliases=['domain_name', 'domain_profile']),
+        domain=dict(type='str', aliases=['domain_name', 'domain_profile']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         vm_provider=dict(type='str', choices=list(VM_PROVIDER_MAPPING.keys())),
-        name_alias=dict(type='str'),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['domain']],
-            ['state', 'present', ['domain']],
+            ['state', 'absent', ['domain', 'vm_provider']],
+            ['state', 'present', ['domain', 'vm_provider']],
         ],
     )
 
@@ -372,34 +367,45 @@ def main():
     domain = module.params.get('domain')
     state = module.params.get('state')
     vm_provider = module.params.get('vm_provider')
-    name_alias = module.params.get('name_alias')
-
-    vswitch_class = 'vmmVSwitchPolicyCont'
-    vswitch_container_mo = 'uni/vmmp-{0}/dom-{1}/vswitchpolcont'.format(VM_PROVIDER_MAPPING.get(vm_provider), domain)
-    vswitch_container_rn = 'vmmp-{0}/dom-{1}/vswitchpolcont'.format(VM_PROVIDER_MAPPING.get(vm_provider), domain)
-
-    # Ensure that querying all objects works when only domain is provided
-    # if name is None:
-    #    vswitch_container_mo = None
 
     aci = ACIModule(module)
+    vswitch_class = 'vmmVSwitchPolicyCont'
+
+    child_classes = [
+        'vmmRsVswitchOverrideLldpIfPol',
+        'vmmRsVswitchOverrideLacpPol',
+        'vmmRsVswitchOverrideCdpIfPol',
+        'lacpEnhancedLagPol'
+    ]
+    if mtu_policy is not None:
+        child_classes.append('vmmRsVswitchOverrideMtuPol')
+
+    if stp_policy is not None:
+        child_classes.append('vmmRsVswitchOverrideStpPol')
+
+    if isinstance(netflow_exporter, dict):
+        child_classes.append('vmmRsVswitchExporterPol')
+
     aci.construct_url(
-        root_class=dict(
-            aci_class=vswitch_class,
-            aci_rn=vswitch_container_rn,
-            module_object=vswitch_container_mo,
-            target_filter=None
-            # target_filter={'name': domain, 'usracc': name},
-        ),
-        child_classes=[
-            'vmmRsVswitchOverrideMtuPol',
-            'vmmRsVswitchOverrideLldpIfPol',
-            'vmmRsVswitchOverrideLacpPol',
-            'vmmRsVswitchOverrideCdpIfPol',
-            'vmmRsVswitchOverrideStpPol',
-            'vmmRsVswitchExporterPol',
-            'lacpEnhancedLagPol'
-        ]
+      root_class=dict(
+          aci_class='vmmProvP',
+          aci_rn='vmmp-{0}'.format(VM_PROVIDER_MAPPING.get(vm_provider)),
+          module_object=vm_provider,
+          target_filter={'name': vm_provider},
+      ),
+      subclass_1=dict(
+          aci_class='vmmDomP',
+          aci_rn='dom-{0}'.format(domain),
+          module_object=domain,
+          target_filter={'name': domain},
+      ),
+      subclass_2=dict(
+          aci_class='vmmVSwitchPolicyCont',
+          aci_rn='vswitchpolcont',
+          module_object='vswitchpolcont',
+          target_filter={'name': 'vswitchpolcont'},
+      ),
+      child_classes=child_classes,
     )
 
     aci.get_existing()
@@ -428,7 +434,7 @@ def main():
             ))))
 
         if stp_policy is not None:
-            children.append(dict(vmmRsVswitchOverrideMtuPol=dict(attributes=dict(
+            children.append(dict(vmmRsVswitchOverrideStpPol=dict(attributes=dict(
                 tDn='uni/infra/ifPol-{0}'.format(stp_policy)
             ))))
 
@@ -451,9 +457,7 @@ def main():
 
         aci.payload(
             aci_class=vswitch_class,
-            class_config=dict(
-                nameAlias=name_alias,
-            ),
+            class_config=dict(rn='vswitchpolcont'),
             child_configs=children
         )
 
