@@ -106,8 +106,8 @@ EXAMPLES = r'''
     password: SomeSecretPassword
     tenant: my_tenant
     l2out: my_l2out
-    #node_profile: default
-    #interface_profile: my_interface_profile # 'default' by default
+    node_profile: default
+    interface_profile: my_interface_profile # 'default' by default
     state: present
   delegate_to: localhost
 
@@ -118,8 +118,8 @@ EXAMPLES = r'''
     password: SomeSecretPassword
     tenant: my_tenant
     l2out: my_l2out
-    #node_profile: default
-    #interface_profile: default
+    node_profile: default
+    interface_profile: default
     interface_type: vpc
     pod_id: 1
     leaves: 101-102
@@ -282,8 +282,8 @@ def main():
     argument_spec.update( # See comments in aci_static_binding_to_epg module.
         tenant=dict(type='str', aliases=['tenant_name']),
         l2out=dict(type='str', aliases=['l2out_name']),
-        node_profile=dict(type='str', default='default', aliases=['node_profile_name', 'logical_node']),
-        interface_profile=dict(type='str', default='default', aliases=['name', 'interface_profile_name', 'logical_interface']),
+        node_profile=dict(type='str', aliases=['node_profile_name', 'logical_node']),
+        interface_profile=dict(type='str', aliases=['name', 'interface_profile_name', 'logical_interface']),
         interface_type=dict(type='str', default='switch_port', choices=['switch_port', 'port_channel', 'vpc']),
         pod_id=dict(type='int', aliases=['pod', 'pod_number']),
         leaves=dict(type='list', elements='str', aliases=['leafs', 'nodes', 'paths', 'switches']),
@@ -325,6 +325,8 @@ def main():
     state = module.params.get('state')
 
     path = INTERFACE_TYPE_MAPPING[interface_type].format(pod_id=pod_id, leaves=leaves, interface=interface)
+    if not pod_id or not leaves or not interface:
+        path = None
 
     path_target_filter = {}
     if any((pod_id, leaves, interface)):
