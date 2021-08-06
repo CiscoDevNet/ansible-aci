@@ -1,0 +1,186 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain if it already exists
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+# CREATE DOMAIN
+- name: Create ansible_phys_domain
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: present
+
+# CREATE L4-L7 LOGICAL DEVICE
+- name: Create L4-L7 Device
+  aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    domain: ansible_phys_dom
+    func_type: GoTo
+    context_aware: single
+    is_copy: no
+    managed: no
+    dev_type: physical
+    svc_type: adc
+    trunking: no
+    prom_mode: yes
+    state: present
+
+# CREATE L4-L7 LOGICAL INTERFACE
+- name: Add Logical Interface
+  aci_l4l7_logical_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ansible_log_intf
+    encap: vlan-987
+    state: present
+  register: add_logical_interface
+
+- name: Verify Logical Interface Attributes
+  assert:
+    that:
+    - add_logical_interface.current.0.vnsLIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
+    - add_logical_interface.current.0.vnsLIf.attributes.name == "ansible_log_intf"
+    - add_logical_interface.current.0.vnsLIf.attributes.encap == "vlan-987"
+
+# ADD L4-L7 LOGICAL INTERFACE AGAIN TO CHECK IDEMPOTENCE
+- name: Add Logical Interface again
+  aci_l4l7_logical_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ansible_log_intf
+    encap: vlan-987
+    state: present
+  register: add_logical_interface_again
+
+- name: Verify Logical Interface Attributes have not changed
+  assert:
+    that:
+    - add_logical_interface_again is not changed
+    - add_logical_interface_again.current.0.vnsLIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
+    - add_logical_interface_again.current.0.vnsLIf.attributes.name == "ansible_log_intf"
+    - add_logical_interface_again.current.0.vnsLIf.attributes.encap == "vlan-987"
+
+# MODIFY L4-L7 LOGICAL INTERFACE
+- name: Update L4-L7 Logical Interface
+  aci_l4l7_logical_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ansible_log_intf
+    encap: vlan-988
+    state: present
+  register: update_logical_interface
+
+- name: Verify Logical Interface update
+  assert:
+    that:
+    - update_logical_interface is changed
+    - update_logical_interface.current.0.vnsLIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
+    - update_logical_interface.current.0.vnsLIf.attributes.name == "ansible_log_intf"
+    - update_logical_interface.current.0.vnsLIf.attributes.encap == "vlan-988"
+
+# QUERY L4-L7 LOGICAL INTERFACE
+- name: Query L4-L7 Logical Interface
+  aci_l4l7_logical_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ansible_log_intf
+    state: query
+  register: query_logical_interface
+
+- name: Verify Logical Interface Attributes have not changed
+  assert:
+    that:
+    - query_logical_interface is not changed
+    - query_logical_interface.current.0.vnsLIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
+    - query_logical_interface.current.0.vnsLIf.attributes.name == "ansible_log_intf"
+    - query_logical_interface.current.0.vnsLIf.attributes.encap == "vlan-988"
+
+# QUERY ALL L4-L7 LOGICAL INTERFACES
+- name: Query All L4-L7 Logical Interfaces
+  aci_l4l7_logical_interface:
+    <<: *aci_info
+    state: query
+  register: query_logical_interface_all
+
+- name: Verify Logical Interface Attributes have not changed
+  assert:
+    that:
+    - query_logical_interface_all is not changed
+
+# DELETE L4-L7 LOGICAL INTERFACE
+- name: Remove L4-L7 Logical Interface
+  aci_l4l7_logical_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ansible_log_intf
+    state: absent
+  register: delete_logical_interface
+
+- name: Verify Logical Interface Deletion
+  assert:
+    that:
+    - delete_logical_interface is changed
+    - delete_logical_interface.current == []
+    - delete_logical_interface.previous.0.vnsLIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
+    - delete_logical_interface.previous.0.vnsLIf.attributes.name == "ansible_log_intf"
+    - delete_logical_interface.previous.0.vnsLIf.attributes.encap == "vlan-988"
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
