@@ -301,14 +301,16 @@ def main():
     aci.get_existing()
 
     if state == 'present':
+        class_config = dict(
+            name=name,
+            format=format,
+            includeMilliSeconds=include_ms,
+        )
+        if include_time_zone is not None:
+            class_config['includeTimeZone'] = include_time_zone
         aci.payload(
             aci_class='syslogGroup',
-            class_config=dict(
-                name=name,
-                format=format,
-                includeMilliSeconds=include_ms,
-                includeTimeZone=include_time_zone,
-            ),
+            class_config=class_config,
             child_configs=[
                 dict(
                     syslogProf=dict(
