@@ -227,9 +227,12 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['tenant', 'device', 'logical_interface']],
+            ['state', 'absent', ['tenant', 'device', 'logical_interface',
+                                 'concrete_device', 'concrete_interface']],
             ['state', 'present', ['tenant', 'device', 'logical_interface',
-                                  'concrete_device', 'concrete_interface']]
+                                  'concrete_device', 'concrete_interface']],
+            ['state', 'query', ['tenant', 'device', 'logical_interface',
+                                'concrete_device', 'concrete_interface']]
         ]
     )
 
