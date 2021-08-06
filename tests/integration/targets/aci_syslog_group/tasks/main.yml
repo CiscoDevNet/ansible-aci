@@ -1,0 +1,243 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_syslog_group if it already exists
+  cisco.aci.aci_syslog_group:
+    <<: *aci_info
+    name: ansible_syslog_group
+    state: absent
+
+# ADD syslog group
+- name: Add syslog group (version >= 4)
+  cisco.aci.aci_syslog_group: &aci_syslog_present
+    <<: *aci_info
+    name: ansible_syslog_group
+    admin_state: enabled
+    format: aci
+    local_file_logging: enabled
+    local_file_log_severity: warnings
+    console_logging: enabled
+    console_log_severity: critical
+    include_ms: yes
+    include_time_zone: yes
+    state: present
+  register: add_syslog_group
+  when: version.current.0.topSystem.attributes.version is version('4', '>=')
+
+- name: Add syslog group (version < 4)
+  cisco.aci.aci_syslog_group: &aci_syslog_present_32
+    <<: *aci_info
+    name: ansible_syslog_group
+    admin_state: enabled
+    format: aci
+    local_file_logging: enabled
+    local_file_log_severity: warnings
+    console_logging: enabled
+    console_log_severity: critical
+    include_ms: yes
+    state: present
+  register: add_syslog_group_32
+  when: version.current.0.topSystem.attributes.version is version('4', '<')
+
+- name: Verify that ansible_syslog_group has been created with correct attributes (version > 4)
+  assert:
+    that:
+    - add_syslog_group.current.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
+    - add_syslog_group.current.0.syslogGroup.attributes.name == "ansible_syslog_group"
+    - add_syslog_group.current.0.syslogGroup.attributes.format == "aci"
+    - add_syslog_group.current.0.syslogGroup.attributes.includeMilliSeconds == "yes"
+    - add_syslog_group.current.0.syslogGroup.attributes.includeTimeZone == "yes"
+  when: version.current.0.topSystem.attributes.version is version('4', '>=')
+
+- name: Verify that ansible_syslog_group has been created with correct attributes (version < 4)
+  assert:
+    that:
+    - add_syslog_group_32.current.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
+    - add_syslog_group_32.current.0.syslogGroup.attributes.name == "ansible_syslog_group"
+    - add_syslog_group_32.current.0.syslogGroup.attributes.format == "aci"
+    - add_syslog_group_32.current.0.syslogGroup.attributes.includeMilliSeconds == "yes"
+  when: version.current.0.topSystem.attributes.version is version('4', '<')
+  
+- name: Verify that ansible_syslog_group children have correct attributes (version >= 4)
+  assert:
+    that:
+    - add_syslog_group.current.0.syslogGroup.children.0.syslogConsole.attributes.adminState == "enabled"
+    - add_syslog_group.current.0.syslogGroup.children.0.syslogConsole.attributes.severity == "critical"
+    - add_syslog_group.current.0.syslogGroup.children.1.syslogFile.attributes.adminState == "enabled"
+    - add_syslog_group.current.0.syslogGroup.children.1.syslogFile.attributes.severity == "warnings"
+    - add_syslog_group.current.0.syslogGroup.children.2.syslogProf.attributes.adminState == "enabled"
+  when: version.current.0.topSystem.attributes.version is version('4', '>=')
+
+- name: Verify that ansible_syslog_group children have correct attributes (version < 4)
+  assert:
+    that:
+    - add_syslog_group_32.current.0.syslogGroup.children.0.syslogConsole.attributes.adminState == "enabled"
+    - add_syslog_group_32.current.0.syslogGroup.children.0.syslogConsole.attributes.severity == "critical"
+    - add_syslog_group_32.current.0.syslogGroup.children.1.syslogFile.attributes.adminState == "enabled"
+    - add_syslog_group_32.current.0.syslogGroup.children.1.syslogFile.attributes.severity == "warnings"
+    - add_syslog_group_32.current.0.syslogGroup.children.2.syslogProf.attributes.adminState == "enabled"
+  when: version.current.0.topSystem.attributes.version is version('4', '<')
+
+# ADD syslog group again to check idempotency
+- name: Add syslog group again (version >= 4)
+  cisco.aci.aci_syslog_group:
+    <<: *aci_syslog_present
+  register: add_syslog_group_again
+  when: version.current.0.topSystem.attributes.version is version('4', '>=')
+
+- name: Add syslog group again (version < 4)
+  cisco.aci.aci_syslog_group:
+    <<: *aci_syslog_present_32
+  register: add_syslog_group_again_32
+  when: version.current.0.topSystem.attributes.version is version('4', '<')
+
+- name: Verify that ansible_syslog_group stays the same (version >= 4)
+  assert:
+    that:
+    - add_syslog_group_again is not changed
+  when: version.current.0.topSystem.attributes.version is version('4', '>=')
+
+- name: Verify that ansible_syslog_group stays the same (version < 4)
+  assert:
+    that:
+    - add_syslog_group_again_32 is not changed
+  when: version.current.0.topSystem.attributes.version is version('4', '<')
+
+# MODIFY syslog group
+- name: Update syslog group (version >= 4)
+  cisco.aci.aci_syslog_group:
+    <<: *aci_info
+    name: ansible_syslog_group
+    admin_state: disabled
+    format: nxos
+    local_file_logging: enabled
+    local_file_log_severity: debugging
+    console_logging: disabled
+    console_log_severity: emergencies
+    include_ms: no
+    include_time_zone: no
+    state: present
+  register: update_syslog_group
+  when: version.current.0.topSystem.attributes.version is version('4', '>=')
+
+- name: Update syslog group (version < 4)
+  cisco.aci.aci_syslog_group:
+    <<: *aci_info
+    name: ansible_syslog_group
+    admin_state: disabled
+    format: nxos
+    local_file_logging: enabled
+    local_file_log_severity: debugging
+    console_logging: disabled
+    console_log_severity: emergencies
+    include_ms: no
+    state: present
+  register: update_syslog_group_32
+  when: version.current.0.topSystem.attributes.version is version('4', '<')
+
+- name: Verify that ansible_syslog_group has been updated with correct attributes (version >= 4)
+  assert:
+    that:
+    - update_syslog_group.current.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
+    - update_syslog_group.current.0.syslogGroup.attributes.name == "ansible_syslog_group"
+    - update_syslog_group.current.0.syslogGroup.attributes.format == "nxos"
+    - update_syslog_group.current.0.syslogGroup.attributes.includeMilliSeconds == "no"
+    - update_syslog_group.current.0.syslogGroup.attributes.includeTimeZone == "no"
+  when: version.current.0.topSystem.attributes.version is version('4', '>=')
+
+- name: Verify that ansible_syslog_group has been updated with correct attributes (version < 4)
+  assert:
+    that:
+    - update_syslog_group_32.current.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
+    - update_syslog_group_32.current.0.syslogGroup.attributes.name == "ansible_syslog_group"
+    - update_syslog_group_32.current.0.syslogGroup.attributes.format == "nxos"
+    - update_syslog_group_32.current.0.syslogGroup.attributes.includeMilliSeconds == "no"
+  when: version.current.0.topSystem.attributes.version is version('4', '<')
+
+- name: Verify that ansible_syslog_group children have correct attributes (version >= 4)
+  assert:
+    that:
+    - update_syslog_group.current.0.syslogGroup.children.0.syslogConsole.attributes.adminState == "disabled"
+    - update_syslog_group.current.0.syslogGroup.children.0.syslogConsole.attributes.severity == "emergencies"
+    - update_syslog_group.current.0.syslogGroup.children.1.syslogFile.attributes.adminState == "enabled"
+    - update_syslog_group.current.0.syslogGroup.children.1.syslogFile.attributes.severity == "debugging"
+    - update_syslog_group.current.0.syslogGroup.children.2.syslogProf.attributes.adminState == "disabled"
+  when: version.current.0.topSystem.attributes.version is version('4', '>=')
+
+- name: Verify that ansible_syslog_group children have correct attributes (version < 4)
+  assert:
+    that:
+    - update_syslog_group_32.current.0.syslogGroup.children.0.syslogConsole.attributes.adminState == "disabled"
+    - update_syslog_group_32.current.0.syslogGroup.children.0.syslogConsole.attributes.severity == "emergencies"
+    - update_syslog_group_32.current.0.syslogGroup.children.1.syslogFile.attributes.adminState == "enabled"
+    - update_syslog_group_32.current.0.syslogGroup.children.1.syslogFile.attributes.severity == "debugging"
+    - update_syslog_group_32.current.0.syslogGroup.children.2.syslogProf.attributes.adminState == "disabled"
+  when: version.current.0.topSystem.attributes.version is version('4', '<')
+
+# QUERY syslog group
+- name: Query the syslog group
+  cisco.aci.aci_syslog_group:
+    <<: *aci_info
+    name: ansible_syslog_group
+    state: query
+  register: query_syslog_group
+
+- name: Verify the attributes under query_syslog_group
+  assert:
+    that:
+    - query_syslog_group is not changed
+    - query_syslog_group.current.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
+    - query_syslog_group.current.0.syslogGroup.attributes.name == "ansible_syslog_group"
+
+- name: Query all syslog groups
+  cisco.aci.aci_syslog_group:
+    <<: *aci_info
+    state: query
+  register: query_syslog_group_all
+
+- name: Verify query_syslog_group_all
+  assert:
+    that:
+    - query_syslog_group_all is not changed
+
+# DELETE syslog group
+- name: Remove the syslog group
+  cisco.aci.aci_syslog_group:
+    <<: *aci_info
+    name: ansible_syslog_group
+    state: absent
+  register: remove_syslog_group
+
+- name: Verify remove_syslog_group
+  assert:
+    that:
+    - remove_syslog_group is changed
+    - remove_syslog_group.previous.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
+    - remove_syslog_group.previous.0.syslogGroup.attributes.name == "ansible_syslog_group"
