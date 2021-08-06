@@ -329,7 +329,7 @@ def main():
           module_object=name,
           target_filter={'name': 'name'},
       ),
-      child_classes=[ 'vmmRsMgmtEPg', 'vmmRsAcc' ],
+      child_classes=['vmmRsMgmtEPg', 'vmmRsAcc'],
     )
 
     aci.get_existing()
