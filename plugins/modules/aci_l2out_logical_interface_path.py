@@ -279,7 +279,7 @@ INTERFACE_TYPE_MAPPING = dict(
 
 def main():
     argument_spec = aci_argument_spec()
-    argument_spec.update( # See comments in aci_static_binding_to_epg module.
+    argument_spec.update(  # See comments in aci_static_binding_to_epg module.
         tenant=dict(type='str', aliases=['tenant_name']),
         l2out=dict(type='str', aliases=['l2out_name']),
         node_profile=dict(type='str', aliases=['node_profile_name', 'logical_node']),
@@ -307,9 +307,9 @@ def main():
     interface_type = module.params.get('interface_type')
     pod_id = module.params.get('pod_id')
     leaves = module.params.get('leaves')
-    if leaves is not None: # Process leaves, and support dash-delimited leaves
+    if leaves is not None:  # Process leaves, and support dash-delimited leaves
         leaves = []
-        for leaf in module.params.get('leaves'): # Users are likely to use integers for leaf IDs, which would raise an exception when using the join method
+        for leaf in module.params.get('leaves'):  # Users are likely to use integers for leaf IDs, which would raise an exception when using the join method
             leaves.extend(str(leaf).split('-'))
         if len(leaves) == 1:
             if interface_type == 'vpc':
