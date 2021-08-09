@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_l2out_logical_entities_profile
+module: aci_l2out_logical_interface_path
 short_description: Manage Layer 2 Outside (L2Out) logical interface path (l2extRsPathL2OutAtt)
 description:
 - Manage interface path entry of L2 outside node (BD extension) on Cisco ACI fabrics.
@@ -31,13 +31,11 @@ options:
     description:
     - Name of the node profile.
     type: str
-    default: default
     aliases: [ node_profile_name, logical_node ]
   interface_profile:
     description:
     - Name of the interface profile.
     type: str
-    default: default
     aliases: [ name, interface_profile_name, logical_interface ]
   interface_type:
     description:

@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_l2out_logical_entities_profile
+module: aci_l2out_logical_interface_profile
 short_description: Manage Layer 2 Outside (L2Out) interface profiles (l2ext:LIfP)
 description:
 - Manage interface profiles of L2 outside (BD extension) on Cisco ACI fabrics.

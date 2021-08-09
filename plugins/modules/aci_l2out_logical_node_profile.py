@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_l2out_logical_entities_profile
+module: aci_l2out_logical_node_profile
 short_description: Manage Layer 2 Outside (L2Out) logical node profiles (l2ext:LNodeP)
 description:
 - Manage node profiles of L2 outside (BD extension) on Cisco ACI fabrics.
