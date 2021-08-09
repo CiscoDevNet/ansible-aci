@@ -41,7 +41,6 @@ options:
     - Name of the virtual domain profile.
     type: str
     aliases: [ domain_name, domain_profile ]
-    required: true
   enhanced_lag:
     description:
     - List of enhanced LAG policies if vSwitch needs to be connected via VPC.
@@ -387,25 +386,25 @@ def main():
         child_classes.append('vmmRsVswitchExporterPol')
 
     aci.construct_url(
-      root_class=dict(
-          aci_class='vmmProvP',
-          aci_rn='vmmp-{0}'.format(VM_PROVIDER_MAPPING.get(vm_provider)),
-          module_object=vm_provider,
-          target_filter={'name': vm_provider},
-      ),
-      subclass_1=dict(
-          aci_class='vmmDomP',
-          aci_rn='dom-{0}'.format(domain),
-          module_object=domain,
-          target_filter={'name': domain},
-      ),
-      subclass_2=dict(
-          aci_class='vmmVSwitchPolicyCont',
-          aci_rn='vswitchpolcont',
-          module_object='vswitchpolcont',
-          target_filter={'name': 'vswitchpolcont'},
-      ),
-      child_classes=child_classes,
+        root_class=dict(
+            aci_class='vmmProvP',
+            aci_rn='vmmp-{0}'.format(VM_PROVIDER_MAPPING.get(vm_provider)),
+            module_object=vm_provider,
+            target_filter={'name': vm_provider},
+        ),
+        subclass_1=dict(
+            aci_class='vmmDomP',
+            aci_rn='dom-{0}'.format(domain),
+            module_object=domain,
+            target_filter={'name': domain},
+        ),
+        subclass_2=dict(
+            aci_class='vmmVSwitchPolicyCont',
+            aci_rn='vswitchpolcont',
+            module_object='vswitchpolcont',
+            target_filter={'name': 'vswitchpolcont'},
+        ),
+        child_classes=child_classes,
     )
 
     aci.get_existing()
