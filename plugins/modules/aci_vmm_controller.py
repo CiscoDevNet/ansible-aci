@@ -15,10 +15,9 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_vmm_controller
-short_description: Manage Controller to domain association for virtual domains profiles (vmm:DomP)
+short_description: Manage VMM Controller for virtual domains profiles (vmm:CtrlrP)
 description:
 - Manage vCenter virtual domains on Cisco ACI fabrics.
-  Currently only VMware vSphere Distributed Switch is supported via this module.
 options:
   name:
     description:
@@ -27,7 +26,7 @@ options:
     aliases: []
   controller_hostname:
     description:
-    - Hostname of IP of the controller.
+    - Hostname or IP of the controller.
     type: str
     aliases: []
   dvs_version:
@@ -59,7 +58,7 @@ options:
     description:
     - Name of the VMM credentials to be used
     type: str
-  management_epg:
+  inband_management_epg:
     description:
     - Name of the management EPG to be used by the controller. Only supports in-band management EPGs for now.
     type: str
@@ -279,7 +278,7 @@ def main():
         domain=dict(type='str', aliases=['domain_name', 'domain_profile']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         credentials=dict(type='str'),
-        management_epg=dict(type='str'),
+        inband_management_epg=dict(type='str'),
         name_alias=dict(type='str'),
         datacenter=dict(type='str'),
         vm_provider=dict(type='str', choices=list(VM_PROVIDER_MAPPING.keys())),
@@ -301,7 +300,7 @@ def main():
     domain = module.params.get('domain')
     state = module.params.get('state')
     credentials = module.params.get('credentials')
-    management_epg = module.params.get('management_epg')
+    inband_management_epg = module.params.get('inband_management_epg')
     name_alias = module.params.get('name_alias')
     datacenter = module.params.get('datacenter')
     vm_provider = module.params.get('vm_provider')
@@ -311,34 +310,34 @@ def main():
     aci = ACIModule(module)
 
     aci.construct_url(
-      root_class=dict(
-          aci_class='vmmProvP',
-          aci_rn='vmmp-{0}'.format(VM_PROVIDER_MAPPING.get(vm_provider)),
-          module_object=vm_provider,
-          target_filter={'name': vm_provider},
-      ),
-      subclass_1=dict(
-          aci_class='vmmDomP',
-          aci_rn='dom-{0}'.format(domain),
-          module_object=domain,
-          target_filter={'name': domain},
-      ),
-      subclass_2=dict(
-          aci_class='vmmCtrlrP',
-          aci_rn='ctrlr-{0}'.format(name),
-          module_object=name,
-          target_filter={'name': 'name'},
-      ),
-      child_classes=['vmmRsMgmtEPg', 'vmmRsAcc'],
+        root_class=dict(
+            aci_class='vmmProvP',
+            aci_rn='vmmp-{0}'.format(VM_PROVIDER_MAPPING.get(vm_provider)),
+            module_object=vm_provider,
+            target_filter={'name': vm_provider},
+        ),
+        subclass_1=dict(
+            aci_class='vmmDomP',
+            aci_rn='dom-{0}'.format(domain),
+            module_object=domain,
+            target_filter={'name': domain},
+        ),
+        subclass_2=dict(
+            aci_class='vmmCtrlrP',
+            aci_rn='ctrlr-{0}'.format(name),
+            module_object=name,
+            target_filter={'name': 'name'},
+        ),
+        child_classes=['vmmRsMgmtEPg', 'vmmRsAcc'],
     )
 
     aci.get_existing()
 
     if state == 'present':
         children = list()
-        if management_epg is not None:
+        if inband_management_epg is not None:
             children.append(dict(vmmRsMgmtEPg=dict(attributes=dict(
-                tDn='uni/tn-mgmt/mgmtp-default/inb-{0}'.format(management_epg)
+                tDn='uni/tn-mgmt/mgmtp-default/inb-{0}'.format(inband_management_epg)
             ))))
 
         if credentials is not None:

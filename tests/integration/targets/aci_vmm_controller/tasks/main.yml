@@ -30,127 +30,133 @@
     - microsoft
     - openstack
 
-# ADD DOMAIN
-- name: Add VMM domain
-  cisco.aci.aci_domain:
-    <<: *aci_info
-    domain: vmm_dom
-    domain_type: vmm
-    vm_provider: "{{ item }}"
-    state: present
-  register: nm_add_domain
-  loop:
-    - vmware
-    - redhat
-    - microsoft
-    - openstack
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Verify VMM add_domain
-  assert:
-    that:
-    - nm_add_domain is changed
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
+  block:
+  # ADD DOMAIN
+  - name: Add VMM domain
+    cisco.aci.aci_domain:
+      <<: *aci_info
+      domain: vmm_dom
+      domain_type: vmm
+      vm_provider: "{{ item }}"
+      state: present
+    register: nm_add_domain
+    loop:
+      - vmware
+      - redhat
+      - microsoft
+      - openstack
 
-- name: Add controller to VMware VMM domain
-  aci_vmm_controller: &add_controller
-    <<: *aci_info
-    domain: vmm_dom
-    name: vCenter1
-    controller_hostname: 10.1.1.1
-    dvs_version: unmanaged
-    vm_provider: vmware
-    credentials: vCenterCredentials1
-    datacenter: DC1
-    state: present
-  register: nm_add_controller
+  - name: Verify VMM add_domain
+    assert:
+      that:
+      - nm_add_domain is changed
 
-- name: Verify VMM add_controller
-  assert:
-    that:
-    - nm_add_controller is changed
-    - nm_add_controller.sent.vmmCtrlrP.attributes.name == 'vCenter1'
-    - nm_add_controller.proposed.vmmCtrlrP.attributes.name == 'vCenter1'
-    - nm_add_controller.previous == []
-    - nm_add_controller.current.0.vmmCtrlrP.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/ctrlr-vCenter1'
-    - nm_add_controller.current.0.vmmCtrlrP.attributes.name == 'vCenter1'
+  - name: Add controller to VMware VMM domain
+    aci_vmm_controller: &add_controller
+      <<: *aci_info
+      domain: vmm_dom
+      name: vCenter1
+      controller_hostname: 10.1.1.1
+      dvs_version: unmanaged
+      vm_provider: vmware
+      credentials: vCenterCredentials1
+      datacenter: DC1
+      state: present
+    register: nm_add_controller
 
-- name: Add another controller to all VMM domain
-  aci_vmm_controller:
-    <<: *add_controller
-    name: vCenter2
-    controller_hostname: 10.10.1.1
-    vm_provider: "{{ item }}"
-    state: present
-  register: add_controller
-  loop:
-    - vmware
-    - redhat
-    - microsoft
-    - openstack
+  - name: Verify VMM add_controller
+    assert:
+      that:
+      - nm_add_controller is changed
+      - nm_add_controller.sent.vmmCtrlrP.attributes.name == 'vCenter1'
+      - nm_add_controller.proposed.vmmCtrlrP.attributes.name == 'vCenter1'
+      - nm_add_controller.previous == []
+      - nm_add_controller.current.0.vmmCtrlrP.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/ctrlr-vCenter1'
+      - nm_add_controller.current.0.vmmCtrlrP.attributes.name == 'vCenter1'
 
-- name: Verify another VMM add_controller
-  assert:
-    that:
-    - add_controller is changed
+  - name: Add another controller to all VMM domain
+    aci_vmm_controller:
+      <<: *add_controller
+      name: vCenter2
+      controller_hostname: 10.10.1.1
+      vm_provider: "{{ item }}"
+      state: present
+    register: add_controller
+    loop:
+      - vmware
+      - redhat
+      - microsoft
+      - openstack
 
-- name: Add controller to VMware VMM domain again
-  aci_vmm_controller:
-    <<: *add_controller
-    name: vCenter2
-    controller_hostname: 10.10.1.1
-    state: present
-  register: add_controller_again
+  - name: Verify another VMM add_controller
+    assert:
+      that:
+      - add_controller is changed
 
-- name: Verify another VMM add_controller again
-  assert:
-    that:
-    - add_controller_again is not changed
+  - name: Add controller to VMware VMM domain again
+    aci_vmm_controller:
+      <<: *add_controller
+      name: vCenter2
+      controller_hostname: 10.10.1.1
+      state: present
+    register: add_controller_again
 
-- name: Query controller
-  aci_vmm_controller:
-    <<: *aci_info
-    domain: vmm_dom
-    name: vCenter1
-    vm_provider: vmware
-    state: query
-  register: query_controller
+  - name: Verify another VMM add_controller again
+    assert:
+      that:
+      - add_controller_again is not changed
 
-- name: Verify VMM query_controller
-  assert:
-    that:
-    - query_controller is not changed
-    - query_controller.current.0.vmmCtrlrP.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/ctrlr-vCenter1'
-    - query_controller.current.0.vmmCtrlrP.attributes.name == 'vCenter1'
+  - name: Query controller
+    aci_vmm_controller:
+      <<: *aci_info
+      domain: vmm_dom
+      name: vCenter1
+      vm_provider: vmware
+      state: query
+    register: query_controller
 
-- name: Query all controllers
-  aci_vmm_controller:
-    <<: *aci_info
-    domain: vmm_dom
-    vm_provider: vmware
-    state: query
-  register: query_controller
+  - name: Verify VMM query_controller
+    assert:
+      that:
+      - query_controller is not changed
+      - query_controller.current.0.vmmCtrlrP.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/ctrlr-vCenter1'
+      - query_controller.current.0.vmmCtrlrP.attributes.name == 'vCenter1'
 
-- name: Verify VMM query_controller
-  assert:
-    that:
-    - query_controller is not changed
+  - name: Query all controllers
+    aci_vmm_controller:
+      <<: *aci_info
+      domain: vmm_dom
+      vm_provider: vmware
+      state: query
+    register: query_controller
 
-- name: Delete controllers
-  aci_vmm_controller:
-    <<: *add_controller
-    name: vCenter1
-    state: absent
-  register: remove_controller
+  - name: Verify VMM query_controller
+    assert:
+      that:
+      - query_controller is not changed
 
-- name: Delete controllers
-  aci_vmm_controller:
-    <<: *add_controller
-    name: vCenter2
-    state: absent
-  register: remove_controller_2
+  - name: Delete controllers
+    aci_vmm_controller:
+      <<: *add_controller
+      name: vCenter1
+      state: absent
+    register: remove_controller
 
-- name: Verify VMM remove_controller
-  assert:
-    that:
-    - remove_controller is changed
-    - remove_controller_2 is changed
-    - remove_controller_2.current == []
+  - name: Delete controllers
+    aci_vmm_controller:
+      <<: *add_controller
+      name: vCenter2
+      state: absent
+    register: remove_controller_2
+
+  - name: Verify VMM remove_controller
+    assert:
+      that:
+      - remove_controller is changed
+      - remove_controller_2 is changed
+      - remove_controller_2.current == []
