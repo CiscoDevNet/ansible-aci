@@ -1,5 +1,6 @@
 # Test code for the ACI modules
 # Copyright: (c) 2017, Bruno Calogero <bcalogero@cisco.com>
+# Copyright: (c) 2021, Cindy <cizhao@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -112,6 +113,13 @@
     primary_encap_id: 50
   register: primary_ecap_id_present
 
+- name: Bind contract to epg - primary_encap_id invalid
+  cisco.aci.aci_static_binding_to_epg:
+    <<: *primary_encap_id_present
+    primary_encap_id: invalid-vlan
+  ignore_errors: yes
+  register: primary_encap_id_invalid
+
 - name: Bind contract to epg - idempotency works again
   cisco.aci.aci_static_binding_to_epg:
     <<: *primary_encap_id_present
@@ -168,7 +176,7 @@
       - missing_required_present is failed
       - 'missing_required_present.msg == "state is present but all of the following are missing: ap, encap_id, epg, interface, leafs, pod_id"'
       - missing_required_present is failed
-
+      - primary_encap_id_invalid is failed
 
 - name: Query specific binding
   cisco.aci.aci_static_binding_to_epg:
