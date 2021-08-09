@@ -48,8 +48,9 @@ options:
     choices: [ unknown, vlan, vxlan ]
   add_infra_pg:
     description:
-    - to configure port groups for infra VLAN (e.g. Virtual APIC).
+    - Configure port groups for infra VLAN (e.g. Virtual APIC).
     type: bool
+    aliases: [ infra_pg ]
   tag_collection:
     description:
     - Enables Cisco APIC to collect VMs that have been assigned tags in VMware vCenter for microsegmentation.
@@ -298,7 +299,7 @@ def main():
                            'CS0', 'CS1', 'CS2', 'CS3', 'CS4', 'CS5', 'CS6', 'CS7', 'EF', 'VA', 'unspecified'],
                   aliases=['target']),
         encap_mode=dict(type='str', choices=['unknown', 'vlan', 'vxlan']),
-        add_infra_pg=dict(type='bool'),
+        add_infra_pg=dict(type='bool', aliases=['infra_pg']),
         tag_collection=dict(type='bool'),
         multicast_address=dict(type='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
