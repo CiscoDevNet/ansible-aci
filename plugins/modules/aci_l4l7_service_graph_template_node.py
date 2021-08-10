@@ -34,7 +34,7 @@ options:
     description:
     - Functional template type for the node
     type: str
-    choices: [ FW_TRANS, FW_ROUTED, ADC_ONE_ARM, ADC_TWO_ARM, OTHER ]
+    choices: [ fw_trans, fw_routed, adc_one_arm, adc_two_arm, other ]
   func_type:
     description:
     - Type of connection
@@ -90,7 +90,7 @@ EXAMPLES = r'''
     tenant: my_tenant
     service_graph: test-graph
     node: test-node
-    func_template_type: ADC_ONE_ARM
+    func_template_type: adc_one_arm
     func_type: GoTo
     device: test-device
     managed: no
@@ -250,11 +250,11 @@ def main():
         node=dict(type='str'),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query']),
-        func_template_type=dict(type='str', choices=['FW_TRANS',
-                                                     'FW_ROUTED',
-                                                     'ADC_ONE_ARM',
-                                                     'ADC_TWO_ARM',
-                                                     'OTHER']),
+        func_template_type=dict(type='str', choices=['fw_trans',
+                                                     'fw_routed',
+                                                     'adc_one_arm',
+                                                     'adc_two_arm',
+                                                     'other']),
         func_type=dict(type='str', choices=['None',
                                             'GoTo',
                                             'GoThrough',
@@ -279,7 +279,7 @@ def main():
     service_graph = module.params.get('service_graph')
     node = module.params.get('node')
     state = module.params.get('state')
-    func_template_type = module.params.get('func_template_type')
+    func_template_type = module.params.get('func_template_type').upper()
     func_type = module.params.get('func_type')
     device = module.params.get('device')
     device_tenant = module.params.get('device_tenant')
