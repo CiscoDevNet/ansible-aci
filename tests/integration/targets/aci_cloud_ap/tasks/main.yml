@@ -1,0 +1,150 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Cindy Zhao (@cizhao)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: ensure tenant exists for tests to kick off
+  cisco.aci.aci_tenant: &aci_tenant_present
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+    state: present
+    tenant: anstest
+  register: tenant_present
+
+- name: ensure cloud ap does not exist initially
+  cisco.aci.aci_cloud_ap:
+    <<: *aci_tenant_present
+    name: '{{ item }}'
+    state: absent
+  loop:
+    - anstest
+    - anstest2
+
+- name: create cloud ap - check mode
+  cisco.aci.aci_cloud_ap: &aci_cloud_ap_present
+    <<: *aci_tenant_present
+    name: anstest
+    descr: Ansible Test Cloud APIC
+    state: present
+  check_mode: yes
+  register: cm_create_cloud_ap
+
+- name: create cloud ap - normal mode
+  cisco.aci.aci_cloud_ap:
+    <<: *aci_cloud_ap_present
+  register: nm_create_cloud_ap
+
+- name: create cloud ap again - idempotency works
+  cisco.aci.aci_cloud_ap:
+    <<: *aci_cloud_ap_present
+  register: create_cloud_ap_again
+
+- name: create another ap - extra for query
+  cisco.aci.aci_cloud_ap:
+    <<: *aci_cloud_ap_present
+    name: anstest2
+  register: extra_cloud_ap
+
+- name: update cloud ap
+  cisco.aci.aci_cloud_ap:
+    <<: *aci_cloud_ap_present
+    descr: Update Ansible Test Update
+  register: update_cloud_ap
+
+- name: query all cloud ap for tenant - query tenant aps
+  cisco.aci.aci_cloud_ap: &aci_cloud_ap_query
+    <<: *aci_cloud_ap_present
+    name: "{{ fakevar | default(omit) }}"
+    state: query
+  register: query_all_tenant
+
+- name: query all cloud ap by name
+  cisco.aci.aci_cloud_ap:
+    <<: *aci_cloud_ap_query
+    tenant: "{{ fakevar | default(omit) }}"
+    name: anstest
+  register: query_all_ap
+
+- name: query all cloud ap - query general
+  cisco.aci.aci_cloud_ap:
+    <<: *aci_cloud_ap_query
+    tenant: "{{ fakevar | default(omit) }}"
+    name: "{{ fakevar | default(omit) }}"
+  register: query_all
+
+- name: query specific cloud ap
+  cisco.aci.aci_cloud_ap:
+    <<: *aci_cloud_ap_present
+    tenant: anstest
+    name: anstest
+    state: query
+  register: query_cloud_ap
+
+- name: verify cloud ap creation
+  assert:
+    that:
+      - cm_create_cloud_ap is changed
+      - nm_create_cloud_ap is changed
+      - cm_create_cloud_ap.previous == nm_create_cloud_ap.previous == []
+      - cm_create_cloud_ap.proposed.cloudApp.attributes.name == 'anstest'
+      - cm_create_cloud_ap.proposed.cloudApp.attributes.descr == 'Ansible Test Cloud APIC'
+      - nm_create_cloud_ap.current.0.cloudApp.attributes.name == 'anstest'
+      - nm_create_cloud_ap.current.0.cloudApp.attributes.descr == 'Ansible Test Cloud APIC'
+      - create_cloud_ap_again is not changed
+      - extra_cloud_ap is changed
+      - extra_cloud_ap.previous == []
+      - extra_cloud_ap.current.0.cloudApp.attributes.name == 'anstest2'
+      - extra_cloud_ap.current.0.cloudApp.attributes.descr == 'Ansible Test Cloud APIC'
+      - update_cloud_ap is changed
+      - update_cloud_ap.previous.0.cloudApp.attributes.name == 'anstest'
+      - update_cloud_ap.previous.0.cloudApp.attributes.descr == 'Ansible Test Cloud APIC'
+      - update_cloud_ap.current.0.cloudApp.attributes.name == 'anstest'
+      - update_cloud_ap.current.0.cloudApp.attributes.descr == 'Update Ansible Test Update'
+
+- name: verify query
+  assert:
+    that:
+      - query_all_tenant is not changed
+      - query_all_tenant.current.0.fvTenant.children | length >= 2
+      - query_all_ap is not changed
+      - query_all_ap.current.0.cloudApp.attributes.name == 'anstest'
+      - query_all_ap.current.0.cloudApp.attributes.descr == 'Update Ansible Test Update'
+      - query_all is not changed
+      - query_all.current | length >= 2
+      - query_cloud_ap is not changed
+      - query_cloud_ap.current.0.cloudApp.attributes.name == 'anstest'
+      - query_cloud_ap.current.0.cloudApp.attributes.descr == 'Update Ansible Test Update'
+      - query_cloud_ap.current.0.cloudApp.attributes.dn == 'uni/tn-anstest/cloudapp-anstest'
+
+- name: delete cloud ap
+  cisco.aci.aci_cloud_ap:
+    <<: *aci_tenant_present
+    name: anstest
+    state: absent
+  register: rm_cloud_ap
+
+- name: delete cloud ap again
+  cisco.aci.aci_cloud_ap:
+    <<: *aci_tenant_present
+    name: anstest
+    state: absent
+  register: rm_cloud_ap_again
+
+- name: verify deletion
+  assert:
+    that:
+      - rm_cloud_ap is changed
+      - rm_cloud_ap.previous.0.cloudApp.attributes.name == 'anstest'
+      - rm_cloud_ap.current == []
+      - rm_cloud_ap_again is not changed
+      - rm_cloud_ap_again.previous == rm_cloud_ap_again.current == []
