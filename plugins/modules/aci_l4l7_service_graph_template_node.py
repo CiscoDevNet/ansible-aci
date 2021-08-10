@@ -275,6 +275,8 @@ def main():
         ]
     )
 
+    aci = ACIModule(module)
+
     tenant = module.params.get('tenant')
     service_graph = module.params.get('service_graph')
     node = module.params.get('node')
@@ -285,8 +287,6 @@ def main():
     device_tenant = module.params.get('device_tenant')
     managed = aci.boolean(module.params.get('managed'))
     routing_mode = module.params.get('routing_mode')
-
-    aci = ACIModule(module)
 
     aci.construct_url(
         root_class=dict(
