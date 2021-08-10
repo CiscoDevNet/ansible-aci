@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2020, nkatarmal-crest (@nirav.katarmal)
 # Copyright: (c) 2021, Cindy Zhao (@cizhao)
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -12,36 +13,24 @@ DOCUMENTATION = r'''
 module: aci_cloudApp 
 short_description: Manage Cloud Application container (cloud:App)
 description:
-- Mo doc not defined in techpub!!!
+- Manage Cloud Application Profile (AP) objects on Cisco ACI fabrics
 notes:
 - More information about the internal APIC class B(cloud:App) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 author:
-- Devarshi Shah (@devarshishah3)
-version_added: '2.7'
+- nkatarmal-crest (@nirav.katarmal)
+- Cindy Zhao (@cizhao)
 options: 
-  annotation:
-    description:
-    - Mo doc not defined in techpub!!! 
   descr:
     description:
-    - configuration item description. 
+    - Description for the cloud AP. 
   name:
     description:
-    - object name 
+    - The name of the cloud application profile.
     aliases: [ cloud_application_container ] 
-  nameAlias:
-    description:
-    - Mo doc not defined in techpub!!! 
-  ownerKey:
-    description:
-    - key for enabling clients to own their data 
-  ownerTag:
-    description:
-    - tag for enabling clients to add their own data 
   tenant:
     description:
-    - tenant name 
+    - The name of an existing tenant.
   state: 
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -57,17 +46,12 @@ from ansible.module_utils.basic import AnsibleModule
 
 def main():
     argument_spec = aci_argument_spec()
-    argument_spec.update({ 
-        'annotation': dict(type='str',),
-        'descr': dict(type='str',),
-        'name': dict(type='str', aliases=['cloud_application_container']),
-        'nameAlias': dict(type='str',),
-        'ownerKey': dict(type='str',),
-        'ownerTag': dict(type='str',),
-        'tenant': dict(type='str',),
-        'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
-
-    })
+    argument_spec.update(
+        descr=dict(type='str',),
+        name=dict(type='str', aliases=['cloud_application_container']),
+        tenant=dict(type='str',),
+        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+    )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
@@ -78,12 +62,8 @@ def main():
         ],
     )
     
-    annotation = module.params['annotation']
     descr = module.params['descr']
     name = module.params['name']
-    nameAlias = module.params['nameAlias']
-    ownerKey = module.params['ownerKey']
-    ownerTag = module.params['ownerTag']
     tenant = module.params['tenant']
     state = module.params['state']
     child_configs=[]
@@ -91,21 +71,19 @@ def main():
 
     aci = ACIModule(module)
     aci.construct_url(
-        root_class={
-            'aci_class': 'fvTenant',
-            'aci_rn': 'tn-{}'.format(tenant),
-            'target_filter': 'eq(fvTenant.name, "{}")'.format(tenant),
-            'module_object': tenant
-        }, 
-        subclass_1={
-            'aci_class': 'cloudApp',
-            'aci_rn': 'cloudapp-{}'.format(name),
-            'target_filter': 'eq(cloudApp.name, "{}")'.format(name),
-            'module_object': name
-        }, 
-        
+        root_class=dict(
+            aci_class='fvTenant',
+            aci_rn='tn-{}'.format(tenant),
+            target_filter={'name': tenant},
+            module_object=tenant,
+        ), 
+        subclass_1=dict(
+            aci_class='cloudApp',
+            aci_rn='cloudapp-{}'.format(name),
+            target_filter={'name': name},
+            module_object=name,
+        ), 
         child_classes=[]
-        
     )
 
     aci.get_existing()
@@ -113,16 +91,11 @@ def main():
     if state == 'present':
         aci.payload(
             aci_class='cloudApp',
-            class_config={ 
-                'annotation': annotation,
-                'descr': descr,
-                'name': name,
-                'nameAlias': nameAlias,
-                'ownerKey': ownerKey,
-                'ownerTag': ownerTag,
-            },
+            class_config=dict(
+                descr=descr,
+                name=name,
+            ),
             child_configs=child_configs
-           
         )
 
         aci.get_diff(aci_class='cloudApp')
