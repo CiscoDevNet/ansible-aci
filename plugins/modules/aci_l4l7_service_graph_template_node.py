@@ -281,12 +281,17 @@ def main():
     service_graph = module.params.get('service_graph')
     node = module.params.get('node')
     state = module.params.get('state')
-    func_template_type = module.params.get('func_template_type').upper()
+    func_template_type = module.params.get('func_template_type')
     func_type = module.params.get('func_type')
     device = module.params.get('device')
     device_tenant = module.params.get('device_tenant')
     managed = aci.boolean(module.params.get('managed'))
     routing_mode = module.params.get('routing_mode')
+
+    if func_template_type:
+        func_template_upper = func_template_type.upper()
+    else:
+        func_template_upper = None
 
     aci.construct_url(
         root_class=dict(
@@ -320,7 +325,7 @@ def main():
             aci_class='vnsAbsNode',
             class_config=dict(
                 name=node,
-                funcTemplateType=func_template_type,
+                funcTemplateType=func_template_upper,
                 funcType=func_type,
                 managed=managed,
                 routingMode=routing_mode
