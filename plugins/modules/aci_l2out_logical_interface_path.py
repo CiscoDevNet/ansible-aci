@@ -12,21 +12,21 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_l3out_logical_interface_profile
-short_description: Manage Layer 3 Outside (L3Out) logical interface profiles (l3ext:LIfP)
+module: aci_l2out_logical_interface_path
+short_description: Manage Layer 2 Outside (L2Out) logical interface path (l2extRsPathL2OutAtt)
 description:
-- Manage L3Out interface profiles on Cisco ACI fabrics.
+- Manage interface path entry of L2 outside node (BD extension) on Cisco ACI fabrics.
 options:
   tenant:
     description:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  l3out:
+  l2out:
     description:
-    - Name of an existing L3Out.
+    - Name of an existing L2Out.
     type: str
-    aliases: [ l3out_name ]
+    aliases: [ l2out_name ]
   node_profile:
     description:
     - Name of the node profile.
@@ -37,17 +37,31 @@ options:
     - Name of the interface profile.
     type: str
     aliases: [ name, interface_profile_name, logical_interface ]
-  nd_policy:
+  interface_type:
     description:
-    - Name of the neighbor discovery interface policy.
+    - The type of interface for the static EPG deployment.
     type: str
-  egress_dpp_policy:
+    choices: [ switch_port, port_channel, vpc ]
+    default: switch_port
+  pod_id:
     description:
-    - Name of the egress data plane policing policy.
-    type: str
-  ingress_dpp_policy:
+    - The pod number part of the tDn.
+    - C(pod_id) is usually an integer below C(10).
+    type: int
+    aliases: [ pod, pod_number ]
+  leaves:
     description:
-    - Name of the ingress data plane policing policy.
+    - The switch ID(s) that the C(interface) belongs to.
+    - When C(interface_type) is C(switch_port) or C(port_channel), then C(leaves) is a string of the leaf ID.
+    - When C(interface_type) is C(vpc), then C(leaves) is a list with both leaf IDs.
+    - The C(leaves) value is usually something like '101' or '101-102' depending on C(connection_type).
+    type: list
+    elements: str
+    aliases: [ leafs, nodes, paths, switches ]
+  interface:
+    description:
+    - The C(interface) string value part of the tDn.
+    - Usually a policy group like C(test-IntPolGrp) or an interface of the following format C(1/7) depending on C(interface_type).
     type: str
   state:
     description:
@@ -60,55 +74,83 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 seealso:
-- module: aci_l3out
-- module: aci_l3out_logical_node_profile
+- module: aci_l2out
+- module: aci_l2out_logical_node_profile
+- module: aci_l2out_logical_interface_profile
+- module: aci_l2out_extepg
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Marcel Zehnder (@maercu)
+- Oleksandr Kreshchenko (@alexkross)
 '''
 
 EXAMPLES = r'''
-- name: Add a new interface profile
-  cisco.aci.aci_l3out_logical_interface_profile:
+- name: Add new node profile
+  cisco.aci.aci_l2out_logical_node_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
-    l3out: my_l3out
-    node_profile: my_node_profile
-    interface_profile: my_interface_profile
+    l2out: my_l2out
+    #node_profile: my_node_profile # 'default' by default
+    state: present
+  delegate_to: localhost
+
+- name: Add new interface profile
+  cisco.aci.aci_l2out_logical_interface_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l2out: my_l2out
+    node_profile: default
+    interface_profile: my_interface_profile # 'default' by default
+    state: present
+  delegate_to: localhost
+
+- name: Add new path to interface profile
+  cisco.aci.aci_l2out_logical_interface_path:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l2out: my_l2out
+    node_profile: default
+    interface_profile: default
+    interface_type: vpc
+    pod_id: 1
+    leaves: 101-102
+    interface: L2o1
     state: present
   delegate_to: localhost
 
 - name: Delete an interface profile
-  cisco.aci.aci_l3out_logical_interface_profile:
+  cisco.aci.aci_l2out_logical_interface_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
-    l3out: my_l3out
-    node_profile: my_node_profile
-    interface_profile: my_interface_profile
+    l2out: my_l2out
+    node_profile: default
+    interface_profile: default
     state: absent
   delegate_to: localhost
 
-- name: Query an interface profile
-  cisco.aci.aci_l3out_logical_interface_profile:
+- name: Query an node profile
+  cisco.aci.aci_l2out_logical_node_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
-    l3out: my_l3out
-    node_profile: my_node_profile
-    interface_profile: my_interface_profile
+    l2out: my_l2out
+    #node_profile: default
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Query all interface profiles
-  cisco.aci.aci_l3out_logical_interface_profile:
+- name: Query all node profiles
+  cisco.aci.aci_l2out_logical_node_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -226,42 +268,67 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
+INTERFACE_TYPE_MAPPING = dict(
+    switch_port='topology/pod-{pod_id}/paths-{leaves}/pathep-[eth{interface}]',
+    port_channel='topology/pod-{pod_id}/paths-{leaves}/pathep-[{interface}]',
+    vpc='topology/pod-{pod_id}/protpaths-{leaves}/pathep-[{interface}]',
+)
+
 
 def main():
     argument_spec = aci_argument_spec()
-    argument_spec.update(
+    argument_spec.update(  # See comments in aci_static_binding_to_epg module.
         tenant=dict(type='str', aliases=['tenant_name']),
-        l3out=dict(type='str', aliases=['l3out_name']),
-        node_profile=dict(type='str', aliases=[
-                          'node_profile_name', 'logical_node']),
-        interface_profile=dict(type='str', aliases=[
-            'name', 'interface_profile_name', 'logical_interface']),
-        nd_policy=dict(type='str', default=''),
-        egress_dpp_policy=dict(type='str', default=''),
-        ingress_dpp_policy=dict(type='str', default=''),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query'])
+        l2out=dict(type='str', aliases=['l2out_name']),
+        node_profile=dict(type='str', aliases=['node_profile_name', 'logical_node']),
+        interface_profile=dict(type='str', aliases=['name', 'interface_profile_name', 'logical_interface']),
+        interface_type=dict(type='str', default='switch_port', choices=['switch_port', 'port_channel', 'vpc']),
+        pod_id=dict(type='int', aliases=['pod', 'pod_number']),
+        leaves=dict(type='list', elements='str', aliases=['leafs', 'nodes', 'paths', 'switches']),
+        interface=dict(type='str'),
+        state=dict(type='str', default='present', choices=['absent', 'present', 'query'])
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['tenant', 'l3out',
-                                 'node_profile', 'interface_profile']],
-            ['state', 'present', ['tenant', 'l3out',
-                                  'node_profile', 'interface_profile']]
+            ['state', 'absent', ['tenant', 'l2out', 'node_profile', 'interface_profile', 'pod_id', 'leaves', 'interface']],
+            ['state', 'present', ['tenant', 'l2out', 'node_profile', 'interface_profile', 'pod_id', 'leaves', 'interface']]
         ]
     )
 
     tenant = module.params.get('tenant')
-    l3out = module.params.get('l3out')
+    l2out = module.params.get('l2out')
     node_profile = module.params.get('node_profile')
     interface_profile = module.params.get('interface_profile')
-    nd_policy = module.params.get('nd_policy')
-    egress_dpp_policy = module.params.get('egress_dpp_policy')
-    ingress_dpp_policy = module.params.get('ingress_dpp_policy')
+    interface_type = module.params.get('interface_type')
+    pod_id = module.params.get('pod_id')
+    leaves = module.params.get('leaves')
+    if leaves is not None:  # Process leaves, and support dash-delimited leaves
+        leaves = []
+        for leaf in module.params.get('leaves'):  # Users are likely to use integers for leaf IDs, which would raise an exception when using the join method
+            leaves.extend(str(leaf).split('-'))
+        if len(leaves) == 1:
+            if interface_type == 'vpc':
+                module.fail_json(msg='A interface_type of "vpc" requires 2 leaves')
+            leaves = leaves[0]
+        elif len(leaves) == 2:
+            if interface_type != 'vpc':
+                module.fail_json(msg='The interface_types "switch_port" and "port_channel" do not support using multiple leaves for a single binding')
+            leaves = "-".join(leaves)
+        else:
+            module.fail_json(msg='The "leaves" parameter must not have more than 2 entries')
+    interface = module.params.get('interface')
     state = module.params.get('state')
+
+    path = INTERFACE_TYPE_MAPPING[interface_type].format(pod_id=pod_id, leaves=leaves, interface=interface)
+    if not pod_id or not leaves or not interface:
+        path = None
+
+    path_target_filter = {}
+    if any((pod_id, leaves, interface)):
+        path_target_filter = {'tDn': path}
 
     aci = ACIModule(module)
 
@@ -273,45 +340,41 @@ def main():
             target_filter={'name': tenant},
         ),
         subclass_1=dict(
-            aci_class='l3extOut',
-            aci_rn='out-{0}'.format(l3out),
-            module_object=l3out,
-            target_filter={'name': l3out},
+            aci_class='l2extOut',
+            aci_rn='l2out-{0}'.format(l2out),
+            module_object=l2out,
+            target_filter={'name': l2out},
         ),
         subclass_2=dict(
-            aci_class='l3extLNodeP',
+            aci_class='l2extLNodeP',
             aci_rn='lnodep-{0}'.format(node_profile),
             module_object=node_profile,
             target_filter={'name': node_profile},
         ),
         subclass_3=dict(
-            aci_class='l3extLIfP',
-            aci_rn='lifp-[{0}]'.format(interface_profile),
+            aci_class='l2extLIfP',
+            aci_rn='lifp-{0}'.format(interface_profile),
             module_object=interface_profile,
             target_filter={'name': interface_profile},
         ),
-        child_classes=['l3extRsNdIfPol',
-                       'l3extRsIngressQosDppPol',
-                       'l3extRsEgressQosDppPol']
+        subclass_4=dict(
+            aci_class='l2extRsPathL2OutAtt',
+            aci_rn='rspathL2OutAtt-[{0}]'.format(path),
+            # rspathL2OutAtt-[topology/pod-1/protpaths-101-102/pathep-[L2o2_n7]]
+            module_object=path,
+            target_filter=path_target_filter,
+        ),
     )
 
     aci.get_existing()
 
     if state == 'present':
-        child_configs = [
-            dict(l3extRsNdIfPol=dict(attributes=dict(tnNdIfPolName=nd_policy))),
-            dict(l3extRsIngressQosDppPol=dict(
-                attributes=dict(tnQosDppPolName=ingress_dpp_policy))),
-            dict(l3extRsEgressQosDppPol=dict(
-                attributes=dict(tnQosDppPolName=egress_dpp_policy)))
-        ]
         aci.payload(
-            aci_class='l3extLIfP',
-            class_config=dict(name=interface_profile),
-            child_configs=child_configs
+            aci_class='l2extRsPathL2OutAtt',
+            class_config=dict(tDn=path),
         )
 
-        aci.get_diff(aci_class='l3extLIfP')
+        aci.get_diff(aci_class='l2extRsPathL2OutAtt')
 
         aci.post_config()
 
