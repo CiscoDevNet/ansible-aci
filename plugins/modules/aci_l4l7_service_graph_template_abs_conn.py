@@ -250,8 +250,8 @@ def main():
     service_graph = module.params.get('service_graph')
     state = module.params.get('state')
     connection_name = module.params.get('connection_name')
-    unicast_route = module.params.get('unicast_route')
-    adjacency_type = aci.boolean(module.params.get('adjacency_type'))
+    unicast_route = aci.boolean(module.params.get('unicast_route'))
+    adjacency_type = module.params.get('adjacency_type')
     direct_connect = aci.boolean(module.params.get('direct_connect'))
 
     aci.construct_url(
