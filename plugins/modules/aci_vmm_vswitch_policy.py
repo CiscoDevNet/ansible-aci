@@ -15,9 +15,9 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_vmm_vswitch_policy
-short_description: Manage vSwitch policy for VmWare virtual domains profiles (vmm:DomP)
+short_description: Manage vSwitch policy for VMware virtual domains profiles (vmm:DomP)
 description:
-- Manage vSwitch policy for VmWare vmm domains on Cisco ACI fabrics.
+- Manage vSwitch policy for VMware VMM domains on Cisco ACI fabrics.
 options:
   port_channel_policy:
     description:
@@ -60,7 +60,7 @@ options:
       load_balancing_mode:
         description:
         - Load balancing mode of the port channel.
-        - See also https://pubhub.devnetcloud.com/media/apic-mim-ref-421/docs/MO-lacpEnhancedLagPol.html .
+        - See also https://pubhub.devnetcloud.com/media/apic-mim-ref-421/docs/MO-lacpEnhancedLagPol.html.
         type: str
         choices:
           - dst-ip
@@ -142,6 +142,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Manuel Widmer (@lumean)
+- Anvitha Jain (@anvitha-jain)
 '''
 
 EXAMPLES = r'''
@@ -298,7 +299,7 @@ url:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, enhanced_lag_spec, netflow_spec
 
 # via UI vSwitch Policy can only be added for VMware and Microsoft vmm domains
 # behavior for other domains is currently untested.
@@ -312,24 +313,24 @@ VM_PROVIDER_MAPPING = dict(
     vmware='VMware',
 )
 
-enhanced_lag_spec = dict(
-    name=dict(type='str', required=True),
-    lacp_mode=dict(type='str', choices=['active', 'passive']),
-    load_balancing_mode=dict(
-        type='str',
-        choices=['dst-ip', 'dst-ip-l4port', 'dst-ip-vlan', 'dst-ip-l4port-vlan', 'dst-mac', 'dst-l4port',
-                 'src-ip', 'src-ip-l4port', 'src-ip-vlan', 'src-ip-l4port-vlan', 'src-mac', 'src-l4port',
-                 'src-dst-ip', 'src-dst-ip-l4port', 'src-dst-ip-vlan', 'src-dst-ip-l4port-vlan', 'src-dst-mac',
-                 'src-dst-l4port', 'src-port-id', 'vlan']),
-    number_uplinks=dict(type='int'),
-)
+# enhanced_lag_spec = dict(
+#     name=dict(type='str', required=True),
+#     lacp_mode=dict(type='str', choices=['active', 'passive']),
+#     load_balancing_mode=dict(
+#         type='str',
+#         choices=['dst-ip', 'dst-ip-l4port', 'dst-ip-vlan', 'dst-ip-l4port-vlan', 'dst-mac', 'dst-l4port',
+#                  'src-ip', 'src-ip-l4port', 'src-ip-vlan', 'src-ip-l4port-vlan', 'src-mac', 'src-l4port',
+#                  'src-dst-ip', 'src-dst-ip-l4port', 'src-dst-ip-vlan', 'src-dst-ip-l4port-vlan', 'src-dst-mac',
+#                  'src-dst-l4port', 'src-port-id', 'vlan']),
+#     number_uplinks=dict(type='int'),
+# )
 
-netflow_spec = dict(
-    name=dict(type='str', required=True),
-    active_flow_timeout=dict(type='int'),
-    idle_flow_timeout=dict(type='int'),
-    sampling_rate=dict(type='int'),
-)
+# netflow_spec = dict(
+#     name=dict(type='str', required=True),
+#     active_flow_timeout=dict(type='int'),
+#     idle_flow_timeout=dict(type='int'),
+#     sampling_rate=dict(type='int'),
+# )
 
 
 def main():
@@ -340,8 +341,8 @@ def main():
         cdp_policy=dict(type='str'),
         mtu_policy=dict(type='str'),
         stp_policy=dict(type='str'),
-        enhanced_lag=dict(type='list', elements='dict', options=enhanced_lag_spec),
-        netflow_exporter=dict(type='dict', options=netflow_spec),
+        enhanced_lag=dict(type='list', elements='dict', options=enhanced_lag_spec()),
+        netflow_exporter=dict(type='dict', options=netflow_spec()),
         domain=dict(type='str', aliases=['domain_name', 'domain_profile']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         vm_provider=dict(type='str', choices=list(VM_PROVIDER_MAPPING.keys())),

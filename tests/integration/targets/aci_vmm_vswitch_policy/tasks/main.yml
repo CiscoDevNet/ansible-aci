@@ -15,18 +15,26 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("debug") }}'
 
+- name: Query system information
+  aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 # Remove VMM domain
 - name: Remove VMM domain (normal mode)
   cisco.aci.aci_domain:
     <<: *aci_info
-    domain: vmm_dom
+    domain: '{{ item.domain }}'
     domain_type: vmm
-    vm_provider: "{{ item }}"
+    vm_provider: '{{ item.provider }}'
     state: absent
   register: nm_remove_domain
   loop:
-    - vmware
-    - microsoft
+    - { domain: 'vmm_dom', provider: 'vmware' }
+    - { domain: 'vmm_dom', provider: 'microsoft' }
+    - { domain: 'microsoft_dom', provider: 'microsoft' }
 
 - name: Verify Cloud and Non-Cloud Sites in use.
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
@@ -38,14 +46,15 @@
   - name: Add VMM domain
     cisco.aci.aci_domain:
       <<: *aci_info
-      domain: vmm_dom
+      domain: '{{ item.domain }}'
       domain_type: vmm
-      vm_provider: "{{ item }}"
+      vm_provider: '{{ item.provider }}'
       state: present
     register: nm_add_domain
     loop:
-      - vmware
-      - microsoft
+      - { domain: 'vmm_dom', provider: 'vmware' }
+      - { domain: 'vmm_dom', provider: 'microsoft' }
+      - { domain: 'microsoft_dom', provider: 'microsoft' }
 
   - name: Verify VMM add_domain
     assert:
@@ -53,7 +62,7 @@
       - nm_add_domain is changed
 
   - name: Add a vSwitch policy to vmware domain
-    aci_vmm_vswitch_policy:
+    aci_vmm_vswitch_policy: &add_vmware_policies
       <<: *aci_info
       domain: vmm_dom
       vm_provider: vmware
@@ -72,6 +81,43 @@
       - add_vmware_policy.current.0.vmmVSwitchPolicyCont.children.0.vmmRsVswitchOverrideLacpPol.attributes.tDn == 'uni/infra/lacplagp-PORT_Channel_policy'
       - add_vmware_policy.current.0.vmmVSwitchPolicyCont.children.1.vmmRsVswitchOverrideCdpIfPol.attributes.tDn == 'uni/infra/cdpIfP-CDP_policy'
       - add_vmware_policy.current.0.vmmVSwitchPolicyCont.children.2.vmmRsVswitchOverrideLldpIfPol.attributes.tDn == 'uni/infra/lldpIfP-LLDP_policy'
+
+  - name: Add a vSwitch policy to vmware domain
+    aci_vmm_vswitch_policy:
+      <<: *add_vmware_policies
+      netflow_exporter:
+        name: Netflow_Exporter_policy
+      enhanced_lag:
+      - name: Enhanced_Lag_pol
+      state: present
+    register: add_vmware_policy_2
+
+  - name: Verify VMM add_vmware_policy_2
+    assert:
+      that:
+      - add_vmware_policy_2 is changed
+      - add_vmware_policy_2.current.0.vmmVSwitchPolicyCont.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/vswitchpolcont'
+      - add_vmware_policy_2.current.0.vmmVSwitchPolicyCont.children.0.lacpEnhancedLagPol.attributes.name == 'Enhanced_Lag_pol'
+      - add_vmware_policy_2.current.0.vmmVSwitchPolicyCont.children.1.vmmRsVswitchExporterPol.attributes.tDn == 'uni/infra/vmmexporterpol-Netflow_Exporter_policy'
+      - add_vmware_policy_2.current.0.vmmVSwitchPolicyCont.children.2.vmmRsVswitchOverrideLacpPol.attributes.tDn == 'uni/infra/lacplagp-PORT_Channel_policy'
+      - add_vmware_policy_2.current.0.vmmVSwitchPolicyCont.children.3.vmmRsVswitchOverrideCdpIfPol.attributes.tDn == 'uni/infra/cdpIfP-CDP_policy'
+      - add_vmware_policy_2.current.0.vmmVSwitchPolicyCont.children.4.vmmRsVswitchOverrideLldpIfPol.attributes.tDn == 'uni/infra/lldpIfP-LLDP_policy'
+
+  - name: Add MTU policy to vmware domain when version is >= 4.2
+    aci_vmm_vswitch_policy:
+      <<: *add_vmware_policies
+      mtu_policy: MTU_policy
+      state: present
+    register: add_vmware_mtu_policy
+    when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+
+  - name: Verify VMM add_vmware_mtu_policy
+    assert:
+      that:
+      - add_vmware_mtu_policy is changed
+      - add_vmware_mtu_policy.current.0.vmmVSwitchPolicyCont.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/vswitchpolcont'
+      - add_vmware_mtu_policy.current.0.vmmVSwitchPolicyCont.children.0.vmmRsVswitchOverrideMtuPol.attributes.tDn == 'uni/fabric/l2pol-MTU_policy'
+    when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
   - name: Add a vSwitch policy to microsoft domain
     aci_vmm_vswitch_policy:
@@ -93,6 +139,23 @@
       - add_microsoft_policy.current.0.vmmVSwitchPolicyCont.children.0.vmmRsVswitchOverrideLacpPol.attributes.tDn == 'uni/infra/lacplagp-ms_PORT_Channel_policy'
       - add_microsoft_policy.current.0.vmmVSwitchPolicyCont.children.1.vmmRsVswitchOverrideCdpIfPol.attributes.tDn == 'uni/infra/cdpIfP-ms_CDP_policy'
       - add_microsoft_policy.current.0.vmmVSwitchPolicyCont.children.2.vmmRsVswitchOverrideLldpIfPol.attributes.tDn == 'uni/infra/lldpIfP-ms_LLDP_policy'
+
+  - name: Add STP vSwitch policy to another microsoft domain
+    aci_vmm_vswitch_policy:
+      <<: *aci_info
+      domain: microsoft_dom
+      vm_provider: microsoft
+      stp_policy: ms_STP_policy
+      state: present
+    register: add_microsoft_stp_policy
+
+  - name: Verify VMM add_microsoft_stp_policy
+    assert:
+      that:
+      - add_microsoft_stp_policy is changed
+      - add_microsoft_stp_policy.previous == []
+      - add_microsoft_stp_policy.current.0.vmmVSwitchPolicyCont.attributes.dn == 'uni/vmmp-Microsoft/dom-microsoft_dom/vswitchpolcont'
+      - add_microsoft_stp_policy.current.0.vmmVSwitchPolicyCont.children.0.vmmRsVswitchOverrideStpPol.attributes.tDn == 'uni/infra/ifPol-ms_STP_policy'
 
   - name: Query all the vSwitch policy
     aci_vmm_vswitch_policy:
