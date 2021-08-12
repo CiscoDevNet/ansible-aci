@@ -6,7 +6,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: aci_cloud_epg 
+module: aci_cloud_epg
 short_description: Manage Cloud EPg (cloud:EPg)
 description:
 - Manage Cloud EPg on Cisco ACI fabrics
@@ -14,12 +14,12 @@ notes:
 - More information about the internal APIC class B(cloud:EPg) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 author:
-- nkatarmal-crest(@nirav.katarmal)
+- Nirav (@nirav)
 - Cindy Zhao (@cizhao)
 options:
   descr:
     description:
-    - Description of the Cloud EPg. 
+    - Description of the Cloud EPg.
   name:
     description:
     - The name of the Cloud EPg.
@@ -42,7 +42,8 @@ options:
     choices: [ absent, present, query ]
     default: present 
 
-extends_documentation_fragment: aci
+extends_documentation_fragment:
+- cisco.aci.aci
 '''
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
