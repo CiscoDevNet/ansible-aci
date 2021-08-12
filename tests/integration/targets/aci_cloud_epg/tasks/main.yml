@@ -54,8 +54,8 @@
       description: Ansible Test
     register: vrf_present
 
-  - name: Create aci cloud epg
-    cisco.aci.aci_cloud_epg:
+  - name: Create aci cloud epg (check_mode)
+    cisco.aci.aci_cloud_epg: &aci_cloud_epg_present
       <<: *aci_info
       tenant: ansible_test
       cloud_application_profile: anstest
@@ -63,4 +63,10 @@
       descr: Aci Cloud EPG
       name: anstest
       state: present
+    check_mode: yes
     register: epg_present
+
+  - name: Create aci cloud epg (normal mode)
+    cisco.aci.aci_cloud_epg:
+      <<: *aci_cloud_epg_present
+      
