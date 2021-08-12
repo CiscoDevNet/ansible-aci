@@ -64,7 +64,6 @@
       controller_hostname: 10.1.1.1
       dvs_version: unmanaged
       vm_provider: vmware
-      credentials: vCenterCredentials1
       datacenter: DC1
       state: present
     register: nm_add_controller
@@ -83,6 +82,8 @@
     aci_vmm_controller:
       <<: *add_controller
       name: vCenter2
+      credentials: vCenterCredentials1
+      inband_management_epg: ib_epg
       controller_hostname: 10.10.1.1
       vm_provider: "{{ item }}"
       state: present
