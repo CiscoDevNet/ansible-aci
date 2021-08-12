@@ -27,6 +27,7 @@ options:
     description:
     - List of message types to include
     type: list
+    elements: str
     choices: [ audit, events, faults, session ]
   min_severity:
     description:
@@ -213,7 +214,7 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         name=dict(type='str', aliases=['syslog_src', 'syslog_source']),
-        include=dict(type='list', choices=['audit', 'events', 'faults', 'session']),
+        include=dict(type='list', elements='str', choices=['audit', 'events', 'faults', 'session']),
         min_severity=dict(type='str', choices=['alerts', 'critical', 'debugging',
                                                'emergencies', 'errors', 'information',
                                                'notifications', 'warnings']),
