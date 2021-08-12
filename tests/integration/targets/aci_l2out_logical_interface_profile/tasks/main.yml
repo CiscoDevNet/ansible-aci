@@ -1,0 +1,153 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Cindy Zhao (@cizhao)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove test tenant before we kickoff
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
+    tenant: l2outintftest
+    state: absent
+
+# SETUP ENVIRONMENT
+- name: Create tenant
+  cisco.aci.aci_tenant: &tenant_present
+    <<: *tenant_absent
+    state: present
+
+- name: Create l2out
+  cisco.aci.aci_l2out:
+    <<: *aci_info
+    tenant: l2outintftest
+    l2out: l2outintftest
+    bd: l2outintftest
+    domain: l2outintftest
+    vlan: 3200
+
+- name: Crete node profile
+  cisco.aci.aci_l2out_logical_node_profile: &np_present
+    <<: *aci_info
+    node_profile: l2outintftest
+    l2out: l2outintftest
+    tenant: l2outintftest
+    state: present
+
+# BEGIN WITH TESTS (ADD PROFILE)
+- name: Add interface profile (check_mode)
+  cisco.aci.aci_l2out_logical_interface_profile: &intf_present
+    <<: *np_present
+    interface_profile: INTFS
+  check_mode: yes
+  register: cm_add_intf
+
+- name: Add interface profile (normal_mode)
+  cisco.aci.aci_l2out_logical_interface_profile:
+    <<: *intf_present
+  register: nm_add_intf
+
+- name: Verify nm_add_intf
+  assert:
+    that:
+    - cm_add_intf is changed
+    - nm_add_intf is changed
+    - cm_add_intf.previous == nm_add_intf.previous == []
+    - cm_add_intf.sent.l2extLIfP.attributes.name == nm_add_intf.sent.l2extLIfP.attributes.name == 'INTFS'
+  
+- name: Add profile  again, check if idempotency works
+  cisco.aci.aci_l2out_logical_interface_profile:
+    <<: *intf_present
+  register: add_intf_again
+
+- name: Verify add_intf_again
+  assert:
+    that:
+    - add_intf_again is not changed
+
+# ADD ANOTHER PROFILE
+- name: Add another profile
+  cisco.aci.aci_l2out_logical_interface_profile:
+    <<: *intf_present
+    interface_profile: INTF2
+
+# QUERY ALL PROFILES
+- name: Query all profiles
+  cisco.aci.aci_l2out_logical_interface_profile:
+    <<: *aci_info
+    state: query
+    l2out: l2outintftest
+    tenant: l2outintftest
+    node_profile: l2outintftest
+  register: query_all_profiles
+
+- name: Verify query_all_profiles
+  assert:
+    that:
+    - query_all_profiles is not changed
+    - query_all_profiles.current.0.l2extLNodeP.children | length > 1
+
+# QUERY A SPECIFIC PROFILE
+- name: Query a specific profile
+  cisco.aci.aci_l2out_logical_interface_profile:
+    <<: *intf_present
+    state: query
+  register: query_spec_profile
+
+- name: Verify query_spec_profile
+  assert:
+    that:
+    - query_spec_profile is not changed
+    - query_spec_profile.current|length == 1
+    - query_spec_profile.current.0.l2extLIfP.attributes.name == 'INTFS'
+    - query_spec_profile.current.0.l2extLIfP.attributes.dn == 'uni/tn-l2outintftest/l2out-l2outintftest/lnodep-l2outintftest/lifp-INTFS'
+
+# QUERY A NON EXISTING PROFILE
+- name: Query a nonexisting profile
+  cisco.aci.aci_l2out_logical_interface_profile:
+    <<: *np_present
+    interface_profile: nonexist
+    state: query
+  register: query_nonexist_profile
+
+- name: Verify query_nonexist_profile
+  assert:
+    that:
+    - query_nonexist_profile is not changed
+    - query_nonexist_profile.current == []
+
+# REMOVE PROFILE
+- name: Remove interface profile
+  cisco.aci.aci_l2out_logical_interface_profile: &intf_absent
+    <<: *intf_present
+    state: absent
+  register: remove_profile
+
+- name: Verify remove_profile
+  assert:
+    that:
+    - remove_profile is changed
+    - remove_profile.current == []
+
+# REMOVE NONEXISTING PROFILE
+- name: Remove interface profile again (nonexisting)
+  cisco.aci.aci_l2out_logical_interface_profile:
+    <<: *intf_absent
+  register: remove_nonexist_profile
+
+- name: Verify remove_nonexist_profile
+  assert:
+    that:
+    - remove_nonexist_profile is not changed
+    - remove_nonexist_profile.current == []
