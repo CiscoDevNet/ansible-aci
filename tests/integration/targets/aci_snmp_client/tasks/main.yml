@@ -85,7 +85,7 @@
     policy: ansible_snmp_policy
     client_group: ansible_snmp_client_group
     address: 10.20.30.0/24
-    client_name: new_snmp_client name
+    client_name: new_snmp_client_name
     state: present
   register: update_snmp_client
 
