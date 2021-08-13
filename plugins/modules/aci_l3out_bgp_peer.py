@@ -64,21 +64,25 @@ options:
     description:
     - BGP Controls
     type: list
+    elements: str
     choices: [ send-com, send-ext-com, allow-self-as, as-override, dis-peer-as-check, nh-self ]
   peer_controls:
     description:
     - Peer Controls
     type: list
+    elements: str
     choices: [ bfd, dis-conn-check ]
   address_type_controls:
     description:
     - Address Type Controls
     type: list
+    elements: str
     choices: [ af-ucast, af-mcast ]
   private_asn_controls:
     description:
     - Private AS Controls
     type: list
+    elements: str
     choices: [ remove-exclusive, remove-all, replace-as ]
   ttl:
     description:
@@ -320,19 +324,18 @@ def main():
         path_ep=dict(type='str'),
         peer_ip=dict(type='str'),
         remote_asn=dict(type='int'),
-        bgp_controls=dict(type='list', choices=['send-com',
-                                                'send-ext-com',
-                                                'allow-self-as',
-                                                'as-override',
-                                                'dis-peer-as-check',
-                                                'nh-self']),
-        peer_controls=dict(type='list', choices=['bfd',
+        bgp_controls=dict(type='list', elements='str',
+                          choices=['send-com', 'send-ext-com', 'allow-self-as',
+                                   'as-override', 'dis-peer-as-check',
+                                   'nh-self']),
+        peer_controls=dict(type='list', elements='str', choices=['bfd',
                                                  'dis-conn-check']),
-        address_type_controls=dict(type='list',
+        address_type_controls=dict(type='list', elements='str'
                                    choices=['af-ucast', 'af-mcast']),
-        private_asn_controls=dict(type='list', choices=['remove-exclusive',
-                                                        'remove-all',
-                                                        'replace-as']),
+        private_asn_controls=dict(type='list', elements='str',
+                                  choices=['remove-exclusive',
+                                           'remove-all',
+                                           'replace-as']),
         ttl=dict(type='int'),
         weight=dict(type='int'),
         admin_state=dict(type='str', choices=['enabled', 'disabled']),
