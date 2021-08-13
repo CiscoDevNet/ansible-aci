@@ -1,0 +1,211 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact: 
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
+
+- name: Add a new tenant
+  aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    description: Ansible tenant
+    state: present
+
+- name: Add New L2Out
+  aci_l2out:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l2out: ansible_l2out
+    description: Ansible Test
+    bd: ansible_bd
+    domain: l2Dom
+    vlan: 3200
+    state: present
+  register: add_l2out
+
+- name: Add another L2Out
+  aci_l2out:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l2out: ansible_l2out_2
+    description: Ansible Test
+    bd: ansible_bd
+    domain: l2Dom
+    vlan: 3200
+    state: present
+  register: add_l2out_2
+
+- name: Add L2 external end point group
+  aci_l2out_extepg:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l2out: ansible_l2out
+    extepg: ansible_extepg
+    description: Ansible external epg
+    preferred_group: True
+    state: present
+  register: l2extepg
+
+- name: Verify l2extepg
+  assert:
+    that:
+    - l2extepg is changed
+    - l2extepg.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
+
+- name: Add L2 external end point group again
+  aci_l2out_extepg:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l2out: ansible_l2out
+    extepg: ansible_extepg
+    description: Ansible external epg
+    preferred_group: True
+    state: present
+  register: l2extepg_again
+
+- name: Verify l2extepg_again
+  assert:
+    that:
+    - l2extepg_again is not changed
+    - l2extepg.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
+
+- name: Add another L2 external end point group
+  aci_l2out_extepg:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l2out: ansible_l2out_2
+    extepg: ansible_extepg_2
+    description: Ansible external epg
+    qos_class: level1
+    preferred_group: True
+    state: present
+  register: l2extepg_2
+
+- name: Verify l2extepg_2
+  assert:
+    that:
+    - l2extepg_2 is changed
+    - l2extepg_2.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out_2/instP-ansible_extepg_2"
+
+- name: Bind External End Point Groups to Contracts
+  aci_l2out_extepg_to_contract:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l2out: ansible_l2out
+    extepg: ansible_extepg
+    contract: ansible_contract
+    contract_type: provider
+    state: present
+  register: bind_extepg_provider_contract
+
+- name: Verify bind_extepg_provider_contract
+  assert:
+    that:
+    - bind_extepg_provider_contract is changed
+    - bind_extepg_provider_contract.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg/rsprov-ansible_contract"
+
+- name: Bind second External End Point Groups to Contracts
+  aci_l2out_extepg_to_contract:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l2out: ansible_l2out_2
+    extepg: ansible_extepg_2
+    contract: ansible_contract2
+    contract_type: provider
+    state: present
+  register: bind_extepg_provider_contract
+
+- name: Verify bind_extepg_provider_contract
+  assert:
+    that:
+    - bind_extepg_provider_contract is changed
+    - bind_extepg_provider_contract.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out_2/instP-ansible_extepg_2/rsprov-ansible_contract2"
+
+- name: Query the External End Point Groups
+  aci_l2out_extepg_to_contract:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l2out: ansible_l2out
+    extepg: ansible_extepg
+    contract: ansible_contract
+    contract_type: provider
+    state: query
+  register: query_extepg
+
+- name: Verify query_extepg
+  assert:
+    that:
+    - query_extepg is not changed
+    - query_extepg.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg/rsprov-ansible_contract"
+
+- name: Query all the External End Point Groups
+  aci_l2out_extepg_to_contract:
+    <<: *aci_info
+    contract_type: provider
+    state: query
+  register: query_all
+
+- name: Verify query_extepg
+  assert:
+    that:
+    - query_extepg is not changed
+    - query_extepg.current | length > 0
+
+- name: Remove existing contract to External End Point Groups
+  aci_l2out_extepg_to_contract:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l2out: ansible_l2out
+    extepg: ansible_extepg
+    contract: ansible_contract
+    contract_type: provider
+    state: absent
+  register: remove_contract_extepg
+
+- name: Verify remove_contract_extepg
+  assert:
+    that:
+    - remove_contract_extepg is changed
+    - remove_contract_extepg.current == []
+    - remove_contract_extepg.previous.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg/rsprov-ansible_contract"
+
+- name: Bind External End Point Groups to Contracts
+  aci_l2out_extepg_to_contract:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l2out: ansible_l2out
+    extepg: ansible_extepg
+    contract: ansible_contract
+    contract_type: consumer
+    provider_match: all
+    state: present
+  ignore_errors: yes
+  register: bind_extepg_consumer_contract
+
+- name: Verify bind_extepg_consumer_contract
+  assert:
+    that:
+    - bind_extepg_consumer_contract is not changed
+    - bind_extepg_consumer_contract.msg == "the 'provider_match' is only configurable for Provided Contracts"
