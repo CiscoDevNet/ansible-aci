@@ -68,7 +68,7 @@ options:
   mode:
     description:
     - Interface mode, only used if instance_type is ext-svi
-    type:str
+    type: str
     choices: [ regular, native, untagged ]
   state:
     description:
@@ -84,7 +84,7 @@ seealso:
 - module: aci_l3out
 - module: aci_l3out_logical_node_profile
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(l3ext:RsPathL3OutAtt)
+  description: More information about the internal APIC class B(l3ext:RsPathL3OutAtt)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
