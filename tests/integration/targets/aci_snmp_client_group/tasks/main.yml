@@ -92,7 +92,6 @@
     - update_snmp_client_group.current.0.snmpClientGrpP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/clgrp-ansible_snmp_client_group"
     - update_snmp_client_group.current.0.snmpClientGrpP.attributes.name == "ansible_snmp_client_group"
     - update_snmp_client_group.current.0.snmpClientGrpP.attributes.descr == "new client group descr"
-    - update_snmp_client_group.current.0.snmpClientGrpP.attributes.epgDn == "uni/tn-mgmt/mgmtp-default/oob-default"
 
 # QUERY snmp client group
 - name: Query snmp client group
@@ -110,7 +109,6 @@
     - query_snmp_client_group.current.0.snmpClientGrpP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/clgrp-ansible_snmp_client_group"
     - query_snmp_client_group.current.0.snmpClientGrpP.attributes.name == "ansible_snmp_client_group"
     - query_snmp_client_group.current.0.snmpClientGrpP.attributes.descr == "new client group descr"
-    - query_snmp_client_group.current.0.snmpClientGrpP.attributes.epgDn == "uni/tn-mgmt/mgmtp-default/oob-default"
 
 - name: Query all snmp client groups
   aci_snmp_client_group:
