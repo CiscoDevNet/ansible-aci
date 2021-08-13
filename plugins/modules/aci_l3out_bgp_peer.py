@@ -330,7 +330,7 @@ def main():
                                    'nh-self']),
         peer_controls=dict(type='list', elements='str', choices=['bfd',
                                                  'dis-conn-check']),
-        address_type_controls=dict(type='list', elements='str'
+        address_type_controls=dict(type='list', elements='str',
                                    choices=['af-ucast', 'af-mcast']),
         private_asn_controls=dict(type='list', elements='str',
                                   choices=['remove-exclusive',
