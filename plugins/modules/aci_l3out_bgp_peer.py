@@ -142,7 +142,7 @@ EXAMPLES = r'''
     state: present
   delegate_to: localhost
 
-- name: Shutdown a BGP peer:
+- name: Shutdown a BGP peer
   cisco.aci.aci_l3out_bgp_peer:
     host: apic
     username: admin
