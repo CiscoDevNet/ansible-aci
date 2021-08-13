@@ -76,7 +76,7 @@ EXAMPLES = r'''
     auth_key: "{{ hmac_key }}"
     state: present
   delegate_to: localhost
-  
+
 - name: Create an SNMP user with both authentication and privacy
   cisco.aci.aci_snmp_user:
     host: apic
