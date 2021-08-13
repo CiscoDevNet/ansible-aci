@@ -268,7 +268,7 @@ def main():
             class_config=dict(
                 addr=address,
                 name=client_name
-                ),
+            ),
         )
 
         aci.get_diff(aci_class='snmpClientP')
