@@ -20,6 +20,7 @@ options:
   address:
     description:
     - IP subnet to accept SNMP requests from
+    type: str
   client_group:
     description:
     - Name of an existing SNMP client group
