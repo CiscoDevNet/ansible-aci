@@ -58,10 +58,10 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(snmp:UserP).
+  description: More information about the internal APIC class B(snmp:UserP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Tim Cragg
+- Tim Cragg (@timcragg)
 '''
 
 EXAMPLES = r'''
