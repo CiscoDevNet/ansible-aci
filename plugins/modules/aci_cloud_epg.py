@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r'''
 ---
 module: aci_cloud_epg
-short_description: Manage Cloud EPg (cloud:EPg)
+short_description: Manage Cloud EPG (cloud:EPg)
 description:
-- Manage Cloud EPg on Cisco ACI fabrics
+- Manage Cloud EPG on Cisco Cloud ACI
 notes:
 - More information about the internal APIC class B(cloud:EPg) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
@@ -20,22 +20,24 @@ author:
 - Nirav (@nirav)
 - Cindy Zhao (@cizhao)
 options:
-  descr:
+  tenant:
     description:
-    - Description of the Cloud EPg.
+    - The name of the existing tenant.
+    type: str
+  ap:
+    description:
+    - The name of the cloud application profile.
+    aliases: [ app_profile, app_profile_name ]
     type: str
   name:
     description:
-    - The name of the Cloud EPg.
-    aliases: [ cloud_epg ]
+    - The name of the cloud EPG.
+    aliases: [ cloud_epg, cloud_epg_name, epg, epg_name ]
     type: str
-  tenant:
+  description:
     description:
-    - Then name of the Tenant.
-    type: str
-  cloud_application_profile:
-    description:
-    - The name of the cloud application profile.
+    - Description of the cloud EPG.
+    aliases: [ descr ]
     type: str
   vrf:
     description:
@@ -61,9 +63,9 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     tenant: tenantName
-    cloud_application_profile: apName
+    ap: apName
     vrf: vrfName
-    descr: Aci Cloud EPG
+    description: Aci Cloud EPG
     name: epgName
     state: present
   delegate_to: localhost
@@ -74,7 +76,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     tenant: tenantName
-    cloud_application_profile: apName
+    ap: apName
     name: cloudName
     state: absent
   delegate_to: localhost
@@ -85,7 +87,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     tenant: tenantName
-    cloud_application_profile: apName
+    ap: apName
     state: query
   delegate_to: localhost
 
@@ -95,7 +97,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     tenant: tenantName
-    cloud_application_profile: apName
+    ap: apName
     name: epgName
     state: query
   delegate_to: localhost
@@ -213,10 +215,10 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update({
-        'descr': dict(type='str',),
-        'name': dict(type='str', aliases=['cloud_epg']),
+        'description': dict(type='str', aliases=['descr']),
+        'name': dict(type='str', aliases=['cloud_epg', 'cloud_epg_name', 'epg', 'epg_name']),
         'tenant': dict(type='str',),
-        'cloud_application_profile': dict(type='str',),
+        'ap': dict(type='str', aliases=['app_profile', 'app_profile_name']),
         'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
         'vrf': dict(type='str', aliases=['context', 'vrf_name']),
     })
@@ -225,21 +227,21 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['name', 'tenant', 'cloud_application_profile', ]],
-            ['state', 'present', ['name', 'tenant', 'cloud_application_profile', ]],
+            ['state', 'absent', ['name', 'tenant', 'ap']],
+            ['state', 'present', ['name', 'tenant', 'ap']],
         ],
     )
 
-    descr = module.params['descr']
+    description = module.params['description']
     name = module.params['name']
     tenant = module.params['tenant']
-    cloud_application_profile = module.params['cloud_application_profile']
+    ap = module.params['ap']
     state = module.params['state']
     child_configs = []
-    relation_cloudrscloudepgctx = module.params['vrf']
+    relation_vrf = module.params['vrf']
 
-    if relation_cloudrscloudepgctx:
-        child_configs.append({'cloudRsCloudEPgCtx': {'attributes': {'tnFvCtxName': relation_cloudrscloudepgctx}}})
+    if relation_vrf:
+        child_configs.append({'cloudRsCloudEPgCtx': {'attributes': {'tnFvCtxName': relation_vrf}}})
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -251,9 +253,9 @@ def main():
         },
         subclass_1={
             'aci_class': 'cloudApp',
-            'aci_rn': 'cloudapp-{0}'.format(cloud_application_profile),
-            'target_filter': 'eq(cloudApp.name, "{0}")'.format(cloud_application_profile),
-            'module_object': cloud_application_profile
+            'aci_rn': 'cloudapp-{0}'.format(ap),
+            'target_filter': 'eq(cloudApp.name, "{0}")'.format(ap),
+            'module_object': ap
         },
         subclass_2={
             'aci_class': 'cloudEPg',
@@ -270,7 +272,7 @@ def main():
         aci.payload(
             aci_class='cloudEPg',
             class_config={
-                'descr': descr,
+                'descr': description,
                 'name': name,
             },
             child_configs=child_configs

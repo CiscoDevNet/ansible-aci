@@ -43,7 +43,7 @@
     cisco.aci.aci_cloud_ap: &aci_cloud_ap_present
       <<: *aci_tenant_present
       name: anstest
-      descr: Ansible Test Cloud APIC
+      description: Ansible Test Cloud APIC
       state: present
     register: create_cloud_ap
 
@@ -64,9 +64,9 @@
     cisco.aci.aci_cloud_epg: &aci_cloud_epg_present
       <<: *aci_info
       tenant: ansible_test
-      cloud_application_profile: anstest
+      ap: anstest
       vrf: anstest
-      descr: Aci Cloud EPG
+      description: Aci Cloud EPG
       name: anstest
       state: present
     check_mode: yes
@@ -137,7 +137,7 @@
     cisco.aci.aci_cloud_epg:
       <<: *aci_info
       tenant: ansible_test
-      cloud_application_profile: anstest
+      ap: anstest
       name: anstest
       state: query
     register: cloud_epg_query
@@ -146,7 +146,7 @@
     cisco.aci.aci_cloud_epg:
       <<: *aci_info
       tenant: ansible_test
-      cloud_application_profile: anstest
+      ap: anstest
       state: query
     register: query_all
 
@@ -166,7 +166,7 @@
     cisco.aci.aci_cloud_epg: &cloud_epg_absent
       <<: *aci_info
       tenant: ansible_test
-      cloud_application_profile: anstest
+      ap: anstest
       name: anstest
       state: absent
     register: cloud_epg_absent
