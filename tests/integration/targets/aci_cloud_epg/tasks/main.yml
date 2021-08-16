@@ -1,0 +1,184 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Cindy Zhao (@cizhao)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for cloud sites
+  when: query_cloud.current | length > 0  # This condition will execute only cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Ensure tenant doesn't exist
+    cisco.aci.aci_tenant:
+      <<: *aci_info
+      state: absent
+      tenant: ansible_test
+    register: tenant_absent
+
+  - name: Ensure tenant exists
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      state: present
+      tenant: ansible_test
+    register: tenant_present
+
+  - name: Ensure application profile exists
+    cisco.aci.aci_cloud_ap: &aci_cloud_ap_present
+      <<: *aci_tenant_present
+      name: anstest
+      description: Ansible Test Cloud APIC
+      state: present
+    register: create_cloud_ap
+
+  - name: Ensure vrf exist
+    cisco.aci.aci_vrf: &aci_vrf_present
+      <<: *aci_tenant_present
+      vrf: anstest
+      description: Ansible Test
+    register: vrf_present
+
+  - name: Create another vrf
+    cisco.aci.aci_vrf:
+      <<: *aci_vrf_present
+      vrf: anstest_2
+    register: another_vrf_present
+
+  - name: Create aci cloud epg (check_mode)
+    cisco.aci.aci_cloud_epg: &aci_cloud_epg_present
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      vrf: anstest
+      description: Aci Cloud EPG
+      name: anstest
+      state: present
+    check_mode: yes
+    register: cm_epg_present
+
+  - name: Create aci cloud epg (normal mode)
+    cisco.aci.aci_cloud_epg:
+      <<: *aci_cloud_epg_present
+    register: nm_epg_present
+
+  - name: Create aci cloud epg again
+    cisco.aci.aci_cloud_epg:
+      <<: *aci_cloud_epg_present
+    register: nm_epg_present_again
+
+  - name: Create another cloud epg
+    cisco.aci.aci_cloud_epg:
+      <<: *aci_cloud_epg_present
+      name: ansible_cloud_epg
+    register: nm_another_epg_present
+
+  - name: Verify cloud epg creation
+    assert:
+      that:
+        - cm_epg_present is changed
+        - nm_epg_present is changed
+        - nm_epg_present_again is not changed
+        - cm_epg_present.previous == nm_epg_present.previous == []
+        - cm_epg_present.proposed.cloudEPg.attributes.name == 'anstest'
+        - cm_epg_present.proposed.cloudEPg.attributes.descr == 'Aci Cloud EPG'
+        - cm_epg_present.proposed.cloudEPg.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudepg-anstest'
+        - cm_epg_present.proposed.cloudEPg.children.0.cloudRsCloudEPgCtx.attributes.tnFvCtxName == 'anstest'
+        - nm_epg_present.current.0.cloudEPg.attributes.name == 'anstest'
+        - nm_epg_present.current.0.cloudEPg.attributes.descr == 'Aci Cloud EPG'
+        - nm_epg_present.current.0.cloudEPg.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudepg-anstest'
+        - nm_epg_present.current.0.cloudEPg.children.0.cloudRsCloudEPgCtx.attributes.tnFvCtxName == 'anstest'
+        - nm_epg_present_again.previous == nm_epg_present_again.current
+        - nm_another_epg_present is changed
+        - nm_another_epg_present.previous == []
+        - nm_another_epg_present.current.0.cloudEPg.attributes.name == 'ansible_cloud_epg'
+
+  - name: Update cloud epg with another vrf
+    cisco.aci.aci_cloud_epg:
+      <<: *aci_cloud_epg_present
+      vrf: anstest_2
+    register: update_cloud_epg
+
+  - name: Update cloud epg without vrf
+    cisco.aci.aci_cloud_epg:
+      <<: *aci_cloud_epg_present
+      vrf: "{{ fakevar | default(omit) }}"
+    register: no_vrf
+
+  # - name: Create cloud epg without vrf
+  #   cisco.aci.aci_cloud_epg:
+  #     <<: *aci_cloud_epg_present
+  #     name: epg_without_vrf
+  #     vrf: "{{ fakevar | default(omit) }}"
+  #   register: create_no_vrf
+
+  - name: Veirfy update_cloud_epg
+    assert:
+      that:
+        - update_cloud_epg is changed
+        - update_cloud_epg.current.0.cloudEPg.children.0.cloudRsCloudEPgCtx.attributes.tnFvCtxName == 'anstest_2'
+
+  - name: Query specific cloud epg
+    cisco.aci.aci_cloud_epg:
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      name: anstest
+      state: query
+    register: cloud_epg_query
+
+  - name: query all
+    cisco.aci.aci_cloud_epg:
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      state: query
+    register: query_all
+
+  - name: Verify query
+    assert:
+      that:
+        - cloud_epg_query is not changed
+        - cloud_epg_query.current.0.cloudEPg.attributes.name == 'anstest'
+        - cloud_epg_query.current.0.cloudEPg.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudepg-anstest'
+        - cloud_epg_query.current.0.cloudEPg.attributes.descr == 'Aci Cloud EPG'
+        - cloud_epg_query.current.0.cloudEPg.children.0.cloudRsCloudEPgCtx.attributes.tnFvCtxName == 'anstest_2'
+        - cloud_epg_query.current.0.cloudEPg.children.0.cloudRsCloudEPgCtx.attributes.tDn == 'uni/tn-ansible_test/ctx-anstest_2'
+        - query_all is not changed
+        - query_all.current.0.cloudApp.children | length >= 2
+
+  - name: Remove cloud epg
+    cisco.aci.aci_cloud_epg: &cloud_epg_absent
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      name: anstest
+      state: absent
+    register: cloud_epg_absent
+
+  - name: Remove cloud epg again
+    cisco.aci.aci_cloud_epg:
+      <<: *cloud_epg_absent
+    register: cloud_epg_absent_again
+
+  - name: Verify deletion
+    assert:
+      that:
+        - cloud_epg_absent is changed
+        - cloud_epg_absent.current == []
+        - cloud_epg_absent_again is not changed
