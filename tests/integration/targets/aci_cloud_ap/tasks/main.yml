@@ -40,7 +40,7 @@
     cisco.aci.aci_cloud_ap: &aci_cloud_ap_present
       <<: *aci_tenant_present
       name: anstest
-      descr: Ansible Test Cloud APIC
+      description: Ansible Test Cloud APIC
       state: present
     check_mode: yes
     register: cm_create_cloud_ap
@@ -64,7 +64,7 @@
   - name: update cloud ap
     cisco.aci.aci_cloud_ap:
       <<: *aci_cloud_ap_present
-      descr: Update Ansible Test Update
+      description: Update Ansible Test Update
     register: update_cloud_ap
 
   - name: query all cloud ap for tenant - query tenant aps

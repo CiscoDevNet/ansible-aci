@@ -11,22 +11,24 @@ __metaclass__ = type
 DOCUMENTATION = r'''
 ---
 module: aci_cloud_ap
-short_description: Manage Cloud Application container (cloud:App)
+short_description: Manage Cloud Application Profile (AP) (cloud:App)
 description:
-- Manage Cloud Application Profile (AP) objects on Cisco ACI fabrics
+- Manage Cloud Application Profile (AP) objects on Cisco Cloud ACI
 options:
-  descr:
+  description:
     description:
-    - Description for the cloud AP.
+    - Description for the cloud application profile.
+    aliases: [ descr ]
     type: str
   name:
     description:
     - The name of the cloud application profile.
-    aliases: [ cloud_application_container ]
+    aliases: [ app_profile, app_profile_name, ap ]
     type: str
   tenant:
     description:
     - The name of an existing tenant.
+    aliases: [ tenant_name ]
     type: str
   state:
     description:
@@ -54,7 +56,7 @@ EXAMPLES = r'''
     password: SomeSecretPassword
     tenant: production
     name: intranet
-    descr: Web Intranet EPG
+    description: Web Intranet EPG
     state: present
   delegate_to: localhost
 
@@ -224,9 +226,9 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        descr=dict(type='str',),
-        name=dict(type='str', aliases=['cloud_application_container']),
-        tenant=dict(type='str',),
+        description=dict(type='str', aliases=['descr']),
+        name=dict(type='str', aliases=['app_profile', 'app_profile_name', 'ap']),
+        tenant=dict(type='str', aliases=['tenant_name']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
 
@@ -239,7 +241,7 @@ def main():
         ],
     )
 
-    descr = module.params['descr']
+    description = module.params['description']
     name = module.params['name']
     tenant = module.params['tenant']
     state = module.params['state']
@@ -268,7 +270,7 @@ def main():
         aci.payload(
             aci_class='cloudApp',
             class_config=dict(
-                descr=descr,
+                descr=description,
                 name=name,
             ),
             child_configs=child_configs
