@@ -21,11 +21,13 @@
     test_vars_leaf: &test_vars_leaf
       pod_id: 1
       node_id: 1101
+      node_type: leaf
       interface: 1/33
       description: testing
     test_vars_spine: &test_vars_spine
       pod_id: 1
       node_id: 1201
+      node_type: spine
       interface: 1/33
       description: testing
     test_vars_fex: &test_vars_fex
@@ -58,7 +60,7 @@
 - name: Leaf - Verify that no infraHPathS is not present
   assert:
     that:
-    - query_leaf_description.current.0.infraInfra.children is not defined
+    - query_leaf_description.current.0.infraInfra.children.0.infraHPathS.children is not defined
 
 - name: Leaf - Set description on interface
   cisco.aci.aci_interface_description:
@@ -90,7 +92,7 @@
 - name: Leaf - Verify that no infraHPathS is not present
   assert:
     that:
-    - query_leaf_description_again.current.0.infraInfra.children is not defined
+    - query_leaf_description_again.current.0.infraInfra.children.0.infraHPathS.children is not defined
 
 - name: Spine - Clean test environment with no description interface
   cisco.aci.aci_interface_description:
@@ -105,10 +107,10 @@
     state: query
   register: query_spine_description
 
-- name: Spine - Verify that no infraHPathS is not present
+- name: Spine - Verify that no infraSHPathS is not present
   assert:
     that:
-    - query_spine_description.current.0.infraInfra.children is not defined
+    - query_spine_description.current.0.infraInfra.children.0.infraSHPathS.children is not defined
 
 - name: Spine - Set description on interface
   cisco.aci.aci_interface_description:
@@ -133,14 +135,14 @@
 - name: Spine - Query interface
   cisco.aci.aci_interface_description:
     <<: *aci_info
-    <<: *test_vars_leaf
+    <<: *test_vars_spine
     state: query
   register: query_spine_description_again
 
-- name: Spine - Verify that no infraHPathS is not present
+- name: Spine - Verify that no infraSHPathS is not present
   assert:
     that:
-    - query_spine_description_again.current.0.infraInfra.children is not defined
+    - query_spine_description_again.current.0.infraInfra.children.0.infraSHPathS.children is not defined
 
 - name: Fex - Clean test environment with no description interface
   cisco.aci.aci_interface_description:
@@ -158,7 +160,7 @@
 - name: Fex - Verify that no infraHPathS is not present
   assert:
     that:
-    - query_fex_description.current.0.infraInfra.children is not defined
+    - query_fex_description.current.0.infraInfra.children.0.infraHPathS.children is not defined
 
 - name: Fex - Set description on interface
   cisco.aci.aci_interface_description:
@@ -183,11 +185,11 @@
 - name: Fex - Query interface
   cisco.aci.aci_interface_description:
     <<: *aci_info
-    <<: *test_vars_leaf
+    <<: *test_vars_fex
     state: query
   register: query_fex_description_again
 
 - name: Fex - Verify that no infraHPathS is not present
   assert:
     that:
-    - query_fex_description_again.current.0.infraInfra.children is not defined
+    - query_fex_description_again.current.0.infraInfra.children.0.infraHPathS.children is not defined

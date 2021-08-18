@@ -29,6 +29,11 @@ options:
     - The C(node_id) value is usually something like '101'.
     type: int
     aliases: [ leaf, spine, node ]
+  node_type:
+    description:
+    - The type of node the C(interface) is configured on.
+    type: str
+    choices: [ leaf, spine, fex ]
   interface:
     description:
     - The name of the C(interface) that is targeted.
@@ -66,6 +71,7 @@ EXAMPLES = r'''
     validate_certs: no
     pod_id: 1
     node_id: 105
+    node_type: leaf
     interface: 1/49
     description: foobar
     state: present
@@ -79,6 +85,7 @@ EXAMPLES = r'''
     validate_certs: no
     pod_id: 1
     node_id: 105
+    node_type: leaf
     interface: 1/49
     description: foobar
     state: absent
@@ -120,6 +127,7 @@ EXAMPLES = r'''
     validate_certs: no
     pod_id: 1
     node_id: 105
+    node_type: leaf
     interface: 1/49
     state: query
   delegate_to: localhost
@@ -241,6 +249,7 @@ def main():
         pod_id=dict(type='int', aliases=['pod', 'pod_number']),
         node_id=dict(type='int', aliases=['leaf', 'spine', 'node']),
         fex_id=dict(type='int'),
+        node_type=dict(type='str', choices=['leaf', 'spine']),
         interface=dict(type='str'),
         description=dict(type='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
@@ -249,6 +258,9 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
+        required_one_of=[
+            ('node_type', 'fex_id'),
+        ],
         required_if=[
             ['state', 'absent', ['pod_id', 'node_id', 'interface']],
             ['state', 'present', ['pod_id', 'node_id', 'interface', 'description']],
@@ -262,18 +274,20 @@ def main():
     interface = module.params.get('interface')
     description = module.params.get('description')
     fex_id = module.params.get('fex_id')
+    node_type = module.params.get('node_type')
     state = module.params.get('state')
-
-    if fex_id:
-        node_type = 'fex'
-    else:
-        resp = json.loads(aci.query(path='api/node/class/topology/pod-{0}/node-{1}/eqptCh.json'.format(pod_id, node_id)))
-        node_type = resp[0]['eqptCh']['attributes']['role']
 
     class_name = 'infraHPathS'
     children = ['infraRsHPathAtt']
 
-    if node_type == 'spine':
+    if fex_id:
+        rn = 'hpaths-{0}_eth{1}_{2}.json'.format(node_id, fex_id, interface.replace('/', '_'))
+        child_configs = [
+            dict(infraRsHPathAtt=dict(attributes=dict(
+                tDn='topology/pod-{0}/paths-{1}/extpaths-{2}/pathep-[eth{3}]'.format(pod_id, node_id, fex_id, interface)
+            ))),
+        ]
+    elif node_type == 'spine':
         rn = 'shpaths-{0}_eth{1}'.format(node_id, interface.replace('/', '_'))
         class_name = 'infraSHPathS'
         children = ['infraRsSHPathAtt']
@@ -289,17 +303,6 @@ def main():
                 tDn='topology/pod-{0}/paths-{1}/pathep-[eth{2}]'.format(pod_id, node_id, interface)
             ))),
         ]
-    elif node_type == 'fex':
-        rn = 'hpaths-{0}_eth{1}_{2}.json'.format(node_id, fex_id, interface.replace('/', '_'))
-        child_configs = [
-            dict(infraRsHPathAtt=dict(attributes=dict(
-                tDn='topology/pod-{0}/paths-{1}/extpaths-{2}/pathep-[eth{3}]'.format(pod_id, node_id, fex_id, interface)
-            ))),
-        ]
-    else:
-        # situation that node type deviates from leaf/spine/fex which should never occur
-        rn = ''
-        child_configs = []
 
     aci.construct_url(
         root_class=dict(
