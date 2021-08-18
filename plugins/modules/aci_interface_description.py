@@ -240,7 +240,6 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
-import json
 
 
 def main():
