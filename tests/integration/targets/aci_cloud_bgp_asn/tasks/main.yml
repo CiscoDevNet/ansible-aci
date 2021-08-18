@@ -56,7 +56,11 @@
 #       <<: *aci_info
 #       annotation: 'tag_system'
 #       asn: 64605
+<<<<<<< HEAD
 #       description: 'sample autonomous profile'
+=======
+#       descr: 'sample autonomous profile'
+>>>>>>> ccdcd5f... Added test cases to cloud BGP ASN module
 #       name: 'BGP_ASN'
 #       name_alias: 'alias_sys_prof'
 #       state: present
@@ -73,7 +77,11 @@
 #       <<: *aci_info
 #       annotation: 'tag_system'
 #       asn: 64605
+<<<<<<< HEAD
 #       description: 'sample autonomous profile'
+=======
+#       descr: 'sample autonomous profile'
+>>>>>>> ccdcd5f... Added test cases to cloud BGP ASN module
 #       name: 'BGP_ASN'
 #       name_alias: 'alias_sys_prof'
 #       state: present
@@ -90,7 +98,11 @@
 #       <<: *aci_info
 #       annotation: 'tag_system'
 #       asn: 64605
+<<<<<<< HEAD
 #       description: 'sample autonomous profile'
+=======
+#       descr: 'sample autonomous profile'
+>>>>>>> ccdcd5f... Added test cases to cloud BGP ASN module
 #       name: 'BGP_ASN'
 #       name_alias: 'alias_sys_prof'
 #       state: query
