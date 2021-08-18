@@ -1,105 +1,133 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2021, Cindy Zhao <cizhao@cisco.com>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: aci_cloudEPSelector 
+module: aci_cloud_epg_selector 
 short_description: Manage Cloud Endpoint Selector (cloud:EPSelector)
 description:
-- Mo doc not defined in techpub!!!
+- Manage Cloud Endpoint Selector on Cisco Cloud ACI
 notes:
 - More information about the internal APIC class B(cloud:EPSelector) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 author:
-- Devarshi Shah (@devarshishah3)
-version_added: '2.7'
-options: 
-  annotation:
+- Nirav (@nirav)
+- Cindy Zhao (@cizhao)
+options:
+  description:
     description:
-    - Mo doc not defined in techpub!!! 
-  descr:
+    - Description of the Cloud Endpoint Selector.
+    type: str
+  expressions:
     description:
-    - configuration item description. 
-  matchExpression:
-    description:
-    - Mo doc not defined in techpub!!! 
+    - Expressions associated to this selector.
+    type: list
+    elements: dict
+    suboptions:
+      key:
+        description:
+        - The key of the expression.
+        - The key is custom or is one of region, zone and ip
+        - The key can be zone only when the site is AWS.
+        required: true
+        type: str
+      operator:
+        description:
+        - The operator associated to the expression.
+        - Operator has_key or does_not_have_key is only available for key custom or zone
+        required: true
+        type: str
+        choices: [ not_in, in, equals, not_equals, has_key, does_not_have_key ]
+      value:
+        description:
+        - The value associated to the expression.
+        - If the operator is in or not_in, the value should be a comma separated string.
+        type: str
   name:
     description:
-    - object name 
-    aliases: [ cloud_endpoint_selector ] 
-  nameAlias:
-    description:
-    - Mo doc not defined in techpub!!! 
-  ownerKey:
-    description:
-    - key for enabling clients to own their data 
-  ownerTag:
-    description:
-    - tag for enabling clients to add their own data 
+    - The name of the Cloud Endpoint selector.
+    aliases: [ selector ]
+    type: str
   tenant:
     description:
-    - tenant name 
-  cloud_application_container:
+    - The name of the existing tenant.
+    required: yes
+    type: str
+  ap:
     description:
-    - object name 
-  cloud_epg:
+    - The name of the cloud application profile.
+    required: yes
+    type: str
+  epg:
     description:
-    - object name 
-  state: 
+    - The name of the cloud EPG.
+    required: yes
+    type: str
+  state:
     description:
     - Use C(present) or C(absent) for adding or removing.
     - Use C(query) for listing an object or multiple objects.
     choices: [ absent, present, query ]
     default: present 
+    type: str
 
-extends_documentation_fragment: aci
+extends_documentation_fragment:
+- cisco.aci.aci
 '''
 
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, expression_spec
 from ansible.module_utils.basic import AnsibleModule
+
+EXPRESSION_KEYS = {
+    'ip': 'IP',
+    'region': 'Region',
+    'zone': 'Zone',
+}
+
+EXPRESSION_OPERATORS = {
+    'not_in': 'notin',
+    'not_equals': '!=',
+    'in': 'in',
+    'equals': '==',
+}
+
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update({ 
-        'annotation': dict(type='str',),
-        'descr': dict(type='str',),
-        'matchExpression': dict(type='str',),
-        'name': dict(type='str', aliases=['cloud_endpoint_selector']),
-        'nameAlias': dict(type='str',),
-        'ownerKey': dict(type='str',),
-        'ownerTag': dict(type='str',),
-        'tenant': dict(type='str',),
-        'cloud_application_container': dict(type='str',),
-        'cloud_epg': dict(type='str',),
+        'description': dict(type='str'),
+        'expressions': dict(type='list', elements='dict', options=expression_spec()),
+        'name': dict(type='str', required=True, aliases=['selector']),
+        'tenant': dict(type='str', required=True),
+        'ap': dict(type='str', required=True),
+        'epg': dict(type='str', required=True),
         'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
-
     })
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[ 
-            ['state', 'absent', ['name', 'tenant', 'cloud_application_container', 'cloud_epg', ]], 
-            ['state', 'present', ['name', 'tenant', 'cloud_application_container', 'cloud_epg', ]],
+            ['state', 'absent', ['name']], 
+            ['state', 'present', ['name']],
         ],
     )
-    
-    annotation = module.params['annotation']
-    descr = module.params['descr']
-    matchExpression = module.params['matchExpression']
+
+    description = module.params['description']
+    expressions = module.params['expressions']
     name = module.params['name']
-    nameAlias = module.params['nameAlias']
-    ownerKey = module.params['ownerKey']
-    ownerTag = module.params['ownerTag']
     tenant = module.params['tenant']
-    cloud_application_container = module.params['cloud_application_container']
-    cloud_epg = module.params['cloud_epg']
+    ap = module.params['ap']
+    epg = module.params['epg']
     state = module.params['state']
     child_configs=[]
-    
+
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -111,15 +139,15 @@ def main():
         }, 
         subclass_1={
             'aci_class': 'cloudApp',
-            'aci_rn': 'cloudapp-{}'.format(cloud_application_container),
-            'target_filter': 'eq(cloudApp.name, "{}")'.format(cloud_application_container),
-            'module_object': cloud_application_container
+            'aci_rn': 'cloudapp-{}'.format(ap),
+            'target_filter': 'eq(cloudApp.name, "{}")'.format(ap),
+            'module_object': ap
         }, 
         subclass_2={
             'aci_class': 'cloudEPg',
-            'aci_rn': 'cloudepg-{}'.format(cloud_epg),
-            'target_filter': 'eq(cloudEPg.name, "{}")'.format(cloud_epg),
-            'module_object': cloud_epg
+            'aci_rn': 'cloudepg-{}'.format(epg),
+            'target_filter': 'eq(cloudEPg.name, "{}")'.format(epg),
+            'module_object': epg
         }, 
         subclass_3={
             'aci_class': 'cloudEPSelector',
@@ -135,19 +163,40 @@ def main():
     aci.get_existing()
 
     if state == 'present':
+        expressions_list = []
+        for expression in expressions:
+            key = expression.get('key')
+            operator = expression.get('operator')
+            value = expression.get('value')
+            if key in ["ip", "region","zone"]:
+                key = EXPRESSION_KEYS.get(key)
+            else:
+                key = 'custom:' + key
+            if operator in ["has_key", "does_not_have_key"] and value:
+                module.fail_json(
+                    msg="Attribute 'value' is not supported for operator '{0}' in expression '{1}'".format(operator, key))
+            if operator in ["not_in", "in", "equals", "not_equals"] and not value:
+                module.fail_json(
+                    msg="Attribute 'value' needed for operator '{0}' in expression '{1}'".format(operator, key))
+            if operator in ["has_key", "does_not_have_key"] and key in ["ip", "region"]:
+                AnsibleModule.fail_json(msg="Operator '{0}' is not supported when expression key is '{1}'".format(operator, key))
+            if operator in ["not_in", "in"]:
+                expressions_list.append('{0} {1}({2})'.format(key, EXPRESSION_OPERATORS.get(operator), value))
+            elif operator in ["equals", "not_equals"]:
+                expressions_list.append('{0}{1}({2})'.format(key, EXPRESSION_OPERATORS.get(operator), value))
+            elif operator == "does_not_have_key":
+                expressions_list.append('!{0}'.format(key))
+            else:
+                expressions_list.append(key)
+        matchExpression = ','.join(expressions_list)
         aci.payload(
             aci_class='cloudEPSelector',
             class_config={ 
-                'annotation': annotation,
-                'descr': descr,
+                'descr': description,
                 'matchExpression': matchExpression,
                 'name': name,
-                'nameAlias': nameAlias,
-                'ownerKey': ownerKey,
-                'ownerTag': ownerTag,
             },
             child_configs=child_configs
-           
         )
 
         aci.get_diff(aci_class='cloudEPSelector')
