@@ -46,6 +46,15 @@ options:
     - The layer 2 encapsulation protocol to use with the virtual switch.
     type: str
     choices: [ unknown, vlan, vxlan ]
+  add_infra_pg:
+    description:
+    - Configure port groups for infra VLAN (e.g. Virtual APIC).
+    type: bool
+    aliases: [ infra_pg ]
+  tag_collection:
+    description:
+    - Enables Cisco APIC to collect VMs that have been assigned tags in VMware vCenter for microsegmentation.
+    type: bool
   multicast_address:
     description:
     - The multicast IP address to use for the virtual switch.
@@ -277,6 +286,8 @@ VSWITCH_MAPPING = dict(
     unknown='unknown',
 )
 
+BOOL_TO_ACI_MAPPING = {True: 'yes', False: 'no', None: None}
+
 
 def main():
     argument_spec = aci_argument_spec()
@@ -288,6 +299,8 @@ def main():
                            'CS0', 'CS1', 'CS2', 'CS3', 'CS4', 'CS5', 'CS6', 'CS7', 'EF', 'VA', 'unspecified'],
                   aliases=['target']),
         encap_mode=dict(type='str', choices=['unknown', 'vlan', 'vxlan']),
+        add_infra_pg=dict(type='bool', aliases=['infra_pg']),
+        tag_collection=dict(type='bool'),
         multicast_address=dict(type='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         vm_provider=dict(type='str', choices=['cloudfoundry', 'kubernetes', 'microsoft', 'openshift', 'openstack', 'redhat', 'vmware']),
@@ -309,6 +322,8 @@ def main():
     domain = module.params.get('domain')
     domain_type = module.params.get('domain_type')
     encap_mode = module.params.get('encap_mode')
+    add_infra_pg = BOOL_TO_ACI_MAPPING[module.params.get('add_infra_pg')]
+    tag_collection = BOOL_TO_ACI_MAPPING[module.params.get('tag_collection')]
     multicast_address = module.params.get('multicast_address')
     vm_provider = module.params.get('vm_provider')
     vswitch = module.params.get('vswitch')
@@ -374,6 +389,8 @@ def main():
             class_config=dict(
                 encapMode=encap_mode,
                 mcastAddr=multicast_address,
+                configInfraPg=add_infra_pg,
+                enableTag=tag_collection,
                 mode=vswitch,
                 name=domain,
                 targetDscp=dscp,
