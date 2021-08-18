@@ -33,7 +33,7 @@ options:
     description:
     - The type of node the C(interface) is configured on.
     type: str
-    choices: [ leaf, spine, fex ]
+    choices: [ leaf, spine ]
   interface:
     description:
     - The name of the C(interface) that is targeted.
