@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2021, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
@@ -9,32 +10,26 @@ __metaclass__ = type
 DOCUMENTATION = r'''
 ---
 module: aci_cloud_bgp_asn
-short_description: Manage Autonomous System Profile (cloud:BgpAsP)
+short_description: Manage Cloud APIC BGP Autonomous System Profile (cloud:BgpAsP)
 description:
-- Mo doc not defined in techpub!!!
-notes:
-- More information about the internal APIC class B(cloud:BgpAsP) from
-  L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
+- Manage the BGP Autonomous System Profile for Cloud APIC
 author:
-- Devarshi Shah (@devarshishah3)
 - Anvitha Jain (@anvitha-jain)
-version_added: '2.7'
+version_added: '2.1.0'
 options:
-  annotation:
-    description:
-    - User-defined string for annotating an object.
   asn:
     description:
-    - autonomous system number
+    - The BGP Autonomous System Number.
     type: str
-  descr:
+  description:
     description:
-    - configuration item description.
+    - Description of the BGP Autonomous System Profile.
+    aliases: [ descr ]
     type: str
   name:
     description:
     - object name
-    aliases: [ autonomous_system_profile ]
+    aliases: [ autonomous_system_profile, autonomous_system_profile_name ]
     type: str
   name_alias:
     description:
@@ -49,7 +44,6 @@ options:
     type: str
 extends_documentation_fragment:
 - cisco.aci.aci
-
 notes:
 - More information about the internal APIC class B(cloud:BgpAsP) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
@@ -62,11 +56,10 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     asn: 64601
-    descr: ASN description
+    description: ASN description
     name: ASN_1
     state: present
   delegate_to: localhost
-
 - name: Remove a cloud BGP ASN
   cisco.aci.aci_cloud_bgp_asn:
     host: apic
@@ -75,7 +68,6 @@ EXAMPLES = r'''
     validate_certs: no
     state: absent
   delegate_to: localhost
-
 - name: Query a cloud BGP ASN
   cisco.aci.aci_cloud_bgp_asn:
     host: apic
@@ -198,10 +190,9 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update({
-        'annotation': dict(type='str'),
         'asn': dict(type='str'),
-        'descr': dict(type='str'),
-        'name': dict(type='str', aliases=['autonomous_system_profile']),
+        'description': dict(type='str', aliases=['descr']),
+        'name': dict(type='str', aliases=['autonomous_system_profile', 'autonomous_system_profile_name']),
         'name_alias': dict(type='str'),
         'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
 
@@ -210,15 +201,11 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[
-            ['state', 'absent', []],
-            ['state', 'present', []],
-        ],
     )
 
     annotation = module.params['annotation']
     asn = module.params['asn']
-    descr = module.params['descr']
+    description = module.params['description']
     name = module.params['name']
     name_alias = module.params['name_alias']
     state = module.params['state']
@@ -243,7 +230,7 @@ def main():
             class_config={
                 'annotation': annotation,
                 'asn': asn,
-                'descr': descr,
+                'descr': description,
                 'name': name,
                 'nameAlias': name_alias,
             },
