@@ -56,7 +56,7 @@
 #       <<: *aci_info
 #       annotation: 'tag_system'
 #       asn: 64605
-#       descr: 'sample autonomous profile'
+#       description: 'sample autonomous profile'
 #       name: 'BGP_ASN'
 #       name_alias: 'alias_sys_prof'
 #       state: present
@@ -73,7 +73,7 @@
 #       <<: *aci_info
 #       annotation: 'tag_system'
 #       asn: 64605
-#       descr: 'sample autonomous profile'
+#       description: 'sample autonomous profile'
 #       name: 'BGP_ASN'
 #       name_alias: 'alias_sys_prof'
 #       state: present
@@ -90,7 +90,7 @@
 #       <<: *aci_info
 #       annotation: 'tag_system'
 #       asn: 64605
-#       descr: 'sample autonomous profile'
+#       description: 'sample autonomous profile'
 #       name: 'BGP_ASN'
 #       name_alias: 'alias_sys_prof'
 #       state: query
