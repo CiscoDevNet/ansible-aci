@@ -6,7 +6,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: aci_cloudExtEPg 
+module: aci_cloud_external_epg
 short_description: Manage Cloud External EPg (cloud:ExtEPg)
 description:
 - Mo doc not defined in techpub!!!
@@ -16,55 +16,55 @@ notes:
 author:
 - Devarshi Shah (@devarshishah3)
 version_added: '2.7'
-options: 
+options:
   annotation:
     description:
-    - Mo doc not defined in techpub!!! 
+    - Mo doc not defined in techpub!!!
   descr:
     description:
-    - configuration item description. 
+    - configuration item description.
   exceptionTag:
     description:
-    - Mo doc not defined in techpub!!! 
+    - Mo doc not defined in techpub!!!
   floodOnEncap:
     description:
-    - Mo doc not defined in techpub!!! 
-    choices: [ disabled, enabled ] 
+    - Mo doc not defined in techpub!!!
+    choices: [ disabled, enabled ]
   matchT:
     description:
-    - match criteria 
-    choices: [ All, AtleastOne, AtmostOne, None ] 
+    - match criteria
+    choices: [ All, AtleastOne, AtmostOne, None ]
   name:
     description:
-    - object name 
-    aliases: [ cloud_external_epg ] 
+    - object name
+    aliases: [ cloud_external_epg ]
   nameAlias:
     description:
-    - Mo doc not defined in techpub!!! 
+    - Mo doc not defined in techpub!!!
   prefGrMemb:
     description:
-    - Mo doc not defined in techpub!!! 
-    choices: [ exclude, include ] 
+    - Mo doc not defined in techpub!!!
+    choices: [ exclude, include ]
   prio:
     description:
-    - qos priority class id 
-    choices: [ level1, level2, level3, level4, level5, level6, unspecified ] 
+    - qos priority class id
+    choices: [ level1, level2, level3, level4, level5, level6, unspecified ]
   routeReachability:
     description:
-    - Mo doc not defined in techpub!!! 
-    choices: [ inter-site, internet, unspecified ] 
+    - Mo doc not defined in techpub!!!
+    choices: [ inter-site, internet, unspecified ]
   tenant:
     description:
-    - tenant name 
+    - tenant name
   cloud_application_container:
     description:
-    - object name 
-  state: 
+    - object name
+  state:
     description:
     - Use C(present) or C(absent) for adding or removing.
     - Use C(query) for listing an object or multiple objects.
     choices: [ absent, present, query ]
-    default: present 
+    default: present
 
 extends_documentation_fragment: aci
 '''
