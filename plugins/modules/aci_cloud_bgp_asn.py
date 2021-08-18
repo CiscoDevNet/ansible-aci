@@ -22,27 +22,31 @@ version_added: '2.7'
 options:
   annotation:
     description:
-    - Mo doc not defined in techpub!!!
+    - User-defined string for annotating an object.
   asn:
     description:
     - autonomous system number
+    type: str
   descr:
     description:
     - configuration item description.
+    type: str
   name:
     description:
     - object name
     aliases: [ autonomous_system_profile ]
+    type: str
   name_alias:
     description:
-    - Mo doc not defined in techpub!!!
+    - The alias for the current object. This relates to the nameAlias field in ACI.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
     - Use C(query) for listing an object or multiple objects.
     choices: [ absent, present, query ]
     default: present
-
+    type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 
@@ -190,6 +194,7 @@ url:
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
 
+
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update({
@@ -217,8 +222,7 @@ def main():
     name = module.params['name']
     name_alias = module.params['name_alias']
     state = module.params['state']
-    child_configs=[]
-
+    child_configs = []
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -254,6 +258,7 @@ def main():
         aci.delete_config()
 
     aci.exit_json()
+
 
 if __name__ == "__main__":
     main()
