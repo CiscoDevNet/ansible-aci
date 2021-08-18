@@ -122,6 +122,14 @@ def netflow_spec():
     )
 
 
+def expression_spec():
+    return dict(
+        key=dict(type='str', required=True),
+        operator=dict(type='str', choices=['not_in', 'in', 'equals', 'not_equals', 'has_key', 'does_not_have_key'], required=True),
+        value=dict(type='str'),
+    )
+
+
 class ACIModule(object):
 
     def __init__(self, module):
