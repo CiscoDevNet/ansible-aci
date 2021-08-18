@@ -99,6 +99,29 @@ def aci_argument_spec():
     )
 
 
+def enhanced_lag_spec():
+    return dict(
+        name=dict(type='str', required=True),
+        lacp_mode=dict(type='str', choices=['active', 'passive']),
+        load_balancing_mode=dict(
+            type='str',
+            choices=['dst-ip', 'dst-ip-l4port', 'dst-ip-vlan', 'dst-ip-l4port-vlan', 'dst-mac', 'dst-l4port',
+                     'src-ip', 'src-ip-l4port', 'src-ip-vlan', 'src-ip-l4port-vlan', 'src-mac', 'src-l4port',
+                     'src-dst-ip', 'src-dst-ip-l4port', 'src-dst-ip-vlan', 'src-dst-ip-l4port-vlan', 'src-dst-mac',
+                     'src-dst-l4port', 'src-port-id', 'vlan']),
+        number_uplinks=dict(type='int'),
+    )
+
+
+def netflow_spec():
+    return dict(
+        name=dict(type='str', required=True),
+        active_flow_timeout=dict(type='int'),
+        idle_flow_timeout=dict(type='int'),
+        sampling_rate=dict(type='int'),
+    )
+
+
 class ACIModule(object):
 
     def __init__(self, module):

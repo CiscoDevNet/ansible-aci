@@ -1,0 +1,204 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# CLEAN ENVIRONMENT
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+- name: Query system information
+  aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+# Remove VMM domain
+- name: Remove VMM domain (normal mode)
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: '{{ item.domain }}'
+    domain_type: vmm
+    vm_provider: '{{ item.provider }}'
+    state: absent
+  register: nm_remove_domain
+  loop:
+    - { domain: 'vmm_dom', provider: 'vmware' }
+    - { domain: 'vmm_dom', provider: 'microsoft' }
+    - { domain: 'microsoft_dom', provider: 'microsoft' }
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
+  block:
+  # ADD DOMAIN
+  - name: Add VMM domain
+    cisco.aci.aci_domain:
+      <<: *aci_info
+      domain: '{{ item.domain }}'
+      domain_type: vmm
+      vm_provider: '{{ item.provider }}'
+      state: present
+    register: nm_add_domain
+    loop:
+      - { domain: 'vmm_dom', provider: 'vmware' }
+      - { domain: 'vmm_dom', provider: 'microsoft' }
+      - { domain: 'microsoft_dom', provider: 'microsoft' }
+
+  - name: Verify VMM add_domain
+    assert:
+      that:
+      - nm_add_domain is changed
+
+  - name: Add a vSwitch policy to vmware domain
+    aci_vmm_vswitch_policy: &add_vmware_policies
+      <<: *aci_info
+      domain: vmm_dom
+      vm_provider: vmware
+      lldp_policy: LLDP_policy
+      cdp_policy: CDP_policy
+      port_channel_policy: PORT_Channel_policy
+      state: present
+    register: add_vmware_policy
+
+  - name: Verify VMM add_vmware_policy
+    assert:
+      that:
+      - add_vmware_policy is changed
+      - add_vmware_policy.previous == []
+      - add_vmware_policy.current.0.vmmVSwitchPolicyCont.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/vswitchpolcont'
+      - add_vmware_policy.current.0.vmmVSwitchPolicyCont.children.0.vmmRsVswitchOverrideLacpPol.attributes.tDn == 'uni/infra/lacplagp-PORT_Channel_policy'
+      - add_vmware_policy.current.0.vmmVSwitchPolicyCont.children.1.vmmRsVswitchOverrideCdpIfPol.attributes.tDn == 'uni/infra/cdpIfP-CDP_policy'
+      - add_vmware_policy.current.0.vmmVSwitchPolicyCont.children.2.vmmRsVswitchOverrideLldpIfPol.attributes.tDn == 'uni/infra/lldpIfP-LLDP_policy'
+
+  - name: Add a vSwitch policy to vmware domain
+    aci_vmm_vswitch_policy:
+      <<: *add_vmware_policies
+      netflow_exporter:
+        name: Netflow_Exporter_policy
+      enhanced_lag:
+      - name: Enhanced_Lag_pol
+      state: present
+    register: add_vmware_policy_2
+
+  - name: Verify VMM add_vmware_policy_2
+    assert:
+      that:
+      - add_vmware_policy_2 is changed
+      - add_vmware_policy_2.current.0.vmmVSwitchPolicyCont.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/vswitchpolcont'
+      - add_vmware_policy_2.current.0.vmmVSwitchPolicyCont.children.0.lacpEnhancedLagPol.attributes.name == 'Enhanced_Lag_pol'
+      - add_vmware_policy_2.current.0.vmmVSwitchPolicyCont.children.1.vmmRsVswitchExporterPol.attributes.tDn == 'uni/infra/vmmexporterpol-Netflow_Exporter_policy'
+      - add_vmware_policy_2.current.0.vmmVSwitchPolicyCont.children.2.vmmRsVswitchOverrideLacpPol.attributes.tDn == 'uni/infra/lacplagp-PORT_Channel_policy'
+      - add_vmware_policy_2.current.0.vmmVSwitchPolicyCont.children.3.vmmRsVswitchOverrideCdpIfPol.attributes.tDn == 'uni/infra/cdpIfP-CDP_policy'
+      - add_vmware_policy_2.current.0.vmmVSwitchPolicyCont.children.4.vmmRsVswitchOverrideLldpIfPol.attributes.tDn == 'uni/infra/lldpIfP-LLDP_policy'
+
+  - name: Add MTU policy to vmware domain when version is >= 4.2
+    aci_vmm_vswitch_policy:
+      <<: *add_vmware_policies
+      mtu_policy: MTU_policy
+      state: present
+    register: add_vmware_mtu_policy
+    when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+
+  - name: Verify VMM add_vmware_mtu_policy
+    assert:
+      that:
+      - add_vmware_mtu_policy is changed
+      - add_vmware_mtu_policy.current.0.vmmVSwitchPolicyCont.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/vswitchpolcont'
+      - add_vmware_mtu_policy.current.0.vmmVSwitchPolicyCont.children.0.vmmRsVswitchOverrideMtuPol.attributes.tDn == 'uni/fabric/l2pol-MTU_policy'
+    when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+
+  - name: Add a vSwitch policy to microsoft domain
+    aci_vmm_vswitch_policy:
+      <<: *aci_info
+      domain: vmm_dom
+      vm_provider: microsoft
+      lldp_policy: ms_LLDP_policy
+      cdp_policy: ms_CDP_policy
+      port_channel_policy: ms_PORT_Channel_policy
+      state: present
+    register: add_microsoft_policy
+
+  - name: Verify VMM add_microsoft_policy
+    assert:
+      that:
+      - add_microsoft_policy is changed
+      - add_microsoft_policy.previous == []
+      - add_microsoft_policy.current.0.vmmVSwitchPolicyCont.attributes.dn == 'uni/vmmp-Microsoft/dom-vmm_dom/vswitchpolcont'
+      - add_microsoft_policy.current.0.vmmVSwitchPolicyCont.children.0.vmmRsVswitchOverrideLacpPol.attributes.tDn == 'uni/infra/lacplagp-ms_PORT_Channel_policy'
+      - add_microsoft_policy.current.0.vmmVSwitchPolicyCont.children.1.vmmRsVswitchOverrideCdpIfPol.attributes.tDn == 'uni/infra/cdpIfP-ms_CDP_policy'
+      - add_microsoft_policy.current.0.vmmVSwitchPolicyCont.children.2.vmmRsVswitchOverrideLldpIfPol.attributes.tDn == 'uni/infra/lldpIfP-ms_LLDP_policy'
+
+  - name: Add STP vSwitch policy to another microsoft domain
+    aci_vmm_vswitch_policy:
+      <<: *aci_info
+      domain: microsoft_dom
+      vm_provider: microsoft
+      stp_policy: ms_STP_policy
+      state: present
+    register: add_microsoft_stp_policy
+
+  - name: Verify VMM add_microsoft_stp_policy
+    assert:
+      that:
+      - add_microsoft_stp_policy is changed
+      - add_microsoft_stp_policy.previous == []
+      - add_microsoft_stp_policy.current.0.vmmVSwitchPolicyCont.attributes.dn == 'uni/vmmp-Microsoft/dom-microsoft_dom/vswitchpolcont'
+      - add_microsoft_stp_policy.current.0.vmmVSwitchPolicyCont.children.0.vmmRsVswitchOverrideStpPol.attributes.tDn == 'uni/infra/ifPol-ms_STP_policy'
+
+  - name: Query all the vSwitch policy
+    aci_vmm_vswitch_policy:
+      <<: *aci_info
+      state: query
+    register: query_all_vmware
+
+  - name: Query all the vSwitch policy of the VMWare domain
+    aci_vmm_vswitch_policy:
+      <<: *aci_info
+      state: query
+    register: query_all_microsoft
+
+  - name: Verify Query all tasks for vmware and microsoft domain
+    assert:
+      that:
+      - query_all_vmware is not changed
+      - query_all_microsoft is not changed
+
+  - name: Query vSwitch policies of VMWare domain
+    aci_vmm_vswitch_policy:
+      <<: *aci_info
+      domain: vmm_dom
+      vm_provider: vmware
+      state: query
+    register: query_vmware
+
+  - name: Verify Query vSwitch policy of the VMWare domain
+    assert:
+      that:
+      - query_vmware is not changed
+      - query_vmware.current.0.vmmVSwitchPolicyCont.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/vswitchpolcont'
+
+  - name: Remove vSwitch Policy from VMware VMM domain
+    aci_vmm_vswitch_policy:
+      <<: *aci_info
+      domain: vmm_dom
+      vm_provider: vmware
+      state: absent
+    register: remove_vmware_vSwitch_policy
+
+  - name: Verify remove_vmware_vSwitch_policy
+    assert:
+      that:
+      - remove_vmware_vSwitch_policy is changed
+      - remove_vmware_vSwitch_policy.current == []
