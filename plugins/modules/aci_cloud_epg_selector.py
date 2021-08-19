@@ -103,7 +103,7 @@ def main():
     argument_spec.update({ 
         'description': dict(type='str'),
         'expressions': dict(type='list', elements='dict', options=expression_spec()),
-        'name': dict(type='str', required=True, aliases=['selector']),
+        'name': dict(type='str', aliases=['selector']),
         'tenant': dict(type='str', required=True),
         'ap': dict(type='str', required=True),
         'epg': dict(type='str', required=True),
@@ -167,23 +167,27 @@ def main():
         for expression in expressions:
             key = expression.get('key')
             operator = expression.get('operator')
-            value = expression.get('value')
+            if expression.get('value'):
+                value = "'" + "','".join(expression.get('value').split( "," )) + "'"
+            else:
+                value = None
+            if operator in ["has_key", "does_not_have_key"]:
+                if value:
+                    module.fail_json(
+                        msg="Attribute 'value' is not supported for operator '{0}' in expression '{1}'".format(operator, key))
+                if key in ["ip", "region"]:
+                    module.fail_json(msg="Operator '{0}' is not supported when expression key is '{1}'".format(operator, key))
+            if operator in ["not_in", "in", "equals", "not_equals"] and not value:
+                module.fail_json(
+                    msg="Attribute 'value' needed for operator '{0}' in expression '{1}'".format(operator, key))
             if key in ["ip", "region","zone"]:
                 key = EXPRESSION_KEYS.get(key)
             else:
                 key = 'custom:' + key
-            if operator in ["has_key", "does_not_have_key"] and value:
-                module.fail_json(
-                    msg="Attribute 'value' is not supported for operator '{0}' in expression '{1}'".format(operator, key))
-            if operator in ["not_in", "in", "equals", "not_equals"] and not value:
-                module.fail_json(
-                    msg="Attribute 'value' needed for operator '{0}' in expression '{1}'".format(operator, key))
-            if operator in ["has_key", "does_not_have_key"] and key in ["ip", "region"]:
-                AnsibleModule.fail_json(msg="Operator '{0}' is not supported when expression key is '{1}'".format(operator, key))
             if operator in ["not_in", "in"]:
                 expressions_list.append('{0} {1}({2})'.format(key, EXPRESSION_OPERATORS.get(operator), value))
             elif operator in ["equals", "not_equals"]:
-                expressions_list.append('{0}{1}({2})'.format(key, EXPRESSION_OPERATORS.get(operator), value))
+                expressions_list.append('{0}{1}{2}'.format(key, EXPRESSION_OPERATORS.get(operator), value))
             elif operator == "does_not_have_key":
                 expressions_list.append('!{0}'.format(key))
             else:
