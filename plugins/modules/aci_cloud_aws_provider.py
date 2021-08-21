@@ -1,18 +1,22 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2020, nkatarmal-crest <nirav.katarmal@crestdatasys.com>
+# Copyright: (c) 2021, Shreyas Srish <ssrish@cisco.com>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: aci_cloud_aws_provider 
+module: aci_cloud_aws_provider
 short_description: Manage Cloud AWS Provider (cloud:AwsProvider)
 description:
 - Manage AWS provider on Cisco Cloud ACI.
 author:
 - Devarshi Shah (@devarshishah3)
-options: 
+options:
   access_key_id:
     description:
     - Cloud Access Key ID.
@@ -20,10 +24,6 @@ options:
   account_id:
     description:
     - AWS Account ID.
-    type: str
-  description:
-    description:
-    - Description for tenant of aws cloud provider. 
     type: str
   email:
     description:
@@ -36,22 +36,11 @@ options:
   is_account_in_org:
     description:
     - Is Account in Organization.
-    type: str
-    choices: [ no, yes ] 
+    type: bool
   is_trusted:
     description:
     - Trusted Tenant
-    type: str
-    choices: [ no, yes ] 
-  name:
-    description:
-    - Name for tenant of aws cloud provider. 
-    type: str
-    aliases: [ cloud_aws_provider ] 
-  name_alias:
-    description:
-    - An alias for the name of the current object. This relates to the nameAlias field in ACI and is used to rename object without changing the DN.
-    type: str
+    type: bool
   provider_id:
     description:
     - AWS provider id
@@ -76,7 +65,7 @@ options:
     choices: [ absent, present, query ]
     default: present
 extends_documentation_fragment:
-  - cisco.aci.aci 
+  - cisco.aci.aci
 
 notes:
   - More information about the internal APIC class B(cloud:AwsProvider) from
@@ -95,7 +84,7 @@ EXAMPLES = r'''
     state: present
   delegate_to: localhost
 
-- name: Delete aws provider 
+- name: Delete aws provider
   cisco.aci.aci_cloud_aws_provider:
     host: apic
     username: admin
@@ -224,19 +213,16 @@ url:
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
 
+
 def main():
     argument_spec = aci_argument_spec()
-    argument_spec.update({ 
+    argument_spec.update({
         'access_key_id': dict(type='str'),
         'account_id': dict(type='str'),
-        'annotation': dict(type='str'),
-        'description': dict(type='str'),
         'email': dict(type='str'),
         'http_proxy': dict(type='str'),
-        'is_account_in_org': dict(type='str', choices=['no', 'yes']),
-        'is_trusted': dict(type='str', choices=['no', 'yes']),
-        'name': dict(type='str', aliases=['cloud_aws_provider']),
-        'name_alias': dict(type='str'),
+        'is_account_in_org': dict(type='bool'),
+        'is_trusted': dict(type='bool'),
         'provider_id': dict(type='str'),
         'region': dict(type='str'),
         'secret_access_key': dict(type='str'),
@@ -248,49 +234,44 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[ 
-            ['state', 'absent', ['tenant']], 
+        required_if=[
+            ['state', 'absent', ['tenant']],
             ['state', 'present', ['tenant']],
         ],
     )
-    
+
+    aci = ACIModule(module)
+
     access_key_id = module.params.get('access_key_id')
     account_id = module.params.get('account_id')
     annotation = module.params.get('annotation')
-    description = module.params.get('description')
     email = module.params.get('email')
     http_proxy = module.params.get('http_proxy')
-    is_account_in_org = module.params.get('is_account_in_org')
-    is_trusted = module.params.get('is_trusted')
-    name = module.params.get('name')
-    name_alias = module.params.get('name_alias')
-    owner_key = module.params.get('owner_key')
-    owner_tag = module.params.get('owner_tag')
+    is_account_in_org = aci.boolean(module.params.get('is_account_in_org'))
+    is_trusted = aci.boolean(module.params.get('is_trusted'))
     provider_id = module.params.get('provider_id')
     region = module.params.get('region')
     secret_access_key = module.params.get('secret_access_key')
     tenant = module.params.get('tenant')
     state = module.params.get('state')
-    child_configs=[]
-    
+    child_configs = []
 
-    aci = ACIModule(module)
     aci.construct_url(
         root_class={
             'aci_class': 'fvTenant',
-            'aci_rn': 'tn-{}'.format(tenant),
-            'target_filter': 'eq(fvTenant.name, "{}")'.format(tenant),
+            'aci_rn': 'tn-{0}'.format(tenant),
+            'target_filter': 'eq(fvTenant.name, "{0}")'.format(tenant),
             'module_object': tenant
-        }, 
+        },
         subclass_1={
             'aci_class': 'cloudAwsProvider',
             'aci_rn': 'awsprovider'.format(),
             'target_filter': '',
             'module_object': None
-        }, 
-        
+        },
+
         child_classes=[]
-        
+
     )
 
     aci.get_existing()
@@ -298,25 +279,20 @@ def main():
     if state == 'present':
         aci.payload(
             aci_class='cloudAwsProvider',
-            class_config={ 
+            class_config={
                 'accessKeyId': access_key_id,
                 'accountId': account_id,
                 'annotation': annotation,
-                'descr': description,
                 'email': email,
                 'httpProxy': http_proxy,
                 'isAccountInOrg': is_account_in_org,
                 'isTrusted': is_trusted,
-                'name': name,
-                'nameAlias': name_alias,
-                'ownerKey': owner_key,
-                'ownerTag': owner_tag,
                 'providerId': provider_id,
                 'region': region,
                 'secretAccessKey': secret_access_key,
             },
             child_configs=child_configs
-           
+
         )
 
         aci.get_diff(aci_class='cloudAwsProvider')
@@ -327,6 +303,7 @@ def main():
         aci.delete_config()
 
     aci.exit_json()
+
 
 if __name__ == "__main__":
     main()
