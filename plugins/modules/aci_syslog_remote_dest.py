@@ -15,7 +15,8 @@ DOCUMENTATION = r'''
 module: aci_syslog_remote_dest
 short_description: Manage Syslog Remote Destinations (syslog:RemoteDest).
 description:
-- Manage syslog remote destinations
+- Manage remote destinations for syslog messages within
+  an existing syslog group object
 options:
   admin_state:
     description:
@@ -53,7 +54,7 @@ options:
     description:
     - Name of the syslog remote destination
     type: str
-    aliases: [ remote_destination_name ]
+    aliases: [ remote_destination_name, remote_destination ]
   severity:
     description:
     - Severity of messages to send to remote syslog
@@ -238,7 +239,8 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        name=dict(type='str', aliases=['remote_destination_name']),
+        name=dict(type='str', aliases=['remote_destination_name',
+                                       'remote_destination']),
         format=dict(type='str', choices=['aci', 'nxos']),
         admin_state=dict(type='str', choices=['enabled', 'disabled']),
         description=dict(type='str'),
@@ -299,10 +301,18 @@ def main():
     aci.get_existing()
 
     if state == 'present':
+        child_configs = []
         if mgmt_epg:
-            tdn = 'uni/tn-mgmt/mgmtp-default/{0}'.format(mgmt_epg)
-        else:
-            tdn = None
+            child_configs.append(
+                dict(
+                    fileRsARemoteHostToEpg=dict(
+                        attributes=dict(
+                            tDn=('uni/tn-mgmt/mgmtp-default/{0}'
+                                 .format(mgmt_epg))
+                        ),
+                    ),
+                )
+            )
         aci.payload(
             aci_class='syslogRemoteDest',
             class_config=dict(
@@ -315,15 +325,7 @@ def main():
                 port=syslog_port,
                 severity=severity,
             ),
-            child_configs=[
-                dict(
-                    fileRsARemoteHostToEpg=dict(
-                        attributes=dict(
-                            tDn=tdn
-                        ),
-                    ),
-                ),
-            ],
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class='syslogRemoteDest')

@@ -13,14 +13,14 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_syslog_src
-short_description: Manage Syslog Src objects (syslog:Src)
+module: aci_syslog_source
+short_description: Manage Syslog Source objects (syslog:Src)
 description:
 - Manage Syslog Source objects
 options:
   name:
     description:
-    - Name of the Syslog Src policy
+    - Name of the Syslog Source policy
     type: str
     aliases: [ syslog_src, syslog_source ]
   include:
@@ -57,8 +57,8 @@ author:
 '''
 
 EXAMPLES = r'''
-- name: Add a new syslog src
-  cisco.aci.aci_syslog_src:
+- name: Add a new syslog source
+  cisco.aci.aci_syslog_source:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -72,8 +72,8 @@ EXAMPLES = r'''
     state: present
   delegate_to: localhost
 
-- name: Remove an existing syslog src
-  cisco.aci.aci_syslog_src:
+- name: Remove an existing syslog source
+  cisco.aci.aci_syslog_source:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -81,8 +81,8 @@ EXAMPLES = r'''
     state: absent
   delegate_to: localhost
 
-- name: Query all syslog srcs
-  cisco.aci.aci_syslog_src:
+- name: Query all syslog sources
+  cisco.aci.aci_syslog_source:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -90,8 +90,8 @@ EXAMPLES = r'''
   delegate_to: localhost
   register: query_result
 
-- name: Query a specific syslog src
-  cisco.aci.aci_syslog_src:
+- name: Query a specific syslog source
+  cisco.aci.aci_syslog_source:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -251,43 +251,27 @@ def main():
     aci.get_existing()
 
     if state == 'present':
+        class_config = dict(
+            name=name,
+            minSev=min_severity
+        )
         if include:
-            aci.payload(
-                aci_class='syslogSrc',
-                class_config=dict(
-                    name=name,
-                    incl=','.join(include),
-                    minSev=min_severity
+            class_config['incl'] = ','.join(include)
 
-                ),
-                child_configs=[
-                    dict(
-                        syslogRsDestGroup=dict(
-                            attributes=dict(
-                                tDn='uni/fabric/slgroup-{0}'.format(destination_group)
-                            ),
+        aci.payload(
+            aci_class='syslogSrc',
+            class_config=class_config,
+            child_configs=[
+                dict(
+                    syslogRsDestGroup=dict(
+                        attributes=dict(
+                            tDn=('uni/fabric/slgroup-{0}'
+                                 .format(destination_group))
                         ),
                     ),
-                ],
-            )
-        else:
-            aci.payload(
-                aci_class='syslogSrc',
-                class_config=dict(
-                    name=name,
-                    minSev=min_severity
-
                 ),
-                child_configs=[
-                    dict(
-                        syslogRsDestGroup=dict(
-                            attributes=dict(
-                                tDn='uni/fabric/slgroup-{0}'.format(destination_group)
-                            ),
-                        ),
-                    ),
-                ],
-            )
+            ],
+        )
 
         aci.get_diff(aci_class='syslogSrc')
 
