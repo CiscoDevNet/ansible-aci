@@ -182,6 +182,23 @@
         - equals_without_value.msg == "Attribute 'value' needed for operator 'equals' in expression 'ctm_test'"
         - does_not_without_key.msg == "Attribute 'value' is not supported for operator 'does_not_have_key' in expression 'ctm_test'"
 
+  - name: Create selector with incorrect parameter - zone with azure cloud
+    cisco.aci.aci_cloud_epg_selector:
+      <<: *aci_cloud_epg_selector
+      name: zone_with_azure
+      expressions:
+        - key: zone
+          operator: has_key
+    ignore_errors: yes
+    register: zone_with_azure
+    when: cloud_type == 'azure'
+
+  - name: Verify zone_with_azure
+    assert:
+      that:
+        - zone_with_azure.msg == "Key 'zone' is only supported for AWS cloud"
+    when: cloud_type == 'azure'
+
   - name: Query specific cloud epg selector
     cisco.aci.aci_cloud_epg_selector:
       <<: *aci_info
