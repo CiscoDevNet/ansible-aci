@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2021, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
@@ -23,40 +24,12 @@ options:
   description:
     description:
     - configuration item description.
-    type: str
-  exception_tag:
-    description:
-    - Control at EPG level if the traffic L2 Multicast/Broadcast and Link Local Layer should be flooded only on ENCAP
-    - or based on bridge-domain settings.
-    type: str
-  flood_on_encap:
-    description:
-    - Mo doc not defined in techpub!!!
-    choices: [ disabled, enabled ]
-    type: str
-  match_t:
-    description:
-    - match criteria
-    choices: [ All, AtleastOne, AtmostOne, None ]
+    aliases: [ descr ]
     type: str
   name:
     description:
     - Name of Object cloud_external_epg.
     aliases: [ cloud_external_epg ]
-    type: str
-  name_alias:
-    description:
-    - Name_alias for object cloud_external_epg.
-    type: str
-  preferred_group_member:
-    description:
-    - Represents parameter used to determine if EPg is part of a group that does not a contract for communication.
-    choices: [ exclude, include ]
-    type: str
-  prio:
-    description:
-    - qos priority class id
-    choices: [ level1, level2, level3, level4, level5, level6, unspecified ]
     type: str
   route_reachability:
     description:
@@ -70,7 +43,13 @@ options:
   ap:
     description:
     - Parent object name
+    aliases: [ app_profile, app_profile_name, cloud_application_container ]
     type: str
+  vrf:
+    description:
+    - The name of the VRF.
+    type: str
+    aliases: [ context, vrf_name ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -253,7 +232,7 @@ def main():
     tenant = module.params['tenant']
     ap = module.params['ap']
     state = module.params['state']
-    child_configs=[]
+    child_configs = []
     relation_vrf = module.params['vrf']
 
     if relation_vrf:
@@ -280,7 +259,7 @@ def main():
             'module_object': name
         },
 
-        child_classes=['fvRsCustQosPol','cloudRsCloudEPgCtx']
+        child_classes=['fvRsCustQosPol', 'cloudRsCloudEPgCtx']
 
     )
 
