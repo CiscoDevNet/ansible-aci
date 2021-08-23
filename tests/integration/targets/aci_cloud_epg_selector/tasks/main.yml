@@ -73,6 +73,7 @@
       epg: anstest
       description: cloud epg selector
       name: ansible_selector
+      cloud_type: "{{ cloud_type }}"
       expressions:
         - key: ip
           operator: in

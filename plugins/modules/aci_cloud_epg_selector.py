@@ -69,6 +69,11 @@ options:
     - The name of the cloud EPG.
     required: yes
     type: str
+  cloud_type:
+    description:
+    - The type of the cloud Apic.
+    type: str
+    choices: [ aws, azure ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -107,6 +112,7 @@ def main():
         'tenant': dict(type='str', required=True),
         'ap': dict(type='str', required=True),
         'epg': dict(type='str', required=True),
+        'cloud_type': dict(type='str', choices=['aws', 'azure']),
         'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
     })
 
@@ -115,7 +121,7 @@ def main():
         supports_check_mode=True,
         required_if=[ 
             ['state', 'absent', ['name']], 
-            ['state', 'present', ['name']],
+            ['state', 'present', ['name', 'cloud_type']],
         ],
     )
 
@@ -125,6 +131,7 @@ def main():
     tenant = module.params['tenant']
     ap = module.params['ap']
     epg = module.params['epg']
+    cloud_type = module.params['cloud_type']
     state = module.params['state']
     child_configs=[]
 
@@ -180,6 +187,9 @@ def main():
             if operator in ["not_in", "in", "equals", "not_equals"] and not value:
                 module.fail_json(
                     msg="Attribute 'value' needed for operator '{0}' in expression '{1}'".format(operator, key))
+            if key == "zone" and cloud_type is not "aws":
+                module.fail_json(
+                    msg="Key '{0}' is only supported for AWS cloud".format(key))
             if key in ["ip", "region","zone"]:
                 key = EXPRESSION_KEYS.get(key)
             else:
