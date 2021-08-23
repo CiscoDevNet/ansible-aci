@@ -1,0 +1,123 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# These tasks need not be executed now, to execute the given tasks follow these steps:
+# 1. Go to cloud APIC
+# 2. Go to Region Management (top right corner blue arrow symbol)
+# 3. Deselect the box whose cloud routers option is selected
+# 4. Run the below task
+# 5. Once the tasks are completed revert the changes made in above steps.
+
+# CLEAN ENVIRONMENT
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# - name: Verify Cloud and Non-Cloud Sites in use.
+#   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+# - name: Execute tasks only for cloud sites
+#   when: query_cloud.current | length > 0  # This condition will execute only cloud sites
+#   block:  # block specifies execution of tasks within, based on conditions
+
+#   - name: Ensure cloud BGP ASN doesn't exist
+#     aci_cloud_bgp_asn:
+#       <<: *aci_info
+#       state: absent
+
+#   - name: Create cloud BGP ASN
+#     aci_cloud_bgp_asn:
+#       <<: *aci_info
+#       state: present
+#     register: asn_present
+
+#   - name: Verify asn_present
+#     assert:
+#       that:
+#       - asn_present is changed
+#       - asn_present.current.0.cloudBgpAsP.attributes.asn == '0'
+
+#   - name: Create cloud BGP ASN
+#     aci_cloud_bgp_asn:
+#       <<: *aci_info
+#       annotation: 'tag_system'
+#       asn: 64605
+#       description: 'sample autonomous profile'
+#       name: 'BGP_ASN'
+#       name_alias: 'alias_sys_prof'
+#       state: present
+#     register: asn_present_2
+
+#   - name: Verify asn_present_2
+#     assert:
+#       that:
+#       - asn_present_2 is changed
+#       - asn_present_2.current.0.cloudBgpAsP.attributes.asn == '64605'
+
+#   - name: Create same cloud BGP ASN again
+#     aci_cloud_bgp_asn:
+#       <<: *aci_info
+#       annotation: 'tag_system'
+#       asn: 64605
+#       description: 'sample autonomous profile'
+#       name: 'BGP_ASN'
+#       name_alias: 'alias_sys_prof'
+#       state: present
+#     register: asn_present_again
+
+#   - name: Verify asn_present_again
+#     assert:
+#       that:
+#       - asn_present_again is not changed
+#       - asn_present_again.current.0.cloudBgpAsP.attributes.asn == '64605'
+
+#   - name: Query particular cloud BGP ASN
+#     aci_cloud_bgp_asn:
+#       <<: *aci_info
+#       annotation: 'tag_system'
+#       asn: 64605
+#       description: 'sample autonomous profile'
+#       name: 'BGP_ASN'
+#       name_alias: 'alias_sys_prof'
+#       state: query
+#     register: asn_query
+
+#   # Query all will give same result as query
+#   # There can be only one cloud BGP ASN
+#   - name: Query all cloud BGP ASN
+#     aci_cloud_bgp_asn:
+#       <<: *aci_info
+#       state: query
+#     register: asn_query_all
+
+#   - name: Verify query
+#     assert:
+#       that:
+#       - asn_query is not changed
+#       - asn_query_all is not changed
+
+#   - name: Delete cloud BGP ASN
+#     aci_cloud_bgp_asn:
+#       <<: *aci_info
+#       state: absent
+#     register: asn_absent
+
+#   - name: Verify absent
+#     assert:
+#       that:
+#       - asn_absent is changed
+#       - asn_absent.current == []

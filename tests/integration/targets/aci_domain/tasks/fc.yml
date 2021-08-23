@@ -65,6 +65,85 @@
     - cm_add_domain_again is not changed
     - nm_add_domain_again is not changed
 
+- name: Update FC domain with incorrect parameter vm_provider (check_mode)
+  cisco.aci.aci_domain:
+    <<: *domain_present
+    vm_provider: vmware
+  check_mode: yes
+  ignore_errors: yes
+  register: cm_incorrect_vm_provider
+
+- name: Update FC domain with incorrect parameter vm_provider (normal mode)
+  cisco.aci.aci_domain:
+    <<: *domain_present
+    vm_provider: vmware
+  ignore_errors: yes
+  register: nm_incorrect_vm_provider
+
+- name: Update FC domain with incorrect parameter encap_mode (check_mode)
+  cisco.aci.aci_domain:
+    <<: *domain_present
+    encap_mode: vlan
+  check_mode: yes
+  ignore_errors: yes
+  register: cm_incorrect_encap_mode
+
+- name: Update FC domain with incorrect parameter encap_mode (normal mode)
+  cisco.aci.aci_domain:
+    <<: *domain_present
+    encap_mode: vlan
+  ignore_errors: yes
+  register: nm_incorrect_encap_mode
+
+- name: Update FC domain with incorrect parameter multicast_address (check_mode)
+  cisco.aci.aci_domain:
+    <<: *domain_present
+    multicast_address: 10.10.10.0
+  check_mode: yes
+  ignore_errors: yes
+  register: cm_incorrect_multicast_address
+
+- name: Update FC domain with incorrect parameter multicast_address (normal mode)
+  cisco.aci.aci_domain:
+    <<: *domain_present
+    multicast_address: 10.10.10.0
+  ignore_errors: yes
+  register: nm_incorrect_multicast_address
+
+- name: Update FC domain with incorrect parameter vswitch (check_mode)
+  cisco.aci.aci_domain:
+    <<: *domain_present
+    vswitch: avs
+  check_mode: yes
+  ignore_errors: yes
+  register: cm_incorrect_vswitch
+
+- name: Update FC domain with incorrect parameter vswitch (normal mode)
+  cisco.aci.aci_domain:
+    <<: *domain_present
+    vswitch: avs
+  ignore_errors: yes
+  register: nm_incorrect_vswitch
+
+- name: Update FC domain with incorrect parameter dscp (normal mode)
+  cisco.aci.aci_domain:
+    <<: *domain_present
+    dscp: unspecified
+  ignore_errors: yes
+  register: nm_incorrect_dscp
+
+- name: Verify incorrect parameter
+  assert:
+    that:
+    - cm_incorrect_vm_provider.msg == "Domain type 'fc' cannot have parameter 'vm_provider'"
+    - nm_incorrect_vm_provider.msg == "Domain type 'fc' cannot have parameter 'vm_provider'"
+    - cm_incorrect_encap_mode.msg == "Domain type 'fc' cannot have parameter 'encap_mode'"
+    - nm_incorrect_encap_mode.msg == "Domain type 'fc' cannot have parameter 'encap_mode'"
+    - cm_incorrect_multicast_address.msg == "Domain type 'fc' cannot have parameter 'multicast_address'"
+    - nm_incorrect_multicast_address.msg == "Domain type 'fc' cannot have parameter 'multicast_address'"
+    - cm_incorrect_vswitch.msg == "Domain type 'fc' cannot have parameter 'vswitch'"
+    - nm_incorrect_vswitch.msg == "Domain type 'fc' cannot have parameter 'vswitch'"
+    - nm_incorrect_dscp.msg == "DSCP values can only be assigned to 'l2ext and 'l3ext' domains"
 
 # QUERY ALL DOMAINS
 - name: Query all FC domains (check_mode)
