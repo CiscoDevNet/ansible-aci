@@ -1,0 +1,190 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for cloud sites
+  when: query_cloud.current | length > 0  # This condition will execute only cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Ensure tenant doesn't exist
+    cisco.aci.aci_tenant:
+      <<: *aci_info
+      state: absent
+      tenant: ansible_test
+    register: tenant_absent
+
+  - name: Ensure cloud external epg doesn't exist
+    cisco.aci.aci_cloud_external_epg:
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      name: anstest
+      state: absent
+
+  - name: Ensure tenant exists
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      state: present
+      tenant: ansible_test
+    register: tenant_present
+
+  - name: Ensure application profile exists
+    cisco.aci.aci_cloud_ap: &aci_cloud_ap_present
+      <<: *aci_tenant_present
+      name: anstest
+      description: Ansible Test Cloud APIC
+      state: present
+    register: create_cloud_ap
+
+  - name: Ensure vrf exist
+    cisco.aci.aci_vrf: &aci_vrf_present
+      <<: *aci_tenant_present
+      vrf: anstest
+      description: Ansible Test
+    register: vrf_present
+
+  - name: Create another vrf
+    cisco.aci.aci_vrf:
+      <<: *aci_vrf_present
+      vrf: anstest_2
+    register: another_vrf_present
+
+  - name: Create aci cloud external epg (check_mode)
+    cisco.aci.aci_cloud_external_epg: &aci_cloud_ext_epg_present
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      vrf: anstest
+      description: Aci Cloud External EPG
+      name: anstest
+      route_reachability: internet
+      state: present
+    check_mode: yes
+    register: cm_epg_present
+
+  - name: Create aci cloud external epg (normal mode)
+    cisco.aci.aci_cloud_external_epg:
+      <<: *aci_cloud_ext_epg_present
+    register: nm_epg_present
+
+  - name: Create aci cloud external epg again
+    cisco.aci.aci_cloud_external_epg:
+      <<: *aci_cloud_ext_epg_present
+    register: nm_epg_present_again
+
+  - name: Verify cloud external epg creation
+    assert:
+      that:
+        - cm_epg_present is changed
+        - nm_epg_present is changed
+        - nm_epg_present_again is not changed
+        - cm_epg_present.previous == nm_epg_present.previous == []
+        - cm_epg_present.proposed.cloudExtEPg.attributes.name == 'anstest'
+        - cm_epg_present.proposed.cloudExtEPg.attributes.descr == 'Aci Cloud External EPG'
+        - cm_epg_present.proposed.cloudExtEPg.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudextepg-anstest'
+        - cm_epg_present.proposed.cloudExtEPg.children.0.cloudRsCloudEPgCtx.attributes.tnFvCtxName == 'anstest'
+        - nm_epg_present.current.0.cloudExtEPg.attributes.name == 'anstest'
+        - nm_epg_present.current.0.cloudExtEPg.attributes.descr == 'Aci Cloud External EPG'
+        - nm_epg_present.current.0.cloudExtEPg.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudextepg-anstest'
+        - nm_epg_present.current.0.cloudExtEPg.children.0.cloudRsCloudEPgCtx.attributes.tnFvCtxName == 'anstest'
+        - nm_epg_present_again.previous == nm_epg_present_again.current
+
+  - name: Create another cloud external epg
+    cisco.aci.aci_cloud_external_epg:
+      <<: *aci_cloud_ext_epg_present
+      name: ansible_cloud_ext_epg
+    register: nm_another_epg_present
+
+  - name: Verify another cloud external epg creation
+    assert:
+      that:
+        - nm_another_epg_present is changed
+        - nm_another_epg_present.previous == []
+        - nm_another_epg_present.current.0.cloudExtEPg.attributes.name == 'ansible_cloud_ext_epg'
+
+  - name: Update cloud external epg with another vrf
+    cisco.aci.aci_cloud_external_epg:
+      <<: *aci_cloud_ext_epg_present
+      vrf: anstest_2
+    register: update_cloud_ext_epg
+
+  - name: Update cloud external epg without vrf
+    cisco.aci.aci_cloud_external_epg:
+      <<: *aci_cloud_ext_epg_present
+      vrf: "{{ fakevar | default(omit) }}"
+    register: no_vrf
+
+  - name: Veirfy update_cloud_ext_epg
+    assert:
+      that:
+        - update_cloud_ext_epg is changed
+        - update_cloud_ext_epg.current.0.cloudExtEPg.children.0.cloudRsCloudEPgCtx.attributes.tnFvCtxName == 'anstest_2'
+
+  - name: Query specific cloud external epg
+    cisco.aci.aci_cloud_external_epg:
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      name: anstest
+      state: query
+    register: cloud_ext_epg_query
+
+  - name: query all
+    cisco.aci.aci_cloud_external_epg:
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      state: query
+    register: query_all
+
+  - name: Verify query
+    assert:
+      that:
+        - cloud_ext_epg_query is not changed
+        - cloud_ext_epg_query.current.0.cloudExtEPg.attributes.name == 'anstest'
+        - cloud_ext_epg_query.current.0.cloudExtEPg.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudextepg-anstest'
+        - cloud_ext_epg_query.current.0.cloudExtEPg.attributes.descr == 'Aci Cloud External EPG'
+        - cloud_ext_epg_query.current.0.cloudExtEPg.children.0.cloudRsCloudEPgCtx.attributes.tnFvCtxName == 'anstest_2'
+        - cloud_ext_epg_query.current.0.cloudExtEPg.children.0.cloudRsCloudEPgCtx.attributes.tDn == 'uni/tn-ansible_test/ctx-anstest_2'
+        - query_all is not changed
+        - query_all.current.0.cloudApp.children | length >= 2
+
+  - name: Remove cloud external epg
+    cisco.aci.aci_cloud_external_epg: &cloud_ext_epg_absent
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      name: anstest
+      state: absent
+    register: cloud_ext_epg_absent
+
+  - name: Remove cloud external epg again
+    cisco.aci.aci_cloud_external_epg:
+      <<: *cloud_ext_epg_absent
+    register: cloud_ext_epg_absent_again
+
+  - name: Verify deletion
+    assert:
+      that:
+        - cloud_ext_epg_absent is changed
+        - cloud_ext_epg_absent.current == []
+        - cloud_ext_epg_absent_again is not changed
