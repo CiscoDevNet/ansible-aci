@@ -91,6 +91,24 @@
       <<: *aci_cloud_epg_selector
     register: selector_present_again
 
+  - name: Verify creation of cloud epg selector
+    assert:
+      that:
+        - cm_selector_present is changed
+        - nm_selector_present is changed
+        - selector_present_again is not changed
+        - cm_selector_present.previous == nm_selector_present.previous == []
+        - cm_selector_present.proposed.cloudEPSelector.attributes.descr == 'cloud epg selector'
+        - cm_selector_present.proposed.cloudEPSelector.attributes.matchExpression == "IP in('10.10.10.1')"
+        - cm_selector_present.proposed.cloudEPSelector.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudepg-anstest/epselector-ansible_selector'
+        - cm_selector_present.proposed.cloudEPSelector.attributes.name == 'ansible_selector'
+        - nm_selector_present.current.0.cloudEPSelector.attributes.descr == 'cloud epg selector'
+        - nm_selector_present.current.0.cloudEPSelector.attributes.matchExpression == "IP in('10.10.10.1')"
+        - nm_selector_present.current.0.cloudEPSelector.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudepg-anstest/epselector-ansible_selector'
+        - nm_selector_present.current.0.cloudEPSelector.attributes.name == 'ansible_selector'
+        - selector_present_again is not changed
+        - selector_present_again.previous == selector_present_again.current == nm_selector_present.current
+
   - name: Update aci cloud epg selector
     cisco.aci.aci_cloud_epg_selector:
       <<: *aci_cloud_epg_selector
@@ -140,7 +158,7 @@
           operator: does_not_have_key
           value: test_value
     ignore_errors: yes
-    register: ip_has_key
+    register: does_not_without_key
 
   - name: Create selector with incorrect parameter - without value
     cisco.aci.aci_cloud_epg_selector:
@@ -152,11 +170,16 @@
     ignore_errors: yes
     register: equals_without_value
 
-  - name: Verify creation of selector
+  - name: Verify creation of other selectors
     assert:
       that:
-        - cm_selector_present is changed
-        - nm_selector_present is changed
+        - sec_selector is changed
+        - udpate_selector is changed
+        - sec_selector.current.0.cloudEPSelector.attributes.name == 'ansible_selector_2'
+        - sec_selector.current.0.cloudEPSelector.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudepg-anstest/epselector-ansible_selector_2'
+        - ip_has_key.msg == "Operator 'has_key' is not supported when expression key is 'ip'"
+        - equals_without_value.msg == "Attribute 'value' needed for operator 'equals' in expression 'ctm_test'"
+        - does_not_without_key.msg == "Attribute 'value' is not supported for operator 'does_not_have_key' in expression 'ctm_test'"
 
   - name: Query specific cloud epg selector
     cisco.aci.aci_cloud_epg_selector:
@@ -177,6 +200,12 @@
       state: query
     register: query_all
 
+  - name: Verify query
+    assert:
+      that:
+        - query_selector.current.0.cloudEPSelector.attributes.name == 'ansible_selector'
+        - query_all.current.0.cloudEPg.children | length >= 2
+
   - name: Remove cloud epg selector
     cisco.aci.aci_cloud_epg_selector: &selector_absent
       <<: *aci_info
@@ -191,3 +220,10 @@
     cisco.aci.aci_cloud_epg_selector:
       <<: *selector_absent
     register: rm_selector_2_again
+
+  - name: Verify rm_selector_2
+    assert:
+      that:
+        - rm_selector_2 is changed
+        - rm_selector_2.current == []
+        - rm_selector_2_again is not changed
