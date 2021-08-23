@@ -344,7 +344,7 @@ def main():
             if operator in ["not_in", "in", "equals", "not_equals"] and not value:
                 module.fail_json(
                     msg="Attribute 'value' needed for operator '{0}' in expression '{1}'".format(operator, key))
-            if key == "zone" and cloud_type is not "aws":
+            if key == "zone" and cloud_type != "aws":
                 module.fail_json(
                     msg="Key '{0}' is only supported for AWS cloud".format(key))
             if key in ["ip", "region", "zone"]:
