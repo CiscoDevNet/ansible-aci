@@ -9,7 +9,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: aci_cloud_epg_selector 
+module: aci_cloud_epg_selector
 short_description: Manage Cloud Endpoint Selector (cloud:EPSelector)
 description:
 - Manage Cloud Endpoint Selector on Cisco Cloud ACI
@@ -79,7 +79,7 @@ options:
     - Use C(present) or C(absent) for adding or removing.
     - Use C(query) for listing an object or multiple objects.
     choices: [ absent, present, query ]
-    default: present 
+    default: present
     type: str
 
 extends_documentation_fragment:
@@ -105,7 +105,7 @@ EXPRESSION_OPERATORS = {
 
 def main():
     argument_spec = aci_argument_spec()
-    argument_spec.update({ 
+    argument_spec.update({
         'description': dict(type='str'),
         'expressions': dict(type='list', elements='dict', options=expression_spec()),
         'name': dict(type='str', aliases=['selector']),
@@ -119,8 +119,8 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[ 
-            ['state', 'absent', ['name']], 
+        required_if=[
+            ['state', 'absent', ['name']],
             ['state', 'present', ['name', 'cloud_type']],
         ],
     )
@@ -133,38 +133,35 @@ def main():
     epg = module.params['epg']
     cloud_type = module.params['cloud_type']
     state = module.params['state']
-    child_configs=[]
-
+    child_configs = []
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class={
             'aci_class': 'fvTenant',
-            'aci_rn': 'tn-{}'.format(tenant),
-            'target_filter': 'eq(fvTenant.name, "{}")'.format(tenant),
+            'aci_rn': 'tn-{0}'.format(tenant),
+            'target_filter': 'eq(fvTenant.name, "{0}")'.format(tenant),
             'module_object': tenant
-        }, 
+        },
         subclass_1={
             'aci_class': 'cloudApp',
-            'aci_rn': 'cloudapp-{}'.format(ap),
-            'target_filter': 'eq(cloudApp.name, "{}")'.format(ap),
+            'aci_rn': 'cloudapp-{0}'.format(ap),
+            'target_filter': 'eq(cloudApp.name, "{0}")'.format(ap),
             'module_object': ap
-        }, 
+        },
         subclass_2={
             'aci_class': 'cloudEPg',
-            'aci_rn': 'cloudepg-{}'.format(epg),
-            'target_filter': 'eq(cloudEPg.name, "{}")'.format(epg),
+            'aci_rn': 'cloudepg-{0}'.format(epg),
+            'target_filter': 'eq(cloudEPg.name, "{0}")'.format(epg),
             'module_object': epg
-        }, 
+        },
         subclass_3={
             'aci_class': 'cloudEPSelector',
-            'aci_rn': 'epselector-{}'.format(name),
-            'target_filter': 'eq(cloudEPSelector.name, "{}")'.format(name),
+            'aci_rn': 'epselector-{0}'.format(name),
+            'target_filter': 'eq(cloudEPSelector.name, "{0}")'.format(name),
             'module_object': name
-        }, 
-        
+        },
         child_classes=[]
-        
     )
 
     aci.get_existing()
@@ -175,7 +172,7 @@ def main():
             key = expression.get('key')
             operator = expression.get('operator')
             if expression.get('value'):
-                value = "'" + "','".join(expression.get('value').split( "," )) + "'"
+                value = "'" + "','".join(expression.get('value').split(",")) + "'"
             else:
                 value = None
             if operator in ["has_key", "does_not_have_key"]:
@@ -190,7 +187,7 @@ def main():
             if key == "zone" and cloud_type is not "aws":
                 module.fail_json(
                     msg="Key '{0}' is only supported for AWS cloud".format(key))
-            if key in ["ip", "region","zone"]:
+            if key in ["ip", "region", "zone"]:
                 key = EXPRESSION_KEYS.get(key)
             else:
                 key = 'custom:' + key
@@ -205,7 +202,7 @@ def main():
         matchExpression = ','.join(expressions_list)
         aci.payload(
             aci_class='cloudEPSelector',
-            class_config={ 
+            class_config={
                 'descr': description,
                 'matchExpression': matchExpression,
                 'name': name,
@@ -221,6 +218,7 @@ def main():
         aci.delete_config()
 
     aci.exit_json()
+
 
 if __name__ == "__main__":
     main()
