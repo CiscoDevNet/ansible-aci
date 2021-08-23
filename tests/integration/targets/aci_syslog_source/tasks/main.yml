@@ -22,7 +22,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_syslog_src if it already exists
-  aci_syslog_src:
+  aci_syslog_source:
     <<: *aci_info
     name: ansible_syslog_src
     state: absent
@@ -37,7 +37,7 @@
 
 # ADD syslog source
 - name: Add syslog source
-  aci_syslog_src:
+  aci_syslog_source:
     <<: *aci_info
     name: ansible_syslog_src
     include:
@@ -64,7 +64,7 @@
 
 # ADD syslog source again to check idempotency
 - name: Add syslog source
-  aci_syslog_src:
+  aci_syslog_source:
     <<: *aci_info
     name: ansible_syslog_src
     include:
@@ -83,7 +83,7 @@
 
 # MODIFY syslog source
 - name: Update the syslog source
-  aci_syslog_src:
+  aci_syslog_source:
     <<: *aci_info
     name: ansible_syslog_src
     include:
@@ -103,7 +103,7 @@
 
 # QUERY syslog source
 - name: Query the syslog source
-  aci_syslog_src:
+  aci_syslog_source:
     <<: *aci_info
     name: ansible_syslog_src
     state: query
@@ -119,7 +119,7 @@
     - query_syslog_src.current.0.syslogSrc.attributes.minSev == "information"
 
 - name: Query all syslog sources
-  aci_syslog_src:
+  aci_syslog_source:
     <<: *aci_info
     state: query
   register: query_syslog_src_all
@@ -131,7 +131,7 @@
 
 # DELETE syslog source
 - name: Remove the syslog source
-  aci_syslog_src:
+  aci_syslog_source:
     <<: *aci_info
     name: ansible_syslog_src
     state: absent
