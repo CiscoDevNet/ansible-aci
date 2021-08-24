@@ -73,7 +73,6 @@
       epg: anstest
       description: cloud epg selector
       name: ansible_selector
-      cloud_type: "{{ cloud_type }}"
       expressions:
         - key: ip
           operator: in
@@ -138,6 +137,8 @@
           value: '{{ region_2 }}'
         - key: test_expression_2
           operator: has_key
+        - key: zone
+          operator: does_not_have_key
     register: sec_selector
 
   - name: Create selector with incorrect parameter - has_key with ip
@@ -181,23 +182,6 @@
         - ip_has_key.msg == "Operator 'has_key' is not supported when expression key is 'ip'"
         - equals_without_value.msg == "Attribute 'value' needed for operator 'equals' in expression 'ctm_test'"
         - does_not_without_key.msg == "Attribute 'value' is not supported for operator 'does_not_have_key' in expression 'ctm_test'"
-
-  - name: Create selector with incorrect parameter - zone with azure cloud
-    cisco.aci.aci_cloud_epg_selector:
-      <<: *aci_cloud_epg_selector
-      name: zone_with_azure
-      expressions:
-        - key: zone
-          operator: has_key
-    ignore_errors: yes
-    register: zone_with_azure
-    when: cloud_type == 'azure'
-
-  - name: Verify zone_with_azure
-    assert:
-      that:
-        - zone_with_azure.msg == "Key 'zone' is only supported for AWS cloud"
-    when: cloud_type == 'azure'
 
   - name: Query specific cloud epg selector
     cisco.aci.aci_cloud_epg_selector:
