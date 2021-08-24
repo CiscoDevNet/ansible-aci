@@ -10,33 +10,32 @@ __metaclass__ = type
 DOCUMENTATION = r'''
 ---
 module: aci_cloud_external_epg_selector
-short_description: Manage Cloud Endpoint Selector for External EPgs (cloud:ExtEPSelector)
+short_description: Manage Cloud Endpoint Selector for External EPGs (cloud:ExtEPSelector)
 description:
 - Decides which endpoints belong to the EPGs based on several parameters.
 notes:
 - More information about the internal APIC class B(cloud:ExtEPSelector) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 author:
-- Devarshi Shah (@devarshishah3)
 - Anvitha Jain (@anvitha-jain)
-version_added: '2.7'
 options:
   name:
     description:
     - The name of the Cloud Endpoint selector.
-    aliases: [ selector ]
+    aliases: [ selector, cloud_external_epg_selector, external_epg_selector, extepg_selector ]
     type: str
   subnet:
     description:
-    - Mo doc not defined in techpub!!!
+    - Ip address of the Cloud Subnet.
+    type: str
   tenant:
     description:
-    - Tenant name
+    - The name of tenant.
     type: str
   ap:
     description:
-    - Parent object name
-    aliases: [ app_profile, app_profile_name, cloud_application_container ]
+    - The name of the cloud application profile.
+    aliases: [ app_profile, app_profile_name ]
     type: str
   cloud_external_epg:
     description:
@@ -48,7 +47,50 @@ options:
     - Use C(query) for listing an object or multiple objects.
     choices: [ absent, present, query ]
     default: present
-extends_documentation_fragment: aci
+    type: str
+extends_documentation_fragment:
+- cisco.aci.aci
+'''
+
+EXAMPLES = r'''
+- name: Add a new cloud external EPG selector
+  cisco.aci.aci_cloud_external_epg_selector:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: tenant1
+    ap: ap1
+    cloud_external_epg: ext_epg
+    name: subnet_name
+    subnet: 10.0.0.0/16
+    state: present
+  delegate_to: localhost
+
+- name: Remove a cloud external EPG selector
+  cisco.aci.aci_cloud_external_epg_selector:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    validate_certs: no
+    tenant: tenant1
+    ap: ap1
+    cloud_external_epg: ext_epg
+    name: subnet_name
+    subnet: 10.0.0.0/16
+    state: absent
+  delegate_to: localhost
+
+- name: Query a cloud external EPG selector
+  cisco.aci.aci_cloud_external_epg_selector:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: tenant1
+    ap: ap1
+    cloud_external_epg: ext_epg
+    state: query
+  delegate_to: localhost
+  register: query_result
 '''
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -58,11 +100,11 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update({
-        'name': dict(type='str', aliases=['selector']),
+        'name': dict(type='str', aliases=['selector', 'cloud_external_epg_selector', 'external_epg_selector', 'extepg_selector']),
         'subnet': dict(type='str'),
         'tenant': dict(type='str'),
         'cloud_external_epg': dict(type='str'),
-        'ap': dict(type='str', aliases=['app_profile', 'app_profile_name', 'ap']),
+        'ap': dict(type='str', aliases=['app_profile', 'app_profile_name']),
         'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
     })
 
@@ -70,43 +112,43 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['subnet', 'tenant', 'ap', 'cloud_external_epg' ]],
-            ['state', 'present', ['subnet', 'tenant', 'ap', 'cloud_external_epg' ]],
+            ['state', 'absent', ['subnet', 'tenant', 'ap', 'cloud_external_epg']],
+            ['state', 'present', ['subnet', 'tenant', 'ap', 'cloud_external_epg']],
         ],
     )
 
-    name = module.params['name']
-    subnet = module.params['subnet']
-    tenant = module.params['tenant']
-    ap = module.params['ap']
-    cloud_external_epg = module.params['cloud_external_epg']
-    state = module.params['state']
+    name = module.params.get('name')
+    subnet = module.params.get('subnet')
+    tenant = module.params.get('tenant')
+    ap = module.params.get('ap')
+    cloud_external_epg = module.params.get('cloud_external_epg')
+    state = module.params.get('state')
     child_configs = []
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class={
             'aci_class': 'fvTenant',
-            'aci_rn': 'tn-{}'.format(tenant),
-            'target_filter': 'eq(fvTenant.name, "{}")'.format(tenant),
+            'aci_rn': 'tn-{0}'.format(tenant),
+            'target_filter': 'eq(fvTenant.name, "{0}")'.format(tenant),
             'module_object': tenant
         },
         subclass_1={
             'aci_class': 'cloudApp',
-            'aci_rn': 'cloudapp-{}'.format(ap),
-            'target_filter': 'eq(cloudApp.name, "{}")'.format(ap),
+            'aci_rn': 'cloudapp-{0}'.format(ap),
+            'target_filter': 'eq(cloudApp.name, "{0}")'.format(ap),
             'module_object': ap
         },
         subclass_2={
             'aci_class': 'cloudExtEPg',
-            'aci_rn': 'cloudextepg-{}'.format(cloud_external_epg),
-            'target_filter': 'eq(cloudExtEPg.name, "{}")'.format(cloud_external_epg),
+            'aci_rn': 'cloudextepg-{0}'.format(cloud_external_epg),
+            'target_filter': 'eq(cloudExtEPg.name, "{0}")'.format(cloud_external_epg),
             'module_object': cloud_external_epg
         },
         subclass_3={
             'aci_class': 'cloudExtEPSelector',
-            'aci_rn': 'extepselector-[{}]'.format(subnet),
-            'target_filter': 'eq(cloudExtEPSelector.name, "{}")'.format(subnet),
+            'aci_rn': 'extepselector-[{0}]'.format(subnet),
+            'target_filter': 'eq(cloudExtEPSelector.name, "{0}")'.format(subnet),
             'module_object': subnet
         },
         child_classes=[]

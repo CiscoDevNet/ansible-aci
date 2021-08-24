@@ -232,13 +232,13 @@ def main():
         ],
     )
 
-    description = module.params['description']
-    name = module.params['name']
-    tenant = module.params['tenant']
-    ap = module.params['ap']
-    state = module.params['state']
+    description = module.params.get('description')
+    name = module.params.get('name')
+    tenant = module.params.get('tenant')
+    ap = module.params.get('ap')
+    state = module.params.get('state')
     child_configs = []
-    relation_vrf = module.params['vrf']
+    relation_vrf = module.params.get('vrf')
 
     if relation_vrf:
         child_configs.append({'cloudRsCloudEPgCtx': {'attributes': {'tnFvCtxName': relation_vrf}}})

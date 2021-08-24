@@ -10,16 +10,14 @@ __metaclass__ = type
 DOCUMENTATION = r'''
 ---
 module: aci_cloud_external_epg
-short_description: Manage Cloud External EPg (cloud:ExtEPg)
+short_description: Manage Cloud External EPG (cloud:ExtEPg)
 description:
 - Configures WAN router connectivity to the cloud infrastructure.
 notes:
 - More information about the internal APIC class B(cloud:ExtEPg) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 author:
-- Devarshi Shah (@devarshishah3)
 - Anvitha Jain (@anvitha-jain)
-version_added: '2.7'
 options:
   description:
     description:
@@ -29,7 +27,7 @@ options:
   name:
     description:
     - Name of Object cloud_external_epg.
-    aliases: [ cloud_external_epg ]
+    aliases: [ cloud_external_epg, cloud_external_epg_name, external_epg, external_epg_name, extepg, extepg_name ]
     type: str
   route_reachability:
     description:
@@ -38,12 +36,12 @@ options:
     type: str
   tenant:
     description:
-    - Tenant name
+    - The name of tenant.
     type: str
   ap:
     description:
-    - Parent object name
-    aliases: [ app_profile, app_profile_name, cloud_application_container ]
+    - The name of the cloud application profile.
+    aliases: [ app_profile, app_profile_name ]
     type: str
   vrf:
     description:
@@ -59,38 +57,43 @@ options:
     type: str
 extends_documentation_fragment:
 - cisco.aci.aci
-
-notes:
-- More information about the internal APIC class B(cloud:BgpAsP) from
-  L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 '''
 
 EXAMPLES = r'''
-- name: Add a new cloud BGP ASN
-  cisco.aci.aci_cloud_bgp_asn:
+- name: Add a new cloud external EPG
+  cisco.aci.aci_cloud_external_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
-    asn: 64601
-    description: ASN description
-    name: ASN_1
+    tenant: tenant1
+    ap: ap1
+    vrf: vrf1
+    description: Cloud External EPG description
+    name: ext_epg
+    route_reachability: internet
     state: present
   delegate_to: localhost
 
-- name: Remove a cloud BGP ASN
-  cisco.aci.aci_cloud_bgp_asn:
+- name: Remove a cloud external EPG
+  cisco.aci.aci_cloud_external_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
     validate_certs: no
+    tenant: tenant1
+    ap: ap1
+    name: ext_epg
     state: absent
   delegate_to: localhost
 
-- name: Query a cloud BGP ASN
-  cisco.aci.aci_cloud_bgp_asn:
+- name: Query a cloud external EPG
+  cisco.aci.aci_cloud_external_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
+    tenant: tenant1
+    ap: ap1
+    name: ext_epg
     state: query
   delegate_to: localhost
   register: query_result
@@ -209,10 +212,11 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update({
         'description': dict(type='str', aliases=['descr']),
-        'name': dict(type='str', aliases=['cloud_external_epg']),
+        'name': dict(type='str',
+                     aliases=['cloud_external_epg', 'cloud_external_epg_name', 'external_epg', 'external_epg_name', 'extepg', 'extepg_name']),
         'route_reachability': dict(type='str', choices=['inter-site', 'internet', 'unspecified']),
         'tenant': dict(type='str'),
-        'ap': dict(type='str', aliases=['app_profile', 'app_profile_name', 'cloud_application_container']),
+        'ap': dict(type='str', aliases=['app_profile', 'app_profile_name']),
         'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
         'vrf': dict(type='str', aliases=['context', 'vrf_name']),
     })
@@ -226,14 +230,14 @@ def main():
         ],
     )
 
-    description = module.params['description']
-    name = module.params['name']
-    route_reachability = module.params['route_reachability']
-    tenant = module.params['tenant']
-    ap = module.params['ap']
-    state = module.params['state']
+    description = module.params.get('description')
+    name = module.params.get('name')
+    route_reachability = module.params.get('route_reachability')
+    tenant = module.params.get('tenant')
+    ap = module.params.get('ap')
+    state = module.params.get('state')
     child_configs = []
-    relation_vrf = module.params['vrf']
+    relation_vrf = module.params.get('vrf')
 
     if relation_vrf:
         child_configs.append({'cloudRsCloudEPgCtx': {'attributes': {'tnFvCtxName': relation_vrf}}})
@@ -242,20 +246,20 @@ def main():
     aci.construct_url(
         root_class={
             'aci_class': 'fvTenant',
-            'aci_rn': 'tn-{}'.format(tenant),
-            'target_filter': 'eq(fvTenant.name, "{}")'.format(tenant),
+            'aci_rn': 'tn-{0}'.format(tenant),
+            'target_filter': 'eq(fvTenant.name, "{0}")'.format(tenant),
             'module_object': tenant
         },
         subclass_1={
             'aci_class': 'cloudApp',
-            'aci_rn': 'cloudapp-{}'.format(ap),
-            'target_filter': 'eq(cloudApp.name, "{}")'.format(ap),
+            'aci_rn': 'cloudapp-{0}'.format(ap),
+            'target_filter': 'eq(cloudApp.name, "{0}")'.format(ap),
             'module_object': ap
         },
         subclass_2={
             'aci_class': 'cloudExtEPg',
-            'aci_rn': 'cloudextepg-{}'.format(name),
-            'target_filter': 'eq(cloudExtEPg.name, "{}")'.format(name),
+            'aci_rn': 'cloudextepg-{0}'.format(name),
+            'target_filter': 'eq(cloudExtEPg.name, "{0}")'.format(name),
             'module_object': name
         },
 
