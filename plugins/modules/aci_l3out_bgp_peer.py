@@ -22,40 +22,48 @@ options:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
+    required: yes
   l3out:
     description:
     - Name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
+    required: yes
   node_profile:
     description:
     - Name of the node profile.
     type: str
     aliases: [ node_profile_name, logical_node ]
+    required: yes
   interface_profile:
     description:
     - Name of the interface profile.
     type: str
     aliases: [ interface_profile_name, logical_interface ]
+    required: yes
   pod_id:
     description:
     - Pod to build the interface on.
     type: str
+    required: yes
   node_id:
     description:
     - Node to build the interface on for Port-channels and single ports.
     - Hyphen separated pair of nodes (e.g. "201-202") for vPCs.
     type: str
+    required: yes
   path_ep:
     description:
     - Path to interface
     - IPG name for Port-channels and vPCs
     - Port number for single ports
     type: str
+    required: yes
   peer_ip:
     description:
     - IP address of the BGP peer.
     type: str
+    required: yes
   remote_asn:
     description:
     - Autonomous System Number of the BGP peer.
