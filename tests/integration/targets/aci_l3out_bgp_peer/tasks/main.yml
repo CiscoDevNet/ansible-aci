@@ -239,7 +239,6 @@
     that:
     - add_eth_bgp_peer_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/peerP-[192.168.50.2]"
     - add_eth_bgp_peer_32.current.0.bgpPeerP.attributes.addr == "192.168.50.2"
-    - add_eth_bgp_peer_32.current.0.bgpPeerP.attributes.adminSt == "enabled"
     - add_eth_bgp_peer_32.current.0.bgpPeerP.attributes.ctrl == "nh-self,send-com,send-ext-com"
     - add_eth_bgp_peer_32.current.0.bgpPeerP.attributes.peerCtrl == "bfd"
     - add_eth_bgp_peer_32.current.0.bgpPeerP.attributes.ttl == "2"
@@ -325,7 +324,6 @@
     - add_eth_bgp_peer_again_32 is not changed
     - add_eth_bgp_peer_again_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/peerP-[192.168.50.2]"
     - add_eth_bgp_peer_again_32.current.0.bgpPeerP.attributes.addr == "192.168.50.2"
-    - add_eth_bgp_peer_again_32.current.0.bgpPeerP.attributes.adminSt == "enabled"
     - add_eth_bgp_peer_again_32.current.0.bgpPeerP.attributes.ctrl == "nh-self,send-com,send-ext-com"
     - add_eth_bgp_peer_again_32.current.0.bgpPeerP.attributes.peerCtrl == "bfd"
     - add_eth_bgp_peer_again_32.current.0.bgpPeerP.attributes.ttl == "2"
@@ -396,7 +394,6 @@
     weight: 50
     allow_self_as_count: 3
     ttl: 4
-    admin_state: disabled
     state: present
   register: update_eth_bgp_peer_32
   when: version.current.0.topSystem.attributes.version is version('4', '<')
@@ -422,7 +419,6 @@
     - update_eth_bgp_peer_32 is changed
     - update_eth_bgp_peer_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/peerP-[192.168.50.2]"
     - update_eth_bgp_peer_32.current.0.bgpPeerP.attributes.addr == "192.168.50.2"
-    - update_eth_bgp_peer_32.current.0.bgpPeerP.attributes.adminSt == "disabled"
     - update_eth_bgp_peer_32.current.0.bgpPeerP.attributes.ctrl == "allow-self-as,as-override"
     - update_eth_bgp_peer_32.current.0.bgpPeerP.attributes.peerCtrl == "dis-conn-check"
     - update_eth_bgp_peer_32.current.0.bgpPeerP.attributes.ttl == "4"
@@ -494,8 +490,6 @@
     - query_eth_bgp_peer_32 is not changed
     - query_eth_bgp_peer_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/peerP-[192.168.50.2]"
     - query_eth_bgp_peer_32.current.0.bgpPeerP.attributes.addr == "192.168.50.2"
-    - query_eth_bgp_peer_32.current.0.bgpPeerP.attributes.addrTCtrl == "af-mcast,af-ucast"
-    - query_eth_bgp_peer_32.current.0.bgpPeerP.attributes.adminSt == "disabled"
     - query_eth_bgp_peer_32.current.0.bgpPeerP.attributes.ctrl == "allow-self-as,as-override"
     - query_eth_bgp_peer_32.current.0.bgpPeerP.attributes.peerCtrl == "dis-conn-check"
     - query_eth_bgp_peer_32.current.0.bgpPeerP.attributes.ttl == "4"
@@ -604,7 +598,6 @@
     that:
     - add_pc_bgp_peer_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/peerP-[192.168.50.2]"
     - add_pc_bgp_peer_32.current.0.bgpPeerP.attributes.addr == "192.168.50.2"
-    - add_pc_bgp_peer_32.current.0.bgpPeerP.attributes.adminSt == "enabled"
     - add_pc_bgp_peer_32.current.0.bgpPeerP.attributes.ctrl == "nh-self,send-com,send-ext-com"
     - add_pc_bgp_peer_32.current.0.bgpPeerP.attributes.peerCtrl == "bfd"
     - add_pc_bgp_peer_32.current.0.bgpPeerP.attributes.ttl == "2"
@@ -690,7 +683,6 @@
     - add_pc_bgp_peer_again_32 is not changed
     - add_pc_bgp_peer_again_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/peerP-[192.168.50.2]"
     - add_pc_bgp_peer_again_32.current.0.bgpPeerP.attributes.addr == "192.168.50.2"
-    - add_pc_bgp_peer_again_32.current.0.bgpPeerP.attributes.adminSt == "enabled"
     - add_pc_bgp_peer_again_32.current.0.bgpPeerP.attributes.ctrl == "nh-self,send-com,send-ext-com"
     - add_pc_bgp_peer_again_32.current.0.bgpPeerP.attributes.peerCtrl == "bfd"
     - add_pc_bgp_peer_again_32.current.0.bgpPeerP.attributes.ttl == "2"
@@ -767,7 +759,6 @@
     weight: 50
     allow_self_as_count: 3
     ttl: 4
-    admin_state: disabled
     state: present
   register: update_pc_bgp_peer_32
   when: version.current.0.topSystem.attributes.version is version('4', '<')
@@ -793,7 +784,6 @@
     - update_pc_bgp_peer_32 is changed
     - update_pc_bgp_peer_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/peerP-[192.168.50.2]"
     - update_pc_bgp_peer_32.current.0.bgpPeerP.attributes.addr == "192.168.50.2"
-    - update_pc_bgp_peer_32.current.0.bgpPeerP.attributes.adminSt == "disabled"
     - update_pc_bgp_peer_32.current.0.bgpPeerP.attributes.ctrl == "allow-self-as,as-override"
     - update_pc_bgp_peer_32.current.0.bgpPeerP.attributes.peerCtrl == "bfd,dis-conn-check"
     - update_pc_bgp_peer_32.current.0.bgpPeerP.attributes.ttl == "4"
@@ -865,7 +855,6 @@
     - query_pc_bgp_peer_32 is not changed
     - query_pc_bgp_peer_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/peerP-[192.168.50.2]"
     - query_pc_bgp_peer_32.current.0.bgpPeerP.attributes.addr == "192.168.50.2"
-    - query_pc_bgp_peer_32.current.0.bgpPeerP.attributes.adminSt == "disabled"
     - query_pc_bgp_peer_32.current.0.bgpPeerP.attributes.ctrl == "allow-self-as,as-override"
     - query_pc_bgp_peer_32.current.0.bgpPeerP.attributes.peerCtrl == "bfd,dis-conn-check"
     - query_pc_bgp_peer_32.current.0.bgpPeerP.attributes.ttl == "4"
@@ -974,7 +963,6 @@
     that:
     - add_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/peerP-[192.168.50.2]"
     - add_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.addr == "192.168.50.2"
-    - add_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.adminSt == "enabled"
     - add_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.ctrl == "nh-self,send-com,send-ext-com"
     - add_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.peerCtrl == "bfd"
     - add_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.ttl == "2"
@@ -1060,7 +1048,6 @@
     - add_vpc_bgp_peer_again is not changed
     - add_vpc_bgp_peer_again.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/peerP-[192.168.50.2]"
     - add_vpc_bgp_peer_again.current.0.bgpPeerP.attributes.addr == "192.168.50.2"
-    - add_vpc_bgp_peer_again.current.0.bgpPeerP.attributes.adminSt == "enabled"
     - add_vpc_bgp_peer_again.current.0.bgpPeerP.attributes.ctrl == "nh-self,send-com,send-ext-com"
     - add_vpc_bgp_peer_again.current.0.bgpPeerP.attributes.peerCtrl == "bfd"
     - add_vpc_bgp_peer_again.current.0.bgpPeerP.attributes.ttl == "2"
@@ -1137,7 +1124,6 @@
     weight: 50
     allow_self_as_count: 3
     ttl: 4
-    admin_state: disabled
     state: present
   register: update_vpc_bgp_peer_32
   when: version.current.0.topSystem.attributes.version is version('4', '<')
@@ -1163,7 +1149,6 @@
     - update_vpc_bgp_peer_32 is changed
     - update_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/peerP-[192.168.50.2]"
     - update_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.addr == "192.168.50.2"
-    - update_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.adminSt == "disabled"
     - update_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.ctrl == "allow-self-as,as-override"
     - update_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.peerCtrl == "bfd,dis-conn-check"
     - update_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.ttl == "4"
@@ -1235,8 +1220,6 @@
     - query_vpc_bgp_peer_32 is not changed
     - query_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/peerP-[192.168.50.2]"
     - query_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.addr == "192.168.50.2"
-    - query_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.addrTCtrl == "af-mcast,af-ucast"
-    - query_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.adminSt == "disabled"
     - query_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.ctrl == "allow-self-as,as-override"
     - query_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.peerCtrl == "bfd,dis-conn-check"
     - query_vpc_bgp_peer_32.current.0.bgpPeerP.attributes.ttl == "4"
