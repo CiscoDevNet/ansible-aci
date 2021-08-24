@@ -17,7 +17,6 @@ notes:
 - More information about the internal APIC class B(cloud:EPSelector) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 author:
-- Nirav (@nirav)
 - Cindy Zhao (@cizhao)
 options:
   description:
@@ -40,19 +39,19 @@ options:
       operator:
         description:
         - The operator associated to the expression.
-        - Operator has_key or does_not_have_key is only available for key custom or zone
+        - Operator C(has_key) or C(does_not_have_key) is only available for key custom or zone
         required: true
         type: str
         choices: [ not_in, in, equals, not_equals, has_key, does_not_have_key ]
       value:
         description:
         - The value associated to the expression.
-        - If the operator is in or not_in, the value should be a comma separated string.
+        - If the operator is C(in) or C(not_in), the value should be a comma separated string.
         type: str
   name:
     description:
     - The name of the Cloud Endpoint selector.
-    aliases: [ selector ]
+    aliases: [ selector, selector_name ]
     type: str
   tenant:
     description:
@@ -268,7 +267,7 @@ def main():
     argument_spec.update({
         'description': dict(type='str'),
         'expressions': dict(type='list', elements='dict', options=expression_spec()),
-        'name': dict(type='str', aliases=['selector']),
+        'name': dict(type='str', aliases=['selector', 'selector_name']),
         'tenant': dict(type='str', required=True),
         'ap': dict(type='str', required=True),
         'epg': dict(type='str', required=True),
@@ -285,14 +284,14 @@ def main():
         ],
     )
 
-    description = module.params['description']
-    expressions = module.params['expressions']
-    name = module.params['name']
-    tenant = module.params['tenant']
-    ap = module.params['ap']
-    epg = module.params['epg']
-    cloud_type = module.params['cloud_type']
-    state = module.params['state']
+    description = module.params.get('description')
+    expressions = module.params.get('expressions')
+    name = module.params.get('name')
+    tenant = module.params.get('tenant')
+    ap = module.params.get('ap')
+    epg = module.params.get('epg')
+    cloud_type = module.params.get('cloud_type')
+    state = module.params.get('state')
     child_configs = []
 
     aci = ACIModule(module)
