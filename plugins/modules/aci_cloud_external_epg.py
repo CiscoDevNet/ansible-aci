@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Cindy Zhao <cizhao@cisco.com>
+# Copyright: (c) 2021, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -9,29 +9,34 @@ __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: aci_cloud_epg
-short_description: Manage Cloud EPG (cloud:EPg)
+module: aci_cloud_external_epg
+short_description: Manage Cloud External EPG (cloud:ExtEPg)
 description:
-- Manage Cloud EPG on Cisco Cloud ACI
+- Configures WAN router connectivity to the cloud infrastructure.
 options:
+  description:
+    description:
+    - configuration item description.
+    aliases: [ descr ]
+    type: str
+  name:
+    description:
+    - Name of Object cloud_external_epg.
+    aliases: [ cloud_external_epg, cloud_external_epg_name, external_epg, external_epg_name, extepg, extepg_name ]
+    type: str
+  route_reachability:
+    description:
+    - Route reachability for this EPG.
+    choices: [ inter-site, internet, unspecified ]
+    type: str
   tenant:
     description:
-    - The name of the existing tenant.
+    - The name of tenant.
     type: str
   ap:
     description:
     - The name of the cloud application profile.
     aliases: [ app_profile, app_profile_name ]
-    type: str
-  name:
-    description:
-    - The name of the cloud EPG.
-    aliases: [ cloud_epg, cloud_epg_name, epg, epg_name ]
-    type: str
-  description:
-    description:
-    - Description of the cloud EPG.
-    aliases: [ descr ]
     type: str
   vrf:
     description:
@@ -48,56 +53,57 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 notes:
-- More information about the internal APIC class B(cloud:EPg) from
+- More information about the internal APIC class B(cloud:ExtEPg) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 author:
-- Nirav (@nirav)
-- Cindy Zhao (@cizhao)
+- Anvitha Jain (@anvitha-jain)
 '''
 
 EXAMPLES = r'''
-- name: Create aci cloud epg (check_mode)
-  cisco.aci.aci_cloud_epg:
+- name: Add a new cloud external EPG
+  cisco.aci.aci_cloud_external_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
-    tenant: tenantName
-    ap: apName
-    vrf: vrfName
-    description: Aci Cloud EPG
-    name: epgName
+    tenant: tenant1
+    ap: ap1
+    vrf: vrf1
+    description: Cloud External EPG description
+    name: ext_epg
+    route_reachability: internet
     state: present
   delegate_to: localhost
 
-- name: Remove cloud epg
-  cisco.aci.aci_cloud_epg:
+- name: Remove a cloud external EPG
+  cisco.aci.aci_cloud_external_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
-    tenant: tenantName
-    ap: apName
-    name: cloudName
+    validate_certs: no
+    tenant: tenant1
+    ap: ap1
+    name: ext_epg
     state: absent
   delegate_to: localhost
 
-- name: query all
-  cisco.aci.aci_cloud_epg:
+- name: Query a cloud external EPG
+  cisco.aci.aci_cloud_external_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
-    tenant: tenantName
-    ap: apName
+    tenant: tenant1
+    ap: ap1
+    name: ext_epg
     state: query
   delegate_to: localhost
 
-- name: query a specific cloud epg
-  cisco.aci.aci_cloud_epg:
+- name: query all
+  cisco.aci.aci_cloud_external_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
-    tenant: tenantName
-    ap: apName
-    name: epgName
+    tenant: tenant1
+    ap: ap1
     state: query
   delegate_to: localhost
 '''
@@ -115,7 +121,7 @@ current:
                     "descr": "Production environment",
                     "dn": "uni/tn-production",
                     "name": "production",
-                    "nameAlias": "",
+                    "name_alias": "",
                     "ownerKey": "",
                     "ownerTag": ""
                 }
@@ -160,7 +166,7 @@ previous:
                     "descr": "Production",
                     "dn": "uni/tn-production",
                     "name": "production",
-                    "nameAlias": "",
+                    "name_alias": "",
                     "ownerKey": "",
                     "ownerTag": ""
                 }
@@ -215,8 +221,10 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update({
         'description': dict(type='str', aliases=['descr']),
-        'name': dict(type='str', aliases=['cloud_epg', 'cloud_epg_name', 'epg', 'epg_name']),
-        'tenant': dict(type='str',),
+        'name': dict(type='str',
+                     aliases=['cloud_external_epg', 'cloud_external_epg_name', 'external_epg', 'external_epg_name', 'extepg', 'extepg_name']),
+        'route_reachability': dict(type='str', choices=['inter-site', 'internet', 'unspecified']),
+        'tenant': dict(type='str'),
         'ap': dict(type='str', aliases=['app_profile', 'app_profile_name']),
         'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
         'vrf': dict(type='str', aliases=['context', 'vrf_name']),
@@ -233,6 +241,7 @@ def main():
 
     description = module.params.get('description')
     name = module.params.get('name')
+    route_reachability = module.params.get('route_reachability')
     tenant = module.params.get('tenant')
     ap = module.params.get('ap')
     state = module.params.get('state')
@@ -257,27 +266,30 @@ def main():
             'module_object': ap
         },
         subclass_2={
-            'aci_class': 'cloudEPg',
-            'aci_rn': 'cloudepg-{0}'.format(name),
-            'target_filter': 'eq(cloudEPg.name, "{0}")'.format(name),
+            'aci_class': 'cloudExtEPg',
+            'aci_rn': 'cloudextepg-{0}'.format(name),
+            'target_filter': 'eq(cloudExtEPg.name, "{0}")'.format(name),
             'module_object': name
         },
-        child_classes=['cloudRsCloudEPgCtx']
+
+        child_classes=['fvRsCustQosPol', 'cloudRsCloudEPgCtx']
+
     )
 
     aci.get_existing()
 
     if state == 'present':
         aci.payload(
-            aci_class='cloudEPg',
+            aci_class='cloudExtEPg',
             class_config={
                 'descr': description,
                 'name': name,
+                'routeReachability': route_reachability,
             },
             child_configs=child_configs
         )
 
-        aci.get_diff(aci_class='cloudEPg')
+        aci.get_diff(aci_class='cloudExtEPg')
 
         aci.post_config()
 

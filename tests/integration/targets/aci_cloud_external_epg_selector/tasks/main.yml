@@ -1,0 +1,181 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for cloud sites
+  when: query_cloud.current | length > 0  # This condition will execute only cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Ensure tenant doesn't exist
+    cisco.aci.aci_tenant:
+      <<: *aci_info
+      state: absent
+      tenant: ansible_test
+    register: tenant_absent
+
+  - name: Ensure cloud external epg doesn't exist
+    cisco.aci.aci_cloud_external_epg:
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      name: anstest
+      state: absent
+
+  - name: Ensure tenant exists
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      state: present
+      tenant: ansible_test
+    register: tenant_present
+
+  - name: Ensure application profile exists
+    cisco.aci.aci_cloud_ap: &aci_cloud_ap_present
+      <<: *aci_tenant_present
+      name: anstest
+      description: Ansible Test Cloud APIC
+      state: present
+    register: create_cloud_ap
+
+  - name: Ensure vrf exist
+    cisco.aci.aci_vrf: &aci_vrf_present
+      <<: *aci_tenant_present
+      vrf: anstest
+      description: Ansible Test
+    register: vrf_present
+
+  - name: Create another vrf
+    cisco.aci.aci_vrf:
+      <<: *aci_vrf_present
+      vrf: anstest_2
+    register: another_vrf_present
+
+  - name: Ensure aci cloud external epg exist
+    cisco.aci.aci_cloud_external_epg:
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      vrf: anstest
+      description: Aci Cloud External EPG
+      name: anstest
+      route_reachability: internet
+      state: present
+    register: ext_epg_present
+
+  - name: Create aci cloud external epg selector (check_mode)
+    cisco.aci.aci_cloud_external_epg_selector: &aci_cloud_ext_epg_present
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      cloud_external_epg: anstest
+      name: subnet1
+      subnet: 10.0.0.0/16
+      state: present
+    check_mode: yes
+    register: cm_epg_present
+
+  - name: Create aci cloud external epg selector (normal mode)
+    cisco.aci.aci_cloud_external_epg_selector:
+      <<: *aci_cloud_ext_epg_present
+    register: nm_epg_present
+
+  - name: Create aci cloud external epg selector again
+    cisco.aci.aci_cloud_external_epg_selector:
+      <<: *aci_cloud_ext_epg_present
+    register: nm_epg_present_again
+
+  - name: Verify cloud external epg creation
+    assert:
+      that:
+        - cm_epg_present is changed
+        - nm_epg_present is changed
+        - nm_epg_present_again is not changed
+        - cm_epg_present.previous == nm_epg_present.previous == []
+        - cm_epg_present.proposed.cloudExtEPSelector.attributes.name == 'subnet1'
+        - cm_epg_present.proposed.cloudExtEPSelector.attributes.subnet == '10.0.0.0/16'
+        - cm_epg_present.proposed.cloudExtEPSelector.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudextepg-anstest/extepselector-[10.0.0.0/16]'
+        - nm_epg_present.current.0.cloudExtEPSelector.attributes.name == 'subnet1'
+        - nm_epg_present.proposed.cloudExtEPSelector.attributes.subnet == '10.0.0.0/16'
+        - nm_epg_present.current.0.cloudExtEPSelector.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudextepg-anstest/extepselector-[10.0.0.0/16]'
+        - nm_epg_present_again.previous == nm_epg_present_again.current
+
+  - name: Create another cloud external epg
+    cisco.aci.aci_cloud_external_epg_selector:
+      <<: *aci_cloud_ext_epg_present
+      name: subnet2
+      subnet: 10.10.10.10/24
+    register: nm_another_epg_present
+
+  - name: Verify another cloud external epg creation
+    assert:
+      that:
+        - nm_another_epg_present is changed
+        - nm_another_epg_present.previous == []
+        - nm_another_epg_present.current.0.cloudExtEPSelector.attributes.name == 'subnet2'
+        - nm_another_epg_present.current.0.cloudExtEPSelector.attributes.subnet == '10.10.10.10/24'
+
+  - name: Query specific cloud external epg selector
+    cisco.aci.aci_cloud_external_epg_selector:
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      cloud_external_epg: anstest
+      name: subnet1
+      state: query
+    register: cloud_ext_epg_query
+
+  - name: query all selectors
+    cisco.aci.aci_cloud_external_epg_selector:
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      cloud_external_epg: anstest
+      state: query
+    register: query_all
+
+  - name: Verify query
+    assert:
+      that:
+        - query_all is not changed
+        - query_all.current.0.cloudExtEPg.children | length >= 2
+
+  - name: Remove cloud external epg selector
+    cisco.aci.aci_cloud_external_epg_selector: &cloud_ext_epg_absent
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      cloud_external_epg: anstest
+      name: subnet1
+      subnet: 10.0.0.0/16
+      state: absent
+    register: cloud_ext_epg_absent
+
+  - name: Remove cloud external epg again
+    cisco.aci.aci_cloud_external_epg_selector:
+      <<: *cloud_ext_epg_absent
+    register: cloud_ext_epg_absent_again
+
+  - name: Verify deletion
+    assert:
+      that:
+        - cloud_ext_epg_absent is changed
+        - cloud_ext_epg_absent.current == []
+        - cloud_ext_epg_absent_again is not changed
