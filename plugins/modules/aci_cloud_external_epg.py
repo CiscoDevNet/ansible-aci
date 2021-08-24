@@ -13,11 +13,6 @@ module: aci_cloud_external_epg
 short_description: Manage Cloud External EPG (cloud:ExtEPg)
 description:
 - Configures WAN router connectivity to the cloud infrastructure.
-notes:
-- More information about the internal APIC class B(cloud:ExtEPg) from
-  L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
-author:
-- Anvitha Jain (@anvitha-jain)
 options:
   description:
     description:
@@ -57,6 +52,11 @@ options:
     type: str
 extends_documentation_fragment:
 - cisco.aci.aci
+notes:
+- More information about the internal APIC class B(cloud:ExtEPg) from
+  L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
+author:
+- Anvitha Jain (@anvitha-jain)
 '''
 
 EXAMPLES = r'''
@@ -96,7 +96,16 @@ EXAMPLES = r'''
     name: ext_epg
     state: query
   delegate_to: localhost
-  register: query_result
+
+- name: query all
+  cisco.aci.aci_cloud_external_epg:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: tenant1
+    ap: ap1
+    state: query
+  delegate_to: localhost
 '''
 
 RETURN = r'''

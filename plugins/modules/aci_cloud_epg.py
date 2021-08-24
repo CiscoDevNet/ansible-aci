@@ -13,12 +13,6 @@ module: aci_cloud_epg
 short_description: Manage Cloud EPG (cloud:EPg)
 description:
 - Manage Cloud EPG on Cisco Cloud ACI
-notes:
-- More information about the internal APIC class B(cloud:EPg) from
-  L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
-author:
-- Nirav (@nirav)
-- Cindy Zhao (@cizhao)
 options:
   tenant:
     description:
@@ -51,9 +45,14 @@ options:
     choices: [ absent, present, query ]
     default: present
     type: str
-
 extends_documentation_fragment:
 - cisco.aci.aci
+notes:
+- More information about the internal APIC class B(cloud:EPg) from
+  L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
+author:
+- Nirav (@nirav)
+- Cindy Zhao (@cizhao)
 '''
 
 EXAMPLES = r'''

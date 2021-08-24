@@ -13,20 +13,16 @@ module: aci_cloud_external_epg_selector
 short_description: Manage Cloud Endpoint Selector for External EPGs (cloud:ExtEPSelector)
 description:
 - Decides which endpoints belong to the EPGs based on several parameters.
-notes:
-- More information about the internal APIC class B(cloud:ExtEPSelector) from
-  L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
-author:
-- Anvitha Jain (@anvitha-jain)
 options:
   name:
     description:
     - The name of the Cloud Endpoint selector.
-    aliases: [ selector, cloud_external_epg_selector, external_epg_selector, extepg_selector ]
+    aliases: [ selector, cloud_external_epg_selector, external_epg_selector, extepg_selector, selector_name ]
     type: str
   subnet:
     description:
-    - Ip address of the Cloud Subnet.
+    - IP address of the Cloud Subnet.
+    aliases: [ ip ]
     type: str
   tenant:
     description:
@@ -50,6 +46,11 @@ options:
     type: str
 extends_documentation_fragment:
 - cisco.aci.aci
+notes:
+- More information about the internal APIC class B(cloud:ExtEPSelector) from
+  L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
+author:
+- Anvitha Jain (@anvitha-jain)
 '''
 
 EXAMPLES = r'''
@@ -80,7 +81,7 @@ EXAMPLES = r'''
     state: absent
   delegate_to: localhost
 
-- name: Query a cloud external EPG selector
+- name: Query all cloud external EPG selectors
   cisco.aci.aci_cloud_external_epg_selector:
     host: apic
     username: admin
@@ -90,7 +91,6 @@ EXAMPLES = r'''
     cloud_external_epg: ext_epg
     state: query
   delegate_to: localhost
-  register: query_result
 '''
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -100,8 +100,8 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update({
-        'name': dict(type='str', aliases=['selector', 'cloud_external_epg_selector', 'external_epg_selector', 'extepg_selector']),
-        'subnet': dict(type='str'),
+        'name': dict(type='str', aliases=['selector', 'cloud_external_epg_selector', 'external_epg_selector', 'extepg_selector', 'selector_name']),
+        'subnet': dict(type='str', aliases=['ip']),
         'tenant': dict(type='str'),
         'cloud_external_epg': dict(type='str'),
         'ap': dict(type='str', aliases=['app_profile', 'app_profile_name']),
