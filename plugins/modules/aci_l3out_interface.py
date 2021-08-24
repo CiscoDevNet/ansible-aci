@@ -272,17 +272,17 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),
-        l3out=dict(type='str', aliases=['l3out_name']),
+        tenant=dict(type='str', aliases=['tenant_name'], required=True),
+        l3out=dict(type='str', aliases=['l3out_name'], required=True),
         node_profile=dict(type='str', aliases=[
-                          'node_profile_name', 'logical_node']),
+                          'node_profile_name', 'logical_node'], required=True),
         interface_profile=dict(type='str', aliases=[
-            'interface_profile_name', 'logical_interface']),
+            'interface_profile_name', 'logical_interface'], required=True),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query']),
-        pod_id=dict(type='str'),
-        node_id=dict(type='str'),
-        path_ep=dict(type='str'),
+        pod_id=dict(type='str', required=True),
+        node_id=dict(type='str', required=True),
+        path_ep=dict(type='str', required=True),
         addr=dict(type='str'),
         interface_type=dict(type='str',
                             choices=['l3-port', 'sub-interface', 'ext-svi']),
@@ -295,18 +295,7 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['tenant', 'l3out',
-                                 'node_profile', 'interface_profile',
-                                 'pod_id', 'node_id',
-                                 'path_ep']],
-            ['state', 'present', ['tenant', 'l3out',
-                                  'node_profile', 'interface_profile',
-                                  'pod_id', 'node_id',
-                                  'path_ep', 'interface_type']],
-            ['state', 'query', ['tenant', 'l3out',
-                                'node_profile', 'interface_profile',
-                                'pod_id', 'node_id',
-                                'path_ep']]
+            ['state', 'present', ['interface_type']]
         ]
     )
 
