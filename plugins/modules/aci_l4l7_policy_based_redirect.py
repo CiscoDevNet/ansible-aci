@@ -47,7 +47,7 @@ options:
   min_threshold:
     description:
     - Minimum percent when threshold is enabled
-    type:int
+    type: int
   threshold_down_action:
     description:
     - Action to take when threshold is breached
