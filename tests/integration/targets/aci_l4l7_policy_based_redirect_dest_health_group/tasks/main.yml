@@ -1,0 +1,189 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+   set_fact:
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+# CREATE L4-L7 POLICY BASED REDIRECT
+- name: Create L4-L7 Policy Based Redirect
+  cisco.aci.aci_l4l7_policy_based_redirect:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy_name: ansible_pbr_policy
+    dest_type: L3
+    hash_algorithm: dip
+    resilient_hash: yes
+    min_threshold: 60
+    max_threshold: 90
+    threshold_enable: yes
+    threshold_down_action: permit
+    pod_aware: yes
+    anycast_enabled: no
+    state: present
+
+# CREATE L4-L7 PBR DESTINATION
+- name: Create L4-L7 Policy Based Redirect Destination
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_policy
+    redirect_ip: 192.168.10.1
+    redirect_mac: AB:CD:EF:12:34:56
+    dest_name: redirect_dest
+    pod_id: 1
+    state: present
+
+# CREATE L4-L7 HEALTH GROUPS
+- name: Create L4-L7 Health Group 1
+  cisco.aci.aci_l4l7_redirect_health_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    health_group: ansible_health_group1
+    state: present
+
+- name: Create L4-L7 Health Group 2
+  cisco.aci.aci_l4l7_redirect_health_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    health_group: ansible_health_group2
+    state: present
+
+# BIND HEALTH GROUP TO DESTINATION
+- name: Bind a Health Group to the PBR Destination
+  cisco.aci.aci_l4l7_policy_based_redirect_dest_health_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_policy
+    redirect_ip: 192.168.10.1
+    health_group: ansible_health_group1
+    state: present
+  register: add_health_group_binding
+
+- name: Verify Health Group Binding
+  assert:
+    that:
+    - add_health_group_binding.current.0.vnsRsRedirectHealthGroup.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]/rsRedirectHealthGroup"
+    - add_health_group_binding.current.0.vnsRsRedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group1"
+
+# BIND HEALTH GROUP TO DESTINATION AGAIN TO TEST IDEMPOTENCE
+- name: Bind a Health Group to the PBR Destination again
+  cisco.aci.aci_l4l7_policy_based_redirect_dest_health_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_policy
+    redirect_ip: 192.168.10.1
+    health_group: ansible_health_group1
+    state: present
+  register: add_health_group_binding_again
+
+- name: Verify Health Group Binding is unchanged
+  assert:
+    that:
+    - add_health_group_binding_again is not changed
+    - add_health_group_binding_again.current.0.vnsRsRedirectHealthGroup.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]/rsRedirectHealthGroup"
+    - add_health_group_binding_again.current.0.vnsRsRedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group1"
+
+# MODIFY HEALTH GROUP BINDING
+- name: Change Health Group binding
+  cisco.aci.aci_l4l7_policy_based_redirect_dest_health_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_policy
+    redirect_ip: 192.168.10.1
+    health_group: ansible_health_group2
+    state: present
+  register: update_health_group_binding
+
+- name: Verify Health Group Binding has updated
+  assert:
+    that:
+    - update_health_group_binding.current.0.vnsRsRedirectHealthGroup.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]/rsRedirectHealthGroup"
+    - update_health_group_binding.current.0.vnsRsRedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group2"
+
+# QUERY HEALTH GROUP BINDING
+- name: Query Health Group binding
+  cisco.aci.aci_l4l7_policy_based_redirect_dest_health_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_policy
+    redirect_ip: 192.168.10.1
+    state: query
+  register: query_health_group_binding
+
+- name: Verify Health Group Binding attributes
+  assert:
+    that:
+    - query_health_group_binding is not changed
+    - query_health_group_binding.current.0.vnsRsRedirectHealthGroup.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]/rsRedirectHealthGroup"
+    - query_health_group_binding.current.0.vnsRsRedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group2"
+
+# REMOVE HEALTH GROUP BINDING
+- name: Remove Health Group binding
+  cisco.aci.aci_l4l7_policy_based_redirect_dest_health_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_policy
+    redirect_ip: 192.168.10.1
+    state: absent
+  register: remove_health_group_binding
+
+- name: Verify Health Group Binding removal
+  assert:
+    that:
+    - remove_health_group_binding is changed
+    - remove_health_group_binding.current == []
+    - remove_health_group_binding.previous.0.vnsRsRedirectHealthGroup.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]/rsRedirectHealthGroup"
+    - remove_health_group_binding.previous.0.vnsRsRedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group2"
+
+# REMOVE HEALTH GROUP BINDING AGAIN TO TEST IDEMPOTENCE
+- name: Remove Health Group binding again
+  cisco.aci.aci_l4l7_policy_based_redirect_dest_health_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_policy
+    redirect_ip: 192.168.10.1
+    state: absent
+  register: remove_health_group_binding_again
+
+- name: Verify Health Group Binding removal idempotence
+  assert:
+    that:
+    - remove_health_group_binding_again is not changed
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
