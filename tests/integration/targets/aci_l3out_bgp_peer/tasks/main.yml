@@ -506,7 +506,7 @@
 - name: verify BGP remote AS (version < 4)
   assert:
     that:
-    - query_eth_bgp_peer.current.0.bgpPeerP.children.1.bgpAsP.attributes.asn == "65457"
+    - query_eth_bgp_peer_32.current.0.bgpPeerP.children.1.bgpAsP.attributes.asn == "65457"
   when: version.current.0.topSystem.attributes.version is version('4', '<')
 
 # DELETE BGP peer
