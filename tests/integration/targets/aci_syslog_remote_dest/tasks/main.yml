@@ -170,7 +170,22 @@
   assert:
     that:
     - remove_syslog_remote_dest is changed
+    - remove_syslog_remote_dest.current == []
     - remove_syslog_remote_dest.previous.0.syslogRemoteDest.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group/rdst-10.20.30.40"
+
+# DELETE syslog remote destination again to test idempotence
+- name: Remove the syslog remote dest again
+  aci_syslog_remote_dest:
+    <<: *aci_info
+    group: ansible_syslog_group
+    destination: "10.20.30.40"
+    state: absent
+  register: remove_syslog_remote_dest_again
+
+- name: Verify remove_syslog_remote_dest idempotence
+  assert:
+    that:
+    - remove_syslog_remote_dest_again is not changed
 
 # DELETE syslog group
 - name: Remove syslog group

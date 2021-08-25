@@ -141,8 +141,22 @@
   assert:
     that:
     - remove_syslog_src is changed
+    - remove_syslog_src.current == []
     - remove_syslog_src.previous.0.syslogSrc.attributes.dn == "uni/fabric/moncommon/slsrc-ansible_syslog_src"
     - remove_syslog_src.previous.0.syslogSrc.attributes.name == "ansible_syslog_src"
+
+# DELETE syslog source again to test idempotence
+- name: Remove the syslog source
+  aci_syslog_source:
+    <<: *aci_info
+    name: ansible_syslog_src
+    state: absent
+  register: remove_syslog_src_again
+
+- name: Verify remove_syslog_src idempotence
+  assert:
+    that:
+    - remove_syslog_src_again is not changed
 
 # DELETE syslog group
 - name: Remove syslog group
