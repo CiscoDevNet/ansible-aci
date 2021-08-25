@@ -29,8 +29,8 @@ options:
   context_aware:
     description:
       - Is device Single or Multi context aware
-     type: str
-     choices: [ multi, single ]
+    type: str
+    choices: [ multi, single ]
   dev_type:
     description:
     - Device type
