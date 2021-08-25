@@ -54,7 +54,8 @@ extends_documentation_fragment:
 
 notes:
 - The C(tenant), C(service_graph) and C(connection_name) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l4l7_service_graph_template_node) and M(cisco.aci.aci_l4l7_service_graph_template_abs_conn) modules can be used for this.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l4l7_service_graph_template_node)
+  and M(cisco.aci.aci_l4l7_service_graph_template_abs_conn) modules can be used for this.
 
 seealso:
 - module: aci_l4l7_service_graph_template

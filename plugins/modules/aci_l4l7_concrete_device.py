@@ -74,7 +74,7 @@ EXAMPLES = r'''
     concrete_device: my_concrete_device
     state: absent
   delegate_to: localhost
-  
+
 - name: Query a concrete device
   cisco.aci.aci_l4l7_concrete_device:
     host: apic
