@@ -55,8 +55,8 @@ options:
   path_ep:
     description:
     - Path to interface
-    - IPG name for Port-channels and vPCs
-    - Port number for single ports
+    - Interface Port Group name for Port-channels and vPCs
+    - Port number for single ports (e.g. "eth1/12")
     type: str
     required: yes
   peer_ip:
@@ -108,7 +108,7 @@ options:
   allow_self_as_count:
     description:
     - Number of allowed self AS.
-    - Only used if allow-self-as is enabled under bgp_controls.
+    - Only used if C(allow-self-as) is enabled under C(bgp_controls).
     type: int
   state:
     description:
@@ -131,7 +131,7 @@ author:
 '''
 
 EXAMPLES = r'''
-- name: Add a new BGP peer
+- name: Add a new BGP peer on a physical interface
   cisco.aci.aci_l3out_bgp_peer:
     host: apic
     username: admin
@@ -151,6 +151,25 @@ EXAMPLES = r'''
       - send-ext-com
     peer_controls:
       - bfd
+    state: present
+  delegate_to: localhost
+
+- name: Add a new BGP peer on a vPC
+  cisco.aci.aci_l3out_bgp_peer:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    pod_id: 1
+    node_id: 201-202
+    path_ep: my_vpc_ipg
+    peer_ip: 192.168.20.2
+    remote_asn: 65457
+    ttl: 4
+    weight: 50
     state: present
   delegate_to: localhost
 
@@ -427,17 +446,16 @@ def main():
 
     aci.get_existing()
 
-    ctrl, peerCtrl, addrTCtrl, privateASctrl = None, None, None, None
-    if bgp_controls:
-        ctrl = ','.join(bgp_controls)
-    if peer_controls:
-        peerCtrl = ','.join(peer_controls)
-    if address_type_controls:
-        addrTCtrl = ','.join(address_type_controls)
-    if private_asn_controls:
-        privateASctrl = ','.join(private_asn_controls)
-
     if state == 'present':
+        ctrl, peerCtrl, addrTCtrl, privateASctrl = None, None, None, None
+        if bgp_controls:
+            ctrl = ','.join(bgp_controls)
+        if peer_controls:
+            peerCtrl = ','.join(peer_controls)
+        if address_type_controls:
+            addrTCtrl = ','.join(address_type_controls)
+        if private_asn_controls:
+            privateASctrl = ','.join(private_asn_controls)
         aci.payload(
             aci_class='bgpPeerP',
             class_config=dict(

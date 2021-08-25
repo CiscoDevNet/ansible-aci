@@ -55,13 +55,13 @@ options:
   path_ep:
     description:
     - Path to interface
-    - IPG name for Port-channels and vPCs
-    - Port number for single ports
+    - Interface Policy Group name for Port-channels and vPCs
+    - Port number for single ports (e.g. "eth1/12")
     type: str
     required: yes
   encap:
     description:
-    - encapsulation on the interface
+    - encapsulation on the interface (e.g. "vlan-500")
     type: str
   addr:
     description:
