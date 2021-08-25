@@ -29,7 +29,7 @@ options:
   node:
     description:
     - Name of the Service Graph Template Node
-    type:str
+    type: str
   func_template_type:
     description:
     - Functional template type for the node
