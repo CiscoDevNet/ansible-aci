@@ -154,6 +154,7 @@
     tenant: ansible_tenant
     policy: ansible_pbr_policy
     redirect_ip: 192.168.10.1
+    health_group: ansible_health_group2
     state: absent
   register: remove_health_group_binding
 
@@ -172,6 +173,7 @@
     tenant: ansible_tenant
     policy: ansible_pbr_policy
     redirect_ip: 192.168.10.1
+    health_group: ansible_health_group2
     state: absent
   register: remove_health_group_binding_again
 
