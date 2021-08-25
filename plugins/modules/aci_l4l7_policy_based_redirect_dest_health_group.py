@@ -38,7 +38,6 @@ options:
     description:
     - Name of an existing Health Group
     type: str
-    required: yes
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -220,12 +219,16 @@ def main():
         redirect_ip=dict(type='str', required=True),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query']),
-        health_group=dict(type='str', required=True),
+        health_group=dict(type='str'),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
+        required_if=[
+            ['state', 'absent', ['health_group']],
+            ['state', 'present', ['health_group']],
+        ],
     )
 
     tenant = module.params.get('tenant')
