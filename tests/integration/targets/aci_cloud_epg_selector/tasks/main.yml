@@ -1,0 +1,231 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Cindy Zhao (@cizhao)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for cloud sites
+  when: query_cloud.current | length > 0  # This condition will execute only cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Ensure tenant doesn't exist
+    cisco.aci.aci_tenant:
+      <<: *aci_info
+      state: absent
+      tenant: ansible_test
+    register: tenant_absent
+
+  - name: Ensure tenant exists
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      state: present
+      tenant: ansible_test
+    register: tenant_present
+
+  - name: Ensure application profile exists
+    cisco.aci.aci_cloud_ap: &aci_cloud_ap_present
+      <<: *aci_tenant_present
+      name: anstest
+      description: Ansible Test Cloud APIC
+      state: present
+    register: create_cloud_ap
+
+  - name: Ensure vrf exist
+    cisco.aci.aci_vrf: &aci_vrf_present
+      <<: *aci_tenant_present
+      vrf: anstest
+      description: Ansible Test
+    register: vrf_present
+
+  - name: Create aci cloud epg
+    cisco.aci.aci_cloud_epg: &aci_cloud_epg_present
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      vrf: anstest
+      description: Aci Cloud EPG
+      name: anstest
+      state: present
+    register: nm_epg_present
+
+  - name: Create aci cloud epg selector (check_mode)
+    cisco.aci.aci_cloud_epg_selector: &aci_cloud_epg_selector
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      epg: anstest
+      description: cloud epg selector
+      name: ansible_selector
+      expressions:
+        - key: ip
+          operator: in
+          value: 10.10.10.1
+      state: present
+    check_mode: yes
+    register: cm_selector_present
+
+  - name: Create aci cloud epg selector (normal mode)
+    cisco.aci.aci_cloud_epg_selector:
+      <<: *aci_cloud_epg_selector
+    register: nm_selector_present
+
+  - name: Create aci cloud epg again
+    cisco.aci.aci_cloud_epg_selector:
+      <<: *aci_cloud_epg_selector
+    register: selector_present_again
+
+  - name: Verify creation of cloud epg selector
+    assert:
+      that:
+        - cm_selector_present is changed
+        - nm_selector_present is changed
+        - selector_present_again is not changed
+        - cm_selector_present.previous == nm_selector_present.previous == []
+        - cm_selector_present.proposed.cloudEPSelector.attributes.descr == 'cloud epg selector'
+        - cm_selector_present.proposed.cloudEPSelector.attributes.matchExpression == "IP in('10.10.10.1')"
+        - cm_selector_present.proposed.cloudEPSelector.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudepg-anstest/epselector-ansible_selector'
+        - cm_selector_present.proposed.cloudEPSelector.attributes.name == 'ansible_selector'
+        - nm_selector_present.current.0.cloudEPSelector.attributes.descr == 'cloud epg selector'
+        - nm_selector_present.current.0.cloudEPSelector.attributes.matchExpression == "IP in('10.10.10.1')"
+        - nm_selector_present.current.0.cloudEPSelector.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudepg-anstest/epselector-ansible_selector'
+        - nm_selector_present.current.0.cloudEPSelector.attributes.name == 'ansible_selector'
+        - selector_present_again is not changed
+        - selector_present_again.previous == selector_present_again.current == nm_selector_present.current
+
+  - name: Update aci cloud epg selector
+    cisco.aci.aci_cloud_epg_selector:
+      <<: *aci_cloud_epg_selector
+      expressions:
+        - key: ip
+          operator: in
+          value: 10.10.10.1,10.10.10.2
+        - key: region
+          operator: equals
+          value: '{{ region }}'
+        - key: test_expression
+          operator: does_not_have_key
+    register: udpate_selector
+
+  - name: Create second aci cloud epg selector
+    cisco.aci.aci_cloud_epg_selector:
+      <<: *aci_cloud_epg_selector
+      description: second cloud epg selector
+      name: ansible_selector_2
+      expressions:
+        - key: ip
+          operator: not_equals
+          value: 10.10.10.3
+        - key: region
+          operator: not_in
+          value: '{{ region_2 }}'
+        - key: test_expression_2
+          operator: has_key
+        - key: zone
+          operator: does_not_have_key
+    register: sec_selector
+
+  - name: Create selector with incorrect parameter - has_key with ip
+    cisco.aci.aci_cloud_epg_selector:
+      <<: *aci_cloud_epg_selector
+      name: ip_has_key
+      expressions:
+        - key: ip
+          operator: has_key
+    ignore_errors: yes
+    register: ip_has_key
+
+  - name: Create selector with incorrect parameter - does_not_have_key with value
+    cisco.aci.aci_cloud_epg_selector:
+      <<: *aci_cloud_epg_selector
+      name: does_not_have_key
+      expressions:
+        - key: ctm_test
+          operator: does_not_have_key
+          value: test_value
+    ignore_errors: yes
+    register: does_not_without_key
+
+  - name: Create selector with incorrect parameter - without value
+    cisco.aci.aci_cloud_epg_selector:
+      <<: *aci_cloud_epg_selector
+      name: equals_without_value
+      expressions:
+        - key: ctm_test
+          operator: equals
+    ignore_errors: yes
+    register: equals_without_value
+
+  - name: Verify creation of other selectors
+    assert:
+      that:
+        - sec_selector is changed
+        - udpate_selector is changed
+        - sec_selector.current.0.cloudEPSelector.attributes.name == 'ansible_selector_2'
+        - sec_selector.current.0.cloudEPSelector.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudepg-anstest/epselector-ansible_selector_2'
+        - ip_has_key.msg == "Operator 'has_key' is not supported when expression key is 'ip'"
+        - equals_without_value.msg == "Attribute 'value' needed for operator 'equals' in expression 'ctm_test'"
+        - does_not_without_key.msg == "Attribute 'value' is not supported for operator 'does_not_have_key' in expression 'ctm_test'"
+
+  - name: Query specific cloud epg selector
+    cisco.aci.aci_cloud_epg_selector:
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      epg: anstest
+      name: ansible_selector
+      state: query
+    register: query_selector
+
+  - name: Query all cloud epg selectors
+    cisco.aci.aci_cloud_epg_selector:
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      epg: anstest
+      state: query
+    register: query_all
+
+  - name: Verify query
+    assert:
+      that:
+        - query_selector.current.0.cloudEPSelector.attributes.name == 'ansible_selector'
+        - query_all.current.0.cloudEPg.children | length >= 2
+
+  - name: Remove cloud epg selector
+    cisco.aci.aci_cloud_epg_selector: &selector_absent
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      epg: anstest
+      name: ansible_selector_2
+      state: absent
+    register: rm_selector_2
+
+  - name: Remove cloud epg selector again
+    cisco.aci.aci_cloud_epg_selector:
+      <<: *selector_absent
+    register: rm_selector_2_again
+
+  - name: Verify rm_selector_2
+    assert:
+      that:
+        - rm_selector_2 is changed
+        - rm_selector_2.current == []
+        - rm_selector_2_again is not changed
