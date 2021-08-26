@@ -1,0 +1,254 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain if it already exists
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+# CREATE DOMAIN
+- name: Create ansible_phys_domain
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: present
+
+# CREATE L4-L7 LOGICAL DEVICE
+- name: Create L4-L7 Device
+  aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    domain: ansible_phys_dom
+    func_type: GoTo
+    context_aware: single
+    is_copy: no
+    managed: no
+    dev_type: physical
+    svc_type: adc
+    trunking: no
+    prom_mode: yes
+    state: present
+
+# CREATE CONTRACT
+- name: Create contract
+  aci_contract:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    scope: application-profile
+    state: present
+
+# CREATE BRIDGE DOMAINS
+- name: Create bridge domain 1
+  aci_bd:
+    <<: *aci_info
+    tenant: ansible_tenant
+    bd: ansible_bd1
+    state: present
+
+- name: Create bridge domain 2
+  aci_bd:
+    <<: *aci_info
+    tenant: ansible_tenant
+    bd: ansible_bd2
+    state: present
+
+# CREATE L4-L7 SERVICE GRAPH
+- name: Create L4-L7 Service Graph
+  aci_l4l7_service_graph_template:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    state: present
+
+# CREATE L4-L7 DEVICE SELECTION POLICY
+- name: Create L4-L7 Device Selection Policy
+  aci_l4l7_device_selection_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    state: present
+
+# CREATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT
+- name: Create L4-L7 Device Selection Logical Interface Context
+  aci_l4l7_device_selection_if_context:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    state: present
+
+# BIND TO CONTEXT BD1
+- name: Add a new Bridge Domain binding
+  aci_l4l7_device_selection_if_context_to_bd:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    bridge_domain: ansible_bd1
+    state: present
+  register: add_bd_binding
+
+# VERIFY BD BINDING
+- name: Verify Bridge Domain binding
+  assert:
+    that:
+    - add_bd_binding.current.0.vnsRsLIfCtxToBD.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider/rsLIfCtxToBD"
+    - add_bd_binding.current.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-ansible_tenant/BD-ansible_bd1"
+
+# BIND CONTEXT TO BD1 AGAIN TO CHECK IDEMPOTENCE
+- name: Add Bridge Domain binding again
+  aci_l4l7_device_selection_if_context_to_bd:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    bridge_domain: ansible_bd1
+    state: present
+  register: add_bd_binding_again
+
+# VERIFY BD BINDING IDEMPOTENCE
+- name: Verify Bridge Domain binding idempotence
+  assert:
+    that:
+    - add_bd_binding_again is not changed
+    - add_bd_binding_again.current.0.vnsRsLIfCtxToBD.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider/rsLIfCtxToBD"
+    - add_bd_binding_again.current.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-ansible_tenant/BD-ansible_bd1"
+
+# CHANGE BD BINDING TO BD2
+- name: Update Bridge Domain binding
+  aci_l4l7_device_selection_if_context_to_bd:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    bridge_domain: ansible_bd2
+    state: present
+  register: update_bd_binding
+
+- name: Verify Bridge Domain binding update
+  assert:
+    that:
+    - update_bd_binding is changed
+    - update_bd_binding.current.0.vnsRsLIfCtxToBD.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider/rsLIfCtxToBD"
+    - update_bd_binding.current.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-ansible_tenant/BD-ansible_bd2"
+
+# QUERY BD BINDING
+- name: Update Bridge Domain binding
+  aci_l4l7_device_selection_if_context_to_bd:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    state: query
+  register: query_bd_binding
+
+- name: Verify Bridge Domain binding update
+  assert:
+    that:
+    - query_bd_binding is not changed
+    - query_bd_binding.current.0.vnsRsLIfCtxToBD.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider/rsLIfCtxToBD"
+    - query_bd_binding.current.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-ansible_tenant/BD-ansible_bd2"
+
+# REMOVE BD BINDING
+- name: Remove Bridge Domain binding
+  aci_l4l7_device_selection_if_context_to_bd:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    bridge_domain: ansible_bd2
+    state: absent
+  register: remove_bd_binding
+
+- name: Verify Bridge Domain binding removal
+  assert:
+    that:
+    - remove_bd_binding is changed
+    - remove_bd_binding.current == []
+    - remove_bd_binding.previous.0.vnsRsLIfCtxToBD.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider/rsLIfCtxToBD"
+    - remove_bd_binding.previous.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-ansible_tenant/BD-ansible_bd2"
+
+# REMOVE BD BINDING AGAIN TO TEST IDEMPOTENCE
+- name: Remove Bridge Domain binding again
+  aci_l4l7_device_selection_if_context_to_bd:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    bridge_domain: ansible_bd2
+    state: absent
+  register: remove_bd_binding_again
+
+- name: Verify Bridge Domain binding removal idempotence
+  assert:
+    that:
+    - remove_bd_binding_again is not changed
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
+
