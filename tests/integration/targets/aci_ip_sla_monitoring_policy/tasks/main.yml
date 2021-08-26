@@ -1,0 +1,167 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+# CREATE ICMP SLA POLICY
+- name: Create ICMP SLA policy
+  cisco.aci.aci_ip_sla_monitoring_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    sla_policy: ansible_sla
+    sla_type: icmp
+    frequency: 40
+    multiplier: 6
+    state: present
+  register: create_icmp_sla
+
+- name: Verify SLA creation
+  assert:
+    that:
+    - create_icmp_sla.current.0.fvIPSLAMonitoringPol.attributes.dn == "uni/tn-ansible_tenant/ipslaMonitoringPol-ansible_sla"
+    - create_icmp_sla.current.0.fvIPSLAMonitoringPol.attributes.name == "ansible_sla"
+    - create_icmp_sla.current.0.fvIPSLAMonitoringPol.attributes.slaDetectMultiplier == "6"
+    - create_icmp_sla.current.0.fvIPSLAMonitoringPol.attributes.slaFrequency == "40"
+    - create_icmp_sla.current.0.fvIPSLAMonitoringPol.attributes.slaPort == "0"
+    - create_icmp_sla.current.0.fvIPSLAMonitoringPol.attributes.slaType == "icmp"
+
+# CREATE ICMP SLA POLICY AGAIN TO TEST IDEMPOTENCE
+- name: Create ICMP SLA policy again
+  cisco.aci.aci_ip_sla_monitoring_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    sla_policy: ansible_sla
+    sla_type: icmp
+    frequency: 40
+    multiplier: 6
+    state: present
+  register: create_icmp_sla_again
+
+- name: Verify SLA creation idempotence
+  assert:
+    that:
+    - create_icmp_sla_again is not changed
+
+# MODIFY SLA POLICY
+- name: Convert ICMP SLA policy to TCP
+  cisco.aci.aci_ip_sla_monitoring_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    sla_policy: ansible_sla
+    sla_type: tcp
+    sla_port: 8080
+    frequency: 20
+    multiplier: 5
+    state: present
+  register: update_tcp_sla
+
+- name: Verify SLA update
+  assert:
+    that:
+    - update_tcp_sla.current.0.fvIPSLAMonitoringPol.attributes.dn == "uni/tn-ansible_tenant/ipslaMonitoringPol-ansible_sla"
+    - update_tcp_sla.current.0.fvIPSLAMonitoringPol.attributes.name == "ansible_sla"
+    - update_tcp_sla.current.0.fvIPSLAMonitoringPol.attributes.slaDetectMultiplier == "5"
+    - update_tcp_sla.current.0.fvIPSLAMonitoringPol.attributes.slaFrequency == "20"
+    - update_tcp_sla.current.0.fvIPSLAMonitoringPol.attributes.slaPort == "8080"
+    - update_tcp_sla.current.0.fvIPSLAMonitoringPol.attributes.slaType == "tcp"
+
+# QUERY IP SLA POLICY
+- name: Query IP SLA monitor
+  cisco.aci.aci_ip_sla_monitoring_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    sla_policy: ansible_sla
+    state: query
+  register: query_tcp_sla
+
+- name: Verify SLA query
+  assert:
+    that:
+    - query_tcp_sla is not changed
+    - query_tcp_sla.current.0.fvIPSLAMonitoringPol.attributes.dn == "uni/tn-ansible_tenant/ipslaMonitoringPol-ansible_sla"
+    - query_tcp_sla.current.0.fvIPSLAMonitoringPol.attributes.name == "ansible_sla"
+    - query_tcp_sla.current.0.fvIPSLAMonitoringPol.attributes.slaDetectMultiplier == "5"
+    - query_tcp_sla.current.0.fvIPSLAMonitoringPol.attributes.slaFrequency == "20"
+    - query_tcp_sla.current.0.fvIPSLAMonitoringPol.attributes.slaPort == "8080"
+    - query_tcp_sla.current.0.fvIPSLAMonitoringPol.attributes.slaType == "tcp"
+
+# QUERY ALL SLA POLICIES
+- name: Query all IP SLA monitor policies
+  cisco.aci.aci_ip_sla_monitoring_policy:
+    <<: *aci_info
+    state: query
+  register: query_sla_all
+
+- name: Verify all SLA query
+  assert:
+    that:
+    - query_sla_all is not changed
+
+# DELETE SLA POLICY
+- name: Remove IP SLA monitor
+  cisco.aci.aci_ip_sla_monitoring_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    sla_policy: ansible_sla
+    state: absent
+  register: remove_tcp_sla
+
+- name: Verify IP SLA deletion
+  assert:
+    that:
+    - remove_tcp_sla is changed
+    - remove_tcp_sla.current == []
+    - remove_tcp_sla.previous.0.fvIPSLAMonitoringPol.attributes.dn == "uni/tn-ansible_tenant/ipslaMonitoringPol-ansible_sla"
+    - remove_tcp_sla.previous.0.fvIPSLAMonitoringPol.attributes.name == "ansible_sla"
+
+# DELETE IP SLA POLICY AGAIN TO TEST IDEMPOTENCE
+- name: Remove IP SLA monitor again
+  cisco.aci.aci_ip_sla_monitoring_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    sla_policy: ansible_sla
+    state: absent
+  register: remove_tcp_sla_again
+
+- name: Verify IP SLA deletion
+  assert:
+    that:
+    - remove_tcp_sla_again is not changed
+
+# CLEAN UP
+- name: remove ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
