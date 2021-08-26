@@ -871,7 +871,7 @@
 - name: verify BGP remote AS (version < 4)
   assert:
     that:
-    - query_pc_bgp_peer.current.0.bgpPeerP.children.1.bgpAsP.attributes.asn == "65457"
+    - query_pc_bgp_peer_32.current.0.bgpPeerP.children.1.bgpAsP.attributes.asn == "65457"
   when: version.current.0.topSystem.attributes.version is version('4', '<')
 
 # DELETE BGP peer
@@ -1045,12 +1045,12 @@
 - name: verify BGP peer has been created with correct attributes (version < 4)
   assert:
     that:
-    - add_vpc_bgp_peer_again is not changed
-    - add_vpc_bgp_peer_again.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/peerP-[192.168.50.2]"
-    - add_vpc_bgp_peer_again.current.0.bgpPeerP.attributes.addr == "192.168.50.2"
-    - add_vpc_bgp_peer_again.current.0.bgpPeerP.attributes.ctrl == "nh-self,send-com,send-ext-com"
-    - add_vpc_bgp_peer_again.current.0.bgpPeerP.attributes.peerCtrl == "bfd"
-    - add_vpc_bgp_peer_again.current.0.bgpPeerP.attributes.ttl == "2"
+    - add_vpc_bgp_peer_again_32 is not changed
+    - add_vpc_bgp_peer_again_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/peerP-[192.168.50.2]"
+    - add_vpc_bgp_peer_again_32.current.0.bgpPeerP.attributes.addr == "192.168.50.2"
+    - add_vpc_bgp_peer_again_32.current.0.bgpPeerP.attributes.ctrl == "nh-self,send-com,send-ext-com"
+    - add_vpc_bgp_peer_again_32.current.0.bgpPeerP.attributes.peerCtrl == "bfd"
+    - add_vpc_bgp_peer_again_32.current.0.bgpPeerP.attributes.ttl == "2"
   when: version.current.0.topSystem.attributes.version is version('4', '<')
 
 - name: verify remote AS object has been created correctly (version >= 4)
@@ -1062,7 +1062,7 @@
 - name: verify remote AS object has been created correctly (version < 4)
   assert:
     that:
-    - add_vpc_bgp_peer_again.current.0.bgpPeerP.children.1.bgpAsP.attributes.asn == "65456"
+    - add_vpc_bgp_peer_again_32.current.0.bgpPeerP.children.1.bgpAsP.attributes.asn == "65456"
   when: version.current.0.topSystem.attributes.version is version('4', '<')
 
 # MODIFY BGP peer
