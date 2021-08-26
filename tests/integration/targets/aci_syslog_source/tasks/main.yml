@@ -1,0 +1,167 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_syslog_src if it already exists
+  aci_syslog_source:
+    <<: *aci_info
+    name: ansible_syslog_src
+    state: absent
+
+# ADD syslog group
+- name: Add syslog group
+  aci_syslog_group:
+    <<: *aci_info
+    name: ansible_syslog_group
+    admin_state: enabled
+    state: present
+
+# ADD syslog source
+- name: Add syslog source
+  aci_syslog_source:
+    <<: *aci_info
+    name: ansible_syslog_src
+    include:
+      - audit
+      - events
+      - faults
+    min_severity: errors
+    destination_group: ansible_syslog_group
+    state: present
+  register: add_syslog_src
+
+- name: Verify that ansible_syslog_src has been created with correct attributes
+  assert:
+    that:
+    - add_syslog_src.current.0.syslogSrc.attributes.dn == "uni/fabric/moncommon/slsrc-ansible_syslog_src"
+    - add_syslog_src.current.0.syslogSrc.attributes.name == "ansible_syslog_src"
+    - add_syslog_src.current.0.syslogSrc.attributes.incl == "audit,events,faults"
+    - add_syslog_src.current.0.syslogSrc.attributes.minSev == "errors"
+
+- name: Verify that ansible_syslog_src children have correct attributes
+  assert:
+    that:
+    - add_syslog_src.current.0.syslogSrc.children.0.syslogRsDestGroup.attributes.tDn == "uni/fabric/slgroup-ansible_syslog_group"
+
+# ADD syslog source again to check idempotency
+- name: Add syslog source
+  aci_syslog_source:
+    <<: *aci_info
+    name: ansible_syslog_src
+    include:
+      - audit
+      - events
+      - faults
+    min_severity: errors
+    destination_group: ansible_syslog_group
+    state: present
+  register: add_syslog_src_again
+
+- name: Verify that ansible_syslog_src stays the same
+  assert:
+    that:
+    - add_syslog_src_again is not changed
+
+# MODIFY syslog source
+- name: Update the syslog source
+  aci_syslog_source:
+    <<: *aci_info
+    name: ansible_syslog_src
+    include:
+      - faults
+    min_severity: information
+    destination_group: ansible_syslog_group
+    state: present
+  register: update_syslog_src
+
+- name: Verify that ansible_syslog_src has been updated with correct attributes
+  assert:
+    that:
+    - update_syslog_src.current.0.syslogSrc.attributes.dn == "uni/fabric/moncommon/slsrc-ansible_syslog_src"
+    - update_syslog_src.current.0.syslogSrc.attributes.name == "ansible_syslog_src"
+    - update_syslog_src.current.0.syslogSrc.attributes.incl == "faults"
+    - update_syslog_src.current.0.syslogSrc.attributes.minSev == "information"
+
+# QUERY syslog source
+- name: Query the syslog source
+  aci_syslog_source:
+    <<: *aci_info
+    name: ansible_syslog_src
+    state: query
+  register: query_syslog_src
+
+- name: Verify the attributes under query_syslog_src
+  assert:
+    that:
+    - query_syslog_src is not changed
+    - query_syslog_src.current.0.syslogSrc.attributes.dn == "uni/fabric/moncommon/slsrc-ansible_syslog_src"
+    - query_syslog_src.current.0.syslogSrc.attributes.name == "ansible_syslog_src"
+    - query_syslog_src.current.0.syslogSrc.attributes.incl == "faults"
+    - query_syslog_src.current.0.syslogSrc.attributes.minSev == "information"
+
+- name: Query all syslog sources
+  aci_syslog_source:
+    <<: *aci_info
+    state: query
+  register: query_syslog_src_all
+
+- name: Verify query_syslog_src_all
+  assert:
+    that:
+    - query_syslog_src_all is not changed
+
+# DELETE syslog source
+- name: Remove the syslog source
+  aci_syslog_source:
+    <<: *aci_info
+    name: ansible_syslog_src
+    state: absent
+  register: remove_syslog_src
+
+- name: Verify remove_syslog_src
+  assert:
+    that:
+    - remove_syslog_src is changed
+    - remove_syslog_src.current == []
+    - remove_syslog_src.previous.0.syslogSrc.attributes.dn == "uni/fabric/moncommon/slsrc-ansible_syslog_src"
+    - remove_syslog_src.previous.0.syslogSrc.attributes.name == "ansible_syslog_src"
+
+# DELETE syslog source again to test idempotence
+- name: Remove the syslog source
+  aci_syslog_source:
+    <<: *aci_info
+    name: ansible_syslog_src
+    state: absent
+  register: remove_syslog_src_again
+
+- name: Verify remove_syslog_src idempotence
+  assert:
+    that:
+    - remove_syslog_src_again is not changed
+
+# DELETE syslog group
+- name: Remove syslog group
+  aci_syslog_group:
+    <<: *aci_info
+    name: ansible_syslog_group
+    admin_state: enabled
+    state: absent

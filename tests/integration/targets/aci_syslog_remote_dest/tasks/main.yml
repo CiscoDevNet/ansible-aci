@@ -1,0 +1,196 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_syslog_src if it already exists
+  aci_syslog_remote_dest:
+    <<: *aci_info
+    group: ansible_syslog_group
+    destination: "10.20.30.40"
+    state: absent
+
+# ADD syslog group
+- name: Add syslog group
+  aci_syslog_group:
+    <<: *aci_info
+    name: ansible_syslog_group
+    admin_state: enabled
+    state: present
+
+# ADD syslog remote destination
+- name: Add syslog remote destination
+  aci_syslog_remote_dest:
+    <<: *aci_info
+    group: ansible_syslog_group
+    destination: "10.20.30.40"
+    name: remote_destination_name
+    facility: local1
+    syslog_port: 5678
+    description: ansible syslog remote destination
+    mgmt_epg: oob-default
+    format: aci
+    admin_state: enabled
+    severity: warnings
+    state: present
+  register: add_syslog_remote_dest
+
+- name: Verify that ansible_syslog_src has been created with correct attributes
+  assert:
+    that:
+    - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group/rdst-10.20.30.40"
+    - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.name == "remote_destination_name"
+    - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.descr == "ansible syslog remote destination"
+    - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.format == "aci"
+    - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.forwardingFacility == "local1"
+    - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.host == "10.20.30.40"
+    - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.port == "5678"
+    - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.adminState == "enabled"
+    - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.severity == "warnings"
+
+- name: Verify that ansible_syslog_remote_dest children have correct attributes
+  assert:
+    that:
+    - add_syslog_remote_dest.current.0.syslogRemoteDest.children.0.fileRsARemoteHostToEpg.attributes.tDn == "uni/tn-mgmt/mgmtp-default/oob-default"
+
+# ADD syslog remote dest again to check idempotency
+- name: Add syslog remote dest
+  aci_syslog_remote_dest:
+    <<: *aci_info
+    group: ansible_syslog_group
+    destination: "10.20.30.40"
+    name: remote_destination_name
+    facility: local1
+    syslog_port: 5678
+    description: ansible syslog remote destination
+    mgmt_epg: oob-default
+    format: aci
+    admin_state: enabled
+    severity: warnings
+    state: present
+  register: add_syslog_remote_dest_again
+
+- name: Verify that ansible_syslog_remote_dest stays the same
+  assert:
+    that:
+    - add_syslog_remote_dest_again is not changed
+
+# MODIFY syslog remote destination
+- name: Update the syslog remote destination
+  aci_syslog_remote_dest:
+    <<: *aci_info
+    group: ansible_syslog_group
+    destination: "10.20.30.40"
+    name: new_remote_destination_name
+    facility: local7
+    syslog_port: 5679
+    description: new ansible syslog remote destination
+    mgmt_epg: oob-default
+    format: nxos
+    admin_state: disabled
+    severity: information
+    state: present
+  register: update_syslog_remote_dest
+
+- name: Verify that ansible_syslog_src has been updated with correct attributes
+  assert:
+    that:
+    - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group/rdst-10.20.30.40"
+    - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.name == "new_remote_destination_name"
+    - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.descr == "new ansible syslog remote destination"
+    - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.format == "nxos"
+    - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.forwardingFacility == "local7"
+    - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.host == "10.20.30.40"
+    - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.port == "5679"
+    - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.adminState == "disabled"
+    - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.severity == "information"
+
+# QUERY syslog source
+- name: Query the syslog source
+  aci_syslog_remote_dest:
+    <<: *aci_info
+    group: ansible_syslog_group
+    destination: "10.20.30.40"
+    state: query
+  register: query_syslog_remote_dest
+
+- name: Verify the attributes under query_syslog_src
+  assert:
+    that:
+    - query_syslog_remote_dest is not changed
+    - query_syslog_remote_dest.current.0.syslogRemoteDest.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group/rdst-10.20.30.40"
+    - query_syslog_remote_dest.current.0.syslogRemoteDest.attributes.name == "new_remote_destination_name"
+    - query_syslog_remote_dest.current.0.syslogRemoteDest.attributes.descr == "new ansible syslog remote destination"
+    - query_syslog_remote_dest.current.0.syslogRemoteDest.attributes.format == "nxos"
+    - query_syslog_remote_dest.current.0.syslogRemoteDest.attributes.forwardingFacility == "local7"
+    - query_syslog_remote_dest.current.0.syslogRemoteDest.attributes.host == "10.20.30.40"
+    - query_syslog_remote_dest.current.0.syslogRemoteDest.attributes.port == "5679"
+    - query_syslog_remote_dest.current.0.syslogRemoteDest.attributes.adminState == "disabled"
+    - query_syslog_remote_dest.current.0.syslogRemoteDest.attributes.severity == "information"
+
+- name: Query all syslog remote destinations
+  aci_syslog_remote_dest:
+    <<: *aci_info
+    state: query
+  register: query_syslog_remote_dest_all
+
+- name: Verify query_syslog_remote_dest_all
+  assert:
+    that:
+    - query_syslog_remote_dest_all is not changed
+
+# DELETE syslog remote destination
+- name: Remove the syslog remote dest
+  aci_syslog_remote_dest:
+    <<: *aci_info
+    group: ansible_syslog_group
+    destination: "10.20.30.40"
+    state: absent
+  register: remove_syslog_remote_dest
+
+- name: Verify remove_syslog_remote_dest
+  assert:
+    that:
+    - remove_syslog_remote_dest is changed
+    - remove_syslog_remote_dest.current == []
+    - remove_syslog_remote_dest.previous.0.syslogRemoteDest.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group/rdst-10.20.30.40"
+
+# DELETE syslog remote destination again to test idempotence
+- name: Remove the syslog remote dest again
+  aci_syslog_remote_dest:
+    <<: *aci_info
+    group: ansible_syslog_group
+    destination: "10.20.30.40"
+    state: absent
+  register: remove_syslog_remote_dest_again
+
+- name: Verify remove_syslog_remote_dest idempotence
+  assert:
+    that:
+    - remove_syslog_remote_dest_again is not changed
+
+# DELETE syslog group
+- name: Remove syslog group
+  aci_syslog_group:
+    <<: *aci_info
+    name: ansible_syslog_group
+    admin_state: enabled
+    state: absent
