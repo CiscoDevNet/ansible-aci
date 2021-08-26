@@ -250,6 +250,8 @@ def main():
         ]
     )
 
+    aci = ACIModule(module)
+
     tenant = module.params.get('tenant')
     state = module.params.get('state')
     contract = module.params.get('contract')
@@ -258,8 +260,6 @@ def main():
     context = module.params.get('context')
     l3_dest = aci.boolean(module.params.get('l3_dest'))
     permit_log = aci.boolean(module.params.get('permit_log'))
-
-    aci = ACIModule(module)
 
     aci.construct_url(
         root_class=dict(
