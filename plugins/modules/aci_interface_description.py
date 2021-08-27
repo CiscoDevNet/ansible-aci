@@ -63,21 +63,6 @@ author:
 '''
 
 EXAMPLES = r'''
-- name: Query for Node Types
-  cisco.aci.aci_rest:
-    host: "{{ inventory_hostname }}"
-    username: "{{ username }}"
-    password: "{{ password }}"
-    validate_certs: no
-    path: /api/node/class/topSystem.json?rsp-subtree=full&rsp-subtree-class=eqptCh
-    method: get
-  register: all
-
-- name: Populate Node Types
-  set_fact:
-    node_types: "{{ node_types|default({}) | combine( {item.topSystem.attributes.id | int : item.topSystem.children[0].eqptCh.attributes.role} ) }}"
-  with_items: "{{ all.imdata }}"
-
 - name: Set Interface Description
   cisco.aci.aci_interface_description:
     host: "{{ inventory_hostname }}"
@@ -86,7 +71,7 @@ EXAMPLES = r'''
     validate_certs: no
     pod_id: 1
     node_id: 105
-    node_type: "{{ node_types[105] }}"
+    node_type: leaf
     interface: 1/49
     description: foobar
     state: present
@@ -100,7 +85,7 @@ EXAMPLES = r'''
     validate_certs: no
     pod_id: 1
     node_id: 105
-    node_type: "{{ node_types[105] }}"
+    node_type: leaf
     interface: 1/49
     description: foobar
     state: absent

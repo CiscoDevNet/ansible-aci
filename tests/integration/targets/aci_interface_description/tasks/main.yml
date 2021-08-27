@@ -19,30 +19,18 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: debug
 
-- name: Query Description
-  cisco.aci.aci_rest:
-    <<: *aci_info
-    path: /api/node/class/topSystem.json?rsp-subtree=full&rsp-subtree-class=eqptCh
-    method: get
-  register: all
-
-- name: Populate Node Types
-  set_fact:
-    node_types: "{{ node_types|default({}) | combine( {item.topSystem.attributes.id | int : item.topSystem.children[0].eqptCh.attributes.role} ) }}"
-  with_items: "{{ all.imdata }}"
-
 - name: Node types
   set_fact:
     test_vars_leaf: &test_vars_leaf
       pod_id: 1
       node_id: 1101
-      node_type: "{{ node_types[1101] }}"
+      node_type: leaf
       interface: 1/33
       description: testing
     test_vars_spine: &test_vars_spine
       pod_id: 1
       node_id: 1201
-      node_type: "{{ node_types[1201] }}"
+      node_type: spine
       interface: 1/33
       description: testing
     test_vars_fex: &test_vars_fex
