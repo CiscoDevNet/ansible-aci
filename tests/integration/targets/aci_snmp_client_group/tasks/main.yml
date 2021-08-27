@@ -65,9 +65,9 @@
 - name: Verify that ansible_snmp_client_group_no_epg has been created with correct attributes
   assert:
     that:
-    - add_snmp_client_group.current.0.snmpClientGrpP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/clgrp-ansible_snmp_client_group_no_epg"
-    - add_snmp_client_group.current.0.snmpClientGrpP.attributes.name == "ansible_snmp_client_group_no_epg"
-    - add_snmp_client_group.current.0.snmpClientGrpP.attributes.descr == "client group descr"
+    - add_snmp_client_group_no_epg.current.0.snmpClientGrpP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/clgrp-ansible_snmp_client_group_no_epg"
+    - add_snmp_client_group_no_epg.current.0.snmpClientGrpP.attributes.name == "ansible_snmp_client_group_no_epg"
+    - add_snmp_client_group_no_epg.current.0.snmpClientGrpP.attributes.descr == "client group descr"
 
 - name: Verify that children of ansible_snmp_client_group have been created with correct values
   assert:
