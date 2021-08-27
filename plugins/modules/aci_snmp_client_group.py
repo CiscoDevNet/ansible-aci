@@ -30,6 +30,7 @@ options:
     description:
     - Associated management EPG
     type: str
+    aliases: [ management_epg_name, management_epg ]
   policy:
     description:
     - Name of an existing SNMP policy
@@ -211,7 +212,8 @@ def main():
     argument_spec.update(
         client_group=dict(type='str',
                           aliases=['client_group_name', 'client_group_profile']),
-        mgmt_epg=dict(type='str'),
+        mgmt_epg=dict(type='str',
+                      aliases=['management_epg_name', 'management_epg']),
         policy=dict(type='str', aliases=['snmp_policy', 'snmp_policy_name']),
         description=dict(type='str'),
         state=dict(type='str', default='present',
