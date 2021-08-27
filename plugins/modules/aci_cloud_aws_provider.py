@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2020, nkatarmal-crest <nirav.katarmal@crestdatasys.com>
 # Copyright: (c) 2021, Shreyas Srish <ssrish@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -15,7 +14,7 @@ short_description: Manage Cloud AWS Provider (cloud:AwsProvider)
 description:
 - Manage AWS provider on Cisco Cloud ACI.
 author:
-- Devarshi Shah (@devarshishah3)
+- Shreyas Srish (@shrsr)
 options:
   access_key_id:
     description:
@@ -25,14 +24,6 @@ options:
     description:
     - AWS Account ID.
     type: str
-  email:
-    description:
-    - Account Email Address.
-    type: str
-  http_proxy:
-    description:
-    - Http Proxy to connect to cloud provider.
-    type: str
   is_account_in_org:
     description:
     - Is Account in Organization.
@@ -41,14 +32,6 @@ options:
     description:
     - Trusted Tenant
     type: bool
-  provider_id:
-    description:
-    - AWS provider id
-    type: str
-  region:
-    description:
-    - AWS Region.
-    type: str
   secret_access_key:
     description:
     - Cloud Secret Access Key.
@@ -100,7 +83,14 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretePassword
-    tenant: ansible_test
+    state: query
+  delegate_to: localhost
+
+- name: Query all aws provider
+  cisco.aci.aci_cloud_aws_provider:
+    host: apic
+    username: admin
+    password: SomeSecretePassword
     state: query
   delegate_to: localhost
 '''
@@ -219,12 +209,8 @@ def main():
     argument_spec.update({
         'access_key_id': dict(type='str'),
         'account_id': dict(type='str'),
-        'email': dict(type='str'),
-        'http_proxy': dict(type='str'),
         'is_account_in_org': dict(type='bool'),
         'is_trusted': dict(type='bool'),
-        'provider_id': dict(type='str'),
-        'region': dict(type='str'),
         'secret_access_key': dict(type='str'),
         'tenant': dict(type='str'),
         'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
@@ -245,12 +231,8 @@ def main():
     access_key_id = module.params.get('access_key_id')
     account_id = module.params.get('account_id')
     annotation = module.params.get('annotation')
-    email = module.params.get('email')
-    http_proxy = module.params.get('http_proxy')
     is_account_in_org = aci.boolean(module.params.get('is_account_in_org'))
     is_trusted = aci.boolean(module.params.get('is_trusted'))
-    provider_id = module.params.get('provider_id')
-    region = module.params.get('region')
     secret_access_key = module.params.get('secret_access_key')
     tenant = module.params.get('tenant')
     state = module.params.get('state')
@@ -266,12 +248,10 @@ def main():
         subclass_1={
             'aci_class': 'cloudAwsProvider',
             'aci_rn': 'awsprovider'.format(),
-            'target_filter': '',
-            'module_object': None
+            'target_filter': {'account_id': account_id},
+            'module_object': account_id
         },
-
-        child_classes=[]
-
+        child_classes=[],
     )
 
     aci.get_existing()
@@ -283,16 +263,11 @@ def main():
                 'accessKeyId': access_key_id,
                 'accountId': account_id,
                 'annotation': annotation,
-                'email': email,
-                'httpProxy': http_proxy,
                 'isAccountInOrg': is_account_in_org,
                 'isTrusted': is_trusted,
-                'providerId': provider_id,
-                'region': region,
                 'secretAccessKey': secret_access_key,
             },
             child_configs=child_configs
-
         )
 
         aci.get_diff(aci_class='cloudAwsProvider')

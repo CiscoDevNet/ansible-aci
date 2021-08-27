@@ -27,7 +27,7 @@
   - query_cloud.current | length > 0
   - query_cloud.current.0.cloudProvP.attributes.vendor == "aws"  # This condition will execute only on cloud aws
   block:  # block specifies execution of tasks within, based on conditions
-  
+
   - name: Ensure tenant doesn't exist
     cisco.aci.aci_tenant:
       <<: *aci_info
@@ -58,7 +58,7 @@
       state: present
     register: aws_present_again
 
-  - name: Change to untrusted aws provider 
+  - name: Change to untrusted aws provider
     cisco.aci.aci_cloud_aws_provider:
       <<: *aci_info
       tenant: ansible_test
@@ -72,8 +72,6 @@
     cisco.aci.aci_cloud_aws_provider:
       <<: *aci_info
       tenant: ansible_test
-      account_id: 111111111111
-      is_trusted: yes
       state: absent
     register: aws_absent
 
@@ -85,12 +83,10 @@
       is_trusted: no
       access_key_id: 1
       secret_access_key: 1
-      email: aws@gmail.com
-      http_proxy: "on"
       state: present
     register: aws_present_new
 
-  - name: Create aws provider again after deletion as not trusted
+  - name: Create aws provider again after deletion as not trusted with account in org
     cisco.aci.aci_cloud_aws_provider:
       <<: *aci_info
       tenant: ansible_test
@@ -98,8 +94,6 @@
       is_trusted: no
       access_key_id: 1
       secret_access_key: 1
-      email: aws@gmail.com
-      http_proxy: "on"
       is_account_in_org: yes
       state: present
     register: aws_present_add_in_org
@@ -110,6 +104,12 @@
       tenant: ansible_test
       state: query
     register: aws_query
+
+  - name: Query all aws provider
+    cisco.aci.aci_cloud_aws_provider:
+      <<: *aci_info
+      state: query
+    register: aws_query_all
   
   - name: Verify all
     assert:
@@ -123,16 +123,12 @@
         - aws_present_new.current.0.cloudAwsProvider.attributes.accessKeyId == "1"
         - aws_present_new.current.0.cloudAwsProvider.attributes.accountId == "111111111111"
         - aws_present_new.current.0.cloudAwsProvider.attributes.dn == "uni/tn-ansible_test/awsprovider"
-        - aws_present_new.current.0.cloudAwsProvider.attributes.email == "aws@gmail.com"
-        - aws_present_new.current.0.cloudAwsProvider.attributes.httpProxy == "on"
         - aws_present_new.current.0.cloudAwsProvider.attributes.isAccountInOrg == "no"
         - aws_present_add_in_org is changed
         - aws_present_add_in_org.current.0.cloudAwsProvider.attributes.isAccountInOrg == "yes"
         - aws_query is not changed
         - aws_query.current.0.fvTenant.children.0.cloudAwsProvider.attributes.accessKeyId == "1"
         - aws_query.current.0.fvTenant.children.0.cloudAwsProvider.attributes.accountId == "111111111111"
-        - aws_query.current.0.fvTenant.children.0.cloudAwsProvider.attributes.email == "aws@gmail.com"
-        - aws_query.current.0.fvTenant.children.0.cloudAwsProvider.attributes.httpProxy == "on"
         - aws_query.current.0.fvTenant.children.0.cloudAwsProvider.attributes.isAccountInOrg == "yes"
 
        
