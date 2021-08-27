@@ -1,0 +1,134 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Shreyas Srish (@shrsr)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for aws cloud site
+  when: 
+  - query_cloud.current | length > 0
+  - query_cloud.current.0.cloudProvP.attributes.vendor == "aws"  # This condition will execute only on cloud aws
+  block:  # block specifies execution of tasks within, based on conditions
+
+  - name: Ensure tenant doesn't exist
+    cisco.aci.aci_tenant:
+      <<: *aci_info
+      tenant: ansible_test
+      state: absent
+
+  - name: Create tenant
+    cisco.aci.aci_tenant:
+      <<: *aci_info
+      tenant: ansible_test
+      state: present
+      
+  - name: Create aws provider
+    cisco.aci.aci_cloud_aws_provider:
+      <<: *aci_info
+      tenant: ansible_test
+      account_id: 111111111111
+      is_trusted: yes
+      state: present
+    register: aws_present
+
+  - name: Create aws provider again
+    cisco.aci.aci_cloud_aws_provider:
+      <<: *aci_info
+      tenant: ansible_test
+      account_id: 111111111111
+      is_trusted: yes
+      state: present
+    register: aws_present_again
+
+  - name: Change to untrusted aws provider
+    cisco.aci.aci_cloud_aws_provider:
+      <<: *aci_info
+      tenant: ansible_test
+      account_id: 111111111111
+      is_trusted: no
+      state: present
+    register: aws_present_not_trusted
+    ignore_errors: true
+
+  - name: Delete aws provider 
+    cisco.aci.aci_cloud_aws_provider:
+      <<: *aci_info
+      tenant: ansible_test
+      state: absent
+    register: aws_absent
+
+  - name: Create aws provider again after deletion as not trusted
+    cisco.aci.aci_cloud_aws_provider:
+      <<: *aci_info
+      tenant: ansible_test
+      account_id: 111111111111
+      is_trusted: no
+      access_key_id: 1
+      secret_access_key: 1
+      state: present
+    register: aws_present_new
+
+  - name: Create aws provider again after deletion as not trusted with account in org
+    cisco.aci.aci_cloud_aws_provider:
+      <<: *aci_info
+      tenant: ansible_test
+      account_id: 111111111111
+      is_trusted: no
+      access_key_id: 1
+      secret_access_key: 1
+      is_account_in_org: yes
+      state: present
+    register: aws_present_add_in_org
+
+  - name: Query aws provider
+    cisco.aci.aci_cloud_aws_provider:
+      <<: *aci_info
+      tenant: ansible_test
+      state: query
+    register: aws_query
+
+  - name: Query all aws provider
+    cisco.aci.aci_cloud_aws_provider:
+      <<: *aci_info
+      state: query
+    register: aws_query_all
+  
+  - name: Verify all
+    assert:
+      that:
+        - aws_present is changed
+        - aws_present_again is not changed
+        - aws_absent is changed
+        - aws_absent.current == []
+        - aws_present_not_trusted.msg == "APIC Error 1{{ ":" }} Invalid Configuration {{ ":" }} Untrusted tenant ansible_test has missing access or secret key"
+        - aws_present_new is changed
+        - aws_present_new.current.0.cloudAwsProvider.attributes.accessKeyId == "1"
+        - aws_present_new.current.0.cloudAwsProvider.attributes.accountId == "111111111111"
+        - aws_present_new.current.0.cloudAwsProvider.attributes.dn == "uni/tn-ansible_test/awsprovider"
+        - aws_present_new.current.0.cloudAwsProvider.attributes.isAccountInOrg == "no"
+        - aws_present_add_in_org is changed
+        - aws_present_add_in_org.current.0.cloudAwsProvider.attributes.isAccountInOrg == "yes"
+        - aws_query is not changed
+        - aws_query.current.0.fvTenant.children.0.cloudAwsProvider.attributes.accessKeyId == "1"
+        - aws_query.current.0.fvTenant.children.0.cloudAwsProvider.attributes.accountId == "111111111111"
+        - aws_query.current.0.fvTenant.children.0.cloudAwsProvider.attributes.isAccountInOrg == "yes"
+
+       
