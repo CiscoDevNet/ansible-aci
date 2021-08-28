@@ -1,0 +1,500 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
+
+- name: Remove ansible_l3ext_domain if it already exists
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_l3ext_domain
+    domain_type: l3dom
+    state: absent
+
+- name: Remove ansible_port_channel_ipg if it already exists
+  aci_interface_policy_leaf_policy_group:
+    <<: *aci_info
+    lag_type: link
+    policy_group: ansible_port_channel_ipg
+    state: absent
+
+- name: Remove ansible_vpc_ipg if it already exists
+  aci_interface_policy_leaf_policy_group:
+    <<: *aci_info
+    lag_type: node
+    policy_group: ansible_vpc_ipg
+    state: absent
+
+- name: Add a new tenant required for l3out
+  aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    description: Ansible tenant
+    state: present
+
+# ADD domain
+- name: Add domain for l3out
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_l3ext_domain
+    domain_type: l3dom
+    state: present
+
+# ADD VRF
+- name: Add VRF for l3out
+  aci_vrf:
+    <<: *aci_info
+    tenant: ansible_tenant
+    vrf: ansible_vrf
+    state: present
+
+# ADD PC IPG
+- name: Add port-channel IPG
+  aci_interface_policy_leaf_policy_group:
+    <<: *aci_info
+    lag_type: link
+    policy_group: ansible_port_channel_ipg
+    state: present
+
+# ADD vPC IPG
+- name: Add vPC IPG
+  aci_interface_policy_leaf_policy_group:
+    <<: *aci_info
+    lag_type: node
+    policy_group: ansible_vpc_ipg
+    state: present
+
+# ADD l3out
+- name: Add l3out
+  aci_l3out:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_l3out
+    vrf: ansible_vrf
+    domain: ansible_domain
+    route_control: export
+    state: present
+
+# ADD l3out logical node profile
+- name: l3out logical node profile
+  aci_l3out_logical_node_profile:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    state: present
+
+# ADD l3out logical interface profile
+- name: l3out logical interface profile
+  aci_l3out_logical_interface_profile:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    state: present
+
+# ADD l3out interface
+- name: Add routed interface
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/15
+    interface_type: l3-port
+    mode: regular
+    addr: 192.168.50.1/27
+    state: present
+  register: add_l3out_interface
+
+- name: Verify l3out has been created with the correct attributes
+  assert:
+    that:
+    - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]"
+    - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.addr == "192.168.50.1/27"
+    - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT == "l3-port"
+    - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "regular"
+
+# ADD l3out interface again to check idempotency
+- name: Add routed interface again
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/15
+    interface_type: l3-port
+    mode: regular
+    addr: 192.168.50.1/27
+    state: present
+  register: add_l3out_interface_again
+
+- name: Verify l3out has not changed
+  assert:
+    that:
+    - add_l3out_interface_again is not changed
+
+# MODIFY l3out attributes
+- name: Update routed interface
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/15
+    interface_type: sub-interface
+    mode: regular
+    addr: 192.168.60.1/27
+    encap: vlan-913
+    state: present
+  register: update_l3out_interface
+
+- name: Verify routed interface has correct attributes
+  assert:
+    that:
+    - update_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]"
+    - update_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.addr == "192.168.60.1/27"
+    - update_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT == "sub-interface"
+    - update_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.encap == "vlan-913"
+    - update_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "regular"
+
+# QUERY l3out interface
+- name: Query routed interface
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/15
+    state: query
+  register: query_l3out_interface
+
+- name: Verify query_l3out_interface
+  assert:
+    that:
+    - query_l3out_interface is not changed
+    - query_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]"
+    - query_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.addr == "192.168.60.1/27"
+    - query_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT == "sub-interface"
+    - query_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.encap == "vlan-913"
+    - query_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "regular"
+
+
+# DELETE l3out interface
+- name: Remove routed sub-interface
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/15
+    state: absent
+  register: delete_l3out_interface
+
+- name: Verify interface has been deleted
+  assert:
+    that:
+      - delete_l3out_interface.current == []
+      - delete_l3out_interface.previous.0.l3extRsPathL3OutAtt.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]"
+
+# ADD l3out port-channel
+- name: Add routed interface port-channel
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: ansible_port_channel_ipg
+    interface_type: l3-port
+    mode: regular
+    addr: 192.168.70.1/27
+    state: present
+  register: add_l3out_pc_interface
+
+- name: Verify l3out port-channel has been created with the correct attributes
+  assert:
+    that:
+    - add_l3out_pc_interface.current.0.l3extRsPathL3OutAtt.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]"
+    - add_l3out_pc_interface.current.0.l3extRsPathL3OutAtt.attributes.addr == "192.168.70.1/27"
+    - add_l3out_pc_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT == "l3-port"
+    - add_l3out_pc_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "regular"
+
+# ADD l3out port-channel again to check idempotency
+- name: Add routed interface port-channel again
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: ansible_port_channel_ipg
+    interface_type: l3-port
+    mode: regular
+    addr: 192.168.70.1/27
+    state: present
+  register: add_l3out_pc_interface_again
+
+- name: Verify interface has not changed
+  assert:
+    that:
+    - add_l3out_pc_interface_again is not changed
+
+# MODIFY l3out port-channel attributes
+- name: Update routed port-channel interface
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: ansible_port_channel_ipg
+    interface_type: l3-port
+    mode: regular
+    addr: 192.168.80.1/27
+    state: present
+  register: update_l3out_pc_interface
+
+- name: Verify l3out port-channel has been updated with the correct attributes
+  assert:
+    that:
+    - update_l3out_pc_interface is changed
+    - update_l3out_pc_interface.current.0.l3extRsPathL3OutAtt.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]"
+    - update_l3out_pc_interface.current.0.l3extRsPathL3OutAtt.attributes.addr == "192.168.80.1/27"
+    - update_l3out_pc_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT == "l3-port"
+    - update_l3out_pc_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "regular"
+
+# QUERY l3out port-channel interface
+- name: Query l3out port-channel
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: ansible_port_channel_ipg
+    state: query
+  register: query_l3out_pc_interface
+
+- name: Verify query_l3out_pc_interface
+  assert:
+    that:
+    - query_l3out_pc_interface is not changed
+    - query_l3out_pc_interface.current.0.l3extRsPathL3OutAtt.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]"
+    - query_l3out_pc_interface.current.0.l3extRsPathL3OutAtt.attributes.addr == "192.168.80.1/27"
+    - query_l3out_pc_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT == "l3-port"
+    - query_l3out_pc_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "regular"
+
+# DELETE l3out port-channel interface
+- name: Remove port-channel
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: ansible_port_channel_ipg
+    state: absent
+  register: delete_l3out_pc_interface
+
+- name: Verify interface has been deleted
+  assert:
+    that:
+      - delete_l3out_pc_interface.current == []
+      - delete_l3out_pc_interface.previous.0.l3extRsPathL3OutAtt.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]"
+
+# ADD l3out vPC
+- name: Add interface vPC
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201-202
+    path_ep: ansible_vpc_ipg
+    interface_type: ext-svi
+    mode: native
+    addr: 192.168.90.1/27
+    encap: vlan-913
+    state: present
+  register: add_l3out_vpc_interface
+
+- name: Verify l3out vPC has been created with the correct attributes
+  assert:
+    that:
+    - add_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]"
+    - add_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.addr == "192.168.90.1/27"
+    - add_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT == "ext-svi"
+    - add_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.encap == "vlan-913"
+    - add_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "native"
+
+- name: Add interface vPC again
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201-202
+    path_ep: ansible_vpc_ipg
+    interface_type: ext-svi
+    mode: native
+    addr: 192.168.90.1/27
+    encap: vlan-913
+    state: present
+  register: add_l3out_vpc_interface_again
+
+- name: Verify vPC interface is not changed
+  assert:
+    that:
+    - add_l3out_vpc_interface_again is not changed
+
+# MODIFY vPC interface
+- name: Update interface vPC
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201-202
+    path_ep: ansible_vpc_ipg
+    interface_type: ext-svi
+    mode: regular
+    addr: 192.168.90.1/27
+    encap: vlan-913
+    state: present
+  register: modify_l3out_vpc_interface
+
+- name: Verify l3out vPC has been updated with the correct attributes
+  assert:
+    that:
+    - modify_l3out_vpc_interface is changed
+    - modify_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]"
+    - modify_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.addr == "192.168.90.1/27"
+    - modify_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT == "ext-svi"
+    - modify_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.encap == "vlan-913"
+    - modify_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "regular"
+
+# QUERY vPC interface
+- name: Query vPC interface
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201-202
+    path_ep: ansible_vpc_ipg
+    state: query
+  register: query_l3out_vpc_interface
+
+- name: Verify l3out vPC query
+  assert:
+    that:
+    - query_l3out_vpc_interface is not changed
+    - query_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]"
+    - query_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.addr == "192.168.90.1/27"
+    - query_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT == "ext-svi"
+    - query_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.encap == "vlan-913"
+    - query_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "regular"
+
+- name: Delete vPC interface
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201-202
+    path_ep: ansible_vpc_ipg
+    state: absent
+  register: delete_l3out_vpc_interface
+
+- name: Verify vPC interface is deleted
+  assert:
+    that:
+    - delete_l3out_vpc_interface.current == []
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
+
+- name: Remove ansible_l3ext_domain
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_l3ext_domain
+    domain_type: l3dom
+    state: absent
+
+- name: Remove ansible_port_channel_ipg
+  aci_interface_policy_leaf_policy_group:
+    <<: *aci_info
+    lag_type: link
+    policy_group: ansible_port_channel_ipg
+    state: absent
+
+- name: Remove ansible_vpc_ipg
+  aci_interface_policy_leaf_policy_group:
+    <<: *aci_info
+    lag_type: node
+    policy_group: ansible_vpc_ipg
+    state: absent
