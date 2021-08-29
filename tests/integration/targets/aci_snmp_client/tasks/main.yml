@@ -1,0 +1,159 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_snmp_client_group if it already exists
+  aci_snmp_policy:
+    <<: *aci_info
+    name: ansible_snmp_policy
+    state: absent
+
+# ADD snmp policy
+- name: Add snmp policy
+  aci_snmp_policy:
+    <<: *aci_info
+    name: ansible_snmp_policy
+    admin_state: enabled
+    state: present
+
+# ADD snmp client group
+- name: Add snmp client group
+  aci_snmp_client_group:
+    <<: *aci_info
+    policy: ansible_snmp_policy
+    client_group: ansible_snmp_client_group
+    mgmt_epg: oob-default
+    state: present
+
+# ADD snmp client
+- name: Add snmp client
+  aci_snmp_client:
+    <<: *aci_info
+    policy: ansible_snmp_policy
+    client_group: ansible_snmp_client_group
+    address: 10.20.30.0/24
+    client_name: snmp_client_name
+    state: present
+  register: add_snmp_client
+
+- name: Verify that ansible_snmp_client has been created with correct attributes
+  assert:
+    that:
+    - add_snmp_client.current.0.snmpClientP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/clgrp-ansible_snmp_client_group/client-[10.20.30.0/24]"
+    - add_snmp_client.current.0.snmpClientP.attributes.addr == "10.20.30.0/24"
+    - add_snmp_client.current.0.snmpClientP.attributes.name == "snmp_client_name"
+
+# ADD snmp client again to check idempotency
+- name: Add snmp client again
+  aci_snmp_client:
+    <<: *aci_info
+    policy: ansible_snmp_policy
+    client_group: ansible_snmp_client_group
+    address: 10.20.30.0/24
+    client_name: snmp_client_name
+    state: present
+  register: add_snmp_client_again
+
+- name: Verify that add_snmp_client_group_again stays the same
+  assert:
+    that:
+    - add_snmp_client_again is not changed
+
+# MODIFY snmp client
+- name: Update snmp client
+  aci_snmp_client:
+    <<: *aci_info
+    policy: ansible_snmp_policy
+    client_group: ansible_snmp_client_group
+    address: 10.20.30.0/24
+    client_name: new_snmp_client_name
+    state: present
+  register: update_snmp_client
+
+- name: Verify that ansible_snmp_client_group has been updated with correct attributes
+  assert:
+    that:
+    - update_snmp_client is changed
+    - update_snmp_client.current.0.snmpClientP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/clgrp-ansible_snmp_client_group/client-[10.20.30.0/24]"
+    - update_snmp_client.current.0.snmpClientP.attributes.addr == "10.20.30.0/24"
+    - update_snmp_client.current.0.snmpClientP.attributes.name == "new_snmp_client_name"
+
+# QUERY snmp client
+- name: Query snmp client
+  aci_snmp_client:
+    <<: *aci_info
+    policy: ansible_snmp_policy
+    client_group: ansible_snmp_client_group
+    address: 10.20.30.0/24
+    state: query
+  register: query_snmp_client
+
+- name: Verify the attributes under query_snmp_client
+  assert:
+    that:
+    - query_snmp_client is not changed
+    - query_snmp_client.current.0.snmpClientP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/clgrp-ansible_snmp_client_group/client-[10.20.30.0/24]"
+    - query_snmp_client.current.0.snmpClientP.attributes.addr == "10.20.30.0/24"
+    - query_snmp_client.current.0.snmpClientP.attributes.name == "new_snmp_client_name"
+
+- name: Query all snmp client
+  aci_snmp_client:
+    <<: *aci_info
+    state: query
+  register: query_snmp_client_all
+
+- name: Verify query_snmp_client_all
+  assert:
+    that:
+    - query_snmp_client_all is not changed
+
+# DELETE snmp client group
+- name: Remove the snmp client
+  aci_snmp_client:
+    <<: *aci_info
+    policy: ansible_snmp_policy
+    client_group: ansible_snmp_client_group
+    address: 10.20.30.0/24
+    state: absent
+  register: remove_snmp_client
+
+- name: Verify remove_snmp_client
+  assert:
+    that:
+    - remove_snmp_client is changed
+    - remove_snmp_client.previous.0.snmpClientP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/clgrp-ansible_snmp_client_group/client-[10.20.30.0/24]"
+    - remove_snmp_client.previous.0.snmpClientP.attributes.addr == "10.20.30.0/24"
+
+# DELETE snmp policy
+- name: Remove the snmp policy
+  aci_snmp_policy:
+    <<: *aci_info
+    name: ansible_snmp_policy
+    state: absent
+
+# DELETE snmp client group
+- name: Remove the snmp client group
+  aci_snmp_client_group:
+    <<: *aci_info
+    policy: ansible_snmp_policy
+    client_group: ansible_snmp_client_group
+    state: absent
