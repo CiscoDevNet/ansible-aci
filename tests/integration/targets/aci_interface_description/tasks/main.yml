@@ -1,0 +1,198 @@
+# Test code for the ACI modules
+# Copyright: (c) 2017, Jacob McGill (@jmcgill298)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Node types
+  set_fact:
+    test_vars_leaf: &test_vars_leaf
+      pod_id: 1
+      node_id: 1101
+      node_type: leaf
+      interface: 1/33
+      description: testing
+    test_vars_spine: &test_vars_spine
+      pod_id: 1
+      node_id: 1201
+      node_type: spine
+      interface: 1/33
+      description: testing
+    test_vars_fex: &test_vars_fex
+      pod_id: 1
+      node_id: 1101
+      interface: 1/33
+      fex_id: 123
+      description: testing
+
+- name: Query system information
+  aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Leaf - Clean test environment with no description interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_leaf
+    state: absent
+
+- name: Leaf - Query interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_leaf
+    state: query
+  register: query_leaf_description
+
+- name: Leaf - Verify that no infraHPathS is not present
+  assert:
+    that:
+    - query_leaf_description.current.0.infraInfra.children.0.infraHPathS.children is not defined
+
+- name: Leaf - Set description on interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_leaf
+    state: present
+  register: set_leaf_description
+
+- name: Leaf - Verify that description is set on interface
+  assert:
+    that:
+    - set_leaf_description.current|length == 1
+    - set_leaf_description.current.0.infraHPathS.children.0.infraRsHPathAtt.attributes.tDn == "topology/pod-1/paths-1101/pathep-[eth1/33]"
+    - set_leaf_description.current.0.infraHPathS.attributes.descr == "testing"
+
+- name: Leaf - Clean test environment with no description interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_leaf
+    state: absent
+
+- name: Leaf - Query interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_leaf
+    state: query
+  register: query_leaf_description_again
+
+- name: Leaf - Verify that no infraHPathS is not present
+  assert:
+    that:
+    - query_leaf_description_again.current.0.infraInfra.children.0.infraHPathS.children is not defined
+
+- name: Spine - Clean test environment with no description interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_spine
+    state: absent
+
+- name: Spine - Query interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_spine
+    state: query
+  register: query_spine_description
+
+- name: Spine - Verify that no infraSHPathS is not present
+  assert:
+    that:
+    - query_spine_description.current.0.infraInfra.children.0.infraSHPathS.children is not defined
+
+- name: Spine - Set description on interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_spine
+    state: present
+  register: set_spine_description
+
+- name: Spine - Verify that description is set on interface
+  assert:
+    that:
+    - set_spine_description.current|length == 1
+    - set_spine_description.current.0.infraSHPathS.children.0.infraRsSHPathAtt.attributes.tDn == "topology/pod-1/paths-1201/pathep-[eth1/33]"
+    - set_spine_description.current.0.infraSHPathS.attributes.descr == "testing"
+
+- name: Spine - Clean test environment with no description interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_spine
+    state: absent
+
+- name: Spine - Query interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_spine
+    state: query
+  register: query_spine_description_again
+
+- name: Spine - Verify that no infraSHPathS is not present
+  assert:
+    that:
+    - query_spine_description_again.current.0.infraInfra.children.0.infraSHPathS.children is not defined
+
+- name: Fex - Clean test environment with no description interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_fex
+    state: absent
+
+- name: Fex - Query interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_fex
+    state: query
+  register: query_fex_description
+
+- name: Fex - Verify that no infraHPathS is not present
+  assert:
+    that:
+    - query_fex_description.current.0.infraInfra.children.0.infraHPathS.children is not defined
+
+- name: Fex - Set description on interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_fex
+    state: present
+  register: set_fex_description
+
+- name: Spine - Verify that description is set on interface
+  assert:
+    that:
+    - set_fex_description.current|length == 1
+    - set_fex_description.current.0.infraHPathS.children.0.infraRsHPathAtt.attributes.tDn == "topology/pod-1/paths-1101/extpaths-123/pathep-[eth1/33]"
+    - set_fex_description.current.0.infraHPathS.attributes.descr == "testing"
+
+- name: Fex - Clean test environment with no description interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_fex
+    state: absent
+
+- name: Fex - Query interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_fex
+    state: query
+  register: query_fex_description_again
+
+- name: Fex - Verify that no infraHPathS is not present
+  assert:
+    that:
+    - query_fex_description_again.current.0.infraInfra.children.0.infraHPathS.children is not defined
