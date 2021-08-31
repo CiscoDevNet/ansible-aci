@@ -12,10 +12,10 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_l4l7_device_selection_if_context_to_bd
-short_description: Manage L4-L7 Device Selection Interface Context binding to Bridge Domains (vns:RsLIfCtxToBD)
+module: aci_l4l7_device_selection_if_context_to_log_intf
+short_description: Manage L4-L7 Device Selection Interface Context binding to Logical Interfaces (vns:RsLIfCtxToLIf)
 description:
-- Manage L4-L7 Device Selection Interface Context binding to Bridge Domains
+- Manage L4-L7 Device Selection Interface Context binding to Logical Interfaces
 options:
   tenant:
     description:
@@ -41,16 +41,14 @@ options:
     description:
     - Name of the logical interface context
     type: str
-  bridge_domain:
+  device:
     description:
-    - Name of an existing Bridge Domain
+    - Name of an existing logical device
+    type:str
+  interface:
+    description:
+    - Name of an existing logical interface
     type: str
-    aliases: [ bd, bd_name ]
-  bd_tenant:
-    description:
-    - Tenant the Bridge Domain is in
-    - Omit this variable if both context and Bridge Domain are in the same tenant
-    - Intended use case is for when the Bridge Domain is in the common tenant, but the context is not
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -62,10 +60,10 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 notes:
-- The C(tenant), C(contract), C(graph), C(node), C(context) and C(bridge_domain) must exist before using this module in your playbook.
+- The C(tenant), C(contract), C(graph), C(node), C(context), C(Device) and C(interface) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant), M(cisco.aci.contract), M(cisco.aci.aci_l4l7_service_graph_template),
-  M(cisco.aci.aci_l4l7_service_graph_template_node), C(cisco.aci.aci_l4l7_device_selection_if_context)
-  and M(cisco.aci.aci_bd) modules can be used for this.
+  M(cisco.aci.aci_l4l7_service_graph_template_node), C(cisco.aci.aci_l4l7_device_selection_if_context),
+  M(cisco.aci.aci_l4l7_device)and M(cisco.aci.aci_l4l7_logical_interface) modules can be used for this.
 seealso:
 - module: aci_l4l7_device_selection_policy
 - module: aci_l4l7_device_selection_if_context
@@ -73,15 +71,15 @@ seealso:
 - module: aci_l4l7_service_graph_template_node
 - module: aci_contract
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(vnsRsLIfCtxToBD)
+  description: More information about the internal APIC class B(vnsRsLIfCtxToLIf)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
 '''
 
 EXAMPLES = r'''
-- name: Add a new Bridge Domain binding
-  cisco.aci.aci_l4l7_device_selection_if_context_to_bd:
+- name: Add a new logical interface binding
+  cisco.aci.aci_l4l7_device_selection_if_context_to_log_intf:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -91,26 +89,12 @@ EXAMPLES = r'''
     node: my_node
     context: my_context
     state: present
-    bridge_domain: my_bd
+    device: my_log_device
+    interface: my_log_interface
   delegate_to: localhost
 
-- name: Add a new Bridge Domain binding to the common tenant
-  cisco.aci.aci_l4l7_device_selection_if_context_to_bd:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: my_tenant
-    contract: my_contract
-    graph: my_graph
-    node: my_node
-    context: my_context
-    state: present
-    bridge_domain: my_bd
-    bd_tenant: common
-  delegate_to: localhost
-
-- name: Delete a Bridge Domain binding
-  cisco.aci.aci_l4l7_device_selection_if_context_to_bd:
+- name: Remove a logical interface binding
+  cisco.aci.aci_l4l7_device_selection_if_context_to_log_intf:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -120,11 +104,12 @@ EXAMPLES = r'''
     node: my_node
     context: my_context
     state: absent
-    bridge_domain: my_bd
+    device: my_log_device
+    interface: my_log_interface
   delegate_to: localhost
 
-- name: Query a Bridge Domain binding
-  cisco.aci.aci_l4l7_device_selection_if_context_to_bd:
+- name: Query a logical interface binding
+  cisco.aci.aci_l4l7_device_selection_if_context_to_log_intf:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -134,7 +119,8 @@ EXAMPLES = r'''
     node: my_node
     context: my_context
     state: query
-    bridge_domain: my_bd
+    device: my_log_device
+    interface: my_log_interface
   delegate_to: localhost
   register: query_result
 
@@ -261,16 +247,16 @@ def main():
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query']),
         context=dict(type='str'),
-        bridge_domain=dict(type='str', aliases=['bd', 'bd_name']),
-        bd_tenant=dict(type='str'),
+        device=dict(type='str'),
+        interface=dict(type='str'),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['tenant', 'contract', 'graph', 'node', 'context', 'bridge_domain']],
-            ['state', 'present', ['tenant', 'contract', 'graph', 'node', 'context', 'bridge_domain']]
+            ['state', 'absent', ['tenant', 'contract', 'graph', 'node', 'context', 'device', 'interface']],
+            ['state', 'present', ['tenant', 'contract', 'graph', 'node', 'context', 'device', 'interface']]
         ]
     )
 
@@ -280,13 +266,10 @@ def main():
     graph = module.params.get('graph')
     node = module.params.get('node')
     context = module.params.get('context')
-    bridge_domain = module.params.get('bridge_domain')
-    bd_tenant = module.params.get('bd_tenant')
+    device = module.params.get('device')
+    interface = module.params.get('interface')
 
     aci = ACIModule(module)
-
-    if not bd_tenant:
-        bd_tenant = tenant
 
     aci.construct_url(
         root_class=dict(
@@ -308,10 +291,10 @@ def main():
             target_filter={'connNameOrLbl': context},
         ),
         subclass_3=dict(
-            aci_class='vnsRsLIfCtxToBD',
-            aci_rn='rsLIfCtxToBD',
-            module_object='uni/tn-{0}/BD-{1}'.format(bd_tenant, bridge_domain),
-            target_filter={'tDn': 'uni/tn-{0}/BD-{1}'.format(bd_tenant, bridge_domain)},
+            aci_class='vnsRsLIfCtxToLIf',
+            aci_rn='rsLIfCtxToLIf',
+            module_object='uni/tn-{0}/lDevVip-{1}/lIf-{2}'.format(tenant, device, interface),
+            target_filter={'tDn': 'uni/tn-{0}/lDevVip-{1}/lIf-{2}'.format(tenant, device, interface)},
         )
     )
 
@@ -319,12 +302,12 @@ def main():
 
     if state == 'present':
         aci.payload(
-            aci_class='vnsRsLIfCtxToBD',
+            aci_class='vnsRsLIfCtxToLIf',
             class_config=dict(
-                tDn='uni/tn-{0}/BD-{1}'.format(bd_tenant, bridge_domain)
+                tDn='uni/tn-{0}/lDevVip-{1}/lIf-{2}'.format(tenant, device, interface)
             ),
         )
-        aci.get_diff(aci_class='vnsRsLIfCtxToBD')
+        aci.get_diff(aci_class='vnsRsLIfCtxToLIf')
 
         aci.post_config()
 
