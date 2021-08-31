@@ -255,8 +255,10 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['tenant', 'contract', 'graph', 'node', 'context', 'device', 'interface']],
-            ['state', 'present', ['tenant', 'contract', 'graph', 'node', 'context', 'device', 'interface']]
+            ['state', 'absent', ['tenant', 'contract', 'graph', 'node',
+                                 'context', 'device', 'interface']],
+            ['state', 'present', ['tenant', 'contract', 'graph', 'node',
+                                  'context', 'device', 'interface']]
         ]
     )
 
@@ -281,8 +283,10 @@ def main():
         subclass_1=dict(
             aci_class='vnsLDevCtx',
             aci_rn='ldevCtx-c-{0}-g-{1}-n-{2}'.format(contract, graph, node),
-            module_object='ldevCtx-c-{0}-g-{1}-n-{2}'.format(contract, graph, node),
-            target_filter={'dn': 'ldevCtx-c-{0}-g-{1}-n-{2}'.format(contract, graph, node)},
+            module_object=('ldevCtx-c-{0}-g-{1}-n-{2}'.
+                           format(contract, graph, node)),
+            target_filter={'dn': 'ldevCtx-c-{0}-g-{1}-n-{2}'.
+                           format(contract, graph, node)},
         ),
         subclass_2=dict(
             aci_class='vnsLIfCtx',
@@ -293,8 +297,10 @@ def main():
         subclass_3=dict(
             aci_class='vnsRsLIfCtxToLIf',
             aci_rn='rsLIfCtxToLIf',
-            module_object='uni/tn-{0}/lDevVip-{1}/lIf-{2}'.format(tenant, device, interface),
-            target_filter={'tDn': 'uni/tn-{0}/lDevVip-{1}/lIf-{2}'.format(tenant, device, interface)},
+            module_object=('uni/tn-{0}/lDevVip-{1}/lIf-{2}'.
+                           format(tenant, device, interface)),
+            target_filter={'tDn': 'uni/tn-{0}/lDevVip-{1}/lIf-{2}'.
+                           format(tenant, device, interface)},
         )
     )
 
@@ -304,7 +310,8 @@ def main():
         aci.payload(
             aci_class='vnsRsLIfCtxToLIf',
             class_config=dict(
-                tDn='uni/tn-{0}/lDevVip-{1}/lIf-{2}'.format(tenant, device, interface)
+                tDn=('uni/tn-{0}/lDevVip-{1}/lIf-{2}'.
+                     format(tenant, device, interface))
             ),
         )
         aci.get_diff(aci_class='vnsRsLIfCtxToLIf')
