@@ -1,0 +1,261 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "sjcl1-svc01-apic01.webex.com"
+      username: "apic:fallback\\admin"
+      password: "REFexGw534QMveLtKD63"
+      validate_certs: no
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain if it already exists
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+# CREATE DOMAIN
+- name: Create ansible_phys_domain
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: present
+
+# CREATE L4-L7 LOGICAL DEVICE
+- name: Create L4-L7 Device
+  aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    domain: ansible_phys_dom
+    func_type: GoTo
+    context_aware: single
+    is_copy: no
+    managed: no
+    dev_type: physical
+    svc_type: adc
+    trunking: no
+    prom_mode: yes
+    state: present
+
+# CREATE CONTRACT
+- name: Create contract
+  aci_contract:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    scope: application-profile
+    state: present
+
+# CREATE L4-L7 SERVICE GRAPH
+- name: Create L4-L7 Service Graph
+  aci_l4l7_service_graph_template:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    state: present
+
+# CREATE L4-L7 DEVICE SELECTION POLICY
+- name: Create L4-L7 Device Selection Policy
+  aci_l4l7_device_selection_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    state: present
+
+# CREATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT
+- name: Create L4-L7 Device Selection Logical Interface Context
+  aci_l4l7_device_selection_if_context:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    state: present
+
+# CREATE L4-L7 LOGICAL INTERFACE 1
+- name: Create L4-L7 Logical Interface 1
+  aci_l4l7_logical_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ans_log_intf1
+    encap: vlan-987
+    state: present
+
+# CREATE L4-L7 LOGICAL INTERFACE 2
+- name: Create L4-L7 Logical Interface 2
+  aci_l4l7_logical_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ans_log_intf2
+    encap: vlan-988
+    state: present
+
+# BIND LOGICAL INTERFACE 1 TO INTERFACE CONTEXT
+- name: Add a new logical interface binding
+  aci_l4l7_device_selection_if_context_to_log_intf:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    device: ansible_device
+    interface: ans_log_intf1
+    state: present
+  register: add_intf_binding
+
+- name: Verify logical interface binding
+  assert:
+    that:
+    - add_intf_binding.current.0.vnsRsLIfCtxToLIf.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider/rsLIfCtxToLIf"
+    - add_intf_binding.current.0.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ans_log_intf1"
+
+# BIND LOGICAL INTERFACE 1 TO INTERFACE CONTEXT AGAIN TO TEST IDEMPOTENCE
+- name: Add a new logical interface binding again
+  aci_l4l7_device_selection_if_context_to_log_intf:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    device: ansible_device
+    interface: ans_log_intf1
+    state: present
+  register: add_intf_binding_again
+
+- name: Verify logical interface binding idempotence
+  assert:
+    that:
+    - add_intf_binding_again is not changed
+    - add_intf_binding_again.current.0.vnsRsLIfCtxToLIf.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider/rsLIfCtxToLIf"
+    - add_intf_binding_again.current.0.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ans_log_intf1"
+
+# BIND LOGICAL INTERFACE 2 TO INTERFACE CONTEXT
+- name: Modify logical interface binding
+  aci_l4l7_device_selection_if_context_to_log_intf:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    device: ansible_device
+    interface: ans_log_intf2
+    state: present
+  register: update_intf_binding
+
+- name: Verify logical interface binding update
+  assert:
+    that:
+    - update_intf_binding is changed
+    - update_intf_binding.current.0.vnsRsLIfCtxToLIf.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider/rsLIfCtxToLIf"
+    - update_intf_binding.current.0.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ans_log_intf2"
+
+# QUERY LOGICAL INTERFACE BINDING
+- name: Query logical interface binding
+  aci_l4l7_device_selection_if_context_to_log_intf:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    device: ansible_device
+    state: query
+  register: query_intf_binding
+
+- name: Verify logical interface binding query
+  assert:
+    that:
+    - query_intf_binding is not changed
+    - query_intf_binding.current.0.vnsRsLIfCtxToLIf.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider/rsLIfCtxToLIf"
+    - query_intf_binding.current.0.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ans_log_intf2"
+
+# REMOVE LOGICAL INTERFACE BINDING
+- name: Query logical interface binding
+  aci_l4l7_device_selection_if_context_to_log_intf:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    device: ansible_device
+    interface: ans_log_intf2
+    state: absent
+  register: remove_intf_binding
+
+- name: Verify logical interface binding removal
+  assert:
+    that:
+    - remove_intf_binding is changed
+    - remove_intf_binding.current == []
+    - remove_intf_binding.previous.0.vnsRsLIfCtxToLIf.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider/rsLIfCtxToLIf"
+    - remove_intf_binding.previous.0.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ans_log_intf2"
+
+# REMOVE LOGICAL INTERFACE BINDING AGAIN TO TEST IDEMPOTENCE
+- name: Query logical interface binding again
+  aci_l4l7_device_selection_if_context_to_log_intf:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    device: ansible_device
+    interface: ans_log_intf2
+    state: absent
+  register: remove_intf_binding_again
+
+- name: Verify logical interface binding removal
+  assert:
+    that:
+    - remove_intf_binding_again is not changed
+    - remove_intf_binding_again.current == []
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
