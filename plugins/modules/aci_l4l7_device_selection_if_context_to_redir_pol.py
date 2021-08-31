@@ -12,10 +12,10 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_l4l7_device_selection_if_context_to_log_intf
-short_description: Manage L4-L7 Device Selection Interface Context binding to Logical Interfaces (vns:RsLIfCtxToLIf)
+module: aci_l4l7_device_selection_if_context_to_redir_pol
+short_description: Manage L4-L7 Device Selection Interface Context binding to Logical Interfaces (vns:RsLIfCtxToSvcRedirectPol)
 description:
-- Manage L4-L7 Device Selection Interface Context binding to Logical Interfaces
+- Manage L4-L7 Device Selection Interface Context Binding to Policy Based Redirection Policy
 options:
   tenant:
     description:
@@ -41,14 +41,9 @@ options:
     description:
     - Name of the logical interface context
     type: str
-  device:
+  policy:
     description:
-    - Name of an existing logical device
-    type:str
-  interface:
-    description:
-    - Name of an existing logical interface
-    type: str
+    - Name of an existing Policy Based Redirect Policy
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -63,23 +58,24 @@ notes:
 - The C(tenant), C(contract), C(graph), C(node), C(context), C(Device) and C(interface) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant), M(cisco.aci.contract), M(cisco.aci.aci_l4l7_service_graph_template),
   M(cisco.aci.aci_l4l7_service_graph_template_node), M(cisco.aci.aci_l4l7_device_selection_if_context),
-  M(cisco.aci.aci_l4l7_device)and M(cisco.aci.aci_l4l7_logical_interface) modules can be used for this.
+  and M(cisco.aci.aci_l4l7_policy_based_redirect) modules can be used for this.
 seealso:
 - module: aci_l4l7_device_selection_policy
 - module: aci_l4l7_device_selection_if_context
 - module: aci_l4l7_service_graph_template
 - module: aci_l4l7_service_graph_template_node
 - module: aci_contract
+- module: aci_l4l7_policy_based_redirect
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(vnsRsLIfCtxToLIf)
+  description: More information about the internal APIC class (vnsRsLIfCtxToSvcRedirectPol)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
 '''
 
 EXAMPLES = r'''
-- name: Add a new logical interface binding
-  cisco.aci.aci_l4l7_device_selection_if_context_to_log_intf:
+- name: Bind a Policy Based Redirect Policy to an Interface Context
+  cisco.aci.aci_l4l7_device_selection_if_context_to_redir_pol:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -88,13 +84,12 @@ EXAMPLES = r'''
     graph: my_graph
     node: my_node
     context: my_context
+    policy: my_pbr_policy
     state: present
-    device: my_log_device
-    interface: my_log_interface
   delegate_to: localhost
 
-- name: Remove a logical interface binding
-  cisco.aci.aci_l4l7_device_selection_if_context_to_log_intf:
+- name: Remove a Policy Based Redirect Policy from an Interface Context
+  cisco.aci.aci_l4l7_device_selection_if_context_to_redir_pol:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -103,13 +98,12 @@ EXAMPLES = r'''
     graph: my_graph
     node: my_node
     context: my_context
-    state: absent
-    device: my_log_device
-    interface: my_log_interface
+    policy: my_pbr_policy
+    state: present
   delegate_to: localhost
 
-- name: Query a logical interface binding
-  cisco.aci.aci_l4l7_device_selection_if_context_to_log_intf:
+- name: Query Policy Based Redirect Policy used on an Interface Context
+  cisco.aci.aci_l4l7_device_selection_if_context_to_redir_pol:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -118,9 +112,8 @@ EXAMPLES = r'''
     graph: my_graph
     node: my_node
     context: my_context
+    policy: my_pbr_policy
     state: query
-    device: my_log_device
-    interface: my_log_interface
   delegate_to: localhost
   register: query_result
 
@@ -247,8 +240,7 @@ def main():
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query']),
         context=dict(type='str'),
-        device=dict(type='str'),
-        interface=dict(type='str'),
+        policy=dict(type='str', aliases=['redirect_policy']),
     )
 
     module = AnsibleModule(
@@ -256,9 +248,9 @@ def main():
         supports_check_mode=True,
         required_if=[
             ['state', 'absent', ['tenant', 'contract', 'graph', 'node',
-                                 'context', 'device', 'interface']],
+                                 'context', 'policy']],
             ['state', 'present', ['tenant', 'contract', 'graph', 'node',
-                                  'context', 'device', 'interface']]
+                                  'context', 'policy']]
         ]
     )
 
@@ -268,8 +260,7 @@ def main():
     graph = module.params.get('graph')
     node = module.params.get('node')
     context = module.params.get('context')
-    device = module.params.get('device')
-    interface = module.params.get('interface')
+    policy = module.params.get('policy')
 
     aci = ACIModule(module)
 
@@ -295,12 +286,12 @@ def main():
             target_filter={'connNameOrLbl': context},
         ),
         subclass_3=dict(
-            aci_class='vnsRsLIfCtxToLIf',
-            aci_rn='rsLIfCtxToLIf',
-            module_object=('uni/tn-{0}/lDevVip-{1}/lIf-{2}'.
-                           format(tenant, device, interface)),
-            target_filter={'tDn': 'uni/tn-{0}/lDevVip-{1}/lIf-{2}'.
-                           format(tenant, device, interface)},
+            aci_class='vnsRsLIfCtxToSvcRedirectPol',
+            aci_rn='rsLIfCtxToSvcRedirectPol',
+            module_object=('uni/tn-{0}/svcCont/svcRedirectPol-{1}'.
+                           format(tenant, policy)),
+            target_filter={'tDn': 'uni/tn-{0}/svcCont/svcRedirectPol-{1}'.
+                           format(tenant, policy)},
         )
     )
 
@@ -308,13 +299,13 @@ def main():
 
     if state == 'present':
         aci.payload(
-            aci_class='vnsRsLIfCtxToLIf',
+            aci_class='vnsRsLIfCtxToSvcRedirectPol',
             class_config=dict(
-                tDn=('uni/tn-{0}/lDevVip-{1}/lIf-{2}'.
-                     format(tenant, device, interface))
+                tDn=('uni/tn-{0}/svcCont/svcRedirectPol-{1}'.
+                     format(tenant, policy))
             ),
         )
-        aci.get_diff(aci_class='vnsRsLIfCtxToLIf')
+        aci.get_diff(aci_class='vnsRsLIfCtxToSvcRedirectPol')
 
         aci.post_config()
 
