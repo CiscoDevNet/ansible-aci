@@ -238,7 +238,7 @@
     state: absent
   register: delete_policy_binding_again
 
-- name: Verify Policy Binding removal
+- name: Verify Policy Binding removal idempotence
   assert:
     that:
     - delete_policy_binding_again is not changed
