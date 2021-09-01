@@ -245,8 +245,8 @@
 - name: Verify Consumer Func Conn Removal idempotence
   assert:
     that:
-    - delete_cons_func_conn is not changed
-    - delete_cons_func_conn.current == []
+    - delete_cons_func_conn_again is not changed
+    - delete_cons_func_conn_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
