@@ -46,8 +46,8 @@
 - name: Verify L4-L7 Health Group
   assert:
     that:
-    - add_health_group.vnsRedirectHealthGroup.current.0.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
-    - add_health_group.vnsRedirectHealthGroup.current.0.attributes.name == "ansible_health_group"
+    - add_health_group.current.0.vnsRedirectHealthGroup.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - add_health_group.current.0.vnsRedirectHealthGroup.attributes.name == "ansible_health_group"
 
 # CREATE REDIRECT HEALTH GROUP AGAIN TO TEST IDEMPOTENCE
 - name: Add a new Redirect Health Group again
@@ -62,8 +62,8 @@
   assert:
     that:
     - add_health_group is not changed
-    - add_health_group.vnsRedirectHealthGroup.current.0.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
-    - add_health_group.vnsRedirectHealthGroup.current.0.attributes.name == "ansible_health_group"
+    - add_health_group.current.0.vnsRedirectHealthGroup.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - add_health_group.current.0.vnsRedirectHealthGroup.attributes.name == "ansible_health_group"
 
 # QUERY REDIRECT HEALTH GROUP
 - name: Query Redirect Health Group
@@ -78,8 +78,8 @@
   assert:
     that:
     - query_health_group is not changed
-    - query_health_group.vnsRedirectHealthGroup.current.0.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
-    - query_health_group.vnsRedirectHealthGroup.current.0.attributes.name == "ansible_health_group"
+    - query_health_group.current.0.vnsRedirectHealthGroup.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - query_health_group.current.0.vnsRedirectHealthGroup.attributes.name == "ansible_health_group"
 
 # REMOVE L4-L7 HEALTH GROUP
 - name: Remove Redirect Health Group
@@ -95,8 +95,8 @@
     that:
     - delete_health_group is changed
     - delete_health_group.current == []
-    - delete_health_group.vnsRedirectHealthGroup.previous.0.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
-    - delete_health_group.vnsRedirectHealthGroup.previous.0.attributes.name == "ansible_health_group"
+    - delete_health_group.previous.0.vnsRedirectHealthGroup.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - delete_health_group.previous.0.vnsRedirectHealthGroup.attributes.name == "ansible_health_group"
 
 # REMOVE L4-L7 HEALTH GROUP AGAIN TO TEST IDEMPOTENCE
 - name: Remove Redirect Health Group
