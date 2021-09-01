@@ -99,7 +99,7 @@
     - delete_health_group.previous.0.vnsRedirectHealthGroup.attributes.name == "ansible_health_group"
 
 # REMOVE L4-L7 HEALTH GROUP AGAIN TO TEST IDEMPOTENCE
-- name: Remove Redirect Health Group
+- name: Remove Redirect Health Group again
   aci_l4l7_redirect_health_group:
     <<: *aci_info
     tenant: ansible_tenant
@@ -110,8 +110,8 @@
 - name: Verify L4-L7 Health Group removal idempotence
   assert:
     that:
-    - delete_health_group is not changed
-    - delete_health_group.current == []
+    - delete_health_group_again is not changed
+    - delete_health_group_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
