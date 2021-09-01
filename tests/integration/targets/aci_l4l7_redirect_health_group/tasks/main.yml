@@ -1,0 +1,114 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+  # GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+# CREATE REDIRECT HEALTH GROUP
+- name: Add a new Redirect Health Group
+  aci_l4l7_redirect_health_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    health_group: ansible_health_group
+    state: present
+  register: add_health_group
+
+- name: Verify L4-L7 Health Group
+  assert:
+    that:
+    - add_health_group.vnsRedirectHealthGroup.current.0.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - add_health_group.vnsRedirectHealthGroup.current.0.attributes.name == "ansible_health_group"
+
+# CREATE REDIRECT HEALTH GROUP AGAIN TO TEST IDEMPOTENCE
+- name: Add a new Redirect Health Group again
+  aci_l4l7_redirect_health_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    health_group: ansible_health_group
+    state: present
+  register: add_health_group_again
+
+- name: Verify L4-L7 Health Group idempotence
+  assert:
+    that:
+    - add_health_group is not changed
+    - add_health_group.vnsRedirectHealthGroup.current.0.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - add_health_group.vnsRedirectHealthGroup.current.0.attributes.name == "ansible_health_group"
+
+# QUERY REDIRECT HEALTH GROUP
+- name: Query Redirect Health Group
+  aci_l4l7_redirect_health_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    health_group: ansible_health_group
+    state: query
+  register: query_health_group
+
+- name: Verify L4-L7 Health Group query
+  assert:
+    that:
+    - query_health_group is not changed
+    - query_health_group.vnsRedirectHealthGroup.current.0.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - query_health_group.vnsRedirectHealthGroup.current.0.attributes.name == "ansible_health_group"
+
+# REMOVE L4-L7 HEALTH GROUP
+- name: Remove Redirect Health Group
+  aci_l4l7_redirect_health_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    health_group: ansible_health_group
+    state: absent
+  register: delete_health_group
+
+- name: Verify L4-L7 Health Group removal
+  assert:
+    that:
+    - delete_health_group is changed
+    - delete_health_group.current == []
+    - delete_health_group.vnsRedirectHealthGroup.previous.0.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - delete_health_group.vnsRedirectHealthGroup.previous.0.attributes.name == "ansible_health_group"
+
+# REMOVE L4-L7 HEALTH GROUP AGAIN TO TEST IDEMPOTENCE
+- name: Remove Redirect Health Group
+  aci_l4l7_redirect_health_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    health_group: ansible_health_group
+    state: absent
+  register: delete_health_group_again
+
+- name: Verify L4-L7 Health Group removal idempotence
+  assert:
+    that:
+    - delete_health_group is not changed
+    - delete_health_group.current == []
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
