@@ -97,6 +97,16 @@
     routing_mode: Redirect
     state: present
 
+# CREATE L4-L7 DEVICE SELECTION POLICY
+- name: Add a new device selection policy
+  aci_l4l7_device_selection_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    state: present
+
 # CREATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT
 - name: Create L4-L7 Device Selection Logical Interface Context
   aci_l4l7_device_selection_if_context:
