@@ -61,9 +61,9 @@
 - name: Verify L4-L7 Health Group idempotence
   assert:
     that:
-    - add_health_group is not changed
-    - add_health_group.current.0.vnsRedirectHealthGroup.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
-    - add_health_group.current.0.vnsRedirectHealthGroup.attributes.name == "ansible_health_group"
+    - add_health_group_again is not changed
+    - add_health_group_again.current.0.vnsRedirectHealthGroup.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - add_health_group_again.current.0.vnsRedirectHealthGroup.attributes.name == "ansible_health_group"
 
 # QUERY REDIRECT HEALTH GROUP
 - name: Query Redirect Health Group
