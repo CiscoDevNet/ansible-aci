@@ -186,6 +186,23 @@
     - delete_l4l7_term_node2.previous.0.vnsAbsTermNodeProv.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeProv-T2"
     - delete_l4l7_term_node2.previous.0.vnsAbsTermNodeProv.attributes.name == "T2"
 
+# DELETE TERM NODE T2 AGAIN TO TEST IDEMPOTENCE
+- name: Remove L4-L7 T2 Service Graph Node
+  aci_l4l7_service_graph_template_term_node:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node_name: T2
+    state: absent
+  register: delete_l4l7_term_node2_again
+
+# VERIFY DELETION IDEMPOTENCE
+- name: Verify Term Node T2 deletion idempotence
+  assert:
+    that:
+    - delete_l4l7_term_node2_again is not changed
+    - delete_l4l7_term_node2_again.current == []
+
 # CLEAN UP
 - name: Remove ansible_tenant
   aci_tenant:

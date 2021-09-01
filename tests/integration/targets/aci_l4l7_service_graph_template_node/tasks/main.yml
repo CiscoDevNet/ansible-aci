@@ -219,6 +219,23 @@
     - delete_l4l7_node.previous.0.vnsAbsNode.attributes.managed == "yes"
     - delete_l4l7_node.previous.0.vnsAbsNode.attributes.routingMode == "Redirect"
 
+# DELETE L4-L7 NODE AGAIN TO TEST IDEMPOTENCE
+- name: Remove L4-L7 Service Graph Node again
+  aci_l4l7_service_graph_template_node:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node: ansible_node
+    state: absent
+  register: delete_l4l7_node_again
+
+# VERIFY NODE REMOVAL IDEMPOTENCE
+- name: Verify Node removal idempotence
+  assert:
+    that:
+    - delete_l4l7_node_again is not changed
+    - delete_l4l7_node_again.current == []
+
 # CLEAN UP
 - name: Remove ansible_tenant
   aci_tenant:

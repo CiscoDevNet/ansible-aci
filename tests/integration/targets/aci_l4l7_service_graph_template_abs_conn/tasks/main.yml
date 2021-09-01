@@ -179,6 +179,22 @@
     - delete_l4l7_abs_conn.previous.0.vnsAbsConnection.attributes.directConnect == "no"
     - delete_l4l7_abs_conn.previous.0.vnsAbsConnection.attributes.unicastRoute == "no"
 
+# DELETE ABS CONN AGAINTO TEST IDEMPOTENCE
+- name: Delete L4-L7 Service Graph Abs Connection again
+  aci_l4l7_service_graph_template_abs_conn:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    connection_name: C1
+    state: absent
+  register: delete_l4l7_abs_conn_again
+
+- name: Verify Connection Deletion idempotence
+  assert:
+    that:
+    - delete_l4l7_abs_conn is not changed
+    - delete_l4l7_abs_conn.current == []
+
 # CLEAN UP
 - name: Remove ansible_tenant
   aci_tenant:

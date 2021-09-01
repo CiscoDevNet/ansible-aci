@@ -171,6 +171,22 @@
     - delete_pbr_dest.previous.0.vnsRedirectDest.attributes.destName == "updated_redirect_dest"
     - delete_pbr_dest.previous.0.vnsRedirectDest.attributes.podId == "1"
 
+# DELETE L4-L7 PBR DESTINATION AGAIN TO TEST IDEMPOTENCE
+- name: Delete L4-L7 Policy Based Redirect Destination
+  aci_l4l7_policy_based_redirect_dest:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_policy
+    redirect_ip: 192.168.10.1
+    state: absent
+  register: delete_pbr_dest_again
+
+- name: Verify L4-L7 Policy Based Redirect Destination deletion idempotence
+  assert:
+    that:
+    - delete_pbr_dest is not changed
+    - delete_pbr_dest.current == []
+
 # CLEAN UP
 - name: Remove ansible_tenant
   aci_tenant:

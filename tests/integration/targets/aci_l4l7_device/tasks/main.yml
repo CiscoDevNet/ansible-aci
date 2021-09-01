@@ -162,8 +162,8 @@
     that:
     - update_l4l7_device.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/phys-ansible_phys_dom"
 
-# QUERY service graph template
-- name: Query L4-L7 Service Graph Template
+# QUERY DEVICE
+- name: Query L4-L7 Device
   aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
@@ -171,7 +171,7 @@
     state: query
   register: query_l4l7_device
 
-- name: Verify L4-L7 Service Graph Template attributes
+- name: Verify L4-L7 Device attributes
   assert:
     that:
     - query_l4l7_device is not changed
@@ -186,18 +186,18 @@
     - query_l4l7_device.current.0.vnsLDevVip.attributes.svcType == "FW"
     - query_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "yes"
 
-- name: Query all L4-L7 Service Graph Templates
+- name: Query all L4-L7 Devices
   aci_l4l7_device:
     <<: *aci_info
     state: query
   register: query_l4l7_device_all
 
-- name: Verify L4-L7 Device attributes
+- name: Verify L4-L7 Device query idempotence
   assert:
     that:
       query_l4l7_device_all is not changed
 
-# DELETE service graph template
+# DELETE DEVICE
 - name: Delete L4-L7 Device
   aci_l4l7_device:
     <<: *aci_info
@@ -206,13 +206,28 @@
     state: absent
   register: remove_l4l7_device
 
-- name: Verify L4-L7 Service Graph Template deletion
+- name: Verify L4-L7 Device deletion
   assert:
     that:
     - remove_l4l7_device is changed
     - remove_l4l7_device.current == []
     - remove_l4l7_device.previous.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
     - remove_l4l7_device.previous.0.vnsLDevVip.attributes.name == "ansible_device"
+
+# DELETE DEVICE AGAIN TO TEST IDEMPOTENCE
+- name: Delete L4-L7 Device again
+  aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    state: absent
+  register: remove_l4l7_device_again
+
+- name: Verify L4-L7 Device deletion idempotence
+  assert:
+    that:
+    - remove_l4l7_device_again is not changed
+    - remove_l4l7_device_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant

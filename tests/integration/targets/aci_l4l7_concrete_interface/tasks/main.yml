@@ -186,6 +186,26 @@
     - delete_concrete_interface.previous.0.vnsCIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
     - delete_concrete_interface.previous.0.vnsCIf.attributes.name == "ansible_concrete_interface"
 
+# DELETE L4-L7 CONCRETE INTERFACE AGAIN TO TEST IDEMPOTENCE
+- name: Remove L4-L7 Concrete Interface
+  aci_l4l7_concrete_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    concrete_device: ansible_concrete_device
+    concrete_interface: ansible_concrete_interface
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/16
+    state: absent
+  register: delete_concrete_interface_again
+
+- name: Verify L4-L7 Concrete Interface Deletion idempotence
+  assert:
+    that:
+    - delete_concrete_interface_again is changed
+    - delete_concrete_interface_again.current == []
+
 # CLEAN UP
 - name: Remove ansible_tenant
   aci_tenant:

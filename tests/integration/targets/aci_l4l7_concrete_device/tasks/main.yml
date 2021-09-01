@@ -145,6 +145,22 @@
     - delete_l4l7_concrete_device.previous.0.vnsCDev.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device"
     - delete_l4l7_concrete_device.previous.0.vnsCDev.attributes.name == "ansible_concrete_device"
 
+# DELETE L4-L7 CONCRETE DEVICE AGAIN TO TEST IDEMPOTENCE
+- name: Remove L4-L7 Concrete Device
+  aci_l4l7_concrete_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    concrete_device: ansible_concrete_device
+    state: absent
+  register: delete_l4l7_concrete_device_again
+
+- name: Verify L4-L7 Concrete Device Deletion idempotence
+  assert:
+    that:
+    - delete_l4l7_concrete_device_again is not changed
+    - delete_l4l7_concrete_device_again.current == []
+
 # CLEAN UP
 - name: Remove ansible_tenant
   aci_tenant:

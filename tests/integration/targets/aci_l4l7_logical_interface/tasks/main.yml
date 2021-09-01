@@ -171,6 +171,22 @@
     - delete_logical_interface.previous.0.vnsLIf.attributes.name == "ansible_log_intf"
     - delete_logical_interface.previous.0.vnsLIf.attributes.encap == "vlan-988"
 
+# DELETE L4-L7 LOGICAL INTERFACE AGAIN TO TEST IDEMPOTENCE
+- name: Remove L4-L7 Logical Interface
+  aci_l4l7_logical_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ansible_log_intf
+    state: absent
+  register: delete_logical_interface_again
+
+- name: Verify Logical Interface Deletion
+  assert:
+    that:
+    - delete_logical_interface_again is not changed
+    - delete_logical_interface_again.current == []
+
 # CLEAN UP
 - name: Remove ansible_tenant
   aci_tenant:

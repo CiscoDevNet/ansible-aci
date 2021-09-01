@@ -173,6 +173,23 @@
     - delete_concrete_intf_attach.previous.0.vnsRsCIfAttN.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf/rscIfAttN-[uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]]"
     - delete_concrete_intf_attach.previous.0.vnsRsCIfAttN.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
 
+# DELETE CONCRETE INTERFACE ATTACHMENT AGAIN TO TEST IDEMPOTENCE
+- name: Remove concrete interface attachment again
+  aci_l4l7_concrete_interface_attach:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ansible_log_intf
+    concrete_device: ansible_concrete_device
+    concrete_interface: ansible_concrete_interface
+    state: absent
+  register: delete_concrete_intf_attach_again
+
+- name: Verify interface attachment removal idemptence
+  assert:
+    that:
+    - delete_concrete_intf_attach_again is not changed
+    - delete_concrete_intf_attach_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant

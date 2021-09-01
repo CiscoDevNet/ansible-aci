@@ -231,10 +231,22 @@
     - delete_prov_func_conn.previous.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-provider"
     - delete_prov_func_conn.previous.0.vnsAbsFuncConn.attributes.name == "provider"
 
-- name: Verify no changes
+# DELETE FUNC CONN AGAIN TO TEST IDEMPOTENCE
+- name: Delete Consumer Func Conn again
+  aci_l4l7_service_graph_template_func_conn:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node: ansible_node
+    connection_name: consumer
+    state: absent
+  register: delete_cons_func_conn_again
+
+- name: Verify Consumer Func Conn Removal idempotence
   assert:
     that:
-    - query_func_conn_all is not changed
+    - delete_cons_func_conn is not changed
+    - delete_cons_func_conn.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant

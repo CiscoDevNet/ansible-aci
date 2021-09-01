@@ -168,6 +168,24 @@
     - delete_device_binding.previous.0.vnsRsLDevCtxToLDev.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/rsLDevCtxToLDev"
     - delete_device_binding.previous.0.vnsRsLDevCtxToLDev.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
 
+# REMOVE DEVICE BINDING AGAIN TO TEST IDEMPOTENCE
+- name: Remove Logical Device Binding from Policy again
+  aci_l4l7_device_selection_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    device: ansible_device
+    state: absent
+  register: delete_device_binding_again
+
+- name: Verify Device Binding Deletion idempotence
+  assert:
+    that:
+    - delete_device_binding_again is not changed
+    - delete_device_binding_again.current == []
+
 # CLEAN UP
 - name: Remove ansible_tenant
   aci_tenant:

@@ -153,7 +153,7 @@
     state: absent
   register: delete_l4l7_device_selection_policy
 
-- name: Verify L4-L7 Device Selection Policy attributes
+- name: Verify L4-L7 Device Selection Policy removal
   assert:
     that:
     - delete_l4l7_device_selection_policy is changed
@@ -162,6 +162,23 @@
     - delete_l4l7_device_selection_policy.previous.0.vnsLDevCtx.attributes.ctrctNameOrLbl == "ansible_contract"
     - delete_l4l7_device_selection_policy.previous.0.vnsLDevCtx.attributes.graphNameOrLbl == "ansible_graph"
     - delete_l4l7_device_selection_policy.previous.0.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_device"
+
+# DELETE L4-L7 DEVICE SELECTION POLICY AGAIN TO TEST IDEMPOTENCE
+- name: Delete L4-L7 Device Selection Policy
+  aci_l4l7_device_selection_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_device
+    state: absent
+  register: delete_l4l7_device_selection_policy_again
+
+- name: Verify L4-L7 Device Selection Policy removal
+  assert:
+    that:
+    - delete_l4l7_device_selection_policy_again is not changed
+    - delete_l4l7_device_selection_policy_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant

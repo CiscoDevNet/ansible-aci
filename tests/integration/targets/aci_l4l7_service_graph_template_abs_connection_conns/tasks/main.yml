@@ -581,6 +581,107 @@
     - delete_c3_term_conn.previous.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C3/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeProv-T2/AbsTConn]"
     - delete_c3_term_conn.previous.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeProv-T2/AbsTConn"
 
+# REMOVE CONNECTIONS AGAIN TO TEST IDEMPOTENCE
+- name: Delete C1 node connection again
+  aci_l4l7_service_graph_template_abs_connection_conns:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    direction: consumer
+    connection_name: C1
+    connected_node: ansible_node1
+    state: absent
+  register: delete_c1_node_conn_again
+
+- name: Delete C1 term connection again
+  aci_l4l7_service_graph_template_abs_connection_conns:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    direction: consumer
+    connection_name: C1
+    state: absent
+  register: delete_c1_term_conn_again
+
+- name: Delete C2 provider connection again
+  aci_l4l7_service_graph_template_abs_connection_conns:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    direction: provider
+    connection_name: C2
+    connected_node: ansible_node1
+    state: absent
+  register: delete_c2_prov_conn_again
+
+- name: Delete C2 consumer connection again
+  aci_l4l7_service_graph_template_abs_connection_conns:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    direction: consumer
+    connection_name: C2
+    connected_node: ansible_node2
+    state: absent
+  register: delete_c2_cons_conn_again
+
+- name: Delete C3 node connection again
+  aci_l4l7_service_graph_template_abs_connection_conns:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    direction: provider
+    connection_name: C3
+    connected_node: ansible_node2
+    state: absent
+  register: delete_c3_node_conn_again
+
+- name: Delete C3 term connection again
+  aci_l4l7_service_graph_template_abs_connection_conns:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    direction: provider
+    connection_name: C3
+    state: absent
+  register: delete_c3_term_conn_again
+
+- name: Verify C1 Node Connection Removal idempotence
+  assert:
+    that:
+    - delete_c1_node_conn_again is not changed
+    - delete_c1_node_conn_again.current == []
+
+- name: Verify C1 Term Node Connection Removal idempotence
+  assert:
+    that:
+    - delete_c1_term_conn_again is not changed
+    - delete_c1_term_conn_again.current == []
+
+- name: Verify C2 Provider Connection Removal idempotence
+  assert:
+    that:
+    - delete_c2_prov_conn_again is not changed
+    - delete_c2_prov_conn_again.current == []
+
+- name: Verify C2 Consumer Connection Removal idempotence
+  assert:
+    that:
+    - delete_c2_cons_conn_again is not changed
+    - delete_c2_cons_conn_again.current == []
+
+- name: Verify C3 Node Connection Removal idempotence
+  assert:
+    that:
+    - delete_c3_node_conn_again is not changed
+    - delete_c3_node_conn_again.current == []
+
+- name: Verify C3 Term Node Connection Removal idempotence
+  assert:
+    that:
+    - delete_c3_term_conn_again is not changed
+    - delete_c3_term_conn_again.current == []
+
 # CLEAN UP
 - name: Remove ansible_tenant
   aci_tenant:

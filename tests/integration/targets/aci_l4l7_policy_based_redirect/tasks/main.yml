@@ -197,6 +197,21 @@
     - delete_pbr_policy.previous.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "deny"
     - delete_pbr_policy.previous.0.vnsSvcRedirectPol.attributes.thresholdEnable == "no"
 
+# DELETE L4-L7 POLICY BASED REDIRECT POLICY AGAIN TO TEST IDEMPOTENCE
+- name: Delete L4-L7 Policy Based Redirect again
+  aci_l4l7_policy_based_redirect:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy_name: ansible_pbr_policy
+    state: absent
+  register: delete_pbr_policy_again
+
+- name: Confirm PBR Policy Removal idempotence
+  assert:
+    that:
+    - delete_pbr_policy_again is not changed
+    - delete_pbr_policy_again.current == []
+
 # CLEAN UP
 - name: Remove ansible_tenant
   aci_tenant:

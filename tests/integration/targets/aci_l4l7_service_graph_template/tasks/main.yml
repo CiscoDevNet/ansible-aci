@@ -109,6 +109,21 @@
     - remove_sgt.previous.0.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph"
     - remove_sgt.previous.0.vnsAbsGraph.attributes.name == "ansible_service_graph"
 
+# DELETE SERVICE GRAPH TEMPLATE AGAIN TO TEST IDEMPOTENCE
+- name: Remove L4-L7 Service Graph Template
+  aci_l4l7_service_graph_template:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_service_graph
+    state: absent
+  register: remove_sgt_again
+
+- name: Verify L4-L7 Service Graph Template deletion idempotence
+  assert:
+    that:
+    - remove_sgt_again is not changed
+    - remove_sgt_again.current == []
+
 # CLEAN UP
 - name: Remove ansible_tenant
   aci_tenant:
