@@ -192,8 +192,8 @@
 - name: Verify Connection Deletion idempotence
   assert:
     that:
-    - delete_l4l7_abs_conn is not changed
-    - delete_l4l7_abs_conn.current == []
+    - delete_l4l7_abs_conn_again is not changed
+    - delete_l4l7_abs_conn_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
