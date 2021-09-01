@@ -184,8 +184,8 @@
 - name: Verify L4-L7 Policy Based Redirect Destination deletion idempotence
   assert:
     that:
-    - delete_pbr_dest is not changed
-    - delete_pbr_dest.current == []
+    - delete_pbr_dest_again is not changed
+    - delete_pbr_dest_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
