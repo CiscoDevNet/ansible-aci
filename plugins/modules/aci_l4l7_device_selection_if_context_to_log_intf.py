@@ -44,7 +44,7 @@ options:
   device:
     description:
     - Name of an existing logical device
-    type:str
+    type: str
   interface:
     description:
     - Name of an existing logical interface
@@ -59,6 +59,11 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 
+notes:
+- The C(tenant), C(contract), C(graph), C(node), C(context), C(Device) and C(interface) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.contract), M(cisco.aci.aci_l4l7_service_graph_template),
+  M(cisco.aci.aci_l4l7_service_graph_template_node), M(cisco.aci.aci_l4l7_device_selection_if_context),
+  M(cisco.aci.aci_l4l7_device)and M(cisco.aci.aci_l4l7_logical_interface) modules can be used for this.
 seealso:
 - module: aci_l4l7_device_selection_policy
 - module: aci_l4l7_device_selection_if_context
