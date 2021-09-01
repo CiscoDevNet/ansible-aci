@@ -27,6 +27,13 @@
     name: ansible_tenant
     state: absent
 
+# CREATE TENANT
+- name: Remove ansible_tenant if it already exists
+  aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
 # CREATE REDIRECT HEALTH GROUP
 - name: Add a new Redirect Health Group
   aci_l4l7_redirect_health_group:
