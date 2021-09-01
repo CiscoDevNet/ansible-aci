@@ -203,7 +203,7 @@
 - name: Verify L4-L7 Concrete Interface Deletion idempotence
   assert:
     that:
-    - delete_concrete_interface_again is changed
+    - delete_concrete_interface_again is not changed
     - delete_concrete_interface_again.current == []
 
 # CLEAN UP
