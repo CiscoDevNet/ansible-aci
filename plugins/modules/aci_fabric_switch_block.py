@@ -232,8 +232,8 @@ def main():
         association=dict(type='str', aliases=['association_name',
                                               'switch_association']),
         descr=dict(type='str'),
-        from_node=dict(type='int', aliases=['from_node']),
-        to_node=dict(type='int', aliases=['to_node']),
+        from_=dict(type='int', aliases=['from_node']),
+        to_=dict(type='int', aliases=['to_node']),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query'])
     )
