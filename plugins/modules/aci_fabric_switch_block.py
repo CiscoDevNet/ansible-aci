@@ -249,34 +249,45 @@ def main():
 
     name = module.params.get('name')
     profile = module.params.get('profile')
-    switch_type = module.params.get('switch_type')
+    # switch_type = module.params.get('switch_type')
     association = module.params.get('association')
     descr = module.params.get('descr')
     from_ = module.params.get('from_')
     to_ = module.paraams.get('to_')
     state = module.params.get('state')
 
-    if switch_type == 'spine':
-        aci_root_class = 'fabricSpineP'
-        aci_root_rn = 'fabric/spprof-{0}'.format(profile)
-        aci_subclass1_class = 'fabricSpineS'
-        aci_subclass1_rn = 'spines-{0}-typ-range'.format(association)
-    elif switch_type == 'leaf':
-        aci_root_class = 'fabricLeafP'
-        aci_root_rn = 'fabric/leprof-{0}'.format(profile)
-        aci_subclass1_class = 'fabricLeafS'
-        aci_subclass1_rn = 'leafs-{0}-typ-range'.format(association)
+    # if switch_type == 'spine':
+    #     aci_root_class = 'fabricSpineP'
+    #     aci_root_rn = 'fabric/spprof-{0}'.format(profile)
+    #     aci_subclass1_class = 'fabricSpineS'
+    #     aci_subclass1_rn = 'spines-{0}-typ-range'.format(association)
+    # elif switch_type == 'leaf':
+    #     aci_root_class = 'fabricLeafP'
+    #     aci_root_rn = 'fabric/leprof-{0}'.format(profile)
+    #     aci_subclass1_class = 'fabricLeafS'
+    #     aci_subclass1_rn = 'leaves-{0}-typ-range'.format(association)
 
     aci.construct_url(
+        # root_class=dict(
+        #     aci_class=aci_root_class,
+        #     aci_rn=aci_root_rn,
+        #     module_object=profile,
+        #     target_filter={'name': profile},
+        # ),
+        # subclass_1=dict(
+        #     aci_class=aci_subclass1_class,
+        #     aci_rn=aci_subclass1_rn,
+        #     module_object=association,
+        #     target_filter={'name': association},
         root_class=dict(
-            aci_class=aci_root_class,
-            aci_rn=aci_root_rn,
+            aci_class='fabricSpineP',
+            aci_rn='fabric/spprof-{0}'.format(profile),
             module_object=profile,
             target_filter={'name': profile},
         ),
         subclass_1=dict(
-            aci_class=aci_subclass1_class,
-            aci_rn=aci_subclass1_rn,
+            aci_class='fabricSpineS',
+            aci_rn='spines-{0}-typ-range'.format(association),
             module_object=association,
             target_filter={'name': association},
         ),
