@@ -57,7 +57,7 @@
     - add_switch_prf_again.current.0.fabricSpineP.attributes.name == "ansible_spine_switch_prf"
 
 # QUERY SPINE SWITCH POLICY
-- name: Create ansible_spine_switch_prf again
+- name: query spine switch profile
   aci_fabric_spine_profile:
     <<: *aci_info
     name: ansible_spine_switch_prf
@@ -72,7 +72,7 @@
     - query_switch_prf.current.0.fabricSpineP.attributes.name == "ansible_spine_switch_prf"
 
 # QUERY ALL SPINE SWITCH POLICIES
-- name: Create ansible_spine_switch_prf again
+- name: query all spine switch profiles
   aci_fabric_spine_profile:
     <<: *aci_info
     state: query
