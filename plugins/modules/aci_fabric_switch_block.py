@@ -47,10 +47,12 @@ options:
     description:
     - First Node ID of the block
     type: int
+    aliases: [ from_node ]
   to_:
     description:
     - Last Node ID of the block
     type: int
+    aliases: [ to_node ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -230,8 +232,8 @@ def main():
         association=dict(type='str', aliases=['association_name',
                                               'switch_association']),
         descr=dict(type='str'),
-        from_node=dict(type='int'),
-        to_node=dict(type='int'),
+        from_node=dict(type='int', aliases=['from_node']),
+        to_node=dict(type='int', aliases=['to_node']),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query'])
     )
@@ -249,53 +251,36 @@ def main():
 
     name = module.params.get('name')
     profile = module.params.get('profile')
-    # switch_type = module.params.get('switch_type')
+    switch_type = module.params.get('switch_type')
     association = module.params.get('association')
     descr = module.params.get('descr')
-    from_node = module.params.get('from_node')
-    to_node = module.params.get('to_node')
+    from_ = module.params.get('from_')
+    to_ = module.params.get('to_')
     state = module.params.get('state')
 
-    # if switch_type == 'spine':
-    #     aci_root_class = 'fabricSpineP'
-    #     aci_root_rn = 'fabric/spprof-{0}'.format(profile)
-    #     aci_subclass1_class = 'fabricSpineS'
-    #     aci_subclass1_rn = 'spines-{0}-typ-range'.format(association)
-    # elif switch_type == 'leaf':
-    #     aci_root_class = 'fabricLeafP'
-    #     aci_root_rn = 'fabric/leprof-{0}'.format(profile)
-    #     aci_subclass1_class = 'fabricLeafS'
-    #     aci_subclass1_rn = 'leaves-{0}-typ-range'.format(association)
+    if switch_type == 'spine':
+        aci_root_class = 'fabricSpineP'
+        aci_root_rn = 'fabric/spprof-{0}'.format(profile)
+        aci_subclass1_class = 'fabricSpineS'
+        aci_subclass1_rn = 'spines-{0}-typ-range'.format(association)
+    elif switch_type == 'leaf':
+        aci_root_class = 'fabricLeafP'
+        aci_root_rn = 'fabric/leprof-{0}'.format(profile)
+        aci_subclass1_class = 'fabricLeafS'
+        aci_subclass1_rn = 'leaves-{0}-typ-range'.format(association)
 
     aci.construct_url(
-        # root_class=dict(
-        #     aci_class=aci_root_class,
-        #     aci_rn=aci_root_rn,
-        #     module_object=profile,
-        #     target_filter={'name': profile},
-        # ),
-        # subclass_1=dict(
-        #     aci_class=aci_subclass1_class,
-        #     aci_rn=aci_subclass1_rn,
-        #     module_object=association,
-        #     target_filter={'name': association},
         root_class=dict(
-            aci_class='fabricSpineP',
-            aci_rn='fabric/spprof-{0}'.format(profile),
+            aci_class=aci_root_class,
+            aci_rn=aci_root_rn,
             module_object=profile,
             target_filter={'name': profile},
         ),
         subclass_1=dict(
-            aci_class='fabricSpineS',
-            aci_rn='spines-{0}-typ-range'.format(association),
+            aci_class=aci_subclass1_class,
+            aci_rn=aci_subclass1_rn,
             module_object=association,
             target_filter={'name': association},
-        ),
-        subclass_2=dict(
-            aci_class='fabricNodeBlk',
-            aci_rn='nodeblk-{0}'.format(name),
-            module_object=name,
-            target_filter={'name': name},
         ),
     )
 
@@ -307,8 +292,8 @@ def main():
             class_config=dict(
                 name=name,
                 descr=descr,
-                from_=from_node,
-                to_=to_node
+                from_=from_,
+                to_=to_
             ),
         )
 
