@@ -224,7 +224,7 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         name=dict(type='str', aliases='block_name'),
-        switch_type=dict('str', choices=['leaf', 'spine'], required=True),
+        switch_type=dict(type='str', choices=['leaf', 'spine'], required=True),
         profile=dict(type='str', aliases=['profile_name',
                                           'switch_profile']),
         association=dict(type='str', aliases=['association_name',
