@@ -230,8 +230,8 @@ def main():
         association=dict(type='str', aliases=['association_name',
                                               'switch_association']),
         descr=dict(type='str'),
-        from_=dict(type='int'),
-        to_=dict(type='int'),
+        from_node=dict(type='int'),
+        to_node=dict(type='int'),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query'])
     )
@@ -252,8 +252,8 @@ def main():
     # switch_type = module.params.get('switch_type')
     association = module.params.get('association')
     descr = module.params.get('descr')
-    from_ = module.params.get('from_')
-    to_ = module.paraams.get('to_')
+    from_node = module.params.get('from_node')
+    to_node = module.paraams.get('to_node')
     state = module.params.get('state')
 
     # if switch_type == 'spine':
@@ -307,8 +307,8 @@ def main():
             class_config=dict(
                 name=name,
                 descr=descr,
-                from_=from_,
-                to_=to_
+                from_=from_node,
+                to_=to_node
             ),
         )
 
