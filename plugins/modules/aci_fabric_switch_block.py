@@ -223,7 +223,7 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        name=dict(type='str', aliases='block_name'),
+        name=dict(type='str', aliases=['block_name']),
         switch_type=dict(type='str', choices=['leaf', 'spine'], required=True),
         profile=dict(type='str', aliases=['profile_name',
                                           'switch_profile']),
