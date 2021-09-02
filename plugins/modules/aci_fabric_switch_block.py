@@ -253,7 +253,7 @@ def main():
     association = module.params.get('association')
     descr = module.params.get('descr')
     from_node = module.params.get('from_node')
-    to_node = module.paraams.get('to_node')
+    to_node = module.params.get('to_node')
     state = module.params.get('state')
 
     # if switch_type == 'spine':
