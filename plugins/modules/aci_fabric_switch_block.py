@@ -28,6 +28,7 @@ options:
     - Type of switch profile, leaf or spine
     type: str
     choices: [ leaf, spine ]
+    required: yes
   profile:
     description:
     - Name of an existing fabric spine or leaf switch profile
@@ -225,7 +226,7 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         name=dict(type='str', aliases=['block_name']),
-        switch_type=dict(type='str', choices=['leaf', 'spine']),
+        switch_type=dict(type='str', choices=['leaf', 'spine'], required=True),
         profile=dict(type='str', aliases=['profile_name',
                                           'switch_profile']),
         association=dict(type='str', aliases=['association_name',
@@ -241,10 +242,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['switch_type', 'profile',
-                                 'association', 'name']],
-            ['state', 'present', ['switch_type', 'profile',
-                                  'association', 'name']],
+            ['state', 'absent', ['profile', 'association', 'name']],
+            ['state', 'present', ['profile', 'association', 'name']],
         ]
     )
 
