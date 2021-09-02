@@ -215,6 +215,7 @@ def main():
 
     name = module.params.get('name')
     descr = module.params.get('descr')
+    state = module.params.get('state')
     child_classes = ['fabricSpineS']
 
     aci.construct_url(
