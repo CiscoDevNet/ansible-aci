@@ -285,7 +285,7 @@ def main():
             aci_rn='nodeblk-{0}'.format(name),
             module_object=name,
             target_filter={'name': name},
-        )
+        ),
     )
 
     aci.get_existing()
