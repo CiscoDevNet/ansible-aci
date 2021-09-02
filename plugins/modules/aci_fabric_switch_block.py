@@ -282,6 +282,12 @@ def main():
             module_object=association,
             target_filter={'name': association},
         ),
+        subclass_2=dict(
+            aci_class='fabricNodeBlk',
+            aci_rn='nodeblk-{0}'.format(name),
+            module_object=name,
+            target_filter={'name': name},
+        ),
     )
 
     aci.get_existing()
