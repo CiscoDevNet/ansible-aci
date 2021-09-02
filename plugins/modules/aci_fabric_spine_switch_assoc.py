@@ -254,7 +254,7 @@ def main():
     aci.get_existing()
 
     if state == 'present':
-        child_configs = None
+        child_configs = []
         if policy_group:
             tDn = 'uni/fabric/funcprof/spnodepgrp-{0}'.format(policy_group)
             child_configs.append(
