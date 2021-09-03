@@ -69,7 +69,7 @@
     switch_type: spine
     profile: ansible_spine_switch_prf
     association: ansible_spine_switch_assoc
-    block: ansible_spine_block
+    name: ansible_spine_block
     from_: 103
     to_: 103
     state: present

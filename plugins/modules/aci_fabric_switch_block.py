@@ -80,7 +80,7 @@ EXAMPLES = r'''
     switch_type: spine
     profile: my_spine_profile
     association: my_spine_switch_assoc
-    block: my_spine_block
+    name: my_spine_block
     from_: 101
     to_: 101
     state: present
@@ -94,7 +94,7 @@ EXAMPLES = r'''
     switch_type: spine
     profile: my_spine_profile
     association: my_spine_switch_assoc
-    block: my_spine_block
+    name: my_spine_block
     state: absent
   delegate_to: localhost
 
@@ -106,7 +106,7 @@ EXAMPLES = r'''
     switch_type: spine
     profile: my_spine_profile
     association: my_spine_switch_assoc
-    block: my_spine_block
+    name: my_spine_block
     state: query
   delegate_to: localhost
   register: query_result
