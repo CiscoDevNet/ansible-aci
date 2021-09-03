@@ -79,6 +79,96 @@
     that:
     - add_association_again.current.0.fabricSpineS.children.0.fabricRsSpNodePGrp.attributes.tDn == "uni/fabric/funcprof/spnodepgrp-ansible_spine_pol_grp1"
 
+# UPDATE SPINE SWITCH POLICY GROUP ASSOCIATION
+- name: Update a spine switch profile association
+  cisco.aci.aci_fabric_spine_switch_assoc:
+    <<: *aci_info
+    profile: ansible_spine_switch_prf
+    name: ansible_spine_switch_assoc
+    policy_group: ansible_spine_pol_grp2
+    state: present
+  register: update_association
+
+- name: Verify association update
+  assert:
+    that:
+    - add_association_again is changed
+    - add_association_again.current.0.fabricSpineS.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range"
+    - add_association_again.current.0.fabricSpineS.attributes.name == "ansible_spine_switch_assoc"
+    - add_association_again.current.0.fabricSpineS.attributes.type == "range"
+
+- name: Verify Policy Group association update
+  assert:
+    that:
+    - add_association_again.current.0.fabricSpineS.children.0.fabricRsSpNodePGrp.attributes.tDn == "uni/fabric/funcprof/spnodepgrp-ansible_spine_pol_grp2"
+
+# QUERY SPINE SWITCH ASSOCIATION
+- name: Query spine switch profile association
+  cisco.aci.aci_fabric_spine_switch_assoc:
+    <<: *aci_info
+    profile: ansible_spine_switch_prf
+    name: ansible_spine_switch_assoc
+    state: query
+  register: query_association
+
+- name: Verify association update
+  assert:
+    that:
+    - query_association is not changed
+    - query_association.current.0.fabricSpineS.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range"
+    - query_association.current.0.fabricSpineS.attributes.name == "ansible_spine_switch_assoc"
+    - query_association.current.0.fabricSpineS.attributes.type == "range"
+
+- name: Verify Policy Group association
+  assert:
+    that:
+    - query_association.current.0.fabricSpineS.children.0.fabricRsSpNodePGrp.attributes.tDn == "uni/fabric/funcprof/spnodepgrp-ansible_spine_pol_grp2"
+
+# QUERY ALL SPINE SWITCH ASSOCIATIONS
+- name: Query spine switch profile association
+  cisco.aci.aci_fabric_spine_switch_assoc:
+    <<: *aci_info
+    state: query
+  register: query_association_all
+
+- name: Verify query all idempotence
+  assert:
+    that:
+    - query_association_all is not changed
+
+# DELETE SPINE SWITCH ASSOCIATION
+- name: Delete spine switch profile association
+  cisco.aci.aci_fabric_spine_switch_assoc:
+    <<: *aci_info
+    profile: ansible_spine_switch_prf
+    name: ansible_spine_switch_assoc
+    state: absent
+  register: delete_association
+
+- name: Verify association removal
+  assert:
+    that:
+    - delete_association is changed
+    - delete_association.current == []
+    - delete_association.previous.0.fabricSpineS.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range"
+    - delete_association.previous.0.fabricSpineS.attributes.name == "ansible_spine_switch_assoc"
+    - delete_association.previous.0.fabricSpineS.attributes.type == "range"
+
+# DELETE SPINE SWITCH ASSOCIATION AGAIN TO TEST IDEMPOTENCE
+- name: Delete spine switch profile association again
+  cisco.aci.aci_fabric_spine_switch_assoc:
+    <<: *aci_info
+    profile: ansible_spine_switch_prf
+    name: ansible_spine_switch_assoc
+    state: absent
+  register: delete_association_again
+
+- name: Verify association removal idempotence
+  assert:
+    that:
+    - delete_association_again is not changed
+    - delete_association_again.current == []
+
 # CLEAN UP ENVIRONMENT
 - name: Remove ansible_spine_switch_prf
   aci_fabric_spine_profile:

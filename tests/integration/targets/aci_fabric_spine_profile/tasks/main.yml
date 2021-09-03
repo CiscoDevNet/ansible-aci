@@ -64,7 +64,7 @@
     state: query
   register: query_switch_prf
 
-- name: Verify profile creation idempotence
+- name: Verify profile query
   assert:
     that:
     - query_switch_prf is not changed
@@ -78,7 +78,7 @@
     state: query
   register: query_switch_prf_all
 
-- name: Verify profile creation idempotence
+- name: Verify profile query idempotence
   assert:
     that:
     - query_switch_prf_all is not changed
@@ -91,7 +91,7 @@
     state: absent
   register: delete_switch_prf
 
-- name: Verify profile creation idempotence
+- name: Verify profile deletion
   assert:
     that:
     - delete_switch_prf is changed
@@ -107,7 +107,7 @@
     state: absent
   register: delete_switch_prf_again
 
-- name: Verify profile creation idempotence
+- name: Verify profile deletion idempotence
   assert:
     that:
     - delete_switch_prf_again is not changed
