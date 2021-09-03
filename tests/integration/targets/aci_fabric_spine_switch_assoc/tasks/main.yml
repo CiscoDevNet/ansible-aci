@@ -92,15 +92,15 @@
 - name: Verify association update
   assert:
     that:
-    - add_association_again is changed
-    - add_association_again.current.0.fabricSpineS.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range"
-    - add_association_again.current.0.fabricSpineS.attributes.name == "ansible_spine_switch_assoc"
-    - add_association_again.current.0.fabricSpineS.attributes.type == "range"
+    - update_association is changed
+    - update_association.current.0.fabricSpineS.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range"
+    - update_association.current.0.fabricSpineS.attributes.name == "ansible_spine_switch_assoc"
+    - update_association.current.0.fabricSpineS.attributes.type == "range"
 
 - name: Verify Policy Group association update
   assert:
     that:
-    - add_association_again.current.0.fabricSpineS.children.0.fabricRsSpNodePGrp.attributes.tDn == "uni/fabric/funcprof/spnodepgrp-ansible_spine_pol_grp2"
+    - update_association.current.0.fabricSpineS.children.0.fabricRsSpNodePGrp.attributes.tDn == "uni/fabric/funcprof/spnodepgrp-ansible_spine_pol_grp2"
 
 # QUERY SPINE SWITCH ASSOCIATION
 - name: Query spine switch profile association
