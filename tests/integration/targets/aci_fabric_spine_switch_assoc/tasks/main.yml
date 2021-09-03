@@ -36,7 +36,7 @@
 
 # CREATE SPINE SWITCH ASSOCIATION
 - name: Create a spine switch profile association
-  cisco.aci.aci_fabric_spine_switch_assoc:
+  aci_fabric_spine_switch_assoc:
     <<: *aci_info
     profile: ansible_spine_switch_prf
     name: ansible_spine_switch_assoc
@@ -58,7 +58,7 @@
 
 # CREATE SPINE SWITCH ASSOCIATION AGAIN TO TEST IDEMPOTENCE
 - name: Create a spine switch profile association again
-  cisco.aci.aci_fabric_spine_switch_assoc:
+  aci_fabric_spine_switch_assoc:
     <<: *aci_info
     profile: ansible_spine_switch_prf
     name: ansible_spine_switch_assoc
@@ -81,7 +81,7 @@
 
 # UPDATE SPINE SWITCH POLICY GROUP ASSOCIATION
 - name: Update a spine switch profile association
-  cisco.aci.aci_fabric_spine_switch_assoc:
+  aci_fabric_spine_switch_assoc:
     <<: *aci_info
     profile: ansible_spine_switch_prf
     name: ansible_spine_switch_assoc
@@ -104,7 +104,7 @@
 
 # QUERY SPINE SWITCH ASSOCIATION
 - name: Query spine switch profile association
-  cisco.aci.aci_fabric_spine_switch_assoc:
+  aci_fabric_spine_switch_assoc:
     <<: *aci_info
     profile: ansible_spine_switch_prf
     name: ansible_spine_switch_assoc
@@ -126,7 +126,7 @@
 
 # QUERY ALL SPINE SWITCH ASSOCIATIONS
 - name: Query spine switch profile association
-  cisco.aci.aci_fabric_spine_switch_assoc:
+  aci_fabric_spine_switch_assoc:
     <<: *aci_info
     state: query
   register: query_association_all
@@ -138,7 +138,7 @@
 
 # DELETE SPINE SWITCH ASSOCIATION
 - name: Delete spine switch profile association
-  cisco.aci.aci_fabric_spine_switch_assoc:
+  aci_fabric_spine_switch_assoc:
     <<: *aci_info
     profile: ansible_spine_switch_prf
     name: ansible_spine_switch_assoc
@@ -156,7 +156,7 @@
 
 # DELETE SPINE SWITCH ASSOCIATION AGAIN TO TEST IDEMPOTENCE
 - name: Delete spine switch profile association again
-  cisco.aci.aci_fabric_spine_switch_assoc:
+  aci_fabric_spine_switch_assoc:
     <<: *aci_info
     profile: ansible_spine_switch_prf
     name: ansible_spine_switch_assoc
