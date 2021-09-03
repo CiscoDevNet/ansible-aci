@@ -43,7 +43,7 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 notes:
-- The C(tprofile) must exist before using this module in your playbook.
+- The C(profile) must exist before using this module in your playbook.
   The M(cisco.aci.aci_fabric_spine_profile) module can be used for this.
 seealso:
 - name: APIC Management Information Model reference
