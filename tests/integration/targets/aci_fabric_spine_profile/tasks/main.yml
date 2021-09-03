@@ -112,3 +112,10 @@
     that:
     - delete_switch_prf_again is not changed
     - delete_switch_prf_again.current == []
+
+# CLEAN UP ENVIRONMENT
+- name: Remove ansible_spine_switch_prf
+  aci_fabric_spine_profile:
+    <<: *aci_info
+    name: ansible_spine_switch_prf
+    state: absent
