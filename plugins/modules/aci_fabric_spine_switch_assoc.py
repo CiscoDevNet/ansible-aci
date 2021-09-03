@@ -32,6 +32,7 @@ options:
   policy_group:
     description:
     - Name of an existing spine switch policy group
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -209,8 +210,8 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        profile=dict(type='str', aliases=['profile_name',
-                                          'spine_profile_name']),
+        profile=dict(type='str', aliases=['spine_profile',
+                                          'spine_switch_profile']),
         name=dict(type='str', aliases=['association_name',
                                        'switch_association']),
         policy_group=dict(type='str'),

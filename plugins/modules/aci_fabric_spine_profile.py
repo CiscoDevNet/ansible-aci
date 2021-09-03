@@ -196,7 +196,7 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        name=dict(type='str', aliases=['profile_name', 'spine_profile_name']),
+        name=dict(type='str', aliases=['spine_switch_profile', 'spine_profile']),
         descr=dict(type='str'),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query'])
