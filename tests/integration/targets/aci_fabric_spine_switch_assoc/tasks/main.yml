@@ -111,7 +111,7 @@
     state: query
   register: query_association
 
-- name: Verify association update
+- name: Verify query data
   assert:
     that:
     - query_association is not changed
