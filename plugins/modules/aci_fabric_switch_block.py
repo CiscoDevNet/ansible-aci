@@ -16,7 +16,7 @@ module: aci_fabric_switch_block
 short_description: Manage switch blocks (fabric:NodeBlk).
 description:
 - Manage fabric node blocks within switch associations (fabric:SpineS and
-  fabric:LeafS) for fabric switch profiles (fabric:SpineP and fabric:LeafP)
+  fabric:LeafS) contained within fabric switch profiles (fabric:SpineP and fabric:LeafP)
 options:
   name:
     description:
