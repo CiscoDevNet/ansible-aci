@@ -63,7 +63,7 @@
     - add_switch_block.current.0.fabricNodeBlk.attributes.name == "ansible_spine_block"
 
 # ADD SPINE SWITCH BLOCK AGAIN TO TEST IDEMPOTENCE
-- name: Create a spine switch association block
+- name: Create a spine switch association block again
   aci_fabric_switch_block:
     <<: *aci_info
     switch_type: spine

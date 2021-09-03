@@ -100,7 +100,7 @@
     - delete_switch_prf.previous.0.fabricSpineP.attributes.name == "ansible_spine_switch_prf"
 
 # DELETE SPINE SWITCH PROFILE AGAIN TO TEST IDEMPOTENCE
-- name: Delete ansible_spine_switch_prf
+- name: Delete ansible_spine_switch_prf again
   aci_fabric_spine_profile:
     <<: *aci_info
     name: ansible_spine_switch_prf
