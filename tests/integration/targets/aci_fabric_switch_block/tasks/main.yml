@@ -82,6 +82,60 @@
     - add_switch_block_again.current.0.fabricNodeBlk.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range/nodeblk-ansible_spine_block"
     - add_switch_block_again.current.0.fabricNodeBlk.attributes.name == "ansible_spine_block"
 
+# QUERY SPINE SWITCH BLOCK
+- name: Query spine switch association block
+  aci_fabric_switch_block:
+    <<: *aci_info
+    switch_type: spine
+    profile: ansible_spine_switch_prf
+    association: ansible_spine_switch_assoc
+    name: ansible_spine_block
+    state: query
+  register: query_switch_block
+
+- name: Verify block query
+  assert:
+    that:
+    - query_switch_block is not changed
+    - query_switch_block.current.0.fabricNodeBlk.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range/nodeblk-ansible_spine_block"
+    - query_switch_block.current.0.fabricNodeBlk.attributes.name == "ansible_spine_block"
+
+# REMOVE SPINE SWITCH BLOCK
+- name: Remove spine switch association block
+  aci_fabric_switch_block:
+    <<: *aci_info
+    switch_type: spine
+    profile: ansible_spine_switch_prf
+    association: ansible_spine_switch_assoc
+    name: ansible_spine_block
+    state: absent
+  register: delete_switch_block
+
+- name: Verify spine switch block removal
+  assert:
+    that:
+    - delete_switch_block is changed
+    - delete_switch_block.current == []
+    - delete_switch_block.previous.0.fabricNodeBlk.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range/nodeblk-ansible_spine_block"
+    - delete_switch_block.previous.0.fabricNodeBlk.attributes.name == "ansible_spine_block"
+
+# REMOVE SPINE SWITCH BLOCK AGAIN TO TEST IDEMPOTENCE
+- name: Remove spine switch association block
+  aci_fabric_switch_block:
+    <<: *aci_info
+    switch_type: spine
+    profile: ansible_spine_switch_prf
+    association: ansible_spine_switch_assoc
+    name: ansible_spine_block
+    state: absent
+  register: delete_switch_block
+
+- name: Verify spine switch block removal idempotence
+  assert:
+    that:
+    - delete_switch_block is not changed
+    - delete_switch_block.current == []
+
 # CLEAN UP ENVIRONMENT
 - name: Remove ansible_spine_switch_prf
   aci_fabric_spine_profile:
