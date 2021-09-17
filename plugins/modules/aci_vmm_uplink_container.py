@@ -216,9 +216,9 @@ def main():
     aci.construct_url(
         root_class=dict(
             aci_class='vmmProvP',
-            aci_rn='vmmp-VMWare',
-            module_object='VMWare',
-            target_filter={'name': 'VMWare'},
+            aci_rn='vmmp-VMware',
+            module_object='VMware',
+            target_filter={'name': 'VMware'},
         ),
         subclass_1=dict(
             aci_class='vmmDomP',
