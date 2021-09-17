@@ -196,7 +196,6 @@ def main():
         domain=dict(type='str'),
         num_of_uplinks=dict(type='int')
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
     )
 
     module = AnsibleModule(
