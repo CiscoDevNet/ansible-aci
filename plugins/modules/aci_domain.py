@@ -82,6 +82,15 @@ options:
     - The APIC defaults to C(default) when unset during creation.
     type: str
     choices: [ avs, default, dvs, unknown ]
+  access_mode:
+    description:
+    - Access mode for vmm domains
+    type: str
+    choices: [ read-only, read-write ]
+  enable_vm_folder:
+    description:
+    - Enable VM folder data retrieval
+    type: bool
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -334,6 +343,8 @@ def main():
         vm_provider=dict(type="str", choices=["cloudfoundry", "kubernetes", "microsoft", "openshift", "openstack", "redhat", "vmware"]),
         vswitch=dict(type="str", choices=["avs", "default", "dvs", "unknown"]),
         name_alias=dict(type="str"),
+        access_mode=dict(type="str", choices=["read-write", "read-only"]),
+        enable_vm_folder=dict(type="bool"),
     )
 
     module = AnsibleModule(
@@ -357,6 +368,8 @@ def main():
     vswitch = module.params.get("vswitch")
     if vswitch is not None:
         vswitch = VSWITCH_MAPPING.get(vswitch)
+    access_mode = module.params.get("access_mode")
+    enable_vm_folder = BOOL_TO_ACI_MAPPING[module.params.get("enable_vm_folder")]
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
@@ -369,6 +382,10 @@ def main():
             module.fail_json(msg="Domain type '{0}' cannot have parameter 'multicast_address'".format(domain_type))
         if vswitch is not None:
             module.fail_json(msg="Domain type '{0}' cannot have parameter 'vswitch'".format(domain_type))
+        if access_mode is not None:
+            module.fail_json(msg="Domain type '{0}' cannot have parameter 'access_mode'".format(domain_type))
+        if enable_vm_folder is not None:
+            module.fail_json(msg="Domain type '{0}' cannot have parameter 'enable_vm_folder'".format(domain_type))
 
     if dscp is not None and domain_type not in ["l2dom", "l3dom"]:
         module.fail_json(msg="DSCP values can only be assigned to 'l2ext and 'l3ext' domains")
@@ -423,6 +440,8 @@ def main():
                 name=domain,
                 targetDscp=dscp,
                 nameAlias=name_alias,
+                accessMode=access_mode,
+                enableVmFolder=enable_vm_folder,
             ),
         )
 
