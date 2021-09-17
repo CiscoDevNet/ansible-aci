@@ -194,7 +194,7 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         domain=dict(type='str'),
-        num_of_uplinks=dict(type='int')
+        num_of_uplinks=dict(type='int'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
 
