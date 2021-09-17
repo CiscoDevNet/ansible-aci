@@ -207,6 +207,10 @@ def main():
         ],
     )
 
+    domain = module.params.get('domain')
+    num_of_uplinks = module.params.get('num_of_uplinks')
+    state = module.params.get('state')
+
     aci = ACIModule(module)
 
     aci.construct_url(
