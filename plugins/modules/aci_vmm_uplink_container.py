@@ -244,7 +244,6 @@ def main():
                 rn='uplinkpcont',
                 numOfUplinks=num_of_uplinks,
             ),
-            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class='vmmUplinkPCont')
