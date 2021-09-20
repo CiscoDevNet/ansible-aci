@@ -230,7 +230,7 @@ def main():
             aci_class='vmmUplinkPCont',
             aci_rn='uplinkpcont',
             module_object='uplinkpcont',
-            target_filter={'id': '0'},
+            target_filter={'rn': 'uplinkpcont'},
         ),
         child_classes=['vmmUplinkP'],
     )
@@ -241,7 +241,6 @@ def main():
         aci.payload(
             aci_class='vmmUplinkPCont',
             class_config=dict(
-                rn='uplinkpcont',
                 numOfUplinks=num_of_uplinks,
             ),
         )
