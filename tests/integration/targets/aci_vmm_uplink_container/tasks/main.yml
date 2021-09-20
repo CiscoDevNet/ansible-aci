@@ -127,7 +127,7 @@
 - name: Verify Uplink Container removal idempotence
   assert:
     that:
-    - delete_container is not changed
+    - delete_container_again is not changed
 
 # CLEAN UP
 - name: Remove ansible_domain
