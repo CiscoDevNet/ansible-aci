@@ -85,6 +85,7 @@ options:
   access_mode:
     description:
     - Access mode for vmm domains
+    - This parameter cannot be changed after a domain is created
     type: str
     choices: [ read-only, read-write ]
   enable_vm_folder:
