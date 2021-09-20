@@ -21,6 +21,7 @@ options:
     description:
     - Name of the VMM domain
     type: str
+    required: yes
   uplink_id:
     description:
     - numerical ID of the uplink
@@ -197,7 +198,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        domain=dict(type='str'),
+        domain=dict(type='str', required=True),
         uplink_id=dict(type='int'),
         uplink_name=dict(type='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
@@ -207,8 +208,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['domain', 'uplink_id']],
-            ['state', 'present', ['domain', 'uplink_id']],
+            ['state', 'absent', ['uplink_id']],
+            ['state', 'present', ['uplink_id']],
         ],
     )
 
