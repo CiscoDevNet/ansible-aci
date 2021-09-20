@@ -230,7 +230,7 @@ def main():
             aci_class='vmmUplinkPCont',
             aci_rn='uplinkpcont',
             module_object='uplinkpcont',
-            target_filter={'rn': 'uplinkpcont'},
+            target_filter={'id': '0'},
         ),
         child_classes=['vmmUplinkP'],
     )
