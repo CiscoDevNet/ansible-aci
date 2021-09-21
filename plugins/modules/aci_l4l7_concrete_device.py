@@ -26,10 +26,12 @@ options:
     description:
     - Name of the logical device (vns:lDevVip) the concrete device is attached to
     type: str
+    aliases: [ device_name, logical_device_name ]
   concrete_device:
     description:
     - Name of the concrete device
     type: str
+    aliases: [ concrete_device_name ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -212,8 +214,9 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         tenant=dict(type='str', aliases=['tenant_name']),
-        device=dict(type='str'),
-        concrete_device=dict(type='str'),
+        device=dict(type='str', aliases=['device_name',
+                                         'logical_device_name']),
+        concrete_device=dict(type='str', aliases=['concrete_device_name']),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query']),
     )
