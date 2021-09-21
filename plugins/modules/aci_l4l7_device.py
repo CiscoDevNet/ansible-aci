@@ -26,6 +26,7 @@ options:
     description:
     - Name of L4-L7 device
     type: str
+    aliases: [ device_name, logical_device_name ]
   context_aware:
     description:
       - Is device Single or Multi context aware
@@ -70,6 +71,7 @@ options:
     description:
     - Physical domain to bind to the device
     type: str
+    aliases: [ domain_name ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -246,7 +248,8 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         tenant=dict(type='str', aliases=['tenant_name']),
-        device=dict(type='str'),
+        device=dict(type='str', aliases=['device_name',
+                                         'logical_device_name']),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query']),
         context_aware=dict(type='str', choices=['single', 'multi']),
@@ -264,7 +267,7 @@ def main():
                                            'others',
                                            'copy']),
         trunking=dict(type='str', choices=['yes', 'no']),
-        domain=dict(type='str'),
+        domain=dict(type='str', aliases=['domain_name']),
     )
 
     module = AnsibleModule(
