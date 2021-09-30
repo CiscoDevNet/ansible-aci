@@ -27,6 +27,8 @@
     name: ansible_spine_switch_prf
     state: absent
 
+# TODO: Add testing for Fabric Leaf Blocks
+
 # CREATE SPINE SWITCH POLICY
 - name: Create ansible_spine_switch_prf
   aci_fabric_spine_profile:

@@ -22,10 +22,11 @@ options:
     - Name of the fabric spine switch profile
     type: str
     aliases: [ spine_profile, spine_switch_profile ]
-  descr:
+  description:
     description:
     - description of the profile
     type: str
+    aliases: [ descr ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -197,7 +198,7 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         name=dict(type='str', aliases=['spine_switch_profile', 'spine_profile']),
-        descr=dict(type='str'),
+        description=dict(type='str', aliases=['descr']),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query'])
     )
@@ -214,7 +215,7 @@ def main():
     aci = ACIModule(module)
 
     name = module.params.get('name')
-    descr = module.params.get('descr')
+    description = module.params.get('description')
     state = module.params.get('state')
     child_classes = ['fabricSpineS']
 
@@ -235,7 +236,7 @@ def main():
             aci_class='fabricSpineP',
             class_config=dict(
                 name=name,
-                descr=descr
+                descr=description
             ),
         )
 
