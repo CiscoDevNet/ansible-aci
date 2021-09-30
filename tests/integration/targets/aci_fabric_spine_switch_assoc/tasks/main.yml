@@ -91,9 +91,9 @@
 - name: Verify association creation
   assert:
     that:
-    - add_association.current.0.fabricSpineS.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc2-typ-range"
-    - add_association.current.0.fabricSpineS.attributes.name == "ansible_spine_switch_assoc2"
-    - add_association.current.0.fabricSpineS.attributes.type == "range"
+    - add_association_without_policy_group.current.0.fabricSpineS.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc2-typ-range"
+    - add_association_without_policy_group.current.0.fabricSpineS.attributes.name == "ansible_spine_switch_assoc2"
+    - add_association_without_policy_group.current.0.fabricSpineS.attributes.type == "range"
 
 # UPDATE SPINE SWITCH POLICY GROUP ASSOCIATION
 - name: Update a spine switch profile association
