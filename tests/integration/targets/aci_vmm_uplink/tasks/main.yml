@@ -20,139 +20,155 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: debug
 
-# CLEAN ENVIRONMENT
-- name: Remove ansible_domain if it already exists
-  aci_domain:
+# PERFORM TESTS ONLY ON SUPPORTED APICS
+- name: Query system information
+  aci_system:
     <<: *aci_info
-    domain: ansible_domain
-    domain_type: vmm
-    vm_provider: vmware
-    state: absent
-
-# CREATE VMWARE DOMAIN
-- name: Create ansible_domain
-  aci_domain:
-    <<: *aci_info
-    domain: ansible_domain
-    domain_type: vmm
-    vm_provider: vmware
-    state: present
-
-# CREATE VMWARE UPLINK CONTAINER
-- name: Create VMWare Uplink Container
-  aci_vmm_uplink_container:
-    <<: *aci_info
-    domain: ansible_domain
-    num_of_uplinks: 1
-    state: present
-
-# CREATE VMWARE UPLINK
-- name: Create VMWare Uplink
-  cisco.aci.aci_vmm_uplink:
-    <<: *aci_info
-    domain: ansible_domain
-    uplink_id: 1
-    uplink_name: uplink1
-    state: present
-  register: create_uplink
-
-- name: Verify Uplink Creation
-  assert:
-    that:
-    - create_uplink.current.0.vmmUplinkP.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont/uplinkp-1"
-    - create_uplink.current.0.vmmUplinkP.attributes.uplinkId == "1"
-    - create_uplink.current.0.vmmUplinkP.attributes.uplinkName == "uplink1"
-
-# CREATE VMWARE UPLINK AGAIN TO TEST IDEMPOTENCE
-- name: Create VMWare Uplink again
-  cisco.aci.aci_vmm_uplink:
-    <<: *aci_info
-    domain: ansible_domain
-    uplink_id: 1
-    uplink_name: uplink1
-    state: present
-  register: create_uplink_again
-
-- name: Verify Uplink Creation idempotence
-  assert:
-    that:
-    - create_uplink_again is not changed
-    - create_uplink_again.current.0.vmmUplinkP.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont/uplinkp-1"
-    - create_uplink_again.current.0.vmmUplinkP.attributes.uplinkId == "1"
-    - create_uplink_again.current.0.vmmUplinkP.attributes.uplinkName == "uplink1"
-
-# MODIFY VMWARE UPLINK
-- name: Create VMWare Uplink again
-  cisco.aci.aci_vmm_uplink:
-    <<: *aci_info
-    domain: ansible_domain
-    uplink_id: 1
-    uplink_name: updated_uplink
-    state: present
-  register: update_uplink
-
-- name: Verify Uplink update
-  assert:
-    that:
-    - update_uplink is changed
-    - update_uplink.current.0.vmmUplinkP.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont/uplinkp-1"
-    - update_uplink.current.0.vmmUplinkP.attributes.uplinkId == "1"
-    - update_uplink.current.0.vmmUplinkP.attributes.uplinkName == "updated_uplink"
-
-# QUERY VMWARE UPLINK
-- name: Query VMWare Uplink
-  cisco.aci.aci_vmm_uplink:
-    <<: *aci_info
-    domain: ansible_domain
-    uplink_id: 1
+    id: 1
     state: query
-  register: query_uplink
+  register: version
 
-- name: Verify Uplink query
-  assert:
-    that:
-    - query_uplink is not changed
-    - query_uplink.current.0.vmmUplinkP.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont/uplinkp-1"
-    - query_uplink.current.0.vmmUplinkP.attributes.uplinkId == "1"
-    - query_uplink.current.0.vmmUplinkP.attributes.uplinkName == "updated_uplink"
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-# DELETE VMWARE UPLINK
-- name: Delete VMWare Uplink
-  cisco.aci.aci_vmm_uplink:
-    <<: *aci_info
-    domain: ansible_domain
-    uplink_id: 1
-    state: absent
-  register: remove_uplink
+- name: Execute tasks only for non-cloud sites
+  when:
+   - query_cloud.current == []  # This condition will skip execution for cloud sites
+   - version.current.0.topSystem.attributes.version is version('4.2', '>=') # Make sure we execute it for APIC version above or equal to 4.2
+  block:
+  # CLEAN ENVIRONMENT
+  - name: Remove ansible_domain if it already exists
+    aci_domain:
+      <<: *aci_info
+      domain: ansible_domain
+      domain_type: vmm
+      vm_provider: vmware
+      state: absent
 
-- name: Verify VMWare Uplink deletion
-  assert:
-    that:
-    - remove_uplink is changed
-    - remove_uplink.current == []
-    - remove_uplink.previous.0.vmmUplinkP.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont/uplinkp-1"
-    - remove_uplink.previous.0.vmmUplinkP.attributes.uplinkId == "1"
-    - remove_uplink.previous.0.vmmUplinkP.attributes.uplinkName == "updated_uplink"
+  # CREATE VMWARE DOMAIN
+  - name: Create ansible_domain
+    aci_domain:
+      <<: *aci_info
+      domain: ansible_domain
+      domain_type: vmm
+      vm_provider: vmware
+      state: present
 
-# DELETE VMWARE UPLINK AGAIN TO TEST IDEMPOTENCE
-- name: Delete VMWare Uplink again
-  cisco.aci.aci_vmm_uplink:
-    <<: *aci_info
-    domain: ansible_domain
-    uplink_id: 1
-    state: absent
-  register: remove_uplink_again
+  # CREATE VMWARE UPLINK CONTAINER
+  - name: Create VMWare Uplink Container
+    aci_vmm_uplink_container:
+      <<: *aci_info
+      domain: ansible_domain
+      num_of_uplinks: 1
+      state: present
 
-- name: Verify VMWare Uplink deletion idempotence
-  assert:
-    that:
-    - remove_uplink_again is not changed
+  # CREATE VMWARE UPLINK
+  - name: Create VMWare Uplink
+    cisco.aci.aci_vmm_uplink:
+      <<: *aci_info
+      domain: ansible_domain
+      uplink_id: 1
+      uplink_name: uplink1
+      state: present
+    register: create_uplink
 
-# CLEAN UP
-- name: Remove ansible_domain
-  aci_domain:
-    <<: *aci_info
-    domain: ansible_domain
-    domain_type: vmm
-    vm_provider: vmware
-    state: absent
+  - name: Verify Uplink Creation
+    assert:
+      that:
+      - create_uplink.current.0.vmmUplinkP.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont/uplinkp-1"
+      - create_uplink.current.0.vmmUplinkP.attributes.uplinkId == "1"
+      - create_uplink.current.0.vmmUplinkP.attributes.uplinkName == "uplink1"
+
+  # CREATE VMWARE UPLINK AGAIN TO TEST IDEMPOTENCE
+  - name: Create VMWare Uplink again
+    cisco.aci.aci_vmm_uplink:
+      <<: *aci_info
+      domain: ansible_domain
+      uplink_id: 1
+      uplink_name: uplink1
+      state: present
+    register: create_uplink_again
+
+  - name: Verify Uplink Creation idempotence
+    assert:
+      that:
+      - create_uplink_again is not changed
+      - create_uplink_again.current.0.vmmUplinkP.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont/uplinkp-1"
+      - create_uplink_again.current.0.vmmUplinkP.attributes.uplinkId == "1"
+      - create_uplink_again.current.0.vmmUplinkP.attributes.uplinkName == "uplink1"
+
+  # MODIFY VMWARE UPLINK
+  - name: Create VMWare Uplink again
+    cisco.aci.aci_vmm_uplink:
+      <<: *aci_info
+      domain: ansible_domain
+      uplink_id: 1
+      uplink_name: updated_uplink
+      state: present
+    register: update_uplink
+
+  - name: Verify Uplink update
+    assert:
+      that:
+      - update_uplink is changed
+      - update_uplink.current.0.vmmUplinkP.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont/uplinkp-1"
+      - update_uplink.current.0.vmmUplinkP.attributes.uplinkId == "1"
+      - update_uplink.current.0.vmmUplinkP.attributes.uplinkName == "updated_uplink"
+
+  # QUERY VMWARE UPLINK
+  - name: Query VMWare Uplink
+    cisco.aci.aci_vmm_uplink:
+      <<: *aci_info
+      domain: ansible_domain
+      uplink_id: 1
+      state: query
+    register: query_uplink
+
+  - name: Verify Uplink query
+    assert:
+      that:
+      - query_uplink is not changed
+      - query_uplink.current.0.vmmUplinkP.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont/uplinkp-1"
+      - query_uplink.current.0.vmmUplinkP.attributes.uplinkId == "1"
+      - query_uplink.current.0.vmmUplinkP.attributes.uplinkName == "updated_uplink"
+
+  # DELETE VMWARE UPLINK
+  - name: Delete VMWare Uplink
+    cisco.aci.aci_vmm_uplink:
+      <<: *aci_info
+      domain: ansible_domain
+      uplink_id: 1
+      state: absent
+    register: remove_uplink
+
+  - name: Verify VMWare Uplink deletion
+    assert:
+      that:
+      - remove_uplink is changed
+      - remove_uplink.current == []
+      - remove_uplink.previous.0.vmmUplinkP.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont/uplinkp-1"
+      - remove_uplink.previous.0.vmmUplinkP.attributes.uplinkId == "1"
+      - remove_uplink.previous.0.vmmUplinkP.attributes.uplinkName == "updated_uplink"
+
+  # DELETE VMWARE UPLINK AGAIN TO TEST IDEMPOTENCE
+  - name: Delete VMWare Uplink again
+    cisco.aci.aci_vmm_uplink:
+      <<: *aci_info
+      domain: ansible_domain
+      uplink_id: 1
+      state: absent
+    register: remove_uplink_again
+
+  - name: Verify VMWare Uplink deletion idempotence
+    assert:
+      that:
+      - remove_uplink_again is not changed
+
+  # CLEAN UP
+  - name: Remove ansible_domain
+    aci_domain:
+      <<: *aci_info
+      domain: ansible_domain
+      domain_type: vmm
+      vm_provider: vmware
+      state: absent
