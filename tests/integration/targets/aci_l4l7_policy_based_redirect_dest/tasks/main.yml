@@ -40,7 +40,6 @@
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
-    dest_type: L3
     hash_algorithm: dip
     resilient_hash: yes
     min_threshold: 60

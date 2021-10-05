@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_l4l7_policy_based_redirect
-short_description: Manage L4-L7 Policy Based Redirection (svc:RedirectPol)
+short_description: Manage L4-L7 Policy Based Redirection (vns:SvcRedirectPol)
 description:
 - Manage L4-L7 Policy Based Redirection
 options:
@@ -80,7 +80,7 @@ notes:
   The M(cisco.aci.aci_tenant) module can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes, B(svcRedirectPol)
+  description: More information about the internal APIC classes, B(vnsSvcRedirectPol)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)

@@ -99,7 +99,6 @@
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy1
-    dest_type: L3
     hash_algorithm: dip
     resilient_hash: yes
     state: present
@@ -110,7 +109,6 @@
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy2
-    dest_type: L3
     hash_algorithm: sip
     resilient_hash: yes
     state: present
