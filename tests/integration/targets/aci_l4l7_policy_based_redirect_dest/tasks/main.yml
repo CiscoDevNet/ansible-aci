@@ -68,7 +68,7 @@
     that:
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]"
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.ip == "192.168.10.1"
-    - add_pbr_dest.current.0.vnsRedirectDest.attributes.mac == "AB:CD:EF:12:34:56"
+    - add_pbr_dest.current.0.vnsRedirectDest.attributes.mac == "DE:AD:BE:EF:CA:FE"
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.destName == "redirect_dest"
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.podId == "1"
 
@@ -91,7 +91,7 @@
     - add_pbr_dest_again is not changed
     - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]"
     - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.ip == "192.168.10.1"
-    - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.mac == "AB:CD:EF:12:34:56"
+    - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.mac == "DE:AD:BE:EF:CA:FE"
     - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.destName == "redirect_dest"
     - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.podId == "1"
 
@@ -114,7 +114,7 @@
     - update_pbr_dest is changed
     - update_pbr_dest.current.0.vnsRedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]"
     - update_pbr_dest.current.0.vnsRedirectDest.attributes.ip == "192.168.10.1"
-    - update_pbr_dest.current.0.vnsRedirectDest.attributes.mac == "AB:CD:EF:12:34:57"
+    - update_pbr_dest.current.0.vnsRedirectDest.attributes.mac == "DE:AD:BE:EF:CA:FF"
     - update_pbr_dest.current.0.vnsRedirectDest.attributes.destName == "updated_redirect_dest"
     - update_pbr_dest.current.0.vnsRedirectDest.attributes.podId == "1"
 
@@ -134,7 +134,7 @@
     - query_pbr_dest is not changed
     - query_pbr_dest.current.0.vnsRedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]"
     - query_pbr_dest.current.0.vnsRedirectDest.attributes.ip == "192.168.10.1"
-    - query_pbr_dest.current.0.vnsRedirectDest.attributes.mac == "AB:CD:EF:12:34:57"
+    - query_pbr_dest.current.0.vnsRedirectDest.attributes.mac == "DE:AD:BE:EF:CA:FF"
     - query_pbr_dest.current.0.vnsRedirectDest.attributes.destName == "updated_redirect_dest"
     - query_pbr_dest.current.0.vnsRedirectDest.attributes.podId == "1"
 
@@ -166,7 +166,7 @@
     - delete_pbr_dest.current == []
     - delete_pbr_dest.previous.0.vnsRedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]"
     - delete_pbr_dest.previous.0.vnsRedirectDest.attributes.ip == "192.168.10.1"
-    - delete_pbr_dest.previous.0.vnsRedirectDest.attributes.mac == "AB:CD:EF:12:34:57"
+    - delete_pbr_dest.previous.0.vnsRedirectDest.attributes.mac == "DE:AD:BE:EF:CA:FF"
     - delete_pbr_dest.previous.0.vnsRedirectDest.attributes.destName == "updated_redirect_dest"
     - delete_pbr_dest.previous.0.vnsRedirectDest.attributes.podId == "1"
 

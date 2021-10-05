@@ -57,7 +57,7 @@
     tenant: ansible_tenant
     policy: ansible_pbr_policy
     redirect_ip: 192.168.10.1
-    redirect_mac: AB:CD:EF:12:34:56
+    redirect_mac: DE:AD:BE:EF:CA:FE
     dest_name: redirect_dest
     pod_id: 1
     state: present

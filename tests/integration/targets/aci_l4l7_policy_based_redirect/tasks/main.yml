@@ -147,34 +147,34 @@
 - name: Verify PBR Attributes
   assert:
     that:
-    - add_pbr_policy__v4_again is not changed
-    - add_pbr_policy__v4_again.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
-    - add_pbr_policy__v4_again.current.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
-    - add_pbr_policy__v4_again.current.0.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
-    - add_pbr_policy__v4_again.current.0.vnsSvcRedirectPol.attributes.destType == "L3"
-    - add_pbr_policy__v4_again.current.0.vnsSvcRedirectPol.attributes.hashingAlgorithm == "dip"
-    - add_pbr_policy__v4_again.current.0.vnsSvcRedirectPol.attributes.maxThresholdPercent == "90"
-    - add_pbr_policy__v4_again.current.0.vnsSvcRedirectPol.attributes.minThresholdPercent == "60"
-    - add_pbr_policy__v4_again.current.0.vnsSvcRedirectPol.attributes.programLocalPodOnly == "yes"
-    - add_pbr_policy__v4_again.current.0.vnsSvcRedirectPol.attributes.resilientHashEnabled == "yes"
-    - add_pbr_policy__v4_again.current.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "permit"
-    - add_pbr_policy__v4_again.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "yes"
+    - add_pbr_policy_v4_again is not changed
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.destType == "L3"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.hashingAlgorithm == "dip"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.maxThresholdPercent == "90"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.minThresholdPercent == "60"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.programLocalPodOnly == "yes"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.resilientHashEnabled == "yes"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "permit"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "yes"
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: Verify PBR Attributes
   assert:
     that:
-    - add_pbr_policy__v3_again is not changed
-    - add_pbr_policy__v3_again.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
-    - add_pbr_policy__v3_again.current.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
-    - add_pbr_policy__v3_again.current.0.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
-    - add_pbr_policy__v3_again.current.0.vnsSvcRedirectPol.attributes.hashingAlgorithm == "dip"
-    - add_pbr_policy__v3_again.current.0.vnsSvcRedirectPol.attributes.maxThresholdPercent == "90"
-    - add_pbr_policy__v3_again.current.0.vnsSvcRedirectPol.attributes.minThresholdPercent == "60"
-    - add_pbr_policy__v3_again.current.0.vnsSvcRedirectPol.attributes.programLocalPodOnly == "yes"
-    - add_pbr_policy__v3_again.current.0.vnsSvcRedirectPol.attributes.resilientHashEnabled == "yes"
-    - add_pbr_policy__v3_again.current.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "permit"
-    - add_pbr_policy__v3_again.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "yes"
+    - add_pbr_policy_v3_again is not changed
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.hashingAlgorithm == "dip"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.maxThresholdPercent == "90"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.minThresholdPercent == "60"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.programLocalPodOnly == "yes"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.resilientHashEnabled == "yes"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "permit"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "yes"
   when: version.current.0.topSystem.attributes.version is version('4.2', '<')
 
 # MODIFY L4-L7 PBR POLICY
