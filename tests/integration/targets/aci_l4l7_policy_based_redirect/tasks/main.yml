@@ -144,7 +144,7 @@
   register: add_pbr_policy_v3_again
   when: version.current.0.topSystem.attributes.version is version('4.2', '<')
 
-- name: Verify PBR Attributes
+- name: Verify PBR Attributes (v4)
   assert:
     that:
     - add_pbr_policy_v4_again is not changed
@@ -161,7 +161,7 @@
     - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "yes"
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
-- name: Verify PBR Attributes
+- name: Verify PBR Attributes (v3)
   assert:
     that:
     - add_pbr_policy_v3_again is not changed
@@ -196,7 +196,7 @@
   register: update_pbr_policy_v4
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
-- name: Update L4-L7 Policy Based Redirect (v4)
+- name: Update L4-L7 Policy Based Redirect (v3)
   aci_l4l7_policy_based_redirect:
     <<: *aci_info
     tenant: ansible_tenant
@@ -213,7 +213,7 @@
   register: update_pbr_policy_v3
   when: version.current.0.topSystem.attributes.version is version('4.2', '<')
 
-- name: Verify PBR Attributes
+- name: Verify PBR Attributes (v4)
   assert:
     that:
     - update_pbr_policy_v4 is changed
@@ -230,7 +230,7 @@
     - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "no"
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
-- name: Verify PBR Attributes
+- name: Verify PBR Attributes (v3)
   assert:
     that:
     - update_pbr_policy_v3 is changed
@@ -289,7 +289,6 @@
     - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
     - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
     - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
-    - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.destType == "L2"
     - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.hashingAlgorithm == "sip-dip-prototype"
     - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.maxThresholdPercent == "80"
     - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.minThresholdPercent == "50"
