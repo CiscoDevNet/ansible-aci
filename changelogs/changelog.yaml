@@ -114,3 +114,115 @@ releases:
         This changelog describes all changes made to the modules and plugins included
         in this collection since v1.1.1. '
     release_date: '2020-12-15'
+  2.1.0:
+    changes:
+      bugfixes:
+      - Fix blacklist bug
+      - Fix cleanup of MGMT EPGs
+      - Fix module reference for l3out_node_profile cleanup task
+      - Fix required variables for absent and present states for l3out_node_profile
+      - Fix sanity & importer check errors
+      - Fix test and assertion variables and module references for l3out_node_profile
+        tests
+      - pylint fix for .format()
+      minor_changes:
+      - Add APIC 5.x to inventory for Integration tests
+      - Add a requirements file
+      - Add ability to change custom epg name
+      - Add aci_cloud_ap module and test file
+      - Add aci_cloud_aws_provider module and its test file (#181)
+      - Add aci_cloud_bgp_asn module and test file (#180)
+      - Add aci_cloud_epg_selector module and test file (#182)
+      - Add aci_fabric_spine_profile, aci_fabric_spine_switch_assoc and aci_fabric_switch_block
+        modules and integration tests (#187)
+      - Add aci_info
+      - Add aci_interface_description module and test file (#167)
+      - Add aci_l3out_bgp_peer and aci_l3out_interface modules and test files (#177)
+      - Add aci_snmp_client, aci_snmp_client_group, aci_snmp_community_policy, aci_snmp_policy
+        and aci_snmp_user modules and test files (#176)
+      - Add aci_syslog_group module and test file (#170)
+      - Add aci_syslog_source and aci_syslog_remote_dest modules and test files (#174)
+      - Add aci_vmm_controller module and test file
+      - Add aci_vmm_vswitch module and test file (#142)
+      - Add check for enhanced lag policy
+      - Add cloud_external_epg and cloud_external_epg_selector modules and test files
+        (#185)
+      - Add directory and aliases file for l3out node profile tests
+      - Add ethertype for IPv6
+      - Add ethertype ipv4
+      - Add functionality to support cryptography for signing
+      - Add galaxy-importer check (#115)
+      - Add ipv6_l3_unknown_multicast parameter support for aci_bd
+      - Add issue templates
+      - Add module aci_cloud_epg & test file (#175)
+      - Add module aci_l3out_logical_node_profile to manage l3out node profiles
+      - Add module and test for aci_contract_subject_to_service_graph
+      - Add new module aci_l2out_extepg_to_contract and test file based on aci_l3out_extepg_to_contract
+      - Add new modules for L2out - aci_l2out_logical_*
+      - Add primary_encap in module tests
+      - Add route_profile, route_profile_l3_out to aci_bd
+      - Add support and tests for custom_qos_policy parameter in aci_epg
+      - Add support for ANSIBLE_NET_SSH_KEYFILE
+      - Add support for vmm domain infra port group and tag collection in aci_domain
+        module (#141)
+      - Add task to create requirement for enhanced lag policy
+      - Add test case for custom epg name
+      - Add test file for aci_bd
+      - Add tests for ipv6_l3_unknown_multicast parameter support in aci_bd
+      - Add tests for l3out node profile module
+      - Add tests to create multiple node profiles and query all node profiles in
+        an L3out
+      - Add variable references and fix naming in l3out_node_profile tests
+      - Add version check for changing custom epg name
+      - Added Enhanced Lag Policy for VMware VMM Domain Profile in module aci_epg_to_domain
+      - Change CI to latest version of ansible and python 3.8
+      - Change child_configs & child_classes
+      - Change dscp to target_dscp in aci_l3out_logical_node_profile module to avoid
+        future var conflicts
+      - Change naming of lagpolicy
+      - Change primary_encap --> primaryEncap
+      - Change test case for enhanced_lag_policy
+      - Changes made to execute aci_epg_to_domain and aci_cloud_cidr modules, also
+        generalised the cloud variables
+      - Check WARNINGs and ERRORs in galaxy-importer check (#118)
+      - Correcting sanity in aci_static_binding_to_epg.py module
+      - Fix broken test parameters for aci_l3out_logical_interface_profile
+      - Fix documentation and add example to query all node profiles for L3out
+      - Fix feedback
+      - Fix indentation causing linting error
+      - Fix lag_plicy tDn
+      - Fix missed separators '/' in path attribute of ACIModule class
+      - Fix module reference and remove unused aliases in aci_l3out_logical_node_profile
+        tests
+      - Fixed default values in docs and specs
+      - Fixed the behavior when output is specified in aci_rest. (#169)
+      - Initial changes to aci_cloud_ctx_profile module to execute only cloud sites
+        from inventory
+      - Interface types added for Po's and vPC's using fex-ports and test files
+      - L3Out Enhancements
+      - L3Out Interface Profile (#134)
+      - Made changes in collection version segment
+      - Made changes in mso.py to generalize construct_url
+      - Made changes to support aci non cloud host >=3.2
+      - Made changes with respect to galaxy importer similar to MSO
+      - Modified 12 files affected from inventory file changes, by differentiating
+        tasks into cloud and non-cloud specific hosts
+      - Move custom_qos_policy to conditional and remove unnecessary custom_qos_policy
+        from monitoring policy in test
+      - Move ipv6_l3_unknown_multicast to condition and check version in test
+      - Remove uneccessary delegate_to variable for l3out_node_profile cleanup task
+      - Separated assert statements for cloud and non-cloud sites and added additional
+        condition statement required for execution of version<=4.1
+      - Supports primaryEncap value as unknown (#157)
+      - Update aci_l3out_extepg_to_contract.py
+      - W291 + boolean correction
+      - contract_enhancements (#135)
+      - doc-required-mismatch fix
+      - interface blacklist test fix
+      - interface disable/enable fabricRsOosPath
+      - interface disable/enable fex support
+      release_summary: 'Release v2.1.0 of the ``ansible-aci`` collection on 2021-10-06.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.0.0. '
+    release_date: '2021-10-06'
