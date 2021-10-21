@@ -48,7 +48,7 @@
   aci_fabric_switch_profile:
     <<: *aci_info
     name: ansible_leaf_switch_prf
-    type: leaf
+    switch_type: leaf
     state: present
 
 # CREATE SPINE SWITCH ASSOCIATION
