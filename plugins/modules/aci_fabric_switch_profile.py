@@ -211,7 +211,7 @@ def main():
                                        'spine_profile',
                                        'leaf_switch_profile',
                                        'leaf_profile']),
-        switch_type=dict(type='str', choices=['leaf', 'spine'], required=True),      
+        switch_type=dict(type='str', choices=['leaf', 'spine'], required=True),
         description=dict(type='str', aliases=['descr']),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query'])
@@ -229,10 +229,10 @@ def main():
     aci = ACIModule(module)
 
     name = module.params.get('name')
-    switch_type = module.params.get('switch_type')    
+    switch_type = module.params.get('switch_type')
     description = module.params.get('description')
     state = module.params.get('state')
-    
+
     child_classes = list()
 
     if switch_type == 'spine':
@@ -243,7 +243,7 @@ def main():
         aci_class = 'fabricLeafP'
         aci_rn = 'fabric/leprof-{0}'.format(name)
         child_classes.append('fabricLeafS')
-    
+
     aci.construct_url(
         root_class=dict(
             aci_class=aci_class,
