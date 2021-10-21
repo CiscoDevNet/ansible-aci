@@ -12,16 +12,22 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_fabric_spine_profile
-short_description: Manage fabric spine profiles (fabric:SpineP).
+module: aci_fabric_switch_profile
+short_description: Manage fabric spine and leaf switch profiles.
 description:
-- Manage fabric spine switch profiles in an ACI fabric.
+- Manage fabric spine/leaf switch profiles (fabric:SpineP / fabric:LeafP) in an ACI fabric.
 options:
   name:
     description:
-    - Name of the fabric spine switch profile
+    - Name of the fabric switch profile
     type: str
-    aliases: [ spine_profile, spine_switch_profile ]
+    aliases: [ spine_profile, spine_switch_profile, leaf_profile, leaf_switch_profile ]
+  switch_type:
+    description:
+    - Type of switch profile, leaf or spine
+    type: str
+    choices: [ leaf, spine ]
+    required: yes
   description:
     description:
     - description of the profile
@@ -39,46 +45,50 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(fabricSpineP).
+  description: More information about the internal APIC class B(fabricSpineP) and B(fabricLeafP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
 '''
 
 EXAMPLES = r'''
-- name: Create a spine switch profile
-  cisco.aci.aci_fabric_spine_profile:
+- name: Create a spine fabric switch profile
+  cisco.aci.aci_fabric_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
     name: my_spine_profile
+    type: spine
     state: present
   delegate_to: localhost
 
-- name: Remove a spine switch profile
-  cisco.aci.aci_fabric_spine_profile:
+- name: Remove a spine fabric switch profile
+  cisco.aci.aci_fabric_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
     name: my_spine_profile
+    type: spine
     state: absent
   delegate_to: localhost
 
-- name: Query a spine profile
-  cisco.aci.aci_fabric_spine_profile:
+- name: Query a spine fabric profile
+  cisco.aci.aci_fabric_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
     name: my_spine_profile
+    type: spine
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Query all spine profiles
-  cisco.aci.aci_fabric_spine_profile:
+- name: Query all leaf fabric profiles
+  cisco.aci.aci_fabric_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
+    type: leaf
     state: query
   delegate_to: localhost
   register: query_result
@@ -197,7 +207,11 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        name=dict(type='str', aliases=['spine_switch_profile', 'spine_profile']),
+        name=dict(type='str', aliases=['spine_switch_profile',
+                                       'spine_profile',
+                                       'leaf_switch_profile',
+                                       'leaf_profile']),
+        switch_type=dict(type='str', choices=['leaf', 'spine'], required=True),      
         description=dict(type='str', aliases=['descr']),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query'])
@@ -215,14 +229,25 @@ def main():
     aci = ACIModule(module)
 
     name = module.params.get('name')
+    switch_type = module.params.get('switch_type')    
     description = module.params.get('description')
     state = module.params.get('state')
-    child_classes = ['fabricSpineS']
+    
+    child_classes = list()
 
+    if switch_type == 'spine':
+        aci_class = 'fabricSpineP'
+        aci_rn = 'fabric/spprof-{0}'.format(name)
+        child_classes.append('fabricSpineS')
+    elif switch_type == 'leaf':
+        aci_class = 'fabricLeafP'
+        aci_rn = 'fabric/leprof-{0}'.format(name)
+        child_classes.append('fabricLeafS')
+    
     aci.construct_url(
         root_class=dict(
-            aci_class='fabricSpineP',
-            aci_rn='fabric/spprof-{0}'.format(name),
+            aci_class=aci_class,
+            aci_rn=aci_rn,
             module_object=name,
             target_filter={'name': name},
         ),
@@ -233,14 +258,14 @@ def main():
 
     if state == 'present':
         aci.payload(
-            aci_class='fabricSpineP',
+            aci_class=aci_class,
             class_config=dict(
                 name=name,
                 descr=description
             ),
         )
 
-        aci.get_diff(aci_class='fabricSpineP')
+        aci.get_diff(aci_class=aci_class)
 
         aci.post_config()
 
