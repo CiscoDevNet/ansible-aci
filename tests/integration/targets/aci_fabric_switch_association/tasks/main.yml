@@ -1,0 +1,385 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_spine_switch_prf if it already exists
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_spine_switch_prf
+    switch_type: spine
+    state: absent
+
+- name: Remove ansible_leaf_switch_prf if it already exists
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_leaf_switch_prf
+    switch_type: leaf
+    state: absent
+
+# CREATE SPINE SWITCH PROFILE
+- name: Create ansible_spine_switch_prf
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_spine_switch_prf
+    switch_type: spine
+    state: present
+
+# CREATE LEAF SWITCH PROFILE
+- name: Create ansible_leaf_switch_prf
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_leaf_switch_prf
+    switch_type: leaf
+    state: present
+
+# CREATE SPINE SWITCH ASSOCIATION
+- name: Create a spine switch profile association
+  aci_fabric_switch_association:
+    <<: *aci_info
+    profile: ansible_spine_switch_prf
+    name: ansible_spine_switch_assoc
+    switch_type: spine
+    policy_group: ansible_spine_pol_grp1
+    state: present
+  register: add_spine_association
+
+- name: Verify spine association creation
+  assert:
+    that:
+    - add_spine_association.current.0.fabricSpineS.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range"
+    - add_spine_association.current.0.fabricSpineS.attributes.name == "ansible_spine_switch_assoc"
+    - add_spine_association.current.0.fabricSpineS.attributes.type == "range"
+
+- name: Verify spine Policy Group association
+  assert:
+    that:
+    - add_spine_association.current.0.fabricSpineS.children.0.fabricRsSpNodePGrp.attributes.tDn == "uni/fabric/funcprof/spnodepgrp-ansible_spine_pol_grp1"
+
+# CREATE SPINE SWITCH ASSOCIATION AGAIN TO TEST IDEMPOTENCE
+- name: Create a spine switch profile association again
+  aci_fabric_switch_association:
+    <<: *aci_info
+    profile: ansible_spine_switch_prf
+    name: ansible_spine_switch_assoc
+    switch_type: spine
+    policy_group: ansible_spine_pol_grp1
+    state: present
+  register: add_spine_association_again
+
+- name: Verify spine association creation idempotence
+  assert:
+    that:
+    - add_spine_association_again is not changed
+    - add_spine_association_again.current.0.fabricSpineS.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range"
+    - add_spine_association_again.current.0.fabricSpineS.attributes.name == "ansible_spine_switch_assoc"
+    - add_spine_association_again.current.0.fabricSpineS.attributes.type == "range"
+
+- name: Verify spine Policy Group association idempotence
+  assert:
+    that:
+    - add_spine_association_again.current.0.fabricSpineS.children.0.fabricRsSpNodePGrp.attributes.tDn == "uni/fabric/funcprof/spnodepgrp-ansible_spine_pol_grp1"
+
+# CREATE SPINE SWITCH ASSOCIATION WITHOUT POLICY GROUP
+- name: Create a spine switch profile association without a policy group
+  aci_fabric_switch_association:
+    <<: *aci_info
+    profile: ansible_spine_switch_prf
+    name: ansible_spine_switch_assoc2
+    switch_type: spine
+    state: present
+  register: add_spine_association_without_policy_group
+
+- name: Verify spine association creation
+  assert:
+    that:
+    - add_spine_association_without_policy_group.current.0.fabricSpineS.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc2-typ-range"
+    - add_spine_association_without_policy_group.current.0.fabricSpineS.attributes.name == "ansible_spine_switch_assoc2"
+    - add_spine_association_without_policy_group.current.0.fabricSpineS.attributes.type == "range"
+
+# UPDATE SPINE SWITCH POLICY GROUP ASSOCIATION
+- name: Update a spine switch profile association
+  aci_fabric_switch_association:
+    <<: *aci_info
+    profile: ansible_spine_switch_prf
+    name: ansible_spine_switch_assoc
+    switch_type: spine
+    policy_group: ansible_spine_pol_grp2
+    state: present
+  register: update_spine_association
+
+- name: Verify spine association update
+  assert:
+    that:
+    - update_spine_association is changed
+    - update_spine_association.current.0.fabricSpineS.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range"
+    - update_spine_association.current.0.fabricSpineS.attributes.name == "ansible_spine_switch_assoc"
+    - update_spine_association.current.0.fabricSpineS.attributes.type == "range"
+
+- name: Verify spine Policy Group association update
+  assert:
+    that:
+    - update_spine_association.current.0.fabricSpineS.children.0.fabricRsSpNodePGrp.attributes.tDn == "uni/fabric/funcprof/spnodepgrp-ansible_spine_pol_grp2"
+
+# CREATE LEAF SWITCH ASSOCIATION
+- name: Create a leaf switch profile association
+  aci_fabric_switch_association:
+    <<: *aci_info
+    profile: ansible_leaf_switch_prf
+    name: ansible_leaf_switch_assoc
+    switch_type: leaf
+    policy_group: ansible_leaf_pol_grp1
+    state: present
+  register: add_leaf_association
+
+- name: Verify leaf association creation
+  assert:
+    that:
+    - add_leaf_association.current.0.fabricLeafS.attributes.dn == "uni/fabric/leprof-ansible_leaf_switch_prf/leaves-ansible_leaf_switch_assoc-typ-range"
+    - add_leaf_association.current.0.fabricLeafS.attributes.name == "ansible_leaf_switch_assoc"
+    - add_leaf_association.current.0.fabricLeafS.attributes.type == "range"
+
+- name: Verify leaf Policy Group association
+  assert:
+    that:
+    - add_leaf_association.current.0.fabricLeafS.children.0.fabricRsLeNodePGrp.attributes.tDn == "uni/fabric/funcprof/lenodepgrp-ansible_leaf_pol_grp1"
+
+# CREATE LEAF SWITCH ASSOCIATION AGAIN TO TEST IDEMPOTENCE
+- name: Create a leaf switch profile association again
+  aci_fabric_switch_association:
+    <<: *aci_info
+    profile: ansible_leaf_switch_prf
+    name: ansible_leaf_switch_assoc
+    switch_type: leaf
+    policy_group: ansible_leaf_pol_grp1
+    state: present
+  register: add_leaf_association_again
+
+- name: Verify leaf association creation idempotence
+  assert:
+    that:
+    - add_leaf_association_again is not changed
+    - add_leaf_association_again.current.0.fabricLeafS.attributes.dn == "uni/fabric/leprof-ansible_leaf_switch_prf/leaves-ansible_leaf_switch_assoc-typ-range"
+    - add_leaf_association_again.current.0.fabricLeafS.attributes.name == "ansible_leaf_switch_assoc"
+    - add_leaf_association_again.current.0.fabricLeafS.attributes.type == "range"
+
+- name: Verify leaf Policy Group association idempotence
+  assert:
+    that:
+    - add_leaf_association_again.current.0.fabricLeafS.children.0.fabricRsLeNodePGrp.attributes.tDn == "uni/fabric/funcprof/lenodepgrp-ansible_leaf_pol_grp1"
+
+# CREATE LEAF SWITCH ASSOCIATION WITHOUT POLICY GROUP
+- name: Create a leaf switch profile association without a policy group
+  aci_fabric_switch_association:
+    <<: *aci_info
+    profile: ansible_leaf_switch_prf
+    name: ansible_leaf_switch_assoc2
+    switch_type: leaf
+    state: present
+  register: add_leaf_association_without_policy_group
+
+- name: Verify leaf association creation
+  assert:
+    that:
+    - add_leaf_association_without_policy_group.current.0.fabricLeafS.attributes.dn == "uni/fabric/leprof-ansible_leaf_switch_prf/leaves-ansible_leaf_switch_assoc2-typ-range"
+    - add_leaf_association_without_policy_group.current.0.fabricLeafS.attributes.name == "ansible_leaf_switch_assoc2"
+    - add_leaf_association_without_policy_group.current.0.fabricLeafS.attributes.type == "range"
+
+# UPDATE LEAF SWITCH POLICY GROUP ASSOCIATION
+- name: Update a leaf switch profile association
+  aci_fabric_switch_association:
+    <<: *aci_info
+    profile: ansible_leaf_switch_prf
+    name: ansible_leaf_switch_assoc
+    switch_type: leaf
+    policy_group: ansible_leaf_pol_grp2
+    state: present
+  register: update_leaf_association
+
+- name: Verify leaf association update
+  assert:
+    that:
+    - update_leaf_association is changed
+    - update_leaf_association.current.0.fabricLeafS.attributes.dn == "uni/fabric/leprof-ansible_leaf_switch_prf/leaves-ansible_leaf_switch_assoc-typ-range"
+    - update_leaf_association.current.0.fabricLeafS.attributes.name == "ansible_leaf_switch_assoc"
+    - update_leaf_association.current.0.fabricLeafS.attributes.type == "range"
+
+- name: Verify leaf Policy Group association update
+  assert:
+    that:
+    - update_leaf_association.current.0.fabricLeafS.children.0.fabricRsLeNodePGrp.attributes.tDn == "uni/fabric/funcprof/lenodepgrp-ansible_leaf_pol_grp2"
+
+# QUERY SPINE SWITCH ASSOCIATION
+- name: Query spine switch profile association
+  aci_fabric_switch_association:
+    <<: *aci_info
+    profile: ansible_spine_switch_prf
+    name: ansible_spine_switch_assoc
+    switch_type: spine
+    state: query
+  register: query_spine_association
+
+- name: Verify spine query data
+  assert:
+    that:
+    - query_spine_association is not changed
+    - query_spine_association.current.0.fabricSpineS.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range"
+    - query_spine_association.current.0.fabricSpineS.attributes.name == "ansible_spine_switch_assoc"
+    - query_spine_association.current.0.fabricSpineS.attributes.type == "range"
+
+- name: Verify spine Policy Group association
+  assert:
+    that:
+    - query_spine_association.current.0.fabricSpineS.children.0.fabricRsSpNodePGrp.attributes.tDn == "uni/fabric/funcprof/spnodepgrp-ansible_spine_pol_grp2"
+
+# QUERY ALL SPINE SWITCH ASSOCIATIONS
+- name: Query spine switch profile association
+  aci_fabric_switch_association:
+    <<: *aci_info
+    switch_type: spine
+    state: query
+  register: query_spine_association_all
+
+- name: Verify spine query all idempotence
+  assert:
+    that:
+    - query_spine_association_all is not changed
+
+# QUERY LEAF SWITCH ASSOCIATION
+- name: Query leaf switch profile association
+  aci_fabric_switch_association:
+    <<: *aci_info
+    profile: ansible_leaf_switch_prf
+    name: ansible_leaf_switch_assoc
+    switch_type: leaf
+    state: query
+  register: query_leaf_association
+
+- name: Verify leaf query data
+  assert:
+    that:
+    - query_leaf_association is not changed
+    - query_leaf_association.current.0.fabricLeafS.attributes.dn == "uni/fabric/leprof-ansible_leaf_switch_prf/leaves-ansible_leaf_switch_assoc-typ-range"
+    - query_leaf_association.current.0.fabricLeafS.attributes.name == "ansible_leaf_switch_assoc"
+    - query_leaf_association.current.0.fabricLeafS.attributes.type == "range"
+
+- name: Verify leaf Policy Group association
+  assert:
+    that:
+    - query_leaf_association.current.0.fabricLeafS.children.0.fabricRsLeNodePGrp.attributes.tDn == "uni/fabric/funcprof/lenodepgrp-ansible_leaf_pol_grp2"
+
+# QUERY ALL LEAF SWITCH ASSOCIATIONS
+- name: Query leaf switch profile association
+  aci_fabric_switch_association:
+    <<: *aci_info
+    switch_type: leaf
+    state: query
+  register: query_leaf_association_all
+
+- name: Verify leaf query all idempotence
+  assert:
+    that:
+    - query_leaf_association_all is not changed
+
+# DELETE SPINE SWITCH ASSOCIATION
+- name: Delete spine switch profile association
+  aci_fabric_switch_association:
+    <<: *aci_info
+    profile: ansible_spine_switch_prf
+    name: ansible_spine_switch_assoc
+    switch_type: spine
+    state: absent
+  register: delete_spine_association
+
+- name: Verify spine association removal
+  assert:
+    that:
+    - delete_spine_association is changed
+    - delete_spine_association.current == []
+    - delete_spine_association.previous.0.fabricSpineS.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range"
+    - delete_spine_association.previous.0.fabricSpineS.attributes.name == "ansible_spine_switch_assoc"
+    - delete_spine_association.previous.0.fabricSpineS.attributes.type == "range"
+
+# DELETE SPINE SWITCH ASSOCIATION AGAIN TO TEST IDEMPOTENCE
+- name: Delete spine switch profile association again
+  aci_fabric_switch_association:
+    <<: *aci_info
+    profile: ansible_spine_switch_prf
+    name: ansible_spine_switch_assoc
+    switch_type: spine
+    state: absent
+  register: delete_spine_association_again
+
+- name: Verify spine association removal idempotence
+  assert:
+    that:
+    - delete_spine_association_again is not changed
+    - delete_spine_association_again.current == []
+
+# DELETE LEAF SWITCH ASSOCIATION
+- name: Delete leaf switch profile association
+  aci_fabric_switch_association:
+    <<: *aci_info
+    profile: ansible_leaf_switch_prf
+    name: ansible_leaf_switch_assoc
+    switch_type: leaf
+    state: absent
+  register: delete_leaf_association
+
+- name: Verify leaf association removal
+  assert:
+    that:
+    - delete_leaf_association is changed
+    - delete_leaf_association.current == []
+    - delete_leaf_association.previous.0.fabricLeafS.attributes.dn == "uni/fabric/leprof-ansible_leaf_switch_prf/leaves-ansible_leaf_switch_assoc-typ-range"
+    - delete_leaf_association.previous.0.fabricLeafS.attributes.name == "ansible_leaf_switch_assoc"
+    - delete_leaf_association.previous.0.fabricLeafS.attributes.type == "range"
+
+# DELETE LEAF SWITCH ASSOCIATION AGAIN TO TEST IDEMPOTENCE
+- name: Delete leaf switch profile association again
+  aci_fabric_switch_association:
+    <<: *aci_info
+    profile: ansible_leaf_switch_prf
+    name: ansible_leaf_switch_assoc
+    switch_type: leaf
+    state: absent
+  register: delete_leaf_association_again
+
+- name: Verify leaf association removal idempotence
+  assert:
+    that:
+    - delete_leaf_association_again is not changed
+    - delete_leaf_association_again.current == []
+
+# CLEAN UP ENVIRONMENT
+- name: Remove ansible_spine_switch_prf
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_spine_switch_prf
+    switch_type: spine
+    state: absent
+    
+- name: Remove ansible_leaf_switch_prf
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_leaf_switch_prf
+    switch_type: leaf
+    state: absent

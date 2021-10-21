@@ -12,27 +12,27 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_fabric_spine_switch_assoc
-short_description: Manage spine switch bindings to profiles and policy groups (fabric:SpineS and fabric:RsSpNodePGrp).
+module: aci_fabric_switch_profile
+short_description: Manage fabric spine and leaf switch profiles.
 description:
-- Manage fabric spine switch associations (fabric:SpineS) to an existing fabric
-  spine profile (fabric:SpineP) in an ACI fabric, and bind them to a
-  policy group (fabric:RsSpNodePGrp)
+- Manage fabric spine/leaf switch profiles (fabric:SpineP / fabric:LeafP) in an ACI fabric.
 options:
-  profile:
-    description:
-    - Name of an existing fabric spine switch profile
-    type: str
-    aliases: [ spine_profile, spine_switch_profile ]
   name:
     description:
-    - Name of the switch association
+    - Name of the fabric switch profile
     type: str
-    aliases: [ association_name, switch_association ]
-  policy_group:
+    aliases: [ spine_profile, spine_switch_profile, leaf_profile, leaf_switch_profile ]
+  switch_type:
     description:
-    - Name of an existing spine switch policy group
+    - Type of switch profile, leaf or spine
     type: str
+    choices: [ leaf, spine ]
+    required: yes
+  description:
+    description:
+    - description of the profile
+    type: str
+    aliases: [ descr ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -43,55 +43,52 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 
-notes:
-- The C(profile) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_fabric_spine_profile) module can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(fabricSpineS) and B(fabricRsSpNodePGrp).
+  description: More information about the internal APIC class B(fabricSpineP) and B(fabricLeafP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
 '''
 
 EXAMPLES = r'''
-- name: Create a spine switch profile association
-  cisco.aci.aci_fabric_spine_switch_assoc:
+- name: Create a spine fabric switch profile
+  cisco.aci.aci_fabric_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
-    profile: my_spine_profile
-    name: my_spine_switch_assoc
-    policy_group: my_spine_pol_grp
+    name: my_spine_profile
+    switch_type: spine
     state: present
   delegate_to: localhost
 
-- name: Remove a spine switch profile association
-  cisco.aci.aci_fabric_spine_switch_assoc:
+- name: Remove a spine fabric switch profile
+  cisco.aci.aci_fabric_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
-    profile: my_spine_profile
-    name: my_spine_switch_assoc
+    name: my_spine_profile
+    switch_type: spine
     state: absent
   delegate_to: localhost
 
-- name: Query a spine profile association
-  cisco.aci.aci_fabric_spine_switch_assoc:
+- name: Query a spine fabric profile
+  cisco.aci.aci_fabric_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
-    profile: my_spine_profile
-    name: my_spine_switch_assoc
+    name: my_spine_profile
+    switch_type: spine
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Query all spine profiles
-  cisco.aci.aci_fabric_spine_switch_assoc:
+- name: Query all leaf fabric profiles
+  cisco.aci.aci_fabric_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
+    switch_type: leaf
     state: query
   delegate_to: localhost
   register: query_result
@@ -210,11 +207,12 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        profile=dict(type='str', aliases=['spine_profile',
-                                          'spine_switch_profile']),
-        name=dict(type='str', aliases=['association_name',
-                                       'switch_association']),
-        policy_group=dict(type='str'),
+        name=dict(type='str', aliases=['spine_switch_profile',
+                                       'spine_profile',
+                                       'leaf_switch_profile',
+                                       'leaf_profile']),
+        switch_type=dict(type='str', choices=['leaf', 'spine'], required=True),
+        description=dict(type='str', aliases=['descr']),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query'])
     )
@@ -223,29 +221,33 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['profile', 'name']],
-            ['state', 'present', ['profile', 'name']],
+            ['state', 'absent', ['name']],
+            ['state', 'present', ['name']],
         ]
     )
 
     aci = ACIModule(module)
 
-    profile = module.params.get('profile')
     name = module.params.get('name')
-    policy_group = module.params.get('policy_group')
+    switch_type = module.params.get('switch_type')
+    description = module.params.get('description')
     state = module.params.get('state')
-    child_classes = ['fabricRsSpNodePGrp', 'fabricNodeBlk']
+
+    child_classes = list()
+
+    if switch_type == 'spine':
+        aci_class = 'fabricSpineP'
+        aci_rn = 'fabric/spprof-{0}'.format(name)
+        child_classes.append('fabricSpineS')
+    elif switch_type == 'leaf':
+        aci_class = 'fabricLeafP'
+        aci_rn = 'fabric/leprof-{0}'.format(name)
+        child_classes.append('fabricLeafS')
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fabricSpineP',
-            aci_rn='fabric/spprof-{0}'.format(profile),
-            module_object=profile,
-            target_filter={'name': profile},
-        ),
-        subclass_1=dict(
-            aci_class='fabricSpineS',
-            aci_rn='spines-{0}-typ-range'.format(name),
+            aci_class=aci_class,
+            aci_rn=aci_rn,
             module_object=name,
             target_filter={'name': name},
         ),
@@ -255,27 +257,15 @@ def main():
     aci.get_existing()
 
     if state == 'present':
-        child_configs = []
-        if policy_group:
-            tDn = 'uni/fabric/funcprof/spnodepgrp-{0}'.format(policy_group)
-            child_configs.append(
-                dict(
-                    fabricRsSpNodePGrp=dict(
-                        attributes=dict(
-                            tDn=tDn
-                        )
-                    )
-                )
-            )
         aci.payload(
-            aci_class='fabricSpineS',
+            aci_class=aci_class,
             class_config=dict(
-                name=name
+                name=name,
+                descr=description
             ),
-            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='fabricSpineS')
+        aci.get_diff(aci_class=aci_class)
 
         aci.post_config()
 

@@ -1,0 +1,235 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_spine_switch_prf if it already exists
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_spine_switch_prf
+    switch_type: spine
+    state: absent
+
+- name: Remove ansible_leaf_switch_prf if it already exists
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_leaf_switch_prf
+    switch_type: leaf
+    state: absent
+
+# CREATE SPINE SWITCH POLICY
+- name: Create ansible_spine_switch_prf
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_spine_switch_prf
+    switch_type: spine
+    state: present
+  register: add_spine_switch_prf
+  
+- name: Verify spine profile creation
+  assert:
+    that:
+    - add_spine_switch_prf.current.0.fabricSpineP.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf"
+    - add_spine_switch_prf.current.0.fabricSpineP.attributes.name == "ansible_spine_switch_prf"
+
+# CREATE SPINE SWITCH POLICY AGAIN TO TEST IDEMPOTENCE
+- name: Create ansible_spine_switch_prf again
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_spine_switch_prf
+    switch_type: spine
+    state: present
+  register: add_spine_switch_prf_again
+
+- name: Verify spine profile creation idempotence
+  assert:
+    that:
+    - add_spine_switch_prf_again is not changed
+    - add_spine_switch_prf_again.current.0.fabricSpineP.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf"
+    - add_spine_switch_prf_again.current.0.fabricSpineP.attributes.name == "ansible_spine_switch_prf"
+
+# CREATE LEAF SWITCH POLICY
+- name: Create ansible_leaf_switch_prf
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_leaf_switch_prf
+    switch_type: leaf
+    state: present
+  register: add_leaf_switch_prf
+
+- name: Verify leaf profile creation
+  assert:
+    that:
+    - add_leaf_switch_prf.current.0.fabricLeafP.attributes.dn == "uni/fabric/leprof-ansible_leaf_switch_prf"
+    - add_leaf_switch_prf.current.0.fabricLeafP.attributes.name == "ansible_leaf_switch_prf"
+
+# CREATE LEAF SWITCH POLICY AGAIN TO TEST IDEMPOTENCE
+- name: Create ansible_leaf_switch_prf again
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_leaf_switch_prf
+    switch_type: leaf
+    state: present
+  register: add_leaf_switch_prf_again
+
+- name: Verify leaf profile creation idempotence
+  assert:
+    that:
+    - add_leaf_switch_prf_again is not changed
+    - add_leaf_switch_prf_again.current.0.fabricLeafP.attributes.dn == "uni/fabric/leprof-ansible_leaf_switch_prf"
+    - add_leaf_switch_prf_again.current.0.fabricLeafP.attributes.name == "ansible_leaf_switch_prf"
+
+# QUERY SPINE SWITCH POLICY
+- name: query spine switch profile
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_spine_switch_prf
+    switch_type: spine
+    state: query
+  register: query_spine_switch_prf
+
+- name: Verify spine profile query
+  assert:
+    that:
+    - query_spine_switch_prf is not changed
+    - query_spine_switch_prf.current.0.fabricSpineP.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf"
+    - query_spine_switch_prf.current.0.fabricSpineP.attributes.name == "ansible_spine_switch_prf"
+
+# QUERY LEAF SWITCH POLICY
+- name: query leaf switch profile
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_leaf_switch_prf
+    switch_type: leaf
+    state: query
+  register: query_leaf_switch_prf
+
+- name: Verify leaf profile query
+  assert:
+    that:
+    - query_leaf_switch_prf is not changed
+    - query_leaf_switch_prf.current.0.fabricLeafP.attributes.dn == "uni/fabric/leprof-ansible_leaf_switch_prf"
+    - query_leaf_switch_prf.current.0.fabricLeafP.attributes.name == "ansible_leaf_switch_prf"
+
+# QUERY ALL SPINE SWITCH POLICIES
+- name: query all spine switch profiles
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    switch_type: spine
+    state: query
+  register: query_spine_switch_prf_all
+
+- name: Verify spine profile query idempotence
+  assert:
+    that:
+    - query_spine_switch_prf_all is not changed
+
+# QUERY ALL LEAF SWITCH POLICIES
+- name: query all leaf switch profiles
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    switch_type: leaf
+    state: query
+  register: query_leaf_switch_prf_all
+
+- name: Verify leaf profile query idempotence
+  assert:
+    that:
+    - query_leaf_switch_prf_all is not changed
+
+# DELETE SPINE SWITCH PROFILE
+- name: Delete ansible_spine_switch_prf
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_spine_switch_prf
+    switch_type: spine
+    state: absent
+  register: delete_spine_switch_prf
+
+- name: Verify spine profile deletion
+  assert:
+    that:
+    - delete_spine_switch_prf is changed
+    - delete_spine_switch_prf.current == []
+    - delete_spine_switch_prf.previous.0.fabricSpineP.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf"
+    - delete_spine_switch_prf.previous.0.fabricSpineP.attributes.name == "ansible_spine_switch_prf"
+
+# DELETE SPINE SWITCH PROFILE AGAIN TO TEST IDEMPOTENCE
+- name: Delete ansible_spine_switch_prf again
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_spine_switch_prf
+    switch_type: spine
+    state: absent
+  register: delete_spine_switch_prf_again
+
+- name: Verify spine profile deletion idempotence
+  assert:
+    that:
+    - delete_spine_switch_prf_again is not changed
+    - delete_spine_switch_prf_again.current == []
+
+# DELETE LEAF SWITCH PROFILE
+- name: Delete ansible_leaf_switch_prf
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_leaf_switch_prf
+    switch_type: leaf
+    state: absent
+  register: delete_leaf_switch_prf
+
+- name: Verify leaf profile deletion
+  assert:
+    that:
+    - delete_leaf_switch_prf is changed
+    - delete_leaf_switch_prf.current == []
+    - delete_leaf_switch_prf.previous.0.fabricLeafP.attributes.dn == "uni/fabric/leprof-ansible_leaf_switch_prf"
+    - delete_leaf_switch_prf.previous.0.fabricLeafP.attributes.name == "ansible_leaf_switch_prf"
+
+# DELETE LEAF SWITCH PROFILE AGAIN TO TEST IDEMPOTENCE
+- name: Delete ansible_leaf_switch_prf again
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_leaf_switch_prf
+    switch_type: leaf
+    state: absent
+  register: delete_leaf_switch_prf_again
+
+- name: Verify leaf profile deletion idempotence
+  assert:
+    that:
+    - delete_leaf_switch_prf_again is not changed
+    - delete_leaf_switch_prf_again.current == []
+
+# CLEAN UP ENVIRONMENT
+- name: Remove ansible_spine_switch_prf
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_spine_switch_prf
+    switch_type: spine
+    state: absent
+    
+- name: Remove ansible_leaf_switch_prf
+  aci_fabric_switch_profile:
+    <<: *aci_info
+    name: ansible_leaf_switch_prf
+    switch_type: leaf
+    state: absent
