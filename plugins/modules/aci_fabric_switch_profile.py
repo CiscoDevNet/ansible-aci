@@ -58,7 +58,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     name: my_spine_profile
-    type: spine
+    switch_type: spine
     state: present
   delegate_to: localhost
 
@@ -68,7 +68,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     name: my_spine_profile
-    type: spine
+    switch_type: spine
     state: absent
   delegate_to: localhost
 
@@ -78,7 +78,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     name: my_spine_profile
-    type: spine
+    switch_type: spine
     state: query
   delegate_to: localhost
   register: query_result
@@ -88,7 +88,7 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretPassword
-    type: leaf
+    switch_type: leaf
     state: query
   delegate_to: localhost
   register: query_result
