@@ -43,7 +43,7 @@ options:
     description:
     - Description of the Fabric Switch Association
     type: str
-    aliases: [ descr ]    
+    aliases: [ descr ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -254,10 +254,10 @@ def main():
     policy_group = module.params.get('policy_group')
     description = module.params.get('description')
     state = module.params.get('state')
-    
+
     child_classes = ['fabricNodeBlk']
     child_configs = list()
-    
+
     if switch_type == 'spine':
         aci_root_class = 'fabricSpineP'
         aci_root_rn = 'fabric/spprof-{0}'.format(profile)
@@ -278,7 +278,7 @@ def main():
             child_configs.append(
                 dict(fabricRsLeNodePGrp=dict(attributes=dict(tDn='uni/fabric/funcprof/lenodepgrp-{0}'.format(policy_group))))
             )
-            
+
     aci.construct_url(
         root_class=dict(
             aci_class=aci_root_class,
