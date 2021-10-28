@@ -49,7 +49,7 @@ options:
     - Path to the physical interface
     - For single ports, this is the port name, e.g. "eth1/15"
     - For Port-channels and vPCs, this is the Interface Policy Group name
-  type: str
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
