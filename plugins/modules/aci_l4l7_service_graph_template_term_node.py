@@ -85,7 +85,6 @@ EXAMPLES = r'''
     tenant: my_tenant
     service_graph: my_service_graph
     node_name: T1
-    state: absent
     state: query
   delegate_to: localhost
   register: query_result

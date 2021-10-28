@@ -251,4 +251,3 @@
     domain: ansible_phys_dom
     domain_type: phys
     state: absent
-
