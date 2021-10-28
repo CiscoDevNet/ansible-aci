@@ -45,7 +45,7 @@ seealso:
   description: More information about the internal APIC class B(vnsAbsGraph)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Tim Cragg
+- Tim Cragg (@timcragg)
 '''
 
 EXAMPLES = r'''
