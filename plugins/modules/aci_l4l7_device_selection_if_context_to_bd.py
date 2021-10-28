@@ -51,6 +51,7 @@ options:
     - Tenant the Bridge Domain is in
     - Omit this variable if both context and Bridge Domain are in the same tenant
     - Intended use case is for when the Bridge Domain is in the common tenant, but the context is not
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.

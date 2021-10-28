@@ -59,7 +59,7 @@ seealso:
   description: More information about the internal APIC class vnsRsRedirectHealthGroup
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Tim Cragg
+- Tim Cragg (@timcragg)
 '''
 
 EXAMPLES = r'''
@@ -88,7 +88,7 @@ EXAMPLES = r'''
   delegate_to: localhost
 
 - name: Query the Health Group for a Policy Based Redirect Destination
-  cisco.aci.aci_l4l7_policy_based_redirect_dest_health_group
+  cisco.aci.aci_l4l7_policy_based_redirect_dest_health_group:
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant

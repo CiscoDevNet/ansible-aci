@@ -44,6 +44,8 @@ options:
   policy:
     description:
     - Name of an existing Policy Based Redirect Policy
+    type: str
+    aliases: [ redirect_policy ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.

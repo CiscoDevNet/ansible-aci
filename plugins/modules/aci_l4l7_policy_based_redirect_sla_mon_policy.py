@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_l4l7_policy_based_routing_sla_mon_policy
+module: aci_l4l7_policy_based_redirect_sla_mon_policy
 short_description: Manage L4-L7 Policy Based Redirect SLA Monitor Policies (vns:RsIPSLAMonitoringPol)
 description:
 - Bind an existing IP SLA Monitoring Policy to an L4-L7 Policy Based Redirect Destination

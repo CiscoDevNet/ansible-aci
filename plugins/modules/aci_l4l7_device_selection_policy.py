@@ -25,11 +25,12 @@ options:
   contract:
     description:
     - Name of an existing contract
-    type: string
+    type: str
+    aliases: [ contract_name ]
   graph:
     description:
     - Name of an existing contract
-    type: string
+    type: str
     aliases: [ service_graph, service_graph_name ]
   node:
     description:

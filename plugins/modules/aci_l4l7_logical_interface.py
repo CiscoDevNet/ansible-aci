@@ -92,14 +92,14 @@ EXAMPLES = r'''
   delegate_to: localhost
   register: query_result
 
- - name: Query all logical interfaces
-   cisco.aci.aci_l4l7_logical_interface:
-     host: apic
-     username: admin
-     password: SomeSecretPassword
-     state: query
-   delegate_to: localhost
-   register: query_result
+- name: Query all logical interfaces
+  cisco.aci.aci_l4l7_logical_interface:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
 
 '''
 

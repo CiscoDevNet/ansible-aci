@@ -45,18 +45,15 @@ options:
   is_copy:
     description:
     - Is the device a copy device
-    type: str
-    choices: [ yes, no ]
+    type: bool
   managed:
     description:
     - Is the device a managed device
-    type: str
-    choices: [ yes, no ]
+    type: bool
   prom_mode:
     description:
     - Enable promiscuous mode
-    type: str
-    choices: [ yes, no ]
+    type: bool
   svc_type:
     description:
     - Service type running on the device
@@ -65,8 +62,7 @@ options:
   trunking:
     description:
     - Enable trunking
-    type: str
-    choices: [ yes, no ]
+    type: bool
   domain:
     description:
     - Physical domain to bind to the device
@@ -259,14 +255,14 @@ def main():
                                             'GoThrough',
                                             'L1',
                                             'L2']),
-        is_copy=dict(type='str', choices=['yes', 'no']),
-        managed=dict(type='str', choices=['yes', 'no']),
-        prom_mode=dict(type='str', choices=['yes', 'no']),
+        is_copy=dict(type='bool'),
+        managed=dict(type='bool'),
+        prom_mode=dict(type='bool'),
         svc_type=dict(type='str', choices=['adc',
                                            'fw',
                                            'others',
                                            'copy']),
-        trunking=dict(type='str', choices=['yes', 'no']),
+        trunking=dict(type='bool'),
         domain=dict(type='str', aliases=['domain_name']),
     )
 
@@ -279,20 +275,20 @@ def main():
         ]
     )
 
+    aci = ACIModule(module)
+
     tenant = module.params.get('tenant')
     state = module.params.get('state')
     device = module.params.get('device')
     context_aware = module.params.get('context_aware')
     dev_type = module.params.get('dev_type')
     func_type = module.params.get('func_type')
-    is_copy = module.params.get('is_copy')
-    managed = module.params.get('managed')
-    prom_mode = module.params.get('prom_mode')
+    is_copy = aci.boolean(module.params.get('is_copy'))
+    managed = aci.boolean(module.params.get('managed'))
+    prom_mode = aci.boolean(module.params.get('prom_mode'))
     svc_type = module.params.get('svc_type')
-    trunking = module.params.get('trunking')
+    trunking = aci.boolean(module.params.get('trunking'))
     domain = module.params.get('domain')
-
-    aci = ACIModule(module)
 
     aci.construct_url(
         root_class=dict(
