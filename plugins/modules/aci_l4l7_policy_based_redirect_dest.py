@@ -30,7 +30,7 @@ options:
   redirect_ip:
     description:
     - Destination IP for redirection
-  type: str
+    type: str
   redirect_mac:
     description:
     - Destination MAC address for redirection
