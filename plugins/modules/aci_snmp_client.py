@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_snmp_client
 short_description: Manage SNMP clients (snmp:ClientP).
@@ -51,9 +50,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create an SNMP client
   cisco.aci.aci_snmp_client:
     host: apic
@@ -97,9 +96,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -202,7 +201,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -212,71 +211,64 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        address=dict(type='str'),
-        client_group=dict(type='str',
-                          aliases=['client_group_name',
-                                   'client_group_profile']),
-        policy=dict(type='str', aliases=['snmp_policy',
-                                         'snmp_policy_name']),
-        client_name=dict(type='str'),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query'])
+        address=dict(type="str"),
+        client_group=dict(type="str", aliases=["client_group_name", "client_group_profile"]),
+        policy=dict(type="str", aliases=["snmp_policy", "snmp_policy_name"]),
+        client_name=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['policy', 'client_group', 'address']],
-            ['state', 'present', ['policy', 'client_group', 'address']],
-        ]
+            ["state", "absent", ["policy", "client_group", "address"]],
+            ["state", "present", ["policy", "client_group", "address"]],
+        ],
     )
 
     aci = ACIModule(module)
 
-    client_group = module.params.get('client_group')
-    policy = module.params.get('policy')
-    client_name = module.params.get('client_name')
-    address = module.params.get('address')
-    state = module.params.get('state')
+    client_group = module.params.get("client_group")
+    policy = module.params.get("policy")
+    client_name = module.params.get("client_name")
+    address = module.params.get("address")
+    state = module.params.get("state")
 
     aci.construct_url(
         root_class=dict(
-            aci_class='snmpPol',
-            aci_rn='fabric/snmppol-{0}'.format(policy),
+            aci_class="snmpPol",
+            aci_rn="fabric/snmppol-{0}".format(policy),
             module_object=policy,
-            target_filter={'name': policy},
+            target_filter={"name": policy},
         ),
         subclass_1=dict(
-            aci_class='snmpClientGrpP',
-            aci_rn='clgrp-{0}'.format(client_group),
+            aci_class="snmpClientGrpP",
+            aci_rn="clgrp-{0}".format(client_group),
             module_object=client_group,
-            target_filter={'name': client_group},
+            target_filter={"name": client_group},
         ),
         subclass_2=dict(
-            aci_class='snmpClientP',
-            aci_rn='client-[{0}]'.format(address),
+            aci_class="snmpClientP",
+            aci_rn="client-[{0}]".format(address),
             module_object=address,
-            target_filter={'addr': address},
-        )
+            target_filter={"addr": address},
+        ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='snmpClientP',
-            class_config=dict(
-                addr=address,
-                name=client_name
-            ),
+            aci_class="snmpClientP",
+            class_config=dict(addr=address, name=client_name),
         )
 
-        aci.get_diff(aci_class='snmpClientP')
+        aci.get_diff(aci_class="snmpClientP")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

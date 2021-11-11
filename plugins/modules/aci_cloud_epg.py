@@ -5,9 +5,10 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_cloud_epg
 short_description: Manage Cloud EPG (cloud:EPg)
@@ -53,9 +54,9 @@ notes:
 author:
 - Nirav (@nirav)
 - Cindy Zhao (@cizhao)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create aci cloud epg (check_mode)
   cisco.aci.aci_cloud_epg:
     host: apic
@@ -100,9 +101,9 @@ EXAMPLES = r'''
     name: epgName
     state: query
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -205,7 +206,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
@@ -213,75 +214,74 @@ from ansible.module_utils.basic import AnsibleModule
 
 def main():
     argument_spec = aci_argument_spec()
-    argument_spec.update({
-        'description': dict(type='str', aliases=['descr']),
-        'name': dict(type='str', aliases=['cloud_epg', 'cloud_epg_name', 'epg', 'epg_name']),
-        'tenant': dict(type='str',),
-        'ap': dict(type='str', aliases=['app_profile', 'app_profile_name']),
-        'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        'vrf': dict(type='str', aliases=['context', 'vrf_name']),
-    })
+    argument_spec.update(
+        {
+            "description": dict(type="str", aliases=["descr"]),
+            "name": dict(type="str", aliases=["cloud_epg", "cloud_epg_name", "epg", "epg_name"]),
+            "tenant": dict(
+                type="str",
+            ),
+            "ap": dict(type="str", aliases=["app_profile", "app_profile_name"]),
+            "state": dict(type="str", default="present", choices=["absent", "present", "query"]),
+            "vrf": dict(type="str", aliases=["context", "vrf_name"]),
+        }
+    )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['name', 'tenant', 'ap']],
-            ['state', 'present', ['name', 'tenant', 'ap']],
+            ["state", "absent", ["name", "tenant", "ap"]],
+            ["state", "present", ["name", "tenant", "ap"]],
         ],
     )
 
-    description = module.params.get('description')
-    name = module.params.get('name')
-    tenant = module.params.get('tenant')
-    ap = module.params.get('ap')
-    state = module.params.get('state')
+    description = module.params.get("description")
+    name = module.params.get("name")
+    tenant = module.params.get("tenant")
+    ap = module.params.get("ap")
+    state = module.params.get("state")
     child_configs = []
-    relation_vrf = module.params.get('vrf')
+    relation_vrf = module.params.get("vrf")
 
     if relation_vrf:
-        child_configs.append({'cloudRsCloudEPgCtx': {'attributes': {'tnFvCtxName': relation_vrf}}})
+        child_configs.append({"cloudRsCloudEPgCtx": {"attributes": {"tnFvCtxName": relation_vrf}}})
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class={
-            'aci_class': 'fvTenant',
-            'aci_rn': 'tn-{0}'.format(tenant),
-            'target_filter': 'eq(fvTenant.name, "{0}")'.format(tenant),
-            'module_object': tenant
+            "aci_class": "fvTenant",
+            "aci_rn": "tn-{0}".format(tenant),
+            "target_filter": 'eq(fvTenant.name, "{0}")'.format(tenant),
+            "module_object": tenant,
         },
-        subclass_1={
-            'aci_class': 'cloudApp',
-            'aci_rn': 'cloudapp-{0}'.format(ap),
-            'target_filter': 'eq(cloudApp.name, "{0}")'.format(ap),
-            'module_object': ap
-        },
+        subclass_1={"aci_class": "cloudApp", "aci_rn": "cloudapp-{0}".format(ap), "target_filter": 'eq(cloudApp.name, "{0}")'.format(ap), "module_object": ap},
         subclass_2={
-            'aci_class': 'cloudEPg',
-            'aci_rn': 'cloudepg-{0}'.format(name),
-            'target_filter': 'eq(cloudEPg.name, "{0}")'.format(name),
-            'module_object': name
+            "aci_class": "cloudEPg",
+            "aci_rn": "cloudepg-{0}".format(name),
+            "target_filter": 'eq(cloudEPg.name, "{0}")'.format(name),
+            "module_object": name,
         },
-        child_classes=['cloudRsCloudEPgCtx']
+        child_classes=["cloudRsCloudEPgCtx"],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='cloudEPg',
+            aci_class="cloudEPg",
             class_config={
-                'descr': description,
-                'name': name,
+                "descr": description,
+                "name": name,
             },
-            child_configs=child_configs
+            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='cloudEPg')
+        aci.get_diff(aci_class="cloudEPg")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

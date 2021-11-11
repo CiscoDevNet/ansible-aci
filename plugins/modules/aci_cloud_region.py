@@ -6,9 +6,10 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_cloud_region
 short_description: Manage Cloud Providers Region (cloud:Region)
@@ -43,9 +44,9 @@ notes:
 
 extends_documentation_fragment:
 - cisco.aci.aci
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Query all regions
   cisco.aci.aci_cloud_region:
     host: apic
@@ -66,9 +67,9 @@ EXAMPLES = r'''
     region: eu-west-2
     state: query
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -171,7 +172,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
@@ -180,9 +181,9 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        region=dict(type='str', aliases=["name"]),
-        cloud=dict(type='str', choices=['aws', 'azure'], required=True),
-        state=dict(type='str', default='query', choices=['query']),
+        region=dict(type="str", aliases=["name"]),
+        cloud=dict(type="str", choices=["aws", "azure"], required=True),
+        state=dict(type="str", default="query", choices=["query"]),
     )
 
     module = AnsibleModule(
@@ -190,24 +191,18 @@ def main():
         supports_check_mode=True,
     )
 
-    region = module.params.get('region')
-    cloud = module.params.get('cloud')
+    region = module.params.get("region")
+    cloud = module.params.get("cloud")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='cloudProvP',
-            aci_rn='clouddomp/provp-{0}'.format(cloud),
-            target_filter='eq(cloudProvP.vendor, "{0}")'.format(cloud),
-            module_object=cloud
+            aci_class="cloudProvP", aci_rn="clouddomp/provp-{0}".format(cloud), target_filter='eq(cloudProvP.vendor, "{0}")'.format(cloud), module_object=cloud
         ),
         subclass_1=dict(
-            aci_class='cloudRegion',
-            aci_rn='region-{0}'.format(region),
-            target_filter='eq(cloudRegion.name, "{0}")'.format(region),
-            module_object=region
+            aci_class="cloudRegion", aci_rn="region-{0}".format(region), target_filter='eq(cloudRegion.name, "{0}")'.format(region), module_object=region
         ),
-        child_classes=[]
+        child_classes=[],
     )
 
     aci.get_existing()

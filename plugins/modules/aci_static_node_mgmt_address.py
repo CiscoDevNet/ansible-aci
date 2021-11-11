@@ -7,9 +7,10 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_static_node_mgmt_address
 short_description: In band or Out of band management IP address
@@ -67,9 +68,9 @@ author:
 - Sudhakar Shet Kudtarkar (@kudtarkar1)
 - Lionel Hercot (@lhercot)
 - Shreyas Srish (@shrsr)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add ipv4 address to in band mgmt interface
   cisco.aci.aci_static_node_mgmt_address:
     host: "Host IP"
@@ -144,9 +145,9 @@ EXAMPLES = r'''
     type: in_band
     state: query
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
    current:
      description: The existing configuration from the APIC after the module has finished
      returned: success
@@ -249,7 +250,7 @@ RETURN = r'''
      returned: failure or debug
      type: str
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
-   '''
+   """
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -258,96 +259,82 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        node_id=dict(type='int'),
-        pod_id=dict(type='int'),
-        type=dict(type='str', choices=['in_band', 'out_of_band'], required=True),
-        epg=dict(type='str'),
-        ipv4_address=dict(type='str', aliases=['ip']),
-        ipv4_gw=dict(type='str', aliases=['gw']),
-        ipv6_address=dict(type='str', aliases=['ipv6']),
-        ipv6_gw=dict(type='str'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        node_id=dict(type="int"),
+        pod_id=dict(type="int"),
+        type=dict(type="str", choices=["in_band", "out_of_band"], required=True),
+        epg=dict(type="str"),
+        ipv4_address=dict(type="str", aliases=["ip"]),
+        ipv4_gw=dict(type="str", aliases=["gw"]),
+        ipv6_address=dict(type="str", aliases=["ipv6"]),
+        ipv6_gw=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[
-            ['state', 'absent', ['node_id', 'epg']],
-            ['state', 'present', ['node_id', 'epg', 'ipv4_address', 'ipv4_gw']]
-        ]
+        required_if=[["state", "absent", ["node_id", "epg"]], ["state", "present", ["node_id", "epg", "ipv4_address", "ipv4_gw"]]],
     )
 
-    pod_id = module.params.get('pod_id')
-    node_id = module.params.get('node_id')
-    type = module.params.get('type')
-    epg = module.params.get('epg')
-    ipv4_address = module.params.get('ipv4_address')
-    ipv4_gw = module.params.get('ipv4_gw')
-    ipv6_address = module.params.get('ipv6_address')
-    ipv6_gw = module.params.get('ipv6_gw')
-    state = module.params.get('state')
+    pod_id = module.params.get("pod_id")
+    node_id = module.params.get("node_id")
+    type = module.params.get("type")
+    epg = module.params.get("epg")
+    ipv4_address = module.params.get("ipv4_address")
+    ipv4_gw = module.params.get("ipv4_gw")
+    ipv6_address = module.params.get("ipv6_address")
+    ipv6_gw = module.params.get("ipv6_gw")
+    state = module.params.get("state")
 
     class_map = dict(
-        in_band=list([
-            dict(aci_class='mgmtInb', aci_rn='inb-{0}'),
-            dict(aci_class='mgmtRsInBStNode', aci_rn='rsinBStNode-[{0}]')
-        ]),
-        out_of_band=list([
-            dict(aci_class='mgmtOob', aci_rn='oob-{0}'),
-            dict(aci_class='mgmtRsOoBStNode', aci_rn='rsooBStNode-[{0}]')
-        ]),
+        in_band=list([dict(aci_class="mgmtInb", aci_rn="inb-{0}"), dict(aci_class="mgmtRsInBStNode", aci_rn="rsinBStNode-[{0}]")]),
+        out_of_band=list([dict(aci_class="mgmtOob", aci_rn="oob-{0}"), dict(aci_class="mgmtRsOoBStNode", aci_rn="rsooBStNode-[{0}]")]),
     )
 
     static_path = None
     if pod_id is not None and node_id is not None:
-        static_path = 'topology/pod-{0}/node-{1}'.format(pod_id, node_id)
+        static_path = "topology/pod-{0}/node-{1}".format(pod_id, node_id)
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-mgmt',
-            module_object='mgmt',
-            target_filter={'name': 'mgmt'},
+            aci_class="fvTenant",
+            aci_rn="tn-mgmt",
+            module_object="mgmt",
+            target_filter={"name": "mgmt"},
         ),
         subclass_1=dict(
-            aci_class='mgmtMgmtP',
-            aci_rn='mgmtp-default',
-            module_object='default',
-            target_filter={'name': 'default'},
+            aci_class="mgmtMgmtP",
+            aci_rn="mgmtp-default",
+            module_object="default",
+            target_filter={"name": "default"},
         ),
         subclass_2=dict(
-            aci_class=class_map.get(type)[0]['aci_class'],
-            aci_rn=class_map.get(type)[0]['aci_rn'].format(epg),
+            aci_class=class_map.get(type)[0]["aci_class"],
+            aci_rn=class_map.get(type)[0]["aci_rn"].format(epg),
             module_object=epg,
-            target_filter={'name': epg},
+            target_filter={"name": epg},
         ),
         subclass_3=dict(
-            aci_class=class_map.get(type)[1]['aci_class'],
-            aci_rn=class_map.get(type)[1]['aci_rn'].format(static_path),
+            aci_class=class_map.get(type)[1]["aci_class"],
+            aci_rn=class_map.get(type)[1]["aci_rn"].format(static_path),
             module_object=static_path,
-            target_filter={'name': static_path},
+            target_filter={"name": static_path},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class=class_map.get(type)[1]['aci_class'],
-            class_config=dict(
-                addr=ipv4_address,
-                gw=ipv4_gw,
-                v6Addr=ipv6_address,
-                v6Gw=ipv6_gw
-            ),
+            aci_class=class_map.get(type)[1]["aci_class"],
+            class_config=dict(addr=ipv4_address, gw=ipv4_gw, v6Addr=ipv6_address, v6Gw=ipv6_gw),
         )
-        aci.get_diff(aci_class=class_map.get(type)[1]['aci_class'])
+        aci.get_diff(aci_class=class_map.get(type)[1]["aci_class"])
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

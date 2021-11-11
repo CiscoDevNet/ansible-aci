@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_contract_subject_to_service_graph
 short_description: Bind contract subject to service graph (vz:RsSubjGraphAtt).
@@ -44,9 +43,9 @@ extends_documentation_fragment:
 - cisco.aci.aci
 author:
 - Marcel Zehnder (@maercu)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new contract subject to service graph binding
   cisco.aci.aci_contract_subject_to_service_graph:
     host: apic
@@ -81,9 +80,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -186,7 +185,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -196,71 +195,52 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str'),
-        contract=dict(type='str'),
-        subject=dict(type='str'),
-        service_graph=dict(type='str'),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query'])
+        tenant=dict(type="str"),
+        contract=dict(type="str"),
+        subject=dict(type="str"),
+        service_graph=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['contract', 'service_graph', 'subject', 'tenant']],
-            ['state', 'present', ['contract', 'service_graph', 'subject', 'tenant']],
-        ]
+            ["state", "absent", ["contract", "service_graph", "subject", "tenant"]],
+            ["state", "present", ["contract", "service_graph", "subject", "tenant"]],
+        ],
     )
 
     aci = ACIModule(module)
 
-    tenant = module.params.get('tenant')
-    contract = module.params.get('contract')
-    subject = module.params.get('subject')
-    service_graph = module.params.get('service_graph')
-    state = module.params.get('state')
+    tenant = module.params.get("tenant")
+    contract = module.params.get("contract")
+    subject = module.params.get("subject")
+    service_graph = module.params.get("service_graph")
+    state = module.params.get("state")
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
-        subclass_1=dict(
-            aci_class='vzBrCP',
-            aci_rn='brc-{0}'.format(contract),
-            module_object=contract,
-            target_filter={'name': contract}
-        ),
-        subclass_2=dict(
-            aci_class='vzSubj',
-            aci_rn='subj-{0}'.format(subject),
-            module_object=subject,
-            target_filter={'name': subject}
-        ),
-        subclass_3=dict(
-            aci_class='vzRsSubjGraphAtt',
-            aci_rn='rsSubjGraphAtt',
-            module_object=service_graph,
-            target_filter={'name': service_graph}
-        ),
+        subclass_1=dict(aci_class="vzBrCP", aci_rn="brc-{0}".format(contract), module_object=contract, target_filter={"name": contract}),
+        subclass_2=dict(aci_class="vzSubj", aci_rn="subj-{0}".format(subject), module_object=subject, target_filter={"name": subject}),
+        subclass_3=dict(aci_class="vzRsSubjGraphAtt", aci_rn="rsSubjGraphAtt", module_object=service_graph, target_filter={"name": service_graph}),
     )
 
     aci.get_existing()
 
-    if state == 'present':
-        aci.payload(
-            aci_class='vzRsSubjGraphAtt',
-            class_config=dict(tnVnsAbsGraphName=service_graph)
-        )
+    if state == "present":
+        aci.payload(aci_class="vzRsSubjGraphAtt", class_config=dict(tnVnsAbsGraphName=service_graph))
 
-        aci.get_diff(aci_class='vzRsSubjGraphAtt')
+        aci.get_diff(aci_class="vzRsSubjGraphAtt")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

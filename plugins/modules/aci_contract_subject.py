@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_contract_subject
 short_description: Manage initial Contract Subjects (vz:Subj)
@@ -94,9 +93,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Swetha Chunduri (@schunduri)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new contract subject
   cisco.aci.aci_contract_subject:
     host: apic
@@ -143,9 +142,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -248,90 +247,116 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 MATCH_MAPPING = dict(
-    all='All',
-    at_least_one='AtleastOne',
-    at_most_one='AtmostOne',
-    none='None',
+    all="All",
+    at_least_one="AtleastOne",
+    at_most_one="AtmostOne",
+    none="None",
 )
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        contract=dict(type='str', aliases=['contract_name']),  # Not required for querying all objects
-        subject=dict(type='str', aliases=['contract_subject', 'name', 'subject_name']),  # Not required for querying all objects
-        tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
-        priority=dict(type='str', choices=['unspecified', 'level1', 'level2', 'level3']),
-        reverse_filter=dict(type='bool'),
-        dscp=dict(type='str', aliases=['target'],
-                  choices=['AF11', 'AF12', 'AF13', 'AF21', 'AF22', 'AF23', 'AF31', 'AF32', 'AF33', 'AF41', 'AF42', 'AF43',
-                           'CS0', 'CS1', 'CS2', 'CS3', 'CS4', 'CS5', 'CS6', 'CS7', 'EF', 'VA', 'unspecified']),
-        description=dict(type='str', aliases=['descr']),
-        consumer_match=dict(type='str', choices=['all', 'at_least_one', 'at_most_one', 'none']),
-        provider_match=dict(type='str', choices=['all', 'at_least_one', 'at_most_one', 'none']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        contract=dict(type="str", aliases=["contract_name"]),  # Not required for querying all objects
+        subject=dict(type="str", aliases=["contract_subject", "name", "subject_name"]),  # Not required for querying all objects
+        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        priority=dict(type="str", choices=["unspecified", "level1", "level2", "level3"]),
+        reverse_filter=dict(type="bool"),
+        dscp=dict(
+            type="str",
+            aliases=["target"],
+            choices=[
+                "AF11",
+                "AF12",
+                "AF13",
+                "AF21",
+                "AF22",
+                "AF23",
+                "AF31",
+                "AF32",
+                "AF33",
+                "AF41",
+                "AF42",
+                "AF43",
+                "CS0",
+                "CS1",
+                "CS2",
+                "CS3",
+                "CS4",
+                "CS5",
+                "CS6",
+                "CS7",
+                "EF",
+                "VA",
+                "unspecified",
+            ],
+        ),
+        description=dict(type="str", aliases=["descr"]),
+        consumer_match=dict(type="str", choices=["all", "at_least_one", "at_most_one", "none"]),
+        provider_match=dict(type="str", choices=["all", "at_least_one", "at_most_one", "none"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['contract', 'subject', 'tenant']],
-            ['state', 'present', ['contract', 'subject', 'tenant']],
+            ["state", "absent", ["contract", "subject", "tenant"]],
+            ["state", "present", ["contract", "subject", "tenant"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    subject = module.params.get('subject')
-    priority = module.params.get('priority')
-    reverse_filter = aci.boolean(module.params.get('reverse_filter'))
-    contract = module.params.get('contract')
-    dscp = module.params.get('dscp')
-    description = module.params.get('description')
-    consumer_match = module.params.get('consumer_match')
+    subject = module.params.get("subject")
+    priority = module.params.get("priority")
+    reverse_filter = aci.boolean(module.params.get("reverse_filter"))
+    contract = module.params.get("contract")
+    dscp = module.params.get("dscp")
+    description = module.params.get("description")
+    consumer_match = module.params.get("consumer_match")
     if consumer_match is not None:
         consumer_match = MATCH_MAPPING.get(consumer_match)
-    provider_match = module.params.get('provider_match')
+    provider_match = module.params.get("provider_match")
     if provider_match is not None:
         provider_match = MATCH_MAPPING.get(provider_match)
-    state = module.params.get('state')
-    tenant = module.params.get('tenant')
-    name_alias = module.params.get('name_alias')
+    state = module.params.get("state")
+    tenant = module.params.get("tenant")
+    name_alias = module.params.get("name_alias")
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='vzBrCP',
-            aci_rn='brc-{0}'.format(contract),
+            aci_class="vzBrCP",
+            aci_rn="brc-{0}".format(contract),
             module_object=contract,
-            target_filter={'name': contract},
+            target_filter={"name": contract},
         ),
         subclass_2=dict(
-            aci_class='vzSubj',
-            aci_rn='subj-{0}'.format(subject),
+            aci_class="vzSubj",
+            aci_rn="subj-{0}".format(subject),
             module_object=subject,
-            target_filter={'name': subject},
+            target_filter={"name": subject},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='vzSubj',
+            aci_class="vzSubj",
             class_config=dict(
                 name=subject,
                 prio=priority,
@@ -344,11 +369,11 @@ def main():
             ),
         )
 
-        aci.get_diff(aci_class='vzSubj')
+        aci.get_diff(aci_class="vzSubj")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

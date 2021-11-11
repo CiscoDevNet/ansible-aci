@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_epg_to_contract
 short_description: Bind EPGs to Contracts (fv:RsCons, fv:RsProv)
@@ -77,9 +76,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jacob McGill (@jmcgill298)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new contract to EPG binding
   cisco.aci.aci_epg_to_contract:
     host: apic
@@ -129,9 +128,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -234,62 +233,62 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 ACI_CLASS_MAPPING = dict(
     consumer={
-        'class': 'fvRsCons',
-        'rn': 'rscons-',
+        "class": "fvRsCons",
+        "rn": "rscons-",
     },
     provider={
-        'class': 'fvRsProv',
-        'rn': 'rsprov-',
+        "class": "fvRsProv",
+        "rn": "rsprov-",
     },
 )
 
 PROVIDER_MATCH_MAPPING = dict(
-    all='All',
-    at_least_one='AtleastOne',
-    at_most_one='AtmostOne',
-    none='None',
+    all="All",
+    at_least_one="AtleastOne",
+    at_most_one="AtmostOne",
+    none="None",
 )
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        contract_type=dict(type='str', required=True, choices=['consumer', 'provider']),
-        ap=dict(type='str', aliases=['app_profile', 'app_profile_name']),  # Not required for querying all objects
-        epg=dict(type='str', aliases=['epg_name']),  # Not required for querying all objects
-        contract=dict(type='str', aliases=['contract_name']),  # Not required for querying all objects
-        priority=dict(type='str', choices=['level1', 'level2', 'level3', 'unspecified']),
-        provider_match=dict(type='str', choices=['all', 'at_least_one', 'at_most_one', 'none']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
+        contract_type=dict(type="str", required=True, choices=["consumer", "provider"]),
+        ap=dict(type="str", aliases=["app_profile", "app_profile_name"]),  # Not required for querying all objects
+        epg=dict(type="str", aliases=["epg_name"]),  # Not required for querying all objects
+        contract=dict(type="str", aliases=["contract_name"]),  # Not required for querying all objects
+        priority=dict(type="str", choices=["level1", "level2", "level3", "unspecified"]),
+        provider_match=dict(type="str", choices=["all", "at_least_one", "at_most_one", "none"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['ap', 'contract', 'epg', 'tenant']],
-            ['state', 'present', ['ap', 'contract', 'epg', 'tenant']],
+            ["state", "absent", ["ap", "contract", "epg", "tenant"]],
+            ["state", "present", ["ap", "contract", "epg", "tenant"]],
         ],
     )
 
-    ap = module.params.get('ap')
-    contract = module.params.get('contract')
-    contract_type = module.params.get('contract_type')
-    epg = module.params.get('epg')
-    priority = module.params.get('priority')
-    provider_match = module.params.get('provider_match')
+    ap = module.params.get("ap")
+    contract = module.params.get("contract")
+    contract_type = module.params.get("contract_type")
+    epg = module.params.get("epg")
+    priority = module.params.get("priority")
+    provider_match = module.params.get("provider_match")
     if provider_match is not None:
         provider_match = PROVIDER_MATCH_MAPPING[provider_match]
-    state = module.params.get('state')
-    tenant = module.params.get('tenant')
+    state = module.params.get("state")
+    tenant = module.params.get("tenant")
 
     aci_class = ACI_CLASS_MAPPING[contract_type]["class"]
     aci_rn = ACI_CLASS_MAPPING[contract_type]["rn"]
@@ -300,34 +299,34 @@ def main():
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='fvAp',
-            aci_rn='ap-{0}'.format(ap),
+            aci_class="fvAp",
+            aci_rn="ap-{0}".format(ap),
             module_object=ap,
-            target_filter={'name': ap},
+            target_filter={"name": ap},
         ),
         subclass_2=dict(
-            aci_class='fvAEPg',
-            aci_rn='epg-{0}'.format(epg),
+            aci_class="fvAEPg",
+            aci_rn="epg-{0}".format(epg),
             module_object=epg,
-            target_filter={'name': epg},
+            target_filter={"name": epg},
         ),
         subclass_3=dict(
             aci_class=aci_class,
-            aci_rn='{0}{1}'.format(aci_rn, contract),
+            aci_rn="{0}{1}".format(aci_rn, contract),
             module_object=contract,
-            target_filter={'tnVzBrCPName': contract},
+            target_filter={"tnVzBrCPName": contract},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
             aci_class=aci_class,
             class_config=dict(
@@ -341,7 +340,7 @@ def main():
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

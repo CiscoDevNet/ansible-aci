@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_tenant
 short_description: Manage tenants (fv:Tenant)
@@ -52,9 +51,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jacob McGill (@jmcgill298)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new tenant
   cisco.aci.aci_tenant:
     host: apic
@@ -92,9 +91,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -197,7 +196,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -206,40 +205,40 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['name', 'tenant_name']),  # Not required for querying all objects
-        description=dict(type='str', aliases=['descr']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        tenant=dict(type="str", aliases=["name", "tenant_name"]),  # Not required for querying all objects
+        description=dict(type="str", aliases=["descr"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['tenant']],
-            ['state', 'present', ['tenant']],
+            ["state", "absent", ["tenant"]],
+            ["state", "present", ["tenant"]],
         ],
     )
 
-    description = module.params.get('description')
-    state = module.params.get('state')
-    tenant = module.params.get('tenant')
-    name_alias = module.params.get('name_alias')
+    description = module.params.get("description")
+    state = module.params.get("state")
+    tenant = module.params.get("tenant")
+    name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
     )
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='fvTenant',
+            aci_class="fvTenant",
             class_config=dict(
                 name=tenant,
                 descr=description,
@@ -247,11 +246,11 @@ def main():
             ),
         )
 
-        aci.get_diff(aci_class='fvTenant')
+        aci.get_diff(aci_class="fvTenant")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

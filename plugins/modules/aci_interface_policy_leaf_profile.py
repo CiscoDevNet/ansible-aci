@@ -6,13 +6,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_leaf_profile
 short_description: Manage fabric interface policy leaf profiles (infra:AccPortP)
@@ -56,9 +55,9 @@ seealso:
 author:
 - Bruno Calogero (@brunocalogero)
 - Shreyas Srish (@shrsr)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new leaf_interface_profile
   cisco.aci.aci_interface_policy_leaf_profile:
     host: apic
@@ -136,9 +135,9 @@ EXAMPLES = r'''
     type: fex
     state: query
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -241,7 +240,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -250,46 +249,46 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        interface_profile=dict(type='str', aliases=['name', 'leaf_interface_profile_name', 'leaf_interface_profile', 'interface_profile_name']),
-        description=dict(type='str', aliases=['descr']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
-        type=dict(type='str', default='leaf', choices=['fex', 'leaf']),
+        interface_profile=dict(type="str", aliases=["name", "leaf_interface_profile_name", "leaf_interface_profile", "interface_profile_name"]),
+        description=dict(type="str", aliases=["descr"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
+        type=dict(type="str", default="leaf", choices=["fex", "leaf"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['interface_profile']],
-            ['state', 'present', ['interface_profile']],
+            ["state", "absent", ["interface_profile"]],
+            ["state", "present", ["interface_profile"]],
         ],
     )
 
-    interface_profile = module.params.get('interface_profile')
-    description = module.params.get('description')
-    state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
-    type_profile = module.params.get('type')
+    interface_profile = module.params.get("interface_profile")
+    description = module.params.get("description")
+    state = module.params.get("state")
+    name_alias = module.params.get("name_alias")
+    type_profile = module.params.get("type")
 
     aci = ACIModule(module)
-    aci_class = 'infraAccPortP'
-    aci_rn = 'accportprof'
-    if type_profile == 'fex':
-        aci_class = 'infraFexP'
-        aci_rn = 'fexprof'
+    aci_class = "infraAccPortP"
+    aci_rn = "accportprof"
+    if type_profile == "fex":
+        aci_class = "infraFexP"
+        aci_rn = "fexprof"
     aci.construct_url(
         root_class=dict(
             aci_class=aci_class,
-            aci_rn='infra/' + aci_rn + '-{0}'.format(interface_profile),
+            aci_rn="infra/" + aci_rn + "-{0}".format(interface_profile),
             module_object=interface_profile,
-            target_filter={'name': interface_profile},
+            target_filter={"name": interface_profile},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
             aci_class=aci_class,
             class_config=dict(
@@ -303,7 +302,7 @@ def main():
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

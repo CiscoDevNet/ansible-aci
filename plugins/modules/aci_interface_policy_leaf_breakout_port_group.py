@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_leaf_breakout_port_group
 short_description: Manage fabric interface policy leaf breakout port group (infra:BrkoutPortGrp)
@@ -48,9 +47,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Cindy Zhao (@cizhao)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create a Leaf Breakout Port Group
   cisco.aci.aci_interface_policy_leaf_breakout_port_group:
     host: apic
@@ -88,9 +87,9 @@ EXAMPLES = r'''
     breakout_port_group: BreakoutPortName
     state: absent
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -193,7 +192,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -202,42 +201,42 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        breakout_port_group=dict(type='str', aliases=['name']),  # Not required for querying all objects
-        description=dict(type='str', aliases=['descr']),
-        breakout_map=dict(type='str'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        breakout_port_group=dict(type="str", aliases=["name"]),  # Not required for querying all objects
+        description=dict(type="str", aliases=["descr"]),
+        breakout_map=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['breakout_port_group']],
-            ['state', 'present', ['breakout_port_group']],
+            ["state", "absent", ["breakout_port_group"]],
+            ["state", "present", ["breakout_port_group"]],
         ],
     )
 
-    breakout_port_group = module.params.get('breakout_port_group')
-    description = module.params.get('description')
-    breakout_map = module.params.get('breakout_map')
-    state = module.params.get('state')
+    breakout_port_group = module.params.get("breakout_port_group")
+    description = module.params.get("description")
+    breakout_map = module.params.get("breakout_map")
+    state = module.params.get("state")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='infraBrkoutPortGrp',
-            aci_rn='infra/funcprof/brkoutportgrp-{0}'.format(breakout_port_group),
+            aci_class="infraBrkoutPortGrp",
+            aci_rn="infra/funcprof/brkoutportgrp-{0}".format(breakout_port_group),
             module_object=breakout_port_group,
-            target_filter={'name': breakout_port_group},
+            target_filter={"name": breakout_port_group},
         ),
         child_classes=[],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='infraBrkoutPortGrp',
+            aci_class="infraBrkoutPortGrp",
             class_config=dict(
                 name=breakout_port_group,
                 descr=description,
@@ -245,11 +244,11 @@ def main():
             ),
         )
 
-        aci.get_diff(aci_class='infraBrkoutPortGrp')
+        aci.get_diff(aci_class="infraBrkoutPortGrp")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_fabric_spine_switch_assoc
 short_description: Manage spine switch bindings to profiles and policy groups (fabric:SpineS and fabric:RsSpNodePGrp).
@@ -52,9 +51,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create a spine switch profile association
   cisco.aci.aci_fabric_spine_switch_assoc:
     host: apic
@@ -95,9 +94,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -200,7 +199,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -210,76 +209,63 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        profile=dict(type='str', aliases=['spine_profile',
-                                          'spine_switch_profile']),
-        name=dict(type='str', aliases=['association_name',
-                                       'switch_association']),
-        policy_group=dict(type='str'),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query'])
+        profile=dict(type="str", aliases=["spine_profile", "spine_switch_profile"]),
+        name=dict(type="str", aliases=["association_name", "switch_association"]),
+        policy_group=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['profile', 'name']],
-            ['state', 'present', ['profile', 'name']],
-        ]
+            ["state", "absent", ["profile", "name"]],
+            ["state", "present", ["profile", "name"]],
+        ],
     )
 
     aci = ACIModule(module)
 
-    profile = module.params.get('profile')
-    name = module.params.get('name')
-    policy_group = module.params.get('policy_group')
-    state = module.params.get('state')
-    child_classes = ['fabricRsSpNodePGrp', 'fabricNodeBlk']
+    profile = module.params.get("profile")
+    name = module.params.get("name")
+    policy_group = module.params.get("policy_group")
+    state = module.params.get("state")
+    child_classes = ["fabricRsSpNodePGrp", "fabricNodeBlk"]
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fabricSpineP',
-            aci_rn='fabric/spprof-{0}'.format(profile),
+            aci_class="fabricSpineP",
+            aci_rn="fabric/spprof-{0}".format(profile),
             module_object=profile,
-            target_filter={'name': profile},
+            target_filter={"name": profile},
         ),
         subclass_1=dict(
-            aci_class='fabricSpineS',
-            aci_rn='spines-{0}-typ-range'.format(name),
+            aci_class="fabricSpineS",
+            aci_rn="spines-{0}-typ-range".format(name),
             module_object=name,
-            target_filter={'name': name},
+            target_filter={"name": name},
         ),
         child_classes=child_classes,
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         child_configs = []
         if policy_group:
-            tDn = 'uni/fabric/funcprof/spnodepgrp-{0}'.format(policy_group)
-            child_configs.append(
-                dict(
-                    fabricRsSpNodePGrp=dict(
-                        attributes=dict(
-                            tDn=tDn
-                        )
-                    )
-                )
-            )
+            tDn = "uni/fabric/funcprof/spnodepgrp-{0}".format(policy_group)
+            child_configs.append(dict(fabricRsSpNodePGrp=dict(attributes=dict(tDn=tDn))))
         aci.payload(
-            aci_class='fabricSpineS',
-            class_config=dict(
-                name=name
-            ),
+            aci_class="fabricSpineS",
+            class_config=dict(name=name),
             child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='fabricSpineS')
+        aci.get_diff(aci_class="fabricSpineS")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

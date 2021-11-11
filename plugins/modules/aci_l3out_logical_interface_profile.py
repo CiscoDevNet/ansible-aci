@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_l3out_logical_interface_profile
 short_description: Manage Layer 3 Outside (L3Out) logical interface profiles (l3ext:LIfP)
@@ -67,9 +66,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Marcel Zehnder (@maercu)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new interface profile
   cisco.aci.aci_l3out_logical_interface_profile:
     host: apic
@@ -115,9 +114,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -220,7 +219,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 
 from ansible.module_utils.basic import AnsibleModule
@@ -230,92 +229,79 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),
-        l3out=dict(type='str', aliases=['l3out_name']),
-        node_profile=dict(type='str', aliases=[
-                          'node_profile_name', 'logical_node']),
-        interface_profile=dict(type='str', aliases=[
-            'name', 'interface_profile_name', 'logical_interface']),
-        nd_policy=dict(type='str', default=''),
-        egress_dpp_policy=dict(type='str', default=''),
-        ingress_dpp_policy=dict(type='str', default=''),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query'])
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        l3out=dict(type="str", aliases=["l3out_name"]),
+        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
+        interface_profile=dict(type="str", aliases=["name", "interface_profile_name", "logical_interface"]),
+        nd_policy=dict(type="str", default=""),
+        egress_dpp_policy=dict(type="str", default=""),
+        ingress_dpp_policy=dict(type="str", default=""),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['tenant', 'l3out',
-                                 'node_profile', 'interface_profile']],
-            ['state', 'present', ['tenant', 'l3out',
-                                  'node_profile', 'interface_profile']]
-        ]
+            ["state", "absent", ["tenant", "l3out", "node_profile", "interface_profile"]],
+            ["state", "present", ["tenant", "l3out", "node_profile", "interface_profile"]],
+        ],
     )
 
-    tenant = module.params.get('tenant')
-    l3out = module.params.get('l3out')
-    node_profile = module.params.get('node_profile')
-    interface_profile = module.params.get('interface_profile')
-    nd_policy = module.params.get('nd_policy')
-    egress_dpp_policy = module.params.get('egress_dpp_policy')
-    ingress_dpp_policy = module.params.get('ingress_dpp_policy')
-    state = module.params.get('state')
+    tenant = module.params.get("tenant")
+    l3out = module.params.get("l3out")
+    node_profile = module.params.get("node_profile")
+    interface_profile = module.params.get("interface_profile")
+    nd_policy = module.params.get("nd_policy")
+    egress_dpp_policy = module.params.get("egress_dpp_policy")
+    ingress_dpp_policy = module.params.get("ingress_dpp_policy")
+    state = module.params.get("state")
 
     aci = ACIModule(module)
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='l3extOut',
-            aci_rn='out-{0}'.format(l3out),
+            aci_class="l3extOut",
+            aci_rn="out-{0}".format(l3out),
             module_object=l3out,
-            target_filter={'name': l3out},
+            target_filter={"name": l3out},
         ),
         subclass_2=dict(
-            aci_class='l3extLNodeP',
-            aci_rn='lnodep-{0}'.format(node_profile),
+            aci_class="l3extLNodeP",
+            aci_rn="lnodep-{0}".format(node_profile),
             module_object=node_profile,
-            target_filter={'name': node_profile},
+            target_filter={"name": node_profile},
         ),
         subclass_3=dict(
-            aci_class='l3extLIfP',
-            aci_rn='lifp-[{0}]'.format(interface_profile),
+            aci_class="l3extLIfP",
+            aci_rn="lifp-[{0}]".format(interface_profile),
             module_object=interface_profile,
-            target_filter={'name': interface_profile},
+            target_filter={"name": interface_profile},
         ),
-        child_classes=['l3extRsNdIfPol',
-                       'l3extRsIngressQosDppPol',
-                       'l3extRsEgressQosDppPol']
+        child_classes=["l3extRsNdIfPol", "l3extRsIngressQosDppPol", "l3extRsEgressQosDppPol"],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         child_configs = [
             dict(l3extRsNdIfPol=dict(attributes=dict(tnNdIfPolName=nd_policy))),
-            dict(l3extRsIngressQosDppPol=dict(
-                attributes=dict(tnQosDppPolName=ingress_dpp_policy))),
-            dict(l3extRsEgressQosDppPol=dict(
-                attributes=dict(tnQosDppPolName=egress_dpp_policy)))
+            dict(l3extRsIngressQosDppPol=dict(attributes=dict(tnQosDppPolName=ingress_dpp_policy))),
+            dict(l3extRsEgressQosDppPol=dict(attributes=dict(tnQosDppPolName=egress_dpp_policy))),
         ]
-        aci.payload(
-            aci_class='l3extLIfP',
-            class_config=dict(name=interface_profile),
-            child_configs=child_configs
-        )
+        aci.payload(aci_class="l3extLIfP", class_config=dict(name=interface_profile), child_configs=child_configs)
 
-        aci.get_diff(aci_class='l3extLIfP')
+        aci.get_diff(aci_class="l3extLIfP")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

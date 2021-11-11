@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_epg
 short_description: Manage End Point Groups (EPG) objects (fv:AEPg)
@@ -100,9 +99,9 @@ seealso:
 author:
 - Swetha Chunduri (@schunduri)
 - Shreyas Srish (@shrsr)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new EPG
   cisco.aci.aci_epg:
     host: apic
@@ -192,9 +191,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -297,7 +296,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -306,83 +305,78 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        epg=dict(type='str', aliases=['epg_name', 'name']),  # Not required for querying all objects
-        bd=dict(type='str', aliases=['bd_name', 'bridge_domain']),
-        ap=dict(type='str', aliases=['app_profile', 'app_profile_name']),  # Not required for querying all objects
-        tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
-        description=dict(type='str', aliases=['descr']),
-        priority=dict(type='str', choices=['level1', 'level2', 'level3', 'unspecified']),
-        intra_epg_isolation=dict(choices=['enforced', 'unenforced']),
-        fwd_control=dict(type='str', choices=['none', 'proxy-arp']),
-        preferred_group=dict(type='bool'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
-        monitoring_policy=dict(type='str'),
-        custom_qos_policy=dict(type='str'),
+        epg=dict(type="str", aliases=["epg_name", "name"]),  # Not required for querying all objects
+        bd=dict(type="str", aliases=["bd_name", "bridge_domain"]),
+        ap=dict(type="str", aliases=["app_profile", "app_profile_name"]),  # Not required for querying all objects
+        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        description=dict(type="str", aliases=["descr"]),
+        priority=dict(type="str", choices=["level1", "level2", "level3", "unspecified"]),
+        intra_epg_isolation=dict(choices=["enforced", "unenforced"]),
+        fwd_control=dict(type="str", choices=["none", "proxy-arp"]),
+        preferred_group=dict(type="bool"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
+        monitoring_policy=dict(type="str"),
+        custom_qos_policy=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['ap', 'epg', 'tenant']],
-            ['state', 'present', ['ap', 'epg', 'tenant']],
+            ["state", "absent", ["ap", "epg", "tenant"]],
+            ["state", "present", ["ap", "epg", "tenant"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    epg = module.params.get('epg')
-    bd = module.params.get('bd')
-    description = module.params.get('description')
-    priority = module.params.get('priority')
-    intra_epg_isolation = module.params.get('intra_epg_isolation')
-    fwd_control = module.params.get('fwd_control')
-    preferred_group = aci.boolean(module.params.get('preferred_group'), 'include', 'exclude')
-    state = module.params.get('state')
-    tenant = module.params.get('tenant')
-    ap = module.params.get('ap')
-    name_alias = module.params.get('name_alias')
-    monitoring_policy = module.params.get('monitoring_policy')
-    custom_qos_policy = module.params.get('custom_qos_policy')
+    epg = module.params.get("epg")
+    bd = module.params.get("bd")
+    description = module.params.get("description")
+    priority = module.params.get("priority")
+    intra_epg_isolation = module.params.get("intra_epg_isolation")
+    fwd_control = module.params.get("fwd_control")
+    preferred_group = aci.boolean(module.params.get("preferred_group"), "include", "exclude")
+    state = module.params.get("state")
+    tenant = module.params.get("tenant")
+    ap = module.params.get("ap")
+    name_alias = module.params.get("name_alias")
+    monitoring_policy = module.params.get("monitoring_policy")
+    custom_qos_policy = module.params.get("custom_qos_policy")
 
-    child_configs = [
-        dict(fvRsBd=dict(attributes=dict(tnFvBDName=bd))),
-        dict(fvRsAEPgMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy)))
-    ]
+    child_configs = [dict(fvRsBd=dict(attributes=dict(tnFvBDName=bd))), dict(fvRsAEPgMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy)))]
 
     if custom_qos_policy is not None:
-        child_configs.append(
-            dict(fvRsCustQosPol=dict(attributes=dict(tnQosCustomPolName=custom_qos_policy)))
-        )
+        child_configs.append(dict(fvRsCustQosPol=dict(attributes=dict(tnQosCustomPolName=custom_qos_policy))))
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='fvAp',
-            aci_rn='ap-{0}'.format(ap),
+            aci_class="fvAp",
+            aci_rn="ap-{0}".format(ap),
             module_object=ap,
-            target_filter={'name': ap},
+            target_filter={"name": ap},
         ),
         subclass_2=dict(
-            aci_class='fvAEPg',
-            aci_rn='epg-{0}'.format(epg),
+            aci_class="fvAEPg",
+            aci_rn="epg-{0}".format(epg),
             module_object=epg,
-            target_filter={'name': epg},
+            target_filter={"name": epg},
         ),
-        child_classes=['fvRsBd', 'fvRsAEPgMonPol', 'fvRsCustQosPol'],
+        child_classes=["fvRsBd", "fvRsAEPgMonPol", "fvRsCustQosPol"],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='fvAEPg',
+            aci_class="fvAEPg",
             class_config=dict(
                 name=epg,
                 descr=description,
@@ -395,11 +389,11 @@ def main():
             child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='fvAEPg')
+        aci.get_diff(aci_class="fvAEPg")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

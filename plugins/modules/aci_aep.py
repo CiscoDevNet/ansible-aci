@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_aep
 short_description: Manage attachable Access Entity Profile (AEP) objects (infra:AttEntityP, infra:ProvAcc)
@@ -58,9 +57,9 @@ seealso:
 author:
 - Swetha Chunduri (@schunduri)
 - Shreyas Srish (@shrsr)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new AEP
   cisco.aci.aci_aep:
     host: apic
@@ -99,9 +98,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -204,7 +203,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -213,57 +212,57 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        aep=dict(type='str', aliases=['name', 'aep_name']),  # Not required for querying all objects
-        description=dict(type='str', aliases=['descr']),
-        infra_vlan=dict(type='bool', aliases=['infrastructure_vlan']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        aep=dict(type="str", aliases=["name", "aep_name"]),  # Not required for querying all objects
+        description=dict(type="str", aliases=["descr"]),
+        infra_vlan=dict(type="bool", aliases=["infrastructure_vlan"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['aep']],
-            ['state', 'present', ['aep']],
+            ["state", "absent", ["aep"]],
+            ["state", "present", ["aep"]],
         ],
     )
 
-    aep = module.params.get('aep')
-    description = module.params.get('description')
-    infra_vlan = module.params.get('infra_vlan')
-    state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
+    aep = module.params.get("aep")
+    description = module.params.get("description")
+    infra_vlan = module.params.get("infra_vlan")
+    state = module.params.get("state")
+    name_alias = module.params.get("name_alias")
     if infra_vlan:
-        child_configs = [dict(infraProvAcc=dict(attributes=dict(name='provacc')))]
+        child_configs = [dict(infraProvAcc=dict(attributes=dict(name="provacc")))]
     elif infra_vlan is False:
-        child_configs = [dict(infraProvAcc=dict(attributes=dict(name='provacc', status='deleted')))]
+        child_configs = [dict(infraProvAcc=dict(attributes=dict(name="provacc", status="deleted")))]
     else:
         child_configs = []
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='infraAttEntityP',
-            aci_rn='infra/attentp-{0}'.format(aep),
+            aci_class="infraAttEntityP",
+            aci_rn="infra/attentp-{0}".format(aep),
             module_object=aep,
-            target_filter={'name': aep},
+            target_filter={"name": aep},
         ),
-        child_classes=['infraProvAcc']
+        child_classes=["infraProvAcc"],
     )
 
     aci.get_existing()
 
     try:
-        if len(aci.existing[0]['infraAttEntityP']) == 1 and infra_vlan is False:
+        if len(aci.existing[0]["infraAttEntityP"]) == 1 and infra_vlan is False:
             child_configs = []
     except Exception:
         pass
 
-    if state == 'present':
+    if state == "present":
 
         aci.payload(
-            aci_class='infraAttEntityP',
+            aci_class="infraAttEntityP",
             class_config=dict(
                 name=aep,
                 descr=description,
@@ -272,11 +271,11 @@ def main():
             child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='infraAttEntityP')
+        aci.get_diff(aci_class="infraAttEntityP")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

@@ -6,13 +6,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_rest
 short_description: Direct access to the Cisco APIC REST API
@@ -77,9 +76,9 @@ seealso:
 author:
 - Dag Wieers (@dagwieers)
 - Cindy Zhao (@cizhao)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a tenant using certificate authentication
   cisco.aci.aci_rest:
     host: apic
@@ -194,9 +193,9 @@ EXAMPLES = r'''
   delay: 30
   delegate_to: localhost
   run_once: yes
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 error_code:
   description: The REST ACI return code, useful for troubleshooting on failure
   returned: always
@@ -242,13 +241,14 @@ url:
   returned: success
   type: str
   sample: https://1.2.3.4/api/mo/uni/tn-[Dag].json?rsp-subtree=modified
-'''
+"""
 
 import json
 import os
 
 try:
     from ansible.module_utils.six.moves.urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
+
     HAS_URLPARSE = True
 except Exception:
     HAS_URLPARSE = False
@@ -256,6 +256,7 @@ except Exception:
 # Optional, only used for XML payload
 try:
     from lxml import etree  # noqa
+
     HAS_LXML_ETREE = True
 except ImportError:
     HAS_LXML_ETREE = False
@@ -263,6 +264,7 @@ except ImportError:
 # Optional, only used for XML payload
 try:
     from xmljson import cobra  # noqa
+
     HAS_XMLJSON_COBRA = True
 except ImportError:
     HAS_XMLJSON_COBRA = False
@@ -270,6 +272,7 @@ except ImportError:
 # Optional, only used for YAML validation
 try:
     import yaml
+
     HAS_YAML = True
 except Exception:
     HAS_YAML = False
@@ -281,7 +284,7 @@ from ansible.module_utils._text import to_text
 
 
 def update_qsl(url, params):
-    ''' Add or update a URL query string '''
+    """Add or update a URL query string"""
 
     if HAS_URLPARSE:
         url_parts = list(urlparse(url))
@@ -289,20 +292,19 @@ def update_qsl(url, params):
         query.update(params)
         url_parts[4] = urlencode(query)
         return urlunparse(url_parts)
-    elif '?' in url:
-        return url + '&' + '&'.join(['%s=%s' % (k, v) for k, v in params.items()])
+    elif "?" in url:
+        return url + "&" + "&".join(["%s=%s" % (k, v) for k, v in params.items()])
     else:
-        return url + '?' + '&'.join(['%s=%s' % (k, v) for k, v in params.items()])
+        return url + "?" + "&".join(["%s=%s" % (k, v) for k, v in params.items()])
 
 
 class ACIRESTModule(ACIModule):
-
     def changed(self, d):
-        ''' Check ACI response for changes '''
+        """Check ACI response for changes"""
 
         if isinstance(d, dict):
             for k, v in d.items():
-                if k == 'status' and v in ('created', 'modified', 'deleted'):
+                if k == "status" and v in ("created", "modified", "deleted"):
                     return True
                 elif self.changed(v) is True:
                     return True
@@ -313,36 +315,36 @@ class ACIRESTModule(ACIModule):
 
         return False
 
-    def response_type(self, rawoutput, rest_type='xml'):
-        ''' Handle APIC response output '''
+    def response_type(self, rawoutput, rest_type="xml"):
+        """Handle APIC response output"""
 
-        if rest_type == 'json':
+        if rest_type == "json":
             self.response_json(rawoutput)
         else:
             self.response_xml(rawoutput)
 
         # Use APICs built-in idempotency
         if HAS_URLPARSE:
-            self.result['changed'] = self.changed(self.imdata)
+            self.result["changed"] = self.changed(self.imdata)
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        path=dict(type='str', required=True, aliases=['uri']),
-        method=dict(type='str', default='get', choices=['delete', 'get', 'post'], aliases=['action']),
-        src=dict(type='path', aliases=['config_file']),
-        content=dict(type='raw'),
+        path=dict(type="str", required=True, aliases=["uri"]),
+        method=dict(type="str", default="get", choices=["delete", "get", "post"], aliases=["action"]),
+        src=dict(type="path", aliases=["config_file"]),
+        content=dict(type="raw"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
-        mutually_exclusive=[['content', 'src']],
+        mutually_exclusive=[["content", "src"]],
     )
 
-    content = module.params.get('content')
-    path = module.params.get('path')
-    src = module.params.get('src')
+    content = module.params.get("content")
+    path = module.params.get("path")
+    src = module.params.get("src")
 
     # Report missing file
     file_exists = False
@@ -353,30 +355,30 @@ def main():
             module.fail_json(msg="Cannot find/access src '%s'" % src)
 
     # Find request type
-    if path.find('.xml') != -1:
-        rest_type = 'xml'
+    if path.find(".xml") != -1:
+        rest_type = "xml"
         if not HAS_LXML_ETREE:
-            module.fail_json(msg='The lxml python library is missing, or lacks etree support.')
+            module.fail_json(msg="The lxml python library is missing, or lacks etree support.")
         if not HAS_XMLJSON_COBRA:
-            module.fail_json(msg='The xmljson python library is missing, or lacks cobra support.')
-    elif path.find('.json') != -1:
-        rest_type = 'json'
+            module.fail_json(msg="The xmljson python library is missing, or lacks cobra support.")
+    elif path.find(".json") != -1:
+        rest_type = "json"
     else:
-        module.fail_json(msg='Failed to find REST API payload type (neither .xml nor .json).')
+        module.fail_json(msg="Failed to find REST API payload type (neither .xml nor .json).")
 
     aci = ACIRESTModule(module)
-    aci.result['status'] = -1  # Ensure we always return a status
+    aci.result["status"] = -1  # Ensure we always return a status
 
     # We include the payload as it may be templated
     payload = content
     if file_exists:
-        with open(src, 'r') as config_object:
+        with open(src, "r") as config_object:
             # TODO: Would be nice to template this, requires action-plugin
             payload = config_object.read()
             payload_output_file = json.loads(payload)
 
     # Validate payload
-    if rest_type == 'json':
+    if rest_type == "json":
         if content and isinstance(content, dict):
             # Validate inline YAML/JSON
             payload = json.dumps(payload)
@@ -387,8 +389,8 @@ def main():
                 payload = json.dumps(yaml.safe_load(payload))
                 payload_output_file = json.loads(payload)
             except Exception as e:
-                module.fail_json(msg='Failed to parse provided JSON/YAML payload: %s' % to_text(e), exception=to_text(e), payload=payload)
-    elif rest_type == 'xml' and HAS_LXML_ETREE:
+                module.fail_json(msg="Failed to parse provided JSON/YAML payload: %s" % to_text(e), exception=to_text(e), payload=payload)
+    elif rest_type == "xml" and HAS_LXML_ETREE:
         if content and isinstance(content, dict) and HAS_XMLJSON_COBRA:
             # Validate inline YAML/JSON
             payload = etree.tostring(cobra.etree(payload)[0])
@@ -397,52 +399,49 @@ def main():
                 # Validate XML string
                 payload = etree.tostring(etree.fromstring(payload))
             except Exception as e:
-                module.fail_json(msg='Failed to parse provided XML payload: %s' % to_text(e), payload=payload)
+                module.fail_json(msg="Failed to parse provided XML payload: %s" % to_text(e), payload=payload)
 
     # Perform actual request using auth cookie (Same as aci.request(), but also supports XML)
-    if 'port' in aci.params and aci.params.get('port') is not None:
-        aci.url = '%(protocol)s://%(host)s:%(port)s/' % aci.params + path.lstrip('/')
+    if "port" in aci.params and aci.params.get("port") is not None:
+        aci.url = "%(protocol)s://%(host)s:%(port)s/" % aci.params + path.lstrip("/")
     else:
-        aci.url = '%(protocol)s://%(host)s/' % aci.params + path.lstrip('/')
-    if aci.params.get('method') != 'get':
-        path += '?rsp-subtree=modified'
-        aci.url = update_qsl(aci.url, {'rsp-subtree': 'modified'})
+        aci.url = "%(protocol)s://%(host)s/" % aci.params + path.lstrip("/")
+    if aci.params.get("method") != "get":
+        path += "?rsp-subtree=modified"
+        aci.url = update_qsl(aci.url, {"rsp-subtree": "modified"})
 
     # Sign and encode request as to APIC's wishes
-    if aci.params.get('private_key') is not None:
+    if aci.params.get("private_key") is not None:
         aci.cert_auth(path=path, payload=payload)
 
-    aci.method = aci.params.get('method').upper()
+    aci.method = aci.params.get("method").upper()
 
     # Perform request
-    resp, info = fetch_url(module, aci.url,
-                           data=payload,
-                           headers=aci.headers,
-                           method=aci.method,
-                           timeout=aci.params.get('timeout'),
-                           use_proxy=aci.params.get('use_proxy'))
+    resp, info = fetch_url(
+        module, aci.url, data=payload, headers=aci.headers, method=aci.method, timeout=aci.params.get("timeout"), use_proxy=aci.params.get("use_proxy")
+    )
 
-    aci.response = info.get('msg')
-    aci.status = info.get('status')
+    aci.response = info.get("msg")
+    aci.status = info.get("status")
 
     # Report failure
-    if info.get('status') != 200:
+    if info.get("status") != 200:
         try:
             # APIC error
-            aci.response_type(info.get('body'), rest_type)
-            aci.fail_json(msg='APIC Error %(code)s: %(text)s' % aci.error)
+            aci.response_type(info.get("body"), rest_type)
+            aci.fail_json(msg="APIC Error %(code)s: %(text)s" % aci.error)
         except KeyError:
             # Connection error
-            aci.fail_json(msg='Connection failed for %(url)s. %(msg)s' % info)
+            aci.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
 
     aci.response_type(resp.read(), rest_type)
 
-    aci.result['imdata'] = aci.imdata
-    aci.result['totalCount'] = aci.totalCount
+    aci.result["imdata"] = aci.imdata
+    aci.result["totalCount"] = aci.totalCount
 
-    if aci.params.get('method') != 'get':
-        output_path = aci.params.get('output_path')
-        if(output_path is not None):
+    if aci.params.get("method") != "get":
+        output_path = aci.params.get("output_path")
+        if output_path is not None:
             with open(output_path, "a") as output_file:
                 json.dump([payload_output_file], output_file)
 
@@ -450,5 +449,5 @@ def main():
     aci.exit_json(**aci.result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

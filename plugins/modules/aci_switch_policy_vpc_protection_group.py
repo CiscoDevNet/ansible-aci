@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_switch_policy_vpc_protection_group
 short_description: Manage switch policy explicit vPC protection groups (fabric:ExplicitGEp, fabric:NodePEp).
@@ -62,9 +61,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Bruno Calogero (@brunocalogero)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add vPC Protection Group
   cisco.aci.aci_switch_policy_vpc_protection_group:
     host: apic
@@ -104,9 +103,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -209,7 +208,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -218,48 +217,48 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        protection_group=dict(type='str', aliases=['name', 'protection_group_name']),  # Not required for querying all objects
-        protection_group_id=dict(type='int', aliases=['id']),
-        vpc_domain_policy=dict(type='str', aliases=['vpc_domain_policy_name']),
-        switch_1_id=dict(type='int'),
-        switch_2_id=dict(type='int'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        protection_group=dict(type="str", aliases=["name", "protection_group_name"]),  # Not required for querying all objects
+        protection_group_id=dict(type="int", aliases=["id"]),
+        vpc_domain_policy=dict(type="str", aliases=["vpc_domain_policy_name"]),
+        switch_1_id=dict(type="int"),
+        switch_2_id=dict(type="int"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['protection_group']],
-            ['state', 'present', ['protection_group', 'protection_group_id', 'switch_1_id', 'switch_2_id']],
+            ["state", "absent", ["protection_group"]],
+            ["state", "present", ["protection_group", "protection_group_id", "switch_1_id", "switch_2_id"]],
         ],
     )
 
-    protection_group = module.params.get('protection_group')
-    protection_group_id = module.params.get('protection_group_id')
-    vpc_domain_policy = module.params.get('vpc_domain_policy')
-    switch_1_id = module.params.get('switch_1_id')
-    switch_2_id = module.params.get('switch_2_id')
-    state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
+    protection_group = module.params.get("protection_group")
+    protection_group_id = module.params.get("protection_group_id")
+    vpc_domain_policy = module.params.get("vpc_domain_policy")
+    switch_1_id = module.params.get("switch_1_id")
+    switch_2_id = module.params.get("switch_2_id")
+    state = module.params.get("state")
+    name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fabricExplicitGEp',
-            aci_rn='fabric/protpol/expgep-{0}'.format(protection_group),
+            aci_class="fabricExplicitGEp",
+            aci_rn="fabric/protpol/expgep-{0}".format(protection_group),
             module_object=protection_group,
-            target_filter={'name': protection_group},
+            target_filter={"name": protection_group},
         ),
-        child_classes=['fabricNodePEp', 'fabricNodePEp', 'fabricRsVpcInstPol'],
+        child_classes=["fabricNodePEp", "fabricNodePEp", "fabricRsVpcInstPol"],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='fabricExplicitGEp',
+            aci_class="fabricExplicitGEp",
             class_config=dict(
                 name=protection_group,
                 id=protection_group_id,
@@ -269,14 +268,14 @@ def main():
                 dict(
                     fabricNodePEp=dict(
                         attributes=dict(
-                            id='{0}'.format(switch_1_id),
+                            id="{0}".format(switch_1_id),
                         ),
                     ),
                 ),
                 dict(
                     fabricNodePEp=dict(
                         attributes=dict(
-                            id='{0}'.format(switch_2_id),
+                            id="{0}".format(switch_2_id),
                         ),
                     ),
                 ),
@@ -290,11 +289,11 @@ def main():
             ],
         )
 
-        aci.get_diff(aci_class='fabricExplicitGEp')
+        aci.get_diff(aci_class="fabricExplicitGEp")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

@@ -6,13 +6,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_vmm_controller
 short_description: Manage VMM Controller for virtual domains profiles (vmm:CtrlrP)
@@ -88,9 +87,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Manuel Widmer (@lumean)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add controller to VMware VMM domain
   cisco.aci.aci_vmm_controller:
     host: apic
@@ -136,10 +135,10 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -242,108 +241,106 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 VM_PROVIDER_MAPPING = dict(
-    cloudfoundry='CloudFoundry',
-    kubernetes='Kubernetes',
-    microsoft='Microsoft',
-    openshift='OpenShift',
-    openstack='OpenStack',
-    redhat='Redhat',
-    vmware='VMware',
+    cloudfoundry="CloudFoundry",
+    kubernetes="Kubernetes",
+    microsoft="Microsoft",
+    openshift="OpenShift",
+    openstack="OpenStack",
+    redhat="Redhat",
+    vmware="VMware",
 )
 
 VM_SCOPE_MAPPING = dict(
-    cloudfoundry='cloudfoundry',
-    kubernetes='kubernetes',
-    microsoft='MicrosoftSCVMM',
-    openshift='openshift',
-    openstack='openstack',
-    redhat='rhev',
-    vmware='vm',
+    cloudfoundry="cloudfoundry",
+    kubernetes="kubernetes",
+    microsoft="MicrosoftSCVMM",
+    openshift="openshift",
+    openstack="openstack",
+    redhat="rhev",
+    vmware="vm",
 )
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        name=dict(type='str'),
-        controller_hostname=dict(type='str'),
-        dvs_version=dict(type='str', choices=['unmanaged', '5.1', '5.5', '6.0', '6.5', '6.6', '7.0']),
-        stats_collection=dict(type='str', default='disabled', choices=['enabled', 'disabled']),
-        domain=dict(type='str', aliases=['domain_name', 'domain_profile']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        credentials=dict(type='str'),
-        inband_management_epg=dict(type='str'),
-        name_alias=dict(type='str'),
-        datacenter=dict(type='str'),
-        vm_provider=dict(type='str', choices=list(VM_PROVIDER_MAPPING.keys())),
+        name=dict(type="str"),
+        controller_hostname=dict(type="str"),
+        dvs_version=dict(type="str", choices=["unmanaged", "5.1", "5.5", "6.0", "6.5", "6.6", "7.0"]),
+        stats_collection=dict(type="str", default="disabled", choices=["enabled", "disabled"]),
+        domain=dict(type="str", aliases=["domain_name", "domain_profile"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        credentials=dict(type="str"),
+        inband_management_epg=dict(type="str"),
+        name_alias=dict(type="str"),
+        datacenter=dict(type="str"),
+        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING.keys())),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['domain', 'vm_provider', 'name']],
-            ['state', 'present', ['domain', 'vm_provider', 'name']],
+            ["state", "absent", ["domain", "vm_provider", "name"]],
+            ["state", "present", ["domain", "vm_provider", "name"]],
         ],
     )
 
-    name = module.params.get('name')
-    controller_hostname = module.params.get('controller_hostname')
-    dvs_version = module.params.get('dvs_version')
-    stats_collection = module.params.get('stats_collection')
-    domain = module.params.get('domain')
-    state = module.params.get('state')
-    credentials = module.params.get('credentials')
-    inband_management_epg = module.params.get('inband_management_epg')
-    name_alias = module.params.get('name_alias')
-    datacenter = module.params.get('datacenter')
-    vm_provider = module.params.get('vm_provider')
+    name = module.params.get("name")
+    controller_hostname = module.params.get("controller_hostname")
+    dvs_version = module.params.get("dvs_version")
+    stats_collection = module.params.get("stats_collection")
+    domain = module.params.get("domain")
+    state = module.params.get("state")
+    credentials = module.params.get("credentials")
+    inband_management_epg = module.params.get("inband_management_epg")
+    name_alias = module.params.get("name_alias")
+    datacenter = module.params.get("datacenter")
+    vm_provider = module.params.get("vm_provider")
 
-    controller_class = 'vmmCtrlrP'
+    controller_class = "vmmCtrlrP"
 
     aci = ACIModule(module)
 
     aci.construct_url(
         root_class=dict(
-            aci_class='vmmProvP',
-            aci_rn='vmmp-{0}'.format(VM_PROVIDER_MAPPING.get(vm_provider)),
+            aci_class="vmmProvP",
+            aci_rn="vmmp-{0}".format(VM_PROVIDER_MAPPING.get(vm_provider)),
             module_object=vm_provider,
-            target_filter={'name': vm_provider},
+            target_filter={"name": vm_provider},
         ),
         subclass_1=dict(
-            aci_class='vmmDomP',
-            aci_rn='dom-{0}'.format(domain),
+            aci_class="vmmDomP",
+            aci_rn="dom-{0}".format(domain),
             module_object=domain,
-            target_filter={'name': domain},
+            target_filter={"name": domain},
         ),
         subclass_2=dict(
-            aci_class='vmmCtrlrP',
-            aci_rn='ctrlr-{0}'.format(name),
+            aci_class="vmmCtrlrP",
+            aci_rn="ctrlr-{0}".format(name),
             module_object=name,
-            target_filter={'name': 'name'},
+            target_filter={"name": "name"},
         ),
-        child_classes=['vmmRsMgmtEPg', 'vmmRsAcc'],
+        child_classes=["vmmRsMgmtEPg", "vmmRsAcc"],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         children = list()
         if inband_management_epg is not None:
-            children.append(dict(vmmRsMgmtEPg=dict(attributes=dict(
-                tDn='uni/tn-mgmt/mgmtp-default/inb-{0}'.format(inband_management_epg)
-            ))))
+            children.append(dict(vmmRsMgmtEPg=dict(attributes=dict(tDn="uni/tn-mgmt/mgmtp-default/inb-{0}".format(inband_management_epg)))))
 
         if credentials is not None:
-            children.append(dict(vmmRsAcc=dict(attributes=dict(
-                tDn='uni/vmmp-{0}/dom-{1}/usracc-{2}'.format(VM_PROVIDER_MAPPING.get(vm_provider), domain, credentials)
-            ))))
+            children.append(
+                dict(vmmRsAcc=dict(attributes=dict(tDn="uni/vmmp-{0}/dom-{1}/usracc-{2}".format(VM_PROVIDER_MAPPING.get(vm_provider), domain, credentials))))
+            )
 
         aci.payload(
             aci_class=controller_class,
@@ -354,16 +351,16 @@ def main():
                 statsMode=stats_collection,
                 rootContName=datacenter,
                 nameAlias=name_alias,
-                scope=VM_SCOPE_MAPPING.get(vm_provider)
+                scope=VM_SCOPE_MAPPING.get(vm_provider),
             ),
-            child_configs=children
+            child_configs=children,
         )
 
         aci.get_diff(aci_class=controller_class)
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

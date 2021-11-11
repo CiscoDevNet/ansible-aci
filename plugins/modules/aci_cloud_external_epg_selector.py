@@ -5,9 +5,10 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_cloud_external_epg_selector
 short_description: Manage Cloud Endpoint Selector for External EPGs (cloud:ExtEPSelector)
@@ -51,9 +52,9 @@ notes:
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 author:
 - Anvitha Jain (@anvitha-jain)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new cloud external EPG selector
   cisco.aci.aci_cloud_external_epg_selector:
     host: apic
@@ -91,7 +92,7 @@ EXAMPLES = r'''
     cloud_external_epg: ext_epg
     state: query
   delegate_to: localhost
-'''
+"""
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
@@ -99,78 +100,75 @@ from ansible.module_utils.basic import AnsibleModule
 
 def main():
     argument_spec = aci_argument_spec()
-    argument_spec.update({
-        'name': dict(type='str', aliases=['selector', 'cloud_external_epg_selector', 'external_epg_selector', 'extepg_selector', 'selector_name']),
-        'subnet': dict(type='str', aliases=['ip']),
-        'tenant': dict(type='str'),
-        'cloud_external_epg': dict(type='str'),
-        'ap': dict(type='str', aliases=['app_profile', 'app_profile_name']),
-        'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
-    })
+    argument_spec.update(
+        {
+            "name": dict(type="str", aliases=["selector", "cloud_external_epg_selector", "external_epg_selector", "extepg_selector", "selector_name"]),
+            "subnet": dict(type="str", aliases=["ip"]),
+            "tenant": dict(type="str"),
+            "cloud_external_epg": dict(type="str"),
+            "ap": dict(type="str", aliases=["app_profile", "app_profile_name"]),
+            "state": dict(type="str", default="present", choices=["absent", "present", "query"]),
+        }
+    )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['subnet', 'tenant', 'ap', 'cloud_external_epg']],
-            ['state', 'present', ['subnet', 'tenant', 'ap', 'cloud_external_epg']],
+            ["state", "absent", ["subnet", "tenant", "ap", "cloud_external_epg"]],
+            ["state", "present", ["subnet", "tenant", "ap", "cloud_external_epg"]],
         ],
     )
 
-    name = module.params.get('name')
-    subnet = module.params.get('subnet')
-    tenant = module.params.get('tenant')
-    ap = module.params.get('ap')
-    cloud_external_epg = module.params.get('cloud_external_epg')
-    state = module.params.get('state')
+    name = module.params.get("name")
+    subnet = module.params.get("subnet")
+    tenant = module.params.get("tenant")
+    ap = module.params.get("ap")
+    cloud_external_epg = module.params.get("cloud_external_epg")
+    state = module.params.get("state")
     child_configs = []
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class={
-            'aci_class': 'fvTenant',
-            'aci_rn': 'tn-{0}'.format(tenant),
-            'target_filter': 'eq(fvTenant.name, "{0}")'.format(tenant),
-            'module_object': tenant
+            "aci_class": "fvTenant",
+            "aci_rn": "tn-{0}".format(tenant),
+            "target_filter": 'eq(fvTenant.name, "{0}")'.format(tenant),
+            "module_object": tenant,
         },
-        subclass_1={
-            'aci_class': 'cloudApp',
-            'aci_rn': 'cloudapp-{0}'.format(ap),
-            'target_filter': 'eq(cloudApp.name, "{0}")'.format(ap),
-            'module_object': ap
-        },
+        subclass_1={"aci_class": "cloudApp", "aci_rn": "cloudapp-{0}".format(ap), "target_filter": 'eq(cloudApp.name, "{0}")'.format(ap), "module_object": ap},
         subclass_2={
-            'aci_class': 'cloudExtEPg',
-            'aci_rn': 'cloudextepg-{0}'.format(cloud_external_epg),
-            'target_filter': 'eq(cloudExtEPg.name, "{0}")'.format(cloud_external_epg),
-            'module_object': cloud_external_epg
+            "aci_class": "cloudExtEPg",
+            "aci_rn": "cloudextepg-{0}".format(cloud_external_epg),
+            "target_filter": 'eq(cloudExtEPg.name, "{0}")'.format(cloud_external_epg),
+            "module_object": cloud_external_epg,
         },
         subclass_3={
-            'aci_class': 'cloudExtEPSelector',
-            'aci_rn': 'extepselector-[{0}]'.format(subnet),
-            'target_filter': 'eq(cloudExtEPSelector.name, "{0}")'.format(subnet),
-            'module_object': subnet
+            "aci_class": "cloudExtEPSelector",
+            "aci_rn": "extepselector-[{0}]".format(subnet),
+            "target_filter": 'eq(cloudExtEPSelector.name, "{0}")'.format(subnet),
+            "module_object": subnet,
         },
-        child_classes=[]
+        child_classes=[],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='cloudExtEPSelector',
+            aci_class="cloudExtEPSelector",
             class_config={
-                'name': name,
-                'subnet': subnet,
+                "name": name,
+                "subnet": subnet,
             },
-            child_configs=child_configs
+            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='cloudExtEPSelector')
+        aci.get_diff(aci_class="cloudExtEPSelector")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

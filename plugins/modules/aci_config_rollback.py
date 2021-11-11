@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_config_rollback
 short_description: Provides rollback and rollback preview functionality (config:ImportP)
@@ -79,9 +78,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jacob McGill (@jmcgill298)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 ---
 - name: Create a Snapshot
   cisco.aci.aci_config_snapshot:
@@ -138,9 +137,9 @@ EXAMPLES = r'''
     fail_on_decrypt: yes
     state: rollback
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 preview:
   description: A preview between two snapshots
   returned: when state is preview
@@ -184,7 +183,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
@@ -195,6 +194,7 @@ from ansible.module_utils.urls import fetch_url
 try:
     import lxml.etree
     from xmljson import cobra
+
     XML_TO_JSON = True
 except ImportError:
     XML_TO_JSON = False
@@ -203,81 +203,81 @@ except ImportError:
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        compare_export_policy=dict(type='str'),
-        compare_snapshot=dict(type='str'),
-        description=dict(type='str', aliases=['descr']),
-        export_policy=dict(type='str'),
-        fail_on_decrypt=dict(type='bool'),
-        import_mode=dict(type='str', choices=['atomic', 'best-effort']),
-        import_policy=dict(type='str'),
-        import_type=dict(type='str', choices=['merge', 'replace']),
-        snapshot=dict(type='str', required=True),
-        state=dict(type='str', default='rollback', choices=['preview', 'rollback']),
+        compare_export_policy=dict(type="str"),
+        compare_snapshot=dict(type="str"),
+        description=dict(type="str", aliases=["descr"]),
+        export_policy=dict(type="str"),
+        fail_on_decrypt=dict(type="bool"),
+        import_mode=dict(type="str", choices=["atomic", "best-effort"]),
+        import_policy=dict(type="str"),
+        import_type=dict(type="str", choices=["merge", "replace"]),
+        snapshot=dict(type="str", required=True),
+        state=dict(type="str", default="rollback", choices=["preview", "rollback"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=False,
         required_if=[
-            ['state', 'preview', ['compare_export_policy', 'compare_snapshot']],
-            ['state', 'rollback', ['import_policy']],
+            ["state", "preview", ["compare_export_policy", "compare_snapshot"]],
+            ["state", "rollback", ["import_policy"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    description = module.params.get('description')
-    export_policy = module.params.get('export_policy')
-    fail_on_decrypt = aci.boolean(module.params.get('fail_on_decrypt'))
-    import_mode = module.params.get('import_mode')
-    import_policy = module.params.get('import_policy')
-    import_type = module.params.get('import_type')
-    snapshot = module.params.get('snapshot')
-    state = module.params.get('state')
+    description = module.params.get("description")
+    export_policy = module.params.get("export_policy")
+    fail_on_decrypt = aci.boolean(module.params.get("fail_on_decrypt"))
+    import_mode = module.params.get("import_mode")
+    import_policy = module.params.get("import_policy")
+    import_type = module.params.get("import_type")
+    snapshot = module.params.get("snapshot")
+    state = module.params.get("state")
 
-    if state == 'rollback':
-        if snapshot.startswith('run-'):
-            snapshot = snapshot.replace('run-', '', 1)
+    if state == "rollback":
+        if snapshot.startswith("run-"):
+            snapshot = snapshot.replace("run-", "", 1)
 
-        if not snapshot.endswith('.tar.gz'):
-            snapshot += '.tar.gz'
+        if not snapshot.endswith(".tar.gz"):
+            snapshot += ".tar.gz"
 
-        filename = 'ce2_{0}-{1}'.format(export_policy, snapshot)
+        filename = "ce2_{0}-{1}".format(export_policy, snapshot)
 
         aci.construct_url(
             root_class=dict(
-                aci_class='configImportP',
-                aci_rn='fabric/configimp-{0}'.format(import_policy),
+                aci_class="configImportP",
+                aci_rn="fabric/configimp-{0}".format(import_policy),
                 module_object=import_policy,
-                target_filter={'name': import_policy},
+                target_filter={"name": import_policy},
             ),
         )
 
         aci.get_existing()
 
         aci.payload(
-            aci_class='configImportP',
+            aci_class="configImportP",
             class_config=dict(
-                adminSt='triggered',
+                adminSt="triggered",
                 descr=description,
                 failOnDecryptErrors=fail_on_decrypt,
                 fileName=filename,
                 importMode=import_mode,
                 importType=import_type,
                 name=import_policy,
-                snapshot='yes',
+                snapshot="yes",
             ),
         )
 
-        aci.get_diff(aci_class='configImportP')
+        aci.get_diff(aci_class="configImportP")
 
         aci.post_config()
 
-    elif state == 'preview':
-        aci.url = '%(protocol)s://%(host)s/mqapi2/snapshots.diff.xml' % module.params
+    elif state == "preview":
+        aci.url = "%(protocol)s://%(host)s/mqapi2/snapshots.diff.xml" % module.params
         aci.filter_string = (
-            '?s1dn=uni/backupst/snapshots-[uni/fabric/configexp-%(export_policy)s]/snapshot-%(snapshot)s&'
-            's2dn=uni/backupst/snapshots-[uni/fabric/configexp-%(compare_export_policy)s]/snapshot-%(compare_snapshot)s'
+            "?s1dn=uni/backupst/snapshots-[uni/fabric/configexp-%(export_policy)s]/snapshot-%(snapshot)s&"
+            "s2dn=uni/backupst/snapshots-[uni/fabric/configexp-%(compare_export_policy)s]/snapshot-%(compare_snapshot)s"
         ) % module.params
 
         # Generate rollback comparison
@@ -287,34 +287,35 @@ def main():
 
 
 def get_preview(aci):
-    '''
+    """
     This function is used to generate a preview between two snapshots and add the parsed results to the aci module return data.
-    '''
+    """
     uri = aci.url + aci.filter_string
-    resp, info = fetch_url(aci.module, uri, headers=aci.headers, method='GET', timeout=aci.module.params.get('timeout'),
-                           use_proxy=aci.module.params.get('use_proxy'))
-    aci.method = 'GET'
-    aci.response = info.get('msg')
-    aci.status = info.get('status')
+    resp, info = fetch_url(
+        aci.module, uri, headers=aci.headers, method="GET", timeout=aci.module.params.get("timeout"), use_proxy=aci.module.params.get("use_proxy")
+    )
+    aci.method = "GET"
+    aci.response = info.get("msg")
+    aci.status = info.get("status")
 
     # Handle APIC response
-    if info.get('status') == 200:
+    if info.get("status") == 200:
         xml_to_json(aci, resp.read())
     else:
-        aci.result['raw'] = resp.read()
+        aci.result["raw"] = resp.read()
         aci.fail_json(msg="Request failed: %(code)s %(text)s (see 'raw' output)" % aci.error)
 
 
 def xml_to_json(aci, response_data):
-    '''
+    """
     This function is used to convert preview XML data into JSON.
-    '''
+    """
     if XML_TO_JSON:
         xml = lxml.etree.fromstring(to_bytes(response_data))
         xmldata = cobra.data(xml)
-        aci.result['preview'] = xmldata
+        aci.result["preview"] = xmldata
     else:
-        aci.result['preview'] = response_data
+        aci.result["preview"] = response_data
 
 
 if __name__ == "__main__":

@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_encap_pool
 short_description: Manage encap pools (fvns:VlanInstP, fvns:VxlanInstP, fvns:VsanInstP)
@@ -64,9 +63,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jacob McGill (@jmcgill298)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new vlan pool
   cisco.aci.aci_encap_pool:
     host: apic
@@ -108,9 +107,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -213,23 +212,23 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 ACI_POOL_MAPPING = dict(
     vlan=dict(
-        aci_class='fvnsVlanInstP',
-        aci_mo='infra/vlanns-',
+        aci_class="fvnsVlanInstP",
+        aci_mo="infra/vlanns-",
     ),
     vxlan=dict(
-        aci_class='fvnsVxlanInstP',
-        aci_mo='infra/vxlanns-',
+        aci_class="fvnsVxlanInstP",
+        aci_mo="infra/vxlanns-",
     ),
     vsan=dict(
-        aci_class='fvnsVsanInstP',
-        aci_mo='infra/vsanns-',
+        aci_class="fvnsVsanInstP",
+        aci_mo="infra/vsanns-",
     ),
 )
 
@@ -237,58 +236,58 @@ ACI_POOL_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        pool_type=dict(type='str', required=True, aliases=['type'], choices=['vlan', 'vsan', 'vxlan']),
-        description=dict(type='str', aliases=['descr']),
-        pool=dict(type='str', aliases=['name', 'pool_name']),  # Not required for querying all objects
-        pool_allocation_mode=dict(type='str', aliases=['allocation_mode', 'mode'], choices=['dynamic', 'static']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        pool_type=dict(type="str", required=True, aliases=["type"], choices=["vlan", "vsan", "vxlan"]),
+        description=dict(type="str", aliases=["descr"]),
+        pool=dict(type="str", aliases=["name", "pool_name"]),  # Not required for querying all objects
+        pool_allocation_mode=dict(type="str", aliases=["allocation_mode", "mode"], choices=["dynamic", "static"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['pool']],
-            ['state', 'present', ['pool']],
+            ["state", "absent", ["pool"]],
+            ["state", "present", ["pool"]],
         ],
     )
 
-    description = module.params.get('description')
-    pool = module.params.get('pool')
-    pool_type = module.params.get('pool_type')
-    pool_allocation_mode = module.params.get('pool_allocation_mode')
-    state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
+    description = module.params.get("description")
+    pool = module.params.get("pool")
+    pool_type = module.params.get("pool_type")
+    pool_allocation_mode = module.params.get("pool_allocation_mode")
+    state = module.params.get("state")
+    name_alias = module.params.get("name_alias")
 
-    aci_class = ACI_POOL_MAPPING[pool_type]['aci_class']
-    aci_mo = ACI_POOL_MAPPING[pool_type]['aci_mo']
+    aci_class = ACI_POOL_MAPPING[pool_type]["aci_class"]
+    aci_mo = ACI_POOL_MAPPING[pool_type]["aci_mo"]
     pool_name = pool
 
     # ACI Pool URL requires the pool_allocation mode for vlan and vsan pools (ex: uni/infra/vlanns-[poolname]-static)
-    if pool_type != 'vxlan' and pool is not None:
+    if pool_type != "vxlan" and pool is not None:
         if pool_allocation_mode is not None:
-            pool_name = '[{0}]-{1}'.format(pool, pool_allocation_mode)
+            pool_name = "[{0}]-{1}".format(pool, pool_allocation_mode)
         else:
             module.fail_json(msg="ACI requires parameter 'pool_allocation_mode' for 'pool_type' of 'vlan' and 'vsan' when parameter 'pool' is provided")
 
     # Vxlan pools do not support pool allocation modes
-    if pool_type == 'vxlan' and pool_allocation_mode is not None:
+    if pool_type == "vxlan" and pool_allocation_mode is not None:
         module.fail_json(msg="vxlan pools do not support setting the 'pool_allocation_mode'; please remove this parameter from the task")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
             aci_class=aci_class,
-            aci_rn='{0}{1}'.format(aci_mo, pool_name),
+            aci_rn="{0}{1}".format(aci_mo, pool_name),
             module_object=pool,
-            target_filter={'name': pool},
+            target_filter={"name": pool},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         # Filter out module parameters with null values
         aci.payload(
             aci_class=aci_class,
@@ -297,7 +296,7 @@ def main():
                 descr=description,
                 name=pool,
                 nameAlias=name_alias,
-            )
+            ),
         )
 
         # Generate config diff which will be used as POST request body
@@ -306,7 +305,7 @@ def main():
         # Submit changes if module not in check_mode and the proposed is different than existing
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

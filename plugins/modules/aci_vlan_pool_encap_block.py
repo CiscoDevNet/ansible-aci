@@ -6,13 +6,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_vlan_pool_encap_block
 short_description: Manage encap blocks assigned to VLAN pools (fvns:EncapBlk)
@@ -81,9 +80,9 @@ seealso:
 author:
 - Jacob McGill (@jmcgill298)
 - Dag Wieers (@dagwieers)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new VLAN encap block
   cisco.aci.aci_vlan_pool_encap_block:
     host: apic
@@ -136,9 +135,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -241,7 +240,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -250,48 +249,48 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        pool=dict(type='str', aliases=['pool_name']),  # Not required for querying all objects
-        block_name=dict(type='str', aliases=['name']),  # Not required for querying all objects
-        block_end=dict(type='int', aliases=['end']),  # Not required for querying all objects
-        block_start=dict(type='int', aliases=["start"]),  # Not required for querying all objects
-        allocation_mode=dict(type='str', aliases=['mode'], choices=['dynamic', 'inherit', 'static']),
-        description=dict(type='str', aliases=['descr']),
-        pool_allocation_mode=dict(type='str', aliases=['pool_mode'], choices=['dynamic', 'static']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        pool=dict(type="str", aliases=["pool_name"]),  # Not required for querying all objects
+        block_name=dict(type="str", aliases=["name"]),  # Not required for querying all objects
+        block_end=dict(type="int", aliases=["end"]),  # Not required for querying all objects
+        block_start=dict(type="int", aliases=["start"]),  # Not required for querying all objects
+        allocation_mode=dict(type="str", aliases=["mode"], choices=["dynamic", "inherit", "static"]),
+        description=dict(type="str", aliases=["descr"]),
+        pool_allocation_mode=dict(type="str", aliases=["pool_mode"], choices=["dynamic", "static"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['pool', 'block_end', 'block_name', 'block_start']],
-            ['state', 'present', ['pool', 'block_end', 'block_name', 'block_start']],
+            ["state", "absent", ["pool", "block_end", "block_name", "block_start"]],
+            ["state", "present", ["pool", "block_end", "block_name", "block_start"]],
         ],
     )
 
-    allocation_mode = module.params.get('allocation_mode')
-    description = module.params.get('description')
-    pool = module.params.get('pool')
-    pool_allocation_mode = module.params.get('pool_allocation_mode')
-    block_end = module.params.get('block_end')
-    block_name = module.params.get('block_name')
-    block_start = module.params.get('block_start')
-    state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
+    allocation_mode = module.params.get("allocation_mode")
+    description = module.params.get("description")
+    pool = module.params.get("pool")
+    pool_allocation_mode = module.params.get("pool_allocation_mode")
+    block_end = module.params.get("block_end")
+    block_name = module.params.get("block_name")
+    block_start = module.params.get("block_start")
+    state = module.params.get("state")
+    name_alias = module.params.get("name_alias")
 
     if block_end is not None:
-        encap_end = 'vlan-{0}'.format(block_end)
+        encap_end = "vlan-{0}".format(block_end)
     else:
         encap_end = None
 
     if block_start is not None:
-        encap_start = 'vlan-{0}'.format(block_start)
+        encap_start = "vlan-{0}".format(block_start)
     else:
         encap_start = None
 
     # Collect proper mo information
-    aci_block_mo = 'from-[{0}]-to-[{1}]'.format(encap_start, encap_end)
+    aci_block_mo = "from-[{0}]-to-[{1}]".format(encap_start, encap_end)
     pool_name = pool
 
     # Validate block_end and block_start are valid for its respective encap type
@@ -313,31 +312,31 @@ def main():
     # ACI Pool URL requires the allocation mode (ex: uni/infra/vlanns-[poolname]-static)
     if pool is not None:
         if pool_allocation_mode is not None:
-            pool_name = '[{0}]-{1}'.format(pool, pool_allocation_mode)
+            pool_name = "[{0}]-{1}".format(pool, pool_allocation_mode)
         else:
             module.fail_json(msg="ACI requires the 'pool_allocation_mode' when 'pool' is provided")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fvnsVlanInstP',
-            aci_rn='infra/vlanns-{0}'.format(pool_name),
+            aci_class="fvnsVlanInstP",
+            aci_rn="infra/vlanns-{0}".format(pool_name),
             module_object=pool,
-            target_filter={'name': pool},
+            target_filter={"name": pool},
         ),
         subclass_1=dict(
-            aci_class='fvnsEncapBlk',
+            aci_class="fvnsEncapBlk",
             aci_rn=aci_block_mo,
             module_object=aci_block_mo,
-            target_filter={'from': encap_start, 'to': encap_end, 'name': block_name},
+            target_filter={"from": encap_start, "to": encap_end, "name": block_name},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='fvnsEncapBlk',
+            aci_class="fvnsEncapBlk",
             class_config={
                 "allocMode": allocation_mode,
                 "descr": description,
@@ -348,11 +347,11 @@ def main():
             },
         )
 
-        aci.get_diff(aci_class='fvnsEncapBlk')
+        aci.get_diff(aci_class="fvnsEncapBlk")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_access_sub_port_block_to_access_port
 short_description: Manage sub port blocks of Fabric interface policy leaf profile interface selectors (infra:HPortS, infra:SubPortBlk)
@@ -83,9 +82,9 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Associate an access sub port block (single port) to an interface selector
   cisco.aci.aci_access_sub_port_block_to_access_port:
     host: apic
@@ -161,9 +160,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -266,7 +265,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
@@ -275,68 +274,68 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        leaf_interface_profile=dict(type='str', aliases=['leaf_interface_profile_name']),  # Not required for querying all objects
-        access_port_selector=dict(type='str', aliases=['name', 'access_port_selector_name']),  # Not required for querying all objects
-        leaf_port_blk=dict(type='str', aliases=['leaf_port_blk_name']),  # Not required for querying all objects
-        leaf_port_blk_description=dict(type='str'),
-        from_port=dict(type='str', aliases=['from', 'fromPort', 'from_port_range']),  # Not required for querying all objects and deleting sub port blocks
-        to_port=dict(type='str', aliases=['to', 'toPort', 'to_port_range']),  # Not required for querying all objects and deleting sub port blocks
-        from_sub_port=dict(type='str', aliases=['fromSubPort', 'from_sub_port_range']),  # Not required for querying all objects and deleting sub port blocks
-        to_sub_port=dict(type='str', aliases=['toSubPort', 'to_sub_port_range']),  # Not required for querying all objects and deleting sub port blocks
-        from_card=dict(type='str', aliases=['from_card_range']),
-        to_card=dict(type='str', aliases=['to_card_range']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        leaf_interface_profile=dict(type="str", aliases=["leaf_interface_profile_name"]),  # Not required for querying all objects
+        access_port_selector=dict(type="str", aliases=["name", "access_port_selector_name"]),  # Not required for querying all objects
+        leaf_port_blk=dict(type="str", aliases=["leaf_port_blk_name"]),  # Not required for querying all objects
+        leaf_port_blk_description=dict(type="str"),
+        from_port=dict(type="str", aliases=["from", "fromPort", "from_port_range"]),  # Not required for querying all objects and deleting sub port blocks
+        to_port=dict(type="str", aliases=["to", "toPort", "to_port_range"]),  # Not required for querying all objects and deleting sub port blocks
+        from_sub_port=dict(type="str", aliases=["fromSubPort", "from_sub_port_range"]),  # Not required for querying all objects and deleting sub port blocks
+        to_sub_port=dict(type="str", aliases=["toSubPort", "to_sub_port_range"]),  # Not required for querying all objects and deleting sub port blocks
+        from_card=dict(type="str", aliases=["from_card_range"]),
+        to_card=dict(type="str", aliases=["to_card_range"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['access_port_selector', 'leaf_port_blk', 'leaf_interface_profile']],
-            ['state', 'present', ['access_port_selector', 'leaf_port_blk', 'from_port', 'to_port', 'from_sub_port', 'to_sub_port', 'leaf_interface_profile']],
+            ["state", "absent", ["access_port_selector", "leaf_port_blk", "leaf_interface_profile"]],
+            ["state", "present", ["access_port_selector", "leaf_port_blk", "from_port", "to_port", "from_sub_port", "to_sub_port", "leaf_interface_profile"]],
         ],
     )
 
-    leaf_interface_profile = module.params.get('leaf_interface_profile')
-    access_port_selector = module.params.get('access_port_selector')
-    leaf_port_blk = module.params.get('leaf_port_blk')
-    leaf_port_blk_description = module.params.get('leaf_port_blk_description')
-    from_port = module.params.get('from_port')
-    to_port = module.params.get('to_port')
-    from_sub_port = module.params.get('from_sub_port')
-    to_sub_port = module.params.get('to_sub_port')
-    from_card = module.params.get('from_card')
-    to_card = module.params.get('to_card')
-    state = module.params.get('state')
+    leaf_interface_profile = module.params.get("leaf_interface_profile")
+    access_port_selector = module.params.get("access_port_selector")
+    leaf_port_blk = module.params.get("leaf_port_blk")
+    leaf_port_blk_description = module.params.get("leaf_port_blk_description")
+    from_port = module.params.get("from_port")
+    to_port = module.params.get("to_port")
+    from_sub_port = module.params.get("from_sub_port")
+    to_sub_port = module.params.get("to_sub_port")
+    from_card = module.params.get("from_card")
+    to_card = module.params.get("to_card")
+    state = module.params.get("state")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='infraAccPortP',
-            aci_rn='infra/accportprof-{0}'.format(leaf_interface_profile),
+            aci_class="infraAccPortP",
+            aci_rn="infra/accportprof-{0}".format(leaf_interface_profile),
             module_object=leaf_interface_profile,
-            target_filter={'name': leaf_interface_profile},
+            target_filter={"name": leaf_interface_profile},
         ),
         subclass_1=dict(
-            aci_class='infraHPortS',
+            aci_class="infraHPortS",
             # NOTE: normal rn: hports-{name}-typ-{type}, hence here hardcoded to range for purposes of module
-            aci_rn='hports-{0}-typ-range'.format(access_port_selector),
+            aci_rn="hports-{0}-typ-range".format(access_port_selector),
             module_object=access_port_selector,
-            target_filter={'name': access_port_selector},
+            target_filter={"name": access_port_selector},
         ),
         subclass_2=dict(
-            aci_class='infraSubPortBlk',
-            aci_rn='subportblk-{0}'.format(leaf_port_blk),
+            aci_class="infraSubPortBlk",
+            aci_rn="subportblk-{0}".format(leaf_port_blk),
             module_object=leaf_port_blk,
-            target_filter={'name': leaf_port_blk},
+            target_filter={"name": leaf_port_blk},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='infraSubPortBlk',
+            aci_class="infraSubPortBlk",
             class_config=dict(
                 descr=leaf_port_blk_description,
                 name=leaf_port_blk,
@@ -350,11 +349,11 @@ def main():
             ),
         )
 
-        aci.get_diff(aci_class='infraSubPortBlk')
+        aci.get_diff(aci_class="infraSubPortBlk")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

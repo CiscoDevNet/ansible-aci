@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_contract_subject_to_filter
 short_description: Bind Contract Subjects to Filters (vz:RsSubjFiltAtt)
@@ -65,9 +64,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jacob McGill (@jmcgill298)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new contract subject to filer binding
   cisco.aci.aci_contract_subject_to_filter:
     host: apic
@@ -118,9 +117,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -223,7 +222,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -232,85 +231,85 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        contract=dict(type='str', aliases=['contract_name']),  # Not required for querying all objects
-        filter=dict(type='str', aliases=['filter_name']),  # Not required for querying all objects
-        subject=dict(type='str', aliases=['contract_subject', 'subject_name']),  # Not required for querying all objects
-        tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
-        log=dict(type='str', choices=['log', 'none'], aliases=['directive']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        contract=dict(type="str", aliases=["contract_name"]),  # Not required for querying all objects
+        filter=dict(type="str", aliases=["filter_name"]),  # Not required for querying all objects
+        subject=dict(type="str", aliases=["contract_subject", "subject_name"]),  # Not required for querying all objects
+        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        log=dict(type="str", choices=["log", "none"], aliases=["directive"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['contract', 'filter', 'subject', 'tenant']],
-            ['state', 'present', ['contract', 'filter', 'subject', 'tenant']],
+            ["state", "absent", ["contract", "filter", "subject", "tenant"]],
+            ["state", "present", ["contract", "filter", "subject", "tenant"]],
         ],
     )
 
-    contract = module.params.get('contract')
-    filter_name = module.params.get('filter')
-    log = module.params.get('log')
-    subject = module.params.get('subject')
-    tenant = module.params.get('tenant')
-    state = module.params.get('state')
+    contract = module.params.get("contract")
+    filter_name = module.params.get("filter")
+    log = module.params.get("log")
+    subject = module.params.get("subject")
+    tenant = module.params.get("tenant")
+    state = module.params.get("state")
 
     # Add subject_filter key to modul.params for building the URL
-    module.params['subject_filter'] = filter_name
+    module.params["subject_filter"] = filter_name
 
     # Convert log to empty string if none, as that is what API expects. An empty string is not a good option to present the user.
-    if log == 'none':
-        log = ''
+    if log == "none":
+        log = ""
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='vzBrCP',
-            aci_rn='brc-{0}'.format(contract),
+            aci_class="vzBrCP",
+            aci_rn="brc-{0}".format(contract),
             module_object=contract,
-            target_filter={'name': contract},
+            target_filter={"name": contract},
         ),
         subclass_2=dict(
-            aci_class='vzSubj',
-            aci_rn='subj-{0}'.format(subject),
+            aci_class="vzSubj",
+            aci_rn="subj-{0}".format(subject),
             module_object=subject,
-            target_filter={'name': subject},
+            target_filter={"name": subject},
         ),
         subclass_3=dict(
-            aci_class='vzRsSubjFiltAtt',
-            aci_rn='rssubjFiltAtt-{0}'.format(filter_name),
+            aci_class="vzRsSubjFiltAtt",
+            aci_rn="rssubjFiltAtt-{0}".format(filter_name),
             module_object=filter_name,
-            target_filter={'tnVzFilterName': filter_name},
+            target_filter={"tnVzFilterName": filter_name},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='vzRsSubjFiltAtt',
+            aci_class="vzRsSubjFiltAtt",
             class_config=dict(
                 tnVzFilterName=filter_name,
                 directives=log,
             ),
         )
 
-        aci.get_diff(aci_class='vzRsSubjFiltAtt')
+        aci.get_diff(aci_class="vzRsSubjFiltAtt")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     # Remove subject_filter used to build URL from module.params
-    module.params.pop('subject_filter')
+    module.params.pop("subject_filter")
 
     aci.exit_json()
 

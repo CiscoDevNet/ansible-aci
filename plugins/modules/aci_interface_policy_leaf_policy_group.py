@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_leaf_policy_group
 short_description: Manage fabric interface policy leaf policy groups (infra:AccBndlGrp, infra:AccPortGrp)
@@ -141,9 +140,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Bruno Calogero (@brunocalogero)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create a Port Channel (PC) Interface Policy Group
   cisco.aci.aci_interface_policy_leaf_policy_group:
     host: apic
@@ -216,9 +215,9 @@ EXAMPLES = r'''
     policy_group: policygroupname
     state: absent
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -321,7 +320,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -332,69 +331,71 @@ def main():
     argument_spec.update(
         # NOTE: Since this module needs to include both infra:AccBndlGrp (for PC and VPC) and infra:AccPortGrp (for leaf access port policy group):
         # NOTE: I'll allow the user to make the choice here (link(PC), node(VPC), leaf(leaf-access port policy group))
-        lag_type=dict(type='str', required=True, aliases=['lag_type_name'], choices=['leaf', 'link', 'node']),
-        policy_group=dict(type='str', aliases=['name', 'policy_group_name']),  # Not required for querying all objects
-        description=dict(type='str', aliases=['descr']),
-        link_level_policy=dict(type='str', aliases=['link_level_policy_name']),
-        cdp_policy=dict(type='str', aliases=['cdp_policy_name']),
-        mcp_policy=dict(type='str', aliases=['mcp_policy_name']),
-        lldp_policy=dict(type='str', aliases=['lldp_policy_name']),
-        stp_interface_policy=dict(type='str', aliases=['stp_interface_policy_name']),
-        egress_data_plane_policing_policy=dict(type='str', aliases=['egress_data_plane_policing_policy_name']),
-        ingress_data_plane_policing_policy=dict(type='str', aliases=['ingress_data_plane_policing_policy_name']),
-        priority_flow_control_policy=dict(type='str', aliases=['priority_flow_control_policy_name']),
-        fibre_channel_interface_policy=dict(type='str', aliases=['fibre_channel_interface_policy_name']),
-        slow_drain_policy=dict(type='str', aliases=['slow_drain_policy_name']),
-        port_channel_policy=dict(type='str', aliases=['port_channel_policy_name']),
-        monitoring_policy=dict(type='str', aliases=['monitoring_policy_name']),
-        storm_control_interface_policy=dict(type='str', aliases=['storm_control_interface_policy_name']),
-        l2_interface_policy=dict(type='str', aliases=['l2_interface_policy_name']),
-        port_security_policy=dict(type='str', aliases=['port_security_policy_name']),
-        aep=dict(type='str', aliases=['aep_name']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        lag_type=dict(type="str", required=True, aliases=["lag_type_name"], choices=["leaf", "link", "node"]),
+        policy_group=dict(type="str", aliases=["name", "policy_group_name"]),  # Not required for querying all objects
+        description=dict(type="str", aliases=["descr"]),
+        link_level_policy=dict(type="str", aliases=["link_level_policy_name"]),
+        cdp_policy=dict(type="str", aliases=["cdp_policy_name"]),
+        mcp_policy=dict(type="str", aliases=["mcp_policy_name"]),
+        lldp_policy=dict(type="str", aliases=["lldp_policy_name"]),
+        stp_interface_policy=dict(type="str", aliases=["stp_interface_policy_name"]),
+        egress_data_plane_policing_policy=dict(type="str", aliases=["egress_data_plane_policing_policy_name"]),
+        ingress_data_plane_policing_policy=dict(type="str", aliases=["ingress_data_plane_policing_policy_name"]),
+        priority_flow_control_policy=dict(type="str", aliases=["priority_flow_control_policy_name"]),
+        fibre_channel_interface_policy=dict(type="str", aliases=["fibre_channel_interface_policy_name"]),
+        slow_drain_policy=dict(type="str", aliases=["slow_drain_policy_name"]),
+        port_channel_policy=dict(type="str", aliases=["port_channel_policy_name"]),
+        monitoring_policy=dict(type="str", aliases=["monitoring_policy_name"]),
+        storm_control_interface_policy=dict(type="str", aliases=["storm_control_interface_policy_name"]),
+        l2_interface_policy=dict(type="str", aliases=["l2_interface_policy_name"]),
+        port_security_policy=dict(type="str", aliases=["port_security_policy_name"]),
+        aep=dict(type="str", aliases=["aep_name"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['policy_group']],
-            ['state', 'present', ['policy_group']],
+            ["state", "absent", ["policy_group"]],
+            ["state", "present", ["policy_group"]],
         ],
     )
 
-    policy_group = module.params.get('policy_group')
-    description = module.params.get('description')
-    lag_type = module.params.get('lag_type')
-    link_level_policy = module.params.get('link_level_policy')
-    cdp_policy = module.params.get('cdp_policy')
-    mcp_policy = module.params.get('mcp_policy')
-    lldp_policy = module.params.get('lldp_policy')
-    stp_interface_policy = module.params.get('stp_interface_policy')
-    egress_data_plane_policing_policy = module.params.get('egress_data_plane_policing_policy')
-    ingress_data_plane_policing_policy = module.params.get('ingress_data_plane_policing_policy')
-    priority_flow_control_policy = module.params.get('priority_flow_control_policy')
-    fibre_channel_interface_policy = module.params.get('fibre_channel_interface_policy')
-    slow_drain_policy = module.params.get('slow_drain_policy')
-    port_channel_policy = module.params.get('port_channel_policy')
-    monitoring_policy = module.params.get('monitoring_policy')
-    storm_control_interface_policy = module.params.get('storm_control_interface_policy')
-    l2_interface_policy = module.params.get('l2_interface_policy')
-    port_security_policy = module.params.get('port_security_policy')
-    aep = module.params.get('aep')
-    state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
+    policy_group = module.params.get("policy_group")
+    description = module.params.get("description")
+    lag_type = module.params.get("lag_type")
+    link_level_policy = module.params.get("link_level_policy")
+    cdp_policy = module.params.get("cdp_policy")
+    mcp_policy = module.params.get("mcp_policy")
+    lldp_policy = module.params.get("lldp_policy")
+    stp_interface_policy = module.params.get("stp_interface_policy")
+    egress_data_plane_policing_policy = module.params.get("egress_data_plane_policing_policy")
+    ingress_data_plane_policing_policy = module.params.get("ingress_data_plane_policing_policy")
+    priority_flow_control_policy = module.params.get("priority_flow_control_policy")
+    fibre_channel_interface_policy = module.params.get("fibre_channel_interface_policy")
+    slow_drain_policy = module.params.get("slow_drain_policy")
+    port_channel_policy = module.params.get("port_channel_policy")
+    monitoring_policy = module.params.get("monitoring_policy")
+    storm_control_interface_policy = module.params.get("storm_control_interface_policy")
+    l2_interface_policy = module.params.get("l2_interface_policy")
+    port_security_policy = module.params.get("port_security_policy")
+    aep = module.params.get("aep")
+    state = module.params.get("state")
+    name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
-    if lag_type == 'leaf' and port_channel_policy is not None:
-        aci.fail_json('port_channel_policy is not a valid parameter for leaf\
+    if lag_type == "leaf" and port_channel_policy is not None:
+        aci.fail_json(
+            "port_channel_policy is not a valid parameter for leaf\
  (leaf access port policy group), if used\
- assign null to it (port_channel_policy: null).')
+ assign null to it (port_channel_policy: null)."
+        )
 
-    if lag_type == 'leaf':
-        aci_class_name = 'infraAccPortGrp'
-        dn_name = 'accportgrp'
+    if lag_type == "leaf":
+        aci_class_name = "infraAccPortGrp"
+        dn_name = "accportgrp"
         class_config_dict = dict(
             name=policy_group,
             descr=description,
@@ -402,9 +403,9 @@ def main():
         )
         # Reset for target_filter
         lag_type = None
-    elif lag_type in ('link', 'node'):
-        aci_class_name = 'infraAccBndlGrp'
-        dn_name = 'accbundle'
+    elif lag_type in ("link", "node"):
+        aci_class_name = "infraAccBndlGrp"
+        dn_name = "accbundle"
         class_config_dict = dict(
             name=policy_group,
             descr=description,
@@ -522,44 +523,46 @@ def main():
 
     # Add infraRsattEntP binding only when aep was defined
     if aep is not None:
-        child_configs.append(dict(
-            infraRsAttEntP=dict(
-                attributes=dict(
-                    tDn='uni/infra/attentp-{0}'.format(aep),
+        child_configs.append(
+            dict(
+                infraRsAttEntP=dict(
+                    attributes=dict(
+                        tDn="uni/infra/attentp-{0}".format(aep),
+                    ),
                 ),
-            ),
-        ))
+            )
+        )
 
     aci.construct_url(
         root_class=dict(
             aci_class=aci_class_name,
-            aci_rn='infra/funcprof/{0}-{1}'.format(dn_name, policy_group),
+            aci_rn="infra/funcprof/{0}-{1}".format(dn_name, policy_group),
             module_object=policy_group,
-            target_filter={'name': policy_group, 'lagT': lag_type},
+            target_filter={"name": policy_group, "lagT": lag_type},
         ),
         child_classes=[
-            'infraRsAttEntP',
-            'infraRsCdpIfPol',
-            'infraRsFcIfPol',
-            'infraRsHIfPol',
-            'infraRsL2IfPol',
-            'infraRsL2PortSecurityPol',
-            'infraRsLacpPol',
-            'infraRsLldpIfPol',
-            'infraRsMcpIfPol',
-            'infraRsMonIfInfraPol',
-            'infraRsQosEgressDppIfPol',
-            'infraRsQosIngressDppIfPol',
-            'infraRsQosPfcIfPol',
-            'infraRsQosSdIfPol',
-            'infraRsStormctrlIfPol',
-            'infraRsStpIfPol',
+            "infraRsAttEntP",
+            "infraRsCdpIfPol",
+            "infraRsFcIfPol",
+            "infraRsHIfPol",
+            "infraRsL2IfPol",
+            "infraRsL2PortSecurityPol",
+            "infraRsLacpPol",
+            "infraRsLldpIfPol",
+            "infraRsMcpIfPol",
+            "infraRsMonIfInfraPol",
+            "infraRsQosEgressDppIfPol",
+            "infraRsQosIngressDppIfPol",
+            "infraRsQosPfcIfPol",
+            "infraRsQosSdIfPol",
+            "infraRsStormctrlIfPol",
+            "infraRsStpIfPol",
         ],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
             aci_class=aci_class_name,
             class_config=class_config_dict,
@@ -570,7 +573,7 @@ def main():
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()
