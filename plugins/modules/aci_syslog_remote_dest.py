@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_syslog_remote_dest
 short_description: Manage Syslog Remote Destinations (syslog:RemoteDest).
@@ -80,9 +79,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create a syslog remote destination
   cisco.aci.aci_syslog_remote_dest:
     host: apic
@@ -125,9 +124,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -230,7 +229,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
@@ -239,82 +238,72 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        name=dict(type='str', aliases=['remote_destination_name',
-                                       'remote_destination']),
-        format=dict(type='str', choices=['aci', 'nxos']),
-        admin_state=dict(type='str', choices=['enabled', 'disabled']),
-        description=dict(type='str'),
-        destination=dict(type='str'),
-        facility=dict(type='str', choices=['local0', 'local1', 'local2',
-                                           'local3', 'local4', 'local5',
-                                           'local6', 'local7']),
-        group=dict(type='str', aliases=['syslog_group', 'syslog_group_name']),
-        mgmt_epg=dict(type='str'),
-        syslog_port=dict(type='int'),
-        severity=dict(type='str', choices=['alerts', 'critical', 'debugging',
-                                           'emergencies', 'error',
-                                           'information', 'notifications',
-                                           'warnings']),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query'])
+        name=dict(type="str", aliases=["remote_destination_name", "remote_destination"]),
+        format=dict(type="str", choices=["aci", "nxos"]),
+        admin_state=dict(type="str", choices=["enabled", "disabled"]),
+        description=dict(type="str"),
+        destination=dict(type="str"),
+        facility=dict(type="str", choices=["local0", "local1", "local2", "local3", "local4", "local5", "local6", "local7"]),
+        group=dict(type="str", aliases=["syslog_group", "syslog_group_name"]),
+        mgmt_epg=dict(type="str"),
+        syslog_port=dict(type="int"),
+        severity=dict(type="str", choices=["alerts", "critical", "debugging", "emergencies", "error", "information", "notifications", "warnings"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['group', 'destination']],
-            ['state', 'present', ['group', 'destination']],
-        ]
+            ["state", "absent", ["group", "destination"]],
+            ["state", "present", ["group", "destination"]],
+        ],
     )
 
     aci = ACIModule(module)
 
-    name = module.params.get('name')
-    format = module.params.get('format')
-    admin_state = module.params.get('admin_state')
-    description = module.params.get('description')
-    destination = module.params.get('destination')
-    facility = module.params.get('facility')
-    group = module.params.get('group')
-    syslog_port = module.params.get('syslog_port')
-    severity = module.params.get('severity')
-    state = module.params.get('state')
-    mgmt_epg = module.params.get('mgmt_epg')
+    name = module.params.get("name")
+    format = module.params.get("format")
+    admin_state = module.params.get("admin_state")
+    description = module.params.get("description")
+    destination = module.params.get("destination")
+    facility = module.params.get("facility")
+    group = module.params.get("group")
+    syslog_port = module.params.get("syslog_port")
+    severity = module.params.get("severity")
+    state = module.params.get("state")
+    mgmt_epg = module.params.get("mgmt_epg")
 
     aci.construct_url(
         root_class=dict(
-            aci_class='syslogGroup',
-            aci_rn='fabric/slgroup-{0}'.format(group),
+            aci_class="syslogGroup",
+            aci_rn="fabric/slgroup-{0}".format(group),
             module_object=group,
-            target_filter={'name': group},
+            target_filter={"name": group},
         ),
         subclass_1=dict(
-            aci_class='syslogRemoteDest',
-            aci_rn='rdst-{0}'.format(destination),
+            aci_class="syslogRemoteDest",
+            aci_rn="rdst-{0}".format(destination),
             module_object=destination,
-            target_filter={'host': destination},
+            target_filter={"host": destination},
         ),
-        child_classes=['fileRsARemoteHostToEpg'],
+        child_classes=["fileRsARemoteHostToEpg"],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         child_configs = []
         if mgmt_epg:
             child_configs.append(
                 dict(
                     fileRsARemoteHostToEpg=dict(
-                        attributes=dict(
-                            tDn=('uni/tn-mgmt/mgmtp-default/{0}'
-                                 .format(mgmt_epg))
-                        ),
+                        attributes=dict(tDn=("uni/tn-mgmt/mgmtp-default/{0}".format(mgmt_epg))),
                     ),
                 )
             )
         aci.payload(
-            aci_class='syslogRemoteDest',
+            aci_class="syslogRemoteDest",
             class_config=dict(
                 adminState=admin_state,
                 descr=description,
@@ -328,11 +317,11 @@ def main():
             child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='syslogRemoteDest')
+        aci.get_diff(aci_class="syslogRemoteDest")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_l3out_extsubnet
 short_description: Manage External Subnet objects (l3extSubnet:extsubnet)
@@ -90,9 +89,9 @@ seealso:
 author:
 - Rostyslav Davydenko (@rost-d)
 - Cindy Zhao (@cizhao)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new External Subnet
   cisco.aci.aci_l3out_extsubnet:
     host: apic
@@ -131,9 +130,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -236,7 +235,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -245,70 +244,70 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', required=True, aliases=['tenant_name']),
-        l3out=dict(type='str', required=True, aliases=['l3out_name']),
-        extepg=dict(type='str', required=True, aliases=['extepg_name', 'name']),
-        network=dict(type='str', aliases=['address', 'ip']),
-        description=dict(type='str', aliases=['descr']),
-        subnet_name=dict(type='str', aliases=['name']),
-        scope=dict(type='list', elements='str', default=['import-security'], choices=['export-rtctrl', 'import-security', 'shared-rtctrl', 'shared-security']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        tenant=dict(type="str", required=True, aliases=["tenant_name"]),
+        l3out=dict(type="str", required=True, aliases=["l3out_name"]),
+        extepg=dict(type="str", required=True, aliases=["extepg_name", "name"]),
+        network=dict(type="str", aliases=["address", "ip"]),
+        description=dict(type="str", aliases=["descr"]),
+        subnet_name=dict(type="str", aliases=["name"]),
+        scope=dict(type="list", elements="str", default=["import-security"], choices=["export-rtctrl", "import-security", "shared-rtctrl", "shared-security"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'present', ['network']],
-            ['state', 'absent', ['network']],
+            ["state", "present", ["network"]],
+            ["state", "absent", ["network"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    tenant = module.params.get('tenant')
-    l3out = module.params.get('l3out')
-    extepg = module.params.get('extepg')
-    network = module.params.get('network')
-    description = module.params.get('description')
-    subnet_name = module.params.get('subnet_name')
-    scope = ','.join(sorted(module.params.get('scope')))
-    state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
+    tenant = module.params.get("tenant")
+    l3out = module.params.get("l3out")
+    extepg = module.params.get("extepg")
+    network = module.params.get("network")
+    description = module.params.get("description")
+    subnet_name = module.params.get("subnet_name")
+    scope = ",".join(sorted(module.params.get("scope")))
+    state = module.params.get("state")
+    name_alias = module.params.get("name_alias")
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='l3extOut',
-            aci_rn='out-{0}'.format(l3out),
+            aci_class="l3extOut",
+            aci_rn="out-{0}".format(l3out),
             module_object=l3out,
-            target_filter={'name': l3out},
+            target_filter={"name": l3out},
         ),
         subclass_2=dict(
-            aci_class='l3extInstP',
-            aci_rn='instP-{0}'.format(extepg),
+            aci_class="l3extInstP",
+            aci_rn="instP-{0}".format(extepg),
             module_object=extepg,
-            target_filter={'name': extepg},
+            target_filter={"name": extepg},
         ),
         subclass_3=dict(
-            aci_class='l3extSubnet',
-            aci_rn='extsubnet-[{0}]'.format(network),
+            aci_class="l3extSubnet",
+            aci_rn="extsubnet-[{0}]".format(network),
             module_object=network,
-            target_filter={'name': network},
+            target_filter={"name": network},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='l3extSubnet',
+            aci_class="l3extSubnet",
             class_config=dict(
                 ip=network,
                 descr=description,
@@ -318,11 +317,11 @@ def main():
             ),
         )
 
-        aci.get_diff(aci_class='l3extSubnet')
+        aci.get_diff(aci_class="l3extSubnet")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

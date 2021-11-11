@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_ospf
 short_description: Manage OSPF interface policies (ospf:IfPol)
@@ -139,9 +138,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Ensure ospf interface policy exists
   cisco.aci.aci_interface_policy_ospf:
     host: apic
@@ -182,9 +181,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -287,7 +286,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -296,85 +295,85 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
-        ospf=dict(type='str', aliases=['ospf_interface', 'name']),  # Not required for querying all objects
-        description=dict(type='str', aliases=['descr']),
-        network_type=dict(type='str', choices=['bcast', 'p2p']),
-        cost=dict(type='int'),
-        controls=dict(type='list', elements='str', choices=['advert-subnet', 'bfd', 'mtu-ignore', 'passive']),
-        dead_interval=dict(type='int'),
-        hello_interval=dict(type='int'),
-        prefix_suppression=dict(type='bool'),
-        priority=dict(type='int'),
-        retransmit_interval=dict(type='int'),
-        transmit_delay=dict(type='int'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        ospf=dict(type="str", aliases=["ospf_interface", "name"]),  # Not required for querying all objects
+        description=dict(type="str", aliases=["descr"]),
+        network_type=dict(type="str", choices=["bcast", "p2p"]),
+        cost=dict(type="int"),
+        controls=dict(type="list", elements="str", choices=["advert-subnet", "bfd", "mtu-ignore", "passive"]),
+        dead_interval=dict(type="int"),
+        hello_interval=dict(type="int"),
+        prefix_suppression=dict(type="bool"),
+        priority=dict(type="int"),
+        retransmit_interval=dict(type="int"),
+        transmit_delay=dict(type="int"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['ospf', 'tenant']],
-            ['state', 'present', ['ospf', 'tenant']],
+            ["state", "absent", ["ospf", "tenant"]],
+            ["state", "present", ["ospf", "tenant"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    tenant = module.params.get('tenant')
-    ospf = module.params.get('ospf')
-    description = module.params.get('description')
-    name_alias = module.params.get('name_alias')
+    tenant = module.params.get("tenant")
+    ospf = module.params.get("ospf")
+    description = module.params.get("description")
+    name_alias = module.params.get("name_alias")
 
-    if module.params.get('controls') is None:
+    if module.params.get("controls") is None:
         controls = None
     else:
-        controls = ','.join(module.params.get('controls'))
+        controls = ",".join(module.params.get("controls"))
 
-    cost = module.params.get('cost')
+    cost = module.params.get("cost")
     if cost is not None and cost not in range(1, 451):
         module.fail_json(msg="Parameter 'cost' is only valid in range between 1 and 450.")
 
-    dead_interval = module.params.get('dead_interval')
+    dead_interval = module.params.get("dead_interval")
     if dead_interval is not None and dead_interval not in range(1, 65536):
         module.fail_json(msg="Parameter 'dead_interval' is only valid in range between 1 and 65536.")
 
-    hello_interval = module.params.get('hello_interval')
+    hello_interval = module.params.get("hello_interval")
     if hello_interval is not None and hello_interval not in range(1, 65536):
         module.fail_json(msg="Parameter 'hello_interval' is only valid in range between 1 and 65536.")
 
-    network_type = module.params.get('network_type')
-    prefix_suppression = aci.boolean(module.params.get('prefix_suppression'), 'enabled', 'disabled')
-    priority = module.params.get('priority')
+    network_type = module.params.get("network_type")
+    prefix_suppression = aci.boolean(module.params.get("prefix_suppression"), "enabled", "disabled")
+    priority = module.params.get("priority")
     if priority is not None and priority not in range(0, 256):
         module.fail_json(msg="Parameter 'priority' is only valid in range between 1 and 255.")
 
-    retransmit_interval = module.params.get('retransmit_interval')
+    retransmit_interval = module.params.get("retransmit_interval")
     if retransmit_interval is not None and retransmit_interval not in range(1, 65536):
         module.fail_json(msg="Parameter 'retransmit_interval' is only valid in range between 1 and 65536.")
 
-    transmit_delay = module.params.get('transmit_delay')
+    transmit_delay = module.params.get("transmit_delay")
     if transmit_delay is not None and transmit_delay not in range(1, 451):
         module.fail_json(msg="Parameter 'transmit_delay' is only valid in range between 1 and 450.")
 
-    state = module.params.get('state')
+    state = module.params.get("state")
 
     aci.construct_url(
         root_class=dict(
-            aci_class='ospfIfPol',
-            aci_rn='tn-{0}/ospfIfPol-{1}'.format(tenant, ospf),
+            aci_class="ospfIfPol",
+            aci_rn="tn-{0}/ospfIfPol-{1}".format(tenant, ospf),
             module_object=ospf,
-            target_filter={'name': ospf},
+            target_filter={"name": ospf},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='ospfIfPol',
+            aci_class="ospfIfPol",
             class_config=dict(
                 name=ospf,
                 descr=description,
@@ -391,11 +390,11 @@ def main():
             ),
         )
 
-        aci.get_diff(aci_class='ospfIfPol')
+        aci.get_diff(aci_class="ospfIfPol")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

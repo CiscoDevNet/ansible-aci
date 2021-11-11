@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_tenant_span_dst_group
 short_description: Manage SPAN destination groups (span:DestGrp)
@@ -56,10 +55,10 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
-'''
+"""
 
 # FIXME: Add more, better examples
-EXAMPLES = r'''
+EXAMPLES = r"""
 - cisco.aci.aci_tenant_span_dst_group:
     host: apic
     username: admin
@@ -68,9 +67,9 @@ EXAMPLES = r'''
     description: '{{ descr }}'
     tenant: '{{ tenant }}'
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -173,7 +172,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -182,49 +181,49 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
-        dst_group=dict(type='str', aliases=['name']),  # Not required for querying all objects
-        description=dict(type='str', aliases=['descr']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        dst_group=dict(type="str", aliases=["name"]),  # Not required for querying all objects
+        description=dict(type="str", aliases=["descr"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['dst_group', 'tenant']],
-            ['state', 'present', ['dst_group', 'tenant']],
+            ["state", "absent", ["dst_group", "tenant"]],
+            ["state", "present", ["dst_group", "tenant"]],
         ],
     )
 
-    dst_group = module.params.get('dst_group')
-    description = module.params.get('description')
-    state = module.params.get('state')
-    tenant = module.params.get('tenant')
-    name_alias = module.params.get('name_alias')
+    dst_group = module.params.get("dst_group")
+    description = module.params.get("description")
+    state = module.params.get("state")
+    tenant = module.params.get("tenant")
+    name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='spanDestGrp',
-            aci_rn='destgrp-{0}'.format(dst_group),
+            aci_class="spanDestGrp",
+            aci_rn="destgrp-{0}".format(dst_group),
             module_object=dst_group,
-            target_filter={'name': dst_group},
+            target_filter={"name": dst_group},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='spanDestGrp',
+            aci_class="spanDestGrp",
             class_config=dict(
                 name=dst_group,
                 descr=description,
@@ -232,11 +231,11 @@ def main():
             ),
         )
 
-        aci.get_diff(aci_class='spanDestGrp')
+        aci.get_diff(aci_class="spanDestGrp")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

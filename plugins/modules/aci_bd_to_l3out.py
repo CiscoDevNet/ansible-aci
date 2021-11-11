@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_bd_to_l3out
 short_description: Bind Bridge Domain to L3 Out (fv:RsBDToOut)
@@ -52,12 +51,12 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jacob McGill (@jmcgill298)
-'''
+"""
 
 # FIXME: Add examples
-EXAMPLES = r''' # '''
+EXAMPLES = r""" # """
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -160,77 +159,77 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 SUBNET_CONTROL_MAPPING = dict(
-    nd_ra='nd',
-    no_gw='no-default-gateway',
-    querier_ip='querier',
-    unspecified='',
+    nd_ra="nd",
+    no_gw="no-default-gateway",
+    querier_ip="querier",
+    unspecified="",
 )
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        bd=dict(type='str', aliases=['bd_name', 'bridge_domain']),  # Not required for querying all objects
-        l3out=dict(type='str'),  # Not required for querying all objects
-        tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        bd=dict(type="str", aliases=["bd_name", "bridge_domain"]),  # Not required for querying all objects
+        l3out=dict(type="str"),  # Not required for querying all objects
+        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'present', ['bd', 'l3out', 'tenant']],
-            ['state', 'absent', ['bd', 'l3out', 'tenant']],
+            ["state", "present", ["bd", "l3out", "tenant"]],
+            ["state", "absent", ["bd", "l3out", "tenant"]],
         ],
     )
 
-    bd = module.params.get('bd')
-    l3out = module.params.get('l3out')
-    state = module.params.get('state')
-    tenant = module.params.get('tenant')
+    bd = module.params.get("bd")
+    l3out = module.params.get("l3out")
+    state = module.params.get("state")
+    tenant = module.params.get("tenant")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='fvBD',
-            aci_rn='BD-{0}'.format(bd),
+            aci_class="fvBD",
+            aci_rn="BD-{0}".format(bd),
             module_object=bd,
-            target_filter={'name': bd},
+            target_filter={"name": bd},
         ),
         subclass_2=dict(
-            aci_class='fvRsBDToOut',
-            aci_rn='rsBDToOut-{0}'.format(l3out),
+            aci_class="fvRsBDToOut",
+            aci_rn="rsBDToOut-{0}".format(l3out),
             module_object=l3out,
-            target_filter={'tnL3extOutName': l3out},
+            target_filter={"tnL3extOutName": l3out},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='fvRsBDToOut',
+            aci_class="fvRsBDToOut",
             class_config=dict(tnL3extOutName=l3out),
         )
 
-        aci.get_diff(aci_class='fvRsBDToOut')
+        aci.get_diff(aci_class="fvRsBDToOut")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

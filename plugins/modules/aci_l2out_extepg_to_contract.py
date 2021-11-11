@@ -7,13 +7,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_l2out_extepg_to_contract
 short_description: Bind Contracts to L2 External End Point Groups (EPGs)
@@ -75,9 +74,9 @@ author:
 - Sudhakar Shet Kudtarkar (@kudtarkar1)
 - Shreyas Srish (@shrsr)
 - Oleksandr Kreshchenko (@alexkross)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Bind a contract to an L2 external EPG
   cisco.aci.aci_l2out_extepg_to_contract:
     host: apic
@@ -127,9 +126,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
    current:
      description: The existing configuration from the APIC after the module has finished
      returned: success
@@ -232,61 +231,61 @@ RETURN = r'''
      returned: failure or debug
      type: str
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
-   '''
+   """
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 ACI_CLASS_MAPPING = dict(
     consumer={
-        'class': 'fvRsCons',
-        'rn': 'rscons-',
+        "class": "fvRsCons",
+        "rn": "rscons-",
     },
     provider={
-        'class': 'fvRsProv',
-        'rn': 'rsprov-',
+        "class": "fvRsProv",
+        "rn": "rsprov-",
     },
 )
 
 PROVIDER_MATCH_MAPPING = dict(
-    all='All',
-    at_least_one='AtleastOne',
-    at_most_one='tmostOne',
-    none='None',
+    all="All",
+    at_least_one="AtleastOne",
+    at_most_one="tmostOne",
+    none="None",
 )
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        contract_type=dict(type='str', required=True, choices=['consumer', 'provider']),
-        l2out=dict(type='str', aliases=['l2out_name']),
-        contract=dict(type='str'),
-        priority=dict(type='str', choices=['level1', 'level2', 'level3', 'unspecified']),
-        provider_match=dict(type='str', choices=['all', 'at_least_one', 'at_most_one', 'none']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        tenant=dict(type='str'),
-        extepg=dict(type='str', aliases=['extepg_name', 'external_epg']),
+        contract_type=dict(type="str", required=True, choices=["consumer", "provider"]),
+        l2out=dict(type="str", aliases=["l2out_name"]),
+        contract=dict(type="str"),
+        priority=dict(type="str", choices=["level1", "level2", "level3", "unspecified"]),
+        provider_match=dict(type="str", choices=["all", "at_least_one", "at_most_one", "none"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        tenant=dict(type="str"),
+        extepg=dict(type="str", aliases=["extepg_name", "external_epg"]),
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['extepg', 'contract', 'l2out', 'tenant']],
-            ['state', 'present', ['extepg', 'contract', 'l2out', 'tenant']],
+            ["state", "absent", ["extepg", "contract", "l2out", "tenant"]],
+            ["state", "present", ["extepg", "contract", "l2out", "tenant"]],
         ],
     )
 
-    l2out = module.params.get('l2out')
-    contract = module.params.get('contract')
-    contract_type = module.params.get('contract_type')
-    extepg = module.params.get('extepg')
-    priority = module.params.get('priority')
-    provider_match = module.params.get('provider_match')
+    l2out = module.params.get("l2out")
+    contract = module.params.get("contract")
+    contract_type = module.params.get("contract_type")
+    extepg = module.params.get("extepg")
+    priority = module.params.get("priority")
+    provider_match = module.params.get("provider_match")
     if provider_match is not None:
         provider_match = PROVIDER_MATCH_MAPPING.get(provider_match)
-    state = module.params.get('state')
-    tenant = module.params.get('tenant')
+    state = module.params.get("state")
+    tenant = module.params.get("tenant")
 
     aci_class = ACI_CLASS_MAPPING.get(contract_type)["class"]
     aci_rn = ACI_CLASS_MAPPING.get(contract_type)["rn"]
@@ -297,34 +296,34 @@ def main():
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='l2extOut',
-            aci_rn='l2out-{0}'.format(l2out),
+            aci_class="l2extOut",
+            aci_rn="l2out-{0}".format(l2out),
             module_object=l2out,
-            target_filter={'name': l2out},
+            target_filter={"name": l2out},
         ),
         subclass_2=dict(
-            aci_class='l2extInstP',
-            aci_rn='instP-{0}'.format(extepg),
+            aci_class="l2extInstP",
+            aci_rn="instP-{0}".format(extepg),
             module_object=extepg,
-            target_filter={'name': extepg},
+            target_filter={"name": extepg},
         ),
         subclass_3=dict(
             aci_class=aci_class,
-            aci_rn='{0}{1}'.format(aci_rn, contract),
+            aci_rn="{0}{1}".format(aci_rn, contract),
             module_object=contract,
-            target_filter={'tnVzBrCPName': contract},
+            target_filter={"tnVzBrCPName": contract},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
             aci_class=aci_class,
             class_config=dict(
@@ -338,7 +337,7 @@ def main():
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

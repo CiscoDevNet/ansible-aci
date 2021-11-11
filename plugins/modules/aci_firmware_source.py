@@ -6,13 +6,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_firmware_source
 short_description: Manage firmware image sources (firmware:OSource)
@@ -67,9 +66,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add firmware source
   cisco.aci.aci_firmware_source:
     host: apic
@@ -108,9 +107,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -213,7 +212,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 
 from ansible.module_utils.basic import AnsibleModule
@@ -223,61 +222,61 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        source=dict(type='str', aliases=['name', 'source_name']),  # Not required for querying all objects
-        polling_interval=dict(type='int'),
-        url=dict(type='str'),
-        url_username=dict(type='str'),
-        url_password=dict(type='str', no_log=True),
-        url_protocol=dict(type='str', default='scp', choices=['http', 'local', 'scp', 'usbkey'], aliases=['url_proto']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        source=dict(type="str", aliases=["name", "source_name"]),  # Not required for querying all objects
+        polling_interval=dict(type="int"),
+        url=dict(type="str"),
+        url_username=dict(type="str"),
+        url_password=dict(type="str", no_log=True),
+        url_protocol=dict(type="str", default="scp", choices=["http", "local", "scp", "usbkey"], aliases=["url_proto"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['source']],
-            ['state', 'present', ['url_protocol', 'source', 'url']],
+            ["state", "absent", ["source"]],
+            ["state", "present", ["url_protocol", "source", "url"]],
         ],
     )
 
-    polling_interval = module.params.get('polling_interval')
-    url_protocol = module.params.get('url_protocol')
-    state = module.params.get('state')
-    source = module.params.get('source')
-    url = module.params.get('url')
-    url_password = module.params.get('url_password')
-    url_username = module.params.get('url_username')
-    name_alias = module.params.get('name_alias')
+    polling_interval = module.params.get("polling_interval")
+    url_protocol = module.params.get("url_protocol")
+    state = module.params.get("state")
+    source = module.params.get("source")
+    url = module.params.get("url")
+    url_password = module.params.get("url_password")
+    url_username = module.params.get("url_username")
+    name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fabricInst',
-            aci_rn='fabric',
-            module_object='fabric',
-            target_filter={'name': 'fabric'},
+            aci_class="fabricInst",
+            aci_rn="fabric",
+            module_object="fabric",
+            target_filter={"name": "fabric"},
         ),
         subclass_1=dict(
-            aci_class='firmwareRepoP',
-            aci_rn='fwrepop',
-            module_object='fwrepop',
-            target_filter={'name': 'fwrepop'},
+            aci_class="firmwareRepoP",
+            aci_rn="fwrepop",
+            module_object="fwrepop",
+            target_filter={"name": "fwrepop"},
         ),
         subclass_2=dict(
-            aci_class='firmwareOSource',
-            aci_rn='osrc-{0}'.format(source),
+            aci_class="firmwareOSource",
+            aci_rn="osrc-{0}".format(source),
             module_object=source,
-            target_filter={'name': source},
+            target_filter={"name": source},
         ),
         config_only=False,
     )
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='firmwareOSource',
+            aci_class="firmwareOSource",
             class_config=dict(
                 name=source,
                 url=url,
@@ -289,11 +288,11 @@ def main():
             ),
         )
 
-        aci.get_diff(aci_class='firmwareOSource')
+        aci.get_diff(aci_class="firmwareOSource")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

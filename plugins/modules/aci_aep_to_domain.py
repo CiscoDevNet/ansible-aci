@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_aep_to_domain
 short_description: Bind AEPs to Physical or Virtual Domains (infra:RsDomP)
@@ -62,9 +61,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add AEP to domain binding
   cisco.aci.aci_aep_to_domain: &binding_present
     host: apic
@@ -107,9 +106,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -212,98 +211,98 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 VM_PROVIDER_MAPPING = dict(
-    cloudfoundry='CloudFoundry',
-    kubernetes='Kubernetes',
-    microsoft='Microsoft',
-    openshift='OpenShift',
-    openstack='OpenStack',
-    redhat='Redhat',
-    vmware='VMware',
+    cloudfoundry="CloudFoundry",
+    kubernetes="Kubernetes",
+    microsoft="Microsoft",
+    openshift="OpenShift",
+    openstack="OpenStack",
+    redhat="Redhat",
+    vmware="VMware",
 )
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        aep=dict(type='str', aliases=['aep_name']),  # Not required for querying all objects
-        domain=dict(type='str', aliases=['domain_name', 'domain_profile']),  # Not required for querying all objects
-        domain_type=dict(type='str', choices=['fc', 'l2dom', 'l3dom', 'phys', 'vmm'], aliases=['type']),  # Not required for querying all objects
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        vm_provider=dict(type='str', choices=['cloudfoundry', 'kubernetes', 'microsoft', 'openshift', 'openstack', 'redhat', 'vmware']),
+        aep=dict(type="str", aliases=["aep_name"]),  # Not required for querying all objects
+        domain=dict(type="str", aliases=["domain_name", "domain_profile"]),  # Not required for querying all objects
+        domain_type=dict(type="str", choices=["fc", "l2dom", "l3dom", "phys", "vmm"], aliases=["type"]),  # Not required for querying all objects
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        vm_provider=dict(type="str", choices=["cloudfoundry", "kubernetes", "microsoft", "openshift", "openstack", "redhat", "vmware"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['domain_type', 'vmm', ['vm_provider']],
-            ['state', 'absent', ['aep', 'domain', 'domain_type']],
-            ['state', 'present', ['aep', 'domain', 'domain_type']],
+            ["domain_type", "vmm", ["vm_provider"]],
+            ["state", "absent", ["aep", "domain", "domain_type"]],
+            ["state", "present", ["aep", "domain", "domain_type"]],
         ],
         required_together=[
-            ['domain', 'domain_type'],
+            ["domain", "domain_type"],
         ],
     )
 
-    aep = module.params.get('aep')
-    domain = module.params.get('domain')
-    domain_type = module.params.get('domain_type')
-    vm_provider = module.params.get('vm_provider')
-    state = module.params.get('state')
+    aep = module.params.get("aep")
+    domain = module.params.get("domain")
+    domain_type = module.params.get("domain_type")
+    vm_provider = module.params.get("vm_provider")
+    state = module.params.get("state")
 
     # Report when vm_provider is set when type is not virtual
-    if domain_type != 'vmm' and vm_provider is not None:
+    if domain_type != "vmm" and vm_provider is not None:
         module.fail_json(msg="Domain type '{0}' cannot have a 'vm_provider'".format(domain_type))
 
     # Compile the full domain for URL building
-    if domain_type == 'fc':
-        domain_mo = 'uni/fc-{0}'.format(domain)
-    elif domain_type == 'l2dom':
-        domain_mo = 'uni/l2dom-{0}'.format(domain)
-    elif domain_type == 'l3dom':
-        domain_mo = 'uni/l3dom-{0}'.format(domain)
-    elif domain_type == 'phys':
-        domain_mo = 'uni/phys-{0}'.format(domain)
-    elif domain_type == 'vmm':
-        domain_mo = 'uni/vmmp-{0}/dom-{1}'.format(VM_PROVIDER_MAPPING[vm_provider], domain)
+    if domain_type == "fc":
+        domain_mo = "uni/fc-{0}".format(domain)
+    elif domain_type == "l2dom":
+        domain_mo = "uni/l2dom-{0}".format(domain)
+    elif domain_type == "l3dom":
+        domain_mo = "uni/l3dom-{0}".format(domain)
+    elif domain_type == "phys":
+        domain_mo = "uni/phys-{0}".format(domain)
+    elif domain_type == "vmm":
+        domain_mo = "uni/vmmp-{0}/dom-{1}".format(VM_PROVIDER_MAPPING[vm_provider], domain)
     else:
         domain_mo = None
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='infraAttEntityP',
-            aci_rn='infra/attentp-{0}'.format(aep),
+            aci_class="infraAttEntityP",
+            aci_rn="infra/attentp-{0}".format(aep),
             module_object=aep,
-            target_filter={'name': aep},
+            target_filter={"name": aep},
         ),
         subclass_1=dict(
-            aci_class='infraRsDomP',
-            aci_rn='rsdomP-[{0}]'.format(domain_mo),
+            aci_class="infraRsDomP",
+            aci_rn="rsdomP-[{0}]".format(domain_mo),
             module_object=domain_mo,
-            target_filter={'tDn': domain_mo},
+            target_filter={"tDn": domain_mo},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='infraRsDomP',
+            aci_class="infraRsDomP",
             class_config=dict(tDn=domain_mo),
         )
 
-        aci.get_diff(aci_class='infraRsDomP')
+        aci.get_diff(aci_class="infraRsDomP")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

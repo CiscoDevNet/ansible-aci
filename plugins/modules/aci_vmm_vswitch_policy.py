@@ -6,13 +6,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_vmm_vswitch_policy
 short_description: Manage vSwitch policy for VMware virtual domains profiles (vmm:DomP)
@@ -143,9 +142,9 @@ seealso:
 author:
 - Manuel Widmer (@lumean)
 - Anvitha Jain (@anvitha-jain)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a vSwitch policy with LLDP
   cisco.aci.aci_vmm_vswitch_policy:
     host: apic
@@ -191,9 +190,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -296,7 +295,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, enhanced_lag_spec, netflow_spec
@@ -304,13 +303,13 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 # via UI vSwitch Policy can only be added for VMware and Microsoft vmm domains
 # behavior for other domains is currently untested.
 VM_PROVIDER_MAPPING = dict(
-    cloudfoundry='CloudFoundry',
-    kubernetes='Kubernetes',
-    microsoft='Microsoft',
-    openshift='OpenShift',
-    openstack='OpenStack',
-    redhat='Redhat',
-    vmware='VMware',
+    cloudfoundry="CloudFoundry",
+    kubernetes="Kubernetes",
+    microsoft="Microsoft",
+    openshift="OpenShift",
+    openstack="OpenStack",
+    redhat="Redhat",
+    vmware="VMware",
 )
 
 # enhanced_lag_spec = dict(
@@ -336,136 +335,129 @@ VM_PROVIDER_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        port_channel_policy=dict(type='str'),
-        lldp_policy=dict(type='str'),
-        cdp_policy=dict(type='str'),
-        mtu_policy=dict(type='str'),
-        stp_policy=dict(type='str'),
-        enhanced_lag=dict(type='list', elements='dict', options=enhanced_lag_spec()),
-        netflow_exporter=dict(type='dict', options=netflow_spec()),
-        domain=dict(type='str', aliases=['domain_name', 'domain_profile']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        vm_provider=dict(type='str', choices=list(VM_PROVIDER_MAPPING.keys())),
+        port_channel_policy=dict(type="str"),
+        lldp_policy=dict(type="str"),
+        cdp_policy=dict(type="str"),
+        mtu_policy=dict(type="str"),
+        stp_policy=dict(type="str"),
+        enhanced_lag=dict(type="list", elements="dict", options=enhanced_lag_spec()),
+        netflow_exporter=dict(type="dict", options=netflow_spec()),
+        domain=dict(type="str", aliases=["domain_name", "domain_profile"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING.keys())),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['domain', 'vm_provider']],
-            ['state', 'present', ['domain', 'vm_provider']],
+            ["state", "absent", ["domain", "vm_provider"]],
+            ["state", "present", ["domain", "vm_provider"]],
         ],
     )
 
-    port_channel_policy = module.params.get('port_channel_policy')
-    lldp_policy = module.params.get('lldp_policy')
-    cdp_policy = module.params.get('cdp_policy')
-    mtu_policy = module.params.get('mtu_policy')
-    stp_policy = module.params.get('stp_policy')
-    netflow_exporter = module.params.get('netflow_exporter')
-    enhanced_lag = module.params.get('enhanced_lag')
-    domain = module.params.get('domain')
-    state = module.params.get('state')
-    vm_provider = module.params.get('vm_provider')
+    port_channel_policy = module.params.get("port_channel_policy")
+    lldp_policy = module.params.get("lldp_policy")
+    cdp_policy = module.params.get("cdp_policy")
+    mtu_policy = module.params.get("mtu_policy")
+    stp_policy = module.params.get("stp_policy")
+    netflow_exporter = module.params.get("netflow_exporter")
+    enhanced_lag = module.params.get("enhanced_lag")
+    domain = module.params.get("domain")
+    state = module.params.get("state")
+    vm_provider = module.params.get("vm_provider")
 
     aci = ACIModule(module)
-    vswitch_class = 'vmmVSwitchPolicyCont'
+    vswitch_class = "vmmVSwitchPolicyCont"
 
-    child_classes = [
-        'vmmRsVswitchOverrideLldpIfPol',
-        'vmmRsVswitchOverrideLacpPol',
-        'vmmRsVswitchOverrideCdpIfPol',
-        'lacpEnhancedLagPol'
-    ]
+    child_classes = ["vmmRsVswitchOverrideLldpIfPol", "vmmRsVswitchOverrideLacpPol", "vmmRsVswitchOverrideCdpIfPol", "lacpEnhancedLagPol"]
     if mtu_policy is not None:
-        child_classes.append('vmmRsVswitchOverrideMtuPol')
+        child_classes.append("vmmRsVswitchOverrideMtuPol")
 
     if stp_policy is not None:
-        child_classes.append('vmmRsVswitchOverrideStpPol')
+        child_classes.append("vmmRsVswitchOverrideStpPol")
 
     if isinstance(netflow_exporter, dict):
-        child_classes.append('vmmRsVswitchExporterPol')
+        child_classes.append("vmmRsVswitchExporterPol")
 
     aci.construct_url(
         root_class=dict(
-            aci_class='vmmProvP',
-            aci_rn='vmmp-{0}'.format(VM_PROVIDER_MAPPING.get(vm_provider)),
+            aci_class="vmmProvP",
+            aci_rn="vmmp-{0}".format(VM_PROVIDER_MAPPING.get(vm_provider)),
             module_object=vm_provider,
-            target_filter={'name': vm_provider},
+            target_filter={"name": vm_provider},
         ),
         subclass_1=dict(
-            aci_class='vmmDomP',
-            aci_rn='dom-{0}'.format(domain),
+            aci_class="vmmDomP",
+            aci_rn="dom-{0}".format(domain),
             module_object=domain,
-            target_filter={'name': domain},
+            target_filter={"name": domain},
         ),
         subclass_2=dict(
-            aci_class='vmmVSwitchPolicyCont',
-            aci_rn='vswitchpolcont',
-            module_object='vswitchpolcont',
-            target_filter={'name': 'vswitchpolcont'},
+            aci_class="vmmVSwitchPolicyCont",
+            aci_rn="vswitchpolcont",
+            module_object="vswitchpolcont",
+            target_filter={"name": "vswitchpolcont"},
         ),
         child_classes=child_classes,
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         children = list()
 
         if port_channel_policy is not None:
-            children.append(dict(vmmRsVswitchOverrideLacpPol=dict(attributes=dict(
-                tDn='uni/infra/lacplagp-{0}'.format(port_channel_policy)
-            ))))
+            children.append(dict(vmmRsVswitchOverrideLacpPol=dict(attributes=dict(tDn="uni/infra/lacplagp-{0}".format(port_channel_policy)))))
 
         if lldp_policy is not None:
-            children.append(dict(vmmRsVswitchOverrideLldpIfPol=dict(attributes=dict(
-                tDn='uni/infra/lldpIfP-{0}'.format(lldp_policy)
-            ))))
+            children.append(dict(vmmRsVswitchOverrideLldpIfPol=dict(attributes=dict(tDn="uni/infra/lldpIfP-{0}".format(lldp_policy)))))
 
         if cdp_policy is not None:
-            children.append(dict(vmmRsVswitchOverrideCdpIfPol=dict(attributes=dict(
-                tDn='uni/infra/cdpIfP-{0}'.format(cdp_policy)
-            ))))
+            children.append(dict(vmmRsVswitchOverrideCdpIfPol=dict(attributes=dict(tDn="uni/infra/cdpIfP-{0}".format(cdp_policy)))))
 
         if mtu_policy is not None:
-            children.append(dict(vmmRsVswitchOverrideMtuPol=dict(attributes=dict(
-                tDn='uni/fabric/l2pol-{0}'.format(mtu_policy)
-            ))))
+            children.append(dict(vmmRsVswitchOverrideMtuPol=dict(attributes=dict(tDn="uni/fabric/l2pol-{0}".format(mtu_policy)))))
 
         if stp_policy is not None:
-            children.append(dict(vmmRsVswitchOverrideStpPol=dict(attributes=dict(
-                tDn='uni/infra/ifPol-{0}'.format(stp_policy)
-            ))))
+            children.append(dict(vmmRsVswitchOverrideStpPol=dict(attributes=dict(tDn="uni/infra/ifPol-{0}".format(stp_policy)))))
 
         if isinstance(netflow_exporter, dict):
-            children.append(dict(vmmRsVswitchExporterPol=dict(attributes=dict(
-                tDn='uni/infra/vmmexporterpol-{0}'.format(netflow_exporter['name']),
-                activeFlowTimeOut=netflow_exporter['active_flow_timeout'],
-                idleFlowTimeOut=netflow_exporter['idle_flow_timeout'],
-                samplingRate=netflow_exporter['sampling_rate'],
-            ))))
+            children.append(
+                dict(
+                    vmmRsVswitchExporterPol=dict(
+                        attributes=dict(
+                            tDn="uni/infra/vmmexporterpol-{0}".format(netflow_exporter["name"]),
+                            activeFlowTimeOut=netflow_exporter["active_flow_timeout"],
+                            idleFlowTimeOut=netflow_exporter["idle_flow_timeout"],
+                            samplingRate=netflow_exporter["sampling_rate"],
+                        )
+                    )
+                )
+            )
 
         if isinstance(enhanced_lag, list):
             for lag_dict in enhanced_lag:
-                children.append(dict(lacpEnhancedLagPol=dict(attributes=dict(
-                    name=lag_dict['name'],
-                    mode=lag_dict['lacp_mode'],
-                    lbmode=lag_dict['load_balancing_mode'],
-                    numLinks=lag_dict['number_uplinks'],
-                ))))
+                children.append(
+                    dict(
+                        lacpEnhancedLagPol=dict(
+                            attributes=dict(
+                                name=lag_dict["name"],
+                                mode=lag_dict["lacp_mode"],
+                                lbmode=lag_dict["load_balancing_mode"],
+                                numLinks=lag_dict["number_uplinks"],
+                            )
+                        )
+                    )
+                )
 
-        aci.payload(
-            aci_class=vswitch_class,
-            class_config=dict(rn='vswitchpolcont'),
-            child_configs=children
-        )
+        aci.payload(aci_class=vswitch_class, class_config=dict(rn="vswitchpolcont"), child_configs=children)
 
         aci.get_diff(aci_class=vswitch_class)
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

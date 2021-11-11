@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_aep_to_epg
 short_description: Bind EPG to AEP (infra:RsFuncToEpg).
@@ -68,9 +67,9 @@ extends_documentation_fragment:
 - cisco.aci.aci
 author:
 - Marcel Zehnder (@maercu)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Associate EPG with AEP
   cisco.aci.aci_aep_to_epg:
     host: apic
@@ -122,9 +121,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -227,7 +226,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -235,13 +234,13 @@ from ansible.module_utils.basic import AnsibleModule
 
 
 INTERFACE_MODE_MAPPING = {
-    '802.1p': 'native',
-    'access': 'untagged',
-    'native': 'native',
-    'regular': 'regular',
-    'tagged': 'regular',
-    'trunk': 'regular',
-    'untagged': 'untagged',
+    "802.1p": "native",
+    "access": "untagged",
+    "native": "native",
+    "regular": "regular",
+    "tagged": "regular",
+    "trunk": "regular",
+    "untagged": "untagged",
 }
 
 
@@ -249,95 +248,68 @@ def main():
     argument_spec = aci_argument_spec()
 
     argument_spec.update(
-        aep=dict(type='str', aliases=['aep_name']),
-        tenant=dict(type='str', aliases=['tenant_name']),
-        ap=dict(type='str', aliases=['app_profile', 'app_profile_name']),
-        epg=dict(type='str', aliases=['epg_name']),
-        encap=dict(type='int', aliases=['vlan', 'vlan_id', 'encap_id']),
-        primary_encap=dict(type='int', aliases=[
-            'primary_vlan', 'primary_vlan_id', 'primary_encap_id']),
-        interface_mode=dict(type='str', choices=['802.1p', 'access', 'native',
-                                                 'regular', 'tagged', 'trunk',
-                                                 'untagged'], aliases=['mode_name', 'mode', 'interface_mode_name']),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query'])
+        aep=dict(type="str", aliases=["aep_name"]),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        ap=dict(type="str", aliases=["app_profile", "app_profile_name"]),
+        epg=dict(type="str", aliases=["epg_name"]),
+        encap=dict(type="int", aliases=["vlan", "vlan_id", "encap_id"]),
+        primary_encap=dict(type="int", aliases=["primary_vlan", "primary_vlan_id", "primary_encap_id"]),
+        interface_mode=dict(
+            type="str", choices=["802.1p", "access", "native", "regular", "tagged", "trunk", "untagged"], aliases=["mode_name", "mode", "interface_mode_name"]
+        ),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['aep', 'epg', 'ap', 'tenant']],
-            ['state', 'present', ['interface_mode', 'encap', 'aep', 'epg', 'ap', 'tenant']],
-        ]
+            ["state", "absent", ["aep", "epg", "ap", "tenant"]],
+            ["state", "present", ["interface_mode", "encap", "aep", "epg", "ap", "tenant"]],
+        ],
     )
 
-    aep = module.params.get('aep')
-    tenant = module.params.get('tenant')
-    ap = module.params.get('ap')
-    epg = module.params.get('epg')
-    encap = module.params.get('encap')
-    primary_encap = module.params.get('primary_encap')
-    interface_mode = module.params.get('interface_mode')
-    state = module.params.get('state')
+    aep = module.params.get("aep")
+    tenant = module.params.get("tenant")
+    ap = module.params.get("ap")
+    epg = module.params.get("epg")
+    encap = module.params.get("encap")
+    primary_encap = module.params.get("primary_encap")
+    interface_mode = module.params.get("interface_mode")
+    state = module.params.get("state")
 
     if interface_mode is not None:
         interface_mode = INTERFACE_MODE_MAPPING[interface_mode]
 
     if encap is not None:
-        encap = 'vlan-{0}'.format(encap)
+        encap = "vlan-{0}".format(encap)
 
     if primary_encap is not None:
-        primary_encap = 'vlan-{0}'.format(primary_encap)
+        primary_encap = "vlan-{0}".format(primary_encap)
 
     epg_mo = None
     if tenant is not None and ap is not None and epg is not None:
-        epg_mo = 'uni/tn-{0}/ap-{1}/epg-{2}'.format(tenant, ap, epg)
+        epg_mo = "uni/tn-{0}/ap-{1}/epg-{2}".format(tenant, ap, epg)
 
     aci = ACIModule(module)
     aci.construct_url(
-        root_class=dict(
-            aci_class='infraAttEntityP',
-            aci_rn='infra/attentp-{0}'.format(aep),
-            module_object=aep,
-            target_filter={'name': aep}
-        ),
-        subclass_1=dict(
-            aci_class='infraGeneric',
-            aci_rn='gen-default',
-            module_object='default',
-            target_filter={'name': 'default'}
-        ),
-        child_classes=['infraRsFuncToEpg']
+        root_class=dict(aci_class="infraAttEntityP", aci_rn="infra/attentp-{0}".format(aep), module_object=aep, target_filter={"name": aep}),
+        subclass_1=dict(aci_class="infraGeneric", aci_rn="gen-default", module_object="default", target_filter={"name": "default"}),
+        child_classes=["infraRsFuncToEpg"],
     )
 
     aci.get_existing()
 
-    if state == 'present':
-        child_configs = [
-            dict(
-                infraRsFuncToEpg=dict(
-                    attributes=dict(
-                        encap=encap,
-                        primaryEncap=primary_encap,
-                        mode=interface_mode,
-                        tDn=epg_mo
-                    )
-                )
-            )
-        ]
+    if state == "present":
+        child_configs = [dict(infraRsFuncToEpg=dict(attributes=dict(encap=encap, primaryEncap=primary_encap, mode=interface_mode, tDn=epg_mo)))]
 
-        aci.payload(
-            aci_class='infraGeneric',
-            class_config=dict(name='default'),
-            child_configs=child_configs
-        )
+        aci.payload(aci_class="infraGeneric", class_config=dict(name="default"), child_configs=child_configs)
 
-        aci.get_diff(aci_class='infraGeneric')
+        aci.get_diff(aci_class="infraGeneric")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_l2
 short_description: Manage Layer 2 interface policies (l2:IfPol)
@@ -64,10 +63,10 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
-'''
+"""
 
 # FIXME: Add more, better examples
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a Layer 2 interface policy
   cisco.aci.aci_interface_policy_l2:
     host: '{{ hostname }}'
@@ -77,9 +76,9 @@ EXAMPLES = r'''
     vlan_scope: '{{ vlan_policy }}'
     description: '{{ description }}'
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -182,80 +181,81 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 # Mapping dicts are used to normalize the proposed data to what the APIC expects, which will keep diffs accurate
 QINQ_MAPPING = dict(
-    core='corePort',
-    disabled='disabled',
-    edge='edgePort',
+    core="corePort",
+    disabled="disabled",
+    edge="edgePort",
 )
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        l2_policy=dict(type='str', aliases=['name']),  # Not required for querying all policies
-        description=dict(type='str', aliases=['descr']),
-        vlan_scope=dict(type='str', choices=['global', 'portlocal']),  # No default provided on purpose
-        qinq=dict(type='str', choices=['core', 'disabled', 'edge']),
-        vepa=dict(type='bool'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        l2_policy=dict(type="str", aliases=["name"]),  # Not required for querying all policies
+        description=dict(type="str", aliases=["descr"]),
+        vlan_scope=dict(type="str", choices=["global", "portlocal"]),  # No default provided on purpose
+        qinq=dict(type="str", choices=["core", "disabled", "edge"]),
+        vepa=dict(type="bool"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['l2_policy']],
-            ['state', 'present', ['l2_policy']],
+            ["state", "absent", ["l2_policy"]],
+            ["state", "present", ["l2_policy"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    l2_policy = module.params.get('l2_policy')
-    vlan_scope = module.params.get('vlan_scope')
-    qinq = module.params.get('qinq')
+    l2_policy = module.params.get("l2_policy")
+    vlan_scope = module.params.get("vlan_scope")
+    qinq = module.params.get("qinq")
     if qinq is not None:
         qinq = QINQ_MAPPING.get(qinq)
-    vepa = aci.boolean(module.params.get('vepa'), 'enabled', 'disabled')
-    description = module.params.get('description')
-    state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
+    vepa = aci.boolean(module.params.get("vepa"), "enabled", "disabled")
+    description = module.params.get("description")
+    state = module.params.get("state")
+    name_alias = module.params.get("name_alias")
 
     aci.construct_url(
         root_class=dict(
-            aci_class='l2IfPol',
-            aci_rn='infra/l2IfP-{0}'.format(l2_policy),
+            aci_class="l2IfPol",
+            aci_rn="infra/l2IfP-{0}".format(l2_policy),
             module_object=l2_policy,
-            target_filter={'name': l2_policy},
+            target_filter={"name": l2_policy},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='l2IfPol',
+            aci_class="l2IfPol",
             class_config=dict(
                 name=l2_policy,
                 descr=description,
                 vlanScope=vlan_scope,
-                qinq=qinq, vepa=vepa,
+                qinq=qinq,
+                vepa=vepa,
                 nameAlias=name_alias,
             ),
         )
 
-        aci.get_diff(aci_class='l2IfPol')
+        aci.get_diff(aci_class="l2IfPol")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

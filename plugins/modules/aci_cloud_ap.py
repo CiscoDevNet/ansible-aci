@@ -6,9 +6,10 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_cloud_ap
 short_description: Manage Cloud Application Profile (AP) (cloud:App)
@@ -46,9 +47,9 @@ notes:
 author:
 - Nirav (@nirav)
 - Cindy Zhao (@cizhao)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new cloud AP
   cisco.aci.aci_cloud_ap:
     host: apic
@@ -112,9 +113,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -217,7 +218,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
@@ -226,61 +227,75 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        description=dict(type='str', aliases=['descr']),
-        name=dict(type='str', aliases=['app_profile', 'app_profile_name', 'ap']),
-        tenant=dict(type='str', aliases=['tenant_name']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        description=dict(type="str", aliases=["descr"]),
+        name=dict(type="str", aliases=["app_profile", "app_profile_name", "ap"]),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['name', 'tenant', ]],
-            ['state', 'present', ['name', 'tenant', ]],
+            [
+                "state",
+                "absent",
+                [
+                    "name",
+                    "tenant",
+                ],
+            ],
+            [
+                "state",
+                "present",
+                [
+                    "name",
+                    "tenant",
+                ],
+            ],
         ],
     )
 
-    description = module.params['description']
-    name = module.params['name']
-    tenant = module.params['tenant']
-    state = module.params['state']
+    description = module.params["description"]
+    name = module.params["name"]
+    tenant = module.params["tenant"]
+    state = module.params["state"]
     child_configs = []
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
-            target_filter={'name': tenant},
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
+            target_filter={"name": tenant},
             module_object=tenant,
         ),
         subclass_1=dict(
-            aci_class='cloudApp',
-            aci_rn='cloudapp-{0}'.format(name),
-            target_filter={'name': name},
+            aci_class="cloudApp",
+            aci_rn="cloudapp-{0}".format(name),
+            target_filter={"name": name},
             module_object=name,
         ),
-        child_classes=[]
+        child_classes=[],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='cloudApp',
+            aci_class="cloudApp",
             class_config=dict(
                 descr=description,
                 name=name,
             ),
-            child_configs=child_configs
+            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='cloudApp')
+        aci.get_diff(aci_class="cloudApp")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

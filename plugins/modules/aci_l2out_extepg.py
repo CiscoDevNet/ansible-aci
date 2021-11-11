@@ -6,14 +6,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_l2out_extepg
 short_description: Manage External Network Instance (L2Out External EPG) objects (l2extInstP).
@@ -68,9 +67,9 @@ seealso:
 author:
 - Sudhakar Shet Kudtarkar (@kudtarkar1)
 - Shreyas Srish (@shrsr)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new L2 external end point group
   cisco.aci.aci_l2out_extepg:
     host: apic
@@ -116,9 +115,9 @@ EXAMPLES = r'''
     state: query
     delegate_to: localhost
     register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
    current:
      description: The existing configuration from the APIC after the module has finished
      returned: success
@@ -221,7 +220,7 @@ RETURN = r'''
      returned: failure or debug
      type: str
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
-   '''
+   """
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -230,77 +229,71 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        l2out=dict(type='str'),
-        description=dict(type='str'),
-        extepg=dict(type='str', aliases=['external_epg', 'extepg_name', 'name']),
-        preferred_group=dict(type='bool'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        tenant=dict(type='str'),
-        qos_class=dict(type='str', choices=['level1', 'level2', 'level3', 'level4', 'level5', 'level6', 'Unspecified']),
+        l2out=dict(type="str"),
+        description=dict(type="str"),
+        extepg=dict(type="str", aliases=["external_epg", "extepg_name", "name"]),
+        preferred_group=dict(type="bool"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        tenant=dict(type="str"),
+        qos_class=dict(type="str", choices=["level1", "level2", "level3", "level4", "level5", "level6", "Unspecified"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['l2out', 'tenant', 'extepg']],
-            ['state', 'present', ['l2out', 'tenant', 'extepg']],
+            ["state", "absent", ["l2out", "tenant", "extepg"]],
+            ["state", "present", ["l2out", "tenant", "extepg"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    l2out = module.params.get('l2out')
-    description = module.params.get('description')
-    preferred_group = aci.boolean(module.params.get('preferred_group'), 'include', 'exclude')
-    state = module.params.get('state')
-    tenant = module.params.get('tenant')
-    extepg = module.params.get('extepg')
-    qos_class = module.params.get('qos_class')
+    l2out = module.params.get("l2out")
+    description = module.params.get("description")
+    preferred_group = aci.boolean(module.params.get("preferred_group"), "include", "exclude")
+    state = module.params.get("state")
+    tenant = module.params.get("tenant")
+    extepg = module.params.get("extepg")
+    qos_class = module.params.get("qos_class")
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='l2extOut',
-            aci_rn='l2out-{0}'.format(l2out),
+            aci_class="l2extOut",
+            aci_rn="l2out-{0}".format(l2out),
             module_object=l2out,
-            target_filter={'name': l2out},
+            target_filter={"name": l2out},
         ),
         subclass_2=dict(
-            aci_class='l2extInstP',
-            aci_rn='instP-{0}'.format(extepg),
+            aci_class="l2extInstP",
+            aci_rn="instP-{0}".format(extepg),
             module_object=extepg,
-            target_filter={'name': extepg},
-
-        )
+            target_filter={"name": extepg},
+        ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
-        config = dict(
-            name=extepg,
-            descr=description,
-            dn='uni/tn-{0}/l2out-{1}/instP-{2}'.format(tenant, l2out, extepg),
-            prefGrMemb=preferred_group
-        )
+    if state == "present":
+        config = dict(name=extepg, descr=description, dn="uni/tn-{0}/l2out-{1}/instP-{2}".format(tenant, l2out, extepg), prefGrMemb=preferred_group)
         if qos_class:
             config.update(prio=qos_class)
         aci.payload(
             class_config=config,
-            aci_class='l2extInstP',
+            aci_class="l2extInstP",
         )
 
-        aci.get_diff(aci_class='l2extInstP')
+        aci.get_diff(aci_class="l2extInstP")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

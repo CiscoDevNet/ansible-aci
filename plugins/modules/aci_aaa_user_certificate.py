@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_aaa_user_certificate
 short_description: Manage AAA user certificates (aaa:UserCert)
@@ -63,9 +62,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a certificate to user
   cisco.aci.aci_aaa_user_certificate:
     host: apic
@@ -107,9 +106,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -212,19 +211,19 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 ACI_MAPPING = dict(
     appuser=dict(
-        aci_class='aaaAppUser',
-        aci_mo='userext/appuser-',
+        aci_class="aaaAppUser",
+        aci_mo="userext/appuser-",
     ),
     user=dict(
-        aci_class='aaaUser',
-        aci_mo='userext/user-',
+        aci_class="aaaUser",
+        aci_mo="userext/user-",
     ),
 )
 
@@ -232,63 +231,62 @@ ACI_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        aaa_user=dict(type='str', required=True),
-        aaa_user_type=dict(type='str', default='user', choices=['appuser', 'user']),
-        certificate=dict(type='str', aliases=['cert_data', 'certificate_data']),
-        name=dict(type='str'),  # Not required for querying all objects
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        aaa_user=dict(type="str", required=True),
+        aaa_user_type=dict(type="str", default="user", choices=["appuser", "user"]),
+        certificate=dict(type="str", aliases=["cert_data", "certificate_data"]),
+        name=dict(type="str"),  # Not required for querying all objects
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['aaa_user', 'name']],
-            ['state', 'present', ['aaa_user', 'certificate', 'name']],
+            ["state", "absent", ["aaa_user", "name"]],
+            ["state", "present", ["aaa_user", "certificate", "name"]],
         ],
     )
 
-    aaa_user = module.params.get('aaa_user')
-    aaa_user_type = module.params.get('aaa_user_type')
-    certificate = module.params.get('certificate')
-    name = module.params.get('name')
-    state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
+    aaa_user = module.params.get("aaa_user")
+    aaa_user_type = module.params.get("aaa_user_type")
+    certificate = module.params.get("certificate")
+    name = module.params.get("name")
+    state = module.params.get("state")
+    name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class=ACI_MAPPING.get(aaa_user_type).get('aci_class'),
-            aci_rn=ACI_MAPPING.get(aaa_user_type).get('aci_mo') + aaa_user,
+            aci_class=ACI_MAPPING.get(aaa_user_type).get("aci_class"),
+            aci_rn=ACI_MAPPING.get(aaa_user_type).get("aci_mo") + aaa_user,
             module_object=aaa_user,
-            target_filter={'name': aaa_user},
+            target_filter={"name": aaa_user},
         ),
         subclass_1=dict(
-            aci_class='aaaUserCert',
-            aci_rn='usercert-{0}'.format(name),
+            aci_class="aaaUserCert",
+            aci_rn="usercert-{0}".format(name),
             module_object=name,
-            target_filter={'name': name},
+            target_filter={"name": name},
         ),
     )
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='aaaUserCert',
+            aci_class="aaaUserCert",
             class_config=dict(
                 data=certificate,
                 name=name,
                 nameAlias=name_alias,
-
             ),
         )
 
-        aci.get_diff(aci_class='aaaUserCert')
+        aci.get_diff(aci_class="aaaUserCert")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

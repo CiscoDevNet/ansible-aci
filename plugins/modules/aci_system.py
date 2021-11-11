@@ -5,9 +5,10 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_system
 short_description: Query the ACI system information (top:System)
@@ -34,9 +35,9 @@ notes:
 
 extends_documentation_fragment:
 - cisco.aci.aci
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Query all controllers system information
   cisco.aci.aci_system:
     host: apic
@@ -55,9 +56,9 @@ EXAMPLES = r'''
     id: 1
     state: query
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -160,7 +161,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
@@ -169,8 +170,8 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        id=dict(type='int', aliases=['controller', 'node']),
-        state=dict(type='str', default='query', choices=['query']),
+        id=dict(type="int", aliases=["controller", "node"]),
+        state=dict(type="str", default="query", choices=["query"]),
     )
 
     module = AnsibleModule(
@@ -178,15 +179,10 @@ def main():
         supports_check_mode=True,
     )
 
-    id = module.params.get('id')
+    id = module.params.get("id")
 
     aci = ACIModule(module)
-    aci.construct_url(
-        root_class=dict(
-            aci_class='topSystem',
-            target_filter={'id': id}
-        )
-    )
+    aci.construct_url(root_class=dict(aci_class="topSystem", target_filter={"id": id}))
 
     aci.get_existing()
 

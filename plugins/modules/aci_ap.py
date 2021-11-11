@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_ap
 short_description: Manage top level Application Profile (AP) objects (fv:Ap)
@@ -62,9 +61,9 @@ seealso:
 author:
 - Swetha Chunduri (@schunduri)
 - Shreyas Srish (@shrsr)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new AP
   cisco.aci.aci_ap:
     host: apic
@@ -106,9 +105,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -211,7 +210,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -220,54 +219,54 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
-        ap=dict(type='str', aliases=['app_profile', 'app_profile_name', 'name']),  # Not required for querying all objects
-        description=dict(type='str', aliases=['descr']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
-        monitoring_policy=dict(type='str'),
+        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        ap=dict(type="str", aliases=["app_profile", "app_profile_name", "name"]),  # Not required for querying all objects
+        description=dict(type="str", aliases=["descr"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
+        monitoring_policy=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['tenant', 'ap']],
-            ['state', 'present', ['tenant', 'ap']],
+            ["state", "absent", ["tenant", "ap"]],
+            ["state", "present", ["tenant", "ap"]],
         ],
     )
 
-    ap = module.params.get('ap')
-    description = module.params.get('description')
-    state = module.params.get('state')
-    tenant = module.params.get('tenant')
-    name_alias = module.params.get('name_alias')
-    monitoring_policy = module.params.get('monitoring_policy')
+    ap = module.params.get("ap")
+    description = module.params.get("description")
+    state = module.params.get("state")
+    tenant = module.params.get("tenant")
+    name_alias = module.params.get("name_alias")
+    monitoring_policy = module.params.get("monitoring_policy")
 
     child_configs = [dict(fvRsApMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy)))]
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='fvAp',
-            aci_rn='ap-{0}'.format(ap),
+            aci_class="fvAp",
+            aci_rn="ap-{0}".format(ap),
             module_object=ap,
-            target_filter={'name': ap},
+            target_filter={"name": ap},
         ),
-        child_classes=['fvRsApMonPol'],
+        child_classes=["fvRsApMonPol"],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='fvAp',
+            aci_class="fvAp",
             class_config=dict(
                 name=ap,
                 descr=description,
@@ -276,11 +275,11 @@ def main():
             child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='fvAp')
+        aci.get_diff(aci_class="fvAp")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

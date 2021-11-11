@@ -5,9 +5,10 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_cloud_aws_provider
 short_description: Manage Cloud AWS Provider (cloud:AwsProvider)
@@ -53,9 +54,9 @@ extends_documentation_fragment:
 notes:
   - More information about the internal APIC class B(cloud:AwsProvider) from
   - L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create aws provider again after deletion as not trusted
   cisco.aci.aci_cloud_aws_provider:
     host: apic
@@ -93,9 +94,9 @@ EXAMPLES = r'''
     password: SomeSecretePassword
     state: query
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -198,7 +199,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
@@ -206,75 +207,76 @@ from ansible.module_utils.basic import AnsibleModule
 
 def main():
     argument_spec = aci_argument_spec()
-    argument_spec.update({
-        'access_key_id': dict(type='str'),
-        'account_id': dict(type='str'),
-        'is_account_in_org': dict(type='bool'),
-        'is_trusted': dict(type='bool'),
-        'secret_access_key': dict(type='str'),
-        'tenant': dict(type='str'),
-        'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
-
-    })
+    argument_spec.update(
+        {
+            "access_key_id": dict(type="str"),
+            "account_id": dict(type="str"),
+            "is_account_in_org": dict(type="bool"),
+            "is_trusted": dict(type="bool"),
+            "secret_access_key": dict(type="str"),
+            "tenant": dict(type="str"),
+            "state": dict(type="str", default="present", choices=["absent", "present", "query"]),
+        }
+    )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['tenant']],
-            ['state', 'present', ['tenant']],
+            ["state", "absent", ["tenant"]],
+            ["state", "present", ["tenant"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    access_key_id = module.params.get('access_key_id')
-    account_id = module.params.get('account_id')
-    annotation = module.params.get('annotation')
-    is_account_in_org = aci.boolean(module.params.get('is_account_in_org'))
-    is_trusted = aci.boolean(module.params.get('is_trusted'))
-    secret_access_key = module.params.get('secret_access_key')
-    tenant = module.params.get('tenant')
-    state = module.params.get('state')
+    access_key_id = module.params.get("access_key_id")
+    account_id = module.params.get("account_id")
+    annotation = module.params.get("annotation")
+    is_account_in_org = aci.boolean(module.params.get("is_account_in_org"))
+    is_trusted = aci.boolean(module.params.get("is_trusted"))
+    secret_access_key = module.params.get("secret_access_key")
+    tenant = module.params.get("tenant")
+    state = module.params.get("state")
     child_configs = []
 
     aci.construct_url(
         root_class={
-            'aci_class': 'fvTenant',
-            'aci_rn': 'tn-{0}'.format(tenant),
-            'target_filter': 'eq(fvTenant.name, "{0}")'.format(tenant),
-            'module_object': tenant
+            "aci_class": "fvTenant",
+            "aci_rn": "tn-{0}".format(tenant),
+            "target_filter": 'eq(fvTenant.name, "{0}")'.format(tenant),
+            "module_object": tenant,
         },
         subclass_1={
-            'aci_class': 'cloudAwsProvider',
-            'aci_rn': 'awsprovider'.format(),
-            'target_filter': {'account_id': account_id},
-            'module_object': account_id
+            "aci_class": "cloudAwsProvider",
+            "aci_rn": "awsprovider".format(),
+            "target_filter": {"account_id": account_id},
+            "module_object": account_id,
         },
         child_classes=[],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='cloudAwsProvider',
+            aci_class="cloudAwsProvider",
             class_config={
-                'accessKeyId': access_key_id,
-                'accountId': account_id,
-                'annotation': annotation,
-                'isAccountInOrg': is_account_in_org,
-                'isTrusted': is_trusted,
-                'secretAccessKey': secret_access_key,
+                "accessKeyId": access_key_id,
+                "accountId": account_id,
+                "annotation": annotation,
+                "isAccountInOrg": is_account_in_org,
+                "isTrusted": is_trusted,
+                "secretAccessKey": secret_access_key,
             },
-            child_configs=child_configs
+            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='cloudAwsProvider')
+        aci.get_diff(aci_class="cloudAwsProvider")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

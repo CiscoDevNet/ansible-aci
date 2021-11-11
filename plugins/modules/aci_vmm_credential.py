@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_vmm_credential
 short_description: Manage virtual domain credential profiles (vmm:UsrAccP)
@@ -70,9 +69,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jason Juenger (@jasonjuenger)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add credential to VMware VMM domain
   cisco.aci.aci_vmm_credential:
     host: apic
@@ -118,9 +117,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -223,56 +222,56 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 VM_PROVIDER_MAPPING = dict(
-    cloudfoundry='CloudFoundry',
-    kubernetes='Kubernetes',
-    microsoft='Microsoft',
-    openshift='OpenShift',
-    openstack='OpenStack',
-    redhat='Redhat',
-    vmware='VMware',
+    cloudfoundry="CloudFoundry",
+    kubernetes="Kubernetes",
+    microsoft="Microsoft",
+    openshift="OpenShift",
+    openstack="OpenStack",
+    redhat="Redhat",
+    vmware="VMware",
 )
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        name=dict(type='str', aliases=['credential_name', 'credential_profile']),
-        credential_password=dict(type='str', no_log=True),
-        credential_username=dict(type='str'),
-        description=dict(type='str', aliases=['descr']),
-        domain=dict(type='str', aliases=['domain_name', 'domain_profile']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        vm_provider=dict(type='str', choices=list(VM_PROVIDER_MAPPING.keys())),
-        name_alias=dict(type='str'),
+        name=dict(type="str", aliases=["credential_name", "credential_profile"]),
+        credential_password=dict(type="str", no_log=True),
+        credential_username=dict(type="str"),
+        description=dict(type="str", aliases=["descr"]),
+        domain=dict(type="str", aliases=["domain_name", "domain_profile"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING.keys())),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['domain']],
-            ['state', 'present', ['domain']],
+            ["state", "absent", ["domain"]],
+            ["state", "present", ["domain"]],
         ],
     )
 
-    name = module.params.get('name')
-    credential_password = module.params.get('credential_password')
-    credential_username = module.params.get('credential_username')
-    description = module.params.get('description')
-    domain = module.params.get('domain')
-    state = module.params.get('state')
-    vm_provider = module.params.get('vm_provider')
-    name_alias = module.params.get('name_alias')
+    name = module.params.get("name")
+    credential_password = module.params.get("credential_password")
+    credential_username = module.params.get("credential_username")
+    description = module.params.get("description")
+    domain = module.params.get("domain")
+    state = module.params.get("state")
+    vm_provider = module.params.get("vm_provider")
+    name_alias = module.params.get("name_alias")
 
-    credential_class = 'vmmUsrAccP'
-    usracc_mo = 'uni/vmmp-{0}/dom-{1}/usracc-{2}'.format(VM_PROVIDER_MAPPING.get(vm_provider), domain, name)
-    usracc_rn = 'vmmp-{0}/dom-{1}/usracc-{2}'.format(VM_PROVIDER_MAPPING.get(vm_provider), domain, name)
+    credential_class = "vmmUsrAccP"
+    usracc_mo = "uni/vmmp-{0}/dom-{1}/usracc-{2}".format(VM_PROVIDER_MAPPING.get(vm_provider), domain, name)
+    usracc_rn = "vmmp-{0}/dom-{1}/usracc-{2}".format(VM_PROVIDER_MAPPING.get(vm_provider), domain, name)
 
     # Ensure that querying all objects works when only domain is provided
     if name is None:
@@ -284,13 +283,13 @@ def main():
             aci_class=credential_class,
             aci_rn=usracc_rn,
             module_object=usracc_mo,
-            target_filter={'name': domain, 'usracc': name},
+            target_filter={"name": domain, "usracc": name},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
             aci_class=credential_class,
             class_config=dict(
@@ -306,7 +305,7 @@ def main():
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

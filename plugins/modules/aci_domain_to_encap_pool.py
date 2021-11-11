@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_domain_to_encap_pool
 short_description: Bind Domain to Encap Pools (infra:RsVlanNs)
@@ -75,9 +74,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add domain to VLAN pool binding
   cisco.aci.aci_domain_to_encap_pool:
     host: apic
@@ -128,9 +127,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -233,33 +232,33 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 VM_PROVIDER_MAPPING = dict(
-    cloudfoundry='CloudFoundry',
-    kubernetes='Kubernetes',
-    microsoft='Microsoft',
-    openshift='OpenShift',
-    openstack='OpenStack',
-    redhat='Redhat',
-    vmware='VMware',
+    cloudfoundry="CloudFoundry",
+    kubernetes="Kubernetes",
+    microsoft="Microsoft",
+    openshift="OpenShift",
+    openstack="OpenStack",
+    redhat="Redhat",
+    vmware="VMware",
 )
 
 POOL_MAPPING = dict(
     vlan=dict(
-        aci_mo='uni/infra/vlanns-{0}',
-        child_class='infraRsVlanNs',
+        aci_mo="uni/infra/vlanns-{0}",
+        child_class="infraRsVlanNs",
     ),
     vxlan=dict(
-        aci_mo='uni/infra/vxlanns-{0}',
-        child_class='vmmRsVxlanNs',
+        aci_mo="uni/infra/vxlanns-{0}",
+        child_class="vmmRsVxlanNs",
     ),
     vsan=dict(
-        aci_mo='uni/infra/vsanns-{0}',
-        child_class='fcRsVsanNs',
+        aci_mo="uni/infra/vsanns-{0}",
+        child_class="fcRsVsanNs",
     ),
 )
 
@@ -267,77 +266,77 @@ POOL_MAPPING = dict(
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        domain_type=dict(type='str', required=True, choices=['fc', 'l2dom', 'l3dom', 'phys', 'vmm']),
-        pool_type=dict(type='str', required=True, choices=['vlan', 'vsan', 'vxlan']),
-        domain=dict(type='str', aliases=['domain_name', 'domain_profile']),  # Not required for querying all objects
-        pool=dict(type='str', aliases=['pool_name']),  # Not required for querying all objects
-        pool_allocation_mode=dict(type='str', aliases=['allocation_mode', 'mode'], choices=['dynamic', 'static']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        vm_provider=dict(type='str', choices=['cloudfoundry', 'kubernetes', 'microsoft', 'openshift', 'openstack', 'redhat', 'vmware']),
+        domain_type=dict(type="str", required=True, choices=["fc", "l2dom", "l3dom", "phys", "vmm"]),
+        pool_type=dict(type="str", required=True, choices=["vlan", "vsan", "vxlan"]),
+        domain=dict(type="str", aliases=["domain_name", "domain_profile"]),  # Not required for querying all objects
+        pool=dict(type="str", aliases=["pool_name"]),  # Not required for querying all objects
+        pool_allocation_mode=dict(type="str", aliases=["allocation_mode", "mode"], choices=["dynamic", "static"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        vm_provider=dict(type="str", choices=["cloudfoundry", "kubernetes", "microsoft", "openshift", "openstack", "redhat", "vmware"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['domain_type', 'vmm', ['vm_provider']],
-            ['state', 'absent', ['domain', 'domain_type', 'pool', 'pool_type']],
-            ['state', 'present', ['domain', 'domain_type', 'pool', 'pool_type']],
+            ["domain_type", "vmm", ["vm_provider"]],
+            ["state", "absent", ["domain", "domain_type", "pool", "pool_type"]],
+            ["state", "present", ["domain", "domain_type", "pool", "pool_type"]],
         ],
     )
 
-    domain = module.params.get('domain')
-    domain_type = module.params.get('domain_type')
-    pool = module.params.get('pool')
-    pool_allocation_mode = module.params.get('pool_allocation_mode')
-    pool_type = module.params.get('pool_type')
-    vm_provider = module.params.get('vm_provider')
-    state = module.params.get('state')
+    domain = module.params.get("domain")
+    domain_type = module.params.get("domain_type")
+    pool = module.params.get("pool")
+    pool_allocation_mode = module.params.get("pool_allocation_mode")
+    pool_type = module.params.get("pool_type")
+    vm_provider = module.params.get("vm_provider")
+    state = module.params.get("state")
 
     # Report when vm_provider is set when type is not virtual
-    if domain_type != 'vmm' and vm_provider is not None:
+    if domain_type != "vmm" and vm_provider is not None:
         module.fail_json(msg="Domain type '{0}' cannot have a 'vm_provider'".format(domain_type))
 
     # ACI Pool URL requires the allocation mode for vlan and vsan pools (ex: uni/infra/vlanns-[poolname]-static)
     pool_name = pool
-    if pool_type != 'vxlan' and pool is not None:
+    if pool_type != "vxlan" and pool is not None:
         if pool_allocation_mode is not None:
-            pool_name = '[{0}]-{1}'.format(pool, pool_allocation_mode)
+            pool_name = "[{0}]-{1}".format(pool, pool_allocation_mode)
         else:
             module.fail_json(msg="ACI requires the 'pool_allocation_mode' for 'pool_type' of 'vlan' and 'vsan' when 'pool' is provided")
 
     # Vxlan pools do not support allocation modes
-    if pool_type == 'vxlan' and pool_allocation_mode is not None:
-        module.fail_json(msg='vxlan pools do not support setting the allocation_mode; please remove this parameter from the task')
+    if pool_type == "vxlan" and pool_allocation_mode is not None:
+        module.fail_json(msg="vxlan pools do not support setting the allocation_mode; please remove this parameter from the task")
 
     # Compile the full domain for URL building
-    if domain_type == 'fc':
-        domain_class = 'fcDomP'
-        domain_mo = 'uni/fc-{0}'.format(domain)
-        domain_rn = 'fc-{0}'.format(domain)
-    elif domain_type == 'l2dom':
-        domain_class = 'l2extDomP'
-        domain_mo = 'uni/l2dom-{0}'.format(domain)
-        domain_rn = 'l2dom-{0}'.format(domain)
-    elif domain_type == 'l3dom':
-        domain_class = 'l3extDomP'
-        domain_mo = 'uni/l3dom-{0}'.format(domain)
-        domain_rn = 'l3dom-{0}'.format(domain)
-    elif domain_type == 'phys':
-        domain_class = 'physDomP'
-        domain_mo = 'uni/phys-{0}'.format(domain)
-        domain_rn = 'phys-{0}'.format(domain)
-    elif domain_type == 'vmm':
-        domain_class = 'vmmDomP'
-        domain_mo = 'uni/vmmp-{0}/dom-{1}'.format(VM_PROVIDER_MAPPING[vm_provider], domain)
-        domain_rn = 'vmmp-{0}/dom-{1}'.format(VM_PROVIDER_MAPPING[vm_provider], domain)
+    if domain_type == "fc":
+        domain_class = "fcDomP"
+        domain_mo = "uni/fc-{0}".format(domain)
+        domain_rn = "fc-{0}".format(domain)
+    elif domain_type == "l2dom":
+        domain_class = "l2extDomP"
+        domain_mo = "uni/l2dom-{0}".format(domain)
+        domain_rn = "l2dom-{0}".format(domain)
+    elif domain_type == "l3dom":
+        domain_class = "l3extDomP"
+        domain_mo = "uni/l3dom-{0}".format(domain)
+        domain_rn = "l3dom-{0}".format(domain)
+    elif domain_type == "phys":
+        domain_class = "physDomP"
+        domain_mo = "uni/phys-{0}".format(domain)
+        domain_rn = "phys-{0}".format(domain)
+    elif domain_type == "vmm":
+        domain_class = "vmmDomP"
+        domain_mo = "uni/vmmp-{0}/dom-{1}".format(VM_PROVIDER_MAPPING[vm_provider], domain)
+        domain_rn = "vmmp-{0}/dom-{1}".format(VM_PROVIDER_MAPPING[vm_provider], domain)
 
     # Ensure that querying all objects works when only domain_type is provided
     if domain is None:
         domain_mo = None
 
-    pool_mo = POOL_MAPPING[pool_type]['aci_mo'].format(pool_name)
-    child_class = POOL_MAPPING[pool_type]['child_class']
+    pool_mo = POOL_MAPPING[pool_type]["aci_mo"].format(pool_name)
+    child_class = POOL_MAPPING[pool_type]["child_class"]
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -345,21 +344,21 @@ def main():
             aci_class=domain_class,
             aci_rn=domain_rn,
             module_object=domain_mo,
-            target_filter={'name': domain},
+            target_filter={"name": domain},
         ),
         child_classes=[child_class],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         # Filter out module params with null values
         aci.payload(
             aci_class=domain_class,
             class_config=dict(name=domain),
             child_configs=[
-                {child_class: {'attributes': {'tDn': pool_mo}}},
-            ]
+                {child_class: {"attributes": {"tDn": pool_mo}}},
+            ],
         )
 
         # Generate config diff which will be used as POST request body
@@ -368,7 +367,7 @@ def main():
         # Submit changes if module not in check_mode and the proposed is different than existing
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()
