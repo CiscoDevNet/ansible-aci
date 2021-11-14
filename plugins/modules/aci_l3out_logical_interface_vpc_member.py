@@ -27,27 +27,53 @@ options:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
+    required: yes
   l3out:
     description:
     - Name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
-  logical_node:
+  node_profile:
     description:
-    - Name of an existing logical node profile.
+    - Name of the node profile.
     type: str
-  logical_interface:
+    aliases: [ node_profile_name, logical_node ]
+  interface_profile:
     description:
-    - Name of an existing logical interface.
+    - Name of the interface profile.
+    type: str
+    aliases: [ interface_profile_name, logical_interface ]
+  pod_id:
+    description:
+    - Pod to of the interface.
+    type: str
+  node_id:
+    description:
+    - Hyphen separated pair of nodes (e.g. "201-202")
+    type: str
+  path_ep:
+    description:
+    - vPC Interface Policy Group name
     type: str
   path_dn:
     description:
-    - DN of existing path endpoints for VPC policy group used to reach external L3 network.
+    - DN of existing path endpoint (fabricPathEp).
     type: str
   side:
     description:
     - Provides the side of member.
     type: str
+    choices: [ A, B ]
+  addr:
+    description:
+    - IP address.
+    type: str
+  ipv6_dad:
+    description:
+    - IPv6 DAD feature.
+    type: str
+    choices: [ enabled, disabled]
+    default: enabled
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -64,30 +90,47 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(tenant), C(l3out), C(logical_node), C(logical_interface), C(path_dn) and C(member) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l3out) modules can be used for this.
+- The L3Out vPC inteface used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_l3out_logical_interface_profile) module can be used for this.
 seealso:
-- module: cisco.aci.aci_tenant
-- module: cisco.aci.aci_l3out
+- module: cisco.aci.aci_l3out_logical_interface_profile
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(l3ext:Out).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Anvitha Jain(@anvitha-jain)
+- Anvitha Jain (@anvitha-jain)
+- Marcel Zehnder (@maercu)
 """
 
 EXAMPLES = r"""
-- name: Create a VPC member
+- name: Create a VPC member based on the path_dn
   cisco.aci.aci_l3out_logical_interface_vpc_member:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: tenantName
     l3out: l3out
-    logical_node: nodeName
-    logical_interface: interfaceName
+    node_profile: nodeName
+    interface_profile: interfaceName
     path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_name]
     side: A
+    state: present
+  delegate_to: localhost
+
+- name: Create a VPC member based pod, node and path
+  cisco.aci.aci_l3out_logical_interface_vpc_member:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: tenantName
+    l3out: l3out
+    node_profile: nodeName
+    interface_profile: interfaceName
+    pod_id: 1
+    node_id: 101-102
+    path_ep: policy_group_name
+    side: A
+    addr: 192.168.1.252/24
     state: present
   delegate_to: localhost
 
@@ -98,8 +141,8 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     tenant: tenantName
     l3out: l3out
-    logical_node: nodeName
-    logical_interface: interfaceName
+    node_profile: nodeName
+    interface_profile: interfaceName
     path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_name]
     side: A
     state: absent
@@ -122,8 +165,8 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     tenant: tenantName
     l3out: l3out
-    logical_node: nodeName
-    logical_interface: interfaceName
+    node_profile: nodeName
+    interface_profile: interfaceName
     path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_name]
     side: A
     state: query
@@ -239,17 +282,21 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
-
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         l3out=dict(type="str", aliases=["l3out_name"]),  # Not required for querying all objects
-        logical_node=dict(type="str"),  # Not required for querying all objects
-        logical_interface=dict(type="str"),
+        node_profile=dict(type="str", aliases=['node_profile_name', 'logical_node']),  # Not required for querying all objects
+        interface_profile=dict(type='str', aliases=['interface_profile_name', 'logical_interface']),
         path_dn=dict(type="str"),
+        pod_id=dict(type='str'),
+        node_id=dict(type='str'),
+        path_ep=dict(type='str'),
         side=dict(type="str"),
+        addr=dict(type='str'),
+        ipv6_dad=dict(type='str', default='enabled', choices=['enabled', 'disabled']),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -259,8 +306,16 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "present", ["side", "path_dn", "logical_interface", "logical_node", "l3out", "tenant"]],
-            ["state", "absent", ["side", "path_dn", "logical_interface", "logical_node", "l3out", "tenant"]],
+            ["state", "present", ["side", "path_dn", "pod_id", "node_id", "path_ep", "interface_profile", "node_profile", "l3out", "tenant"]],
+            ["state", "absent", ["side", "path_dn", "pod_id", "node_id", "path_ep", "interface_profile", "node_profile", "l3out", "tenant"]],
+        ],
+        mutually_exclusive=[
+            ['path_dn', 'pod_id'],
+            ['path_dn', 'node_id'],
+            ['path_dn', 'path_ep'],
+        ],
+        required_together=[
+            ["pod_id", "node_id", "path_ep"],
         ],
     )
 
@@ -268,14 +323,23 @@ def main():
 
     tenant = module.params.get("tenant")
     l3out = module.params.get("l3out")
-    logical_node = module.params.get("logical_node")
-    logical_interface = module.params.get("logical_interface")
+    node_profile = module.params.get("node_profile")
+    interface_profile = module.params.get("interface_profile")
+    pod_id = module.params.get('pod_id')
+    node_id = module.params.get('node_id')
+    path_ep = module.params.get('path_ep')
     path_dn = module.params.get("path_dn")
     side = module.params.get("side")
+    addr = module.params.get('addr')
+    ipv6_dad = module.params.get('ipv6_dad')
     description = module.params.get("description")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
+    if not path_dn:
+      path_dn = ('topology/pod-{0}/protpaths-{1}/pathep-[{2}]'.format(pod_id,
+                                                                      node_id,
+                                                                      path_ep))
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -291,15 +355,15 @@ def main():
         ),
         subclass_2=dict(
             aci_class="l3extLNodeP",
-            aci_rn="lnodep-{0}".format(logical_node),
-            module_object=logical_node,
-            target_filter={"name": logical_node},
+            aci_rn="lnodep-{0}".format(node_profile),
+            module_object=node_profile,
+            target_filter={"name": node_profile},
         ),
         subclass_3=dict(
             aci_class="l3extLIfP",
-            aci_rn="lifp-{0}".format(logical_interface),
-            module_object=logical_interface,
-            target_filter={"name": logical_interface},
+            aci_rn="lifp-{0}".format(interface_profile),
+            module_object=interface_profile,
+            target_filter={"name": interface_profile},
         ),
         subclass_4=dict(
             aci_class="l3extRsPathL3OutAtt",
@@ -322,6 +386,8 @@ def main():
             aci_class="l3extMember",
             class_config=dict(
                 name=side,
+                addr=addr,
+                ipv6Dad=ipv6_dad,
                 descr=description,
                 nameAlias=name_alias,
             ),
