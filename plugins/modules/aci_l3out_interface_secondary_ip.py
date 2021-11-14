@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_l3out_interface_secondary_ip:
+module: aci_l3out_interface_secondary_ip
 short_description: Manage Layer 3 Outside (L3Out) interface secondary IP addresses (l3ext:Ip).
 description:
 - Manage Layer 3 Outside (L3Out) interface secondary IP addresses (l3ext:Ip).
@@ -258,6 +258,7 @@ url:
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
+
 
 def main():
     argument_spec = aci_argument_spec()
