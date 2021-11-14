@@ -27,7 +27,6 @@ options:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-    required: yes
   l3out:
     description:
     - Name of an existing L3Out.
