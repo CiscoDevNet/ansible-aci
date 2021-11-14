@@ -52,7 +52,7 @@ options:
     - Interface Policy Group name for Port-channels and vPCs
     - Port number for single ports (e.g. "eth1/12")
     type: str
- side:
+  side:
     description:
     - Provides the side for vPC member interfaces.
     type: str
@@ -61,6 +61,12 @@ options:
     description:
     - Secondary IP address.
     type: str
+  ipv6_dad:
+    description:
+    - IPv6 DAD feature.
+    type: str
+    choices: [ enabled, disabled]
+    default: enabled
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -71,6 +77,8 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 
+notes:
+- This is a test
 seealso:
 - module: aci_l3out
 - module: aci_l3out_logical_node_profile
