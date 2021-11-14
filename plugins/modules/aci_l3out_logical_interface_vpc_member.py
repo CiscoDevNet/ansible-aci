@@ -282,6 +282,7 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
+
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
@@ -330,9 +331,9 @@ def main():
     name_alias = module.params.get('name_alias')
 
     if not path_dn:
-      path_dn = ('topology/pod-{0}/protpaths-{1}/pathep-[{2}]'.format(pod_id,
-                                                                      node_id,
-                                                                      path_ep))
+        path_dn = ('topology/pod-{0}/protpaths-{1}/pathep-[{2}]'.format(pod_id,
+                                                                        node_id,
+                                                                        path_ep))
     aci.construct_url(
         root_class=dict(
             aci_class='fvTenant',
