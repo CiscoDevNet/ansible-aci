@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2020, Anvitha Jain(@anvitha-jain) <anvjain@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -9,26 +8,20 @@ __metaclass__ = type
 
 ANSIBLE_METADATA = {'metadata_version': '1.1',
                     'status': ['preview'],
-                    'supported_by': 'certified'}
+                    'supported_by': 'community'}
 
 DOCUMENTATION = r'''
 ---
-module: aci_l3out_logical_interface_vpc_member
-short_description: Manage Member Node objects (l3extMember:Member)
+module: aci_l3out_interface_secondary_ip:
+short_description: Manage Layer 3 Outside (L3Out) interface secondary IP addresses (l3ext:Ip).
 description:
-- Manage Member Node objects (l3extMember:Member)
+- Manage Layer 3 Outside (L3Out) interface secondary IP addresses (l3ext:Ip).
 options:
-  description:
-    description:
-    - The description for the logical interface VPC member.
-    type: str
-    aliases: [ descr ]
   tenant:
     description:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-    required: yes
   l3out:
     description:
     - Name of an existing L3Out.
@@ -46,35 +39,28 @@ options:
     aliases: [ interface_profile_name, logical_interface ]
   pod_id:
     description:
-    - Pod to of the interface.
+    - Pod to build the interface on.
     type: str
   node_id:
     description:
-    - Hyphen separated pair of nodes (e.g. "201-202")
+    - Node to build the interface on for Port-channels and single ports.
+    - Hyphen separated pair of nodes (e.g. "201-202") for vPCs.
     type: str
   path_ep:
     description:
-    - vPC Interface Policy Group name
+    - Path to interface
+    - Interface Policy Group name for Port-channels and vPCs
+    - Port number for single ports (e.g. "eth1/12")
     type: str
-  path_dn:
+ side:
     description:
-    - DN of existing path endpoint (fabricPathEp).
-    type: str
-  side:
-    description:
-    - Provides the side of member.
+    - Provides the side for vPC member interfaces.
     type: str
     choices: [ A, B ]
   addr:
     description:
-    - IP address.
+    - Secondary IP address.
     type: str
-  ipv6_dad:
-    description:
-    - IPv6 DAD feature.
-    type: str
-    choices: [ enabled, disabled]
-    default: enabled
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -82,93 +68,84 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
-  name_alias:
-    description:
-    - The alias for the current object. This relates to the nameAlias field in ACI.
-    type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 
-notes:
-- The L3Out vPC inteface used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_l3out_logical_interface_profile) module can be used for this.
 seealso:
-- module: cisco.aci.aci_l3out_logical_interface_profile
+- module: aci_l3out
+- module: aci_l3out_logical_node_profile
+- module: aci_l3out_logical_interface_profile
+- module: aci_l3out_logical_interface
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(l3ext:Out).
+  description: More information about the internal APIC class B(l3ext:RsPathL3OutAtt)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Anvitha Jain (@anvitha-jain)
 - Marcel Zehnder (@maercu)
 '''
 
 EXAMPLES = r'''
-- name: Create a VPC member based on the path_dn
-  cisco.aci.aci_l3out_logical_interface_vpc_member:
+- name: Add a new secondary IP to a routed interface
+  cisco.aci.aci_l3out_interface_secondary_ip:
     host: apic
     username: admin
     password: SomeSecretPassword
-    tenant: tenantName
-    l3out: l3out
-    node_profile: nodeName
-    interface_profile: interfaceName
-    path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_name]
-    side: A
-    state: present
-  delegate_to: localhost
-
-- name: Create a VPC member based pod, node and path
-  cisco.aci.aci_l3out_logical_interface_vpc_member:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: tenantName
-    l3out: l3out
-    node_profile: nodeName
-    interface_profile: interfaceName
+    tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
     pod_id: 1
-    node_id: 101-102
-    path_ep: policy_group_name
-    side: A
-    addr: 192.168.1.252/24
+    node_id: 201
+    path_ep: eth1/12
+    addr: 192.168.10.2/27
     state: present
   delegate_to: localhost
 
-- name: Delete a VPC member
-  cisco.aci.aci_l3out_logical_interface_vpc_member:
+- name: Add a new secondary IP to a vPC member
+  cisco.aci.aci_l3out_interface_secondary_ip:
     host: apic
     username: admin
     password: SomeSecretPassword
-    tenant: tenantName
-    l3out: l3out
-    node_profile: nodeName
-    interface_profile: interfaceName
-    path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_name]
+    tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    pod_id: 1
+    node_id: 201-202
+    path_ep: my_vpc_ipg
     side: A
+    addr: 192.168.10.2/27
+    state: present
+  delegate_to: localhost
+
+- name: Delete a secondary IP
+  cisco.aci.aci_l3out_interface_secondary_ip:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/12
+    addr: 192.168.10.2/27
     state: absent
   delegate_to: localhost
 
-- name: Query all VPC members
-  cisco.aci.aci_l3out_logical_interface_vpc_member:
+- name: Query a secondary IP
+  cisco.aci.aci_l3out_interface_secondary_ip:
     host: apic
     username: admin
     password: SomeSecretPassword
-    tenant: production
-    state: query
-  delegate_to: localhost
-  register: query_result
-
-- name: Query a specific VPC member under l3out
-  cisco.aci.aci_l3out_logical_interface_vpc_member:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: tenantName
-    l3out: l3out
-    node_profile: nodeName
-    interface_profile: interfaceName
-    path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_name]
-    side: A
+    tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/12
+    addr: 192.168.10.2/27
     state: query
   delegate_to: localhost
   register: query_result
@@ -279,8 +256,8 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 '''
 
-from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible.module_utils.basic import AnsibleModule
 
 def main():
     argument_spec = aci_argument_spec()
@@ -291,28 +268,22 @@ def main():
                           'node_profile_name', 'logical_node']),
         interface_profile=dict(type='str', aliases=[
             'interface_profile_name', 'logical_interface']),
-        path_dn=dict(type='str'),
+        state=dict(type='str', default='present',
+                   choices=['absent', 'present', 'query']),
         pod_id=dict(type='str'),
         node_id=dict(type='str'),
         path_ep=dict(type='str'),
         side=dict(type='str', choices=['A', 'B']),
         addr=dict(type='str'),
-        ipv6_dad=dict(type='str', default='enabled', choices=[
-            'enabled', 'disabled']),
-        description=dict(type='str', aliases=['descr']),
-        state=dict(type='str', default='present', choices=[
-                   'absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        ipv6_dad=dict(type='str', default='enabled',
+                      choices=['enabled', 'disabled'])
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        # deleted the checks because 'path_dn' or a combination of 'pod_id' + 'node_id' + 'path_ep' is valid
-        required_if=[],
+        required_if=[]
     )
-
-    aci = ACIModule(module)
 
     tenant = module.params.get('tenant')
     l3out = module.params.get('l3out')
@@ -321,72 +292,45 @@ def main():
     pod_id = module.params.get('pod_id')
     node_id = module.params.get('node_id')
     path_ep = module.params.get('path_ep')
-    path_dn = module.params.get('path_dn')
     side = module.params.get('side')
     addr = module.params.get('addr')
     ipv6_dad = module.params.get('ipv6_dad')
-    description = module.params.get('description')
     state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
 
-    if not path_dn:
-      path_dn = ('topology/pod-{0}/protpaths-{1}/pathep-[{2}]'.format(pod_id,
-                                                                      node_id,
-                                                                      path_ep))
+    aci = ACIModule(module)
+
+    path_type = 'paths'
+    member = ''
+
+    if node_id:
+        if '-' in node_id:
+            path_type = 'protpaths'
+            member = 'mem-{0}/'.format(side)
+
+    path_dn = ('topology/pod-{0}/{1}-{2}/pathep-[{3}]'.format(pod_id,
+                                                              path_type,
+                                                              node_id,
+                                                              path_ep))
+
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
-            module_object=tenant,
-            target_filter={'name': tenant},
-        ),
-        subclass_1=dict(
-            aci_class='l3extOut',
-            aci_rn='out-{0}'.format(l3out),
-            module_object=l3out,
-            target_filter={'name': l3out},
-        ),
-        subclass_2=dict(
-            aci_class='l3extLNodeP',
-            aci_rn='lnodep-{0}'.format(node_profile),
-            module_object=node_profile,
-            target_filter={'name': node_profile},
-        ),
-        subclass_3=dict(
-            aci_class='l3extLIfP',
-            aci_rn='lifp-{0}'.format(interface_profile),
-            module_object=interface_profile,
-            target_filter={'name': interface_profile},
-        ),
-        subclass_4=dict(
-            aci_class='l3extRsPathL3OutAtt',
-            aci_rn='rspathL3OutAtt-[{0}]'.format(path_dn),
-            module_object=path_dn,
-            target_filter={'name': path_dn},
-        ),
-        subclass_5=dict(
-            aci_class='l3extMember',
-            aci_rn='mem-{0}'.format(side),
-            module_object=side,
-            target_filter={'name': side},
-        ),
+            aci_class='l3extIp',
+            aci_rn='tn-{0}/out-{1}/lnodep-{2}/lifp-{3}/rspathL3OutAtt-[{4}]/{5}addr-[{6}]'.format(
+                tenant, l3out, node_profile, interface_profile, path_dn, member, addr),
+            module_object=addr,
+            target_filter={'addr': addr},
+        )
     )
 
     aci.get_existing()
 
     if state == 'present':
         aci.payload(
-            aci_class='l3extMember',
-            class_config=dict(
-                name=side,
-                addr=addr,
-                ipv6Dad=ipv6_dad,
-                descr=description,
-                nameAlias=name_alias,
-            ),
+            aci_class='l3extIp',
+            class_config=dict(addr=addr, ipv6Dad=ipv6_dad)
         )
 
-        aci.get_diff(aci_class='l3extMember')
+        aci.get_diff(aci_class='l3extIp')
 
         aci.post_config()
 

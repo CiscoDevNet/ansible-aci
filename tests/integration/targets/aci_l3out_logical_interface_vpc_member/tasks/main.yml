@@ -45,39 +45,40 @@
     route_control: export
     state: present
 
-- name: Add a new logical node
-  cisco.aci.aci_rest:
+- name: Add a new logical node profile
+  cisco.aci.aci_l3out_logical_node_profile: 
     <<: *aci_info
-    path: /api/mo/uni/tn-ansible_tenant/out-ansible_l3out.json
-    method: post
-    content:
-      {
-          "l3extLNodeP": {
-              "attributes": {
-                  "dn": "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_LNode",
-                  "name": "ansible_LNode"
-              },
-              "children": [{
-                  "l3extLIfP": {
-                      "attributes": {
-                          "name": "ansible_LInterface"
-                      },
-                      "children": [{
-                          "l3extRsPathL3OutAtt": {
-                              "attributes": {
-                                  "addr": "0.0.0.0",
-                                  "encap": "vlan-100",
-                                  "ifInstT": "ext-svi",
-                                  "tDn": "topology/pod-1/protpaths-101-102/pathep-[policy_group_one]"
-                              }
-                          }
-                      }]
-                  }
-              }]
-          }
-      }
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_LNode
+    state: present
 
-- name: Add a VPC member
+- name: Add a interface profile
+  cisco.aci.aci_l3out_logical_interface_profile: 
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_LNode
+    interface_profile: ansible_LInterface
+    state: present
+
+- name: Add two vPC-interfaces
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_LNode
+    interface_profile: ansible_LInterface
+    pod_id: 1
+    node_id: 101-102
+    path_ep: "{{ item }}"
+    interface_type: ext-svi
+    state: present
+  loop:
+    - policy_group_one
+    - policy_group_two
+
+- name: Add a VPC member based on path_dn
   aci_l3out_logical_interface_vpc_member:
     <<: *aci_info
     tenant: ansible_tenant
@@ -86,6 +87,21 @@
     logical_interface: ansible_LInterface
     path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_one]
     side: A
+    state: present
+
+- name: Add a VPC member based on pod_id, node_id, path_ep
+  aci_l3out_logical_interface_vpc_member:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_LNode
+    interface_profile: ansible_LInterface
+    pod_id: 1
+    node_id: 101-102
+    path_ep: policy_group_two
+    side: A
+    addr: 192.168.1.254/24
+    ipv6_dad: disabled
     state: present
 
 - name: Query a specific VPC member under ansible_l3out

@@ -67,6 +67,12 @@ options:
     description:
     - IP address.
     type: str
+  ipv6_dad:
+    description:
+    - IPv6 DAD feature.
+    type: str
+    choices: [ enabled, disabled]
+    default: enabled
   interface_type:
     description:
     - Type of interface to build.
@@ -95,6 +101,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
+- Marcel Zehnder (@maercu)
 '''
 
 EXAMPLES = r'''
@@ -291,6 +298,8 @@ def main():
         node_id=dict(type='str', required=True),
         path_ep=dict(type='str', required=True),
         addr=dict(type='str'),
+        ipv6_dad=dict(type='str', default='enabled',
+                      choices=['enabled', 'disabled']),
         interface_type=dict(type='str',
                             choices=['l3-port', 'sub-interface', 'ext-svi']),
         mode=dict(type='str',
@@ -315,6 +324,7 @@ def main():
     node_id = module.params.get('node_id')
     path_ep = module.params.get('path_ep')
     addr = module.params.get('addr')
+    ipv6_dad = module.params.get('ipv6_dad')
     interface_type = module.params.get('interface_type')
     mode = module.params.get('mode')
     encap = module.params.get('encap')
@@ -371,6 +381,7 @@ def main():
             class_config=dict(
                 tDn=path_dn,
                 addr=addr,
+                ipv6Dad=ipv6_dad,
                 ifInstT=interface_type,
                 mode=mode,
                 encap=encap
