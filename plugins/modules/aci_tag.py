@@ -21,7 +21,7 @@ options:
     description:
     - Unique Distinguished Name (DN) from ACI object model.
     type: str
-  annotation:
+  tag_annotation:
     description:
     - A simple note or description.
     type: dict
@@ -62,8 +62,13 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     dn: SomeValidAciDN
-    annotation:
-        someKey: someValue
+    tag_annotation:
+      someKey: someValue
+      foo: bar
+    tag_inst:
+      - blah
+    tag:
+      bar: foo
     state: present
   delegate_to: localhost
 '''
