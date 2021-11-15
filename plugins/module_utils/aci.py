@@ -1100,11 +1100,11 @@ class ACIModule(object):
             # add name back to config only if the configs do not match
             if config:
                 # TODO: If URLs are built with the object's name, then we should be able to leave off adding the name back
-                # config['name'] = proposed_config.get('name')
-                config = {aci_class: {"attributes": config}}
+                config = {aci_class: {'attributes': config}}
 
             # check for updates to child configs and update new config dictionary
             children = self.get_diff_children(aci_class)
+
             if children and config:
                 config[aci_class].update({"children": children})
             elif children:
@@ -1112,7 +1112,6 @@ class ACIModule(object):
 
         else:
             config = self.proposed
-
         self.config = config
 
     @staticmethod
@@ -1141,29 +1140,43 @@ class ACIModule(object):
 
         return update_config
 
-    def get_diff_children(self, aci_class):
+    def get_diff_children(self, aci_class, proposed_obj=None, existing_obj=None):
         """
         This method is used to retrieve the updated child configs by comparing the proposed children configs
-        agains the objects existing children configs.
+        against the objects existing children configs.
 
         :param aci_class: Type str.
                           This is the root dictionary key for the MO's configuration body, or the ACI class of the MO.
         :return: The list of updated child config dictionaries. None is returned if there are no changes to the child
                  configurations.
         """
-        proposed_children = self.proposed[aci_class].get("children")
+        if proposed_obj is None:
+            proposed_children = self.proposed[aci_class].get('children')
+        else:
+            proposed_children = proposed_obj
         if proposed_children:
             child_updates = []
-            existing_children = self.existing[0][aci_class].get("children", [])
+            if existing_obj is None:
+                existing_children = self.existing[0][aci_class].get('children', [])
+            else:
+                existing_children = existing_obj
 
             # Loop through proposed child configs and compare against existing child configuration
             for child in proposed_children:
                 child_class, proposed_child, existing_child = self.get_nested_config(child, existing_children)
+                _, proposed_child_children, existing_child_children = self.get_nested_children(child, existing_children)
 
                 if existing_child is None:
                     child_update = child
                 else:
                     child_update = self.get_diff_child(child_class, proposed_child, existing_child)
+                    if proposed_child_children:
+                        child_update_children = self.get_diff_children(aci_class, proposed_child_children, existing_child_children)
+
+                        if child_update_children:
+                            child_update = child
+                    elif existing_child_children:
+                        child_update = child
 
                 # Update list of updated child configs only if the child config is different than what exists
                 if child_update:
@@ -1236,6 +1249,40 @@ class ACIModule(object):
                     existing_config = None
 
         return child_class, proposed_config, existing_config
+
+    @staticmethod
+    def get_nested_children(proposed_child, existing_children):
+        """
+        This method is used for stiping off the outer layers of the child dictionaries so only the children are returned.
+
+        :param proposed_child: Type dict.
+                               The dictionary that represents the child config.
+        :param existing_children: Type list.
+                                  The list of existing child config dictionaries.
+        :return: The child's class as str (root config dict key), the child's proposed children as a list and the child's
+                 existing children as a list.
+        """
+        for key in proposed_child.keys():
+            child_class = key
+            proposed_config = proposed_child[key]['attributes']
+            existing_config = None
+            proposed_children = proposed_child[key].get('children')
+            existing_child_children = None
+
+            # FIXME: Design causes issues for repeated child_classes
+            # get existing dictionary from the list of existing to use for comparison
+            for child in existing_children:
+                if child.get(child_class):
+                    existing_config = child[key]['attributes']
+                    existing_child_children = child[key].get('children')
+                    # NOTE: This is an ugly fix
+                    # Return the one that is a subset match
+                    if set(proposed_config.items()).issubset(set(existing_config.items())):
+                        break
+                    existing_child_children = None
+                    existing_config = None
+
+        return child_class, proposed_children, existing_child_children
 
     def payload(self, aci_class, class_config, child_configs=None):
         """

@@ -1,0 +1,216 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Shreyas Srish (@shrsr)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact: 
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  aci_tenant:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Add a new tenant
+  aci_tenant:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    description: Ansible tenant
+    state: present
+
+- name: Add a new AP
+  aci_ap:
+    <<: *aci_info
+    tenant: ansible_tenant
+    ap: AP1
+    description: AP1
+    monitoring_policy: default
+    state: present
+
+- name: Add a new EPG
+  aci_epg:
+    <<: *aci_info
+    tenant: ansible_tenant
+    ap: AP1
+    epg: EPG1
+    description: Test EPG
+    preferred_group: yes
+    state: present
+
+- name: Add span ansible_group
+  aci_tenant_span_dst_group:
+    <<: *aci_info
+    ap: AP1
+    epg: EPG1
+    dst_group: ansible_group
+    description: Test span
+    destination_ip: 10.0.0.1
+    source_ip: 10.0.2.1
+    tenant: ansible_tenant
+    version_enforced: false
+    span_version: ver1
+    ttl: 2
+    mtu: 1501
+    flow_id: 1
+    dscp: "CS1"
+    state: present
+  register: add_span1
+
+- name: Add span ansible_group again
+  aci_tenant_span_dst_group:
+    <<: *aci_info
+    ap: AP1
+    epg: EPG1
+    dst_group: ansible_group
+    description: Test span
+    destination_ip: 10.0.0.1
+    source_ip: 10.0.2.1
+    tenant: ansible_tenant
+    version_enforced: false
+    span_version: ver1
+    ttl: 2
+    mtu: 1501
+    flow_id: 1
+    dscp: "CS1"
+    state: present
+  register: add_span1_again
+
+- name: Change span ansible_group's src ip
+  aci_tenant_span_dst_group:
+    <<: *aci_info
+    ap: AP1
+    epg: EPG1
+    dst_group: ansible_group2
+    description: Test span
+    destination_ip: 10.0.0.2
+    source_ip: 10.0.2.1
+    tenant: ansible_tenant
+    version_enforced: false
+    span_version: ver1
+    ttl: 2
+    mtu: 1501
+    flow_id: 1
+    dscp: CS1
+    state: present
+  register: change_span1_ip
+
+- name: Change span ansible_group's dscp
+  aci_tenant_span_dst_group:
+    <<: *aci_info
+    ap: AP1
+    epg: EPG1
+    dst_group: ansible_group2
+    description: Test span
+    destination_ip: 10.0.0.2
+    source_ip: 10.0.2.1
+    tenant: ansible_tenant
+    version_enforced: false
+    span_version: ver1
+    ttl: 2
+    mtu: 1501
+    flow_id: 1
+    dscp: VA
+    state: present
+  register: change_span1_dscp
+
+- name: Add span ansible_group2
+  aci_tenant_span_dst_group:
+    <<: *aci_info
+    ap: AP1
+    epg: EPG1
+    dst_group: ansible_group2
+    description: Test span
+    destination_ip: 10.0.0.1
+    source_ip: 10.0.2.1
+    tenant: ansible_tenant
+    version_enforced: true
+    span_version: ver2
+    ttl: 2
+    mtu: 1501
+    flow_id: 1
+    dscp: CS1
+    state: present
+  register: add_span2
+
+- name: Query span ansible_group
+  aci_tenant_span_dst_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    dst_group: ansible_group
+    state: query
+  register: query_span_ansible_group
+
+- name: Query all span dest groups
+  aci_tenant_span_dst_group:
+    <<: *aci_info
+    state: query
+  register: query_all_span
+
+- name: Remove span ansible_group
+  aci_tenant_span_dst_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    dst_group: ansible_group
+    state: absent
+  register: remove_span1
+
+- name: Remove span ansible_group2
+  aci_tenant_span_dst_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    dst_group: ansible_group2
+    state: absent
+  register: remove_span2
+
+- name: Verify span
+  assert:
+    that:
+    - add_span1 is changed
+    - add_span1.current.0.spanDestGrp.attributes.name == "ansible_group"
+    - add_span1.current.0.spanDestGrp.attributes.descr == "Test span"
+    - add_span1.current.0.spanDestGrp.attributes.dn == "uni/tn-ansible_tenant/destgrp-ansible_group"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "CS1"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver1"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1501"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "2"
+    - add_span1_again is not changed
+    - change_span1_ip.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.2"
+    - change_span1_dscp.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "VA"
+    - add_span2 is changed
+    - query_span_ansible_group is not changed
+    - query_span_ansible_group.current.0.spanDestGrp.attributes.name == "ansible_group"
+    - query_span_ansible_group.current.0.spanDestGrp.attributes.descr == "Test span"
+    - query_span_ansible_group.current.0.spanDestGrp.attributes.dn == "uni/tn-ansible_tenant/destgrp-ansible_group"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "CS1"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1501"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "2"
+    - query_all_span is not changed
+    - remove_span1 is changed
+    - remove_span1.current == []
+    - remove_span2 is changed
+    - remove_span2.current == []
