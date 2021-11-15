@@ -61,8 +61,9 @@ EXAMPLES = r'''
     host: apic
     username: admin
     password: SomeSecretPassword
-    dn: production
-    annotation: intranet
+    dn: SomeValidAciDN
+    annotation:
+        someKey: someValue
     state: present
   delegate_to: localhost
 '''
@@ -180,9 +181,9 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         dn=dict(type='str'),
-        annotation=dict(type='dict'),
-        tag_inst=dict(type='list'),
-        tag=dict(type='dict', aliases=['policy_tag']),
+        tag_annotation=dict(type='dict', default={}),
+        tag_inst=dict(type='list', default=[]),
+        tag=dict(type='dict', default={}, aliases=['policy_tag']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
 
@@ -201,12 +202,12 @@ def main():
     # add validate step for dn?
     dn = module.params.get('dn')
 
-    annotation = module.params.get('annotation')
+    tag_annotation = module.params.get('tag_annotation')
     tag_inst = module.params.get('tag_inst')
     tag = module.params.get('tag')
     state = module.params.get('state')
 
-    child_configs = [dict(tagAnnotation=dict(attributes=dict(key=k, value=v))) for k, v in annotation.items()]
+    child_configs = [dict(tagAnnotation=dict(attributes=dict(key=k, value=v))) for k, v in tag_annotation.items()]
     child_configs.extend([dict(tagInst=dict(attributes=dict(name=n))) for n in tag_inst])
     child_configs.extend([dict(tagTag=dict(attributes=dict(key=k, value=v))) for k, v in tag.items()])
 
@@ -274,17 +275,18 @@ def main():
         # ex dn = uni/tn-{name}/ap-{name}/epg-{name}/
         # ex dn for delete = uni/tn-{name}/ap-{name}/epg-{name}/tagKey-{key}
         del_base_url = aci.url.rstrip(".json")
-        for class_name, values in child_configs:
-            if class_name == "tagAnnotation":
-                aci.url = '{0}/annotationKey-{1}.json'.format(del_base_url, values['attributes']['key'])
-            elif class_name == "tagTag":
-                aci.url = '{0}/tagKey-{1}.json'.format(del_base_url, values['attributes']['name'])
-            elif class_name == "tagInst":
-                aci.url = '{0}/tag-{1}.json'.format(del_base_url, values['attributes']['key'])
-            else:
-                # should never be the case
-                continue
-            aci.delete_config()
+        for child in child_configs:
+            for class_name, values in child.items():
+                if class_name == "tagAnnotation":
+                    aci.url = '{0}/annotationKey-{1}.json'.format(del_base_url, values['attributes']['key'])
+                elif class_name == "tagTag":
+                    aci.url = '{0}/tagKey-{1}.json'.format(del_base_url, values['attributes']['key'])
+                elif class_name == "tagInst":
+                    aci.url = '{0}/tag-{1}.json'.format(del_base_url, values['attributes']['name'])
+                else:
+                    # should never be the case
+                    continue
+                aci.delete_config()
 
     aci.exit_json()
 
