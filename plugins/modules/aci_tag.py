@@ -272,6 +272,7 @@ def main():
         aci.get_diff(aci_class=class_name)
 
         # when vars in above comments set, think this should still work
+        # tagInst also creates a tagAnnotation object, should also be deleted
         aci.post_config()
 
     elif state == 'absent':
@@ -287,6 +288,7 @@ def main():
                 elif class_name == "tagTag":
                     aci.url = '{0}/tagKey-{1}.json'.format(del_base_url, values['attributes']['key'])
                 elif class_name == "tagInst":
+                    # Add logic to delete the tagAnnotation object aligned with the tagInst created object.
                     aci.url = '{0}/tag-{1}.json'.format(del_base_url, values['attributes']['name'])
                 else:
                     # should never be the case
