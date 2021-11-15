@@ -71,6 +71,23 @@
     state: present
   register: add_span1
 
+- name: Verify add span
+  assert:
+    that:
+    - add_span1 is changed
+    - add_span1.current.0.spanDestGrp.attributes.name == "ansible_group"
+    - add_span1.current.0.spanDestGrp.attributes.descr == "Test span"
+    - add_span1.current.0.spanDestGrp.attributes.dn == "uni/tn-ansible_tenant/destgrp-ansible_group"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "CS1"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver1"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1501"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "2"
+
 - name: Add span ansible_group again
   aci_tenant_span_dst_group:
     <<: *aci_info
@@ -89,6 +106,11 @@
     dscp: "CS1"
     state: present
   register: add_span1_again
+
+- name: Verify add span again
+  assert:
+    that:
+    - add_span1_again is not changed
 
 - name: Change span ansible_group's src ip
   aci_tenant_span_dst_group:
@@ -128,6 +150,12 @@
     state: present
   register: change_span1_dscp
 
+- name: Verify changes in span
+  assert:
+    that:
+    - change_span1_ip.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.2"
+    - change_span1_dscp.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "VA"
+
 - name: Add span ansible_group2
   aci_tenant_span_dst_group:
     <<: *aci_info
@@ -147,6 +175,23 @@
     state: present
   register: add_span2
 
+- name: Verify addition of second span
+  assert:
+    that:
+    - add_span2 is changed
+    - add_span2.current.0.spanDestGrp.attributes.name == "ansible_group2"
+    - add_span2.current.0.spanDestGrp.attributes.descr == "Test span"
+    - add_span2.current.0.spanDestGrp.attributes.dn == "uni/tn-ansible_tenant/destgrp-ansible_group2"
+    - add_span2.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group2"
+    - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "CS1"
+    - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
+    - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
+    - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver2"
+    - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1501"
+    - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
+    - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "yes"
+    - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "2"
+
 - name: Query span ansible_group
   aci_tenant_span_dst_group:
     <<: *aci_info
@@ -160,6 +205,24 @@
     <<: *aci_info
     state: query
   register: query_all_span
+
+- name: Verify Query of span
+  assert:
+    that:
+    - query_span_ansible_group is not changed
+    - query_span_ansible_group.current.0.spanDestGrp.attributes.name == "ansible_group"
+    - query_span_ansible_group.current.0.spanDestGrp.attributes.descr == "Test span"
+    - query_span_ansible_group.current.0.spanDestGrp.attributes.dn == "uni/tn-ansible_tenant/destgrp-ansible_group"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "CS1"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1501"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "2"
+    - query_all_span is not changed
+    - query_all_span | length >= 2
 
 - name: Remove span ansible_group
   aci_tenant_span_dst_group:
@@ -177,39 +240,9 @@
     state: absent
   register: remove_span2
 
-- name: Verify span
+- name: Verify Remove of span
   assert:
     that:
-    - add_span1 is changed
-    - add_span1.current.0.spanDestGrp.attributes.name == "ansible_group"
-    - add_span1.current.0.spanDestGrp.attributes.descr == "Test span"
-    - add_span1.current.0.spanDestGrp.attributes.dn == "uni/tn-ansible_tenant/destgrp-ansible_group"
-    - add_span1.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group"
-    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "CS1"
-    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
-    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
-    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver1"
-    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1501"
-    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
-    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
-    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "2"
-    - add_span1_again is not changed
-    - change_span1_ip.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.2"
-    - change_span1_dscp.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "VA"
-    - add_span2 is changed
-    - query_span_ansible_group is not changed
-    - query_span_ansible_group.current.0.spanDestGrp.attributes.name == "ansible_group"
-    - query_span_ansible_group.current.0.spanDestGrp.attributes.descr == "Test span"
-    - query_span_ansible_group.current.0.spanDestGrp.attributes.dn == "uni/tn-ansible_tenant/destgrp-ansible_group"
-    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group"
-    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "CS1"
-    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
-    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
-    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1501"
-    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
-    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
-    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "2"
-    - query_all_span is not changed
     - remove_span1 is changed
     - remove_span1.current == []
     - remove_span2 is changed
