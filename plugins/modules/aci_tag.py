@@ -295,6 +295,8 @@ def main():
                     continue
                 aci.delete_config()
 
+    # When state absent and when having multiple tag deletes the printed output is incorrect
+    # Will only show last child since the values are overwritten by delete_config in this current way of delete
     aci.exit_json()
 
 
