@@ -1164,7 +1164,7 @@ class ACIModule(object):
             # Loop through proposed child configs and compare against existing child configuration
             for child in proposed_children:
                 child_class, proposed_child, existing_child = self.get_nested_config(child, existing_children)
-                _, proposed_child_children, existing_child_children = self.get_nested_children(child, existing_children)
+                proposed_child_children, existing_child_children = self.get_nested_children(child, existing_children)
 
                 if existing_child is None:
                     child_update = child
@@ -1282,7 +1282,7 @@ class ACIModule(object):
                     existing_child_children = None
                     existing_config = None
 
-        return child_class, proposed_children, existing_child_children
+        return proposed_children, existing_child_children
 
     def payload(self, aci_class, class_config, child_configs=None):
         """
