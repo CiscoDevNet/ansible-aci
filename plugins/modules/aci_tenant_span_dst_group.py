@@ -31,6 +31,48 @@ options:
     - The name of the tenant.
     type: str
     aliases: [ tenant_name ]
+  ap:
+    description:
+    - The name of application profile.
+    type: str
+  epg:
+    description:
+    - The name of the end point group.
+    type: str
+  source_ip:
+    description:
+    - The source EPG IP address prefix.
+    type: str
+  destination_ip:
+    description:
+    - The destination EPG IP address.
+    type: str
+  span_version:
+    description:
+    - SPAN version.
+    type: str
+    choices: [ ver1, ver2 ]
+  flow_id:
+    description:
+    - The flow ID of the SPAN packet.
+    type: int
+  ttl:
+    description:
+    - The time to live session.
+    type: int
+  mtu:
+    description:
+    - The MTU truncation size for the packets.
+    type: int
+  dscp:
+    description:
+    - The DSCP value for sending the monitored packets using ERSPAN.
+    type: str
+    choices: [ CS0, CS1, CS2, CS3, CS4, CS5, CS6, CS7, EF, VA, AF11, AF12, AF13, AF21, AF22, AF23, AF31, AF32, AF33, AF41, AF42, AF43, unspecified ]
+  version_enforced:
+    description:
+    - Enforce SPAN version.
+    type: bool
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -57,17 +99,57 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
+- Shreyas Srish (@shrsr)
 """
 
-# FIXME: Add more, better examples
 EXAMPLES = r"""
-- cisco.aci.aci_tenant_span_dst_group:
+- name: Add SPAN destination group
+  cisco.aci.aci_tenant_span_dst_group:
     host: apic
     username: admin
     password: SomeSecretPassword
-    dst_group: '{{ dst_group }}'
-    description: '{{ descr }}'
-    tenant: '{{ tenant }}'
+    tenant: Tenant1
+    ap: AP1
+    epg: EPG1
+    dst_group: group1
+    description: Test span
+    destination_ip: 10.0.0.1
+    source_ip: 10.0.2.1
+    version_enforced: false
+    span_version: ver1
+    ttl: 2
+    mtu: 1501
+    flow_id: 1
+    dscp: CS1
+    state: present
+  delegate_to: localhost
+
+- name: Remove SPAN destination group
+  cisco.aci.aci_tenant_span_dst_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: Tenant1
+    dst_group: group1
+    state: absent
+  delegate_to: localhost
+
+- name: Query SPAN destination group
+  cisco.aci.aci_tenant_span_dst_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: Tenant1
+    dst_group: group1
+    state: query
+  delegate_to: localhost
+
+- name: Query all SPAN destination groups
+  cisco.aci.aci_tenant_span_dst_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
   delegate_to: localhost
 """
 
@@ -190,6 +272,16 @@ def main():
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
+        source_ip=dict(type="str"),
+        destination_ip=dict(type="str"),
+        mtu=dict(type="int"),
+        ttl=dict(type="int"),
+        flow_id=dict(type="int"),
+        version_enforced=dict(type="bool"),
+        span_version=dict(type="str", choices=["ver1", "ver2"]),
+        dscp=dict(type="str", choices=["CS0", "CS1", "CS2", "CS3", "CS4", "CS5", "CS6", "CS7", "EF", "VA", "AF11",
+                                       "AF12", "AF13", "AF21", "AF22", "AF23", "AF31", "AF32", "AF33", "AF41", "AF42", "AF43", "unspecified"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
@@ -197,17 +289,41 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["dst_group", "tenant"]],
-            ["state", "present", ["dst_group", "tenant"]],
+            ["state", "present", ["dst_group", "destination_ip", "source_ip", "ap", "epg", "tenant"]],
         ],
     )
 
+    aci = ACIModule(module)
+
+    ap = module.params.get("ap")
+    epg = module.params.get("epg")
     dst_group = module.params.get("dst_group")
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
+    destination_ip = module.params.get("destination_ip")
+    source_ip = module.params.get("source_ip")
+    span_version = module.params.get("span_version")
     name_alias = module.params.get("name_alias")
+    dscp = module.params.get("dscp")
+    mtu = str(module.params.get("mtu"))
+    ttl = str(module.params.get("ttl"))
+    flow_id = str(module.params.get("flow_id"))
+    version_enforced = module.params.get("version_enforced")
 
-    aci = ACIModule(module)
+    dest_tdn = "uni/tn-{0}/ap-{1}/epg-{2}".format(tenant, ap, epg)
+
+    if version_enforced is True:
+        version_enforced = "yes"
+    else:
+        version_enforced = "no"
+
+    child_configs = [
+        dict(spanDest=dict(attributes=dict(name=dst_group), children=[dict(spanRsDestEpg=dict(attributes=dict(ip=destination_ip,
+             srcIpPrefix=source_ip, ver=span_version, verEnforced=version_enforced, ttl=ttl,
+             mtu=mtu, flowId=flow_id, dscp=dscp, tDn=dest_tdn)))])),
+    ]
+
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -221,6 +337,7 @@ def main():
             module_object=dst_group,
             target_filter={"name": dst_group},
         ),
+        child_classes=["spanDest", "spanRsDestEpg"],
     )
 
     aci.get_existing()
@@ -233,6 +350,7 @@ def main():
                 descr=description,
                 nameAlias=name_alias,
             ),
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class="spanDestGrp")

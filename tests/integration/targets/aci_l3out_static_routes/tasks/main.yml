@@ -173,6 +173,18 @@
     - query_specific_mo.current|length == 1
     - query_specific_mo.current[0].ipRouteP.attributes.ip == "10.1.0.1/24"
 
+- name: Add another static routes
+  aci_l3out_static_routes:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    logical_node: lNode
+    node_id: 101
+    pod_id: 1 
+    prefix: 10.1.0.0/24
+    state: present
+  register: static_another
+
 - name: Query all relationships
   aci_l3out_static_routes:
     <<: *aci_info
