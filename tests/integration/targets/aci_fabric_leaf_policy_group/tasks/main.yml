@@ -48,7 +48,7 @@
 
 - name: Debug
   ansible.builtin.debug:
-    msg: "{{ add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.0 }}"
+    msg: "{{ add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children }}"
 
 - name: Verify that ansible_fabric_leaf_policy_group children have correct attributes
   assert:
