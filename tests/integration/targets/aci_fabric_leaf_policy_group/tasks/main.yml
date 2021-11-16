@@ -60,7 +60,7 @@
 # ADD Fabric Leaf Policy Group again to check idempotency
 - name: Add ansible_fabric_leaf_policy_group again to test idempotence
   cisco.aci.aci_fabric_leaf_policy_group:
-    <<: aci_fabric_leaf_policy_group_present
+    <<: *aci_fabric_leaf_policy_group_present
   register: add_fabric_leaf_policy_group_again
 
 - name: Verify that ansible_fabric_leaf_policy_group has not been changed
