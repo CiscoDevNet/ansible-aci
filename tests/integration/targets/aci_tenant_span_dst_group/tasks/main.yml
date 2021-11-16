@@ -63,9 +63,9 @@
     source_ip: 10.0.2.1
     tenant: ansible_tenant
     version_enforced: false
-    span_version: ver1
+    span_version: version_1
     ttl: 2
-    mtu: 1501
+    mtu: 1500
     flow_id: 1
     dscp: "CS1"
     state: present
@@ -83,7 +83,7 @@
     - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
     - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
     - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver1"
-    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1501"
+    - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1500"
     - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
     - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
     - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "2"
@@ -99,9 +99,9 @@
     source_ip: 10.0.2.1
     tenant: ansible_tenant
     version_enforced: false
-    span_version: ver1
+    span_version: version_1
     ttl: 2
-    mtu: 1501
+    mtu: 1500
     flow_id: 1
     dscp: "CS1"
     state: present
@@ -123,9 +123,9 @@
     source_ip: 10.0.2.1
     tenant: ansible_tenant
     version_enforced: false
-    span_version: ver1
+    span_version: version_1
     ttl: 2
-    mtu: 1501
+    mtu: 1500
     flow_id: 1
     dscp: CS1
     state: present
@@ -142,9 +142,9 @@
     source_ip: 10.0.2.1
     tenant: ansible_tenant
     version_enforced: false
-    span_version: ver1
+    span_version: version_1
     ttl: 2
-    mtu: 1501
+    mtu: 1500
     flow_id: 1
     dscp: VA
     state: present
@@ -167,9 +167,9 @@
     source_ip: 10.0.2.1
     tenant: ansible_tenant
     version_enforced: true
-    span_version: ver2
+    span_version: version_2
     ttl: 2
-    mtu: 1501
+    mtu: 1500
     flow_id: 1
     dscp: CS1
     state: present
@@ -187,7 +187,7 @@
     - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
     - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
     - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver2"
-    - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1501"
+    - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1500"
     - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
     - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "yes"
     - add_span2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "2"
@@ -217,7 +217,7 @@
     - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "CS1"
     - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
     - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
-    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1501"
+    - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1500"
     - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
     - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
     - query_span_ansible_group.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "2"
