@@ -41,24 +41,24 @@ options:
     type: str
   source_ip:
     description:
-    - The source EPG IP address prefix.
+    - The source IP address.
     type: str
   destination_ip:
     description:
-    - The destination EPG IP address.
+    - The destination IP address.
     type: str
   span_version:
     description:
     - SPAN version.
     type: str
-    choices: [ ver1, ver2 ]
+    choices: [ version_1, version_2 ]
   flow_id:
     description:
     - The flow ID of the SPAN packet.
     type: int
   ttl:
     description:
-    - The time to live session.
+    - The time to live of the span session packets.
     type: int
   mtu:
     description:
@@ -116,9 +116,9 @@ EXAMPLES = r"""
     destination_ip: 10.0.0.1
     source_ip: 10.0.2.1
     version_enforced: false
-    span_version: ver1
+    span_version: version_1
     ttl: 2
-    mtu: 1501
+    mtu: 1500
     flow_id: 1
     dscp: CS1
     state: present
@@ -268,6 +268,8 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        ap=dict(type="str"),
+        epg=dict(type="str"),
         dst_group=dict(type="str", aliases=["name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -278,7 +280,7 @@ def main():
         ttl=dict(type="int"),
         flow_id=dict(type="int"),
         version_enforced=dict(type="bool"),
-        span_version=dict(type="str", choices=["ver1", "ver2"]),
+        span_version=dict(type="str", choices=["version_1", "version_2"]),
         dscp=dict(type="str", choices=["CS0", "CS1", "CS2", "CS3", "CS4", "CS5", "CS6", "CS7", "EF", "VA", "AF11",
                                        "AF12", "AF13", "AF21", "AF22", "AF23", "AF31", "AF32", "AF33", "AF41", "AF42", "AF43", "unspecified"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -317,6 +319,11 @@ def main():
         version_enforced = "yes"
     else:
         version_enforced = "no"
+
+    if span_version == "version_1":
+        span_version = "ver1"
+    else:
+        span_version = "ver2"
 
     child_configs = [
         dict(spanDest=dict(attributes=dict(name=dst_group), children=[dict(spanRsDestEpg=dict(attributes=dict(ip=destination_ip,
