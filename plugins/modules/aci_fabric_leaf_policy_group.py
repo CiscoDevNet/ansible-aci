@@ -291,7 +291,7 @@ def main():
     aci.construct_url(
         root_class=dict(
             aci_class='fabricLeNodePGrp',
-            aci_rn='lenodepgrp-{0}'.format(name),
+            aci_rn='fabric/funcprof/lenodepgrp-{0}'.format(name),
             module_object=name,
             target_filter={'name': name},
         ),
