@@ -53,11 +53,12 @@
 - name: Verify that ansible_fabric_leaf_policy_group children have correct attributes
   assert:
     that:
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.0.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.2.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.3.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.4.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.0.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == ""
+    #- add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.0.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    #- add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    #- add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.2.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    #- add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.4.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
 
 
 # ADD Fabric Leaf Policy Group again to check idempotency
