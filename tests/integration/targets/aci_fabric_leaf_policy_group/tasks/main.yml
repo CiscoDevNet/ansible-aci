@@ -120,20 +120,20 @@
 - name: Verify attributes
   assert:
     that:
-    - query_fabric_leaf_policy_group_again is not changed
-    - query_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.attributes.dn == "uni/fabric/funcprof/lenodepgrp-ansible_fabric_leaf_policy_group"
-    - query_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.attributes.name == "ansible_fabric_leaf_policy_group"
+    - query_fabric_leaf_policy_group is not changed
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.attributes.dn == "uni/fabric/funcprof/lenodepgrp-ansible_fabric_leaf_policy_group"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.attributes.name == "ansible_fabric_leaf_policy_group"
 
 - name: Verify children
   assert:
     that:
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.0.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == "default"
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.4.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.5.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.6.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.0.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.4.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.5.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.6.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
 
 - name: Query all Fabric Leaf Policy Groups
   cisco.aci.aci_fabric_leaf_policy_group:
