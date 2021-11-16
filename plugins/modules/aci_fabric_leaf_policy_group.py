@@ -375,7 +375,7 @@ def main():
             )
 
         aci.payload(
-            aci_class='l2extOut',
+            aci_class='fabricLeNodePGrp',
             class_config=dict(
                 name=name,
                 descr=description,
@@ -383,7 +383,7 @@ def main():
             child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='l2extOut')
+        aci.get_diff(aci_class='fabricLeNodePGrp')
 
         aci.post_config()
 
