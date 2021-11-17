@@ -52,6 +52,10 @@ options:
     - The APIC defaults to C(at_least_one) when unset during creation.
     type: str
     choices: [ all, at_least_one, at_most_one, none ]
+  subject_label:
+    description:
+    - Subject label to match
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -257,6 +261,11 @@ PROVIDER_MATCH_MAPPING = dict(
     none="None",
 )
 
+SUBJ_LABEL_MAPPING = dict(
+    consumer="vzConsSubjLbl",
+    provider="vzProvSubjLbl",
+)
+
 
 def main():
     argument_spec = aci_argument_spec()
@@ -270,6 +279,7 @@ def main():
         provider_match=dict(type="str", choices=["all", "at_least_one", "at_most_one", "none"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        subject_label=dict(type="str"),
     )
 
     module = AnsibleModule(
@@ -291,12 +301,16 @@ def main():
         provider_match = PROVIDER_MATCH_MAPPING[provider_match]
     state = module.params.get("state")
     tenant = module.params.get("tenant")
+    subject_label = module.params.get("subject_label")
 
     aci_class = ACI_CLASS_MAPPING[contract_type]["class"]
     aci_rn = ACI_CLASS_MAPPING[contract_type]["rn"]
+    subject_label_class = SUBJ_LABEL_MAPPING[contract_type]
 
     if contract_type == "consumer" and provider_match is not None:
         module.fail_json(msg="the 'provider_match' is only configurable for Provided Contracts")
+
+    child_classes = [subject_label_class]
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -324,11 +338,17 @@ def main():
             module_object=contract,
             target_filter={"tnVzBrCPName": contract},
         ),
+        child_classes=child_classes,
     )
 
     aci.get_existing()
 
     if state == "present":
+        child_configs = []
+        if subject_label:
+            child_configs.append(
+                {subject_label_class: {"attributes": {"name": subject_label}}}
+            )
         aci.payload(
             aci_class=aci_class,
             class_config=dict(
@@ -336,6 +356,7 @@ def main():
                 prio=priority,
                 tnVzBrCPName=contract,
             ),
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class=aci_class)
