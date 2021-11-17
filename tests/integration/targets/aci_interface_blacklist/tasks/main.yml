@@ -39,6 +39,18 @@
     state: query
   register: version
 
+- name: Spine - Clean test environment with enabled interface
+  cisco.aci.aci_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars_spine
+    state: absent
+
+- name: Fex - Clean test environment with enabled interface
+  cisco.aci.aci_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars_fex
+    state: absent
+
 - name: Leaf - Clean test environment with enabled interface
   cisco.aci.aci_interface_blacklist:
     <<: *aci_info
