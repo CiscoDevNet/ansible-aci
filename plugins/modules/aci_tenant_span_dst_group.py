@@ -31,14 +31,24 @@ options:
     - The name of the tenant.
     type: str
     aliases: [ tenant_name ]
-  ap:
+  destination_epg:
     description:
-    - The name of application profile.
-    type: str
-  epg:
-    description:
-    - The name of the end point group.
-    type: str
+    - The destination end point group.
+    type: dict
+    suboptions:
+      epg:
+        description:
+        - The name of the end point group.
+        type: str
+      ap:
+        description:
+        - The name of application profile.
+        type: str
+      tenant:
+        description:
+        - The name of the tenant.
+        type: str
+        aliases: [ tenant_name ]
   source_ip:
     description:
     - The source IP address.
@@ -109,8 +119,10 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: Tenant1
-    ap: AP1
-    epg: EPG1
+    destination_epg:
+        tenant: Test1
+        ap: ap1
+        epg: ep1
     dst_group: group1
     description: Test span
     destination_ip: 10.0.0.1
@@ -262,14 +274,21 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
+def destination_epg_spec():
+    return dict(
+        epg=dict(type="str"),
+        ap=dict(type="str"),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+    )
+
+
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        ap=dict(type="str"),
-        epg=dict(type="str"),
+        destination_epg=dict(type="dict", options=destination_epg_spec()),
         dst_group=dict(type="str", aliases=["name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -291,14 +310,13 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["dst_group", "tenant"]],
-            ["state", "present", ["dst_group", "destination_ip", "source_ip", "ap", "epg", "tenant"]],
+            ["state", "present", ["dst_group", "destination_ip", "source_ip", "destination_epg", "tenant"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    ap = module.params.get("ap")
-    epg = module.params.get("epg")
+    destination_epg = module.params.get("destination_epg")
     dst_group = module.params.get("dst_group")
     description = module.params.get("description")
     state = module.params.get("state")
@@ -312,24 +330,6 @@ def main():
     ttl = str(module.params.get("ttl"))
     flow_id = str(module.params.get("flow_id"))
     version_enforced = module.params.get("version_enforced")
-
-    dest_tdn = "uni/tn-{0}/ap-{1}/epg-{2}".format(tenant, ap, epg)
-
-    if version_enforced is True:
-        version_enforced = "yes"
-    else:
-        version_enforced = "no"
-
-    if span_version == "version_1":
-        span_version = "ver1"
-    else:
-        span_version = "ver2"
-
-    child_configs = [
-        dict(spanDest=dict(attributes=dict(name=dst_group), children=[dict(spanRsDestEpg=dict(attributes=dict(ip=destination_ip,
-             srcIpPrefix=source_ip, ver=span_version, verEnforced=version_enforced, ttl=ttl,
-             mtu=mtu, flowId=flow_id, dscp=dscp, tDn=dest_tdn)))])),
-    ]
 
     aci.construct_url(
         root_class=dict(
@@ -350,6 +350,24 @@ def main():
     aci.get_existing()
 
     if state == "present":
+        dest_tdn = "uni/tn-{0}/ap-{1}/epg-{2}".format(destination_epg["tenant"], destination_epg["ap"], destination_epg["epg"])
+
+        if version_enforced is True:
+            version_enforced = "yes"
+        else:
+            version_enforced = "no"
+
+        if span_version == "version_1":
+            span_version = "ver1"
+        else:
+            span_version = "ver2"
+
+        child_configs = [
+            dict(spanDest=dict(attributes=dict(name=dst_group), children=[dict(spanRsDestEpg=dict(attributes=dict(ip=destination_ip,
+                 srcIpPrefix=source_ip, ver=span_version, verEnforced=version_enforced, ttl=ttl,
+                 mtu=mtu, flowId=flow_id, dscp=dscp, tDn=dest_tdn)))])),
+        ]
+
         aci.payload(
             aci_class="spanDestGrp",
             class_config=dict(
