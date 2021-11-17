@@ -51,7 +51,7 @@ options:
         aliases: [ tenant_name ]
   source_ip:
     description:
-    - The source IP address.
+    - The source IP address or prefix.
     type: str
   destination_ip:
     description:
