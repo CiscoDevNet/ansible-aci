@@ -33,35 +33,18 @@
     description: Ansible tenant
     state: present
 
-- name: Add a new AP
-  aci_ap:
-    <<: *aci_info
-    tenant: ansible_tenant
-    ap: AP1
-    description: AP1
-    monitoring_policy: default
-    state: present
-
-- name: Add a new EPG
-  aci_epg:
-    <<: *aci_info
-    tenant: ansible_tenant
-    ap: AP1
-    epg: EPG1
-    description: Test EPG
-    preferred_group: yes
-    state: present
-
 - name: Add span ansible_group
   aci_tenant_span_dst_group:
     <<: *aci_info
-    ap: AP1
-    epg: EPG1
     dst_group: ansible_group
     description: Test span
     destination_ip: 10.0.0.1
     source_ip: 10.0.2.1
     tenant: ansible_tenant
+    destination_epg:
+        tenant: Test1
+        ap: ap1
+        epg: ep1
     version_enforced: false
     span_version: version_1
     ttl: 2
@@ -91,13 +74,15 @@
 - name: Add span ansible_group again
   aci_tenant_span_dst_group:
     <<: *aci_info
-    ap: AP1
-    epg: EPG1
     dst_group: ansible_group
     description: Test span
     destination_ip: 10.0.0.1
     source_ip: 10.0.2.1
     tenant: ansible_tenant
+    destination_epg:
+        tenant: Test1
+        ap: ap1
+        epg: ep1
     version_enforced: false
     span_version: version_1
     ttl: 2
@@ -115,13 +100,15 @@
 - name: Change span ansible_group's src ip
   aci_tenant_span_dst_group:
     <<: *aci_info
-    ap: AP1
-    epg: EPG1
     dst_group: ansible_group2
     description: Test span
     destination_ip: 10.0.0.2
     source_ip: 10.0.2.1
     tenant: ansible_tenant
+    destination_epg:
+        tenant: Test1
+        ap: ap1
+        epg: ep1
     version_enforced: false
     span_version: version_1
     ttl: 2
@@ -134,13 +121,15 @@
 - name: Change span ansible_group's dscp
   aci_tenant_span_dst_group:
     <<: *aci_info
-    ap: AP1
-    epg: EPG1
     dst_group: ansible_group2
     description: Test span
     destination_ip: 10.0.0.2
     source_ip: 10.0.2.1
     tenant: ansible_tenant
+    destination_epg:
+        tenant: Test1
+        ap: ap1
+        epg: ep1
     version_enforced: false
     span_version: version_1
     ttl: 2
@@ -159,13 +148,15 @@
 - name: Add span ansible_group2
   aci_tenant_span_dst_group:
     <<: *aci_info
-    ap: AP1
-    epg: EPG1
     dst_group: ansible_group2
     description: Test span
     destination_ip: 10.0.0.1
     source_ip: 10.0.2.1
     tenant: ansible_tenant
+    destination_epg:
+        tenant: Test1
+        ap: ap1
+        epg: ep1
     version_enforced: true
     span_version: version_2
     ttl: 2
