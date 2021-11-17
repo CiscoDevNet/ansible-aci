@@ -13,10 +13,10 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_fabric_leaf_policy_group
-short_description: Manage Fabric Leaf Policy Group (fabricLeNodePGrp) objects.
+module: aci_fabric_switch_policy_group
+short_description: Manage Fabric Switch Policy Group objects.
 description:
-- Manage Fabric Leaf Policy Group configuration on Cisco ACI fabrics.
+- Manage Fabric Switch Policy Group (fabricLeNodePGrp and fabricSpNodePGrp) configuration on Cisco ACI fabrics.
 options:
   name:
     description:
@@ -27,6 +27,12 @@ options:
     description:
     - Description for the Leaf Policy Group.
     type: str
+  switch_type:
+    description:
+    - Whether this is a leaf or spine policy group
+    type: str
+    choices: [ leaf, spine ]
+    required: yes
   monitoring_policy:
     description:
     - Monitoring Policy to attach to this Policy Group
@@ -82,40 +88,44 @@ author:
 
 EXAMPLES = r'''
 - name: Add a new Fabric Leaf Policy Group
-  cisco.aci.aci_fabric_leaf_policy_group:
+  cisco.aci.aci_fabric_switch_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
     name: my_fabric_leaf_policy_group
+    switch_type: leaf
     monitoring_policy: my_monitor_policy
     inventory_policy: my_inv_policy
     state: present
     delegate_to: localhost
 
 - name: Remove a Fabric Leaf Policy Group
-  cisco.aci.aci_fabric_leaf_policy_group:
+  cisco.aci.aci_fabric_switch_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
     name: my_fabric_leaf_policy_group
+    switch_type: leaf
     state: absent
     delegate_to: localhost
 
 - name: Query a Fabric Leaf Policy Group
-  cisco.aci.aci_fabric_leaf_policy_group:
+  cisco.aci.aci_fabric_switch_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
     name: my_fabric_leaf_policy_group
+    switch_type: leaf
     state: query
     delegate_to: localhost
     register: query_result
 
 - name: Query all Fabric Leaf Policy Groups
-  cisco.aci.aci_fabric_leaf_policy_group:
+  cisco.aci.aci_fabric_switch_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
+    switch_type: leaf
     state: query
     delegate_to: localhost
     register: query_result
@@ -234,6 +244,7 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         name=dict(type='str', aliases=['policy_group', 'policy_group_name']),
+        switch_type=dict(type='str', choices=['leaf', 'spine'], required=True),
         monitoring_policy=dict(type='str',
                                aliases=['monitoring',
                                         'fabricRsMonInstFabricPol']),
@@ -270,6 +281,7 @@ def main():
     )
 
     name = module.params.get('name')
+    switch_type = module.params.get('switch_type')
     description = module.params.get('description')
     monitoring_policy = module.params.get('monitoring_policy')
     tech_support_export_policy = module.params.get('tech_support_export_policy')
@@ -287,11 +299,18 @@ def main():
                      'fabricRsTwampServerPol',
                      'fabricRsTwampResponderPol']
 
+    if switch_type == 'spine':
+        aci_class = 'fabricSpNodePGrp'
+        aci_rn = 'fabric/funcprof/spnodepgrp-{0}'.format(name)
+    elif switch_type == 'leaf':
+        aci_class = 'fabricLeNodePGrp'
+        aci_rn = 'fabric/funcprof/lenodepgrp-{0}'.format(name)
+
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fabricLeNodePGrp',
-            aci_rn='fabric/funcprof/lenodepgrp-{0}'.format(name),
+            aci_class=aci_class,
+            aci_rn=aci_rn,
             module_object=name,
             target_filter={'name': name},
         ),
@@ -375,7 +394,7 @@ def main():
             )
 
         aci.payload(
-            aci_class='fabricLeNodePGrp',
+            aci_class=aci_class,
             class_config=dict(
                 name=name,
                 descr=description,
@@ -383,7 +402,7 @@ def main():
             child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='fabricLeNodePGrp')
+        aci.get_diff(aci_class=aci_class)
 
         aci.post_config()
 
