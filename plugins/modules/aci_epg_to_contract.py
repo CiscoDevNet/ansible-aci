@@ -94,6 +94,7 @@ EXAMPLES = r"""
     epg: anstest
     contract: anstest_http
     contract_type: provider
+    subject_label: subjlabel
     state: present
   delegate_to: localhost
 
