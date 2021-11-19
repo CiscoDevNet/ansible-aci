@@ -216,6 +216,7 @@ def main():
 
     node_id = module.params.get('node_id')
     pod_id = module.params.get('pod_id')
+    description = module.params.get('description')
     state = module.params.get('state')
 
     aci = ACIModule(module)
