@@ -209,8 +209,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['l2out', 'tenant']],
-            ['state', 'present', ['bd', 'l2out', 'tenant', 'domain', 'vlan']],
+            ['state', 'absent', ['node_id']],
+            ['state', 'present', ['node_id', 'pod_id']],
         ],
     )
 
