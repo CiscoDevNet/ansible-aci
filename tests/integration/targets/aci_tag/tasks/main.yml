@@ -3,3 +3,84 @@
 # Copyright: (c) 2020, Shreyas Srish (@shrsr)
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+    test_vars: &test_vars_tag
+      tag_key: foo
+      tag_value: bar
+      tag_type: annotation
+    test_vars_tenant: &test_vars_tenant
+      tenant: tag_test
+
+- name: Add tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    <<: *test_vars_tenant
+    tenant: tag_test
+    state: present
+  delegate_to: localhost
+
+- name: Query Tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    <<: *test_vars_tenant
+    tenant: tag_test
+  delegate_to: localhost
+  register: query_result
+
+- name: Get DN
+  set_fact:
+    dn: "{{ query_result.current[0].fvTenant.attributes.dn }}"
+
+- name: Query tag
+  cisco.aci.aci_tag:
+    <<: *aci_info
+    <<: *test_vars_tag
+    dn: "{{ dn }}"
+    state: query
+  delegate_to: localhost
+
+- name: Create tag
+  cisco.aci.aci_tag:
+    <<: *aci_info
+    <<: *test_vars_tag
+    dn: "{{ dn }}"
+    state: present
+  delegate_to: localhost
+
+- name: Delete tag
+  cisco.aci.aci_tag:
+    <<: *aci_info
+    <<: *test_vars_tag
+    dn: "{{ dn }}"
+    state: absent
+  delegate_to: localhost
+
+- name: Query tag
+  cisco.aci.aci_tag:
+    <<: *aci_info
+    <<: *test_vars_tag
+    dn: "{{ dn }}"
+    state: query
+  delegate_to: localhost
+
+- name: Remove tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    <<: *test_vars_tenant
+    tenant: tag_test
+    state: absent
+  delegate_to: localhost

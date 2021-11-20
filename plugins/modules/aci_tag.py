@@ -15,26 +15,25 @@ DOCUMENTATION = r'''
 module: aci_tag
 short_description: Tagging of ACI objects
 description:
-- Tagging objects on Cisco ACI fabrics.
+- Tagging a object on Cisco ACI fabric.
 options:
   dn:
     description:
     - Unique Distinguished Name (DN) from ACI object model.
     type: str
-  tag_annotation:
+  key:
     description:
-    - A simple note or description.
-    type: dict
-  tag_inst:
+    - Unique identifier of tag object.
+    type: str
+  value:
     description:
-    - A simple note or description.
-    type: list
-    aliases: [ epg_name, name ]
-  tag:
-    description: 
-    - A label for grouping of objects, which need not be of the same class.
-    type: dict
-    aliases: [ policy_tag ]
+    - Value of the property.
+    type: str
+  tag_type:
+    description:
+    - Type of tag object.
+    type: str
+    choices: [ annotation, instance, tag ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -49,8 +48,8 @@ notes:
 - The ACI object must exist before using this module in your playbook.
 seealso:
 - name: Cisco APIC System Management Configuration Guide
-  description: More information about the tagging.
-  link: https://www.cisco.com/c/en/us/td/docs/dcn/aci/apic/5x/system-management-configuration/cisco-apic-system-management-configuration-guide-52x/m-alias-annotations-and-tags.html
+  description: More information about the tagging can be found in the Cisco APIC System Management Configuration Guide.
+  link: https://www.cisco.com/c/en/us/support/cloud-systems-management/application-policy-infrastructure-controller-apic/tsd-products-support-series-home.html
 author:
 - Akini Ross (@akinross)
 '''
@@ -62,13 +61,9 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     dn: SomeValidAciDN
-    tag_annotation:
-      someKey: someValue
-      foo: bar
-    tag_inst:
-      - blah
-    tag:
-      bar: foo
+    key: foo
+    value: bar
+    tag_type: annotation
     state: present
   delegate_to: localhost
 '''
@@ -185,10 +180,10 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        dn=dict(type='str'),
-        tag_annotation=dict(type='dict', default={}),
-        tag_inst=dict(type='list', default=[]),
-        tag=dict(type='dict', default={}, aliases=['policy_tag']),
+        dn=dict(type='str', required=True),
+        tag_key=dict(type='str'),
+        tag_value=dict(type='str'),
+        tag_type=dict(type='str', choices=['annotation', 'instance', 'tag']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
 
@@ -196,107 +191,70 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['dn']],
-            ['state', 'present', ['dn']],
-        ],
-        required_one_of=[
-            ('annotation', 'tag_inst', 'tag'),
+            ['state', 'absent', ['tag_key', 'tag_type']],
+            ['state', 'present', ['tag_key', 'tag_type']],
+            ['tag_type', 'annotation', ['tag_value']],
+            ['tag_type', 'tag', ['tag_value']],
         ],
     )
 
-    # add validate step for dn?
-    dn = module.params.get('dn')
+    aci = ACIModule(module)
 
-    tag_annotation = module.params.get('tag_annotation')
-    tag_inst = module.params.get('tag_inst')
-    tag = module.params.get('tag')
+    dn = module.params.get('dn')
+    tag_key = module.params.get('tag_key')
+    tag_value = module.params.get('tag_value')
+    tag_type = module.params.get('tag_type')
     state = module.params.get('state')
 
-    child_configs = [dict(tagAnnotation=dict(attributes=dict(key=k, value=v))) for k, v in tag_annotation.items()]
-    child_configs.extend([dict(tagInst=dict(attributes=dict(name=n))) for n in tag_inst])
-    child_configs.extend([dict(tagTag=dict(attributes=dict(key=k, value=v))) for k, v in tag.items()])
+    child_configs = []
+    if tag_type == 'annotation':
+        child_configs.append(dict(tagAnnotation=dict(attributes=dict(key=tag_key, value=tag_value))))
+    elif tag_type == 'instance':
+        child_configs.append(dict(tagInst=dict(attributes=dict(name=tag_key))))
+    elif tag_type == 'tag':
+        child_configs.append(dict(tagTag=dict(attributes=dict(key=tag_key, value=tag_value))))
 
-    aci = ACIModule(module)
-    # sets aci.child_classes
-    # aci.py row 676
-    # if child_classes is None:
-    #     self.child_classes = set()
-    # else:
-    #     self.child_classes = set(child_classes)
     aci.child_classes = {'tagAnnotation', 'tagInst', 'tagTag'}
-    # aci.py row 696
-    # if self.child_classes:
-    #     # Append child_classes to filter_string if filter string is empty
-    #     self.update_qs({'rsp-subtree': 'full', 'rsp-subtree-class': ','.join(sorted(self.child_classes))})
     aci.update_qs({'rsp-subtree': 'full', 'rsp-subtree-class': ','.join(sorted(aci.child_classes))})
-    # sets aci.path in _construct_url_1 (n depth)
-    # aci.py row 711
-    # self.path = 'api/mo/uni/{0}.json'.format(obj_rn)
     aci.path = 'api/mo/{0}.json'.format(dn)
-    # sets aci.url
-    # aci.py row 691
     if aci.params.get('port') is not None:
         aci.url = '{protocol}://{host}:{port}/{path}'.format(path=aci.path, **aci.module.params)
     else:
         aci.url = '{protocol}://{host}/{path}'.format(path=aci.path, **aci.module.params)
 
-    # no class available so pbb should set vars in comments above in advance to get_existing()
-    # aci.construct_url(
-    #     root_class=dict(
-    #         aci_class='fvTenant',
-    #         aci_rn='tn-{0}',
-    #         module_object="tenant",
-    #         target_filter={'name': "tenant"},
-    #     ),
-    #     child_classes=['tagAnnotation', 'tagInst', 'tagTag'],
-    # )
-
-    # when vars in above comments set, think this should still work
     aci.get_existing()
 
     if state == 'present':
-        # payload should represent the children of object only as defined in child_configs
-        # if no class from dn url multiple tags will need to be multiple rest calls...
-        # writes to self.existing = json.loads(resp.read())['imdata']
-        # retrieves class from self.existing ( check length is 1 ? )
-        # next(iter(self.existing[0]))
-        # class config should not be needed and child_configs should suffice?
+
         class_name = next(iter(aci.existing[0]))
         aci.payload(
             aci_class=class_name,
             class_config={},
-            child_configs=child_configs,
+            child_configs=child_configs
         )
-
-        # use retrieved class
         aci.get_diff(aci_class=class_name)
-
-        # when vars in above comments set, think this should still work
-        # tagInst also creates a tagAnnotation object, should also be deleted
         aci.post_config()
 
     elif state == 'absent':
 
-        # for each tag new dn should be calculated to delete, url will point to the object and remove it instead of tag
-        # ex dn = uni/tn-{name}/ap-{name}/epg-{name}/
-        # ex dn for delete = uni/tn-{name}/ap-{name}/epg-{name}/tagKey-{key}
-        del_base_url = aci.url.rstrip(".json")
-        for child in child_configs:
-            for class_name, values in child.items():
-                if class_name == "tagAnnotation":
-                    aci.url = '{0}/annotationKey-{1}.json'.format(del_base_url, values['attributes']['key'])
-                elif class_name == "tagTag":
-                    aci.url = '{0}/tagKey-{1}.json'.format(del_base_url, values['attributes']['key'])
-                elif class_name == "tagInst":
-                    # Add logic to delete the tagAnnotation object aligned with the tagInst created object.
-                    aci.url = '{0}/tag-{1}.json'.format(del_base_url, values['attributes']['name'])
-                else:
-                    # should never be the case
-                    continue
-                aci.delete_config()
+        tag_class = next(iter(child_configs[0]))
+        base_url = aci.url.rstrip(".json")
+        attributes = child_configs[0][tag_class]['attributes']
 
-    # When state absent and when having multiple tag deletes the printed output is incorrect
-    # Will only show last child since the values are overwritten by delete_config in this current way of delete
+        if tag_class == "tagAnnotation":
+            aci.url = '{0}/annotationKey-{1}.json'.format(base_url, attributes['key'])
+        elif tag_class == "tagTag":
+            aci.url = '{0}/tagKey-{1}.json'.format(base_url, attributes['key'])
+        elif tag_class == "tagInst":
+            # TODO Add logic to delete the tagAnnotation object aligned with the tagInst created object?
+            aci.url = '{0}/tag-{1}.json'.format(base_url, attributes['name'])
+        else:  # should never be the case else set url to empty string so no delete can occur
+            aci.url = ''
+
+        # In output showing "current": [] which is correct for the annotation object since it is removed
+        # TODO Add logic to display current parent object of the annotation?
+        aci.delete_config()
+
     aci.exit_json()
 
 
