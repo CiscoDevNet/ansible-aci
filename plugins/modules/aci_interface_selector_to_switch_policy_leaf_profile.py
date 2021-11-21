@@ -36,6 +36,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - This module requires an existing leaf profile, the module M(cisco.aci.aci_switch_policy_leaf_profile) can be used for this.
@@ -187,11 +188,12 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         leaf_profile=dict(type="str", aliases=["leaf_profile_name"]),  # Not required for querying all objects
         interface_selector=dict(type="str", aliases=["interface_profile_name", "interface_selector_name", "name"]),  # Not required for querying all objects

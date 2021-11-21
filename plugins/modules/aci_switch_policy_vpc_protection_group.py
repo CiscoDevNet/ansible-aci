@@ -53,6 +53,7 @@ options:
     type: str
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 seealso:
 - module: cisco.aci.aci_switch_policy_leaf_profile
@@ -211,11 +212,12 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         protection_group=dict(type="str", aliases=["name", "protection_group_name"]),  # Not required for querying all objects
         protection_group_id=dict(type="int", aliases=["id"]),

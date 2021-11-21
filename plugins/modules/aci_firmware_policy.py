@@ -50,7 +50,8 @@ options:
         type: str
 extends_documentation_fragment:
 - cisco.aci.aci
-
+- cisco.aci.annotation
+- cisco.aci.owner
 
 author:
     - Steven Gerhart (@sgerhart)
@@ -177,12 +178,14 @@ url:
 """
 
 
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 from ansible.module_utils.basic import AnsibleModule
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         name=dict(type="str"),  # Not required for querying all objects
         version=dict(type="str"),

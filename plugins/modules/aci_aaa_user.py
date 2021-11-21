@@ -86,6 +86,8 @@ options:
     type: str
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 notes:
 - This module is not idempotent when C(aaa_password) is being used
@@ -262,11 +264,13 @@ except ImportError:
     HAS_DATEUTIL = False
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         aaa_password=dict(type="str", no_log=True),
         aaa_password_lifetime=dict(type="int"),

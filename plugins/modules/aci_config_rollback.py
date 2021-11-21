@@ -70,6 +70,7 @@ options:
     default: rollback
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 seealso:
 - module: cisco.aci.aci_config_snapshot
@@ -185,7 +186,7 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
 
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_bytes
 from ansible.module_utils.urls import fetch_url
@@ -202,6 +203,7 @@ except ImportError:
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         compare_export_policy=dict(type="str"),
         compare_snapshot=dict(type="str"),

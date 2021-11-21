@@ -133,6 +133,8 @@ options:
     choices: [ cloudfoundry, kubernetes, microsoft, openshift, openstack, redhat, vmware ]
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 seealso:
 - module: cisco.aci.aci_domain
@@ -299,7 +301,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, enhanced_lag_spec, netflow_spec
-
+from ansible_collections.cisco.aci.plugins.module_utils.aci import aci_annotation_spec, aci_owner_spec
 # via UI vSwitch Policy can only be added for VMware and Microsoft vmm domains
 # behavior for other domains is currently untested.
 VM_PROVIDER_MAPPING = dict(
@@ -334,6 +336,8 @@ VM_PROVIDER_MAPPING = dict(
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         port_channel_policy=dict(type="str"),
         lldp_policy=dict(type="str"),

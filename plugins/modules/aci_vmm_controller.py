@@ -78,6 +78,7 @@ options:
     choices: [ cloudfoundry, kubernetes, microsoft, openshift, openstack, redhat, vmware ]
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 seealso:
 - module: cisco.aci.aci_domain
@@ -244,7 +245,7 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 VM_PROVIDER_MAPPING = dict(
     cloudfoundry="CloudFoundry",
@@ -269,6 +270,7 @@ VM_SCOPE_MAPPING = dict(
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         name=dict(type="str"),
         controller_hostname=dict(type="str"),

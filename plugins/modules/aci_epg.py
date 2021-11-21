@@ -86,6 +86,7 @@ options:
     type: str
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - The C(tenant) and C(app_profile) used must exist before using this module in your playbook.
@@ -299,11 +300,12 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         epg=dict(type="str", aliases=["epg_name", "name"]),  # Not required for querying all objects
         bd=dict(type="str", aliases=["bd_name", "bridge_domain"]),

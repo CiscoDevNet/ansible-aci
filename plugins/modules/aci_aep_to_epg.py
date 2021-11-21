@@ -65,6 +65,8 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+
 author:
 - Marcel Zehnder (@maercu)
 """
@@ -229,7 +231,7 @@ url:
 """
 
 
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 from ansible.module_utils.basic import AnsibleModule
 
 
@@ -246,7 +248,7 @@ INTERFACE_MODE_MAPPING = {
 
 def main():
     argument_spec = aci_argument_spec()
-
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         aep=dict(type="str", aliases=["aep_name"]),
         tenant=dict(type="str", aliases=["tenant_name"]),

@@ -57,6 +57,8 @@ options:
     aliases: [ config_file ]
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 notes:
 - Certain payloads are known not to be idempotent, so be careful when constructing payloads,
@@ -278,7 +280,7 @@ except Exception:
     HAS_YAML = False
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 from ansible.module_utils.urls import fetch_url
 from ansible.module_utils._text import to_text
 
@@ -330,6 +332,8 @@ class ACIRESTModule(ACIModule):
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         path=dict(type="str", required=True, aliases=["uri"]),
         method=dict(type="str", default="get", choices=["delete", "get", "post"], aliases=["action"]),

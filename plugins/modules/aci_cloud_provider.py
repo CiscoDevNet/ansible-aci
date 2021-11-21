@@ -30,6 +30,7 @@ notes:
 
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 """
 
 EXAMPLES = r"""
@@ -148,12 +149,13 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
 
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 from ansible.module_utils.basic import AnsibleModule
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         state=dict(type="str", default="query", choices=["query"]),
     )

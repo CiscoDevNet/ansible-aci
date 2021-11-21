@@ -45,6 +45,8 @@ options:
     type: str
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+
 notes:
 - More information about the internal APIC class B(cloud:BgpAsP) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
@@ -184,12 +186,13 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
 
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 from ansible.module_utils.basic import AnsibleModule
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         {
             "asn": dict(type="str"),

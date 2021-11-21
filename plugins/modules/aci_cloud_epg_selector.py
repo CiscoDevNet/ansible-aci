@@ -79,6 +79,8 @@ options:
 
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 """
 
 EXAMPLES = r"""
@@ -240,7 +242,7 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
 
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, expression_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, expression_spec, aci_annotation_spec, aci_owner_spec
 from ansible.module_utils.basic import AnsibleModule
 
 EXPRESSION_KEYS = {
@@ -259,6 +261,7 @@ EXPRESSION_OPERATORS = {
 
 def main():
     argument_spec = aci_argument_spec()
+<<<<<<< HEAD
     argument_spec.update(
         {
             "description": dict(type="str"),
@@ -270,6 +273,19 @@ def main():
             "state": dict(type="str", default="present", choices=["absent", "present", "query"]),
         }
     )
+=======
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
+    argument_spec.update({
+        'description': dict(type='str'),
+        'expressions': dict(type='list', elements='dict', options=expression_spec()),
+        'name': dict(type='str', aliases=['selector', 'selector_name']),
+        'tenant': dict(type='str', required=True),
+        'ap': dict(type='str', required=True),
+        'epg': dict(type='str', required=True),
+        'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
+    })
+>>>>>>> cac199f (Addition of annotation and owner doc-fragments)
 
     module = AnsibleModule(
         argument_spec=argument_spec,

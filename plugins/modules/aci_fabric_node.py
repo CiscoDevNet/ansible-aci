@@ -59,6 +59,7 @@ options:
     type: str
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 seealso:
 - name: APIC Management Information Model reference
@@ -206,7 +207,7 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 # NOTE: (This problem is also present on the APIC GUI)
@@ -215,6 +216,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         description=dict(type="str", aliases=["descr"]),
         node_id=dict(type="int"),  # Not required for querying all objects
