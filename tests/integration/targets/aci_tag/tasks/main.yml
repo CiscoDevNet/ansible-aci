@@ -18,10 +18,17 @@
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: debug
-    test_vars: &test_vars_tag
+    test_vars_annotation: &test_vars_annotation
       tag_key: foo
       tag_value: bar
       tag_type: annotation
+    test_vars_instance: &test_vars_instance
+      tag_key: foo
+      tag_type: instance
+    test_vars_tag: &test_vars_tag
+      tag_key: foo
+      tag_value: bar
+      tag_type: tag
     test_vars_tenant: &test_vars_tenant
       tenant: tag_test
 
@@ -45,7 +52,71 @@
   set_fact:
     dn: "{{ query_result.current[0].fvTenant.attributes.dn }}"
 
-- name: Query tag
+- name:  Annotation Query tag
+  cisco.aci.aci_tag:
+    <<: *aci_info
+    <<: *test_vars_annotation
+    dn: "{{ dn }}"
+    state: query
+  delegate_to: localhost
+
+- name: Annotation Create tag
+  cisco.aci.aci_tag:
+    <<: *aci_info
+    <<: *test_vars_annotation
+    dn: "{{ dn }}"
+    state: present
+  delegate_to: localhost
+
+- name: Annotation Delete tag
+  cisco.aci.aci_tag:
+    <<: *aci_info
+    <<: *test_vars_annotation
+    dn: "{{ dn }}"
+    state: absent
+  delegate_to: localhost
+
+- name: Annotation Query tag
+  cisco.aci.aci_tag:
+    <<: *aci_info
+    <<: *test_vars_annotation
+    dn: "{{ dn }}"
+    state: query
+  delegate_to: localhost
+
+- name: Instance Query tag
+  cisco.aci.aci_tag:
+    <<: *aci_info
+    <<: *test_vars_instance
+    dn: "{{ dn }}"
+    state: query
+  delegate_to: localhost
+
+- name: Instance Create tag
+  cisco.aci.aci_tag:
+    <<: *aci_info
+    <<: *test_vars_instance
+    dn: "{{ dn }}"
+    state: present
+  delegate_to: localhost
+
+- name: Instance Delete tag
+  cisco.aci.aci_tag:
+    <<: *aci_info
+    <<: *test_vars_instance
+    dn: "{{ dn }}"
+    state: absent
+  delegate_to: localhost
+
+- name: Instance Query tag
+  cisco.aci.aci_tag:
+    <<: *aci_info
+    <<: *test_vars_instance
+    dn: "{{ dn }}"
+    state: query
+  delegate_to: localhost
+
+- name: Tag Query tag
   cisco.aci.aci_tag:
     <<: *aci_info
     <<: *test_vars_tag
@@ -53,7 +124,7 @@
     state: query
   delegate_to: localhost
 
-- name: Create tag
+- name: Tag Create tag
   cisco.aci.aci_tag:
     <<: *aci_info
     <<: *test_vars_tag
@@ -61,7 +132,7 @@
     state: present
   delegate_to: localhost
 
-- name: Delete tag
+- name: Tag Delete tag
   cisco.aci.aci_tag:
     <<: *aci_info
     <<: *test_vars_tag
@@ -69,7 +140,7 @@
     state: absent
   delegate_to: localhost
 
-- name: Query tag
+- name: Tag Query tag
   cisco.aci.aci_tag:
     <<: *aci_info
     <<: *test_vars_tag

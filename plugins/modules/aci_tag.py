@@ -206,17 +206,22 @@ def main():
     tag_type = module.params.get('tag_type')
     state = module.params.get('state')
 
-    child_configs = []
+    aci.path = ""
+    class_name = ""
+    class_config = ""
     if tag_type == 'annotation':
-        child_configs.append(dict(tagAnnotation=dict(attributes=dict(key=tag_key, value=tag_value))))
+        aci.path = 'api/mo/{0}/annotationKey-{1}.json'.format(dn, tag_key)
+        class_config = dict(value=tag_value)
+        class_name = "tagAnnotation"
     elif tag_type == 'instance':
-        child_configs.append(dict(tagInst=dict(attributes=dict(name=tag_key))))
+        aci.path = 'api/mo/{0}/tag-{1}.json'.format(dn, tag_key)
+        class_config = dict()
+        class_name = "tagInst"
     elif tag_type == 'tag':
-        child_configs.append(dict(tagTag=dict(attributes=dict(key=tag_key, value=tag_value))))
+        aci.path = 'api/mo/{0}/tagKey-{1}.json'.format(dn, tag_key)
+        class_config = dict(value=tag_value)
+        class_name = "tagTag"
 
-    aci.child_classes = {'tagAnnotation', 'tagInst', 'tagTag'}
-    aci.update_qs({'rsp-subtree': 'full', 'rsp-subtree-class': ','.join(sorted(aci.child_classes))})
-    aci.path = 'api/mo/{0}.json'.format(dn)
     if aci.params.get('port') is not None:
         aci.url = '{protocol}://{host}:{port}/{path}'.format(path=aci.path, **aci.module.params)
     else:
@@ -226,33 +231,16 @@ def main():
 
     if state == 'present':
 
-        class_name = next(iter(aci.existing[0]))
         aci.payload(
             aci_class=class_name,
-            class_config={},
-            child_configs=child_configs
+            class_config=class_config
         )
         aci.get_diff(aci_class=class_name)
         aci.post_config()
 
     elif state == 'absent':
 
-        tag_class = next(iter(child_configs[0]))
-        base_url = aci.url.rstrip(".json")
-        attributes = child_configs[0][tag_class]['attributes']
-
-        if tag_class == "tagAnnotation":
-            aci.url = '{0}/annotationKey-{1}.json'.format(base_url, attributes['key'])
-        elif tag_class == "tagTag":
-            aci.url = '{0}/tagKey-{1}.json'.format(base_url, attributes['key'])
-        elif tag_class == "tagInst":
-            # TODO Add logic to delete the tagAnnotation object aligned with the tagInst created object?
-            aci.url = '{0}/tag-{1}.json'.format(base_url, attributes['name'])
-        else:  # should never be the case else set url to empty string so no delete can occur
-            aci.url = ''
-
-        # In output showing "current": [] which is correct for the annotation object since it is removed
-        # TODO Add logic to display current parent object of the annotation?
+        # TODO Add logic to delete the tagAnnotation object aligned with the tagInst created object?
         aci.delete_config()
 
     aci.exit_json()
