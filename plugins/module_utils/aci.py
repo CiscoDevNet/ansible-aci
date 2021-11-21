@@ -98,7 +98,17 @@ def aci_argument_spec():
         use_ssl=dict(type="bool", default=True, fallback=(env_fallback, ["ACI_USE_SSL"])),
         validate_certs=dict(type="bool", default=True, fallback=(env_fallback, ["ACI_VALIDATE_CERTS"])),
         output_path=dict(type="str", fallback=(env_fallback, ["ACI_OUTPUT_PATH"])),
+    )
+
+
+def aci_annotation_spec():
+    return dict(
         annotation=dict(type="str", fallback=(env_fallback, ["ACI_ANNOTATION"])),
+    )
+
+
+def aci_owner_spec():
+    return dict(
         owner_key=dict(type="str", fallback=(env_fallback, ["ACI_OWNER_KEY"])),
         owner_tag=dict(type="str", fallback=(env_fallback, ["ACI_OWNER_TAG"])),
     )

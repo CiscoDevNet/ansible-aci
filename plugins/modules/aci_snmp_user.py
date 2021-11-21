@@ -54,6 +54,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 seealso:
 - name: APIC Management Information Model reference
@@ -227,12 +228,13 @@ url:
 """
 
 
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 from ansible.module_utils.basic import AnsibleModule
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         policy=dict(type="str", aliases=["snmp_policy", "snmp_policy_name"]),
         name=dict(type="str", aliases=["snmp_user_policy"]),

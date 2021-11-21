@@ -60,6 +60,7 @@ options:
     type: str
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - A scheduler is required for this module, which could have been created using the M(cisco.aci.aci_fabric_scheduler) module or via the UI.
@@ -187,12 +188,13 @@ url:
 """
 
 
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 from ansible.module_utils.basic import AnsibleModule
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         name=dict(type="str", aliases=["maintenance_policy"]),  # Not required for querying all objects
         runmode=dict(type="str", default="pauseOnlyOnFailures", choices=["pauseOnlyOnFailures", "pauseNever"]),

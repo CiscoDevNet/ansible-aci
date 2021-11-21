@@ -100,6 +100,7 @@ options:
     aliases: [ tenant_name ]
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - The C(tenant) and C(filter) used must exist before using this module in your playbook.
@@ -236,7 +237,7 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 VALID_ARP_FLAGS = ["arp_reply", "arp_request", "unspecified"]
 VALID_ETHER_TYPES = ["arp", "fcoe", "ip", "ipv4", "ipv6", "mac_security", "mpls_ucast", "trill", "unspecified"]
@@ -280,6 +281,7 @@ ICMP6_MAPPING = dict(
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         arp_flag=dict(type="str", choices=VALID_ARP_FLAGS),
         description=dict(type="str", aliases=["descr"]),

@@ -84,6 +84,8 @@ options:
     choices: [ avs, default, dvs, unknown ]
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 seealso:
 - module: cisco.aci.aci_aep_to_domain
@@ -266,7 +268,7 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 VM_PROVIDER_MAPPING = dict(
     cloudfoundry="CloudFoundry",
@@ -290,6 +292,8 @@ BOOL_TO_ACI_MAPPING = {True: "yes", False: "no", None: None}
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         domain_type=dict(type="str", required=True, choices=["fc", "l2dom", "l3dom", "phys", "vmm"], aliases=["type"]),
         domain=dict(type="str", aliases=["domain_name", "domain_profile", "name"]),  # Not required for querying all objects

@@ -66,6 +66,7 @@ options:
     aliases: [ tenant_name ]
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 seealso:
 - module: cisco.aci.aci_ap
@@ -236,7 +237,7 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 ACI_CLASS_MAPPING = dict(
     consumer={
@@ -259,6 +260,7 @@ PROVIDER_MATCH_MAPPING = dict(
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         contract_type=dict(type="str", required=True, choices=["consumer", "provider"]),
         ap=dict(type="str", aliases=["app_profile", "app_profile_name"]),  # Not required for querying all objects

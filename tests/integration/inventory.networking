@@ -1,6 +1,0 @@
-[aci]
-lh-dmz1-pod3-sim-v32 ansible_host=173.36.219.136 ansible_connection=local aci_hostname=173.36.219.136 aci_username=ansible_github_ci aci_password="jZqwpB*r9&5mx3mn8e5"
-lh-dmz1-pod3-sim-v42 ansible_host=173.36.219.68 ansible_connection=local aci_hostname=173.36.219.68 aci_username=ansible_github_ci aci_password="jZqwpB*r9&5mx3mn8e5"
-lh-dmz1-pod3-sim-v51 ansible_host=173.36.219.129 ansible_connection=local aci_hostname=173.36.219.129 aci_username=ansible_github_ci aci_password="jZqwpB*r9&5mx3mn8e5"
-aws_cloud ansible_host=54.176.140.90 ansible_connection=local aci_hostname=54.176.140.90 aci_username=ansible_github_ci aci_password="sJ94G92#8dq2hx*K4qh" cloud_type=aws region=us-east-1 region_2=us-west-1 availability_zone=us-west-1a
-azure_cloud ansible_host=104.42.26.226 ansible_connection=local aci_hostname=104.42.26.226 aci_username=ansible_github_ci aci_password="sJ94G92#8dq2hx*K4qh" cloud_type=azure region=westus region_2=westus2 vnet_gateway=true

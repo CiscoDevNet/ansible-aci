@@ -39,6 +39,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - The C(bd) and C(l3out) parameters should exist before using this module.
@@ -162,7 +163,7 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 SUBNET_CONTROL_MAPPING = dict(
     nd_ra="nd",
@@ -174,6 +175,7 @@ SUBNET_CONTROL_MAPPING = dict(
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         bd=dict(type="str", aliases=["bd_name", "bridge_domain"]),  # Not required for querying all objects
         l3out=dict(type="str"),  # Not required for querying all objects
