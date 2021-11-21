@@ -261,7 +261,8 @@ EXPRESSION_OPERATORS = {
 
 def main():
     argument_spec = aci_argument_spec()
-<<<<<<< HEAD
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         {
             "description": dict(type="str"),
@@ -273,19 +274,6 @@ def main():
             "state": dict(type="str", default="present", choices=["absent", "present", "query"]),
         }
     )
-=======
-    argument_spec.update(aci_annotation_spec())
-    argument_spec.update(aci_owner_spec())
-    argument_spec.update({
-        'description': dict(type='str'),
-        'expressions': dict(type='list', elements='dict', options=expression_spec()),
-        'name': dict(type='str', aliases=['selector', 'selector_name']),
-        'tenant': dict(type='str', required=True),
-        'ap': dict(type='str', required=True),
-        'epg': dict(type='str', required=True),
-        'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
-    })
->>>>>>> cac199f (Addition of annotation and owner doc-fragments)
 
     module = AnsibleModule(
         argument_spec=argument_spec,
