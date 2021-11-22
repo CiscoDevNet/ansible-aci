@@ -66,7 +66,6 @@ options:
     - IPv6 DAD feature.
     type: str
     choices: [ enabled, disabled]
-    default: enabled
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -284,14 +283,18 @@ def main():
         path_ep=dict(type='str'),
         side=dict(type='str', choices=['A', 'B']),
         addr=dict(type='str'),
-        ipv6_dad=dict(type='str', default='enabled',
-                      choices=['enabled', 'disabled'])
+        ipv6_dad=dict(type='str', choices=['enabled', 'disabled'])
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[]
+        required_if=[
+            ['state', 'absent', ['tenant', 'l3out', 'node_profile',
+                                 'interface_profile', 'pod_id', 'node_id', 'path_ep']],
+            ['state', 'present', ['tenant', 'l3out', 'node_profile',
+                                  'interface_profile', 'pod_id', 'node_id', 'path_ep']]
+        ]
     )
 
     tenant = module.params.get('tenant')
@@ -309,25 +312,53 @@ def main():
     aci = ACIModule(module)
 
     path_type = 'paths'
-    member = ''
+    rn_prefix = ''
 
     if node_id:
         if '-' in node_id:
             path_type = 'protpaths'
-            member = 'mem-{0}/'.format(side)
+            rn_prefix = 'mem-{0}/'.format(side)
 
     path_dn = ('topology/pod-{0}/{1}-{2}/pathep-[{3}]'.format(pod_id,
                                                               path_type,
                                                               node_id,
                                                               path_ep))
-
     aci.construct_url(
         root_class=dict(
+            aci_class='fvTenant',
+            aci_rn='tn-{0}'.format(tenant),
+            module_object=tenant,
+            target_filter={'name': tenant},
+        ),
+        subclass_1=dict(
+            aci_class='l3extOut',
+            aci_rn='out-{0}'.format(l3out),
+            module_object=l3out,
+            target_filter={'name': l3out},
+        ),
+        subclass_2=dict(
+            aci_class='l3extLNodeP',
+            aci_rn='lnodep-{0}'.format(node_profile),
+            module_object=node_profile,
+            target_filter={'name': node_profile},
+        ),
+        subclass_3=dict(
+            aci_class='l3extLIfP',
+            aci_rn='lifp-{0}'.format(interface_profile),
+            module_object=interface_profile,
+            target_filter={'name': interface_profile},
+        ),
+        subclass_4=dict(
+            aci_class='l3extRsPathL3OutAtt',
+            aci_rn='rspathL3OutAtt-[{0}]'.format(path_dn),
+            module_object=path_dn,
+            target_filter={'tDn': path_dn}
+        ),
+        subclass_5=dict(
             aci_class='l3extIp',
-            aci_rn='tn-{0}/out-{1}/lnodep-{2}/lifp-{3}/rspathL3OutAtt-[{4}]/{5}addr-[{6}]'.format(
-                tenant, l3out, node_profile, interface_profile, path_dn, member, addr),
+            aci_rn='{0}addr-[{1}]'.format(rn_prefix, addr),
             module_object=addr,
-            target_filter={'addr': addr},
+            target_filter={'addr': addr}
         )
     )
 
@@ -340,7 +371,6 @@ def main():
         )
 
         aci.get_diff(aci_class='l3extIp')
-
         aci.post_config()
 
     elif state == 'absent':

@@ -132,6 +132,7 @@
     mode: regular
     addr: 192.168.50.1/27
     ipv6_dad: disabled
+    mtu: 1500
     state: present
   register: add_l3out_interface
 
@@ -141,6 +142,7 @@
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]"
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.addr == "192.168.50.1/27"
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.ipv6Dad == "disabled"
+    - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.mtu == "1500"
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT == "l3-port"
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "regular"
 
@@ -159,6 +161,7 @@
     mode: regular
     addr: 192.168.50.1/27
     ipv6_dad: disabled
+    mtu: 1500
     state: present
   register: add_l3out_interface_again
 

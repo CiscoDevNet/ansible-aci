@@ -72,7 +72,6 @@ options:
     - IPv6 DAD feature.
     type: str
     choices: [ enabled, disabled]
-    default: enabled
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -296,7 +295,7 @@ def main():
         path_ep=dict(type='str'),
         side=dict(type="str"),
         addr=dict(type='str'),
-        ipv6_dad=dict(type='str', default='enabled', choices=['enabled', 'disabled']),
+        ipv6_dad=dict(type='str', choices=['enabled', 'disabled']),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),

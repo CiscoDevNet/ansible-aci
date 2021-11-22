@@ -66,12 +66,15 @@ options:
     description:
     - IP address.
     type: str
+  mtu:
+    description:
+    - Interface MTU.
+    type: str
   ipv6_dad:
     description:
     - IPv6 DAD feature.
     type: str
     choices: [ enabled, disabled]
-    default: enabled
   interface_type:
     description:
     - Type of interface to build.
@@ -296,6 +299,7 @@ def main():
         node_id=dict(type="str", required=True),
         path_ep=dict(type="str", required=True),
         addr=dict(type="str"),
+        mtu=dict(type='str'),
         ipv6_dad=dict(type="str", choices=["enabled", "disabled"]),
         interface_type=dict(type="str", choices=["l3-port", "sub-interface", "ext-svi"]),
         mode=dict(type="str", choices=["regular", "native", "untagged"]),
@@ -313,6 +317,7 @@ def main():
     node_id = module.params.get("node_id")
     path_ep = module.params.get("path_ep")
     addr = module.params.get("addr")
+    mtu = module.params.get('mtu')
     ipv6_dad = module.params.get("ipv6_dad")
     interface_type = module.params.get("interface_type")
     mode = module.params.get("mode")
@@ -352,8 +357,11 @@ def main():
             target_filter={"name": interface_profile},
         ),
         subclass_4=dict(
-            aci_class="l3extRsPathL3OutAtt", aci_rn="/rspathL3OutAtt-[{0}]".format(path_dn), module_object=path_dn, target_filter={"tDn": path_dn}
-        ),
+            aci_class='l3extRsPathL3OutAtt',
+            aci_rn='rspathL3OutAtt-[{0}]'.format(path_dn),
+            module_object=path_dn,
+            target_filter={'tDn': path_dn}
+        )
     )
 
     aci.get_existing()
@@ -365,6 +373,7 @@ def main():
                 tDn=path_dn,
                 addr=addr,
                 ipv6Dad=ipv6_dad,
+                mtu=mtu,
                 ifInstT=interface_type,
                 mode=mode,
                 encap=encap

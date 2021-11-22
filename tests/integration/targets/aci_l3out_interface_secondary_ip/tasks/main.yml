@@ -228,7 +228,7 @@
     - secondary_intf.current.0.l3extIp.attributes.ipv6Dad == "disabled"
     - secondary_po.current.0.l3extIp.attributes.dn== "uni/tn-ansible_l3_secondary/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/addr-[192.168.70.2/27]"
     - secondary_po.current.0.l3extIp.attributes.ipv6Dad == "disabled"
-    - secondary_vpc.current.0.l3extIp.attributes.dn == "uni/tn-ansible_l3_secondary/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/mem-A/addr-[192.168.90.2/27]"
+    - secondary_vpc.current.0.l3extIp.attributes.addr == "192.168.90.2/27"
     - secondary_vpc.current.0.l3extIp.attributes.ipv6Dad == "disabled"
 
 # CHECK idempotency
@@ -405,7 +405,7 @@
     - secondary_intf_query.current.0.l3extIp.attributes.ipv6Dad == "enabled"
     - secondary_po_query.current.0.l3extIp.attributes.dn== "uni/tn-ansible_l3_secondary/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/addr-[192.168.70.2/27]"
     - secondary_po_query.current.0.l3extIp.attributes.ipv6Dad == "enabled"
-    - secondary_vpc_query.current.0.l3extIp.attributes.dn == "uni/tn-ansible_l3_secondary/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/mem-A/addr-[192.168.90.2/27]"
+    - secondary_vpc_query.current.0.l3extIp.attributes.addr == "192.168.90.2/27"
     - secondary_vpc_query.current.0.l3extIp.attributes.ipv6Dad == "enabled"
     - secondary_all_query.current|length > 1
 
@@ -464,9 +464,8 @@
     - secondary_vpc_remove.current == []
     - secondary_intf_remove.previous.0.l3extIp.attributes.dn == "uni/tn-ansible_l3_secondary/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/addr-[192.168.50.2/27]"
     - secondary_po_remove.previous.0.l3extIp.attributes.dn == "uni/tn-ansible_l3_secondary/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/addr-[192.168.70.2/27]"
-    - secondary_vpc_remove.previous.0.l3extIp.attributes.dn == "uni/tn-ansible_l3_secondary/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/mem-A/addr-[192.168.90.2/27]"
+    - secondary_vpc_remove.previous.0.l3extIp.attributes.addr == "192.168.90.2/27"
  
-
 # CLEAN UP
 - name: Remove tenant
   aci_tenant:
