@@ -68,6 +68,19 @@ options:
     - TWAMP Responder Policy to attach to this Policy Group
     type: str
     aliases: [ 'twamp_responder', 'fabricRsTwampResponderPol' ]
+  node_control_policy:
+    description:
+    - Node Control Policy to attach to this Policy Group
+    type: str
+    aliases: [ 'node_control', 'fabricRsNodeCtrl' ]
+  analytics_cluster:
+    description:
+    - Name of the analytics cluster. Requires analytics_name to be present
+    type: str
+  analytics_name:
+    description:
+    - Name of the analytics policy. Requires analytics_cluster to be present
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -266,6 +279,10 @@ def main():
         twamp_responder_policy=dict(type='str',
                                     aliases=['twamp_responder',
                                              'fabricRsTwampResponderPol']),
+        node_control_policy=dict(type='str', aliases=['node_control',
+                                                      'fabricRsNodeCtrl']),
+        analytics_cluster=dict(type='str'),
+        analytics_name=dict(type='str'),
         description=dict(type='str'),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query']),
@@ -277,6 +294,9 @@ def main():
         required_if=[
             ['state', 'absent', ['name']],
             ['state', 'present', ['name']],
+        ],
+        required_together=[
+            ('analytics_cluster', 'analytics_name'),
         ],
     )
 
@@ -290,6 +310,9 @@ def main():
     power_redundancy_policy = module.params.get('power_redundancy_policy')
     twamp_server_policy = module.params.get('twamp_server_policy')
     twamp_responder_policy = module.params.get('twamp_responder_policy')
+    node_control_policy = module.params.get('node_control_policy')
+    analytics_cluster = module.params.get('analytics_cluster')
+    analytics_name = module.params.get('analytics_name')
     state = module.params.get('state')
     child_classes = ['fabricRsMonInstFabricPol',
                      'fabricRsNodeTechSupP',
@@ -297,7 +320,9 @@ def main():
                      'fabricRsCallhomeInvPol',
                      'fabricRsPsuInstPol',
                      'fabricRsTwampServerPol',
-                     'fabricRsTwampResponderPol']
+                     'fabricRsTwampResponderPol',
+                     'fabricRsNodeCtrl',
+                     'fabricRsNodeCfgSrv']
 
     if switch_type == 'spine':
         aci_class = 'fabricSpNodePGrp'
@@ -388,6 +413,28 @@ def main():
                     fabricRsTwampResponderPol=dict(
                         attributes=dict(
                             tnTwampResponderPolName=twamp_responder_policy
+                        )
+                    )
+                )
+            )
+        if node_control_policy:
+            child_configs.append(
+                dict(
+                    fabricRsNodeCtrl=dict(
+                        attributes=dict(
+                            tnFabricNodeControlName=node_control_policy
+                        )
+                    )
+                )
+            )
+        if analytics_cluster:
+            analytics_tdn = ('uni/fabric/analytics/cluster-{0}/cfgsrv-{1}'.
+                             format(analytics_cluster, analytics_name))
+            child_configs.append(
+                dict(
+                    fabricRsNodeCfgSrv=dict(
+                        attributes=dict(
+                            tDn=analytics_tdn
                         )
                     )
                 )

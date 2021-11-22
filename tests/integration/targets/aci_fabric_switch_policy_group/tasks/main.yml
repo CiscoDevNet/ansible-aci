@@ -62,9 +62,10 @@
     - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == ""
     - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
     - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == ""
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.4.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.5.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.6.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.4.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == ""
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.5.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.6.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.7.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
 
 # ADD Fabric Leaf Policy Group again to check idempotency
 - name: Add ansible_fabric_leaf_policy_group again to test idempotence
@@ -86,9 +87,10 @@
     - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == ""
     - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
     - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == ""
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.4.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.5.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.6.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.4.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == ""
+    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.5.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.6.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.7.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
 
 # ADD Fabric Spine Policy Group
 - name: Add ansible_fabric_spine_policy_group
@@ -117,9 +119,10 @@
     - add_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == ""
     - add_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
     - add_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == ""
-    - add_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.4.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - add_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.5.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - add_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.6.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - add_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.4.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == ""
+    - add_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.5.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - add_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.6.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - add_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.7.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
 
 # ADD Fabric Spine Policy Group again to check idempotency
 - name: Add ansible_fabric_spine_policy_group again to test idempotence
@@ -141,9 +144,10 @@
     - add_fabric_spine_policy_group_again.current.0.fabricSpNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == ""
     - add_fabric_spine_policy_group_again.current.0.fabricSpNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
     - add_fabric_spine_policy_group_again.current.0.fabricSpNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == ""
-    - add_fabric_spine_policy_group_again.current.0.fabricSpNodePGrp.children.4.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - add_fabric_spine_policy_group_again.current.0.fabricSpNodePGrp.children.5.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - add_fabric_spine_policy_group_again.current.0.fabricSpNodePGrp.children.6.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - add_fabric_spine_policy_group_again.current.0.fabricSpNodePGrp.children.4.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == ""
+    - add_fabric_spine_policy_group_again.current.0.fabricSpNodePGrp.children.5.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - add_fabric_spine_policy_group_again.current.0.fabricSpNodePGrp.children.6.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - add_fabric_spine_policy_group_again.current.0.fabricSpNodePGrp.children.7.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
 
 # MODIFY Fabric Leaf Policy Group
 - name: Update ansible_fabric_leaf_policy_group
@@ -153,6 +157,7 @@
     switch_type: leaf
     twamp_server_policy: default
     twamp_responder_policy: default
+    node_control_policy: default
   register: update_fabric_leaf_policy_group
 
 - name: Verify ansible_fabric_leaf_policy_group is changed
@@ -169,9 +174,10 @@
     - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
     - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
     - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == "default"
-    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.4.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.5.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.6.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.4.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == "default"
+    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.5.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.6.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.7.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
 
 # MODIFY Fabric Spine Policy Group
 - name: Update ansible_fabric_spine_policy_group
@@ -181,6 +187,7 @@
     switch_type: spine
     twamp_server_policy: default
     twamp_responder_policy: default
+    node_control_policy: default
   register: update_fabric_spine_policy_group
 
 - name: Verify ansible_fabric_spine_policy_group is changed
@@ -197,9 +204,10 @@
     - update_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
     - update_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
     - update_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == "default"
-    - update_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.4.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - update_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.5.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - update_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.6.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - update_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.4.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == "default"
+    - update_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.5.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - update_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.6.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - update_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.7.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
 
 # QUERY Fabric Leaf Policy Group
 - name: Query ansible_fabric_leaf_policy_group
@@ -224,9 +232,10 @@
     - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
     - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
     - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == "default"
-    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.4.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.5.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.6.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.4.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.5.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.6.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.7.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
 
 - name: Query all Fabric Leaf Policy Groups
   cisco.aci.aci_fabric_switch_policy_group:
@@ -263,9 +272,10 @@
     - query_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
     - query_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
     - query_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == "default"
-    - query_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.4.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - query_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.5.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - query_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.6.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - query_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.4.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == "default"
+    - query_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.5.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - query_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.6.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - query_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.7.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
 
 - name: Query all Fabric Spine Policy Groups
   cisco.aci.aci_fabric_switch_policy_group:
@@ -293,15 +303,14 @@
     that:
     - delete_fabric_leaf_policy_group is changed
     - delete_fabric_leaf_policy_group.current == []
-    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.attributes.dn == "uni/fabric/funcprof/lenodepgrp-ansible_fabric_leaf_policy_group"
-    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.attributes.name == "ansible_fabric_leaf_policy_group"
     - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.0.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
     - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
     - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
     - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == "default"
-    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.4.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.5.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.6.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.4.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == "default"
+    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.5.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.6.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.7.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
 
 # DELETE Fabric Spine Policy Group
 - name: Remove ansible_fabric_spine_policy_group
@@ -317,12 +326,11 @@
     that:
     - delete_fabric_spine_policy_group is changed
     - delete_fabric_spine_policy_group.current == []
-    - delete_fabric_spine_policy_group.previous.0.fabricSpNodePGrp.attributes.dn == "uni/fabric/funcprof/spnodepgrp-ansible_fabric_spine_policy_group"
-    - delete_fabric_spine_policy_group.previous.0.fabricSpNodePGrp.attributes.name == "ansible_fabric_spine_policy_group"
     - delete_fabric_spine_policy_group.previous.0.fabricSpNodePGrp.children.0.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
     - delete_fabric_spine_policy_group.previous.0.fabricSpNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
     - delete_fabric_spine_policy_group.previous.0.fabricSpNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
     - delete_fabric_spine_policy_group.previous.0.fabricSpNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == "default"
-    - delete_fabric_spine_policy_group.previous.0.fabricSpNodePGrp.children.4.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - delete_fabric_spine_policy_group.previous.0.fabricSpNodePGrp.children.5.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - delete_fabric_spine_policy_group.previous.0.fabricSpNodePGrp.children.6.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - delete_fabric_spine_policy_group.previous.0.fabricSpNodePGrp.children.4.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == "default"
+    - delete_fabric_spine_policy_group.previous.0.fabricSpNodePGrp.children.5.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - delete_fabric_spine_policy_group.previous.0.fabricSpNodePGrp.children.6.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - delete_fabric_spine_policy_group.previous.0.fabricSpNodePGrp.children.7.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
