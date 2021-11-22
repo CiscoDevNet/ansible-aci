@@ -181,9 +181,9 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         dn=dict(type='str', required=True),
-        tag_key=dict(type='str'),
+        tag_key=dict(type='str', required=True),
         tag_value=dict(type='str'),
-        tag_type=dict(type='str', choices=['annotation', 'instance', 'tag']),
+        tag_type=dict(type='str', choices=['annotation', 'instance', 'tag'], required=True),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
 
@@ -191,8 +191,6 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['tag_key', 'tag_type']],
-            ['state', 'present', ['tag_key', 'tag_type']],
             ['tag_type', 'annotation', ['tag_value']],
             ['tag_type', 'tag', ['tag_value']],
         ],
@@ -206,9 +204,6 @@ def main():
     tag_type = module.params.get('tag_type')
     state = module.params.get('state')
 
-    aci.path = ""
-    class_name = ""
-    class_config = ""
     if tag_type == 'annotation':
         aci.path = 'api/mo/{0}/annotationKey-{1}.json'.format(dn, tag_key)
         class_config = dict(value=tag_value)
@@ -217,7 +212,7 @@ def main():
         aci.path = 'api/mo/{0}/tag-{1}.json'.format(dn, tag_key)
         class_config = dict()
         class_name = "tagInst"
-    elif tag_type == 'tag':
+    else:
         aci.path = 'api/mo/{0}/tagKey-{1}.json'.format(dn, tag_key)
         class_config = dict(value=tag_value)
         class_name = "tagTag"
