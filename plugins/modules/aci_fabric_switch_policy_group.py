@@ -93,7 +93,7 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(fabricLeNodePGrp).
+  description: More information about the internal APIC classes B(fabricLeNodePGrp and fabricSpNodePGrp).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -109,6 +109,19 @@ EXAMPLES = r'''
     switch_type: leaf
     monitoring_policy: my_monitor_policy
     inventory_policy: my_inv_policy
+    state: present
+    delegate_to: localhost
+
+- name: Remove existing analytics and monitoring policy bindings from a Policy Group
+  cisco.aci.aci_fabric_switch_policy_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: my_fabric_leaf_policy_group
+    switch_type: leaf
+    monitoring_policy: ""
+    analytics_cluster: ""
+    analytics_name: ""
     state: present
     delegate_to: localhost
 
@@ -347,7 +360,7 @@ def main():
     if state == 'present':
         child_configs = []
 
-        if monitoring_policy:
+        if monitoring_policy is not None:
             child_configs.append(
                 dict(
                     fabricRsMonInstFabricPol=dict(
@@ -357,7 +370,7 @@ def main():
                     )
                 )
             )
-        if tech_support_export_policy:
+        if tech_support_export_policy is not None:
             child_configs.append(
                 dict(
                     fabricRsNodeTechSupP=dict(
@@ -367,7 +380,7 @@ def main():
                     )
                 )
             )
-        if core_export_policy:
+        if core_export_policy is not None:
             child_configs.append(
                 dict(
                     fabricRsNodeCoreP=dict(
@@ -377,7 +390,7 @@ def main():
                     )
                 )
             )
-        if inventory_policy:
+        if inventory_policy is not None:
             child_configs.append(
                 dict(
                     fabricRsCallhomeInvPol=dict(
@@ -387,7 +400,7 @@ def main():
                     )
                 )
             )
-        if power_redundancy_policy:
+        if power_redundancy_policy is not None:
             child_configs.append(
                 dict(
                     fabricRsPsuInstPol=dict(
@@ -397,7 +410,7 @@ def main():
                     )
                 )
             )
-        if twamp_server_policy:
+        if twamp_server_policy is not None:
             child_configs.append(
                 dict(
                     fabricRsTwampServerPol=dict(
@@ -407,7 +420,7 @@ def main():
                     )
                 )
             )
-        if twamp_responder_policy:
+        if twamp_responder_policy is not None:
             child_configs.append(
                 dict(
                     fabricRsTwampResponderPol=dict(
@@ -417,7 +430,7 @@ def main():
                     )
                 )
             )
-        if node_control_policy:
+        if node_control_policy is not None:
             child_configs.append(
                 dict(
                     fabricRsNodeCtrl=dict(
@@ -427,9 +440,12 @@ def main():
                     )
                 )
             )
-        if analytics_cluster:
-            analytics_tdn = ('uni/fabric/analytics/cluster-{0}/cfgsrv-{1}'.
-                             format(analytics_cluster, analytics_name))
+        if analytics_cluster is not None:
+            if analytics_cluster:
+                analytics_tdn = ('uni/fabric/analytics/cluster-{0}/cfgsrv-{1}'.
+                                 format(analytics_cluster, analytics_name))
+            else:
+                analytics_tdn = ''
             child_configs.append(
                 dict(
                     fabricRsNodeCfgSrv=dict(
