@@ -89,6 +89,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     pool: production
+    pool_allocation_mode: static
     block_start: 20
     block_end: 50
     state: present
@@ -100,6 +101,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     pool: production
+    pool_allocation_mode: static
     block_start: 20
     block_end: 50
     state: absent
@@ -111,6 +113,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     pool: production
+    pool_allocation_mode: static
     block_start: 20
     block_end: 50
     state: query
@@ -123,6 +126,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     pool: production
+    pool_allocation_mode: static
     state: query
   delegate_to: localhost
   register: query_result
@@ -264,8 +268,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["pool", "block_end", "block_name", "block_start"]],
-            ["state", "present", ["pool", "block_end", "block_name", "block_start"]],
+            ['state', 'absent', ['pool', 'pool_allocation_mode', 'block_end', 'block_start']],
+            ['state', 'present', ['pool', 'pool_allocation_mode', 'block_end', 'block_start']],
         ],
     )
 

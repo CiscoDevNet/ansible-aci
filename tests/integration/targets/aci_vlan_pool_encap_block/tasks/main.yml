@@ -20,7 +20,7 @@
     output_level: '{{ aci_output_level | default("info") }}'
     state: absent
     pool: anstest
-    allocation_mode: static
+    pool_allocation_mode: static
     description: Ansible Test
 
 - name: Ensure vlan pool exists for tests to kick off
@@ -34,7 +34,7 @@
     output_level: debug
     state: present
     pool: anstest
-    allocation_mode: static
+    pool_allocation_mode: static
     description: Ansible Test
   register: pool_present
 
@@ -188,20 +188,7 @@
   assert:
     that:
       - encap_block_present_missing_param is failed
-      - 'encap_block_present_missing_param.msg == "state is present but all of the following are missing: block_end, block_name, block_start"'
-
-- name: Missing required param - error message works
-  cisco.aci.aci_vlan_pool_encap_block:
-    <<: *aci_encap_block_present
-    pool_allocation_mode: "{{ fake_var | default(omit) }}"
-  ignore_errors: yes
-  register: encap_block_present_allocation
-
-- name: Present assertions
-  assert:
-    that:
-      - encap_block_present_allocation is failed
-      - encap_block_present_allocation.msg == "ACI requires the 'pool_allocation_mode' when 'pool' is provided"
+      - 'encap_block_present_missing_param.msg == "state is present but all of the following are missing: block_end, block_start"'
 
 - name: Query specific vlan pool range
   cisco.aci.aci_vlan_pool_encap_block: &aci_encap_block_query
