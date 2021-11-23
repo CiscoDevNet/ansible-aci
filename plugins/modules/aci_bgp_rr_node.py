@@ -29,6 +29,7 @@ options:
   description:
     description:
     - Description of the Route Reflector Node
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
