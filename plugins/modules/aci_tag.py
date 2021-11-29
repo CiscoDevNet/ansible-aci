@@ -21,11 +21,11 @@ options:
     description:
     - Unique Distinguished Name (DN) from ACI object model.
     type: str
-  key:
+  tag_key:
     description:
     - Unique identifier of tag object.
     type: str
-  value:
+  tag_value:
     description:
     - Value of the property.
     type: str
@@ -61,8 +61,8 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     dn: SomeValidAciDN
-    key: foo
-    value: bar
+    tag_key: foo
+    tag_value: bar
     tag_type: annotation
     state: present
   delegate_to: localhost
@@ -180,9 +180,9 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        dn=dict(type='str', required=True),
-        tag_key=dict(type='str', required=True),
-        tag_value=dict(type='str'),
+        dn=dict(type='str'),
+        tag_key=dict(type='str'),
+        tag_value=dict(type='str', default=''),
         tag_type=dict(type='str', choices=['annotation', 'instance', 'tag'], required=True),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
@@ -191,51 +191,49 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['tag_type', 'annotation', ['tag_value']],
-            ['tag_type', 'tag', ['tag_value']],
+            ['state', 'absent', ['tag_key']],
+            ['state', 'present', ['tag_key']],
         ],
+        required_together=[('tag_key', 'dn')]
     )
 
     aci = ACIModule(module)
 
     dn = module.params.get('dn')
+    if dn is not None:
+        dn = dn.lstrip("uni/")
     tag_key = module.params.get('tag_key')
     tag_value = module.params.get('tag_value')
     tag_type = module.params.get('tag_type')
     state = module.params.get('state')
 
-    if tag_type == 'annotation':
-        aci.path = 'api/mo/{0}/annotationKey-{1}.json'.format(dn, tag_key)
-        class_config = dict(value=tag_value)
-        class_name = "tagAnnotation"
-    elif tag_type == 'instance':
-        aci.path = 'api/mo/{0}/tag-{1}.json'.format(dn, tag_key)
-        class_config = dict()
-        class_name = "tagInst"
-    else:
-        aci.path = 'api/mo/{0}/tagKey-{1}.json'.format(dn, tag_key)
-        class_config = dict(value=tag_value)
-        class_name = "tagTag"
+    aci_type = dict(annotation=dict(dn='{0}/annotationKey-{1}'.format(dn, tag_key), name="tagAnnotation",
+                                    config=dict(value=tag_value)),
+                    instance=dict(dn='{0}/tag-{1}'.format(dn, tag_key), name='tagInst', config=dict()),
+                    tag=dict(dn='{0}/tagKey-{1}n'.format(dn, tag_key), name="tagTag", config=dict(value=tag_value)))
 
-    if aci.params.get('port') is not None:
-        aci.url = '{protocol}://{host}:{port}/{path}'.format(path=aci.path, **aci.module.params)
-    else:
-        aci.url = '{protocol}://{host}/{path}'.format(path=aci.path, **aci.module.params)
+    aci.construct_url(
+        root_class=dict(
+            aci_class=aci_type[tag_type]['name'],
+            aci_rn=aci_type[tag_type]['dn'],
+            module_object=tag_key,
+            target_filter={'name': tag_key},
+        )
+    )
 
     aci.get_existing()
 
     if state == 'present':
 
         aci.payload(
-            aci_class=class_name,
-            class_config=class_config
+            aci_class=aci_type[tag_type]['name'],
+            class_config=aci_type[tag_type]['config']
         )
-        aci.get_diff(aci_class=class_name)
+        aci.get_diff(aci_class=aci_type[tag_type]['name'])
         aci.post_config()
 
     elif state == 'absent':
 
-        # TODO Add logic to delete the tagAnnotation object aligned with the tagInst created object?
         aci.delete_config()
 
     aci.exit_json()
