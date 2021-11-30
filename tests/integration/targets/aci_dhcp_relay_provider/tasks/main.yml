@@ -26,6 +26,14 @@
     tenant: ansible_tenant
     state: absent
 
+- name: Remove l2ext domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_l2dom
+    domain_type: l2dom
+    state: absent
+  delegate_to: localhost
+
 - name: Remove l3ext domain
   cisco.aci.aci_domain:
     <<: *aci_info
@@ -65,6 +73,14 @@
     <<: *aci_info
     tenant: ansible_tenant
     bd: ansible_bd
+    state: present
+  delegate_to: localhost
+
+- name: Add l2ext domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_l2dom
+    domain_type: l2dom
     state: present
   delegate_to: localhost
 
@@ -194,6 +210,14 @@
     <<: *aci_info
     tenant: ansible_tenant
     state: absent
+
+- name: Remove l2ext domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_l2dom
+    domain_type: l2dom
+    state: absent
+  delegate_to: localhost
 
 - name: Remove l3ext domain
   cisco.aci.aci_domain:
