@@ -413,17 +413,17 @@
   assert:
     that:
     - delete_epg_relay_provider is changed
-    - delete_epg_relay_provider == []
+    - delete_epg_relay_provider.current == []
     - delete_epg_relay_provider.previous.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg]"
     - delete_epg_relay_provider.previous.0.dhcpRsProv.attributes.addr == "10.20.30.50"
     - delete_epg_relay_provider.previous.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg"
     - delete_l2_relay_provider is changed
-    - delete_l2_relay_provider == []
+    - delete_l2_relay_provider.current == []
     - delete_l2_relay_provider.previous.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_l2out_ext_net]"
     - delete_l2_relay_provider.previous.0.dhcpRsProv.attributes.addr == "10.20.30.51"
     - delete_l2_relay_provider.previous.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_l2out_ext_net"
     - delete_l3_relay_provider is changed
-    - delete_l3_relay_provider == []
+    - delete_l3_relay_provider.current == []
     - delete_l3_relay_provider.previous.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net]"
     - delete_l3_relay_provider.previous.0.dhcpRsProv.attributes.addr == "10.20.30.52"
     - delete_l3_relay_provider.previous.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net"
