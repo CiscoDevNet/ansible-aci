@@ -89,6 +89,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     l2out: ansible_l2out
+    domain: ansible_l2dom
     bd: ansible_bd
     vlan: 3200
     state: present
