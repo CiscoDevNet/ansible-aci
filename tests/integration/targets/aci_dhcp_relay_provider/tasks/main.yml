@@ -127,6 +127,8 @@
     name: ansible_l3out
     domain: ansible_l3dom
     vrf: ansible_vrf
+    route_control:
+    - export
     state: present
   delegate_to: localhost
 
