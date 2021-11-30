@@ -156,7 +156,7 @@
   cisco.aci.aci_dhcp_relay_provider:
     <<: *aci_info
     tenant: ansible_tenant
-    relay_name: ansible_dhcp_relay
+    relay_policy: ansible_dhcp_relay
     epg_type: app_epg
     anp: ansible_ap
     app_epg: ansible_epg
@@ -169,7 +169,7 @@
   cisco.aci.aci_dhcp_relay_provider:
     <<: *aci_info
     tenant: ansible_tenant
-    relay_name: ansible_dhcp_relay
+    relay_policy: ansible_dhcp_relay
     epg_type: l2_external_net
     l2out_name: ansible_l2out
     external_net: ansible_l2out_ext_net
@@ -182,7 +182,7 @@
   cisco.aci.aci_dhcp_relay_provider:
     <<: *aci_info
     tenant: ansible_tenant
-    relay_name: ansible_dhcp_relay
+    relay_policy: ansible_dhcp_relay
     epg_type: l3_external_net
     l2out_name: ansible_l3out
     external_net: ansible_l3out_ext_net
