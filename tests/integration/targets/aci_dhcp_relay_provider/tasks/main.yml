@@ -102,7 +102,7 @@
     l2out: ansible_l2out
     extepg: ansible_l2out_ext_net
     state: present
-    delegate_to: localhost
+  delegate_to: localhost
 
 - name: Add a new l3ext domain
   cisco.aci.aci_domain:
