@@ -184,7 +184,7 @@
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
     epg_type: l3_external_net
-    l2out_name: ansible_l3out
+    l3out_name: ansible_l3out
     external_net: ansible_l3out_ext_net
     dhcp_server_addr: 10.20.30.42
     state: present
