@@ -39,13 +39,6 @@
     tenant: tag_test
     state: present
   delegate_to: localhost
-
-- name: Query Tenant
-  cisco.aci.aci_tenant:
-    <<: *aci_info
-    <<: *test_vars_tenant
-    tenant: tag_test
-  delegate_to: localhost
   register: query_result
 
 - name: Get DN
@@ -55,8 +48,7 @@
 - name:  Annotation Query tag
   cisco.aci.aci_tag:
     <<: *aci_info
-    <<: *test_vars_annotation
-    dn: "{{ dn }}"
+    tag_type: annotation
     state: query
   delegate_to: localhost
 
@@ -67,6 +59,28 @@
     dn: "{{ dn }}"
     state: present
   delegate_to: localhost
+  register: annotation_create_result
+
+- name: Annotation tag created
+  assert:
+    that:
+    - annotation_create_result.current.0.tagAnnotation.attributes.key == "foo"
+    - annotation_create_result.current.0.tagAnnotation.attributes.value == "bar"
+
+- name: Annotation Query tag
+  cisco.aci.aci_tag:
+    <<: *aci_info
+    <<: *test_vars_annotation
+    dn: "{{ dn }}"
+    state: query
+  delegate_to: localhost
+  register: annotation_query_result
+
+- name: Annotation tag query verification
+  assert:
+    that:
+    - annotation_create_result.current.0.tagAnnotation.attributes.key == "foo"
+    - annotation_create_result.current.0.tagAnnotation.attributes.value == "bar"
 
 - name: Annotation Delete tag
   cisco.aci.aci_tag:
@@ -75,6 +89,12 @@
     dn: "{{ dn }}"
     state: absent
   delegate_to: localhost
+  register: annotation_delete_result
+
+- name: Annotation tag deleted
+  assert:
+    that:
+    - annotation_delete_result.current.0.tagAnnotation is not defined
 
 - name: Annotation Query tag
   cisco.aci.aci_tag:
@@ -87,8 +107,7 @@
 - name: Instance Query tag
   cisco.aci.aci_tag:
     <<: *aci_info
-    <<: *test_vars_instance
-    dn: "{{ dn }}"
+    tag_type: instance
     state: query
   delegate_to: localhost
 
@@ -99,6 +118,26 @@
     dn: "{{ dn }}"
     state: present
   delegate_to: localhost
+  register: instance_create_result
+
+- name: Instance tag created
+  assert:
+    that:
+    - instance_create_result.current.0.tagInst.attributes.name == "foo"
+
+- name: Instance Query tag
+  cisco.aci.aci_tag:
+    <<: *aci_info
+    <<: *test_vars_instance
+    dn: "{{ dn }}"
+    state: query
+  delegate_to: localhost
+  register: instance_query_result
+
+- name: Instance tag query verification
+  assert:
+    that:
+    - instance_query_result.current.0.tagInst.attributes.name == "foo"
 
 - name: Instance Delete tag
   cisco.aci.aci_tag:
@@ -107,6 +146,12 @@
     dn: "{{ dn }}"
     state: absent
   delegate_to: localhost
+  register: instance_delete_result
+
+- name: Instance tag deleted
+  assert:
+    that:
+    - instance_delete_result.current.0.tagInst is not defined
 
 - name: Instance Query tag
   cisco.aci.aci_tag:
@@ -119,8 +164,7 @@
 - name: Tag Query tag
   cisco.aci.aci_tag:
     <<: *aci_info
-    <<: *test_vars_tag
-    dn: "{{ dn }}"
+    tag_type: tag
     state: query
   delegate_to: localhost
 
@@ -131,6 +175,28 @@
     dn: "{{ dn }}"
     state: present
   delegate_to: localhost
+  register: tag_create_result
+
+- name: Tag tag created
+  assert:
+    that:
+    - tag_create_result.current.0.tagTag.attributes.key == "foo"
+    - tag_create_result.current.0.tagTag.attributes.value == "bar"
+
+- name: Tag Query tag
+  cisco.aci.aci_tag:
+    <<: *aci_info
+    <<: *test_vars_tag
+    dn: "{{ dn }}"
+    state: query
+  delegate_to: localhost
+  register: tag_query_result
+
+- name: Tag tag query verification
+  assert:
+    that:
+    - tag_query_result.current.0.tagTag.attributes.key == "foo"
+    - tag_query_result.current.0.tagTag.attributes.value == "bar"
 
 - name: Tag Delete tag
   cisco.aci.aci_tag:
@@ -139,6 +205,12 @@
     dn: "{{ dn }}"
     state: absent
   delegate_to: localhost
+  register: tag_delete_result
+
+- name: Tag tag deleted
+  assert:
+    that:
+    - tag_delete_result.current.0.tagTag is not defined
 
 - name: Tag Query tag
   cisco.aci.aci_tag:

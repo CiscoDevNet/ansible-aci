@@ -46,6 +46,9 @@ extends_documentation_fragment:
 
 notes:
 - The ACI object must exist before using this module in your playbook.
+- CAVEAT - Due to deprecation of the 'tagInst' object, creating a tag with tag_type 'instance' automatically generates a
+  'annotation' tag_type tag with an empty value. When deleting a tag_type 'instance', the 'tagAnnotation' object will
+  remain present and needs to be deleted separately.
 seealso:
 - name: Cisco APIC System Management Configuration Guide
   description: More information about the tagging can be found in the Cisco APIC System Management Configuration Guide.
@@ -65,6 +68,34 @@ EXAMPLES = r'''
     tag_value: bar
     tag_type: annotation
     state: present
+  delegate_to: localhost
+- name: Delete annotation tag
+  cisco.aci.aci_tag:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    dn: SomeValidAciDN
+    tag_key: foo
+    tag_type: annotation
+    state: absent
+  delegate_to: localhost
+- name: Query annotation tag
+  cisco.aci.aci_tag:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    dn: SomeValidAciDN
+    tag_key: foo
+    tag_type: annotation
+    state: query
+  delegate_to: localhost
+- name: Query annotation tags
+  cisco.aci.aci_tag:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tag_type: annotation
+    state: query
   delegate_to: localhost
 '''
 
@@ -183,7 +214,7 @@ def main():
         dn=dict(type='str'),
         tag_key=dict(type='str'),
         tag_value=dict(type='str', default=''),
-        tag_type=dict(type='str', choices=['annotation', 'instance', 'tag'], required=True),
+        tag_type=dict(type='str', choices=['annotation', 'instance', 'tag']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
 
@@ -191,17 +222,16 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['tag_key']],
-            ['state', 'present', ['tag_key']],
+            ['state', 'query', ['tag_type']],
+            ['state', 'absent', ['tag_type', 'tag_key']],
+            ['state', 'present', ['tag_type', 'tag_key']],
         ],
         required_together=[('tag_key', 'dn')]
     )
 
     aci = ACIModule(module)
 
-    dn = module.params.get('dn')
-    if dn is not None:
-        dn = dn.lstrip("uni/")
+    dn = module.params.get('dn') if module.params.get('dn') is None else module.params.get('dn').lstrip("uni/")
     tag_key = module.params.get('tag_key')
     tag_value = module.params.get('tag_value')
     tag_type = module.params.get('tag_type')
@@ -210,7 +240,7 @@ def main():
     aci_type = dict(annotation=dict(dn='{0}/annotationKey-{1}'.format(dn, tag_key), name="tagAnnotation",
                                     config=dict(value=tag_value)),
                     instance=dict(dn='{0}/tag-{1}'.format(dn, tag_key), name='tagInst', config=dict()),
-                    tag=dict(dn='{0}/tagKey-{1}n'.format(dn, tag_key), name="tagTag", config=dict(value=tag_value)))
+                    tag=dict(dn='{0}/tagKey-{1}'.format(dn, tag_key), name="tagTag", config=dict(value=tag_value)))
 
     aci.construct_url(
         root_class=dict(
