@@ -281,7 +281,7 @@ def main():
         mutually_exclusive=[
             ['anp', 'l2out_name'],
             ['anp', 'l3out_name'],
-            ['anp', 'extenal_net'],
+            ['anp', 'external_net'],
             ['app_epg', 'l2out_name'],
             ['app_epg', 'l3out_name'],
             ['app_epg', 'external_net'],
