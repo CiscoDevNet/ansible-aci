@@ -90,7 +90,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     tenant: Auto-Demo
-    relay_name: my_dhcp_relay
+    relay_policy: my_dhcp_relay
     epg_type: app_epg
     anp: my_anp
     app_epg: my_app_epg
@@ -104,7 +104,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     tenant: Auto-Demo
-    relay_name: my_dhcp_relay
+    relay_policy: my_dhcp_relay
     epg_type: l3_external_net
     l3out_name: my_l3out
     external_net: my_l3out_ext_net
@@ -131,7 +131,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     tenant: Auto-Demo
-    relay_name: my_dhcp_relay
+    relay_policy: my_dhcp_relay
     epg_type: app_epg
     anp: my_anp
     app_epg: my_app_epg
