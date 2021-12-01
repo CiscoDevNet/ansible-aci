@@ -253,7 +253,6 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         relay_policy=dict(type='str', aliases=['relay_policy_name']),
-        description=dict(type='str'),
         epg_type=dict(type='str', required=True,
                       choices=['app_epg',
                                'l2_external_net',
@@ -285,7 +284,7 @@ def main():
             ['anp', 'extenal_net'],
             ['app_epg', 'l2out_name'],
             ['app_epg', 'l3out_name'],
-            ['app_epg', 'extenal_net'],
+            ['app_epg', 'external_net'],
             ['l2out_name', 'l3out_name'],
         ],
     )
