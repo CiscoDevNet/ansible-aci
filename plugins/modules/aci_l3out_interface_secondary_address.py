@@ -276,7 +276,7 @@ def main():
         pod_id=dict(type='str', required=True),
         node_id=dict(type='str', required=True),
         path_ep=dict(type='str', required=True),
-        adddress=dict(type='str', aliases=['secondary_address']),
+        address=dict(type='str', aliases=['secondary_address']),
     )
 
     module = AnsibleModule(

@@ -1,0 +1,302 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
+
+- name: Remove ansible_l3ext_domain if it already exists
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_l3ext_domain
+    domain_type: l3dom
+    state: absent
+
+- name: Remove ansible_port_channel_ipg if it already exists
+  aci_interface_policy_leaf_policy_group:
+    <<: *aci_info
+    lag_type: link
+    policy_group: ansible_port_channel_ipg
+    state: absent
+
+- name: Remove ansible_vpc_ipg if it already exists
+  aci_interface_policy_leaf_policy_group:
+    <<: *aci_info
+    lag_type: node
+    policy_group: ansible_vpc_ipg
+    state: absent
+
+- name: Add a new tenant required for l3out
+  aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    description: Ansible tenant
+    state: present
+
+# ADD domain
+- name: Add domain for l3out
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_l3ext_domain
+    domain_type: l3dom
+    state: present
+
+# ADD VRF
+- name: Add VRF for l3out
+  aci_vrf:
+    <<: *aci_info
+    tenant: ansible_tenant
+    vrf: ansible_vrf
+    state: present
+
+# ADD PC IPG
+- name: Add port-channel IPG
+  aci_interface_policy_leaf_policy_group:
+    <<: *aci_info
+    lag_type: link
+    policy_group: ansible_port_channel_ipg
+    state: present
+
+# ADD vPC IPG
+- name: Add vPC IPG
+  aci_interface_policy_leaf_policy_group:
+    <<: *aci_info
+    lag_type: node
+    policy_group: ansible_vpc_ipg
+    state: present
+
+# ADD l3out
+- name: Add l3out
+  aci_l3out:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_l3out
+    vrf: ansible_vrf
+    domain: ansible_domain
+    route_control: export
+    state: present
+
+# ADD l3out logical node profile
+- name: l3out logical node profile
+  aci_l3out_logical_node_profile:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    state: present
+
+# ADD l3out logical interface profile
+- name: l3out logical interface profile
+  aci_l3out_logical_interface_profile:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    state: present
+
+# ADD l3out interface
+- name: Add routed interface
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/15
+    interface_type: l3-port
+    mode: regular
+    addr: 192.168.50.1/27
+    state: present
+
+# ADD l3out port-channel
+- name: Add routed interface port-channel
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: ansible_port_channel_ipg
+    interface_type: l3-port
+    mode: regular
+    addr: 192.168.70.1/27
+    state: present
+
+# ADD l3out vPC
+- name: Add interface vPC
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201-202
+    path_ep: ansible_vpc_ipg
+    interface_type: ext-svi
+    mode: native
+    addr: 192.168.90.1/27
+    encap: vlan-913
+    state: present
+
+# ADD SECONDARY ADDRESS TO ETHERNET PORT
+- name: add BGP peer to ethernet port
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/15
+    address: 192.168.90.2/27
+    state: present
+  register: add_eth_secondary_addr
+
+- name: verify secondary address has been created with correct attributes
+  assert:
+    that:
+    - add_eth_secondary_addr is changed
+    - add_eth_secondary_addr.current.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/addr-[192.168.90.2/27]"
+    - add_eth_secondary_addr.current.0.l3extIp.attributes.addr == "192.168.90.2/27"
+
+# ADD BGP SECONDARY ADDRESS AGAIN TO TEST IDEMPOTENCE
+- name: add secondary address to ethernet port again
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/15
+    address: 192.168.90.2/27
+    state: present
+  register: add_eth_secondary_addr_again
+
+- name: verify BGP peer has been created with correct attributes
+  assert:
+    that:
+    - add_eth_secondary_addr_again is not changed
+    - add_eth_secondary_addr_again.current.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/addr-[192.168.90.2/27]"
+    - add_eth_secondary_addr_again.current.0.l3extIp.attributes.addr == "192.168.90.2/27"
+
+# QUERY SECONDARY ADDRESS
+- name: query secondary address
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/15
+    address: 192.168.90.2/27
+    state: query
+  register: query_eth_secondary_addr
+
+- name: verify secondary address attributes
+  assert:
+    that:
+    - query_eth_secondary_addr is not changed
+    - query_eth_secondary_addr.current.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/addr-[192.168.90.2/27]"
+    - query_eth_secondary_addr.current.0.l3extIp.attributes.addr == "192.168.90.2/27"
+
+- name: query all secondary addresses on eth interface
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/15
+    state: query
+  register: query_eth_secondary_addr_all
+
+- name: verify secondary address attributes
+  assert:
+    that:
+    - query_eth_secondary_addr_all is not changed
+
+# DELETE SECONDARY ADDRESS
+- name: delete secondary address
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/15
+    address: 192.168.90.2/27
+    state: absent
+  register: remove_eth_secondary_addr
+
+- name: verify secondary address removal
+  assert:
+    that:
+    - remove_eth_secondary_addr is changed
+    - remove_eth_secondary_addr.current == []
+    - remove_eth_secondary_addr.previous.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/addr-[192.168.90.2/27]"
+    - remove_eth_secondary_addr.previous.0.l3extIp.attributes.addr == "192.168.90.2/27"
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
+
+- name: Remove ansible_l3ext_domain
+  aci_domain:
+    <<: *aci_info
+    domain: ansible_l3ext_domain
+    domain_type: l3dom
+    state: absent
+
+- name: Remove ansible_port_channel_ipg
+  aci_interface_policy_leaf_policy_group:
+    <<: *aci_info
+    lag_type: link
+    policy_group: ansible_port_channel_ipg
+    state: absent
+
+- name: Remove ansible_vpc_ipg
+  aci_interface_policy_leaf_policy_group:
+    <<: *aci_info
+    lag_type: node
+    policy_group: ansible_vpc_ipg
+    state: absent
