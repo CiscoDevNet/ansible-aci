@@ -164,6 +164,20 @@ EXAMPLES = r'''
     - esg: web
     - esg: database
 
+- name: Add an existing ESG as a Contract Master for other ESG
+  cisco.aci.aci_esg:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: production
+    ap: ticketing
+    esg: new_app
+    esg_contract_master: database
+    description: New App ESG
+    vrf: 'default'
+    state: present
+  delegate_to: localhost
+
 - name: Query an ESG
   cisco.aci.aci_esg:
     host: apic
