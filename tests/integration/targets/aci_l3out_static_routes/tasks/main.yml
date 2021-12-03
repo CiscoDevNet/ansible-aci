@@ -115,15 +115,36 @@
     prefix: 10.1.0.1/24
     state: query
   delegate_to: localhost
-  register: query_result
+  register: query_specific_mo
+
+- name: Verify query_specific_mo
+  assert:
+    that:
+    - query_specific_mo is not changed
+    - query_specific_mo.current|length == 1
+    - query_specific_mo.current[0].ipRouteP.attributes.rtCtrl == "bfd"
+    - query_specific_mo.current[0].ipRouteP.attributes.ip == "10.1.0.1/24"
 
 - name: Query all relationships
   aci_l3out_static_routes:
     <<: *aci_info
-    tenant: production
+    tenant: ansible_tenant
     state: query
   ignore_errors: yes
-  register: query_result
+  register: query_all_relationships
+
+- name: Verify query_all_relationships
+  assert:
+    that:
+    - query_all_relationships is not changed
+    - query_all_relationships.current|length == 1
+    - query_all_relationships.current[0].fvTenant.children[0].l3extOut.attributes.name == "ansible_l3out"
+    - query_all_relationships.current[0].fvTenant.children[0].l3extOut.children[0].l3extLNodeP.attributes.name == "lNode"
+    - query_all_relationships.current[0].fvTenant.children[0].l3extOut.children[0].l3extLNodeP.children[0].l3extRsNodeL3OutAtt.attributes.rtrId == "10.1.0.1"
+    - query_all_relationships.current[0].fvTenant.children[0].l3extOut.children[0].l3extLNodeP.children[0].l3extRsNodeL3OutAtt.attributes.rtrIdLoopBack == "yes"
+    - query_all_relationships.current[0].fvTenant.children[0].l3extOut.children[0].l3extLNodeP.children[0].l3extRsNodeL3OutAtt.children[0].ipRouteP.attributes.rtCtrl == "bfd"
+    - query_all_relationships.current[0].fvTenant.children[0].l3extOut.children[0].l3extLNodeP.children[0].l3extRsNodeL3OutAtt.children[0].ipRouteP.attributes.ip == "10.1.0.1/24"
+    - query_all_relationships.current[0].fvTenant.children[0].l3extOut.children[0].l3extLNodeP.children[0].l3extRsNodeL3OutAtt.attributes.tDn == "topology/pod-1/node-101"
 
 - name: Remove static routes
   aci_l3out_static_routes:
@@ -135,4 +156,30 @@
     pod_id: 1
     prefix: 10.1.0.1/24
     state: absent
-  delegate_to: localhost
+  register: remove_static_routes
+
+- name: Verify remove_static_routes
+  assert:
+    that:
+    - remove_static_routes is changed
+    - remove_static_routes.current|length == 0
+
+- name: Remove L3Out
+  aci_l3out:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_l3out
+    state: absent
+  register: remove_l3out
+
+- name: Verify remove_l3out
+  assert:
+    that:
+    - remove_l3out is changed
+    - remove_l3out.current|length == 0
+
+- name: Remove the ansible_tenant
+  aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
