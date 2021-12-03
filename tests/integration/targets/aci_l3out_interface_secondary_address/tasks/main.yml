@@ -167,7 +167,7 @@
     state: present
 
 # ADD SECONDARY ADDRESS TO ETHERNET PORT
-- name: add BGP peer to ethernet port
+- name: add secondary address to ethernet port
   aci_l3out_interface_secondary_address:
     <<: *aci_info
     tenant: ansible_tenant
@@ -188,7 +188,7 @@
     - add_eth_secondary_addr.current.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/addr-[192.168.90.2/27]"
     - add_eth_secondary_addr.current.0.l3extIp.attributes.addr == "192.168.90.2/27"
 
-# ADD BGP SECONDARY ADDRESS AGAIN TO TEST IDEMPOTENCE
+# ADD SECONDARY ADDRESS AGAIN TO TEST IDEMPOTENCE
 - name: add secondary address to ethernet port again
   aci_l3out_interface_secondary_address:
     <<: *aci_info
@@ -513,7 +513,7 @@
     pod_id: 1
     node_id: 201-202
     path_ep: ansible_vpc_ipg
-    peer_ip: 192.168.90.2/27
+    address: 192.168.90.2/27
     state: absent
   register: remove_vpc_secondary_addr
 
@@ -536,7 +536,7 @@
     pod_id: 1
     node_id: 201-202
     path_ep: ansible_vpc_ipg
-    peer_ip: 192.168.90.2/27
+    address: 192.168.90.2/27
     state: absent
   register: remove_vpc_secondary_addr_again
 
