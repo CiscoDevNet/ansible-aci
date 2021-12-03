@@ -20,29 +20,35 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - Name of the tenant the relay_policy is in.
     type: str
   relay_policy:
     description:
-    - Name of an existing DHCP rely policy
+    - Name of an existing DHCP relay policy
     type: str
     aliases: [ relay_policy_name ]
+  provider_tenant:
+    description:
+    - Name of the tenant the relay_policy is in
+    - Only required if the provider EPG is in a different tenant to the relay_policy
+    type: str
   epg_type:
     description:
-    - Type of EPG the DHCP srver is in
+    - Type of EPG the DHCP server is in
     type: str
-    choices: [ app_epg, l2_external_net, l3_external_net ]
+    choices: [ epg, l2_external_net, l3_external_net, dn ]
     required: yes
   anp:
     description:
     - Application Profile the EPG is in.
     - Only used when epg_type is app_epg.
     type: str
-  app_epg:
+  epg:
     description:
     - Name of the Application EPG the DHCP server is in.
     - Only used when epg_type is app_epg
     type: str
+    aliases: [ app_epg ]
   l2out_name:
     description:
     - Name of the L2out the DHCP server is in.
@@ -53,10 +59,16 @@ options:
     - Name of the L3out the DHCP server is in.
     - Only used when epg_type is l3_external_net.
     type: str
-  external_net:
+  external_epg:
     description:
     - Name of the external network object the DHCP server is in.
     - Only used when epg_type is l2_external_net or l3_external_net.
+    type: str
+    aliases: [ external_net ]
+  dn:
+    description:
+    - dn of the EPG the DHCP server is in
+    - Only used when epg_type is dn
     type: str
   dhcp_server_addr:
     description:
@@ -91,9 +103,9 @@ EXAMPLES = r'''
     password: SomeSecretPassword
     tenant: Auto-Demo
     relay_policy: my_dhcp_relay
-    epg_type: app_epg
+    epg_type: epg
     anp: my_anp
-    app_epg: my_app_epg
+    epg: my_app_epg
     dhcp_server_addr: 10.20.30.40
     state: present
   delegate_to: localhost
@@ -119,9 +131,9 @@ EXAMPLES = r'''
     password: SomeSecretPassword
     tenant: Auto-Demo
     relay_policy: my_dhcp_relay
-    epg_type: app_epg
+    epg_type: epg
     anp: my_anp
-    app_epg: my_app_epg
+    epg: my_app_epg
     state: absent
   delegate_to: localhost
 
@@ -132,9 +144,9 @@ EXAMPLES = r'''
     password: SomeSecretPassword
     tenant: Auto-Demo
     relay_policy: my_dhcp_relay
-    epg_type: app_epg
+    epg_type: epg
     anp: my_anp
-    app_epg: my_app_epg
+    epg: my_app_epg
     state: query
   delegate_to: localhost
   register: query_result
@@ -254,18 +266,21 @@ def main():
     argument_spec.update(
         relay_policy=dict(type='str', aliases=['relay_policy_name']),
         epg_type=dict(type='str', required=True,
-                      choices=['app_epg',
+                      choices=['epg',
                                'l2_external_net',
-                               'l3_external_net']),
+                               'l3_external_net',
+                               'dn']),
         anp=dict(type='str'),
         app_epg=dict(type='str'),
         l2out_name=dict(type='str'),
         l3out_name=dict(type='str'),
-        external_net=dict(type='str'),
+        external_epg=dict(type='str', aliases=['external_net']),
         dhcp_server_addr=dict(type='str'),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query']),
         tenant=dict(type='str'),
+        provider_tenant=dict(type='str'),
+        dn=dict(type='str'),
     )
 
     module = AnsibleModule(
@@ -274,18 +289,24 @@ def main():
         required_if=[
             ['state', 'absent', ['relay_policy', 'tenant']],
             ['state', 'present', ['relay_policy', 'tenant']],
-            ['epg_type', 'app_epg', ['anp', 'app_epg']],
-            ['epg_type', 'l2_external_net', ['l2out_name', 'external_net']],
-            ['epg_type', 'l3_external_net', ['l3out_name', 'external_net']],
+            ['epg_type', 'epg', ['anp', 'epg']],
+            ['epg_type', 'l2_external_net', ['l2out_name', 'external_epg']],
+            ['epg_type', 'l3_external_net', ['l3out_name', 'external_epg']],
+            ['epg_type', 'dn', ['dn']],
         ],
         mutually_exclusive=[
             ['anp', 'l2out_name'],
             ['anp', 'l3out_name'],
-            ['anp', 'external_net'],
+            ['anp', 'external_epg'],
+            ['anp', 'dn'],
             ['app_epg', 'l2out_name'],
             ['app_epg', 'l3out_name'],
-            ['app_epg', 'external_net'],
+            ['app_epg', 'external_epg'],
+            ['app_epg', 'dn'],
             ['l2out_name', 'l3out_name'],
+            ['l2out_name', 'dn'],
+            ['l3out_name', 'dn'],
+            ['external_epg', 'dn'],
         ],
     )
 
@@ -294,20 +315,27 @@ def main():
     tenant = module.params.get('tenant')
     epg_type = module.params.get('epg_type')
     anp = module.params.get('anp')
-    app_epg = module.params.get('app_epg')
+    epg = module.params.get('epg')
     l2out_name = module.params.get('l2out_name')
     l3out_name = module.params.get('l3out_name')
-    external_net = module.params.get('external_net')
+    external_epg = module.params.get('external_epg')
     dhcp_server_addr = module.params.get('dhcp_server_addr')
+    provider_tenant = module.params.get('provider_tenant')
+    dn = module.params.get('dn')
+
+    if provider_tenant is None:
+        provider_tenant = tenant
 
     if epg_type == 'app_epg':
-        tdn = 'uni/tn-{0}/ap-{1}/epg-{2}'.format(tenant, anp, app_epg)
+        tdn = 'uni/tn-{0}/ap-{1}/epg-{2}'.format(provider_tenant, anp, epg)
     elif epg_type == 'l2_external_net':
         tdn = ('uni/tn-{0}/l2out-{1}/instP-{2}'
-               .format(tenant, l2out_name, external_net))
+               .format(provider_tenant, l2out_name, external_epg))
     elif epg_type == 'l3_external_net':
         tdn = ('uni/tn-{0}/out-{1}/instP-{2}'
-               .format(tenant, l3out_name, external_net))
+               .format(provider_tenant, l3out_name, external_epg))
+    elif epg_type == 'dn':
+        tdn = dn
 
     aci = ACIModule(module)
     aci.construct_url(

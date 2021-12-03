@@ -255,9 +255,7 @@ def main():
             class_config=dict(
                 name=name,
                 descr=description,
-                owner='tenant',
-                mode='visible',
-                dn='uni/tn-{0}/relayp-{1}'.format(tenant, name)
+                owner='tenant'
             ),
         )
 
