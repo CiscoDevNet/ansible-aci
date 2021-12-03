@@ -203,7 +203,7 @@
     state: present
   register: add_eth_secondary_addr_again
 
-- name: verify BGP peer has been created with correct attributes
+- name: verify secondary address has been created with correct attributes
   assert:
     that:
     - add_eth_secondary_addr_again is not changed
@@ -358,6 +358,24 @@
     - query_pc_secondary_addr.current.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/addr-[192.168.70.2/27]"
     - query_pc_secondary_addr.current.0.l3extIp.attributes.addr == "192.168.70.2/27"
 
+- name: query all secondary addresses on port-channel
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: ansible_port_channel_ipg
+    state: query
+  register: query_pc_secondary_addr_all
+
+- name: verify secondary address attributes
+  assert:
+    that:
+    - query_pc_secondary_addr_all is not changed
+
 # DELETE SECONDARY ADDRESS
 - name: delete secondary address
   aci_l3out_interface_secondary_address:
@@ -465,6 +483,24 @@
     - query_vpc_secondary_addr is not changed
     - query_vpc_secondary_addr.current.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/addr-[192.168.90.2/27]"
     - query_vpc_secondary_addr.current.0.l3extIp.attributes.addr == "192.168.90.2/27"
+
+- name: query all secondary addresses on vPC
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201-202
+    path_ep: ansible_vpc_ipg
+    state: query
+  register: query_vpc_secondary_addr_all
+
+- name: verify secondary address attributes
+  assert:
+    that:
+    - query_vpc_secondary_addr_all is not changed
 
 # DELETE SECONDARY ADDRESS
 - name: delete secondary address
