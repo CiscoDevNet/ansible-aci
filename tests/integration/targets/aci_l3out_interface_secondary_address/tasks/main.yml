@@ -543,7 +543,7 @@
 - name: verify secondary address removal
   assert:
     that:
-    - remove_vpc_secondary_addr_again is changed
+    - remove_vpc_secondary_addr_again is not changed
 
 # CLEAN UP
 - name: Remove ansible_tenant
