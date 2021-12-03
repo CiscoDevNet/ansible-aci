@@ -29,8 +29,8 @@ options:
     aliases: [ relay_policy_name ]
   provider_tenant:
     description:
-    - Name of the tenant the relay_policy is in
-    - Only required if the provider EPG is in a different tenant to the relay_policy
+    - Name of the tenant the epg or external_epg is in
+    - Only required if the epg or external_epg is in a different tenant to the relay_policy
     type: str
   epg_type:
     description:
