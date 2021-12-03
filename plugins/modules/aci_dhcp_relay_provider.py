@@ -36,7 +36,7 @@ options:
     description:
     - Type of EPG the DHCP server is in
     type: str
-    choices: [ epg, l2_external_net, l3_external_net, dn ]
+    choices: [ epg, l2_external, l3_external, dn ]
     required: yes
   anp:
     description:
@@ -52,17 +52,17 @@ options:
   l2out_name:
     description:
     - Name of the L2out the DHCP server is in.
-    - Only used when epg_type is l2_external_net
+    - Only used when epg_type is l2_external
     type: str
   l3out_name:
     description:
     - Name of the L3out the DHCP server is in.
-    - Only used when epg_type is l3_external_net.
+    - Only used when epg_type is l3_external.
     type: str
   external_epg:
     description:
     - Name of the external network object the DHCP server is in.
-    - Only used when epg_type is l2_external_net or l3_external_net.
+    - Only used when epg_type is l2_external or l3_external.
     type: str
     aliases: [ external_net ]
   dn:
@@ -117,7 +117,7 @@ EXAMPLES = r'''
     password: SomeSecretPassword
     tenant: Auto-Demo
     relay_policy: my_dhcp_relay
-    epg_type: l3_external_net
+    epg_type: l3_external
     l3out_name: my_l3out
     external_net: my_l3out_ext_net
     dhcp_server_addr: 10.20.30.40
@@ -267,11 +267,11 @@ def main():
         relay_policy=dict(type='str', aliases=['relay_policy_name']),
         epg_type=dict(type='str', required=True,
                       choices=['epg',
-                               'l2_external_net',
-                               'l3_external_net',
+                               'l2_external',
+                               'l3_external',
                                'dn']),
         anp=dict(type='str'),
-        app_epg=dict(type='str'),
+        epg=dict(type='str', aliases=['app_epg']),
         l2out_name=dict(type='str'),
         l3out_name=dict(type='str'),
         external_epg=dict(type='str', aliases=['external_net']),
@@ -290,8 +290,8 @@ def main():
             ['state', 'absent', ['relay_policy', 'tenant']],
             ['state', 'present', ['relay_policy', 'tenant']],
             ['epg_type', 'epg', ['anp', 'epg']],
-            ['epg_type', 'l2_external_net', ['l2out_name', 'external_epg']],
-            ['epg_type', 'l3_external_net', ['l3out_name', 'external_epg']],
+            ['epg_type', 'l2_external', ['l2out_name', 'external_epg']],
+            ['epg_type', 'l3_external', ['l3out_name', 'external_epg']],
             ['epg_type', 'dn', ['dn']],
         ],
         mutually_exclusive=[
@@ -326,12 +326,12 @@ def main():
     if provider_tenant is None:
         provider_tenant = tenant
 
-    if epg_type == 'app_epg':
+    if epg_type == 'epg':
         tdn = 'uni/tn-{0}/ap-{1}/epg-{2}'.format(provider_tenant, anp, epg)
-    elif epg_type == 'l2_external_net':
+    elif epg_type == 'l2_external':
         tdn = ('uni/tn-{0}/l2out-{1}/instP-{2}'
                .format(provider_tenant, l2out_name, external_epg))
-    elif epg_type == 'l3_external_net':
+    elif epg_type == 'l3_external':
         tdn = ('uni/tn-{0}/out-{1}/instP-{2}'
                .format(provider_tenant, l3out_name, external_epg))
     elif epg_type == 'dn':

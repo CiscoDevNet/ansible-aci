@@ -74,7 +74,7 @@
     - add_dhcp_relay_again.current.0.dhcpRelayP.attributes.descr == "Ansible DHCP Relay"
 
 # MODIFY DHCP RELAY
-- name: Add DHCP relay policy again
+- name: Update DHCP relay policy
   cisco.aci.aci_dhcp_relay:
     <<: *aci_info
     tenant: ansible_tenant

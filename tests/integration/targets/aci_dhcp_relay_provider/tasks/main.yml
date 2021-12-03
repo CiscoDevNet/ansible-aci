@@ -157,7 +157,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
-    epg_type: app_epg
+    epg_type: epg
     anp: ansible_ap
     app_epg: ansible_epg
     dhcp_server_addr: 10.20.30.40
@@ -170,7 +170,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
-    epg_type: l2_external_net
+    epg_type: l2_external
     l2out_name: ansible_l2out
     external_net: ansible_l2out_ext_net
     dhcp_server_addr: 10.20.30.41
@@ -183,7 +183,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
-    epg_type: l3_external_net
+    epg_type: l3_external
     l3out_name: ansible_l3out
     external_net: ansible_l3out_ext_net
     dhcp_server_addr: 10.20.30.42
@@ -213,7 +213,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
-    epg_type: app_epg
+    epg_type: epg
     anp: ansible_ap
     app_epg: ansible_epg
     dhcp_server_addr: 10.20.30.40
@@ -226,7 +226,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
-    epg_type: l2_external_net
+    epg_type: l2_external
     l2out_name: ansible_l2out
     external_net: ansible_l2out_ext_net
     dhcp_server_addr: 10.20.30.41
@@ -239,7 +239,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
-    epg_type: l3_external_net
+    epg_type: l3_external
     l3out_name: ansible_l3out
     external_net: ansible_l3out_ext_net
     dhcp_server_addr: 10.20.30.42
@@ -269,7 +269,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
-    epg_type: app_epg
+    epg_type: epg
     anp: ansible_ap
     app_epg: ansible_epg
     dhcp_server_addr: 10.20.30.50
@@ -282,7 +282,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
-    epg_type: l2_external_net
+    epg_type: l2_external
     l2out_name: ansible_l2out
     external_net: ansible_l2out_ext_net
     dhcp_server_addr: 10.20.30.51
@@ -295,7 +295,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
-    epg_type: l3_external_net
+    epg_type: l3_external
     l3out_name: ansible_l3out
     external_net: ansible_l3out_ext_net
     dhcp_server_addr: 10.20.30.52
@@ -325,7 +325,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
-    epg_type: app_epg
+    epg_type: epg
     anp: ansible_ap
     app_epg: ansible_epg
     state: query
@@ -337,7 +337,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
-    epg_type: l2_external_net
+    epg_type: l2_external
     l2out_name: ansible_l2out
     external_net: ansible_l2out_ext_net
     state: query
@@ -349,7 +349,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
-    epg_type: l3_external_net
+    epg_type: l3_external
     l3out_name: ansible_l3out
     external_net: ansible_l3out_ext_net
     state: query
@@ -378,7 +378,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
-    epg_type: app_epg
+    epg_type: epg
     anp: ansible_ap
     app_epg: ansible_epg
     state: absent
@@ -390,7 +390,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
-    epg_type: l2_external_net
+    epg_type: l2_external
     l2out_name: ansible_l2out
     external_net: ansible_l2out_ext_net
     state: absent
@@ -402,7 +402,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
-    epg_type: l3_external_net
+    epg_type: l3_external
     l3out_name: ansible_l3out
     external_net: ansible_l3out_ext_net
     state: absent
@@ -427,6 +427,50 @@
     - delete_l3_relay_provider.previous.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net]"
     - delete_l3_relay_provider.previous.0.dhcpRsProv.attributes.addr == "10.20.30.52"
     - delete_l3_relay_provider.previous.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net"
+
+# DELETE DHCP RELAY PROVIDERS AGAIN TO TEST IDEMPOTENCE
+- name: Delete DHCP relay App EPG provider again
+  cisco.aci.aci_dhcp_relay_provider:
+    <<: *aci_info
+    tenant: ansible_tenant
+    relay_policy: ansible_dhcp_relay
+    epg_type: epg
+    anp: ansible_ap
+    app_epg: ansible_epg
+    state: absent
+  delegate_to: localhost
+  register: delete_epg_relay_provider_again
+
+- name: Delete DHCP relay L2out provider again
+  cisco.aci.aci_dhcp_relay_provider:
+    <<: *aci_info
+    tenant: ansible_tenant
+    relay_policy: ansible_dhcp_relay
+    epg_type: l2_external
+    l2out_name: ansible_l2out
+    external_net: ansible_l2out_ext_net
+    state: absent
+  delegate_to: localhost
+  register: delete_l2_relay_provider_again
+
+- name: Delete DHCP relay L3out provider again
+  cisco.aci.aci_dhcp_relay_provider:
+    <<: *aci_info
+    tenant: ansible_tenant
+    relay_policy: ansible_dhcp_relay
+    epg_type: l3_external
+    l3out_name: ansible_l3out
+    external_net: ansible_l3out_ext_net
+    state: absent
+  delegate_to: localhost
+  register: delete_l3_relay_provider_again
+
+- name: Confirm DHCP relay provider removal
+  assert:
+    that:
+    - delete_epg_relay_provider_again is not changed
+    - delete_l2_relay_provider_again is not changed
+    - delete_l3_relay_provider_again is not changed
 
 # CLEAN ENVIRONMENT AGAIN
 - name: Remove the ansible_tenant
