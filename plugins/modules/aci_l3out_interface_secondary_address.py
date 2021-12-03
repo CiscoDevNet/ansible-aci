@@ -101,7 +101,7 @@ EXAMPLES = r'''
     state: present
   delegate_to: localhost
 
-- name: Add a new BGP peer on a vPC
+- name: Add a new secondary address on a vPC
   cisco.aci.aci_l3out_interface_secondary_address:
     host: apic
     username: admin
@@ -133,7 +133,7 @@ EXAMPLES = r'''
     state: absent
   delegate_to: localhost
 
-- name: Query a BGP peer
+- name: Query a secondary address
   cisco.aci.aci_l3out_interface_secondary_address:
     host: apic
     username: admin
