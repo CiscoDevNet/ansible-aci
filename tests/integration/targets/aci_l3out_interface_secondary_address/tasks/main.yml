@@ -273,6 +273,242 @@
     - remove_eth_secondary_addr.previous.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/addr-[192.168.90.2/27]"
     - remove_eth_secondary_addr.previous.0.l3extIp.attributes.addr == "192.168.90.2/27"
 
+# DELETE SECONDARY ADDRESS AGAIN TO TEST IDEMPOTENCE
+- name: delete secondary address again
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/15
+    address: 192.168.90.2/27
+    state: absent
+  register: remove_eth_secondary_addr_again
+
+- name: verify secondary address removal
+  assert:
+    that:
+    - remove_eth_secondary_addr_again is not changed
+
+# ADD SECONDARY ADDRESS TO PORT-CHANNEL
+- name: add secondary address to port-channel
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: ansible_port_channel_ipg
+    address: 192.168.70.2/27
+    state: present
+  register: add_pc_secondary_addr
+
+- name: verify secondary address has been created with correct attributes
+  assert:
+    that:
+    - add_pc_secondary_addr.current.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/addr-[192.168.70.2/27]"
+    - add_pc_secondary_addr.current.0.l3extIp.attributes.addr == "192.168.70.2/27"
+
+# ADD SECONDARY ADDRESS AGAIN TO TEST IDEMPOTENCE
+- name: add secondary address to port-channel again
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: ansible_port_channel_ipg
+    address: 192.168.70.2/27
+    state: present
+  register: add_pc_secondary_addr_again
+
+- name: verify secondary address has been created with correct attributes
+  assert:
+    that:
+    - add_pc_secondary_addr_again is not changed
+    - add_pc_secondary_addr_again.current.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/addr-[192.168.70.2/27]"
+    - add_pc_secondary_addr_again.current.0.l3extIp.attributes.addr == "192.168.70.2/27"
+
+# QUERY SECONDARY ADDRESS
+- name: query secondary address
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: ansible_port_channel_ipg
+    address: 192.168.70.2/27
+    state: query
+  register: query_pc_secondary_addr
+
+- name: verify secondary address attributes
+  assert:
+    that:
+    - query_pc_secondary_addr is not changed
+    - query_pc_secondary_addr.current.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/addr-[192.168.70.2/27]"
+    - query_pc_secondary_addr.current.0.l3extIp.attributes.addr == "192.168.70.2/27"
+
+# DELETE SECONDARY ADDRESS
+- name: delete secondary address
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: ansible_port_channel_ipg
+    address: 192.168.70.2/27
+    state: absent
+  register: remove_pc_secondary_addr
+
+- name: verify secondary address removal
+  assert:
+    that:
+    - remove_pc_secondary_addr is changed
+    - remove_pc_secondary_addr.current == []
+    - remove_pc_secondary_addr.previous.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/addr-[192.168.70.2/27]"
+    - remove_pc_secondary_addr.previous.0.l3extIp.attributes.addr == "192.168.70.2/27"
+
+# DELETE SECONDARY ADDRESS AGAIN TO TEST IDEMPOTENCE
+- name: delete secondary address again
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201
+    path_ep: ansible_port_channel_ipg
+    address: 192.168.70.2/27
+    state: absent
+  register: remove_pc_secondary_addr_again
+
+- name: verify secondary address removal
+  assert:
+    that:
+    - remove_pc_secondary_addr_again is not changed
+
+# ADD SECONDARY ADDRESS TO VPC
+- name: add secondary address to vPC
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201-202
+    path_ep: ansible_vpc_ipg
+    address: 192.168.90.2/27
+    state: present
+  register: add_vpc_secondary_addr
+
+- name: verify secondary address has been created with correct attributes
+  assert:
+    that:
+    - add_vpc_secondary_addr.current.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/addr-[192.168.90.2/27]"
+    - add_vpc_secondary_addr.current.0.l3extIp.attributes.addr == "192.168.90.2/27"
+
+# ADD SECONDARY ADDRESS AGAIN TO CHECK IDEMPOTENCE
+- name: add secondary address to vPC again
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201-202
+    path_ep: ansible_vpc_ipg
+    address: 192.168.90.2/27
+    state: present
+  register: add_vpc_secondary_addr_again
+
+- name: verify secondary address has been created with correct attributes
+  assert:
+    that:
+    - add_vpc_secondary_addr_again is not changed
+    - add_vpc_secondary_addr_again.current.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/addr-[192.168.90.2/27]"
+    - add_vpc_secondary_addr_again.current.0.l3extIp.attributes.addr == "192.168.90.2/27"
+
+# QUERY SECONDARY ADDRESS
+- name: query secondary address
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201-202
+    path_ep: ansible_vpc_ipg
+    address: 192.168.90.2/27
+    state: query
+  register: query_vpc_secondary_addr
+
+- name: verify secondary address attributes
+  assert:
+    that:
+    - query_vpc_secondary_addr is not changed
+    - query_vpc_secondary_addr.current.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/addr-[192.168.90.2/27]"
+    - query_vpc_secondary_addr.current.0.l3extIp.attributes.addr == "192.168.90.2/27"
+
+# DELETE SECONDARY ADDRESS
+- name: delete secondary address
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201-202
+    path_ep: ansible_vpc_ipg
+    peer_ip: 192.168.90.2/27
+    state: absent
+  register: remove_vpc_secondary_addr
+
+- name: verify secondary address removal
+  assert:
+    that:
+    - remove_vpc_secondary_addr is changed
+    - remove_vpc_secondary_addr.current == []
+    - remove_vpc_secondary_addr.previous.0.l3extIp.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/addr-[192.168.90.2/27]"
+    - remove_vpc_secondary_addr.previous.0.l3extIp.attributes.addr == "192.168.90.2/27"
+
+# DELETE SECONDARY ADDRESS AGAIN TO TEST IDEMPOTENCE
+- name: delete secondary address
+  aci_l3out_interface_secondary_address:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    pod_id: 1
+    node_id: 201-202
+    path_ep: ansible_vpc_ipg
+    peer_ip: 192.168.90.2/27
+    state: absent
+  register: remove_vpc_secondary_addr_again
+
+- name: verify secondary address removal
+  assert:
+    that:
+    - remove_vpc_secondary_addr_again is changed
+
 # CLEAN UP
 - name: Remove ansible_tenant
   aci_tenant:
