@@ -13,10 +13,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_esg
-short_description: Manage Endpoint Security Groups (ESGs) objects (fv:ESg)
+module: aci_esg_to_epg_selector
+short_description: Manage ESG - EPG Selectors (fv:fvEPgSelector)
 description:
-- Manage Endpoint Security Groups (ESGs) on Cisco ACI fabrics.
+- Manage Endpoint Security Groups - EPG Selectors on Cisco ACI fabrics.
 
 options:
   tenant:
@@ -33,33 +33,21 @@ options:
     description:
     - Name of the Endpoint Security Group.
     type: str
-    aliases: [ esg_name, name ]
-  admin_state:
+    aliases: [ esg_name ]
+  epg_provider_ap:
     description:
-    - Use C(no) to set 'Admin Up' on the ESG Admin state and it is default.
-    - Use C(yes) to set 'Admin Shut' on the ESG Admin state
+    - Name of the Application profile which contains the EPG.
     type: str
-    choices: [ 'no', 'yes' ]
-  vrf:
+  epg:
     description:
-    - Name of the VRF
+    - Name of the EPG which is used to create EPG Selector object under the ESG.
     type: str
-    aliases: [ vrf_name ]
+    aliases: [ epg_name ]
   description:
     description:
-    - Endpoint security group description.
+    - Description of the ESG Tag Selector.
     type: str
-    aliases: [ descr ]
-  intra_esg_isolation:
-    description:
-    - The default value of Intra ESG Isolation is C(unenforced).
-    type: str
-    choices: [ enforced, unenforced ]
-  preferred_group_member:
-    description:
-    - The default value of Preferred Group Member is C(exclude).
-    type: str
-    choices: [ exclude, include ]
+    aliases: [ epg_selector_description ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -75,9 +63,9 @@ extends_documentation_fragment:
 - cisco.aci.aci
 
 seealso:
-- module: cisco.aci.aci_aep_to_domain
-- name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(infra:AttEntityP) and B(infra:ProvAcc).
+- module: cisco.aci.aci_esg
+- name: Manage Endpoint Security Groups (ESGs) objects (fv:ESg)
+  description: Manage Endpoint Security Groups (ESGs) on Cisco ACI fabrics.
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Sabari Jaganathan (@sajagana)
@@ -85,80 +73,78 @@ author:
 
 
 EXAMPLES = r"""
-- name: Add a new ESG
-  cisco.aci.aci_esg:
+- name: Add an EPG selector
+  cisco.aci.aci_esg_to_epg_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
-    ap: intranet
+    ap: production_ap
     esg: web_esg
-    vrf: 'default'
-    description: Web Intranet ESG
+    epg_provider_ap: production_ap1
+    epg: production_ap1-epg
+    description: epg-test-description
     state: present
   delegate_to: localhost
 
-- name: Add list of ESGs
-  cisco.aci.aci_esg:
+- name: Add list of EPG selectors
+  cisco.aci.aci_esg_to_epg_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
-    ap: ticketing
+    ap: production_ap
     esg: "{{ item.esg }}"
-    description: Ticketing ESG
-    vrf: 'default'
+    epg_provider_ap: "{{ item.epg_provider_ap }}"
+    epg: "{{ item.epg }}"
+    description: epg-test-description
     state: present
   delegate_to: localhost
   with_items:
-    - esg: web
-    - esg: database
+    - {"epg_provider_ap": "production_ap1", "epg": "epg-test1", "esg": "web_esg"}
+    - {"epg_provider_ap": "production_ap1", "epg": "epg-test2", "esg": "web_esg"}
 
-- name: Query an ESG
-  cisco.aci.aci_esg:
+- name: Query an EPG selector with esg and epg name
+  cisco.aci.aci_esg_to_epg_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
-    ap: ticketing
+    ap: production_ap
     esg: web_esg
+    epg_provider_ap: production_ap1
+    epg: production_ap1-epg
     state: query
   delegate_to: localhost
 
-- name: Query all ESGs
-  cisco.aci.aci_esg:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    state: query
-  delegate_to: localhost
-
-- name: Query all ESGs with a Specific Name
-  cisco.aci.aci_esg:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    esg: web_esg
-    state: query
-  delegate_to: localhost
-
-- name: Query all ESGs of an App Profile
-  cisco.aci.aci_esg:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    ap: ticketing
-    state: query
-  delegate_to: localhost
-
-- name: Remove an ESG
-  cisco.aci.aci_esg:
+- name: Query all EPG selectors under a application profile
+  cisco.aci.aci_esg_to_epg_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
-    app_profile: intranet
+    ap: production_ap
+    state: query
+  delegate_to: localhost
+
+- name: Query all EPG selectors
+  cisco.aci.aci_esg_to_epg_selector:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+
+- name: Remove an EPG selector
+  cisco.aci.aci_esg_to_epg_selector:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: production
+    ap: production_ap
     esg: web_esg
+    epg_provider_ap: production_ap1
+    epg: production_ap1-epg
     state: absent
   delegate_to: localhost
 """
@@ -280,15 +266,10 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         ap=dict(type="str", aliases=["app_profile", "app_profile_name"]),
-        esg=dict(type="str", aliases=["name", "esg_name"]),
-        admin_state=dict(type="str", choices=["no", "yes"]),  # ESG Admin State
-        vrf=dict(type="str", aliases=["vrf_name"]),  # ESG VRF name
-        description=dict(type="str", aliases=["descr"]),
-        intra_esg_isolation=dict(
-            type="str",
-            choices=["enforced", "unenforced"],
-        ),  # Intra ESG Isolation
-        preferred_group_member=dict(type="str", choices=["exclude", "include"]),  # Preferred Group Member
+        esg=dict(type="str", aliases=["esg_name"]),
+        epg_provider_ap=dict(type="str"),
+        epg=dict(type="str", aliases=["epg_name"]),
+        description=dict(type="str", aliases=["epg_selector_description"]),
         state=dict(
             type="str",
             default="present",
@@ -301,8 +282,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "ap", "esg"]],
-            ["state", "present", ["tenant", "ap", "esg"]],
+            ["state", "absent", ["tenant", "ap", "esg", "epg", "epg_provider_ap"]],
+            ["state", "present", ["tenant", "ap", "esg", "epg", "epg_provider_ap"]],
         ],
     )
 
@@ -310,17 +291,14 @@ def main():
     tenant = module.params.get("tenant")
     ap = module.params.get("ap")
     esg = module.params.get("esg")
-    admin_state = module.params.get("admin_state")
-    vrf = module.params.get("vrf")
+    epg_provider_ap = module.params.get("epg_provider_ap")
+    epg = module.params.get("epg")
     description = module.params.get("description")
-    intra_esg_isolation = module.params.get("intra_esg_isolation")
-    preferred_group_member = module.params.get("preferred_group_member")
     state = module.params.get("state")
-    name_alias = module.params.get("name_alias")
 
-    # VRF Selection - fvRsScope
-    child_configs = [dict(fvRsScope=dict(attributes=dict(tnFvCtxName=vrf)))]
-
+    matchEpgDn = "uni/tn-{0}/ap-{1}/epg-{2}".format(tenant, epg_provider_ap, epg)
+    epgselector = "epgselector-[{0}]".format(matchEpgDn)
+    dn = "uni/tn-{0}/ap-{1}/esg-{2}/{3}".format(tenant, ap, esg, epgselector)
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -340,28 +318,25 @@ def main():
             module_object=esg,
             target_filter={"name": esg},
         ),
-        child_classes=[
-            "fvRsScope",
-        ],
+        subclass_3=dict(
+            aci_class="fvEPgSelector",
+            aci_rn=epgselector,
+            module_object=dn,
+            target_filter={"matchEpgDn": epg},
+        ),
     )
-
     aci.get_existing()
 
     if state == "present":
         aci.payload(
-            aci_class="fvESg",
+            aci_class="fvEPgSelector",
             class_config=dict(
-                name=esg,
+                matchEpgDn=matchEpgDn,
                 descr=description,
-                shutdown=admin_state,
-                pcEnfPref=intra_esg_isolation,
-                prefGrMemb=preferred_group_member,
-                nameAlias=name_alias,
             ),
-            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class="fvESg")
+        aci.get_diff(aci_class="fvEPgSelector")
 
         aci.post_config()
 

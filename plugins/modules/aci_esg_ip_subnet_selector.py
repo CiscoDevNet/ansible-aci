@@ -13,10 +13,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_esg
-short_description: Manage Endpoint Security Groups (ESGs) objects (fv:ESg)
+module: aci_esg_ip_subnet_selector
+short_description: Manage ESG IP Subnet selector(fv:EPSelector)
 description:
-- Manage Endpoint Security Groups (ESGs) on Cisco ACI fabrics.
+- Manage Endpoint Security Groups (ESG) IP Subnet selector relationships on Cisco ACI fabrics.
 
 options:
   tenant:
@@ -33,33 +33,17 @@ options:
     description:
     - Name of the Endpoint Security Group.
     type: str
-    aliases: [ esg_name, name ]
-  admin_state:
+    aliases: [ esg_name ]
+  ip:
     description:
-    - Use C(no) to set 'Admin Up' on the ESG Admin state and it is default.
-    - Use C(yes) to set 'Admin Shut' on the ESG Admin state
+    - IP address of the subnet selector.
     type: str
-    choices: [ 'no', 'yes' ]
-  vrf:
-    description:
-    - Name of the VRF
-    type: str
-    aliases: [ vrf_name ]
+    aliases: [ subnet_ip ]
   description:
     description:
-    - Endpoint security group description.
+    - Description of the ESG IP Subnet selector.
     type: str
-    aliases: [ descr ]
-  intra_esg_isolation:
-    description:
-    - The default value of Intra ESG Isolation is C(unenforced).
-    type: str
-    choices: [ enforced, unenforced ]
-  preferred_group_member:
-    description:
-    - The default value of Preferred Group Member is C(exclude).
-    type: str
-    choices: [ exclude, include ]
+    aliases: [ ip_subnet_selector_description ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -71,13 +55,13 @@ options:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
+
 extends_documentation_fragment:
 - cisco.aci.aci
-
 seealso:
-- module: cisco.aci.aci_aep_to_domain
-- name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(infra:AttEntityP) and B(infra:ProvAcc).
+- module: cisco.aci.aci_esg
+- name: Manage Endpoint Security Groups (ESGs) objects (fv:ESg)
+  description: Manage Endpoint Security Groups (ESGs) on Cisco ACI fabrics.
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Sabari Jaganathan (@sajagana)
@@ -85,80 +69,36 @@ author:
 
 
 EXAMPLES = r"""
-- name: Add a new ESG
-  cisco.aci.aci_esg:
+- name: Add an IP subnet selector
+  cisco.aci.aci_esg_tag_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
-    ap: intranet
+    ap: production_ap
     esg: web_esg
-    vrf: 'default'
-    description: Web Intranet ESG
+    ip: "10.0.0.0"
+    description: "IP Subnet Selector Description"
     state: present
   delegate_to: localhost
 
-- name: Add list of ESGs
-  cisco.aci.aci_esg:
+- name: Query all IP subnet selector
+  cisco.aci.aci_esg_tag_selector:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+
+- name: Remove an IP subnet selector
+  cisco.aci.aci_esg_tag_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
-    ap: ticketing
-    esg: "{{ item.esg }}"
-    description: Ticketing ESG
-    vrf: 'default'
-    state: present
-  delegate_to: localhost
-  with_items:
-    - esg: web
-    - esg: database
-
-- name: Query an ESG
-  cisco.aci.aci_esg:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: production
-    ap: ticketing
+    ap: production_ap
     esg: web_esg
-    state: query
-  delegate_to: localhost
-
-- name: Query all ESGs
-  cisco.aci.aci_esg:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    state: query
-  delegate_to: localhost
-
-- name: Query all ESGs with a Specific Name
-  cisco.aci.aci_esg:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    esg: web_esg
-    state: query
-  delegate_to: localhost
-
-- name: Query all ESGs of an App Profile
-  cisco.aci.aci_esg:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    ap: ticketing
-    state: query
-  delegate_to: localhost
-
-- name: Remove an ESG
-  cisco.aci.aci_esg:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: production
-    app_profile: intranet
-    esg: web_esg
+    ip: "10.0.0.0"
     state: absent
   delegate_to: localhost
 """
@@ -280,15 +220,9 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         ap=dict(type="str", aliases=["app_profile", "app_profile_name"]),
-        esg=dict(type="str", aliases=["name", "esg_name"]),
-        admin_state=dict(type="str", choices=["no", "yes"]),  # ESG Admin State
-        vrf=dict(type="str", aliases=["vrf_name"]),  # ESG VRF name
-        description=dict(type="str", aliases=["descr"]),
-        intra_esg_isolation=dict(
-            type="str",
-            choices=["enforced", "unenforced"],
-        ),  # Intra ESG Isolation
-        preferred_group_member=dict(type="str", choices=["exclude", "include"]),  # Preferred Group Member
+        esg=dict(type="str", aliases=["esg_name"]),
+        ip=dict(type="str", aliases=["subnet_ip"]),
+        description=dict(type="str", aliases=["ip_subnet_selector_description"]),
         state=dict(
             type="str",
             default="present",
@@ -301,8 +235,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "ap", "esg"]],
-            ["state", "present", ["tenant", "ap", "esg"]],
+            ["state", "absent", ["tenant", "ap", "esg", "ip"]],
+            ["state", "present", ["tenant", "ap", "esg", "ip"]],
         ],
     )
 
@@ -310,17 +244,13 @@ def main():
     tenant = module.params.get("tenant")
     ap = module.params.get("ap")
     esg = module.params.get("esg")
-    admin_state = module.params.get("admin_state")
-    vrf = module.params.get("vrf")
+    ip = module.params.get("ip")
     description = module.params.get("description")
-    intra_esg_isolation = module.params.get("intra_esg_isolation")
-    preferred_group_member = module.params.get("preferred_group_member")
     state = module.params.get("state")
-    name_alias = module.params.get("name_alias")
 
-    # VRF Selection - fvRsScope
-    child_configs = [dict(fvRsScope=dict(attributes=dict(tnFvCtxName=vrf)))]
-
+    match_expression = "ip=='{0}'".format(ip)
+    aci_rn = "epselector-[{0}]".format(match_expression)
+    dn = "uni/tn-{0}/ap-{1}/esg-{2}/{3}".format(tenant, ap, esg, aci_rn)
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -340,28 +270,26 @@ def main():
             module_object=esg,
             target_filter={"name": esg},
         ),
-        child_classes=[
-            "fvRsScope",
-        ],
+        subclass_3=dict(
+            aci_class="fvEPSelector",
+            aci_rn=aci_rn,
+            module_object=dn,
+            target_filter={},
+        ),
     )
 
     aci.get_existing()
 
     if state == "present":
         aci.payload(
-            aci_class="fvESg",
+            aci_class="fvEPSelector",
             class_config=dict(
-                name=esg,
+                matchExpression=match_expression,
                 descr=description,
-                shutdown=admin_state,
-                pcEnfPref=intra_esg_isolation,
-                prefGrMemb=preferred_group_member,
-                nameAlias=name_alias,
             ),
-            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class="fvESg")
+        aci.get_diff(aci_class="fvEPSelector")
 
         aci.post_config()
 

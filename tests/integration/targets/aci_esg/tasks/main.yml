@@ -1,5 +1,5 @@
 # Test code for the ACI modules
-# Copyright: (c) 2021, Sabari Jaganathan (@sajagana)
+# Copyright: (c) 2022, Sabari Jaganathan (@sajagana)
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -27,254 +27,251 @@
     state: query
   register: version
 
-- name: ensure tenant deleted successfully before starting tests
-  cisco.aci.aci_tenant:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
+# Setup part
+- name: Ensure tenant - anstest does not exists before testing
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
     output_level: debug
     tenant: anstest
     state: absent
 
-- name: ensure tenant exists for tests to kick off
-  cisco.aci.aci_tenant: &aci_tenant_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
+- name: Ensure anstest - tenant exists
+  cisco.aci.aci_tenant: &tenant_present
+    <<: *tenant_absent
     state: present
-    tenant: anstest
-  register: tenant_present
 
-- name: ensure ap exists for tests to kick off
-  cisco.aci.aci_ap: &aci_ap_present
-    <<: *aci_tenant_present
-    ap: anstest
-  register: ap_present
+- name: Ensure ap - application profile exists
+  cisco.aci.aci_ap: &anstest_ap_present
+    <<: *tenant_present
+    ap: anstest_ap
+    state: present
 
-- name: create basic esg - check mode works
-  cisco.aci.aci_esg: &aci_esg_present
-    <<: *aci_ap_present
-    esg: anstest-esg
-    description: Ansible Test
-    vrf: 'default'
-    admin_state: 'no'
+- name: Ensure anstest_ap_1 - application profile exists
+  cisco.aci.aci_ap: &anstest_ap_1_present
+    <<: *tenant_present
+    ap: anstest_ap_1
+    state: present
+
+# Test Part
+- name: Ensure web_esg_0 - endpoint security group exists with check mode
+  cisco.aci.aci_esg: &cm_web_esg_0_present
+    <<: *anstest_ap_present
+    esg: web_esg_0
+    vrf: default
     state: present
   check_mode: yes
-  register: esg_present_check_mode
+  register: cm_web_esg_0_present
   when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
 
-- name: create basic esg - creation works
-  cisco.aci.aci_esg:
-    <<: *aci_esg_present
-  register: esg_present
-
-- name: create basic esg - idempotency works
-  cisco.aci.aci_esg:
-    <<: *aci_esg_present
-  register: esg_present_idempotent
-
-- name: update basic esg - update works
-  cisco.aci.aci_esg:
-    <<: *aci_esg_present
-    description: Ansible Test Update
-  register: esg_present_update
-
-- name: create basic esg - missing param
-  cisco.aci.aci_esg:
-    <<: *aci_esg_present
-    ap: "{{ fakevar | default(omit) }}"
-  ignore_errors: yes
-  register: esg_present_missing_param
-
-- name: create basic esg - used for query
-  cisco.aci.aci_esg:
-    <<: *aci_ap_present
-    esg: anstest2-esg
-    description: Ansible Test
-    vrf: 'default'
-    admin_state: 'no'
-
-- name: present assertions for basic esg check works
+- name: Assertions check for add web_esg_0 with check mode
   assert:
     that:
-      - esg_present_check_mode is changed
-      - esg_present_check_mode.previous == []
-      - esg_present_check_mode.sent.fvESg.attributes != {}
-      - esg_present_check_mode.sent.fvESg.children.0.fvRsScope.attributes.tnFvCtxName == "default"
-      - esg_present is changed
-      - esg_present.sent == esg_present_check_mode.sent
-      - esg_present_idempotent is not changed
-      - esg_present_idempotent.sent == {}
-      - esg_present_update is changed
-      - esg_present_update.sent.fvESg.attributes.descr == 'Ansible Test Update'
-      - esg_present_missing_param is failed
-      - 'esg_present_missing_param.msg == "state is present but all of the following are missing: ap"'
+      - cm_web_esg_0_present is changed
+      - cm_web_esg_0_present.current | length == 0
+      - cm_web_esg_0_present.previous | length == 0
 
-- name: get basic esg
-  cisco.aci.aci_esg:
-    <<: *aci_esg_present
-    state: query
-  register: esg_query
+- name: Ensure web_esg_0 - endpoint security group exists with normal mode
+  cisco.aci.aci_esg: &nm_web_esg_0_present
+    <<: *cm_web_esg_0_present
+  register: nm_web_esg_0_present
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
 
-- name: get all esgs
-  cisco.aci.aci_esg:
-    <<: *aci_tenant_present
-    state: query
-    tenant: "{{ fakevar | default(omit) }}"
-  register: esg_query_all
-
-- name: query assertions for basic esg check works
+- name: Assertions check for add web_esg_0 with normal mode
   assert:
     that:
-      - esg_query is not changed
-      - esg_query.current | length == 1
-      - esg_query.current.0.fvESg.attributes.name == "anstest-esg"
-      - '"tn-anstest/ap-anstest/esg-anstest-esg.json" in esg_query.url'
-      - esg_query_all is not changed
-      - esg_query_all.current | length > 1
-      - '"?rsp-subtree=full&rsp-subtree-class=fvEPSelector,fvEPgSelector,fvRsScope,fvRsSecInherited,fvTagSelector" in esg_query_all.filter_string'
-      - '"class/fvESg.json" in esg_query_all.url'
+      - nm_web_esg_0_present is changed
+      - nm_web_esg_0_present.current | length == 1
+      - nm_web_esg_0_present.previous | length == 0
+      - nm_web_esg_0_present.current.0.fvESg.attributes.name == 'web_esg_0'
+      - nm_web_esg_0_present.current.0.fvESg.attributes.shutdown == 'no'
+      - nm_web_esg_0_present.current.0.fvESg.attributes.prio == 'unspecified'
+      - nm_web_esg_0_present.current.0.fvESg.attributes.prefGrMemb == 'exclude'
+      - nm_web_esg_0_present.current.0.fvESg.attributes.pcEnfPref == 'unenforced'
+      - nm_web_esg_0_present.current.0.fvESg.children[0].fvRsScope.attributes.tnFvCtxName == 'default'
 
-- name: delete basic esg - check mode works
-  cisco.aci.aci_esg: &aci_esg_absent
-    <<: *aci_esg_present
+- name: Ensure web_esg_0 - endpoint security group exists with normal mode - idempotency works
+  cisco.aci.aci_esg:
+    <<: *nm_web_esg_0_present
+  register: idempotency_web_esg_0_present
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+
+- name: Idempotency assertions check for add web_esg_0 with normal mode
+  assert:
+    that:
+      - idempotency_web_esg_0_present is not changed
+      - idempotency_web_esg_0_present.current | length == 1
+      - idempotency_web_esg_0_present.previous | length == 1
+      - idempotency_web_esg_0_present.current.0.fvESg.attributes.name == 'web_esg_0'
+
+- name: Ensure web_esg_0 - endpoint security group exists under ap(anstest_ap_1_present)
+  cisco.aci.aci_esg:
+    <<: *anstest_ap_1_present
+    esg: web_esg_0
+    vrf: default
+    state: present
+  register: ap_1_web_esg_0_present
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+
+- name: Assertions check for add web_esg_0 under ap(anstest_ap_1_present)
+  assert:
+    that:
+      - ap_1_web_esg_0_present is changed
+      - ap_1_web_esg_0_present.current | length == 1
+      - ap_1_web_esg_0_present.previous | length == 0
+      - ap_1_web_esg_0_present.current.0.fvESg.attributes.name == 'web_esg_0'
+      - ap_1_web_esg_0_present.current.0.fvESg.attributes.dn == "uni/tn-anstest/ap-anstest_ap_1/esg-web_esg_0"
+
+- name: Ensure web_esg_1 - endpoint security group exists with admin_state(no) - 'Admin Up' on the UI side
+  cisco.aci.aci_esg:
+    <<: *anstest_ap_present
+    esg: web_esg_1
+    admin_state: no
+    state: present
+  register: web_esg_1_present
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+
+- name: Assertions check for add web_esg_1
+  assert:
+    that:
+      - web_esg_1_present is changed
+      - web_esg_1_present.current | length == 1
+      - web_esg_1_present.previous | length == 0
+      - web_esg_1_present.current.0.fvESg.attributes.name == 'web_esg_1'
+      - web_esg_1_present.current.0.fvESg.attributes.shutdown == 'no'
+      - web_esg_1_present.current.0.fvESg.children[0].fvRsScope.attributes.tnFvCtxName == ''
+      - web_esg_1_present.sent.fvESg.attributes.shutdown == 'no'
+
+- name: Ensure web_esg_2 - endpoint security group exists with admin_state(yes) - 'Admin Shut' on the UI side
+  cisco.aci.aci_esg:
+    <<: *anstest_ap_present
+    esg: web_esg_2
+    admin_state: yes
+    state: present
+  register: web_esg_2_present
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+
+- name: Assertions check for add web_esg_2
+  assert:
+    that:
+      - web_esg_2_present is changed
+      - web_esg_2_present.current | length == 1
+      - web_esg_2_present.previous | length == 0
+      - web_esg_2_present.current.0.fvESg.attributes.name == 'web_esg_2'
+      - web_esg_2_present.current.0.fvESg.attributes.shutdown == 'yes'
+      - web_esg_2_present.current.0.fvESg.children[0].fvRsScope.attributes.tnFvCtxName == ''
+      - web_esg_2_present.sent.fvESg.attributes.shutdown == 'yes'
+
+- name: Query an ESG
+  cisco.aci.aci_esg:
+    <<: *anstest_ap_present
+    esg: web_esg_0
+    state: query
+  register: query_web_esg_0
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+
+- name: Assertions check for query an ESG(web_esg_0) under ap(anstest_ap)
+  assert:
+    that:
+      - query_web_esg_0 is not changed
+      - query_web_esg_0.current | length == 1
+      - query_web_esg_0.current.0.fvESg.attributes.name == 'web_esg_0'
+      - query_web_esg_0.current.0.fvESg.attributes.dn == "uni/tn-anstest/ap-anstest_ap/esg-web_esg_0"
+      - query_web_esg_0.current.0.fvESg.attributes.shutdown == 'no'
+
+- name: Query all ESGs
+  cisco.aci.aci_esg:
+    <<: *aci_info
+    state: query
+  register: query_all_esg
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+
+- name: Assertions check for query all ESGs
+  assert:
+    that:
+      - query_all_esg is not changed
+      - query_all_esg.current | length >= 4 # Count of ESGs added in the above tasks
+
+- name: Query all ESGs with a Specific Name
+  cisco.aci.aci_esg:
+    <<: *aci_info
+    esg: web_esg_0
+    state: query
+  register: query_all_esg_with_name
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+
+- name: Assertions check for query all ESGs with a Specific Name
+  assert:
+    that:
+      - query_all_esg_with_name is not changed
+      - query_all_esg_with_name.current | length >= 2
+
+- name: Query all ESGs of an App Profile
+  cisco.aci.aci_esg:
+    <<: *aci_info
+    ap: anstest_ap
+    state: query
+  register: query_all_ap_esg
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+
+- name: Assertions check for query all ESGs of an App Profile
+  assert:
+    that:
+      - query_all_ap_esg is not changed
+      - query_all_ap_esg.current.0.fvAp.attributes.name == 'anstest_ap'
+      - query_all_ap_esg.current.0.fvAp.children | length == 3
+
+- name: Remove an ESG with check mode
+  cisco.aci.aci_esg: &cm_web_esg_0_absent
+    <<: *anstest_ap_present
+    esg: web_esg_0
     state: absent
+  register: cm_web_esg_0_absent
   check_mode: yes
-  register: delete_esg_check_mode
-
-- name: delete basic esg - delete works
-  cisco.aci.aci_esg:
-    <<: *aci_esg_absent
-  register: delete_esg
-
-- name: delete basic esg - idempotency works
-  cisco.aci.aci_esg:
-    <<: *aci_esg_absent
-  register: delete_esg_idempotent
-
-- name: delete basic esg - cleanup extra esg
-  cisco.aci.aci_esg:
-    <<: *aci_esg_absent
-    esg: anstest2-esg
-
-- name: delete basic esg - missing param fails
-  cisco.aci.aci_esg:
-    <<: *aci_esg_absent
-    tenant: "{{ fakevar | default(omit) }}"
-  ignore_errors: yes
-  register: delete_esg_missing_param
-
-- name: query assertions for deleting basic esg check works
-  assert:
-    that:
-      - delete_esg_check_mode is changed
-      - delete_esg_check_mode.previous != []
-      - delete_esg is changed
-      - delete_esg.previous == delete_esg_check_mode.previous
-      - delete_esg_idempotent is not changed
-      - delete_esg_idempotent.previous == []
-      - delete_esg_missing_param is failed
-      - 'delete_esg_missing_param.msg == "state is absent but all of the following are missing: tenant"'
-
-- name: create epg - check mode works
-  cisco.aci.aci_epg: &aci_epg_present
-    <<: *aci_ap_present
-    epg: anstest-epg
-    bd: 'default'
-    description: Ansible Test
-    state: present
-  check_mode: yes
-  register: epg_present_check_mode
-
-- name: create epg - creation works
-  cisco.aci.aci_epg:
-    <<: *aci_epg_present
-  register: epg_present
-
-- name: create esg for contract master
-  cisco.aci.aci_esg: &aci_esg_contract_master_present
-    <<: *aci_ap_present
-    esg: anstest-esg-contract-master
-    description: Ansible Test ESG Contract Master
-    vrf: 'default'
-    admin_state: 'no'
-  register: esg_contract_master_present
   when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
 
-- name: create esg - check mode with Tag Selectors and other options works new
-  cisco.aci.aci_esg: &aci_esg_present_new
-    <<: *aci_ap_present
-    epg: anstest-epg
-    esg: anstest-esg
-    description: Ansible Test
-    vrf: 'default'
-    admin_state: 'no'
-    intra_esg_isolation: 'enforced'
-    preferred_group_member: 'include'
-    match_key: 'esg-matchKey'
-    match_value: 'esg-matchValue'
-    subnet_ip: "{{ (aci_hostname.split('.')[:3] + [255]) | join('.') }}"
-    subnet_selector_description: Ansible Test Subnet Selector
-    esg_contract_master: 'anstest-esg-contract-master'
-    value_operator: 'contains'
-    tag_selector_description: Ansible Test  Tag Selector
-    epg_selector_description: Ansible Test EPG Selector
-    state: present
-  check_mode: yes
-  register: esg_present_check_mode
-  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
-
-- name: create esg with Tag Selectors and other options
-  cisco.aci.aci_esg:
-    <<: *aci_esg_present_new
-
-- name: get specific esg
-  cisco.aci.aci_esg:
-    <<: *aci_esg_present_new
-    state: query
-  register: esg_query_new
-
-- name: get all esgs
-  cisco.aci.aci_esg:
-    <<: *aci_tenant_present
-    state: query
-    tenant: "{{ fakevar | default(omit) }}"
-  register: esg_query_all_new
-
-- name: query assertions check for esg with Tag Selectors and other options works
+- name: Assertions check for remove an ESG with check mode
   assert:
     that:
-      - esg_query_new is not changed
-      - esg_query_new.current | length == 1
-      - esg_query_new.current.0.fvESg.attributes.name == "anstest-esg"
-      - esg_present_check_mode.sent.fvESg.children.1.fvTagSelector.attributes.matchKey == 'esg-matchKey'
-      - esg_present_check_mode.sent.fvESg.children.1.fvTagSelector.attributes.matchValue == 'esg-matchValue'
-      - '"tn-anstest/ap-anstest/esg-anstest-esg.json" in esg_query.url'
-      - esg_query_all_new is not changed
-      - esg_query_all_new.current | length > 1
-      - '"?rsp-subtree=full&rsp-subtree-class=fvEPSelector,fvEPgSelector,fvRsScope,fvRsSecInherited,fvTagSelector" in esg_query_all.filter_string'
-      - '"class/fvESg.json" in esg_query_all.url'
+      - cm_web_esg_0_absent is changed
+      - cm_web_esg_0_absent.current | length == 1
+      - cm_web_esg_0_absent.previous | length == 1
+      - cm_web_esg_0_absent.current.0.fvESg.attributes.name == 'web_esg_0'
+      - cm_web_esg_0_absent.previous.0.fvESg.attributes.name == 'web_esg_0'
 
-- name: delete epg - delete works
-  cisco.aci.aci_epg:
-    <<: *aci_epg_present
-  register: delete_epg
+- name: Remove an ESG with normal mode
+  cisco.aci.aci_esg: &nm_web_esg_0_absent
+    <<: *cm_web_esg_0_absent
+  register: nm_web_esg_0_absent
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
 
-- name: cleanup ap
+- name: Assertions check for remove an ESG with normal mode
+  assert:
+    that:
+      - nm_web_esg_0_absent is changed
+      - nm_web_esg_0_absent.current == []
+      - nm_web_esg_0_absent.previous | length == 1
+      - nm_web_esg_0_absent.previous.0.fvESg.attributes.name == 'web_esg_0'
+
+- name: Remove an ESG with normal mode - idempotency works
+  cisco.aci.aci_esg:
+    <<: *nm_web_esg_0_absent
+  register: idempotency_web_esg_0_absent
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+
+- name: Idempotency assertions check for remove an ESG with normal mode
+  assert:
+    that:
+      - idempotency_web_esg_0_absent is not changed
+      - idempotency_web_esg_0_absent.current == []
+      - idempotency_web_esg_0_absent.previous == []
+
+# Cleanup part
+- name: Remove ap - application profile
   cisco.aci.aci_ap:
-    <<: *aci_ap_present
+    <<: *anstest_ap_present
     state: absent
-  when: ap_present.previous == []
 
-- name: cleanup tenant
+- name: Remove anstest - tenant
   cisco.aci.aci_tenant:
-    <<: *aci_tenant_present
+    <<: *tenant_present
     state: absent
-  when: tenant_present.previous == []
