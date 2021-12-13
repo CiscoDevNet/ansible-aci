@@ -45,7 +45,8 @@ options:
     - QoS class.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
-    choices: [ level1, level2, level3, unspecified ]
+    choices: [ level1, level2, level3, level4, level5, level6, unspecified ]
+    default: unspecified
   provider_match:
     description:
     - The matching algorithm for Provided Contracts.
@@ -266,7 +267,7 @@ def main():
         ap=dict(type="str", aliases=["app_profile", "app_profile_name"]),  # Not required for querying all objects
         epg=dict(type="str", aliases=["epg_name"]),  # Not required for querying all objects
         contract=dict(type="str", aliases=["contract_name"]),  # Not required for querying all objects
-        priority=dict(type="str", choices=["level1", "level2", "level3", "unspecified"]),
+        priority=dict(type="str", choices=["level1", "level2", "level3", "level4", "level5", "level6", "unspecified"]),
         provider_match=dict(type="str", choices=["all", "at_least_one", "at_most_one", "none"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
