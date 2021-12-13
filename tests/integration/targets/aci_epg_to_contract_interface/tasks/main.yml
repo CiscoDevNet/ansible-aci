@@ -78,7 +78,7 @@
     state: present
   register: testcif1
 
-- name: Ensure inter_tenant_contract_interface binding does not exist in anstest1_epg
+- name: Ensure inter_tenant_contract_interface binding exist in anstest1_epg
   cisco.aci.aci_epg_to_contract_interface: &contract_interface_binding_present
     <<: *aci_info
     tenant: anstest1
