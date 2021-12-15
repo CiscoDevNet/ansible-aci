@@ -85,7 +85,7 @@
   delegate_to: localhost
   register: update_dns_domain
 
-- name: Verify DNS domain creation
+- name: Verify DNS domain update
   assert:
     that:
     - update_dns_domain is changed
@@ -135,7 +135,7 @@
   delegate_to: localhost
   register: delete_dns_domain
 
-- name: Verify DNS provider deletion
+- name: Verify DNS domain deletion
   assert:
     that:
     - delete_dns_domain is changed
@@ -154,10 +154,10 @@
   delegate_to: localhost
   register: delete_dns_domain_again
 
-- name: Verify DNS provider deletion idempotence
+- name: Verify DNS domain deletion idempotence
   assert:
     that:
-    - delete_dns_domain is not changed
+    - delete_dns_domain_again is not changed
 
 # CLEAN ENVIRONMENT
 - name: Remove DNS profile if it already exists

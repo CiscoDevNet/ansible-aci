@@ -28,7 +28,7 @@
     state: present
   register: add_dns_profile
 
-- name: Verify that ansible_dns_profile has been created with correct attributes
+- name: Verify that DNS profile has been created with correct attributes
   assert:
     that:
     - add_dns_profile is changed
@@ -43,7 +43,7 @@
     state: present
   register: add_dns_profile_again
 
-- name: Verify that ansible_dns_profile has been created with correct attributes
+- name: Verify that DNS profile creation idempotence
   assert:
     that:
     - add_dns_profile_again is not changed
@@ -51,7 +51,7 @@
     - add_dns_profile_again.current.0.dnsProfile.attributes.name == "ansible_dns_profile"
 
 # QUERY DNS PROFILE
-- name: Query the syslog group
+- name: Query the DNS profile
   cisco.aci.aci_dns_profile:
     <<: *aci_info
     profile_name: ansible_dns_profile
@@ -104,4 +104,3 @@
   assert:
     that:
     - remove_dns_profile_again is not changed
-

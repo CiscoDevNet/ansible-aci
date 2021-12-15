@@ -66,7 +66,7 @@
   delegate_to: localhost
   register: add_dns_provider_again
 
-- name: Verify DNS provider creation
+- name: Verify DNS provider creation idempotence
   assert:
     that:
     - add_dns_provider_again is not changed
@@ -85,7 +85,7 @@
   delegate_to: localhost
   register: update_dns_provider
 
-- name: Verify DNS provider creation
+- name: Verify DNS provider update
   assert:
     that:
     - update_dns_provider is changed
@@ -157,7 +157,7 @@
 - name: Verify DNS provider deletion idempotence
   assert:
     that:
-    - delete_dns_provider is not changed
+    - delete_dns_provider_again is not changed
 
 # CLEAN ENVIRONMENT
 - name: Remove DNS profile if it already exists
