@@ -39,10 +39,6 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
-  name_alias:
-    description:
-    - The alias for the current object. This relates to the nameAlias field in ACI.
-    type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 
@@ -233,7 +229,6 @@ def main():
     addr = module.params.get('addr')
     preferred = aci.boolean(module.params.get('preferred'))
     state = module.params.get('state')
-
 
     aci.construct_url(
         root_class=dict(
