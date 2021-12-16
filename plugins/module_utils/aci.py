@@ -1469,5 +1469,5 @@ class ACIModule(object):
             output_path = self.params.get("output_path")
             if output_path is not None:
                 with open(output_path, "a") as output_file:
-                    if self.result.get('changed') == True:
+                    if self.result.get('changed') is True:
                         json.dump([mo], output_file)
