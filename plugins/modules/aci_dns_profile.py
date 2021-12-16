@@ -46,7 +46,7 @@ EXAMPLES = r'''
   cisco.aci.aci_dns_profile:
     host: apic
     username: admin
-    password: SomeSecretePassword
+    password: SomeSecretPassword
     dns_profile: my_dns_prof
     state: present
   delegate_to: localhost
@@ -55,7 +55,7 @@ EXAMPLES = r'''
   cisco.aci.aci_dns_profile:
     host: apic
     username: admin
-    password: SomeSecretePassword
+    password: SomeSecretPassword
     dns_profile: my_dns_prof
     state: absent
   delegate_to: localhost
@@ -64,7 +64,7 @@ EXAMPLES = r'''
   cisco.aci.aci_dns_profile:
     host: apic
     username: admin
-    password: SomeSecretePassword
+    password: SomeSecretPassword
     dns_profile: my_dns_prof
     state: query
   delegate_to: localhost
@@ -74,7 +74,7 @@ EXAMPLES = r'''
   cisco.aci.aci_dns_profile:
     host: apic
     username: admin
-    password: SomeSecretePassword
+    password: SomeSecretPassword
     state: query
   delegate_to: localhost
   register: query_result
