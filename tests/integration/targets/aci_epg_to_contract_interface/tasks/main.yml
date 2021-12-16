@@ -84,7 +84,7 @@
     tenant: anstest1
     ap: anstest1_ap
     epg: anstest1_epg
-    contract: inter_tenant_contract_interface
+    contract_interface: inter_tenant_contract_interface
     priority: unspecified
     state: present
   register: inter_tenant_contract_interface_present
@@ -113,7 +113,7 @@
     tenant: anstest1
     ap: anstest1_ap
     epg: anstest1_epg
-    contract: inter_tenant_contract_interface
+    contract_interface: inter_tenant_contract_interface
     state: query
   register: single_object_query_result
 
@@ -157,7 +157,7 @@
     tenant: anstest1
     ap: anstest1_ap
     epg: anstest1_epg
-    contract: temp_contract # contract was not exported, test expected to fail
+    contract_interface: temp_contract # contract was not exported, test expected to fail
     priority: unspecified
     state: present
   ignore_errors: yes
@@ -165,7 +165,7 @@
 - name: check missing parameters while binding consumed contract interface with anstest1_epg
   cisco.aci.aci_epg_to_contract_interface:
     <<: *contract_interface_binding_present
-    contract: "{{ fakevar | default(omit) }}"
+    contract_interface: "{{ fakevar | default(omit) }}"
     state: present
   ignore_errors: yes
 
