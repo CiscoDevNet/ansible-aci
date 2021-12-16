@@ -5,9 +5,10 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_node_mgmt_epg
 short_description: In band or Out of band management EPGs
@@ -45,9 +46,9 @@ extends_documentation_fragment:
 
 author:
 - Shreyas Srish (@shrsr)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add in band mgmt epg
   cisco.aci.aci_node_mgmt_epg:
     host: "Host IP"
@@ -109,9 +110,9 @@ EXAMPLES = r'''
     type: in_band
     state: absent
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
    current:
      description: The existing configuration from the APIC after the module has finished
      returned: success
@@ -214,7 +215,7 @@ RETURN = r'''
      returned: failure or debug
      type: str
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
-   '''
+   """
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -223,31 +224,24 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        type=dict(type='str', choices=['in_band', 'out_of_band'], required=True),
-        epg=dict(type='str', aliases=['name']),
-        bd=dict(type='str'),
-        encap=dict(type='str'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        type=dict(type="str", choices=["in_band", "out_of_band"], required=True),
+        epg=dict(type="str", aliases=["name"]),
+        bd=dict(type="str"),
+        encap=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
-    module = AnsibleModule(
-        argument_spec=argument_spec,
-        supports_check_mode=True,
-        required_if=[
-            ['state', 'absent', ['epg']],
-            ['state', 'present', ['epg']]
-        ]
-    )
+    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True, required_if=[["state", "absent", ["epg"]], ["state", "present", ["epg"]]])
 
-    type = module.params.get('type')
-    epg = module.params.get('epg')
-    bd = module.params.get('bd')
-    encap = module.params.get('encap')
-    state = module.params.get('state')
+    type = module.params.get("type")
+    epg = module.params.get("epg")
+    bd = module.params.get("bd")
+    encap = module.params.get("encap")
+    state = module.params.get("state")
 
     child_configs = []
     child_class = []
-    if type == 'in_band':
+    if type == "in_band":
         child_configs = [
             dict(
                 mgmtRsMgmtBD=dict(
@@ -255,58 +249,63 @@ def main():
                         tnFvBDName=bd,
                     ),
                 ),
-            )]
+            )
+        ]
 
-        child_class = ['mgmtRsMgmtBD']
+        child_class = ["mgmtRsMgmtBD"]
 
     class_map = dict(
-        in_band=list([
-            dict(aci_class='mgmtInB', aci_rn='inb-{0}'),
-        ]),
-        out_of_band=list([
-            dict(aci_class='mgmtOoB', aci_rn='oob-{0}'),
-        ]),
+        in_band=list(
+            [
+                dict(aci_class="mgmtInB", aci_rn="inb-{0}"),
+            ]
+        ),
+        out_of_band=list(
+            [
+                dict(aci_class="mgmtOoB", aci_rn="oob-{0}"),
+            ]
+        ),
     )
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-mgmt',
-            module_object='mgmt',
-            target_filter={'name': 'mgmt'},
+            aci_class="fvTenant",
+            aci_rn="tn-mgmt",
+            module_object="mgmt",
+            target_filter={"name": "mgmt"},
         ),
         subclass_1=dict(
-            aci_class='mgmtMgmtP',
-            aci_rn='mgmtp-default',
-            module_object='default',
-            target_filter={'name': 'default'},
+            aci_class="mgmtMgmtP",
+            aci_rn="mgmtp-default",
+            module_object="default",
+            target_filter={"name": "default"},
         ),
         subclass_2=dict(
-            aci_class=class_map.get(type)[0]['aci_class'],
-            aci_rn=class_map.get(type)[0]['aci_rn'].format(epg),
+            aci_class=class_map.get(type)[0]["aci_class"],
+            aci_rn=class_map.get(type)[0]["aci_rn"].format(epg),
             module_object=epg,
-            target_filter={'name': epg},
+            target_filter={"name": epg},
         ),
         child_classes=child_class,
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class=class_map.get(type)[0]['aci_class'],
+            aci_class=class_map.get(type)[0]["aci_class"],
             class_config=dict(
                 name=epg,
                 encap=encap,
             ),
             child_configs=child_configs,
         )
-        aci.get_diff(aci_class=class_map.get(type)[0]['aci_class'])
+        aci.get_diff(aci_class=class_map.get(type)[0]["aci_class"])
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

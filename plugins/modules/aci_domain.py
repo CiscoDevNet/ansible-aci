@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_domain
 short_description: Manage physical, virtual, bridged, routed or FC domain profiles (phys:DomP, vmm:DomP, l2ext:DomP, l3ext:DomP, fc:DomP)
@@ -96,9 +95,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new physical domain
   cisco.aci.aci_domain:
     host: apic
@@ -159,9 +158,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -264,75 +263,100 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 VM_PROVIDER_MAPPING = dict(
-    cloudfoundry='CloudFoundry',
-    kubernetes='Kubernetes',
-    microsoft='Microsoft',
-    openshift='OpenShift',
-    openstack='OpenStack',
-    redhat='Redhat',
-    vmware='VMware',
+    cloudfoundry="CloudFoundry",
+    kubernetes="Kubernetes",
+    microsoft="Microsoft",
+    openshift="OpenShift",
+    openstack="OpenStack",
+    redhat="Redhat",
+    vmware="VMware",
 )
 
 VSWITCH_MAPPING = dict(
-    avs='n1kv',
-    default='default',
-    dvs='default',
-    unknown='unknown',
+    avs="n1kv",
+    default="default",
+    dvs="default",
+    unknown="unknown",
 )
 
-BOOL_TO_ACI_MAPPING = {True: 'yes', False: 'no', None: None}
+BOOL_TO_ACI_MAPPING = {True: "yes", False: "no", None: None}
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        domain_type=dict(type='str', required=True, choices=['fc', 'l2dom', 'l3dom', 'phys', 'vmm'], aliases=['type']),
-        domain=dict(type='str', aliases=['domain_name', 'domain_profile', 'name']),  # Not required for querying all objects
-        dscp=dict(type='str',
-                  choices=['AF11', 'AF12', 'AF13', 'AF21', 'AF22', 'AF23', 'AF31', 'AF32', 'AF33', 'AF41', 'AF42', 'AF43',
-                           'CS0', 'CS1', 'CS2', 'CS3', 'CS4', 'CS5', 'CS6', 'CS7', 'EF', 'VA', 'unspecified'],
-                  aliases=['target']),
-        encap_mode=dict(type='str', choices=['unknown', 'vlan', 'vxlan']),
-        add_infra_pg=dict(type='bool', aliases=['infra_pg']),
-        tag_collection=dict(type='bool'),
-        multicast_address=dict(type='str'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        vm_provider=dict(type='str', choices=['cloudfoundry', 'kubernetes', 'microsoft', 'openshift', 'openstack', 'redhat', 'vmware']),
-        vswitch=dict(type='str', choices=['avs', 'default', 'dvs', 'unknown']),
-        name_alias=dict(type='str'),
+        domain_type=dict(type="str", required=True, choices=["fc", "l2dom", "l3dom", "phys", "vmm"], aliases=["type"]),
+        domain=dict(type="str", aliases=["domain_name", "domain_profile", "name"]),  # Not required for querying all objects
+        dscp=dict(
+            type="str",
+            choices=[
+                "AF11",
+                "AF12",
+                "AF13",
+                "AF21",
+                "AF22",
+                "AF23",
+                "AF31",
+                "AF32",
+                "AF33",
+                "AF41",
+                "AF42",
+                "AF43",
+                "CS0",
+                "CS1",
+                "CS2",
+                "CS3",
+                "CS4",
+                "CS5",
+                "CS6",
+                "CS7",
+                "EF",
+                "VA",
+                "unspecified",
+            ],
+            aliases=["target"],
+        ),
+        encap_mode=dict(type="str", choices=["unknown", "vlan", "vxlan"]),
+        add_infra_pg=dict(type="bool", aliases=["infra_pg"]),
+        tag_collection=dict(type="bool"),
+        multicast_address=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        vm_provider=dict(type="str", choices=["cloudfoundry", "kubernetes", "microsoft", "openshift", "openstack", "redhat", "vmware"]),
+        vswitch=dict(type="str", choices=["avs", "default", "dvs", "unknown"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['domain_type', 'vmm', ['vm_provider']],
-            ['state', 'absent', ['domain', 'domain_type']],
-            ['state', 'present', ['domain', 'domain_type']],
+            ["domain_type", "vmm", ["vm_provider"]],
+            ["state", "absent", ["domain", "domain_type"]],
+            ["state", "present", ["domain", "domain_type"]],
         ],
     )
 
-    dscp = module.params.get('dscp')
-    domain = module.params.get('domain')
-    domain_type = module.params.get('domain_type')
-    encap_mode = module.params.get('encap_mode')
-    add_infra_pg = BOOL_TO_ACI_MAPPING[module.params.get('add_infra_pg')]
-    tag_collection = BOOL_TO_ACI_MAPPING[module.params.get('tag_collection')]
-    multicast_address = module.params.get('multicast_address')
-    vm_provider = module.params.get('vm_provider')
-    vswitch = module.params.get('vswitch')
+    dscp = module.params.get("dscp")
+    domain = module.params.get("domain")
+    domain_type = module.params.get("domain_type")
+    encap_mode = module.params.get("encap_mode")
+    add_infra_pg = BOOL_TO_ACI_MAPPING[module.params.get("add_infra_pg")]
+    tag_collection = BOOL_TO_ACI_MAPPING[module.params.get("tag_collection")]
+    multicast_address = module.params.get("multicast_address")
+    vm_provider = module.params.get("vm_provider")
+    vswitch = module.params.get("vswitch")
     if vswitch is not None:
         vswitch = VSWITCH_MAPPING.get(vswitch)
-    state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
+    state = module.params.get("state")
+    name_alias = module.params.get("name_alias")
 
-    if domain_type != 'vmm':
+    if domain_type != "vmm":
         if vm_provider is not None:
             module.fail_json(msg="Domain type '{0}' cannot have parameter 'vm_provider'".format(domain_type))
         if encap_mode is not None:
@@ -342,30 +366,30 @@ def main():
         if vswitch is not None:
             module.fail_json(msg="Domain type '{0}' cannot have parameter 'vswitch'".format(domain_type))
 
-    if dscp is not None and domain_type not in ['l2dom', 'l3dom']:
+    if dscp is not None and domain_type not in ["l2dom", "l3dom"]:
         module.fail_json(msg="DSCP values can only be assigned to 'l2ext and 'l3ext' domains")
 
     # Compile the full domain for URL building
-    if domain_type == 'fc':
-        domain_class = 'fcDomP'
-        domain_mo = 'uni/fc-{0}'.format(domain)
-        domain_rn = 'fc-{0}'.format(domain)
-    elif domain_type == 'l2dom':
-        domain_class = 'l2extDomP'
-        domain_mo = 'uni/l2dom-{0}'.format(domain)
-        domain_rn = 'l2dom-{0}'.format(domain)
-    elif domain_type == 'l3dom':
-        domain_class = 'l3extDomP'
-        domain_mo = 'uni/l3dom-{0}'.format(domain)
-        domain_rn = 'l3dom-{0}'.format(domain)
-    elif domain_type == 'phys':
-        domain_class = 'physDomP'
-        domain_mo = 'uni/phys-{0}'.format(domain)
-        domain_rn = 'phys-{0}'.format(domain)
-    elif domain_type == 'vmm':
-        domain_class = 'vmmDomP'
-        domain_mo = 'uni/vmmp-{0}/dom-{1}'.format(VM_PROVIDER_MAPPING.get(vm_provider), domain)
-        domain_rn = 'vmmp-{0}/dom-{1}'.format(VM_PROVIDER_MAPPING.get(vm_provider), domain)
+    if domain_type == "fc":
+        domain_class = "fcDomP"
+        domain_mo = "uni/fc-{0}".format(domain)
+        domain_rn = "fc-{0}".format(domain)
+    elif domain_type == "l2dom":
+        domain_class = "l2extDomP"
+        domain_mo = "uni/l2dom-{0}".format(domain)
+        domain_rn = "l2dom-{0}".format(domain)
+    elif domain_type == "l3dom":
+        domain_class = "l3extDomP"
+        domain_mo = "uni/l3dom-{0}".format(domain)
+        domain_rn = "l3dom-{0}".format(domain)
+    elif domain_type == "phys":
+        domain_class = "physDomP"
+        domain_mo = "uni/phys-{0}".format(domain)
+        domain_rn = "phys-{0}".format(domain)
+    elif domain_type == "vmm":
+        domain_class = "vmmDomP"
+        domain_mo = "uni/vmmp-{0}/dom-{1}".format(VM_PROVIDER_MAPPING.get(vm_provider), domain)
+        domain_rn = "vmmp-{0}/dom-{1}".format(VM_PROVIDER_MAPPING.get(vm_provider), domain)
 
     # Ensure that querying all objects works when only domain_type is provided
     if domain is None:
@@ -377,13 +401,13 @@ def main():
             aci_class=domain_class,
             aci_rn=domain_rn,
             module_object=domain_mo,
-            target_filter={'name': domain},
+            target_filter={"name": domain},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
             aci_class=domain_class,
             class_config=dict(
@@ -402,7 +426,7 @@ def main():
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

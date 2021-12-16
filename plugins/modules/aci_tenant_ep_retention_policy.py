@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_tenant_ep_retention_policy
 short_description: Manage End Point (EP) retention protocol policies (fv:EpRetPol)
@@ -92,9 +91,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Swetha Chunduri (@schunduri)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new EPR policy
   cisco.aci.aci_tenant_ep_retention_policy:
     host: apic
@@ -140,9 +139,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -245,95 +244,95 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
 BOUNCE_TRIG_MAPPING = dict(
-    coop='protocol',
-    rarp='rarp-flood',
+    coop="protocol",
+    rarp="rarp-flood",
 )
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
-        epr_policy=dict(type='str', aliases=['epr_name', 'name']),  # Not required for querying all objects
-        bounce_age=dict(type='int'),
-        bounce_trigger=dict(type='str', choices=['coop', 'flood']),
-        hold_interval=dict(type='int'),
-        local_ep_interval=dict(type='int'),
-        remote_ep_interval=dict(type='int'),
-        description=dict(type='str', aliases=['descr']),
-        move_frequency=dict(type='int'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        epr_policy=dict(type="str", aliases=["epr_name", "name"]),  # Not required for querying all objects
+        bounce_age=dict(type="int"),
+        bounce_trigger=dict(type="str", choices=["coop", "flood"]),
+        hold_interval=dict(type="int"),
+        local_ep_interval=dict(type="int"),
+        remote_ep_interval=dict(type="int"),
+        description=dict(type="str", aliases=["descr"]),
+        move_frequency=dict(type="int"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['epr_policy', 'tenant']],
-            ['state', 'present', ['epr_policy', 'tenant']],
+            ["state", "absent", ["epr_policy", "tenant"]],
+            ["state", "present", ["epr_policy", "tenant"]],
         ],
     )
 
-    epr_policy = module.params.get('epr_policy')
-    bounce_age = module.params.get('bounce_age')
+    epr_policy = module.params.get("epr_policy")
+    bounce_age = module.params.get("bounce_age")
     if bounce_age is not None and bounce_age != 0 and bounce_age not in range(150, 65536):
         module.fail_json(msg="The bounce_age must be a value of 0 or between 150 and 65535")
     if bounce_age == 0:
-        bounce_age = 'infinite'
-    bounce_trigger = module.params.get('bounce_trigger')
+        bounce_age = "infinite"
+    bounce_trigger = module.params.get("bounce_trigger")
     if bounce_trigger is not None:
         bounce_trigger = BOUNCE_TRIG_MAPPING[bounce_trigger]
-    description = module.params.get('description')
-    hold_interval = module.params.get('hold_interval')
+    description = module.params.get("description")
+    hold_interval = module.params.get("hold_interval")
     if hold_interval is not None and hold_interval not in range(5, 65536):
         module.fail_json(msg="The hold_interval must be a value between 5 and 65535")
-    local_ep_interval = module.params.get('local_ep_interval')
+    local_ep_interval = module.params.get("local_ep_interval")
     if local_ep_interval is not None and local_ep_interval != 0 and local_ep_interval not in range(120, 65536):
         module.fail_json(msg="The local_ep_interval must be a value of 0 or between 120 and 65535")
     if local_ep_interval == 0:
         local_ep_interval = "infinite"
-    move_frequency = module.params.get('move_frequency')
+    move_frequency = module.params.get("move_frequency")
     if move_frequency is not None and move_frequency not in range(65536):
         module.fail_json(msg="The move_frequency must be a value between 0 and 65535")
     if move_frequency == 0:
         move_frequency = "none"
-    remote_ep_interval = module.params.get('remote_ep_interval')
+    remote_ep_interval = module.params.get("remote_ep_interval")
     if remote_ep_interval is not None and remote_ep_interval not in range(120, 65536):
         module.fail_json(msg="The remote_ep_interval must be a value of 0 or between 120 and 65535")
     if remote_ep_interval == 0:
         remote_ep_interval = "infinite"
-    state = module.params.get('state')
-    tenant = module.params.get('tenant')
-    name_alias = module.params.get('name_alias')
+    state = module.params.get("state")
+    tenant = module.params.get("tenant")
+    name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='fvEpRetPol',
-            aci_rn='epRPol-{0}'.format(epr_policy),
+            aci_class="fvEpRetPol",
+            aci_rn="epRPol-{0}".format(epr_policy),
             module_object=epr_policy,
-            target_filter={'name': epr_policy},
+            target_filter={"name": epr_policy},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='fvEpRetPol',
+            aci_class="fvEpRetPol",
             class_config=dict(
                 name=epr_policy,
                 descr=description,
@@ -347,11 +346,11 @@ def main():
             ),
         )
 
-        aci.get_diff(aci_class='fvEpRetPol')
+        aci.get_diff(aci_class="fvEpRetPol")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

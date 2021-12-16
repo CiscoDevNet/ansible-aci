@@ -5,9 +5,10 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_cloud_epg_selector
 short_description: Manage Cloud Endpoint Selector (cloud:EPSelector)
@@ -78,9 +79,9 @@ options:
 
 extends_documentation_fragment:
 - cisco.aci.aci
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create aci cloud epg selector
   cisco.aci.aci_cloud_epg_selector:
     host: apic
@@ -132,9 +133,9 @@ EXAMPLES = r'''
     name: selectorName
     state: query
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -237,132 +238,127 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, expression_spec
 from ansible.module_utils.basic import AnsibleModule
 
 EXPRESSION_KEYS = {
-    'ip': 'IP',
-    'region': 'Region',
-    'zone': 'Zone',
+    "ip": "IP",
+    "region": "Region",
+    "zone": "Zone",
 }
 
 EXPRESSION_OPERATORS = {
-    'not_in': 'notin',
-    'not_equals': '!=',
-    'in': 'in',
-    'equals': '==',
+    "not_in": "notin",
+    "not_equals": "!=",
+    "in": "in",
+    "equals": "==",
 }
 
 
 def main():
     argument_spec = aci_argument_spec()
-    argument_spec.update({
-        'description': dict(type='str'),
-        'expressions': dict(type='list', elements='dict', options=expression_spec()),
-        'name': dict(type='str', aliases=['selector', 'selector_name']),
-        'tenant': dict(type='str', required=True),
-        'ap': dict(type='str', required=True),
-        'epg': dict(type='str', required=True),
-        'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
-    })
+    argument_spec.update(
+        {
+            "description": dict(type="str"),
+            "expressions": dict(type="list", elements="dict", options=expression_spec()),
+            "name": dict(type="str", aliases=["selector", "selector_name"]),
+            "tenant": dict(type="str", required=True),
+            "ap": dict(type="str", required=True),
+            "epg": dict(type="str", required=True),
+            "state": dict(type="str", default="present", choices=["absent", "present", "query"]),
+        }
+    )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['name']],
-            ['state', 'present', ['name']],
+            ["state", "absent", ["name"]],
+            ["state", "present", ["name"]],
         ],
     )
 
-    description = module.params.get('description')
-    expressions = module.params.get('expressions')
-    name = module.params.get('name')
-    tenant = module.params.get('tenant')
-    ap = module.params.get('ap')
-    epg = module.params.get('epg')
-    state = module.params.get('state')
+    description = module.params.get("description")
+    expressions = module.params.get("expressions")
+    name = module.params.get("name")
+    tenant = module.params.get("tenant")
+    ap = module.params.get("ap")
+    epg = module.params.get("epg")
+    state = module.params.get("state")
     child_configs = []
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class={
-            'aci_class': 'fvTenant',
-            'aci_rn': 'tn-{0}'.format(tenant),
-            'target_filter': 'eq(fvTenant.name, "{0}")'.format(tenant),
-            'module_object': tenant
+            "aci_class": "fvTenant",
+            "aci_rn": "tn-{0}".format(tenant),
+            "target_filter": 'eq(fvTenant.name, "{0}")'.format(tenant),
+            "module_object": tenant,
         },
-        subclass_1={
-            'aci_class': 'cloudApp',
-            'aci_rn': 'cloudapp-{0}'.format(ap),
-            'target_filter': 'eq(cloudApp.name, "{0}")'.format(ap),
-            'module_object': ap
-        },
+        subclass_1={"aci_class": "cloudApp", "aci_rn": "cloudapp-{0}".format(ap), "target_filter": 'eq(cloudApp.name, "{0}")'.format(ap), "module_object": ap},
         subclass_2={
-            'aci_class': 'cloudEPg',
-            'aci_rn': 'cloudepg-{0}'.format(epg),
-            'target_filter': 'eq(cloudEPg.name, "{0}")'.format(epg),
-            'module_object': epg
+            "aci_class": "cloudEPg",
+            "aci_rn": "cloudepg-{0}".format(epg),
+            "target_filter": 'eq(cloudEPg.name, "{0}")'.format(epg),
+            "module_object": epg,
         },
         subclass_3={
-            'aci_class': 'cloudEPSelector',
-            'aci_rn': 'epselector-{0}'.format(name),
-            'target_filter': 'eq(cloudEPSelector.name, "{0}")'.format(name),
-            'module_object': name
+            "aci_class": "cloudEPSelector",
+            "aci_rn": "epselector-{0}".format(name),
+            "target_filter": 'eq(cloudEPSelector.name, "{0}")'.format(name),
+            "module_object": name,
         },
-        child_classes=[]
+        child_classes=[],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         expressions_list = []
         for expression in expressions:
-            key = expression.get('key')
-            operator = expression.get('operator')
-            if expression.get('value'):
-                value = "'" + "','".join(expression.get('value').split(",")) + "'"
+            key = expression.get("key")
+            operator = expression.get("operator")
+            if expression.get("value"):
+                value = "'" + "','".join(expression.get("value").split(",")) + "'"
             else:
                 value = None
             if operator in ["has_key", "does_not_have_key"]:
                 if value:
-                    module.fail_json(
-                        msg="Attribute 'value' is not supported for operator '{0}' in expression '{1}'".format(operator, key))
+                    module.fail_json(msg="Attribute 'value' is not supported for operator '{0}' in expression '{1}'".format(operator, key))
                 if key in ["ip", "region"]:
                     module.fail_json(msg="Operator '{0}' is not supported when expression key is '{1}'".format(operator, key))
             if operator in ["not_in", "in", "equals", "not_equals"] and not value:
-                module.fail_json(
-                    msg="Attribute 'value' needed for operator '{0}' in expression '{1}'".format(operator, key))
+                module.fail_json(msg="Attribute 'value' needed for operator '{0}' in expression '{1}'".format(operator, key))
             if key in ["ip", "region", "zone"]:
                 key = EXPRESSION_KEYS.get(key)
             else:
-                key = 'custom:' + key
+                key = "custom:" + key
             if operator in ["not_in", "in"]:
-                expressions_list.append('{0} {1}({2})'.format(key, EXPRESSION_OPERATORS.get(operator), value))
+                expressions_list.append("{0} {1}({2})".format(key, EXPRESSION_OPERATORS.get(operator), value))
             elif operator in ["equals", "not_equals"]:
-                expressions_list.append('{0}{1}{2}'.format(key, EXPRESSION_OPERATORS.get(operator), value))
+                expressions_list.append("{0}{1}{2}".format(key, EXPRESSION_OPERATORS.get(operator), value))
             elif operator == "does_not_have_key":
-                expressions_list.append('!{0}'.format(key))
+                expressions_list.append("!{0}".format(key))
             else:
                 expressions_list.append(key)
-        matchExpression = ','.join(expressions_list)
+        matchExpression = ",".join(expressions_list)
         aci.payload(
-            aci_class='cloudEPSelector',
+            aci_class="cloudEPSelector",
             class_config={
-                'descr': description,
-                'matchExpression': matchExpression,
-                'name': name,
+                "descr": description,
+                "matchExpression": matchExpression,
+                "name": name,
             },
-            child_configs=child_configs
+            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='cloudEPSelector')
+        aci.get_diff(aci_class="cloudEPSelector")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

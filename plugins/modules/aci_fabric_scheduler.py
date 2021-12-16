@@ -4,15 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
-}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: aci_fabric_scheduler
 
@@ -86,9 +83,9 @@ extends_documentation_fragment:
 
 author:
     - Steven Gerhart (@sgerhart)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
    - name: Simple Scheduler (Empty)
      cisco.aci.aci_fabric_scheduler:
         host: "{{ inventory_hostname }}"
@@ -131,9 +128,9 @@ EXAMPLES = r'''
         minute: 30
         day: Tuesday
         state: present
-'''
+"""
 
-RETURN = '''
+RETURN = """
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -236,7 +233,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
@@ -245,82 +242,105 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        name=dict(type='str', aliases=['scheduler_name']),  # Not required for querying all objects
-        description=dict(type='str', aliases=['descr']),
-        windowname=dict(type='str'),
-        recurring=dict(type='bool'),
-        concurCap=dict(type='int'),  # Number of devices it will run against concurrently
-        maxTime=dict(type='str'),  # The amount of minutes a process will be able to run (unlimited or dd:hh:mm:ss)
-        date=dict(type='str'),  # The date the process will run YYYY-MM-DDTHH:MM:SS
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        hour=dict(type='int'),
-        minute=dict(type='int'),
-        day=dict(type='str', default='every-day', choices=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
-                                                           'Saturday', 'Sunday', 'every-day', 'even-day', 'odd-day']),
-        name_alias=dict(type='str'),
+        name=dict(type="str", aliases=["scheduler_name"]),  # Not required for querying all objects
+        description=dict(type="str", aliases=["descr"]),
+        windowname=dict(type="str"),
+        recurring=dict(type="bool"),
+        concurCap=dict(type="int"),  # Number of devices it will run against concurrently
+        maxTime=dict(type="str"),  # The amount of minutes a process will be able to run (unlimited or dd:hh:mm:ss)
+        date=dict(type="str"),  # The date the process will run YYYY-MM-DDTHH:MM:SS
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        hour=dict(type="int"),
+        minute=dict(type="int"),
+        day=dict(
+            type="str",
+            default="every-day",
+            choices=["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "every-day", "even-day", "odd-day"],
+        ),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['name']],
-            ['state', 'present', ['name']],
+            ["state", "absent", ["name"]],
+            ["state", "present", ["name"]],
         ],
     )
 
-    state = module.params.get('state')
-    name = module.params.get('name')
-    windowname = module.params.get('windowname')
-    recurring = module.params.get('recurring')
-    date = module.params.get('date')
-    hour = module.params.get('hour')
-    minute = module.params.get('minute')
-    maxTime = module.params.get('maxTime')
-    concurCap = module.params.get('concurCap')
-    day = module.params.get('day')
-    description = module.params.get('description')
-    name_alias = module.params.get('name_alias')
+    state = module.params.get("state")
+    name = module.params.get("name")
+    windowname = module.params.get("windowname")
+    recurring = module.params.get("recurring")
+    date = module.params.get("date")
+    hour = module.params.get("hour")
+    minute = module.params.get("minute")
+    maxTime = module.params.get("maxTime")
+    concurCap = module.params.get("concurCap")
+    day = module.params.get("day")
+    description = module.params.get("description")
+    name_alias = module.params.get("name_alias")
 
     if recurring:
-        child_configs = [dict(trigRecurrWindowP=dict(attributes=dict(name=windowname, hour=hour, minute=minute,
-                                                                     procCa=maxTime, concurCap=concurCap, day=day,)))]
+        child_configs = [
+            dict(
+                trigRecurrWindowP=dict(
+                    attributes=dict(
+                        name=windowname,
+                        hour=hour,
+                        minute=minute,
+                        procCa=maxTime,
+                        concurCap=concurCap,
+                        day=day,
+                    )
+                )
+            )
+        ]
     elif recurring is False:
-        child_configs = [dict(trigAbsWindowP=dict(attributes=dict(name=windowname, procCap=maxTime,
-                                                                  concurCap=concurCap, date=date,)))]
+        child_configs = [
+            dict(
+                trigAbsWindowP=dict(
+                    attributes=dict(
+                        name=windowname,
+                        procCap=maxTime,
+                        concurCap=concurCap,
+                        date=date,
+                    )
+                )
+            )
+        ]
     else:
         child_configs = []
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='trigSchedP',
-            aci_rn='fabric/schedp-{0}'.format(name),
-            target_filter={'name': name},
+            aci_class="trigSchedP",
+            aci_rn="fabric/schedp-{0}".format(name),
+            target_filter={"name": name},
             module_object=name,
         ),
-
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='trigSchedP',
+            aci_class="trigSchedP",
             class_config=dict(
                 name=name,
                 descr=description,
                 nameAlias=name_alias,
             ),
             child_configs=child_configs,
-
         )
 
-        aci.get_diff(aci_class='trigSchedP')
+        aci.get_diff(aci_class="trigSchedP")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

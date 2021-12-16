@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_switch_leaf_selector
 short_description: Bind leaf selectors to switch policy leaf profiles (infra:LeafS, infra:NodeBlk, infra:RsAccNodePGrep)
@@ -81,9 +80,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Bruno Calogero (@brunocalogero)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: adding a switch policy leaf profile selector associated Node Block range (w/ policy group)
   cisco.aci.aci_switch_leaf_selector:
     host: apic
@@ -131,9 +130,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -236,7 +235,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -244,39 +243,38 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 
 def main():
     argument_spec = aci_argument_spec()
-    argument_spec.update({
-        'description': dict(type='str'),
-        'leaf_profile': dict(type='str', aliases=['leaf_profile_name']),  # Not required for querying all objects
-        'leaf': dict(type='str', aliases=['name', 'leaf_name', 'leaf_profile_leaf_name', 'leaf_selector_name']),  # Not required for querying all objects
-        'leaf_node_blk': dict(type='str', aliases=['leaf_node_blk_name', 'node_blk_name']),
-        'leaf_node_blk_description': dict(type='str'),
-        # NOTE: Keyword 'from' is a reserved word in python, so we need it as a string
-        'from': dict(type='int', aliases=['node_blk_range_from', 'from_range', 'range_from']),
-        'to': dict(type='int', aliases=['node_blk_range_to', 'to_range', 'range_to']),
-        'policy_group': dict(type='str', aliases=['policy_group_name']),
-        'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        'name_alias': dict(type='str'),
-    })
+    argument_spec.update(
+        {
+            "description": dict(type="str"),
+            "leaf_profile": dict(type="str", aliases=["leaf_profile_name"]),  # Not required for querying all objects
+            "leaf": dict(type="str", aliases=["name", "leaf_name", "leaf_profile_leaf_name", "leaf_selector_name"]),  # Not required for querying all objects
+            "leaf_node_blk": dict(type="str", aliases=["leaf_node_blk_name", "node_blk_name"]),
+            "leaf_node_blk_description": dict(type="str"),
+            # NOTE: Keyword 'from' is a reserved word in python, so we need it as a string
+            "from": dict(type="int", aliases=["node_blk_range_from", "from_range", "range_from"]),
+            "to": dict(type="int", aliases=["node_blk_range_to", "to_range", "range_to"]),
+            "policy_group": dict(type="str", aliases=["policy_group_name"]),
+            "state": dict(type="str", default="present", choices=["absent", "present", "query"]),
+            "name_alias": dict(type="str"),
+        }
+    )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[
-            ['state', 'absent', ['leaf_profile', 'leaf']],
-            ['state', 'present', ['leaf_profile', 'leaf', 'leaf_node_blk', 'from', 'to']]
-        ]
+        required_if=[["state", "absent", ["leaf_profile", "leaf"]], ["state", "present", ["leaf_profile", "leaf", "leaf_node_blk", "from", "to"]]],
     )
 
-    description = module.params.get('description')
-    leaf_profile = module.params.get('leaf_profile')
-    leaf = module.params.get('leaf')
-    leaf_node_blk = module.params.get('leaf_node_blk')
-    leaf_node_blk_description = module.params.get('leaf_node_blk_description')
-    from_ = module.params.get('from')
-    to_ = module.params.get('to')
-    policy_group = module.params.get('policy_group')
-    state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
+    description = module.params.get("description")
+    leaf_profile = module.params.get("leaf_profile")
+    leaf = module.params.get("leaf")
+    leaf_node_blk = module.params.get("leaf_node_blk")
+    leaf_node_blk_description = module.params.get("leaf_node_blk_description")
+    from_ = module.params.get("from")
+    to_ = module.params.get("to")
+    policy_group = module.params.get("policy_group")
+    state = module.params.get("state")
+    name_alias = module.params.get("name_alias")
 
     # Build child_configs dynamically
     child_configs = [
@@ -294,39 +292,40 @@ def main():
 
     # Add infraRsAccNodePGrp only when policy_group was defined
     if policy_group is not None:
-        child_configs.append(dict(
-            infraRsAccNodePGrp=dict(
-                attributes=dict(
-                    tDn='uni/infra/funcprof/accnodepgrp-{0}'.format(policy_group),
+        child_configs.append(
+            dict(
+                infraRsAccNodePGrp=dict(
+                    attributes=dict(
+                        tDn="uni/infra/funcprof/accnodepgrp-{0}".format(policy_group),
+                    ),
                 ),
-            ),
-        ))
+            )
+        )
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='infraNodeP',
-            aci_rn='infra/nprof-{0}'.format(leaf_profile),
+            aci_class="infraNodeP",
+            aci_rn="infra/nprof-{0}".format(leaf_profile),
             module_object=leaf_profile,
-            target_filter={'name': leaf_profile},
+            target_filter={"name": leaf_profile},
         ),
         subclass_1=dict(
-            aci_class='infraLeafS',
+            aci_class="infraLeafS",
             # NOTE: normal rn: leaves-{name}-typ-{type}, hence here hardcoded to range for purposes of module
-            aci_rn='leaves-{0}-typ-range'.format(leaf),
+            aci_rn="leaves-{0}-typ-range".format(leaf),
             module_object=leaf,
-            target_filter={'name': leaf},
+            target_filter={"name": leaf},
         ),
         # NOTE: infraNodeBlk is not made into a subclass because there is a 1-1 mapping between node block and leaf selector name
-        child_classes=['infraNodeBlk', 'infraRsAccNodePGrp'],
-
+        child_classes=["infraNodeBlk", "infraRsAccNodePGrp"],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='infraLeafS',
+            aci_class="infraLeafS",
             class_config=dict(
                 descr=description,
                 name=leaf,
@@ -335,11 +334,11 @@ def main():
             child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='infraLeafS')
+        aci.get_diff(aci_class="infraLeafS")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

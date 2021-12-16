@@ -5,9 +5,10 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_cloud_bgp_asn
 short_description: Manage Cloud APIC BGP Autonomous System Profile (cloud:BgpAsP)
@@ -47,9 +48,9 @@ extends_documentation_fragment:
 notes:
 - More information about the internal APIC class B(cloud:BgpAsP) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new cloud BGP ASN
   cisco.aci.aci_cloud_bgp_asn:
     host: apic
@@ -76,9 +77,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -181,7 +182,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
@@ -189,59 +190,54 @@ from ansible.module_utils.basic import AnsibleModule
 
 def main():
     argument_spec = aci_argument_spec()
-    argument_spec.update({
-        'asn': dict(type='str'),
-        'description': dict(type='str', aliases=['descr']),
-        'name': dict(type='str', aliases=['autonomous_system_profile', 'autonomous_system_profile_name']),
-        'name_alias': dict(type='str'),
-        'state': dict(type='str', default='present', choices=['absent', 'present', 'query']),
-
-    })
+    argument_spec.update(
+        {
+            "asn": dict(type="str"),
+            "description": dict(type="str", aliases=["descr"]),
+            "name": dict(type="str", aliases=["autonomous_system_profile", "autonomous_system_profile_name"]),
+            "name_alias": dict(type="str"),
+            "state": dict(type="str", default="present", choices=["absent", "present", "query"]),
+        }
+    )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
     )
 
-    annotation = module.params['annotation']
-    asn = module.params['asn']
-    description = module.params['description']
-    name = module.params['name']
-    name_alias = module.params['name_alias']
-    state = module.params['state']
+    annotation = module.params["annotation"]
+    asn = module.params["asn"]
+    description = module.params["description"]
+    name = module.params["name"]
+    name_alias = module.params["name_alias"]
+    state = module.params["state"]
     child_configs = []
 
     aci = ACIModule(module)
     aci.construct_url(
-        root_class={
-            'aci_class': 'cloudBgpAsP',
-            'aci_rn': 'clouddomp/as'.format(),
-            'target_filter': {'name': name},
-            'module_object': None
-        },
-        child_classes=[]
+        root_class={"aci_class": "cloudBgpAsP", "aci_rn": "clouddomp/as".format(), "target_filter": {"name": name}, "module_object": None}, child_classes=[]
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='cloudBgpAsP',
+            aci_class="cloudBgpAsP",
             class_config={
-                'annotation': annotation,
-                'asn': asn,
-                'descr': description,
-                'name': name,
-                'nameAlias': name_alias,
+                "annotation": annotation,
+                "asn": asn,
+                "descr": description,
+                "name": name,
+                "nameAlias": name_alias,
             },
-            child_configs=child_configs
+            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='cloudBgpAsP')
+        aci.get_diff(aci_class="cloudBgpAsP")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

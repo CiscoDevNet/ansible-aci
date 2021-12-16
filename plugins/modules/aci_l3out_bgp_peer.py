@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_l3out_bgp_peer
 short_description: Manage Layer 3 Outside (L3Out) BGP Peers (bgp:PeerP)
@@ -128,9 +127,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new BGP peer on a physical interface
   cisco.aci.aci_l3out_bgp_peer:
     host: apic
@@ -223,9 +222,9 @@ EXAMPLES = r'''
   delegate_to: localhost
   register: query_result
 
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -328,7 +327,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 
 from ansible.module_utils.basic import AnsibleModule
@@ -338,126 +337,101 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name'], required=True),
-        l3out=dict(type='str', aliases=['l3out_name'], required=True),
-        node_profile=dict(type='str', aliases=[
-                          'node_profile_name', 'logical_node'], required=True),
-        interface_profile=dict(type='str', aliases=[
-            'interface_profile_name', 'logical_interface'], required=True),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query']),
-        pod_id=dict(type='str', required=True),
-        node_id=dict(type='str', required=True),
-        path_ep=dict(type='str', required=True),
-        peer_ip=dict(type='str', required=True),
-        remote_asn=dict(type='int'),
-        bgp_controls=dict(type='list', elements='str',
-                          choices=['send-com', 'send-ext-com', 'allow-self-as',
-                                   'as-override', 'dis-peer-as-check',
-                                   'nh-self']),
-        peer_controls=dict(type='list', elements='str',
-                           choices=['bfd', 'dis-conn-check']),
-        address_type_controls=dict(type='list', elements='str',
-                                   choices=['af-ucast', 'af-mcast']),
-        private_asn_controls=dict(type='list', elements='str',
-                                  choices=['remove-exclusive',
-                                           'remove-all',
-                                           'replace-as']),
-        ttl=dict(type='int'),
-        weight=dict(type='int'),
-        admin_state=dict(type='str', choices=['enabled', 'disabled']),
-        allow_self_as_count=dict(type='int'),
+        tenant=dict(type="str", aliases=["tenant_name"], required=True),
+        l3out=dict(type="str", aliases=["l3out_name"], required=True),
+        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"], required=True),
+        interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"], required=True),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        pod_id=dict(type="str", required=True),
+        node_id=dict(type="str", required=True),
+        path_ep=dict(type="str", required=True),
+        peer_ip=dict(type="str", required=True),
+        remote_asn=dict(type="int"),
+        bgp_controls=dict(type="list", elements="str", choices=["send-com", "send-ext-com", "allow-self-as", "as-override", "dis-peer-as-check", "nh-self"]),
+        peer_controls=dict(type="list", elements="str", choices=["bfd", "dis-conn-check"]),
+        address_type_controls=dict(type="list", elements="str", choices=["af-ucast", "af-mcast"]),
+        private_asn_controls=dict(type="list", elements="str", choices=["remove-exclusive", "remove-all", "replace-as"]),
+        ttl=dict(type="int"),
+        weight=dict(type="int"),
+        admin_state=dict(type="str", choices=["enabled", "disabled"]),
+        allow_self_as_count=dict(type="int"),
     )
 
-    module = AnsibleModule(
-        argument_spec=argument_spec,
-        supports_check_mode=True
-    )
+    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True)
 
-    tenant = module.params.get('tenant')
-    l3out = module.params.get('l3out')
-    node_profile = module.params.get('node_profile')
-    interface_profile = module.params.get('interface_profile')
-    state = module.params.get('state')
-    pod_id = module.params.get('pod_id')
-    node_id = module.params.get('node_id')
-    path_ep = module.params.get('path_ep')
-    peer_ip = module.params.get('peer_ip')
-    remote_asn = module.params.get('remote_asn')
-    bgp_controls = module.params.get('bgp_controls')
-    peer_controls = module.params.get('peer_controls')
-    address_type_controls = module.params.get('address_type_controls')
-    private_asn_controls = module.params.get('private_asn_controls')
-    ttl = module.params.get('ttl')
-    weight = module.params.get('weight')
-    admin_state = module.params.get('admin_state')
-    allow_self_as_count = module.params.get('allow_self_as_count')
+    tenant = module.params.get("tenant")
+    l3out = module.params.get("l3out")
+    node_profile = module.params.get("node_profile")
+    interface_profile = module.params.get("interface_profile")
+    state = module.params.get("state")
+    pod_id = module.params.get("pod_id")
+    node_id = module.params.get("node_id")
+    path_ep = module.params.get("path_ep")
+    peer_ip = module.params.get("peer_ip")
+    remote_asn = module.params.get("remote_asn")
+    bgp_controls = module.params.get("bgp_controls")
+    peer_controls = module.params.get("peer_controls")
+    address_type_controls = module.params.get("address_type_controls")
+    private_asn_controls = module.params.get("private_asn_controls")
+    ttl = module.params.get("ttl")
+    weight = module.params.get("weight")
+    admin_state = module.params.get("admin_state")
+    allow_self_as_count = module.params.get("allow_self_as_count")
 
     aci = ACIModule(module)
-    if '-' in node_id:
-        path_type = 'protpaths'
+    if "-" in node_id:
+        path_type = "protpaths"
     else:
-        path_type = 'paths'
+        path_type = "paths"
 
-    path_dn = ('topology/pod-{0}/{1}-{2}/pathep-[{3}]'.format(pod_id,
-                                                              path_type,
-                                                              node_id,
-                                                              path_ep))
+    path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, path_type, node_id, path_ep)
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='l3extOut',
-            aci_rn='out-{0}'.format(l3out),
+            aci_class="l3extOut",
+            aci_rn="out-{0}".format(l3out),
             module_object=l3out,
-            target_filter={'name': l3out},
+            target_filter={"name": l3out},
         ),
         subclass_2=dict(
-            aci_class='l3extLNodeP',
-            aci_rn='lnodep-{0}'.format(node_profile),
+            aci_class="l3extLNodeP",
+            aci_rn="lnodep-{0}".format(node_profile),
             module_object=node_profile,
-            target_filter={'name': node_profile},
+            target_filter={"name": node_profile},
         ),
         subclass_3=dict(
-            aci_class='l3extLIfP',
-            aci_rn='lifp-{0}'.format(interface_profile),
+            aci_class="l3extLIfP",
+            aci_rn="lifp-{0}".format(interface_profile),
             module_object=interface_profile,
-            target_filter={'name': interface_profile},
+            target_filter={"name": interface_profile},
         ),
         subclass_4=dict(
-            aci_class='l3extRsPathL3OutAtt',
-            aci_rn='/rspathL3OutAtt-[{0}]'.format(path_dn),
-            module_object=path_dn,
-            target_filter={'tDn': path_dn}
+            aci_class="l3extRsPathL3OutAtt", aci_rn="/rspathL3OutAtt-[{0}]".format(path_dn), module_object=path_dn, target_filter={"tDn": path_dn}
         ),
-        subclass_5=dict(
-            aci_class='bgpPeerP',
-            aci_rn='/peerP-[{0}]'.format(peer_ip),
-            module_object=peer_ip,
-            target_filter={'addr': peer_ip}
-        ),
-        child_classes=['bgpRsPeerPfxPol', 'bgpAsP', 'bgpLocalAsnP']
+        subclass_5=dict(aci_class="bgpPeerP", aci_rn="/peerP-[{0}]".format(peer_ip), module_object=peer_ip, target_filter={"addr": peer_ip}),
+        child_classes=["bgpRsPeerPfxPol", "bgpAsP", "bgpLocalAsnP"],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         ctrl, peerCtrl, addrTCtrl, privateASctrl = None, None, None, None
         if bgp_controls:
-            ctrl = ','.join(bgp_controls)
+            ctrl = ",".join(bgp_controls)
         if peer_controls:
-            peerCtrl = ','.join(peer_controls)
+            peerCtrl = ",".join(peer_controls)
         if address_type_controls:
-            addrTCtrl = ','.join(address_type_controls)
+            addrTCtrl = ",".join(address_type_controls)
         if private_asn_controls:
-            privateASctrl = ','.join(private_asn_controls)
+            privateASctrl = ",".join(private_asn_controls)
         aci.payload(
-            aci_class='bgpPeerP',
+            aci_class="bgpPeerP",
             class_config=dict(
                 addr=peer_ip,
                 ctrl=ctrl,
@@ -467,24 +441,22 @@ def main():
                 ttl=ttl,
                 weight=weight,
                 adminSt=admin_state,
-                allowedSelfAsCnt=allow_self_as_count
+                allowedSelfAsCnt=allow_self_as_count,
             ),
             child_configs=[
                 dict(
                     bgpAsP=dict(
-                        attributes=dict(
-                            asn=remote_asn
-                        ),
+                        attributes=dict(asn=remote_asn),
                     ),
                 ),
             ],
         )
 
-        aci.get_diff(aci_class='bgpPeerP')
+        aci.get_diff(aci_class="bgpPeerP")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

@@ -6,9 +6,10 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_cloud_subnet
 short_description: Manage Cloud Subnet (cloud:Subnet)
@@ -74,9 +75,9 @@ options:
 
 extends_documentation_fragment:
 - cisco.aci.aci
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create aci cloud subnet
   cisco.aci.aci_cloud_subnet:
     host: apic
@@ -114,9 +115,9 @@ EXAMPLES = r'''
     cidr: '10.10.0.0/16'
     state: query
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -219,7 +220,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
@@ -228,100 +229,87 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        name=dict(type='str', aliases=['subnet']),
-        description=dict(type='str'),
-        address=dict(type='str'),
-        name_alias=dict(type='str'),
-        vnet_gateway=dict(type='bool', default=False),
-        tenant=dict(type='str', required=True),
-        cloud_context_profile=dict(type='str', required=True),
-        cidr=dict(type='str', required=True),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        availability_zone=dict(type='str'),
+        name=dict(type="str", aliases=["subnet"]),
+        description=dict(type="str"),
+        address=dict(type="str"),
+        name_alias=dict(type="str"),
+        vnet_gateway=dict(type="bool", default=False),
+        tenant=dict(type="str", required=True),
+        cloud_context_profile=dict(type="str", required=True),
+        cidr=dict(type="str", required=True),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        availability_zone=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['address']],
-            ['state', 'present', ['address']],
+            ["state", "absent", ["address"]],
+            ["state", "present", ["address"]],
         ],
     )
 
-    name = module.params.get('name')
-    description = module.params.get('description')
-    address = module.params.get('address')
-    name_alias = module.params.get('name_alias')
-    vnet_gateway = module.params.get('vnet_gateway')
-    tenant = module.params.get('tenant')
-    cloud_context_profile = module.params.get('cloud_context_profile')
-    cidr = module.params.get('cidr')
-    state = module.params.get('state')
-    availability_zone = module.params.get('availability_zone')
+    name = module.params.get("name")
+    description = module.params.get("description")
+    address = module.params.get("address")
+    name_alias = module.params.get("name_alias")
+    vnet_gateway = module.params.get("vnet_gateway")
+    tenant = module.params.get("tenant")
+    cloud_context_profile = module.params.get("cloud_context_profile")
+    cidr = module.params.get("cidr")
+    state = module.params.get("state")
+    availability_zone = module.params.get("availability_zone")
     child_configs = []
 
     aci = ACIModule(module)
     aci.construct_url(
-        root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
-            target_filter='eq(fvTenant.name, "{0}")'.format(tenant),
-            module_object=tenant
-        ),
+        root_class=dict(aci_class="fvTenant", aci_rn="tn-{0}".format(tenant), target_filter='eq(fvTenant.name, "{0}")'.format(tenant), module_object=tenant),
         subclass_1=dict(
-            aci_class='cloudCtxProfile',
-            aci_rn='ctxprofile-{0}'.format(cloud_context_profile),
+            aci_class="cloudCtxProfile",
+            aci_rn="ctxprofile-{0}".format(cloud_context_profile),
             target_filter='eq(cloudCtxProfile.name, "{0}")'.format(cloud_context_profile),
-            module_object=cloud_context_profile
+            module_object=cloud_context_profile,
         ),
-        subclass_2=dict(
-            aci_class='cloudCidr',
-            aci_rn='cidr-[{0}]'.format(cidr),
-            target_filter='eq(cloudCidr.addr, "{0}")'.format(cidr),
-            module_object=cidr
-        ),
+        subclass_2=dict(aci_class="cloudCidr", aci_rn="cidr-[{0}]".format(cidr), target_filter='eq(cloudCidr.addr, "{0}")'.format(cidr), module_object=cidr),
         subclass_3=dict(
-            aci_class='cloudSubnet',
-            aci_rn='subnet-[{0}]'.format(address),
-            target_filter='eq(cloudSubnet.ip, "{0}")'.format(address),
-            module_object=address
+            aci_class="cloudSubnet", aci_rn="subnet-[{0}]".format(address), target_filter='eq(cloudSubnet.ip, "{0}")'.format(address), module_object=address
         ),
-        child_classes=['cloudRsZoneAttach']
+        child_classes=["cloudRsZoneAttach"],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         # in aws cloud apic
         if availability_zone:
             region = availability_zone[:-1]
-            tDn = 'uni/clouddomp/provp-aws/region-{0}/zone-{1}'.format(region, availability_zone)
-            child_configs.append({'cloudRsZoneAttach': {'attributes': {'tDn': tDn}}})
+            tDn = "uni/clouddomp/provp-aws/region-{0}/zone-{1}".format(region, availability_zone)
+            child_configs.append({"cloudRsZoneAttach": {"attributes": {"tDn": tDn}}})
         # in azure cloud apic
         if vnet_gateway:
-            usage = 'gateway'
+            usage = "gateway"
         else:
-            usage = 'user'
+            usage = "user"
 
         aci.payload(
-            aci_class='cloudSubnet',
+            aci_class="cloudSubnet",
             class_config=dict(
                 name=name,
                 descr=description,
                 ip=address,
                 nameAlias=name_alias,
-                scope='private',
+                scope="private",
                 usage=usage,
             ),
-            child_configs=child_configs
+            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='cloudSubnet')
+        aci.get_diff(aci_class="cloudSubnet")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

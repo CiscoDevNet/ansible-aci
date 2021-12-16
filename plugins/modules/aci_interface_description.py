@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_interface_description
 short_description: Setting and removing description on physical interfaces.
@@ -60,9 +59,9 @@ extends_documentation_fragment:
 
 author:
 - Akini Ross (@akinross)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Set Interface Description
   cisco.aci.aci_interface_description:
     host: "{{ inventory_hostname }}"
@@ -131,9 +130,9 @@ EXAMPLES = r'''
     interface: 1/49
     state: query
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -236,7 +235,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -245,81 +244,77 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        pod_id=dict(type='int', aliases=['pod', 'pod_number']),
-        node_id=dict(type='int', aliases=['leaf', 'spine', 'node']),
-        fex_id=dict(type='int'),
-        node_type=dict(type='str', choices=['leaf', 'spine']),
-        interface=dict(type='str'),
-        description=dict(type='str'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        pod_id=dict(type="int", aliases=["pod", "pod_number"]),
+        node_id=dict(type="int", aliases=["leaf", "spine", "node"]),
+        fex_id=dict(type="int"),
+        node_type=dict(type="str", choices=["leaf", "spine"]),
+        interface=dict(type="str"),
+        description=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_one_of=[
-            ('node_type', 'fex_id'),
+            ("node_type", "fex_id"),
         ],
         required_if=[
-            ['state', 'absent', ['pod_id', 'node_id', 'interface']],
-            ['state', 'present', ['pod_id', 'node_id', 'interface', 'description']],
+            ["state", "absent", ["pod_id", "node_id", "interface"]],
+            ["state", "present", ["pod_id", "node_id", "interface", "description"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    pod_id = module.params.get('pod_id')
-    node_id = module.params.get('node_id')
-    interface = module.params.get('interface')
-    description = module.params.get('description')
-    fex_id = module.params.get('fex_id')
-    node_type = module.params.get('node_type')
-    state = module.params.get('state')
+    pod_id = module.params.get("pod_id")
+    node_id = module.params.get("node_id")
+    interface = module.params.get("interface")
+    description = module.params.get("description")
+    fex_id = module.params.get("fex_id")
+    node_type = module.params.get("node_type")
+    state = module.params.get("state")
 
-    class_name = 'infraHPathS'
-    children = ['infraRsHPathAtt']
+    class_name = "infraHPathS"
+    children = ["infraRsHPathAtt"]
 
     if fex_id:
-        rn = 'hpaths-{0}_eth{1}_{2}.json'.format(node_id, fex_id, interface.replace('/', '_'))
+        rn = "hpaths-{0}_eth{1}_{2}.json".format(node_id, fex_id, interface.replace("/", "_"))
         child_configs = [
-            dict(infraRsHPathAtt=dict(attributes=dict(
-                tDn='topology/pod-{0}/paths-{1}/extpaths-{2}/pathep-[eth{3}]'.format(pod_id, node_id, fex_id, interface)
-            ))),
+            dict(
+                infraRsHPathAtt=dict(attributes=dict(tDn="topology/pod-{0}/paths-{1}/extpaths-{2}/pathep-[eth{3}]".format(pod_id, node_id, fex_id, interface)))
+            ),
         ]
-    elif node_type == 'spine':
-        rn = 'shpaths-{0}_eth{1}'.format(node_id, interface.replace('/', '_'))
-        class_name = 'infraSHPathS'
-        children = ['infraRsSHPathAtt']
+    elif node_type == "spine":
+        rn = "shpaths-{0}_eth{1}".format(node_id, interface.replace("/", "_"))
+        class_name = "infraSHPathS"
+        children = ["infraRsSHPathAtt"]
         child_configs = [
-            dict(infraRsSHPathAtt=dict(attributes=dict(
-                tDn='topology/pod-{0}/paths-{1}/pathep-[eth{2}]'.format(pod_id, node_id, interface)
-            ))),
+            dict(infraRsSHPathAtt=dict(attributes=dict(tDn="topology/pod-{0}/paths-{1}/pathep-[eth{2}]".format(pod_id, node_id, interface)))),
         ]
-    elif node_type == 'leaf':
-        rn = 'hpaths-{0}_eth{1}'.format(node_id, interface.replace('/', '_'))
+    elif node_type == "leaf":
+        rn = "hpaths-{0}_eth{1}".format(node_id, interface.replace("/", "_"))
         child_configs = [
-            dict(infraRsHPathAtt=dict(attributes=dict(
-                tDn='topology/pod-{0}/paths-{1}/pathep-[eth{2}]'.format(pod_id, node_id, interface)
-            ))),
+            dict(infraRsHPathAtt=dict(attributes=dict(tDn="topology/pod-{0}/paths-{1}/pathep-[eth{2}]".format(pod_id, node_id, interface)))),
         ]
 
     aci.construct_url(
         root_class=dict(
-            aci_class='infraInfra',
-            aci_rn='infra',
-            module_object='infra',
-            target_filter={'name': 'infra'},
+            aci_class="infraInfra",
+            aci_rn="infra",
+            module_object="infra",
+            target_filter={"name": "infra"},
         ),
         subclass_1=dict(
             aci_class=class_name,
             aci_rn=rn,
         ),
-        child_classes=children
+        child_classes=children,
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
             aci_class=class_name,
             class_config=dict(
@@ -332,7 +327,7 @@ def main():
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
 
         aci.delete_config()
 

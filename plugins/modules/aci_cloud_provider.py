@@ -5,9 +5,10 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_cloud_provider
 short_description: Query Cloud Provider information (cloud:ProvP)
@@ -29,9 +30,9 @@ notes:
 
 extends_documentation_fragment:
 - cisco.aci.aci
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Query cloud provider information
   cisco.aci.aci_cloud_provider:
     host: apic
@@ -40,9 +41,9 @@ EXAMPLES = r'''
     validate_certs: no
     state: query
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -145,7 +146,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.basic import AnsibleModule
@@ -154,7 +155,7 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        state=dict(type='str', default='query', choices=['query']),
+        state=dict(type="str", default="query", choices=["query"]),
     )
 
     module = AnsibleModule(
@@ -163,11 +164,7 @@ def main():
     )
 
     aci = ACIModule(module)
-    aci.construct_url(
-        root_class=dict(
-            aci_class='cloudProvP'
-        )
-    )
+    aci.construct_url(root_class=dict(aci_class="cloudProvP"))
 
     aci.get_existing()
 

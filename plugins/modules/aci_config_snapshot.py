@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_config_snapshot
 short_description: Manage Config Snapshots (config:Snapshot, config:ExportP)
@@ -71,9 +70,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jacob McGill (@jmcgill298)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create a Snapshot
   cisco.aci.aci_config_snapshot:
     host: apic
@@ -113,9 +112,9 @@ EXAMPLES = r'''
     snapshot: run-2017-08-24T17-20-05
     state: absent
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -218,7 +217,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -227,67 +226,67 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        description=dict(type='str', aliases=['descr']),
-        export_policy=dict(type='str', aliases=['name']),  # Not required for querying all objects
-        format=dict(type='str', choices=['json', 'xml']),
-        include_secure=dict(type='bool'),
-        max_count=dict(type='int'),
-        snapshot=dict(type='str'),
-        state=dict(type='str', choices=['absent', 'present', 'query'], default='present'),
+        description=dict(type="str", aliases=["descr"]),
+        export_policy=dict(type="str", aliases=["name"]),  # Not required for querying all objects
+        format=dict(type="str", choices=["json", "xml"]),
+        include_secure=dict(type="bool"),
+        max_count=dict(type="int"),
+        snapshot=dict(type="str"),
+        state=dict(type="str", choices=["absent", "present", "query"], default="present"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=False,
         required_if=[
-            ['state', 'absent', ['export_policy', 'snapshot']],
-            ['state', 'present', ['export_policy']],
+            ["state", "absent", ["export_policy", "snapshot"]],
+            ["state", "present", ["export_policy"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    description = module.params.get('description')
-    export_policy = module.params.get('export_policy')
-    file_format = module.params.get('format')
-    include_secure = aci.boolean(module.params.get('include_secure'))
-    max_count = module.params.get('max_count')
+    description = module.params.get("description")
+    export_policy = module.params.get("export_policy")
+    file_format = module.params.get("format")
+    include_secure = aci.boolean(module.params.get("include_secure"))
+    max_count = module.params.get("max_count")
     if max_count is not None:
         if max_count in range(1, 11):
             max_count = str(max_count)
         else:
             module.fail_json(msg="Parameter 'max_count' must be a number between 1 and 10")
-    snapshot = module.params.get('snapshot')
-    if snapshot is not None and not snapshot.startswith('run-'):
-        snapshot = 'run-' + snapshot
-    state = module.params.get('state')
+    snapshot = module.params.get("snapshot")
+    if snapshot is not None and not snapshot.startswith("run-"):
+        snapshot = "run-" + snapshot
+    state = module.params.get("state")
 
-    if state == 'present':
+    if state == "present":
         aci.construct_url(
             root_class=dict(
-                aci_class='configExportP',
-                aci_rn='fabric/configexp-{0}'.format(export_policy),
+                aci_class="configExportP",
+                aci_rn="fabric/configexp-{0}".format(export_policy),
                 module_object=export_policy,
-                target_filter={'name': export_policy},
+                target_filter={"name": export_policy},
             ),
         )
 
         aci.get_existing()
 
         aci.payload(
-            aci_class='configExportP',
+            aci_class="configExportP",
             class_config=dict(
-                adminSt='triggered',
+                adminSt="triggered",
                 descr=description,
                 format=file_format,
                 includeSecureFields=include_secure,
                 maxSnapshotCount=max_count,
                 name=export_policy,
-                snapshot='yes',
+                snapshot="yes",
             ),
         )
 
-        aci.get_diff('configExportP')
+        aci.get_diff("configExportP")
 
         # Create a new Snapshot
         aci.post_config()
@@ -295,29 +294,29 @@ def main():
     else:
         # Prefix the proper url to export_policy
         if export_policy is not None:
-            export_policy = 'uni/fabric/configexp-{0}'.format(export_policy)
+            export_policy = "uni/fabric/configexp-{0}".format(export_policy)
 
         aci.construct_url(
             root_class=dict(
-                aci_class='configSnapshotCont',
-                aci_rn='backupst/snapshots-[{0}]'.format(export_policy),
+                aci_class="configSnapshotCont",
+                aci_rn="backupst/snapshots-[{0}]".format(export_policy),
                 module_object=export_policy,
-                target_filter={'name': export_policy},
+                target_filter={"name": export_policy},
             ),
             subclass_1=dict(
-                aci_class='configSnapshot',
-                aci_rn='snapshot-{0}'.format(snapshot),
+                aci_class="configSnapshot",
+                aci_rn="snapshot-{0}".format(snapshot),
                 module_object=snapshot,
-                target_filter={'name': snapshot},
+                target_filter={"name": snapshot},
             ),
         )
 
         aci.get_existing()
 
-        if state == 'absent':
+        if state == "absent":
             # Build POST request to used to remove Snapshot
             aci.payload(
-                aci_class='configSnapshot',
+                aci_class="configSnapshot",
                 class_config=dict(
                     name=snapshot,
                     retire="yes",
@@ -325,7 +324,7 @@ def main():
             )
 
             if aci.existing:
-                aci.get_diff('configSnapshot')
+                aci.get_diff("configSnapshot")
 
                 # Mark Snapshot for Deletion
                 aci.post_config()

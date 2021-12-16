@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_port_security
 short_description: Manage port security (l2:PortSecurityPol)
@@ -59,10 +58,10 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
-'''
+"""
 
 # FIXME: Add more, better examples
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a port security interface policy
   cisco.aci.aci_interface_policy_port_security:
     host: '{{ inventory_hostname }}'
@@ -73,9 +72,9 @@ EXAMPLES = r'''
     max_end_points: '{{ max_end_points }}'
     port_security_timeout: '{{ port_security_timeout }}'
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -178,7 +177,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -187,49 +186,49 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        port_security=dict(type='str', aliases=['name']),  # Not required for querying all objects
-        description=dict(type='str', aliases=['descr']),
-        max_end_points=dict(type='int'),
-        port_security_timeout=dict(type='int'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        port_security=dict(type="str", aliases=["name"]),  # Not required for querying all objects
+        description=dict(type="str", aliases=["descr"]),
+        max_end_points=dict(type="int"),
+        port_security_timeout=dict(type="int"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['port_security']],
-            ['state', 'present', ['port_security']],
+            ["state", "absent", ["port_security"]],
+            ["state", "present", ["port_security"]],
         ],
     )
 
-    port_security = module.params.get('port_security')
-    description = module.params.get('description')
-    max_end_points = module.params.get('max_end_points')
-    port_security_timeout = module.params.get('port_security_timeout')
-    name_alias = module.params.get('name_alias')
+    port_security = module.params.get("port_security")
+    description = module.params.get("description")
+    max_end_points = module.params.get("max_end_points")
+    port_security_timeout = module.params.get("port_security_timeout")
+    name_alias = module.params.get("name_alias")
     if max_end_points is not None and max_end_points not in range(12001):
-        module.fail_json(msg='The max_end_points must be between 0 and 12000')
+        module.fail_json(msg="The max_end_points must be between 0 and 12000")
     if port_security_timeout is not None and port_security_timeout not in range(60, 3601):
-        module.fail_json(msg='The port_security_timeout must be between 60 and 3600')
-    state = module.params.get('state')
+        module.fail_json(msg="The port_security_timeout must be between 60 and 3600")
+    state = module.params.get("state")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='l2PortSecurityPol',
-            aci_rn='infra/portsecurityP-{0}'.format(port_security),
+            aci_class="l2PortSecurityPol",
+            aci_rn="infra/portsecurityP-{0}".format(port_security),
             module_object=port_security,
-            target_filter={'name': port_security},
+            target_filter={"name": port_security},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='l2PortSecurityPol',
+            aci_class="l2PortSecurityPol",
             class_config=dict(
                 name=port_security,
                 descr=description,
@@ -239,11 +238,11 @@ def main():
             ),
         )
 
-        aci.get_diff(aci_class='l2PortSecurityPol')
+        aci.get_diff(aci_class="l2PortSecurityPol")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

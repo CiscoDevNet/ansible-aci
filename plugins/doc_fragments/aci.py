@@ -4,13 +4,14 @@
 # Copyright: (c) 2017, Swetha Chunduri (@schunduri)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
 class ModuleDocFragment(object):
     # Standard files documentation fragment
-    DOCUMENTATION = r'''
+    DOCUMENTATION = r"""
 options:
   host:
     description:
@@ -117,4 +118,4 @@ seealso:
   description: Detailed information on how to manage your ACI infrastructure using Ansible.
 - ref: aci_dev_guide
   description: Detailed guide on how to write your own Cisco ACI modules to contribute.
-'''
+"""

@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_bd
 short_description: Manage Bridge Domains (BD) objects (fv:BD)
@@ -162,9 +161,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jacob McGill (@jmcgill298)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add Bridge Domain
   cisco.aci.aci_bd:
     host: "{{ inventory_hostname }}"
@@ -237,9 +236,9 @@ EXAMPLES = r'''
     bd: web_servers
     state: absent
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -342,7 +341,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
@@ -351,95 +350,95 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        arp_flooding=dict(type='bool'),
-        bd=dict(type='str', aliases=['bd_name', 'name']),  # Not required for querying all objects
-        bd_type=dict(type='str', choices=['ethernet', 'fc']),
-        description=dict(type='str'),
-        enable_multicast=dict(type='bool'),
-        enable_routing=dict(type='bool'),
-        endpoint_clear=dict(type='bool'),
-        endpoint_move_detect=dict(type='str', choices=['default', 'garp']),
-        endpoint_retention_action=dict(type='str', choices=['inherit', 'resolve']),
-        endpoint_retention_policy=dict(type='str'),
-        igmp_snoop_policy=dict(type='str'),
-        ip_learning=dict(type='bool'),
-        ipv6_nd_policy=dict(type='str'),
-        l2_unknown_unicast=dict(type='str', choices=['proxy', 'flood']),
-        l3_unknown_multicast=dict(type='str', choices=['flood', 'opt-flood']),
-        ipv6_l3_unknown_multicast=dict(type='str', choices=['flood', 'opt-flood']),
-        limit_ip_learn=dict(type='bool'),
-        mac_address=dict(type='str', aliases=['mac']),
-        multi_dest=dict(type='str', choices=['bd-flood', 'drop', 'encap-flood']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        tenant=dict(type='str', aliases=['tenant_name']),  # Not required for querying all objects
-        vrf=dict(type='str', aliases=['vrf_name']),
-        route_profile=dict(type='str'),
-        route_profile_l3out=dict(type='str'),
-        name_alias=dict(type='str'),
+        arp_flooding=dict(type="bool"),
+        bd=dict(type="str", aliases=["bd_name", "name"]),  # Not required for querying all objects
+        bd_type=dict(type="str", choices=["ethernet", "fc"]),
+        description=dict(type="str"),
+        enable_multicast=dict(type="bool"),
+        enable_routing=dict(type="bool"),
+        endpoint_clear=dict(type="bool"),
+        endpoint_move_detect=dict(type="str", choices=["default", "garp"]),
+        endpoint_retention_action=dict(type="str", choices=["inherit", "resolve"]),
+        endpoint_retention_policy=dict(type="str"),
+        igmp_snoop_policy=dict(type="str"),
+        ip_learning=dict(type="bool"),
+        ipv6_nd_policy=dict(type="str"),
+        l2_unknown_unicast=dict(type="str", choices=["proxy", "flood"]),
+        l3_unknown_multicast=dict(type="str", choices=["flood", "opt-flood"]),
+        ipv6_l3_unknown_multicast=dict(type="str", choices=["flood", "opt-flood"]),
+        limit_ip_learn=dict(type="bool"),
+        mac_address=dict(type="str", aliases=["mac"]),
+        multi_dest=dict(type="str", choices=["bd-flood", "drop", "encap-flood"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        vrf=dict(type="str", aliases=["vrf_name"]),
+        route_profile=dict(type="str"),
+        route_profile_l3out=dict(type="str"),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['bd', 'tenant']],
-            ['state', 'present', ['bd', 'tenant']],
+            ["state", "absent", ["bd", "tenant"]],
+            ["state", "present", ["bd", "tenant"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    arp_flooding = aci.boolean(module.params.get('arp_flooding'))
-    bd = module.params.get('bd')
-    bd_type = module.params.get('bd_type')
-    if bd_type == 'ethernet':
+    arp_flooding = aci.boolean(module.params.get("arp_flooding"))
+    bd = module.params.get("bd")
+    bd_type = module.params.get("bd_type")
+    if bd_type == "ethernet":
         # ethernet type is represented as regular, but that is not clear to the users
-        bd_type = 'regular'
-    description = module.params.get('description')
-    enable_multicast = aci.boolean(module.params.get('enable_multicast'))
-    enable_routing = aci.boolean(module.params.get('enable_routing'))
-    endpoint_clear = aci.boolean(module.params.get('endpoint_clear'))
-    endpoint_move_detect = module.params.get('endpoint_move_detect')
-    if endpoint_move_detect == 'default':
+        bd_type = "regular"
+    description = module.params.get("description")
+    enable_multicast = aci.boolean(module.params.get("enable_multicast"))
+    enable_routing = aci.boolean(module.params.get("enable_routing"))
+    endpoint_clear = aci.boolean(module.params.get("endpoint_clear"))
+    endpoint_move_detect = module.params.get("endpoint_move_detect")
+    if endpoint_move_detect == "default":
         # the ACI default setting is an empty string, but that is not a good input value
-        endpoint_move_detect = ''
-    endpoint_retention_action = module.params.get('endpoint_retention_action')
-    endpoint_retention_policy = module.params.get('endpoint_retention_policy')
-    igmp_snoop_policy = module.params.get('igmp_snoop_policy')
-    ip_learning = aci.boolean(module.params.get('ip_learning'))
-    ipv6_nd_policy = module.params.get('ipv6_nd_policy')
-    l2_unknown_unicast = module.params.get('l2_unknown_unicast')
-    l3_unknown_multicast = module.params.get('l3_unknown_multicast')
-    ipv6_l3_unknown_multicast = module.params.get('ipv6_l3_unknown_multicast')
-    limit_ip_learn = aci.boolean(module.params.get('limit_ip_learn'))
-    mac_address = module.params.get('mac_address')
-    multi_dest = module.params.get('multi_dest')
-    state = module.params.get('state')
-    tenant = module.params.get('tenant')
-    vrf = module.params.get('vrf')
-    route_profile = module.params.get('route_profile')
-    route_profile_l3out = module.params.get('route_profile_l3out')
-    name_alias = module.params.get('name_alias')
+        endpoint_move_detect = ""
+    endpoint_retention_action = module.params.get("endpoint_retention_action")
+    endpoint_retention_policy = module.params.get("endpoint_retention_policy")
+    igmp_snoop_policy = module.params.get("igmp_snoop_policy")
+    ip_learning = aci.boolean(module.params.get("ip_learning"))
+    ipv6_nd_policy = module.params.get("ipv6_nd_policy")
+    l2_unknown_unicast = module.params.get("l2_unknown_unicast")
+    l3_unknown_multicast = module.params.get("l3_unknown_multicast")
+    ipv6_l3_unknown_multicast = module.params.get("ipv6_l3_unknown_multicast")
+    limit_ip_learn = aci.boolean(module.params.get("limit_ip_learn"))
+    mac_address = module.params.get("mac_address")
+    multi_dest = module.params.get("multi_dest")
+    state = module.params.get("state")
+    tenant = module.params.get("tenant")
+    vrf = module.params.get("vrf")
+    route_profile = module.params.get("route_profile")
+    route_profile_l3out = module.params.get("route_profile_l3out")
+    name_alias = module.params.get("name_alias")
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='fvBD',
-            aci_rn='BD-{0}'.format(bd),
+            aci_class="fvBD",
+            aci_rn="BD-{0}".format(bd),
             module_object=bd,
-            target_filter={'name': bd},
+            target_filter={"name": bd},
         ),
-        child_classes=['fvRsCtx', 'fvRsIgmpsn', 'fvRsBDToNdP', 'fvRsBdToEpRet', 'fvRsBDToProfile'],
+        child_classes=["fvRsCtx", "fvRsIgmpsn", "fvRsBDToNdP", "fvRsBdToEpRet", "fvRsBDToProfile"],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         class_config = dict(
             arpFlood=arp_flooding,
             descr=description,
@@ -459,25 +458,25 @@ def main():
         )
 
         if ipv6_l3_unknown_multicast is not None:
-            class_config['v6unkMcastAct'] = ipv6_l3_unknown_multicast
+            class_config["v6unkMcastAct"] = ipv6_l3_unknown_multicast
 
         aci.payload(
-            aci_class='fvBD',
+            aci_class="fvBD",
             class_config=class_config,
             child_configs=[
-                {'fvRsCtx': {'attributes': {'tnFvCtxName': vrf}}},
-                {'fvRsIgmpsn': {'attributes': {'tnIgmpSnoopPolName': igmp_snoop_policy}}},
-                {'fvRsBDToNdP': {'attributes': {'tnNdIfPolName': ipv6_nd_policy}}},
-                {'fvRsBdToEpRet': {'attributes': {'resolveAct': endpoint_retention_action, 'tnFvEpRetPolName': endpoint_retention_policy}}},
-                {'fvRsBDToProfile': {'attributes': {'tnL3extOutName': route_profile_l3out, 'tnRtctrlProfileName': route_profile}}},
+                {"fvRsCtx": {"attributes": {"tnFvCtxName": vrf}}},
+                {"fvRsIgmpsn": {"attributes": {"tnIgmpSnoopPolName": igmp_snoop_policy}}},
+                {"fvRsBDToNdP": {"attributes": {"tnNdIfPolName": ipv6_nd_policy}}},
+                {"fvRsBdToEpRet": {"attributes": {"resolveAct": endpoint_retention_action, "tnFvEpRetPolName": endpoint_retention_policy}}},
+                {"fvRsBDToProfile": {"attributes": {"tnL3extOutName": route_profile_l3out, "tnRtctrlProfileName": route_profile}}},
             ],
         )
 
-        aci.get_diff(aci_class='fvBD')
+        aci.get_diff(aci_class="fvBD")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()
