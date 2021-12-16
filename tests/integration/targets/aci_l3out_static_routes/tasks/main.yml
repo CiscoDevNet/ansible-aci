@@ -46,29 +46,33 @@
     state: present
   delegate_to: localhost
 
-- name: Add a new logical node
-  cisco.aci.aci_rest:
+- name: Create L3OUT Logical Node Profile
+  cisco.aci.aci_l3out_logical_node_profile: &np_present
     <<: *aci_info
-    path: /api/mo/uni/tn-ansible_tenant/out-ansible_l3out.json
-    method: post
-    content:
-      {
-          "l3extLNodeP": {
-              "attributes": {
-                  "dn": "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-lNode",
-                  "name": "lNode",
-              },
-              "children": [{
-                  "l3extRsNodeL3OutAtt": {
-                      "attributes": {
-                          "rtrId": "10.1.0.1",
-                          "rtrIdLoopBack": "yes",
-                          "tDn": "topology/pod-1/node-101",
-                      }
-                  }
-              }]
-          }
-      }
+    node_profile: lNode
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    description: L3Out Logical Node Profile for ansible_tenant tenant
+    state: present
+
+- name: Create L3OUT Logical Node
+  cisco.aci.aci_l3out_logical_node:
+    <<: *np_present
+    description: "{{ fake_var | default(omit) }}"
+    pod_id: 1
+    node_id: 101
+    router_id: 10.1.0.1
+    router_id_as_loopback: 'yes'
+  register: l3out_logical_node
+
+- name: Verify l3out_logical_node
+  assert:
+    that:
+    - l3out_logical_node is changed
+    - l3out_logical_node.previous == []
+    - l3out_logical_node.sent.l3extRsNodeL3OutAtt.attributes.rtrId == '10.1.0.1'
+    - l3out_logical_node.sent.l3extRsNodeL3OutAtt.attributes.rtrIdLoopBack == 'yes'
+    - l3out_logical_node.sent.l3extRsNodeL3OutAtt.attributes.tDn == 'topology/pod-1/node-101'
 
 - name: Add static routes
   aci_l3out_static_routes:
@@ -122,7 +126,6 @@
     that:
     - query_specific_mo is not changed
     - query_specific_mo.current|length == 1
-    - query_specific_mo.current[0].ipRouteP.attributes.rtCtrl == "bfd"
     - query_specific_mo.current[0].ipRouteP.attributes.ip == "10.1.0.1/24"
 
 - name: Query all relationships
