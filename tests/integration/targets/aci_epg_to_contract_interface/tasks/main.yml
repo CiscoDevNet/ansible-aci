@@ -85,7 +85,6 @@
     ap: anstest1_ap
     epg: anstest1_epg
     contract_interface: inter_tenant_contract_interface
-    priority: unspecified
     state: present
   register: inter_tenant_contract_interface_present
 
@@ -158,7 +157,6 @@
     ap: anstest1_ap
     epg: anstest1_epg
     contract_interface: temp_contract # contract was not exported, test expected to fail
-    priority: unspecified
     state: present
   ignore_errors: yes
 

@@ -78,7 +78,6 @@ EXAMPLES = r"""
     ap: anstest
     epg: anstest
     contract_interface: anstest_http
-    priority: level3
     state: present
   delegate_to: localhost
 
