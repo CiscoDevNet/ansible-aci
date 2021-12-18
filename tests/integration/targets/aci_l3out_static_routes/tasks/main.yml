@@ -44,7 +44,6 @@
     l3protocol: ospf
     route_control: export
     state: present
-  delegate_to: localhost
 
 - name: Create L3OUT Logical Node Profile
   cisco.aci.aci_l3out_logical_node_profile: &np_present
@@ -174,34 +173,10 @@
     - query_specific_mo.current|length == 1
     - query_specific_mo.current[0].ipRouteP.attributes.ip == "10.1.0.1/24"
 
-- name: Add another static route
+- name: Query all relationships
   aci_l3out_static_routes:
     <<: *aci_info
     tenant: ansible_tenant
-    l3out: ansible_l3out
-    logical_node: lNode
-    node_id: 101
-    pod_id: 1 
-    prefix: 10.1.0.0/24
-    state: present
-  register: static_another
-
-- name: Verify another static route
-  assert:
-    that:
-    - static_another is changed
-    - static_another.current.0.ipRouteP.attributes.ip == "10.1.0.0/24"
-    - static_another.current.0.ipRouteP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-lNode/rsnodeL3OutAtt-[topology/pod-1/node-101]/rt-[10.1.0.0/24]"
-
-- name: Query for a specific MO under l3out
-  aci_l3out_static_routes:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    logical_node: lNode
-    node_id: 101
-    pod_id: 1
-    prefix: 10.1.0.1/24
     state: query
   ignore_errors: yes
   register: query_all_relationships

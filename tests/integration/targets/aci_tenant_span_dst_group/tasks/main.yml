@@ -36,7 +36,7 @@
 - name: Add span ansible_group
   aci_tenant_span_dst_group:
     <<: *aci_info
-    dst_group: ansible_group
+    destination_group: ansible_group
     description: Test span
     destination_ip: 10.0.0.1
     source_ip: 10.0.2.1
@@ -74,7 +74,7 @@
 - name: Add span ansible_group again
   aci_tenant_span_dst_group:
     <<: *aci_info
-    dst_group: ansible_group
+    destination_group: ansible_group
     description: Test span
     destination_ip: 10.0.0.1
     source_ip: 10.0.2.1
@@ -100,7 +100,7 @@
 - name: Change span ansible_group's src ip
   aci_tenant_span_dst_group:
     <<: *aci_info
-    dst_group: ansible_group2
+    destination_group: ansible_group2
     description: Test span
     destination_ip: 10.0.0.2
     source_ip: 10.0.2.1
@@ -121,7 +121,7 @@
 - name: Change span ansible_group's dscp
   aci_tenant_span_dst_group:
     <<: *aci_info
-    dst_group: ansible_group2
+    destination_group: ansible_group2
     description: Test span
     destination_ip: 10.0.0.2
     source_ip: 10.0.2.1
@@ -148,7 +148,7 @@
 - name: Add span ansible_group2
   aci_tenant_span_dst_group:
     <<: *aci_info
-    dst_group: ansible_group2
+    destination_group: ansible_group2
     description: Test span
     destination_ip: 10.0.0.1
     source_ip: 10.0.2.1
@@ -187,7 +187,7 @@
   aci_tenant_span_dst_group:
     <<: *aci_info
     tenant: ansible_tenant
-    dst_group: ansible_group
+    destination_group: ansible_group
     state: query
   register: query_span_ansible_group
 
@@ -219,7 +219,7 @@
   aci_tenant_span_dst_group:
     <<: *aci_info
     tenant: ansible_tenant
-    dst_group: ansible_group
+    destination_group: ansible_group
     state: absent
   register: remove_span1
 
@@ -227,7 +227,7 @@
   aci_tenant_span_dst_group:
     <<: *aci_info
     tenant: ansible_tenant
-    dst_group: ansible_group2
+    destination_group: ansible_group2
     state: absent
   register: remove_span2
 
