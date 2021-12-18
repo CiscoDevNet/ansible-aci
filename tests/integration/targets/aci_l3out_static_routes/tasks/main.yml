@@ -44,6 +44,7 @@
     l3protocol: ospf
     route_control: export
     state: present
+  delegate_to: localhost
 
 - name: Create L3OUT Logical Node Profile
   cisco.aci.aci_l3out_logical_node_profile: &np_present
