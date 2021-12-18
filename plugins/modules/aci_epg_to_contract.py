@@ -46,7 +46,6 @@ options:
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
     choices: [ level1, level2, level3, level4, level5, level6, unspecified ]
-    default: unspecified
   provider_match:
     description:
     - The matching algorithm for Provided Contracts.
