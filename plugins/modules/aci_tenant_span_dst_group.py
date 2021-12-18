@@ -16,11 +16,11 @@ short_description: Manage SPAN destination groups (span:DestGrp)
 description:
 - Manage SPAN destination groups on Cisco ACI fabrics.
 options:
-  dst_group:
+  destination_group:
     description:
     - The name of the SPAN destination group.
     type: str
-    aliases: [ name ]
+    aliases: [ name, dst_group ]
   description:
     description:
     - The description of the SPAN destination group.
@@ -123,7 +123,7 @@ EXAMPLES = r"""
         tenant: Test1
         ap: ap1
         epg: ep1
-    dst_group: group1
+    destination_group: group1
     description: Test span
     destination_ip: 10.0.0.1
     source_ip: 10.0.2.1
@@ -142,7 +142,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: Tenant1
-    dst_group: group1
+    destination_group: group1
     state: absent
   delegate_to: localhost
 
@@ -152,7 +152,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: Tenant1
-    dst_group: group1
+    destination_group: group1
     state: query
   delegate_to: localhost
 
@@ -289,9 +289,8 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         destination_epg=dict(type="dict", options=destination_epg_spec()),
-        dst_group=dict(type="str", aliases=["name"]),  # Not required for querying all objects
+        destination_group=dict(type="str", aliases=["name", "dst_group"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
-        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
         source_ip=dict(type="str"),
         destination_ip=dict(type="str"),
@@ -309,15 +308,15 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["dst_group", "tenant"]],
-            ["state", "present", ["dst_group", "destination_ip", "source_ip", "destination_epg", "tenant"]],
+            ["state", "absent", ["destination_group", "tenant"]],
+            ["state", "present", ["destination_group", "destination_ip", "source_ip", "destination_epg", "tenant"]],
         ],
     )
 
     aci = ACIModule(module)
 
     destination_epg = module.params.get("destination_epg")
-    dst_group = module.params.get("dst_group")
+    destination_group = module.params.get("destination_group")
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
@@ -340,9 +339,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="spanDestGrp",
-            aci_rn="destgrp-{0}".format(dst_group),
-            module_object=dst_group,
-            target_filter={"name": dst_group},
+            aci_rn="destgrp-{0}".format(destination_group),
+            module_object=destination_group,
+            target_filter={"name": destination_group},
         ),
         child_classes=["spanDest", "spanRsDestEpg"],
     )
@@ -363,7 +362,7 @@ def main():
             span_version = "ver2"
 
         child_configs = [
-            dict(spanDest=dict(attributes=dict(name=dst_group), children=[dict(spanRsDestEpg=dict(attributes=dict(ip=destination_ip,
+            dict(spanDest=dict(attributes=dict(name=destination_group), children=[dict(spanRsDestEpg=dict(attributes=dict(ip=destination_ip,
                  srcIpPrefix=source_ip, ver=span_version, verEnforced=version_enforced, ttl=ttl,
                  mtu=mtu, flowId=flow_id, dscp=dscp, tDn=dest_tdn)))])),
         ]
@@ -371,7 +370,7 @@ def main():
         aci.payload(
             aci_class="spanDestGrp",
             class_config=dict(
-                name=dst_group,
+                name=destination_group,
                 descr=description,
                 nameAlias=name_alias,
             ),
