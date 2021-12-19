@@ -60,6 +60,8 @@
     <<: *aci_epg_present
     contract_type: provider
     contract: anstest_http
+    contract_label: anstest_contract_label
+    subject_label: anstest_subject_label
   check_mode: yes
   register: provide_present_check_mode
 
@@ -80,6 +82,8 @@
     <<: *aci_epg_provide_present
     contract: anstest_https
     provider_match: at_most_one
+    contract_label: "{{ fakevar | default(omit) }}"
+    subject_label: "{{ fakevar | default(omit) }}"
   register: provide_present2
 
 - name: bind contract to epg - idempotency works
