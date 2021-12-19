@@ -1,0 +1,160 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg(@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
+
+- name: Add a new tenant
+  aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    description: Ansible tenant
+    state: present
+
+# CREATE DHCP RELAY
+- name: Add a new DHCP relay policy
+  cisco.aci.aci_dhcp_relay:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_dhcp_relay
+    description: Ansible DHCP Relay
+    state: present
+  register: add_dhcp_relay
+
+- name: Verify DHCP Relay creation
+  assert:
+    that:
+    - add_dhcp_relay is changed
+    - add_dhcp_relay.current.0.dhcpRelayP.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay"
+    - add_dhcp_relay.current.0.dhcpRelayP.attributes.name == "ansible_dhcp_relay"
+    - add_dhcp_relay.current.0.dhcpRelayP.attributes.owner == "tenant"
+    - add_dhcp_relay.current.0.dhcpRelayP.attributes.descr == "Ansible DHCP Relay"
+
+# CREATE DHCP RELAY AGAIN TO TEST IDEMPOTENCE
+- name: Add DHCP relay policy again
+  cisco.aci.aci_dhcp_relay:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_dhcp_relay
+    description: Ansible DHCP Relay
+    state: present
+  register: add_dhcp_relay_again
+
+- name: Verify DHCP Relay idempotence
+  assert:
+    that:
+    - add_dhcp_relay_again is not changed
+    - add_dhcp_relay_again.current.0.dhcpRelayP.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay"
+    - add_dhcp_relay_again.current.0.dhcpRelayP.attributes.name == "ansible_dhcp_relay"
+    - add_dhcp_relay_again.current.0.dhcpRelayP.attributes.owner == "tenant"
+    - add_dhcp_relay_again.current.0.dhcpRelayP.attributes.descr == "Ansible DHCP Relay"
+
+# MODIFY DHCP RELAY
+- name: Update DHCP relay policy
+  cisco.aci.aci_dhcp_relay:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_dhcp_relay
+    description: New Ansible DHCP Relay
+    state: present
+  register: update_dhcp_relay
+
+- name: Verify DHCP Relay change
+  assert:
+    that:
+    - update_dhcp_relay is changed
+    - update_dhcp_relay.current.0.dhcpRelayP.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay"
+    - update_dhcp_relay.current.0.dhcpRelayP.attributes.name == "ansible_dhcp_relay"
+    - update_dhcp_relay.current.0.dhcpRelayP.attributes.owner == "tenant"
+    - update_dhcp_relay.current.0.dhcpRelayP.attributes.descr == "New Ansible DHCP Relay"
+
+# QUERY DHCP RELAY
+- name: Query DHCP relay policy
+  cisco.aci.aci_dhcp_relay:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_dhcp_relay
+    state: query
+  register: query_dhcp_relay
+
+- name: Verify DHCP Relay query
+  assert:
+    that:
+    - query_dhcp_relay is not changed
+    - query_dhcp_relay.current.0.dhcpRelayP.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay"
+    - query_dhcp_relay.current.0.dhcpRelayP.attributes.name == "ansible_dhcp_relay"
+    - query_dhcp_relay.current.0.dhcpRelayP.attributes.owner == "tenant"
+    - query_dhcp_relay.current.0.dhcpRelayP.attributes.descr == "New Ansible DHCP Relay"
+
+- name: Query all DHCP relays in ansible_tenant
+  cisco.aci.aci_dhcp_relay:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: query
+  register: query_dhcp_relay_all
+
+- name: Verify query idempotence
+  assert:
+    that:
+    - query_dhcp_relay_all is not changed
+
+# DELETE DHCP RELAY
+- name: Delete DHCP relay policy
+  cisco.aci.aci_dhcp_relay:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_dhcp_relay
+    state: absent
+  register: delete_dhcp_relay
+
+- name: Verify DHCP Relay deletion
+  assert:
+    that:
+    - delete_dhcp_relay is changed
+    - delete_dhcp_relay.current == []
+    - delete_dhcp_relay.previous.0.dhcpRelayP.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay"
+    - delete_dhcp_relay.previous.0.dhcpRelayP.attributes.name == "ansible_dhcp_relay"
+    - delete_dhcp_relay.previous.0.dhcpRelayP.attributes.owner == "tenant"
+    - delete_dhcp_relay.previous.0.dhcpRelayP.attributes.descr == "New Ansible DHCP Relay"
+
+- name: Delete DHCP relay policy again to test idempotence
+  cisco.aci.aci_dhcp_relay:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_dhcp_relay
+    state: absent
+  register: delete_dhcp_relay_again
+
+- name: Verify DHCP Relay deletion idempotence
+  assert:
+    that:
+    - delete_dhcp_relay_again is not changed
+
+# CLEAN ENVIRONMENT AGAIN
+- name: Remove the ansible_tenant
+  aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
