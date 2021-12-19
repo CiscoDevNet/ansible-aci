@@ -1,0 +1,131 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove BGP Route Reflector Node 101 if it already exists
+  cisco.aci.aci_bgp_rr_node:
+    <<: *aci_info
+    node_id: 101
+    state: absent
+
+# ADD ROUTE REFLECTOR NODE
+- name: Add BGP Route Reflector Node
+  cisco.aci.aci_bgp_rr_node:
+    <<: *aci_info
+    node_id: 101
+    pod_id: 1
+    description: ans_node
+    state: present
+  register: add_bgp_rr_node
+
+- name: Verify that BGP route reflector node has been created with correct attributes
+  assert:
+    that:
+    - add_bgp_rr_node is changed
+    - add_bgp_rr_node.current.0.bgpRRNodePEp.attributes.dn == "uni/fabric/bgpInstP-default/rr/node-101"
+    - add_bgp_rr_node.current.0.bgpRRNodePEp.attributes.id == "101"
+    - add_bgp_rr_node.current.0.bgpRRNodePEp.attributes.podId == "1"
+    - add_bgp_rr_node.current.0.bgpRRNodePEp.attributes.descr == "ans_node"
+
+# ADD ROUTE REFLECTOR NODE AGAIN TO TEST IDEMPOTENCE
+- name: Add BGP route reflector node again
+  cisco.aci.aci_bgp_rr_node:
+    <<: *aci_info
+    node_id: 101
+    pod_id: 1
+    description: ans_node
+    state: present
+  register: add_bgp_rr_node_again
+
+- name: Verify that BGP route reflector node has been created with correct attributes
+  assert:
+    that:
+    - add_bgp_rr_node_again is not changed
+    - add_bgp_rr_node_again.current.0.bgpRRNodePEp.attributes.dn == "uni/fabric/bgpInstP-default/rr/node-101"
+    - add_bgp_rr_node_again.current.0.bgpRRNodePEp.attributes.id == "101"
+    - add_bgp_rr_node_again.current.0.bgpRRNodePEp.attributes.podId == "1"
+    - add_bgp_rr_node_again.current.0.bgpRRNodePEp.attributes.descr == "ans_node"
+
+# MODIFY ROUTE REFLECTOR NODE
+- name: Add BGP route reflector node again
+  cisco.aci.aci_bgp_rr_node:
+    <<: *aci_info
+    node_id: 101
+    pod_id: 1
+    description: ans_node_update
+    state: present
+  register: update_bgp_rr_node
+
+- name: Verify that BGP route reflector node has been updated with correct attributes
+  assert:
+    that:
+    - update_bgp_rr_node is changed
+    - update_bgp_rr_node.current.0.bgpRRNodePEp.attributes.dn == "uni/fabric/bgpInstP-default/rr/node-101"
+    - update_bgp_rr_node.current.0.bgpRRNodePEp.attributes.id == "101"
+    - update_bgp_rr_node.current.0.bgpRRNodePEp.attributes.podId == "1"
+    - update_bgp_rr_node.current.0.bgpRRNodePEp.attributes.descr == "ans_node_update"
+
+# QUERY ROUTE REFLECTOR NODE
+- name: Add BGP route reflector node again
+  cisco.aci.aci_bgp_rr_node:
+    <<: *aci_info
+    node_id: 101
+    state: query
+  register: query_bgp_rr_node
+
+- name: Verify that BGP route reflector node attributes
+  assert:
+    that:
+    - query_bgp_rr_node is not changed
+    - query_bgp_rr_node.current.0.bgpRRNodePEp.attributes.dn == "uni/fabric/bgpInstP-default/rr/node-101"
+    - query_bgp_rr_node.current.0.bgpRRNodePEp.attributes.id == "101"
+    - query_bgp_rr_node.current.0.bgpRRNodePEp.attributes.podId == "1"
+    - query_bgp_rr_node.current.0.bgpRRNodePEp.attributes.descr == "ans_node_update"
+
+- name: Query all route relector nodes
+  cisco.aci.aci_bgp_rr_node:
+    <<: *aci_info
+    state: query
+  register: query_bgp_rr_node_all
+
+- name: Verify query_bgp_rr_node_all
+  assert:
+    that:
+    - query_bgp_rr_node_all is not changed
+
+# DELETE ROUTE REFLECTOR NODE
+- name: Remove BGP route reflector node
+  cisco.aci.aci_bgp_rr_node:
+    <<: *aci_info
+    node_id: 101
+    state: absent
+  register: remove_bgp_rr_node
+
+- name: Verify BGP route reflector node removal
+  assert:
+    that:
+    - remove_bgp_rr_node is changed
+    - remove_bgp_rr_node.current == []
+    - remove_bgp_rr_node.previous.0.bgpRRNodePEp.attributes.dn == "uni/fabric/bgpInstP-default/rr/node-101"
+    - remove_bgp_rr_node.previous.0.bgpRRNodePEp.attributes.id == "101"
+    - remove_bgp_rr_node.previous.0.bgpRRNodePEp.attributes.podId == "1"
+    - remove_bgp_rr_node.previous.0.bgpRRNodePEp.attributes.descr == "ans_node_update"
