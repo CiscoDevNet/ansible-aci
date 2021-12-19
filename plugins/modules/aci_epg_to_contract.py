@@ -52,6 +52,10 @@ options:
     - The APIC defaults to C(at_least_one) when unset during creation.
     type: str
     choices: [ all, at_least_one, at_most_one, none ]
+  contract_label:
+    description:
+    - Contract label to match
+    type: str
   subject_label:
     description:
     - Subject label to match
@@ -94,6 +98,7 @@ EXAMPLES = r"""
     epg: anstest
     contract: anstest_http
     contract_type: provider
+    contract_label: contractlabel
     subject_label: subjlabel
     state: present
   delegate_to: localhost
@@ -262,6 +267,11 @@ PROVIDER_MATCH_MAPPING = dict(
     none="None",
 )
 
+CONTRACT_LABEL_MAPPING = dict(
+    consumer="vzConsLbl",
+    provider="vzProvLbl",
+)
+
 SUBJ_LABEL_MAPPING = dict(
     consumer="vzConsSubjLbl",
     provider="vzProvSubjLbl",
@@ -280,6 +290,7 @@ def main():
         provider_match=dict(type="str", choices=["all", "at_least_one", "at_most_one", "none"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        contract_label=dict(type="str"),
         subject_label=dict(type="str"),
     )
 
@@ -302,16 +313,18 @@ def main():
         provider_match = PROVIDER_MATCH_MAPPING[provider_match]
     state = module.params.get("state")
     tenant = module.params.get("tenant")
+    contract_label = module.params.get("contract_label")
     subject_label = module.params.get("subject_label")
 
     aci_class = ACI_CLASS_MAPPING[contract_type]["class"]
     aci_rn = ACI_CLASS_MAPPING[contract_type]["rn"]
+    contract_label_class = CONTRACT_LABEL_MAPPING[contract_type]
     subject_label_class = SUBJ_LABEL_MAPPING[contract_type]
 
     if contract_type == "consumer" and provider_match is not None:
         module.fail_json(msg="the 'provider_match' is only configurable for Provided Contracts")
 
-    child_classes = [subject_label_class]
+    child_classes = [subject_label_class, contract_label_class]
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -346,6 +359,10 @@ def main():
 
     if state == "present":
         child_configs = []
+        if contract_label:
+            child_configs.append(
+                {contract_label_class: {"attributes": {"name": contract_label}}}
+            )
         if subject_label:
             child_configs.append(
                 {subject_label_class: {"attributes": {"name": subject_label}}}
