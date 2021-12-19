@@ -223,7 +223,6 @@ def main():
     aci.get_existing()
 
     if state == 'present':
-
         aci.payload(
             aci_class='dnsProfile',
             class_config=dict(

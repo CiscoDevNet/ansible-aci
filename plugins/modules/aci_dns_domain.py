@@ -249,7 +249,6 @@ def main():
     aci.get_existing()
 
     if state == 'present':
-
         aci.payload(
             aci_class='dnsDomain',
             class_config=dict(

@@ -24,10 +24,11 @@ options:
     type: str
     aliases: [ profile_name ]
     required: yes
-  addr:
+  address:
     description:
     - address of the DNS server
     type: str
+    aliases: [ addr, ip_address ]
   preferred:
     description:
     - Whether this is the preferred DNS server
@@ -61,7 +62,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     dns_profile: my_dns_prof
-    addr: 10.20.30.40
+    address: 10.20.30.40
     state: present
   delegate_to: localhost
 
@@ -71,7 +72,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     dns_profile: my_dns_prof
-    addr: 10.20.30.40
+    address: 10.20.30.40
     state: absent
   delegate_to: localhost
 
@@ -81,7 +82,7 @@ EXAMPLES = r'''
     username: admin
     password: SomeSecretPassword
     dns_profile: my_dns_prof
-    addr: 10.20.30.40
+    address: 10.20.30.40
     state: query
   delegate_to: localhost
   register: query_result
@@ -209,7 +210,7 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         dns_profile=dict(type='str', aliases=['profile_name'], required=True),
-        addr=dict(type='str'),
+        address=dict(type='str', aliases=['addr', 'ip_address']),
         preferred=dict(type='bool'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
@@ -218,15 +219,15 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['addr']],
-            ['state', 'present', ['addr']],
+            ['state', 'absent', ['address']],
+            ['state', 'present', ['address']],
         ],
     )
 
     aci = ACIModule(module)
 
     dns_profile = module.params.get('dns_profile')
-    addr = module.params.get('addr')
+    address = module.params.get('address')
     preferred = aci.boolean(module.params.get('preferred'))
     state = module.params.get('state')
 
@@ -239,20 +240,19 @@ def main():
         ),
         subclass_1=dict(
             aci_class='dnsProv',
-            aci_rn='prov-{0}'.format(addr),
-            module_object=addr,
-            target_filter={'addr': addr}
+            aci_rn='prov-{0}'.format(address),
+            module_object=address,
+            target_filter={'address': address}
         ),
     )
 
     aci.get_existing()
 
     if state == 'present':
-
         aci.payload(
             aci_class='dnsProv',
             class_config=dict(
-                addr=addr,
+                addr=address,
                 preferred=preferred
             ),
         )
