@@ -125,12 +125,50 @@
   ignore_errors: yes
   register: nm_incorrect_vswitch
 
+- name: Update FC domain with incorrect parameter dscp (check mode)
+  cisco.aci.aci_domain:
+    <<: *domain_present
+    dscp: unspecified
+  check_mode: yes
+  ignore_errors: yes
+  register: cm_incorrect_dscp
+
 - name: Update FC domain with incorrect parameter dscp (normal mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     dscp: unspecified
   ignore_errors: yes
   register: nm_incorrect_dscp
+
+- name: Update FC domain with incorrect parameter access_mode (check mode)
+  cisco.aci.aci_domain:
+    <<: *domain_present
+    access_mode: read-write
+  check_mode: yes
+  ignore_errors: yes
+  register: cm_incorrect_access_mode
+
+- name: Update FC domain with incorrect parameter access_mode (normal mode)
+  cisco.aci.aci_domain:
+    <<: *domain_present
+    access_mode: read-write
+  ignore_errors: yes
+  register: nm_incorrect_access_mode
+
+- name: Update FC domain with incorrect parameter enable_vm_folder (check mode)
+  cisco.aci.aci_domain:
+    <<: *domain_present
+    enable_vm_folder: true
+  check_mode: yes
+  ignore_errors: yes
+  register: cm_incorrect_enable_vm_folder
+
+- name: Update FC domain with incorrect parameter enable_vm_folder (normal mode)
+  cisco.aci.aci_domain:
+    <<: *domain_present
+    enable_vm_folder: true
+  ignore_errors: yes
+  register: nm_incorrect_enable_vm_folder
 
 - name: Verify incorrect parameter
   assert:
@@ -143,7 +181,12 @@
     - nm_incorrect_multicast_address.msg == "Domain type 'fc' cannot have parameter 'multicast_address'"
     - cm_incorrect_vswitch.msg == "Domain type 'fc' cannot have parameter 'vswitch'"
     - nm_incorrect_vswitch.msg == "Domain type 'fc' cannot have parameter 'vswitch'"
+    - cm_incorrect_dscp.msg == "DSCP values can only be assigned to 'l2ext and 'l3ext' domains"
     - nm_incorrect_dscp.msg == "DSCP values can only be assigned to 'l2ext and 'l3ext' domains"
+    - cm_incorrect_access_mode.msg == "Domain type 'fc' cannot have parameter 'access_mode'"
+    - nm_incorrect_access_mode.msg == "Domain type 'fc' cannot have parameter 'access_mode'"
+    - cm_incorrect_enable_vm_folder.msg == "Domain type 'fc' cannot have parameter 'enable_vm_folder'"
+    - nm_incorrect_enable_vm_folder.msg == "Domain type 'fc' cannot have parameter 'enable_vm_folder'"
 
 # QUERY ALL DOMAINS
 - name: Query all FC domains (check_mode)
