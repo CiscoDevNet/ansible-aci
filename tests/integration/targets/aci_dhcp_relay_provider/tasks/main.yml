@@ -32,7 +32,6 @@
     domain: ansible_l2dom
     domain_type: l2dom
     state: absent
-  delegate_to: localhost
 
 - name: Remove l3ext domain
   cisco.aci.aci_domain:
@@ -40,7 +39,6 @@
     domain: ansible_l3dom
     domain_type: l3dom
     state: absent
-  delegate_to: localhost
 
 - name: Add a new tenant
   aci_tenant:
@@ -56,7 +54,6 @@
     ap: ansible_ap
     description: Ansible AP
     state: present
-  delegate_to: localhost
 
 - name: Add a new EPG
   cisco.aci.aci_epg:
@@ -66,7 +63,15 @@
     epg: ansible_epg
     description: Ansible EPG
     state: present
-  delegate_to: localhost
+
+- name: Add another new EPG
+  cisco.aci.aci_epg:
+    <<: *aci_info
+    tenant: ansible_tenant
+    ap: ansible_ap
+    epg: ansible_epg_2
+    description: Ansible EPG
+    state: present
 
 - name: Add a new BD
   cisco.aci.aci_bd:
@@ -74,7 +79,6 @@
     tenant: ansible_tenant
     bd: ansible_bd
     state: present
-  delegate_to: localhost
 
 - name: Add l2ext domain
   cisco.aci.aci_domain:
@@ -82,7 +86,6 @@
     domain: ansible_l2dom
     domain_type: l2dom
     state: present
-  delegate_to: localhost
 
 - name: Add a new l2out
   cisco.aci.aci_l2out:
@@ -93,7 +96,6 @@
     bd: ansible_bd
     vlan: 3200
     state: present
-  delegate_to: localhost
 
 - name: Add a new L2 external end point group
   cisco.aci.aci_l2out_extepg:
@@ -102,7 +104,6 @@
     l2out: ansible_l2out
     extepg: ansible_l2out_ext_net
     state: present
-  delegate_to: localhost
 
 - name: Add a new l3ext domain
   cisco.aci.aci_domain:
@@ -110,7 +111,6 @@
     domain: ansible_l3dom
     domain_type: l3dom
     state: present
-  delegate_to: localhost
 
 - name: Add a new VRF to a tenant
   cisco.aci.aci_vrf:
@@ -118,7 +118,6 @@
     vrf: ansible_vrf
     tenant: ansible_tenant
     state: present
-  delegate_to: localhost
 
 - name: Add a new L3Out
   cisco.aci.aci_l3out:
@@ -130,7 +129,6 @@
     route_control:
     - export
     state: present
-  delegate_to: localhost
 
 - name: Add a new ExtEpg
   cisco.aci.aci_l3out_extepg:
@@ -139,7 +137,6 @@
     l3out: ansible_l3out
     name: ansible_l3out_ext_net
     state: present
-  delegate_to: localhost
 
 # CREATE DHCP RELAY
 - name: Add a new DHCP relay policy
@@ -149,7 +146,6 @@
     name: ansible_dhcp_relay
     description: Ansible DHCP Relay
     state: present
-  delegate_to: localhost
 
 # CREATE DHCP RELAY PROVIDERS
 - name: Add a new DHCP relay App EPG provider
@@ -162,7 +158,6 @@
     app_epg: ansible_epg
     dhcp_server_addr: 10.20.30.40
     state: present
-  delegate_to: localhost
   register: add_epg_relay_provider
 
 - name: Add a new DHCP relay L2out provider
@@ -175,7 +170,6 @@
     external_net: ansible_l2out_ext_net
     dhcp_server_addr: 10.20.30.41
     state: present
-  delegate_to: localhost
   register: add_l2_relay_provider
 
 - name: Add a new DHCP relay L3out provider
@@ -184,12 +178,23 @@
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
     epg_type: l3_external
+    provider_tenant: ansible_tenant
     l3out_name: ansible_l3out
     external_net: ansible_l3out_ext_net
     dhcp_server_addr: 10.20.30.42
     state: present
-  delegate_to: localhost
   register: add_l3_relay_provider
+
+- name: Add a new DHCP relay dn provider
+  cisco.aci.aci_dhcp_relay_provider:
+    <<: *aci_info
+    tenant: ansible_tenant
+    relay_policy: ansible_dhcp_relay
+    epg_type: dn
+    dn: "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
+    dhcp_server_addr: 10.20.30.43
+    state: present
+  register: add_dn_relay_provider
 
 - name: Confirm DHCP relay provider creation
   assert:
@@ -206,6 +211,10 @@
     - add_l3_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net]"
     - add_l3_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.42"
     - add_l3_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net"
+    - add_dn_relay_provider is changed
+    - add_dn_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2]"
+    - add_dn_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.43"
+    - add_dn_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
 
 # ADD DHCP RELAY PROVIDERS AGAIN TO TEST IDEMPOTENCE
 - name: Add DHCP relay App EPG provider again
@@ -218,7 +227,6 @@
     app_epg: ansible_epg
     dhcp_server_addr: 10.20.30.40
     state: present
-  delegate_to: localhost
   register: add_epg_relay_provider_again
 
 - name: Add DHCP relay L2out provider again
@@ -231,7 +239,6 @@
     external_net: ansible_l2out_ext_net
     dhcp_server_addr: 10.20.30.41
     state: present
-  delegate_to: localhost
   register: add_l2_relay_provider_again
 
 - name: Add DHCP relay L3out provider again
@@ -240,12 +247,23 @@
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
     epg_type: l3_external
+    provider_tenant: ansible_tenant
     l3out_name: ansible_l3out
     external_net: ansible_l3out_ext_net
     dhcp_server_addr: 10.20.30.42
     state: present
-  delegate_to: localhost
   register: add_l3_relay_provider_again
+
+- name: Add a new DHCP relay dn provider again
+  cisco.aci.aci_dhcp_relay_provider:
+    <<: *aci_info
+    tenant: ansible_tenant
+    relay_policy: ansible_dhcp_relay
+    epg_type: dn
+    dn: "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
+    dhcp_server_addr: 10.20.30.43
+    state: present
+  register: add_dn_relay_provider_again
 
 - name: Confirm DHCP relay provider idempotence
   assert:
@@ -262,6 +280,10 @@
     - add_l3_relay_provider_again.current.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net]"
     - add_l3_relay_provider_again.current.0.dhcpRsProv.attributes.addr == "10.20.30.42"
     - add_l3_relay_provider_again.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net"
+    - add_dn_relay_provider_again is not changed
+    - add_dn_relay_provider_again.current.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2]"
+    - add_dn_relay_provider_again.current.0.dhcpRsProv.attributes.addr == "10.20.30.43"
+    - add_dn_relay_provider_again.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
 
 # MODIFY DHCP RELAY PROVIDERS
 - name: Update DHCP relay App EPG provider
@@ -274,7 +296,6 @@
     app_epg: ansible_epg
     dhcp_server_addr: 10.20.30.50
     state: present
-  delegate_to: localhost
   register: update_epg_relay_provider
 
 - name: Update DHCP relay L2out provider
@@ -287,7 +308,6 @@
     external_net: ansible_l2out_ext_net
     dhcp_server_addr: 10.20.30.51
     state: present
-  delegate_to: localhost
   register: update_l2_relay_provider
 
 - name: Update DHCP relay L3out provider
@@ -296,12 +316,23 @@
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
     epg_type: l3_external
+    provider_tenant: ansible_tenant
     l3out_name: ansible_l3out
     external_net: ansible_l3out_ext_net
     dhcp_server_addr: 10.20.30.52
     state: present
-  delegate_to: localhost
   register: update_l3_relay_provider
+
+- name: Update DHCP relay dn provider
+  cisco.aci.aci_dhcp_relay_provider:
+    <<: *aci_info
+    tenant: ansible_tenant
+    relay_policy: ansible_dhcp_relay
+    epg_type: dn
+    dn: "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
+    dhcp_server_addr: 10.20.30.53
+    state: present
+  register: update_dn_relay_provider
 
 - name: Confirm DHCP relay provider update
   assert:
@@ -318,6 +349,11 @@
     - update_l3_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net]"
     - update_l3_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.52"
     - update_l3_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net"
+    - update_dn_relay_provider is changed
+    - update_dn_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2]"
+    - update_dn_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.53"
+    - update_dn_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
+
 
 # QUERY DHCP RELAY PROVIDERS
 - name: Query DHCP relay App EPG provider
@@ -329,7 +365,6 @@
     anp: ansible_ap
     app_epg: ansible_epg
     state: query
-  delegate_to: localhost
   register: query_epg_relay_provider
 
 - name: Query DHCP relay L2out provider
@@ -341,7 +376,6 @@
     l2out_name: ansible_l2out
     external_net: ansible_l2out_ext_net
     state: query
-  delegate_to: localhost
   register: query_l2_relay_provider
 
 - name: Query DHCP relay L3out provider
@@ -353,8 +387,17 @@
     l3out_name: ansible_l3out
     external_net: ansible_l3out_ext_net
     state: query
-  delegate_to: localhost
   register: query_l3_relay_provider
+
+- name: Query DHCP relay dn provider
+  cisco.aci.aci_dhcp_relay_provider:
+    <<: *aci_info
+    tenant: ansible_tenant
+    relay_policy: ansible_dhcp_relay
+    epg_type: dn
+    dn: "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
+    state: query
+  register: query_dn_relay_provider
 
 - name: Confirm DHCP relay provider query
   assert:
@@ -371,6 +414,10 @@
     - query_l3_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net]"
     - query_l3_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.52"
     - query_l3_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net"
+    - query_dn_relay_provider is not changed
+    - query_dn_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2]"
+    - query_dn_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.53"
+    - query_dn_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
 
 # DELETE DHCP RELAY PROVIDERS
 - name: Delete DHCP relay App EPG provider
@@ -382,7 +429,6 @@
     anp: ansible_ap
     app_epg: ansible_epg
     state: absent
-  delegate_to: localhost
   register: delete_epg_relay_provider
 
 - name: Delete DHCP relay L2out provider
@@ -394,7 +440,6 @@
     l2out_name: ansible_l2out
     external_net: ansible_l2out_ext_net
     state: absent
-  delegate_to: localhost
   register: delete_l2_relay_provider
 
 - name: Delete DHCP relay L3out provider
@@ -403,11 +448,22 @@
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
     epg_type: l3_external
+    provider_tenant: ansible_tenant
     l3out_name: ansible_l3out
     external_net: ansible_l3out_ext_net
     state: absent
-  delegate_to: localhost
   register: delete_l3_relay_provider
+
+- name: Delete DHCP relay dn provider
+  cisco.aci.aci_dhcp_relay_provider:
+    <<: *aci_info
+    tenant: ansible_tenant
+    relay_policy: ansible_dhcp_relay
+    epg_type: dn
+    dn: "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
+    state: absent
+  register: delete_dn_relay_provider
+
 
 - name: Confirm DHCP relay provider removal
   assert:
@@ -427,6 +483,10 @@
     - delete_l3_relay_provider.previous.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net]"
     - delete_l3_relay_provider.previous.0.dhcpRsProv.attributes.addr == "10.20.30.52"
     - delete_l3_relay_provider.previous.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net"
+    - delete_dn_relay_provider is changed
+    - delete_dn_relay_provider.previous.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2]"
+    - delete_dn_relay_provider.previous.0.dhcpRsProv.attributes.addr == "10.20.30.53"
+    - delete_dn_relay_provider.previous.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
 
 # DELETE DHCP RELAY PROVIDERS AGAIN TO TEST IDEMPOTENCE
 - name: Delete DHCP relay App EPG provider again
@@ -438,7 +498,6 @@
     anp: ansible_ap
     app_epg: ansible_epg
     state: absent
-  delegate_to: localhost
   register: delete_epg_relay_provider_again
 
 - name: Delete DHCP relay L2out provider again
@@ -450,7 +509,6 @@
     l2out_name: ansible_l2out
     external_net: ansible_l2out_ext_net
     state: absent
-  delegate_to: localhost
   register: delete_l2_relay_provider_again
 
 - name: Delete DHCP relay L3out provider again
@@ -459,11 +517,21 @@
     tenant: ansible_tenant
     relay_policy: ansible_dhcp_relay
     epg_type: l3_external
+    provider_tenant: ansible_tenant
     l3out_name: ansible_l3out
     external_net: ansible_l3out_ext_net
     state: absent
-  delegate_to: localhost
   register: delete_l3_relay_provider_again
+
+- name: Delete DHCP relay dn provider again
+  cisco.aci.aci_dhcp_relay_provider:
+    <<: *aci_info
+    tenant: ansible_tenant
+    relay_policy: ansible_dhcp_relay
+    epg_type: dn
+    dn: "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
+    state: absent
+  register: delete_dn_relay_provider_again
 
 - name: Confirm DHCP relay provider removal
   assert:
@@ -471,6 +539,7 @@
     - delete_epg_relay_provider_again is not changed
     - delete_l2_relay_provider_again is not changed
     - delete_l3_relay_provider_again is not changed
+    - delete_dn_relay_provider_again is not changed
 
 # CLEAN ENVIRONMENT AGAIN
 - name: Remove the ansible_tenant
@@ -485,7 +554,6 @@
     domain: ansible_l2dom
     domain_type: l2dom
     state: absent
-  delegate_to: localhost
 
 - name: Remove l3ext domain
   cisco.aci.aci_domain:
@@ -493,4 +561,3 @@
     domain: ansible_l3dom
     domain_type: l3dom
     state: absent
-  delegate_to: localhost

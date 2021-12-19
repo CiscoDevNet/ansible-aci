@@ -24,7 +24,7 @@ options:
     type: str
   name:
     description:
-    - Name of the DHCP rely policy
+    - Name of the DHCP relay policy
     type: str
     aliases: [ relay_policy ]
   description:
@@ -249,7 +249,6 @@ def main():
     aci.get_existing()
 
     if state == 'present':
-
         aci.payload(
             aci_class='dhcpRelayP',
             class_config=dict(

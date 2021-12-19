@@ -41,7 +41,6 @@
     name: ansible_dhcp_relay
     description: Ansible DHCP Relay
     state: present
-  delegate_to: localhost
   register: add_dhcp_relay
 
 - name: Verify DHCP Relay creation
@@ -61,7 +60,6 @@
     name: ansible_dhcp_relay
     description: Ansible DHCP Relay
     state: present
-  delegate_to: localhost
   register: add_dhcp_relay_again
 
 - name: Verify DHCP Relay idempotence
@@ -81,7 +79,6 @@
     name: ansible_dhcp_relay
     description: New Ansible DHCP Relay
     state: present
-  delegate_to: localhost
   register: update_dhcp_relay
 
 - name: Verify DHCP Relay change
@@ -100,7 +97,6 @@
     tenant: ansible_tenant
     name: ansible_dhcp_relay
     state: query
-  delegate_to: localhost
   register: query_dhcp_relay
 
 - name: Verify DHCP Relay query
@@ -117,7 +113,6 @@
     <<: *aci_info
     tenant: ansible_tenant
     state: query
-  delegate_to: localhost
   register: query_dhcp_relay_all
 
 - name: Verify query idempotence
@@ -132,7 +127,6 @@
     tenant: ansible_tenant
     name: ansible_dhcp_relay
     state: absent
-  delegate_to: localhost
   register: delete_dhcp_relay
 
 - name: Verify DHCP Relay deletion
@@ -151,7 +145,6 @@
     tenant: ansible_tenant
     name: ansible_dhcp_relay
     state: absent
-  delegate_to: localhost
   register: delete_dhcp_relay_again
 
 - name: Verify DHCP Relay deletion idempotence

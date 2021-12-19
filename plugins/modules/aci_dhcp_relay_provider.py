@@ -30,7 +30,7 @@ options:
   provider_tenant:
     description:
     - Name of the tenant the epg or external_epg is in
-    - Only required if the epg or external_epg is in a different tenant to the relay_policy
+    - Only required if the epg or external_epg is in a different tenant than the relay_policy
     type: str
   epg_type:
     description:
@@ -46,7 +46,7 @@ options:
   epg:
     description:
     - Name of the Application EPG the DHCP server is in.
-    - Only used when epg_type is app_epg
+    - Only used when epg_type is epg
     type: str
     aliases: [ app_epg ]
   l2out_name:
@@ -362,7 +362,6 @@ def main():
     aci.get_existing()
 
     if state == 'present':
-
         aci.payload(
             aci_class='dhcpRsProv',
             class_config=dict(
