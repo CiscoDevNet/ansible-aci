@@ -37,6 +37,8 @@
       domain: vmm_dom
       domain_type: vmm
       vm_provider: vmware
+      access_mode: read-write
+      enable_vm_folder: true
       state: present
     check_mode: yes
     register: cm_add_domain
