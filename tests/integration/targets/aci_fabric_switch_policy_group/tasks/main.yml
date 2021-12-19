@@ -46,6 +46,8 @@
     core_export_policy: default
     inventory_policy: default
     power_redundancy_policy: default
+    analytics_cluster: ansible_test
+    analytics_name: ansible_test
     state: present
   register: add_fabric_leaf_policy_group
 
@@ -58,14 +60,15 @@
 - name: Verify that ansible_fabric_leaf_policy_group children have correct attributes
   assert:
     that:
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.0.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == ""
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == ""
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.4.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == ""
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.5.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.6.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.7.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.0.fabricRsNodeCfgSrv.attributes.tDn == "uni/fabric/analytics/cluster-ansible_test/cfgsrv-ansible_test"
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.2.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == ""
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.3.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.4.fabricRsTwampServerPol.attributes.tnTwampServerPolName == ""
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.5.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == ""
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.6.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.7.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.8.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
 
 # ADD Fabric Leaf Policy Group again to check idempotency
 - name: Add ansible_fabric_leaf_policy_group again to test idempotence
@@ -83,14 +86,15 @@
 - name: Verify that ansible_fabric_leaf_policy_group children are still correct
   assert:
     that:
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.0.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == ""
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == ""
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.4.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == ""
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.5.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.6.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.7.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.0.fabricRsNodeCfgSrv.attributes.tDn == "uni/fabric/analytics/cluster-ansible_test/cfgsrv-ansible_test"
+    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.1.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
+    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.2.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == ""
+    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.3.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
+    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.4.fabricRsTwampServerPol.attributes.tnTwampServerPolName == ""
+    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.5.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == ""
+    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.6.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.7.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.8.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
 
 # ADD Fabric Spine Policy Group
 - name: Add ansible_fabric_spine_policy_group
@@ -170,14 +174,15 @@
 - name: Verify ansible_fabric_leaf_policy_group children are updated
   assert:
     that:
-    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.0.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
-    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
-    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
-    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == "default"
-    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.4.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == "default"
-    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.5.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.6.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.7.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.0.fabricRsNodeCfgSrv.attributes.tDn == "uni/fabric/analytics/cluster-ansible_test/cfgsrv-ansible_test"
+    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
+    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.2.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
+    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.3.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
+    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.4.fabricRsTwampServerPol.attributes.tnTwampServerPolName == "default"
+    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.5.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == "default"
+    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.6.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.7.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.8.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
 
 # MODIFY Fabric Spine Policy Group
 - name: Update ansible_fabric_spine_policy_group
