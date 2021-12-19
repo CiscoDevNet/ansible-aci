@@ -1,0 +1,168 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove DNS profile if it already exists
+  cisco.aci.aci_dns_profile:
+    <<: *aci_info
+    profile_name: ansible_dns_profile
+    state: absent
+  delegate_to: localhost
+
+# ADD DNS PROFILE
+- name: Add DNS profile
+  cisco.aci.aci_dns_profile:
+    <<: *aci_info
+    profile_name: ansible_dns_profile
+    state: present
+  delegate_to: localhost
+
+# ADD DNS DOMAIN
+- name: Add a new DNS domain
+  cisco.aci.aci_dns_domain:
+    <<: *aci_info
+    dns_profile: ansible_dns_profile
+    domain: example.com
+    default: false
+    state: present
+  delegate_to: localhost
+  register: add_dns_domain
+
+- name: Verify DNS domain creation
+  assert:
+    that:
+    - add_dns_domain is changed
+    - add_dns_domain.current.0.dnsDomain.attributes.dn == "uni/fabric/dnsp-ansible_dns_profile/dom-example.com"
+    - add_dns_domain.current.0.dnsDomain.attributes.name == "example.com"
+    - add_dns_domain.current.0.dnsDomain.attributes.isDefault == "no"
+
+# ADD DNS DOMAIN AGAIN TO TEST IDEMPOTENCE
+- name: Add DNS domain again
+  cisco.aci.aci_dns_domain:
+    <<: *aci_info
+    dns_profile: ansible_dns_profile
+    domain: example.com
+    default: false
+    state: present
+  delegate_to: localhost
+  register: add_dns_domain_again
+
+- name: Verify DNS domain creation idempotence
+  assert:
+    that:
+    - add_dns_domain_again is not changed
+    - add_dns_domain_again.current.0.dnsDomain.attributes.dn == "uni/fabric/dnsp-ansible_dns_profile/dom-example.com"
+    - add_dns_domain_again.current.0.dnsDomain.attributes.name == "example.com"
+    - add_dns_domain_again.current.0.dnsDomain.attributes.isDefault == "no"
+
+# MODIFY DNS DOMAIN
+- name: Update DNS domain
+  cisco.aci.aci_dns_domain:
+    <<: *aci_info
+    dns_profile: ansible_dns_profile
+    domain: example.com
+    default: true
+    state: present
+  delegate_to: localhost
+  register: update_dns_domain
+
+- name: Verify DNS domain update
+  assert:
+    that:
+    - update_dns_domain is changed
+    - update_dns_domain.current.0.dnsDomain.attributes.dn == "uni/fabric/dnsp-ansible_dns_profile/dom-example.com"
+    - update_dns_domain.current.0.dnsDomain.attributes.name == "example.com"
+    - update_dns_domain.current.0.dnsDomain.attributes.isDefault == "yes"
+
+# QUERY DNS DOMAIN
+- name: Query DNS domain
+  cisco.aci.aci_dns_domain:
+    <<: *aci_info
+    dns_profile: ansible_dns_profile
+    domain: example.com
+    state: query
+  delegate_to: localhost
+  register: query_dns_domain
+
+- name: Verify DNS domain attributes
+  assert:
+    that:
+    - query_dns_domain is not changed
+    - query_dns_domain.current.0.dnsDomain.attributes.dn == "uni/fabric/dnsp-ansible_dns_profile/dom-example.com"
+    - query_dns_domain.current.0.dnsDomain.attributes.name == "example.com"
+    - query_dns_domain.current.0.dnsDomain.attributes.isDefault == "yes"
+
+# QUERY ALL DNS DOMAINS WITHIN THE PROFILE
+- name: Query all DNS domains within the profile
+  cisco.aci.aci_dns_domain:
+    <<: *aci_info
+    dns_profile: ansible_dns_profile
+    state: query
+  delegate_to: localhost
+  register: query_dns_domain_all
+
+- name: Verify DNS domain query idempotence
+  assert:
+    that:
+    - query_dns_domain_all is not changed
+
+# DELETE DNS DOMAIN
+- name: Remove DNS Domain
+  cisco.aci.aci_dns_domain:
+    <<: *aci_info
+    dns_profile: ansible_dns_profile
+    domain: example.com
+    state: absent
+  delegate_to: localhost
+  register: delete_dns_domain
+
+- name: Verify DNS domain deletion
+  assert:
+    that:
+    - delete_dns_domain is changed
+    - delete_dns_domain.current == []
+    - delete_dns_domain.previous.0.dnsDomain.attributes.dn == "uni/fabric/dnsp-ansible_dns_profile/dom-example.com"
+    - delete_dns_domain.previous.0.dnsDomain.attributes.name == "example.com"
+    - delete_dns_domain.previous.0.dnsDomain.attributes.isDefault == "yes"
+
+# DELETE DNS DOMAIN AGAIN TO TEST IDEMPOTENCE
+- name: Remove DNS Domain
+  cisco.aci.aci_dns_domain:
+    <<: *aci_info
+    dns_profile: ansible_dns_profile
+    domain: example.com
+    state: absent
+  delegate_to: localhost
+  register: delete_dns_domain_again
+
+- name: Verify DNS domain deletion idempotence
+  assert:
+    that:
+    - delete_dns_domain_again is not changed
+
+# CLEAN ENVIRONMENT
+- name: Remove DNS profile if it already exists
+  cisco.aci.aci_dns_profile:
+    <<: *aci_info
+    profile_name: ansible_dns_profile
+    state: absent
+  delegate_to: localhost
