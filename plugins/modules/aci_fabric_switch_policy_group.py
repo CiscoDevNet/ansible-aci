@@ -265,6 +265,17 @@ RETURN = r'''
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 
+ACI_CLASS_MAPPING = dict(
+    spine={
+        'class': 'fabricSpNodePGrp',
+        'rn': 'spnodepgrp-',
+    },
+    leaf={
+        'class': 'fabricLeNodePGrp',
+        'rn': 'lenodepgrp-',
+    },
+)
+
 
 def main():
     argument_spec = aci_argument_spec()
@@ -327,28 +338,26 @@ def main():
     analytics_cluster = module.params.get('analytics_cluster')
     analytics_name = module.params.get('analytics_name')
     state = module.params.get('state')
-    child_classes = ['fabricRsMonInstFabricPol',
-                     'fabricRsNodeTechSupP',
-                     'fabricRsNodeCoreP',
-                     'fabricRsCallhomeInvPol',
-                     'fabricRsPsuInstPol',
-                     'fabricRsTwampServerPol',
-                     'fabricRsTwampResponderPol',
-                     'fabricRsNodeCtrl',
-                     'fabricRsNodeCfgSrv']
+    child_classes = [
+        'fabricRsMonInstFabricPol',
+        'fabricRsNodeTechSupP',
+        'fabricRsNodeCoreP',
+        'fabricRsCallhomeInvPol',
+        'fabricRsPsuInstPol',
+        'fabricRsTwampServerPol',
+        'fabricRsTwampResponderPol',
+        'fabricRsNodeCtrl',
+        'fabricRsNodeCfgSrv'
+    ]
 
-    if switch_type == 'spine':
-        aci_class = 'fabricSpNodePGrp'
-        aci_rn = 'fabric/funcprof/spnodepgrp-{0}'.format(name)
-    elif switch_type == 'leaf':
-        aci_class = 'fabricLeNodePGrp'
-        aci_rn = 'fabric/funcprof/lenodepgrp-{0}'.format(name)
+    aci_class = ACI_CLASS_MAPPING[switch_type]["class"]
+    aci_rn = ACI_CLASS_MAPPING[switch_type]["rn"]
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
             aci_class=aci_class,
-            aci_rn=aci_rn,
+            aci_rn='fabric/funcprof/{0}{1}'.format(aci_rn, name),
             module_object=name,
             target_filter={'name': name},
         ),
@@ -440,12 +449,8 @@ def main():
                     )
                 )
             )
-        if analytics_cluster is not None:
-            if analytics_cluster:
-                analytics_tdn = ('uni/fabric/analytics/cluster-{0}/cfgsrv-{1}'.
-                                 format(analytics_cluster, analytics_name))
-            else:
-                analytics_tdn = ''
+        if analytics_cluster and analytics_name:
+            analytics_tdn = ('uni/fabric/analytics/cluster-{0}/cfgsrv-{1}'.format(analytics_cluster, analytics_name))
             child_configs.append(
                 dict(
                     fabricRsNodeCfgSrv=dict(
