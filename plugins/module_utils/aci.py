@@ -1100,7 +1100,7 @@ class ACIModule(object):
             # add name back to config only if the configs do not match
             if config:
                 # TODO: If URLs are built with the object's name, then we should be able to leave off adding the name back
-                config = {aci_class: {'attributes': config}}
+                config = {aci_class: {"attributes": config}}
 
             # check for updates to child configs and update new config dictionary
             children = self.get_diff_children(aci_class)
@@ -1151,13 +1151,13 @@ class ACIModule(object):
                  configurations.
         """
         if proposed_obj is None:
-            proposed_children = self.proposed[aci_class].get('children')
+            proposed_children = self.proposed[aci_class].get("children")
         else:
             proposed_children = proposed_obj
         if proposed_children:
             child_updates = []
             if existing_obj is None:
-                existing_children = self.existing[0][aci_class].get('children', [])
+                existing_children = self.existing[0][aci_class].get("children", [])
             else:
                 existing_children = existing_obj
 
@@ -1264,17 +1264,17 @@ class ACIModule(object):
         """
         for key in proposed_child.keys():
             child_class = key
-            proposed_config = proposed_child[key]['attributes']
+            proposed_config = proposed_child[key]["attributes"]
             existing_config = None
-            proposed_children = proposed_child[key].get('children')
+            proposed_children = proposed_child[key].get("children")
             existing_child_children = None
 
             # FIXME: Design causes issues for repeated child_classes
             # get existing dictionary from the list of existing to use for comparison
             for child in existing_children:
                 if child.get(child_class):
-                    existing_config = child[key]['attributes']
-                    existing_child_children = child[key].get('children')
+                    existing_config = child[key]["attributes"]
+                    existing_child_children = child[key].get("children")
                     # NOTE: This is an ugly fix
                     # Return the one that is a subset match
                     if set(proposed_config.items()).issubset(set(existing_config.items())):
@@ -1376,7 +1376,6 @@ class ACIModule(object):
             if self.params.get("state") in ("absent", "present"):
                 if self.params.get("output_level") in ("debug", "info"):
                     self.result["previous"] = self.existing
-                self.dump_json()
 
         # Return the gory details when we need it
         if self.params.get("output_level") == "debug":
@@ -1469,5 +1468,5 @@ class ACIModule(object):
             output_path = self.params.get("output_path")
             if output_path is not None:
                 with open(output_path, "a") as output_file:
-                    if self.result.get('changed') is True:
+                    if self.result.get("changed") is True:
                         json.dump([mo], output_file)
