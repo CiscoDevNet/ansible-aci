@@ -32,6 +32,11 @@ options:
     description:
     - Name of an existing spine switch policy group
     type: str
+  description:
+    description:
+    - Description of the Fabric Switch Association
+    type: str
+    aliases: [ descr ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -216,6 +221,7 @@ def main():
         profile=dict(type="str", aliases=["spine_profile", "spine_switch_profile"]),
         name=dict(type="str", aliases=["association_name", "switch_association"]),
         policy_group=dict(type="str"),
+        description=dict(type='str', aliases=['descr']),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -233,6 +239,7 @@ def main():
     profile = module.params.get("profile")
     name = module.params.get("name")
     policy_group = module.params.get("policy_group")
+    description = module.params.get('description')
     state = module.params.get("state")
     child_classes = ["fabricRsSpNodePGrp", "fabricNodeBlk"]
 
@@ -261,7 +268,7 @@ def main():
             child_configs.append(dict(fabricRsSpNodePGrp=dict(attributes=dict(tDn=tDn))))
         aci.payload(
             aci_class="fabricSpineS",
-            class_config=dict(name=name),
+            class_config=dict(name=name, descr=description),
             child_configs=child_configs,
         )
 
