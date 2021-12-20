@@ -63,10 +63,11 @@ options:
     - Provides the side of member.
     type: str
     choices: [ A, B ]
-  addr:
+  address:
     description:
     - IP address.
     type: str
+    aliases: [ addr, ip_address]
   ipv6_dad:
     description:
     - IPv6 DAD feature.
@@ -128,7 +129,7 @@ EXAMPLES = r"""
     node_id: 101-102
     path_ep: policy_group_name
     side: A
-    addr: 192.168.1.252/24
+    address: 192.168.1.252/24
     state: present
   delegate_to: localhost
 
@@ -287,15 +288,15 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         l3out=dict(type="str", aliases=["l3out_name"]),  # Not required for querying all objects
-        node_profile=dict(type="str", aliases=['node_profile_name', 'logical_node']),  # Not required for querying all objects
-        interface_profile=dict(type='str', aliases=['interface_profile_name', 'logical_interface']),
+        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),  # Not required for querying all objects
+        interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
         path_dn=dict(type="str"),
-        pod_id=dict(type='str'),
-        node_id=dict(type='str'),
-        path_ep=dict(type='str'),
-        side=dict(type="str"),
-        addr=dict(type='str'),
-        ipv6_dad=dict(type='str', choices=['enabled', 'disabled']),
+        pod_id=dict(type="str"),
+        node_id=dict(type="str"),
+        path_ep=dict(type="str"),
+        side=dict(type="str", choices=["A", "B"]),
+        address=dict(type="str", aliases=["addr", "ip_address"]),
+        ipv6_dad=dict(type="str", choices=["enabled", "disabled"]),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -305,13 +306,13 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "present", ["side", "path_dn", "pod_id", "node_id", "path_ep", "interface_profile", "node_profile", "l3out", "tenant"]],
-            ["state", "absent", ["side", "path_dn", "pod_id", "node_id", "path_ep", "interface_profile", "node_profile", "l3out", "tenant"]],
+            ["state", "present", ["side", "interface_profile", "node_profile", "l3out", "tenant"]],
+            ["state", "absent", ["side", "interface_profile", "node_profile", "l3out", "tenant"]],
         ],
         mutually_exclusive=[
-            ['path_dn', 'pod_id'],
-            ['path_dn', 'node_id'],
-            ['path_dn', 'path_ep'],
+            ["path_dn", "pod_id"],
+            ["path_dn", "node_id"],
+            ["path_dn", "path_ep"],
         ],
         required_together=[
             ["pod_id", "node_id", "path_ep"],
@@ -324,21 +325,25 @@ def main():
     l3out = module.params.get("l3out")
     node_profile = module.params.get("node_profile")
     interface_profile = module.params.get("interface_profile")
-    pod_id = module.params.get('pod_id')
-    node_id = module.params.get('node_id')
-    path_ep = module.params.get('path_ep')
+    pod_id = module.params.get("pod_id")
+    node_id = module.params.get("node_id")
+    path_ep = module.params.get("path_ep")
     path_dn = module.params.get("path_dn")
     side = module.params.get("side")
-    addr = module.params.get('addr')
-    ipv6_dad = module.params.get('ipv6_dad')
+    address = module.params.get("address")
+    ipv6_dad = module.params.get("ipv6_dad")
     description = module.params.get("description")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
     if not path_dn:
-        path_dn = ('topology/pod-{0}/protpaths-{1}/pathep-[{2}]'.format(pod_id,
-                                                                        node_id,
-                                                                        path_ep))
+        if pod_id and node_id and path_ep:
+            path_dn = ("topology/pod-{0}/protpaths-{1}/pathep-[{2}]".format(pod_id,
+                                                                            node_id,
+                                                                            path_ep))
+        else:
+            path_dn = None
+
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -385,7 +390,7 @@ def main():
             aci_class="l3extMember",
             class_config=dict(
                 name=side,
-                addr=addr,
+                addr=address,
                 ipv6Dad=ipv6_dad,
                 descr=description,
                 nameAlias=name_alias,

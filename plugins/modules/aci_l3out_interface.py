@@ -44,28 +44,26 @@ options:
     description:
     - Pod to build the interface on.
     type: str
-    required: yes
   node_id:
     description:
     - Node to build the interface on for Port-channels and single ports.
     - Hyphen separated pair of nodes (e.g. "201-202") for vPCs.
     type: str
-    required: yes
   path_ep:
     description:
     - Path to interface
     - Interface Policy Group name for Port-channels and vPCs
     - Port number for single ports (e.g. "eth1/12")
     type: str
-    required: yes
   encap:
     description:
     - encapsulation on the interface (e.g. "vlan-500")
     type: str
-  addr:
+  address:
     description:
     - IP address.
     type: str
+    aliases: [ addr, ip_address]
   mtu:
     description:
     - Interface MTU.
@@ -121,7 +119,7 @@ EXAMPLES = r"""
     node_id: 201
     path_ep: eth1/12
     interface_type: l3-port
-    addr: 192.168.10.1/27
+    address: 192.168.10.1/27
     state: present
   delegate_to: localhost
 
@@ -295,10 +293,10 @@ def main():
         node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"], required=True),
         interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"], required=True),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        pod_id=dict(type="str", required=True),
-        node_id=dict(type="str", required=True),
-        path_ep=dict(type="str", required=True),
-        addr=dict(type="str"),
+        pod_id=dict(type="str"),
+        node_id=dict(type="str"),
+        path_ep=dict(type="str"),
+        address=dict(type="str", aliases=["addr", "ip_address"]),
         mtu=dict(type='str'),
         ipv6_dad=dict(type="str", choices=["enabled", "disabled"]),
         interface_type=dict(type="str", choices=["l3-port", "sub-interface", "ext-svi"]),
@@ -306,7 +304,14 @@ def main():
         encap=dict(type="str"),
     )
 
-    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True, required_if=[["state", "present", ["interface_type"]]])
+    module = AnsibleModule(
+        argument_spec=argument_spec,
+        supports_check_mode=True,
+        required_if=[
+            ["state", "present", ["interface_type", "pod_id", "node_id", "path_ep"]],
+            ["state", "absent", ["pod_id", "node_id", "path_ep"]]
+        ]
+    )
 
     tenant = module.params.get("tenant")
     l3out = module.params.get("l3out")
@@ -316,7 +321,7 @@ def main():
     pod_id = module.params.get("pod_id")
     node_id = module.params.get("node_id")
     path_ep = module.params.get("path_ep")
-    addr = module.params.get("addr")
+    address = module.params.get("address")
     mtu = module.params.get('mtu')
     ipv6_dad = module.params.get("ipv6_dad")
     interface_type = module.params.get("interface_type")
@@ -324,12 +329,14 @@ def main():
     encap = module.params.get("encap")
 
     aci = ACIModule(module)
-    if "-" in node_id:
+    if node_id and "-" in node_id:
         path_type = "protpaths"
     else:
         path_type = "paths"
 
-    path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, path_type, node_id, path_ep)
+    path_dn = None
+    if pod_id and node_id and path_ep:
+        path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, path_type, node_id, path_ep)
 
     aci.construct_url(
         root_class=dict(
@@ -371,7 +378,7 @@ def main():
             aci_class="l3extRsPathL3OutAtt",
             class_config=dict(
                 tDn=path_dn,
-                addr=addr,
+                addr=address,
                 ipv6Dad=ipv6_dad,
                 mtu=mtu,
                 ifInstT=interface_type,

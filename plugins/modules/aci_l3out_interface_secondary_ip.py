@@ -4,13 +4,16 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_l3out_interface_secondary_ip
 short_description: Manage Layer 3 Outside (L3Out) interface secondary IP addresses (l3ext:Ip).
@@ -57,10 +60,11 @@ options:
     - Provides the side for vPC member interfaces.
     type: str
     choices: [ A, B ]
-  addr:
+  address:
     description:
     - Secondary IP address.
     type: str
+    aliases: [ addr, ip_address]
   ipv6_dad:
     description:
     - IPv6 DAD feature.
@@ -88,9 +92,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Marcel Zehnder (@maercu)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new secondary IP to a routed interface
   cisco.aci.aci_l3out_interface_secondary_ip:
     host: apic
@@ -103,7 +107,7 @@ EXAMPLES = r'''
     pod_id: 1
     node_id: 201
     path_ep: eth1/12
-    addr: 192.168.10.2/27
+    address: 192.168.10.2/27
     state: present
   delegate_to: localhost
 
@@ -120,7 +124,7 @@ EXAMPLES = r'''
     node_id: 201-202
     path_ep: my_vpc_ipg
     side: A
-    addr: 192.168.10.2/27
+    address: 192.168.10.2/27
     state: present
   delegate_to: localhost
 
@@ -136,7 +140,7 @@ EXAMPLES = r'''
     pod_id: 1
     node_id: 201
     path_ep: eth1/12
-    addr: 192.168.10.2/27
+    address: 192.168.10.2/27
     state: absent
   delegate_to: localhost
 
@@ -152,13 +156,13 @@ EXAMPLES = r'''
     pod_id: 1
     node_id: 201
     path_ep: eth1/12
-    addr: 192.168.10.2/27
+    address: 192.168.10.2/27
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -261,119 +265,146 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+)
 from ansible.module_utils.basic import AnsibleModule
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),
-        l3out=dict(type='str', aliases=['l3out_name']),
-        node_profile=dict(type='str', aliases=[
-                          'node_profile_name', 'logical_node']),
-        interface_profile=dict(type='str', aliases=[
-            'interface_profile_name', 'logical_interface']),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query']),
-        pod_id=dict(type='str'),
-        node_id=dict(type='str'),
-        path_ep=dict(type='str'),
-        side=dict(type='str', choices=['A', 'B']),
-        addr=dict(type='str'),
-        ipv6_dad=dict(type='str', choices=['enabled', 'disabled'])
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        l3out=dict(type="str", aliases=["l3out_name"]),
+        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
+        interface_profile=dict(
+            type="str", aliases=["interface_profile_name", "logical_interface"]
+        ),
+        state=dict(
+            type="str", default="present", choices=["absent", "present", "query"]
+        ),
+        pod_id=dict(type="str"),
+        node_id=dict(type="str"),
+        path_ep=dict(type="str"),
+        side=dict(type="str", choices=["A", "B"]),
+        address=dict(type="str", aliases=["addr", "ip_address"]),
+        ipv6_dad=dict(type="str", choices=["enabled", "disabled"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['tenant', 'l3out', 'node_profile',
-                                 'interface_profile', 'pod_id', 'node_id', 'path_ep']],
-            ['state', 'present', ['tenant', 'l3out', 'node_profile',
-                                  'interface_profile', 'pod_id', 'node_id', 'path_ep']]
-        ]
+            [
+                "state",
+                "absent",
+                [
+                    "tenant",
+                    "l3out",
+                    "node_profile",
+                    "interface_profile",
+                    "pod_id",
+                    "node_id",
+                    "path_ep",
+                ],
+            ],
+            [
+                "state",
+                "present",
+                [
+                    "tenant",
+                    "l3out",
+                    "node_profile",
+                    "interface_profile",
+                    "pod_id",
+                    "node_id",
+                    "path_ep",
+                ],
+            ],
+        ],
     )
 
-    tenant = module.params.get('tenant')
-    l3out = module.params.get('l3out')
-    node_profile = module.params.get('node_profile')
-    interface_profile = module.params.get('interface_profile')
-    pod_id = module.params.get('pod_id')
-    node_id = module.params.get('node_id')
-    path_ep = module.params.get('path_ep')
-    side = module.params.get('side')
-    addr = module.params.get('addr')
-    ipv6_dad = module.params.get('ipv6_dad')
-    state = module.params.get('state')
+    tenant = module.params.get("tenant")
+    l3out = module.params.get("l3out")
+    node_profile = module.params.get("node_profile")
+    interface_profile = module.params.get("interface_profile")
+    pod_id = module.params.get("pod_id")
+    node_id = module.params.get("node_id")
+    path_ep = module.params.get("path_ep")
+    side = module.params.get("side")
+    address = module.params.get("address")
+    ipv6_dad = module.params.get("ipv6_dad")
+    state = module.params.get("state")
 
     aci = ACIModule(module)
 
-    path_type = 'paths'
-    rn_prefix = ''
+    path_type = "paths"
+    rn_prefix = ""
 
     if node_id:
-        if '-' in node_id:
-            path_type = 'protpaths'
-            rn_prefix = 'mem-{0}/'.format(side)
+        if "-" in node_id:
+            path_type = "protpaths"
+            rn_prefix = "mem-{0}/".format(side)
 
-    path_dn = ('topology/pod-{0}/{1}-{2}/pathep-[{3}]'.format(pod_id,
-                                                              path_type,
-                                                              node_id,
-                                                              path_ep))
+    path_dn = None
+    if pod_id and node_id and path_ep:
+        path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(
+            pod_id, path_type, node_id, path_ep
+        )
+
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='l3extOut',
-            aci_rn='out-{0}'.format(l3out),
+            aci_class="l3extOut",
+            aci_rn="out-{0}".format(l3out),
             module_object=l3out,
-            target_filter={'name': l3out},
+            target_filter={"name": l3out},
         ),
         subclass_2=dict(
-            aci_class='l3extLNodeP',
-            aci_rn='lnodep-{0}'.format(node_profile),
+            aci_class="l3extLNodeP",
+            aci_rn="lnodep-{0}".format(node_profile),
             module_object=node_profile,
-            target_filter={'name': node_profile},
+            target_filter={"name": node_profile},
         ),
         subclass_3=dict(
-            aci_class='l3extLIfP',
-            aci_rn='lifp-{0}'.format(interface_profile),
+            aci_class="l3extLIfP",
+            aci_rn="lifp-{0}".format(interface_profile),
             module_object=interface_profile,
-            target_filter={'name': interface_profile},
+            target_filter={"name": interface_profile},
         ),
         subclass_4=dict(
-            aci_class='l3extRsPathL3OutAtt',
-            aci_rn='rspathL3OutAtt-[{0}]'.format(path_dn),
+            aci_class="l3extRsPathL3OutAtt",
+            aci_rn="rspathL3OutAtt-[{0}]".format(path_dn),
             module_object=path_dn,
-            target_filter={'tDn': path_dn}
+            target_filter={"tDn": path_dn},
         ),
         subclass_5=dict(
-            aci_class='l3extIp',
-            aci_rn='{0}addr-[{1}]'.format(rn_prefix, addr),
-            module_object=addr,
-            target_filter={'addr': addr}
-        )
+            aci_class="l3extIp",
+            aci_rn="{0}addr-[{1}]".format(rn_prefix, address),
+            module_object=address,
+            target_filter={"addr": address},
+        ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='l3extIp',
-            class_config=dict(addr=addr, ipv6Dad=ipv6_dad)
+            aci_class="l3extIp", class_config=dict(addr=address, ipv6Dad=ipv6_dad)
         )
 
-        aci.get_diff(aci_class='l3extIp')
+        aci.get_diff(aci_class="l3extIp")
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()
