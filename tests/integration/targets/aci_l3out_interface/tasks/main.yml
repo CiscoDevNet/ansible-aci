@@ -131,6 +131,8 @@
     interface_type: l3-port
     mode: regular
     addr: 192.168.50.1/27
+    ipv6_dad: disabled
+    mtu: 1500
     state: present
   register: add_l3out_interface
 
@@ -139,6 +141,8 @@
     that:
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]"
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.addr == "192.168.50.1/27"
+    - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.ipv6Dad == "disabled"
+    - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.mtu == "1500"
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT == "l3-port"
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "regular"
 
@@ -156,6 +160,8 @@
     interface_type: l3-port
     mode: regular
     addr: 192.168.50.1/27
+    ipv6_dad: disabled
+    mtu: 1500
     state: present
   register: add_l3out_interface_again
 
@@ -215,6 +221,25 @@
     - query_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.encap == "vlan-913"
     - query_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "regular"
 
+- name: Query all interfaces
+  aci_l3out_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    node_profile: ansible_node_profile
+    interface_profile: ansible_interface_profile
+    state: query
+  register: query_l3out_interfaces
+
+- name: Verify query_l3out_interfaces
+  assert:
+    that:
+    - query_l3out_interfaces is not changed
+    - query_l3out_interfaces.current.0.l3extLIfP.children.0.l3extRsPathL3OutAtt.attributes.rn == "rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]"
+    - query_l3out_interfaces.current.0.l3extLIfP.children.0.l3extRsPathL3OutAtt.attributes.addr == "192.168.60.1/27"
+    - query_l3out_interfaces.current.0.l3extLIfP.children.0.l3extRsPathL3OutAtt.attributes.ifInstT == "sub-interface"
+    - query_l3out_interfaces.current.0.l3extLIfP.children.0.l3extRsPathL3OutAtt.attributes.encap == "vlan-913"
+    - query_l3out_interfaces.current.0.l3extLIfP.children.0.l3extRsPathL3OutAtt.attributes.mode == "regular"
 
 # DELETE l3out interface
 - name: Remove routed sub-interface
