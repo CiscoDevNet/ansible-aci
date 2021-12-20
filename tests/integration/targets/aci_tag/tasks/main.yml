@@ -18,212 +18,407 @@
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: debug
-    test_vars_annotation: &test_vars_annotation
-      tag_key: foo
-      tag_value: bar
-      tag_type: annotation
-    test_vars_instance: &test_vars_instance
-      tag_key: foo
-      tag_type: instance
-    test_vars_tag: &test_vars_tag
-      tag_key: foo
-      tag_value: bar
-      tag_type: tag
-    test_vars_tenant: &test_vars_tenant
-      tenant: tag_test
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Remove tenant to cleanup
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    tenant: tag_test
+    state: absent
 
 - name: Add tenant
   cisco.aci.aci_tenant:
     <<: *aci_info
-    <<: *test_vars_tenant
     tenant: tag_test
     state: present
-  delegate_to: localhost
   register: query_result
 
 - name: Get DN
   set_fact:
     dn: "{{ query_result.current[0].fvTenant.attributes.dn }}"
 
-- name:  Annotation Query tag
-  cisco.aci.aci_tag:
+- name: Annotation Create tag (check_mode)
+  cisco.aci.aci_tag: &annotation_present
     <<: *aci_info
+    tag_key: foo
+    tag_value: bar
     tag_type: annotation
-    state: query
-  delegate_to: localhost
-
-- name: Annotation Create tag
-  cisco.aci.aci_tag:
-    <<: *aci_info
-    <<: *test_vars_annotation
     dn: "{{ dn }}"
     state: present
-  delegate_to: localhost
-  register: annotation_create_result
+  check_mode: yes
+  register: cm_annotation_create
+
+- name: Annotation Create tag (normal_mode)
+  cisco.aci.aci_tag:
+    <<: *annotation_present
+    state: present
+  register: nm_annotation_create
 
 - name: Annotation tag created
   assert:
     that:
-    - annotation_create_result.current.0.tagAnnotation.attributes.key == "foo"
-    - annotation_create_result.current.0.tagAnnotation.attributes.value == "bar"
+    - cm_annotation_create is changed
+    - cm_annotation_create.proposed.tagAnnotation.attributes.value == "bar"
+    - nm_annotation_create is changed
+    - nm_annotation_create.current.0.tagAnnotation.attributes.key == "foo"
+    - nm_annotation_create.current.0.tagAnnotation.attributes.value == "bar"
+
+- name: Annotation Create tag again (check_mode)
+  cisco.aci.aci_tag:
+    <<: *annotation_present
+    state: present
+  check_mode: yes
+  register: cm_annotation_create_again
+
+- name: Annotation Create tag (normal_mode)
+  cisco.aci.aci_tag:
+    <<: *annotation_present
+    state: present
+  register: nm_annotation_create_again
+
+- name: Annotation tag create again
+  assert:
+    that:
+    - cm_annotation_create_again is not changed
+    - cm_annotation_create_again.current.0.tagAnnotation.attributes.key == "foo"
+    - cm_annotation_create_again.current.0.tagAnnotation.attributes.value == "bar"
+    - nm_annotation_create_again is not changed
+    - nm_annotation_create_again.current.0.tagAnnotation.attributes.key == "foo"
+    - nm_annotation_create_again.current.0.tagAnnotation.attributes.value == "bar"
 
 - name: Annotation Query tag
   cisco.aci.aci_tag:
-    <<: *aci_info
-    <<: *test_vars_annotation
-    dn: "{{ dn }}"
+    <<: *annotation_present
     state: query
-  delegate_to: localhost
   register: annotation_query_result
 
 - name: Annotation tag query verification
   assert:
     that:
-    - annotation_create_result.current.0.tagAnnotation.attributes.key == "foo"
-    - annotation_create_result.current.0.tagAnnotation.attributes.value == "bar"
+    - annotation_query_result is not changed
+    - annotation_query_result.current.0.tagAnnotation.attributes.key == "foo"
+    - annotation_query_result.current.0.tagAnnotation.attributes.value == "bar"
 
-- name: Annotation Delete tag
+- name: Annotation Query all tags
   cisco.aci.aci_tag:
-    <<: *aci_info
-    <<: *test_vars_annotation
-    dn: "{{ dn }}"
+    <<: *annotation_present
+    dn: "{{ fake_var | default(omit) }}"
+    tag_key: "{{ fake_var | default(omit) }}"
+    state: query
+  register: annotation_query_all
+
+- name: Annotation tag query verification
+  assert:
+    that:
+    - annotation_query_all is not changed
+
+- name: Annotation tag query verification (continued)
+  assert:
+    that:
+    - annotation_query_all.current.0.tagAnnotation.attributes.key == "foo"
+    - annotation_query_all.current.0.tagAnnotation.attributes.value == "bar"
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
+
+- name: Annotation Delete tag (check_mode)
+  cisco.aci.aci_tag: &annotation_absent
+    <<: *annotation_present
+    tag_value: "{{ fake_var | default(omit) }}"
     state: absent
-  delegate_to: localhost
-  register: annotation_delete_result
+  check_mode: yes
+  register: cm_annotation_delete
+
+- name: Annotation Delete tag (normal_mode)
+  cisco.aci.aci_tag:
+    <<: *annotation_absent
+    state: absent
+  register: nm_annotation_delete
 
 - name: Annotation tag deleted
   assert:
     that:
-    - annotation_delete_result.current.0.tagAnnotation is not defined
+    - cm_annotation_delete is changed
+    - nm_annotation_delete is changed
+    - cm_annotation_delete.proposed.tagAnnotation is not defined
+    - nm_annotation_delete.current.0.tagAnnotation is not defined
+    - cm_annotation_delete.previous.0.tagAnnotation.attributes.key == "foo"
+    - nm_annotation_delete.previous.0.tagAnnotation.attributes.key == "foo"
+    - cm_annotation_delete.previous.0.tagAnnotation.attributes.value == "bar"
+    - nm_annotation_delete.previous.0.tagAnnotation.attributes.value == "bar"
 
-- name: Annotation Query tag
+- name: Annotation Delete tag again (check_mode)
   cisco.aci.aci_tag:
-    <<: *aci_info
-    <<: *test_vars_annotation
-    dn: "{{ dn }}"
-    state: query
-  delegate_to: localhost
+    <<: *annotation_absent
+    state: absent
+  check_mode: yes
+  register: cm_annotation_delete_again
 
-- name: Instance Query tag
+- name: Annotation Delete tag again (normal_mode)
   cisco.aci.aci_tag:
+    <<: *annotation_absent
+    state: absent
+  register: nm_annotation_delete_again
+
+- name: Annotation tag deleted again
+  assert:
+    that:
+    - cm_annotation_delete_again is not changed
+    - nm_annotation_delete_again is not changed
+    - cm_annotation_delete_again.current.0.tagAnnotation is not defined
+    - nm_annotation_delete_again.current.0.tagAnnotation is not defined
+    - cm_annotation_delete_again.previous.0.tagAnnotation is not defined
+    - nm_annotation_delete_again.previous.0.tagAnnotation is not defined
+
+- name: Instance Create tag (check_mode)
+  cisco.aci.aci_tag: &instance_present
     <<: *aci_info
+    tag_key: foo
     tag_type: instance
-    state: query
-  delegate_to: localhost
-
-- name: Instance Create tag
-  cisco.aci.aci_tag:
-    <<: *aci_info
-    <<: *test_vars_instance
     dn: "{{ dn }}"
     state: present
-  delegate_to: localhost
-  register: instance_create_result
+  check_mode: yes
+  register: cm_instance_create
+
+- name: Instance Create tag (normal_mode)
+  cisco.aci.aci_tag:
+    <<: *instance_present
+    state: present
+  register: nm_instance_create
 
 - name: Instance tag created
   assert:
     that:
-    - instance_create_result.current.0.tagInst.attributes.name == "foo"
+    - cm_instance_create is changed
+    - nm_instance_create is changed
+    - nm_instance_create.current.0.tagInst.attributes.name == "foo"
+
+- name: Instance Create tag again (check_mode)
+  cisco.aci.aci_tag:
+    <<: *instance_present
+    state: present
+  check_mode: yes
+  register: cm_instance_create_again
+
+- name: Instance Create tag (normal_mode)
+  cisco.aci.aci_tag:
+    <<: *instance_present
+    state: present
+  register: nm_instance_create_again
+
+- name: Instance tag create again
+  assert:
+    that:
+    - cm_instance_create_again is not changed
+    - cm_instance_create_again.current.0.tagInst.attributes.name == "foo"
+    - nm_instance_create_again is not changed
+    - nm_instance_create_again.current.0.tagInst.attributes.name == "foo"
 
 - name: Instance Query tag
   cisco.aci.aci_tag:
-    <<: *aci_info
-    <<: *test_vars_instance
-    dn: "{{ dn }}"
+    <<: *instance_present
     state: query
-  delegate_to: localhost
   register: instance_query_result
 
 - name: Instance tag query verification
   assert:
     that:
+    - instance_query_result is not changed
     - instance_query_result.current.0.tagInst.attributes.name == "foo"
 
-- name: Instance Delete tag
+- name: Instance Query all tags
   cisco.aci.aci_tag:
-    <<: *aci_info
-    <<: *test_vars_instance
-    dn: "{{ dn }}"
+    <<: *instance_present
+    dn: "{{ fake_var | default(omit) }}"
+    tag_key: "{{ fake_var | default(omit) }}"
+    state: query
+  register: instance_query_all
+
+- name: Instance tag query verification
+  assert:
+    that:
+    - instance_query_all is not changed
+
+- name: Instance tag query verification (continued)
+  assert:
+    that:
+    - instance_query_all.current.0.tagInst.attributes.name == "foo"
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
+
+- name: Instance Delete tag (check_mode)
+  cisco.aci.aci_tag: &instance_absent
+    <<: *instance_present
+    tag_value: "{{ fake_var | default(omit) }}"
     state: absent
-  delegate_to: localhost
-  register: instance_delete_result
+  check_mode: yes
+  register: cm_instance_delete
+
+- name: Instance Delete tag (normal_mode)
+  cisco.aci.aci_tag:
+    <<: *instance_absent
+    state: absent
+  register: nm_instance_delete
 
 - name: Instance tag deleted
   assert:
     that:
-    - instance_delete_result.current.0.tagInst is not defined
+    - cm_instance_delete is changed
+    - nm_instance_delete is changed
+    - cm_instance_delete.proposed.tagInst is not defined
+    - nm_instance_delete.current.0.tagInst is not defined
+    - cm_instance_delete.previous.0.tagInst.attributes.name == "foo"
+    - nm_instance_delete.previous.0.tagInst.attributes.name == "foo"
 
-- name: Instance Query tag
+- name: Instance Delete tag again (check_mode)
   cisco.aci.aci_tag:
-    <<: *aci_info
-    <<: *test_vars_instance
-    dn: "{{ dn }}"
-    state: query
-  delegate_to: localhost
+    <<: *instance_absent
+    state: absent
+  check_mode: yes
+  register: cm_instance_delete_again
 
-- name: Tag Query tag
+- name: Instance Delete tag again (normal_mode)
   cisco.aci.aci_tag:
+    <<: *instance_absent
+    state: absent
+  register: nm_instance_delete_again
+
+- name: Instance tag deleted again
+  assert:
+    that:
+    - cm_instance_delete_again is not changed
+    - nm_instance_delete_again is not changed
+    - cm_instance_delete_again.current.0.tagInst is not defined
+    - nm_instance_delete_again.current.0.tagInst is not defined
+    - cm_instance_delete_again.previous.0.tagInst is not defined
+    - nm_instance_delete_again.previous.0.tagInst is not defined
+
+- name: Tag Create tag (check_mode)
+  cisco.aci.aci_tag: &tag_present
     <<: *aci_info
+    tag_key: foo
+    tag_value: bar
     tag_type: tag
-    state: query
-  delegate_to: localhost
-
-- name: Tag Create tag
-  cisco.aci.aci_tag:
-    <<: *aci_info
-    <<: *test_vars_tag
     dn: "{{ dn }}"
     state: present
-  delegate_to: localhost
-  register: tag_create_result
+  check_mode: yes
+  register: cm_tag_create
+
+- name: Tag Create tag (normal_mode)
+  cisco.aci.aci_tag:
+    <<: *tag_present
+    state: present
+  register: nm_tag_create
 
 - name: Tag tag created
   assert:
     that:
-    - tag_create_result.current.0.tagTag.attributes.key == "foo"
-    - tag_create_result.current.0.tagTag.attributes.value == "bar"
+    - cm_tag_create is changed
+    - cm_tag_create.proposed.tagTag.attributes.value == "bar"
+    - nm_tag_create is changed
+    - nm_tag_create.current.0.tagTag.attributes.key == "foo"
+    - nm_tag_create.current.0.tagTag.attributes.value == "bar"
+
+- name: Tag Create tag again (check_mode)
+  cisco.aci.aci_tag:
+    <<: *tag_present
+    state: present
+  check_mode: yes
+  register: cm_tag_create_again
+
+- name: Tag Create tag (normal_mode)
+  cisco.aci.aci_tag:
+    <<: *tag_present
+    state: present
+  register: nm_tag_create_again
+
+- name: Tag tag create again
+  assert:
+    that:
+    - cm_tag_create_again is not changed
+    - cm_tag_create_again.current.0.tagTag.attributes.key == "foo"
+    - cm_tag_create_again.current.0.tagTag.attributes.value == "bar"
+    - nm_tag_create_again is not changed
+    - nm_tag_create_again.current.0.tagTag.attributes.key == "foo"
+    - nm_tag_create_again.current.0.tagTag.attributes.value == "bar"
 
 - name: Tag Query tag
   cisco.aci.aci_tag:
-    <<: *aci_info
-    <<: *test_vars_tag
-    dn: "{{ dn }}"
+    <<: *tag_present
     state: query
-  delegate_to: localhost
   register: tag_query_result
 
 - name: Tag tag query verification
   assert:
     that:
+    - tag_query_result is not changed
     - tag_query_result.current.0.tagTag.attributes.key == "foo"
     - tag_query_result.current.0.tagTag.attributes.value == "bar"
 
-- name: Tag Delete tag
+- name: Tag Query all tags
   cisco.aci.aci_tag:
-    <<: *aci_info
-    <<: *test_vars_tag
-    dn: "{{ dn }}"
+    <<: *tag_present
+    dn: "{{ fake_var | default(omit) }}"
+    tag_key: "{{ fake_var | default(omit) }}"
+    state: query
+  register: tag_query_all
+
+- name: Tag tag query verification
+  assert:
+    that:
+    - tag_query_all is not changed
+
+- name: Tag tag query verification (continued)
+  assert:
+    that:
+    - tag_query_all.current.0.tagTag.attributes.key == "foo"
+    - tag_query_all.current.0.tagTag.attributes.value == "bar"
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
+
+- name: Tag Delete tag (check_mode)
+  cisco.aci.aci_tag: &tag_absent
+    <<: *tag_present
+    tag_value: "{{ fake_var | default(omit) }}"
     state: absent
-  delegate_to: localhost
-  register: tag_delete_result
+  check_mode: yes
+  register: cm_tag_delete
+
+- name: Tag Delete tag (normal_mode)
+  cisco.aci.aci_tag:
+    <<: *tag_absent
+    state: absent
+  register: nm_tag_delete
 
 - name: Tag tag deleted
   assert:
     that:
-    - tag_delete_result.current.0.tagTag is not defined
+    - cm_tag_delete is changed
+    - nm_tag_delete is changed
+    - cm_tag_delete.proposed.tagTag is not defined
+    - nm_tag_delete.current.0.tagTag is not defined
+    - cm_tag_delete.previous.0.tagTag.attributes.key == "foo"
+    - nm_tag_delete.previous.0.tagTag.attributes.key == "foo"
+    - cm_tag_delete.previous.0.tagTag.attributes.value == "bar"
+    - nm_tag_delete.previous.0.tagTag.attributes.value == "bar"
 
-- name: Tag Query tag
+- name: Tag Delete tag again (check_mode)
   cisco.aci.aci_tag:
-    <<: *aci_info
-    <<: *test_vars_tag
-    dn: "{{ dn }}"
-    state: query
-  delegate_to: localhost
-
-- name: Remove tenant
-  cisco.aci.aci_tenant:
-    <<: *aci_info
-    <<: *test_vars_tenant
-    tenant: tag_test
+    <<: *tag_absent
     state: absent
-  delegate_to: localhost
+  check_mode: yes
+  register: cm_tag_delete_again
+
+- name: Tag Delete tag again (normal_mode)
+  cisco.aci.aci_tag:
+    <<: *tag_absent
+    state: absent
+  register: nm_tag_delete_again
+
+- name: Tag tag deleted again
+  assert:
+    that:
+    - cm_tag_delete_again is not changed
+    - nm_tag_delete_again is not changed
+    - cm_tag_delete_again.current.0.tagTag is not defined
+    - nm_tag_delete_again.current.0.tagTag is not defined
+    - cm_tag_delete_again.previous.0.tagTag is not defined
+    - nm_tag_delete_again.previous.0.tagTag is not defined
