@@ -60,12 +60,6 @@
     <<: *domain_present
   register: nm_add_user_domain_again
 
-#- name: debug
-#  ansible.builtin.debug:
-#    msg:
-#    - "{{ cm_add_user_domain }}"
-#    - "{{ nm_add_user_domain }}"
-
 - name: Verify add user
   assert:
     that:
