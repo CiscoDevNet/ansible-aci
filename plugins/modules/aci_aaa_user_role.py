@@ -27,6 +27,7 @@ options:
     description:
     - Name of the user domain
     type: str
+    required: yes
   role_name:
     description:
     - Name of the AAA role
