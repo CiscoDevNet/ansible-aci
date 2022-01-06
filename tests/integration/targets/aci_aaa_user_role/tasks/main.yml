@@ -177,7 +177,7 @@
     <<: *role_absent
   register: nm_remove_user_role_again
 
-- name: Verify remove_user
+- name: Verify remove_user_role
   assert:
     that:
     - cm_remove_user_role is changed
@@ -185,3 +185,9 @@
     - nm_remove_user_role.current == []
     - cm_remove_user_role_again is not changed
     - nm_remove_user_role_again is not changed
+    
+- name: Remove user to clean environment for next test on ci
+  aci_aaa_user:
+    <<: *aci_info
+    aaa_user: ansible
+    state: absent
