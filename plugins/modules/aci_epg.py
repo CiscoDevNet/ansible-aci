@@ -73,6 +73,11 @@ options:
     description:
     - The name of the custom Quality of Service policy.
     type: str
+  useg:
+    description:
+    - Use C(yes) to create uSeg EPG and C(no) is used to create Application EPG.
+    type: str
+    choices: [ 'yes', 'no' ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -136,6 +141,22 @@ EXAMPLES = r"""
       bd: web_bd
     - epg: database
       bd: database_bd
+
+- name: Add a new uSeg EPG
+  cisco.aci.aci_epg:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: production
+    ap: intranet
+    epg: web_epg
+    description: Web Intranet EPG
+    bd: prod_bd
+    monitoring_policy: default
+    preferred_group: yes
+    useg: yes
+    state: present
+  delegate_to: localhost
 
 - name: Remove an EPG
   cisco.aci.aci_epg:
@@ -320,6 +341,7 @@ def main():
         name_alias=dict(type="str"),
         monitoring_policy=dict(type="str"),
         custom_qos_policy=dict(type="str"),
+        useg=dict(type="str", choices=['yes', 'no']),
     )
 
     module = AnsibleModule(
@@ -346,6 +368,7 @@ def main():
     name_alias = module.params.get("name_alias")
     monitoring_policy = module.params.get("monitoring_policy")
     custom_qos_policy = module.params.get("custom_qos_policy")
+    useg = module.params.get("useg")
 
     child_configs = [dict(fvRsBd=dict(attributes=dict(tnFvBDName=bd))), dict(fvRsAEPgMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy)))]
 
@@ -387,6 +410,7 @@ def main():
                 fwdCtrl=fwd_control,
                 prefGrMemb=preferred_group,
                 nameAlias=name_alias,
+                isAttrBasedEPg=useg,
             ),
             child_configs=child_configs,
         )

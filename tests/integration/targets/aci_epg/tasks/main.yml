@@ -171,6 +171,125 @@
       - delete_epg_missing_param is failed
       - 'delete_epg_missing_param.msg == "state is absent but all of the following are missing: tenant"'
 
+- name: create microsegmented epg with check mode
+  cisco.aci.aci_epg: &cm_useg_epg_present
+    <<: *aci_ap_present
+    epg: anstest_useg_epg
+    bd: anstest
+    useg: yes
+    description: uSeg EPG Ansible Test
+  check_mode: yes
+  register: cm_useg_epg_present
+
+- name: Assertions check for create microsegmented epg with check mode
+  assert:
+    that:
+      - cm_useg_epg_present is changed
+      - cm_useg_epg_present.current == []
+      - cm_useg_epg_present.previous == []
+      - cm_useg_epg_present.sent.fvAEPg.attributes.name == 'anstest_useg_epg'
+      - cm_useg_epg_present.sent.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+      - cm_useg_epg_present.sent.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+
+- name: create microsegmented epg with normal mode
+  cisco.aci.aci_epg: &nm_useg_epg_present
+    <<: *cm_useg_epg_present
+  register: nm_useg_epg_present
+
+- name: Assertions check for create microsegmented epg with normal mode
+  assert:
+    that:
+      - nm_useg_epg_present is changed
+      - nm_useg_epg_present.current | length == 1
+      - nm_useg_epg_present.previous == []
+      - nm_useg_epg_present.current.0.fvAEPg.attributes.name == 'anstest_useg_epg'
+      - nm_useg_epg_present.current.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+      - nm_useg_epg_present.current.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+      - nm_useg_epg_present.sent.fvAEPg.attributes.name == 'anstest_useg_epg'
+      - nm_useg_epg_present.sent.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+      - nm_useg_epg_present.sent.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+
+- name: create microsegmented epg with normal mode - idempotency works
+  cisco.aci.aci_epg:
+    <<: *cm_useg_epg_present
+  register: idempotency_nm_useg_epg_present
+
+- name: Idempotency assertions check for create microsegmented epg with normal mode
+  assert:
+    that:
+      - idempotency_nm_useg_epg_present is not changed
+      - idempotency_nm_useg_epg_present.current | length == 1
+      - idempotency_nm_useg_epg_present.previous | length == 1
+      - idempotency_nm_useg_epg_present.current.0.fvAEPg.attributes.name == 'anstest_useg_epg'
+      - idempotency_nm_useg_epg_present.previous.0.fvAEPg.attributes.name == 'anstest_useg_epg'
+      - idempotency_nm_useg_epg_present.current.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+      - idempotency_nm_useg_epg_present.previous.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+      - idempotency_nm_useg_epg_present.current.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+      - idempotency_nm_useg_epg_present.previous.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+
+- name: get anstest_useg_epg epg
+  cisco.aci.aci_epg:
+    <<: *nm_useg_epg_present
+    state: query
+  register: useg_epg_present
+
+- name: Assertions check for query microsegmented epg with normal mode
+  assert:
+    that:
+      - useg_epg_present is not changed
+      - useg_epg_present.current | length == 1
+      - useg_epg_present.current.0.fvAEPg.attributes.name == 'anstest_useg_epg'
+      - useg_epg_present.current.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+      - useg_epg_present.current.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+
+- name: delete microsegmented epg with check mode
+  cisco.aci.aci_epg: &cm_useg_epg_absent
+    <<: *nm_useg_epg_present
+    state: absent
+  check_mode: yes
+  register: cm_useg_epg_absent
+
+- name: Assertions check for delete microsegmented epg with check mode
+  assert:
+    that:
+      - cm_useg_epg_absent is changed
+      - cm_useg_epg_absent.current | length == 1
+      - cm_useg_epg_absent.previous | length == 1
+      - cm_useg_epg_absent.current.0.fvAEPg.attributes.name == 'anstest_useg_epg'
+      - cm_useg_epg_absent.current.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+      - cm_useg_epg_absent.current.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+      - cm_useg_epg_absent.previous.0.fvAEPg.attributes.name == 'anstest_useg_epg'
+      - cm_useg_epg_absent.previous.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+      - cm_useg_epg_absent.previous.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+
+- name: delete microsegmented epg with normal mode
+  cisco.aci.aci_epg: &nm_useg_epg_absent
+    <<: *cm_useg_epg_absent
+    state: absent
+  register: nm_useg_epg_absent
+
+- name: Assertions check for delete microsegmented epg with normal mode
+  assert:
+    that:
+      - nm_useg_epg_absent is changed
+      - nm_useg_epg_absent.current | length == 0
+      - nm_useg_epg_absent.previous | length == 1
+      - nm_useg_epg_absent.previous.0.fvAEPg.attributes.name == 'anstest_useg_epg'
+      - nm_useg_epg_absent.previous.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+      - nm_useg_epg_absent.previous.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+
+- name: delete microsegmented epg with normal mode - idempotency works
+  cisco.aci.aci_epg:
+    <<: *nm_useg_epg_absent
+  register: idempotency_nm_useg_epg_absent
+
+- name: Idempotency assertions check for delete microsegmented epg with normal mode
+  assert:
+    that:
+      - idempotency_nm_useg_epg_absent is not changed
+      - idempotency_nm_useg_epg_absent.current | length == 0
+      - idempotency_nm_useg_epg_absent.previous | length == 0
+
 - name: cleanup bd
   cisco.aci.aci_bd:
     <<: *aci_bd_present
