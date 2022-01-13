@@ -22,7 +22,7 @@ options:
     - Name of the object class for which you are configuring access.
     type: str
     aliases: [ custom_privilege_name ]
-  wPriv:
+  w_priv:
     description:
     - Name of the custom privilege that will include write access to objects of the class.
     type: str
@@ -51,7 +51,7 @@ options:
       custom-privilege-21,
       custom-privilege-22
     ]
-  rPriv:
+  r_priv:
     description:
     - Name of the custom privilege that will include read access to objects of the class.
     type: str
@@ -110,8 +110,8 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     name: fabricPod
-    wPriv: custom-privilege-1
-    rPriv: custom-privilege-1
+    w_priv: custom-privilege-1
+    r_priv: custom-privilege-1
     state: present
   delegate_to: localhost
 
@@ -121,15 +121,15 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     name: "{{ item.name }}"
-    wPriv: "{{ item.wPriv }}"
-    rPriv: "{{ item.rPriv | default('') }}"
+    w_priv: "{{ item.w_priv }}"
+    r_priv: "{{ item.r_priv | default('') }}"
     state: present
   with_items:
     - name: fvTenant
-      wPriv: custom-privilege-2
-      rPriv: custom-privilege-2
+      w_priv: custom-privilege-2
+      r_priv: custom-privilege-2
     - name: aaaUser
-      wPriv: custom-privilege-3
+      w_priv: custom-privilege-3
   delegate_to: localhost
 
 - name: Query a custom privilege with name
@@ -297,12 +297,12 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         name=dict(type="str", aliases=["custom_privilege_name"]),
-        wPriv=dict(
+        w_priv=dict(
             type="str",
             aliases=["write_priv"],
             choices=CUSTOM_PRIVILEGES,
         ),
-        rPriv=dict(
+        r_priv=dict(
             type="str",
             aliases=["read_priv"],
             choices=CUSTOM_PRIVILEGES,
@@ -323,18 +323,13 @@ def main():
     aci = ACIModule(module)
 
     name = module.params.get("name")
-    wPriv = module.params.get("wPriv")
-    rPriv = module.params.get("rPriv")
+    w_priv = module.params.get("w_priv")
+    r_priv = module.params.get("r_priv")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
     aci.construct_url(
-        root_class=dict(
-            aci_class="aaaRbacClassPriv",
-            aci_rn="rbacdb/rbacclpriv-{0}".format(name),
-            module_object=name,
-            target_filter={"name": name},
-        ),
+        root_class=dict(aci_class="aaaRbacClassPriv", aci_rn="rbacdb/rbacclpriv-{0}".format(name), module_object=name, target_filter=dict(name=name)),
     )
     aci.get_existing()
 
@@ -343,8 +338,8 @@ def main():
             aci_class="aaaRbacClassPriv",
             class_config=dict(
                 name=name,
-                wPriv=wPriv,
-                rPriv=rPriv,
+                wPriv=w_priv,
+                rPriv=r_priv,
                 nameAlias=name_alias,
             ),
         )

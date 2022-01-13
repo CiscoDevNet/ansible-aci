@@ -349,17 +349,16 @@ def main():
             aci_class="aaaRole",
             aci_rn="userext/role-{0}".format(name),
             module_object=name,
-            target_filter={"name": name},
+            target_filter=dict(name=name),
         ),
     )
     aci.get_existing()
 
-    if isinstance(priv, list):
-        formatted_privileges = ",".join(priv)
-    else:
-        formatted_privileges = priv
-
     if state == "present":
+        if isinstance(priv, list):
+            formatted_privileges = ",".join(priv)
+        else:
+            formatted_privileges = priv
         aci.payload(
             aci_class="aaaRole",
             class_config=dict(

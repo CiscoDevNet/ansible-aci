@@ -29,8 +29,8 @@
 - name: Add a custom privilege with check mode
   cisco.aci.aci_aaa_custom_privilege: &cm_cp_present
     <<: *fabric_pod_absent
-    wPriv: custom-privilege-1
-    rPriv: custom-privilege-1
+    w_priv: custom-privilege-1
+    r_priv: custom-privilege-1
     state: present
   check_mode: yes
   register: cm_cp_present
@@ -103,8 +103,8 @@
 - name: Update fv_tenant_present custom privilege with 'custom-privilege-2' privilege
   cisco.aci.aci_aaa_custom_privilege:
     <<: *fv_tenant_present
-    wPriv: custom-privilege-2
-    rPriv: custom-privilege-2
+    w_priv: custom-privilege-2
+    r_priv: custom-privilege-2
   register: update_cp_with_priv
 
 - name: Assertions check for update fv_tenant_present custom privilege with 'custom-privilege-2' privilege
@@ -119,24 +119,24 @@
       - update_cp_with_priv.previous.0.aaaRbacClassPriv.attributes.wPriv == ''
       - update_cp_with_priv.previous.0.aaaRbacClassPriv.attributes.rPriv == ''
 
-- name: Update fv_tenant_present - wPriv to 'custom-privilege-3' privilege
+- name: Update fv_tenant_present - w_priv to 'custom-privilege-3' privilege
   cisco.aci.aci_aaa_custom_privilege:
     <<: *fv_tenant_present
-    wPriv: custom-privilege-3
-  register: update_cp_wPriv_check
+    w_priv: custom-privilege-3
+  register: update_cp_w_priv_check
 
-- name: Assertions check for update fv_tenant_present - wPriv to 'custom-privilege-3' privilege
+- name: Assertions check for update fv_tenant_present - w_priv to 'custom-privilege-3' privilege
   assert:
     that:
-      - update_cp_wPriv_check is changed
-      - update_cp_wPriv_check.current | length == 1
-      - update_cp_wPriv_check.previous | length == 1
-      - update_cp_wPriv_check.current.0.aaaRbacClassPriv.attributes.name == 'fvTenant'
-      - update_cp_wPriv_check.current.0.aaaRbacClassPriv.attributes.wPriv == 'custom-privilege-3'
-      - update_cp_wPriv_check.current.0.aaaRbacClassPriv.attributes.rPriv == 'custom-privilege-2'
-      - update_cp_wPriv_check.previous.0.aaaRbacClassPriv.attributes.name == 'fvTenant'
-      - update_cp_wPriv_check.previous.0.aaaRbacClassPriv.attributes.wPriv == 'custom-privilege-2'
-      - update_cp_wPriv_check.previous.0.aaaRbacClassPriv.attributes.rPriv == 'custom-privilege-2'
+      - update_cp_w_priv_check is changed
+      - update_cp_w_priv_check.current | length == 1
+      - update_cp_w_priv_check.previous | length == 1
+      - update_cp_w_priv_check.current.0.aaaRbacClassPriv.attributes.name == 'fvTenant'
+      - update_cp_w_priv_check.current.0.aaaRbacClassPriv.attributes.wPriv == 'custom-privilege-3'
+      - update_cp_w_priv_check.current.0.aaaRbacClassPriv.attributes.rPriv == 'custom-privilege-2'
+      - update_cp_w_priv_check.previous.0.aaaRbacClassPriv.attributes.name == 'fvTenant'
+      - update_cp_w_priv_check.previous.0.aaaRbacClassPriv.attributes.wPriv == 'custom-privilege-2'
+      - update_cp_w_priv_check.previous.0.aaaRbacClassPriv.attributes.rPriv == 'custom-privilege-2'
 
 - name: Query a custom privilege with name
   cisco.aci.aci_aaa_custom_privilege:

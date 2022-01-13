@@ -248,13 +248,14 @@ def main():
             aci_class="aaaDomain",
             aci_rn="userext/domain-{0}".format(name),
             module_object=name,
-            target_filter={"name": name},
+            target_filter=dict(name=name),
         ),
     )
     aci.get_existing()
-    restricted_rbac_domain_mapping = {False: "no", True: "yes"}
-    restricted_rbac_domain_state = restricted_rbac_domain_mapping.get(restricted_rbac_domain)
+
     if state == "present":
+        restricted_rbac_domain_mapping = {False: "no", True: "yes"}
+        restricted_rbac_domain_state = restricted_rbac_domain_mapping.get(restricted_rbac_domain)
         aci.payload(
             aci_class="aaaDomain",
             class_config=dict(
