@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_esg_to_epg_selector
+module: aci_esg_epg_selector
 short_description: Manage ESG - EPG Selectors (fv:fvEPgSelector)
 description:
 - Manage Endpoint Security Groups - EPG Selectors on Cisco ACI fabrics.
@@ -26,7 +26,7 @@ options:
     aliases: [ tenant_name ]
   ap:
     description:
-    - The name of the cloud application profile.
+    - The name of the application profile.
     type: str
     aliases: [ app_profile, app_profile_name ]
   esg:
@@ -34,7 +34,7 @@ options:
     - Name of the Endpoint Security Group.
     type: str
     aliases: [ esg_name ]
-  epg_provider_ap:
+  epg_ap:
     description:
     - Name of the Application profile which contains the EPG.
     type: str
@@ -74,51 +74,51 @@ author:
 
 EXAMPLES = r"""
 - name: Add an EPG selector
-  cisco.aci.aci_esg_to_epg_selector:
+  cisco.aci.aci_esg_epg_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
     ap: production_ap
     esg: web_esg
-    epg_provider_ap: production_ap1
+    epg_ap: production_ap1
     epg: production_ap1-epg
     description: epg-test-description
     state: present
   delegate_to: localhost
 
 - name: Add list of EPG selectors
-  cisco.aci.aci_esg_to_epg_selector:
+  cisco.aci.aci_esg_epg_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
     ap: production_ap
     esg: "{{ item.esg }}"
-    epg_provider_ap: "{{ item.epg_provider_ap }}"
+    epg_ap: "{{ item.epg_ap }}"
     epg: "{{ item.epg }}"
     description: epg-test-description
     state: present
   delegate_to: localhost
   with_items:
-    - {"epg_provider_ap": "production_ap1", "epg": "epg-test1", "esg": "web_esg"}
-    - {"epg_provider_ap": "production_ap1", "epg": "epg-test2", "esg": "web_esg"}
+    - {"epg_ap": "production_ap1", "epg": "epg-test1", "esg": "web_esg"}
+    - {"epg_ap": "production_ap1", "epg": "epg-test2", "esg": "web_esg"}
 
 - name: Query an EPG selector with esg and epg name
-  cisco.aci.aci_esg_to_epg_selector:
+  cisco.aci.aci_esg_epg_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
     ap: production_ap
     esg: web_esg
-    epg_provider_ap: production_ap1
+    epg_ap: production_ap1
     epg: production_ap1-epg
     state: query
   delegate_to: localhost
 
 - name: Query all EPG selectors under a application profile
-  cisco.aci.aci_esg_to_epg_selector:
+  cisco.aci.aci_esg_epg_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -128,7 +128,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query all EPG selectors
-  cisco.aci.aci_esg_to_epg_selector:
+  cisco.aci.aci_esg_epg_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -136,14 +136,14 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Remove an EPG selector
-  cisco.aci.aci_esg_to_epg_selector:
+  cisco.aci.aci_esg_epg_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
     ap: production_ap
     esg: web_esg
-    epg_provider_ap: production_ap1
+    epg_ap: production_ap1
     epg: production_ap1-epg
     state: absent
   delegate_to: localhost
@@ -267,7 +267,7 @@ def main():
         tenant=dict(type="str", aliases=["tenant_name"]),
         ap=dict(type="str", aliases=["app_profile", "app_profile_name"]),
         esg=dict(type="str", aliases=["esg_name"]),
-        epg_provider_ap=dict(type="str"),
+        epg_ap=dict(type="str"),
         epg=dict(type="str", aliases=["epg_name"]),
         description=dict(type="str", aliases=["epg_selector_description"]),
         state=dict(
@@ -282,8 +282,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "ap", "esg", "epg", "epg_provider_ap"]],
-            ["state", "present", ["tenant", "ap", "esg", "epg", "epg_provider_ap"]],
+            ["state", "absent", ["tenant", "ap", "esg", "epg", "epg_ap"]],
+            ["state", "present", ["tenant", "ap", "esg", "epg", "epg_ap"]],
         ],
     )
 
@@ -291,14 +291,13 @@ def main():
     tenant = module.params.get("tenant")
     ap = module.params.get("ap")
     esg = module.params.get("esg")
-    epg_provider_ap = module.params.get("epg_provider_ap")
+    epg_ap = module.params.get("epg_ap")
     epg = module.params.get("epg")
     description = module.params.get("description")
     state = module.params.get("state")
 
-    matchEpgDn = "uni/tn-{0}/ap-{1}/epg-{2}".format(tenant, epg_provider_ap, epg)
+    matchEpgDn = "uni/tn-{0}/ap-{1}/epg-{2}".format(tenant, epg_ap, epg)
     epgselector = "epgselector-[{0}]".format(matchEpgDn)
-    dn = "uni/tn-{0}/ap-{1}/esg-{2}/{3}".format(tenant, ap, esg, epgselector)
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -321,7 +320,7 @@ def main():
         subclass_3=dict(
             aci_class="fvEPgSelector",
             aci_rn=epgselector,
-            module_object=dn,
+            module_object=epg,
             target_filter={"matchEpgDn": epg},
         ),
     )

@@ -25,7 +25,7 @@ options:
     aliases: [ tenant_name ]
   ap:
     description:
-    - The name of the cloud application profile.
+    - The name of the application profile.
     type: str
     aliases: [ app_profile, app_profile_name ]
   esg:
@@ -38,13 +38,14 @@ options:
     - ESG Tag Selector Key Name
     type: str
     aliases: [ match_key ]
-  value_operator:
+  operator:
     description:
     - C(equals) is the default operator type of the ESG Tag Selector.
     - C(contains) is used to match values partially.
     - C(regex) allows to pass patterns values.
     type: str
     choices: [ contains, equals, regex ]
+    aliases: [ value_operator ]
   match_value:
     description:
     - Value filed of the ESG Tag Selector.
@@ -260,7 +261,7 @@ def main():
         ap=dict(type="str", aliases=["app_profile", "app_profile_name"]),
         esg=dict(type="str", aliases=["esg_name"]),
         name=dict(type="str", aliases=["match_key"]),  # ESG Tag Selector key name
-        value_operator=dict(type="str", choices=["contains", "equals", "regex"]),  # ESG Tag Selector operator type
+        operator=dict(type="str", choices=["contains", "equals", "regex"], aliases=["value_operator"]),  # ESG Tag Selector operator type
         match_value=dict(type="str"),  # ESG Tag Selector match value
         description=dict(type="str", aliases=["tag_selector_description"]),
         state=dict(
@@ -285,12 +286,11 @@ def main():
     ap = module.params.get("ap")
     esg = module.params.get("esg")
     name = module.params.get("name")
-    value_operator = module.params.get("value_operator")
+    operator = module.params.get("operator")
     match_value = module.params.get("match_value")
     description = module.params.get("description")
     state = module.params.get("state")
 
-    dn = "uni/tn-{0}/ap-{1}/esg-{2}/tagselectorkey-[{3}]-value-[{4}]".format(tenant, ap, esg, name, match_value)
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -313,7 +313,7 @@ def main():
         subclass_3=dict(
             aci_class="fvTagSelector",
             aci_rn="tagselectorkey-[{0}]-value-[{1}]".format(name, match_value),
-            module_object=dn,
+            module_object=name,
             target_filter={"matchKey": name, "matchValue": match_value},
         ),
     )
@@ -326,7 +326,7 @@ def main():
             class_config=dict(
                 matchKey=name,
                 matchValue=match_value,
-                valueOperator=value_operator,
+                valueOperator=operator,
                 descr=description,
             ),
         )

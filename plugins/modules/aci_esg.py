@@ -26,7 +26,7 @@ options:
     aliases: [ tenant_name ]
   ap:
     description:
-    - The name of the cloud application profile.
+    - The name of the application profile.
     type: str
     aliases: [ app_profile, app_profile_name ]
   esg:
@@ -36,10 +36,10 @@ options:
     aliases: [ esg_name, name ]
   admin_state:
     description:
-    - Use C(no) to set 'Admin Up' on the ESG Admin state and it is default.
-    - Use C(yes) to set 'Admin Shut' on the ESG Admin state
-    type: str
-    choices: [ 'no', 'yes' ]
+    - Use C(false) to set 'Admin Up' on the ESG Admin state and it is default.
+    - Use C(true) to set 'Admin Shut' on the ESG Admin state
+    type: bool
+    choices: [ false, true ]
   vrf:
     description:
     - Name of the VRF
@@ -281,7 +281,7 @@ def main():
         tenant=dict(type="str", aliases=["tenant_name"]),
         ap=dict(type="str", aliases=["app_profile", "app_profile_name"]),
         esg=dict(type="str", aliases=["name", "esg_name"]),
-        admin_state=dict(type="str", choices=["no", "yes"]),  # ESG Admin State
+        admin_state=dict(type="bool", choices=[False, True]),  # ESG Admin State
         vrf=dict(type="str", aliases=["vrf_name"]),  # ESG VRF name
         description=dict(type="str", aliases=["descr"]),
         intra_esg_isolation=dict(
@@ -302,7 +302,7 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["tenant", "ap", "esg"]],
-            ["state", "present", ["tenant", "ap", "esg"]],
+            ["state", "present", ["tenant", "ap", "esg", "vrf"]],
         ],
     )
 
@@ -319,7 +319,8 @@ def main():
     name_alias = module.params.get("name_alias")
 
     # VRF Selection - fvRsScope
-    child_configs = [dict(fvRsScope=dict(attributes=dict(tnFvCtxName=vrf)))]
+    if state == "present":
+        child_configs = [dict(fvRsScope=dict(attributes=dict(tnFvCtxName=vrf)))]
 
     aci.construct_url(
         root_class=dict(
@@ -353,7 +354,7 @@ def main():
             class_config=dict(
                 name=esg,
                 descr=description,
-                shutdown=admin_state,
+                shutdown={True: "yes", False: "no"}.get(admin_state),
                 pcEnfPref=intra_esg_isolation,
                 prefGrMemb=preferred_group_member,
                 nameAlias=name_alias,

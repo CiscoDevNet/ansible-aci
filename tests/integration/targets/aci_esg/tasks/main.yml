@@ -121,11 +121,12 @@
       - ap_1_web_esg_0_present.current.0.fvESg.attributes.name == 'web_esg_0'
       - ap_1_web_esg_0_present.current.0.fvESg.attributes.dn == "uni/tn-anstest/ap-anstest_ap_1/esg-web_esg_0"
 
-- name: Ensure web_esg_1 - endpoint security group exists with admin_state(no) - 'Admin Up' on the UI side
+- name: Ensure web_esg_1 - endpoint security group exists with admin_state(false -> no) - 'Admin Up' on the UI side
   cisco.aci.aci_esg:
     <<: *anstest_ap_present
     esg: web_esg_1
-    admin_state: no
+    vrf: default
+    admin_state: false
     state: present
   register: web_esg_1_present
   when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
@@ -138,14 +139,15 @@
       - web_esg_1_present.previous | length == 0
       - web_esg_1_present.current.0.fvESg.attributes.name == 'web_esg_1'
       - web_esg_1_present.current.0.fvESg.attributes.shutdown == 'no'
-      - web_esg_1_present.current.0.fvESg.children[0].fvRsScope.attributes.tnFvCtxName == ''
+      - web_esg_1_present.current.0.fvESg.children[0].fvRsScope.attributes.tnFvCtxName == 'default'
       - web_esg_1_present.sent.fvESg.attributes.shutdown == 'no'
 
-- name: Ensure web_esg_2 - endpoint security group exists with admin_state(yes) - 'Admin Shut' on the UI side
+- name: Ensure web_esg_2 - endpoint security group exists with admin_state(true -> yes) - 'Admin Shut' on the UI side
   cisco.aci.aci_esg:
     <<: *anstest_ap_present
     esg: web_esg_2
-    admin_state: yes
+    admin_state: true
+    vrf: default
     state: present
   register: web_esg_2_present
   when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
@@ -158,7 +160,7 @@
       - web_esg_2_present.previous | length == 0
       - web_esg_2_present.current.0.fvESg.attributes.name == 'web_esg_2'
       - web_esg_2_present.current.0.fvESg.attributes.shutdown == 'yes'
-      - web_esg_2_present.current.0.fvESg.children[0].fvRsScope.attributes.tnFvCtxName == ''
+      - web_esg_2_present.current.0.fvESg.children[0].fvRsScope.attributes.tnFvCtxName == 'default'
       - web_esg_2_present.sent.fvESg.attributes.shutdown == 'yes'
 
 - name: Query an ESG

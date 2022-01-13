@@ -25,7 +25,7 @@ options:
     aliases: [ tenant_name ]
   ap:
     description:
-    - The name of the cloud application profile.
+    - The name of the application profile.
     type: str
     aliases: [ app_profile, app_profile_name ]
   esg:

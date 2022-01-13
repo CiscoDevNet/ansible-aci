@@ -54,26 +54,26 @@
     state: present
   when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
 
-- name: Ensure epg_provider_ap - application profile exists under the same tenant
-  cisco.aci.aci_ap: &epg_provider_ap_present
+- name: Ensure epg_ap - application profile exists under the same tenant
+  cisco.aci.aci_ap: &epg_ap_present
     <<: *tenant_present
-    ap: epg_provider_ap
+    ap: epg_ap
     state: present
 
-- name: Ensure anstest_epg - exists under epg_provider_ap - application profile
+- name: Ensure anstest_epg - exists under epg_ap - application profile
   cisco.aci.aci_epg:
-    <<: *epg_provider_ap_present
+    <<: *epg_ap_present
     epg: anstest_epg
     bd: default
     description: Ansible Test
 
 - name: Add an EPG selector with check mode
-  cisco.aci.aci_esg_to_epg_selector: &cm_epg_selector_present
+  cisco.aci.aci_esg_epg_selector: &cm_epg_selector_present
     <<: *aci_info
     tenant: anstest
     ap: anstest_ap
     esg: web_esg
-    epg_provider_ap: epg_provider_ap
+    epg_ap: epg_ap
     epg: anstest_epg
     description: Ans Test EPG Selector
     state: present
@@ -86,10 +86,10 @@
     that:
       - cm_epg_selector_present is changed
       - cm_epg_selector_present.current | length == 0
-      - cm_epg_selector_present.sent.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_provider_ap/epg-anstest_epg"
+      - cm_epg_selector_present.sent.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_ap/epg-anstest_epg"
 
 - name: Add an EPG selector with normal mode
-  cisco.aci.aci_esg_to_epg_selector:
+  cisco.aci.aci_esg_epg_selector:
     <<: *cm_epg_selector_present
   register: nm_epg_selector_present
   when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
@@ -99,10 +99,10 @@
     that:
       - nm_epg_selector_present is changed
       - nm_epg_selector_present.current | length == 1
-      - nm_epg_selector_present.current.0.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_provider_ap/epg-anstest_epg"
+      - nm_epg_selector_present.current.0.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_ap/epg-anstest_epg"
 
 - name: Add an EPG selector with check mode - idempotency works
-  cisco.aci.aci_esg_to_epg_selector: &cm_idempotency_epg_selector_present
+  cisco.aci.aci_esg_epg_selector: &cm_idempotency_epg_selector_present
     <<: *cm_epg_selector_present
   check_mode: yes
   register: cm_idempotency_epg_selector_present
@@ -115,7 +115,7 @@
       - cm_idempotency_epg_selector_present.current | length == 1
 
 - name: Add an EPG selector with normal mode - idempotency works
-  cisco.aci.aci_esg_to_epg_selector:
+  cisco.aci.aci_esg_epg_selector:
     <<: *cm_idempotency_epg_selector_present
   register: nm_idempotency_epg_selector_present
   when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
@@ -127,12 +127,12 @@
       - nm_idempotency_epg_selector_present.current | length == 1
 
 - name: Query a EPG selector with esg and epg name
-  cisco.aci.aci_esg_to_epg_selector:
+  cisco.aci.aci_esg_epg_selector:
     <<: *aci_info
     tenant: anstest
     ap: anstest_ap
     esg: web_esg
-    epg_provider_ap: epg_provider_ap
+    epg_ap: epg_ap
     epg: anstest_epg
     state: query
   register: query_single_epg_selector
@@ -143,11 +143,11 @@
     that:
       - query_single_epg_selector is not changed
       - query_single_epg_selector.current | length == 1
-      - query_single_epg_selector.current.0.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_provider_ap/epg-anstest_epg"
+      - query_single_epg_selector.current.0.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_ap/epg-anstest_epg"
       - query_single_epg_selector.current.0.fvEPgSelector.attributes.descr == "Ans Test EPG Selector"
 
 - name: Query all EPG selectors under an application profile
-  cisco.aci.aci_esg_to_epg_selector:
+  cisco.aci.aci_esg_epg_selector:
     <<: *aci_info
     tenant: anstest
     ap: anstest_ap
@@ -162,10 +162,10 @@
       - query_all_epg_selectors_under_ap.current | length == 1
       - query_all_epg_selectors_under_ap.current.0.fvAp.attributes.name == 'anstest_ap'
       - query_all_epg_selectors_under_ap.current.0.fvAp.children.0.fvESg.attributes.name == 'web_esg'
-      - query_all_epg_selectors_under_ap.current.0.fvAp.children.0.fvESg.children[0].fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_provider_ap/epg-anstest_epg"
+      - query_all_epg_selectors_under_ap.current.0.fvAp.children.0.fvESg.children[0].fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_ap/epg-anstest_epg"
 
 - name: Query all EPG selectors
-  cisco.aci.aci_esg_to_epg_selector:
+  cisco.aci.aci_esg_epg_selector:
     <<: *aci_info
     state: query
   register: query_all_epg_selectors
@@ -178,12 +178,12 @@
       - query_all_epg_selectors.current | length >= 1
 
 - name: Remove an EPG selector with check mode
-  cisco.aci.aci_esg_to_epg_selector: &cm_epg_selector_absent
+  cisco.aci.aci_esg_epg_selector: &cm_epg_selector_absent
     <<: *aci_info
     tenant: anstest
     ap: anstest_ap
     esg: web_esg
-    epg_provider_ap: epg_provider_ap
+    epg_ap: epg_ap
     epg: anstest_epg
     state: absent
   check_mode: yes
@@ -195,11 +195,11 @@
     that:
       - cm_epg_selector_absent is changed
       - cm_epg_selector_absent.current != []
-      - cm_epg_selector_absent.current.0.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_provider_ap/epg-anstest_epg"
-      - cm_epg_selector_absent.previous.0.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_provider_ap/epg-anstest_epg"
+      - cm_epg_selector_absent.current.0.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_ap/epg-anstest_epg"
+      - cm_epg_selector_absent.previous.0.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_ap/epg-anstest_epg"
 
 - name: Remove an EPG selector with normal mode
-  cisco.aci.aci_esg_to_epg_selector:
+  cisco.aci.aci_esg_epg_selector:
     <<: *cm_epg_selector_absent
   register: nm_epg_selector_absent
   when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
@@ -209,10 +209,10 @@
     that:
       - nm_epg_selector_absent is changed
       - nm_epg_selector_absent.current == []
-      - nm_epg_selector_absent.previous.0.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_provider_ap/epg-anstest_epg"
+      - nm_epg_selector_absent.previous.0.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_ap/epg-anstest_epg"
 
 - name: Remove a EPG selector with check mode - idempotency works
-  cisco.aci.aci_esg_to_epg_selector: &cm_idempotency_epg_selector_absent
+  cisco.aci.aci_esg_epg_selector: &cm_idempotency_epg_selector_absent
     <<: *cm_epg_selector_absent
   check_mode: yes
   register: cm_idempotency_epg_selector_absent
@@ -225,7 +225,7 @@
       - cm_idempotency_epg_selector_absent.current == []
 
 - name: Remove a EPG selector with normal mode - idempotency works
-  cisco.aci.aci_esg_to_epg_selector:
+  cisco.aci.aci_esg_epg_selector:
     <<: *cm_idempotency_epg_selector_absent
   register: nm_idempotency_epg_selector_absent
   when: version.current.0.topSystem.attributes.version is version('5.2', '>=')

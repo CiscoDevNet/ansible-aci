@@ -16,7 +16,7 @@ DOCUMENTATION = r"""
 module: aci_esg_ip_subnet_selector
 short_description: Manage ESG IP Subnet selector(fv:EPSelector)
 description:
-- Manage Endpoint Security Groups (ESG) IP Subnet selector relationships on Cisco ACI fabrics.
+- Manage Endpoint Security Groups (ESG) IP Subnet selector on Cisco ACI fabrics.
 
 options:
   tenant:
@@ -26,7 +26,7 @@ options:
     aliases: [ tenant_name ]
   ap:
     description:
-    - The name of the cloud application profile.
+    - The name of the application profile.
     type: str
     aliases: [ app_profile, app_profile_name ]
   esg:
@@ -38,7 +38,7 @@ options:
     description:
     - IP address of the subnet selector.
     type: str
-    aliases: [ subnet_ip ]
+    aliases: [ subnet ]
   description:
     description:
     - Description of the ESG IP Subnet selector.
@@ -221,7 +221,7 @@ def main():
         tenant=dict(type="str", aliases=["tenant_name"]),
         ap=dict(type="str", aliases=["app_profile", "app_profile_name"]),
         esg=dict(type="str", aliases=["esg_name"]),
-        ip=dict(type="str", aliases=["subnet_ip"]),
+        ip=dict(type="str", aliases=["subnet"]),
         description=dict(type="str", aliases=["ip_subnet_selector_description"]),
         state=dict(
             type="str",
@@ -250,7 +250,6 @@ def main():
 
     match_expression = "ip=='{0}'".format(ip)
     aci_rn = "epselector-[{0}]".format(match_expression)
-    dn = "uni/tn-{0}/ap-{1}/esg-{2}/{3}".format(tenant, ap, esg, aci_rn)
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -273,7 +272,7 @@ def main():
         subclass_3=dict(
             aci_class="fvEPSelector",
             aci_rn=aci_rn,
-            module_object=dn,
+            module_object=ip,
             target_filter={},
         ),
     )
