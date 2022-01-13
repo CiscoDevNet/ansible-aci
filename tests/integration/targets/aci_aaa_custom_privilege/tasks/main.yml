@@ -1,0 +1,222 @@
+# Test code for the ACI modules
+# Copyright: (c) 2022, Sabari Jaganathan (@sajagana)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Ensure fabricPod custom privilege does not exists
+  cisco.aci.aci_aaa_custom_privilege: &fabric_pod_absent
+    <<: *aci_info
+    name: fabricPod
+    state: absent
+
+- name: Add a custom privilege with check mode
+  cisco.aci.aci_aaa_custom_privilege: &cm_cp_present
+    <<: *fabric_pod_absent
+    wPriv: custom-privilege-1
+    rPriv: custom-privilege-1
+    state: present
+  check_mode: yes
+  register: cm_cp_present
+
+- name: Assertions check for add a custom privilege with check mode
+  assert:
+    that:
+      - cm_cp_present is changed
+      - cm_cp_present.current | length == 0
+      - cm_cp_present.previous | length == 0
+      - cm_cp_present.sent.aaaRbacClassPriv.attributes.name == 'fabricPod'
+      - cm_cp_present.sent.aaaRbacClassPriv.attributes.wPriv == 'custom-privilege-1'
+      - cm_cp_present.sent.aaaRbacClassPriv.attributes.rPriv == 'custom-privilege-1'
+
+- name: Add a custom privilege with normal mode
+  cisco.aci.aci_aaa_custom_privilege: &nm_cp_present
+    <<: *cm_cp_present
+  register: nm_cp_present
+
+- name: Assertions check for add a custom privilege with normal mode
+  assert:
+    that:
+      - nm_cp_present is changed
+      - nm_cp_present.current | length == 1
+      - nm_cp_present.previous | length == 0
+      - nm_cp_present.current.0.aaaRbacClassPriv.attributes.name == 'fabricPod'
+      - nm_cp_present.current.0.aaaRbacClassPriv.attributes.wPriv == 'custom-privilege-1'
+      - nm_cp_present.current.0.aaaRbacClassPriv.attributes.rPriv == 'custom-privilege-1'
+
+- name: Add a custom privilege with normal mode - idempotency works
+  cisco.aci.aci_aaa_custom_privilege:
+    <<: *nm_cp_present
+  register: idempotency_cp_present
+
+- name: Idempotency assertions check for add a custom privilege with normal mode
+  assert:
+    that:
+      - idempotency_cp_present is not changed
+      - idempotency_cp_present.current | length == 1
+      - idempotency_cp_present.previous | length == 1
+      - idempotency_cp_present.current.0.aaaRbacClassPriv.attributes.name == 'fabricPod'
+      - idempotency_cp_present.current.0.aaaRbacClassPriv.attributes.wPriv == 'custom-privilege-1'
+      - idempotency_cp_present.current.0.aaaRbacClassPriv.attributes.rPriv == 'custom-privilege-1'
+      - idempotency_cp_present.previous.0.aaaRbacClassPriv.attributes.name == 'fabricPod'
+      - idempotency_cp_present.previous.0.aaaRbacClassPriv.attributes.wPriv == 'custom-privilege-1'
+      - idempotency_cp_present.previous.0.aaaRbacClassPriv.attributes.rPriv == 'custom-privilege-1'
+
+- name: Ensure fvTenant custom privilege does not exists
+  cisco.aci.aci_aaa_custom_privilege: &fv_tenant_absent
+    <<: *aci_info
+    name: fvTenant
+    state: absent
+
+- name: Add a custom privilege with none privileges
+  cisco.aci.aci_aaa_custom_privilege: &fv_tenant_present
+    <<: *fv_tenant_absent
+    state: present
+  register: cp_with_none_priv
+
+- name: Assertions check for add a custom privilege with none privileges
+  assert:
+    that:
+      - cp_with_none_priv is changed
+      - cp_with_none_priv.current | length == 1
+      - cp_with_none_priv.previous | length == 0
+      - cp_with_none_priv.current.0.aaaRbacClassPriv.attributes.name == 'fvTenant'
+      - cp_with_none_priv.current.0.aaaRbacClassPriv.attributes.wPriv == ''
+      - cp_with_none_priv.current.0.aaaRbacClassPriv.attributes.rPriv == ''
+
+- name: Update fv_tenant_present custom privilege with 'custom-privilege-2' privilege
+  cisco.aci.aci_aaa_custom_privilege:
+    <<: *fv_tenant_present
+    wPriv: custom-privilege-2
+    rPriv: custom-privilege-2
+  register: update_cp_with_priv
+
+- name: Assertions check for update fv_tenant_present custom privilege with 'custom-privilege-2' privilege
+  assert:
+    that:
+      - update_cp_with_priv is changed
+      - update_cp_with_priv.current | length == 1
+      - update_cp_with_priv.previous | length == 1
+      - update_cp_with_priv.current.0.aaaRbacClassPriv.attributes.name == 'fvTenant'
+      - update_cp_with_priv.current.0.aaaRbacClassPriv.attributes.wPriv == 'custom-privilege-2'
+      - update_cp_with_priv.current.0.aaaRbacClassPriv.attributes.rPriv == 'custom-privilege-2'
+      - update_cp_with_priv.previous.0.aaaRbacClassPriv.attributes.wPriv == ''
+      - update_cp_with_priv.previous.0.aaaRbacClassPriv.attributes.rPriv == ''
+
+- name: Update fv_tenant_present - wPriv to 'custom-privilege-3' privilege
+  cisco.aci.aci_aaa_custom_privilege:
+    <<: *fv_tenant_present
+    wPriv: custom-privilege-3
+  register: update_cp_wPriv_check
+
+- name: Assertions check for update fv_tenant_present - wPriv to 'custom-privilege-3' privilege
+  assert:
+    that:
+      - update_cp_wPriv_check is changed
+      - update_cp_wPriv_check.current | length == 1
+      - update_cp_wPriv_check.previous | length == 1
+      - update_cp_wPriv_check.current.0.aaaRbacClassPriv.attributes.name == 'fvTenant'
+      - update_cp_wPriv_check.current.0.aaaRbacClassPriv.attributes.wPriv == 'custom-privilege-3'
+      - update_cp_wPriv_check.current.0.aaaRbacClassPriv.attributes.rPriv == 'custom-privilege-2'
+      - update_cp_wPriv_check.previous.0.aaaRbacClassPriv.attributes.name == 'fvTenant'
+      - update_cp_wPriv_check.previous.0.aaaRbacClassPriv.attributes.wPriv == 'custom-privilege-2'
+      - update_cp_wPriv_check.previous.0.aaaRbacClassPriv.attributes.rPriv == 'custom-privilege-2'
+
+- name: Query a custom privilege with name
+  cisco.aci.aci_aaa_custom_privilege:
+    <<: *aci_info
+    name: fabricPod
+    state: query
+  register: query_a_cp_with_name
+
+- name: Assertions check for query a custom privilege with name
+  assert:
+    that:
+      - query_a_cp_with_name is not changed
+      - query_a_cp_with_name.current | length == 1
+      - query_a_cp_with_name.current.0.aaaRbacClassPriv.attributes.name == 'fabricPod'
+      - query_a_cp_with_name.current.0.aaaRbacClassPriv.attributes.wPriv == 'custom-privilege-1'
+      - query_a_cp_with_name.current.0.aaaRbacClassPriv.attributes.rPriv == 'custom-privilege-1'
+
+- name: Query all custom privileges
+  cisco.aci.aci_aaa_custom_privilege:
+    <<: *aci_info
+    state: query
+  register: query_all_cp
+
+- name: Assertions check for query all custom privileges
+  assert:
+    that:
+      - query_all_cp is not changed
+      - query_all_cp.current | length >= 2
+
+- name: Remove a custom privilege with check mode
+  cisco.aci.aci_aaa_custom_privilege: &cm_cp_absent
+    <<: *aci_info
+    name: fabricPod
+    state: absent
+  check_mode: yes
+  register: cm_cp_absent
+
+- name: Assertions check for remove a custom privilege with check mode
+  assert:
+    that:
+      - cm_cp_absent is changed
+      - cm_cp_absent.current | length == 1
+      - cm_cp_absent.previous | length == 1
+      - cm_cp_absent.current.0.aaaRbacClassPriv.attributes.name == 'fabricPod'
+      - cm_cp_absent.previous.0.aaaRbacClassPriv.attributes.name == 'fabricPod'
+
+- name: Remove a custom privilege with normal mode
+  cisco.aci.aci_aaa_custom_privilege: &nm_cp_absent
+    <<: *cm_cp_absent
+  register: nm_cp_absent
+
+- name: Assertions check for remove a custom privilege with normal mode
+  assert:
+    that:
+      - nm_cp_absent is changed
+      - nm_cp_absent.current == []
+      - nm_cp_absent.previous | length == 1
+      - nm_cp_absent.previous.0.aaaRbacClassPriv.attributes.name == 'fabricPod'
+
+- name: Remove a custom privilege with normal mode - idempotency works
+  cisco.aci.aci_aaa_custom_privilege:
+    <<: *nm_cp_absent
+  register: idempotency_cp_absent
+
+- name: Idempotency assertions check for remove a custom privilege with normal mode
+  assert:
+    that:
+      - idempotency_cp_absent is not changed
+      - idempotency_cp_absent.current == []
+      - idempotency_cp_absent.previous == []
+
+- name: Query a Removed custom privilege with name
+  cisco.aci.aci_aaa_custom_privilege:
+    <<: *aci_info
+    name: fabricPod
+    state: query
+  register: removed_cp_query_result
+
+- name: Assertions check for Removed custom privilege with name
+  assert:
+    that:
+      - removed_cp_query_result is not changed
+      - removed_cp_query_result.current == []

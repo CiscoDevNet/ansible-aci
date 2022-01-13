@@ -1,0 +1,193 @@
+# Test code for the ACI modules
+# Copyright: (c) 2022, Sabari Jaganathan (@sajagana)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Ensure an anstest_role aaa role does not exists
+  cisco.aci.aci_aaa_role: &anstest_role_absent
+    <<: *aci_info
+    name: anstest_role
+    state: absent
+
+- name: Add an anstest_role aaa role with check mode
+  cisco.aci.aci_aaa_role: &cm_anstest_role_present
+    <<: *anstest_role_absent
+    priv: aaa
+    state: present
+  check_mode: yes
+  register: cm_anstest_role_present
+
+- name: Assertions check for add an anstest_role aaa role with check mode
+  assert:
+    that:
+      - cm_anstest_role_present is changed
+      - cm_anstest_role_present.current | length == 0
+      - cm_anstest_role_present.previous | length == 0
+      - cm_anstest_role_present.sent.aaaRole.attributes.name == 'anstest_role'
+      - cm_anstest_role_present.sent.aaaRole.attributes.priv == 'aaa'
+
+- name: Add an anstest_role aaa role with normal mode
+  cisco.aci.aci_aaa_role: &nm_anstest_role_present
+    <<: *cm_anstest_role_present
+  register: nm_anstest_role_present
+
+- name: Assertions check for add an anstest_role aaa role with normal mode
+  assert:
+    that:
+      - nm_anstest_role_present is changed
+      - nm_anstest_role_present.current | length == 1
+      - nm_anstest_role_present.previous | length == 0
+      - nm_anstest_role_present.current.0.aaaRole.attributes.name == 'anstest_role'
+      - nm_anstest_role_present.current.0.aaaRole.attributes.priv == 'aaa'
+
+- name: Add an anstest_role aaa role with normal mode - idempotency works
+  cisco.aci.aci_aaa_role:
+    <<: *nm_anstest_role_present
+  register: idempotency_anstest_role_present
+
+- name: Idempotency assertions check for add an anstest_role aaa role with normal mode
+  assert:
+    that:
+      - idempotency_anstest_role_present is not changed
+      - idempotency_anstest_role_present.current | length == 1
+      - idempotency_anstest_role_present.previous | length == 1
+      - idempotency_anstest_role_present.current.0.aaaRole.attributes.name == 'anstest_role'
+      - idempotency_anstest_role_present.previous.0.aaaRole.attributes.name == 'anstest_role'
+      - idempotency_anstest_role_present.current.0.aaaRole.attributes.priv == 'aaa'
+      - idempotency_anstest_role_present.previous.0.aaaRole.attributes.priv == 'aaa'
+
+- name: Update an anstest_role with list of privileges
+  cisco.aci.aci_aaa_role:
+    <<: *nm_anstest_role_present
+    priv: [ "admin", "aaa", "tenant-connectivity"]
+  register: anstest_role_with_list_priv
+
+- name: Assertions check for update an anstest_role with list of privileges
+  assert:
+    that:
+      - anstest_role_with_list_priv is changed
+      - anstest_role_with_list_priv.current | length == 1
+      - anstest_role_with_list_priv.previous | length == 1
+      - anstest_role_with_list_priv.current.0.aaaRole.attributes.name == 'anstest_role'
+      - anstest_role_with_list_priv.previous.0.aaaRole.attributes.name == 'anstest_role'
+      - anstest_role_with_list_priv.current.0.aaaRole.attributes.priv == 'aaa,admin,tenant-connectivity'
+      - anstest_role_with_list_priv.previous.0.aaaRole.attributes.priv == 'aaa'
+
+- name: Update an anstest_role with admin privilege
+  cisco.aci.aci_aaa_role:
+    <<: *nm_anstest_role_present
+    priv: "admin"
+  register: anstest_role_with_valid_priv
+
+- name: Assertions check for update an anstest_role with admin privilege
+  assert:
+    that:
+      - anstest_role_with_valid_priv is changed
+      - anstest_role_with_valid_priv.current | length == 1
+      - anstest_role_with_valid_priv.previous | length == 1
+      - anstest_role_with_valid_priv.current.0.aaaRole.attributes.name == 'anstest_role'
+      - anstest_role_with_valid_priv.previous.0.aaaRole.attributes.name == 'anstest_role'
+      - anstest_role_with_valid_priv.current.0.aaaRole.attributes.priv == 'admin'
+      - anstest_role_with_valid_priv.previous.0.aaaRole.attributes.priv == 'aaa,admin,tenant-connectivity'
+
+- name: Update an anstest_role with invalid list of privileges
+  cisco.aci.aci_aaa_role:
+    <<: *nm_anstest_role_present
+    priv: [ "admin", "aaa", "tenant-connectivity123"]
+  register: anstest_role_with_invalid_list_priv
+  ignore_errors: yes
+
+- name: Update an anstest_role with invalid privilege
+  cisco.aci.aci_aaa_role:
+    <<: *nm_anstest_role_present
+    priv: "admin123"
+  register: anstest_role_with_invalid_priv
+  ignore_errors: yes
+
+- name: Query an aaa role with name
+  cisco.aci.aci_aaa_role:
+    <<: *aci_info
+    name: anstest_role
+    state: query
+  register: anstest_role_query_result
+
+- name: Assertions check for query a aaa role with name
+  assert:
+    that:
+      - anstest_role_query_result is not changed
+      - anstest_role_query_result.current | length == 1
+      - anstest_role_query_result.current.0.aaaRole.attributes.name == 'anstest_role'
+      - anstest_role_query_result.current.0.aaaRole.attributes.priv == 'admin'
+
+- name: Query all aaa roles
+  cisco.aci.aci_aaa_role:
+    <<: *aci_info
+    state: query
+  register: query_all_roles
+
+- name: Assertions check for query all aaa roles
+  assert:
+    that:
+      - query_all_roles is not changed
+      - query_all_roles.current | length >= 1
+
+- name: Remove an anstest_role aaa role with check mode
+  cisco.aci.aci_aaa_role: &cm_anstest_role_absent
+    <<: *nm_anstest_role_present
+    state: absent
+  check_mode: yes
+  register: cm_anstest_role_absent
+
+- name: Assertions check for remove an anstest_role aaa role with check mode
+  assert:
+    that:
+      - cm_anstest_role_absent is changed
+      - cm_anstest_role_absent.current | length == 1
+      - cm_anstest_role_absent.previous | length == 1
+      - cm_anstest_role_absent.current.0.aaaRole.attributes.name == 'anstest_role'
+      - cm_anstest_role_absent.previous.0.aaaRole.attributes.name == 'anstest_role'
+      - cm_anstest_role_absent.current.0.aaaRole.attributes.priv == 'admin'
+      - cm_anstest_role_absent.previous.0.aaaRole.attributes.priv == 'admin'
+
+- name: Remove an anstest_role aaa role with normal mode
+  cisco.aci.aci_aaa_role: &nm_anstest_role_absent
+    <<: *cm_anstest_role_absent
+  register: nm_anstest_role_absent
+
+- name: Assertions check for remove an anstest_role aaa role with normal mode
+  assert:
+    that:
+      - nm_anstest_role_absent is changed
+      - nm_anstest_role_absent.current | length == 0
+      - nm_anstest_role_absent.previous | length == 1
+      - nm_anstest_role_absent.previous.0.aaaRole.attributes.name == 'anstest_role'
+      - nm_anstest_role_absent.previous.0.aaaRole.attributes.priv == 'admin'
+
+- name: Remove an anstest_role aaa role with normal mode - idempotency works
+  cisco.aci.aci_aaa_role:
+    <<: *nm_anstest_role_absent
+  register: idempotency_anstest_role_absent
+
+- name: Idempotency assertions check for remove an anstest_role aaa role with normal mode
+  assert:
+    that:
+      - idempotency_anstest_role_absent is not changed
+      - idempotency_anstest_role_absent.current | length == 0
+      - idempotency_anstest_role_absent.previous | length == 0
