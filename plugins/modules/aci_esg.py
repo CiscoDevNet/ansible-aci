@@ -318,6 +318,7 @@ def main():
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
+    child_configs = []
     # VRF Selection - fvRsScope
     if state == "present":
         child_configs = [dict(fvRsScope=dict(attributes=dict(tnFvCtxName=vrf)))]
@@ -348,13 +349,16 @@ def main():
 
     aci.get_existing()
 
+    state_mapping = {True: "yes", False: "no"}
+    shutdown = state_mapping.get(admin_state)
+
     if state == "present":
         aci.payload(
             aci_class="fvESg",
             class_config=dict(
                 name=esg,
                 descr=description,
-                shutdown={True: "yes", False: "no"}.get(admin_state),
+                shutdown=shutdown,
                 pcEnfPref=intra_esg_isolation,
                 prefGrMemb=preferred_group_member,
                 nameAlias=name_alias,

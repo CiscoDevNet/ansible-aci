@@ -249,7 +249,7 @@ def main():
     state = module.params.get("state")
 
     match_expression = "ip=='{0}'".format(ip)
-    aci_rn = "epselector-[{0}]".format(match_expression)
+    subnet_selector_rn = "epselector-[{0}]".format(match_expression)
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -271,7 +271,7 @@ def main():
         ),
         subclass_3=dict(
             aci_class="fvEPSelector",
-            aci_rn=aci_rn,
+            aci_rn=subnet_selector_rn,
             module_object=ip,
             target_filter={},
         ),
