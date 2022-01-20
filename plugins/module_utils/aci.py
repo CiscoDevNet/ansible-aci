@@ -109,7 +109,7 @@ def aci_annotation_spec():
 
 def aci_owner_spec():
     return dict(
-        owner_key=dict(type="str", fallback=(env_fallback, ["ACI_OWNER_KEY"])),
+        owner_key=dict(type="str", no_log=False, fallback=(env_fallback, ["ACI_OWNER_KEY"])),
         owner_tag=dict(type="str", fallback=(env_fallback, ["ACI_OWNER_TAG"])),
     )
 
@@ -158,7 +158,7 @@ def netflow_spec():
 
 def expression_spec():
     return dict(
-        key=dict(type="str", required=True),
+        key=dict(type="str", required=True, no_log=False),
         operator=dict(type="str", choices=["not_in", "in", "equals", "not_equals", "has_key", "does_not_have_key"], required=True),
         value=dict(type="str"),
     )

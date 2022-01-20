@@ -239,9 +239,9 @@ def main():
         policy=dict(type="str", aliases=["snmp_policy", "snmp_policy_name"]),
         name=dict(type="str", aliases=["snmp_user_policy"]),
         auth_type=dict(type="str", choices=["hmac-md5-96", "hmac-sha1-96"]),
-        auth_key=dict(type="str"),
+        auth_key=dict(type="str", no_log=True),
         privacy_type=dict(type="str", choices=["aes-128", "des", "none"]),
-        privacy_key=dict(type="str"),
+        privacy_key=dict(type="str", no_log=True),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 

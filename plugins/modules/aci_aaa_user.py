@@ -273,10 +273,10 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         aaa_password=dict(type="str", no_log=True),
-        aaa_password_lifetime=dict(type="int"),
-        aaa_password_update_required=dict(type="bool"),
+        aaa_password_lifetime=dict(type="int", no_log=False),
+        aaa_password_update_required=dict(type="bool", no_log=False),
         aaa_user=dict(type="str", aliases=["name"]),  # Not required for querying all objects
-        clear_password_history=dict(type="bool"),
+        clear_password_history=dict(type="bool", no_log=False),
         description=dict(type="str", aliases=["descr"]),
         email=dict(type="str"),
         enabled=dict(type="bool"),
