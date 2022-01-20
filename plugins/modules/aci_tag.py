@@ -212,7 +212,7 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         dn=dict(type="str"),
-        tag_key=dict(type="str"),
+        tag_key=dict(type="str", no_log=False),
         tag_value=dict(type="str", default=""),
         tag_type=dict(type="str", choices=["annotation", "instance", "tag"], required=True),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),

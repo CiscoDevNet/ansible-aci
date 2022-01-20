@@ -217,7 +217,7 @@ def main():
             "account_id": dict(type="str"),
             "is_account_in_org": dict(type="bool"),
             "is_trusted": dict(type="bool"),
-            "secret_access_key": dict(type="str"),
+            "secret_access_key": dict(type="str", no_log=True),
             "tenant": dict(type="str"),
             "state": dict(type="str", default="present", choices=["absent", "present", "query"]),
         }
