@@ -1,0 +1,502 @@
+# Test code for the ACI modules
+# Copyright: (c) 2022, Sabari Jaganathan (@sajagana)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Ensure anstest tenant does not exists
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
+    tenant: anstest
+    state: absent
+
+- name: Ensure anstest tenant exists
+  cisco.aci.aci_tenant: &tenant_present
+    <<: *tenant_absent
+    state: present
+
+- name: Ensure anstest ap exists
+  cisco.aci.aci_ap: &ap_present
+    <<: *tenant_present
+    ap: anstest
+
+- name: Ensure anstest epg exists
+  cisco.aci.aci_epg: &epg_present
+    <<: *ap_present
+    epg: anstest
+
+- name: Add list of interfaces with individual objects
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *epg_present
+    interface_configs: [
+      {
+          "encap_id": 221,
+          "deploy_immediacy": lazy,
+          "interface_mode": trunk,
+          "interface_type": switch_port,
+          "pod": 1,
+          "leafs": 101,
+          "interface": '1/7',
+      },
+      {
+          "vlan_id": 107,
+          "pod": 7,
+          "leafs": 107,
+          "interface": '1/7'
+      },
+      {
+          "vlan_id": 108,
+          "pod": 8,
+          "leafs": 108,
+          "interface": '1/8'
+      },
+    ]
+  register: created_interfaces
+
+- name: Assertions check for add list of interfaces with individual objects
+  assert:
+    that:
+      - created_interfaces is changed
+      - created_interfaces.current.0.fvAEPg.children | length == 3
+      - '"children" not in created_interfaces.previous.0.fvAEPg'
+      - created_interfaces.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == ""
+      - created_interfaces.current.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == ""
+      - created_interfaces.current.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == ""
+
+- name: Update list of interfaces with individual object status of the anstest epg
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *epg_present
+    interface_configs: [
+      {
+          "encap_id": 221,
+          "deploy_immediacy": lazy,
+          "interface_mode": trunk,
+          "interface_type": switch_port,
+          "pod": 1,
+          "leafs": 101,
+          "interface": '1/7',
+          "status": modified,
+          "descr": "Interface Modified"
+      },
+      {
+          "vlan_id": 107,
+          "pod": 7,
+          "leafs": 107,
+          "interface": '1/7',
+          "status": modified,
+          "descr": "Interface Modified"
+      },
+      {
+          "vlan_id": 108,
+          "pod": 8,
+          "leafs": 108,
+          "interface": '1/8',
+          "status": modified,
+          "descr": "Interface Modified"
+      },
+    ]
+  register: modified_interfaces
+
+- name: Assertions check for update list of interfaces with individual object status
+  assert:
+    that:
+      - modified_interfaces is changed
+      - modified_interfaces.current.0.fvAEPg.children | length == 3
+      - modified_interfaces.previous.0.fvAEPg.children | length == 3
+      - modified_interfaces.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Interface Modified"
+      - modified_interfaces.current.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == "Interface Modified"
+      - modified_interfaces.current.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Interface Modified"
+      - modified_interfaces.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == ""
+      - modified_interfaces.previous.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == ""
+      - modified_interfaces.previous.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == ""
+
+- name: Use different statues to perform create, delete and modify the interface objects
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *epg_present
+    interface_configs: [
+      {
+          "vlan_id": 107,
+          "pod": 7,
+          "leafs": 107,
+          "interface": '1/7',
+          "status": deleted,
+          "descr": "Interface Deleted"
+      },
+      {
+          "vlan_id": 108,
+          "pod": 8,
+          "leafs": 108,
+          "interface": '1/8',
+          "status": modified,
+          "descr": "Interface Modified"
+      },
+      {
+          "vlan_id": 109,
+          "pod": 9,
+          "leafs": 109,
+          "interface": '1/9',
+          "status": created,
+          "descr": "Interface Created"
+      }
+    ]
+  register: multi_operation_interfaces
+
+- name: Assertions check for multi status interface objects validation
+  assert:
+    that:
+      - multi_operation_interfaces is changed
+      - multi_operation_interfaces.current.0.fvAEPg.children | length == 3
+      - multi_operation_interfaces.previous.0.fvAEPg.children | length == 3
+
+- name: Query all interfaces with EPG name to check individual interface properties
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *epg_present
+    state: query
+  register: all_interfaces_result_1
+
+- name: Assertions check for query all interfaces with EPG name to check individual interface properties
+  assert:
+    that:
+      - all_interfaces_result_1 is not changed
+      - all_interfaces_result_1.current.0.fvAEPg.children | length == 3
+
+- name: Remove list of interfaces with individual object status of the anstest epg
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *epg_present
+    interface_configs: [
+      {
+          "encap_id": 221,
+          "pod": 1,
+          "leafs": 101,
+          "interface": '1/7',
+          "status": deleted,
+      },
+      {
+          "vlan_id": 107,
+          "pod": 7,
+          "leafs": 107,
+          "interface": '1/7',
+          "status": deleted,
+      },
+      {
+          "vlan_id": 108,
+          "pod": 8,
+          "leafs": 108,
+          "interface": '1/8',
+          "status": deleted,
+      },
+      {
+          "vlan_id": 109,
+          "pod": 9,
+          "leafs": 109,
+          "interface": '1/9',
+          "status": deleted,
+      }
+    ]
+  register: deleted_interfaces_with_status
+
+- name: Assertions check for remove list of interfaces with individual object status of the anstest epg
+  assert:
+    that:
+      - deleted_interfaces_with_status is changed
+      - '"children" not in deleted_interfaces_with_status.current.0.fvAEPg'
+      - deleted_interfaces_with_status.previous.0.fvAEPg.children | length == 3
+      - deleted_interfaces_with_status.sent.fvAEPg.children.0.fvRsPathAtt.attributes.status == "deleted"
+      - deleted_interfaces_with_status.sent.fvAEPg.children.1.fvRsPathAtt.attributes.status == "deleted"
+      - deleted_interfaces_with_status.sent.fvAEPg.children.2.fvRsPathAtt.attributes.status == "deleted"
+      - deleted_interfaces_with_status.sent.fvAEPg.children.3.fvRsPathAtt.attributes.status == "deleted"
+
+- name: Add list of interfaces with interfaces_status to anstest epg
+  cisco.aci.aci_bulk_static_binding_to_epg: &cm_created_interfaces
+    <<: *epg_present
+    interface_configs: [
+      {
+          "vlan_id": 107,
+          "pod": 7,
+          "leafs": 107,
+          "interface": '1/7',
+      },
+      {
+          "vlan_id": 108,
+          "pod": 8,
+          "leafs": 108,
+          "interface": '1/8',
+      },
+      {
+          "vlan_id": 109,
+          "pod": 9,
+          "leafs": 109,
+          "interface": '1/9',
+      }
+    ]
+    interfaces_status: created
+  check_mode: yes
+  register: cm_created_interfaces
+
+- name: Assertions check for add list of interfaces with interfaces_status - check mode
+  assert:
+    that:
+      - cm_created_interfaces is changed
+      - '"children" not in cm_created_interfaces.current.0.fvAEPg'
+      - '"children" not in cm_created_interfaces.previous.0.fvAEPg'
+      - cm_created_interfaces.sent.fvAEPg.children | length == 3
+
+- name: Add list of interfaces with interfaces_status to anstest epg - normal mode
+  cisco.aci.aci_bulk_static_binding_to_epg: &nm_created_interfaces
+    <<: *cm_created_interfaces
+  register: nm_created_interfaces
+
+- name: Assertions check for add list of interfaces with interfaces_status - normal mode
+  assert:
+    that:
+      - nm_created_interfaces is changed
+      - nm_created_interfaces.current.0.fvAEPg.children | length == 3
+      - '"children" not in nm_created_interfaces.previous.0.fvAEPg'
+      - nm_created_interfaces.sent.fvAEPg.children | length == 3
+
+- name: Add list of interfaces with interfaces_status to anstest epg - normal mode idempotency works
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *nm_created_interfaces
+  register: idempotency_created_interfaces
+  ignore_errors: yes
+
+- name: Idempotency assertions check for add list of interfaces with interfaces_status - normal mode
+  assert:
+    that:
+      - idempotency_created_interfaces is not changed
+      - idempotency_created_interfaces.response == "HTTP Error 400: Bad Request"
+      - '"children" in idempotency_created_interfaces.previous.0.fvAEPg'
+      - idempotency_created_interfaces.previous.0.fvAEPg.children | length == 3
+      - idempotency_created_interfaces.sent.fvAEPg.children | length == 3
+
+- name: Update list of interfaces with interfaces_status
+  cisco.aci.aci_bulk_static_binding_to_epg: &updated_interfaces
+    <<: *epg_present
+    interface_configs: [
+      {
+          "vlan_id": 107,
+          "pod": 7,
+          "leafs": 107,
+          "interface": '1/7',
+          "descr": "Interface Modified"
+      },
+      {
+          "vlan_id": 108,
+          "pod": 8,
+          "leafs": 108,
+          "interface": '1/8',
+          "descr": "Interface Modified"
+      },
+      {
+          "vlan_id": 109,
+          "pod": 9,
+          "leafs": 109,
+          "interface": '1/9',
+          "descr": "Interface Modified"
+      }
+    ]
+    interfaces_status: modified
+  register: updated_interfaces
+
+- name: Assertions check for update list of interfaces with interfaces_status
+  assert:
+    that:
+      - updated_interfaces is changed
+      - updated_interfaces.current.0.fvAEPg.children | length == 3
+      - updated_interfaces.previous.0.fvAEPg.children | length == 3
+      - updated_interfaces.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Interface Modified"
+      - updated_interfaces.current.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == "Interface Modified"
+      - updated_interfaces.current.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Interface Modified"
+      - updated_interfaces.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == ""
+      - updated_interfaces.previous.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == ""
+      - updated_interfaces.previous.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == ""
+
+- name: Query all interfaces with EPG name - which is added by interfaces_status
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *epg_present
+    state: query
+  register: all_interfaces_result_2
+
+- name: Assertions check for query all interfaces with EPG name - which is added by interfaces_status
+  assert:
+    that:
+      - all_interfaces_result_2 is not changed
+      - all_interfaces_result_2.current.0.fvAEPg.children | length == 3
+      - all_interfaces_result_2.filter_string == "?rsp-subtree=full&rsp-subtree-class=fvRsPathAtt"
+
+- name: Remove list of interfaces with interfaces_status from anstest epg - check mode
+  cisco.aci.aci_bulk_static_binding_to_epg: &cm_deleted_list_of_interfaces
+    <<: *updated_interfaces
+    interfaces_status: deleted
+  check_mode: yes
+  register: cm_deleted_list_of_interfaces
+
+- name: Assertions check for remove list of interfaces with interfaces_status from anstest epg - check mode
+  assert:
+    that:
+      - cm_deleted_list_of_interfaces is changed
+      - cm_deleted_list_of_interfaces.current.0.fvAEPg.children | length == 3
+      - cm_deleted_list_of_interfaces.previous.0.fvAEPg.children | length == 3
+      - cm_deleted_list_of_interfaces.sent.fvAEPg.children | length == 3
+
+- name: Remove list of interfaces with interfaces_status from anstest epg - normal mode
+  cisco.aci.aci_bulk_static_binding_to_epg: &nm_deleted_list_of_interfaces
+    <<: *cm_deleted_list_of_interfaces
+  register: nm_deleted_list_of_interfaces
+
+- name: Assertions check for remove list of interfaces with interfaces_status from anstest epg - normal mode
+  assert:
+    that:
+      - nm_deleted_list_of_interfaces is changed
+      - '"children" not in nm_deleted_list_of_interfaces.current.0.fvAEPg'
+      - nm_deleted_list_of_interfaces.previous.0.fvAEPg.children | length == 3
+      - nm_deleted_list_of_interfaces.sent.fvAEPg.children | length == 3
+
+- name: Remove list of interfaces with interfaces_status from anstest epg - normal mode idempotency works
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *nm_deleted_list_of_interfaces
+  register: idempotency_deleted_list_of_interfaces
+
+- name: Idempotency assertions check for remove list of interfaces with interfaces_status from anstest epg - normal mode
+  assert:
+    that:
+      - idempotency_deleted_list_of_interfaces is changed
+      - '"children" not in idempotency_deleted_list_of_interfaces.current.0.fvAEPg'
+      - '"children" not in idempotency_deleted_list_of_interfaces.previous.0.fvAEPg'
+
+- name: Add fex_port_channel interfaces to anstest epg
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *aci_info
+    tenant: anstest
+    ap: anstest
+    epg: anstest
+    interface_configs: [
+      {
+        "encap_id": 222,
+        "deploy_immediacy": lazy,
+        "interface_mode": trunk,
+        "interface_type": fex_port_channel,
+        "pod": 2,
+        "leafs": 102,
+        "interface": '2/7',
+        "extpaths": [
+          1012
+        ],
+        "descr": "fex_port_channel - interface created"
+      }
+    ]
+  register: fex_port_channel_present
+
+- name: Assertions check for add fex_port_channel interfaces to anstest epg
+  assert:
+    that:
+      - fex_port_channel_present is changed
+      - fex_port_channel_present.current.0.fvAEPg.children | length == 1
+      - '"children" not in fex_port_channel_present.previous.0.fvAEPg'
+      - fex_port_channel_present.sent.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-222"
+      - fex_port_channel_present.sent.fvAEPg.children.0.fvRsPathAtt.attributes.status == "created"
+      - fex_port_channel_present.sent.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-2/paths-102/extpaths-1012/pathep-[2/7]"
+      - fex_port_channel_present.sent.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "fex_port_channel - interface created"
+
+- name: Add fex_vpc interfaces to anstest epg
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *aci_info
+    tenant: anstest
+    ap: anstest
+    epg: anstest
+    interface_configs: [
+      {
+        "encap_id": 223,
+        "deploy_immediacy": lazy,
+        "interface_mode": trunk,
+        "interface_type": fex_vpc,
+        "pod": 3,
+        "leafs": [
+          103,
+          104
+        ],
+        "interface": '3/7',
+        "extpaths": [
+          103,
+          104
+        ],
+        "descr": "fex_vpc - interface created"
+      }
+    ]
+  register: fex_vpc_present
+
+- name: Assertions check for add fex_vpc interfaces to anstest epg
+  assert:
+    that:
+      - fex_vpc_present is changed
+      - fex_vpc_present.current.0.fvAEPg.children | length == 2
+      - fex_vpc_present.previous.0.fvAEPg.children | length == 1
+      - fex_vpc_present.sent.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-223"
+      - fex_vpc_present.sent.fvAEPg.children.0.fvRsPathAtt.attributes.status == "created"
+      - fex_vpc_present.sent.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-3/protpaths-103-104/extprotpaths-103-104/pathep-[3/7]"
+      - fex_vpc_present.sent.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "fex_vpc - interface created"
+
+- name: Add vpc interfaces to anstest epg
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *epg_present
+    interface_configs: [
+      {
+        "encap_id": 224,
+        "deploy_immediacy": lazy,
+        "interface_mode": trunk,
+        "interface_type": vpc,
+        "pod": 4,
+        "leafs": [
+          105,
+          106
+        ],
+        "interface": '4/7',
+        "extpaths": [
+          1015
+        ],
+        "descr": "vpc - interface created"
+      }
+    ]
+  register: vpc_present
+
+- name: Assertions check for add vpc interfaces to anstest epg
+  assert:
+    that:
+      - vpc_present is changed
+      - vpc_present.current.0.fvAEPg.children | length == 3
+      - vpc_present.previous.0.fvAEPg.children | length == 2
+      - vpc_present.sent.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-224"
+      - vpc_present.sent.fvAEPg.children.0.fvRsPathAtt.attributes.status == "created"
+      - vpc_present.sent.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-4/protpaths-105-106/pathep-[4/7]"
+      - vpc_present.sent.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "vpc - interface created"
+
+# Cleanup part
+- name: Remove anstest epg
+  cisco.aci.aci_epg:
+    <<: *epg_present
+    state: absent
+
+- name: Remove anstest ap
+  cisco.aci.aci_ap:
+    <<: *ap_present
+    state: absent
+
+- name: Remove anstest tenant
+  cisco.aci.aci_tenant:
+    <<: *tenant_present
+    state: absent
