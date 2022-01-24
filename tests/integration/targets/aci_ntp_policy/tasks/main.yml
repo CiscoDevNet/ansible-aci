@@ -1,5 +1,5 @@
 # Test code for the ACI modules
-# Copyright: (c) 2017, Dag Wieers (dagwieers) <dag@wieers.com>
+# Copyright: (c) 2022, Tim Cragg (timcragg)
 #
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -52,7 +52,7 @@
   check_mode: yes
   register: cm_add_policy_again
 
-- name: Add user again (normal mode)
+- name: Add NTP policy again (normal mode)
   cisco.aci.aci_ntp_policy:
     <<: *policy_present
   register: nm_add_policy_again
@@ -158,14 +158,14 @@
     - nm_query_all_policies is not changed
 
 # QUERY OUR USER
-- name: Query our user (check_mode)
+- name: Query our policy (check_mode)
   cisco.aci.aci_ntp_policy:
     <<: *policy_query_all
     name: ansible_ntp_policy
   check_mode: yes
   register: cm_query_policy
 
-- name: Query our user (normal mode)
+- name: Query our policy (normal mode)
   cisco.aci.aci_ntp_policy:
     <<: *policy_query_all
     name: ansible_ntp_policy
@@ -207,7 +207,7 @@
     <<: *policy_absent
   register: nm_remove_policy_again
 
-- name: Verify remove_user
+- name: Verify remove_policy
   assert:
     that:
     - cm_remove_policy is changed

@@ -13,40 +13,47 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_ntp_policy
-short_description: Manage NTP policies.
+module: aci_ntp_server
+short_description: Manage NTP servers.
 description:
-- Manage NTP policy (datetimePol) configuration on Cisco ACI fabrics.
+- Manage NTP server (datetimeNtpProv) configuration on Cisco ACI fabrics.
 options:
-  name:
+  ntp_policy:
     description:
-    - Name of the NTP policy
+    - Name of an existing NTP policy
     type: str
-    aliases: [ ntp_policy ]
+    required: yes
+    aliases: [ policy_name ]
+  ntp_server:
+    description:
+    - Name of the NTP server
+    type: str
+    aliases: [ server_name ]
   description:
     description:
-    - Description of the NTP policy
+    - Description of the NTP server
     type: str
-  admin_state:
+  min_poll:
     description:
-    - Admin state of the policy
-    type: str
-    choices: [ disabled, enabled ]
-  server_state:
+    - Minimum polling interval
+    type: int
+  max_poll:
     description:
-    - Allow switches to act as NTP servers
-    type: str
-    choices: [ disabled, enabled ]
-  auth_state:
+    - Maximum polling interval
+    type: int
+  preferred:
     description:
-    - Enable authentication
-    type: str
-    choices: [ disabled, enabled ]
-  master_mode:
+    - Is this the preferred NTP server
+    type: bool
+  epg_type:
     description:
-    - Enable master mode. Only applicable if server_state is enabled
+    - Type of management EPG to use to reach the NTP server, inb or oob
     type: str
-    choices: [ disabled, enabled ]
+    choices: [ inb, oob ]
+  epg_name:
+    description:
+    - Name of the management EPG to reach the NTP server
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -57,50 +64,58 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 
+notes:
+- The used C(ntp_policy) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_ntp_policy) module can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(datetimePol).
+  description: More information about the internal APIC class B(datetimeNtpProv).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
 '''
 
 EXAMPLES = r'''
-- name: Add a new NTP policy
-  cisco.aci.aci_ntp_policy:
+- name: Add a new NTP server
+  cisco.aci.aci_ntp_server:
     host: apic
     username: admin
     password: SomeSecretPassword
-    name: my_ntp_policy
-    description: via Ansible
-    admin_state: enabled
+    ntp_policy: my_ntp_policy
+    ntp_server: 10.20.30.40
+    min_poll: 3
+    max_poll: 8
+    preferred: yes
     state: present
   delegate_to: localhost
 
-- name: Remove a NTP policy
-  cisco.aci.aci_ntp_policy:
+- name: Remove a NTP server
+  cisco.aci.aci_ntp_server:
     host: apic
     username: admin
     password: SomeSecretPassword
-    name: my_ntp_policy
+    ntp_policy: my_ntp_policy
+    ntp_server: 10.20.30.40
     state: absent
   delegate_to: localhost
 
-- name: Query a NTP policy
-  cisco.aci.aci_ntp_policy:
+- name: Query a NTP server
+  cisco.aci.aci_ntp_server:
     host: apic
     username: admin
     password: SomeSecretPassword
-    name: my_ntp_policy
+    ntp_policy: my_ntp_policy
+    ntp_server: 10.20.30.40
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Query all NTP policies
-  cisco.aci.aci_ntp_policy:
+- name: Query all NTP servers within a policy
+  cisco.aci.aci_ntp_server:
     host: apic
     username: admin
     password: SomeSecretPassword
+    ntp_policy: my_ntp_policy
     state: query
   delegate_to: localhost
   register: query_result
@@ -218,12 +233,14 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        name=dict(type='str', aliases=['ntp_policy']),
+        ntp_policy=dict(type='str', aliases=['policy_name'], required=True),
+        ntp_server=dict(type='str', aliases=['server_name']),
         description=dict(type='str'),
-        admin_state=dict(type='str', choices=['disabled', 'enabled']),
-        server_state=dict(type='str', choices=['disabled', 'enabled']),
-        auth_state=dict(type='str', choices=['disabled', 'enabled']),
-        master_mode=dict(type='str', choices=['disabled', 'enabled']),
+        min_poll=dict(type='int'),
+        max_poll=dict(type='int'),
+        preferred=dict(type='bool'),
+        epg_type=dict(type='str', choices=['inb', 'oob']),
+        epg_name=dict(type='str'),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
 
@@ -231,27 +248,38 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['name']],
-            ['state', 'present', ['name']],
+            ['state', 'absent', ['ntp_server']],
+            ['state', 'present', ['ntp_server']],
+        ],
+        required_together=[
+            ['epg_type', 'epg_name'],
         ],
     )
-
-    name = module.params.get('name')
-    description = module.params.get('description')
-    admin_state = module.params.get('admin_state')
-    server_state = module.params.get('server_state')
-    auth_state = module.params.get('auth_state')
-    master_mode = module.params.get('master_mode')
-    state = module.params.get('state')
-    child_classes = ['datetimeNtpProv']
-
     aci = ACIModule(module)
+
+    ntp_policy = module.params.get('ntp_policy')
+    ntp_server = module.params.get('ntp_server')
+    description = module.params.get('description')
+    min_poll = module.params.get('min_poll')
+    max_poll = module.params.get('max_poll')
+    preferred = aci.boolean(module.params.get('preferred'))
+    epg_type = module.params.get('epg_type')
+    epg_name = module.params.get('epg_name')
+    state = module.params.get('state')
+    child_classes = ['datetimeRsNtpProvToEpg']
+
     aci.construct_url(
         root_class=dict(
             aci_class='datetimePol',
-            aci_rn='fabric/time-{0}'.format(name),
-            module_object=name,
-            target_filter={'name': name},
+            aci_rn='fabric/time-{0}'.format(ntp_policy),
+            module_object=ntp_policy,
+            target_filter={'name': ntp_policy},
+        ),
+        subclass_1=dict(
+            aci_class='datetimeNtpProv',
+            aci_rn='ntpprov-{0}'.format(ntp_server),
+            module_object=ntp_server,
+            target_filter={'name': ntp_server},
         ),
         child_classes=child_classes,
     )
@@ -259,19 +287,23 @@ def main():
     aci.get_existing()
 
     if state == 'present':
+        child_configs = []
+        if epg_type is not None:
+            tdn = 'uni/tn-mgmt/mgmtp-default/{0}-{1}'.format(epg_type, epg_name)
+            child_configs.append(dict(datetimeRsNtpProvToEpg=dict(attributes=dict(tDn=tdn))))
         aci.payload(
-            aci_class='datetimePol',
+            aci_class='datetimeNtpProv',
             class_config=dict(
-                name=name,
+                name=ntp_server,
                 descr=description,
-                adminSt=admin_state,
-                serverState=server_state,
-                authSt=auth_state,
-                masterMode=master_mode
+                maxPoll=max_poll,
+                minPoll=min_poll,
+                preferred=preferred
             ),
+            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='datetimePol')
+        aci.get_diff(aci_class='datetimeNtpProv')
 
         aci.post_config()
 
