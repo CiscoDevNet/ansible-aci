@@ -38,7 +38,7 @@ options:
     type: str
     aliases: [ coop_policy ]
   bgp_rr_policy:
-    decription:
+    description:
     - BGP route reflector policy to bind to the policy group
     type: str
   management_access_policy:
