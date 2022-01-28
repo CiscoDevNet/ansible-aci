@@ -33,19 +33,55 @@ options:
     - The name of the end point group.
     type: str
     aliases: [ epg_name ]
+  description:
+    description:
+    - Description for the static path to EPG binding.
+    type: str
+    aliases: [ descr ]
+  encap_id:
+    description:
+    - The encapsulation ID associating the C(epg) with the interface path.
+    - This acts as the secondary C(encap_id) when using micro-segmentation.
+    - Accepted values are any valid encap ID for specified encap, currently ranges between C(1) and C(4096).
+    type: int
+    aliases: [ vlan, vlan_id ]
+  primary_encap_id:
+    description:
+    - Determines the primary encapsulation ID associating the C(epg)
+      with the interface path when using micro-segmentation.
+    - Accepted values are any valid encap ID for specified encap, currently ranges between C(1) and C(4096) and C(unknown.
+    - C(unknown) is the default value and using C(unknown) disables the Micro-Segmentation.
+    type: str
+    aliases: [ primary_vlan, primary_vlan_id ]
+  deploy_immediacy:
+    description:
+    - The Deployment Immediacy of Static EPG on PC, VPC or Interface.
+    - The APIC defaults to C(lazy) when unset during creation.
+    type: str
+    choices: [ immediate, lazy ]
+  interface_mode:
+    description:
+    - Determines how layer 2 tags will be read from and added to frames.
+    - Values C(802.1p) and C(native) are identical.
+    - Values C(access) and C(untagged) are identical.
+    - Values C(regular), C(tagged) and C(trunk) are identical.
+    - The APIC defaults to C(trunk) when unset during creation.
+    type: str
+    choices: [ 802.1p, access, native, regular, tagged, trunk, untagged ]
+    aliases: [ interface_mode_name, mode ]
+  interface_type:
+    description:
+    - The type of interface for the static EPG deployment.
+    type: str
+    choices: [ fex, port_channel, switch_port, vpc, fex_port_channel, fex_vpc ]
+    default: switch_port
   interface_configs:
     description:
-    - List of interface configurations, elements in the form dictionary.
+    - List of interface configurations, elements in the form of a dictionary.
+    - Module level attributes will be overridden by the path level attributes.
     type: list
     elements: dict
     suboptions:
-      status:
-        description:
-        - Status of the individual interface object, This status can be overridden by interfaces_status.
-        - C(created) is used to bind an interface, C(deleted) is used to delete an interface and C(modified) is used to update an interface.
-        type: str
-        choices: [ created, deleted, modified ]
-        default: created
       description:
         description:
         - Description for the static path to EPG binding.
@@ -87,7 +123,6 @@ options:
         - The type of interface for the static EPG deployment.
         type: str
         choices: [ fex, port_channel, switch_port, vpc, fex_port_channel, fex_vpc ]
-        default: switch_port
       pod_id:
         description:
         - The pod number part of the tDn.
@@ -116,12 +151,6 @@ options:
         - Usually something like C(1011).
         type: list
         elements: str
-  interfaces_status:
-    description:
-    - Interfaces status is used to override the entire interface_configs objects status.
-    - C(created) is used to bind interfaces, C(deleted) is used to delete interfaces and C(modified) is used to update interfaces.
-    type: str
-    choices: [ created, deleted, modified ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -150,7 +179,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add list of interfaces to an EPG
+- name: Create list of interfaces using module level attributes
   cisco.aci.aci_bulk_static_binding_to_epg:
     host: apic
     username: admin
@@ -158,32 +187,25 @@ EXAMPLES = r"""
     tenant: accessport-code-cert
     ap: accessport_code_app
     epg: accessport_epg1
-    interface_configs: [
-      {
-          "encap_id": 221,
-          "deploy_immediacy": lazy,
-          "interface_mode": trunk,
-          "interface_type": switch_port,
-          "pod": 1,
-          "leafs": 101,
-          "interface": '1/7',
-      },
-      {
-          "vlan_id": 107,
-          "pod": 7,
-          "leafs": 107,
-          "interface": '1/7'
-      },
-      {
-          "vlan_id": 108,
-          "pod": 8,
-          "leafs": 108,
-          "interface": '1/8'
-      },
-    ]
+    encap_id: 221
+    interface_mode: trunk
+    deploy_immediacy: lazy
+    description: "Module level attributes used to create interfaces"
+    interface_configs:
+      - interface: 1/7
+        leafs: 101
+        pod: 1
+      - interface: 1/7
+        leafs: 107
+        pod: 7
+      - interface: 1/8
+        leafs: 108
+        pod: 8
+        encap_id: 108
+    state: present
   delegate_to: localhost
 
-- name: Add, Modify and Delete list of interfaces to an EPG
+- name: Create/Update list of interfaces using path level attributes
   cisco.aci.aci_bulk_static_binding_to_epg:
     host: apic
     username: admin
@@ -191,35 +213,32 @@ EXAMPLES = r"""
     tenant: accessport-code-cert
     ap: accessport_code_app
     epg: accessport_epg1
-    interface_configs: [
-      {
-          "vlan_id": 107,
-          "pod": 7,
-          "leafs": 107,
-          "interface": '1/7',
-          "status": deleted,
-          "descr": "Interface Deleted"
-      },
-      {
-          "vlan_id": 108,
-          "pod": 8,
-          "leafs": 108,
-          "interface": '1/8',
-          "status": modified,
-          "descr": "Interface Modified"
-      },
-      {
-          "vlan_id": 109,
-          "pod": 9,
-          "leafs": 109,
-          "interface": '1/9',
-          "status": created,
-          "descr": "Interface Created"
-      }
-    ]
+    interface_configs:
+      - interface: 1/7
+        leafs: 101
+        pod: 1
+        encap_id: 221
+        interface_mode: trunk
+        deploy_immediacy: lazy
+        description: "Path level attributes used to create/update interfaces"
+      - interface: 1/7
+        leafs: 107
+        pod: 7
+        encap_id: 221
+        interface_mode: trunk
+        deploy_immediacy: lazy
+        description: "Path level attributes used to create/update interfaces"
+      - interface: 1/8
+        leafs: 108
+        pod: 8
+        encap_id: 108
+        interface_mode: trunk
+        deploy_immediacy: lazy
+        description: "Path level attributes used to create/update interfaces"
+    state: present
   delegate_to: localhost
 
-- name: Add list of interfaces without changing individual object status
+- name: Query all interfaces of an EPG
   cisco.aci.aci_bulk_static_binding_to_epg:
     host: apic
     username: admin
@@ -227,47 +246,18 @@ EXAMPLES = r"""
     tenant: accessport-code-cert
     ap: accessport_code_app
     epg: accessport_epg1
-    interface_configs: [
-      {
-          "vlan_id": 107,
-          "pod": 7,
-          "leafs": 107,
-          "interface": '1/7',
-          "status": deleted,
-          "descr": "Interface Deleted"
-      },
-      {
-          "vlan_id": 108,
-          "pod": 8,
-          "leafs": 108,
-          "interface": '1/8',
-          "status": modified,
-          "descr": "Interface Modified"
-      },
-      {
-          "vlan_id": 109,
-          "pod": 9,
-          "leafs": 109,
-          "interface": '1/9',
-          "status": created,
-          "descr": "Interface Created"
-      }
-    ]
-    interfaces_status: created
+    state: query
   delegate_to: localhost
 
-- name: Query all interfaces of the EPG
+- name: Query all interfaces
   cisco.aci.aci_bulk_static_binding_to_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
-    tenant: accessport-code-cert
-    ap: accessport_code_app
-    epg: accessport_epg1
-  state: query
+    state: query
   delegate_to: localhost
 
-- name: Delete list of interfaces without changing individual object status
+- name: Remove list of interfaces
   cisco.aci.aci_bulk_static_binding_to_epg:
     host: apic
     username: admin
@@ -275,33 +265,21 @@ EXAMPLES = r"""
     tenant: accessport-code-cert
     ap: accessport_code_app
     epg: accessport_epg1
-    interface_configs: [
-      {
-          "vlan_id": 107,
-          "pod": 7,
-          "leafs": 107,
-          "interface": '1/7',
-          "status": deleted,
-          "descr": "Interface Deleted"
-      },
-      {
-          "vlan_id": 108,
-          "pod": 8,
-          "leafs": 108,
-          "interface": '1/8',
-          "status": modified,
-          "descr": "Interface Modified"
-      },
-      {
-          "vlan_id": 109,
-          "pod": 9,
-          "leafs": 109,
-          "interface": '1/9',
-          "status": created,
-          "descr": "Interface Created"
-      }
-    ]
-    interfaces_status: deleted
+    encap_id: 221
+    interface_mode: trunk
+    deploy_immediacy: lazy
+    interface_configs:
+      - interface: 1/7
+        leafs: 101
+        pod: 1
+      - interface: 1/7
+        leafs: 107
+        pod: 7
+      - interface: 1/8
+        leafs: 108
+        pod: 8
+        encap_id: 108
+    state: absent
   delegate_to: localhost
 """
 
@@ -442,11 +420,18 @@ def main():
         tenant=dict(type="str", aliases=["tenant_name"]),
         ap=dict(type="str", aliases=["app_profile", "app_profile_name"]),
         epg=dict(type="str", aliases=["epg_name"]),
+        description=dict(type="str", aliases=["descr"]),
+        encap_id=dict(type="int", aliases=["vlan", "vlan_id"]),
+        primary_encap_id=dict(type="str", aliases=["primary_vlan", "primary_vlan_id"]),
+        deploy_immediacy=dict(type="str", choices=["immediate", "lazy"]),
+        interface_mode=dict(
+            type="str", choices=["802.1p", "access", "native", "regular", "tagged", "trunk", "untagged"], aliases=["interface_mode_name", "mode"]
+        ),
+        interface_type=dict(type="str", default="switch_port", choices=["fex", "port_channel", "switch_port", "vpc", "fex_port_channel", "fex_vpc"]),
         interface_configs=dict(
             type="list",
             elements="dict",
             options=dict(
-                status=dict(type="str", default="created", choices=["created", "deleted", "modified"]),
                 description=dict(type="str", aliases=["descr"]),
                 encap_id=dict(type="int", aliases=["vlan", "vlan_id"]),
                 primary_encap_id=dict(type="str", aliases=["primary_vlan", "primary_vlan_id"]),
@@ -454,14 +439,13 @@ def main():
                 interface_mode=dict(
                     type="str", choices=["802.1p", "access", "native", "regular", "tagged", "trunk", "untagged"], aliases=["interface_mode_name", "mode"]
                 ),
-                interface_type=dict(type="str", default="switch_port", choices=["fex", "port_channel", "switch_port", "vpc", "fex_port_channel", "fex_vpc"]),
+                interface_type=dict(type="str", choices=["fex", "port_channel", "switch_port", "vpc", "fex_port_channel", "fex_vpc"]),
                 pod_id=dict(type="int", aliases=["pod", "pod_number"]),
                 leafs=dict(type="list", elements="str", aliases=["leaves", "nodes", "paths", "switches"]),
                 interface=dict(type="str"),
                 extpaths=dict(type="list", elements="str"),
             ),
         ),
-        interfaces_status=dict(type="str", choices=["created", "deleted", "modified"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -477,24 +461,32 @@ def main():
     tenant = module.params.get("tenant")
     ap = module.params.get("ap")
     epg = module.params.get("epg")
+    module_description = module.params.get("description")
+    module_encap_id = module.params.get("encap_id")
+    module_primary_encap_id = module.params.get("primary_encap_id")
+    module_deploy_immediacy = module.params.get("deploy_immediacy")
+    module_interface_mode = module.params.get("interface_mode")
+    module_interface_type = module.params.get("interface_type")
     interface_configs = module.params.get("interface_configs")
-    interfaces_status = module.params.get("interfaces_status")
     state = module.params.get("state")
 
     aci = ACIModule(module)
     children = []
-    if state == "present":
+    interface_status_mapping = {"absent": "deleted"}
+
+    if state == "present" or state == "absent":
         for interface_config in interface_configs:
-            description = interface_config.get("description")
-            encap_id = interface_config.get("encap_id")
-            primary_encap_id = interface_config.get("primary_encap_id")
-            deploy_immediacy = interface_config.get("deploy_immediacy")
-            interface_mode = interface_config.get("interface_mode")
-            interface_type = interface_config.get("interface_type")
             pod_id = interface_config.get("pod_id")
             leafs = interface_config.get("leafs")
             interface = interface_config.get("interface")
             extpaths = interface_config.get("extpaths")
+
+            description = interface_config.get("description") or module_description
+            deploy_immediacy = interface_config.get("deploy_immediacy") or module_deploy_immediacy
+            interface_type = interface_config.get("interface_type") or module_interface_type
+            encap_id = interface_config.get("encap_id") or module_encap_id
+            primary_encap_id = interface_config.get("primary_encap_id") or module_primary_encap_id
+            interface_mode = interface_config.get("interface_mode") or module_interface_mode
 
             if interface_type in ["fex", "fex_vpc", "fex_port_channel"] and extpaths is None:
                 aci.fail_json(msg="extpaths is required when interface_type is: {0}".format(interface_type))
@@ -553,14 +545,9 @@ def main():
 
             static_path = INTERFACE_TYPE_MAPPING[interface_type].format(pod_id=pod_id, leafs=leafs, extpaths=extpaths, interface=interface)
 
-            if interface_mode is not None:
-                interface_mode = INTERFACE_MODE_MAPPING[interface_mode]
+            interface_mode = INTERFACE_MODE_MAPPING.get(interface_mode)
 
-            # Override individual interface object status with interfaces_status
-            if interfaces_status is None:
-                interface_status = interface_config.get("status")
-            else:
-                interface_status = interfaces_status
+            interface_status = interface_status_mapping.get(state)
 
             children.append(
                 dict(
@@ -602,7 +589,7 @@ def main():
 
     aci.get_existing()
 
-    if state == "present":
+    if state == "present" or state == "absent":
         aci.payload(
             aci_class="fvAEPg",
             class_config=dict(),
@@ -612,9 +599,6 @@ def main():
         aci.get_diff(aci_class="fvAEPg")
 
         aci.post_config()
-
-    elif state == "absent":
-        aci.fail_json(msg="This module does not support delete operation")
 
     aci.exit_json()
 
