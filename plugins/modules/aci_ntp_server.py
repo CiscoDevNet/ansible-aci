@@ -5,13 +5,16 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_ntp_server
 short_description: Manage NTP servers.
@@ -73,9 +76,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new NTP server
   cisco.aci.aci_ntp_server:
     host: apic
@@ -119,9 +122,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
    current:
      description: The existing configuration from the APIC after the module has finished
      returned: success
@@ -224,90 +227,93 @@ RETURN = r'''
      returned: failure or debug
      type: str
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
-   '''
+   """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+)
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        ntp_policy=dict(type='str', aliases=['policy_name'], required=True),
-        ntp_server=dict(type='str', aliases=['server_name']),
-        description=dict(type='str'),
-        min_poll=dict(type='int'),
-        max_poll=dict(type='int'),
-        preferred=dict(type='bool'),
-        epg_type=dict(type='str', choices=['inb', 'oob']),
-        epg_name=dict(type='str'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        ntp_policy=dict(type="str", aliases=["policy_name"], required=True),
+        ntp_server=dict(type="str", aliases=["server_name"]),
+        description=dict(type="str"),
+        min_poll=dict(type="int"),
+        max_poll=dict(type="int"),
+        preferred=dict(type="bool"),
+        epg_type=dict(type="str", choices=["inb", "oob"]),
+        epg_name=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['ntp_server']],
-            ['state', 'present', ['ntp_server']],
+            ["state", "absent", ["ntp_server"]],
+            ["state", "present", ["ntp_server"]],
         ],
         required_together=[
-            ['epg_type', 'epg_name'],
+            ["epg_type", "epg_name"],
         ],
     )
     aci = ACIModule(module)
 
-    ntp_policy = module.params.get('ntp_policy')
-    ntp_server = module.params.get('ntp_server')
-    description = module.params.get('description')
-    min_poll = module.params.get('min_poll')
-    max_poll = module.params.get('max_poll')
-    preferred = aci.boolean(module.params.get('preferred'))
-    epg_type = module.params.get('epg_type')
-    epg_name = module.params.get('epg_name')
-    state = module.params.get('state')
-    child_classes = ['datetimeRsNtpProvToEpg']
+    ntp_policy = module.params.get("ntp_policy")
+    ntp_server = module.params.get("ntp_server")
+    description = module.params.get("description")
+    min_poll = module.params.get("min_poll")
+    max_poll = module.params.get("max_poll")
+    preferred = aci.boolean(module.params.get("preferred"))
+    epg_type = module.params.get("epg_type")
+    epg_name = module.params.get("epg_name")
+    state = module.params.get("state")
+    child_classes = ["datetimeRsNtpProvToEpg"]
 
     aci.construct_url(
         root_class=dict(
-            aci_class='datetimePol',
-            aci_rn='fabric/time-{0}'.format(ntp_policy),
+            aci_class="datetimePol",
+            aci_rn="fabric/time-{0}".format(ntp_policy),
             module_object=ntp_policy,
-            target_filter={'name': ntp_policy},
+            target_filter={"name": ntp_policy},
         ),
         subclass_1=dict(
-            aci_class='datetimeNtpProv',
-            aci_rn='ntpprov-{0}'.format(ntp_server),
+            aci_class="datetimeNtpProv",
+            aci_rn="ntpprov-{0}".format(ntp_server),
             module_object=ntp_server,
-            target_filter={'name': ntp_server},
+            target_filter={"name": ntp_server},
         ),
         child_classes=child_classes,
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         child_configs = []
         if epg_type is not None:
-            tdn = 'uni/tn-mgmt/mgmtp-default/{0}-{1}'.format(epg_type, epg_name)
+            tdn = "uni/tn-mgmt/mgmtp-default/{0}-{1}".format(epg_type, epg_name)
             child_configs.append(dict(datetimeRsNtpProvToEpg=dict(attributes=dict(tDn=tdn))))
         aci.payload(
-            aci_class='datetimeNtpProv',
+            aci_class="datetimeNtpProv",
             class_config=dict(
                 name=ntp_server,
                 descr=description,
                 maxPoll=max_poll,
                 minPoll=min_poll,
-                preferred=preferred
+                preferred=preferred,
             ),
             child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class='datetimeNtpProv')
+        aci.get_diff(aci_class="datetimeNtpProv")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

@@ -8,30 +8,28 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove any pre-existing NTP policy
   cisco.aci.aci_ntp_policy: &policy_absent
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     name: ansible_ntp_policy
     state: absent
 
 # ADD NTP POLICY
 - name: Add NTP policy
   cisco.aci.aci_ntp_policy:
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     name: ansible_ntp_policy
     description: 'Ansible test policy'
     admin_state: enabled
@@ -42,13 +40,7 @@
 # ADD NTP SERVER
 - name: Add NTP server (check mode)
   cisco.aci.aci_ntp_server: &server_present
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     ntp_policy: ansible_ntp_policy
     ntp_server: 10.20.30.40
     description: 'Ansible test server'
@@ -98,13 +90,7 @@
 # MODIFY SERVER
 - name: Modify NTP server (check mode)
   cisco.aci.aci_ntp_server: &server_changed
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     ntp_policy: ansible_ntp_policy
     ntp_server: 10.20.30.40
     description: 'Ansible test server'
@@ -154,13 +140,7 @@
 # QUERY ALL POLICIES
 - name: Query all servers (check_mode)
   cisco.aci.aci_ntp_server: &server_query_all
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     ntp_policy: ansible_ntp_policy
     state: query
   check_mode: yes
@@ -207,13 +187,7 @@
 # REMOVE SERVER
 - name: Remove server (check mode)
   cisco.aci.aci_ntp_server: &server_absent
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     ntp_policy: ansible_ntp_policy
     ntp_server: 10.20.30.40
     state: absent
@@ -254,12 +228,6 @@
 # CLEAN UP
 - name: Remove NTP Policy
   cisco.aci.aci_ntp_policy:
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     name: ansible_ntp_policy
     state: absent

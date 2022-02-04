@@ -5,13 +5,16 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_ntp_policy
 short_description: Manage NTP policies.
@@ -63,9 +66,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new NTP policy
   cisco.aci.aci_ntp_policy:
     host: apic
@@ -104,9 +107,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
    current:
      description: The existing configuration from the APIC after the module has finished
      returned: success
@@ -209,73 +212,76 @@ RETURN = r'''
      returned: failure or debug
      type: str
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
-   '''
+   """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+)
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        name=dict(type='str', aliases=['ntp_policy']),
-        description=dict(type='str'),
-        admin_state=dict(type='str', choices=['disabled', 'enabled']),
-        server_state=dict(type='str', choices=['disabled', 'enabled']),
-        auth_state=dict(type='str', choices=['disabled', 'enabled']),
-        master_mode=dict(type='str', choices=['disabled', 'enabled']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        name=dict(type="str", aliases=["ntp_policy"]),
+        description=dict(type="str"),
+        admin_state=dict(type="str", choices=["disabled", "enabled"]),
+        server_state=dict(type="str", choices=["disabled", "enabled"]),
+        auth_state=dict(type="str", choices=["disabled", "enabled"]),
+        master_mode=dict(type="str", choices=["disabled", "enabled"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['name']],
-            ['state', 'present', ['name']],
+            ["state", "absent", ["name"]],
+            ["state", "present", ["name"]],
         ],
     )
 
-    name = module.params.get('name')
-    description = module.params.get('description')
-    admin_state = module.params.get('admin_state')
-    server_state = module.params.get('server_state')
-    auth_state = module.params.get('auth_state')
-    master_mode = module.params.get('master_mode')
-    state = module.params.get('state')
-    child_classes = ['datetimeNtpProv']
+    name = module.params.get("name")
+    description = module.params.get("description")
+    admin_state = module.params.get("admin_state")
+    server_state = module.params.get("server_state")
+    auth_state = module.params.get("auth_state")
+    master_mode = module.params.get("master_mode")
+    state = module.params.get("state")
+    child_classes = ["datetimeNtpProv"]
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='datetimePol',
-            aci_rn='fabric/time-{0}'.format(name),
+            aci_class="datetimePol",
+            aci_rn="fabric/time-{0}".format(name),
             module_object=name,
-            target_filter={'name': name},
+            target_filter={"name": name},
         ),
         child_classes=child_classes,
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='datetimePol',
+            aci_class="datetimePol",
             class_config=dict(
                 name=name,
                 descr=description,
                 adminSt=admin_state,
                 serverState=server_state,
                 authSt=auth_state,
-                masterMode=master_mode
+                masterMode=master_mode,
             ),
         )
 
-        aci.get_diff(aci_class='datetimePol')
+        aci.get_diff(aci_class="datetimePol")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()
