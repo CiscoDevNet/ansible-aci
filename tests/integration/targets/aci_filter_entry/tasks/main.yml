@@ -124,6 +124,7 @@
       - entry_present_check_mode.sent.vzEntry.attributes.name == 'anstest'
       - entry_present_check_mode.sent.vzEntry.attributes.prot == 'tcp'
       - entry_present is changed
+      - entry_present.current.0.vzEntry.attributes.annotation == 'orchestrator:Ansible'
       - entry_present.previous == []
       - entry_present.sent == entry_present_check_mode.sent
       - entry_present_idempotent is not changed

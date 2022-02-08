@@ -55,6 +55,11 @@ options:
       together with the C(template) lookup plugin, or use C(template).
     type: path
     aliases: [ config_file ]
+  annotation:
+    description:
+      - The default value for the annotation attribute is 'orchestrator:Ansible'.
+    type: str
+    default: orchestrator:Ansible
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation

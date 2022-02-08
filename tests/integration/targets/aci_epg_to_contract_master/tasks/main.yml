@@ -175,6 +175,7 @@
     that:
     - query_another_specific_contract_master is not changed
     - query_another_specific_contract_master.current.0.fvRsSecInherited.attributes.dn == "uni/tn-anstest/ap-anstest/epg-anstest_2/rssecInherited-[uni/tn-anstest/ap-anstest/epg-anstest]"
+    - query_another_specific_contract_master.current.0.fvRsSecInherited.attributes.annotation == 'orchestrator:Ansible'
     - query_another_specific_contract_master.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-anstest/ap-anstest/epg-anstest"
 
 - name: Remove specific contract master

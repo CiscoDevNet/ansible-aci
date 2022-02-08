@@ -88,6 +88,13 @@
     path_dn: topology/pod-1/protpaths-101-102/pathep-[policy_group_one]
     side: A
     state: present
+  register: l3out_logical_interface_vpc_member_present
+
+- name: Assertions check for add a VPC member based on path_dn
+  assert:
+    that:
+    - l3out_logical_interface_vpc_member_present is changed
+    - l3out_logical_interface_vpc_member_present.current.0.l3extMember.attributes.annotation == 'orchestrator:Ansible'
 
 - name: Add a VPC member based on pod_id, node_id, path_ep
   aci_l3out_logical_interface_vpc_member:

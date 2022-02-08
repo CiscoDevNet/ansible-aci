@@ -112,6 +112,7 @@
         - cm_epg_present.proposed.cloudExtEPSelector.attributes.name == 'subnet1'
         - cm_epg_present.proposed.cloudExtEPSelector.attributes.subnet == '10.0.0.0/16'
         - cm_epg_present.proposed.cloudExtEPSelector.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudextepg-anstest/extepselector-[10.0.0.0/16]'
+        - nm_epg_present.current.0.cloudExtEPSelector.attributes.annotation == 'orchestrator:Ansible'
         - nm_epg_present.current.0.cloudExtEPSelector.attributes.name == 'subnet1'
         - nm_epg_present.proposed.cloudExtEPSelector.attributes.subnet == '10.0.0.0/16'
         - nm_epg_present.current.0.cloudExtEPSelector.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudextepg-anstest/extepselector-[10.0.0.0/16]'

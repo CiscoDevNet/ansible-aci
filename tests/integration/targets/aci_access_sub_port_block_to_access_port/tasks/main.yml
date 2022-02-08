@@ -62,6 +62,7 @@
     that:
     - accesssubportblock_to_accessport_check_mode_present is changed
     - accesssubportblock_to_accessport_present is changed
+    - accesssubportblock_to_accessport_present.current.0.infraSubPortBlk.attributes.annotation == 'orchestrator:Ansible'
     - accesssubportblock_to_accessport_present.previous == []
     - accesssubportblock_to_accessport_present.sent.infraSubPortBlk.attributes.descr == 'anstest_leafportblkdesc'
     - accesssubportblock_to_accessport_present.sent.infraSubPortBlk.attributes.name == 'anstest_leafportblkname'

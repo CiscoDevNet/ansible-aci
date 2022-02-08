@@ -111,3 +111,4 @@
       that:
       - query_vpn_gateway is not changed
       - query_vpn_gateway.current.0.cloudRouterP.children | length == 3
+      - query_vpn_gateway.current.0.cloudRouterP.attributes.annotation == 'orchestrator:Ansible'

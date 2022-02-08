@@ -72,6 +72,7 @@
     that:
     - cm_add_binding is changed
     - nm_add_binding is changed
+    - nm_add_binding.current.0.infraRsDomP.attributes.annotation == 'orchestrator:Ansible'
     - cm_add_binding.sent.infraRsDomP.attributes.tDn == nm_add_binding.sent.infraRsDomP.attributes.tDn == 'uni/phys-phys_dom'
     - cm_add_binding.proposed.infraRsDomP.attributes.tDn == nm_add_binding.proposed.infraRsDomP.attributes.tDn == 'uni/phys-phys_dom'
     - cm_add_binding.current == cm_add_binding.previous == nm_add_binding.previous == []

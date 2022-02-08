@@ -68,6 +68,7 @@
     that:
     - cm_add_leaf_interface_profile is changed
     - nm_add_leaf_interface_profile is changed
+    - nm_add_leaf_interface_profile.current.0.infraAccPortP.attributes.annotation == 'orchestrator:Ansible'
     - cm_add_leaf_interface_profile_again is not changed
     - nm_add_leaf_interface_profile_again is not changed
     - nm_add_leaf_interface_profile_fex is changed

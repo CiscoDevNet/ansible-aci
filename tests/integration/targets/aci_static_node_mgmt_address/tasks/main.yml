@@ -160,6 +160,7 @@
     - cm_add_oob.sent.mgmtRsOoBStNode.attributes.addr == '3.1.1.3/24'
     - nm_add_inb is changed
     - nm_add_inb.current.0.mgmtRsInBStNode.attributes.addr == '3.1.1.2/24'
+    - nm_add_inb.current.0.mgmtRsInBStNode.attributes.annotation == 'orchestrator:Ansible'
     - nm_add_oob is changed
     - nm_add_oob.current.0.mgmtRsOoBStNode.attributes.addr == '3.1.1.3/24'
     - nm_add_inb_2 is changed

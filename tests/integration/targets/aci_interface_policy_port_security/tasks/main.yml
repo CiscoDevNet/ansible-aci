@@ -111,6 +111,7 @@
     - port_security1_nm.current.0.l2PortSecurityPol.attributes.timeout == "190"
     - port_security1_nm.current.0.l2PortSecurityPol.attributes.maximum == "300"
     - port_security1_nm.current.0.l2PortSecurityPol.attributes.descr == "security 1"
+    - port_security1_nm.current.0.l2PortSecurityPol.attributes.annotation == 'orchestrator:Ansible'
     - port_security1_nm_again is not changed
     - port_security1_nm_error_timeout.msg == "The port_security_timeout must be between 60 and 3600"
     - port_security1_nm_error_max.msg == "The max_end_points must be between 0 and 12000"

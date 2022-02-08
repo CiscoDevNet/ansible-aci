@@ -91,6 +91,7 @@
       - subject_filter_present is changed
       - subject_filter_present.previous == []
       - subject_filter_present.sent == subject_filter_present_check_mode.sent
+      - subject_filter_present.current.0.vzRsSubjFiltAtt.attributes.annotation == 'orchestrator:Ansible'
       - subject_filter_present_2 is changed
       - subject_filter_present_idempotent is not changed
       - subject_filter_present_idempotent.previous != []

@@ -13,9 +13,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_logical_interface_vpc_member
-short_description: Manage Member Node objects (l3extMember:Member)
+short_description: Manage Member Node objects (l3ext:Member)
 description:
-- Manage Member Node objects (l3extMember:Member)
+- Manage Member Node objects (l3ext:Member)
 options:
   description:
     description:
@@ -84,6 +84,11 @@ options:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
+  annotation:
+    description:
+      - The default value for the annotation attribute is 'orchestrator:Ansible'.
+    type: str
+    default: orchestrator:Ansible
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation

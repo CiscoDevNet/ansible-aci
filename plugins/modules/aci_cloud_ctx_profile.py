@@ -63,7 +63,11 @@ options:
     choices: [ absent, present, query ]
     type: str
     default: present
-
+  annotation:
+    description:
+    - The default value for the annotation attribute is 'orchestrator:Ansible'.
+    type: str
+    default: orchestrator:Ansible
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation

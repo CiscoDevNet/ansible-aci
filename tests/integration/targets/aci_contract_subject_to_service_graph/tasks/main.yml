@@ -81,6 +81,7 @@
       - subject_service_graph_present.sent == subject_service_graph_present_check_mode.sent
       - subject_service_graph_present_idempotent is not changed
       - subject_service_graph_present_idempotent.previous != []
+      - subject_service_graph_present.current.0.vzRsSubjGraphAtt.attributes.annotation == 'orchestrator:Ansible'
       - subject_service_graph_update is changed
       - subject_service_graph_update.sent.vzRsSubjGraphAtt.attributes.tnVnsAbsGraphName == 'anstest2'
       - present_missing_param is failed

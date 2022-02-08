@@ -74,6 +74,7 @@
     - nm_dhcp_label1 is changed
     - nm_dhcp_label1.current.0.dhcpLbl.attributes.dn == 'uni/tn-ansible_tenant/BD-database/dhcplbl-label1'
     - nm_dhcp_label1.current.0.dhcpLbl.attributes.name == 'label1'
+    - nm_dhcp_label1.current.0.dhcpLbl.attributes.annotation == 'orchestrator:Ansible'
 
 - name: Create another DHCP Relay Label to a Bridge Domain - normal mode
   aci_bd_dhcp_label:

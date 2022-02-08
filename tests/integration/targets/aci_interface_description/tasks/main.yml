@@ -83,6 +83,7 @@
     - set_leaf_description.current|length == 1
     - set_leaf_description.current.0.infraHPathS.children.0.infraRsHPathAtt.attributes.tDn == "topology/pod-1/paths-1101/pathep-[eth1/33]"
     - set_leaf_description.current.0.infraHPathS.attributes.descr == "testing"
+    - set_leaf_description.current.0.infraHPathS.attributes.annotation == 'orchestrator:Ansible'
 
 - name: Query Leaf interface - 1101_eth1_33
   cisco.aci.aci_interface_description:

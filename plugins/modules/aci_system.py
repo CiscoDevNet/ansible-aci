@@ -28,6 +28,11 @@ options:
     choices: [ query ]
     default: query
     type: str
+  annotation:
+    description:
+      - The default value for the annotation attribute is 'orchestrator:Ansible'.
+    type: str
+    default: orchestrator:Ansible
 notes:
 - More information about the internal APIC class B(top:System) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
@@ -163,12 +168,13 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
 
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 from ansible.module_utils.basic import AnsibleModule
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         id=dict(type="int", aliases=["controller", "node"]),
         state=dict(type="str", default="query", choices=["query"]),

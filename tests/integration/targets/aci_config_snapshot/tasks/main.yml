@@ -53,6 +53,7 @@
       - create.sent.configExportP.attributes.adminSt == "triggered"
       - create_update is not failed
       - create_update is changed
+      - create_update.current.0.configExportP.attributes.annotation == 'orchestrator:Ansible'
       - create_update.sent.configExportP.attributes.adminSt == 'triggered'
       - create_update.sent.configExportP.attributes.format == 'xml'
       - create_update.sent.configExportP.attributes.includeSecureFields == 'yes'

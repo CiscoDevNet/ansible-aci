@@ -47,6 +47,7 @@
   assert:
     that:
     - add_dhcp_relay is changed
+    - add_dhcp_relay.current.0.dhcpRelayP.attributes.annotation == 'orchestrator:Ansible'
     - add_dhcp_relay.current.0.dhcpRelayP.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay"
     - add_dhcp_relay.current.0.dhcpRelayP.attributes.name == "ansible_dhcp_relay"
     - add_dhcp_relay.current.0.dhcpRelayP.attributes.owner == "tenant"

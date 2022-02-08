@@ -78,6 +78,7 @@
     - cm_add_node_profile.current == cm_add_node_profile.previous == nm_add_node_profile.previous == []
     - nm_add_node_profile.current.0.l2extLNodeP.attributes.dn == 'uni/tn-ansible_tenant/l2out-ansible_l2out/lnodep-ansible_node_profile'
     - nm_add_node_profile.current.0.l2extLNodeP.attributes.name == 'ansible_node_profile'
+    - nm_add_node_profile.current.0.l2extLNodeP.attributes.annotation == 'orchestrator:Ansible'
     - nm_add_second_node_profile.current.0.l2extLNodeP.attributes.dn == 'uni/tn-ansible_tenant/l2out-ansible_l2out/lnodep-ansible_node_profile2'
     - nm_add_second_node_profile.current.0.l2extLNodeP.attributes.name == 'ansible_node_profile2'
 

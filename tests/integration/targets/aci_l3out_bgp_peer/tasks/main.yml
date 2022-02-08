@@ -232,6 +232,7 @@
     - add_eth_bgp_peer.current.0.bgpPeerP.attributes.ctrl == "nh-self,send-com,send-ext-com"
     - add_eth_bgp_peer.current.0.bgpPeerP.attributes.peerCtrl == "bfd"
     - add_eth_bgp_peer.current.0.bgpPeerP.attributes.ttl == "2"
+    - add_eth_bgp_peer.current.0.bgpPeerP.attributes.annotation == 'orchestrator:Ansible'
   when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
 - name: verify BGP peer has been created with correct attributes (version < 4)
@@ -242,6 +243,7 @@
     - add_eth_bgp_peer_32.current.0.bgpPeerP.attributes.ctrl == "nh-self,send-com,send-ext-com"
     - add_eth_bgp_peer_32.current.0.bgpPeerP.attributes.peerCtrl == "bfd"
     - add_eth_bgp_peer_32.current.0.bgpPeerP.attributes.ttl == "2"
+    - add_eth_bgp_peer_32.current.0.bgpPeerP.attributes.annotation == 'orchestrator:Ansible'
   when: version.current.0.topSystem.attributes.version is version('4', '<')
 
 - name: verify remote AS object has been created correctly
