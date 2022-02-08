@@ -148,6 +148,7 @@
     - add_nm_inband is changed
     - add_nm_inband.current.0.mgmtInB.attributes.name == 'ansible-inband'
     - add_nm_inband.current.0.mgmtInB.children.0.mgmtRsMgmtBD.attributes.tnFvBDName == 'bd1'
+    - add_nm_inband.current.0.mgmtInB.attributes.annotation == 'orchestrator:Ansible'
     - add_nm_outofband is changed
     - add_nm_outofband.current.0.mgmtOoB.attributes.name == 'ansible-outofband'
     - add_nm_inband_again is not changed

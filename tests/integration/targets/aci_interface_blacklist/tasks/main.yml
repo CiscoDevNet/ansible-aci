@@ -95,6 +95,7 @@
     - disable_leaf_int.current|length == 1
     - disable_leaf_int.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/pathep-[eth1/33]"
     - disable_leaf_int.current.0.fabricRsOosPath.attributes.lc == "blacklist"
+    - disable_leaf_int.current.0.fabricRsOosPath.attributes.annotation == 'orchestrator:Ansible'
 
 - name: Leaf - Disable interface again
   cisco.aci.aci_interface_blacklist:

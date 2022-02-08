@@ -79,6 +79,7 @@
       - vrf_present_check_mode.sent.fvCtx.attributes.name == 'anstest'
       - vrf_present is changed
       - vrf_present.sent == vrf_present_check_mode.sent
+      - vrf_present.current.0.fvCtx.attributes.annotation == 'orchestrator:Ansible'
       - vrf_present.previous == []
       - vrf_present_idempotent is not changed
       - vrf_present_idempotent.previous != []

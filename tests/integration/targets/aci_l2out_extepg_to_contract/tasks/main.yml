@@ -125,6 +125,7 @@
     that:
     - bind_extepg_provider_contract is changed
     - bind_extepg_provider_contract.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg/rsprov-ansible_contract"
+    - bind_extepg_provider_contract.current.0.fvRsProv.attributes.annotation == 'orchestrator:Ansible'
 
 - name: Bind second External End Point Groups to Contracts
   aci_l2out_extepg_to_contract:

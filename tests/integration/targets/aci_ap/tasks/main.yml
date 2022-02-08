@@ -83,6 +83,7 @@
       - ap_present is changed
       - ap_present.previous == []
       - ap_present.current.0.fvAp.children.0.fvRsApMonPol.attributes.tnMonEPGPolName == 'check'
+      - ap_present.current.0.fvAp.attributes.annotation == 'orchestrator:Ansible'
       - ap_present.sent == ap_present_check_mode.sent
       - ap_present.sent.fvAp.attributes.descr == 'Ansible Test'
       - ap_present.sent.fvAp.attributes.name == 'anstest'

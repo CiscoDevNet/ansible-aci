@@ -279,6 +279,18 @@
     - cm_query_tenant.current[0].fvTenant.attributes.ownerTag == 'ansible_tag_changed'
 
 
+- name: Update tenant with default annotation
+  cisco.aci.aci_tenant:
+    <<: *tenant_present
+    annotation: "{{ fake_var | default(omit) }}"
+  register: default_annotation
+
+- name: Assertion check for update tenant with default annotation
+  assert:
+    that:
+    - default_annotation is changed
+    - default_annotation.current.0.fvTenant.attributes.annotation == 'orchestrator:Ansible'
+
 # REMOVE TENANT
 - name: Remove tenant (check_mode)
   cisco.aci.aci_tenant:

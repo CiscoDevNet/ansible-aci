@@ -356,6 +356,7 @@
       - phys_present is changed
       - phys_present.previous == []
       - phys_present.sent.fvRsDomAtt.attributes.switchingMode == 'native'
+      - phys_present.current.0.fvRsDomAtt.attributes.annotation == 'orchestrator:Ansible'
       - '"[uni/phys-anstest].json" in phys_present.url'
       - phys_idempotent is not changed
       - phys_idempotent.sent == {}

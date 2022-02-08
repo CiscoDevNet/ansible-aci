@@ -120,6 +120,7 @@
         - aws_absent.current == []
         - aws_present_not_trusted.msg == "APIC Error 1{{ ":" }} Invalid Configuration {{ ":" }} Untrusted tenant ansible_test has missing access or secret key"
         - aws_present_new is changed
+        - aws_present_new.current.0.cloudAwsProvider.attributes.annotation == 'orchestrator:Ansible'
         - aws_present_new.current.0.cloudAwsProvider.attributes.accessKeyId == "1"
         - aws_present_new.current.0.cloudAwsProvider.attributes.accountId == "111111111111"
         - aws_present_new.current.0.cloudAwsProvider.attributes.dn == "uni/tn-ansible_test/awsprovider"

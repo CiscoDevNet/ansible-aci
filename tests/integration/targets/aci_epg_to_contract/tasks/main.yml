@@ -118,6 +118,7 @@
       - provide_present_check_mode.sent.fvRsProv.attributes.tnVzBrCPName == 'anstest_http'
       - provide_present is changed
       - provide_present.sent == provide_present_check_mode.sent
+      - provide_present.current.0.fvRsProv.attributes.annotation == 'orchestrator:Ansible'
       - provide_present.previous == []
       - consume_present is changed
       - consume_present.previous == []

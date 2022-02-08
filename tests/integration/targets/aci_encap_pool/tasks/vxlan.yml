@@ -48,6 +48,7 @@
       - create_vxlan is changed
       - create_vxlan.previous == []
       - create_vxlan.sent == create_vxlan_check_mode.sent
+      - create_vxlan.current.0.fvnsVxlanInstP.attributes.annotation == 'orchestrator:Ansible'
 
 - name: create vxlan pool again - idempotency works
   cisco.aci.aci_encap_pool:

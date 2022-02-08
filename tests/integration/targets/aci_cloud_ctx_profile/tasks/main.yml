@@ -107,6 +107,7 @@
       that:
       - nm_add_aci_ctx_profile is changed
       - nm_add_aci_ctx_profile.previous == []
+      - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.attributes.annotation == 'orchestrator:Ansible'
       - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
       - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1"
       - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.children[2].cloudRsToCtx.attributes.tnFvCtxName == "ctx_profile_vrf_1"

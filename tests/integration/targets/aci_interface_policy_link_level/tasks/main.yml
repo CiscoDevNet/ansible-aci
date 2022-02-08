@@ -49,6 +49,7 @@
     - nm_add_policy.previous == cm_add_policy.previous == cm_add_policy.current == []
     - nm_add_policy.current.0.fabricHIfPol.attributes.name == 'ansible_test'
     - nm_add_policy.current.0.fabricHIfPol.attributes.dn == 'uni/infra/hintfpol-ansible_test'
+    - nm_add_policy.current.0.fabricHIfPol.attributes.annotation == 'orchestrator:Ansible'
     - nm_add_policy.proposed.fabricHIfPol.attributes.name == cm_add_policy.proposed.fabricHIfPol.attributes.name == nm_add_policy.sent.fabricHIfPol.attributes.name == 'ansible_test'
 
 - name: Add Link Level Policy again (check mode)

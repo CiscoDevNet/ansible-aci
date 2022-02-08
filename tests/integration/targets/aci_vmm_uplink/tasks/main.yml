@@ -78,6 +78,7 @@
       - create_uplink.current.0.vmmUplinkP.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont/uplinkp-1"
       - create_uplink.current.0.vmmUplinkP.attributes.uplinkId == "1"
       - create_uplink.current.0.vmmUplinkP.attributes.uplinkName == "uplink1"
+      - create_uplink.current.0.vmmUplinkP.attributes.annotation == 'orchestrator:Ansible'
 
   # CREATE VMWARE UPLINK AGAIN TO TEST IDEMPOTENCE
   - name: Create VMWare Uplink again

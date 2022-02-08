@@ -50,6 +50,7 @@
     - add_association.current.0.fabricLeafS.attributes.dn == "uni/fabric/leprof-ansible_leaf_switch_prf/leaves-ansible_leaf_switch_assoc-typ-range"
     - add_association.current.0.fabricLeafS.attributes.name == "ansible_leaf_switch_assoc"
     - add_association.current.0.fabricLeafS.attributes.type == "range"
+    - add_association.current.0.fabricLeafS.attributes.annotation == 'orchestrator:Ansible'
 
 - name: Verify Policy Group association
   assert:

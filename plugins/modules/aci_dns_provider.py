@@ -40,6 +40,11 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
+  annotation:
+    description:
+    - The default value for the annotation attribute is 'orchestrator:Ansible'.
+    type: str
+    default: orchestrator:Ansible
 extends_documentation_fragment:
 - cisco.aci.aci
 
@@ -203,11 +208,12 @@ RETURN = r'''
    '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         dns_profile=dict(type='str', aliases=['profile_name'], required=True),
         address=dict(type='str', aliases=['addr', 'ip_address']),

@@ -89,6 +89,7 @@
       - cm_non_primary_cidr.proposed.cloudCidr.attributes.addr == "10.0.0.0/16"
       - cm_non_primary_cidr.proposed.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"
       - cm_non_primary_cidr.proposed.cloudCidr.attributes.primary == "no"
+      - nm_non_primary_cidr.current.0.cloudCidr.attributes.annotation == 'orchestrator:Ansible'
       - nm_non_primary_cidr.current.0.cloudCidr.attributes.addr == "10.0.0.0/16"
       - nm_non_primary_cidr.current.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"
       - nm_non_primary_cidr.current.0.cloudCidr.attributes.primary == "no"

@@ -42,6 +42,7 @@
 - assert: 
     that: 
       - cdp_create is changed
+      - cdp_create.current.0.cdpIfPol.attributes.annotation == 'orchestrator:Ansible'
 
 
 - name: test for idempotency

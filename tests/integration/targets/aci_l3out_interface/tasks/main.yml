@@ -145,6 +145,7 @@
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.mtu == "1500"
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT == "l3-port"
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "regular"
+    - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.annotation == 'orchestrator:Ansible'
 
 # ADD l3out interface again to check idempotency
 - name: Add routed interface again

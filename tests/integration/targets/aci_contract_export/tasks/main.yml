@@ -68,7 +68,8 @@
     - nm_add_intf is changed
     - cm_add_intf.previous == nm_add_intf.previous == []
     - cm_add_intf.sent.vzCPIf.attributes.name == nm_add_intf.sent.vzCPIf.attributes.name == 'testcif1'
-  
+    - nm_add_intf.current.0.vzCPIf.attributes.annotation == 'orchestrator:Ansible'
+
 - name: Create interface again, check if idempotency works
   cisco.aci.aci_contract_export:
     <<: *cif_present

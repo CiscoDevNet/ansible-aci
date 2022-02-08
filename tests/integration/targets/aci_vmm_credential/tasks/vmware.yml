@@ -111,6 +111,7 @@
       - cm_add_credential.current == cm_add_credential.previous == nm_add_credential.previous == []
       - nm_add_credential.current.0.vmmUsrAccP.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/usracc-vmm_cred'
       - nm_add_credential.current.0.vmmUsrAccP.attributes.name == 'vmm_cred'
+      - nm_add_credential.current.0.vmmUsrAccP.attributes.annotation == 'orchestrator:Ansible'
 
   # MODIFY credential
   - name: Modify vmware VMM credential (check mode)

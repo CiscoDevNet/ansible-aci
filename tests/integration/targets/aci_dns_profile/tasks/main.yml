@@ -32,6 +32,7 @@
   assert:
     that:
     - add_dns_profile is changed
+    - add_dns_profile.current.0.dnsProfile.attributes.annotation == 'orchestrator:Ansible'
     - add_dns_profile.current.0.dnsProfile.attributes.dn == "uni/fabric/dnsp-ansible_dns_profile"
     - add_dns_profile.current.0.dnsProfile.attributes.name == "ansible_dns_profile"
 

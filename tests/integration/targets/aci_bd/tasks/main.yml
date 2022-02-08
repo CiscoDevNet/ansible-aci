@@ -136,6 +136,7 @@
       - bd_present_check_mode.sent.fvBD.attributes.descr == 'Ansible Test'
       - bd_present_check_mode.sent.fvBD.attributes.name == 'anstest'
       - bd_present is changed
+      - bd_present.current.0.fvBD.attributes.annotation == 'orchestrator:Ansible'
       - bd_present.sent == bd_present_check_mode.sent
       - bd_present.previous == []
       - bd_present_idempotent is not changed

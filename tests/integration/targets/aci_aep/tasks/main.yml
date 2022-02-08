@@ -65,6 +65,7 @@
     that:
     - cm_add_aep is changed
     - nm_add_aep is changed
+    - nm_add_aep.current.0.infraAttEntityP.attributes.annotation == 'orchestrator:Ansible'
     - nm_add_aep2 is changed
     - nm_add_aep3 is changed
     - nm_add_aep.previous == nm_add_aep.previous == cm_add_aep.current == []

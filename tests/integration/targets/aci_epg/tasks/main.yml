@@ -96,6 +96,7 @@
       - epg_present_check_mode.sent.fvAEPg.children.2.fvRsCustQosPol.attributes.tnQosCustomPolName == 'check'
       - epg_present is changed
       - epg_present.sent == epg_present_check_mode.sent
+      - epg_present.current.0.fvAEPg.attributes.annotation == 'orchestrator:Ansible'
       - epg_present_idempotent is not changed
       - epg_present_idempotent.sent == {}
       - epg_present_update is changed

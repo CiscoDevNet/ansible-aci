@@ -65,7 +65,8 @@
     - nm_add_intf is changed
     - cm_add_intf.previous == nm_add_intf.previous == []
     - cm_add_intf.sent.l2extLIfP.attributes.name == nm_add_intf.sent.l2extLIfP.attributes.name == 'INTFS'
-  
+    - nm_add_intf.current.0.l2extLIfP.attributes.annotation == 'orchestrator:Ansible'
+
 - name: Add profile  again, check if idempotency works
   cisco.aci.aci_l2out_logical_interface_profile:
     <<: *intf_present

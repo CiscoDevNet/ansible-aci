@@ -50,6 +50,7 @@
     - add_association.current.0.fabricSpineS.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range"
     - add_association.current.0.fabricSpineS.attributes.name == "ansible_spine_switch_assoc"
     - add_association.current.0.fabricSpineS.attributes.type == "range"
+    - add_association.current.0.fabricSpineS.attributes.annotation == 'orchestrator:Ansible'
 
 - name: Verify Policy Group association
   assert:

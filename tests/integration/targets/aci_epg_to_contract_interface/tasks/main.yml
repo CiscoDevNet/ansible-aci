@@ -95,6 +95,7 @@
       - inter_tenant_contract_interface_present.current | length == 1
       - inter_tenant_contract_interface_present.current.0.fvRsConsIf.attributes.tnVzCPIfName == 'inter_tenant_contract_interface'
       - inter_tenant_contract_interface_present.current.0.fvRsConsIf.attributes.prio == 'unspecified'
+      - inter_tenant_contract_interface_present.current.0.fvRsConsIf.attributes.annotation == 'orchestrator:Ansible'
 
 - name: Ensure inter_tenant_contract_interface binding with anstest1_epg - idempotency works
   cisco.aci.aci_epg_to_contract_interface:

@@ -40,6 +40,7 @@
     that:
     - add_switch_prf.current.0.fabricSpineP.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf"
     - add_switch_prf.current.0.fabricSpineP.attributes.name == "ansible_spine_switch_prf"
+    - add_switch_prf.current.0.fabricSpineP.attributes.annotation == 'orchestrator:Ansible'
 
 # CREATE SPINE SWITCH POLICY AGAIN TO TEST IDEMPOTENCE
 - name: Create ansible_spine_switch_prf again

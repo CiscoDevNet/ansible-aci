@@ -85,6 +85,7 @@
     - nm_add_nh is changed
     - cm_add_nh.previous == nm_add_nh.previous == []
     - cm_add_nh.sent.ipNexthopP.attributes.nhAddr == nm_add_nh.sent.ipNexthopP.attributes.nhAddr == '1.1.1.1'
+    - nm_add_nh.current.0.ipNexthopP.attributes.annotation == 'orchestrator:Ansible'
 
 - name: Add nexthop  again, check if idempotency works
   cisco.aci.aci_l3out_static_routes_nexthop: 

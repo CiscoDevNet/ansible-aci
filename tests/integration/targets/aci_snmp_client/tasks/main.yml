@@ -61,6 +61,7 @@
     - add_snmp_client.current.0.snmpClientP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/clgrp-ansible_snmp_client_group/client-[10.20.30.0/24]"
     - add_snmp_client.current.0.snmpClientP.attributes.addr == "10.20.30.0/24"
     - add_snmp_client.current.0.snmpClientP.attributes.name == "snmp_client_name"
+    - add_snmp_client.current.0.snmpClientP.attributes.annotation == 'orchestrator:Ansible'
 
 # ADD snmp client again to check idempotency
 - name: Add snmp client again

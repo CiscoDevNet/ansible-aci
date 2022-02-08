@@ -55,6 +55,7 @@
     - add_snmp_user.current.0.snmpUserP.attributes.name == "ansible_snmp_user"
     - add_snmp_user.current.0.snmpUserP.attributes.authType == "hmac-sha1-96"
     - add_snmp_user.current.0.snmpUserP.attributes.privType == "aes-128"
+    - add_snmp_user.current.0.snmpUserP.attributes.annotation == 'orchestrator:Ansible'
 
 # QUERY snmp user
 - name: Query snmp user

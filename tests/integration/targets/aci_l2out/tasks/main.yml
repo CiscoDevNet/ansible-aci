@@ -50,6 +50,7 @@
     that:
     - add_l2out.current.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out"
     - add_l2out.current.0.l2extOut.attributes.name == "ansible_l2out"
+    - add_l2out.current.0.l2extOut.attributes.annotation == 'orchestrator:Ansible'
 
 - name: Add the L2Out again
   aci_l2out:

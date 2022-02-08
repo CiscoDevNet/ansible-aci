@@ -81,6 +81,7 @@
       - add_vmware_policy.current.0.vmmVSwitchPolicyCont.children.0.vmmRsVswitchOverrideLacpPol.attributes.tDn == 'uni/infra/lacplagp-PORT_Channel_policy'
       - add_vmware_policy.current.0.vmmVSwitchPolicyCont.children.1.vmmRsVswitchOverrideCdpIfPol.attributes.tDn == 'uni/infra/cdpIfP-CDP_policy'
       - add_vmware_policy.current.0.vmmVSwitchPolicyCont.children.2.vmmRsVswitchOverrideLldpIfPol.attributes.tDn == 'uni/infra/lldpIfP-LLDP_policy'
+      - add_vmware_policy.current.0.vmmVSwitchPolicyCont.attributes.annotation == 'orchestrator:Ansible'
 
   - name: Add a vSwitch policy to vmware domain
     aci_vmm_vswitch_policy:
