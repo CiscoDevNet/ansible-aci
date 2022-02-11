@@ -49,7 +49,7 @@ options:
     description:
     - Determines the primary encapsulation ID associating the C(epg)
       with the interface path when using micro-segmentation.
-    - Accepted values are any valid encap ID for specified encap, currently ranges between C(1) and C(4096) and C(unknown.
+    - Accepted values are any valid encap ID for specified encap, currently ranges between C(1) and C(4096) and C(unknown).
     - C(unknown) is the default value and using C(unknown) disables the Micro-Segmentation.
     type: str
     aliases: [ primary_vlan, primary_vlan_id ]
@@ -98,7 +98,7 @@ options:
         description:
         - Determines the primary encapsulation ID associating the C(epg)
           with the interface path when using micro-segmentation.
-        - Accepted values are any valid encap ID for specified encap, currently ranges between C(1) and C(4096) and C(unknown.
+        - Accepted values are any valid encap ID for specified encap, currently ranges between C(1) and C(4096) and C(unknown).
         - C(unknown) is the default value and using C(unknown) disables the Micro-Segmentation.
         type: str
         aliases: [ primary_vlan, primary_vlan_id ]
@@ -474,6 +474,30 @@ def main():
     children = []
     interface_status_mapping = {"absent": "deleted"}
 
+    aci.construct_url(
+        root_class=dict(
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
+            module_object=tenant,
+            target_filter=dict(name=tenant),
+        ),
+        subclass_1=dict(
+            aci_class="fvAp",
+            aci_rn="ap-{0}".format(ap),
+            module_object=ap,
+            target_filter=dict(name=ap),
+        ),
+        subclass_2=dict(
+            aci_class="fvAEPg",
+            aci_rn="epg-{0}".format(epg),
+            module_object=epg,
+            target_filter=dict(name=epg),
+        ),
+        child_classes=["fvRsPathAtt"],
+    )
+
+    aci.get_existing()
+
     if state == "present" or state == "absent":
         for interface_config in interface_configs:
             pod_id = interface_config.get("pod_id")
@@ -565,31 +589,6 @@ def main():
                 )
             )
 
-    aci.construct_url(
-        root_class=dict(
-            aci_class="fvTenant",
-            aci_rn="tn-{0}".format(tenant),
-            module_object=tenant,
-            target_filter=dict(name=tenant),
-        ),
-        subclass_1=dict(
-            aci_class="fvAp",
-            aci_rn="ap-{0}".format(ap),
-            module_object=ap,
-            target_filter=dict(name=ap),
-        ),
-        subclass_2=dict(
-            aci_class="fvAEPg",
-            aci_rn="epg-{0}".format(epg),
-            module_object=epg,
-            target_filter=dict(name=epg),
-        ),
-        child_classes=["fvRsPathAtt"],
-    )
-
-    aci.get_existing()
-
-    if state == "present" or state == "absent":
         aci.payload(
             aci_class="fvAEPg",
             class_config=dict(),
