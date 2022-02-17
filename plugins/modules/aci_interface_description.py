@@ -303,16 +303,8 @@ def main():
         ]
 
     aci.construct_url(
-        root_class=dict(
-            aci_class="infraInfra",
-            aci_rn="infra",
-            module_object="infra",
-            target_filter={"name": "infra"},
-        ),
-        subclass_1=dict(
-            aci_class=class_name,
-            aci_rn=rn,
-        ),
+        root_class=dict(aci_class="infraInfra", aci_rn="infra", module_object="infra", target_filter=dict(name="infra")),
+        subclass_1=dict(aci_class=class_name, aci_rn=rn, module_object="infra", target_filter=dict(name="infra")),
         child_classes=children,
     )
 
