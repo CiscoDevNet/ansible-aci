@@ -204,7 +204,7 @@
     fex_id: 105
   register: bind_fexintprftest_policy_group
 
-- name: Assertions check for remove fex policy group from the fexintprftest fex profile
+- name: Assertions check for bind anstest_fex_accessportselector with fexintprftest - Fex Profile Policy Group
   assert:
     that:
       - bind_fexintprftest_policy_group is changed
