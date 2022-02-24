@@ -5,7 +5,7 @@ The ansible-aci project provides an Ansible collection for managing and automati
 This collection has been tested and supports ACI 3.2+.
 Modules supporting new features introduced in ACI API in specific ACI versions might not be supported in earlier ACI releases.
 
-*Note: This collection is not compatible with versions of Ansible before v2.8.*
+*Note: This collection is not compatible with versions of Ansible before v2.8.*hjgfdjh
 
 ## Requirements
 Ansible v2.9 or newer
