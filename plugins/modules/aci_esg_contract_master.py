@@ -244,7 +244,9 @@ def main():
     contract_master_esg = module.params.get("contract_master_esg")
     state = module.params.get("state")
 
-    contract_master = "uni/tn-{0}/ap-{1}/esg-{2}".format(tenant, contract_master_ap, contract_master_esg)
+    contract_master = None
+    if contract_master_ap is not None and contract_master_esg is not None:
+        contract_master = "uni/tn-{0}/ap-{1}/esg-{2}".format(tenant, contract_master_ap, contract_master_esg)
 
     aci.construct_url(
         root_class=dict(

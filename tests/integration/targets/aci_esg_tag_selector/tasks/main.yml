@@ -27,163 +27,156 @@
     state: query
   register: version
 
-# Setup part
-- name: Ensure tenant - anstest does not exists before testing
-  cisco.aci.aci_tenant: &tenant_absent
-    <<: *aci_info
-    output_level: debug
-    tenant: anstest
-    state: absent
-
-- name: Ensure anstest - tenant exists
-  cisco.aci.aci_tenant: &tenant_present
-    <<: *tenant_absent
-    state: present
-
-- name: Ensure ap - application profile exists
-  cisco.aci.aci_ap: &anstest_ap_present
-    <<: *tenant_present
-    ap: anstest_ap
-    state: present
-
-- name: Ensure web_esg - endpoint security group exists
-  cisco.aci.aci_esg: &web_esg_present
-    <<: *anstest_ap_present
-    esg: web_esg
-    vrf: default
-    state: present
+- name: Execute tasks only for ACI v5.2+
   when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+  block:  # block specifies execution of tasks within, based on conditions
+  # Setup part
+  - name: Ensure tenant - anstest does not exists before testing
+    cisco.aci.aci_tenant: &tenant_absent
+      <<: *aci_info
+      output_level: debug
+      tenant: anstest
+      state: absent
 
-# Test Part
-- name: Add a tag selector under web_esg with name and value(check_mode)
-  cisco.aci.aci_esg_tag_selector: &selector_0_cm_present
-    <<: *anstest_ap_present
-    esg: web_esg
-    name: tag-selector-0
-    match_value: tag-value-0
-    description: tag-selector-description
-    state: present
-  register: selector_0_cm_present
-  check_mode: yes
-  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+  - name: Ensure anstest - tenant exists
+    cisco.aci.aci_tenant: &tenant_present
+      <<: *tenant_absent
+      state: present
 
-- name: Add a tag selector under web_esg with name and value(normal_mode)
-  cisco.aci.aci_esg_tag_selector:
-    <<: *selector_0_cm_present
-  register: selector_0_nm_present
-  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+  - name: Ensure ap - application profile exists
+    cisco.aci.aci_ap: &anstest_ap_present
+      <<: *tenant_present
+      ap: anstest_ap
+      state: present
 
-- name: present assertions for Tag Selector - tag-selector-0
-  assert:
-    that:
-      - selector_0_cm_present is changed
-      - selector_0_nm_present is changed
-      - selector_0_cm_present.sent.fvTagSelector.attributes.matchKey == 'tag-selector-0'
-      - selector_0_cm_present.sent.fvTagSelector.attributes.matchValue == 'tag-value-0'
-      - selector_0_nm_present.current.0.fvTagSelector.attributes.matchKey == 'tag-selector-0'
-      - selector_0_nm_present.current.0.fvTagSelector.attributes.matchValue == 'tag-value-0'
-      - selector_0_nm_present.current.0.fvTagSelector.attributes.valueOperator == 'equals'
+  - name: Ensure web_esg - endpoint security group exists
+    cisco.aci.aci_esg: &web_esg_present
+      <<: *anstest_ap_present
+      esg: web_esg
+      vrf: default
+      state: present
 
-- name: Query all Tag Selectors
-  cisco.aci.aci_esg_tag_selector:
-    <<: *aci_info
-    state: query
-  register: query_result
-  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+  # Test Part
+  - name: Add a tag selector under web_esg with name and value(check_mode)
+    cisco.aci.aci_esg_tag_selector: &selector_0_cm_present
+      <<: *anstest_ap_present
+      esg: web_esg
+      name: tag-selector-0
+      match_value: tag-value-0
+      description: tag-selector-description
+      state: present
+    register: selector_0_cm_present
+    check_mode: yes
 
-- name: Verification of query all Tag Selectors - query_result
-  assert:
-    that:
-      - query_result is not changed
-      - query_result.current | length >= 1
+  - name: Add a tag selector under web_esg with name and value(normal_mode)
+    cisco.aci.aci_esg_tag_selector:
+      <<: *selector_0_cm_present
+    register: selector_0_nm_present
 
-- name: Query all Tag Selectors with a name and value
-  cisco.aci.aci_esg_tag_selector:
-    <<: *aci_info
-    name: tag-selector-0
-    match_value: tag-value-0
-    state: query
-  register: result_with_name_and_value
-  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+  - name: present assertions for Tag Selector - tag-selector-0
+    assert:
+      that:
+        - selector_0_cm_present is changed
+        - selector_0_nm_present is changed
+        - selector_0_cm_present.sent.fvTagSelector.attributes.matchKey == 'tag-selector-0'
+        - selector_0_cm_present.sent.fvTagSelector.attributes.matchValue == 'tag-value-0'
+        - selector_0_nm_present.current.0.fvTagSelector.attributes.matchKey == 'tag-selector-0'
+        - selector_0_nm_present.current.0.fvTagSelector.attributes.matchValue == 'tag-value-0'
+        - selector_0_nm_present.current.0.fvTagSelector.attributes.valueOperator == 'equals'
 
-- name: Verification of query - Tag Selectors with a name and value
-  assert:
-    that:
-      - result_with_name_and_value is not changed
-      - result_with_name_and_value.current | length == 1
-      - result_with_name_and_value.current.0.fvTagSelector.attributes.matchKey == 'tag-selector-0'
-      - result_with_name_and_value.current.0.fvTagSelector.attributes.matchValue == 'tag-value-0'
-      - result_with_name_and_value.current.0.fvTagSelector.attributes.valueOperator == 'equals'
+  - name: Query all Tag Selectors
+    cisco.aci.aci_esg_tag_selector:
+      <<: *aci_info
+      state: query
+    register: query_result
 
-- name: Query all Tag Selectors with only name
-  cisco.aci.aci_esg_tag_selector:
-    <<: *aci_info
-    name: tag-selector-0
-    state: query
-  register: result_with_name
-  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+  - name: Verification of query all Tag Selectors - query_result
+    assert:
+      that:
+        - query_result is not changed
+        - query_result.current | length >= 1
 
-- name: Verification of query - Tag Selectors with only name
-  assert:
-    that:
-      - result_with_name is not changed
-      - result_with_name.current | length == 1
-      - result_with_name.current.0.fvTagSelector.attributes.matchKey == 'tag-selector-0'
-      - result_with_name.current.0.fvTagSelector.attributes.matchValue == 'tag-value-0'
-      - result_with_name.current.0.fvTagSelector.attributes.valueOperator == 'equals'
+  - name: Query all Tag Selectors with a name and value
+    cisco.aci.aci_esg_tag_selector:
+      <<: *aci_info
+      name: tag-selector-0
+      match_value: tag-value-0
+      state: query
+    register: result_with_name_and_value
 
-- name: Remove a Tag Selector with name and value(check_mode)
-  cisco.aci.aci_esg_tag_selector: &selector_0_cm_absent_with_name_and_value
-    <<: *anstest_ap_present
-    esg: web_esg
-    name: tag-selector-0
-    match_value: tag-value-0
-    state: absent
-  register: selector_0_cm_absent_with_name_and_value
-  check_mode: yes
-  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+  - name: Verification of query - Tag Selectors with a name and value
+    assert:
+      that:
+        - result_with_name_and_value is not changed
+        - result_with_name_and_value.current | length == 1
+        - result_with_name_and_value.current.0.fvTagSelector.attributes.matchKey == 'tag-selector-0'
+        - result_with_name_and_value.current.0.fvTagSelector.attributes.matchValue == 'tag-value-0'
+        - result_with_name_and_value.current.0.fvTagSelector.attributes.valueOperator == 'equals'
 
-- name: Remove a Tag Selector with name and value(normal_mode)
-  cisco.aci.aci_esg_tag_selector:
-    <<: *selector_0_cm_absent_with_name_and_value
-  register: selector_0_nm_absent_with_name_and_value
-  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+  - name: Query all Tag Selectors with only name
+    cisco.aci.aci_esg_tag_selector:
+      <<: *aci_info
+      name: tag-selector-0
+      state: query
+    register: result_with_name
 
-- name: Verification of selector_0_nm_absent_with_name - Tag Selectors under web_esg
-  assert:
-    that:
-      - selector_0_cm_absent_with_name_and_value is changed
-      - selector_0_cm_absent_with_name_and_value.current | length == 1
-      - selector_0_nm_absent_with_name_and_value is changed
-      - selector_0_nm_absent_with_name_and_value.current | length == 0
-      - selector_0_nm_absent_with_name_and_value.previous.0.fvTagSelector.attributes.matchKey == 'tag-selector-0'
-      - selector_0_nm_absent_with_name_and_value.previous.0.fvTagSelector.attributes.matchValue == 'tag-value-0'
+  - name: Verification of query - Tag Selectors with only name
+    assert:
+      that:
+        - result_with_name is not changed
+        - result_with_name.current | length == 1
+        - result_with_name.current.0.fvTagSelector.attributes.matchKey == 'tag-selector-0'
+        - result_with_name.current.0.fvTagSelector.attributes.matchValue == 'tag-value-0'
+        - result_with_name.current.0.fvTagSelector.attributes.valueOperator == 'equals'
 
-- name: Remove a Tag Selector with name and value(normal_mode) - idempotency works
-  cisco.aci.aci_esg_tag_selector:
-    <<: *selector_0_cm_absent_with_name_and_value
-  register: idempotency_selector_0_nm_absent_with_name_and_value
-  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+  - name: Remove a Tag Selector with name and value(check_mode)
+    cisco.aci.aci_esg_tag_selector: &selector_0_cm_absent_with_name_and_value
+      <<: *anstest_ap_present
+      esg: web_esg
+      name: tag-selector-0
+      match_value: tag-value-0
+      state: absent
+    register: selector_0_cm_absent_with_name_and_value
+    check_mode: yes
 
-- name: Verification of idempotency_selector_0_nm_absent_with_name_and_value - Tag Selectors under web_esg
-  assert:
-    that:
-      - idempotency_selector_0_nm_absent_with_name_and_value is not changed
-      - idempotency_selector_0_nm_absent_with_name_and_value.current | length == 0
+  - name: Remove a Tag Selector with name and value(normal_mode)
+    cisco.aci.aci_esg_tag_selector:
+      <<: *selector_0_cm_absent_with_name_and_value
+    register: selector_0_nm_absent_with_name_and_value
 
-# Cleanup part
-- name: Remove web_esg - endpoint security group
-  cisco.aci.aci_esg:
-    <<: *web_esg_present
-    state: absent
-  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+  - name: Verification of selector_0_nm_absent_with_name - Tag Selectors under web_esg
+    assert:
+      that:
+        - selector_0_cm_absent_with_name_and_value is changed
+        - selector_0_cm_absent_with_name_and_value.current | length == 1
+        - selector_0_nm_absent_with_name_and_value is changed
+        - selector_0_nm_absent_with_name_and_value.current | length == 0
+        - selector_0_nm_absent_with_name_and_value.previous.0.fvTagSelector.attributes.matchKey == 'tag-selector-0'
+        - selector_0_nm_absent_with_name_and_value.previous.0.fvTagSelector.attributes.matchValue == 'tag-value-0'
 
-- name: Remove ap - application profile
-  cisco.aci.aci_ap:
-    <<: *anstest_ap_present
-    state: absent
+  - name: Remove a Tag Selector with name and value(normal_mode) - idempotency works
+    cisco.aci.aci_esg_tag_selector:
+      <<: *selector_0_cm_absent_with_name_and_value
+    register: idempotency_selector_0_nm_absent_with_name_and_value
 
-- name: Remove anstest - tenant
-  cisco.aci.aci_tenant:
-    <<: *tenant_present
-    state: absent
+  - name: Verification of idempotency_selector_0_nm_absent_with_name_and_value - Tag Selectors under web_esg
+    assert:
+      that:
+        - idempotency_selector_0_nm_absent_with_name_and_value is not changed
+        - idempotency_selector_0_nm_absent_with_name_and_value.current | length == 0
+
+  # Cleanup part
+  - name: Remove web_esg - endpoint security group
+    cisco.aci.aci_esg:
+      <<: *web_esg_present
+      state: absent
+
+  - name: Remove ap - application profile
+    cisco.aci.aci_ap:
+      <<: *anstest_ap_present
+      state: absent
+
+  - name: Remove anstest - tenant
+    cisco.aci.aci_tenant:
+      <<: *tenant_present
+      state: absent

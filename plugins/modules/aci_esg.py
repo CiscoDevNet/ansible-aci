@@ -36,7 +36,7 @@ options:
     aliases: [ esg_name, name ]
   admin_state:
     description:
-    - Use C(false) to set 'Admin Up' on the ESG Admin state and it is default.
+    - Use C(false) to set 'Admin Up' on the ESG Admin state and is the default.
     - Use C(true) to set 'Admin Shut' on the ESG Admin state
     type: bool
     choices: [ false, true ]
@@ -318,11 +318,6 @@ def main():
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
-    child_configs = []
-    # VRF Selection - fvRsScope
-    if state == "present":
-        child_configs = [dict(fvRsScope=dict(attributes=dict(tnFvCtxName=vrf)))]
-
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -349,10 +344,10 @@ def main():
 
     aci.get_existing()
 
-    state_mapping = {True: "yes", False: "no"}
-    shutdown = state_mapping.get(admin_state)
-
     if state == "present":
+        state_mapping = {True: "yes", False: "no"}
+        shutdown = state_mapping.get(admin_state)
+        # VRF Selection - fvRsScope
         aci.payload(
             aci_class="fvESg",
             class_config=dict(
@@ -363,7 +358,7 @@ def main():
                 prefGrMemb=preferred_group_member,
                 nameAlias=name_alias,
             ),
-            child_configs=child_configs,
+            child_configs=[dict(fvRsScope=dict(attributes=dict(tnFvCtxName=vrf)))],
         )
 
         aci.get_diff(aci_class="fvESg")
