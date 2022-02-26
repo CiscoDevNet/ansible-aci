@@ -1,0 +1,244 @@
+# Test code for the ACI modules
+# Copyright: (c) 2022, Sabari Jaganathan (@sajagana)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Execute tasks only for ACI v5.2+
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+  block:  # block specifies execution of tasks within, based on conditions
+  # Setup part
+  - name: Ensure tenant - anstest does not exists before testing
+    cisco.aci.aci_tenant: &tenant_absent
+      <<: *aci_info
+      output_level: debug
+      tenant: anstest
+      state: absent
+
+  - name: Ensure anstest - tenant exists
+    cisco.aci.aci_tenant: &tenant_present
+      <<: *tenant_absent
+      state: present
+
+  - name: Ensure ap - application profile exists
+    cisco.aci.aci_ap: &anstest_ap_present
+      <<: *tenant_present
+      ap: anstest_ap
+      state: present
+
+  - name: Ensure web_esg - endpoint security group exists
+    cisco.aci.aci_esg: &web_esg_present
+      <<: *anstest_ap_present
+      esg: web_esg
+      vrf: default
+      state: present
+
+  - name: Ensure epg_ap - application profile exists under the same tenant
+    cisco.aci.aci_ap: &epg_ap_present
+      <<: *tenant_present
+      ap: epg_ap
+      state: present
+
+  - name: Ensure anstest_epg - exists under epg_ap - application profile
+    cisco.aci.aci_epg:
+      <<: *epg_ap_present
+      epg: anstest_epg
+      bd: default
+      description: Ansible Test
+
+  - name: Add an EPG selector with check mode
+    cisco.aci.aci_esg_epg_selector: &cm_epg_selector_present
+      <<: *aci_info
+      tenant: anstest
+      ap: anstest_ap
+      esg: web_esg
+      epg_ap: epg_ap
+      epg: anstest_epg
+      description: Ans Test EPG Selector
+      state: present
+    check_mode: yes
+    register: cm_epg_selector_present
+
+  - name: Assertions check for add an EPG selector with check mode
+    assert:
+      that:
+        - cm_epg_selector_present is changed
+        - cm_epg_selector_present.current | length == 0
+        - cm_epg_selector_present.sent.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_ap/epg-anstest_epg"
+
+  - name: Add an EPG selector with normal mode
+    cisco.aci.aci_esg_epg_selector:
+      <<: *cm_epg_selector_present
+    register: nm_epg_selector_present
+
+  - name: Assertions check for add an EPG selector with normal mode
+    assert:
+      that:
+        - nm_epg_selector_present is changed
+        - nm_epg_selector_present.current | length == 1
+        - nm_epg_selector_present.current.0.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_ap/epg-anstest_epg"
+
+  - name: Add an EPG selector with check mode - idempotency works
+    cisco.aci.aci_esg_epg_selector: &cm_idempotency_epg_selector_present
+      <<: *cm_epg_selector_present
+    check_mode: yes
+    register: cm_idempotency_epg_selector_present
+
+  - name: Idempotency assertions check for add an EPG selector with check mode
+    assert:
+      that:
+        - cm_idempotency_epg_selector_present is not changed
+        - cm_idempotency_epg_selector_present.current | length == 1
+
+  - name: Add an EPG selector with normal mode - idempotency works
+    cisco.aci.aci_esg_epg_selector:
+      <<: *cm_idempotency_epg_selector_present
+    register: nm_idempotency_epg_selector_present
+
+  - name: Idempotency assertions check for add an EPG selector with normal mode
+    assert:
+      that:
+        - nm_idempotency_epg_selector_present is not changed
+        - nm_idempotency_epg_selector_present.current | length == 1
+
+  - name: Query a EPG selector with esg and epg name
+    cisco.aci.aci_esg_epg_selector:
+      <<: *aci_info
+      tenant: anstest
+      ap: anstest_ap
+      esg: web_esg
+      epg_ap: epg_ap
+      epg: anstest_epg
+      state: query
+    register: query_single_epg_selector
+
+  - name: Assertions check for query an EPG selector with esg and epg name
+    assert:
+      that:
+        - query_single_epg_selector is not changed
+        - query_single_epg_selector.current | length == 1
+        - query_single_epg_selector.current.0.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_ap/epg-anstest_epg"
+        - query_single_epg_selector.current.0.fvEPgSelector.attributes.descr == "Ans Test EPG Selector"
+
+  - name: Query all EPG selectors under an application profile
+    cisco.aci.aci_esg_epg_selector:
+      <<: *aci_info
+      tenant: anstest
+      ap: anstest_ap
+      state: query
+    register: query_all_epg_selectors_under_ap
+
+  - name: Assertions check for query all EPG selectors under an application profile
+    assert:
+      that:
+        - query_all_epg_selectors_under_ap is not changed
+        - query_all_epg_selectors_under_ap.current | length == 1
+        - query_all_epg_selectors_under_ap.current.0.fvAp.attributes.name == 'anstest_ap'
+        - query_all_epg_selectors_under_ap.current.0.fvAp.children.0.fvESg.attributes.name == 'web_esg'
+        - query_all_epg_selectors_under_ap.current.0.fvAp.children.0.fvESg.children[0].fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_ap/epg-anstest_epg"
+
+  - name: Query all EPG selectors
+    cisco.aci.aci_esg_epg_selector:
+      <<: *aci_info
+      state: query
+    register: query_all_epg_selectors
+
+  - name: Assertions check for query all EPG selectors
+    assert:
+      that:
+        - query_all_epg_selectors is not changed
+        - query_all_epg_selectors.current | length >= 1
+
+  - name: Remove an EPG selector with check mode
+    cisco.aci.aci_esg_epg_selector: &cm_epg_selector_absent
+      <<: *aci_info
+      tenant: anstest
+      ap: anstest_ap
+      esg: web_esg
+      epg_ap: epg_ap
+      epg: anstest_epg
+      state: absent
+    check_mode: yes
+    register: cm_epg_selector_absent
+
+  - name: Assertions check for remove an EPG selector with check mode
+    assert:
+      that:
+        - cm_epg_selector_absent is changed
+        - cm_epg_selector_absent.current != []
+        - cm_epg_selector_absent.current.0.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_ap/epg-anstest_epg"
+        - cm_epg_selector_absent.previous.0.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_ap/epg-anstest_epg"
+
+  - name: Remove an EPG selector with normal mode
+    cisco.aci.aci_esg_epg_selector:
+      <<: *cm_epg_selector_absent
+    register: nm_epg_selector_absent
+
+  - name: Assertions check for remove an EPG selector with normal mode
+    assert:
+      that:
+        - nm_epg_selector_absent is changed
+        - nm_epg_selector_absent.current == []
+        - nm_epg_selector_absent.previous.0.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_ap/epg-anstest_epg"
+
+  - name: Remove a EPG selector with check mode - idempotency works
+    cisco.aci.aci_esg_epg_selector: &cm_idempotency_epg_selector_absent
+      <<: *cm_epg_selector_absent
+    check_mode: yes
+    register: cm_idempotency_epg_selector_absent
+
+  - name: Idempotency assertions check for EPG selector with check mode
+    assert:
+      that:
+        - cm_idempotency_epg_selector_absent is not changed
+        - cm_idempotency_epg_selector_absent.current == []
+
+  - name: Remove a EPG selector with normal mode - idempotency works
+    cisco.aci.aci_esg_epg_selector:
+      <<: *cm_idempotency_epg_selector_absent
+    register: nm_idempotency_epg_selector_absent
+
+  - name: Idempotency assertions check for EPG selector with normal mode
+    assert:
+      that:
+        - nm_idempotency_epg_selector_absent is not changed
+        - nm_idempotency_epg_selector_absent.current == []
+
+  # Cleanup part
+  - name: Remove web_esg - endpoint security group
+    cisco.aci.aci_esg:
+      <<: *web_esg_present
+      state: absent
+
+  - name: Remove ap - application profile
+    cisco.aci.aci_ap:
+      <<: *anstest_ap_present
+      state: absent
+
+  - name: Remove anstest - tenant
+    cisco.aci.aci_tenant:
+      <<: *tenant_present
+      state: absent

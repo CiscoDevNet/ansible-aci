@@ -1,0 +1,175 @@
+# Test code for the ACI modules
+# Copyright: (c) 2022, Sabari Jaganathan (@sajagana)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Execute tasks only for ACI v5+
+  when: version.current.0.topSystem.attributes.version is version('5', '>=')
+  block:  # block specifies execution of tasks within, based on conditions
+  # Setup part
+  - name: Ensure tenant - anstest does not exists before testing
+    cisco.aci.aci_tenant: &tenant_absent
+      <<: *aci_info
+      output_level: debug
+      tenant: anstest
+      state: absent
+
+  - name: Ensure anstest - tenant exists
+    cisco.aci.aci_tenant: &tenant_present
+      <<: *tenant_absent
+      state: present
+
+  - name: Ensure ap - application profile exists
+    cisco.aci.aci_ap: &anstest_ap_present
+      <<: *tenant_present
+      ap: anstest_ap
+      state: present
+
+  - name: Ensure web_esg - endpoint security group exists
+    cisco.aci.aci_esg: &web_esg_present
+      <<: *anstest_ap_present
+      esg: web_esg
+      vrf: default
+      state: present
+
+  # Test Part
+  - name: Add IP Subnet selector with check mode
+    cisco.aci.aci_esg_ip_subnet_selector: &cm_subnet_ip_present
+      <<: *aci_info
+      <<: *web_esg_present
+      vrf: "{{ fake_var | default(omit) }}"
+      ip: "10.0.0.1"
+      description: "IP Subnet Selector"
+      state: present
+    check_mode: yes
+    register: cm_subnet_ip_present
+
+  - name: Assertions check for add IP Subnet selector with check mode
+    assert:
+      that:
+        - cm_subnet_ip_present is changed
+        - cm_subnet_ip_present.current == []
+        - cm_subnet_ip_present.previous == []
+        - cm_subnet_ip_present.sent.fvEPSelector.attributes.matchExpression == "ip=='10.0.0.1'"
+
+  - name: Add IP Subnet selector with normal mode
+    cisco.aci.aci_esg_ip_subnet_selector: &nm_subnet_ip_present
+      <<: *cm_subnet_ip_present
+    register: nm_subnet_ip_present
+
+  - name: Assertions check for add IP Subnet selector with normal mode
+    assert:
+      that:
+        - nm_subnet_ip_present is changed
+        - nm_subnet_ip_present.current | length == 1
+        - nm_subnet_ip_present.current.0.fvEPSelector.attributes.matchExpression == "ip=='10.0.0.1'"
+        - nm_subnet_ip_present.current.0.fvEPSelector.attributes.dn == "uni/tn-anstest/ap-anstest_ap/esg-web_esg/epselector-[ip=='10.0.0.1']"
+        - nm_subnet_ip_present.previous == []
+        - nm_subnet_ip_present.sent.fvEPSelector.attributes.matchExpression == "ip=='10.0.0.1'"
+
+  - name: Add IP Subnet selector with normal mode - idempotency works
+    cisco.aci.aci_esg_ip_subnet_selector:
+      <<: *nm_subnet_ip_present
+    register: idempotency_nm_subnet_ip_present
+
+  - name: Idempotency assertions check for add IP Subnet selectors with normal mode
+    assert:
+      that:
+        - idempotency_nm_subnet_ip_present is not changed
+        - idempotency_nm_subnet_ip_present.current.0.fvEPSelector.attributes.matchExpression == "ip=='10.0.0.1'"
+        - idempotency_nm_subnet_ip_present.current.0.fvEPSelector.attributes.descr == "IP Subnet Selector"
+        - idempotency_nm_subnet_ip_present.previous.0.fvEPSelector.attributes.matchExpression == "ip=='10.0.0.1'"
+        - idempotency_nm_subnet_ip_present.proposed.fvEPSelector.attributes.matchExpression == "ip=='10.0.0.1'"
+
+  - name: Query all IP Subnet selectors
+    cisco.aci.aci_esg_ip_subnet_selector:
+      <<: *aci_info
+      state: query
+    register: query_result
+
+  - name: Assertions check for query all IP Subnet selectors
+    assert:
+      that:
+        - query_result is not changed
+        - query_result.current | length >= 1
+
+  - name: Remove IP Subnet selector with check mode
+    cisco.aci.aci_esg_ip_subnet_selector: &cm_subnet_ip_absent
+      <<: *cm_subnet_ip_present
+      state: absent
+    check_mode: yes
+    register: cm_subnet_ip_absent
+
+  - name: Assertions check for remove IP Subnet selector with check mode
+    assert:
+      that:
+        - cm_subnet_ip_absent is changed
+        - cm_subnet_ip_absent.current != []
+        - cm_subnet_ip_absent.previous.0.fvEPSelector.attributes.matchExpression == "ip=='10.0.0.1'"
+        - cm_subnet_ip_absent.previous.0.fvEPSelector.attributes.descr == "IP Subnet Selector"
+        - cm_subnet_ip_absent.current.0.fvEPSelector.attributes.matchExpression == "ip=='10.0.0.1'"
+        - cm_subnet_ip_absent.current.0.fvEPSelector.attributes.descr == "IP Subnet Selector"
+
+  - name: Remove IP Subnet selector with normal mode
+    cisco.aci.aci_esg_ip_subnet_selector: &nm_subnet_ip_absent
+      <<: *cm_subnet_ip_absent
+    register: nm_subnet_ip_absent
+
+  - name: Assertions check for remove IP Subnet selector with normal mode
+    assert:
+      that:
+        - nm_subnet_ip_absent is changed
+        - nm_subnet_ip_absent.current == []
+        - nm_subnet_ip_absent.previous.0.fvEPSelector.attributes.matchExpression == "ip=='10.0.0.1'"
+        - nm_subnet_ip_absent.previous.0.fvEPSelector.attributes.descr == "IP Subnet Selector"
+
+  - name: Remove IP Subnet selector with normal mode - idempotency works
+    cisco.aci.aci_esg_ip_subnet_selector:
+      <<: *nm_subnet_ip_absent
+    register: idempotency_nm_subnet_ip_absent
+
+  - name: Idempotency assertions check for remove IP Subnet selector with normal mode
+    assert:
+      that:
+        - idempotency_nm_subnet_ip_absent is not changed
+        - idempotency_nm_subnet_ip_absent.current == []
+
+  # Cleanup part
+  - name: Remove web_esg - endpoint security group
+    cisco.aci.aci_esg:
+      <<: *web_esg_present
+      state: absent
+
+  - name: Remove ap - application profile
+    cisco.aci.aci_ap:
+      <<: *anstest_ap_present
+      state: absent
+
+  - name: Remove anstest - tenant
+    cisco.aci.aci_tenant:
+      <<: *tenant_present
+      state: absent
