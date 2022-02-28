@@ -94,7 +94,7 @@ options:
     description:
     - The type of interface for the static EPG deployment.
     type: str
-    choices: [ breakout, fex, port_channel, switch_port, vpc ]
+    choices: [ breakout, fex, port_channel, switch_port, vpc, fex_port_channel, fex_vpc]
     default: switch_port
   type:
     description:
@@ -312,6 +312,8 @@ INTERFACE_TYPE_MAPPING = dict(
     port_channel="uni/infra/funcprof/accbundle-{0}",
     switch_port="uni/infra/funcprof/accportgrp-{0}",
     vpc="uni/infra/funcprof/accbundle-{0}",
+    fex_port_channel="uni/infra/funcprof/accbundle-{0}",
+    fex_vpc="uni/infra/funcprof/accbundle-{0}",
 )
 
 
@@ -330,7 +332,9 @@ def main():
         from_card=dict(type="str", aliases=["from_card_range"]),
         to_card=dict(type="str", aliases=["to_card_range"]),
         policy_group=dict(type="str", aliases=["policy_group_name"]),
-        interface_type=dict(type="str", default="switch_port", choices=["breakout", "fex", "port_channel", "switch_port", "vpc"]),
+        interface_type=dict(
+            type="str", default="switch_port", choices=["breakout", "fex", "port_channel", "switch_port", "vpc", "fex_port_channel", "fex_vpc"]
+        ),
         type=dict(type="str", default="leaf", choices=["fex", "leaf"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
