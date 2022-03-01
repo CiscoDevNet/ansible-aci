@@ -227,8 +227,8 @@
     <<: *aci_info
     policy_group: policygroupname_link_fpc
     lag_type: link
-    link_level_policy: linklevelpolicy
-    fibre_channel_interface_policy: fiberchannelpolicy
+    link_level_policy: link_level_policy
+    fibre_channel_interface_policy: fiber_channel_policy
     state: present
 
 - name: Bind anstest_fex_port_channel Access Port Selector with policygroupname_link_fpc Policy Group - check mode
@@ -314,8 +314,8 @@
     <<: *aci_info
     policy_group: policygroupname_node_fvpc
     lag_type: node
-    link_level_policy: linklevelpolicy
-    fibre_channel_interface_policy: fiberchannelpolicy
+    link_level_policy: link_level_policy
+    fibre_channel_interface_policy: fiber_channel_policy
     state: present
   register: policygroupname_node_fvpc_present
 
