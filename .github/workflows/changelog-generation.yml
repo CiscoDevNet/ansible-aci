@@ -10,8 +10,6 @@ jobs:
     name: Run automation script
     runs-on: ubuntu-latest
     steps:
-    - run: git remote -v
-
     - name: Check out script code
       uses: actions/checkout@v3
       with:
@@ -22,6 +20,9 @@ jobs:
       uses: actions/checkout@v3
       with:
         path: ./collection
+
+    - run: git remote -v
+      working-directory: ./collection
     
     - name: Set up Python 3.8
       uses: actions/setup-python@v1
