@@ -9,14 +9,21 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
 - name: Remove Interface policy leaf profile - Cleanup
   cisco.aci.aci_interface_policy_leaf_profile: &aci_interface_policy_leaf_profile_absent
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    <<: *aci_info
     leaf_interface_profile: leafintprftest
     state: absent
 
@@ -29,12 +36,7 @@
 
 - name: Ensuring bindings do not already exist
   cisco.aci.aci_access_port_to_interface_policy_leaf_profile: &aci_access_port_to_interface_policy_leaf_profile_absent
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    <<: *aci_info
     leaf_interface_profile: leafintprftest
     access_port_selector: anstest_accessportselector
     state: absent
@@ -48,13 +50,7 @@
 
 - name: Ensuring Interface Policy Leaf profile exists for kick off
   cisco.aci.aci_interface_policy_leaf_profile: &aci_interface_policy_leaf_profile_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
+    <<: *aci_info
     state: present
     leaf_interface_profile: leafintprftest
   register: leaf_profile_present
@@ -67,13 +63,7 @@
 
 - name: Add a new fex policy group to the fexintprftest fex profile
   cisco.aci.aci_leaf_interface_profiles_fex_policy_group: &fexintprftest_policy_group_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
+    <<: *aci_info
     policy_group: fexintprftest
     fex_profile: fexintprftest
     state: present
@@ -181,17 +171,10 @@
       - binding_query is not changed
       - binding_query_fex is not changed
       - binding_query.current | length >= 1
-      - '"api/mo/uni/infra/accportprof-leafintprftest/hports-anstest_accessportselector-typ-range.json" in binding_query.url'
 
 - name: Bind anstest_fex_accessportselector with fexintprftest - Fex Profile Policy Group
   cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
+    <<: *aci_info
     state: present
     leaf_interface_profile: leafintprftest
     fex_profile: fexintprftest
