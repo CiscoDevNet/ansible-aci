@@ -21,6 +21,9 @@ jobs:
       with:
         path: ./collection
 
+    - run: ls
+      working-directory: ./collection
+
     - run: git remote -v
       working-directory: ./collection
     
@@ -33,7 +36,7 @@ jobs:
       run: pip install -r ./release_script/requirements.txt
 
     - name: Run automation script
-      run: python ./release_script/script.py arguments.txt
+      run: python ./release_script/script.py
 
 
   
