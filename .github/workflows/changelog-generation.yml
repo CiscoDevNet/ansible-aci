@@ -23,7 +23,7 @@ jobs:
 
     - run: git remote -v
       working-directory: ./collection
-    
+
     - name: Set up Python 3.8
       uses: actions/setup-python@v1
       with:
@@ -32,8 +32,10 @@ jobs:
     - name: Install release script requirements
       run: pip install -r ./release_script/requirements.txt
 
+    - name: "Check github token"
+      run: echo "this is github token $GITHUB_TOKEN"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Run automation script
       run: python ./release_script/script.py
-
-
-  
