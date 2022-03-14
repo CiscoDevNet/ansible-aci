@@ -18,9 +18,6 @@ jobs:
       with:
         path: ./collection
 
-    - run: git remote -v
-      working-directory: ./collection
-
     - name: Set up Python 3.8
       uses: actions/setup-python@v1
       with:
