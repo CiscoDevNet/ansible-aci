@@ -33,9 +33,12 @@ jobs:
       run: pip install -r ./release_script/requirements.txt
 
     - name: "Check github token"
-      run: echo "this is github token $GITHUB_TOKEN"
+      run: echo "$GITHUB_TOKEN" > ./release_script/token.txt
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: "Test gh auth"
+      run: gh auth login --with-token < ./release_script/token.txt
 
     - name: Run automation script
       run: python ./release_script/script.py
