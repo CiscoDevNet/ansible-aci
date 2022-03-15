@@ -5,6 +5,28 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.1.1
+======
+
+Release Summary
+---------------
+
+Release v2.1.1 of the ``ansible-aci`` collection on 2022-03-15.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.1.0.
+
+
+Major Changes
+-------------
+
+
+Minor Changes
+-------------
+
+
+Bugfixes
+--------
+
+
 v2.1.0
 ======
 
