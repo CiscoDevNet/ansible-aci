@@ -226,3 +226,45 @@ releases:
         This changelog describes all changes made to the modules and plugins included
         in this collection since v2.0.0. '
     release_date: '2021-10-06'
+  2.2.0:
+    changes:
+      bugfixes:
+      - Add pool_allocation_mode to the required parameter list in aci_vlan_pool_encap_block
+        module
+      - Fix bfd issues in aci_l3out_static_routes module on pre-4.2 APICs
+      - Fix output_path to support multiple APIC runs in parallel
+      - Fix small sanity issue in aci_epg_to_contract
+      - Remove owner_key, owner_tag and annotation from module that do not support
+        them
+      - Removed block_name from the required parameter list in aci_vlan_pool_encap_block
+        module
+      minor_changes:
+      - Add access_mode and enable_vm_folder attributes to aci_domain
+      - Add aci_bgp_rr_asn and aci_bgp_rr_node module and tests
+      - Add aci_dhcp_relay and aci_dhcp_relay_provider modules and test files (#211)
+      - Add aci_dns_profile, aci_dns_domain and aci_dns_provider modules and test
+        files (#221)
+      - Add aci_epg_to_contract_interface module and test file
+      - Add aci_esg, aci_esg_contract_master, aci_esg_epg_selector, aci_esg_ip_subnet_selector
+        and aci_esg_tag_selector modules (#212)
+      - Add aci_fabric_leaf_profile and aci_fabric_leaf_switch_assoc modules and test
+        files
+      - Add aci_fabric_switch_policy_group module and test file
+      - Add aci_l3out_interface_secondary_ip module and test file
+      - Add description to aci_fabric_spine_switch_assoc module
+      - Add destination_epg, source_ip, destination_ip, span_version, flow_id, ttl,
+        mtu, dscp, and version_enforced attributes to aci_tenant_span_dst_group module
+      - Add mtu and ipv6_dad attributes to aci_l3out_interface
+      - Add new aci_vmm_uplink and aci_vmm_uplink_container modules and test files  (#189)
+      - Add new priorities in the aci_epg_to_contract priority module attribute
+      - Add support for contract_label and subject_label into aci_epg_to_contract
+        module
+      - Add support for tagging with new module aci_tag (#210)
+      - Add useg attribute to aci_epg module
+      release_summary: 'Release v2.2.0 of the ``ansible-aci`` collection on 2022-03-15.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.1.0.
+
+        '
+    release_date: '2022-03-15'
