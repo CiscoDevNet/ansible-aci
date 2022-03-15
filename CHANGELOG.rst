@@ -46,6 +46,16 @@ Bugfixes
 - Remove owner_key, owner_tag and annotation from module that do not support them
 - Removed block_name from the required parameter list in aci_vlan_pool_encap_block module
 
+v2.1.1
+======
+
+Release Summary
+---------------
+
+Release v2.1.1 of the ``ansible-aci`` collection on 2022-03-15.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.1.0.
+
+
 v2.1.0
 ======
 
