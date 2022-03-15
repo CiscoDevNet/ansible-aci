@@ -26,13 +26,7 @@ jobs:
     - name: Install release script requirements
       run: pip install -r ./release_script/requirements.txt
 
-    - name: "Get github token"
-      run: echo "$GITHUB_TOKEN" > ./release_script/token.txt
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: "GH auth"
-      run: gh auth login --with-token < ./release_script/token.txt
-
     - name: Run automation script
       run: python ./release_script/script.py
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
