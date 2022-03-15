@@ -226,3 +226,99 @@ releases:
         This changelog describes all changes made to the modules and plugins included
         in this collection since v2.0.0. '
     release_date: '2021-10-06'
+  2.1.1:
+    changes:
+      release_summary: 'Release v2.1.1 of the ``ansible-aci`` collection on 2022-03-15.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.1.0.
+
+        '
+      trivial:
+      - Add BGP RR ASN integration test
+      - Add BGP RR ASN module
+      - Add BGP RR node module and test file
+      - 'Add access_mode and enable_vm_folder attributes to aci_domain and new aci_vmm_uplink
+        and aci_vmm_uplink container modules and test files  (#189) Co-authored-by:
+        Lionel Hercot <lhercot@cisco.com>'
+      - 'Add aci_dhcp_relay and aci_dhcp_relay_provider modules and test files (#211)
+        Co-authored-by: Lionel Hercot <lhercot@cisco.com>'
+      - Add aci_dns_profile, aci_dns_domain and aci_dns_provider modules and test
+        files (#221)
+      - Add aci_fabric_leaf_profile and aci_fabric_leaf_switch_assoc modules and test
+        files
+      - Add cleanup for spine and fex at top of aci_interface_blacklist testfile
+      - Add description to aci_fabric_spine_switch_assoc
+      - Add destination epg option
+      - Add missing test for analytics and refactor small part of code
+      - 'Add more testing to aci_l3out_static_routes and fix bfd issues on pre-4.2
+        APICs
+
+        Also fix small sanity issue in aci_epg_to_contract from previous PR merge'
+      - Add spine switch support
+      - Add support for contract_label into aci_epg_to_contract and add test cases
+        for contract_label and subject_label
+      - 'Add support for tagging with aci_tag (#210) Co-authored-by: Lionel Hercot
+        <lhercot@cisco.com>'
+      - Add test for leaf blocks in aci_fabric_switch_block test file
+      - Added Inter-Tenant Consumed Contract Interface module and added test cases
+      - 'Added aci_esg, aci_esg_contract_master, aci_esg_epg_selector, aci_esg_ip_subnet_selector
+        and aci_esg_tag_selector modules (#212) Co-authored-by: Lionel Hercot <lhercot@cisco.com>'
+      - Added logic to store mo object config if the task has made changes on server
+        side and added verifications to validate output file content using output_path
+        parameter
+      - Added missing priorities in the aci_epg_to_contract module
+      - Added task to remove log files under test directory
+      - Added useg parameter to create microsegmented EPGs and updated testcases for
+        uSeg EPGs.
+      - Addition of annotation and owner doc-fragments
+      - Change dest_group to destination_group in aci_tenant_span_dst attributes
+      - 'Changed tenant name on Query all relationships task
+
+        Added verifications to validate the task changes'
+      - Changes made to mtu
+      - Changes to test files for span and static routes
+      - Fabric leaf policy group module
+      - 'Fix aci_tenant test with output_path to support multiple APIC runs in parallel
+
+        Remove duplicate dumo_json() in aci.py and run black on aci.py for formatting'
+      - Fix ansible version for sanity in 2.11
+      - Fix policy removal
+      - Fix sanity issues in unit tests from 2.12 galaxy-importer
+      - Integration tests for fabric leaf policy groups
+      - L3out interface enhancements (#201)
+      - Modify aci library to accommodate span_dest_grp module
+      - Put back inventory
+      - Ran Black on plugins directory
+      - Removed block_name from the required parameter list Added pool_allocation_mode
+        to the required parameter list Deleted pool_allocation_mode missing parameter
+        check testcase
+      - Removed default value on priority parameter and changed contract to contract_interface
+        on module and test files
+      - Removed priority from tests and examples
+      - Replaced aci_rest task with aci modules
+      - Revert aci_l3out_static_routes changes as they should not be part of this
+        PR
+      - Update Ansible version in CI to 2.9.27, 2.10.16, 2.11.7 and 2.12.1
+      - Update EPG to contract module
+      - Update example
+      - Update fabric leaf policy group
+      - Update fabric leaf policy group
+      - Update fabric leaf policy group tests
+      - Update fabric leaf policy group tests
+      - Update fabric leaf policy group tests
+      - Update fabric leaf policy group tests
+      - Update fabric leaf policy group tests
+      - Update fabric leaf policy group tests
+      - Update fabric leaf policy group tests
+      - Update fabric leaf policy group tests
+      - Update fabric leaf policy group tests
+      - Update fabric leaf policy group tests
+      - Update fabric leaf policy group tests
+      - Update fabric leaf policy group tests
+      - Update inventory file for tests
+      - Updated test case name
+      - Updates
+      - '[ignore] Add ability to create release PR automatically (#242)'
+      - change description
+    release_date: '2022-03-15'
