@@ -1,0 +1,32 @@
+name: Generate Changelog
+on:
+  push:
+    branches: master
+jobs:
+  generate-changelog:
+    name: Run automation script
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out script code
+      uses: actions/checkout@v3
+      with:
+        repository: ciscoecosystem/release_script
+        path: ./release_script
+
+    - name: Check out collection code
+      uses: actions/checkout@v3
+      with:
+        path: ./collection
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: Install release script requirements
+      run: pip install -r ./release_script/requirements.txt
+
+    - name: Run automation script
+      run: python ./release_script/script.py
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
