@@ -283,7 +283,7 @@ def main():
     children = ["infraRsHPathAtt"]
 
     if fex_id:
-        rn = "hpaths-{0}_eth{1}_{2}.json".format(node_id, fex_id, interface.replace("/", "_"))
+        rn = "hpaths-{0}_eth{1}_{2}".format(node_id, fex_id, interface.replace("/", "_"))
         child_configs = [
             dict(
                 infraRsHPathAtt=dict(attributes=dict(tDn="topology/pod-{0}/paths-{1}/extpaths-{2}/pathep-[eth{3}]".format(pod_id, node_id, fex_id, interface)))
@@ -302,9 +302,12 @@ def main():
             dict(infraRsHPathAtt=dict(attributes=dict(tDn="topology/pod-{0}/paths-{1}/pathep-[eth{2}]".format(pod_id, node_id, interface)))),
         ]
 
+    dn = "uni/infra/{0}".format(rn)
+    interface_name = rn.split("-")[1]
+
     aci.construct_url(
         root_class=dict(aci_class="infraInfra", aci_rn="infra", module_object="infra", target_filter=dict(name="infra")),
-        subclass_1=dict(aci_class=class_name, aci_rn=rn, module_object="infra", target_filter=dict(name="infra")),
+        subclass_1=dict(aci_class=class_name, aci_rn=rn, module_object=dn, target_filter=dict(name=interface_name)),
         child_classes=children,
     )
 

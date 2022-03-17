@@ -211,19 +211,20 @@
     - set_fex_description.current.0.infraHPathS.children.0.infraRsHPathAtt.attributes.tDn == "topology/pod-1/paths-1101/extpaths-123/pathep-[eth1/33]"
     - set_fex_description.current.0.infraHPathS.attributes.descr == "testing"
 
-- name: Query Fex interface - 1102_eth123_1_33.json
+- name: Query Fex interface - 1102_eth123_1_33
   cisco.aci.aci_interface_description:
     <<: *aci_info
     <<: *test_vars_fex
     state: query
   register: query_fex_interface_1201_eth1_33
 
-- name: Assertion check for query Fex interface - 1102_eth123_1_33.json
+- name: Assertion check for query Fex interface - 1102_eth123_1_33
   assert:
     that:
     - query_fex_interface_1201_eth1_33.current.0.infraHPathS.children | length == 1
     - query_fex_interface_1201_eth1_33.current.0.infraHPathS.children.0.infraRsHPathAtt.attributes.rn == "rsHPathAtt-[topology/pod-1/paths-1101/extpaths-123/pathep-[eth1/33]]"
     - query_fex_interface_1201_eth1_33.current.0.infraHPathS.attributes.descr == "testing"
+    - query_fex_interface_1201_eth1_33.current.0.infraHPathS.attributes.name == "1101_eth123_1_33"
 
 - name: Fex - Clean test environment with no description interface
   cisco.aci.aci_interface_description:
