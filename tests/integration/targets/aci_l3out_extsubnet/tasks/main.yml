@@ -84,7 +84,6 @@
       - nm_add_subnet is changed
       - cm_add_subnet.proposed.l3extSubnet.attributes.ip == "192.0.2.0/24"
       - cm_add_subnet.proposed.l3extSubnet.attributes.name == "test"
-      - cm_add_subnet.proposed.l3extSubnet.attributes.scope == "import-security"
       - nm_add_subnet.current.0.l3extSubnet.attributes.ip == "192.0.2.0/24"
       - nm_add_subnet.current.0.l3extSubnet.attributes.name == "test"
       - nm_add_subnet.current.0.l3extSubnet.attributes.scope == "import-security"
@@ -119,7 +118,7 @@
   check_mode: yes
   register: cm_change_subnet
 
-- name: Change subnet (check_mode)
+- name: Change subnet (normal mode)
   cisco.aci.aci_l3out_extsubnet:
     <<: *aci_info
     tenant: ansible_tenant
@@ -208,3 +207,105 @@
       - rm_subnet.current == []
       - rm_subnet.previous.0.l3extSubnet.attributes.ip == "192.0.2.0/24"
       - rm_subnet.previous.0.l3extSubnet.attributes.name == "ansible_test"
+
+- name: Change subnet aggregate mismatch without scope (normal mode)
+  cisco.aci.aci_l3out_extsubnet:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    network: 0.0.0.0/0
+    subnet_name: ansible_test
+    description: description for subnet
+    aggregate: [ export-rtctrl, import-rtctrl ]
+    state: present
+  register: nm_aggregate_scope_none
+  ignore_errors: yes
+
+- name: asserts failed aggregate creation tasks
+  assert:
+    that:
+      - nm_aggregate_scope_none is failed
+      - nm_aggregate_scope_none.msg.startswith("missing parameter(s) required by 'aggregate'")
+
+- name: Change subnet aggregate mismatch (normal mode)
+  cisco.aci.aci_l3out_extsubnet:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    network: 0.0.0.0/0
+    subnet_name: ansible_test
+    description: description for subnet
+    scope: [ import-security ]
+    aggregate: [ export-rtctrl, import-rtctrl ]
+    state: present
+  register: nm_aggregate_scope_mismatch
+  ignore_errors: yes
+
+- name: asserts failed aggregate creation tasks
+  assert:
+    that:
+      - nm_aggregate_scope_mismatch is failed
+      - nm_aggregate_scope_mismatch.msg == "All aggregate values ['export-rtctrl', 'import-rtctrl'] need to be defined in scope ['import-security']."
+
+- name: Change subnet aggregate match (check mode)
+  cisco.aci.aci_l3out_extsubnet:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    network: 0.0.0.0/0
+    subnet_name: ansible_test
+    description: description for subnet
+    scope: [ export-rtctrl, import-rtctrl, import-security ]
+    aggregate: [ export-rtctrl, import-rtctrl ]
+    state: present
+  check_mode: yes
+  register: cm_aggregate_scope_match
+
+- name: Change subnet aggregate match (normal mode)
+  cisco.aci.aci_l3out_extsubnet:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    network: 0.0.0.0/0
+    subnet_name: ansible_test
+    description: description for subnet
+    scope: [ export-rtctrl, import-rtctrl, import-security ]
+    aggregate: [ export-rtctrl, import-rtctrl ]
+    state: present
+  register: nm_aggregate_scope_match
+
+- name: asserts success aggregate creation task
+  assert:
+    that:
+      - cm_aggregate_scope_match is changed
+      - cm_aggregate_scope_match.proposed.l3extSubnet.attributes.ip == "0.0.0.0/0"
+      - cm_aggregate_scope_match.proposed.l3extSubnet.attributes.name == "ansible_test"
+      - cm_aggregate_scope_match.proposed.l3extSubnet.attributes.scope == "export-rtctrl,import-rtctrl,import-security"
+      - cm_aggregate_scope_match.proposed.l3extSubnet.attributes.aggregate == "export-rtctrl,import-rtctrl"
+      - nm_aggregate_scope_match.current.0.l3extSubnet.attributes.ip == "0.0.0.0/0"
+      - nm_aggregate_scope_match.current.0.l3extSubnet.attributes.name == "ansible_test"
+      - nm_aggregate_scope_match.current.0.l3extSubnet.attributes.scope == "export-rtctrl,import-rtctrl,import-security"
+      - nm_aggregate_scope_match.current.0.l3extSubnet.attributes.aggregate == "export-rtctrl,import-rtctrl"
+
+- name: Change subnet other aggregate order (normal mode)
+  cisco.aci.aci_l3out_extsubnet:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    extepg: ansible_extEpg
+    network: 0.0.0.0/0
+    subnet_name: ansible_test
+    description: description for subnet
+    scope: [ export-rtctrl, import-rtctrl, import-security ]
+    aggregate: [ import-rtctrl, export-rtctrl ]
+    state: present
+  register: nm_aggregate_scope_match
+
+- name: asserts success aggregate creation task reversed input order
+  assert:
+    that:
+      - nm_aggregate_scope_match is not changed

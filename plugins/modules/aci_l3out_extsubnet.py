@@ -53,15 +53,29 @@ options:
     description:
     - Determines the scope of the Subnet.
     - The C(export-rtctrl) option controls which external networks are advertised out of the fabric using route-maps and IP prefix-lists.
+    - The C(import-rtctrl) option controls which external networks are advertised in to the fabric using route-maps and IP prefix-lists.
     - The C(import-security) option classifies for the external EPG.
       The rules and contracts defined in this external EPG apply to networks matching this subnet.
     - The C(shared-rtctrl) option controls which external prefixes are advertised to other tenants for shared services.
     - The C(shared-security) option configures the classifier for the subnets in the VRF where the routes are leaked.
     - The APIC defaults to C(import-security) when unset during creation.
-    default: [ import-security ]
+    - The C(import-rtctrl) is only supported for BGP and OSPF.
     type: list
     elements: str
-    choices: [ export-rtctrl, import-security, shared-rtctrl, shared-security ]
+    choices: [ export-rtctrl, import-rtctrl, import-security, shared-rtctrl, shared-security ]
+  aggregate:
+    description:
+    - Determines the Aggregate Routes for the Subnet.
+    - The C(export-rtctrl) option to export all transit routes of a VRF (0/0 subnets).
+    - The C(import-rtctrl) option to import all incoming routes of given L3 peers (0/0 subnets).
+    - The C(shared-rtctrl) option to share routes learned in one VRF which needs to be advertised to another VRF.
+      0/0 can be used to share all subnet routes across multiple VRFs.
+    - The C(import-rtctrl) is only supported for BGP and OSPF.
+    - Aggregate import route control is only available if the L3Out has 'Import Route Control Enforcement' enabled.
+      Default this is disabled, M(cisco.aci.aci_l3out) with C(route_control) can be used to enable.
+    type: list
+    elements: str
+    choices: [ export-rtctrl, import-rtctrl, shared-rtctrl]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -104,6 +118,7 @@ EXAMPLES = r"""
     description: External Subnet for Production ExtEpg
     network: 192.0.2.0/24
     scope: export-rtctrl
+    aggregate: export-rtctrl
     state: present
   delegate_to: localhost
 
@@ -252,7 +267,9 @@ def main():
         network=dict(type="str", aliases=["address", "ip"]),
         description=dict(type="str", aliases=["descr"]),
         subnet_name=dict(type="str", aliases=["name"]),
-        scope=dict(type="list", elements="str", default=["import-security"], choices=["export-rtctrl", "import-security", "shared-rtctrl", "shared-security"]),
+        scope=dict(type="list", elements="str",
+                   choices=["import-security", "export-rtctrl", "import-rtctrl", "shared-rtctrl", "shared-security"]),
+        aggregate=dict(type="list", elements="str", choices=["export-rtctrl", "import-rtctrl", "shared-rtctrl"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
@@ -264,6 +281,7 @@ def main():
             ["state", "present", ["network"]],
             ["state", "absent", ["network"]],
         ],
+        required_by={"aggregate": "scope"}
     )
 
     aci = ACIModule(module)
@@ -274,9 +292,20 @@ def main():
     network = module.params.get("network")
     description = module.params.get("description")
     subnet_name = module.params.get("subnet_name")
-    scope = ",".join(sorted(module.params.get("scope")))
+    scope = module.params.get("scope")
+    aggregate = module.params.get("aggregate")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
+
+    # Validation rule to only allow aggregate choice when there is a match in scope choice
+    if aggregate and not set(aggregate).issubset(scope):
+        aci.module.fail_json(msg="All aggregate values {0} need to be defined in scope {1}.".format(aggregate, scope))
+
+    class_config = dict(ip=network, descr=description, name=subnet_name, nameAlias=name_alias)
+    if scope:
+        class_config['scope'] = ",".join(sorted(scope))
+    if aggregate:
+        class_config['aggregate'] = ",".join(sorted(aggregate))
 
     aci.construct_url(
         root_class=dict(
@@ -308,16 +337,7 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        aci.payload(
-            aci_class="l3extSubnet",
-            class_config=dict(
-                ip=network,
-                descr=description,
-                name=subnet_name,
-                scope=scope,
-                nameAlias=name_alias,
-            ),
-        )
+        aci.payload(aci_class="l3extSubnet", class_config=class_config)
 
         aci.get_diff(aci_class="l3extSubnet")
 
