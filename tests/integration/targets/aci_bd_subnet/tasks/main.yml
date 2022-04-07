@@ -98,7 +98,7 @@
       - create_check_mode.sent.fvSubnet.attributes.ip == create_subnet.sent.fvSubnet.attributes.ip == '10.100.100.1/24'
       - create_check_mode.sent.fvSubnet.attributes.name == create_subnet.sent.fvSubnet.attributes.name == 'anstest'
       - create_subnet is changed
-      - create_subnet.current.0.fvSubnet.attributes.annotation == 'orchestrator:Ansible'
+      - create_subnet.current.0.fvSubnet.attributes.annotation == 'orchestrator:ansible'
       - create_subnet.previous == []
       - create_subnet2 is changed
       - create_subnet2.sent == create_subnet2.proposed

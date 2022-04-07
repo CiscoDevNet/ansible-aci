@@ -88,6 +88,7 @@
         - nm_subnet_ip_present.current | length == 1
         - nm_subnet_ip_present.current.0.fvEPSelector.attributes.matchExpression == "ip=='10.0.0.1'"
         - nm_subnet_ip_present.current.0.fvEPSelector.attributes.dn == "uni/tn-anstest/ap-anstest_ap/esg-web_esg/epselector-[ip=='10.0.0.1']"
+        - nm_subnet_ip_present.current.0.fvEPSelector.attributes.annotation == 'orchestrator:ansible'
         - nm_subnet_ip_present.previous == []
         - nm_subnet_ip_present.sent.fvEPSelector.attributes.matchExpression == "ip=='10.0.0.1'"
 

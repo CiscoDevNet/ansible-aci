@@ -78,7 +78,7 @@
       - subject_present is changed
       - subject_present.previous == []
       - subject_present.sent == subject_present_check_mode.sent
-      - subject_present.current.0.vzSubj.attributes.annotation == 'orchestrator:Ansible'
+      - subject_present.current.0.vzSubj.attributes.annotation == 'orchestrator:ansible'
       - subject_present_idempotent is not changed
       - subject_present_idempotent.previous != []
       - subject_update is changed

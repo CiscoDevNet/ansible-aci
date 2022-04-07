@@ -200,7 +200,7 @@
   assert:
     that:
     - add_epg_relay_provider is changed
-    - add_epg_relay_provider.current.0.dhcpRsProv.attributes.annotation == 'orchestrator:Ansible'
+    - add_epg_relay_provider.current.0.dhcpRsProv.attributes.annotation == 'orchestrator:ansible'
     - add_epg_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg]"
     - add_epg_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.40"
     - add_epg_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg"

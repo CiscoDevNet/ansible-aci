@@ -289,7 +289,7 @@
   assert:
     that:
     - default_annotation is changed
-    - default_annotation.current.0.fvTenant.attributes.annotation == 'orchestrator:Ansible'
+    - default_annotation.current.0.fvTenant.attributes.annotation == 'orchestrator:ansible'
 
 # REMOVE TENANT
 - name: Remove tenant (check_mode)

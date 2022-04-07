@@ -72,7 +72,7 @@
     - sw_leaf_selec_present.sent.infraLeafS.children.0.infraNodeBlk.attributes.from_ == '1011'
     - sw_leaf_selec_present.sent.infraLeafS.children.0.infraNodeBlk.attributes.to_ == '1011'
     - sw_leaf_selec_present.sent.infraLeafS.children.0.infraNodeBlk.attributes.name == 'node_blk_name'
-    - sw_leaf_selec_present.current.0.infraLeafS.attributes.annotation == 'orchestrator:Ansible'
+    - sw_leaf_selec_present.current.0.infraLeafS.attributes.annotation == 'orchestrator:ansible'
     - sw_leaf_selec_idempotent is not changed
     - sw_leaf_selec_idempotent.sent == {}
     - sw_leaf_selec_update is changed

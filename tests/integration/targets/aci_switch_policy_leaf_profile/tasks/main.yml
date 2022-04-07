@@ -56,7 +56,7 @@
     that:
     - cm_add_switch_leaf_profile is changed
     - nm_add_switch_leaf_profile is changed
-    - nm_add_switch_leaf_profile.current.0.infraNodeP.attributes.annotation == 'orchestrator:Ansible'
+    - nm_add_switch_leaf_profile.current.0.infraNodeP.attributes.annotation == 'orchestrator:ansible'
     - cm_add_switch_leaf_profile_again is not changed
     - nm_add_switch_leaf_profile_again is not changed
 

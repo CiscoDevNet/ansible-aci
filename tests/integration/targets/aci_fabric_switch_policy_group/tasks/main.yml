@@ -56,7 +56,7 @@
     that:
     - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.attributes.dn == "uni/fabric/funcprof/lenodepgrp-ansible_fabric_leaf_policy_group"
     - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.attributes.name == "ansible_fabric_leaf_policy_group"
-    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.attributes.annotation == 'orchestrator:Ansible'
+    - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.attributes.annotation == 'orchestrator:ansible'
 
 - name: Verify that ansible_fabric_leaf_policy_group children have correct attributes
   assert:

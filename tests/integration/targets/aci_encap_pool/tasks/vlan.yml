@@ -61,7 +61,7 @@
       - create_dynamic.sent.fvnsVlanInstP.attributes.allocMode == 'dynamic'
       - create_dynamic.sent.fvnsVlanInstP.attributes.descr == 'Ansible Test'
       - create_dynamic.sent.fvnsVlanInstP.attributes.name == 'anstest'
-      - create_dynamic.current.0.fvnsVlanInstP.attributes.annotation == 'orchestrator:Ansible'
+      - create_dynamic.current.0.fvnsVlanInstP.attributes.annotation == 'orchestrator:ansible'
 
 - name: create static vlan pool again - idempotency works
   cisco.aci.aci_encap_pool:

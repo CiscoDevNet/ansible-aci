@@ -48,7 +48,7 @@
     - add_snmp_policy.current.0.snmpPol.attributes.loc == "snmp location"
     - add_snmp_policy.current.0.snmpPol.attributes.adminSt == "enabled"
     - add_snmp_policy.current.0.snmpPol.attributes.descr == "policy description"
-    - add_snmp_policy.current.0.snmpPol.attributes.annotation == 'orchestrator:Ansible'
+    - add_snmp_policy.current.0.snmpPol.attributes.annotation == 'orchestrator:ansible'
 
 # ADD snmp policy again to check idempotency
 - name: Add snmp policy

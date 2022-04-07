@@ -57,7 +57,7 @@
       - cm_add_domain.current == cm_add_domain.previous == nm_add_domain.previous == []
       - nm_add_domain.current.0.vmmDomP.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom'
       - nm_add_domain.current.0.vmmDomP.attributes.name == 'vmm_dom'
-      - nm_add_domain.current.0.vmmDomP.attributes.annotation == 'orchestrator:Ansible'
+      - nm_add_domain.current.0.vmmDomP.attributes.annotation == 'orchestrator:ansible'
 
   - name: Add VMM domain again (check_mode)
     cisco.aci.aci_domain: *domain_present

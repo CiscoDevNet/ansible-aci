@@ -72,7 +72,7 @@
   assert:
     that:
     - l2extepg.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
-    - l2extepg.current.0.l2extInstP.attributes.annotation == 'orchestrator:Ansible'
+    - l2extepg.current.0.l2extInstP.attributes.annotation == 'orchestrator:ansible'
 
 - name: Add L2 external end point group again
   aci_l2out_extepg:

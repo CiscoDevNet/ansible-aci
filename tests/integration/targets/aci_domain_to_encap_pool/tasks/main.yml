@@ -308,7 +308,7 @@
     - l2dom is changed
     - l3dom is changed
     - vmm_kubernetes is changed
-    - phys_vlan.current.0.physDomP.attributes.annotation == 'orchestrator:Ansible'
+    - phys_vlan.current.0.physDomP.attributes.annotation == 'orchestrator:ansible'
     - phys_vlan.current.0.physDomP.children.0.infraRsVlanNs.attributes.tDn =='uni/infra/vlanns-[test_pool]-dynamic'
     - fc_vsan.current.0.fcDomP.children.0.fcRsVsanNs.attributes.tDn == 'uni/infra/vsanns-[test_pool]-dynamic'
     - l2dom.current.0.l2extDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-static'

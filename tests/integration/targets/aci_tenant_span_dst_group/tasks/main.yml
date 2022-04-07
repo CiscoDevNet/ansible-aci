@@ -70,7 +70,7 @@
     - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
     - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
     - add_span1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "2"
-    - add_span1.current.0.spanDestGrp.attributes.annotation == 'orchestrator:Ansible'
+    - add_span1.current.0.spanDestGrp.attributes.annotation == 'orchestrator:ansible'
 
 - name: Add span ansible_group again
   aci_tenant_span_dst_group:

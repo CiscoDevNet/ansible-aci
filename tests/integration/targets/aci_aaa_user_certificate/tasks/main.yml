@@ -86,7 +86,7 @@
     that:
     - cm_add_cert is changed
     - nm_add_cert is change
-    - nm_add_cert.current.0.aaaUserCert.attributes.annotation == 'orchestrator:Ansible'
+    - nm_add_cert.current.0.aaaUserCert.attributes.annotation == 'orchestrator:ansible'
     - cm_add_cert_again is not changed
     - nm_add_cert_again is not changed
 

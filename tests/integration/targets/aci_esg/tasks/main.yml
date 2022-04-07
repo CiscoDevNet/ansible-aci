@@ -87,6 +87,7 @@
         - nm_web_esg_0_present.current.0.fvESg.attributes.prio == 'unspecified'
         - nm_web_esg_0_present.current.0.fvESg.attributes.prefGrMemb == 'exclude'
         - nm_web_esg_0_present.current.0.fvESg.attributes.pcEnfPref == 'unenforced'
+        - nm_web_esg_0_present.current.0.fvESg.attributes.annotation == 'orchestrator:ansible'
         - nm_web_esg_0_present.current.0.fvESg.children[0].fvRsScope.attributes.tnFvCtxName == 'default'
 
   - name: Assertions check for add web_esg_0 with normal mode (v5.2+)

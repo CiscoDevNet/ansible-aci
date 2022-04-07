@@ -103,7 +103,7 @@ def aci_argument_spec():
 
 def aci_annotation_spec():
     return dict(
-        annotation=dict(type="str", default="orchestrator:Ansible", fallback=(env_fallback, ["ACI_ANNOTATION"])),
+        annotation=dict(type="str", default="orchestrator:ansible", fallback=(env_fallback, ["ACI_ANNOTATION"])),
     )
 
 

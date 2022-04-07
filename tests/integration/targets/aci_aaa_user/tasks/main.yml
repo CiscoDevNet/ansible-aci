@@ -66,7 +66,7 @@
     that:
     - cm_add_user is changed
     - nm_add_user is changed
-    - nm_add_user.current.0.aaaUser.attributes.annotation == 'orchestrator:Ansible'
+    - nm_add_user.current.0.aaaUser.attributes.annotation == 'orchestrator:ansible'
     - nm_add_user.current.0.aaaUser.attributes.descr == 'Ansible test user'
     - cm_add_user_again is not changed
     - nm_add_user_again is not changed

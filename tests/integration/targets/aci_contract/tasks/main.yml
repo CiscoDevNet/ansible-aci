@@ -64,7 +64,7 @@
       - present_check_mode.sent.vzBrCP.attributes.name == 'anstest'
       - present_check_mode.sent.vzBrCP.attributes.descr == 'Ansible Test'
       - contract_present is changed
-      - contract_present.current.0.vzBrCP.attributes.annotation == 'orchestrator:Ansible'
+      - contract_present.current.0.vzBrCP.attributes.annotation == 'orchestrator:ansible'
       - contract_present.sent == present_check_mode.sent
       - present_idempotent is not changed
       - present_update is changed

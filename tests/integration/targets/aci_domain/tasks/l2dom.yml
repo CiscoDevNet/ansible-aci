@@ -47,7 +47,7 @@
     - cm_add_domain.sent.l2extDomP.attributes.name == nm_add_domain.sent.l2extDomP.attributes.name == 'l2_dom'
     - cm_add_domain.proposed.l2extDomP.attributes.name == nm_add_domain.proposed.l2extDomP.attributes.name == 'l2_dom'
     - cm_add_domain.current == cm_add_domain.previous == nm_add_domain.previous == []
-    - nm_add_domain.current.0.l2extDomP.attributes.annotation == 'orchestrator:Ansible'
+    - nm_add_domain.current.0.l2extDomP.attributes.annotation == 'orchestrator:ansible'
     - nm_add_domain.current.0.l2extDomP.attributes.name == 'l2_dom'
     - nm_add_domain.current.0.l2extDomP.attributes.dn == 'uni/l2dom-l2_dom'
 

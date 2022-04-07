@@ -166,7 +166,7 @@
       - provide_present_check_mode.sent.fvRsPathAtt.attributes.tDn == 'topology/pod-1/paths-101/pathep-[eth1/7]'
       - provide_present is changed
       - provide_present.sent == provide_present_check_mode.sent
-      - provide_present.current.0.fvRsPathAtt.attributes.annotation == 'orchestrator:Ansible'
+      - provide_present.current.0.fvRsPathAtt.attributes.annotation == 'orchestrator:ansible'
       - provide_present.previous == []
       - primary_ecap_id_present is changed
       - primary_ecap_id_present.sent.fvRsPathAtt.attributes.primaryEncap == 'vlan-50'
