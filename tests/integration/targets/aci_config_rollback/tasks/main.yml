@@ -37,6 +37,7 @@
 - name: create a new snapshot
   cisco.aci.aci_config_snapshot:
     <<: *create_snapshot
+  register: create_snapshot_annotation_check
 
 - name: waiting for snapshot to be finished before querying
   pause:
@@ -106,3 +107,4 @@
       - '"fabric/configimp-anstest.json" in rollback_rollback.url'
       - tenant_removed is not changed
       - tenant_removed.previous == []
+      - create_snapshot_annotation_check.current.0.configExportP.attributes.annotation == 'orchestrator:ansible'

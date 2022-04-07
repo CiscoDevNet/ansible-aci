@@ -82,7 +82,7 @@
     that:
     - cm_add_assoc is changed
     - nm_add_assoc is changed
-    - nm_add_assoc.current.0.infraGeneric.attributes.annotation == 'orchestrator:Ansible'
+    - nm_add_assoc.current.0.infraGeneric.attributes.annotation == 'orchestrator:ansible'
     - cm_add_assoc.previous == nm_add_assoc.previous == []
     - cm_add_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.encap == nm_add_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.encap == 'vlan-1984'
     - cm_add_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.mode == nm_add_assoc.sent.infraGeneric.children[0].infraRsFuncToEpg.attributes.mode == 'regular'

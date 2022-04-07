@@ -229,13 +229,13 @@ def main():
 
     aci = ACIModule(module)
 
-    dn = module.params.get('dn')
+    dn = module.params.get("dn")
     tag_key = module.params.get("tag_key")
     tag_value = module.params.get("tag_value")
     tag_type = module.params.get("tag_type")
     state = module.params.get("state")
 
-    if module.params.get('dn') is not None:
+    if module.params.get("dn") is not None:
         dn = dn.lstrip("uni/")
 
     aci_type = dict(

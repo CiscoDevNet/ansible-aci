@@ -87,7 +87,7 @@
       - nm_add_subnet.current.0.l3extSubnet.attributes.ip == "192.0.2.0/24"
       - nm_add_subnet.current.0.l3extSubnet.attributes.name == "test"
       - nm_add_subnet.current.0.l3extSubnet.attributes.scope == "import-security"
-      - nm_add_subnet.current.0.l3extSubnet.attributes.annotation == 'orchestrator:Ansible'
+      - nm_add_subnet.current.0.l3extSubnet.attributes.annotation == 'orchestrator:ansible'
 
 - name: Add subnet again
   cisco.aci.aci_l3out_extsubnet:

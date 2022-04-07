@@ -80,7 +80,7 @@
     - cm_add_binding.proposed.physDomP.attributes.name == nm_add_binding.proposed.physDomP.attributes.name == 'phys_dom'
     - cm_add_binding.proposed.physDomP.children.0.infraRsVlanNs.attributes.tDn == nm_add_binding.proposed.physDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
     - cm_add_binding.current == cm_add_binding.previous == nm_add_binding.previous == []
-    - nm_add_binding.current.0.physDomP.attributes.annotation == 'orchestrator:Ansible'
+    - nm_add_binding.current.0.physDomP.attributes.annotation == 'orchestrator:ansible'
     - nm_add_binding.current.0.physDomP.attributes.name == 'phys_dom'
     - nm_add_binding.current.0.physDomP.attributes.dn == 'uni/phys-phys_dom'
     - nm_add_binding.current.0.physDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'

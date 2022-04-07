@@ -71,7 +71,7 @@
     that:
     - cm_add_ospf_interface_policy is changed
     - nm_add_ospf_interface_policy is changed
-    - nm_add_ospf_interface_policy.current.0.ospfIfPol.attributes.annotation == 'orchestrator:Ansible'
+    - nm_add_ospf_interface_policy.current.0.ospfIfPol.attributes.annotation == 'orchestrator:ansible'
     - cm_add_ospf_interface_policy_again is not changed
     - nm_add_ospf_interface_policy_again is not changed
 

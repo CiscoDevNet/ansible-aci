@@ -89,6 +89,7 @@
         - cm_contract_esg_present.current == []
         - cm_contract_esg_present.previous == []
         - cm_contract_esg_present.sent.fvRsSecInherited.attributes.tDn == "uni/tn-anstest/ap-contract_master_ap/esg-contract_esg"
+        - cm_contract_esg_present.sent.fvRsSecInherited.attributes.annotation == 'orchestrator:ansible'
 
   - name: Add an ESG contract master to web_esg with normal mode
     cisco.aci.aci_esg_contract_master: &nm_contract_esg_present

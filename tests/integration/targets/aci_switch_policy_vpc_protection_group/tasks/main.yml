@@ -58,7 +58,7 @@
     that:
     - cm_add_vpc_prot_grp is changed
     - nm_add_vpc_prot_grp is changed
-    - nm_add_vpc_prot_grp.current.0.fabricExplicitGEp.attributes.annotation == 'orchestrator:Ansible'
+    - nm_add_vpc_prot_grp.current.0.fabricExplicitGEp.attributes.annotation == 'orchestrator:ansible'
     - cm_add_vpc_prot_grp_again is not changed
     - nm_add_vpc_prot_grp_again is not changed
 

@@ -75,7 +75,7 @@
         - cm_create_cloud_ap.previous == nm_create_cloud_ap.previous == []
         - cm_create_cloud_ap.proposed.cloudApp.attributes.name == 'anstest'
         - cm_create_cloud_ap.proposed.cloudApp.attributes.descr == 'Ansible Test Cloud APIC'
-        - nm_create_cloud_ap.current.0.cloudApp.attributes.annotation == 'orchestrator:Ansible'
+        - nm_create_cloud_ap.current.0.cloudApp.attributes.annotation == 'orchestrator:ansible'
         - nm_create_cloud_ap.current.0.cloudApp.attributes.name == 'anstest'
         - nm_create_cloud_ap.current.0.cloudApp.attributes.descr == 'Ansible Test Cloud APIC'
         - create_cloud_ap_again is not changed

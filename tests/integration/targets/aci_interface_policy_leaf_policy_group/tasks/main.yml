@@ -94,7 +94,7 @@
     - intf_policy_leaf_polgrp_present.sent.infraAccBndlGrp.attributes.name == 'policygroupname_link'
     - intf_policy_leaf_polgrp_present.sent.infraAccBndlGrp.children.0.infraRsFcIfPol.attributes.tnFcIfPolName == 'fiberchannelpolicy'
     - intf_policy_leaf_polgrp_present.sent.infraAccBndlGrp.children.1.infraRsHIfPol.attributes.tnFabricHIfPolName == 'linklevelpolicy'
-    - intf_policy_leaf_polgrp_present.current.0.infraAccBndlGrp.attributes.annotation == 'orchestrator:Ansible'
+    - intf_policy_leaf_polgrp_present.current.0.infraAccBndlGrp.attributes.annotation == 'orchestrator:ansible'
     - intf_policy_leaf_polgrp_idempotent is not changed
     - intf_policy_leaf_polgrp_idempotent.sent == {}
     - intf_policy_leaf_polgrp_update is changed

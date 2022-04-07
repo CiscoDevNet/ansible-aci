@@ -83,7 +83,7 @@
     - nm_vzany_prov is changed
     - cm_vzany_prov.previous == nm_vzany_prov.previous == []
     - cm_vzany_prov.sent.vzRsAnyToProv.attributes.tnVzBrCPName == nm_vzany_prov.sent.vzRsAnyToProv.attributes.tnVzBrCPName == 'testcp'
-    - nm_vzany_prov.current.0.vzRsAnyToProv.attributes.annotation == 'orchestrator:Ansible'
+    - nm_vzany_prov.current.0.vzRsAnyToProv.attributes.annotation == 'orchestrator:ansible'
 
 - name: Attach contract again, check if idempotency works
   cisco.aci.aci_vzany_to_contract:

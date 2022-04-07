@@ -83,6 +83,7 @@
         - selector_0_nm_present.current.0.fvTagSelector.attributes.matchKey == 'tag-selector-0'
         - selector_0_nm_present.current.0.fvTagSelector.attributes.matchValue == 'tag-value-0'
         - selector_0_nm_present.current.0.fvTagSelector.attributes.valueOperator == 'equals'
+        - selector_0_nm_present.current.0.fvTagSelector.attributes.annotation == 'orchestrator:ansible'
 
   - name: Query all Tag Selectors
     cisco.aci.aci_esg_tag_selector:

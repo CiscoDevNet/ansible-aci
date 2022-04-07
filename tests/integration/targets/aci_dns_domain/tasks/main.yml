@@ -51,7 +51,7 @@
   assert:
     that:
     - add_dns_domain is changed
-    - add_dns_domain.current.0.dnsDomain.attributes.annotation == 'orchestrator:Ansible'
+    - add_dns_domain.current.0.dnsDomain.attributes.annotation == 'orchestrator:ansible'
     - add_dns_domain.current.0.dnsDomain.attributes.dn == "uni/fabric/dnsp-ansible_dns_profile/dom-example.com"
     - add_dns_domain.current.0.dnsDomain.attributes.name == "example.com"
     - add_dns_domain.current.0.dnsDomain.attributes.isDefault == "no"

@@ -64,7 +64,7 @@
       - range_present.previous == []
       - range_present.sent == range_present_check_mode.sent
       - range_present.sent == range_present.proposed
-      - range_present.current.0.fvnsEncapBlk.attributes.annotation == 'orchestrator:Ansible'
+      - range_present.current.0.fvnsEncapBlk.attributes.annotation == 'orchestrator:ansible'
 
 - name: create vlan pool range - idempotency works
   cisco.aci.aci_encap_pool_range:

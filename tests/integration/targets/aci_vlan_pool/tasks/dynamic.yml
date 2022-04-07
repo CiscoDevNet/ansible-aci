@@ -54,7 +54,7 @@
     - nm_add_dynamic_vlan_pool.current.0.fvnsVlanInstP.attributes.descr == ''
     - nm_add_dynamic_vlan_pool.current.0.fvnsVlanInstP.attributes.dn == 'uni/infra/vlanns-[anstest]-dynamic'
     - nm_add_dynamic_vlan_pool.current.0.fvnsVlanInstP.attributes.name == 'anstest'
-    - nm_add_dynamic_vlan_pool.current.0.fvnsVlanInstP.attributes.annotation == 'orchestrator:Ansible'
+    - nm_add_dynamic_vlan_pool.current.0.fvnsVlanInstP.attributes.annotation == 'orchestrator:ansible'
 
 - name: Add dynamic_vlan_pool again (check_mode)
   cisco.aci.aci_vlan_pool: *dynamic_vlan_pool_present

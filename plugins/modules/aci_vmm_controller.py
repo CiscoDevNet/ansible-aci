@@ -76,11 +76,6 @@ options:
     - Support for CloudFoundry, OpenShift and Red Hat was added in ACI v3.1.
     type: str
     choices: [ cloudfoundry, kubernetes, microsoft, openshift, openstack, redhat, vmware ]
-  annotation:
-    description:
-      - The default value for the annotation attribute is 'orchestrator:Ansible'.
-    type: str
-    default: orchestrator:Ansible
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation

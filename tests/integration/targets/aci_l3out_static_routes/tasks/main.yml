@@ -100,7 +100,7 @@
     - nm_add_route.current[0].ipRouteP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-lNode/rsnodeL3OutAtt-[topology/pod-1/node-101]/rt-[10.1.0.1/24]"
     - cm_add_route.proposed.ipRouteP.attributes.ip == "10.1.0.1/24"
     - nm_add_route.current[0].ipRouteP.attributes.ip == "10.1.0.1/24"
-    - nm_add_route.current[0].ipRouteP.attributes.annotation == 'orchestrator:Ansible'
+    - nm_add_route.current[0].ipRouteP.attributes.annotation == 'orchestrator:ansible'
 
 - name: Add static routes again (check_mode)
   aci_l3out_static_routes:

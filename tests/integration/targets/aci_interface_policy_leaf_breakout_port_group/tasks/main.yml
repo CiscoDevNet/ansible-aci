@@ -63,7 +63,7 @@
       - nm_create_brkout_port.current.0.infraBrkoutPortGrp.attributes.dn == "uni/infra/funcprof/brkoutportgrp-ansible_breakout_port"
       - nm_create_brkout_port.current.0.infraBrkoutPortGrp.attributes.descr == "description for ansible_breakout_port"
       - nm_create_brkout_port.current.0.infraBrkoutPortGrp.attributes.brkoutMap == "10g-4x"
-      - nm_create_brkout_port.current.0.infraBrkoutPortGrp.attributes.annotation == 'orchestrator:Ansible'
+      - nm_create_brkout_port.current.0.infraBrkoutPortGrp.attributes.annotation == 'orchestrator:ansible'
 
 - name: Create leaf breakout port group again (normal_mode)
   cisco.aci.aci_interface_policy_leaf_breakout_port_group:

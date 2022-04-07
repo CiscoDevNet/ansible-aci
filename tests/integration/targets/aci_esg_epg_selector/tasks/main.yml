@@ -88,6 +88,7 @@
         - cm_epg_selector_present is changed
         - cm_epg_selector_present.current | length == 0
         - cm_epg_selector_present.sent.fvEPgSelector.attributes.matchEpgDn == "uni/tn-anstest/ap-epg_ap/epg-anstest_epg"
+        - cm_epg_selector_present.sent.fvEPgSelector.attributes.annotation == 'orchestrator:ansible'
 
   - name: Add an EPG selector with normal mode
     cisco.aci.aci_esg_epg_selector:

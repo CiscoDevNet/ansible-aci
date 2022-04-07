@@ -133,7 +133,7 @@
     that:
     - accessport_to_intf_check_mode_present is changed
     - accessport_to_intf_present is changed
-    - accessport_to_intf_present.current.0.infraHPortS.attributes.annotation == 'orchestrator:Ansible'
+    - accessport_to_intf_present.current.0.infraHPortS.attributes.annotation == 'orchestrator:ansible'
     - accessport_to_intf_present.previous == []
     - accessport_to_intf_present.sent.infraHPortS.attributes.name == 'anstest_accessportselector'
     - accessport_to_intf_idempotent is not changed

@@ -69,7 +69,7 @@
     - cm_add_filter is changed
     - cm_add_filter_again is changed
     - nm_add_filter is changed
-    - nm_add_filter.current.0.vzFilter.attributes.annotation == 'orchestrator:Ansible'
+    - nm_add_filter.current.0.vzFilter.attributes.annotation == 'orchestrator:ansible'
     - nm_add_filter_again is not changed
 
 # CHANGE FILTER

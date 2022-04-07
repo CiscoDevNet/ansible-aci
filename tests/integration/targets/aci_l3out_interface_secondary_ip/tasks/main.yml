@@ -226,7 +226,7 @@
     that:
     - secondary_intf.current.0.l3extIp.attributes.dn == "uni/tn-ansible_l3_secondary/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/addr-[192.168.50.2/27]"
     - secondary_intf.current.0.l3extIp.attributes.ipv6Dad == "disabled"
-    - secondary_intf.current.0.l3extIp.attributes.annotation == 'orchestrator:Ansible'
+    - secondary_intf.current.0.l3extIp.attributes.annotation == 'orchestrator:ansible'
     - secondary_po.current.0.l3extIp.attributes.dn== "uni/tn-ansible_l3_secondary/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/addr-[192.168.70.2/27]"
     - secondary_po.current.0.l3extIp.attributes.ipv6Dad == "disabled"
     - secondary_vpc.current.0.l3extIp.attributes.addr == "192.168.90.2/27"

@@ -59,7 +59,7 @@
     that:
     - cm_add_fabric_node is changed
     - nm_add_fabric_node is changed
-    - nm_add_fabric_node.current.0.fabricNodeIdentP.attributes.annotation == 'orchestrator:Ansible'
+    - nm_add_fabric_node.current.0.fabricNodeIdentP.attributes.annotation == 'orchestrator:ansible'
     # FIXME: Module is not idempotent
     - cm_add_fabric_node_again is not changed
     - nm_add_fabric_node_again is not changed

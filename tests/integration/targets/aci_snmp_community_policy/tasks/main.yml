@@ -50,7 +50,7 @@
     - add_snmp_community.current.0.snmpCommunityP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/community-ansible_snmp_community"
     - add_snmp_community.current.0.snmpCommunityP.attributes.name == "ansible_snmp_community"
     - add_snmp_community.current.0.snmpCommunityP.attributes.descr == "community description"
-    - add_snmp_community.current.0.snmpCommunityP.attributes.annotation == 'orchestrator:Ansible'
+    - add_snmp_community.current.0.snmpCommunityP.attributes.annotation == 'orchestrator:ansible'
 
 # ADD snmp community again to check idempotency
 - name: Add snmp client group again

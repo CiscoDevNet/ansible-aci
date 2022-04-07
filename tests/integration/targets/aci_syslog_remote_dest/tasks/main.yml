@@ -65,7 +65,7 @@
     - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.port == "5678"
     - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.adminState == "enabled"
     - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.severity == "warnings"
-    - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.annotation == 'orchestrator:Ansible'
+    - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.annotation == 'orchestrator:ansible'
 
 - name: Verify that ansible_syslog_remote_dest children have correct attributes
   assert:

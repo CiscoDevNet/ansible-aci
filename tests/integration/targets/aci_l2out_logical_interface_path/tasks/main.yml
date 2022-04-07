@@ -84,7 +84,7 @@
       - cm_path_to_intfp.previous == nm_path_to_intfp.previous == []
       - cm_path_to_intfp.proposed.l2extRsPathL2OutAtt.attributes.dn == 'uni/tn-anstest/l2out-anstest/lnodep-anstest/lifp-INTFS/rspathL2OutAtt-[topology/pod-1/protpaths-101-102/pathep-[1/7]]'
       - nm_path_to_intfp.current.0.l2extRsPathL2OutAtt.attributes.dn == 'uni/tn-anstest/l2out-anstest/lnodep-anstest/lifp-INTFS/rspathL2OutAtt-[topology/pod-1/protpaths-101-102/pathep-[1/7]]'
-      - nm_path_to_intfp.current.0.l2extRsPathL2OutAtt.attributes.annotation == 'orchestrator:Ansible'
+      - nm_path_to_intfp.current.0.l2extRsPathL2OutAtt.attributes.annotation == 'orchestrator:ansible'
 
 - name: Add another path to interface profile - interface type switch port
   cisco.aci.aci_l2out_logical_interface_path:
