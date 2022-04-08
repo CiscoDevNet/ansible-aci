@@ -14,7 +14,7 @@ options:
     description:
     - User-defined string for annotating an object.
     - If the value is not specified in the task, the value of environment variable C(ACI_ANNOTATION) will be used instead.
-    - If the value is not specified in the task and environment variable C(ACI_ANNOTATION) then the default value will be used. 
+    - If the value is not specified in the task and environment variable C(ACI_ANNOTATION) then the default value will be used.
     type: str
     default: orchestrator:ansible
 '''
