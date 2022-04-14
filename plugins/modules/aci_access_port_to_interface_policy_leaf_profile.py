@@ -94,7 +94,7 @@ options:
     description:
     - The type of interface for the static EPG deployment.
     type: str
-    choices: [ breakout, fex, port_channel, switch_port, vpc ]
+    choices: [ breakout, fex, port_channel, switch_port, vpc, fex_port_channel, fex_vpc]
     default: switch_port
   type:
     description:
@@ -306,12 +306,16 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
+port_channels_dn = "uni/infra/funcprof/accbundle-{0}"
+
 INTERFACE_TYPE_MAPPING = dict(
     breakout="uni/infra/funcprof/brkoutportgrp-{0}",
     fex="uni/infra/funcprof/accportgrp-{0}",
-    port_channel="uni/infra/funcprof/accbundle-{0}",
+    port_channel=port_channels_dn,
     switch_port="uni/infra/funcprof/accportgrp-{0}",
-    vpc="uni/infra/funcprof/accbundle-{0}",
+    vpc=port_channels_dn,
+    fex_port_channel=port_channels_dn,
+    fex_vpc=port_channels_dn,
 )
 
 
@@ -330,7 +334,9 @@ def main():
         from_card=dict(type="str", aliases=["from_card_range"]),
         to_card=dict(type="str", aliases=["to_card_range"]),
         policy_group=dict(type="str", aliases=["policy_group_name"]),
-        interface_type=dict(type="str", default="switch_port", choices=["breakout", "fex", "port_channel", "switch_port", "vpc"]),
+        interface_type=dict(
+            type="str", default="switch_port", choices=["breakout", "fex", "port_channel", "switch_port", "vpc", "fex_port_channel", "fex_vpc"]
+        ),
         type=dict(type="str", default="leaf", choices=["fex", "leaf"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
