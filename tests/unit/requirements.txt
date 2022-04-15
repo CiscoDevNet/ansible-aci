@@ -8,3 +8,6 @@ ipaddress
 # requirement for aci_rest module
 xmljson
 lxml
+
+# requirement for aci_aaa_user module
+python-dateutil
