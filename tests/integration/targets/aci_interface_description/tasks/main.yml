@@ -40,17 +40,22 @@
       fex_id: 123
       description: testing
 
-- name: Query system information
-  aci_system:
-    <<: *aci_info
-    id: 1
-    state: query
-  register: version
-
 - name: Leaf - Clean test environment with no description interface
   cisco.aci.aci_interface_description:
     <<: *aci_info
     <<: *test_vars_leaf
+    state: absent
+
+- name: Spine - Clean test environment with no description interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_spine
+    state: absent
+
+- name: Fex - Clean test environment with no description interface
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    <<: *test_vars_fex
     state: absent
 
 - name: Leaf - Query interface
@@ -60,7 +65,7 @@
     state: query
   register: query_leaf_description
 
-- name: Leaf - Verify that no infraHPathS is not present
+- name: Leaf - Verify that no infraHPathS is present
   assert:
     that:
     - query_leaf_description.current.0.infraInfra.children.0.infraHPathS.children is not defined
@@ -95,6 +100,22 @@
     - query_leaf_interface_1101_eth1_33.current.0.infraHPathS.attributes.descr == "testing"
     - query_leaf_interface_1101_eth1_33.current.0.infraHPathS.attributes.name == "1101_eth1_33"
 
+- name: Query all leaf interfaces
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    node_type: leaf
+    state: query
+  register: query_all_leaf_interfaces
+
+- name: Verify query all leaf interfaces
+  assert:
+    that:
+    - query_all_leaf_interfaces.current | length > 1
+    - query_all_leaf_interfaces.current.1.infraHPathS.children.0.infraRsHPathAtt.attributes.rn == "rsHPathAtt-[topology/pod-1/paths-1101/pathep-[eth1/33]]"
+    - query_all_leaf_interfaces.current.1.infraHPathS.attributes.dn == "uni/infra/hpaths-1101_eth1_33"
+    - query_all_leaf_interfaces.current.1.infraHPathS.attributes.descr == "testing"
+    - query_all_leaf_interfaces.current.1.infraHPathS.attributes.name == "1101_eth1_33"
+
 - name: Leaf - Clean test environment with no description interface
   cisco.aci.aci_interface_description:
     <<: *aci_info
@@ -108,7 +129,7 @@
     state: query
   register: query_leaf_description_again
 
-- name: Leaf - Verify that no infraHPathS is not present
+- name: Leaf - Verify that no infraHPathS is present
   assert:
     that:
     - query_leaf_description_again.current.0.infraInfra.children.0.infraHPathS.children is not defined
@@ -126,7 +147,7 @@
     state: query
   register: query_spine_description
 
-- name: Spine - Verify that no infraSHPathS is not present
+- name: Spine - Verify that no infraSHPathS is present
   assert:
     that:
     - query_spine_description.current.0.infraInfra.children.0.infraSHPathS.children is not defined
@@ -161,6 +182,22 @@
     - query_spine_interface_1201_eth1_33.current.0.infraSHPathS.attributes.descr == "testing"
     - query_spine_interface_1201_eth1_33.current.0.infraSHPathS.attributes.name == "1201_eth1_33"
 
+- name: Query all spine interfaces
+  cisco.aci.aci_interface_description:
+    <<: *aci_info
+    node_type: spine
+    state: query
+  register: query_all_spine_interfaces
+
+- name: Verify query all spine interfaces
+  assert:
+    that:
+    - query_all_spine_interfaces.current | length >= 1
+    - query_all_spine_interfaces.current.1.infraSHPathS.children.0.infraRsSHPathAtt.attributes.rn == "rsSHPathAtt-[topology/pod-1/paths-1201/pathep-[eth1/33]]"
+    - query_all_spine_interfaces.current.1.infraSHPathS.attributes.dn == "uni/infra/shpaths-1201_eth1_33"
+    - query_all_spine_interfaces.current.1.infraSHPathS.attributes.descr == "testing"
+    - query_all_spine_interfaces.current.1.infraSHPathS.attributes.name == "1201_eth1_33"
+
 - name: Spine - Clean test environment with no description interface
   cisco.aci.aci_interface_description:
     <<: *aci_info
@@ -174,7 +211,7 @@
     state: query
   register: query_spine_description_again
 
-- name: Spine - Verify that no infraSHPathS is not present
+- name: Spine - Verify that no infraSHPathS is present
   assert:
     that:
     - query_spine_description_again.current.0.infraInfra.children.0.infraSHPathS.children is not defined
@@ -192,7 +229,7 @@
     state: query
   register: query_fex_description
 
-- name: Fex - Verify that no infraHPathS is not present
+- name: Fex - Verify that no infraHPathS is present
   assert:
     that:
     - query_fex_description.current.0.infraInfra.children.0.infraHPathS.children is not defined
@@ -211,14 +248,14 @@
     - set_fex_description.current.0.infraHPathS.children.0.infraRsHPathAtt.attributes.tDn == "topology/pod-1/paths-1101/extpaths-123/pathep-[eth1/33]"
     - set_fex_description.current.0.infraHPathS.attributes.descr == "testing"
 
-- name: Query Fex interface - 1102_eth123_1_33
+- name: Query Fex interface - 1101_eth123_1_33
   cisco.aci.aci_interface_description:
     <<: *aci_info
     <<: *test_vars_fex
     state: query
   register: query_fex_interface_1201_eth1_33
 
-- name: Assertion check for query Fex interface - 1102_eth123_1_33
+- name: Assertion check for query Fex interface - 1101_eth123_1_33
   assert:
     that:
     - query_fex_interface_1201_eth1_33.current.0.infraHPathS.children | length == 1
@@ -239,7 +276,7 @@
     state: query
   register: query_fex_description_again
 
-- name: Fex - Verify that no infraHPathS is not present
+- name: Fex - Verify that no infraHPathS is present
   assert:
     that:
     - query_fex_description_again.current.0.infraInfra.children.0.infraHPathS.children is not defined
