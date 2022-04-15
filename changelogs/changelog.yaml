@@ -268,3 +268,19 @@ releases:
 
         '
     release_date: '2022-03-15'
+  2.2.1:
+    changes:
+      release_summary: 'Release v2.2.1 of the ``ansible-aci`` collection on 2022-04-15.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.2.0.
+
+        '
+      trivial:
+      - '[bugfix] Fix aci_interface_description query interface filtering  (#238)'
+      - '[ignore] Fix dateutil issue in CICD pipeline'
+      - '[minor_change] Added aggregate attribute, scope default and "import-rtctrl"
+        to scope choices in aci_l3out_extsubnet module (#260)'
+      - '[minor_change] Added fex_port_channel and fex_vpc interface types to aci_access_port_to_interface_policy_leaf_profile
+        (#241)'
+    release_date: '2022-04-15'
