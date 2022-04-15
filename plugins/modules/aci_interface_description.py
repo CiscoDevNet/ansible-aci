@@ -281,38 +281,43 @@ def main():
 
     class_name = "infraHPathS"
     children = ["infraRsHPathAtt"]
-
-    if fex_id:
-        rn = "hpaths-{0}_eth{1}_{2}.json".format(node_id, fex_id, interface.replace("/", "_"))
-        child_configs = [
-            dict(
-                infraRsHPathAtt=dict(attributes=dict(tDn="topology/pod-{0}/paths-{1}/extpaths-{2}/pathep-[eth{3}]".format(pod_id, node_id, fex_id, interface)))
-            ),
-        ]
-    elif node_type == "spine":
-        rn = "shpaths-{0}_eth{1}".format(node_id, interface.replace("/", "_"))
+    if node_type == "spine":
         class_name = "infraSHPathS"
         children = ["infraRsSHPathAtt"]
-        child_configs = [
-            dict(infraRsSHPathAtt=dict(attributes=dict(tDn="topology/pod-{0}/paths-{1}/pathep-[eth{2}]".format(pod_id, node_id, interface)))),
-        ]
-    elif node_type == "leaf":
-        rn = "hpaths-{0}_eth{1}".format(node_id, interface.replace("/", "_"))
-        child_configs = [
-            dict(infraRsHPathAtt=dict(attributes=dict(tDn="topology/pod-{0}/paths-{1}/pathep-[eth{2}]".format(pod_id, node_id, interface)))),
-        ]
+    rn = None
+
+    if node_id and interface:
+        if fex_id:
+            rn = "hpaths-{0}_eth{1}_{2}".format(node_id, fex_id, interface.replace("/", "_"))
+            child_configs = [
+                dict(
+                    infraRsHPathAtt=dict(
+                        attributes=dict(tDn="topology/pod-{0}/paths-{1}/extpaths-{2}/pathep-[eth{3}]".format(pod_id, node_id, fex_id, interface))
+                    )
+                ),
+            ]
+        elif node_type == "spine":
+            rn = "shpaths-{0}_eth{1}".format(node_id, interface.replace("/", "_"))
+            child_configs = [
+                dict(infraRsSHPathAtt=dict(attributes=dict(tDn="topology/pod-{0}/paths-{1}/pathep-[eth{2}]".format(pod_id, node_id, interface)))),
+            ]
+        elif node_type == "leaf":
+            rn = "hpaths-{0}_eth{1}".format(node_id, interface.replace("/", "_"))
+            child_configs = [
+                dict(infraRsHPathAtt=dict(attributes=dict(tDn="topology/pod-{0}/paths-{1}/pathep-[eth{2}]".format(pod_id, node_id, interface)))),
+            ]
+
+    dn = None
+    interface_name = None
+    infra_mo = None
+    if rn:
+        dn = "uni/infra/{0}".format(rn)
+        interface_name = rn.split("-")[1]
+        infra_mo = "infra"
 
     aci.construct_url(
-        root_class=dict(
-            aci_class="infraInfra",
-            aci_rn="infra",
-            module_object="infra",
-            target_filter={"name": "infra"},
-        ),
-        subclass_1=dict(
-            aci_class=class_name,
-            aci_rn=rn,
-        ),
+        root_class=dict(aci_class="infraInfra", aci_rn="infra", module_object=infra_mo, target_filter=dict(name="infra")),
+        subclass_1=dict(aci_class=class_name, aci_rn=rn, module_object=dn, target_filter=dict(name=interface_name)),
         child_classes=children,
     )
 
