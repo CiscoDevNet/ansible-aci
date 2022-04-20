@@ -75,6 +75,20 @@ options:
     - Name of the VMM Domain Enhanced Lag Policy.
     type: str
     aliases: [ lag_policy ]
+  vmm_uplink_active:
+    description:
+    - A list of active uplink IDs.
+    - The order decides the order in which active uplinks take over for a failed uplink.
+    - At least one active uplink must remain specified in list when a active uplink is previously configured.
+    - Not specifying 'vmm_uplink_active' and 'vmm_uplink_standby' will remove a configured child object ( fv:UplinkOrderCont ).
+    type: list
+    elements: str
+  vmm_uplink_standby:
+    description:
+    - A list of standby uplink IDs.
+    - At least one standby uplink must remain specified in list when no active uplink is previously configured.
+    type: list
+    elements: str
   netflow:
     description:
     - Determines if netflow should be enabled.
@@ -326,6 +340,8 @@ def main():
         switching_mode=dict(type="str", default="native", choices=["AVE", "native"]),
         epg=dict(type="str", aliases=["name", "epg_name"]),  # Not required for querying all objects
         enhanced_lag_policy=dict(type="str", aliases=["lag_policy"]),
+        vmm_uplink_active=dict(type='list', elements='str'),
+        vmm_uplink_standby=dict(type='list', elements='str'),
         netflow=dict(type="bool"),
         primary_encap=dict(type="int"),
         resolution_immediacy=dict(type="str", choices=["immediate", "lazy", "pre-provision"]),
@@ -366,6 +382,8 @@ def main():
     switching_mode = module.params.get("switching_mode")
     epg = module.params.get("epg")
     enhanced_lag_policy = module.params.get("enhanced_lag_policy")
+    vmm_uplink_active = module.params.get("vmm_uplink_active")
+    vmm_uplink_standby = module.params.get("vmm_uplink_standby")
     netflow = aci.boolean(module.params.get("netflow"), "enabled", "disabled")
     primary_encap = module.params.get("primary_encap")
     if primary_encap is not None:
@@ -388,6 +406,15 @@ def main():
         epg_domain = "uni/vmmp-{0}/dom-{1}".format(VM_PROVIDER_MAPPING[vm_provider], domain)
         child_configs = [dict(vmmSecP=dict(attributes=dict(allowPromiscuous=promiscuous)))]
         child_classes = ["vmmSecP"]
+
+        if vmm_uplink_active is not None or vmm_uplink_standby is not None:
+            uplink_order_cont = dict(fvUplinkOrderCont=dict(attributes=dict()))
+            if vmm_uplink_active is not None:
+                uplink_order_cont['fvUplinkOrderCont']['attributes']['active'] = ",".join(vmm_uplink_active)
+            if vmm_uplink_standby is not None:
+                uplink_order_cont['fvUplinkOrderCont']['attributes']['standby'] = ",".join(vmm_uplink_standby)
+            child_configs.append(uplink_order_cont)
+            child_classes.append("fvUplinkOrderCont")
 
         if enhanced_lag_policy is not None:
             lag_policy = epg_domain + "/vswitchpolcont/enlacplagp-{0}".format(enhanced_lag_policy)
