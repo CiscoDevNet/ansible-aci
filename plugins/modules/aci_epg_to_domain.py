@@ -79,14 +79,14 @@ options:
     description:
     - A list of active uplink IDs.
     - The order decides the order in which active uplinks take over for a failed uplink.
-    - At least one active uplink must remain specified in list when a active uplink is previously configured.
+    - At least one active uplink must remain specified in the list when an active uplink was previously configured.
     - Not specifying 'vmm_uplink_active' and 'vmm_uplink_standby' will remove a configured child object ( fv:UplinkOrderCont ).
     type: list
     elements: str
   vmm_uplink_standby:
     description:
     - A list of standby uplink IDs.
-    - At least one standby uplink must remain specified in list when no active uplink is previously configured.
+    - At least one standby uplink must remain specified in the list when no active uplink is configured.
     type: list
     elements: str
   netflow:
