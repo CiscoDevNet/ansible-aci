@@ -147,7 +147,7 @@
     - query_all_assocs is not changed
     - query_all_assocs.current|length >= 1
 
-# QUERY A SPECIFIC ASSOCIATIONS
+# QUERY A SPECIFIC ASSOCIATION
 - name: Query a specific EPG to AEP association
   cisco.aci.aci_aep_to_epg:
     <<: *assoc_update
@@ -160,15 +160,15 @@
     - query_spec_assoc is not changed
     - query_spec_assoc.current|length == 1
 
-# REMOVE ASSOCIATION
-- name: Remove EPG to AEP association (check_mode)
+# REMOVE A SPECIFIC ASSOCIATION
+- name: Remove EPG1 to AEP association (check_mode)
   cisco.aci.aci_aep_to_epg: &assoc_remove
     <<: *assoc_update
     state: absent
   check_mode: yes
   register: cm_remove_spec_assoc
 
-- name: Remove EPG to AEP association (normal mode)
+- name: Remove EPG1 to AEP association (normal mode)
   cisco.aci.aci_aep_to_epg:
     <<: *assoc_remove
   register: nm_remove_spec_assoc
@@ -180,7 +180,7 @@
     - nm_remove_spec_assoc is changed
     - nm_remove_spec_assoc.current == []
 
-- name: Remove EPG to AEP association again (normal mode)
+- name: Remove EPG1 to AEP association again (normal mode)
   cisco.aci.aci_aep_to_epg:
     <<: *assoc_remove
   register: nm_remove_spec_assoc_again
@@ -190,6 +190,19 @@
     that:
     - nm_remove_spec_assoc_again is not changed
 
+# QUERY A STILL EXISTING ASSOCIATION
+- name: Query EPG2 to AEP association
+  cisco.aci.aci_aep_to_epg:
+    <<: *assoc_present
+    epg: epg2
+    state: query
+  register: query_existing_assoc
+
+- name: Verify query_existing_assoc
+  assert:
+    that:
+    - query_existing_assoc is not changed
+    - query_existing_assoc.current|length == 1
 
 # QUERY NON-EXISTING ASSOCIATION
 - name: Query non-existing EPG to AEP association (normal mode)
