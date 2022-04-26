@@ -80,7 +80,6 @@ options:
     - A list of active uplink IDs.
     - The order decides the order in which active uplinks take over for a failed uplink.
     - At least one active uplink must remain specified in the list when an active uplink was previously configured.
-    - Not specifying 'vmm_uplink_active' and 'vmm_uplink_standby' will remove a configured child object ( fv:UplinkOrderCont ).
     type: list
     elements: str
   vmm_uplink_standby:
@@ -405,6 +404,7 @@ def main():
     if domain_type == "vmm":
         epg_domain = "uni/vmmp-{0}/dom-{1}".format(VM_PROVIDER_MAPPING[vm_provider], domain)
         child_configs = [dict(vmmSecP=dict(attributes=dict(allowPromiscuous=promiscuous)))]
+        # check with child classes added on all versions
         child_classes = ["vmmSecP"]
 
         if vmm_uplink_active is not None or vmm_uplink_standby is not None:
