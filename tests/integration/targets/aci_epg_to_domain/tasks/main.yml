@@ -240,17 +240,14 @@
       assert:
         that:
           - vmm_uplink is changed
-          - vmm_uplink.current.0.fvRsDomAtt.children | length == 2
           - vmm_uplink.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "1,2"
           - vmm_uplink.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == "3,4"
           - vmm_uplink_change_standby is changed
-          - vmm_uplink_change_standby.current.0.fvRsDomAtt.children | length == 2
           - vmm_uplink_change_standby.previous.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "1,2"
           - vmm_uplink_change_standby.previous.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == "3,4"
           - vmm_uplink_change_standby.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "1,2"
           - vmm_uplink_change_standby.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == "5,6"
           - vmm_uplink_change_active is changed
-          - vmm_uplink_change_active.current.0.fvRsDomAtt.children | length == 2
           - vmm_uplink_change_active.previous.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "1,2"
           - vmm_uplink_change_active.previous.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == "5,6"
           - vmm_uplink_change_active.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "3,4"
@@ -293,13 +290,10 @@
       assert:
         that:
           - vmm_uplink_0_value is changed
-          - vmm_uplink_0_value.current.0.fvRsDomAtt.children | length == 2
           - vmm_uplink_0_value.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "0"
           - vmm_uplink_32_value is changed
-          - vmm_uplink_32_value.current.0.fvRsDomAtt.children | length == 2
           - vmm_uplink_32_value.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "32"
           - vmm_uplink_empty_value_standby is changed
-          - vmm_uplink_empty_value_standby.current.0.fvRsDomAtt.children | length == 2
           - vmm_uplink_empty_value_standby.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == ""
 
     - name: bind vmm domain to epg - vmm_uplink change empty value active
@@ -336,25 +330,6 @@
           - 'vmm_uplink_empty_value_active.msg == "APIC Error 801: property active of uni/tn-anstest/ap-anstest/epg-anstest/rsdomAtt-[uni/vmmp-VMware/dom-anstest]/uplinkorder failed validation for value ''''"'
           - 'vmm_uplink_string_value.msg == "APIC Error 801: property active of uni/tn-anstest/ap-anstest/epg-anstest/rsdomAtt-[uni/vmmp-VMware/dom-anstest]/uplinkorder failed validation for value ''testing''"'
           - 'vmm_uplink_33_value.msg == "APIC Error 120: Invalid Configuration. Uplink Id can not be higher than 32."'
-
-    - name: bind vmm domain to epg - vmm_uplink remove
-      cisco.aci.aci_epg_to_domain:
-        <<: *aci_epg_to_domain_present
-        domain_type: vmm
-        vm_provider: vmware
-
-    - name: bind vmm domain to epg - vmm_uplink removed query
-      cisco.aci.aci_epg_to_domain:
-        <<: *aci_epg_to_domain_present
-        domain_type: vmm
-        vm_provider: vmware
-        state: query
-      register: vmm_uplink_none
-
-    - name: vmm_uplink removed assertion
-      assert:
-        that:
-          - vmm_uplink_none.current.0.fvRsDomAtt.children | length == 1
 
 - name: change custom epg name
   cisco.aci.aci_epg_to_domain:
