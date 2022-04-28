@@ -268,3 +268,14 @@ releases:
 
         '
     release_date: '2022-03-15'
+  2.3.0:
+    changes:
+      bugfixes:
+      - Fix aci_interface_description query interface filtering  (#238)
+      release_summary: 'Release v2.3.0 of the ``ansible-aci`` collection on 2022-04-28.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.2.0.
+
+        '
+    release_date: '2022-04-28'

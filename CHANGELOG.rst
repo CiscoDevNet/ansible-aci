@@ -5,6 +5,21 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.3.0
+======
+
+Release Summary
+---------------
+
+Release v2.3.0 of the ``ansible-aci`` collection on 2022-04-28.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.2.0.
+
+
+Bugfixes
+--------
+
+- Fix aci_interface_description query interface filtering  (#238)
+
 v2.2.0
 ======
 
