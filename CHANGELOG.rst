@@ -5,6 +5,27 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.3.0
+======
+
+Release Summary
+---------------
+
+Release v2.3.0 of the ``ansible-aci`` collection on 2022-04-28.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.2.0.
+
+
+Minor Changes
+-------------
+
+- Added aggregate attribute, scope default and "import-rtctrl" to scope choices in aci_l3out_extsubnet module (#260)
+- Added fex_port_channel and fex_vpc interface types to aci_access_port_to_interface_policy_leaf_profile (#241)
+
+Bugfixes
+--------
+
+- Fix aci_interface_description query interface filtering  (#238)
+
 v2.2.0
 ======
 
