@@ -440,6 +440,7 @@ def main():
 
     aci.response_type(resp.read(), rest_type)
 
+    aci.result["status"] = aci.status
     aci.result["imdata"] = aci.imdata
     aci.result["totalCount"] = aci.totalCount
 
