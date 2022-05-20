@@ -1,0 +1,175 @@
+# Author: Tim Cragg (@timcragg)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove test tenant before we kickoff
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
+
+# SETUP ENVIRONMENT
+- name: Create domain
+  cisco.aci.aci_domain: &domain_present
+    <<: *aci_info
+    domain: ansible_l3_dom
+    domain_type: l3dom
+    state: present
+
+- name: Create tenant
+  cisco.aci.aci_tenant: &tenant_present
+    <<: *tenant_absent
+    state: present
+
+- name: Configure VRF
+  cisco.aci.aci_vrf: &vrf_present
+    <<: *tenant_present
+    vrf: ansible_vrf
+
+- name: Create L3Out
+  cisco.aci.aci_l3out:
+    <<: *vrf_present
+    l3out: ansible_l3out
+    domain: ansible_l3_dom
+    route_control: export
+
+- name: Create route control profile
+  cisco.aci.aci_route_control_profile:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    profile: ansible_rtctrl_profile
+    prof_type: global
+    state: present
+
+# BEGIN WITH TESTS
+- name: Add route control context (check_mode)
+  cisco.aci.aci_route_control_context: &context_present
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    profile: ansible_rtctrl_profile
+    context: ansible_rtctrl_context
+    order: 0
+    action: permit
+    state: present
+  check_mode: yes
+  register: cm_add_context
+
+- name: Add profile (normal mode)
+  cisco.aci.aci_route_control_profile: 
+    <<: *context_present
+  register: nm_add_context
+
+- name: Verify add profile
+  assert:
+    that:
+    - cm_add_context is changed
+    - nm_add_context is changed
+    - cm_add_context.previous == nm_add_context.previous == []
+    - cm_add_context.sent.rtctrlCtxP.attributes.name == nm_add_context.sent.rtctrlCtxP.attributes.name == 'ansible_rtctrl_context'
+    - cm_add_context.sent.rtctrlCtxP.attributes.type == nm_add_context.sent.rtctrlCtxP.attributes.action == 'permit'
+    - cm_add_context.sent.rtctrlCtxP.attributes.order == nm_add_context.sent.rtctrlCtxP.attributes.order == '0'
+
+- name: Add context again, check if idempotency works
+  cisco.aci.aci_route_control_context: 
+    <<: *context_present
+  register: add_context_again
+
+- name: Verify add_context_again
+  assert:
+    that:
+    - add_context_again is not changed
+
+# UPDATE CONTEXT
+- name: Change route control context
+  cisco.aci.aci_route_control_context: &context_update
+    <<: *context_present
+    action: deny
+  register: update_context
+
+- name: Verify update_context
+  assert:
+    that:
+    - update_context is changed
+    - update_context.previous != []
+    - update_context.sent.rtctrlCtxP.attributes.action == 'deny'
+    - update_context.current.0.rtctrlCtxP.attributes.order == '0'
+
+# QUERY ALL CONTEXTS
+- name: Query all contexts
+  cisco.aci.aci_route_control_context: 
+    <<: *aci_info
+    state: query
+  register: query_all_contexts
+
+- name: Verify query_all_contexts
+  assert:
+    that:
+    - query_all_contexts is not changed
+    - query_all_contexts.current|length >= 1
+
+# QUERY A SPECIFIC CONTEXT
+- name: Query a specific context
+  cisco.aci.aci_route_control_context:
+    <<: *context_update
+    state: query
+  register: query_spec_context
+
+- name: Verify query_spec_context
+  assert:
+    that:
+    - query_spec_context is not changed
+    - query_spec_context.current|length == 1
+    - query_spec_context.current.0.rtctrlCtxP.attributes.order == '0'
+    - query_spec_context.current.0.rtctrlCtxP.attributes.action == 'deny'
+    
+
+# REMOVE CONTEXT
+- name: Remove context
+  cisco.aci.aci_route_control_context:
+    <<: *context_update
+    state: absent
+  register: remove_context
+
+- name: Verify remove_context
+  assert:
+    that:
+    - remove_context is changed
+    - remove_context.current == []
+
+# REMOVE CONTEXT AGAIN TO TEST IDEMPOTENCE
+- name: Remove profile again
+  cisco.aci.aci_route_control_context:
+    <<: *context_update
+    state: absent
+  register: remove_context_again
+
+- name: Verify remove_context
+  assert:
+    that:
+    - remove_context_again is not changed
+    - remove_context_again.current == []
+
+# CLEAN UP
+- name: Remove test tenant
+  cisco.aci.aci_tenant:
+    <<: *tenant_absent
+
+- name: Remove test domain
+  cisco.aci.aci_domain:
+    <<: *domain_present
+    state: absent
+  
