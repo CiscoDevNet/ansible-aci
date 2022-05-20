@@ -222,7 +222,6 @@ def main():
         l3out=dict(type="str", aliases=["l3out_name"]),
         profile=dict(type="str", aliases=["profile_name", "route_control_profile"]),
         context=dict(type="str"),
-        description=dict(type="str", aliases=["descr"]),
         subj_name=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -243,7 +242,6 @@ def main():
     tenant = module.params.get("tenant")
     profile = module.params.get("profile")
     context = module.params.get("context")
-    description = module.params.get("description")
     subj_name = module.params.get("subj_name")
 
     aci.construct_url(

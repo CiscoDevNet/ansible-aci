@@ -25,11 +25,6 @@ options:
     description:
     - Subject name
     type: str
-  description:
-    description:
-    - Description of the Subject
-    type: str
-    aliases: [ descr ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.

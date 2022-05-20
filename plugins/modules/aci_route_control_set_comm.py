@@ -29,6 +29,7 @@ options:
   description:
     description:
     - Description of the Set Community object
+    type: str
   community:
     description:
     - Community to set

@@ -32,7 +32,7 @@ options:
   aggregate:
     description:
     - When Aggregate is false, the IP addresses are matched exactly
-    type: boolean
+    type: bool
   greater_than_mask:
     description:
     - prefix length to match. 0 is considered unspecified

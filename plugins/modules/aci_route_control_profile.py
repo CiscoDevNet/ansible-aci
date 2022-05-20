@@ -44,7 +44,7 @@ options:
   autocontinue:
     description:
     - Autocontinue
-    type: boolean
+    type: bool
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
