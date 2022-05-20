@@ -68,19 +68,19 @@
   check_mode: yes
   register: cm_add_context
 
-- name: Add profile (normal mode)
-  cisco.aci.aci_route_control_profile: 
+- name: Add context (normal mode)
+  cisco.aci.aci_route_control_context: 
     <<: *context_present
   register: nm_add_context
 
-- name: Verify add profile
+- name: Verify add context
   assert:
     that:
     - cm_add_context is changed
     - nm_add_context is changed
     - cm_add_context.previous == nm_add_context.previous == []
     - cm_add_context.sent.rtctrlCtxP.attributes.name == nm_add_context.sent.rtctrlCtxP.attributes.name == 'ansible_rtctrl_context'
-    - cm_add_context.sent.rtctrlCtxP.attributes.type == nm_add_context.sent.rtctrlCtxP.attributes.action == 'permit'
+    - cm_add_context.sent.rtctrlCtxP.attributes.action == nm_add_context.sent.rtctrlCtxP.attributes.action == 'permit'
     - cm_add_context.sent.rtctrlCtxP.attributes.order == nm_add_context.sent.rtctrlCtxP.attributes.order == '0'
 
 - name: Add context again, check if idempotency works
@@ -151,13 +151,13 @@
     - remove_context.current == []
 
 # REMOVE CONTEXT AGAIN TO TEST IDEMPOTENCE
-- name: Remove profile again
+- name: Remove context again
   cisco.aci.aci_route_control_context:
     <<: *context_update
     state: absent
   register: remove_context_again
 
-- name: Verify remove_context
+- name: Verify remove_context_again
   assert:
     that:
     - remove_context_again is not changed
