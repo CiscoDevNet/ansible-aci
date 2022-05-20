@@ -1,0 +1,153 @@
+# Author: Tim Cragg (@timcragg)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove test tenant before we kickoff
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
+
+# SETUP ENVIRONMENT
+- name: Create domain
+  cisco.aci.aci_domain: &domain_present
+    <<: *aci_info
+    domain: ansible_l3_dom
+    domain_type: l3dom
+    state: present
+
+- name: Create tenant
+  cisco.aci.aci_tenant: &tenant_present
+    <<: *tenant_absent
+    state: present
+
+- name: Configure VRF
+  cisco.aci.aci_vrf: &vrf_present
+    <<: *tenant_present
+    vrf: ansible_vrf
+
+- name: Create L3Out
+  cisco.aci.aci_l3out:
+    <<: *vrf_present
+    l3out: ansible_l3out
+    domain: ansible_l3_dom
+    route_control: export 
+
+# BEGIN WITH TESTS
+- name: Add route control profile (check_mode)
+  cisco.aci.aci_route_control_profile: &profile_present
+    <<: *aci_info
+    profile: ansible_rtctrl_profile
+    prof_type: global
+    autocontinue: false
+    state: present
+  check_mode: yes
+  register: cm_add_profile
+
+- name: Add profile (normal mode)
+  cisco.aci.aci_route_control_profile: 
+    <<: *profile_present
+  register: nm_add_profile
+
+- name: Verify add profile
+  assert:
+    that:
+    - cm_add_profile is changed
+    - nm_add_profile is changed
+    - cm_add_profile.previous == nm_add_profile.previous == []
+    - cm_add_profile.sent.rtctrlProfile.attributes.name == nm_add_profile.sent.rtctrlProfile.attributes.name == 'ansible_rtctrl_profile'
+    - cm_add_profile.sent.rtctrlProfile.attributes.type == nm_add_profile.sent.rtctrlProfile.attributes.type == 'global'
+    - cm_add_profile.sent.rtctrlProfile.attributes.autoContinue == nm_add_profile.sent.rtctrlProfile.attributes.autoContinue == 'false'
+
+- name: Add profile again, check if idempotency works
+  cisco.aci.aci_route_control_profile: 
+    <<: *profile_present
+  register: add_profile_again
+
+- name: Verify add_profile_again
+  assert:
+    that:
+    - add_node_again is not changed
+
+# UPDATE PROFILE
+- name: Change route control profile
+  cisco.aci.aci_route_control_profile: &profile_update
+    <<: *profile_present
+    prof_type: combinable
+    autocontinue: true
+  register: update_profile
+
+- name: Verify update_profile
+  assert:
+    that:
+    - update_profile is changed
+    - update_profile.previous != []
+    - update_profile.sent.rtctrlProfile.attributes.type == 'combinable'
+    - update_profile.sent.rtctrlProfile.attributes.autoContinue == 'true'
+
+# QUERY ALL PROFILES
+- name: Query all profiles
+  cisco.aci.aci_route_control_profile: 
+    <<: *aci_info
+    state: query
+  register: query_all_profiles
+
+- name: Verify query_all_profiles
+  assert:
+    that:
+    - query_all_profiles is not changed
+    - query_all_profiles.current|length >= 1
+
+# QUERY A SPECIFIC PROFILE
+- name: Query a specific profile
+  cisco.aci.aci_route_control_profile:
+    <<: *profile_update
+    state: query
+  register: query_spec_profile
+
+- name: Verify query_spec_profile
+  assert:
+    that:
+    - query_spec_profile is not changed
+    - query_spec_profile.current|length == 1
+    - query_spec_profile.current.0.rtctrlProfile.attributes.type == 'combinable'
+    - query_spec_profile.current.0.rtctrlProfile.attributes.autoContinue == 'true'
+    
+
+# REMOVE PROFILE
+- name: Remove profile
+  cisco.aci.aci_route_control_profile:
+    <<: *profile_update
+    state: absent
+  register: remove_profile
+
+- name: Verify remove_profile
+  assert:
+    that:
+    - remove_node is changed
+    - remove_node.current == []
+
+# REMOVE PROFILE AGAIN TO TEST IDEMPOTENCE
+- name: Remove profile again
+  cisco.aci.aci_route_control_profile:
+    <<: *profile_update
+    state: absent
+  register: remove_profile_again
+
+- name: Verify remove_profile
+  assert:
+    that:
+    - remove_profile_again is not changed
+    - remove_profile_again.current == []

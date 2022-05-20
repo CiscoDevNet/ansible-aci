@@ -278,6 +278,7 @@ def main():
                 name=profile,
                 descr=description,
                 type=prof_type,
+                autoContinue=autocontinue,
                 dn="uni/tn-{0}/out-{1}/prof-{2}".format(tenant, l3out, profile),
             ),
         )
