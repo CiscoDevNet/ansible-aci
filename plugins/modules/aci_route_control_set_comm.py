@@ -33,7 +33,7 @@ options:
   community:
     description:
     - Community to set
-    type:str
+    type: str
   set_criteria:
     description:
     - Whether to append or replace communities

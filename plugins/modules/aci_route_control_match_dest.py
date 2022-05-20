@@ -272,9 +272,10 @@ def main():
         aci.payload(
             aci_class="rtctrlMatchRtDest",
             class_config=dict(
-                name=profile,
-                descr=description,
-                type=prof_type,
+                ip=ip,
+                fromPfxLen=greater_than,
+                toPfxLen=less_than,
+                aggregate=aggregate,
                 dn="uni/tn-{0}/subj-{1}/dest-[{2}]".format(tenant, subject, ip),
             ),
         )

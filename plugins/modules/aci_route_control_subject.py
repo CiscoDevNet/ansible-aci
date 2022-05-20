@@ -233,9 +233,8 @@ def main():
         aci.payload(
             aci_class="rtctrlSubj",
             class_config=dict(
-                name=profile,
-                descr=description,
-                dn="uni/tn-{0}/subj-{1}".format(tenant, subject),
+                name=subject_name,
+                dn="uni/tn-{0}/subj-{1}".format(tenant, subject_name),
             ),
         )
 
