@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_route_control_subject
-short_description: Manage Route Control Match Destination objects (rtctrlSubj)
+short_description: Manage Route Control Match Destination objects (rtctrlSubjP)
 description:
 - Manage Route Control Subject on Cisco ACI fabrics.
 options:
@@ -41,7 +41,7 @@ notes:
 seealso:
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(rtctrl:MatchRtDest).
+  description: More information about the internal APIC class B(rtctrl:SubjP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -220,7 +220,7 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="rtctrlSubj",
+            aci_class="rtctrlSubjP",
             aci_rn="subj-{0}".format(subject_name),
             module_object=subject_name,
             target_filter={"name": subject_name},
@@ -231,14 +231,14 @@ def main():
 
     if state == "present":
         aci.payload(
-            aci_class="rtctrlSubj",
+            aci_class="rtctrlSubjP",
             class_config=dict(
                 name=subject_name,
                 dn="uni/tn-{0}/subj-{1}".format(tenant, subject_name),
             ),
         )
 
-        aci.get_diff(aci_class="rtctrlSubj")
+        aci.get_diff(aci_class="rtctrlSubjP")
 
         aci.post_config()
 
