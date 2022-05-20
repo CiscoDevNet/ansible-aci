@@ -30,6 +30,7 @@ options:
     description:
     - Description of the Set Community object
     type: str
+    aliases: [ descr ]
   community:
     description:
     - Community to set

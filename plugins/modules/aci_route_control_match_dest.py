@@ -276,7 +276,7 @@ def main():
                 fromPfxLen=greater_than,
                 toPfxLen=less_than,
                 aggregate=aggregate,
-                dn="uni/tn-{0}/subj-{1}/dest-[{2}]".format(tenant, subject, ip),
+                dn="uni/tn-{0}/subj-{1}/dest-[{2}]".format(tenant, subject_name, ip),
             ),
         )
 
