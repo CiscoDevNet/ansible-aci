@@ -47,7 +47,7 @@
     - cm_add_subject is changed
     - nm_add_subject is changed
     - cm_add_subject.previous == nm_add_subject.previous == []
-    - cm_add_subject.sent.rtctrlSubj.attributes.name == nm_add_subject.sent.rtctrlSubj.attributes.name == 'ansible_rtctrl_subject'
+    - cm_add_subject.sent.rtctrlSubjP.attributes.name == nm_add_subject.sent.rtctrlSubjP.attributes.name == 'ansible_rtctrl_subject'
 
 - name: Add subject again, check if idempotency works
   cisco.aci.aci_route_control_subject: 
@@ -84,7 +84,7 @@
     that:
     - query_spec_subject is not changed
     - query_spec_subject.current|length == 1
-    - query_spec_subject.current.0.rtctrlSubj.attributes.name == 'ansible_rtctrl_subject'
+    - query_spec_subject.current.0.rtctrlSubjP.attributes.name == 'ansible_rtctrl_subject'
 
 # REMOVE SUBJECT
 - name: Remove subject
@@ -93,24 +93,24 @@
     state: absent
   register: remove_subject
 
-- name: Verify remove_context
+- name: Verify remove_subject
   assert:
     that:
     - remove_subject is changed
     - remove_subject.current == []
 
 # REMOVE SUBJECT AGAIN TO TEST IDEMPOTENCE
-- name: Remove context again
+- name: Remove subject again
   cisco.aci.aci_route_control_subject:
     <<: *subject_present
     state: absent
-  register: remove_context_again
+  register: remove_subject_again
 
-- name: Verify remove_context_again
+- name: Verify remove_subject_again
   assert:
     that:
-    - remove_context_again is not changed
-    - remove_context_again.current == []
+    - remove_subject_again is not changed
+    - remove_subject_again.current == []
 
 # CLEAN UP
 - name: Remove test tenant
