@@ -82,9 +82,9 @@
 - name: Verify query_spec_attr
   assert:
     that:
-    - query_spec_match_dest is not changed
-    - query_spec_match_dest.current|length == 1
-    - query_spec_match_dest.current.0.rtctrlAttrP.attributes.name == 'ansible_attr'
+    - query_spec_attr is not changed
+    - query_spec_attr.current|length == 1
+    - query_spec_attr.current.0.rtctrlAttrP.attributes.name == 'ansible_attr'
 
 # REMOVE ATTR
 - name: Remove match destination
