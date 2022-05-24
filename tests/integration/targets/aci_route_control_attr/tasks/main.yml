@@ -87,7 +87,7 @@
     - query_spec_attr.current.0.rtctrlAttrP.attributes.name == 'ansible_attr'
 
 # REMOVE ATTR
-- name: Remove match destination
+- name: Remove route control attribution
   cisco.aci.aci_route_control_attr:
     <<: *attr_present
     state: absent
@@ -99,8 +99,8 @@
     - remove_attr is changed
     - remove_attr.current == []
 
-# REMOVE MATCH ATTR AGAIN TO TEST IDEMPOTENCE
-- name: Remove match destination again
+# REMOVE ATTR AGAIN TO TEST IDEMPOTENCE
+- name: Remove route control attribute again
   cisco.aci.aci_route_control_attr:
     <<: *attr_present
     state: absent
