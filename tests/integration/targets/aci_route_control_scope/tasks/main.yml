@@ -103,7 +103,7 @@
     - cm_add_scope is changed
     - nm_add_scope is changed
     - cm_add_scope.previous == nm_add_scope.previous == []
-    - cm_add_scope.sent.rtctrlScope.attributes.tnRtctrlAttrPName == nm_add_scope.sent.rtctrlScope.attributes.tnRtctrlAttrPName == 'ansible_rtctrl_attr'
+    - cm_add_scope.sent.rtctrlScope.children.0.rtctrlRsScopeToAttrP.attributes.tnRtctrlAttrPName == nm_add_scope.sent.rtctrlScope.children.0.rtctrlRsScopeToAttrP.attributes.tnRtctrlAttrPName == 'ansible_rtctrl_attr'
 
 - name: Add context again, check if idempotency works
   cisco.aci.aci_route_control_scope:
@@ -127,7 +127,7 @@
     that:
     - update_scope is changed
     - update_scope.previous != []
-    - update_scope.sent.rtctrlScope.attributes.tnRtctrlAttrPName == 'ansible_rtctrl_attr2'
+    - update_scope.sent.rtctrlScope.children.0.rtctrlRsScopeToAttrP.attributes.tnRtctrlAttrPName == 'ansible_rtctrl_attr2'
 
 # QUERY ALL SCOPES
 - name: Query all scopes
@@ -173,7 +173,7 @@
 # REMOVE SCOPE AGAIN TO TEST IDEMPOTENCE
 - name: Remove scope again
   cisco.aci.aci_route_control_scope:
-    <<: *context_present
+    <<: *scope_present
     state: absent
   register: remove_scope_again
 
