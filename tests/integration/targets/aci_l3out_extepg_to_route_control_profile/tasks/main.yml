@@ -20,7 +20,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant:
+  aci_tenant: &tenant_absent
     <<: *aci_info
     tenant: ansible_tenant
     state: absent
