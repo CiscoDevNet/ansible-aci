@@ -26,13 +26,6 @@
     <<: *tenant_absent
     state: present
 
-- name: Add route control attribute
-  cisco.aci.aci_route_control_attr:
-    <<: *aci_info
-    tenant: ansible_tenant
-    name: ansible_attr
-    state: present
-
 # BEGIN WITH TESTS
 - name: Add route control attribute (check_mode)
   cisco.aci.aci_route_control_attr: &attr_present
