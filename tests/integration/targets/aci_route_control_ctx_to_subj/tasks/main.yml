@@ -78,7 +78,6 @@
   cisco.aci.aci_route_control_ctx_to_subj: &binding_present
     <<: *aci_info
     tenant: ansible_tenant
-    subject_name: ansible_rtctrl_subject
     l3out: ansible_l3out
     profile: tansible_rtctrl_profile
     context: ansible_rtctrl_context
