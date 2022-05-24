@@ -96,8 +96,8 @@
 - name: Verify remove_attr
   assert:
     that:
-    - remove_match_attr is changed
-    - remove_match_attr.current == []
+    - remove_attr is changed
+    - remove_attr.current == []
 
 # REMOVE MATCH ATTR AGAIN TO TEST IDEMPOTENCE
 - name: Remove match destination again
