@@ -63,7 +63,7 @@ seealso:
 - module: cisco.aci.aci_route_control_profile
 - module: cisco.aci.aci_route_control_context
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(rtctrl:Profile).
+  description: More information about the internal APIC class B(rtctrl:Scope).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
