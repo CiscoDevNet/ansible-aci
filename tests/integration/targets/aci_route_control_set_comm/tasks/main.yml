@@ -113,7 +113,7 @@
     - query_spec_comm.current.0.rtctrlSetComm.attributes.setCriteria == 'replace'
 
 # REMOVE COMM
-- name: Remove route control comm
+- name: Remove route control community
   cisco.aci.aci_route_control_set_comm:
     <<: *comm_present
     state: absent
@@ -126,7 +126,7 @@
     - remove_comm.current == []
 
 # REMOVE COMM AGAIN TO TEST IDEMPOTENCE
-- name: Remove match destination again
+- name: Remove route control community again
   cisco.aci.aci_route_control_set_comm:
     <<: *comm_present
     state: absent
