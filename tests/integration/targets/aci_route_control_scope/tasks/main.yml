@@ -154,7 +154,7 @@
     that:
     - query_spec_scope is not changed
     - query_spec_scope.current|length == 1
-    - query_spec_scope.current.0.rtctrlScope.attributes.tnRtctrlAttrPName == 'ansible_rtctrl_attr2'
+    - query_spec_scope.current.0.rtctrlScope.children.0.rtctrlRsScopeToAttrP.attributes.tnRtctrlAttrPName == 'ansible_rtctrl_attr2'
 
 
 # REMOVE SCOPE
