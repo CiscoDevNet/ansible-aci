@@ -1,0 +1,144 @@
+# Author: Tim Cragg (@timcragg)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove test tenant before we kickoff
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
+
+# SETUP ENVIRONMENT
+- name: Create tenant
+  cisco.aci.aci_tenant: &tenant_present
+    <<: *tenant_absent
+    state: present
+
+- name: Add route control attribute
+  cisco.aci.aci_route_control_attr:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_attr
+    state: present
+
+# BEGIN WITH TESTS
+- name: Add route control community (check_mode)
+  cisco.aci.aci_route_control_set_comm: &comm_present
+    <<: *aci_info
+    tenant: ansible_tenant
+    attr_name: ansible_attr
+    set_criteria: append
+    community: extended:as4-nn2:5:16
+    state: present
+  check_mode: yes
+  register: cm_add_comm
+
+- name: Add route control community (normal mode)
+  cisco.aci.aci_route_control_set_comm:
+    <<: *comm_present
+  register: nm_add_comm
+
+- name: Verify add community
+  assert:
+    that:
+    - cm_add_comm is changed
+    - nm_add_comm is changed
+    - cm_add_comm.previous == nm_add_comm.previous == []
+    - cm_add_comm.sent.rtctrlSetComm.attributes.community == nm_add_comm.sent.rtctrlSetComm.attributes.community == 'extended:as4-nn2:5:16'
+    - cm_add_comm.sent.rtctrlSetComm.attributes.setCriteria == nm_add_comm.sent.rtctrlSetComm.attributes.setCriteria == 'append'
+
+- name: Add route control attribute again, check if idempotency works
+  cisco.aci.aci_route_control_set_comm:
+    <<: *comm_present
+  register: add_comm_again
+
+- name: Verify add_comm_again
+  assert:
+    that:
+    - add_comm_again is not changed
+
+# MODIFY COMMUNITY
+- name: Update route control community
+  cisco.aci.aci_route_control_set_comm:
+    <<: *comm_present
+    set_criteria: replace
+    community: extended:as4-nn2:5:17
+  register: update_comm
+
+- name: Verify nm_update_comm
+  assert:
+    that:
+    - update_comm is changed
+    - update_comm.sent.rtctrlSetComm.attributes.community == 'extended:as4-nn2:5:17'
+    - update_comm.sent.rtctrlSetComm.attributes.setCriteria == 'replace'
+
+# QUERY ALL COMMS
+- name: Query all route control communities
+  cisco.aci.aci_route_control_set_comm:
+    <<: *aci_info
+    state: query
+  register: query_all_comms
+
+- name: Verify query_all_comms
+  assert:
+    that:
+    - query_all_comms is not changed
+    - query_all_comms.current|length >= 1
+
+# QUERY A SPECIFIC COMMUNITY
+- name: Query a specific route control community
+  cisco.aci.aci_route_control_set_comm:
+    <<: *comm_present
+    state: query
+  register: query_spec_comm
+
+- name: Verify query_spec_comm
+  assert:
+    that:
+    - query_spec_comm is not changed
+    - query_spec_comm.current|length == 1
+    - query_spec_comm.current.0.rtctrlSetComm.attributes.community == 'extended:as4-nn2:5:17'
+    - query_spec_comm.current.0.rtctrlSetComm.attributes.setCriteria == 'replace'
+
+# REMOVE COMM
+- name: Remove route control comm
+  cisco.aci.aci_route_control_set_comm:
+    <<: *comm_present
+    state: absent
+  register: remove_comm
+
+- name: Verify remove_comm
+  assert:
+    that:
+    - remove_comm is changed
+    - remove_comm.current == []
+
+# REMOVE COMM AGAIN TO TEST IDEMPOTENCE
+- name: Remove match destination again
+  cisco.aci.aci_route_control_set_comm:
+    <<: *comm_present
+    state: absent
+  register: remove_comm_again
+
+- name: Verify remove_comm_again
+  assert:
+    that:
+    - remove_comm_again is not changed
+    - remove_comm_again.current == []
+
+# CLEAN UP
+- name: Remove test tenant
+  cisco.aci.aci_tenant:
+    <<: *tenant_absent
