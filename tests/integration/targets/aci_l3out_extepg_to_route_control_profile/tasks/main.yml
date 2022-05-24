@@ -102,7 +102,7 @@
     that:
     - cm_add_binding is changed
     - nm_add_binding is changed
-    - cm_add_binding.previous == nm_add_scope.previous == []
+    - cm_add_binding.previous == nm_add_binding.previous == []
     - cm_add_binding.sent.l3extRsInstPToProfile.attributes.direction == nm_add_binding.sent.l3extRsInstPToProfile.attributes.direction == 'import'
     - cm_add_binding.sent.l3extRsInstPToProfile.attributes.tnRtctrlProfileName == nm_add_binding.sent.l3extRsInstPToProfile.attributes.tnRtctrlProfileName == 'ansible_rtctrl_profile'
 
@@ -118,7 +118,7 @@
 
 # UPDATE BINDING
 - name: Change route control profile binding
-  cisco.aci.aci_l3out_extepg_to_route_control_profile:
+  cisco.aci.aci_l3out_extepg_to_route_control_profile: &binding_update
     <<: *binding_present
     profile: ansible_rtctrl_profile2
   register: update_binding
@@ -127,7 +127,6 @@
   assert:
     that:
     - update_binding is changed
-    - update_binding.previous != []
     - update_binding.sent.l3extRsInstPToProfile.attributes.tnRtctrlProfileName == 'ansible_rtctrl_profile2'
 
 # QUERY ALL BINDINGS
@@ -146,7 +145,7 @@
 # QUERY A SPECIFIC BINDINGS
 - name: Query a specific binding
   cisco.aci.aci_l3out_extepg_to_route_control_profile:
-    <<: *binding_present
+    <<: *binding_update
     state: query
   register: query_spec_binding
 
@@ -160,7 +159,7 @@
 # REMOVE BINDING
 - name: Remove binding
   cisco.aci.aci_l3out_extepg_to_route_control_profile:
-    <<: *binding_present
+    <<: *binding_update
     state: absent
   register: remove_binding
 
@@ -173,7 +172,7 @@
 # REMOVE BINDING AGAIN TO TEST IDEMPOTENCE
 - name: Remove binding again
   cisco.aci.aci_l3out_extepg_to_route_control_profile:
-    <<: *binding_present
+    <<: *binding_update
     state: absent
   register: remove_binding_again
 
