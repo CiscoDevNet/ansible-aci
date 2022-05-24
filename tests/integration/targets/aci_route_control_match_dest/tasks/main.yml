@@ -48,7 +48,7 @@
   register: cm_add_match_dest
 
 - name: Add match destination (normal mode)
-  cisco.aci.aci_route_control_match_dest: 
+  cisco.aci.aci_route_control_match_dest:
     <<: *match_dest_present
   register: nm_add_match_dest
 
@@ -64,7 +64,7 @@
     - cm_add_match_dest.sent.rtctrlMatchRtDest.attributes.aggregate == nm_add_match_dest.sent.rtctrlMatchRtDest.attributes.aggregate == 'no'
 
 - name: Add match destination again, check if idempotency works
-  cisco.aci.aci_route_control_match_dest: 
+  cisco.aci.aci_route_control_match_dest:
     <<: *match_dest_present
   register: add_match_dest_again
 
@@ -75,7 +75,7 @@
 
 # UPDATE MATCH DESTINATION
 - name: Update Match Destination
-  cisco.aci.aci_route_control_match_dest: 
+  cisco.aci.aci_route_control_match_dest:
     <<: *match_dest_present
     aggregate: yes
     gt: 0
@@ -93,7 +93,7 @@
 
 # QUERY ALL MATCH DESTINATIONS
 - name: Query all match destinations
-  cisco.aci.aci_route_control_match_dest: 
+  cisco.aci.aci_route_control_match_dest:
     <<: *aci_info
     state: query
   register: query_all_match_destinations
@@ -120,7 +120,7 @@
     - query_spec_match_dest.current.0.rtctrlMatchRtDest.attributes.fromPfxLen == '0'
     - query_spec_match_dest.current.0.rtctrlMatchRtDest.attributes.toPfxLen == '0'
     - query_spec_match_dest.current.0.rtctrlMatchRtDest.attributes.aggregate == 'yes'
-    
+
 
 # REMOVE MATCH DESTINATION
 - name: Remove match destination
@@ -152,4 +152,3 @@
 - name: Remove test tenant
   cisco.aci.aci_tenant:
     <<: *tenant_absent
-

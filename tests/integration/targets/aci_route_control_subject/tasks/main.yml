@@ -37,7 +37,7 @@
   register: cm_add_subject
 
 - name: Add subject (normal mode)
-  cisco.aci.aci_route_control_subject: 
+  cisco.aci.aci_route_control_subject:
     <<: *subject_present
   register: nm_add_subject
 
@@ -50,7 +50,7 @@
     - cm_add_subject.sent.rtctrlSubjP.attributes.name == nm_add_subject.sent.rtctrlSubjP.attributes.name == 'ansible_rtctrl_subject'
 
 - name: Add subject again, check if idempotency works
-  cisco.aci.aci_route_control_subject: 
+  cisco.aci.aci_route_control_subject:
     <<: *subject_present
   register: add_subject_again
 
@@ -61,7 +61,7 @@
 
 # QUERY ALL SUBJECTS
 - name: Query all subjects
-  cisco.aci.aci_route_control_subject: 
+  cisco.aci.aci_route_control_subject:
     <<: *aci_info
     state: query
   register: query_all_subjects
@@ -116,4 +116,3 @@
 - name: Remove test tenant
   cisco.aci.aci_tenant:
     <<: *tenant_absent
-
