@@ -154,7 +154,7 @@
 # REMOVE BINDING AGAIN TO TEST IDEMPOTENCE
 - name: Remove binding again
   cisco.aci.aci_route_control_ctx_to_subj:
-    <<: *binding_update
+    <<: *binding_present
     state: absent
   register: remove_binding_again
 
