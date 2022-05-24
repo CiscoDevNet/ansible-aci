@@ -79,7 +79,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     l3out: ansible_l3out
-    profile: tansible_rtctrl_profile
+    profile: ansible_rtctrl_profile
     context: ansible_rtctrl_context
     subj_name: ansible_rtctrl_subject
     state: present

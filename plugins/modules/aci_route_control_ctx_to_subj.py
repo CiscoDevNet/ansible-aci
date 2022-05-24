@@ -283,7 +283,6 @@ def main():
         aci.payload(
             aci_class="rtctrlRsCtxPToSubjP",
             class_config=dict(
-                dn="uni/tn-{0}/out-{1}/prof-{2}/ctx-{3}/rsctxPToSubjP-{4}".format(tenant, l3out, profile, context, subj_name),
                 tnRtctrlSubjPName=subj_name,
             ),
         )
