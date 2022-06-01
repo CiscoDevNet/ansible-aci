@@ -58,6 +58,7 @@
         leafs: 108
         pod: 8
         encap_id: 108
+        primary_encap_id: 1008
     state: present
   check_mode: yes
   register: cm_interfaces_present
@@ -163,6 +164,7 @@
         leafs: 108
         pod: 8
         encap_id: 108
+        primary_encap_id: 1008
         description: "Description set from path level attributes"
     state: present
   check_mode: yes
@@ -438,6 +440,7 @@
     interface_mode: trunk
     deploy_immediacy: lazy
     encap_id: 108
+    primary_encap_id: unknown
     description: "Module level test"
     interface_configs:
       - interface: 1/8
@@ -452,6 +455,7 @@
       - module_level_check is changed
       - module_level_check.current.0.fvAEPg.children | length == 1
       - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-108"
+      - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.primaryEncap == "unknown"
       - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-8/paths-108/pathep-[eth1/8]"
       - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Module level test"
       - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.instrImedcy == "lazy"
@@ -471,6 +475,7 @@
       - module_level_check_absent.current.0.fvAEPg.attributes.name == "anstest"
       - module_level_check_absent.previous.0.fvAEPg.children | length == 1
       - module_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-108"
+      - module_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.primaryEncap == "unknown"
       - module_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Module level test"
       - module_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-8/paths-108/pathep-[eth1/8]"
 
@@ -555,17 +560,206 @@
       - path_and_module_encap_id_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Path and Module level test"
       - path_and_module_encap_id_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-7/paths-107/pathep-[eth1/7]"
 
-# Cleanup part
-- name: Remove anstest epg
-  cisco.aci.aci_epg:
+- name: Bind static-binding to epg - interface type switch_port - no leafs (normal mode)
+  cisco.aci.aci_bulk_static_binding_to_epg:
     <<: *epg_present
-    state: absent
+    interface_configs:
+    - interface_type: switch_port
+      interface_mode: trunk
+      deploy_immediacy: lazy
+      encap_id: 107
+      interface: 'ansible_test'
+      pod: 1
+    state: present
+  ignore_errors: yes
+  register: switch_port_no_leafs
 
-- name: Remove anstest ap
-  cisco.aci.aci_ap:
-    <<: *ap_present
-    state: absent
+- name: Bind static-binding to epg - interface type fex_vpc - no extpaths (normal mode)
+  cisco.aci.aci_bulk_static_binding_to_epg: &fex_vpc_no_extpaths
+    <<: *epg_present
+    interface_configs:
+    - interface_type: fex_vpc
+      interface_mode: trunk
+      deploy_immediacy: lazy
+      encap_id: 107
+      interface: 'ansible_test'
+      leafs: 101
+      pod: 1
+    state: present
+  ignore_errors: yes
+  register: fex_vpc_no_extpaths
 
+- name: Bind static-binding to epg - interface type fex_vpc - incorrect extpaths (normal mode)
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *fex_vpc_no_extpaths
+    interface_configs:
+    - interface_type: fex_vpc
+      interface_mode: trunk
+      deploy_immediacy: lazy
+      encap_id: 107
+      interface: 'ansible_test'
+      leafs: 101
+      pod: 1
+      extpaths:
+      - 1012
+  ignore_errors: yes
+  register: fex_vpc_one_node
+
+- name: Bind static-binding to epg - fex_vpc with one extpaths (normal mode)
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *fex_vpc_no_extpaths
+    interface_configs:
+    - interface_type: fex_vpc
+      interface_mode: trunk
+      deploy_immediacy: lazy
+      encap_id: 107
+      interface: 'ansible_test'
+      pod: 1
+      leafs:
+      - 101
+      - 102
+      extpaths:
+      - 103
+  ignore_errors: yes
+  register: fex_vpc_one_extpaths
+
+- name: Bind static-binding to epg - switch_port with two leafs (normal mode)
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *fex_vpc_no_extpaths
+    interface_configs:
+    - interface_type: switch_port
+      interface_mode: trunk
+      deploy_immediacy: lazy
+      encap_id: 107
+      interface: 'ansible_test'
+      pod: 1
+      leafs:
+      - 101
+      - 102
+  ignore_errors: yes
+  register: switch_port_two_leafs
+
+- name: Bind static-binding to epg - switch_port with two extpaths (normal mode)
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *fex_vpc_no_extpaths
+    interface_configs:
+    - interface_type: switch_port
+      interface_mode: trunk
+      deploy_immediacy: lazy
+      encap_id: 107
+      interface: 'ansible_test'
+      pod: 1
+      leafs:
+      - 101
+      extpaths:
+      - 102
+      - 103
+  ignore_errors: yes
+  register: switch_port_two_extpaths
+
+- name: Bind static-binding to epg - fex_vpc with 3 nodes (normal mode)
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *fex_vpc_no_extpaths
+    interface_configs:
+    - interface_type: fex_vpc
+      interface_mode: trunk
+      deploy_immediacy: lazy
+      encap_id: 107
+      interface: 'ansible_test'
+      pod: 1
+      leafs:
+      - 101
+      - 102
+      - 103
+      extpaths:
+      - 101
+      - 102
+  ignore_errors: yes
+  register: fex_vpc_three_leafs
+
+- name: Bind static-binding to epg - fex_vpc with 3 expaths (normal mode)
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *fex_vpc_no_extpaths
+    interface_configs:
+    - interface_type: fex_vpc
+      interface_mode: trunk
+      deploy_immediacy: lazy
+      encap_id: 107
+      interface: 'ansible_test'
+      pod: 1
+      leafs:
+      - 101
+      - 102
+      extpaths:
+      - 101
+      - 102
+      - 103
+  ignore_errors: yes
+  register: fex_vpc_three_expaths
+
+- name: Bind static-binding to epg - switch_port with encap_id 5000 (normal mode)
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *fex_vpc_no_extpaths
+    interface_configs:
+    - interface_type: switch_port
+      interface_mode: trunk
+      deploy_immediacy: lazy
+      encap_id: 5000
+      interface: 'ansible_test'
+      pod: 1
+      leafs:
+      - 101
+  ignore_errors: yes
+  register: switch_port_encap_id_too_high
+
+- name: Bind static-binding to epg - switch_port with primary_encap_id 5000 (normal mode)
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *fex_vpc_no_extpaths
+    interface_configs:
+    - interface_type: switch_port
+      interface_mode: trunk
+      deploy_immediacy: lazy
+      encap_id: 107
+      primary_encap_id: 5000
+      interface: 'ansible_test'
+      pod: 1
+      leafs:
+      - 101
+  ignore_errors: yes
+  register: switch_port_primary_encap_id_too_high
+
+- name: Bind static-binding to epg - switch_port with primary_encap_id 5000 (normal mode)
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    <<: *fex_vpc_no_extpaths
+    interface_configs:
+    - interface_type: switch_port
+      interface_mode: trunk
+      deploy_immediacy: lazy
+      encap_id: 107
+      primary_encap_id: not_unknown
+      interface: 'ansible_test'
+      pod: 1
+      leafs:
+      - 101
+  ignore_errors: yes
+  register: switch_port_primary_encap_id_not_unknown
+
+- name: Negative assertions to check error messages
+  assert:
+    that:
+    - switch_port_no_leafs.msg == "missing required arguments{{':'}} leafs found in interface_configs"
+    - fex_vpc_no_extpaths.msg == "extpaths is required when interface_type is{{':'}} fex_vpc"
+    - fex_vpc_one_node.msg == "A interface_type of \"vpc\" requires 2 leafs"
+    - fex_vpc_one_extpaths.msg == "A interface_type of \"fex_vpc\" requires 2 extpaths"
+    - switch_port_two_leafs.msg == "The interface_types \"switch_port\", \"port_channel\", and \"fex\" do not support using multiple leafs for a single binding"
+    - switch_port_two_extpaths.msg == "The interface_types \"fex\" and \"fex_port_channel\" do not support using multiple extpaths for a single binding"
+    - fex_vpc_three_leafs.msg == "The \"leafs\" parameter must not have more than 2 entries"
+    - fex_vpc_three_expaths.msg == "The \"extpaths\" parameter must not have more than 2 entries"
+    - switch_port_encap_id_too_high.msg == "Valid VLAN assignments are from 1 to 4096"
+    - switch_port_primary_encap_id_too_high.msg == "Valid VLAN assignments are from 1 to 4096 or unknown."
+    - switch_port_primary_encap_id_not_unknown.msg.startswith("Valid VLAN assignments are from 1 to 4096 or unknown. ")
+
+# Cleanup part
 - name: Remove anstest tenant
   cisco.aci.aci_tenant:
     <<: *tenant_present
