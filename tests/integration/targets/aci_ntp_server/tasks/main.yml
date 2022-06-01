@@ -1,0 +1,237 @@
+# Test code for the ACI modules
+# Copyright: (c) 2017, Tim Cragg (timcragg)
+#
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove any pre-existing NTP policy
+  cisco.aci.aci_ntp_policy: &policy_absent
+    <<: *aci_info
+    name: ansible_ntp_policy
+    state: absent
+
+# ADD NTP POLICY
+- name: Add NTP policy
+  cisco.aci.aci_ntp_policy:
+    <<: *aci_info
+    name: ansible_ntp_policy
+    description: 'Ansible test policy'
+    admin_state: enabled
+    server_state: disabled
+    auth_state: disabled
+    state: present
+
+# ADD NTP SERVER
+- name: Add NTP server (check mode)
+  cisco.aci.aci_ntp_server: &server_present
+    <<: *aci_info
+    ntp_policy: ansible_ntp_policy
+    ntp_server: 10.20.30.40
+    description: 'Ansible test server'
+    min_poll: 5
+    max_poll: 10
+    preferred: yes
+    state: present
+  check_mode: yes
+  register: cm_add_server
+
+- name: Add NTP server (normal mode)
+  cisco.aci.aci_ntp_server:
+    <<: *server_present
+  register: nm_add_server
+
+- name: Add NTP server again (check mode)
+  cisco.aci.aci_ntp_server:
+    <<: *server_present
+  check_mode: yes
+  register: cm_add_server_again
+
+- name: Add NTP server again (normal mode)
+  cisco.aci.aci_ntp_server:
+    <<: *server_present
+  register: nm_add_server_again
+
+- name: Verify add server
+  assert:
+    that:
+    - cm_add_server is changed
+    - nm_add_server is changed
+    - nm_add_server.current.0.datetimeNtpProv.attributes.dn == 'uni/fabric/time-ansible_ntp_policy/ntpprov-10.20.30.40'
+    - nm_add_server.current.0.datetimeNtpProv.attributes.name == '10.20.30.40'
+    - nm_add_server.current.0.datetimeNtpProv.attributes.descr == 'Ansible test server'
+    - nm_add_server.current.0.datetimeNtpProv.attributes.minPoll == '5'
+    - nm_add_server.current.0.datetimeNtpProv.attributes.maxPoll == '10'
+    - nm_add_server.current.0.datetimeNtpProv.attributes.preferred == 'yes'
+    - cm_add_server_again is not changed
+    - nm_add_server_again is not changed
+    - nm_add_server_again.current.0.datetimeNtpProv.attributes.dn == 'uni/fabric/time-ansible_ntp_policy/ntpprov-10.20.30.40'
+    - nm_add_server_again.current.0.datetimeNtpProv.attributes.name == '10.20.30.40'
+    - nm_add_server_again.current.0.datetimeNtpProv.attributes.descr == 'Ansible test server'
+    - nm_add_server_again.current.0.datetimeNtpProv.attributes.minPoll == '5'
+    - nm_add_server_again.current.0.datetimeNtpProv.attributes.maxPoll == '10'
+    - nm_add_server_again.current.0.datetimeNtpProv.attributes.preferred == 'yes'
+
+# MODIFY SERVER
+- name: Modify NTP server (check mode)
+  cisco.aci.aci_ntp_server: &server_changed
+    <<: *aci_info
+    ntp_policy: ansible_ntp_policy
+    ntp_server: 10.20.30.40
+    description: 'Ansible test server'
+    min_poll: 6
+    max_poll: 9
+    preferred: yes
+    epg_type: oob
+    epg_name: default
+    state: present
+  check_mode: yes
+  register: cm_modify_server
+
+- name: Modify server (normal mode)
+  cisco.aci.aci_ntp_server:
+    <<: *server_changed
+  register: nm_modify_server
+
+- name: Modify server again (check mode)
+  cisco.aci.aci_ntp_server:
+    <<: *server_changed
+  check_mode: yes
+  register: cm_modify_server_again
+
+- name: Modify server again (normal mode)
+  cisco.aci.aci_ntp_server:
+    <<: *server_changed
+  register: nm_modify_server_again
+
+- name: Verify modify policy
+  assert:
+    that:
+    - cm_modify_server is changed
+    - nm_modify_server is changed
+    - nm_modify_server.current.0.datetimeNtpProv.attributes.dn == 'uni/fabric/time-ansible_ntp_policy/ntpprov-10.20.30.40'
+    - nm_modify_server.current.0.datetimeNtpProv.attributes.name == '10.20.30.40'
+    - nm_modify_server.current.0.datetimeNtpProv.attributes.descr == 'Ansible test server'
+    - nm_modify_server.current.0.datetimeNtpProv.attributes.minPoll == '6'
+    - nm_modify_server.current.0.datetimeNtpProv.attributes.maxPoll == '9'
+    - nm_modify_server.current.0.datetimeNtpProv.attributes.preferred == 'yes'
+    - nm_modify_server.current.0.datetimeNtpProv.children.0.datetimeRsNtpProvToEpg.attributes.tDn == 'uni/tn-mgmt/mgmtp-default/oob-default'
+    - cm_modify_server_again is not changed
+    - nm_modify_server_again is not changed
+    - nm_modify_server_again.current.0.datetimeNtpProv.attributes.dn == 'uni/fabric/time-ansible_ntp_policy/ntpprov-10.20.30.40'
+    - nm_modify_server_again.current.0.datetimeNtpProv.attributes.name == '10.20.30.40'
+    - nm_modify_server_again.current.0.datetimeNtpProv.attributes.descr == 'Ansible test server'
+    - nm_modify_server_again.current.0.datetimeNtpProv.attributes.minPoll == '6'
+    - nm_modify_server_again.current.0.datetimeNtpProv.attributes.maxPoll == '9'
+    - nm_modify_server_again.current.0.datetimeNtpProv.attributes.preferred == 'yes'
+    - nm_modify_server_again.current.0.datetimeNtpProv.children.0.datetimeRsNtpProvToEpg.attributes.tDn == 'uni/tn-mgmt/mgmtp-default/oob-default'
+
+# QUERY ALL POLICIES
+- name: Query all servers (check_mode)
+  cisco.aci.aci_ntp_server: &server_query_all
+    <<: *aci_info
+    ntp_policy: ansible_ntp_policy
+    state: query
+  check_mode: yes
+  register: cm_query_all_servers
+
+- name: Query all servers (normal mode)
+  cisco.aci.aci_ntp_server:
+    <<: *server_query_all
+  register: nm_query_all_servers
+
+- name: Verify query_all_servers
+  assert:
+    that:
+    - cm_query_all_servers is not changed
+    - nm_query_all_servers is not changed
+
+# QUERY OUR SERVER
+- name: Query our server (check_mode)
+  cisco.aci.aci_ntp_server:
+    <<: *server_query_all
+    ntp_server: 10.20.30.40
+  check_mode: yes
+  register: cm_query_server
+
+- name: Query our server (normal mode)
+  cisco.aci.aci_ntp_server:
+    <<: *server_query_all
+    ntp_server: 10.20.30.40
+  register: nm_query_server
+
+- name: Verify query_server
+  assert:
+    that:
+    - cm_query_server is not changed
+    - nm_query_server is not changed
+    - cm_query_server == nm_query_server
+    - nm_query_server.current.0.datetimeNtpProv.attributes.dn == 'uni/fabric/time-ansible_ntp_policy/ntpprov-10.20.30.40'
+    - nm_query_server.current.0.datetimeNtpProv.attributes.name == '10.20.30.40'
+    - nm_query_server.current.0.datetimeNtpProv.attributes.descr == 'Ansible test server'
+    - nm_query_server.current.0.datetimeNtpProv.attributes.minPoll == '6'
+    - nm_query_server.current.0.datetimeNtpProv.attributes.maxPoll == '9'
+    - nm_query_server.current.0.datetimeNtpProv.attributes.preferred == 'yes'
+
+# REMOVE SERVER
+- name: Remove server (check mode)
+  cisco.aci.aci_ntp_server: &server_absent
+    <<: *aci_info
+    ntp_policy: ansible_ntp_policy
+    ntp_server: 10.20.30.40
+    state: absent
+  check_mode: yes
+  register: cm_remove_server
+
+- name: Remove server (normal mode)
+  cisco.aci.aci_ntp_server:
+    <<: *server_absent
+  register: nm_remove_server
+
+- name: Remove server again (check mode)
+  cisco.aci.aci_ntp_server:
+    <<: *server_absent
+  check_mode: yes
+  register: cm_remove_server_again
+
+- name: Remove server again (normal mode)
+  cisco.aci.aci_ntp_server:
+    <<: *server_absent
+  register: nm_remove_server_again
+
+- name: Verify remove_server
+  assert:
+    that:
+    - cm_remove_server is changed
+    - nm_remove_server is changed
+    - nm_remove_server.current == []
+    - nm_remove_server.previous.0.datetimeNtpProv.attributes.dn == 'uni/fabric/time-ansible_ntp_policy/ntpprov-10.20.30.40'
+    - nm_remove_server.previous.0.datetimeNtpProv.attributes.name == '10.20.30.40'
+    - nm_remove_server.previous.0.datetimeNtpProv.attributes.descr == 'Ansible test server'
+    - nm_remove_server.previous.0.datetimeNtpProv.attributes.minPoll == '6'
+    - nm_remove_server.previous.0.datetimeNtpProv.attributes.maxPoll == '9'
+    - nm_remove_server.previous.0.datetimeNtpProv.attributes.preferred == 'yes'
+    - cm_remove_server_again is not changed
+    - nm_remove_server_again is not changed
+
+# CLEAN UP
+- name: Remove NTP Policy
+  cisco.aci.aci_ntp_policy:
+    <<: *aci_info
+    name: ansible_ntp_policy
+    state: absent
