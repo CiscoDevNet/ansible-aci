@@ -128,6 +128,7 @@ options:
         - The pod number part of the tDn.
         - C(pod_id) is usually an integer below C(10).
         type: int
+        required: yes
         aliases: [ pod, pod_number ]
       leafs:
         description:
@@ -137,12 +138,14 @@ options:
         - The C(leafs) value is usually something like '101' or '101-102' depending on C(connection_type).
         type: list
         elements: str
+        required: yes
         aliases: [ leaves, nodes, paths, switches ]
       interface:
         description:
         - The C(interface) string value part of the tDn.
         - Usually a policy group like C(test-IntPolGrp) or an interface of the following format C(1/7) depending on C(interface_type).
         type: str
+        required: yes
       extpaths:
         description:
         - The C(extpaths) integer value part of the tDn.
@@ -401,16 +404,16 @@ INTERFACE_MODE_MAPPING = {
     "untagged": "untagged",
 }
 
-INTERFACE_TYPE_MAPPING = dict(
-    fex="topology/pod-{pod_id}/paths-{leafs}/extpaths-{extpaths}/pathep-[eth{interface}]",
-    fex_port_channel="topology/pod-{pod_id}/paths-{leafs}/extpaths-{extpaths}/pathep-[{interface}]",
-    fex_vpc="topology/pod-{pod_id}/protpaths-{leafs}/extprotpaths-{extpaths}/pathep-[{interface}]",
-    port_channel="topology/pod-{pod_id}/paths-{leafs}/pathep-[{interface}]",
-    switch_port="topology/pod-{pod_id}/paths-{leafs}/pathep-[eth{interface}]",
-    vpc="topology/pod-{pod_id}/protpaths-{leafs}/pathep-[{interface}]",
-)
+INTERFACE_TYPE_MAPPING = {
+    "fex": "topology/pod-{pod_id}/paths-{leafs}/extpaths-{extpaths}/pathep-[eth{interface}]",
+    "fex_port_channel": "topology/pod-{pod_id}/paths-{leafs}/extpaths-{extpaths}/pathep-[{interface}]",
+    "fex_vpc": "topology/pod-{pod_id}/protpaths-{leafs}/extprotpaths-{extpaths}/pathep-[{interface}]",
+    "port_channel": "topology/pod-{pod_id}/paths-{leafs}/pathep-[{interface}]",
+    "switch_port": "topology/pod-{pod_id}/paths-{leafs}/pathep-[eth{interface}]",
+    "vpc": "topology/pod-{pod_id}/protpaths-{leafs}/pathep-[{interface}]",
+}
 
-# TODO: change 'deploy_immediacy' to 'resolution_immediacy' (as seen in aci_epg_to_domain)?
+INTERFACE_STATUS_MAPPING = {"absent": "deleted"}
 
 
 def main():
@@ -440,9 +443,9 @@ def main():
                     type="str", choices=["802.1p", "access", "native", "regular", "tagged", "trunk", "untagged"], aliases=["interface_mode_name", "mode"]
                 ),
                 interface_type=dict(type="str", choices=["fex", "port_channel", "switch_port", "vpc", "fex_port_channel", "fex_vpc"]),
-                pod_id=dict(type="int", aliases=["pod", "pod_number"]),
-                leafs=dict(type="list", elements="str", aliases=["leaves", "nodes", "paths", "switches"]),
-                interface=dict(type="str"),
+                pod_id=dict(type="int", required=True, aliases=["pod", "pod_number"]),
+                leafs=dict(type="list", elements="str", required=True, aliases=["leaves", "nodes", "paths", "switches"]),
+                interface=dict(type="str", required=True),
                 extpaths=dict(type="list", elements="str"),
             ),
         ),
@@ -472,7 +475,6 @@ def main():
 
     aci = ACIModule(module)
     children = []
-    interface_status_mapping = {"absent": "deleted"}
 
     aci.construct_url(
         root_class=dict(
@@ -571,7 +573,7 @@ def main():
 
             interface_mode = INTERFACE_MODE_MAPPING.get(interface_mode)
 
-            interface_status = interface_status_mapping.get(state)
+            interface_status = INTERFACE_STATUS_MAPPING.get(state)
 
             children.append(
                 dict(
