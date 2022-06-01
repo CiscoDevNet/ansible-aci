@@ -322,6 +322,7 @@
         vmm_uplink_active: [ 33 ]
       ignore_errors: yes
       register: vmm_uplink_33_value
+      when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
     - name: vmm_uplink error assertions
       assert:
@@ -348,6 +349,267 @@
       assert:
         that:
           - custom_epg_name.current.0.fvRsDomAtt.attributes.customEpgName == "anstest_epg"
+
+- name: domain with delimiter
+  cisco.aci.aci_epg_to_domain: &aci_delimiter
+    <<: *aci_epg_to_domain_present
+    domain: "ansdelim_{{ index }}"
+    domain_type: vmm
+    vm_provider: vmware
+    delimiter: "{{ item }}"
+  register: delimeter
+  loop:
+    - "|"
+    - "~"
+    - "!"
+    - "@"
+    - "^"
+    - "+"
+    - "="
+  loop_control:
+    index_var: index
+
+- name: domain with delimiter not allowed input
+  cisco.aci.aci_epg_to_domain:
+    <<: *aci_delimiter
+    domain: ansdelim_not_allowed
+    delimiter: not_allowed
+  register: delimiter_not_allowed
+  ignore_errors: true
+
+- name: delete domains with delimiter
+  cisco.aci.aci_epg_to_domain:
+    <<: *aci_epg_to_domain_present
+    domain: "ansdelim_{{ item }}"
+    domain_type: vmm
+    vm_provider: vmware
+    state: absent
+  register: delimeter_absent
+  loop: "{{ range(0, 7, 1)|list }}"
+
+- name: domains with delimiter assertions
+  assert:
+    that:
+      - delimeter.results.0 is changed
+      - delimeter.results.0.current.0.fvRsDomAtt.attributes.delimiter == "|"
+      - delimeter.results.1 is changed
+      - delimeter.results.1.current.0.fvRsDomAtt.attributes.delimiter == "~"
+      - delimeter.results.2 is changed
+      - delimeter.results.2.current.0.fvRsDomAtt.attributes.delimiter == "!"
+      - delimeter.results.3 is changed
+      - delimeter.results.3.current.0.fvRsDomAtt.attributes.delimiter == "@"
+      - delimeter.results.4 is changed
+      - delimeter.results.4.current.0.fvRsDomAtt.attributes.delimiter == "^"
+      - delimeter.results.5 is changed
+      - delimeter.results.5.current.0.fvRsDomAtt.attributes.delimiter == "+"
+      - delimeter.results.6 is changed
+      - delimeter.results.6.current.0.fvRsDomAtt.attributes.delimiter == "="
+      - delimiter_not_allowed is not changed
+      - 'delimiter_not_allowed.msg == "value of delimiter must be one of: |, ~, !, @, ^, +, =, got: not_allowed"'
+      - delimeter_absent.results.0 is changed
+      - delimeter_absent.results.0.current == []
+      - delimeter_absent.results.1 is changed
+      - delimeter_absent.results.1.current == []
+      - delimeter_absent.results.2 is changed
+      - delimeter_absent.results.2.current == []
+      - delimeter_absent.results.3 is changed
+      - delimeter_absent.results.3.current == []
+      - delimeter_absent.results.4 is changed
+      - delimeter_absent.results.4.current == []
+      - delimeter_absent.results.5 is changed
+      - delimeter_absent.results.5.current == []
+      - delimeter_absent.results.6 is changed
+      - delimeter_absent.results.6.current == []
+
+- name: domain with untagged vlan true
+  cisco.aci.aci_epg_to_domain: &aci_untagged
+    <<: *aci_epg_to_domain_present
+    domain: ansuntagged
+    domain_type: vmm
+    vm_provider: vmware
+    untagged_vlan: true
+  register: untagged_vlan_true
+
+- name: domain with untagged vlan false
+  cisco.aci.aci_epg_to_domain:
+    <<: *aci_untagged
+    untagged_vlan: false
+  register: untagged_vlan_false
+
+- name: delete domain with untagged vlan
+  cisco.aci.aci_epg_to_domain:
+    <<: *aci_untagged
+    state: absent
+  register: untagged_vlan_absent
+
+- name: domains with untagged vlan assertions
+  assert:
+    that:
+      - untagged_vlan_true is changed
+      - untagged_vlan_true.current.0.fvRsDomAtt.attributes.untagged == "yes"
+      - untagged_vlan_false is changed
+      - untagged_vlan_false.current.0.fvRsDomAtt.attributes.untagged == "no"
+      - untagged_vlan_absent is changed
+      - untagged_vlan_absent.current == []
+
+- name: Test domain with port binding
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+  block:
+    - name: domain with port binding dynamic
+      cisco.aci.aci_epg_to_domain: &aci_port_binding
+        <<: *aci_epg_to_domain_present
+        domain: ansportbind
+        domain_type: vmm
+        vm_provider: vmware
+        port_binding: dynamic
+      register: port_binding_dynamic
+
+    - name: change domain with port binding to static
+      cisco.aci.aci_epg_to_domain:
+        <<: *aci_port_binding
+        port_binding: static
+      register: port_binding_static
+
+    - name: change domain with port binding to ephemeral
+      cisco.aci.aci_epg_to_domain:
+        <<: *aci_port_binding
+        port_binding: ephemeral
+      register: port_binding_ephemeral
+
+    - name: domain with port binding not allowed input
+      cisco.aci.aci_epg_to_domain:
+        <<: *aci_port_binding
+        domain: ansdelim_not_allowed
+        port_binding: not_allowed
+      register: port_binding_not_allowed
+      ignore_errors: true
+
+    - name: delete domain with port binding
+      cisco.aci.aci_epg_to_domain:
+        <<: *aci_port_binding
+        state: absent
+      register: port_binding_absent
+
+    - name: domains with port binding assertions
+      assert:
+        that:
+          - port_binding_dynamic is changed
+          - port_binding_dynamic.current.0.fvRsDomAtt.attributes.bindingType == "dynamicBinding"
+          - port_binding_static is changed
+          - port_binding_static.current.0.fvRsDomAtt.attributes.bindingType == "staticBinding"
+          - port_binding_ephemeral is changed
+          - port_binding_ephemeral.current.0.fvRsDomAtt.attributes.bindingType == "ephemeral"
+          - port_binding_not_allowed is not changed
+          - 'port_binding_not_allowed.msg == "value of port_binding must be one of: dynamic, ephemeral, static, got: not_allowed"'
+          - port_binding_absent is changed
+          - port_binding_absent.current == []
+
+    - name: domain with port allocation elastic
+      cisco.aci.aci_epg_to_domain: &aci_port_allocation
+        <<: *aci_epg_to_domain_present
+        domain: ansportalloc
+        domain_type: vmm
+        vm_provider: vmware
+        port_allocation: elastic
+      register: port_allocation_elastic
+
+    - name: change domain with port allocation to fixed
+      cisco.aci.aci_epg_to_domain:
+        <<: *aci_port_allocation
+        port_allocation: fixed
+      register: port_allocation_fixed
+
+    - name: domain with port allocation not allowed input
+      cisco.aci.aci_epg_to_domain:
+        <<: *aci_port_allocation
+        domain: ansdelim_not_allowed
+        port_allocation: not_allowed
+      register: port_allocation_not_allowed
+      ignore_errors: true
+
+    - name: delete domain with port allocation
+      cisco.aci.aci_epg_to_domain:
+        <<: *aci_port_allocation
+        state: absent
+      register: port_allocation_absent
+
+    - name: domains with port allocation assertions
+      assert:
+        that:
+          - port_allocation_elastic is changed
+          - port_allocation_elastic.current.0.fvRsDomAtt.attributes.portAllocation == "elastic"
+          - port_allocation_fixed is changed
+          - port_allocation_fixed.current.0.fvRsDomAtt.attributes.portAllocation == "fixed"
+          - port_allocation_not_allowed is not changed
+          - 'port_allocation_not_allowed.msg == "value of port_allocation must be one of: elastic, fixed, got: not_allowed"'
+          - port_allocation_absent is changed
+          - port_allocation_absent.current == []
+
+    - name: domain with number of ports of 2
+      cisco.aci.aci_epg_to_domain: &aci_number_port
+        <<: *aci_epg_to_domain_present
+        domain: ansportnum
+        domain_type: vmm
+        vm_provider: vmware
+        number_of_ports: 2
+      register: number_of_ports_2
+
+    - name: change domain with number of ports to 3
+      cisco.aci.aci_epg_to_domain:
+        <<: *aci_number_port
+        number_of_ports: 3
+      register: number_of_ports_3
+
+    - name: delete domain with number of ports
+      cisco.aci.aci_epg_to_domain:
+        <<: *aci_number_port
+        state: absent
+      register: number_of_ports_absent
+
+    - name: domains with number of ports assertions
+      assert:
+        that:
+          - number_of_ports_2 is changed
+          - number_of_ports_2.current.0.fvRsDomAtt.attributes.numPorts == "2"
+          - number_of_ports_3 is changed
+          - number_of_ports_3.current.0.fvRsDomAtt.attributes.numPorts == "3"
+          - number_of_ports_absent is changed
+          - number_of_ports_absent.current == []
+
+- name: domain with forged transmits and mac changes
+  cisco.aci.aci_epg_to_domain: &aci_forged_transmits_and_mac_changes
+    <<: *aci_epg_to_domain_present
+    domain: ansforgedmac
+    domain_type: vmm
+    vm_provider: vmware
+    forged_transmits: accept
+    mac_changes: accept
+  register: forged_transmits_and_mac_changes_accept
+
+- name: change domain with forged transmits and mac changes to reject
+  cisco.aci.aci_epg_to_domain:
+    <<: *aci_forged_transmits_and_mac_changes
+    forged_transmits: reject
+    mac_changes: reject
+  register: forged_transmits_and_mac_changes_reject
+
+- name: delete domain with forged transmits and mac changes
+  cisco.aci.aci_epg_to_domain:
+    <<: *aci_forged_transmits_and_mac_changes
+    state: absent
+  register: forged_transmits_and_mac_changes_absent
+
+- name: domains with forged transmits and mac changes assertions
+  assert:
+    that:
+      - forged_transmits_and_mac_changes_accept is changed
+      - forged_transmits_and_mac_changes_accept.current.0.fvRsDomAtt.children.0.vmmSecP.attributes.forgedTransmits == "accept"
+      - forged_transmits_and_mac_changes_accept.current.0.fvRsDomAtt.children.0.vmmSecP.attributes.macChanges == "accept"
+      - forged_transmits_and_mac_changes_reject is changed
+      - forged_transmits_and_mac_changes_reject.current.0.fvRsDomAtt.children.0.vmmSecP.attributes.forgedTransmits == "reject"
+      - forged_transmits_and_mac_changes_reject.current.0.fvRsDomAtt.children.0.vmmSecP.attributes.macChanges == "reject"
+      - forged_transmits_and_mac_changes_absent is changed
+      - forged_transmits_and_mac_changes_absent.current == []
 
 - name: present assertions
   assert:

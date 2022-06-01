@@ -133,6 +133,41 @@ options:
     description:
     - The custom epg name in VMM domain association.
     type: str
+  delimiter:
+    description:
+    - The delimiter.
+    type: str
+    choices: [ "|", "~", "!", "@", "^", "+", "=" ]
+  untagged_vlan:
+    description:
+    - The access vlan is untagged.
+    type: bool
+  port_binding:
+    description:
+    - The port binding method.
+    type: str
+    choices: [ dynamic, ephemeral, static ]
+  port_allocation:
+    description:
+    - The port allocation method.
+    type: str
+    choices: [ elastic, fixed ]
+  number_of_ports:
+    description:
+    - The number of ports.
+    type: int
+  forged_transmits:
+    description:
+    - Allow forged transmits. A forged transmit occurs when a network adapter starts sending out traffic that identifies itself as something else.
+    type: str
+    choices: [ accept, reject ]
+    default: reject
+  mac_changes:
+    description:
+    - Allows definition of new MAC addresses for the network adapter within the virtual machine (VM).
+    type: str
+    choices: [ accept, reject ]
+    default: reject
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -349,6 +384,13 @@ def main():
         vm_provider=dict(type="str", choices=["cloudfoundry", "kubernetes", "microsoft", "openshift", "openstack", "redhat", "vmware"]),
         promiscuous=dict(type="str", default="reject", choices=["accept", "reject"]),
         custom_epg_name=dict(type="str"),
+        delimiter=dict(type="str", choices=["|", "~", "!", "@", "^", "+", "="]),
+        untagged_vlan=dict(type="bool"),
+        port_binding=dict(type="str", choices=["dynamic", "ephemeral", "static"]),
+        port_allocation=dict(type="str", choices=["elastic", "fixed"]),
+        number_of_ports=dict(type="int"),
+        forged_transmits=dict(type="str", default="reject", choices=["accept", "reject"]),
+        mac_changes=dict(type="str", default="reject", choices=["accept", "reject"])
     )
 
     module = AnsibleModule(
@@ -397,13 +439,23 @@ def main():
     if domain_type in ["l2dom", "phys"] and vm_provider is not None:
         module.fail_json(msg="Domain type '%s' cannot have a 'vm_provider'" % domain_type)
 
+    delimiter = module.params.get("delimiter")
+    untagged_vlan = 'yes' if module.params.get("untagged_vlan") is True else 'no'
+    port_binding = module.params.get("port_binding")
+    if port_binding == "static" or port_binding == "dynamic":
+        port_binding = "{0}Binding".format(port_binding)
+    port_allocation = module.params.get("port_allocation")
+    number_of_ports = module.params.get("number_of_ports")
+    forged_transmits = module.params.get("forged_transmits")
+    mac_changes = module.params.get("mac_changes")
+
     child_classes = None
     child_configs = None
 
     # Compile the full domain for URL building
     if domain_type == "vmm":
         epg_domain = "uni/vmmp-{0}/dom-{1}".format(VM_PROVIDER_MAPPING[vm_provider], domain)
-        child_configs = [dict(vmmSecP=dict(attributes=dict(allowPromiscuous=promiscuous)))]
+        child_configs = [dict(vmmSecP=dict(attributes=dict(allowPromiscuous=promiscuous, forgedTransmits=forged_transmits, macChanges=mac_changes)))]
         # check with child classes added on all versions
         child_classes = ["vmmSecP"]
 
@@ -477,6 +529,11 @@ def main():
                 primaryEncap=primary_encap,
                 resImedcy=resolution_immediacy,
                 customEpgName=custom_epg_name,
+                delimiter=delimiter,
+                untagged=untagged_vlan,
+                bindingType=port_binding,
+                portAllocation=port_allocation,
+                numPorts=number_of_ports
             ),
             child_configs=child_configs,
         )
