@@ -97,6 +97,8 @@
     min_poll: 6
     max_poll: 9
     preferred: yes
+    epg_type: oob
+    epg_name: default
     state: present
   check_mode: yes
   register: cm_modify_server
@@ -128,6 +130,7 @@
     - nm_modify_server.current.0.datetimeNtpProv.attributes.minPoll == '6'
     - nm_modify_server.current.0.datetimeNtpProv.attributes.maxPoll == '9'
     - nm_modify_server.current.0.datetimeNtpProv.attributes.preferred == 'yes'
+    - nm_modify_server.current.0.datetimeNtpProv.children.0.datetimeRsNtpProvToEpg.attributes.tDn == 'uni/tn-mgmt/mgmtp-default/oob-default'
     - cm_modify_server_again is not changed
     - nm_modify_server_again is not changed
     - nm_modify_server_again.current.0.datetimeNtpProv.attributes.dn == 'uni/fabric/time-ansible_ntp_policy/ntpprov-10.20.30.40'
@@ -136,6 +139,7 @@
     - nm_modify_server_again.current.0.datetimeNtpProv.attributes.minPoll == '6'
     - nm_modify_server_again.current.0.datetimeNtpProv.attributes.maxPoll == '9'
     - nm_modify_server_again.current.0.datetimeNtpProv.attributes.preferred == 'yes'
+    - nm_modify_server_again.current.0.datetimeNtpProv.children.0.datetimeRsNtpProvToEpg.attributes.tDn == 'uni/tn-mgmt/mgmtp-default/oob-default'
 
 # QUERY ALL POLICIES
 - name: Query all servers (check_mode)
