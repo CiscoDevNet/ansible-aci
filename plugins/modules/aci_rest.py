@@ -45,14 +45,14 @@ options:
     - When used instead of C(src), sets the payload of the API request directly.
     - This may be convenient to template simple requests.
     - For anything complex use the C(template) lookup plugin (see examples)
-      or the (template) module with parameter C(src).
+      or the C(template) module with parameter C(src).
     type: raw
   src:
     description:
     - Name of the absolute path of the filename that includes the body
       of the HTTP request being sent to the ACI fabric.
     - If you require a templated payload, use the C(content) parameter
-      together with the C(template) lookup plugin, or use (template).
+      together with the C(template) lookup plugin, or use C(template).
     type: path
     aliases: [ config_file ]
 extends_documentation_fragment:

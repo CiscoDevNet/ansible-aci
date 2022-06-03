@@ -16,7 +16,7 @@ module: aci_vmm_uplink_container
 short_description: Manage VMM uplink containers (vmm:UplinkPCont)
 description:
 - Manage VMM Uplink containers on Cisco ACI fabrics.
-- Individual uplinks within the container are managed using the (aci_vmm_uplink) module
+- Individual uplinks within the container are managed using the M(cisco.aci.aci_vmm_uplink) module
 options:
   domain:
     description:
