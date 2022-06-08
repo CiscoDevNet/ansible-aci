@@ -90,19 +90,20 @@
   register: nm_add_aep_true_to_false_again
 
 - name: Add AEP again (check_mode)
-  cisco.aci.aci_aep: *aep_present
+  cisco.aci.aci_aep:
+    <<: *aep_present
   check_mode: yes
   register: cm_add_aep_again
 
 - name: Add AEP again (normal mode)
-  cisco.aci.aci_aep: *aep_present
+  cisco.aci.aci_aep:
+    <<: *aep_present
   register: nm_add_aep_again
 
 - name: Verify add_aep_again
   assert:
     that:
     - cm_add_aep_again is not changed
-    - nm_add_aep_again is not changed
     - nm_add_aep_again is not changed
     - nm_add_aep_again.previous[0].infraAttEntityP.attributes.dn == nm_add_aep_again.previous[0].infraAttEntityP.attributes.dn == cm_add_aep_again.current[0].infraAttEntityP.attributes.dn == nm_add_aep_again.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
     - nm_add_aep_again.previous[0].infraAttEntityP.attributes.name == nm_add_aep_again.previous[0].infraAttEntityP.attributes.name == cm_add_aep_again.current[0].infraAttEntityP.attributes.name == nm_add_aep_again.current[0].infraAttEntityP.attributes.name == 'ansible_test'
