@@ -5,6 +5,33 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.3.0
+======
+
+Release Summary
+---------------
+
+Release v2.3.0 of the ``ansible-aci`` collection on 2022-06-08.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.2.0.
+
+
+Minor Changes
+-------------
+
+- Add aci_ntp_policy and aci_ntp_server modules and test files (#229)
+- Added active/stanby vmm uplinks for epg to domain
+- Added aggregate attribute, scope default and "import-rtctrl" to scope choices in aci_l3out_extsubnet module (#260)
+- Added fex_port_channel and fex_vpc interface types to aci_access_port_to_interface_policy_leaf_profile (#241)
+- Adding missing options aci epg to domain
+- Removed faulty test and docs for removal childs
+
+Bugfixes
+--------
+
+- Fix aci_aep_to_epg absent issue to only delete the correct binding (#263)
+- Fix aci_interface_description query interface filtering  (#238)
+- Fix for recursive get_diff_children in module_utils aci.py to skip some unneeded childrens
+
 v2.2.0
 ======
 
