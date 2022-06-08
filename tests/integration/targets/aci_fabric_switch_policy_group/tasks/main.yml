@@ -234,14 +234,15 @@
 - name: Verify children
   assert:
     that:
-    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.0.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
-    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
-    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
-    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == "default"
-    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.4.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == "default"
-    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.5.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.6.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.7.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.0.fabricRsNodeCfgSrv.attributes.tDn == "uni/fabric/analytics/cluster-ansible_test/cfgsrv-ansible_test"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.2.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.3.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.4.fabricRsTwampServerPol.attributes.tnTwampServerPolName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.5.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.6.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.7.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.8.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
 
 - name: Query all Fabric Leaf Policy Groups
   cisco.aci.aci_fabric_switch_policy_group:
@@ -309,14 +310,15 @@
     that:
     - delete_fabric_leaf_policy_group is changed
     - delete_fabric_leaf_policy_group.current == []
-    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.0.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
-    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
-    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.2.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
-    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.3.fabricRsTwampServerPol.attributes.tnTwampServerPolName == "default"
-    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.4.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == "default"
-    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.5.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
-    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.6.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
-    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.7.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
+    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.0.fabricRsNodeCfgSrv.attributes.tDn == "uni/fabric/analytics/cluster-ansible_test/cfgsrv-ansible_test"
+    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.1.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
+    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.2.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
+    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.3.fabricRsPsuInstPol.attributes.tnPsuInstPolName == "default"
+    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.4.fabricRsTwampServerPol.attributes.tnTwampServerPolName == "default"
+    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.5.fabricRsNodeCtrl.attributes.tnFabricNodeControlName == "default"
+    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.6.fabricRsMonInstFabricPol.attributes.tnMonFabricPolName == "default"
+    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.7.fabricRsNodeCoreP.attributes.tnDbgexpCorePName == "default"
+    - delete_fabric_leaf_policy_group.previous.0.fabricLeNodePGrp.children.8.fabricRsNodeTechSupP.attributes.tnDbgexpTechSupPName == "default"
 
 # DELETE Fabric Spine Policy Group
 - name: Remove ansible_fabric_spine_policy_group

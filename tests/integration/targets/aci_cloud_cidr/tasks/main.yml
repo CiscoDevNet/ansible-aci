@@ -55,7 +55,7 @@
       name: ctx_profile_1
       vrf: ctx_profile_vrf_1
       region: "{{ region_2 }}"
-      primary_cidr: '10.10.0.0/16'
+      primary_cidr: '10.11.0.0/16'
       cloud: "{{ cloud_type }}"
       state: present
     register: nm_add_aci_ctx_profile
@@ -118,7 +118,7 @@
     aci_cloud_cidr:
       <<: *aci_info
       tenant: anstest
-      address: 10.10.0.0/16
+      address: 10.11.0.0/16
       cloud_context_profile: ctx_profile_1
       state: present
     check_mode: yes
@@ -128,7 +128,7 @@
     aci_cloud_cidr:
       <<: *aci_info
       tenant: anstest
-      address: 10.10.0.0/16
+      address: 10.11.0.0/16
       cloud_context_profile: ctx_profile_1
       state: present
     ignore_errors: yes
@@ -145,7 +145,7 @@
     aci_cloud_cidr:
       <<: *aci_info
       tenant: anstest
-      address: 10.10.0.0/16
+      address: 10.11.0.0/16
       cloud_context_profile: ctx_profile_1
       state: absent
     check_mode: yes
@@ -155,7 +155,7 @@
     aci_cloud_cidr:
       <<: *aci_info
       tenant: anstest
-      address: 10.10.0.0/16
+      address: 10.11.0.0/16
       cloud_context_profile: ctx_profile_1
       state: absent
     ignore_errors: yes
@@ -224,7 +224,7 @@
       - query_all.current.0.cloudCtxProfile.children.0.cloudCidr.attributes.primary == "no"
       - query_all.current.0.cloudCtxProfile.children.1.cloudCidr.attributes.addr == "10.0.0.0/16"
       - query_all.current.0.cloudCtxProfile.children.1.cloudCidr.attributes.primary == "no"
-      - query_all.current.0.cloudCtxProfile.children.2.cloudCidr.attributes.addr == "10.10.0.0/16"
+      - query_all.current.0.cloudCtxProfile.children.2.cloudCidr.attributes.addr == "10.11.0.0/16"
       - query_all.current.0.cloudCtxProfile.children.2.cloudCidr.attributes.primary == "yes"
 
   - name: Query primary CIDR
@@ -232,7 +232,7 @@
       <<: *aci_info
       tenant: anstest
       cloud_context_profile: ctx_profile_1
-      address: 10.10.0.0/16
+      address: 10.11.0.0/16
       state: query
     register: query_primary
 
@@ -240,8 +240,8 @@
     assert:
       that:
       - query_primary is not changed
-      - query_primary.current.0.cloudCidr.attributes.addr == "10.10.0.0/16"
-      - query_primary.current.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.10.0.0/16]"
+      - query_primary.current.0.cloudCidr.attributes.addr == "10.11.0.0/16"
+      - query_primary.current.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.11.0.0/16]"
       - query_primary.current.0.cloudCidr.attributes.primary == "yes"
 
   - name: Query non_primary CIDR
