@@ -1154,6 +1154,7 @@ class ACIModule(object):
             proposed_children = self.proposed[aci_class].get("children")
         else:
             proposed_children = proposed_obj
+
         if proposed_children:
             child_updates = []
             if existing_obj is None:
@@ -1175,8 +1176,6 @@ class ACIModule(object):
 
                         if child_update_children:
                             child_update = child
-                    elif existing_child_children:
-                        child_update = child
 
                 # Update list of updated child configs only if the child config is different than what exists
                 if child_update:
