@@ -379,7 +379,6 @@ def main():
         with open(src, "r") as config_object:
             # TODO: Would be nice to template this, requires action-plugin
             payload = config_object.read()
-            payload_output_file = json.loads(payload)
 
     # Validate payload
     if rest_type == "json":
