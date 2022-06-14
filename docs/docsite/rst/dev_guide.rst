@@ -5,7 +5,7 @@ Developing Cisco ACI modules
 ****************************
 This is a brief walk-through of how to create new Cisco ACI modules for Ansible.
 
-For more information about Cisco ACI, look at the :ref:`Cisco ACI user guide <aci_guide>`.
+For more information about Cisco ACI, look at the :ref:`Cisco ACI user guide <ansible_collections.cisco.aci.docsite.scenario_guide>`.
 
 What's covered in this section:
 
