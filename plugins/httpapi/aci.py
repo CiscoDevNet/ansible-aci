@@ -14,21 +14,8 @@
 
 
 from __future__ import (absolute_import, division, print_function)
+from ipaddress import ip_address
 __metaclass__ = type
-
-DOCUMENTATION = """
----
-author:
-- Lionel Hercot (lhercot)
-- Shreyas Srish (shrsr)
-httpapi: aci
-short_description: Ansible ACI HTTPAPI Plugin.
-description:
-  - This ACI plugin provides the HTTPAPI transport methods needed to initiate
-    a connection to the ACI controller, send API requests and process the
-    response from the controller.
-"""
-
 
 import json
 import re
@@ -44,27 +31,14 @@ class HttpApi(HttpApiBase):
 
     def __init__(self, *args, **kwargs):
         super(HttpApi, self).__init__(*args, **kwargs)
-        self.aci_host = None
-        self.aci_port = None
-        self.aci_user = None
-        self.aci_pass = None
         self.auth = None
         self.check_auth_from_private_key = None
-        self.aci_proxy = None
-        self.aci_ssl = None
-        self.aci_validate_certs = None
         self.backup_hosts = None
         self.host_counter = 0
 
     def set_params(self, auth, params):
-        self.aci_host = params.get('host')
-        self.aci_port = params.get('port')
-        self.aci_user = params.get('username')
-        self.aci_pass = params.get('password')
+        self.params = params
         self.auth = auth
-        self.aci_proxy = params.get('use_proxy')
-        self.aci_ssl = params.get('use_ssl')
-        self.aci_validate_certs = params.get('validate_certs')
 
     def set_backup_hosts(self):
         try:
@@ -85,15 +59,13 @@ class HttpApi(HttpApiBase):
             response, response_data = self.connection.send(path, data, method=method)
             response_value = self._get_response_value(response_data)
             self.connection._auth = {'Cookie': 'APIC-Cookie={0}'
-                                     .format(self._response_to_json(response_value).get('imdata')[0]['aaaLogin']['attributes']['token'])}
-
+                                        .format(self._response_to_json(response_value).get('imdata')[0]['aaaLogin']['attributes']['token'])}
         except Exception:
             self.handle_error()
 
     def logout(self):
         method = 'POST'
         path = '/api/aaaLogout.json'
-
         try:
             response, response_data = self.connection.send(path, {}, method=method)
         except Exception as e:
@@ -107,51 +79,49 @@ class HttpApi(HttpApiBase):
         if json is None:
             json = {}
         # Case1: List of hosts is provided
+        if self.host_counter == 0:
+            with open('/tmp/hosts.pkl', 'wb') as fi:
+                pickle.dump(0, fi)
         self.backup_hosts = self.set_backup_hosts()
+        self.connection.set_option('persistent_command_timeout', 1)
         if not self.backup_hosts:
-            # Case 1: Used for multiple hosts present in the playbook
-            if self.connection._connected is True and self.aci_host != self.connection.get_option("host"):
-                self.connection._connected = False
+            # if self.connection._connected is True and self.params.get('host') != self.connection.get_option("host"):
+            #     self.connection._connected = False
+            if self.params.get('host') is not None:
+                self.connection.set_option("host", self.params.get('host'))
 
-            if self.aci_host is not None:
-                self.connection.set_option("host", self.aci_host)
+            if self.params.get('port') is not None:
+                self.connection.set_option("port", self.params.get('port'))
 
-            if self.aci_port is not None:
-                self.connection.set_option("port", self.aci_port)
+            if self.params.get('username') is not None:
+                self.connection.set_option("remote_user", self.params.get('username'))
 
-            if self.aci_user is not None:
-                self.connection.set_option("remote_user", self.aci_user)
-
-            if self.aci_pass is not None:
-                self.connection.set_option("password", self.aci_pass)
+            if self.params.get('password') is not None:
+                self.connection.set_option("password", self.params.get('password'))
 
             if self.auth is not None:
                 self.connection._auth = {'Cookie': '{0}'.format(self.auth)}
                 self.check_auth_from_private_key = {'Cookie': '{0}'.format(self.auth)}
 
-            if self.aci_proxy is not None:
-                self.connection.set_option("use_proxy", self.aci_proxy)
+            if self.params.get('use_proxy') is not None:
+                self.connection.set_option("use_proxy", self.params.get('use_proxy'))
 
-            if self.aci_ssl is not None:
-                self.connection.set_option("use_ssl", self.aci_ssl)
+            if self.params.get('use_ssl') is not None:
+                self.connection.set_option("use_ssl", self.params.get('use_ssl'))
 
-            if self.aci_validate_certs is not None:
-                self.connection.set_option("validate_certs", self.aci_validate_certs)
+            if self.params.get('validate_certs') is not None:
+                self.connection.set_option("validate_certs", self.params.get('validate_certs'))
 
-            # Case2: Switch using private key to credential authentication when private key is not specified
-            if self.auth is None and self.check_auth_from_private_key is not None:
-                self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
+            #Case2: Switch using private key to credential authentication when private key is not specified
+            # if self.auth is None and self.check_auth_from_private_key is not None:
+            #     self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
         else:
-            try:
-                with open('my_hosts.pk', 'rb') as fi:
-                    self.host_counter = pickle.load(fi)
-            except FileNotFoundError:
-                pass
+            with open('/tmp/hosts.pkl', 'rb') as fi:
+                self.host_counter = pickle.load(fi)
             try:
                 self.connection.set_option("host", self.backup_hosts[self.host_counter])
             except IndexError:
                 pass
-
         # Perform some very basic path input validation.
         path = str(path)
         if path[0] != '/':
@@ -165,20 +135,19 @@ class HttpApi(HttpApiBase):
             self.handle_error()
 
     def handle_error(self):
+        #raise ConnectionError("login")
         self.host_counter += 1
-        if self.host_counter == len(self.backup_hosts):
-            raise ConnectionError("No hosts left in cluster to continue operation")
-        with open('my_hosts.pk', 'wb') as fi:
+        if self.host_counter >= len(self.backup_hosts):
+            raise ConnectionError("No hosts left in cluster to continue operation %s" % self.connection.get_option("host"))
+        with open('/tmp/hosts.pkl', 'wb') as fi:
             pickle.dump(self.host_counter, fi)
-        try:
-            self.connection.set_option("host", self.backup_hosts[self.host_counter])
-        except IndexError:
-            pass
+        self.connection.set_option("host", self.backup_hosts[self.host_counter])
         self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
         return True
 
     def _verify_response(self, response, method, path, rdata):
         ''' Process the return code and response object from APIC '''
+        number = self.host_counter
         resp_value = self._get_response_value(rdata)
         if path.find('.json') != -1:
             respond_data = self._response_to_json(resp_value)
@@ -190,7 +159,7 @@ class HttpApi(HttpApiBase):
             msg = str(response)
         else:
             msg = '{0} ({1} bytes)'.format(response.msg, len(resp_value))
-        return self._return_info(response_code, method, path, msg, respond_data)
+        return self._return_info(response_code, method, path, msg, number, respond_data)
 
     def _get_response_value(self, response_data):
         ''' Extract string data from response_data returned from APIC '''
@@ -204,14 +173,13 @@ class HttpApi(HttpApiBase):
         except ValueError:
             return 'Invalid JSON response: {0}'.format(response_text)
 
-    def _return_info(self, response_code, method, path, msg, respond_data=None):
+    def _return_info(self, response_code, method, path, msg, number, respond_data=None):
         ''' Format success/error data and return with consistent format '''
-
         info = {}
         info['status'] = response_code
         info['method'] = method
         info['url'] = path
         info['msg'] = msg
         info['body'] = respond_data
-
+        info['hosts'] = number
         return info

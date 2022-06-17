@@ -91,6 +91,7 @@ except ImportError:
 def aci_argument_spec():
     return dict(
 <<<<<<< HEAD
+<<<<<<< HEAD
         host=dict(
             type="str",
             required=True,
@@ -98,9 +99,12 @@ def aci_argument_spec():
             fallback=(env_fallback, ["ACI_HOST"]),
         ),
 =======
+=======
+>>>>>>> 5ca45db ([ignore] Change location of persistent storage file)
         host=dict(type="str", required=False, aliases=["hostname"], fallback=(env_fallback, ["ACI_HOST"])),
 >>>>>>> 6341500 (retry w/o conflict)
         port=dict(type="int", required=False, fallback=(env_fallback, ["ACI_PORT"])),
+<<<<<<< HEAD
         username=dict(
             type="str",
             default="admin",
@@ -112,6 +116,16 @@ def aci_argument_spec():
             no_log=True,
             fallback=(env_fallback, ["ACI_PASSWORD", "ANSIBLE_NET_PASSWORD"]),
         ),
+=======
+        username=dict(type="str", default="admin", aliases=["user"], fallback=(env_fallback, ["ACI_USERNAME", "ANSIBLE_NET_USERNAME"])),
+        password=dict(type="str", no_log=True, fallback=(env_fallback, ["ACI_PASSWORD", "ANSIBLE_NET_PASSWORD"])),
+=======
+        host=dict(type='str', required=True, aliases=['hostname'], fallback=(env_fallback, ['ACI_HOST'])),
+        port=dict(type='int', required=False, fallback=(env_fallback, ['ACI_PORT'])),
+        username=dict(type='str', required=False, aliases=['user'], fallback=(env_fallback, ['ACI_USERNAME', 'ANSIBLE_NET_USERNAME'])),
+        password=dict(type='str', no_log=True, fallback=(env_fallback, ['ACI_PASSWORD', 'ANSIBLE_NET_PASSWORD'])),
+>>>>>>> eeef0dc ([ignore] Change location of persistent storage file)
+>>>>>>> 5ca45db ([ignore] Change location of persistent storage file)
         # Beware, this is not the same as client_key !
         private_key=dict(
             type="str",
@@ -492,8 +506,8 @@ class ACIModule(object):
             else:
                 self.module.fail_json(msg="Provided private key '%(private_key)s' does not appear to be a private key." % self.params)
 
-        if self.params.get("certificate_name") is None:
-            self.params["certificate_name"] = self.params.get("username")
+        if self.params.get('certificate_name') is None:
+            self.params['certificate_name'] = self.params.get('username', 'admin')
         # NOTE: ACI documentation incorrectly adds a space between method and path
         sig_request = method + path + payload
         if HAS_CRYPTOGRAPHY:
@@ -1250,7 +1264,11 @@ class ACIModule(object):
 
         elif not self.module.check_mode:
             # Sign and encode request as to APIC's wishes
+<<<<<<< HEAD
             self.call("DELETE")
+=======
+            self.api_call('DELETE')
+>>>>>>> eeef0dc ([ignore] Change location of persistent storage file)
 
 <<<<<<< HEAD
             resp, info = fetch_url(
@@ -1404,6 +1422,7 @@ class ACIModule(object):
         and existing configuration will be added to the self.result dictionary.
         """
 <<<<<<< HEAD
+<<<<<<< HEAD
         uri = self.url + self.filter_string
 
         # Sign and encode request as to APIC's wishes
@@ -1436,6 +1455,12 @@ class ACIModule(object):
 =======
         self.call("GET")
 >>>>>>> 6341500 (retry w/o conflict)
+=======
+        self.call("GET")
+=======
+        self.api_call('GET')
+>>>>>>> eeef0dc ([ignore] Change location of persistent storage file)
+>>>>>>> 5ca45db ([ignore] Change location of persistent storage file)
 
     @staticmethod
     def get_nested_config(proposed_child, existing_children):
@@ -1556,6 +1581,7 @@ class ACIModule(object):
         elif not self.module.check_mode:
             # Sign and encode request as to APIC's wishes
 <<<<<<< HEAD
+<<<<<<< HEAD
             url = self.url
             if parent_class is not None:
                 if self.params.get("port") is not None:
@@ -1595,6 +1621,12 @@ class ACIModule(object):
 =======
             self.call("POST")
 >>>>>>> da2af7d (retry w/o conflict)
+=======
+            self.call("POST")
+=======
+            self.api_call('POST')
+>>>>>>> eeef0dc ([ignore] Change location of persistent storage file)
+>>>>>>> d17daa6 ([ignore] Change location of persistent storage file)
         else:
             self.result["changed"] = True
             self.method = "POST"
@@ -1706,6 +1738,7 @@ class ACIModule(object):
                         json.dump([mo], output_file)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     def delete_config_request(self, path):
         self._config_request(path, "absent")
         self.result["changed"] = True
@@ -1735,6 +1768,9 @@ def ospf_spec():
     )
 =======
     def call(self, method):
+=======
+    def api_call(self, method):
+>>>>>>> d17daa6 ([ignore] Change location of persistent storage file)
         if method == 'GET':
             call_path = self.path + self.filter_string
             call_url = self.url + self.filter_string
@@ -1752,14 +1788,16 @@ def ospf_spec():
             self.cert_auth(method=method, path=call_path, payload=data)
 
         if self.module._socket_path:
-            conn = Connection(self.module._socket_path)
-            conn.set_params(self.headers.get('Cookie'), self.params)
-            info = conn.send_request(method, '/{0}'.format(call_path), data)
-            try:
-                self.url = info.get('url')
-            except Exception:
-                info = conn.send_request(method, '/{0}'.format(call_path), data)
-                self.url = info.get('url')
+            connect = Connection(self.module._socket_path)
+            connect.set_params(self.headers.get('Cookie'), self.params)
+            info = connect.send_request(method, '/{0}'.format(call_path), data)
+            self.url = info.get('url')
+            self.stdout = str(info.get('hosts'))
+            # try:
+            #     self.url = info.get('url')
+            # except Exception:
+            #     info = connect.send_request(method, '/{0}'.format(call_path), data)
+            #     self.url = info.get('url')
         else:
             resp, info = fetch_url(self.module, call_url,
                                    data=data,
