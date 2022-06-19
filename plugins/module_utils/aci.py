@@ -349,6 +349,7 @@ class ACIModule(object):
         self.response = None
         self.status = None
         self.url = None
+        self.httpapi_logs = list()
 
         # aci_rest output
         self.imdata = None
@@ -1264,11 +1265,7 @@ class ACIModule(object):
 
         elif not self.module.check_mode:
             # Sign and encode request as to APIC's wishes
-<<<<<<< HEAD
-            self.call("DELETE")
-=======
-            self.api_call('DELETE')
->>>>>>> eeef0dc ([ignore] Change location of persistent storage file)
+            self.api_call("DELETE")
 
 <<<<<<< HEAD
             resp, info = fetch_url(
@@ -1423,6 +1420,7 @@ class ACIModule(object):
         """
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         uri = self.url + self.filter_string
 
         # Sign and encode request as to APIC's wishes
@@ -1461,6 +1459,9 @@ class ACIModule(object):
         self.api_call('GET')
 >>>>>>> eeef0dc ([ignore] Change location of persistent storage file)
 >>>>>>> 5ca45db ([ignore] Change location of persistent storage file)
+=======
+        self.api_call("GET")
+>>>>>>> 53e78e0 ([ignore] Addition of queue messages)
 
     @staticmethod
     def get_nested_config(proposed_child, existing_children):
@@ -1582,6 +1583,7 @@ class ACIModule(object):
             # Sign and encode request as to APIC's wishes
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             url = self.url
             if parent_class is not None:
                 if self.params.get("port") is not None:
@@ -1627,6 +1629,9 @@ class ACIModule(object):
             self.api_call('POST')
 >>>>>>> eeef0dc ([ignore] Change location of persistent storage file)
 >>>>>>> d17daa6 ([ignore] Change location of persistent storage file)
+=======
+            self.api_call("POST")
+>>>>>>> a77aefa ([ignore] Addition of queue messages)
         else:
             self.result["changed"] = True
             self.method = "POST"
@@ -1653,6 +1658,7 @@ class ACIModule(object):
             self.result["response"] = self.response
             self.result["status"] = self.status
             self.result["url"] = self.url
+            self.result["httpapi_logs"] = self.httpapi_logs
         if self.stdout:
             self.result["stdout"] = self.stdout
 
@@ -1700,9 +1706,18 @@ class ACIModule(object):
                     self.result["filter_string"] = self.filter_string
                 self.result["method"] = self.method
                 # self.result['path'] = self.path  # Adding 'path' in result causes state: absent in output
+<<<<<<< HEAD
                 self.result["response"] = self.response
                 self.result["status"] = self.status
                 self.result["url"] = self.url
+=======
+                self.result['response'] = self.response
+                self.result['status'] = self.status
+                self.result['url'] = self.url
+                self.result['httpapi_logs'] = self.httpapi_logs
+        if self.stdout:
+            self.result['stdout'] = self.stdout
+>>>>>>> cecc2ae ([ignore] Addition of queue messages)
 
         if "state" in self.params:
             if self.params.get("output_level") in ("debug", "info"):
@@ -1792,6 +1807,7 @@ def ospf_spec():
             connect.set_params(self.headers.get('Cookie'), self.params)
             info = connect.send_request(method, '/{0}'.format(call_path), data)
             self.url = info.get('url')
+            self.httpapi_logs.extend(connect.pop_messages())
             self.stdout = str(info.get('hosts'))
             # try:
             #     self.url = info.get('url')

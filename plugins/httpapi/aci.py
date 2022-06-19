@@ -51,6 +51,7 @@ class HttpApi(HttpApiBase):
     def login(self, username, password):
         ''' Log in to APIC '''
         # Perform login request
+        self.connection.queue_message('log', 'Establishing connection to {0}'.format(self.connection.get_option('host')))
         method = 'POST'
         path = '/api/aaaLogin.json'
         payload = {'aaaUser': {'attributes': {'name': username, 'pwd': password}}}
@@ -60,7 +61,9 @@ class HttpApi(HttpApiBase):
             response_value = self._get_response_value(response_data)
             self.connection._auth = {'Cookie': 'APIC-Cookie={0}'
                                         .format(self._response_to_json(response_value).get('imdata')[0]['aaaLogin']['attributes']['token'])}
+            self.connection.queue_message('vvvv', 'Establishing connection to {0} was successful'.format(self.connection.get_option('host')))
         except Exception:
+            self.connection.queue_message('vvvv', 'Failed establishing connection to {0}'.format(self.connection.get_option('host')))
             self.handle_error()
 
     def logout(self):
@@ -79,11 +82,11 @@ class HttpApi(HttpApiBase):
         if json is None:
             json = {}
         # Case1: List of hosts is provided
-        if self.host_counter == 0:
-            with open('/tmp/hosts.pkl', 'wb') as fi:
-                pickle.dump(0, fi)
+        # if self.host_counter == 0:
+        #     with open('/tmp/hosts.pkl', 'wb') as fi:
+        #         pickle.dump(0, fi)
         self.backup_hosts = self.set_backup_hosts()
-        self.connection.set_option('persistent_command_timeout', 1)
+        #self.connection.set_option('persistent_command_timeout', 3)
         if not self.backup_hosts:
             # if self.connection._connected is True and self.params.get('host') != self.connection.get_option("host"):
             #     self.connection._connected = False
@@ -116,10 +119,11 @@ class HttpApi(HttpApiBase):
             # if self.auth is None and self.check_auth_from_private_key is not None:
             #     self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
         else:
-            with open('/tmp/hosts.pkl', 'rb') as fi:
-                self.host_counter = pickle.load(fi)
+            # with open('/tmp/hosts.pkl', 'rb') as fi:
+            #     self.host_counter = pickle.load(fi)
             try:
                 self.connection.set_option("host", self.backup_hosts[self.host_counter])
+                self.connection.queue_message('vvvv', 'Initializing operation on host {0}'.format(self.connection.get_option('host')))
             except IndexError:
                 pass
         # Perform some very basic path input validation.
@@ -130,17 +134,19 @@ class HttpApi(HttpApiBase):
         response = None
         try:
             response, rdata = self.connection.send(path, json, method=method)
+            self.connection.queue_message('vvvv', 'Received response from {0} with HTTP: {1}'.format(self.connection.get_option('host'), response.getcode()))
             return self._verify_response(response, method, path, rdata)
         except Exception:
+            self.connection.queue_message('vvvv', 'Failed to receive response from {0}'.format(self.connection.get_option('host')))
             self.handle_error()
 
     def handle_error(self):
-        #raise ConnectionError("login")
         self.host_counter += 1
         if self.host_counter >= len(self.backup_hosts):
             raise ConnectionError("No hosts left in cluster to continue operation %s" % self.connection.get_option("host"))
-        with open('/tmp/hosts.pkl', 'wb') as fi:
-            pickle.dump(self.host_counter, fi)
+        # with open('/tmp/hosts.pkl', 'wb') as fi:
+        #     pickle.dump(self.host_counter, fi)
+        self.connection.queue_message('vvvv', 'Switching host from {0} to {1}'.format(self.connection.get_option('host'), self.backup_hosts[self.host_counter]))
         self.connection.set_option("host", self.backup_hosts[self.host_counter])
         self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
         return True
