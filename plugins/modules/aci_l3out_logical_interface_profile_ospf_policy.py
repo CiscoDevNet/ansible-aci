@@ -237,7 +237,7 @@ def main():
         interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
         ospf_policy=dict(type="str", aliases=["name", "ospf_policy_name"]),
         ospf_auth_type=dict(type="str", default="default", choices=["default", "none", "simple", "md5"]),
-        ospf_auth_key=dict(type="str", default=""),
+        ospf_auth_key=dict(type="str", default="", no_log=True),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
