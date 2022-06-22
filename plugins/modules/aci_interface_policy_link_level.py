@@ -75,7 +75,7 @@ author:
 
 EXAMPLES = r"""
 - name: Add a Link Level Policy
-  aci_interface_policy_link_level:
+  cisco.aci.aci_interface_policy_link_level:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -89,7 +89,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Remove a Link Level Policy
-  aci_interface_policy_link_level:
+  cisco.aci.aci_interface_policy_link_level:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -97,7 +97,7 @@ EXAMPLES = r"""
     state: absent
 
 - name: Query a Link Level Policy
-  aci_interface_policy_link_level:
+  cisco.aci.aci_interface_policy_link_level:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -106,7 +106,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query all Link Level Policies
-  aci_interface_policy_link_level:
+  cisco.aci.aci_interface_policy_link_level:
     host: apic
     username: admin
     password: SomeSecretPassword
