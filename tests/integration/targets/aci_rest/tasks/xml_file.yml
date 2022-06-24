@@ -14,6 +14,8 @@
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("debug") }}'
+      output_path: "/tmp/ansible_output_file.log"
+      output_format: "xml"
 
 - name: Ensure tenant does not exists using ans_test_delete xml template
   cisco.aci.aci_rest:
@@ -88,6 +90,7 @@
     path: /api/mo/uni.xml
     src: "./targets/aci_rest/tasks/xml_files/tn-ans_test_update.xml"
     method: post
+    output_format: json
   check_mode: yes
   register: cm_update_tenant
 
@@ -102,6 +105,7 @@
     path: /api/mo/uni.xml
     src: "./targets/aci_rest/tasks/xml_files/tn-ans_test_update.xml"
     method: post
+    output_format: json
   register: nm_update_tenant
 
 - name: Assertions check for update tenant description using ans_test_update xml template file with normal mode
@@ -118,6 +122,7 @@
     path: /api/mo/uni.xml
     src: "./targets/aci_rest/tasks/xml_files/tn-ans_test_update.xml"
     method: post
+    output_format: json
   register: idempotency_nm_update_tenant
 
 - name: Idempotency assertions check for update tenant description using ans_test_update xml template file with normal mode
