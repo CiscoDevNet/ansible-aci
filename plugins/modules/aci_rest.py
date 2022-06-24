@@ -470,7 +470,7 @@ def main():
                     if aci.params.get("output_format") == "json" and HAS_XML_TO_DICT:
                         json.dump([xmltodict.parse(payload)], output_file)
                         output_file.write("\n")
-                    elif aci.params.get("output_format") == "xml":
+                    elif aci.params.get("output_format") == "xml" or not HAS_XML_TO_DICT:
                         output_file.write(payload)
                         output_file.write("\n")
 
