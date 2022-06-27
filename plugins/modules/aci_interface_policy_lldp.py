@@ -60,18 +60,43 @@ author:
 - Dag Wieers (@dagwieers)
 """
 
-# FIXME: Add more, better examples
 EXAMPLES = r"""
-- name: Add a LLDP interface policy
+- name: Create a LLDP interface policy
   cisco.aci.aci_interface_policy_lldp:
-    host: '{{ hostname }}'
-    username: '{{ username }}'
-    password: '{{ password }}'
-    lldp_policy: '{{ lldp_policy }}'
-    description: '{{ description }}'
-    receive_state: '{{ receive_state }}'
-    transmit_state: '{{ transmit_state }}'
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    lldp_policy: lldppolicy1
+    state: present
   delegate_to: localhost
+
+- name: Delete a LLDP interface policy
+  cisco.aci.aci_interface_policy_lldp:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    lldp_policy: lldppolicy1
+    state: absent
+  delegate_to: localhost
+
+- name: Query all LLDP interface policies
+  cisco.aci.aci_interface_policy_lldp:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific LLDP interface policy
+  cisco.aci.aci_interface_policy_lldp:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    lldp_policy: lldppolicy1
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
