@@ -65,17 +65,47 @@ author:
 - Dag Wieers (@dagwieers)
 """
 
-# FIXME: Add more, better examples
 EXAMPLES = r"""
-- cisco.aci.aci_l3out_route_tag_policy:
+- name: Create a l3out route tag policy
+  cisco.aci.aci_l3out_route_tag_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    rtp: '{{ rtp_name }}'
+    tag: 1000
+    rtp: my_route_tag_policy
     tenant: production
-    tag: '{{ tag }}'
-    description: '{{ description }}'
+    state: present
   delegate_to: localhost
+
+- name: Delete a l3out route tag policy
+  cisco.aci.aci_l3out_route_tag_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    rtp: my_route_tag_policy
+    tenant: production
+    state: absent
+  delegate_to: localhost
+
+- name: Query all l3out route tag policies
+  cisco.aci.aci_l3out_route_tag_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific l3out route tag policy
+  cisco.aci.aci_l3out_route_tag_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    rtp: my_route_tag_policy
+    tenant: production
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
