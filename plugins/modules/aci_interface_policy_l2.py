@@ -73,7 +73,8 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    l2_policy: l2policy1
+    l2_policy: PORT_LOCAL
+    vlan_scope: portlocal
     state: present
   delegate_to: localhost
 
@@ -82,7 +83,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    l2_policy: l2policy1
+    l2_policy: PORT_LOCAL
     state: absent
   delegate_to: localhost
 
@@ -100,7 +101,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    l2_policy: l2policy1
+    l2_policy: PORT_LOCAL
     state: query
   delegate_to: localhost
   register: query_result
