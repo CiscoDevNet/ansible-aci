@@ -86,29 +86,6 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add new node profile
-  cisco.aci.aci_l2out_logical_node_profile:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: my_tenant
-    l2out: my_l2out
-    #node_profile: my_node_profile # 'default' by default
-    state: present
-  delegate_to: localhost
-
-- name: Add new interface profile
-  cisco.aci.aci_l2out_logical_interface_profile:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: my_tenant
-    l2out: my_l2out
-    node_profile: default
-    interface_profile: my_interface_profile # 'default' by default
-    state: present
-  delegate_to: localhost
-
 - name: Add new path to interface profile
   cisco.aci.aci_l2out_logical_interface_path:
     host: apic
@@ -116,41 +93,47 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     tenant: my_tenant
     l2out: my_l2out
-    node_profile: default
-    interface_profile: default
-    interface_type: vpc
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
     pod_id: 1
     leaves: 101-102
     interface: L2o1
     state: present
   delegate_to: localhost
 
-- name: Delete an interface profile
-  cisco.aci.aci_l2out_logical_interface_profile:
+- name: Delete path to interface profile
+  cisco.aci.aci_l2out_logical_interface_path:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
     l2out: my_l2out
-    node_profile: default
-    interface_profile: default
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    pod_id: 1
+    leaves: 101-102
+    interface: L2o1
     state: absent
   delegate_to: localhost
 
-- name: Query an node profile
-  cisco.aci.aci_l2out_logical_node_profile:
+- name: Query a path to interface profile
+  cisco.aci.aci_l2out_logical_interface_path:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
     l2out: my_l2out
-    #node_profile: default
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    pod_id: 1
+    leaves: 101-102
+    interface: L2o1
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Query all node profiles
-  cisco.aci.aci_l2out_logical_node_profile:
+- name: Query all paths to interface profiles
+  cisco.aci.aci_l2out_logical_interface_path:
     host: apic
     username: admin
     password: SomeSecretPassword
