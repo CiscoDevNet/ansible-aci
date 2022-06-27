@@ -68,18 +68,46 @@ author:
 - Jacob McGill (@jmcgill298)
 """
 
-# FIXME: Add more, better examples
 EXAMPLES = r"""
-- cisco.aci.aci_tenant_span_src_group:
+- name: Create a SPAN source group
+  cisco.aci.aci_tenant_span_src_group:
     host: apic
     username: admin
     password: SomeSecretPassword
-    tenant: production
-    src_group: "{{ src_group }}"
-    dst_group: "{{ dst_group }}"
-    admin_state: "{{ admin_state }}"
-    description: "{{ description }}"
+    src_group: my_span_source_group
+    tenant: prod
+    state: present
   delegate_to: localhost
+
+- name: Delete a SPAN source group
+  cisco.aci.aci_tenant_span_src_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    src_group: my_span_source_group
+    tenant: prod
+    state: absent
+  delegate_to: localhost
+
+- name: Query all SPAN source groups
+  cisco.aci.aci_tenant_span_src_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific SPAN source group
+  cisco.aci.aci_tenant_span_src_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    src_group: my_span_source_group
+    tenant: prod
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
