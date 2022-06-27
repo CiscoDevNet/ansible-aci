@@ -59,7 +59,7 @@ author:
 - Dag Wieers (@dagwieers)
 """
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create a monitoring policy
   cisco.aci.aci_epg_monitoring_policy:
     host: apic
@@ -99,7 +99,7 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
 RETURN = r"""
 current:
