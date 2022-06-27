@@ -104,19 +104,46 @@ author:
 - Dag Wieers (@dagwieers)
 """
 
-# FIXME: Add more, better examples
 EXAMPLES = r"""
-- name: Add a port channel interface policy
+- name: Create a Port Channel interface policy
   cisco.aci.aci_interface_policy_port_channel:
-    host: '{{ inventory_hostname }}'
-    username: '{{ username }}'
-    password: '{{ password }}'
-    port_channel: '{{ port_channel }}'
-    description: '{{ description }}'
-    min_links: '{{ min_links }}'
-    max_links: '{{ max_links }}'
-    mode: '{{ mode }}'
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    port_channel: LACP_ACTIVE
+    mode: active
+    min_links: 1
+    max_links: 16
+    state: present
   delegate_to: localhost
+
+- name: Delete a Port Channel interface policy
+  cisco.aci.aci_interface_policy_port_channel:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    port_channel: LACP_ACTIVE
+    state: absent
+  delegate_to: localhost
+
+- name: Query all Port Channel interface policies
+  cisco.aci.aci_interface_policy_port_channel:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific Port Channel interface policy
+  cisco.aci.aci_interface_policy_port_channel:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    port_channel: LACP_ACTIVE
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
