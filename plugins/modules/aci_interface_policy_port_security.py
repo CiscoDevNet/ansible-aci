@@ -62,18 +62,45 @@ author:
 - Dag Wieers (@dagwieers)
 """
 
-# FIXME: Add more, better examples
 EXAMPLES = r"""
-- name: Add a port security interface policy
+- name: Create a Port Security interface policy
   cisco.aci.aci_interface_policy_port_security:
-    host: '{{ inventory_hostname }}'
-    username: '{{ username }}'
-    password: '{{ password }}'
-    port_security: '{{ port_security }}'
-    description: '{{ descr }}'
-    max_end_points: '{{ max_end_points }}'
-    port_security_timeout: '{{ port_security_timeout }}'
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    port_security: PS_1
+    max_end_points: 1
+    port_security_timeout: 60
+    state: present
   delegate_to: localhost
+
+- name: Delete a Port Security interface policy
+  cisco.aci.aci_interface_policy_port_security:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    port_security: PS_1
+    state: absent
+  delegate_to: localhost
+
+- name: Query all Port Security interface policies
+  cisco.aci.aci_interface_policy_port_security:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific Port Security interface policy
+  cisco.aci.aci_interface_policy_port_security:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    port_security: PS_1
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
