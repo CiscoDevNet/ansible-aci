@@ -59,17 +59,47 @@ author:
 - Dag Wieers (@dagwieers)
 """
 
-# FIXME: Add more, better examples
-EXAMPLES = r"""
-- cisco.aci.aci_epg_monitoring_policy:
-    host: '{{ hostname }}'
-    username: '{{ username }}'
-    password: '{{ password }}'
-    monitoring_policy: '{{ monitoring_policy }}'
-    description: '{{ description }}'
-    tenant: '{{ tenant }}'
+EXAMPLES = r'''
+- name: Create a monitoring policy
+  cisco.aci.aci_epg_monitoring_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    monitoring_policy: web_servers_monitoring
+    tenant: prod
+    state: present
   delegate_to: localhost
-"""
+
+- name: Delete a monitoring policy
+  cisco.aci.aci_epg_monitoring_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    monitoring_policy: web_servers_monitoring
+    tenant: prod
+    state: absent
+  delegate_to: localhost
+
+- name: Query all monitoring policy
+  cisco.aci.aci_epg_monitoring_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific monitoring policy
+  cisco.aci.aci_epg_monitoring_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    monitoring_policy: web_servers_monitoring
+    tenant: prod
+    state: query
+  delegate_to: localhost
+  register: query_result
+'''
 
 RETURN = r"""
 current:
