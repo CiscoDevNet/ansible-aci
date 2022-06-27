@@ -48,24 +48,45 @@ author:
 """
 
 EXAMPLES = r"""
-    - name: add firmware group node
-      cisco.aci.aci_firmware_group_node:
-        host: "{{ inventory_hostname }}"
-        username: "{{ user }}"
-        password: "{{ pass }}"
-        validate_certs: no
-        group: testingfwgrp
-        node: 1001
-        state: present
-    - name: Remove firmware group node
-      cisco.aci.aci_firmware_group_node:
-        host: "{{ inventory_hostname }}"
-        username: "{{ user }}"
-        password: "{{ pass }}"
-        validate_certs: no
-        group: testingfwgrp
-        node: 1001
-        state: absent
+- name: Add a firmware group node
+  cisco.aci.aci_firmware_group_node:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    group: fmgroup
+    node: 1001
+    state: present
+  delegate_to: localhost
+
+- name: Remove a firmware group node
+  cisco.aci.aci_firmware_group_node:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    group: fmgroup
+    node: 1001
+    state: absent
+  delegate_to: localhost
+
+- name: Query all firmware groups nodes
+  cisco.aci.aci_firmware_group_node:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific firmware group node
+  cisco.aci.aci_firmware_group_node:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    group: fmgroup
+    node: 1001
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = """
