@@ -68,18 +68,44 @@ author:
 - Steven Gerhart (@sgerhart)
 """
 
-# FIXME: Add more, better examples
 EXAMPLES = r"""
-- name: Ensure maintenance policy is present
+- name: Create a maintenance policy
   cisco.aci.aci_maintenance_policy:
-    host: '{{ inventory_hostname }}'
-    username: '{{ user }}'
-    password: '{{ pass }}'
-    validate_certs: no
-    name: maintenancePol1
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: my_maintenance_policy
     scheduler: simpleScheduler
-    runmode: False
     state: present
+  delegate_to: localhost
+
+- name: Delete a maintenance policy
+  cisco.aci.aci_maintenance_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: my_maintenance_policy
+    state: absent
+  delegate_to: localhost
+
+- name: Query all maintenance policies
+  cisco.aci.aci_maintenance_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific maintenance policy
+  cisco.aci.aci_maintenance_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: my_maintenance_policy
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""

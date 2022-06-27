@@ -45,17 +45,44 @@ author:
     - Steven Gerhart (@sgerhart)
 """
 
-# FIXME: Add more, better examples
 EXAMPLES = r"""
-- name: maintenance group
+- name: Create a maintenance group
   cisco.aci.aci_maintenance_group:
-    host: "{{ inventory_hostname }}"
-    username: "{{ user }}"
-    password: "{{ pass }}"
-    validate_certs: no
-    group: maintenancegrp1
-    policy: maintenancePol1
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    group: my_maintenance_group
+    policy: my_maintenance_policy
     state: present
+  delegate_to: localhost
+
+- name: Delete a maintenance group
+  cisco.aci.aci_maintenance_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    group: my_maintenance_group
+    state: absent
+  delegate_to: localhost
+
+- name: Query all maintenance groups
+  cisco.aci.aci_maintenance_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific maintenance group
+  cisco.aci.aci_maintenance_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    group: my_maintenance_group
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = """
