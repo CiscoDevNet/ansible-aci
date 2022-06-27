@@ -58,16 +58,46 @@ author:
 - Dag Wieers (@dagwieers)
 """
 
-# FIXME: Add more, better examples
 EXAMPLES = r"""
-- cisco.aci.aci_tenant_action_rule_profile:
+- name: Create a action rule profile
+  cisco.aci.aci_tenant_action_rule_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
-    action_rule: '{{ action_rule }}'
-    description: '{{ descr }}'
-    tenant: '{{ tenant }}'
+    action_rule: my_action_rule
+    tenant: prod
+    state: present
   delegate_to: localhost
+
+- name: Delete a action rule profile
+  cisco.aci.aci_tenant_action_rule_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    action_rule: my_action_rule
+    tenant: prod
+    state: absent
+  delegate_to: localhost
+
+- name: Query all action rule profiles
+  cisco.aci.aci_tenant_action_rule_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific action rule profile
+  cisco.aci.aci_tenant_action_rule_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    action_rule: my_action_rule
+    tenant: prod
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
