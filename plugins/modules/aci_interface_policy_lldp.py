@@ -66,7 +66,9 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    lldp_policy: lldppolicy1
+    lldp_policy: LLDP_OFF
+    receive_state: false
+    transmit_state: false
     state: present
   delegate_to: localhost
 
@@ -75,7 +77,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    lldp_policy: lldppolicy1
+    lldp_policy: LLDP_OFF
     state: absent
   delegate_to: localhost
 
@@ -93,7 +95,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    lldp_policy: lldppolicy1
+    lldp_policy: LLDP_OFF
     state: query
   delegate_to: localhost
   register: query_result
