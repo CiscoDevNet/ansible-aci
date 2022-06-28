@@ -92,6 +92,7 @@ def aci_argument_spec():
     return dict(
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         host=dict(
             type="str",
             required=True,
@@ -101,6 +102,8 @@ def aci_argument_spec():
 =======
 =======
 >>>>>>> 5ca45db ([ignore] Change location of persistent storage file)
+=======
+>>>>>>> d11ea33 ([ignore] Ability to switch from certificate based authentication to credential)
         host=dict(type="str", required=False, aliases=["hostname"], fallback=(env_fallback, ["ACI_HOST"])),
 >>>>>>> 6341500 (retry w/o conflict)
         port=dict(type="int", required=False, fallback=(env_fallback, ["ACI_PORT"])),
@@ -119,6 +122,7 @@ def aci_argument_spec():
 =======
         username=dict(type="str", default="admin", aliases=["user"], fallback=(env_fallback, ["ACI_USERNAME", "ANSIBLE_NET_USERNAME"])),
         password=dict(type="str", no_log=True, fallback=(env_fallback, ["ACI_PASSWORD", "ANSIBLE_NET_PASSWORD"])),
+<<<<<<< HEAD
 =======
         host=dict(type='str', required=True, aliases=['hostname'], fallback=(env_fallback, ['ACI_HOST'])),
         port=dict(type='int', required=False, fallback=(env_fallback, ['ACI_PORT'])),
@@ -126,6 +130,8 @@ def aci_argument_spec():
         password=dict(type='str', no_log=True, fallback=(env_fallback, ['ACI_PASSWORD', 'ANSIBLE_NET_PASSWORD'])),
 >>>>>>> eeef0dc ([ignore] Change location of persistent storage file)
 >>>>>>> 5ca45db ([ignore] Change location of persistent storage file)
+=======
+>>>>>>> d11ea33 ([ignore] Ability to switch from certificate based authentication to credential)
         # Beware, this is not the same as client_key !
         private_key=dict(
             type="str",
@@ -338,7 +344,6 @@ class ACIModule(object):
         self.original = None
         self.proposed = dict()
         self.stdout = None
-        self.counter = 0
 
         # debug output
         self.filter_string = ""
@@ -1706,18 +1711,13 @@ class ACIModule(object):
                     self.result["filter_string"] = self.filter_string
                 self.result["method"] = self.method
                 # self.result['path'] = self.path  # Adding 'path' in result causes state: absent in output
-<<<<<<< HEAD
+
                 self.result["response"] = self.response
                 self.result["status"] = self.status
                 self.result["url"] = self.url
-=======
-                self.result['response'] = self.response
-                self.result['status'] = self.status
-                self.result['url'] = self.url
                 self.result['httpapi_logs'] = self.httpapi_logs
         if self.stdout:
             self.result['stdout'] = self.stdout
->>>>>>> cecc2ae ([ignore] Addition of queue messages)
 
         if "state" in self.params:
             if self.params.get("output_level") in ("debug", "info"):
@@ -1806,14 +1806,13 @@ def ospf_spec():
             connect = Connection(self.module._socket_path)
             connect.set_params(self.headers.get('Cookie'), self.params)
             info = connect.send_request(method, '/{0}'.format(call_path), data)
-            self.url = info.get('url')
+            try:
+                self.url = info.get('url')
+            except Exception:
+                info = connect.send_request(method, '/{0}'.format(call_path), data)
+                self.url = info.get('url')
             self.httpapi_logs.extend(connect.pop_messages())
-            self.stdout = str(info.get('hosts'))
-            # try:
-            #     self.url = info.get('url')
-            # except Exception:
-            #     info = connect.send_request(method, '/{0}'.format(call_path), data)
-            #     self.url = info.get('url')
+            self.stdout = str("Through plugin")
         else:
             resp, info = fetch_url(self.module, call_url,
                                    data=data,
@@ -1839,6 +1838,7 @@ def ospf_spec():
                     self.existing = info['body']['imdata']
                 else:
                     self.response_json(info.get('body'))
+
         else:
             try:
                 # APIC error
