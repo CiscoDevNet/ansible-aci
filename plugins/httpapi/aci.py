@@ -16,6 +16,18 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+DOCUMENTATION = """
+---
+author:
+- Shreyas Srish (shrsr)
+httpapi: aci
+short_description: Ansible ACI HTTPAPI Plugin.
+description:
+  - This ACI plugin provides the HTTPAPI transport methods needed to initiate
+    a connection to the APIC, send API requests and process the
+    response from the controller.
+"""
+
 import json
 import re
 
@@ -33,6 +45,7 @@ class HttpApi(HttpApiBase):
         self.backup_hosts = None
         self.list_of_hosts = []
         self.host_counter = 0
+        self.entered_exception = False
         
     def set_params(self, auth, params):
         self.params = params
@@ -61,7 +74,7 @@ class HttpApi(HttpApiBase):
             response_value = self._get_response_value(response_data)
             self.connection._auth = {'Cookie': 'APIC-Cookie={0}'
                                         .format(self._response_to_json(response_value).get('imdata')[0]['aaaLogin']['attributes']['token'])}
-            self.connection.queue_message('vvvv', 'Establishing connection to {0} was successful'.format(self.connection.get_option('host')))
+            self.connection.queue_message('vvvv', 'Connection to {0} was successful'.format(self.connection.get_option('host')))
         except Exception:
             self.connection.queue_message('vvvv', 'Failed establishing connection to {0}'.format(self.connection.get_option('host')))
             self.handle_error()
@@ -91,10 +104,7 @@ class HttpApi(HttpApiBase):
 
         # Case1: Host is provided in the task of a playbook
         if self.params.get('host') is not None:
-       
-            # if self.connection._connected is True and self.params.get('host') != self.connection.get_option("host"):
-            #     self.connection._connected = False
-            
+
             self.connection.set_option("host", self.params.get('host'))
 
             if self.params.get('port') is not None:
@@ -143,18 +153,31 @@ class HttpApi(HttpApiBase):
         if path[0] != '/':
             msg = 'Value of <path> does not appear to be formated properly'
             raise ConnectionError(self._return_info(None, method, path, msg))
+        # Initiation of request
         try:
             response, rdata = self.connection.send(path, data, method=method)
             self.connection.queue_message('vvvv', 'Received response from {0} with HTTP: {1}'.format(self.connection.get_option('host'), response.getcode()))
-            return self._verify_response(response, method, path, rdata)
         except Exception:
+            self.entered_exception = True
             self.connection.queue_message('vvvv', 'Failed to receive response from {0}'.format(self.connection.get_option('host')))
             self.handle_error()
+        finally:
+            if self.entered_exception:
+                self.entered_exception = False
+                self.connection.queue_message('vvvv', 'Retrying request on {0}'.format(self.connection.get_option('host')))
+                # Final try/except block to close/exit operation
+                try:
+                    response, rdata = self.connection.send(path, data, method=method)
+                except:
+                    self.handle_error()
+                return self._verify_response(response, method, path, rdata)
+            else:
+                return self._verify_response(response, method, path, rdata)
 
     def handle_error(self):
         self.host_counter += 1
         if self.host_counter >= len(self.backup_hosts):
-            raise ConnectionError("No hosts left in cluster to continue operation %s %s %s %s %s" % (self.connection.get_option("host"), self.host_counter, len(self.backup_hosts), self.backup_hosts, self.get_backup_hosts()))
+            raise ConnectionError("No hosts left in cluster to continue operation!!!")
         self.connection.queue_message('vvvv', 'Switching host from {0} to {1}'.format(self.connection.get_option('host'), self.backup_hosts[self.host_counter]))
         self.connection.set_option("host", self.backup_hosts[self.host_counter])
         self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))

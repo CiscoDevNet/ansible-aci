@@ -1806,13 +1806,8 @@ def ospf_spec():
             connect = Connection(self.module._socket_path)
             connect.set_params(self.headers.get('Cookie'), self.params)
             info = connect.send_request(method, '/{0}'.format(call_path), data)
-            try:
-                self.url = info.get('url')
-            except Exception:
-                info = connect.send_request(method, '/{0}'.format(call_path), data)
-                self.url = info.get('url')
+            self.url = info.get('url')
             self.httpapi_logs.extend(connect.pop_messages())
-            self.stdout = str("Through plugin")
         else:
             resp, info = fetch_url(self.module, call_url,
                                    data=data,
