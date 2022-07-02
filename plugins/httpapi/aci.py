@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Cisco and/or its affiliates.
+# Copyright (c) 2022 Cisco and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -170,9 +170,7 @@ class HttpApi(HttpApiBase):
                     response, rdata = self.connection.send(path, data, method=method)
                 except:
                     self.handle_error()
-                return self._verify_response(response, method, path, rdata)
-            else:
-                return self._verify_response(response, method, path, rdata)
+            return self._verify_response(response, method, path, rdata)
 
     def handle_error(self):
         self.host_counter += 1
