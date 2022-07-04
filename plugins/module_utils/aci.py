@@ -1369,12 +1369,18 @@ class ACIModule(object):
             self.result["changed"] = True
             self.method = "POST"
 
-    def exit_json(self, **kwargs):
+    def exit_json(self, filter_existing=None, **kwargs):
+        """
+        :param filter_existing: tuple consisting of the function at (index 0) and the args at (index 1)
+        CAUTION: the function should always take in self.existing in its first parameter
+        :param kwargs: kwargs to be passed to ansible module exit_json()
+        filter_existing is not passed via kwargs since it cant handle function type and should not be exposed to user
+        """
 
         if "state" in self.params:
             if self.params.get("state") in ("absent", "present"):
                 if self.params.get("output_level") in ("debug", "info"):
-                    self.result["previous"] = self.existing
+                    self.result["previous"] = self.existing if not filter_existing else filter_existing[0](self.existing, filter_existing[1])
 
         # Return the gory details when we need it
         if self.params.get("output_level") == "debug":
@@ -1398,7 +1404,7 @@ class ACIModule(object):
             #         before=json.dumps(self.original, sort_keys=True, indent=4),
             #         after=json.dumps(self.existing, sort_keys=True, indent=4),
             #     )
-            self.result["current"] = self.existing
+            self.result["current"] = self.existing if not filter_existing else filter_existing[0](self.existing, filter_existing[1])
 
             if self.params.get("output_level") in ("debug", "info"):
                 self.result["sent"] = self.config

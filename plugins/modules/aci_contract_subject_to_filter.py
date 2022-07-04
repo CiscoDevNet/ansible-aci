@@ -26,13 +26,30 @@ options:
     - The name of the Filter to bind to the Subject.
     type: str
     aliases: [ filter_name ]
-  log:
+  direction:
+    description:
+    - The direction of traffic matching for the filter.
+    type: str
+    default: both
+    choices: [ both, consumer_to_provider, provider_to_consumer ]
+  action:
+    description:
+    - The action required when the condition is met.
+    - The APIC defaults to C(permit) when unset during creation.
+    type: str
+    choices: [ deny, permit ]
+  priority_override:
+    description:
+    - The priority level assigned to traffic matching flows.
+    type: str
+    choices: [ default, level1, level2, level3 ]
+  directives:
     description:
     - Determines if the binding should be set to log.
     - The APIC defaults to C(none) when unset during creation.
     type: str
-    choices: [ log, none ]
-    aliases: [ directive ]
+    choices: [ log, no_stats, none ]
+    aliases: [ log, directive]
   subject:
     description:
     - The name of the Contract Subject.
@@ -236,8 +253,13 @@ def main():
         contract=dict(type="str", aliases=["contract_name"]),  # Not required for querying all objects
         filter=dict(type="str", aliases=["filter_name"]),  # Not required for querying all objects
         subject=dict(type="str", aliases=["contract_subject", "subject_name"]),  # Not required for querying all objects
-        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        log=dict(type="str", choices=["log", "none"], aliases=["directive"]),
+        # default both because of back-worth compatibility and for determining which config to push
+        direction=dict(type="str", default="both", choices=["both", "consumer_to_provider", "provider_to_consumer"]),
+        action=dict(type="str", choices=["deny", "permit"]),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        # named directives instead of log/directive for readability of code, aliases and input "none are kept for back-worth compatibility
+        directives=dict(type="str", choices=["log", "no_stats", "none"], aliases=["log", "directive"]),
+        priority_override=dict(type="str", choices=["default", "level1", "level2", "level3"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -252,20 +274,16 @@ def main():
 
     contract = module.params.get("contract")
     filter_name = module.params.get("filter")
-    log = module.params.get("log")
+    # "none" is kept because of back-worth compatibility, could be deleted and keep only None
+    directives = "" if (module.params.get("directives") is None or module.params.get("directives") == "none") else module.params.get("directives")
     subject = module.params.get("subject")
+    direction = module.params.get("direction")
+    action = module.params.get("action")
+    priority_override = module.params.get("priority_override")
     tenant = module.params.get("tenant")
     state = module.params.get("state")
 
-    # Add subject_filter key to modul.params for building the URL
-    module.params["subject_filter"] = filter_name
-
-    # Convert log to empty string if none, as that is what API expects. An empty string is not a good option to present the user.
-    if log == "none":
-        log = ""
-
-    aci = ACIModule(module)
-    aci.construct_url(
+    base_subject_dict = dict(
         root_class=dict(
             aci_class="fvTenant",
             aci_rn="tn-{0}".format(tenant),
@@ -283,37 +301,60 @@ def main():
             aci_rn="subj-{0}".format(subject),
             module_object=subject,
             target_filter={"name": subject},
-        ),
-        subclass_3=dict(
-            aci_class="vzRsSubjFiltAtt",
-            aci_rn="rssubjFiltAtt-{0}".format(filter_name),
-            module_object=filter_name,
-            target_filter={"tnVzFilterName": filter_name},
-        ),
+        )
     )
+
+    aci = ACIModule(module)
+
+    if direction == "both":
+        filter_class = "vzRsSubjFiltAtt"
+        # dict unpacking with **base_subject_dict raises syntax error in python2.7 thus dict lookup
+        aci.construct_url(root_class=base_subject_dict.get("root_class"),
+                          subclass_1=base_subject_dict.get("subclass_1"),
+                          subclass_2=base_subject_dict.get("subclass_2"),
+                          subclass_3=dict(
+                              aci_class=filter_class,
+                              aci_rn="rssubjFiltAtt-{0}".format(filter_name),
+                              module_object=filter_name,
+                              target_filter=dict(tnVzFilterName=filter_name)))
+    else:
+        term_class, term = ("vzInTerm", "intmnl") if direction == "consumer_to_provider" else ("vzOutTerm", "outtmnl")
+        filter_class = "vzRsFiltAtt"
+        # dict unpacking with **base_subject_dict raises syntax error in python2.7 thus dict lookup
+        aci.construct_url(root_class=base_subject_dict.get("root_class"),
+                          subclass_1=base_subject_dict.get("subclass_1"),
+                          subclass_2=base_subject_dict.get("subclass_2"),
+                          subclass_3=dict(aci_class=term_class, aci_rn=term),
+                          child_classes=[filter_class])
 
     aci.get_existing()
 
     if state == "present":
-        aci.payload(
-            aci_class="vzRsSubjFiltAtt",
-            class_config=dict(
-                tnVzFilterName=filter_name,
-                directives=log,
-            ),
-        )
 
-        aci.get_diff(aci_class="vzRsSubjFiltAtt")
+        config = dict(tnVzFilterName=filter_name, directives=directives, action=action, priorityOverride=priority_override)
+
+        if direction == "both":
+            aci.payload(aci_class=filter_class, class_config=config)
+            aci.get_diff(aci_class=filter_class)
+
+        else:
+            child_config = [dict(vzRsFiltAtt=dict(attributes=config))]
+            aci.payload(aci_class=term_class, class_config=dict(), child_configs=child_config)
+            aci.get_diff(aci_class=term_class)
 
         aci.post_config()
 
     elif state == "absent":
         aci.delete_config()
 
-    # Remove subject_filter used to build URL from module.params
-    module.params.pop("subject_filter")
-
-    aci.exit_json()
+    if direction == "both":
+        aci.exit_json()
+    else:
+        def filter_result(input_list, name):
+            return [{key: filter_entry} for entry in input_list for children in entry[term_class]['children']
+                    for key, filter_entry in children.items() if filter_entry['attributes']['tnVzFilterName'] == name]
+        filter_existing = (filter_result, filter_name)
+        aci.exit_json(filter_existing)
 
 
 if __name__ == "__main__":
