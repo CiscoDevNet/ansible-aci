@@ -330,18 +330,14 @@ def main():
     aci.get_existing()
 
     if state == "present":
-
         config = dict(tnVzFilterName=filter_name, directives=directives, action=action, priorityOverride=priority_override)
-
         if direction == "both":
             aci.payload(aci_class=filter_class, class_config=config)
             aci.get_diff(aci_class=filter_class)
-
         else:
             child_config = [dict(vzRsFiltAtt=dict(attributes=config))]
             aci.payload(aci_class=term_class, class_config=dict(), child_configs=child_config)
             aci.get_diff(aci_class=term_class)
-
         aci.post_config()
 
     elif state == "absent":
