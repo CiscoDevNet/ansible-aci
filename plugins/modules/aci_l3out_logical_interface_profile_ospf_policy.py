@@ -50,7 +50,7 @@ options:
     default: None
   ospf_auth_key:
     description:
-    - OSPF authentication key. 
+    - OSPF authentication key.
     type: str
     default: ""
   state:
