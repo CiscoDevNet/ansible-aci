@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2022, Jason Juenger (@jasonjuenger) <jasonjuenger@gmail.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -45,11 +46,13 @@ options:
     description:
     - OSPF authentication type.
     type: str
-    choices: [ None, default, simple, md5 ]
+    choices: [ default, simple, md5 ]
+    default: None
   ospf_auth_key:
     description:
-    - OSPF authentication key.
+    - OSPF authentication key. 
     type: str
+    default: ""
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -236,8 +239,8 @@ def main():
         node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
         interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
         ospf_policy=dict(type="str", aliases=["name", "ospf_policy_name"]),
-        ospf_auth_type=dict(type="str", default=None, choices=[None, "default", "simple", "md5"]),
-        ospf_auth_key=dict(type="str", default="", no_log=True),
+        ospf_auth_type=dict(type="str", choices=["default", "simple", "md5"]),
+        ospf_auth_key=dict(type="str", no_log=True),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -303,21 +306,16 @@ def main():
                 tnOspfIfPolName=ospf_policy
             )))
         ]
-        if ospf_auth_key != "":
-            aci.payload(
-                aci_class="ospfIfP",
-                class_config=dict(
-                    authType=ospf_auth_type,
-                    authKey=ospf_auth_key,
-                ),
-                child_configs=child_configs)
-        else:
-            aci.payload(
-                aci_class="ospfIfP",
-                class_config=dict(
-                    authType=ospf_auth_type,
-                ),
-                child_configs=child_configs)
+
+        config = dict(authType=ospf_auth_type)
+        if ospf_auth_key is not None:
+            config.update(authKey=ospf_auth_key)
+
+        aci.payload(
+            aci_class="ospfIfP",
+            class_config=config,
+            child_configs=child_configs
+        )
 
         aci.get_diff(aci_class="ospfIfP")
 
