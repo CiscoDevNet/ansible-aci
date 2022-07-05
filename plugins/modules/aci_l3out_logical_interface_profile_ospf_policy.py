@@ -86,6 +86,19 @@ EXAMPLES = r"""
     node_profile: my_node_profile
     interface_profile: my_interface_profile
     ospf_policy: my_ospf_interface_policy
+    state: present
+  delegate_to: localhost
+
+- name: Add a new interface profile OSPF policy with authentication
+  cisco.aci.aci_l3out_logical_interface_profile_ospf_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    ospf_policy: my_ospf_interface_policy
     ospf_auth_type: simple
     ospf_auth_key: my_auth_key
     state: present
