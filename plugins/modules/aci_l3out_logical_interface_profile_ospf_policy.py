@@ -47,7 +47,6 @@ options:
     - OSPF authentication type.
     type: str
     choices: [ default, simple, md5 ]
-    default: None
   ospf_auth_key:
     description:
     - OSPF authentication key.
