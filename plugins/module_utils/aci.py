@@ -164,6 +164,42 @@ def expression_spec():
     )
 
 
+def aci_contract_qos_spec():
+    return dict(type="str", choices=["level1", "level2", "level3", "unspecified"])
+
+
+def aci_contract_dscp_spec():
+    return dict(
+        type="str",
+        aliases=["target"],
+        choices=[
+            "AF11",
+            "AF12",
+            "AF13",
+            "AF21",
+            "AF22",
+            "AF23",
+            "AF31",
+            "AF32",
+            "AF33",
+            "AF41",
+            "AF42",
+            "AF43",
+            "CS0",
+            "CS1",
+            "CS2",
+            "CS3",
+            "CS4",
+            "CS5",
+            "CS6",
+            "CS7",
+            "EF",
+            "VA",
+            "unspecified"
+        ],
+    )
+
+
 class ACIModule(object):
     def __init__(self, module):
         self.module = module
