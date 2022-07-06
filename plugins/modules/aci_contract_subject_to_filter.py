@@ -40,7 +40,7 @@ options:
     choices: [ deny, permit ]
   priority_override:
     description:
-    - The priority level assigned to traffic matching flows.
+    - Overrides the filter priority for the a single applied filter.
     type: str
     choices: [ default, level1, level2, level3 ]
   directives:
@@ -250,13 +250,13 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
+        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         contract=dict(type="str", aliases=["contract_name"]),  # Not required for querying all objects
         filter=dict(type="str", aliases=["filter_name"]),  # Not required for querying all objects
         subject=dict(type="str", aliases=["contract_subject", "subject_name"]),  # Not required for querying all objects
         # default both because of back-worth compatibility and for determining which config to push
         direction=dict(type="str", default="both", choices=["both", "consumer_to_provider", "provider_to_consumer"]),
         action=dict(type="str", choices=["deny", "permit"]),
-        tenant=dict(type="str", aliases=["tenant_name"]),
         # named directives instead of log/directive for readability of code, aliases and input "none are kept for back-worth compatibility
         directives=dict(type="str", choices=["log", "no_stats", "none"], aliases=["log", "directive"]),
         priority_override=dict(type="str", choices=["default", "level1", "level2", "level3"]),
@@ -306,6 +306,20 @@ def main():
 
     aci = ACIModule(module)
 
+    # start logic to be consistent with GUI to only allow both direction or a one-way connection
+    aci.construct_url(root_class=base_subject_dict.get("root_class"),
+                      subclass_1=base_subject_dict.get("subclass_1"),
+                      subclass_2=base_subject_dict.get("subclass_2"),
+                      child_classes=["vzInTerm", "vzOutTerm"])
+    aci.get_existing()
+    direction_options = ["both"]
+    if aci.existing:
+        direction_options = ["consumer_to_provider", "provider_to_consumer"] if "children" in aci.existing[0]["vzSubj"] else ["both"]
+
+    if direction not in direction_options:
+        module.fail_json(msg="Direction is not allowed, valid option is {0}.".format(" or ".join(direction_options)))
+    # end logic to be consistent with GUI to only allow both direction or a one-way connection
+
     if direction == "both":
         filter_class = "vzRsSubjFiltAtt"
         # dict unpacking with **base_subject_dict raises syntax error in python2.7 thus dict lookup
@@ -346,9 +360,11 @@ def main():
     if direction == "both":
         aci.exit_json()
     else:
+        # filter the output of current/previous to tnVzFilterName only since existing consist full vzInTerm/vzOutTerm
         def filter_result(input_list, name):
-            return [{key: filter_entry} for entry in input_list for children in entry[term_class]['children']
+            return [{key: filter_entry} for entry in input_list if 'children' in entry[term_class] for children in entry[term_class]['children']
                     for key, filter_entry in children.items() if filter_entry['attributes']['tnVzFilterName'] == name]
+        # pass function to
         filter_existing = (filter_result, filter_name)
         aci.exit_json(filter_existing)
 

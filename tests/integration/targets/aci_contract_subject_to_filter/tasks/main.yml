@@ -180,107 +180,196 @@
           - absent_missing_param is failed
           - 'absent_missing_param.msg == "state is absent but all of the following are missing: filter"'
 
-    - name: create subject filter with direction both as default
-      cisco.aci.aci_contract_subject_to_filter:
-        <<: *aci_subject_present
-        filter: anstest
+    - name: create filter 1
+      cisco.aci.aci_filter:
+        <<: *aci_tenant_present
+        filter: filter1
+
+    - name: create filter 2
+      cisco.aci.aci_filter:
+        <<: *aci_tenant_present
+        filter: filter2
+
+    - name: create contract 1
+      cisco.aci.aci_contract: &aci_contract1
+        <<: *aci_tenant_present
+        contract: contract1
+
+    - name: create subject both
+      cisco.aci.aci_contract_subject: &aci_subject_both
+        <<: *aci_contract1
+        subject: subjectboth
+      register: subject_both
+
+    - name: create subject one-way
+      cisco.aci.aci_contract_subject: &aci_subject_one_way
+        <<: *aci_contract1
+        subject: subjectoneway
+        direction: one-way
+      register: nm_subject_present_one_way_again
+
+    - name: create subject filter with direction both as default (check_mode)
+      cisco.aci.aci_contract_subject_to_filter: &aci_subject_both_to_filter
+        <<: *aci_subject_both
+        filter: filter1
         action: permit
         directive: log
         priority_override: level1
         state: present
-      register: filter_present_default
+      check_mode: yes
+      register: cm_filter1_present_default
 
-    - name: create subject filter with direction provider to consumer
+    - name: apply subject filter1 with direction both as default
       cisco.aci.aci_contract_subject_to_filter:
-        <<: *aci_subject_present
-        filter: anstest
+        <<: *aci_subject_both_to_filter
+      register: nm_filter1_present_default
+
+    - name: apply subject filter1 with direction provider to consumer (error)
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_both_to_filter
+        direction: provider_to_consumer
+      register: nm_filter1_present_p2c
+      ignore_errors: yes
+
+    - name: apply subject filter1 with direction consumer to provider (error)
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_both_to_filter
+        direction: consumer_to_provider
+      register: nm_filter1_present_c2p
+      ignore_errors: yes
+
+    - name: apply subject filter1 with direction both set
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_both_to_filter
+        filter: filter1
+        direction: both
         action: permit
         directive: no_stats
         priority_override: level2
-        direction: provider_to_consumer
         state: present
-      register: filter_present_p2c
+      register: nm_filter1_present_both
 
-    - name: create subject filter with direction consumer to provider
-      cisco.aci.aci_contract_subject_to_filter:
-        <<: *aci_subject_present
-        filter: anstest
+    - name: apply subject filter2 with direction provider to consumer
+      cisco.aci.aci_contract_subject_to_filter: &aci_subject_one_way_to_filter
+        <<: *aci_subject_one_way
+        filter: filter2
+        direction: provider_to_consumer
         action: permit
         directive: none
-        priority_override: level3
-        direction: consumer_to_provider
+        priority_override: level2
         state: present
-      register: filter_present_c2p
+      register: nm_filter2_present_p2c
 
-    - name: create subject filter with direction both set
+    - name: apply subject filter2 with direction consumer to provider
       cisco.aci.aci_contract_subject_to_filter:
-        <<: *aci_subject_present
-        filter: anstest
-        action: permit
-        directive: no_stats
-        priority_override: default
-        direction: both
-        state: present
-      register: filter_present_both
+        <<: *aci_subject_one_way_to_filter
+        direction: provider_to_consumer
+      register: nm_filter2_present_c2p
 
-    - name: filter subject with direction assertions
+    - name: apply subject filter2 with direction both (error)
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_one_way_to_filter
+        direction: both
+      register: nm_filter2_present_both
+      ignore_errors: yes
+
+    - name: filter assertions
       assert:
         that:
-          - filter_present_default is changed
-          - filter_present_default.current.0.vzRsSubjFiltAtt.attributes.action == "permit"
-          - filter_present_default.current.0.vzRsSubjFiltAtt.attributes.tnVzFilterName == "anstest"
-          - filter_present_default.current.0.vzRsSubjFiltAtt.attributes.priorityOverride == "level1"
-          - filter_present_default.current.0.vzRsSubjFiltAtt.attributes.directives == "log"
-          - filter_present_p2c is changed
-          - filter_present_p2c.current.0.vzRsFiltAtt.attributes.action == "permit"
-          - filter_present_p2c.current.0.vzRsFiltAtt.attributes.tnVzFilterName == "anstest"
-          - filter_present_p2c.current.0.vzRsFiltAtt.attributes.priorityOverride == "level2"
-          - filter_present_p2c.current.0.vzRsFiltAtt.attributes.directives == "no_stats"
-          - filter_present_c2p is changed
-          - filter_present_c2p.current.0.vzRsFiltAtt.attributes.action == "permit"
-          - filter_present_c2p.current.0.vzRsFiltAtt.attributes.tnVzFilterName == "anstest"
-          - filter_present_c2p.current.0.vzRsFiltAtt.attributes.priorityOverride == "level3"
-          - filter_present_c2p.current.0.vzRsFiltAtt.attributes.directives == ""
-          - filter_present_both is changed
-          - filter_present_both.current.0.vzRsSubjFiltAtt.attributes.action == "permit"
-          - filter_present_both.current.0.vzRsSubjFiltAtt.attributes.tnVzFilterName == "anstest"
-          - filter_present_both.current.0.vzRsSubjFiltAtt.attributes.priorityOverride == "default"
-          - filter_present_both.current.0.vzRsSubjFiltAtt.attributes.directives == "no_stats"
+          - cm_filter1_present_default is changed
+          - nm_filter1_present_default is changed
+          - nm_filter1_present_default.current.0.vzRsSubjFiltAtt.attributes.action == "permit"
+          - nm_filter1_present_default.current.0.vzRsSubjFiltAtt.attributes.tnVzFilterName == "filter1"
+          - nm_filter1_present_default.current.0.vzRsSubjFiltAtt.attributes.priorityOverride == "level1"
+          - nm_filter1_present_default.current.0.vzRsSubjFiltAtt.attributes.directives == "log"
+          - nm_filter1_present_p2c is not changed
+          - nm_filter1_present_p2c.msg == "Direction is not allowed, valid option is both."
+          - nm_filter1_present_c2p is not changed
+          - nm_filter1_present_c2p.msg == "Direction is not allowed, valid option is both."
+          - nm_filter1_present_both is changed
+          - nm_filter1_present_both.current.0.vzRsSubjFiltAtt.attributes.action == "permit"
+          - nm_filter1_present_both.current.0.vzRsSubjFiltAtt.attributes.tnVzFilterName == "filter1"
+          - nm_filter1_present_both.current.0.vzRsSubjFiltAtt.attributes.priorityOverride == "level2"
+          - nm_filter1_present_both.current.0.vzRsSubjFiltAtt.attributes.directives == "no_stats"
+          - nm_filter2_present_p2c is changed
+          - nm_filter2_present_p2c.current.0.vzRsFiltAtt.attributes.action == "permit"
+          - nm_filter2_present_p2c.current.0.vzRsFiltAtt.attributes.tnVzFilterName == "filter2"
+          - nm_filter2_present_p2c.current.0.vzRsFiltAtt.attributes.priorityOverride == "level2"
+          - nm_filter2_present_p2c.current.0.vzRsFiltAtt.attributes.directives == ""
+          - nm_filter2_present_c2p is not changed
+          - nm_filter2_present_c2p.current.0.vzRsFiltAtt.attributes.action == "permit"
+          - nm_filter2_present_c2p.current.0.vzRsFiltAtt.attributes.tnVzFilterName == "filter2"
+          - nm_filter2_present_c2p.current.0.vzRsFiltAtt.attributes.priorityOverride == "level2"
+          - nm_filter2_present_c2p.current.0.vzRsFiltAtt.attributes.directives == ""
+          - nm_filter2_present_both.msg == "Direction is not allowed, valid option is consumer_to_provider or provider_to_consumer."
 
     - name: Execute tasks only for non-cloud sites
       when: query_cloud.current == []  # This condition will execute only non-cloud sites
       block:  # block specifies execution of tasks within, based on conditions
       - name: create subject filter with action deny for non-cloud
         cisco.aci.aci_contract_subject_to_filter:
-          <<: *aci_subject_present
-          filter: anstest
+          <<: *aci_subject_both_to_filter
+          direction: both
           action: deny
-          state: present
-        register: filter_present_deny_non_cloud
+        register: filter_present_deny_non_cloud_both
+
+      - name: create subject filter with action deny for non-cloud p2c
+        cisco.aci.aci_contract_subject_to_filter:
+          <<: *aci_subject_one_way_to_filter
+          direction: provider_to_consumer
+          action: deny
+        register: filter_present_deny_non_cloud_p2c
+
+      - name: create subject filter with action deny for non-cloud p2c
+        cisco.aci.aci_contract_subject_to_filter:
+          <<: *aci_subject_one_way_to_filter
+          direction: consumer_to_provider
+          action: deny
+        register: filter_present_deny_non_cloud_c2p
 
       - name: filter subject with direction assertions
         assert:
           that:
-            - filter_present_deny_non_cloud is changed
-            - filter_present_deny_non_cloud.current.0.vzRsSubjFiltAtt.attributes.action == "deny"
+            - filter_present_deny_non_cloud_both is changed
+            - filter_present_deny_non_cloud_both.current.0.vzRsSubjFiltAtt.attributes.action == "deny"
+            - filter_present_deny_non_cloud_p2c is changed
+            - filter_present_deny_non_cloud_p2c.current.0.vzRsFiltAtt.attributes.action == "deny"
+            - filter_present_deny_non_cloud_c2p is changed
+            - filter_present_deny_non_cloud_c2p.current.0.vzRsFiltAtt.attributes.action == "deny"
 
     - name: Execute tasks only for cloud sites
       when: query_cloud.current | length > 0  # This condition will execute only cloud sites
       block:  # block specifies execution of tasks within, based on conditions
-      - name: create subject filter with action deny casues error for cloud
+      - name: create subject filter with action deny casues error for cloud (error)
         cisco.aci.aci_contract_subject_to_filter:
-          <<: *aci_subject_present
-          filter: anstest
+          <<: *aci_subject_both_to_filter
           action: deny
-          priority_override: level1
-          state: present
         register: filter_present_deny_cloud
         ignore_errors: yes
 
-    - name: cloud assertions
-      assert:
-        that:
-          - filter_present_deny_cloud.msg.startswith("APIC Error 1: Invalid Configuration CLOUD_ONLY_PERMIT_ACTION_SUPPORTED")
+      - name: create subject filter with action deny for cloud p2c
+        cisco.aci.aci_contract_subject_to_filter:
+          <<: *aci_subject_one_way_to_filter
+          direction: provider_to_consumer
+          action: deny
+        register: filter_present_deny_cloud_p2c
+        ignore_errors: yes
+
+      - name: create subject filter with action deny for cloud p2c
+        cisco.aci.aci_contract_subject_to_filter:
+          <<: *aci_subject_one_way_to_filter
+          direction: provider_to_consumer
+          action: deny
+        register: filter_present_deny_cloud_c2p
+        ignore_errors: yes
+
+      - name: cloud assertions
+        assert:
+          that:
+            - filter_present_deny_cloud.msg.startswith("APIC Error 1: Invalid Configuration CLOUD_ONLY_PERMIT_ACTION_SUPPORTED")
+            - filter_present_deny_cloud_p2c.msg.startswith("APIC Error 1: Invalid Configuration CLOUD_ONLY_PERMIT_ACTION_SUPPORTED")
+            - filter_present_deny_cloud_c2p.msg.startswith("APIC Error 1: Invalid Configuration CLOUD_ONLY_PERMIT_ACTION_SUPPORTED")
+
   always:
     - name: cleanup tenant
       cisco.aci.aci_tenant:
