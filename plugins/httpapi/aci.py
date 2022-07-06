@@ -31,6 +31,7 @@ description:
 import json
 import re
 
+from ansible.errors import AnsibleConnectionFailure
 from ansible.module_utils._text import to_text
 from ansible.module_utils.connection import ConnectionError
 from ansible.plugins.httpapi import HttpApiBase
@@ -46,6 +47,7 @@ class HttpApi(HttpApiBase):
         self.list_of_hosts = []
         self.host_counter = 0
         self.entered_exception = False
+        self.exception_message = None
         
     def set_params(self, auth, params):
         self.params = params
@@ -54,12 +56,12 @@ class HttpApi(HttpApiBase):
     def get_backup_hosts(self):
         try:
             # append is used here to store the first value of the variable self.connection.get_option("host") in the 0th position
-            # this is done because value of 'host' keeps changing constantly when list of hosts is provided. We always
-            # want access to the original set of hosts
+            # this is done because we keep changing the value of 'host' constantly when a list of hosts is provided. We always
+            # want access to the original set of hosts.
             self.list_of_hosts.append(re.sub(r'[[\]]', '', self.connection.get_option("host")).split(","))
             return self.list_of_hosts
         except Exception:
-            return [None]
+            return []
 
     def login(self, username, password):
         ''' Log in to APIC '''
@@ -75,8 +77,9 @@ class HttpApi(HttpApiBase):
             self.connection._auth = {'Cookie': 'APIC-Cookie={0}'
                                         .format(self._response_to_json(response_value).get('imdata')[0]['aaaLogin']['attributes']['token'])}
             self.connection.queue_message('vvvv', 'Connection to {0} was successful'.format(self.connection.get_option('host')))
-        except Exception:
-            self.connection.queue_message('vvvv', 'Failed establishing connection to {0}'.format(self.connection.get_option('host')))
+        except Exception as exc:
+            self.exception_message = exc
+            self.connection.queue_message('vvvv', '{0}'.format(exc))
             self.handle_error()
 
     def logout(self):
@@ -104,7 +107,6 @@ class HttpApi(HttpApiBase):
 
         # Case1: Host is provided in the task of a playbook
         if self.params.get('host') is not None:
-
             self.connection.set_option("host", self.params.get('host'))
 
             if self.params.get('port') is not None:
@@ -140,6 +142,9 @@ class HttpApi(HttpApiBase):
 
             if self.params.get('validate_certs') is not None:
                 self.connection.set_option("validate_certs", self.params.get('validate_certs'))
+        
+            if self.params.get('timeout') is not None:
+                self.connection.set_option('persistent_command_timeout', self.params.get('timeout'))
             
         # Case2: Host is not provided in the task of a playbook
         elif self.backup_hosts:
@@ -148,16 +153,13 @@ class HttpApi(HttpApiBase):
                 self.connection.queue_message('vvvv', 'Initializing operation on host {0}'.format(self.connection.get_option('host')))
             except IndexError:
                 pass
-        # Perform some very basic path input validation.
-        path = str(path)
-        if path[0] != '/':
-            msg = 'Value of <path> does not appear to be formated properly'
-            raise ConnectionError(self._return_info(None, method, path, msg))
+
         # Initiation of request
         try:
-            response, rdata = self.connection.send(path, data, method=method)
+            response, response_data = self.connection.send(path, data, method=method)
             self.connection.queue_message('vvvv', 'Received response from {0} with HTTP: {1}'.format(self.connection.get_option('host'), response.getcode()))
-        except Exception:
+        except Exception as exc:
+            self.exception_message = exc
             self.entered_exception = True
             self.connection.queue_message('vvvv', 'Failed to receive response from {0}'.format(self.connection.get_option('host')))
             self.handle_error()
@@ -167,12 +169,19 @@ class HttpApi(HttpApiBase):
                 self.connection.queue_message('vvvv', 'Retrying request on {0}'.format(self.connection.get_option('host')))
                 # Final try/except block to close/exit operation
                 try:
-                    response, rdata = self.connection.send(path, data, method=method)
+                    response, response_data = self.connection.send(path, data, method=method)
                 except:
                     self.handle_error()
-            return self._verify_response(response, method, path, rdata)
+            return self._verify_response(response, method, path, response_data)
 
     def handle_error(self):
+        # We break the flow of code here when we are operating on a host at task level and/or hosts are also present in the inventory file.
+        if self.params.get('host') is not None:
+            raise AnsibleConnectionFailure(
+                "{0}".format(
+                    self.exception_message
+                )
+            )
         self.host_counter += 1
         if self.host_counter >= len(self.backup_hosts):
             raise ConnectionError("No hosts left in cluster to continue operation!!!")
@@ -180,19 +189,19 @@ class HttpApi(HttpApiBase):
         self.connection.set_option("host", self.backup_hosts[self.host_counter])
         self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
             
-    def _verify_response(self, response, method, path, rdata):
+    def _verify_response(self, response, method, path, response_data):
         ''' Process the return code and response object from APIC '''
-        resp_value = self._get_response_value(rdata)
+        response_value = self._get_response_value(response_data)
         if path.find('.json') != -1:
-            respond_data = self._response_to_json(resp_value)
+            respond_data = self._response_to_json(response_value)
         else:
-            respond_data = resp_value
+            respond_data = response_value
         response_code = response.getcode()
         path = response.geturl()
         if response_code == 400:
             msg = str(response)
         else:
-            msg = '{0} ({1} bytes)'.format(response.msg, len(resp_value))
+            msg = '{0} ({1} bytes)'.format(response.msg, len(response_value))
         return self._return_info(response_code, method, path, msg, respond_data)
 
     def _get_response_value(self, response_data):
