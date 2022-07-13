@@ -170,7 +170,9 @@ class HttpApi(HttpApiBase):
                 # Final try/except block to close/exit operation
                 try:
                     response, response_data = self.connection.send(path, data, method=method)
+                    self.connection.queue_message('vvvv', 'Received response from {0} with HTTP: {1}'.format(self.connection.get_option('host'), response.getcode()))
                 except:
+                    self.connection.queue_message('vvvv', 'Failed to receive response from {0}'.format(self.connection.get_option('host')))
                     self.handle_error()
             return self._verify_response(response, method, path, response_data)
 

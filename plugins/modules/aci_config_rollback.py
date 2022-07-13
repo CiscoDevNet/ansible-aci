@@ -306,24 +306,11 @@ def get_preview(aci):
     path = aci.path + aci.filter_string
     resp = None
     if aci.module._socket_path:
-        conn = Connection(aci.module._socket_path)
-        conn.set_auth(
-            aci.headers.get("Cookie"),
-            aci.module.params.get("host"),
-            aci.module.params.get("username"),
-            aci.module.params.get("password"),
-            aci.module.params.get("port"),
-            aci.module.params.get("use_ssl"),
-            aci.module.params.get("use_proxy"),
-            aci.module.params.get("validate_certs"),
-        )
-        conn.set_params(aci.headers.get('Cookie'), aci.params)
-        info = conn.send_request('GET', '/{0}'.format(path), None)
-        try:
-            aci.url = info.get('url')
-        except Exception:
-            info = conn.send_request('GET', '/{0}'.format(path), None)
-            aci.url = info.get('url')
+        connect = Connection(aci.module._socket_path)
+        connect.set_params(aci.headers.get('Cookie'), aci.params)
+        info = connect.send_request('GET', '/{0}'.format(path), None)
+        aci.url = info.get('url')
+        aci.httpapi_logs.extend(connect.pop_messages())
     else:
         resp, info = fetch_url(
             aci.module,

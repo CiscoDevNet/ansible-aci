@@ -425,14 +425,11 @@ def main():
     # Perform request
     resp = None
     if module._socket_path:
-        conn = Connection(aci.module._socket_path)
-        conn.set_params(aci.headers.get('Cookie'), aci.params)
-        info = conn.send_request(aci.method, '/{0}'.format(path), payload)
-        try:
-            aci.url = info.get('url')
-        except Exception:
-            info = conn.send_request(aci.method, '/{0}'.format(path), payload)
-            aci.url = info.get('url')
+        connect = Connection(aci.module._socket_path)
+        connect.set_params(aci.headers.get('Cookie'), aci.params)
+        info = connect.send_request(aci.method, '/{0}'.format(path), payload)
+        aci.url = info.get('url')
+        aci.httpapi_logs.extend(connect.pop_messages())
     else:
         resp, info = fetch_url(module, aci.url,
                                data=payload,
