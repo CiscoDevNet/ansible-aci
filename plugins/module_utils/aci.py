@@ -1800,11 +1800,10 @@ def ospf_spec():
             data = None
         resp = None
         if self.params.get('private_key'):
-            self.cert_auth(method=method, path=call_path, payload=data)
-
+            self.cert_auth(path=call_path, payload=data, method=method)
         if self.module._socket_path:
             connect = Connection(self.module._socket_path)
-            connect.set_params(self.headers.get('Cookie'), self.params)
+            connect.get_params(self.headers.get('Cookie'), self.params, method, '/{0}'.format(call_path), data)
             info = connect.send_request(method, '/{0}'.format(call_path), data)
             self.url = info.get('url')
             self.httpapi_logs.extend(connect.pop_messages())
