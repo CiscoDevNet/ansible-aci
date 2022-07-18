@@ -128,7 +128,7 @@ class HttpApi(HttpApiBase):
             # We check if the list of hosts provided in two consecutive tasks are the same. If they are not the same we begin operation from the first host on the next 
             # task (Memory of the host in the list-reset).
             # If they are the same, we continue operation on the same host on which previous task was running (Memory of the host in the list-preserved).
-            if self.backup_hosts != ast.literal_eval(self.params.get('host')) if '[' in self.params.get('host') else self.params.get('host').split(",") or not self.counter_checker:
+            if self.backup_hosts != ast.literal_eval(self.params.get('host')) if '[' in self.params.get('host') else self.params.get('host').split(",") or self.counter_checker is False:
                 self.host_counter = 0
 
             self.backup_hosts = ast.literal_eval(self.params.get('host')) if '[' in self.params.get('host') else self.params.get('host').split(",")
@@ -148,7 +148,7 @@ class HttpApi(HttpApiBase):
                 self.connection._auth = {'Cookie': '{0}'.format(self.auth)}
                 self.check_auth_from_private_key = True
                 self.connection.queue_message('vvvv', 'Going through certificate authentication')
-                # Override @ensure_connect check
+                # Override parameter in @ensure_connect
                 self.connection._connected = True
 
             # Switch from certificate to credential authentication when private key is not specified in a
@@ -172,6 +172,10 @@ class HttpApi(HttpApiBase):
             if self.params.get('timeout') is not None:
                 self.connection.set_option('persistent_command_timeout', self.params.get('timeout'))
 
+            # If session_key is present in the inventory, password in the task is ignored. In order to avoid this, we explicitly set session_key to None.
+            if self.connection.get_option("session_key") is not None:
+                self.connection.set_option("session_key", None)
+
             self.counter_checker = True
 
         else:
@@ -187,7 +191,7 @@ class HttpApi(HttpApiBase):
             if self.connection.get_option("session_key") is not None:
                 self.connection._auth = {'Cookie': '{0}'.format(self.cert_auth(path, method, data).get('Cookie'))}
                 self.connection.queue_message('vvvv', 'Going through certificate authentication')
-                # Override @ensure_connect check
+                # Override parameter in @ensure_connect
                 self.connection._connected = True
 
         try:
