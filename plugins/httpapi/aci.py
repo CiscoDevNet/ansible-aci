@@ -58,38 +58,39 @@ class HttpApi(HttpApiBase):
     def __init__(self, *args, **kwargs):
         super(HttpApi, self).__init__(*args, **kwargs)
         self.auth = None
-        self.check_auth_from_private_key = False
+        self.check_auth_from_private_key_task = False
+        self.check_auth_from_credential_task = False
         self.backup_hosts = None
-        self.list_of_hosts = []
+        self.inventory_hosts = []
         self.host_counter = 0
-        self.counter_checker = False
+        self.counter_task = False
+        self.counter_inventory = False
         self.entered_exception = False
+        self.entered_http_error = None
+        self.entered_connection_error_on_last_host = False
         self.exception_message = None
         self.response_auth = None
         self.response_data_auth = None
+        self.r_d = None
+        self.r = None
 
     def get_params(self, auth, params, method, call_path, data):
         self.params = params
         self.auth = auth
-        self.method = method
-        self.call_path = call_path
-        self.data = data
+        
 
     def get_backup_hosts_from_inventory(self):
         try:
-            # append is used here to store the list of hosts in self.connection.get_option("host") in the 0th position.
-            # This is done because we keep changing the value of 'host' constantly using self.connection.set_option("host") when a list of hosts is provided.
-            # We always want access to the original list of hosts.
-
             # Case: Host is provided in the inventory
-            self.list_of_hosts.append(re.sub(r'[[\]]', '', self.connection.get_option("host")).split(","))
+            self.inventory_hosts.append(re.sub(r'[[\]]', '', self.connection.get_option("host")).split(","))
         except Exception:
-            pass
+            # Case: Host is provided in the memory inventory
+            self.inventory_hosts.append(self.connection.get_option("host"))
 
     def login(self, username, password):
         ''' Log in to APIC '''
         # Perform login request
-        self.connection.queue_message('log', 'Establishing connection to {0}'.format(self.connection.get_option('host')))
+        self.connection.queue_message('step:', 'Establishing connection to {0}'.format(self.connection.get_option('host')))
         method = 'POST'
         path = '/api/aaaLogin.json'
         payload = {'aaaUser': {'attributes': {'name': username, 'pwd': password}}}
@@ -98,12 +99,11 @@ class HttpApi(HttpApiBase):
             response, response_data = self.connection.send(path, data, method=method)
             response_value = self._get_response_value(response_data)
             self.connection._auth = {'Cookie': 'APIC-Cookie={0}'
-                                     .format(self._response_to_json(response_value).get('imdata')[0]['aaaLogin']['attributes']['token'])}
-            self.connection.queue_message('vvvv', 'Connection to {0} was successful'.format(self.connection.get_option('host')))
-        except Exception as exc:
-            self.exception_message = exc
-            self.connection.queue_message('vvvv', '{0}'.format(exc))
-            self.handle_error()
+                                        .format(self._response_to_json(response_value).get('imdata')[0]['aaaLogin']['attributes']['token'])}
+            self.connection.queue_message('step:', 'Connection to {0} was successful'.format(self.connection.get_option('host')))
+        except Exception as exc_login:
+            self.connection.queue_message('step:', '{0}'.format(exc_login))
+            self.handle_connection_error(exc_login)
 
     def logout(self):
         method = 'POST'
@@ -119,19 +119,24 @@ class HttpApi(HttpApiBase):
     def send_request(self, method, path, data):
         ''' This method handles all APIC REST API requests other than login '''
 
-        # The command timeout which is the response timeout from APIC can be set in the inventory
-        # self.connection.set_option('persistent_command_timeout', 3)
+        #The command timeout which is the response timeout from APIC can be set in the inventory
+        #self.connection.set_option('persistent_command_timeout', 2)
 
         if self.params.get('host') is not None:
+            self.counter_task = True
 
             # Case: Host is provided in the task of a playbook
+            task_hosts = ast.literal_eval(self.params.get('host')) if '[' in self.params.get('host') else self.params.get('host').split(",")
+            
             # We check if the list of hosts provided in two consecutive tasks are the same. If they are not the same we begin operation from the first host on the next 
             # task (Memory of the host in the list-reset).
             # If they are the same, we continue operation on the same host on which previous task was running (Memory of the host in the list-preserved).
-            if self.backup_hosts != ast.literal_eval(self.params.get('host')) if '[' in self.params.get('host') else self.params.get('host').split(",") or self.counter_checker is False:
+            if self.counter_inventory or self.backup_hosts != task_hosts:
                 self.host_counter = 0
+                self.counter_inventory = False
+                self.connection._connected = False
 
-            self.backup_hosts = ast.literal_eval(self.params.get('host')) if '[' in self.params.get('host') else self.params.get('host').split(",")
+            self.backup_hosts = task_hosts
 
             if self.params.get('port') is not None:
                 self.connection.set_option("port", self.params.get('port'))
@@ -145,20 +150,26 @@ class HttpApi(HttpApiBase):
             # Start with certificate authentication (or) Switch from credential authentication to certificate authentication when private key is specified in a
             # task while ansible is running a playbook.
             if self.auth is not None:
+                if self.check_auth_from_credential_task:
+                    self.host_counter = 0
+                self.check_auth_from_credential_task = False
                 self.connection._auth = {'Cookie': '{0}'.format(self.auth)}
-                self.check_auth_from_private_key = True
-                self.connection.queue_message('vvvv', 'Going through certificate authentication')
+                self.check_auth_from_private_key_task = True
+                self.connection.queue_message('step:', 'Setting certificate authentication at task level')
                 # Override parameter in @ensure_connect
                 self.connection._connected = True
 
             # Switch from certificate to credential authentication when private key is not specified in a
             # task while ansible is running a playbook
-            elif self.auth is None and self.check_auth_from_private_key:
-                self.check_auth_from_private_key = False
+            elif self.auth is None and self.check_auth_from_private_key_task:
+                self.host_counter = 0
+                self.check_auth_from_private_key_task = False
+                self.check_auth_from_credential_task = True
                 # Continue Operation on the host via credential authentication. Memory of the host in the list-preserved.
-                self.connection.queue_message('vvvv', 'Switching from certificate to credential authentication')
-                self.connection.set_option("host", self.backup_hosts[self.host_counter])
-                self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
+                self.connection.queue_message('step:', 'Switching from certificate to credential authentication at the task level')
+                self.connection._connected = False
+            else:
+                self.check_auth_from_credential_task = True
 
             if self.params.get('use_proxy') is not None:
                 self.connection.set_option("use_proxy", self.params.get('use_proxy'))
@@ -176,82 +187,86 @@ class HttpApi(HttpApiBase):
             if self.connection.get_option("session_key") is not None:
                 self.connection.set_option("session_key", None)
 
-            self.counter_checker = True
-
         else:
+            self.counter_inventory = True
+            # Case: Hosts from the inventory are used
+            self.get_backup_hosts_from_inventory()
             # Reset counter to start operation on first host in inventory. Memory of the host in the list-reset.
             # This covers the scenario where a playbook contains back to back tasks with and without hosts specified at task level.
-            if self.counter_checker:
+            if self.counter_task or self.backup_hosts != self.inventory_hosts[0]:
                 self.host_counter = 0
-                self.counter_checker = False
+                self.counter_task = False
+                self.connection._connected = False
+    
             # Set backup host/hosts from the inventory. Host is not provided in the task.
-            self.get_backup_hosts_from_inventory()
-            self.backup_hosts = self.list_of_hosts[0]
+            self.backup_hosts = self.inventory_hosts[0]
+               
             # Note: session_key takes precedence over password
             if self.connection.get_option("session_key") is not None:
+                self.check_auth_from_private_key_task = True
+                self.connection.queue_message('step:', 'Setting certificate authentication from inventory')
                 self.connection._auth = {'Cookie': '{0}'.format(self.cert_auth(path, method, data).get('Cookie'))}
-                self.connection.queue_message('vvvv', 'Going through certificate authentication')
                 # Override parameter in @ensure_connect
                 self.connection._connected = True
 
         try:
             self.connection.set_option("host", self.backup_hosts[self.host_counter])
-            self.connection.queue_message('vvvv', 'Initializing operation on host {0}'.format(self.connection.get_option('host')))
-        except IndexError:
-            pass
+            self.connection.queue_message('step:', 'Initializing operation on host {0}'.format(self.connection.get_option('host')))
+        except IndexError as exc:
+            raise ConnectionError("HERE {0}, {1}".format(self.backup_hosts, self.host_counter))
+        
+        self.method = method
+        self.call_path = path
+        self.data = data
 
-        # Initiation of request
         try:
             response, response_data = self.connection.send(path, data, method=method)
-            self.connection.queue_message('vvvv', 'Received response from {0} with HTTP: {1}'.format(self.connection.get_option('host'), response.getcode()))
-        except Exception as exc:
-            self.exception_message = exc
+            self.connection.queue_message('step:', 'Received response from {0} for {1} operation with HTTP: {2}'.format(self.connection.get_option('host'), method, response.getcode()))
+        except Exception as exc_response:
             self.entered_exception = True
-            self.connection.queue_message('vvvv', 'Failed to receive response from {0}: {1}'.format(self.connection.get_option('host'), exc))
-            self.handle_error()
+            self.connection.queue_message('step:', 'Connection to {0} has failed: {1}'.format(self.connection.get_option('host'), exc_response))
+            self.handle_connection_error(exc_response)
         finally:
             if self.entered_exception:
                 self.entered_exception = False
                 if self.auth is not None or (self.connection.get_option("session_key") is not None and self.auth is None):
-                    if self.host_counter >= len(self.backup_hosts):
-                        raise ConnectionError("No hosts left in cluster to continue operation!!! Error on final host: {0}".format(self.exception_message))
-                    self.connection.queue_message('vvvv', 'Received response from {0} with HTTP: {1}'.format(self.connection.get_option('host'),
-                                                  self.response_auth.getcode()))
-                    return self._verify_response(self.response_auth, self.method, self.call_path, self.response_data_auth)
-                self.connection.queue_message('vvvv', 'Retrying request on {0}'.format(self.connection.get_option('host')))
-                # Final try/except block to close/exit operation
-                try:
-                    response, response_data = self.connection.send(path, data, method=method)
-                    self.connection.queue_message('vvvv', 'Received response from {0} with HTTP: {1}'.format(self.connection.get_option('host'),
-                                                  response.getcode()))
-                except Exception as exc:
-                    self.exception_message = exc
-                    self.handle_error()
+                    # TO DO
+                    return self.handle_connection_error(None)
+                else:
+                    self.connection.queue_message('step:', 'Retrying request on {0}'.format(self.connection.get_option('host')))
+                    # Final try/except block to close/exit operation
+                    try:
+                        response, response_data = self.connection.send(path, data, method=method)
+                        self.connection.queue_message('step:', 'Received response from {0} for {1} operation with HTTP: {2}'.format(self.connection.get_option('host'), method, response.getcode()))
+                    except Exception as exc_credential:
+                        self.connection.queue_message('step:', 'Connection to {0} has failed: {1}'.format(self.connection.get_option('host'), exc_credential))
+                        self.handle_connection_error(exc_credential)
         return self._verify_response(response, method, path, response_data)
 
-    def handle_error(self):
-        # We break the flow of code here when we are operating on a single host at task level or single host in the inventory file.
-        # We do this to replicate the behavior of Ansible running via local connection on a single host.
-        if len(self.backup_hosts) == 1:
-            raise ConnectionError("{0}".format(self.exception_message))
+    def handle_connection_error(self, exc):
         self.host_counter += 1
         if self.host_counter >= len(self.backup_hosts):
-            raise ConnectionError("No hosts left in cluster to continue operation!!! Error on final host: {0}".format(self.exception_message))
-        self.connection.queue_message('vvvv', 'Switching host from {0} to {1}'.format(self.connection.get_option('host'), self.backup_hosts[self.host_counter]))
-        self.connection.set_option("host", self.backup_hosts[self.host_counter])
-        
+            # The host_counter is reset here before the final error to accommodate the use of ignore_errors in the tasks
+            self.host_counter = 0
+            raise ConnectionError("No hosts left in cluster to continue operation!!! Error on final host {0}: {1}".format(self.connection.get_option('host'), exc))
+        self.connection.queue_message('step:', 'Switching host from {0} to {1}'.format(self.connection.get_option('host'), self.backup_hosts[self.host_counter]))
+        self.connection.set_option("host", self.backup_hosts[self.host_counter])            
         if self.auth is not None or (self.connection.get_option("session_key") is not None and self.auth is None):
-            self.connection.queue_message('vvvv', 'Retrying request on {0}'.format(self.connection.get_option('host')))
+            self.connection.queue_message('step:', 'Retrying request on {0}'.format(self.connection.get_option('host')))
             try:
-                response_auth, response_data_auth = self.connection.send(self.call_path, self.data, method=self.method)
-                self.response_auth = response_auth
-                self.response_data_auth = response_data_auth
-            except Exception as exc:
-                self.exception_message = exc
-                self.connection.queue_message('vvvv', 'Failed to receive response from {0}: {1}'.format(self.connection.get_option('host'), exc))
-                self.handle_error()
+                response, response_data = self.connection.send(self.call_path, self.data, method=self.method)
+                self.connection.queue_message('step:', 'Received response from {0} for {1} operation with HTTP: {2}'.format(self.connection.get_option('host'), self.method, response.getcode()))
+                return self._verify_response(response, self.method, self.call_path, response_data)
+            except Exception as exc_certificate:
+                self.connection.queue_message('step:', 'Connection to {0} has failed: {1}'.format(self.connection.get_option('host'), exc_certificate))
+                self.handle_connection_error(exc_certificate)
         else:
             self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
+
+    def handle_httperror(self, exc_http_response):
+        self.entered_http_error = exc_http_response.code
+        self.connection.queue_message('step:', 'Failed to receive response from {0}: {1}'.format(self.connection.get_option('host'), exc_http_response))
+        return exc_http_response
 
     def _verify_response(self, response, method, path, response_data):
         ''' Process the return code and response object from APIC '''
