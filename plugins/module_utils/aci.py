@@ -1803,7 +1803,7 @@ def ospf_spec():
             self.cert_auth(path=call_path, payload=data, method=method)
         if self.module._socket_path:
             connect = Connection(self.module._socket_path)
-            connect.get_params(self.headers.get('Cookie'), self.params, method, '/{0}'.format(call_path), data)
+            connect.get_params(self.headers.get('Cookie'), self.params)
             info = connect.send_request(method, '/{0}'.format(call_path), data)
             self.url = info.get('url')
             self.httpapi_logs.extend(connect.pop_messages())
