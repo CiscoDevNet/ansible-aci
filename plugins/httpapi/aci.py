@@ -65,18 +65,17 @@ class HttpApi(HttpApiBase):
         self.backup_hosts = None
         self.inventory_hosts = []
         self.host_counter = 0
-        self.counter_task = False
-        self.counter_inventory = False
-        self.entered_exception_certificate = False
-        self.entered_exception_credentials = False
-        self.ignore_error_check = False
+        self.entered_task = False
+        self.entered_inventory = False
+        self.entered_exception = False
+        self.connection_error_check = False
         
     def get_params(self, auth, params):
         self.params = params
         self.auth = auth
 
     def get_backup_hosts_from_inventory(self):
-        # append is used here to store the list of hosts in self.connection.get_option("host") in the 0th position of the list.
+        # append is used here to store the first list of hosts available in self.connection.get_option("host") in the 0th position of the list inventory_host.
         # This is done because we keep changing the value of 'host' constantly using self.connection.set_option("host") when a list of hosts is provided.
         # We always want access to the original list of hosts from the inventory when the tasks are running on them.
         try:
@@ -120,7 +119,7 @@ class HttpApi(HttpApiBase):
     # One API call is made via each call to send_request from aci.py in module_utils
     # As long as a host is active in the list we make sure that the API call goes through
     # A switch like mechanism is heavily utilized in order to transition from -
-    # tasks opearating on hosts using credentials to tasks opearting on hosts using certificate and vice-versa in the same playbook
+    # tasks operating on hosts using credentials to tasks opearting on hosts using certificate and vice-versa in the same playbook
     # tasks using hosts in inventory via session_key (certificate) to tasks using a password in the inventory and vice-versa in the same playbook
     # tasks using hosts at task level to tasks using hosts in inventory and vice versa in the same playbook
     def send_request(self, method, path, data):
@@ -131,7 +130,7 @@ class HttpApi(HttpApiBase):
 
         # Note: Preference is given to Hosts mentioned at task level in the playbook
         if self.params.get('host') is not None:
-            self.counter_task = True
+            self.entered_task = True
 
             # Case: Host is provided in the task of a playbook
             task_hosts = ast.literal_eval(self.params.get('host')) if '[' in self.params.get('host') else self.params.get('host').split(",")
@@ -139,14 +138,14 @@ class HttpApi(HttpApiBase):
             # We check whether:
             # 1.The list of hosts provided in two consecutive tasks are not the same
             # 2.The previous task was running on the hosts in the inventory
-            # 3.ignore_check was set in the previous task 
+            # 3.connection_error_check was set in the previous task 
             # If yes, we begin the operation on the first host of the list. (Memory of the host in the list-reset).
             # If no, we continue operation on the same host on which previous task was running (Memory of the host in the list-preserved).
-            if self.counter_inventory or self.backup_hosts != task_hosts or self.ignore_error_check:
+            if self.entered_inventory or self.backup_hosts != task_hosts or self.connection_error_check:
                 self.host_counter = 0
                 # We set the following to false as the list of hosts have changed from the previous task
-                self.counter_inventory = False
-                self.ignore_error_check = False
+                self.entered_inventory = False
+                self.connection_error_check = False
                 # Enforce @ensure_connect
                 self.connection._connected = False
 
@@ -195,20 +194,20 @@ class HttpApi(HttpApiBase):
                 self.connection.set_option('persistent_command_timeout', self.params.get('timeout'))
 
             # If session_key is present in the inventory, password in the task is ignored. In order to avoid this, we explicitly set session_key to None 
-            # to give preference to credentials/certificate in the task level
+            # to give preference to credentials/certificate at the task level
             if self.connection.get_option("session_key") is not None:
                 self.connection.set_option("session_key", None)
         else:
             # If the task has no hosts and their credentials/certificate we need to operate on the hosts in the inventory
-            self.counter_inventory = True
+            self.entered_inventory = True
             # Case: Hosts from the inventory are used
             self.get_backup_hosts_from_inventory()
             # Reset counter to start operation on first host in inventory. Memory of the host in the list-reset.
             # This covers the scenario where a playbook contains back to back tasks with and without hosts specified at task level.
-            if self.counter_task or self.backup_hosts != self.inventory_hosts[0] or self.ignore_error_check:
+            if self.entered_task or self.backup_hosts != self.inventory_hosts[0] or self.connection_error_check:
                 self.host_counter = 0
-                self.counter_task = False
-                self.ignore_error_check = False
+                self.entered_task = False
+                self.connection_error_check = False
                 # Enforce @ensure_connect
                 self.connection._connected = False
     
@@ -238,53 +237,36 @@ class HttpApi(HttpApiBase):
         try:
             self.connection.set_option("host", self.backup_hosts[self.host_counter])
             self.connection.queue_message('step:', 'Initializing operation on host {0}'.format(self.connection.get_option('host')))
-        # This is only executed if there are no hosts mentioned in the task or the inventory
         except Exception as exception_hosts:
             raise ConnectionError("Critical Error {0}".format(exception_hosts))
 
-        # If credentials are mentioned, the first attempt at login is perofrmed automatically via @ensure_connect before making a request.
-        # First attempt at making a request.
+        # If the credentials are mentioned, the first attempt at login is performed automatically via @ensure_connect before making a request.
         try:
             response, response_data = self.connection.send(path, data, method=method)
             self.connection.queue_message('step:', 'Received response from {0} for {1} operation with HTTP: {2}'.format(self.connection.get_option('host'), method, response.getcode()))
         except Exception as exc_response:
             self.connection.queue_message('step:', 'Connection to {0} has failed: {1}'.format(self.connection.get_option('host'), exc_response))
-            if self.auth is not None or (self.connection.get_option("session_key") is not None and self.auth is None):
-                self.entered_exception_certificate = True
-            else:
-                self.entered_exception_credentials = True
-            # We don't call the handle_connection_error when ignore_errors is set. This check is to avoid switching of hosts 
-            # when host_counter is reset.
-            if not self.ignore_error_check:
-                self.handle_connection_error(exc_response)
+            self.entered_exception = True
+            self.handle_connection_error(exc_response)
+            
         # finally block is always executed
         finally: 
-            if self.entered_exception_credentials:
-                self.entered_exception_credentials = False
+            if self.entered_exception:
+                self.entered_exception = False
                 self.connection.queue_message('step:', 'Retrying request on {0}'.format(self.connection.get_option('host')))
-                #Final try/except block to close/exit operation when credentials are used
-                try:
-                    response, response_data = self.connection.send(path, data, method=method)
-                    self.connection.queue_message('step:', 'Received response from {0} for {1} operation with HTTP: {2}'.format(self.connection.get_option('host'), method, response.getcode()))
-                except Exception as exc_credential:
-                    self.connection.queue_message('step:', 'Connection to {0} has failed: {1}'.format(self.connection.get_option('host'), exc_credential))
-                    self.handle_connection_error(exc_credential)
-            elif self.entered_exception_certificate:
-                self.entered_exception_certificate = False
-                if not self.ignore_error_check:
-                    # Recursive function, if certificate is used
+                # Exit recursive function. All the hosts are exhausted
+                if not self.connection_error_check:
                     return self.send_request(method, path, data)
-        # Final return statement for response from the request function
+        # return statement executed upon each successful response from the request function
         return self._verify_response(response, method, path, response_data)
 
     # Custom error handler
     def handle_connection_error(self, exception):
         self.host_counter += 1
         if self.host_counter >= len(self.backup_hosts):
-            # We set ignore_error_check to True here to accommodate the use of ignore_errors and its consequence on the next task
-            self.ignore_error_check = True
-            # Base Case Connection Error
-            raise ConnectionError("No hosts left in cluster to continue operation!!! Error on final host {0}: {1} {2}".format(self.connection.get_option('host'), exception))
+            # Base Case for send_request. All hosts are exhausted in the list.
+            self.connection_error_check = True
+            raise ConnectionError("No hosts left in cluster to continue operation!!! Error on final host {0}: {1}".format(self.connection.get_option('host'), exception))
         self.connection.queue_message('step:', 'Switching host from {0} to {1}'.format(self.connection.get_option('host'), self.backup_hosts[self.host_counter]))
         self.connection.set_option("host", self.backup_hosts[self.host_counter])            
         if self.auth is not None or (self.connection.get_option("session_key") is not None and self.auth is None):
@@ -344,23 +326,31 @@ class HttpApi(HttpApiBase):
         if payload is None:
             payload = ''
 
-        if os.path.exists(list(self.connection.get_option("session_key").values())[0]):
-            try:
-                permission = 'r'
-                if HAS_CRYPTOGRAPHY:
-                    permission = 'rb'
-                with open(list(self.connection.get_option("session_key").values())[0], permission) as fh:
-                    private_key_content = fh.read()
-            except Exception:
-                raise ConnectionError("Cannot open private key file {0}".format(list(self.connection.get_option("session_key").values())[0]))
-            try:
-                if HAS_CRYPTOGRAPHY:
-                    sig_key = serialization.load_pem_private_key(private_key_content, password=None, backend=default_backend(),)
-                else:
-                    sig_key = load_privatekey(FILETYPE_PEM, private_key_content)
-            except Exception:
-                raise ConnectionError("Cannot load private key file {0}".format(list(self.connection.get_option("session_key").values())[0]))
-            self.params['certificate_name'] = list(self.connection.get_option("session_key").keys())[0]
+        try:
+            if HAS_CRYPTOGRAPHY:
+                key = list(self.connection.get_option("session_key").values())[0].encode()
+                sig_key = serialization.load_pem_private_key(key, password=None, backend=default_backend(),)
+            else:
+                sig_key = load_privatekey(FILETYPE_PEM, list(self.connection.get_option("session_key").values())[0])
+        except Exception:
+            if os.path.exists(list(self.connection.get_option("session_key").values())[0]):
+                try:
+                    permission = 'r'
+                    if HAS_CRYPTOGRAPHY:
+                        permission = 'rb'
+                    with open(list(self.connection.get_option("session_key").values())[0], permission) as fh:
+                        private_key_content = fh.read()
+                except Exception:
+                    raise ConnectionError("Cannot open private key file {0}".format(list(self.connection.get_option("session_key").values())[0]))
+                try:
+                    if HAS_CRYPTOGRAPHY:
+                        sig_key = serialization.load_pem_private_key(private_key_content, password=None, backend=default_backend(),)
+                    else:
+                        sig_key = load_privatekey(FILETYPE_PEM, private_key_content)
+                except Exception:
+                    raise ConnectionError("Cannot load private key file {0}".format(list(self.connection.get_option("session_key").values())[0]))
+            else:
+                raise ConnectionError("Provided private key {0} does not appear to be a private key.".format(list(self.connection.get_option("session_key").values())[0]))    
         sig_request = method + path + payload
         if HAS_CRYPTOGRAPHY:
             sig_signature = sig_key.sign(sig_request.encode(), padding.PKCS1v15(), hashes.SHA256())
