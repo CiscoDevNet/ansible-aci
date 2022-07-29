@@ -7,7 +7,6 @@ ipaddress
 # requirement for aci_rest module
 xmljson
 lxml
-xmltodict
 
 # requirement for aci_aaa_user module
 python-dateutil

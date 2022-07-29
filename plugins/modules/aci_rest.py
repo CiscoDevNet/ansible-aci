@@ -55,14 +55,6 @@ options:
       together with the C(template) lookup plugin, or use C(template).
     type: path
     aliases: [ config_file ]
-  output_format:
-    description:
-    - This option is only applicable for XML based POST request.
-    - C(xml) used to store the XML payload content in the output_path.
-    - C(json) used to store the XML payload content as JSON string in the output_path.
-    type: str
-    choices: [ json, xml ]
-    default: json
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -287,14 +279,6 @@ try:
 except Exception:
     HAS_YAML = False
 
-# Optional, Used to convert xml payload to dict object for the output file dumping.
-try:
-    import xmltodict
-
-    HAS_XML_TO_DICT = True
-except Exception:
-    HAS_XML_TO_DICT = False
-
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 from ansible.module_utils.urls import fetch_url
@@ -355,7 +339,6 @@ def main():
         method=dict(type="str", default="get", choices=["delete", "get", "post"], aliases=["action"]),
         src=dict(type="path", aliases=["config_file"]),
         content=dict(type="raw"),
-        output_format=dict(type="str", default="json", choices=["json", "xml"]),
     )
 
     module = AnsibleModule(
@@ -402,12 +385,12 @@ def main():
         if content and isinstance(content, dict):
             # Validate inline YAML/JSON
             payload = json.dumps(payload)
-            payload_output_file = json.loads(payload)
+            # payload_output_file = json.loads(payload)
         elif payload and isinstance(payload, str) and HAS_YAML:
             try:
                 # Validate YAML/JSON string
                 payload = json.dumps(yaml.safe_load(payload))
-                payload_output_file = json.loads(payload)
+                # payload_output_file = json.loads(payload)
             except Exception as e:
                 module.fail_json(msg="Failed to parse provided JSON/YAML payload: %s" % to_text(e), exception=to_text(e), payload=payload)
     elif rest_type == "xml" and HAS_LXML_ETREE:
@@ -463,16 +446,7 @@ def main():
         output_path = aci.params.get("output_path")
         if output_path is not None:
             with open(output_path, "a") as output_file:
-                if rest_type == "json":
-                    json.dump([payload_output_file], output_file)
-                    output_file.write("\n")
-                elif rest_type == "xml":
-                    if aci.params.get("output_format") == "json" and HAS_XML_TO_DICT:
-                        json.dump([xmltodict.parse(payload)], output_file)
-                        output_file.write("\n")
-                    elif aci.params.get("output_format") == "xml" or not HAS_XML_TO_DICT:
-                        output_file.write(payload)
-                        output_file.write("\n")
+                output_file.write(payload)
 
     # Report success
     aci.exit_json(**aci.result)
