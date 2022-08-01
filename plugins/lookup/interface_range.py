@@ -11,11 +11,11 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = """
     name: interface_range
-    short_description: interfaces from range
+    short_description: query interfaces from a range or comma separated list of ranges
     description:
-      - this lookup returns interfaces from a range given to it
+      - this lookup returns interfaces from a range or comma separated list of ranges given to it
     notes:
-      - add document
+      - duplicate interfaces from overlapping ranges will only be returned once
     options:
       _terms:
         description: comma separated strings of interface ranges
