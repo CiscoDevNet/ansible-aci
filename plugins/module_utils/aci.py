@@ -168,10 +168,10 @@ def aci_contract_qos_spec():
     return dict(type="str", choices=["level1", "level2", "level3", "unspecified"])
 
 
-def aci_contract_dscp_spec():
+def aci_contract_dscp_spec(direction=None):
     return dict(
         type="str",
-        aliases=["target"],
+        aliases=["target" if not direction else "target_{0}".format(direction)],
         choices=[
             "AF11",
             "AF12",

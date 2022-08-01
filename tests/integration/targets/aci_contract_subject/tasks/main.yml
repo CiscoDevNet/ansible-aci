@@ -269,14 +269,14 @@
     - name: create subject both again with direction both set
       cisco.aci.aci_contract_subject:
         <<: *aci_subject_both
-        direction: both
+        apply_both_direction: both
       register: nm_subject_present_both_again
 
     - name: create subject one-way (check_mode)
       cisco.aci.aci_contract_subject: &aci_subject_one_way
         <<: *aci_contract1
         subject: subjectoneway
-        direction: one-way
+        apply_both_direction: one-way
       check_mode: yes
       register: cm_subject_present_one_way
 
@@ -305,14 +305,14 @@
     - name: reverse subject both to one-way
       cisco.aci.aci_contract_subject:
         <<: *aci_subject_both
-        direction: one-way
+        apply_both_direction: one-way
       register: nm_subject_reverse_to_one_way
       ignore_errors: yes
 
     - name: reverse subject one-way to both
       cisco.aci.aci_contract_subject:
         <<: *aci_subject_one_way
-        direction: both
+        apply_both_direction: both
       register: nm_subject_reverse_to_both
       ignore_errors: yes
 

@@ -26,7 +26,7 @@ options:
     - The contract subject name.
     type: str
     aliases: [ contract_subject, name, subject_name ]
-  direction:
+  apply_both_direction:
     description:
     - The direction of traffic matching for the filter.
     type: str
@@ -70,7 +70,7 @@ options:
     type: str
     choices: [ AF11, AF12, AF13, AF21, AF22, AF23, AF31, AF32, AF33, AF41, AF42, AF43,
                CS0, CS1, CS2, CS3, CS4, CS5, CS6, CS7, EF, VA, unspecified ]
-    aliases: [ target ]
+    aliases: [ target_consumer_to_provider ]
   priority_provider_to_consumer:
     description:
     - The QoS class of Filter Chain For Provider to Consumer.
@@ -84,7 +84,7 @@ options:
     type: str
     choices: [ AF11, AF12, AF13, AF21, AF22, AF23, AF31, AF32, AF33, AF41, AF42, AF43,
                CS0, CS1, CS2, CS3, CS4, CS5, CS6, CS7, EF, VA, unspecified ]
-    aliases: [ target ]
+    aliases: [ target_provider_to_consumer ]
   description:
     description:
     - Description for the contract subject.
@@ -310,13 +310,13 @@ def main():
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
         # default both because of back-worth compatibility and for determining which config to push
-        direction=dict(type="str", default="both", choices=["both", "one-way"]),
+        apply_both_direction=dict(type="str", default="both", choices=["both", "one-way"]),
         priority=aci_contract_qos_spec(),
         dscp=aci_contract_dscp_spec(),
         priority_consumer_to_provider=aci_contract_qos_spec(),
-        dscp_consumer_to_provider=aci_contract_dscp_spec(),
+        dscp_consumer_to_provider=aci_contract_dscp_spec("consumer_to_provider"),
         priority_provider_to_consumer=aci_contract_qos_spec(),
-        dscp_provider_to_consumer=aci_contract_dscp_spec(),
+        dscp_provider_to_consumer=aci_contract_dscp_spec("provider_to_consumer"),
     )
 
     module = AnsibleModule(
@@ -349,7 +349,7 @@ def main():
     state = module.params.get("state")
     tenant = module.params.get("tenant")
     name_alias = module.params.get("name_alias")
-    direction = module.params.get("direction")
+    direction = module.params.get("apply_both_direction")
 
     subject_class = "vzSubj"
     base_subject_dict = dict(
