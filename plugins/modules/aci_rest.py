@@ -385,12 +385,10 @@ def main():
         if content and isinstance(content, dict):
             # Validate inline YAML/JSON
             payload = json.dumps(payload)
-            # payload_output_file = json.loads(payload)
         elif payload and isinstance(payload, str) and HAS_YAML:
             try:
                 # Validate YAML/JSON string
                 payload = json.dumps(yaml.safe_load(payload))
-                # payload_output_file = json.loads(payload)
             except Exception as e:
                 module.fail_json(msg="Failed to parse provided JSON/YAML payload: %s" % to_text(e), exception=to_text(e), payload=payload)
     elif rest_type == "xml" and HAS_LXML_ETREE:
