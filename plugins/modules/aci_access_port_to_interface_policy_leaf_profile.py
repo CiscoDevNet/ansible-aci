@@ -93,8 +93,9 @@ options:
   interface_type:
     description:
     - The type of interface for the static EPG deployment.
+    - The interface_type fex_profile can not be configured with a profile of type fex.
     type: str
-    choices: [ breakout, fex, port_channel, switch_port, vpc , fex_profile]
+    choices: [ breakout, fex, port_channel, switch_port, vpc, fex_port_channel, fex_vpc , fex_profile]
     default: switch_port
   fex_id:
     description:
@@ -102,13 +103,14 @@ options:
     type: int
   fex_profile:
     description:
-    - The name of the Fex Profile.
+    - The name of the Fex Profile. Value of the fex_profile is overridden by the policy_group.
     type: str
     aliases: [ fex_profile_name ]
   type:
     description:
     - The type of access port to be created under respective profile.
     type: str
+    aliases: [ profile_type ]
     choices: [ fex, leaf ]
     default: leaf
   state:
@@ -332,13 +334,17 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
+port_channels_dn = "uni/infra/funcprof/accbundle-{0}"
+
 INTERFACE_TYPE_MAPPING = dict(
     breakout="uni/infra/funcprof/brkoutportgrp-{0}",
     fex="uni/infra/funcprof/accportgrp-{0}",
     fex_profile="uni/infra/fexprof-{0}/fexbundle-{1}",
-    port_channel="uni/infra/funcprof/accbundle-{0}",
+    port_channel=port_channels_dn,
     switch_port="uni/infra/funcprof/accportgrp-{0}",
-    vpc="uni/infra/funcprof/accbundle-{0}",
+    vpc=port_channels_dn,
+    fex_port_channel=port_channels_dn,
+    fex_vpc=port_channels_dn,
 )
 
 
@@ -357,10 +363,12 @@ def main():
         from_card=dict(type="str", aliases=["from_card_range"]),
         to_card=dict(type="str", aliases=["to_card_range"]),
         policy_group=dict(type="str", aliases=["policy_group_name"]),
-        interface_type=dict(type="str", default="switch_port", choices=["breakout", "fex", "port_channel", "switch_port", "vpc", "fex_profile"]),
+        interface_type=dict(
+            type="str", default="switch_port", choices=["breakout", "fex", "port_channel", "switch_port", "vpc", "fex_port_channel", "fex_vpc", "fex_profile"]
+        ),
         fex_id=dict(type="int"),
         fex_profile=dict(type="str", aliases=["fex_profile_name"]),
-        type=dict(type="str", default="leaf", choices=["fex", "leaf"]),
+        type=dict(type="str", default="leaf", choices=["fex", "leaf"], aliases=["profile_type"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -407,27 +415,31 @@ def main():
 
     # Add infraRsAccBaseGrp only when policy_group was defined
     if policy_group is not None:
-        if fex_profile is None:
-            infra_rs_Acc_base_grp_t_dn = INTERFACE_TYPE_MAPPING[interface_type].format(policy_group)
-        else:
-            infra_rs_Acc_base_grp_t_dn = INTERFACE_TYPE_MAPPING[interface_type].format(fex_profile, policy_group)
+        if interface_type == "fex_profile" and type_profile == "fex":
+            module.fail_json(msg="Invalid Configuration - interface_type fex_profile can not be configured with a profile of type fex")
+        elif interface_type == "fex_profile" and fex_profile is not None:
+            infra_rs_acc_base_grp_t_dn = INTERFACE_TYPE_MAPPING[interface_type].format(fex_profile, policy_group)
+        elif interface_type == "fex_profile" and fex_profile is None:
+            infra_rs_acc_base_grp_t_dn = INTERFACE_TYPE_MAPPING[interface_type].format(policy_group, policy_group)
+        elif interface_type != "fex_profile":
+            infra_rs_acc_base_grp_t_dn = INTERFACE_TYPE_MAPPING[interface_type].format(policy_group)
 
-        infra_rs_Acc_base_grp = dict(
+        infra_rs_acc_base_grp = dict(
             infraRsAccBaseGrp=dict(
-                attributes=dict(tDn=infra_rs_Acc_base_grp_t_dn),
+                attributes=dict(tDn=infra_rs_acc_base_grp_t_dn),
             ),
         )
 
         if interface_type == "fex_profile":
             if fex_id is not None:
                 if fex_id in range(101, 200):
-                    infra_rs_Acc_base_grp["infraRsAccBaseGrp"]["attributes"]["fexId"] = fex_id
+                    infra_rs_acc_base_grp["infraRsAccBaseGrp"]["attributes"]["fexId"] = fex_id
                 else:
                     module.fail_json(msg="The valid FEX ID is between 101 to 199")
             else:
                 module.fail_json(msg="The fex_id must not be None, when interface_type is fex_profile")
 
-        child_configs.append(infra_rs_Acc_base_grp)
+        child_configs.append(infra_rs_acc_base_grp)
 
     aci = ACIModule(module)
     aci_class = "infraAccPortP"

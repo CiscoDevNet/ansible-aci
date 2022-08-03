@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_leaf_interface_profiles_fex_policy_group
+module: aci_interface_policy_leaf_profile_fex_policy_group
 short_description: Manage leaf interface profiles fex policy group (infra:FexBndlGrp)
 description:
 - Manage leaf interface profiles fex policy group on Cisco ACI fabrics.
@@ -48,7 +48,7 @@ author:
 
 EXAMPLES = r"""
 - name: Add a new fex policy group
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group:
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -58,7 +58,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Add list of fex policy groups
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group:
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -73,7 +73,7 @@ EXAMPLES = r"""
       fex_profile: anstest_fex_profile
 
 - name: Query a fex policy group under fex profile
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group:
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -83,7 +83,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query all fex policy groups under fex profile
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group:
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -92,7 +92,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query all fex policy groups with name
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group:
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -101,7 +101,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query all fex policy groups
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group:
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -109,7 +109,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Remove fex policy group
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group:
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword

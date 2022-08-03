@@ -34,7 +34,7 @@
   register: fex_profile_present
 
 - name: Add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with check mode
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group: &cm_fex_policy_group_present
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group: &cm_fex_policy_group_present
     <<: *aci_info
     name: anstest_fex_policy_group
     fex_profile: anstest_fex_profile
@@ -52,7 +52,7 @@
       - cm_fex_policy_group_present.sent.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
 
 - name: Add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group: &nm_fex_policy_group_present
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group: &nm_fex_policy_group_present
     <<: *cm_fex_policy_group_present
   register: nm_fex_policy_group_present
 
@@ -66,7 +66,7 @@
       - nm_fex_policy_group_present.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
 
 - name: Add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode - idempotency works
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group: &idempotency_fex_policy_group_present
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group: &idempotency_fex_policy_group_present
     <<: *nm_fex_policy_group_present
   register: idempotency_fex_policy_group_present
 
@@ -82,7 +82,7 @@
       - idempotency_fex_policy_group_present.previous.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
 
 - name: Add multiple Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group:
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
     <<: *aci_info
     name: "{{ item.name }}"
     fex_profile: "{{ item.fex_profile }}"
@@ -134,7 +134,7 @@
       - temp_anstest_fex_profile_present.previous | length == 0
 
 - name: Add Fex Policy Group to temp_anstest_fex_profile - Interface Policy Fex profile
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group:
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
     <<: *aci_info
     name: anstest_fex_policy_group
     fex_profile: temp_anstest_fex_profile
@@ -151,7 +151,7 @@
       - temp_anstest_fex_policy_group_present.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-temp_anstest_fex_profile/fexbundle-anstest_fex_policy_group"
 
 - name: Query anstest_fex_policy_group - fex policy group with fex_profile
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group:
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
     <<: *aci_info
     name: anstest_fex_policy_group
     fex_profile: anstest_fex_profile
@@ -167,7 +167,7 @@
       - query_res_fex_policy_group_with_profile.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
 
 - name: Query all fex policy group under anstest_fex_profile
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group:
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
     <<: *aci_info
     fex_profile: anstest_fex_profile
     state: query
@@ -180,7 +180,7 @@
       - query_all_policy_groups_under_fex_profile.current.0.infraFexP.children | length == 3
 
 - name: Query all anstest_fex_policy_group - fex policy groups
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group:
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
     <<: *aci_info
     name: anstest_fex_policy_group
     state: query
@@ -195,7 +195,7 @@
       - query_res_anstest_fex_policy_group.current.1.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
 
 - name: Query all - fex policy groups
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group:
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
     <<: *aci_info
     state: query
   register: all_fex_policy_groups
@@ -207,7 +207,7 @@
       - all_fex_policy_groups.current | length >= 4
 
 - name: Remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with check mode
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group: &cm_anstest_fex_policy_group_absent
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group: &cm_anstest_fex_policy_group_absent
     <<: *aci_info
     name: anstest_fex_policy_group
     fex_profile: anstest_fex_profile
@@ -227,7 +227,7 @@
       - cm_anstest_fex_policy_group_absent.previous.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
 
 - name: Remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with normal mode
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group: &nm_anstest_fex_policy_group_absent
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group: &nm_anstest_fex_policy_group_absent
     <<: *cm_anstest_fex_policy_group_absent
   register: nm_anstest_fex_policy_group_absent
 
@@ -241,7 +241,7 @@
       - nm_anstest_fex_policy_group_absent.previous.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
 
 - name: Remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with normal mode - idempotency works
-  cisco.aci.aci_leaf_interface_profiles_fex_policy_group: &idempotency_anstest_fex_policy_group_absent
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group: &idempotency_anstest_fex_policy_group_absent
     <<: *nm_anstest_fex_policy_group_absent
   register: idempotency_anstest_fex_policy_group_absent
 
