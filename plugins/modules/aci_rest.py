@@ -426,7 +426,7 @@ def main():
     resp = None
     if module._socket_path:
         connect = Connection(aci.module._socket_path)
-        connect.set_params(aci.headers.get('Cookie'), aci.params)
+        connect.get_params(aci.headers.get('Cookie'), aci.params)
         info = connect.send_request(aci.method, '/{0}'.format(path), payload)
         aci.url = info.get('url')
         aci.httpapi_logs.extend(connect.pop_messages())

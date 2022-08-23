@@ -327,6 +327,7 @@ def destination_epg_spec():
 
 class ACIModule(object):
     def __init__(self, module):
+        self.default_username = 'admin'
         self.module = module
         self.params = module.params
         self.result = dict(changed=False)
@@ -428,6 +429,7 @@ class ACIModule(object):
         if self.params.get("port") is not None:
             url = "%(protocol)s://%(host)s:%(port)s/api/aaaLogin.json" % self.params
         else:
+<<<<<<< HEAD
             url = "%(protocol)s://%(host)s/api/aaaLogin.json" % self.params
         payload = {
             "aaaUser": {
@@ -445,6 +447,15 @@ class ACIModule(object):
             timeout=self.params.get("timeout"),
             use_proxy=self.params.get("use_proxy"),
         )
+=======
+            url = '%(protocol)s://%(host)s/api/aaaLogin.json' % self.params
+        payload = {'aaaUser': {'attributes': {'name': self.params.get('username', self.default_username), 'pwd': self.params.get('password')}}}
+        resp, auth = fetch_url(self.module, url,
+                               data=json.dumps(payload),
+                               method='POST',
+                               timeout=self.params.get('timeout'),
+                               use_proxy=self.params.get('use_proxy'))
+>>>>>>> cde59eb (add test file to check connection)
 
         # Handle APIC response
         if auth.get("status") != 200:
@@ -513,7 +524,7 @@ class ACIModule(object):
                 self.module.fail_json(msg="Provided private key '%(private_key)s' does not appear to be a private key." % self.params)
 
         if self.params.get('certificate_name') is None:
-            self.params['certificate_name'] = self.params.get('username', 'admin')
+            self.params['certificate_name'] = self.params.get('username', self.default_username)
         # NOTE: ACI documentation incorrectly adds a space between method and path
         sig_request = method + path + payload
         if HAS_CRYPTOGRAPHY:
@@ -1802,6 +1813,7 @@ def ospf_spec():
         if self.params.get('private_key'):
             self.cert_auth(path=call_path, payload=data, method=method)
         if self.module._socket_path:
+            self.params['validate_certs'] = False
             connect = Connection(self.module._socket_path)
             connect.get_params(self.headers.get('Cookie'), self.params)
             info = connect.send_request(method, '/{0}'.format(call_path), data)

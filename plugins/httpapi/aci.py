@@ -58,6 +58,7 @@ class HttpApi(HttpApiBase):
     def __init__(self, *args, **kwargs):
         super(HttpApi, self).__init__(*args, **kwargs)
         self.auth = None
+        self.params = None
         self.check_auth_from_private_key_task = False
         self.check_auth_from_credentials_task = False
         self.check_auth_from_private_key_inventory = False
@@ -65,11 +66,9 @@ class HttpApi(HttpApiBase):
         self.backup_hosts = None
         self.inventory_hosts = []
         self.host_counter = 0
-        self.entered_task = False
-        self.entered_inventory = False
         self.entered_exception = False
         self.connection_error_check = False
-        
+
     def get_params(self, auth, params):
         self.params = params
         self.auth = auth
@@ -100,33 +99,115 @@ class HttpApi(HttpApiBase):
             self.connection._auth = {'Cookie': 'APIC-Cookie={0}'
                                         .format(self._response_to_json(response_value).get('imdata')[0]['aaaLogin']['attributes']['token'])}
             self.connection.queue_message('step:', 'Connection to {0} was successful'.format(self.connection.get_option('host')))
-        except Exception as exc_login:
-            self.connection.queue_message('step:', '{0}'.format(exc_login))
-            # Indirect recursion
-            self.handle_connection_error(exc_login)
+        except Exception:
+            # The exception here is transferred to the response exception
+            raise
 
     def logout(self):
         method = 'POST'
         path = '/api/aaaLogout.json'
+        payload = {"aaaUser":{"attributes":{"name":self.connection.get_option("remote_user")}}}
+        data = json.dumps(payload)
         try:
-            response, response_data = self.connection.send(path, {}, method=method)
-        except Exception as exc:
-            msg = 'Error on attempt to logout from APIC. {0}'.format(exc)
+            response, response_data = self.connection.send(path, data, method=method)
+        except Exception as exc_logout:
+            msg = 'Error on attempt to logout from APIC. {0}'.format(exc_logout)
             raise ConnectionError(self._return_info(None, method, path, msg))
         self.connection._auth = None
         self._verify_response(response, method, path, response_data)
 
+    def set_parameters(self, method, path, data):
+        if self.params.get('port') is not None:
+            self.connection.set_option("port", self.params.get('port'))
+
+        if self.params.get('username') is not None:
+            self.connection.set_option("remote_user", self.params.get('username'))
+            
+        if self.params.get('use_proxy') is not None:
+            self.connection.set_option("use_proxy", self.params.get('use_proxy'))
+
+        if self.params.get('use_ssl') is not None:
+            self.connection.set_option("use_ssl", self.params.get('use_ssl'))
+
+        if self.params.get('validate_certs') is not None:
+            self.connection.set_option("validate_certs", self.params.get('validate_certs'))
+
+        # The command timeout which is the response timeout from APIC
+        if self.params.get('timeout') is not None:
+            self.connection.set_option('persistent_command_timeout', self.params.get('timeout'))
+
+        # If the persistent_connect_timeout is less than the response timeout from APIC the persistent socket connection will fail 
+        if self.params.get('timeout') is not None:
+            self.connection.set_option('persistent_connect_timeout', self.params.get('timeout') + 30)
+        else:
+            # For inventory
+            self.connection.set_option('persistent_connect_timeout', self.connection.get_option('persistent_command_timeout') + 30)
+       
+        # Start with certificate authentication
+        if self.auth is not None:
+            # If session_key is present in the inventory, certificate in the task is ignored. In order to avoid this, we explicitly set session_key to None 
+            # to give preference to credentials/certificate at the task level. 
+            if self.connection.get_option("session_key") is not None:
+                self.connection.set_option("session_key", None)
+            # Check if the previous task was running with the credentials at the task level/inventory or the certificate in the inventory
+            if self.check_auth_from_credentials_task or self.check_auth_from_credentials_inventory or self.check_auth_from_private_key_inventory:
+                self.host_counter = 0
+                self.check_auth_from_credentials_task = False
+                self.check_auth_from_credentials_inventory = False
+                self.check_auth_from_private_key_inventory = False
+            self.check_auth_from_private_key_task = True
+            self.connection._auth = {'Cookie': '{0}'.format(self.auth)}
+            self.connection.queue_message('step:', 'Setting certificate authentication at task level')
+            # Override parameter in @ensure_connect
+            self.connection._connected = True
+        # Start with credential authentication
+        elif self.params.get('password') is not None:
+            # If session_key is present in the inventory, certificate in the task is ignored. In order to avoid this, we explicitly set session_key to None 
+            # to give preference to credentials/certificate at the task level. 
+            if self.connection.get_option("session_key") is not None:
+                self.connection.set_option("session_key", None)
+            self.connection.set_option("password", self.params.get('password'))
+            # Check if the previous task was running with the certificate in at the task level/inventory or the credentials in the inventory
+            if self.check_auth_from_private_key_task or self.check_auth_from_credentials_inventory or self.check_auth_from_private_key_inventory:
+                self.host_counter = 0
+                # Enforce @ensure_connect
+                self.connection._connected = False
+                self.check_auth_from_private_key_task = False
+                self.check_auth_from_credentials_inventory = False
+                self.check_auth_from_private_key_inventory = False
+            self.check_auth_from_credentials_task = True
+            self.connection.queue_message('step:', 'Setting credential authentication at task level')
+        # Note: session_key takes precedence over password if both of them are present in the inventory
+        elif self.connection.get_option("session_key") is not None:
+            # Check if the previous task was running with the certificate at the task level or the credentials in the inventory/task
+            if self.check_auth_from_credentials_inventory or self.check_auth_from_private_key_task or self.check_auth_from_credentials_task:
+                self.host_counter = 0
+                self.check_auth_from_credentials_inventory = False
+                self.check_auth_from_private_key_task = False
+                self.check_auth_from_credentials_task = False
+            self.check_auth_from_private_key_inventory = True
+            self.connection.queue_message('step:', 'Setting certificate authentication from inventory')
+            self.connection._auth = {'Cookie': '{0}'.format(self.cert_auth(path, method, data).get('Cookie'))}
+            # Override parameter in @ensure_connect
+            self.connection._connected = True
+        # No session_key provided. Use password in the inventory instead
+        else:
+            # Check if the previous task was running with the certificate at the task/inventory level or the credentials in the task
+            if self.check_auth_from_private_key_inventory or self.check_auth_from_private_key_task or self.check_auth_from_credentials_task:
+                self.host_counter = 0
+                # Enforce @ensure_connect
+                self.connection._connected = False
+                self.check_auth_from_private_key_inventory = False
+                self.check_auth_from_private_key_task = False
+                self.check_auth_from_credentials_task = False
+            self.check_auth_from_credentials_inventory = True
+            self.connection.queue_message('step:', 'Setting credential authentication from inventory')
+
     # One API call is made via each call to send_request from aci.py in module_utils
     # As long as a host is active in the list we make sure that the API call goes through
-    # A switch like mechanism is heavily utilized in order to transition from -
-    # tasks operating on hosts using credentials to tasks opearting on hosts using certificate and vice-versa in the same playbook
-    # tasks using hosts in inventory via session_key (certificate) to tasks using a password in the inventory and vice-versa in the same playbook
-    # tasks using hosts at task level to tasks using hosts in inventory and vice versa in the same playbook
+    # A switch like mechanism is heavily utilized to support the same playbook consisting of tasks running on different hosts
     def send_request(self, method, path, data):
         ''' This method handles all APIC REST API requests other than login '''
-
-        #The command timeout which is the response timeout from APIC can be set in the inventory
-        #self.connection.set_option('persistent_command_timeout', 30)
 
         # Note: Preference is given to Hosts mentioned at task level in the playbook
         if self.params.get('host') is not None:
@@ -137,108 +218,38 @@ class HttpApi(HttpApiBase):
             
             # We check whether:
             # 1.The list of hosts provided in two consecutive tasks are not the same
-            # 2.The previous task was running on the hosts in the inventory
-            # 3.connection_error_check was set in the previous task 
+            # 2.connection_error_check was set in the previous task 
             # If yes, we begin the operation on the first host of the list. (Memory of the host in the list-reset).
             # If no, we continue operation on the same host on which previous task was running (Memory of the host in the list-preserved).
-            if self.entered_inventory or self.backup_hosts != task_hosts or self.connection_error_check:
+            if self.backup_hosts != task_hosts or self.connection_error_check:
                 self.host_counter = 0
-                # We set the following to false as the list of hosts have changed from the previous task
-                self.entered_inventory = False
                 self.connection_error_check = False
-                # Enforce @ensure_connect
                 self.connection._connected = False
 
             self.backup_hosts = task_hosts
-
-            if self.params.get('port') is not None:
-                self.connection.set_option("port", self.params.get('port'))
-
-            if self.params.get('username') is not None:
-                self.connection.set_option("remote_user", self.params.get('username'))
-
-            if self.params.get('password') is not None:
-                self.connection.set_option("password", self.params.get('password'))
-
-            # Start with certificate authentication
-            if self.auth is not None:
-                # Check if the previous task was running with the credentials
-                if self.check_auth_from_credentials_task:
-                    self.host_counter = 0
-                    self.check_auth_from_credentials_task = False
-                self.check_auth_from_private_key_task = True
-                self.connection._auth = {'Cookie': '{0}'.format(self.auth)}
-                self.connection.queue_message('step:', 'Setting certificate authentication at task level')
-                # Override parameter in @ensure_connect
-                self.connection._connected = True
-            # Start with credential authentication
-            else:
-                # Check if the previous task was running on certificate auth
-                if self.check_auth_from_private_key_task:
-                    self.host_counter = 0
-                    # Enforce @ensure_connect
-                    self.connection._connected = False
-                    self.check_auth_from_private_key_task = False
-                self.check_auth_from_credentials_task = True
-                
-            if self.params.get('use_proxy') is not None:
-                self.connection.set_option("use_proxy", self.params.get('use_proxy'))
-
-            if self.params.get('use_ssl') is not None:
-                self.connection.set_option("use_ssl", self.params.get('use_ssl'))
-
-            if self.params.get('validate_certs') is not None:
-                self.connection.set_option("validate_certs", self.params.get('validate_certs'))
-
-            if self.params.get('timeout') is not None:
-                self.connection.set_option('persistent_command_timeout', self.params.get('timeout'))
-
-            # If session_key is present in the inventory, password in the task is ignored. In order to avoid this, we explicitly set session_key to None 
-            # to give preference to credentials/certificate at the task level
-            if self.connection.get_option("session_key") is not None:
-                self.connection.set_option("session_key", None)
         else:
-            # If the task has no hosts and their credentials/certificate we need to operate on the hosts in the inventory
-            self.entered_inventory = True
             # Case: Hosts from the inventory are used
             self.get_backup_hosts_from_inventory()
-            # Reset counter to start operation on first host in inventory. Memory of the host in the list-reset.
-            # This covers the scenario where a playbook contains back to back tasks with and without hosts specified at task level.
-            if self.entered_task or self.backup_hosts != self.inventory_hosts[0] or self.connection_error_check:
+
+            # We check whether:
+            # 1.The list of hosts provided in two consecutive tasks are not the same
+            # 2.connection_error_check was set in the previous task
+            # If yes, we begin the operation on the first host of the list. (Memory of the host in the list-reset).
+            # If no, we continue operation on the same host on which previous task was running (Memory of the host in the list-preserved).
+            if self.backup_hosts != self.inventory_hosts[0] or self.connection_error_check:
                 self.host_counter = 0
-                self.entered_task = False
                 self.connection_error_check = False
-                # Enforce @ensure_connect
                 self.connection._connected = False
     
             # Set backup host/hosts from the inventory. Host is not provided in the task.
             self.backup_hosts = self.inventory_hosts[0]
-               
-            # Note: session_key takes precedence over password
-            if self.connection.get_option("session_key") is not None:
-                if self.check_auth_from_credentials_inventory:
-                    self.host_counter = 0
-                    self.check_auth_from_credentials_inventory = False
-                self.check_auth_from_private_key_inventory = True
-                self.connection.queue_message('step:', 'Setting certificate authentication from inventory')
-                self.connection._auth = {'Cookie': '{0}'.format(self.cert_auth(path, method, data).get('Cookie'))}
-                # Override parameter in @ensure_connect
-                self.connection._connected = True
-            # No session_key provided. Use password instead
-            else:
-                if self.check_auth_from_private_key_inventory:
-                    self.host_counter = 0
-                    # Enforce @ensure_connect
-                    self.connection._connected = False
-                    self.check_auth_from_private_key_inventory = False
-                self.check_auth_from_credentials_inventory = True
         
+        # Set parameters from the task
+        self.set_parameters(method, path, data)
+               
         # Start operation on the host
-        try:
-            self.connection.set_option("host", self.backup_hosts[self.host_counter])
-            self.connection.queue_message('step:', 'Initializing operation on host {0}'.format(self.connection.get_option('host')))
-        except Exception as exception_hosts:
-            raise ConnectionError("Critical Error {0}".format(exception_hosts))
+        self.connection.set_option("host", self.backup_hosts[self.host_counter])
+        self.connection.queue_message('step:', 'Initializing operation on host {0}'.format(self.connection.get_option('host')))
 
         # If the credentials are mentioned, the first attempt at login is performed automatically via @ensure_connect before making a request.
         try:
@@ -273,7 +284,6 @@ class HttpApi(HttpApiBase):
            return
         else:
             # Login function is called until connection to a host is established or until all the hosts in the list are exhausted 
-            # Indirect recursion
             self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
 
     # Built-in-function
@@ -290,10 +300,7 @@ class HttpApi(HttpApiBase):
             respond_data = response_value
         response_code = response.getcode()
         path = response.geturl()
-        if response_code == 400:
-            msg = str(response)
-        else:
-            msg = '{0} ({1} bytes)'.format(response.msg, len(response_value))
+        msg = '{0} ({1} bytes)'.format(response.msg, len(response_value))
         return self._return_info(response_code, method, path, msg, respond_data)
 
     def _get_response_value(self, response_data):
@@ -362,3 +369,4 @@ class HttpApi(HttpApiBase):
                                  'APIC-Certificate-Fingerprint=fingerprint; ' +\
                                  'APIC-Request-Signature=%s' % to_native(base64.b64encode(sig_signature))
         return headers
+
