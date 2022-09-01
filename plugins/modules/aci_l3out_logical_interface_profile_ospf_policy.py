@@ -44,12 +44,13 @@ options:
     aliases: [ name, ospf_policy_name ]
   ospf_auth_type:
     description:
-    - OSPF authentication type.
+    - OSPF authentication type. The value C(default) represents the "No Authentication" setting.
     type: str
     choices: [ default, simple, md5 ]
   ospf_auth_key:
     description:
     - OSPF authentication key.
+    - When using C(ospf_auth_key) this module will always show as C(changed) as the module cannot know what the currently configured key is.
     type: str
     default: ""
   state:
@@ -260,7 +261,7 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "l3out", "node_profile", "interface_profile", "ospf_policy"]],
+            ["state", "absent", ["tenant", "l3out", "node_profile", "interface_profile"]],
             ["state", "present", ["tenant", "l3out", "node_profile", "interface_profile", "ospf_policy"]],
         ],
     )
