@@ -14,7 +14,7 @@ DOCUMENTATION = """
 ---
 module: aci_firmware_policy
 
-short_description: This creates a firmware policy
+short_description: This creates a firmware policy (firmware:FwP)
 
 
 description:

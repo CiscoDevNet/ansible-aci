@@ -17,7 +17,7 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = r"""
 ---
 module: aci_ntp_server
-short_description: Manage NTP servers.
+short_description: Manage NTP servers (datetimeNtpProv)
 description:
 - Manage NTP server (datetimeNtpProv) configuration on Cisco ACI fabrics.
 options:

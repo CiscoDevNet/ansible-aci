@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_interface_blacklist
-short_description: Enabling or Disabling physical interfaces.
+short_description: Enabling or Disabling physical interfaces (fabric:RsOosPath)
 description:
 - Enables or Disables physical interfaces on Cisco ACI fabrics.
 options:

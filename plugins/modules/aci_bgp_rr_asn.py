@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_bgp_rr_asn
-short_description: Manage BGP Route Reflector ASN.
+short_description: Manage BGP Route Reflector ASN (bgp:AsP)
 description:
 - Manage the BGP Autonomous System Number of the fabric (bgpAsP).
 - This module is specifically for fabric BGP, for L3Out BGP use the aci_l3out_bgp_peer module

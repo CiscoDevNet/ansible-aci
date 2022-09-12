@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_dhcp_relay
-short_description: Manage DHCP relay policies.
+short_description: Manage DHCP relay policies (dhcp:RelayP)
 description:
 - Manage DHCP relay policy (dhcpRelayP) configuration on Cisco ACI fabrics.
 options:

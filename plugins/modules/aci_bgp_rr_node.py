@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_bgp_rr_node
-short_description: Manage BGP Route Reflector objects.
+short_description: Manage BGP Route Reflector objects (bgp:RRNodePEp)
 description:
 - Manage ACI BGP Route Reflector Nodes (bgpRRNodePEp).
 options:

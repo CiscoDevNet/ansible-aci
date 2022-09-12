@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_interface_description
-short_description: Setting and removing description on physical interfaces.
+short_description: Setting and removing description on physical interfaces (infraHPathS, infraRsHPathAtt, infraSHPathS, infraRsSHPathAtt)
 description:
 - Setting and removing description on physical interfaces on Cisco ACI fabrics.
 options:

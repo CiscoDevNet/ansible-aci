@@ -13,7 +13,7 @@ DOCUMENTATION = """
 ---
 module: aci_fabric_scheduler
 
-short_description: This modules creates ACI schedulers.
+short_description: This modules creates ACI schedulers (trig:SchedP, trig:AbsWindowP, trig:RecurrWindowP)
 
 
 description:

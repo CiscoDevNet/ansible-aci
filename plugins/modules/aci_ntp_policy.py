@@ -17,7 +17,7 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = r"""
 ---
 module: aci_ntp_policy
-short_description: Manage NTP policies.
+short_description: Manage NTP policies (datetimePol)
 description:
 - Manage NTP policy (datetimePol) configuration on Cisco ACI fabrics.
 options:

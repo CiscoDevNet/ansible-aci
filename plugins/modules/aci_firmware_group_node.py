@@ -13,11 +13,11 @@ DOCUMENTATION = """
 ---
 module: aci_firmware_group_node
 
-short_description: This modules adds and remove nodes from the firmware group
+short_description: This modules adds and remove nodes from the firmware group (fabric:NodeBlk, firmware:FwGrp)
 
 
 description:
-    - This module addes/deletes a node to the firmware group. This modules assigns 1 node at a time.
+    - This module addes/deletes a node to the firmware group. This modules assigns 1 node at a time ().
 
 options:
     group:

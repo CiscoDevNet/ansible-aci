@@ -11,7 +11,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_maintenance_group_node
-short_description: Manage maintenance group nodes
+short_description: Manage maintenance group nodes (fabric:NodeBlk, maint:MaintGrp)
 description:
 - Manage maintenance group nodes
 options:

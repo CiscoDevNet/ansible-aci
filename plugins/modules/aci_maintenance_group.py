@@ -11,7 +11,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = """
 module: aci_maintenance_group
-short_description: This creates an ACI maintenance group
+short_description: This creates an ACI maintenance group (maint:MaintGrp, maint:RsMgrpp)
 notes:
     - a maintenance policy (aci_maintenance_policy must be created prior to creating an aci maintenance group
 description:

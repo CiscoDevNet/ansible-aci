@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_fabric_switch_policy_group
-short_description: Manage Fabric Switch Policy Group objects.
+short_description: Manage Fabric Switch Policy Group objects (fabric:LeNodePGrp, fabric:SpNodePGrp)
 description:
 - Manage Fabric Switch Policy Group (fabricLeNodePGrp and fabricSpNodePGrp) configuration on Cisco ACI fabrics.
 options:

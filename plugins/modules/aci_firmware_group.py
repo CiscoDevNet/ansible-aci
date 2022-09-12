@@ -12,7 +12,7 @@ DOCUMENTATION = """
 ---
 module: aci_firmware_group
 
-short_description: This module creates a firmware group
+short_description: This module creates a firmware group (firmware:FwGrp, firmware:RsFwgrpp)
 
 
 description:

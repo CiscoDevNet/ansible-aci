@@ -13,7 +13,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: aci_static_node_mgmt_address
-short_description: In band or Out of band management IP address
+short_description: In band or Out of band management IP address (mgmtRsOoBStNode, mgmtRsInBStNode)
 description:
 - Cisco ACI Fabric Node IP address
 options:

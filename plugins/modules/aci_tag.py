@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_tag
-short_description: Tagging of ACI objects
+short_description: Tagging of ACI objects (tag:Annotation, tag:Inst, tag:Tag)
 description:
 - Tagging a object on Cisco ACI fabric.
 options:

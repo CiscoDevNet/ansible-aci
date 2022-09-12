@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_maintenance_policy
-short_description: Manage firmware maintenance policies
+short_description: Manage firmware maintenance policies (maint:MaintP, maintRsPolScheduler)
 description:
 - Manage maintenance policies that defines behavior during an ACI upgrade.
 options:
