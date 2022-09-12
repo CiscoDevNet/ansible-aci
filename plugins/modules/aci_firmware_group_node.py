@@ -17,7 +17,7 @@ short_description: This modules adds and remove nodes from the firmware group (f
 
 
 description:
-    - This module addes/deletes a node to the firmware group. This modules assigns 1 node at a time ().
+    - This module addes/deletes a node to the firmware group. This modules assigns 1 node at a time.
 
 options:
     group:
