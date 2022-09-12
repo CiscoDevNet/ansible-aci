@@ -11,7 +11,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: aci_node_mgmt_epg
-short_description: In band or Out of band management EPGs
+short_description: In band or Out of band management EPGs (mgmt:OoB, mgmt:InB)
 description:
 - Cisco ACI Fabric Node EPGs
 options:
