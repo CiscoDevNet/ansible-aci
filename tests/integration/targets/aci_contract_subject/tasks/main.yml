@@ -1,5 +1,5 @@
 # Test code for the ACI modules
-# Copyright: (c) 2017, Jacob McGill (@jmcgill298)
+# Copyright: (c) 2017, Jacob McGill (@jmcgill298), Mark Ciecior (@markciecior)
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -63,6 +63,14 @@
     priority: level3
   register: subject_present_2
 
+- name: create subject - add subject labels
+  cisco.aci.aci_contract_subject: &aci_subject_present_label
+    <<: *aci_contract_present
+    subject: anstest3
+    subject_label: my_test_label
+    subject_label_direction: consumer
+  register: subject_present_label
+
 - name: missing param - failure message works
   cisco.aci.aci_contract_subject:
     <<: *aci_tenant_present
@@ -90,6 +98,8 @@
       - subject_present_2.sent.vzSubj.attributes.name == 'anstest2'
       - subject_present_2.sent.vzSubj.attributes.prio == 'level3'
       - subject_present_2.sent.vzSubj.attributes.revFltPorts == 'no'
+      - subject_present_label is changed
+      - subject_present_label.sent.vzConsSubjLbl.attributes.name == 'my_test_label'
       - present_missing_param is failed
       - 'present_missing_param.msg == "state is present but all of the following are missing: contract, subject"'
 
@@ -136,6 +146,13 @@
     tenant: "{{ fakevar | default(omit) }}"
     contract: "{{ fakevar | default(omit) }}"
   register: query_subject
+
+- name: query labeled subject
+  cisco.aci.aci_contract_subject:
+    <<: *aci_query_subject_label
+    tenant: "{{ fakevar | default(omit) }}"
+    contract: "{{ fakevar | default(omit) }}"
+  register: query_subject_label
 
 - name: query all
   cisco.aci.aci_contract_subject:
@@ -187,6 +204,10 @@
       - query_subject.current.0.vzSubj.attributes.name == "anstest"
       - '"query-target-filter=eq(vzSubj.name,\"anstest\")" in query_subject.filter_string'
       - '"class/vzSubj.json" in query_subject.url'
+      - query_subject_label is not changed
+      - query_subject_label.current.0.vzSubj.attributes.name == "anstest3"
+      - '"query-target-filter=eq(vzConsSubjLbl.name,\"my_test_label\")" in query_subject_label.filter_string'
+      - '"class/vzConsSubjLbl.json" in query_subject_label.url'
       - query_all is not changed
       - query_all.current|length > 1
       - query_all.current.0.vzSubj is defined
@@ -212,6 +233,11 @@
 - name: delete subject - cleanup
   cisco.aci.aci_contract_subject:
     <<: *aci_subject_present_2
+    state: absent
+
+- name: delete subject with label - cleanup
+  cisco.aci.aci_contract_subject:
+    <<: *aci_subject_present_label
     state: absent
 
 - name: missing params - failure message works
