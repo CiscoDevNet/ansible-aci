@@ -37,6 +37,7 @@
               }
           }
       }
+    output_path: "/tmp/ansible_output_file.log"
   register: nm_add_tenant
 
 - name: Add tenant again (normal mode)

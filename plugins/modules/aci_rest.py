@@ -379,19 +379,16 @@ def main():
         with open(src, "r") as config_object:
             # TODO: Would be nice to template this, requires action-plugin
             payload = config_object.read()
-            payload_output_file = json.loads(payload)
 
     # Validate payload
     if rest_type == "json":
         if content and isinstance(content, dict):
             # Validate inline YAML/JSON
             payload = json.dumps(payload)
-            payload_output_file = json.loads(payload)
         elif payload and isinstance(payload, str) and HAS_YAML:
             try:
                 # Validate YAML/JSON string
                 payload = json.dumps(yaml.safe_load(payload))
-                payload_output_file = json.loads(payload)
             except Exception as e:
                 module.fail_json(msg="Failed to parse provided JSON/YAML payload: %s" % to_text(e), exception=to_text(e), payload=payload)
     elif rest_type == "xml" and HAS_LXML_ETREE:
@@ -447,7 +444,7 @@ def main():
         output_path = aci.params.get("output_path")
         if output_path is not None:
             with open(output_path, "a") as output_file:
-                json.dump([payload_output_file], output_file)
+                output_file.write(str(payload))
 
     # Report success
     aci.exit_json(**aci.result)
