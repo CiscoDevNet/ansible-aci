@@ -444,7 +444,7 @@ def main():
         output_path = aci.params.get("output_path")
         if output_path is not None:
             with open(output_path, "a") as output_file:
-                output_file.write(payload)
+                output_file.write(str(payload))
 
     # Report success
     aci.exit_json(**aci.result)
