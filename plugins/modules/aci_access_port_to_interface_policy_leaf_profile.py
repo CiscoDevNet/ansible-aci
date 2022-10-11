@@ -415,22 +415,21 @@ def main():
 
     # Add infraRsAccBaseGrp only when policy_group was defined
     if policy_group is not None:
-        if interface_type == "fex_profile" and type_profile == "fex":
-            module.fail_json(msg="Invalid Configuration - interface_type fex_profile can not be configured with a profile of type fex")
-        elif interface_type == "fex_profile" and fex_profile is not None:
-            infra_rs_acc_base_grp_t_dn = INTERFACE_TYPE_MAPPING[interface_type].format(fex_profile, policy_group)
-        elif interface_type == "fex_profile" and fex_profile is None:
-            infra_rs_acc_base_grp_t_dn = INTERFACE_TYPE_MAPPING[interface_type].format(policy_group, policy_group)
-        elif interface_type != "fex_profile":
-            infra_rs_acc_base_grp_t_dn = INTERFACE_TYPE_MAPPING[interface_type].format(policy_group)
 
         infra_rs_acc_base_grp = dict(
             infraRsAccBaseGrp=dict(
-                attributes=dict(tDn=infra_rs_acc_base_grp_t_dn),
+                attributes=dict(),
             ),
         )
 
         if interface_type == "fex_profile":
+            if type_profile == "fex":
+                module.fail_json(msg="Invalid Configuration - interface_type fex_profile can not be configured with a profile of type fex")
+            elif fex_profile is not None:
+                infra_rs_acc_base_grp["infraRsAccBaseGrp"]["attributes"]["tDn"] = INTERFACE_TYPE_MAPPING[interface_type].format(fex_profile, policy_group)
+            elif fex_profile is None:
+                infra_rs_acc_base_grp["infraRsAccBaseGrp"]["attributes"]["tDn"] = INTERFACE_TYPE_MAPPING[interface_type].format(policy_group, policy_group)
+
             if fex_id is not None:
                 if fex_id in range(101, 200):
                     infra_rs_acc_base_grp["infraRsAccBaseGrp"]["attributes"]["fexId"] = fex_id
@@ -438,6 +437,9 @@ def main():
                     module.fail_json(msg="The valid FEX ID is between 101 to 199")
             else:
                 module.fail_json(msg="The fex_id must not be None, when interface_type is fex_profile")
+
+        elif interface_type != "fex_profile":
+            infra_rs_acc_base_grp["infraRsAccBaseGrp"]["attributes"]["tDn"] = INTERFACE_TYPE_MAPPING[interface_type].format(policy_group)
 
         child_configs.append(infra_rs_acc_base_grp)
 

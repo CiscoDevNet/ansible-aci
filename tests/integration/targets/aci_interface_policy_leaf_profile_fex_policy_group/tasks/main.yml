@@ -5,19 +5,19 @@
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
   fail:
-    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+    msg: "Please define the following variables: aci_hostname, aci_username and aci_password."
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # SET VARS
 - name: Set vars
   set_fact:
     aci_info: &aci_info
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
       output_level: '{{ aci_output_level | default("info") }}'
 
 - name: Ensure anstest_fex_profile - Interface Policy Fex profile does not exists
@@ -34,7 +34,8 @@
   register: fex_profile_present
 
 - name: Add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with check mode
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group: &cm_fex_policy_group_present
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+    &cm_fex_policy_group_present
     <<: *aci_info
     name: anstest_fex_policy_group
     fex_profile: anstest_fex_profile
@@ -52,7 +53,8 @@
       - cm_fex_policy_group_present.sent.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
 
 - name: Add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group: &nm_fex_policy_group_present
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+    &nm_fex_policy_group_present
     <<: *cm_fex_policy_group_present
   register: nm_fex_policy_group_present
 
@@ -66,7 +68,8 @@
       - nm_fex_policy_group_present.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
 
 - name: Add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode - idempotency works
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group: &idempotency_fex_policy_group_present
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+    &idempotency_fex_policy_group_present
     <<: *nm_fex_policy_group_present
   register: idempotency_fex_policy_group_present
 
@@ -207,7 +210,8 @@
       - all_fex_policy_groups.current | length >= 4
 
 - name: Remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with check mode
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group: &cm_anstest_fex_policy_group_absent
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+    &cm_anstest_fex_policy_group_absent
     <<: *aci_info
     name: anstest_fex_policy_group
     fex_profile: anstest_fex_profile
@@ -227,7 +231,8 @@
       - cm_anstest_fex_policy_group_absent.previous.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
 
 - name: Remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with normal mode
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group: &nm_anstest_fex_policy_group_absent
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+    &nm_anstest_fex_policy_group_absent
     <<: *cm_anstest_fex_policy_group_absent
   register: nm_anstest_fex_policy_group_absent
 
@@ -241,7 +246,8 @@
       - nm_anstest_fex_policy_group_absent.previous.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
 
 - name: Remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with normal mode - idempotency works
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group: &idempotency_anstest_fex_policy_group_absent
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+    &idempotency_anstest_fex_policy_group_absent
     <<: *nm_anstest_fex_policy_group_absent
   register: idempotency_anstest_fex_policy_group_absent
 

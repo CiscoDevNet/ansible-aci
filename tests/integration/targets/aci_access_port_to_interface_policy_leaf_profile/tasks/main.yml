@@ -6,23 +6,24 @@
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
   fail:
-    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+    msg: "Please define the following variables: aci_hostname, aci_username and aci_password."
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # SET VARS
 - name: Set vars
   set_fact:
     aci_info: &aci_info
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
       output_level: '{{ aci_output_level | default("info") }}'
 
 - name: Remove Interface policy leaf profile - Cleanup
-  cisco.aci.aci_interface_policy_leaf_profile: &aci_interface_policy_leaf_profile_absent
+  cisco.aci.aci_interface_policy_leaf_profile:
+    &aci_interface_policy_leaf_profile_absent
     <<: *aci_info
     leaf_interface_profile: leafintprftest
     state: absent
@@ -35,7 +36,8 @@
     state: absent
 
 - name: Ensuring bindings do not already exist
-  cisco.aci.aci_access_port_to_interface_policy_leaf_profile: &aci_access_port_to_interface_policy_leaf_profile_absent
+  cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
+    &aci_access_port_to_interface_policy_leaf_profile_absent
     <<: *aci_info
     leaf_interface_profile: leafintprftest
     access_port_selector: anstest_accessportselector
@@ -49,7 +51,8 @@
     state: absent
 
 - name: Ensuring Interface Policy Leaf profile exists for kick off
-  cisco.aci.aci_interface_policy_leaf_profile: &aci_interface_policy_leaf_profile_present
+  cisco.aci.aci_interface_policy_leaf_profile:
+    &aci_interface_policy_leaf_profile_present
     <<: *aci_info
     state: present
     leaf_interface_profile: leafintprftest
@@ -62,7 +65,8 @@
     leaf_interface_profile: fexintprftest
 
 - name: Add a new fex policy group to the fexintprftest fex profile
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group: &fexintprftest_policy_group_present
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+    &fexintprftest_policy_group_present
     <<: *aci_info
     policy_group: fexintprftest
     fex_profile: fexintprftest
@@ -81,7 +85,8 @@
 # TODO: Ensure that leaf Policy Group Exists (module missing) (infra:AccPortGrp)
 
 - name: Bind an Interface Access Port Selector to an Interface Policy Leaf Profile with a Policy Group - check mode works
-  cisco.aci.aci_access_port_to_interface_policy_leaf_profile: &aci_access_port_to_interface_policy_leaf_profile_present
+  cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
+    &aci_access_port_to_interface_policy_leaf_profile_present
     <<: *aci_interface_policy_leaf_profile_present
     access_port_selector: anstest_accessportselector
   check_mode: yes
@@ -132,23 +137,23 @@
 - name: present assertions
   assert:
     that:
-    - accessport_to_intf_check_mode_present is changed
-    - accessport_to_intf_present is changed
-    - accessport_to_intf_present.current.0.infraHPortS.attributes.annotation == 'orchestrator:ansible'
-    - accessport_to_intf_present.previous == []
-    - accessport_to_intf_present.sent.infraHPortS.attributes.name == 'anstest_accessportselector'
-    - accessport_to_intf_idempotent is not changed
-    - accessport_to_intf_idempotent.sent == {}
-    - accessport_to_intf_update is changed
-    - accessport_to_intf_update.sent.infraHPortS.attributes == {}
-    - accessport_to_intf_update.sent.infraHPortS.children[0].infraRsAccBaseGrp.attributes.tDn == 'uni/infra/funcprof/accportgrp-anstest_policygroupname'
-    - accessport_to_intf_present_fex is changed
-    - accessport_to_intf_present_fex.previous == []
-    - accessport_to_intf_present_fex.sent.infraHPortS.attributes.name == 'anstest_fex_accessportselector'
-    - accessport_to_intf_idempotent_fex is not changed
-    - accessport_to_intf_idempotent_fex.sent == {}
-    - accessport_to_intf_update_fex is changed
-    - accessport_to_intf_update_fex.sent.infraHPortS.children[0].infraRsAccBaseGrp.attributes.tDn == 'uni/infra/funcprof/accportgrp-anstest_fex_policygroupname'
+      - accessport_to_intf_check_mode_present is changed
+      - accessport_to_intf_present is changed
+      - accessport_to_intf_present.current.0.infraHPortS.attributes.annotation == 'orchestrator:ansible'
+      - accessport_to_intf_present.previous == []
+      - accessport_to_intf_present.sent.infraHPortS.attributes.name == 'anstest_accessportselector'
+      - accessport_to_intf_idempotent is not changed
+      - accessport_to_intf_idempotent.sent == {}
+      - accessport_to_intf_update is changed
+      - accessport_to_intf_update.sent.infraHPortS.attributes == {}
+      - accessport_to_intf_update.sent.infraHPortS.children[0].infraRsAccBaseGrp.attributes.tDn == 'uni/infra/funcprof/accportgrp-anstest_policygroupname'
+      - accessport_to_intf_present_fex is changed
+      - accessport_to_intf_present_fex.previous == []
+      - accessport_to_intf_present_fex.sent.infraHPortS.attributes.name == 'anstest_fex_accessportselector'
+      - accessport_to_intf_idempotent_fex is not changed
+      - accessport_to_intf_idempotent_fex.sent == {}
+      - accessport_to_intf_update_fex is changed
+      - accessport_to_intf_update_fex.sent.infraHPortS.children[0].infraRsAccBaseGrp.attributes.tDn == 'uni/infra/funcprof/accportgrp-anstest_fex_policygroupname'
 
 - name: Query Specific access_port_selector and leaf_interface_profile binding
   cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
@@ -286,10 +291,10 @@
 - name: Assertion check for bind anstest_fex_port_channel Access Port Selector with policygroupname_link_fpc Policy Group - check mode
   assert:
     that:
-    - cm_fpc_present.current | length == 0
-    - cm_fpc_present.previous | length == 0
-    - cm_fpc_present.sent.infraHPortS.attributes.name == "anstest_fex_port_channel"
-    - cm_fpc_present.sent.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_link_fpc"
+      - cm_fpc_present.current | length == 0
+      - cm_fpc_present.previous | length == 0
+      - cm_fpc_present.sent.infraHPortS.attributes.name == "anstest_fex_port_channel"
+      - cm_fpc_present.sent.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_link_fpc"
 
 - name: Bind anstest_fex_port_channel Access Port Selector with policygroupname_link_fpc Policy Group - normal mode
   cisco.aci.aci_access_port_to_interface_policy_leaf_profile: &nm_fpc_present
@@ -299,11 +304,11 @@
 - name: Assertion check for bind anstest_fex_port_channel Access Port Selector with policygroupname_link_fpc Policy Group - normal mode
   assert:
     that:
-    - nm_fpc_present.current | length == 1
-    - nm_fpc_present.previous | length == 0
-    - nm_fpc_present.current.0.infraHPortS.attributes.name == "anstest_fex_port_channel"
-    - nm_fpc_present.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_link_fpc"
-    - nm_fpc_present.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
+      - nm_fpc_present.current | length == 1
+      - nm_fpc_present.previous | length == 0
+      - nm_fpc_present.current.0.infraHPortS.attributes.name == "anstest_fex_port_channel"
+      - nm_fpc_present.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_link_fpc"
+      - nm_fpc_present.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
 
 - name: Remove anstest_fex_port_channel Access Port Selector with policygroupname_link_fpc Policy Group - check mode
   cisco.aci.aci_access_port_to_interface_policy_leaf_profile: &cm_fpc_absent
@@ -315,14 +320,14 @@
 - name: Assertion check for remove anstest_fex_port_channel Access Port Selector with policygroupname_link_fpc Policy Group - check mode
   assert:
     that:
-    - cm_fpc_absent.current | length == 1
-    - cm_fpc_absent.previous | length == 1
-    - cm_fpc_absent.current.0.infraHPortS.attributes.name == "anstest_fex_port_channel"
-    - cm_fpc_absent.previous.0.infraHPortS.attributes.name == "anstest_fex_port_channel"
-    - cm_fpc_absent.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_link_fpc"
-    - cm_fpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_link_fpc"
-    - cm_fpc_absent.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
-    - cm_fpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
+      - cm_fpc_absent.current | length == 1
+      - cm_fpc_absent.previous | length == 1
+      - cm_fpc_absent.current.0.infraHPortS.attributes.name == "anstest_fex_port_channel"
+      - cm_fpc_absent.previous.0.infraHPortS.attributes.name == "anstest_fex_port_channel"
+      - cm_fpc_absent.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_link_fpc"
+      - cm_fpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_link_fpc"
+      - cm_fpc_absent.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
+      - cm_fpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
 
 - name: Remove anstest_fex_port_channel Access Port Selector with policygroupname_link_fpc Policy Group - normal mode
   cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
@@ -332,11 +337,11 @@
 - name: Assertion check for remove anstest_fex_port_channel Access Port Selector with policygroupname_link_fpc Policy Group - normal mode
   assert:
     that:
-    - nm_fpc_absent.current | length == 0
-    - nm_fpc_absent.previous | length == 1
-    - nm_fpc_absent.previous.0.infraHPortS.attributes.name == "anstest_fex_port_channel"
-    - nm_fpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_link_fpc"
-    - nm_fpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
+      - nm_fpc_absent.current | length == 0
+      - nm_fpc_absent.previous | length == 1
+      - nm_fpc_absent.previous.0.infraHPortS.attributes.name == "anstest_fex_port_channel"
+      - nm_fpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_link_fpc"
+      - nm_fpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
 
 - name: Add anstest_fex_vpc - Interface Policy Leaf Profile with type Fex
   cisco.aci.aci_interface_policy_leaf_profile: &anstest_fex_vpc
@@ -348,9 +353,9 @@
 - name: Assertion check for add anstest_fex_vpc - Interface Policy Leaf Profile with type Fex
   assert:
     that:
-    - anstest_fex_vpc_present.current | length == 1
-    - anstest_fex_vpc_present.current.0.infraFexP.attributes.name == "anstest_fex_vpc"
-    - anstest_fex_vpc_present.current.0.infraFexP.attributes.dn == "uni/infra/fexprof-anstest_fex_vpc"
+      - anstest_fex_vpc_present.current | length == 1
+      - anstest_fex_vpc_present.current.0.infraFexP.attributes.name == "anstest_fex_vpc"
+      - anstest_fex_vpc_present.current.0.infraFexP.attributes.dn == "uni/infra/fexprof-anstest_fex_vpc"
 
 - name: Add policygroupname_node_fvpc - Policy Group with lag type node
   cisco.aci.aci_interface_policy_leaf_policy_group:
@@ -365,12 +370,13 @@
 - name: Assertion check for add policygroupname_node_fvpc - Policy Group with lag type node
   assert:
     that:
-    - policygroupname_node_fvpc_present.current | length == 1
-    - policygroupname_node_fvpc_present.current.0.infraAccBndlGrp.attributes.name == "policygroupname_node_fvpc"
-    - policygroupname_node_fvpc_present.current.0.infraAccBndlGrp.attributes.lagT == "node"
+      - policygroupname_node_fvpc_present.current | length == 1
+      - policygroupname_node_fvpc_present.current.0.infraAccBndlGrp.attributes.name == "policygroupname_node_fvpc"
+      - policygroupname_node_fvpc_present.current.0.infraAccBndlGrp.attributes.lagT == "node"
 
 - name: Bind anstest_fex_vpc Access Port Selector with policygroupname_node_fvpc Policy Group - check mode
-  cisco.aci.aci_access_port_to_interface_policy_leaf_profile: &cm_fex_vpc_present
+  cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
+    &cm_fex_vpc_present
     <<: *anstest_fex_vpc
     interface_type: fex_vpc
     access_port_selector: anstest_fex_vpc
@@ -381,10 +387,10 @@
 - name: Assertion check for bind anstest_fex_vpc Access Port Selector with policygroupname_node_fvpc Policy Group - check mode
   assert:
     that:
-    - cm_fex_vpc_present.current | length == 0
-    - cm_fex_vpc_present.previous | length == 0
-    - cm_fex_vpc_present.sent.infraHPortS.attributes.name == "anstest_fex_vpc"
-    - cm_fex_vpc_present.sent.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_node_fvpc"
+      - cm_fex_vpc_present.current | length == 0
+      - cm_fex_vpc_present.previous | length == 0
+      - cm_fex_vpc_present.sent.infraHPortS.attributes.name == "anstest_fex_vpc"
+      - cm_fex_vpc_present.sent.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_node_fvpc"
 
 - name: Bind anstest_fex_vpc Access Port Selector with policygroupname_node_fvpc Policy Group - normal mode
   cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
@@ -394,11 +400,11 @@
 - name: Assertion check for bind anstest_fex_vpc Access Port Selector with policygroupname_node_fvpc Policy Group - normal mode
   assert:
     that:
-    - nm_fex_vpc_present.current | length == 1
-    - nm_fex_vpc_present.previous | length == 0
-    - nm_fex_vpc_present.current.0.infraHPortS.attributes.name == "anstest_fex_vpc"
-    - nm_fex_vpc_present.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
-    - nm_fex_vpc_present.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_node_fvpc"
+      - nm_fex_vpc_present.current | length == 1
+      - nm_fex_vpc_present.previous | length == 0
+      - nm_fex_vpc_present.current.0.infraHPortS.attributes.name == "anstest_fex_vpc"
+      - nm_fex_vpc_present.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
+      - nm_fex_vpc_present.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_node_fvpc"
 
 - name: Remove anstest_fex_vpc Access Port Selector with policygroupname_node_fvpc Policy Group - check mode
   cisco.aci.aci_access_port_to_interface_policy_leaf_profile: &cm_fex_vpc_absent
@@ -410,14 +416,14 @@
 - name: Assertion check for remove anstest_fex_vpc Access Port Selector with policygroupname_node_fvpc Policy Group - check mode
   assert:
     that:
-    - cm_fex_vpc_absent.current | length == 1
-    - cm_fex_vpc_absent.previous | length == 1
-    - cm_fex_vpc_absent.current.0.infraHPortS.attributes.name == "anstest_fex_vpc"
-    - cm_fex_vpc_absent.previous.0.infraHPortS.attributes.name == "anstest_fex_vpc"
-    - cm_fex_vpc_absent.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
-    - cm_fex_vpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
-    - cm_fex_vpc_absent.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_node_fvpc"
-    - cm_fex_vpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_node_fvpc"
+      - cm_fex_vpc_absent.current | length == 1
+      - cm_fex_vpc_absent.previous | length == 1
+      - cm_fex_vpc_absent.current.0.infraHPortS.attributes.name == "anstest_fex_vpc"
+      - cm_fex_vpc_absent.previous.0.infraHPortS.attributes.name == "anstest_fex_vpc"
+      - cm_fex_vpc_absent.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
+      - cm_fex_vpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
+      - cm_fex_vpc_absent.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_node_fvpc"
+      - cm_fex_vpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_node_fvpc"
 
 - name: Remove anstest_fex_vpc Access Port Selector with policygroupname_node_fvpc Policy Group - normal mode
   cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
@@ -427,11 +433,11 @@
 - name: Assertion check for remove anstest_fex_vpc Access Port Selector with policygroupname_node_fvpc Policy Group - normal mode
   assert:
     that:
-    - nm_fex_vpc_absent.current | length == 0
-    - nm_fex_vpc_absent.previous | length == 1
-    - nm_fex_vpc_absent.previous.0.infraHPortS.attributes.name == "anstest_fex_vpc"
-    - nm_fex_vpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
-    - nm_fex_vpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_node_fvpc"
+      - nm_fex_vpc_absent.current | length == 0
+      - nm_fex_vpc_absent.previous | length == 1
+      - nm_fex_vpc_absent.previous.0.infraHPortS.attributes.name == "anstest_fex_vpc"
+      - nm_fex_vpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "101"
+      - nm_fex_vpc_absent.previous.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/funcprof/accbundle-policygroupname_node_fvpc"
 
 # Removing profiles
 - name: Remove anstest_fex_vpc - Interface Policy Leaf Profile with type Fex
@@ -443,9 +449,9 @@
 - name: Assertion check for remove anstest_fex_vpc - Interface Policy Leaf Profile with type Fex
   assert:
     that:
-    - anstest_fex_vpc_absent.current | length == 0
-    - anstest_fex_vpc_absent.previous | length == 1
-    - anstest_fex_vpc_absent.previous.0.infraFexP.attributes.name == "anstest_fex_vpc"
+      - anstest_fex_vpc_absent.current | length == 0
+      - anstest_fex_vpc_absent.previous | length == 1
+      - anstest_fex_vpc_absent.previous.0.infraFexP.attributes.name == "anstest_fex_vpc"
 
 - name: Remove anstest_fex_port_channel - Interface Policy Leaf Profile with type Fex
   cisco.aci.aci_interface_policy_leaf_profile:
@@ -456,9 +462,9 @@
 - name: Assertion check for remove anstest_fex_port_channel - Interface Policy Leaf Profile with type Fex
   assert:
     that:
-    - anstest_fex_port_channel_absent.current | length == 0
-    - anstest_fex_port_channel_absent.previous | length == 1
-    - anstest_fex_port_channel_absent.previous.0.infraFexP.attributes.name == "anstest_fex_port_channel"
+      - anstest_fex_port_channel_absent.current | length == 0
+      - anstest_fex_port_channel_absent.previous | length == 1
+      - anstest_fex_port_channel_absent.previous.0.infraFexP.attributes.name == "anstest_fex_port_channel"
 
 - name: Ensure anstest_leaf_profile interface does not exists
   cisco.aci.aci_interface_policy_leaf_profile: &anstest_leaf_profile_absent
@@ -471,7 +477,7 @@
 - name: Assertion check for ensure anstest_leaf_profile interface does not exists
   assert:
     that:
-    - anstest_leaf_profile_absent.current | length == 0
+      - anstest_leaf_profile_absent.current | length == 0
 
 - name: Ensure anstest_fex_profile interface does not exists
   cisco.aci.aci_interface_policy_leaf_profile: &anstest_fex_profile_absent
@@ -484,7 +490,7 @@
 - name: Assertion check for ensure anstest_fex_profile interface does not exists
   assert:
     that:
-    - anstest_fex_profile_absent.current | length == 0
+      - anstest_fex_profile_absent.current | length == 0
 
 - name: Ensure temp_anstest_fex_profile interface does not exists
   cisco.aci.aci_interface_policy_leaf_profile: &temp_anstest_fex_profile_absent
@@ -497,7 +503,7 @@
 - name: Assertion check for ensure temp_anstest_fex_profile interface does not exists
   assert:
     that:
-    - temp_anstest_fex_profile_absent.current | length == 0
+      - temp_anstest_fex_profile_absent.current | length == 0
 
 - name: Add a new anstest_leaf_profile with profile type leaf
   cisco.aci.aci_interface_policy_leaf_profile: &anstest_leaf_profile_present
@@ -508,11 +514,11 @@
 - name: Assertion check for add a new anstest_leaf_profile with profile type leaf
   assert:
     that:
-    - anstest_leaf_profile_present is changed
-    - anstest_leaf_profile_present.current | length == 1
-    - anstest_leaf_profile_present.previous | length == 0
-    - anstest_leaf_profile_present.current.0.infraAccPortP.attributes.name == "anstest_leaf_profile"
-    - anstest_leaf_profile_present.current.0.infraAccPortP.attributes.dn == "uni/infra/accportprof-anstest_leaf_profile"
+      - anstest_leaf_profile_present is changed
+      - anstest_leaf_profile_present.current | length == 1
+      - anstest_leaf_profile_present.previous | length == 0
+      - anstest_leaf_profile_present.current.0.infraAccPortP.attributes.name == "anstest_leaf_profile"
+      - anstest_leaf_profile_present.current.0.infraAccPortP.attributes.dn == "uni/infra/accportprof-anstest_leaf_profile"
 
 - name: Add a new anstest_fex_profile with profile type fex
   cisco.aci.aci_interface_policy_leaf_profile: &anstest_fex_profile_present
@@ -523,11 +529,11 @@
 - name: Assertion check for add a new anstest_fex_profile with profile type fex
   assert:
     that:
-    - anstest_fex_profile_present is changed
-    - anstest_fex_profile_present.current | length == 1
-    - anstest_fex_profile_present.previous | length == 0
-    - anstest_fex_profile_present.current.0.infraFexP.attributes.name == "anstest_fex_profile"
-    - anstest_fex_profile_present.current.0.infraFexP.attributes.dn == "uni/infra/fexprof-anstest_fex_profile"
+      - anstest_fex_profile_present is changed
+      - anstest_fex_profile_present.current | length == 1
+      - anstest_fex_profile_present.previous | length == 0
+      - anstest_fex_profile_present.current.0.infraFexP.attributes.name == "anstest_fex_profile"
+      - anstest_fex_profile_present.current.0.infraFexP.attributes.dn == "uni/infra/fexprof-anstest_fex_profile"
 
 - name: Add a new temp_anstest_fex_profile with profile type fex
   cisco.aci.aci_interface_policy_leaf_profile: &temp_anstest_fex_profile_present
@@ -538,14 +544,15 @@
 - name: Assertion check for add a new temp_anstest_fex_profile with profile type fex
   assert:
     that:
-    - temp_anstest_fex_profile_present is changed
-    - temp_anstest_fex_profile_present.current | length == 1
-    - temp_anstest_fex_profile_present.previous | length == 0
-    - temp_anstest_fex_profile_present.current.0.infraFexP.attributes.name == "temp_anstest_fex_profile"
-    - temp_anstest_fex_profile_present.current.0.infraFexP.attributes.dn == "uni/infra/fexprof-temp_anstest_fex_profile"
+      - temp_anstest_fex_profile_present is changed
+      - temp_anstest_fex_profile_present.current | length == 1
+      - temp_anstest_fex_profile_present.previous | length == 0
+      - temp_anstest_fex_profile_present.current.0.infraFexP.attributes.name == "temp_anstest_fex_profile"
+      - temp_anstest_fex_profile_present.current.0.infraFexP.attributes.dn == "uni/infra/fexprof-temp_anstest_fex_profile"
 
 - name: Add a new policy_group with the same name of interface profile - temp_anstest_fex_profile
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group: &temp_anstest_fex_profile_policy_group_present
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+    &temp_anstest_fex_profile_policy_group_present
     <<: *aci_info
     policy_group: temp_anstest_fex_profile
     fex_profile: temp_anstest_fex_profile
@@ -555,11 +562,11 @@
 - name: Assertion check for add a new policy_group with the same name of interface profile - temp_anstest_fex_profile
   assert:
     that:
-    - temp_anstest_fex_profile_policy_group_present is changed
-    - temp_anstest_fex_profile_policy_group_present.current | length == 1
-    - temp_anstest_fex_profile_policy_group_present.previous | length == 0
-    - temp_anstest_fex_profile_policy_group_present.current.0.infraFexBndlGrp.attributes.name == "temp_anstest_fex_profile"
-    - temp_anstest_fex_profile_policy_group_present.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-temp_anstest_fex_profile/fexbundle-temp_anstest_fex_profile"
+      - temp_anstest_fex_profile_policy_group_present is changed
+      - temp_anstest_fex_profile_policy_group_present.current | length == 1
+      - temp_anstest_fex_profile_policy_group_present.previous | length == 0
+      - temp_anstest_fex_profile_policy_group_present.current.0.infraFexBndlGrp.attributes.name == "temp_anstest_fex_profile"
+      - temp_anstest_fex_profile_policy_group_present.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-temp_anstest_fex_profile/fexbundle-temp_anstest_fex_profile"
 
 - name: Bind temp_anstest_fex_profile with anstest_fex_profile - Fex Profile Policy Group
   cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
@@ -577,7 +584,7 @@
 - name: Assertion check for bind temp_anstest_fex_profile with anstest_fex_profile - Fex Profile Policy Group
   assert:
     that:
-    - temp_anstest_fex_profile_access_port_present.msg == "Invalid Configuration - interface_type fex_profile can not be configured with a profile of type fex"
+      - temp_anstest_fex_profile_access_port_present.msg == "Invalid Configuration - interface_type fex_profile can not be configured with a profile of type fex"
 
 - name: Remove temp_anstest_fex_profile
   cisco.aci.aci_interface_policy_leaf_profile:
@@ -587,12 +594,13 @@
 - name: Assertion check for remove temp_anstest_fex_profile
   assert:
     that:
-    - remove_anstest_fex_profile_absent is changed
-    - remove_anstest_fex_profile_absent.current | length == 0
-    - remove_anstest_fex_profile_absent.previous | length == 1
+      - remove_anstest_fex_profile_absent is changed
+      - remove_anstest_fex_profile_absent.current | length == 0
+      - remove_anstest_fex_profile_absent.previous | length == 1
 
 - name: Add a new policy_group with the same name of interface profile - anstest_fex_profile
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group: &anstest_fex_profile_policy_group_present
+  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+    &anstest_fex_profile_policy_group_present
     <<: *aci_info
     policy_group: anstest_fex_profile
     fex_profile: anstest_fex_profile
@@ -602,14 +610,15 @@
 - name: Assertion check for add a new policy_group with the same name of interface profile - anstest_fex_profile
   assert:
     that:
-    - anstest_fex_profile_policy_group_present is changed
-    - anstest_fex_profile_policy_group_present.current | length == 1
-    - anstest_fex_profile_policy_group_present.previous | length == 0
-    - anstest_fex_profile_policy_group_present.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_profile"
-    - anstest_fex_profile_policy_group_present.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_profile"
+      - anstest_fex_profile_policy_group_present is changed
+      - anstest_fex_profile_policy_group_present.current | length == 1
+      - anstest_fex_profile_policy_group_present.previous | length == 0
+      - anstest_fex_profile_policy_group_present.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_profile"
+      - anstest_fex_profile_policy_group_present.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_profile"
 
 - name: Bind anstest_leaf_profile with anstest_fex_profile - Fex Profile Policy Group
-  cisco.aci.aci_access_port_to_interface_policy_leaf_profile: &anstest_leaf_profile_access_port_present
+  cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
+    &anstest_leaf_profile_access_port_present
     <<: *aci_info
     leaf_interface_profile: anstest_leaf_profile
     policy_group: anstest_fex_profile
@@ -623,12 +632,12 @@
 - name: Assertion check for bind anstest_leaf_profile with anstest_fex_profile - Fex Profile Policy Group
   assert:
     that:
-    - anstest_leaf_profile_access_port_present is changed
-    - anstest_leaf_profile_access_port_present.current | length == 1
-    - anstest_leaf_profile_access_port_present.previous | length == 0
-    - anstest_leaf_profile_access_port_present.current.0.infraHPortS.attributes.name == "anstest_leaf_profile_access_port"
-    - anstest_leaf_profile_access_port_present.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_profile"
-    - anstest_leaf_profile_access_port_present.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "105"
+      - anstest_leaf_profile_access_port_present is changed
+      - anstest_leaf_profile_access_port_present.current | length == 1
+      - anstest_leaf_profile_access_port_present.previous | length == 0
+      - anstest_leaf_profile_access_port_present.current.0.infraHPortS.attributes.name == "anstest_leaf_profile_access_port"
+      - anstest_leaf_profile_access_port_present.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_profile"
+      - anstest_leaf_profile_access_port_present.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "105"
 
 - name: Remove anstest_leaf_profile
   cisco.aci.aci_interface_policy_leaf_profile:
@@ -638,9 +647,9 @@
 - name: Assertion check for remove anstest_leaf_profile
   assert:
     that:
-    - anstest_leaf_profile_cleanup is changed
-    - anstest_leaf_profile_cleanup.previous | length == 1
-    - anstest_leaf_profile_cleanup.current | length == 0
+      - anstest_leaf_profile_cleanup is changed
+      - anstest_leaf_profile_cleanup.previous | length == 1
+      - anstest_leaf_profile_cleanup.current | length == 0
 
 - name: Remove anstest_fex_profile
   cisco.aci.aci_interface_policy_leaf_profile:
@@ -650,6 +659,6 @@
 - name: Assertion check for remove anstest_fex_profile
   assert:
     that:
-    - anstest_fex_profile_cleanup is changed
-    - anstest_fex_profile_cleanup.previous | length == 1
-    - anstest_fex_profile_cleanup.current | length == 0
+      - anstest_fex_profile_cleanup is changed
+      - anstest_fex_profile_cleanup.previous | length == 1
+      - anstest_fex_profile_cleanup.current | length == 0
