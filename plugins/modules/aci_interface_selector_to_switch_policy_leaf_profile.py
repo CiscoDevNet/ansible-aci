@@ -226,7 +226,7 @@ def main():
             aci_class="infraRsAccPortP",
             aci_rn="rsaccPortP-[{0}]".format(interface_selector_tDn),
             module_object=interface_selector,
-            target_filter={"name": interface_selector},
+            target_filter={"tDn": interface_selector_tDn},
         ),
     )
 
