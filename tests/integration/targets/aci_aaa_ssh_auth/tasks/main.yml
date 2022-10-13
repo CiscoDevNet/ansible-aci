@@ -1,4 +1,5 @@
 # Test code for the ACI modules
+# Copyright: (c) 2022, Tim Cragg (timcragg) <tcragg@cisco.com>
 # Copyright: (c) 2017, Dag Wieers (dagwieers) <dag@wieers.com>
 #
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
@@ -18,7 +19,6 @@
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
-    key_data: "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHL9VwXtwdyTC8lC0FAT4Ss8g0TnYJQf+zJiFlzUBiioqyblvr3w6xwgm5B5oghWag/IwK8c43rxvrW9Yn45xhU= ansible@example"
 
 # CLEAN ENVIRONMENT
 - name: Remove any pre-existing user
@@ -42,7 +42,7 @@
     <<: *aci_info
     aaa_user: ansible
     auth_name: ansible_key
-    data: "{{ key_data }}"
+    data: "{{ lookup('file', 'pki/sshkey.pub') }}"
     state: present
   check_mode: yes
   register: cm_add_ssh_key
@@ -70,12 +70,12 @@
     - nm_add_ssh_key is changed
     - nm_add_ssh_key.current.0.aaaSshAuth.attributes.dn == 'uni/userext/user-ansible/sshauth-ansible_key'
     - nm_add_ssh_key.current.0.aaaSshAuth.attributes.name == 'ansible_key'
-    - nm_add_ssh_key.current.0.aaaSshAuth.attributes.data == "{{ key_data }}"
+    - nm_add_ssh_key.current.0.aaaSshAuth.attributes.data == lookup('file', 'pki/sshkey.pub')
     - cm_add_ssh_key_again is not changed
     - nm_add_ssh_key_again is not changed
     - nm_add_ssh_key_again.current.0.aaaSshAuth.attributes.dn == 'uni/userext/user-ansible/sshauth-ansible_key'
     - nm_add_ssh_key_again.current.0.aaaSshAuth.attributes.name == 'ansible_key'
-    - nm_add_ssh_key_again.current.0.aaaSshAuth.attributes.data == "{{ key_data }}"
+    - nm_add_ssh_key_again.current.0.aaaSshAuth.attributes.data == lookup('file', 'pki/sshkey.pub')
 
 # QUERY ALL SSH KEYS
 - name: Query all SSH keys (check mode)
@@ -117,7 +117,7 @@
     - nm_query_ssh_key is not changed
     - nm_query_ssh_key.current.0.aaaSshAuth.attributes.dn == 'uni/userext/user-ansible/sshauth-ansible_key'
     - nm_query_ssh_key.current.0.aaaSshAuth.attributes.name == 'ansible_key'
-    - nm_query_ssh_key.current.0.aaaSshAuth.attributes.data == "{{ key_data }}"
+    - nm_query_ssh_key.current.0.aaaSshAuth.attributes.data == lookup('file', 'pki/sshkey.pub')
     - cm_query_ssh_key == nm_query_ssh_key
 
 # REMOVE SSH KEY
@@ -126,7 +126,7 @@
     <<: *aci_info
     aaa_user: ansible
     auth_name: ansible_key
-    data: "{{ key_data }}"
+    data: "{{ lookup('file', 'pki/sshkey.pub') }}"
     state: absent
   check_mode: yes
   register: cm_remove_ssh_key

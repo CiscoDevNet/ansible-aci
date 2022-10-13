@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) <year>, <Name> (@<github id>)
+# Copyright: (c) 2022, Tim Cragg (@timcragg)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -46,6 +46,8 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 notes:
 - The C(aaa_user) and C(domain_name) must exist before using this module in your playbook.
@@ -212,7 +214,7 @@ RETURN = r'''
    '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 PRIV_TYPE_MAPPING = {
     'read': 'readPriv',
@@ -222,6 +224,8 @@ PRIV_TYPE_MAPPING = {
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         aaa_user=dict(type='str', required=True),
         domain_name=dict(type='str', required=True),
