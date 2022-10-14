@@ -132,7 +132,7 @@
     <<: *aci_info 
     type: in_band
     epg: ansible-inband-2
-    encap: vlan-4
+    encap: vlan-104
     bd: bd4
     state: present
   register: add_nm_inband_encap4
@@ -163,7 +163,7 @@
     - add_nm_inband_bd4 is changed
     - add_nm_inband_bd4.current.0.mgmtInB.children.0.mgmtRsMgmtBD.attributes.tnFvBDName == 'bd4'
     - add_nm_inband_encap4 is changed
-    - add_nm_inband_encap4.current.0.mgmtInB.attributes.encap == 'vlan-4'
+    - add_nm_inband_encap4.current.0.mgmtInB.attributes.encap == 'vlan-104'
 
 # Query operations
 - name: Query node mgmt in_band epg

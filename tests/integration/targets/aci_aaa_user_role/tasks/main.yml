@@ -1,0 +1,194 @@
+# Test code for the ACI modules
+# Copyright: (c) 2022, Tim Cragg (timcragg) <tcragg@cisco.com>
+# Copyright: (c) 2017, Dag Wieers (dagwieers) <dag@wieers.com>
+#
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove any pre-existing user
+  cisco.aci.aci_aaa_user:
+    <<: *aci_info
+    aaa_user: ansible
+    state: absent
+
+# ADD USER
+- name: Create AAA user
+  cisco.aci.aci_aaa_user:
+    <<: *aci_info
+    aaa_user: ansible
+    aaa_password: 12!Ab:cD!34
+    state: present
+
+# ADD USER DOMAIN
+- name: Add AAA user domain
+  cisco.aci.aci_aaa_user_domain:
+    <<: *aci_info
+    aaa_user: ansible
+    domain_name: mgmt
+    state: present
+
+# ADD USER ROLE
+- name: Add a new user role (Check Mode)
+  cisco.aci.aci_aaa_user_role: &role_present
+    <<: *aci_info
+    aaa_user: ansible
+    domain_name: mgmt
+    role_name: admin
+    priv_type: read
+    state: present
+  check_mode: yes
+  register: cm_add_user_role
+
+- name: Add a new user role (Normal Mode)
+  cisco.aci.aci_aaa_user_role:
+    <<: *role_present
+  register: nm_add_user_role
+
+- name: Add user role again (Check Mode)
+  cisco.aci.aci_aaa_user_role:
+    <<: *role_present
+  check_mode: yes
+  register: cm_add_user_role_again
+
+- name: Add user role again (Normal Mode)
+  cisco.aci.aci_aaa_user_role:
+    <<: *role_present
+  register: nm_add_user_role_again
+
+- name: Verify add user role
+  assert:
+    that:
+    - cm_add_user_role is changed
+    - nm_add_user_role is changed
+    - nm_add_user_role.current.0.aaaUserRole.attributes.dn == 'uni/userext/user-ansible/userdomain-mgmt/role-admin'
+    - nm_add_user_role.current.0.aaaUserRole.attributes.name == 'admin'
+    - nm_add_user_role.current.0.aaaUserRole.attributes.privType == 'readPriv'
+    - cm_add_user_role_again is not changed
+    - nm_add_user_role_again is not changed
+    - nm_add_user_role_again.current.0.aaaUserRole.attributes.dn == 'uni/userext/user-ansible/userdomain-mgmt/role-admin'
+    - nm_add_user_role_again.current.0.aaaUserRole.attributes.name == 'admin'
+    - nm_add_user_role_again.current.0.aaaUserRole.attributes.privType == 'readPriv'
+
+# UPDATE USER ROLE
+- name: Update user role (Check Mode)
+  cisco.aci.aci_aaa_user_role:
+    <<: *role_present
+    priv_type: write
+  check_mode: yes
+  register: cm_update_user_role
+
+- name: Update user role (Normal Mode)
+  cisco.aci.aci_aaa_user_role:
+    <<: *role_present
+    priv_type: write
+  register: nm_update_user_role
+
+- name: Verify update user role
+  assert:
+    that:
+    - cm_update_user_role is changed
+    - nm_update_user_role is changed
+    - nm_update_user_role.current.0.aaaUserRole.attributes.dn == 'uni/userext/user-ansible/userdomain-mgmt/role-admin'
+    - nm_update_user_role.current.0.aaaUserRole.attributes.name == 'admin'
+    - nm_update_user_role.current.0.aaaUserRole.attributes.privType == 'writePriv'
+
+# QUERY ALL USER ROLES
+- name: Query all users (check mode)
+  cisco.aci.aci_aaa_user_role: &role_query_all
+    <<: *aci_info
+    aaa_user: ansible
+    domain_name: mgmt
+    state: query
+  check_mode: yes
+  register: cm_query_all_user_roles
+
+- name: Query all users (normal mode)
+  cisco.aci.aci_aaa_user_domain:
+    <<: *role_query_all
+  register: nm_query_all_user_roles
+
+- name: Verify query_all_user_roles
+  assert:
+    that:
+    - cm_query_all_user_roles is not changed
+    - nm_query_all_user_roles is not changed
+
+# QUERY OUR USER ROLE
+- name: Query our role (check mode)
+  cisco.aci.aci_aaa_user_role: &role_query
+    <<: *role_query_all
+    role_name: admin
+  check_mode: yes
+  register: cm_query_user_role
+
+- name: Query our role (normal mode)
+  cisco.aci.aci_aaa_user_role:
+    <<: *role_query
+  register: nm_query_user_role
+
+- name: Verify query_user_role
+  assert:
+    that:
+    - cm_query_user_role is not changed
+    - nm_query_user_role is not changed
+    - nm_query_user_role.current.0.aaaUserRole.attributes.dn == 'uni/userext/user-ansible/userdomain-mgmt/role-admin'
+    - nm_query_user_role.current.0.aaaUserRole.attributes.name == 'admin'
+    - nm_query_user_role.current.0.aaaUserRole.attributes.privType == 'writePriv'
+
+# REMOVE USER ROLE
+- name: Remove user role (check mode)
+  cisco.aci.aci_aaa_user_role: &role_absent
+    <<: *aci_info
+    aaa_user: ansible
+    domain_name: mgmt
+    role_name: admin
+    state: absent
+  check_mode: yes
+  register: cm_remove_user_role
+
+- name: Remove user role (normal mode)
+  cisco.aci.aci_aaa_user_role:
+    <<: *role_absent
+  register: nm_remove_user_role
+
+- name: Remove user role again (check mode)
+  cisco.aci.aci_aaa_user_role:
+    <<: *role_absent
+  check_mode: yes
+  register: cm_remove_user_role_again
+
+- name: Remove user role again (normal mode)
+  cisco.aci.aci_aaa_user_role:
+    <<: *role_absent
+  register: nm_remove_user_role_again
+
+- name: Verify remove_user_role
+  assert:
+    that:
+    - cm_remove_user_role is changed
+    - nm_remove_user_role is changed
+    - nm_remove_user_role.current == []
+    - cm_remove_user_role_again is not changed
+    - nm_remove_user_role_again is not changed
+    
+- name: Remove user to clean environment for next test on ci
+  aci_aaa_user:
+    <<: *aci_info
+    aaa_user: ansible
+    state: absent

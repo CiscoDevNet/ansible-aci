@@ -13,16 +13,30 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = r'''
 ---
-module: aci_dns_profile
-short_description: Manage DNS Profile (dnsProfile) objects.
+module: aci_aaa_user_role
+short_description: Manage AAA user role (aaaUserRole) objects.
 description:
-- Manage DNS Profile configuration on Cisco ACI fabrics.
+- Manage AAA User Role configuration on Cisco ACI fabrics.
 options:
-  dns_profile:
+  aaa_user:
     description:
-    - Name of the DNS profile.
+    - Name of an existing AAA user
     type: str
-    aliases: [ name, profile_name ]
+    required: yes
+  domain_name:
+    description:
+    - Name of the user domain
+    type: str
+    required: yes
+  role_name:
+    description:
+    - Name of the AAA role
+    type: str
+  priv_type:
+    description:
+    - Privilege for the role
+    type: str
+    choices: [ read, write ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -33,49 +47,62 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
+- cisco.aci.owner
 
+notes:
+- The C(aaa_user) and C(domain_name) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_aaa_user) and M(cisco.aci.aci_aaa_user_domain) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(dnsProfile).
+  description: More information about the internal APIC class B(aaaUserRole).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
 '''
 
 EXAMPLES = r'''
-- name: Add a new DNS profile
-  cisco.aci.aci_dns_profile:
+- name: Add a new user role
+  cisco.aci.aci_aaa_user_role:
     host: apic
     username: admin
     password: SomeSecretPassword
-    dns_profile: my_dns_prof
+    aaa_user: my_user
+    domain_name: my_domain
+    role_name: my_role
+    priv_type: read
     state: present
   delegate_to: localhost
 
-- name: Remove a DNS profile
-  cisco.aci.aci_dns_profile:
+- name: Remove user role
+  cisco.aci.aci_aaa_user_role:
     host: apic
     username: admin
     password: SomeSecretPassword
-    dns_profile: my_dns_prof
+    aaa_user: my_user
+    domain_name: my_domain
+    role_name: my_role
     state: absent
   delegate_to: localhost
 
-- name: Query a DNS profile
-  cisco.aci.aci_dns_profile:
+- name: Query a user role
+  cisco.aci.aci_aaa_user_role:
     host: apic
     username: admin
     password: SomeSecretPassword
-    dns_profile: my_dns_prof
+    aaa_user: my_user
+    domain_name: my_domain
+    role_name: my_role
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Query all DNS profiles
-  cisco.aci.aci_dns_profile:
+- name: Query all roles within a user domain
+  cisco.aci.aci_aaa_user_role:
     host: apic
     username: admin
     password: SomeSecretPassword
+    aaa_user: my_user
+    domain_name: my_domain
     state: query
   delegate_to: localhost
   register: query_result
@@ -187,14 +214,23 @@ RETURN = r'''
    '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+
+PRIV_TYPE_MAPPING = {
+    'read': 'readPriv',
+    'write': 'writePriv',
+}
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        dns_profile=dict(type='str', aliases=['name', 'profile_name']),
+        aaa_user=dict(type='str', required=True),
+        domain_name=dict(type='str', required=True),
+        role_name=dict(type='str'),
+        priv_type=dict(type='str', choices=['read', 'write']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
 
@@ -202,37 +238,54 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['dns_profile']],
-            ['state', 'present', ['dns_profile']],
+            ['state', 'absent', ['role_name']],
+            ['state', 'present', ['role_name', 'priv_type']],
         ],
     )
 
-    dns_profile = module.params.get('dns_profile')
+    aaa_user = module.params.get('aaa_user')
+    domain_name = module.params.get('domain_name')
+    role_name = module.params.get('role_name')
+    priv_type = module.params.get('priv_type')
     state = module.params.get('state')
-    child_classes = ['dnsProv', 'dnsDomain']
+
+    if priv_type is not None:
+        priv_type = PRIV_TYPE_MAPPING[priv_type]
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='dnsProfile',
-            aci_rn='fabric/dnsp-{0}'.format(dns_profile),
-            module_object=dns_profile,
-            target_filter={'name': dns_profile},
+            aci_class='aaaUser',
+            aci_rn='userext/user-{0}'.format(aaa_user),
+            module_object=aaa_user,
+            target_filter={'name': aaa_user},
         ),
-        child_classes=child_classes,
+        subclass_1=dict(
+            aci_class='aaaUserDomain',
+            aci_rn='userdomain-{0}'.format(domain_name),
+            module_object=domain_name,
+            target_filter={'name': domain_name},
+        ),
+        subclass_2=dict(
+            aci_class='aaaUserRole',
+            aci_rn='role-{0}'.format(role_name),
+            module_object=role_name,
+            target_filter={'name': role_name},
+        ),
     )
 
     aci.get_existing()
 
     if state == 'present':
         aci.payload(
-            aci_class='dnsProfile',
+            aci_class='aaaUserRole',
             class_config=dict(
-                name=dns_profile
+                name=role_name,
+                privType=priv_type
             ),
         )
 
-        aci.get_diff(aci_class='dnsProfile')
+        aci.get_diff(aci_class='aaaUserRole')
 
         aci.post_config()
 
