@@ -5,6 +5,73 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.3.0
+======
+
+Release Summary
+---------------
+
+Release v2.3.0 of the ``ansible-aci`` collection on 2022-10-14.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.2.0.
+
+
+Minor Changes
+-------------
+
+- Add aci_l3out_logical_interface_profile_ospf_policy module to apply ospfIfP policy to L3out logical interface profile (#301)
+- Add aci_ntp_policy and aci_ntp_server modules and test files (#229)
+- Add cisco.aci.interface_range lookup plugin for interface range handling (#302)
+- Add new aci_aaa_ssh_auth, aci_aaa_user_domain and aci_aaa_user_role modules (#223) * AAA updates
+   
+   * feat: AAA user role integration test
+   
+   * chore: Add aliases file
+   
+   * fix: add clean up
+   
+   * feat: Add AAA SSH Auth integration test
+   
+   * chore: Add aliases file
+   
+   * chore: remove unnecessary debugging
+   
+   * fix: correct docs
+   
+   * [ignore] Update copyrights and other review feedback for aci_aaa_ssh_auth, aci_aaa_user_domain and aci_aaa_user_role
+   
+   Co-authored-by: Lionel Hercot <lhercot@cisco.com>
+- Added aci_bd_to_l3out example
+- Added aci_epg_monitoring_policy example
+- Added aci_filter_entry example
+- Added aci_firmware_group example
+- Added aci_firmware_group_node example
+- Added aci_interface_policy_fc example
+- Added aci_interface_policy_l2 example
+- Added aci_interface_policy_lldp example
+- Added aci_interface_policy_mcp example
+- Added aci_interface_policy_port_channel example
+- Added aci_interface_policy_port_security example
+- Added aci_l2out_logical_interface example
+- Added aci_l3out_route_tag_policy example
+- Added aci_maintenance examples
+- Added aci_tenant_action_rule_profile example
+- Added aci_tenant_src_group examples
+- Added active/stanby vmm uplinks for epg to domain
+- Added aggregate attribute, scope default and "import-rtctrl" to scope choices in aci_l3out_extsubnet module (#260)
+- Added fex_port_channel and fex_vpc interface types to aci_access_port_to_interface_policy_leaf_profile (#241)
+- Adding missing options aci epg to domain
+- Default value endpoint move detect BD documentation fix
+- Removed faulty test and docs for removal childs
+
+Bugfixes
+--------
+
+- Fix aci_aep_to_epg absent issue to only delete the correct binding (#263)
+- Fix aci_interface_description query interface filtering  (#238)
+- Fix aci_interface_selector_to_switch_policy_leaf_profile error when querying interface_selector without specifying a switch policy leaf profile (#318)
+- Fix aci_rest output_path issues when content is not JSON and added test case for aci_rest XML content
+- Fix for recursive get_diff_children in module_utils aci.py to skip some unneeded childrens
+
 v2.2.0
 ======
 
