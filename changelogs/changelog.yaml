@@ -268,3 +268,34 @@ releases:
 
         '
     release_date: '2022-03-15'
+  2.3.0:
+    changes:
+      bugfixes:
+      - Fix HTTP status returned by aci_rest (#279)
+      - Fix aci_aep_to_epg absent issue to only delete the correct binding (#263)
+      - Fix aci_interface_description query interface filtering (#238)
+      - Fix aci_interface_selector_to_switch_policy_leaf_profile error when querying
+        interface_selector without specifying a switch policy leaf profile (#318)
+      - Fix aci_rest output_path issues when content is not JSON
+      minor_changes:
+      - Add aci_bulk_static_binding_to_epg module to bind multiple interfaces to an
+        EPG in one API call
+      - Add aci_l3out_logical_interface_profile_ospf_policy module to apply ospfIfP
+        policy to L3out logical interface profile (#301)
+      - Add aci_ntp_policy and aci_ntp_server modules (#229)
+      - Add cisco.aci.interface_range lookup plugin for interface range handling (#302)
+      - Add new aci_aaa_ssh_auth, aci_aaa_user_domain and aci_aaa_user_role modules
+        (#223)
+      - Add support for active/stanby vmm uplinks in aci_epg_to_domain
+      - Add support for aggregate attribute, scope default and "import-rtctrl" to
+        scope choices in aci_l3out_extsubnet module (#260)
+      - Added fex_port_channel and fex_vpc interface types to aci_access_port_to_interface_policy_leaf_profile
+        (#241)
+      - Adding missing options to aci_epg_to_domain
+      release_summary: 'Release v2.3.0 of the ``ansible-aci`` collection on 2022-10-14.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.2.0.
+
+        '
+    release_date: '2022-10-14'
