@@ -2,8 +2,11 @@
 requires_ansible: '>=2.9.10'
 action_groups:
   aci:
+    - aci_aaa_ssh_auth
     - aci_aaa_user
     - aci_aaa_user_certificate
+    - aci_aaa_user_domain
+    - aci_aaa_user_role
     - aci_access_port_block_to_access_port
     - aci_access_port_to_interface_policy_leaf_profile
     - aci_access_sub_port_block_to_access_port
@@ -103,6 +106,7 @@ action_groups:
     - aci_l3out_interface
     - aci_l3out_interface_secondary_ip
     - aci_l3out_logical_interface_profile
+    - aci_l3out_logical_interface_profile_ospf_policy
     - aci_l3out_logical_interface_vpc_member
     - aci_l3out_logical_node
     - aci_l3out_logical_node_profile
