@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_aaa_user_role
 short_description: Manage AAA user role (aaaUserRole) objects.
@@ -58,9 +57,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new user role
   cisco.aci.aci_aaa_user_role:
     host: apic
@@ -106,9 +105,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
    current:
      description: The existing configuration from the APIC after the module has finished
      returned: success
@@ -211,14 +210,14 @@ RETURN = r'''
      returned: failure or debug
      type: str
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
-   '''
+   """
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 PRIV_TYPE_MAPPING = {
-    'read': 'readPriv',
-    'write': 'writePriv',
+    "read": "readPriv",
+    "write": "writePriv",
 }
 
 
@@ -227,27 +226,27 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        aaa_user=dict(type='str', required=True),
-        domain_name=dict(type='str', required=True),
-        role_name=dict(type='str'),
-        priv_type=dict(type='str', choices=['read', 'write']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        aaa_user=dict(type="str", required=True),
+        domain_name=dict(type="str", required=True),
+        role_name=dict(type="str"),
+        priv_type=dict(type="str", choices=["read", "write"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['role_name']],
-            ['state', 'present', ['role_name', 'priv_type']],
+            ["state", "absent", ["role_name"]],
+            ["state", "present", ["role_name", "priv_type"]],
         ],
     )
 
-    aaa_user = module.params.get('aaa_user')
-    domain_name = module.params.get('domain_name')
-    role_name = module.params.get('role_name')
-    priv_type = module.params.get('priv_type')
-    state = module.params.get('state')
+    aaa_user = module.params.get("aaa_user")
+    domain_name = module.params.get("domain_name")
+    role_name = module.params.get("role_name")
+    priv_type = module.params.get("priv_type")
+    state = module.params.get("state")
 
     if priv_type is not None:
         priv_type = PRIV_TYPE_MAPPING[priv_type]
@@ -255,41 +254,38 @@ def main():
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='aaaUser',
-            aci_rn='userext/user-{0}'.format(aaa_user),
+            aci_class="aaaUser",
+            aci_rn="userext/user-{0}".format(aaa_user),
             module_object=aaa_user,
-            target_filter={'name': aaa_user},
+            target_filter={"name": aaa_user},
         ),
         subclass_1=dict(
-            aci_class='aaaUserDomain',
-            aci_rn='userdomain-{0}'.format(domain_name),
+            aci_class="aaaUserDomain",
+            aci_rn="userdomain-{0}".format(domain_name),
             module_object=domain_name,
-            target_filter={'name': domain_name},
+            target_filter={"name": domain_name},
         ),
         subclass_2=dict(
-            aci_class='aaaUserRole',
-            aci_rn='role-{0}'.format(role_name),
+            aci_class="aaaUserRole",
+            aci_rn="role-{0}".format(role_name),
             module_object=role_name,
-            target_filter={'name': role_name},
+            target_filter={"name": role_name},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='aaaUserRole',
-            class_config=dict(
-                name=role_name,
-                privType=priv_type
-            ),
+            aci_class="aaaUserRole",
+            class_config=dict(name=role_name, privType=priv_type),
         )
 
-        aci.get_diff(aci_class='aaaUserRole')
+        aci.get_diff(aci_class="aaaUserRole")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()
