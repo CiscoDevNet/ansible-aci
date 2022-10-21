@@ -1,0 +1,264 @@
+# Test code for the ACI modules
+# Copyright: (c) 2022, Tim Cragg (timcragg)
+#
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove any pre-existing pod policy group
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *aci_info
+    name: '{{ item }}'
+    state: absent
+  loop:
+  - "ansible_pod_policy_group"
+  - "ansible_empty_pod_policy_group"
+
+# ADD POD POLICY GROUP
+- name: Add pod policy group (check mode)
+  cisco.aci.aci_fabric_pod_policy_group: &group_present
+    <<: *aci_info
+    name: ansible_pod_policy_group
+    date_time_policy: default
+    isis_policy: default
+    coop_group_policy: default
+    bgp_rr_policy: default
+    management_access_policy: default
+    snmp_policy: default
+    macsec_policy: default
+    state: present
+  check_mode: yes
+  register: cm_add_group
+
+- name: Add pod policy group (normal mode)
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *group_present
+  register: nm_add_group
+
+- name: Add pod policy group again (check mode)
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *group_present
+  check_mode: yes
+  register: cm_add_group_again
+
+- name: Add pod policy group again (normal mode)
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *group_present
+  register: nm_add_group_again
+
+- name: Verify add policy group
+  assert:
+    that:
+    - cm_add_group is changed
+    - nm_add_group is changed
+    - nm_add_group.current.0.fabricPodPGrp.attributes.dn == 'uni/fabric/funcprof/podpgrp-ansible_pod_policy_group'
+    - nm_add_group.current.0.fabricPodPGrp.attributes.name == 'ansible_pod_policy_group'
+    - nm_add_group.current.0.fabricPodPGrp.children.0.fabricRsSnmpPol.attributes.tnSnmpPolName == 'default'
+    - nm_add_group.current.0.fabricPodPGrp.children.1.fabricRsPodPGrpCoopP.attributes.tnCoopPolName == 'default'
+    - nm_add_group.current.0.fabricPodPGrp.children.2.fabricRsCommPol.attributes.tnCommPolName == 'default'
+    - nm_add_group.current.0.fabricPodPGrp.children.3.fabricRsMacsecPol.attributes.tnMacsecFabIfPolName == 'default'
+    - nm_add_group.current.0.fabricPodPGrp.children.4.fabricRsTimePol.attributes.tnDatetimePolName == 'default'
+    - nm_add_group.current.0.fabricPodPGrp.children.5.fabricRsPodPGrpBGPRRP.attributes.tnBgpInstPolName == 'default'
+    - nm_add_group.current.0.fabricPodPGrp.children.6.fabricRsPodPGrpIsisDomP.attributes.tnIsisDomPolName == 'default'
+    - cm_add_group_again is not changed
+    - nm_add_group_again is not changed
+    - nm_add_group_again.current.0.fabricPodPGrp.attributes.dn == 'uni/fabric/funcprof/podpgrp-ansible_pod_policy_group'
+    - nm_add_group_again.current.0.fabricPodPGrp.attributes.name == 'ansible_pod_policy_group'
+    - nm_add_group_again.current.0.fabricPodPGrp.children.0.fabricRsSnmpPol.attributes.tnSnmpPolName == 'default'
+    - nm_add_group_again.current.0.fabricPodPGrp.children.1.fabricRsPodPGrpCoopP.attributes.tnCoopPolName == 'default'
+    - nm_add_group_again.current.0.fabricPodPGrp.children.2.fabricRsCommPol.attributes.tnCommPolName == 'default'
+    - nm_add_group_again.current.0.fabricPodPGrp.children.3.fabricRsMacsecPol.attributes.tnMacsecFabIfPolName == 'default'
+    - nm_add_group_again.current.0.fabricPodPGrp.children.4.fabricRsTimePol.attributes.tnDatetimePolName == 'default'
+    - nm_add_group_again.current.0.fabricPodPGrp.children.5.fabricRsPodPGrpBGPRRP.attributes.tnBgpInstPolName == 'default'
+    - nm_add_group_again.current.0.fabricPodPGrp.children.6.fabricRsPodPGrpIsisDomP.attributes.tnIsisDomPolName == 'default'
+
+- name: Add empty pod policy group (normal mode)
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *aci_info
+    name: ansible_empty_pod_policy_group
+    state: present
+  register: nm_add_empty_group
+
+- name: Verify add empty policy group
+  assert:
+    that:
+    - nm_add_empty_group is changed
+    - nm_add_empty_group.current.0.fabricPodPGrp.attributes.dn == 'uni/fabric/funcprof/podpgrp-ansible_empty_pod_policy_group'
+    - nm_add_empty_group.current.0.fabricPodPGrp.attributes.name == 'ansible_empty_pod_policy_group'
+    - nm_add_empty_group.current.0.fabricPodPGrp.children.0.fabricRsSnmpPol.attributes.tnSnmpPolName == ''
+    - nm_add_empty_group.current.0.fabricPodPGrp.children.1.fabricRsPodPGrpCoopP.attributes.tnCoopPolName == ''
+    - nm_add_empty_group.current.0.fabricPodPGrp.children.2.fabricRsCommPol.attributes.tnCommPolName == ''
+    - nm_add_empty_group.current.0.fabricPodPGrp.children.3.fabricRsMacsecPol.attributes.tnMacsecFabIfPolName == ''
+    - nm_add_empty_group.current.0.fabricPodPGrp.children.4.fabricRsTimePol.attributes.tnDatetimePolName == ''
+    - nm_add_empty_group.current.0.fabricPodPGrp.children.5.fabricRsPodPGrpBGPRRP.attributes.tnBgpInstPolName == ''
+    - nm_add_empty_group.current.0.fabricPodPGrp.children.6.fabricRsPodPGrpIsisDomP.attributes.tnIsisDomPolName == ''
+
+# MODIFY POLICY GROUP
+- name: Modify pod policy group (check mode)
+  cisco.aci.aci_fabric_pod_policy_group: &group_changed
+    <<: *aci_info
+    name: ansible_pod_policy_group
+    date_time_policy: ''
+    isis_policy: ''
+    coop_group_policy: ''
+    bgp_rr_policy: ''
+    management_access_policy: ''
+    snmp_policy: ''
+    macsec_policy: ''
+    state: present
+  check_mode: yes
+  register: cm_modify_group
+
+- name: Modify pod policy group (normal mode)
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *group_changed
+  register: nm_modify_group
+
+- name: Modify policy group again (check mode)
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *group_changed
+  check_mode: yes
+  register: cm_modify_group_again
+
+- name: Modify policy group again (normal mode)
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *group_changed
+  register: nm_modify_group_again
+
+- name: Verify modify policy
+  assert:
+    that:
+    - cm_modify_group is changed
+    - nm_modify_group is changed
+    - nm_modify_group.current.0.fabricPodPGrp.attributes.dn == 'uni/fabric/funcprof/podpgrp-ansible_pod_policy_group'
+    - nm_modify_group.current.0.fabricPodPGrp.attributes.name == 'ansible_pod_policy_group'
+    - nm_modify_group.current.0.fabricPodPGrp.children.0.fabricRsSnmpPol.attributes.tnSnmpPolName == ''
+    - nm_modify_group.current.0.fabricPodPGrp.children.1.fabricRsPodPGrpCoopP.attributes.tnCoopPolName == ''
+    - nm_modify_group.current.0.fabricPodPGrp.children.2.fabricRsCommPol.attributes.tnCommPolName == ''
+    - nm_modify_group.current.0.fabricPodPGrp.children.3.fabricRsMacsecPol.attributes.tnMacsecFabIfPolName == ''
+    - nm_modify_group.current.0.fabricPodPGrp.children.4.fabricRsTimePol.attributes.tnDatetimePolName == ''
+    - nm_modify_group.current.0.fabricPodPGrp.children.5.fabricRsPodPGrpBGPRRP.attributes.tnBgpInstPolName == ''
+    - nm_modify_group.current.0.fabricPodPGrp.children.6.fabricRsPodPGrpIsisDomP.attributes.tnIsisDomPolName == ''
+    - cm_modify_group_again is not changed
+    - nm_modify_group_again is not changed
+    - nm_modify_group_again.current.0.fabricPodPGrp.attributes.dn == 'uni/fabric/funcprof/podpgrp-ansible_pod_policy_group'
+    - nm_modify_group_again.current.0.fabricPodPGrp.attributes.name == 'ansible_pod_policy_group'
+    - nm_modify_group_again.current.0.fabricPodPGrp.children.0.fabricRsSnmpPol.attributes.tnSnmpPolName == ''
+    - nm_modify_group_again.current.0.fabricPodPGrp.children.1.fabricRsPodPGrpCoopP.attributes.tnCoopPolName == ''
+    - nm_modify_group_again.current.0.fabricPodPGrp.children.2.fabricRsCommPol.attributes.tnCommPolName == ''
+    - nm_modify_group_again.current.0.fabricPodPGrp.children.3.fabricRsMacsecPol.attributes.tnMacsecFabIfPolName == ''
+    - nm_modify_group_again.current.0.fabricPodPGrp.children.4.fabricRsTimePol.attributes.tnDatetimePolName == ''
+    - nm_modify_group_again.current.0.fabricPodPGrp.children.5.fabricRsPodPGrpBGPRRP.attributes.tnBgpInstPolName == ''
+    - nm_modify_group_again.current.0.fabricPodPGrp.children.6.fabricRsPodPGrpIsisDomP.attributes.tnIsisDomPolName == ''
+
+# QUERY ALL POLICY GROUPS
+- name: Query all policy groups (check_mode)
+  cisco.aci.aci_fabric_pod_policy_group: &group_query_all
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    state: query
+  check_mode: yes
+  register: cm_query_all_groups
+
+- name: Query all groups (normal mode)
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *group_query_all
+  register: nm_query_all_groups
+
+- name: Verify query_all_groups
+  assert:
+    that:
+    - cm_query_all_groups is not changed
+    - nm_query_all_groups is not changed
+
+# QUERY A POD POLICY GROUP
+- name: Query a specific pod policy (check_mode)
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *group_query_all
+    name: ansible_pod_policy_group
+  check_mode: yes
+  register: cm_query_group
+
+- name: Query a specific pod policy (normal mode)
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *group_query_all
+    name: ansible_pod_policy_group
+  register: nm_query_group
+
+- name: Verify query_group
+  assert:
+    that:
+    - cm_query_group is not changed
+    - nm_query_group is not changed
+    - cm_query_group == nm_query_group
+    - nm_query_group.current.0.fabricPodPGrp.attributes.dn == 'uni/fabric/funcprof/podpgrp-ansible_pod_policy_group'
+    - nm_query_group.current.0.fabricPodPGrp.attributes.name == 'ansible_pod_policy_group'
+    - nm_query_group.current.0.fabricPodPGrp.children.0.fabricRsSnmpPol.attributes.tnSnmpPolName == ''
+    - nm_query_group.current.0.fabricPodPGrp.children.1.fabricRsPodPGrpCoopP.attributes.tnCoopPolName == ''
+    - nm_query_group.current.0.fabricPodPGrp.children.2.fabricRsCommPol.attributes.tnCommPolName == ''
+    - nm_query_group.current.0.fabricPodPGrp.children.3.fabricRsMacsecPol.attributes.tnMacsecFabIfPolName == ''
+    - nm_query_group.current.0.fabricPodPGrp.children.4.fabricRsTimePol.attributes.tnDatetimePolName == ''
+    - nm_query_group.current.0.fabricPodPGrp.children.5.fabricRsPodPGrpBGPRRP.attributes.tnBgpInstPolName == ''
+    - nm_query_group.current.0.fabricPodPGrp.children.6.fabricRsPodPGrpIsisDomP.attributes.tnIsisDomPolName == ''
+
+# REMOVE POLICY GROUP
+- name: Remove policy group (check mode)
+  cisco.aci.aci_fabric_pod_policy_group: &group_absent
+    <<: *group_present
+    state: absent
+  check_mode: yes
+  register: cm_remove_group
+
+- name: Remove policy group (normal mode)
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *group_absent
+  register: nm_remove_group
+
+- name: Remove policy group again (check mode)
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *group_absent
+  check_mode: yes
+  register: cm_remove_group_again
+
+- name: Remove policy group again (normal mode)
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *group_absent
+  register: nm_remove_group_again
+
+- name: Verify remove_group and remove_group_again
+  assert:
+    that:
+    - cm_remove_group is changed
+    - nm_remove_group is changed
+    - nm_remove_group.current == []
+    - nm_remove_group.previous.0.fabricPodPGrp.attributes.dn == 'uni/fabric/funcprof/podpgrp-ansible_pod_policy_group'
+    - nm_remove_group.previous.0.fabricPodPGrp.attributes.name == 'ansible_pod_policy_group'
+    - nm_remove_group.previous.0.fabricPodPGrp.children.0.fabricRsSnmpPol.attributes.tnSnmpPolName == ''
+    - nm_remove_group.previous.0.fabricPodPGrp.children.1.fabricRsPodPGrpCoopP.attributes.tnCoopPolName == ''
+    - nm_remove_group.previous.0.fabricPodPGrp.children.2.fabricRsCommPol.attributes.tnCommPolName == ''
+    - nm_remove_group.previous.0.fabricPodPGrp.children.3.fabricRsMacsecPol.attributes.tnMacsecFabIfPolName == ''
+    - nm_remove_group.previous.0.fabricPodPGrp.children.4.fabricRsTimePol.attributes.tnDatetimePolName == ''
+    - nm_remove_group.previous.0.fabricPodPGrp.children.5.fabricRsPodPGrpBGPRRP.attributes.tnBgpInstPolName == ''
+    - nm_remove_group.previous.0.fabricPodPGrp.children.6.fabricRsPodPGrpIsisDomP.attributes.tnIsisDomPolName == ''
+    - cm_remove_group_again is not changed
+    - nm_remove_group_again is not changed
