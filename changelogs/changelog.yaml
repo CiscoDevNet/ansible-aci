@@ -299,3 +299,16 @@ releases:
 
         '
     release_date: '2022-10-14'
+  2.4.0:
+    changes:
+      minor_changes:
+      - Add aci_aaa_domain, aci_aaa_role and aci_custom_privilege modules (#226)
+      - Add support for filter direction in aci_contract_subject and aci_contract_subject_to_filter
+        (#306)
+      release_summary: 'Release v2.4.0 of the ``ansible-aci`` collection on 2022-10-21.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.3.0.
+
+        '
+    release_date: '2022-10-21'
