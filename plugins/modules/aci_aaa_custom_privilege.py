@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_aaa_custom_privilege
-short_description: Manage AAA RBAC Node Rules (aaa:RbacClassPriv)
+short_description: Manage AAA RBAC Custom Privileges (aaa:RbacClassPriv)
 description:
 - Manage AAA Custom Privileges with RBAC Rules on Cisco ACI fabrics.
 options:
@@ -22,11 +22,16 @@ options:
     - Name of the object class for which you are configuring access.
     type: str
     aliases: [ custom_privilege_name ]
-  w_priv:
+  description:
+    description:
+    - Description of the AAA custom privilege.
+    type: str
+    aliases: [ descr ]
+  write_privilege:
     description:
     - Name of the custom privilege that will include write access to objects of the class.
     type: str
-    aliases: [ write_priv ]
+    aliases: [ write_priv, w_priv ]
     choices: [
       custom-privilege-1,
       custom-privilege-2,
@@ -51,11 +56,11 @@ options:
       custom-privilege-21,
       custom-privilege-22
     ]
-  r_priv:
+  read_privilege:
     description:
     - Name of the custom privilege that will include read access to objects of the class.
     type: str
-    aliases: [ read_priv ]
+    aliases: [ read_priv, r_priv ]
     choices: [
       custom-privilege-1,
       custom-privilege-2,
@@ -110,8 +115,8 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     name: fabricPod
-    w_priv: custom-privilege-1
-    r_priv: custom-privilege-1
+    write_privilege: custom-privilege-1
+    read_privilege: custom-privilege-1
     state: present
   delegate_to: localhost
 
@@ -121,15 +126,15 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     name: "{{ item.name }}"
-    w_priv: "{{ item.w_priv }}"
-    r_priv: "{{ item.r_priv | default('') }}"
+    write_privilege: "{{ item.write_privilege }}"
+    read_privilege: "{{ item.read_privilege | default('') }}"
     state: present
   with_items:
     - name: fvTenant
-      w_priv: custom-privilege-2
-      r_priv: custom-privilege-2
+      write_privilege: custom-privilege-2
+      read_privilege: custom-privilege-2
     - name: aaaUser
-      w_priv: custom-privilege-3
+      write_privilege: custom-privilege-3
   delegate_to: localhost
 
 - name: Query a custom privilege with name
@@ -297,14 +302,15 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         name=dict(type="str", aliases=["custom_privilege_name"]),
-        w_priv=dict(
+        description=dict(type="str", aliases=["descr"]),
+        write_privilege=dict(
             type="str",
-            aliases=["write_priv"],
+            aliases=["write_priv", "w_priv"],
             choices=CUSTOM_PRIVILEGES,
         ),
-        r_priv=dict(
+        read_privilege=dict(
             type="str",
-            aliases=["read_priv"],
+            aliases=["read_priv", "r_priv"],
             choices=CUSTOM_PRIVILEGES,
         ),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -323,8 +329,9 @@ def main():
     aci = ACIModule(module)
 
     name = module.params.get("name")
-    w_priv = module.params.get("w_priv")
-    r_priv = module.params.get("r_priv")
+    description = module.params.get("description")
+    w_priv = module.params.get("write_privilege")
+    r_priv = module.params.get("read_privilege")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
@@ -338,6 +345,7 @@ def main():
             aci_class="aaaRbacClassPriv",
             class_config=dict(
                 name=name,
+                descr=description,
                 wPriv=w_priv,
                 rPriv=r_priv,
                 nameAlias=name_alias,

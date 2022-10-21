@@ -20,6 +20,13 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
 
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 - name: Ensure an anstest_role aaa role does not exists
   cisco.aci.aci_aaa_role: &anstest_role_absent
     <<: *aci_info
@@ -87,8 +94,20 @@
       - anstest_role_with_list_priv.previous | length == 1
       - anstest_role_with_list_priv.current.0.aaaRole.attributes.name == 'anstest_role'
       - anstest_role_with_list_priv.previous.0.aaaRole.attributes.name == 'anstest_role'
-      - anstest_role_with_list_priv.current.0.aaaRole.attributes.priv == 'aaa,admin,tenant-connectivity'
       - anstest_role_with_list_priv.previous.0.aaaRole.attributes.priv == 'aaa'
+
+- name: Assertions check for anstest_role_with_list_priv on v4.2 or earlier
+  assert:
+    that:
+      - anstest_role_with_list_priv.current.0.aaaRole.attributes.priv == 'aaa,admin'
+  when: version.current.0.topSystem.attributes.version is version('5', '<')
+
+- name: Assertions check for anstest_role_with_list_priv on v5+
+  assert:
+    that:
+      - anstest_role_with_list_priv.current.0.aaaRole.attributes.priv == 'aaa,admin,tenant-connectivity'
+  when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
 
 - name: Update an anstest_role with admin privilege
   cisco.aci.aci_aaa_role:
@@ -105,7 +124,18 @@
       - anstest_role_with_valid_priv.current.0.aaaRole.attributes.name == 'anstest_role'
       - anstest_role_with_valid_priv.previous.0.aaaRole.attributes.name == 'anstest_role'
       - anstest_role_with_valid_priv.current.0.aaaRole.attributes.priv == 'admin'
+
+- name: Assertions check for anstest_role_with_valid_priv on v4.2 or earlier
+  assert:
+    that:
+      - anstest_role_with_valid_priv.previous.0.aaaRole.attributes.priv == 'aaa,admin'
+  when: version.current.0.topSystem.attributes.version is version('5', '<')
+
+- name: Assertions check for anstest_role_with_valid_priv on v5+
+  assert:
+    that:
       - anstest_role_with_valid_priv.previous.0.aaaRole.attributes.priv == 'aaa,admin,tenant-connectivity'
+  when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
 - name: Update an anstest_role with invalid list of privileges
   cisco.aci.aci_aaa_role:
@@ -120,6 +150,12 @@
     priv: "admin123"
   register: anstest_role_with_invalid_priv
   ignore_errors: yes
+
+- name: Assertions check for query a aaa role with name
+  assert:
+    that:
+      - anstest_role_with_invalid_list_priv.msg.startswith("value of privileges must be one or more of")
+      - anstest_role_with_invalid_priv.msg.startswith("value of privileges must be one or more of")
 
 - name: Query an aaa role with name
   cisco.aci.aci_aaa_role:

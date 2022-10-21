@@ -22,11 +22,11 @@ options:
     - The name of the aaa role.
     type: str
     aliases: [ aaa_role ]
-  priv:
+  privileges:
     description:
     - The privilege(s) assigned to a role.
-    - Use Comma separated values to assign multiple privileges to a Role.
     type: list
+    aliases: [ priv ]
     elements: str
     choices: [
       admin,
@@ -113,7 +113,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     name: anstest
-    priv: aaa
+    privileges: aaa
     state: present
   delegate_to: localhost
 
@@ -123,14 +123,14 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     name: "{{ item.name }}"
-    priv: "{{ item.priv }}"
+    privileges: "{{ item.privilege }}"
     state: present
   delegate_to: localhost
   with_items:
   - name: anstest1
-    priv: site-admin
+    privilege: site-admin
   - name: anstest2
-    priv: site-policy
+    privilege: site-policy
 
 - name: Query a aaa role with name
   cisco.aci.aci_aaa_role:
@@ -322,7 +322,7 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         name=dict(type="str", aliases=["aaa_role"]),
-        priv=dict(type="list", elements="str", choices=PRIVILEGES),
+        privileges=dict(type="list", aliases=["priv"], elements="str", choices=PRIVILEGES),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -333,13 +333,13 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["name"]],
-            ["state", "present", ["name", "priv"]],
+            ["state", "present", ["name", "privileges"]],
         ],
     )
 
     name = module.params.get("name")
     description = module.params.get("description")
-    priv = module.params.get("priv")
+    privileges = module.params.get("privileges")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
@@ -355,10 +355,7 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        if isinstance(priv, list):
-            formatted_privileges = ",".join(priv)
-        else:
-            formatted_privileges = priv
+        formatted_privileges = ",".join(privileges)
         aci.payload(
             aci_class="aaaRole",
             class_config=dict(
