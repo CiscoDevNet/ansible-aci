@@ -5,6 +5,21 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.4.0
+======
+
+Release Summary
+---------------
+
+Release v2.4.0 of the ``ansible-aci`` collection on 2022-10-21.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.3.0.
+
+
+Minor Changes
+-------------
+
+- Add aci_aaa_domain, aci_aaa_role and aci_custom_privilege modules (#226)
+
 v2.3.0
 ======
 
