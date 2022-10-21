@@ -14,9 +14,9 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = r'''
 ---
 module: aci_fabric_pod_policy_group
-short_description: Manage Fabric Pod Policy Groups.
+short_description: Manage Fabric Pod Policy Groups (fabric:PodPGrp)
 description:
-- Fabric Pod Policy Group (fabricPodPGrp) configuration on Cisco ACI fabrics.
+- Fabric Pod Policy Group (fabric:PodPGrp) configuration on Cisco ACI fabrics.
 options:
   name:
     description:
@@ -54,6 +54,10 @@ options:
     description:
     - MACSec policy to bind to the policy group
     type: str
+  name_alias:
+    description:
+    - The alias for the current object. This relates to the nameAlias field in ACI.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -63,6 +67,8 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 seealso:
 - name: APIC Management Information Model reference
@@ -219,11 +225,13 @@ RETURN = r'''
    '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         name=dict(type='str', aliases=['policy_group', 'policy_group_name', 'pod_policy_group']),
         date_time_policy=dict(type='str', aliases=['ntp_policy']),
@@ -233,6 +241,7 @@ def main():
         management_access_policy=dict(type='str', aliases=['management_policy', 'mgmt_policy']),
         snmp_policy=dict(type='str'),
         macsec_policy=dict(type='str'),
+        name_alias=dict(type="str"),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
     )
 
@@ -254,6 +263,7 @@ def main():
     management_access_policy = module.params.get('management_access_policy')
     snmp_policy = module.params.get('snmp_policy')
     macsec_policy = module.params.get('macsec_policy')
+    name_alias = module.params.get("name_alias")
     state = module.params.get('state')
     child_classes = ['fabricRsSnmpPol', 'fabricRsPodPGrpIsisDomP',
                      'fabricRsPodPGrpCoopP', 'fabricRsPodPGrpBGPRRP',
@@ -290,7 +300,8 @@ def main():
         aci.payload(
             aci_class='fabricPodPGrp',
             class_config=dict(
-                name=name
+                name=name,
+                nameAlias=name_alias
             ),
             child_configs=child_configs,
         )
