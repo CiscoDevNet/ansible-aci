@@ -2,194 +2,378 @@
 # Copyright: (c) 2017, Jacob McGill (@jmcgill298)
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
-
 - name: Test that we have an ACI APIC host, ACI username and ACI password
   fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
-- name: ensure tenant exists for tests to kick off
-  cisco.aci.aci_tenant: &aci_tenant_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
-    tenant: anstest
-    state: present
-  register: tenant_present
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: ensure filter exists for tests to kick off
-  cisco.aci.aci_filter: &aci_filter_present
-    <<: *aci_tenant_present
-    filter: anstest
-  register: filter_present
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
 
-- name: ensure filter exists for tests to kick off
-  cisco.aci.aci_filter: &aci_filter_present_2
-    <<: *aci_tenant_present
-    filter: anstest2
-  register: filter_present_2
+- name: Assure tenant removal after tests
+  block:
+    - name: ensure tenant is deleted for clean state
+      cisco.aci.aci_tenant:
+        <<: *aci_info
+        tenant: anstest
+        state: absent
+      register: tenant_present
 
-- name: ensure contract exists for tests to kick off
-  cisco.aci.aci_contract: &aci_contract_present
-    <<: *aci_tenant_present
-    contract: anstest
-  register: contract_present
+    - name: ensure tenant exists for tests to kick off
+      cisco.aci.aci_tenant: &aci_tenant_present
+        <<: *aci_info
+        tenant: anstest
+        state: present
+      register: tenant_present
 
-- name: ensure subject exists for tests to kick off
-  cisco.aci.aci_contract_subject: &aci_subject_present
-    <<: *aci_contract_present
-    subject: anstest
-  register: subject_present
+    - name: ensure filter exists for tests to kick off
+      cisco.aci.aci_filter: &aci_filter_present
+        <<: *aci_tenant_present
+        filter: anstest
+      register: filter_present
 
-- name: create subject filter binding - check mode works
-  cisco.aci.aci_contract_subject_to_filter: &aci_subject_filter_present
-    <<: *aci_subject_present
-    filter: anstest
-    log: log
-  check_mode: yes
-  register: subject_filter_present_check_mode
+    - name: ensure filter exists for tests to kick off
+      cisco.aci.aci_filter: &aci_filter_present_2
+        <<: *aci_tenant_present
+        filter: anstest2
+      register: filter_present_2
 
-- name: create subject filter binding - creation works
-  cisco.aci.aci_contract_subject_to_filter:
-    <<: *aci_subject_filter_present
-  register: subject_filter_present
+    - name: ensure contract exists for tests to kick off
+      cisco.aci.aci_contract: &aci_contract_present
+        <<: *aci_tenant_present
+        contract: anstest
+      register: contract_present
 
-- name: create subject filter binding - additional testing
-  cisco.aci.aci_contract_subject_to_filter: &aci_subject_filter_present_2
-    <<: *aci_subject_filter_present
-    filter: anstest2
-  register: subject_filter_present_2
+    - name: ensure subject exists for tests to kick off
+      cisco.aci.aci_contract_subject: &aci_subject_present
+        <<: *aci_contract_present
+        subject: anstest
+      register: subject_present
 
-- name: create subject filter binding - idempotency works
-  cisco.aci.aci_contract_subject_to_filter:
-    <<: *aci_subject_filter_present
-  register: subject_filter_present_idempotent
+    - name: create subject filter binding - check mode works
+      cisco.aci.aci_contract_subject_to_filter: &aci_subject_filter_present
+        <<: *aci_subject_present
+        filter: anstest
+        log: log
+      check_mode: yes
+      register: subject_filter_present_check_mode
 
-- name: update subject filter binding - update works
-  cisco.aci.aci_contract_subject_to_filter:
-    <<: *aci_subject_filter_present
-    log: none
-  register: subject_filter_update
+    - name: create subject filter binding - creation works
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_filter_present
+      register: subject_filter_present
 
-- name: missing param - failure message works
-  cisco.aci.aci_contract_subject_to_filter:
-    <<: *aci_tenant_present
-  ignore_errors: yes
-  register: present_missing_param
+    - name: create subject filter binding - additional testing
+      cisco.aci.aci_contract_subject_to_filter: &aci_subject_filter_present_2
+        <<: *aci_subject_filter_present
+        filter: anstest2
+      register: subject_filter_present_2
 
-- name: present assertions
-  assert:
-    that:
-      - subject_filter_present_check_mode is changed
-      - subject_filter_present_check_mode.previous == []
-      - subject_filter_present_check_mode.sent.vzRsSubjFiltAtt.attributes.directives == 'log'
-      - subject_filter_present_check_mode.sent.vzRsSubjFiltAtt.attributes.tnVzFilterName == 'anstest'
-      - subject_filter_present is changed
-      - subject_filter_present.previous == []
-      - subject_filter_present.sent == subject_filter_present_check_mode.sent
-      - subject_filter_present.current.0.vzRsSubjFiltAtt.attributes.annotation == 'orchestrator:ansible'
-      - subject_filter_present_2 is changed
-      - subject_filter_present_idempotent is not changed
-      - subject_filter_present_idempotent.previous != []
-      - subject_filter_update is changed
-      - subject_filter_update.sent.vzRsSubjFiltAtt.attributes.directives == ''
-      - present_missing_param is failed
-      - 'present_missing_param.msg == "state is present but all of the following are missing: contract, filter, subject"'
+    - name: create subject filter binding - idempotency works
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_filter_present
+      register: subject_filter_present_idempotent
 
-- name: query all
-  cisco.aci.aci_contract_subject_to_filter:
-    <<: *aci_tenant_present
-    state: query
-    tenant: "{{ fakevar | default(omit) }}"
-  register: query_all
+    - name: update subject filter binding - update works
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_filter_present
+        log: none
+      register: subject_filter_update
 
-- name: query binding
-  cisco.aci.aci_contract_subject_to_filter:
-    <<: *aci_subject_filter_present
-    state: query
-  register: query_binding
+    - name: missing param - failure message works
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_tenant_present
+      ignore_errors: yes
+      register: present_missing_param
 
-- name: query assertions
-  assert:
-    that:
-      - query_all is not changed
-      - query_all.current | length > 1
-      - query_all.current.0.vzRsSubjFiltAtt is defined
-      - query_binding is not changed
-      - query_binding.current != []
+    - name: present assertions
+      assert:
+        that:
+          - subject_filter_present_check_mode is changed
+          - subject_filter_present_check_mode.previous == []
+          - subject_filter_present_check_mode.sent.vzRsSubjFiltAtt.attributes.directives == 'log'
+          - subject_filter_present_check_mode.sent.vzRsSubjFiltAtt.attributes.tnVzFilterName == 'anstest'
+          - subject_filter_present is changed
+          - subject_filter_present.previous == []
+          - subject_filter_present.sent == subject_filter_present_check_mode.sent
+          - subject_filter_present.current.0.vzRsSubjFiltAtt.attributes.annotation == 'orchestrator:ansible'
+          - subject_filter_present_2 is changed
+          - subject_filter_present_idempotent is not changed
+          - subject_filter_present_idempotent.previous != []
+          - subject_filter_update is changed
+          - subject_filter_update.sent.vzRsSubjFiltAtt.attributes.directives == ''
+          - present_missing_param is failed
+          - 'present_missing_param.msg == "state is present but all of the following are missing: contract, filter, subject"'
 
-- name: delete subject filter binding - check mode works
-  cisco.aci.aci_contract_subject_to_filter: &aci_subject_filter_absent
-    <<: *aci_subject_filter_present
-    state: absent
-  check_mode: yes
-  register: subject_filter_absent_check_mode
+    - name: query all
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_tenant_present
+        state: query
+        tenant: "{{ fakevar | default(omit) }}"
+      register: query_all
 
-- name: delete subject filter binding - deletion works
-  cisco.aci.aci_contract_subject_to_filter:
-    <<: *aci_subject_filter_absent
-  register: subject_filter_absent
+    - name: query binding
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_filter_present
+        state: query
+      register: query_binding
 
-- name: delete subject filter binding - idempotency works
-  cisco.aci.aci_contract_subject_to_filter:
-    <<: *aci_subject_filter_absent
-  register: subject_filter_absent_idempotent
+    - name: query assertions
+      assert:
+        that:
+          - query_all is not changed
+          - query_all.current | length > 1
+          - query_all.current.0.vzRsSubjFiltAtt is defined
+          - query_binding is not changed
+          - query_binding.current != []
 
-- name: missing param - failure message works
-  cisco.aci.aci_contract_subject_to_filter:
-    <<: *aci_subject_filter_absent
-    filter: "{{ fakevar | default(omit) }}"
-  ignore_errors: yes
-  register: absent_missing_param
+    - name: delete subject filter binding - check mode works
+      cisco.aci.aci_contract_subject_to_filter: &aci_subject_filter_absent
+        <<: *aci_subject_filter_present
+        state: absent
+      check_mode: yes
+      register: subject_filter_absent_check_mode
 
-- name: cleanup subject filter binding
-  cisco.aci.aci_contract_subject_to_filter:
-    <<: *aci_subject_filter_present_2
-    state: absent
+    - name: delete subject filter binding - deletion works
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_filter_absent
+      register: subject_filter_absent
 
-- name: absent assertions
-  assert:
-    that:
-      - subject_filter_absent_check_mode is changed
-      - subject_filter_absent_check_mode.proposed == {}
-      - subject_filter_absent_check_mode.previous != []
-      - subject_filter_absent is changed
-      - subject_filter_absent.previous != []
-      - subject_filter_absent_idempotent is not changed
-      - subject_filter_absent_idempotent.previous == []
-      - absent_missing_param is failed
-      - 'absent_missing_param.msg == "state is absent but all of the following are missing: filter"'
+    - name: delete subject filter binding - idempotency works
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_filter_absent
+      register: subject_filter_absent_idempotent
 
-- name: cleanup subject
-  cisco.aci.aci_contract_subject:
-    <<: *aci_subject_present
-    state: absent
-  when: subject_present is changed
+    - name: missing param - failure message works
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_filter_absent
+        filter: "{{ fakevar | default(omit) }}"
+      ignore_errors: yes
+      register: absent_missing_param
 
-- name: cleanup contract
-  cisco.aci.aci_contract:
-    <<: *aci_contract_present
-    state: absent
-  when: contract_present is changed
+    - name: cleanup subject filter binding
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_filter_present_2
+        state: absent
 
-- name: cleanup filter
-  cisco.aci.aci_filter:
-    <<: *aci_filter_present
-    state: absent
-  when: filter_present is changed
+    - name: absent assertions
+      assert:
+        that:
+          - subject_filter_absent_check_mode is changed
+          - subject_filter_absent_check_mode.proposed == {}
+          - subject_filter_absent_check_mode.previous != []
+          - subject_filter_absent is changed
+          - subject_filter_absent.previous != []
+          - subject_filter_absent_idempotent is not changed
+          - subject_filter_absent_idempotent.previous == []
+          - absent_missing_param is failed
+          - 'absent_missing_param.msg == "state is absent but all of the following are missing: filter"'
 
-- name: cleanup filter
-  cisco.aci.aci_filter:
-    <<: *aci_filter_present_2
-    state: absent
-  when: filter_present_2 is changed
+    - name: create filter 1
+      cisco.aci.aci_filter:
+        <<: *aci_tenant_present
+        filter: filter1
 
-- name: cleanup tenant
-  cisco.aci.aci_tenant:
-    <<: *aci_tenant_present
-    state: absent
-  when: tenant_present is changed
+    - name: create filter 2
+      cisco.aci.aci_filter:
+        <<: *aci_tenant_present
+        filter: filter2
+
+    - name: create contract 1
+      cisco.aci.aci_contract: &aci_contract1
+        <<: *aci_tenant_present
+        contract: contract1
+
+    - name: create subject both
+      cisco.aci.aci_contract_subject: &aci_subject_both
+        <<: *aci_contract1
+        subject: subjectboth
+      register: subject_both
+
+    - name: create subject one-way
+      cisco.aci.aci_contract_subject: &aci_subject_one_way
+        <<: *aci_contract1
+        subject: subjectoneway
+        apply_both_direction: one-way
+      register: nm_subject_present_one_way_again
+
+    - name: create subject filter with direction both as default (check_mode)
+      cisco.aci.aci_contract_subject_to_filter: &aci_subject_both_to_filter
+        <<: *aci_subject_both
+        filter: filter1
+        action: permit
+        directive: log
+        priority_override: level1
+        state: present
+      check_mode: yes
+      register: cm_filter1_present_default
+
+    - name: apply subject filter1 with direction both as default
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_both_to_filter
+      register: nm_filter1_present_default
+
+    - name: apply subject filter1 with direction provider to consumer (error)
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_both_to_filter
+        direction: provider_to_consumer
+      register: nm_filter1_present_p2c
+      ignore_errors: yes
+
+    - name: apply subject filter1 with direction consumer to provider (error)
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_both_to_filter
+        direction: consumer_to_provider
+      register: nm_filter1_present_c2p
+      ignore_errors: yes
+
+    - name: apply subject filter1 with direction both set
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_both_to_filter
+        filter: filter1
+        direction: both
+        action: permit
+        directive: no_stats
+        priority_override: level2
+        state: present
+      register: nm_filter1_present_both
+
+    - name: apply subject filter2 with direction provider to consumer
+      cisco.aci.aci_contract_subject_to_filter: &aci_subject_one_way_to_filter
+        <<: *aci_contract1
+        subject: subjectoneway
+        filter: filter2
+        direction: provider_to_consumer
+        action: permit
+        directive: none
+        priority_override: level2
+        state: present
+      register: nm_filter2_present_p2c
+
+    - name: apply subject filter2 with direction consumer to provider
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_one_way_to_filter
+        direction: provider_to_consumer
+      register: nm_filter2_present_c2p
+
+    - name: apply subject filter2 with direction both (error)
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_one_way_to_filter
+        direction: both
+      register: nm_filter2_present_both
+      ignore_errors: yes
+
+    - name: filter assertions
+      assert:
+        that:
+          - cm_filter1_present_default is changed
+          - nm_filter1_present_default is changed
+          - nm_filter1_present_default.current.0.vzRsSubjFiltAtt.attributes.action == "permit"
+          - nm_filter1_present_default.current.0.vzRsSubjFiltAtt.attributes.tnVzFilterName == "filter1"
+          - nm_filter1_present_default.current.0.vzRsSubjFiltAtt.attributes.priorityOverride == "level1"
+          - nm_filter1_present_default.current.0.vzRsSubjFiltAtt.attributes.directives == "log"
+          - nm_filter1_present_p2c is not changed
+          - nm_filter1_present_p2c.msg == "Direction is not allowed, valid option is both."
+          - nm_filter1_present_c2p is not changed
+          - nm_filter1_present_c2p.msg == "Direction is not allowed, valid option is both."
+          - nm_filter1_present_both is changed
+          - nm_filter1_present_both.current.0.vzRsSubjFiltAtt.attributes.action == "permit"
+          - nm_filter1_present_both.current.0.vzRsSubjFiltAtt.attributes.tnVzFilterName == "filter1"
+          - nm_filter1_present_both.current.0.vzRsSubjFiltAtt.attributes.priorityOverride == "level2"
+          - nm_filter1_present_both.current.0.vzRsSubjFiltAtt.attributes.directives == "no_stats"
+          - nm_filter2_present_p2c is changed
+          - nm_filter2_present_p2c.current.0.vzRsFiltAtt.attributes.action == "permit"
+          - nm_filter2_present_p2c.current.0.vzRsFiltAtt.attributes.tnVzFilterName == "filter2"
+          - nm_filter2_present_p2c.current.0.vzRsFiltAtt.attributes.priorityOverride == "level2"
+          - nm_filter2_present_p2c.current.0.vzRsFiltAtt.attributes.directives == ""
+          - nm_filter2_present_c2p is not changed
+          - nm_filter2_present_c2p.current.0.vzRsFiltAtt.attributes.action == "permit"
+          - nm_filter2_present_c2p.current.0.vzRsFiltAtt.attributes.tnVzFilterName == "filter2"
+          - nm_filter2_present_c2p.current.0.vzRsFiltAtt.attributes.priorityOverride == "level2"
+          - nm_filter2_present_c2p.current.0.vzRsFiltAtt.attributes.directives == ""
+          - nm_filter2_present_both.msg == "Direction is not allowed, valid option is consumer_to_provider or provider_to_consumer."
+
+    - name: Execute tasks only for non-cloud sites
+      when: query_cloud.current == []  # This condition will execute only non-cloud sites
+      block:  # block specifies execution of tasks within, based on conditions
+      - name: create subject filter with action deny for non-cloud
+        cisco.aci.aci_contract_subject_to_filter:
+          <<: *aci_subject_both_to_filter
+          direction: both
+          action: deny
+        register: filter_present_deny_non_cloud_both
+
+      - name: create subject filter with action deny for non-cloud p2c
+        cisco.aci.aci_contract_subject_to_filter:
+          <<: *aci_subject_one_way_to_filter
+          direction: provider_to_consumer
+          action: deny
+        register: filter_present_deny_non_cloud_p2c
+
+      - name: create subject filter with action deny for non-cloud p2c
+        cisco.aci.aci_contract_subject_to_filter:
+          <<: *aci_subject_one_way_to_filter
+          direction: consumer_to_provider
+          action: deny
+        register: filter_present_deny_non_cloud_c2p
+
+      - name: filter subject with direction assertions
+        assert:
+          that:
+            - filter_present_deny_non_cloud_both is changed
+            - filter_present_deny_non_cloud_both.current.0.vzRsSubjFiltAtt.attributes.action == "deny"
+            - filter_present_deny_non_cloud_p2c is changed
+            - filter_present_deny_non_cloud_p2c.current.0.vzRsFiltAtt.attributes.action == "deny"
+            - filter_present_deny_non_cloud_c2p is changed
+            - filter_present_deny_non_cloud_c2p.current.0.vzRsFiltAtt.attributes.action == "deny"
+
+    - name: Execute tasks only for cloud sites
+      when: query_cloud.current | length > 0  # This condition will execute only cloud sites
+      block:  # block specifies execution of tasks within, based on conditions
+      - name: create subject filter with action deny casues error for cloud (error)
+        cisco.aci.aci_contract_subject_to_filter:
+          <<: *aci_subject_both_to_filter
+          action: deny
+        register: filter_present_deny_cloud
+        ignore_errors: yes
+
+      - name: create subject filter with action deny for cloud p2c
+        cisco.aci.aci_contract_subject_to_filter:
+          <<: *aci_subject_one_way_to_filter
+          direction: provider_to_consumer
+          action: deny
+        register: filter_present_deny_cloud_p2c
+        ignore_errors: yes
+
+      - name: create subject filter with action deny for cloud p2c
+        cisco.aci.aci_contract_subject_to_filter:
+          <<: *aci_subject_one_way_to_filter
+          direction: provider_to_consumer
+          action: deny
+        register: filter_present_deny_cloud_c2p
+        ignore_errors: yes
+
+      - name: cloud assertions
+        assert:
+          that:
+            - filter_present_deny_cloud.msg.startswith("APIC Error 1: Invalid Configuration CLOUD_ONLY_PERMIT_ACTION_SUPPORTED")
+            - filter_present_deny_cloud_p2c.msg.startswith("APIC Error 1: Invalid Configuration CLOUD_ONLY_PERMIT_ACTION_SUPPORTED")
+            - filter_present_deny_cloud_c2p.msg.startswith("APIC Error 1: Invalid Configuration CLOUD_ONLY_PERMIT_ACTION_SUPPORTED")
+
+  always:
+    - name: cleanup tenant
+      cisco.aci.aci_tenant:
+        <<: *aci_tenant_present
+        state: absent
+      when: tenant_present is changed
