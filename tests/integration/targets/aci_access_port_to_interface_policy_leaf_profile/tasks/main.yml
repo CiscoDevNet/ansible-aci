@@ -205,6 +205,29 @@
       - bind_fexintprftest_policy_group.current.0.infraHPortS.children.1.infraRsAccBaseGrp.attributes.fexId == "105"
       - bind_fexintprftest_policy_group.current.0.infraHPortS.children.1.infraRsAccBaseGrp.attributes.tDn == "uni/infra/fexprof-fexintprftest/fexbundle-fexintprftest"
 
+- name: Bind anstest_fex_accessportselector_2 without fex_profile
+  cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
+    <<: *aci_info
+    state: present
+    leaf_interface_profile: leafintprftest
+    policy_group: fexintprftest
+    access_port_selector_name: anstest_fex_accessportselector_2
+    interface_type: fex_profile
+    from_port: 14
+    to_port: 14
+    port_blk: block2
+    fex_id: 106
+  register: bind_fexintprftest_policy_group_2
+
+- name: Assertions check for bind anstest_fex_accessportselector with fexintprftest - Fex Profile Policy Group
+  assert:
+    that:
+      - bind_fexintprftest_policy_group_2 is changed
+      - bind_fexintprftest_policy_group_2.previous | length == 0
+      - bind_fexintprftest_policy_group_2.current.0.infraHPortS.attributes.name == "anstest_fex_accessportselector_2"
+      - bind_fexintprftest_policy_group_2.current.0.infraHPortS.children.1.infraRsAccBaseGrp.attributes.fexId == "106"
+      - bind_fexintprftest_policy_group_2.current.0.infraHPortS.children.1.infraRsAccBaseGrp.attributes.tDn == "uni/infra/fexprof-fexintprftest/fexbundle-fexintprftest"
+
 - name: Remove fex policy group from the fexintprftest fex profile
   cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
     <<: *fexintprftest_policy_group_present
@@ -638,6 +661,41 @@
       - anstest_leaf_profile_access_port_present.current.0.infraHPortS.attributes.name == "anstest_leaf_profile_access_port"
       - anstest_leaf_profile_access_port_present.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.tDn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_profile"
       - anstest_leaf_profile_access_port_present.current.0.infraHPortS.children.0.infraRsAccBaseGrp.attributes.fexId == "105"
+
+- name: Bind anstest_leaf_profile with anstest_fex_profile with wrong fex_id
+  cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
+    <<: *aci_info
+    leaf_interface_profile: anstest_leaf_profile
+    policy_group: anstest_fex_profile
+    access_port_selector_name: anstest_leaf_profile_access_port
+    interface_type: fex_profile
+    fex_id: 999
+    type: leaf
+    state: present
+  ignore_errors: yes
+  register: anstest_leaf_profile_access_port_wrong_fex_id
+
+- name: Assertion check for bind anstest_leaf_profile with wrong fex_id
+  assert:
+    that:
+      - anstest_leaf_profile_access_port_wrong_fex_id.msg == "A valid FEX ID is between 101 to 199"
+
+- name: Bind anstest_leaf_profile with anstest_fex_profile with no fex_id
+  cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
+    <<: *aci_info
+    leaf_interface_profile: anstest_leaf_profile
+    policy_group: anstest_fex_profile
+    access_port_selector_name: anstest_leaf_profile_access_port
+    interface_type: fex_profile
+    type: leaf
+    state: present
+  ignore_errors: yes
+  register: anstest_leaf_profile_access_port_no_fex_id
+
+- name: Assertion check for bind anstest_leaf_profile with no fex_id
+  assert:
+    that:
+      - anstest_leaf_profile_access_port_no_fex_id.msg == "The fex_id must not be None, when interface_type is fex_profile"
 
 - name: Remove anstest_leaf_profile
   cisco.aci.aci_interface_policy_leaf_profile:

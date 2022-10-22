@@ -99,7 +99,7 @@ options:
     default: switch_port
   fex_id:
     description:
-    - Id of the fex profile, the valid FEX ID is between 101 to 199.
+    - Id of the fex profile, a valid FEX ID is between 101 to 199.
     type: int
   fex_profile:
     description:
@@ -434,11 +434,11 @@ def main():
                 if fex_id in range(101, 200):
                     infra_rs_acc_base_grp["infraRsAccBaseGrp"]["attributes"]["fexId"] = fex_id
                 else:
-                    module.fail_json(msg="The valid FEX ID is between 101 to 199")
+                    module.fail_json(msg="A valid FEX ID is between 101 to 199")
             else:
                 module.fail_json(msg="The fex_id must not be None, when interface_type is fex_profile")
 
-        elif interface_type != "fex_profile":
+        else:
             infra_rs_acc_base_grp["infraRsAccBaseGrp"]["attributes"]["tDn"] = INTERFACE_TYPE_MAPPING[interface_type].format(policy_group)
 
         child_configs.append(infra_rs_acc_base_grp)
