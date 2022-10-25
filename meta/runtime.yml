@@ -2,6 +2,9 @@
 requires_ansible: '>=2.9.10'
 action_groups:
   aci:
+    - aci_aaa_custom_privilege
+    - aci_aaa_domain
+    - aci_aaa_role
     - aci_aaa_ssh_auth
     - aci_aaa_user
     - aci_aaa_user_certificate
@@ -66,6 +69,7 @@ action_groups:
     - aci_fabric_leaf_profile
     - aci_fabric_leaf_switch_assoc
     - aci_fabric_node
+    - aci_fabric_pod_policy_group
     - aci_fabric_scheduler
     - aci_fabric_spine_profile
     - aci_fabric_spine_switch_assoc
@@ -85,6 +89,7 @@ action_groups:
     - aci_interface_policy_leaf_breakout_port_group
     - aci_interface_policy_leaf_policy_group
     - aci_interface_policy_leaf_profile
+    - aci_interface_policy_leaf_profile_fex_policy_group
     - aci_interface_policy_link_level
     - aci_interface_policy_lldp
     - aci_interface_policy_mcp
@@ -141,6 +146,7 @@ action_groups:
     - aci_tenant_ep_retention_policy
     - aci_tenant_span_dst_group
     - aci_tenant_span_src_group
+    - aci_tenant_span_src_group_src
     - aci_tenant_span_src_group_to_dst_group
     - aci_vlan_pool
     - aci_vlan_pool_encap_block
