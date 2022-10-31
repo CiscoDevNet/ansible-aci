@@ -323,6 +323,10 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
+SUBJ_LABEL_MAPPING = dict(
+    consumer="vzConsSubjLbl",
+    provider="vzProvSubjLbl",
+)
 
 def main():
     argument_spec = aci_argument_spec()
@@ -341,6 +345,8 @@ def main():
         name_alias=dict(type="str"),
         monitoring_policy=dict(type="str"),
         custom_qos_policy=dict(type="str"),
+        subject_label=dict(type="str"),
+        subject_label_direction=dict(type="str", choices=["consumer", "provider"]),
         useg=dict(type="str", choices=['yes', 'no']),
     )
 
@@ -369,8 +375,18 @@ def main():
     monitoring_policy = module.params.get("monitoring_policy")
     custom_qos_policy = module.params.get("custom_qos_policy")
     useg = module.params.get("useg")
+    subject_label = module.params.get("subject_label")
+    subject_label_direction = module.params.get("subject_label_direction")
+
+    subject_label_class = SUBJ_LABEL_MAPPING[subject_label_direction]
+
+    child_classes = ["fvRsBd", "fvRsAEPgMonPol", "fvRsCustQosPol"]
 
     child_configs = [dict(fvRsBd=dict(attributes=dict(tnFvBDName=bd))), dict(fvRsAEPgMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy)))]
+
+    if subject_label_direction is not None:
+      child_classes.append(subject_label_class)
+      child_configs.append({subject_label_class: {"attributes": {"name": subject_label}}})
 
     if custom_qos_policy is not None:
         child_configs.append(dict(fvRsCustQosPol=dict(attributes=dict(tnQosCustomPolName=custom_qos_policy))))
@@ -394,7 +410,7 @@ def main():
             module_object=epg,
             target_filter={"name": epg},
         ),
-        child_classes=["fvRsBd", "fvRsAEPgMonPol", "fvRsCustQosPol"],
+        child_classes=child_classes,
     )
 
     aci.get_existing()

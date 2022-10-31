@@ -391,3 +391,6 @@ $RECYCLE.BIN/
 
 # Ansible Collection tarball
 cisco-aci-*.tar.gz
+
+# Virtualenv
+.venv/

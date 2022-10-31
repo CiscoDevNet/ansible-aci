@@ -4,6 +4,7 @@ lh-dmz1-pod3-sim-v42 ansible_host=173.36.219.68 aci_hostname=173.36.219.68
 lh-dmz1-pod3-sim-v51 ansible_host=173.36.219.129 aci_hostname=173.36.219.129
 aws_cloud ansible_host=52.52.20.121 aci_hostname=52.52.20.121 aci_password="sJ94G92#8dq2hx*K4qh" cloud_type=aws region=us-east-1 region_2=us-west-1 availability_zone=us-west-1a
 azure_cloud ansible_host=104.42.26.226 aci_hostname=104.42.26.226 aci_password="sJ94G92#8dq2hx*K4qh" cloud_type=azure region=westus region_2=westus2 vnet_gateway=true
+sandbox ansible_host=sandboxapicdc.cisco.com aci_hostname=sandboxapicdc.cisco.com aci_username=admin aci_password="!v3G@!4@Y"
 
 [aci:vars]
 aci_username=ansible_github_ci

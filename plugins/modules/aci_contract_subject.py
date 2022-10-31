@@ -79,6 +79,15 @@ options:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
+  subject_label:
+    description:
+    - The label applid to this contract subject
+    type: str
+  subject_label_direction:
+    description:
+    - Use C(consumer) to add a consumed label and C(provider) to add a provided label to this contract
+    type: str
+    choices: [ consumer, provider ]
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -94,6 +103,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Swetha Chunduri (@schunduri)
+- Mark Ciecior (@markciecior)
 """
 
 EXAMPLES = r"""
@@ -109,6 +119,23 @@ EXAMPLES = r"""
     reverse_filter: yes
     priority: level1
     dscp: unspecified
+    state: present
+  register: query_result
+
+- name: Add a label to a contract subject
+  cisco.aci.aci_contract_subject:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: production
+    contract: web_to_db
+    subject: default
+    description: test
+    reverse_filter: yes
+    priority: level1
+    dscp: unspecified
+    subject_label: MyLabel
+    subject_label_direction: consumer
     state: present
   register: query_result
 
@@ -260,6 +287,10 @@ MATCH_MAPPING = dict(
     none="None",
 )
 
+SUBJ_LABEL_MAPPING = dict(
+    consumer="vzConsSubjLbl",
+    provider="vzProvSubjLbl",
+)
 
 def main():
     argument_spec = aci_argument_spec()
@@ -304,6 +335,8 @@ def main():
         provider_match=dict(type="str", choices=["all", "at_least_one", "at_most_one", "none"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
+        subject_label=dict(type="str"),
+        subject_label_direction=dict(type="str", choices=["consumer", "provider"]),
     )
 
     module = AnsibleModule(
@@ -332,6 +365,12 @@ def main():
     state = module.params.get("state")
     tenant = module.params.get("tenant")
     name_alias = module.params.get("name_alias")
+    subject_label = module.params.get("subject_label")
+    subject_label_direction = module.params.get("subject_label_direction")
+
+    subject_label_class = SUBJ_LABEL_MAPPING[subject_label_direction]
+
+    child_classes = [subject_label_class]
 
     aci.construct_url(
         root_class=dict(
@@ -352,11 +391,17 @@ def main():
             module_object=subject,
             target_filter={"name": subject},
         ),
+        child_classes=child_classes,
     )
 
     aci.get_existing()
 
     if state == "present":
+        child_configs = []
+        if subject_label:
+            child_configs.append(
+              {subject_label_class: {"attributes": {"name": subject_label}}}
+            )
         aci.payload(
             aci_class="vzSubj",
             class_config=dict(
@@ -369,6 +414,7 @@ def main():
                 descr=description,
                 nameAlias=name_alias,
             ),
+            child_configs=child_configs
         )
 
         aci.get_diff(aci_class="vzSubj")

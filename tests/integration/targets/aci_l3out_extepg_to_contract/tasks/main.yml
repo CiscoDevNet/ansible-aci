@@ -1,5 +1,5 @@
 # Test code for the ACI modules
-# Copyright: (c) 2020, Shreyas Srish (@shrsr)
+# Copyright: (c) 2020, Shreyas Srish (@shrsr), Mark Ciecior (@markciecior)
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -62,6 +62,7 @@
     extepg: ansible_extEpg
     contract: ansible_contract
     contract_type: provider
+    subject_label: my_test_label
     state: present
   register: bind_extepg_provider_contract
 
@@ -70,6 +71,8 @@
     that:
     - bind_extepg_provider_contract.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
     - bind_extepg_provider_contract.current.0.fvRsProv.attributes.annotation == 'orchestrator:ansible'
+    - bind_extepg_provider_contract.current.0.vzConsSubjLbl is defined
+    - bind_extepg_provider_contract.current.0.vzConsSubjLbl.attributes.name == 'my_test_label'
 
 - name: Bind second External End Point Groups to Contracts
   aci_l3out_extepg_to_contract:
