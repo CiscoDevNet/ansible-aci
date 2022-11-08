@@ -61,6 +61,9 @@
       - invalid_max_count.msg == "Parameter 'max_count' must be a number between 1 and 10"
       - missing_param is failed
       - 'missing_param.msg == "state is present but all of the following are missing: export_policy"'
+      - create.job_details.attributes.dn == "uni/backupst/jobs-[uni/fabric/configexp-anstest]"
+      - create.job_details.attributes.name == "anstest"
+      - "'lastJobName' in create.job_details.attributes"
 
 - name: query with export_policy
   cisco.aci.aci_config_snapshot: &query_snapshot

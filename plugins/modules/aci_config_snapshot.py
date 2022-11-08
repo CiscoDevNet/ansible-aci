@@ -293,6 +293,12 @@ def main():
         # Create a new Snapshot
         aci.post_config()
 
+        # Query for job information and add to results
+        # Change state to query else aci.request() will not execute a GET request but POST
+        aci.params["state"] = "query"
+        aci.request(path="/api/node/mo/uni/backupst/jobs-[uni/fabric/configexp-{0}].json".format(export_policy))
+        aci.result["job_details"] = aci.imdata[0].get("configJobCont", {})
+
     else:
         # Prefix the proper url to export_policy
         if export_policy is not None:
