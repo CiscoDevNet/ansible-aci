@@ -272,7 +272,8 @@ def main():
                 target_filter={"name": export_policy},
             ),
         )
-
+        # Variable set for reuse of correct url in get_existing() triggered from exit_json() after query request
+        reset_url = aci.url
         aci.get_existing()
 
         aci.payload(
@@ -298,6 +299,9 @@ def main():
         aci.params["state"] = "query"
         aci.request(path="/api/node/mo/uni/backupst/jobs-[uni/fabric/configexp-{0}].json".format(export_policy))
         aci.result["job_details"] = aci.imdata[0].get("configJobCont", {})
+        # Reset state and url to display correct in output and trigger get_existing() function with correct url
+        aci.url = reset_url
+        aci.params["state"] = "present"
 
     else:
         # Prefix the proper url to export_policy
