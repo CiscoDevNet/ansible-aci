@@ -18,7 +18,6 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: debug
     export_policy: anstest
-    max_count: 10
     include_secure: no
     format: json
     description: ansible test
@@ -27,6 +26,7 @@
 - name: update snapshot to include secure and use xml - update works
   cisco.aci.aci_config_snapshot:
     <<: *create_snapshot
+    max_count: 10
     include_secure: yes
     format: xml
   register: create_update
