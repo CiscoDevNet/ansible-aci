@@ -562,9 +562,9 @@ def main():
             module_object=node_profile,
             target_filter={"name": node_profile},
         ),
-        subclass_3=subclass_3 or None,
-        subclass_4=subclass_4 or None,
-        subclass_5=subclass_5 or None,
+        subclass_3=subclass_3,
+        subclass_4=subclass_4,
+        subclass_5=subclass_5,
         child_classes=[
             "bgpRsPeerPfxPol",
             "bgpAsP",
