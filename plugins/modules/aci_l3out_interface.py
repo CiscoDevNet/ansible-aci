@@ -90,6 +90,11 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
+  autostate:
+    description:
+    - SVI auto state.
+    type: str
+    choices: [ enabled, disabled ]
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -302,6 +307,7 @@ def main():
         interface_type=dict(type="str", choices=["l3-port", "sub-interface", "ext-svi"]),
         mode=dict(type="str", choices=["regular", "native", "untagged"]),
         encap=dict(type="str"),
+        autostate=dict(type="str", choices=["enabled", "disabled"]),
     )
 
     module = AnsibleModule(
@@ -327,6 +333,7 @@ def main():
     interface_type = module.params.get("interface_type")
     mode = module.params.get("mode")
     encap = module.params.get("encap")
+    autostate = module.params.get("autostate")
 
     aci = ACIModule(module)
     if node_id and "-" in node_id:
@@ -383,7 +390,8 @@ def main():
                 mtu=mtu,
                 ifInstT=interface_type,
                 mode=mode,
-                encap=encap
+                encap=encap,
+                autostate=autostate
             ),
         )
 
