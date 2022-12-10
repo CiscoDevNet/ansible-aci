@@ -138,7 +138,7 @@
   ignore_errors: yes
   register: error_change
 
-- name: Verify create
+- name: Verify create source groups to destination
   ansible.builtin.assert:
     that:
     - cm_create is changed
@@ -163,7 +163,7 @@
     state: query
   register: query_all
 
-- name: Verify query
+- name: Verify queries of source group to destination
   ansible.builtin.assert:
     that:
     - query_one is not changed
@@ -171,16 +171,23 @@
     - query_all is not changed
     - query_all.current | length == 2
 
-- name: Delete a source groups
+- name: Delete a source group to destination
   cisco.aci.aci_tenant_span_src_group_to_dst_group:
     <<: *aci_source_to_dest
     state: absent
   register: delete
 
-- name: Verify delete
+- name: Delete a source group to destination again
+  cisco.aci.aci_tenant_span_src_group_to_dst_group:
+    <<: *aci_source_to_dest
+    state: absent
+  register: delete_again
+
+- name: Verify delete of source group to destinations
   ansible.builtin.assert:
     that:
     - delete is changed
+    - delete_again is not changed
     - delete.current == []
 
 - name: Remove the ansible_tenant

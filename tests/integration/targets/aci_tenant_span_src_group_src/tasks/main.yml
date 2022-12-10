@@ -125,7 +125,7 @@
     src_group: ansible_span
   register: change_without_epg_direction_both
 
-- name: Verify create
+- name: Verify create and changes of sources
   ansible.builtin.assert:
     that:
     - cm_create_with_epg is changed
@@ -162,7 +162,7 @@
     state: query
   register: query_all
 
-- name: Verify query
+- name: Verify queries of sources
   ansible.builtin.assert:
     that:
     - query_one is not changed
@@ -179,10 +179,17 @@
     state: absent
   register: delete
 
-- name: Verify delete
+- name: Delete a source again
+  cisco.aci.aci_tenant_span_src_group_src:
+    <<: *aci_src
+    state: absent
+  register: delete_again
+
+- name: Verify delete of source
   ansible.builtin.assert:
     that:
     - delete is changed
+    - delete_again is not changed
     - delete.current == []
 
 - name: Remove the ansible_tenant

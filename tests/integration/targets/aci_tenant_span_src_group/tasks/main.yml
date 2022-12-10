@@ -110,7 +110,7 @@
     description: ansible test description 2
   register: change_without_dest
 
-- name: Verify create
+- name: Verify create of source groups
   ansible.builtin.assert:
     that:
     - cm_create_with_dest is changed
@@ -143,7 +143,7 @@
     state: query
   register: query_all
 
-- name: Verify query
+- name: Verify queries to source groups
   ansible.builtin.assert:
     that:
     - query_one is not changed
@@ -159,10 +159,17 @@
     state: absent
   register: delete
 
-- name: Verify delete
+- name: Delete a source group again
+  cisco.aci.aci_tenant_span_src_group:
+    <<: *aci_span
+    state: absent
+  register: delete_again
+
+- name: Verify delete of source group
   ansible.builtin.assert:
     that:
     - delete is changed
+    - delete_again is not changed
     - delete.current == []
 
 - name: Remove the ansible_tenant

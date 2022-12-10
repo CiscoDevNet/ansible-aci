@@ -115,8 +115,6 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    src_group: my_span_source_group
-    tenant: prod
     name: test
     state: query
   delegate_to: localhost
