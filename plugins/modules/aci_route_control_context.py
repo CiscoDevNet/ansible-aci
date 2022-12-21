@@ -35,19 +35,20 @@ options:
     description:
     - Name of the Route Control Context
     type: str
+    aliases: [ name, route_control_context ]
   description:
     description:
-    - Description of the context
+    - Description of the Route Control Context
     type: str
     aliases: [ descr ]
   action:
     description:
-    - Action to take
+    - Action of the Route Control Context
     type: str
     choices: [ permit, deny ]
   order:
     description:
-    - Order of the context within the profile
+    - Order of the Route Control Context within the profile
     type: int
   state:
     description:
@@ -109,6 +110,15 @@ EXAMPLES = r"""
     l3out: my_l3out
     profile: test_profile
     context: test_context
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query All Route Control Contexts
+  cisco.aci.aci_route_control_context:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
     state: query
   delegate_to: localhost
   register: query_result
@@ -229,7 +239,7 @@ def main():
         tenant=dict(type="str", aliases=["tenant_name"]),
         l3out=dict(type="str", aliases=["l3out_name"]),
         profile=dict(type="str", aliases=["profile_name", "route_control_profile"]),
-        context=dict(type="str"),
+        context=dict(type="str", aliases=["name", "route_control_context"]),
         description=dict(type="str", aliases=["descr"]),
         action=dict(type="str", choices=["permit", "deny"]),
         order=dict(type="int"),
@@ -294,7 +304,6 @@ def main():
                 action=action,
                 order=order,
                 descr=description,
-                dn="uni/tn-{0}/out-{1}/prof-{2}/ctx-{3}".format(tenant, l3out, profile, context),
             ),
         )
 

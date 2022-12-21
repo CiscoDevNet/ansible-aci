@@ -26,14 +26,14 @@
     state: absent
 
 # SETUP ENVIRONMENT
-- name: Create domain
+- name: Create l3dom domain
   cisco.aci.aci_domain: &domain_present
     <<: *aci_info
     domain: ansible_l3_dom
     domain_type: l3dom
     state: present
 
-- name: Add a new tenant
+- name: Add a new ansible_tenant
   aci_tenant:
     <<: *aci_info
     tenant: ansible_tenant
@@ -61,7 +61,7 @@
     description: ExtEpg for Ansible l3out
     state: present
 
-- name: Add route control profile
+- name: Add route control profile - ansible_rtctrl_profile
   cisco.aci.aci_route_control_profile:
     <<: *aci_info
     tenant: ansible_tenant
@@ -70,7 +70,7 @@
     prof_type: global
     state: present
 
-- name: Add second route control profile
+- name: Add route control profile - ansible_rtctrl_profile2
   cisco.aci.aci_route_control_profile:
     <<: *aci_info
     tenant: ansible_tenant
@@ -92,12 +92,12 @@
   check_mode: yes
   register: cm_add_binding
 
-- name: Add binding (normal mode)
+- name: Add route control profile binding (normal mode)
   cisco.aci.aci_l3out_extepg_to_route_control_profile:
     <<: *binding_present
   register: nm_add_binding
 
-- name: Verify add binding
+- name: Verify add route control profile binding
   assert:
     that:
     - cm_add_binding is changed
@@ -106,7 +106,7 @@
     - cm_add_binding.sent.l3extRsInstPToProfile.attributes.direction == nm_add_binding.sent.l3extRsInstPToProfile.attributes.direction == 'import'
     - cm_add_binding.sent.l3extRsInstPToProfile.attributes.tnRtctrlProfileName == nm_add_binding.sent.l3extRsInstPToProfile.attributes.tnRtctrlProfileName == 'ansible_rtctrl_profile'
 
-- name: Add binding again, check if idempotency works
+- name: Add route control profile binding again, check if idempotency works
   cisco.aci.aci_l3out_extepg_to_route_control_profile:
     <<: *binding_present
   register: add_binding_again
@@ -128,9 +128,10 @@
     that:
     - update_binding is changed
     - update_binding.sent.l3extRsInstPToProfile.attributes.tnRtctrlProfileName == 'ansible_rtctrl_profile2'
+    - update_binding.current.0.l3extRsInstPToProfile.attributes.tnRtctrlProfileName == 'ansible_rtctrl_profile2'
 
 # QUERY ALL BINDINGS
-- name: Query all bindings
+- name: Query all route control profile bindings
   cisco.aci.aci_l3out_extepg_to_route_control_profile:
     <<: *aci_info
     state: query
@@ -143,7 +144,7 @@
     - query_all_bindings.current|length >= 1
 
 # QUERY A SPECIFIC BINDINGS
-- name: Query a specific binding
+- name: Query a specific route control profile binding
   cisco.aci.aci_l3out_extepg_to_route_control_profile:
     <<: *binding_update
     state: query
@@ -157,7 +158,7 @@
     - query_spec_binding.current.0.l3extRsInstPToProfile.attributes.tnRtctrlProfileName == 'ansible_rtctrl_profile2'
 
 # REMOVE BINDING
-- name: Remove binding
+- name: Remove route control profile binding
   cisco.aci.aci_l3out_extepg_to_route_control_profile:
     <<: *binding_update
     state: absent
@@ -168,9 +169,11 @@
     that:
     - remove_binding is changed
     - remove_binding.current == []
+    - remove_binding.previous != []
+    - remove_binding.previous.0.l3extRsInstPToProfile.attributes.tnRtctrlProfileName == "ansible_rtctrl_profile2"
 
 # REMOVE BINDING AGAIN TO TEST IDEMPOTENCE
-- name: Remove binding again
+- name: Remove route control profile binding again
   cisco.aci.aci_l3out_extepg_to_route_control_profile:
     <<: *binding_update
     state: absent
@@ -183,11 +186,11 @@
     - remove_binding_again.current == []
 
 # CLEAN UP
-- name: Remove test tenant
+- name: Remove ansible_tenant test tenant
   cisco.aci.aci_tenant:
     <<: *tenant_absent
 
-- name: Remove test domain
+- name: Remove l3out domain
   cisco.aci.aci_domain:
     <<: *domain_present
     state: absent

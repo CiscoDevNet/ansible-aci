@@ -30,6 +30,7 @@ options:
     description:
     - Name of an existing external EPG within the L3Out
     type: str
+    aliases: [ external_epg ]
   profile:
     description:
     - Name of the Route Control Profile to bind to the external EPG
@@ -40,6 +41,7 @@ options:
     - Direction to apply the Route Control Profile
     type: str
     choices: [ import, export ]
+    aliases: [ route_control_profile_direction ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -220,9 +222,9 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         l3out=dict(type="str", aliases=["l3out_name"]),
-        ext_epg=dict(type="str"),
+        ext_epg=dict(type="str", aliases=["external_epg"]),
         profile=dict(type="str", aliases=["profile_name", "route_control_profile"]),
-        direction=dict(type="str", choices=["import", "export"]),
+        direction=dict(type="str", aliases=["route_control_profile_direction"], choices=["import", "export"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -277,7 +279,6 @@ def main():
         aci.payload(
             aci_class="l3extRsInstPToProfile",
             class_config=dict(
-                dn="uni/tn-{0}/out-{1}/instP-{2}/rsinstPToProfile-[{3}]-{4}".format(tenant, l3out, ext_epg, profile, direction),
                 direction=direction,
                 tnRtctrlProfileName=profile,
             ),

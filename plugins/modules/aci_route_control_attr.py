@@ -84,6 +84,15 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Query All Route Control Match Attributes
+  cisco.aci.aci_route_control_attr:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
@@ -244,7 +253,6 @@ def main():
             class_config=dict(
                 name=name,
                 descr=description,
-                dn="uni/tn-{0}/attr-{1}".format(tenant, name),
             ),
         )
 

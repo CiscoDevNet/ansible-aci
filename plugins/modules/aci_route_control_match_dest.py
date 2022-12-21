@@ -12,9 +12,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_route_control_match_dest
-short_description: Manage Route Control Match Destination objects (rtctrlMatchRtDest)
+short_description: Manage Route Control Match Destination Rule objects (rtctrlMatchRtDest)
 description:
-- Manage Route Control Match Destination on Cisco ACI fabrics.
+- Manage Route Control Match Destination Rules on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -23,11 +23,11 @@ options:
     aliases: [ tenant_name ]
   subject_name:
     description:
-    - Subject name
+    - Name of the Match Rule object.
     type: str
   ip:
     description:
-    - IP prefix in CIDR format
+    - Match Prefix IP in the CIDR format.
     type: str
   aggregate:
     description:
@@ -35,12 +35,12 @@ options:
     type: bool
   greater_than_mask:
     description:
-    - prefix length to match. 0 is considered unspecified
+    - Prefix length to match, in the range of 0 to 128 and greater_than_mask must be larger than Mask Length.
     type: int
     aliases: [ less_than, lt ]
   less_than_mask:
     description:
-    - prefix length to match. 0 is considered unspecified
+    - Prefix length to match, in the range of 0 to 128 and greater_than_mask cannot be larger than less_than_mask.
     type: int
     aliases: [ greater_than, gt ]
   state:
@@ -100,6 +100,15 @@ EXAMPLES = r"""
     tenant: my_tenant
     subject_name: my_subject
     ip: 10.20.30.0/24
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query All Route Control Match Destinations
+  cisco.aci.aci_route_control_match_dest:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
     state: query
   delegate_to: localhost
   register: query_result
@@ -245,6 +254,16 @@ def main():
     less_than = module.params.get("less_than_mask")
     state = module.params.get("state")
 
+    if ip is not None:
+        mask = int(ip.split("/")[1])
+
+    if greater_than is not None:
+        if greater_than <= mask:
+            aci.fail_json(msg="greater_than must be greater than the prefix mask")
+        if less_than is not None:
+            if less_than < greater_than:
+                aci.fail_json(msg="greater_than must be less than less_than")
+
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -262,7 +281,7 @@ def main():
             aci_class="rtctrlMatchRtDest",
             aci_rn="dest-[{0}]".format(ip),
             module_object=ip,
-            target_filter={"name": ip},
+            target_filter={"ip": ip},
         ),
     )
 
@@ -276,7 +295,6 @@ def main():
                 fromPfxLen=greater_than,
                 toPfxLen=less_than,
                 aggregate=aggregate,
-                dn="uni/tn-{0}/subj-{1}/dest-[{2}]".format(tenant, subject_name, ip),
             ),
         )
 

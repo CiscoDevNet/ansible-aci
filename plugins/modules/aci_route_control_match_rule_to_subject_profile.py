@@ -11,10 +11,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_route_control_ctx_to_subj
-short_description: Manage Route Control Ctx to Subj objects (rtctrl:RsCtxPToSubjP)
+module: aci_route_control_match_rule_to_subject_profile
+short_description: Manage Route Control Context Match Rule objects (rtctrl:RsCtxPToSubjP)
 description:
-- Manage Route Control Ctx to Subj on Cisco ACI fabrics.
+- Manage Route Control Context Match Rules on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -35,10 +35,12 @@ options:
     description:
     - Name of the Route Control Context
     type: str
-  subj_name:
+    aliases: [ route_control_context ]
+  subject_profile:
     description:
-    - Name of the rtctrlSubj object to link the context to
+    - Name of the Subject Profile object which is mapped to the Route Control Context Match Rules
     type: str
+    aliases: [ name ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -66,7 +68,7 @@ author:
 
 EXAMPLES = r"""
 - name: Add a new Route Control Context to Subject binding
-  cisco.aci.aci_route_control_ctx_to_subj:
+  cisco.aci.aci_route_control_match_rule_to_subject_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -74,12 +76,12 @@ EXAMPLES = r"""
     l3out: my_l3out
     profile: test_profile
     context: test_context
-    subj_name: test_rtctrl_subj
+    subject_profile: test_rtctrl_subj
     state: present
   delegate_to: localhost
 
 - name: Delete Route Control Context to Subject binding
-  cisco.aci.aci_route_control_ctx_to_subj:
+  cisco.aci.aci_route_control_match_rule_to_subject_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -87,12 +89,12 @@ EXAMPLES = r"""
     l3out: my_l3out
     profile: test_profile
     context: test_context
-    subj_name: test_rtctrl_subj
+    subject_profile: test_rtctrl_subj
     state: absent
   delegate_to: localhost
 
 - name: Query Route Control Context to Subject binding
-  cisco.aci.aci_route_control_scope:
+  cisco.aci.aci_route_control_match_rule_to_subject_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -100,7 +102,16 @@ EXAMPLES = r"""
     l3out: my_l3out
     profile: test_profile
     context: test_context
-    subj_name: test_rtctrl_subj
+    subject_profile: test_rtctrl_subj
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query All Route Control Context to Subject bindings
+  cisco.aci.aci_route_control_match_rule_to_subject_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
     state: query
   delegate_to: localhost
   register: query_result
@@ -221,8 +232,8 @@ def main():
         tenant=dict(type="str", aliases=["tenant_name"]),
         l3out=dict(type="str", aliases=["l3out_name"]),
         profile=dict(type="str", aliases=["profile_name", "route_control_profile"]),
-        context=dict(type="str"),
-        subj_name=dict(type="str"),
+        context=dict(type="str", aliases=["route_control_context"]),
+        subject_profile=dict(type="str", aliases=["name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -230,8 +241,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["l3out", "tenant", "profile", "context", "subj_name"]],
-            ["state", "present", ["l3out", "tenant", "profile", "context", "subj_name"]],
+            ["state", "absent", ["l3out", "tenant", "profile", "context", "subject_profile"]],
+            ["state", "present", ["l3out", "tenant", "profile", "context", "subject_profile"]],
         ],
     )
 
@@ -242,7 +253,7 @@ def main():
     tenant = module.params.get("tenant")
     profile = module.params.get("profile")
     context = module.params.get("context")
-    subj_name = module.params.get("subj_name")
+    subj_name = module.params.get("subject_profile")
 
     aci.construct_url(
         root_class=dict(

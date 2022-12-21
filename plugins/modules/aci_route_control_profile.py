@@ -28,17 +28,19 @@ options:
     aliases: [ l3out_name ]
   description:
     description:
-    - Description for the Route Control Profile.
+    - Description of the Route Control Profile.
     type: str
     aliases: [ descr ]
-  profile:
+  name:
     description:
     - Name of the Route Control Profile
     type: str
-    aliases: [ profile_name, route_control_profile ]
-  prof_type:
+    aliases: [ profile, profile_name, route_control_profile ]
+  profile_type:
     description:
-    - Type of the profile
+    - Type of the Route Control Profile
+    - For "Match Prefix AND Routing Policy", choose combinable
+    - For "Match Routing Policy Only", choose global
     type: str
     choices: [ combinable, global ]
   autocontinue:
@@ -69,14 +71,14 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a new
+- name: Add Route Control Profile
   cisco.aci.aci_route_control_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
     l3out: my_l3out
-    profile: test_profile
+    name: test_profile
     description: Test Route Control Profile
     state: present
   delegate_to: localhost
@@ -88,7 +90,7 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     tenant: production
     l3out: my_l3out
-    profile: test_profile
+    name: test_profile
     state: absent
   delegate_to: localhost
 
@@ -99,7 +101,16 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     tenant: production
     l3out: my_l3out
-    profile: test_profile
+    name: test_profile
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query All Route Control Profiles
+  cisco.aci.aci_route_control_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
     state: query
   delegate_to: localhost
   register: query_result
@@ -220,8 +231,8 @@ def main():
         tenant=dict(type="str", aliases=["tenant_name"]),
         l3out=dict(type="str", aliases=["l3out_name"]),
         description=dict(type="str", aliases=["descr"]),
-        profile=dict(type="str", aliases=["profile_name", "route_control_profile"]),
-        prof_type=dict(type="str", choices=["combinable", "global"]),
+        name=dict(type="str", aliases=["profile, ""profile_name", "route_control_profile"]),
+        profile_type=dict(type="str", choices=["combinable", "global"]),
         autocontinue=dict(type="bool"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -241,8 +252,8 @@ def main():
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
-    profile = module.params.get("profile")
-    prof_type = module.params.get("prof_type")
+    profile = module.params.get("name")
+    prof_type = module.params.get("profile_type")
     autocontinue = aci.boolean(module.params.get("autocontinue"))
 
     child_classes = ["rtctrlCtxP", "rtctrlRtInstPToProfile", "rtctrlRsCtxPToSubjP"]
@@ -279,7 +290,6 @@ def main():
                 descr=description,
                 type=prof_type,
                 autoContinue=autocontinue,
-                dn="uni/tn-{0}/out-{1}/prof-{2}".format(tenant, l3out, profile),
             ),
         )
 
