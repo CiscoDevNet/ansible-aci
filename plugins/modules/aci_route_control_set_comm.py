@@ -222,8 +222,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "attr_name"]],
-            ["state", "present", ["tenant", "attr_name"]],
+            ["state", "absent", ["tenant", "attr_name", "community"]],
+            ["state", "present", ["tenant", "attr_name", "community"]],
         ],
     )
 
@@ -267,8 +267,6 @@ def main():
                 descr=description,
                 community=community,
                 setCriteria=set_criteria,
-                type="community",
-                dn="uni/tn-{0}/attr-{1}/scomm".format(tenant, name),
             ),
         )
 

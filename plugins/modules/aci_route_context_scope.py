@@ -11,10 +11,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_route_control_scope
-short_description: Manage Route Control Scope objects (rtctrl:Scope)
+module: aci_route_context_scope
+short_description: Manage Route Context Scope objects (rtctrl:Scope)
 description:
-- Manage Route Control Scopes on Cisco ACI fabrics.
+- Manage Route Context Scopes on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -28,21 +28,21 @@ options:
     aliases: [ l3out_name ]
   profile:
     description:
-    - Name of the Route Control Profile
+    - Name of the Route Context Profile
     type: str
     aliases: [ profile_name, route_control_profile ]
   context:
     description:
-    - Name of the Route Control Context
+    - Name of the Route Control Profile Context
     type: str
   description:
     description:
-    - Description of the Scope
+    - Description of the Route Control Profile Context
     type: str
     aliases: [ descr ]
-  attr_name:
+  set_action_rule_profile:
     description:
-    - Name of the rtctrlAttrP object to link the scope to
+    - Name of the Set Action Rule Profile(rtctrlAttrP) object link to the Route Control Profile Context Scope.
     type: str
   state:
     description:
@@ -70,8 +70,8 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a new Route Control Scope
-  cisco.aci.aci_route_control_scope:
+- name: Add a new Route Context Scope
+  cisco.aci.aci_route_context_scope:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -79,12 +79,12 @@ EXAMPLES = r"""
     l3out: my_l3out
     profile: test_profile
     context: test_context
-    attr_name: test_rtctrl_attr
+    set_action_rule_profile: test_rtctrl_attr
     state: present
   delegate_to: localhost
 
-- name: Delete Route Control Scope
-  cisco.aci.aci_route_control_scope:
+- name: Delete Route Context Scope
+  cisco.aci.aci_route_context_scope:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -95,8 +95,8 @@ EXAMPLES = r"""
     state: absent
   delegate_to: localhost
 
-- name: Query Route Control Scope
-  cisco.aci.aci_route_control_scope:
+- name: Query Route Context Scope
+  cisco.aci.aci_route_context_scope:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -104,6 +104,15 @@ EXAMPLES = r"""
     l3out: my_l3out
     profile: test_profile
     context: test_context
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query All Route Context Scopes
+  cisco.aci.aci_route_context_scope:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
     state: query
   delegate_to: localhost
   register: query_result
@@ -226,7 +235,7 @@ def main():
         profile=dict(type="str", aliases=["profile_name", "route_control_profile"]),
         context=dict(type="str"),
         description=dict(type="str", aliases=["descr"]),
-        attr_name=dict(type="str"),
+        set_action_rule_profile=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -247,7 +256,7 @@ def main():
     profile = module.params.get("profile")
     context = module.params.get("context")
     description = module.params.get("description")
-    attr_name = module.params.get("attr_name")
+    set_action_rule_profile = module.params.get("attr_name")
 
     aci.construct_url(
         root_class=dict(
@@ -290,13 +299,12 @@ def main():
             aci_class="rtctrlScope",
             class_config=dict(
                 descr=description,
-                dn="uni/tn-{0}/out-{1}/prof-{2}/ctx-{3}/scp".format(tenant, l3out, profile, context),
             ),
             child_configs=[
                 dict(
                     rtctrlRsScopeToAttrP=dict(
                         attributes=dict(
-                            tnRtctrlAttrPName=attr_name
+                            tnRtctrlAttrPName=set_action_rule_profile
                         ),
                     ),
                 ),

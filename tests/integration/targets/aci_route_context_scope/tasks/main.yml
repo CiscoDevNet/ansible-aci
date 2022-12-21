@@ -80,8 +80,8 @@
     state: present
 
 # BEGIN WITH TESTS
-- name: Add route control scope (check_mode)
-  cisco.aci.aci_route_control_scope: &scope_present
+- name: Add route context scope (check_mode)
+  cisco.aci.aci_route_context_scope: &scope_present
     <<: *aci_info
     tenant: ansible_tenant
     l3out: ansible_l3out
@@ -93,7 +93,7 @@
   register: cm_add_scope
 
 - name: Add scope (normal mode)
-  cisco.aci.aci_route_control_scope:
+  cisco.aci.aci_route_context_scope:
     <<: *scope_present
   register: nm_add_scope
 
@@ -105,8 +105,8 @@
     - cm_add_scope.previous == nm_add_scope.previous == []
     - cm_add_scope.sent.rtctrlScope.children.0.rtctrlRsScopeToAttrP.attributes.tnRtctrlAttrPName == nm_add_scope.sent.rtctrlScope.children.0.rtctrlRsScopeToAttrP.attributes.tnRtctrlAttrPName == 'ansible_rtctrl_attr'
 
-- name: Add context again, check if idempotency works
-  cisco.aci.aci_route_control_scope:
+- name: Add context scope again, check if idempotency works
+  cisco.aci.aci_route_context_scope:
     <<: *scope_present
   register: add_scope_again
 
@@ -116,8 +116,8 @@
     - add_scope_again is not changed
 
 # UPDATE SCOPE
-- name: Change route control scope
-  cisco.aci.aci_route_control_scope:
+- name: Change route context scope
+  cisco.aci.aci_route_context_scope:
     <<: *scope_present
     attr_name: ansible_rtctrl_attr2
   register: update_scope
@@ -131,7 +131,7 @@
 
 # QUERY ALL SCOPES
 - name: Query all scopes
-  cisco.aci.aci_route_control_scope:
+  cisco.aci.aci_route_context_scope:
     <<: *aci_info
     state: query
   register: query_all_scopes
@@ -144,7 +144,7 @@
 
 # QUERY A SPECIFIC SCOPE
 - name: Query a specific scope
-  cisco.aci.aci_route_control_scope:
+  cisco.aci.aci_route_context_scope:
     <<: *scope_present
     state: query
   register: query_spec_scope
@@ -159,7 +159,7 @@
 
 # REMOVE SCOPE
 - name: Remove scope
-  cisco.aci.aci_route_control_scope:
+  cisco.aci.aci_route_context_scope:
     <<: *scope_present
     state: absent
   register: remove_scope
@@ -172,7 +172,7 @@
 
 # REMOVE SCOPE AGAIN TO TEST IDEMPOTENCE
 - name: Remove scope again
-  cisco.aci.aci_route_control_scope:
+  cisco.aci.aci_route_context_scope:
     <<: *scope_present
     state: absent
   register: remove_scope_again

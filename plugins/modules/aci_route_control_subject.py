@@ -12,9 +12,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_route_control_subject
-short_description: Manage Route Control Match Destination objects (rtctrlSubjP)
+short_description: Manage Match Rule objects (rtctrlSubjP)
 description:
-- Manage Route Control Subject on Cisco ACI fabrics.
+- Manage Match Rules on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -23,8 +23,9 @@ options:
     aliases: [ tenant_name ]
   subject_name:
     description:
-    - Subject name
+    - Name of the Route Match Destination object
     type: str
+    aliases: [ name ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -75,6 +76,15 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     tenant: my_tenant
     subject_name: my_subject
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query All Route Control Subject
+  cisco.aci.aci_route_control_subject:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
     state: query
   delegate_to: localhost
   register: query_result
@@ -193,7 +203,7 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
-        subject_name=dict(type="str"),
+        subject_name=dict(type="str", aliases=["name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -234,7 +244,6 @@ def main():
             aci_class="rtctrlSubjP",
             class_config=dict(
                 name=subject_name,
-                dn="uni/tn-{0}/subj-{1}".format(tenant, subject_name),
             ),
         )
 
