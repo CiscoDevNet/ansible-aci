@@ -56,7 +56,8 @@ extends_documentation_fragment:
 
 notes:
 - The C(tenant), C(l3out), C(profile) and C(context) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_route_control_profile) and M(cisco.aci.aci_route_control_context) modules can be used for this.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_route_control_profile)
+  and M(cisco.aci.aci_route_control_context) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
 - module: cisco.aci.aci_l3out
