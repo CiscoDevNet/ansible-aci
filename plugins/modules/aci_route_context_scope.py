@@ -256,7 +256,7 @@ def main():
     profile = module.params.get("profile")
     context = module.params.get("context")
     description = module.params.get("description")
-    set_action_rule_profile = module.params.get("attr_name")
+    set_action_rule_profile = module.params.get("set_action_rule_profile")
 
     aci.construct_url(
         root_class=dict(
