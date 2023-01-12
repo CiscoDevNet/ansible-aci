@@ -133,6 +133,7 @@
     addr: 192.168.50.1/27
     ipv6_dad: disabled
     mtu: 1500
+    auto_state: disabled
     state: present
   register: add_l3out_interface
 
@@ -143,6 +144,7 @@
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.addr == "192.168.50.1/27"
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.ipv6Dad == "disabled"
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.mtu == "1500"
+    - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.autostate == "disabled"
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT == "l3-port"
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "regular"
     - add_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.annotation == 'orchestrator:ansible'
@@ -163,6 +165,7 @@
     addr: 192.168.50.1/27
     ipv6_dad: disabled
     mtu: 1500
+    auto_state: disabled
     state: present
   register: add_l3out_interface_again
 
