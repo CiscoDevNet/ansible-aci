@@ -133,7 +133,7 @@
     addr: 192.168.50.1/27
     ipv6_dad: disabled
     mtu: 1500
-    autostate: disabled
+    auto_state: disabled
     state: present
   register: add_l3out_interface
 
@@ -165,7 +165,7 @@
     addr: 192.168.50.1/27
     ipv6_dad: disabled
     mtu: 1500
-    autostate: disabled
+    auto_state: disabled
     state: present
   register: add_l3out_interface_again
 

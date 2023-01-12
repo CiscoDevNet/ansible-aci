@@ -90,7 +90,7 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
-  autostate:
+  auto_state:
     description:
     - SVI auto state.
     type: str
@@ -307,7 +307,7 @@ def main():
         interface_type=dict(type="str", choices=["l3-port", "sub-interface", "ext-svi"]),
         mode=dict(type="str", choices=["regular", "native", "untagged"]),
         encap=dict(type="str"),
-        autostate=dict(type="str", choices=["enabled", "disabled"]),
+        auto_state=dict(type="str", choices=["enabled", "disabled"]),
     )
 
     module = AnsibleModule(
@@ -333,7 +333,7 @@ def main():
     interface_type = module.params.get("interface_type")
     mode = module.params.get("mode")
     encap = module.params.get("encap")
-    autostate = module.params.get("autostate")
+    auto_state = module.params.get("auto_state")
 
     aci = ACIModule(module)
     if node_id and "-" in node_id:
@@ -391,7 +391,7 @@ def main():
                 ifInstT=interface_type,
                 mode=mode,
                 encap=encap,
-                autostate=autostate
+                autostate=auto_state
             ),
         )
 
