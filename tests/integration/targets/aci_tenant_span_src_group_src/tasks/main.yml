@@ -85,7 +85,7 @@
     dst_group: ansible_dest_group
   register: nm_create_with_dest
 
-- name: Create a source (check mode)
+- name: Create a ansible_source SPAN Source (check mode)
   cisco.aci.aci_tenant_span_src_group_src: &aci_src
     <<: *aci_tenant
     name: ansible_source
@@ -97,17 +97,17 @@
   check_mode: yes
   register: cm_create_with_epg
 
-- name: Create a source
+- name: Create a ansible_source SPAN Source
   cisco.aci.aci_tenant_span_src_group_src:
     <<: *aci_src
   register: nm_create_with_epg
 
-- name: Create a source again
+- name: Create a ansible_source SPAN Source again
   cisco.aci.aci_tenant_span_src_group_src:
     <<: *aci_src
   register: nm_create_with_epg_again
 
-- name: Create second source
+- name: Create second ansible_source SPAN Source
   cisco.aci.aci_tenant_span_src_group_src:
     <<: *aci_tenant
     name: ansible_source_2
@@ -116,7 +116,7 @@
     src_group: ansible_span
   register: create_without_epg_direction_outgoing
 
-- name: Change second source
+- name: Change second ansible_source SPAN Source
   cisco.aci.aci_tenant_span_src_group_src:
     <<: *aci_tenant
     name: ansible_source_2
@@ -150,19 +150,19 @@
     - change_without_epg_direction_both.current.0.spanSrc.attributes.dir == "both"
     - '"children" not in change_without_epg_direction_both.current.0.spanSrc'
 
-- name: Query a source
+- name: Query a ansible_source SPAN Source
   cisco.aci.aci_tenant_span_src_group_src:
     <<: *aci_src
     state: query
   register: query_one
 
-- name: Query all sources
+- name: Query all ansible_source SPAN Sources
   cisco.aci.aci_tenant_span_src_group_src:
     <<: *aci_info
     state: query
   register: query_all
 
-- name: Verify queries of sources
+- name: Verify queries of ansible_source SPAN Sources
   ansible.builtin.assert:
     that:
     - query_one is not changed
@@ -173,19 +173,19 @@
     - query_all is not changed
     - query_all.current | length == 2
 
-- name: Delete a source
+- name: Delete a ansible_source SPAN Source
   cisco.aci.aci_tenant_span_src_group_src:
     <<: *aci_src
     state: absent
   register: delete
 
-- name: Delete a source again
+- name: Delete a ansible_source SPAN Source again
   cisco.aci.aci_tenant_span_src_group_src:
     <<: *aci_src
     state: absent
   register: delete_again
 
-- name: Verify delete of source
+- name: Verify delete of ansible_source SPAN Source
   ansible.builtin.assert:
     that:
     - delete is changed

@@ -30,7 +30,6 @@ options:
     description:
     - The name of the Span source group.
     type: str
-    aliases: [ name ]
   tenant:
     description:
     - The name of the Tenant.
