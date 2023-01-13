@@ -5,6 +5,32 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.4.0
+======
+
+Release Summary
+---------------
+
+Release v2.4.0 of the ``ansible-aci`` collection on 2023-01-13.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.3.0.
+
+
+Minor Changes
+-------------
+
+- Add SVI auto state support (auto_state attribute) to aci_l3out_interface (#348)
+- Add aci_aaa_domain, aci_aaa_role and aci_custom_privilege modules (#226)
+- Add aci_fabric_pod_policy_group module (#230)
+- Add aci_interface_policy_leaf_profile_fex_policy_group module and add FEX support to aci_access_port_to_interface_policy_leaf_profile (#233)
+- Add aci_tenant_span_src_group_src module (#344)
+- Add support for filter direction in aci_contract_subject and aci_contract_subject_to_filter (#306)
+- Update modules to assign roles and permissions to a user (#225)
+
+Bugfixes
+--------
+
+- Add snapshot job details in result of aci_config_snapshot to support query of snapshot results (#342)
+
 v2.3.0
 ======
 
