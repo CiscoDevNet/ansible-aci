@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 
 # This code is part of Ansible, but is an independent component
@@ -90,24 +91,13 @@ except ImportError:
 
 def aci_argument_spec():
     return dict(
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
         host=dict(
             type="str",
-            required=True,
+            required=False,
             aliases=["hostname"],
             fallback=(env_fallback, ["ACI_HOST"]),
         ),
-=======
-=======
->>>>>>> 5ca45db ([ignore] Change location of persistent storage file)
-=======
->>>>>>> d11ea33 ([ignore] Ability to switch from certificate based authentication to credential)
-        host=dict(type="str", required=False, aliases=["hostname"], fallback=(env_fallback, ["ACI_HOST"])),
->>>>>>> 6341500 (retry w/o conflict)
         port=dict(type="int", required=False, fallback=(env_fallback, ["ACI_PORT"])),
-<<<<<<< HEAD
         username=dict(
             type="str",
             default="admin",
@@ -119,19 +109,6 @@ def aci_argument_spec():
             no_log=True,
             fallback=(env_fallback, ["ACI_PASSWORD", "ANSIBLE_NET_PASSWORD"]),
         ),
-=======
-        username=dict(type="str", default="admin", aliases=["user"], fallback=(env_fallback, ["ACI_USERNAME", "ANSIBLE_NET_USERNAME"])),
-        password=dict(type="str", no_log=True, fallback=(env_fallback, ["ACI_PASSWORD", "ANSIBLE_NET_PASSWORD"])),
-<<<<<<< HEAD
-=======
-        host=dict(type='str', required=True, aliases=['hostname'], fallback=(env_fallback, ['ACI_HOST'])),
-        port=dict(type='int', required=False, fallback=(env_fallback, ['ACI_PORT'])),
-        username=dict(type='str', required=False, aliases=['user'], fallback=(env_fallback, ['ACI_USERNAME', 'ANSIBLE_NET_USERNAME'])),
-        password=dict(type='str', no_log=True, fallback=(env_fallback, ['ACI_PASSWORD', 'ANSIBLE_NET_PASSWORD'])),
->>>>>>> eeef0dc ([ignore] Change location of persistent storage file)
->>>>>>> 5ca45db ([ignore] Change location of persistent storage file)
-=======
->>>>>>> d11ea33 ([ignore] Ability to switch from certificate based authentication to credential)
         # Beware, this is not the same as client_key !
         private_key=dict(
             type="str",
@@ -327,7 +304,6 @@ def destination_epg_spec():
 
 class ACIModule(object):
     def __init__(self, module):
-        self.default_username = 'admin'
         self.module = module
         self.params = module.params
         self.result = dict(changed=False)
@@ -429,7 +405,6 @@ class ACIModule(object):
         if self.params.get("port") is not None:
             url = "%(protocol)s://%(host)s:%(port)s/api/aaaLogin.json" % self.params
         else:
-<<<<<<< HEAD
             url = "%(protocol)s://%(host)s/api/aaaLogin.json" % self.params
         payload = {
             "aaaUser": {
@@ -447,15 +422,6 @@ class ACIModule(object):
             timeout=self.params.get("timeout"),
             use_proxy=self.params.get("use_proxy"),
         )
-=======
-            url = '%(protocol)s://%(host)s/api/aaaLogin.json' % self.params
-        payload = {'aaaUser': {'attributes': {'name': self.params.get('username', self.default_username), 'pwd': self.params.get('password')}}}
-        resp, auth = fetch_url(self.module, url,
-                               data=json.dumps(payload),
-                               method='POST',
-                               timeout=self.params.get('timeout'),
-                               use_proxy=self.params.get('use_proxy'))
->>>>>>> cde59eb (add test file to check connection)
 
         # Handle APIC response
         if auth.get("status") != 200:
@@ -524,7 +490,7 @@ class ACIModule(object):
                 self.module.fail_json(msg="Provided private key '%(private_key)s' does not appear to be a private key." % self.params)
 
         if self.params.get('certificate_name') is None:
-            self.params['certificate_name'] = self.params.get('username', self.default_username)
+            self.params['certificate_name'] = self.params.get('username', 'admin')
         # NOTE: ACI documentation incorrectly adds a space between method and path
         sig_request = method + path + payload
         if HAS_CRYPTOGRAPHY:
@@ -1278,39 +1244,9 @@ class ACIModule(object):
 
         if not self.existing:
             return
-
         elif not self.module.check_mode:
             # Sign and encode request as to APIC's wishes
             self.api_call("DELETE")
-
-<<<<<<< HEAD
-            resp, info = fetch_url(
-                self.module,
-                self.url,
-                headers=self.headers,
-                method="DELETE",
-                timeout=self.params.get("timeout"),
-                use_proxy=self.params.get("use_proxy"),
-            )
-
-            self.response = info.get("msg")
-            self.status = info.get("status")
-            self.method = "DELETE"
-
-            # Handle APIC response
-            if info.get("status") == 200:
-                self.result["changed"] = True
-                self.response_json(resp.read())
-            else:
-                try:
-                    # APIC error
-                    self.response_json(info["body"])
-                    self.fail_json(msg="APIC Error %(code)s: %(text)s" % self.error)
-                except KeyError:
-                    # Connection error
-                    self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
-=======
->>>>>>> 6341500 (retry w/o conflict)
         else:
             self.result["changed"] = True
             self.method = "DELETE"
@@ -1320,7 +1256,6 @@ class ACIModule(object):
         This method is used to get the difference between the proposed and existing configurations. Each module
         should call the get_existing method before this method, and add the proposed config to the module results
         using the module's config parameters. The new config will added to the self.result dictionary.
-
         :param aci_class: Type str.
                           This is the root dictionary key for the MO's configuration body, or the ACI class of the MO.
         """
@@ -1357,7 +1292,6 @@ class ACIModule(object):
         """
         This method is used to get the difference between a proposed and existing child configs. The get_nested_config()
         method should be used to return the proposed and existing config portions of child.
-
         :param child_class: Type str.
                             The root class (dict key) for the child dictionary.
         :param proposed_child: Type dict.
@@ -1434,57 +1368,14 @@ class ACIModule(object):
         that this method can be used to supply the existing configuration when using the get_diff method. The response, status,
         and existing configuration will be added to the self.result dictionary.
         """
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-        uri = self.url + self.filter_string
 
-        # Sign and encode request as to APIC's wishes
-        if self.params.get("private_key"):
-            self.cert_auth(path=self.path + self.filter_string, method="GET")
-
-        resp, info = fetch_url(
-            self.module,
-            uri,
-            headers=self.headers,
-            method="GET",
-            timeout=self.params.get("timeout"),
-            use_proxy=self.params.get("use_proxy"),
-        )
-        self.response = info.get("msg")
-        self.status = info.get("status")
-        self.method = "GET"
-
-        # Handle APIC response
-        if info.get("status") == 200:
-            self.existing = json.loads(resp.read())["imdata"]
-        else:
-            try:
-                # APIC error
-                self.response_json(info["body"])
-                self.fail_json(msg="APIC Error %(code)s: %(text)s" % self.error)
-            except KeyError:
-                # Connection error
-                self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
-=======
-        self.call("GET")
->>>>>>> 6341500 (retry w/o conflict)
-=======
-        self.call("GET")
-=======
-        self.api_call('GET')
->>>>>>> eeef0dc ([ignore] Change location of persistent storage file)
->>>>>>> 5ca45db ([ignore] Change location of persistent storage file)
-=======
         self.api_call("GET")
->>>>>>> 53e78e0 ([ignore] Addition of queue messages)
 
     @staticmethod
     def get_nested_config(proposed_child, existing_children):
         """
         This method is used for stiping off the outer layers of the child dictionaries so only the configuration
         key, value pairs are returned.
-
         :param proposed_child: Type dict.
                                The dictionary that represents the child config.
         :param existing_children: Type list.
@@ -1549,7 +1440,6 @@ class ACIModule(object):
         This method is used to dynamically build the proposed configuration dictionary from the config related parameters
         passed into the module. All values that were not passed values from the playbook task will be removed so as to not
         inadvertently change configurations.
-
         :param aci_class: Type str
                           This is the root dictionary key for the MO's configuration body, or the ACI class of the MO.
         :param class_config: Type dict
@@ -1722,13 +1612,10 @@ class ACIModule(object):
                     self.result["filter_string"] = self.filter_string
                 self.result["method"] = self.method
                 # self.result['path'] = self.path  # Adding 'path' in result causes state: absent in output
-
                 self.result["response"] = self.response
                 self.result["status"] = self.status
                 self.result["url"] = self.url
-                self.result['httpapi_logs'] = self.httpapi_logs
-        if self.stdout:
-            self.result['stdout'] = self.stdout
+                self.result["httpapi_logs"] = self.httpapi_logs
 
         if "state" in self.params:
             if self.params.get("output_level") in ("debug", "info"):
@@ -1796,65 +1683,77 @@ def ospf_spec():
     def call(self, method):
 =======
     def api_call(self, method):
+<<<<<<< HEAD
 >>>>>>> d17daa6 ([ignore] Change location of persistent storage file)
         if method == 'GET':
+=======
+        if method == "GET":
+>>>>>>> 5d0ead5 ([minor_change] Fix comments and formatting)
             call_path = self.path + self.filter_string
             call_url = self.url + self.filter_string
             data = None
-        elif method == 'POST':
+        elif method == "POST":
             call_path = self.path
             call_url = self.url
             data = json.dumps(self.config)
-        elif method == 'DELETE':
+        elif method == "DELETE":
             call_path = self.path
             call_url = self.url
             data = None
         resp = None
-        if self.params.get('private_key'):
+        if self.params.get("private_key"):
             self.cert_auth(path=call_path, payload=data, method=method)
         if self.module._socket_path:
-            self.params['validate_certs'] = False
+            self.params["validate_certs"] = False
             connect = Connection(self.module._socket_path)
-            connect.get_params(self.headers.get('Cookie'), self.params)
-            info = connect.send_request(method, '/{0}'.format(call_path), data)
-            self.url = info.get('url')
+            connect.get_params(self.headers.get("Cookie"), self.params)
+            info = connect.send_request(method, "/{0}".format(call_path), data)
+            self.url = info.get("url")
             self.httpapi_logs.extend(connect.pop_messages())
+            self.stdout = str("Through plugin")
         else:
-            resp, info = fetch_url(self.module, call_url,
-                                   data=data,
-                                   headers=self.headers,
-                                   method=method,
-                                   timeout=self.params.get('timeout'),
-                                   use_proxy=self.params.get('use_proxy'))
-        self.response = info.get('msg')
-        self.status = info.get('status')
+            resp, info = fetch_url(
+                self.module,
+                call_url,
+                data=data,
+                headers=self.headers,
+                method=method,
+                timeout=self.params.get("timeout"),
+                use_proxy=self.params.get("use_proxy"),
+            )
+        self.response = info.get("msg")
+        self.status = info.get("status")
         self.method = method
 
         # Handle APIC response
-        if info.get('status') == 200:
-            if method == 'POST' or method == 'DELETE':
-                self.result['changed'] = True
+        if info.get("status") == 200:
+            if method == "POST" or method == "DELETE":
+                self.result["changed"] = True
             try:
-                if method == 'GET':
-                    self.existing = json.loads(resp.read())['imdata']
+                if method == "GET":
+                    self.existing = json.loads(resp.read())["imdata"]
                 else:
                     self.response_json(resp.read())
             except AttributeError:
-                if method == 'GET':
-                    self.existing = info['body']['imdata']
+                if method == "GET":
+                    self.existing = info["body"]["imdata"]
                 else:
-                    self.response_json(info.get('body'))
+                    self.response_json(info.get("body"))
 
         else:
             try:
                 # APIC error
-                self.response_json(info['body'])
-                self.fail_json(msg='APIC Error %(code)s: %(text)s' % self.error)
+                self.response_json(info["body"])
+                self.fail_json(msg="APIC Error %(code)s: %(text)s" % self.error)
             except KeyError:
                 # Connection error
+<<<<<<< HEAD
                 self.fail_json(msg='Connection failed for %(url)s. %(msg)s' % info)
 <<<<<<< HEAD
 
 >>>>>>> da2af7d (retry w/o conflict)
 =======
 >>>>>>> 02c53f6 (Check Sanity)
+=======
+                self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
+>>>>>>> 5d0ead5 ([minor_change] Fix comments and formatting)

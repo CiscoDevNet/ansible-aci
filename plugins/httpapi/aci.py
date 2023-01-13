@@ -81,7 +81,7 @@ class HttpApi(HttpApiBase):
             # Case: Host is provided in the inventory
             self.inventory_hosts.append(re.sub(r'[[\]]', '', self.connection.get_option("host")).split(","))
         except Exception:
-            # Case: Host is provided in the memory inventory
+            # Case: Host is provided in a different format
             self.inventory_hosts.append(self.connection.get_option("host"))
 
     # Login function is executed until connection to a host is established or until all the hosts in the list are exhausted 
@@ -205,14 +205,11 @@ class HttpApi(HttpApiBase):
 
     # One API call is made via each call to send_request from aci.py in module_utils
     # As long as a host is active in the list we make sure that the API call goes through
-    # A switch like mechanism is heavily utilized to support the same playbook consisting of tasks running on different hosts
     def send_request(self, method, path, data):
         ''' This method handles all APIC REST API requests other than login '''
 
         # Note: Preference is given to Hosts mentioned at task level in the playbook
         if self.params.get('host') is not None:
-            self.entered_task = True
-
             # Case: Host is provided in the task of a playbook
             task_hosts = ast.literal_eval(self.params.get('host')) if '[' in self.params.get('host') else self.params.get('host').split(",")
             
@@ -221,7 +218,7 @@ class HttpApi(HttpApiBase):
             # 2.connection_error_check was set in the previous task 
             # If yes, we begin the operation on the first host of the list. (Memory of the host in the list-reset).
             # If no, we continue operation on the same host on which previous task was running (Memory of the host in the list-preserved).
-            if self.backup_hosts != task_hosts or self.connection_error_check:
+            if (self.backup_hosts is not None and self.backup_hosts != task_hosts) or self.connection_error_check:
                 self.host_counter = 0
                 self.connection_error_check = False
                 self.connection._connected = False
@@ -236,7 +233,7 @@ class HttpApi(HttpApiBase):
             # 2.connection_error_check was set in the previous task
             # If yes, we begin the operation on the first host of the list. (Memory of the host in the list-reset).
             # If no, we continue operation on the same host on which previous task was running (Memory of the host in the list-preserved).
-            if self.backup_hosts != self.inventory_hosts[0] or self.connection_error_check:
+            if (self.backup_hosts is not None and self.backup_hosts != self.inventory_hosts[0]) or self.connection_error_check:
                 self.host_counter = 0
                 self.connection_error_check = False
                 self.connection._connected = False
@@ -369,4 +366,3 @@ class HttpApi(HttpApiBase):
                                  'APIC-Certificate-Fingerprint=fingerprint; ' +\
                                  'APIC-Request-Signature=%s' % to_native(base64.b64encode(sig_signature))
         return headers
-
