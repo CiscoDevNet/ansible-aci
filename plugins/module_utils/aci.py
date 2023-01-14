@@ -889,15 +889,7 @@ class ACIModule(object):
             self.child_classes = set(child_classes)
 
         if subclass_5 is not None:
-            self._construct_url_6(
-                root_class,
-                subclass_1,
-                subclass_2,
-                subclass_3,
-                subclass_4,
-                subclass_5,
-                config_only,
-            )
+            self._construct_url_6(root_class, subclass_1, subclass_2, subclass_3, subclass_4, subclass_5, config_only)
         elif subclass_4 is not None:
             self._construct_url_5(root_class, subclass_1, subclass_2, subclass_3, subclass_4, config_only)
         elif subclass_3 is not None:
@@ -1316,7 +1308,6 @@ class ACIModule(object):
         """
         This method is used to retrieve the updated child configs by comparing the proposed children configs
         against the objects existing children configs.
-
         :param aci_class: Type str.
                           This is the root dictionary key for the MO's configuration body, or the ACI class of the MO.
         :return: The list of updated child config dictionaries. None is returned if there are no changes to the child
@@ -1405,7 +1396,6 @@ class ACIModule(object):
     def get_nested_children(proposed_child, existing_children):
         """
         This method is used for stiping off the outer layers of the child dictionaries so only the children are returned.
-
         :param proposed_child: Type dict.
                                The dictionary that represents the child config.
         :param existing_children: Type list.
