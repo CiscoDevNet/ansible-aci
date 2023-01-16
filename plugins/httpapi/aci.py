@@ -77,12 +77,8 @@ class HttpApi(HttpApiBase):
         # append is used here to store the first list of hosts available in self.connection.get_option("host") in the 0th position of the list inventory_host.
         # This is done because we keep changing the value of 'host' constantly using self.connection.set_option("host") when a list of hosts is provided.
         # We always want access to the original list of hosts from the inventory when the tasks are running on them.
-        try:
-            # Case: Host is provided in the inventory
-            self.inventory_hosts.append(re.sub(r'[[\]]', '', self.connection.get_option("host")).split(","))
-        except Exception:
-            # Case: Host is provided in a different format
-            self.inventory_hosts.append(self.connection.get_option("host"))
+        # Case: Host is provided in the inventory
+        self.inventory_hosts.append(re.sub(r'[[\]]', '', self.connection.get_option("host")).split(","))
 
     # Login function is executed until connection to a host is established or until all the hosts in the list are exhausted 
     def login(self, username, password):
@@ -131,17 +127,12 @@ class HttpApi(HttpApiBase):
 
         if self.params.get('validate_certs') is not None:
             self.connection.set_option("validate_certs", self.params.get('validate_certs'))
-
+    
         # The command timeout which is the response timeout from APIC
-        if self.params.get('timeout') is not None:
-            self.connection.set_option('persistent_command_timeout', self.params.get('timeout'))
-
         # If the persistent_connect_timeout is less than the response timeout from APIC the persistent socket connection will fail 
         if self.params.get('timeout') is not None:
+            self.connection.set_option('persistent_command_timeout', self.params.get('timeout'))
             self.connection.set_option('persistent_connect_timeout', self.params.get('timeout') + 30)
-        else:
-            # For inventory
-            self.connection.set_option('persistent_connect_timeout', self.connection.get_option('persistent_command_timeout') + 30)
        
         # Start with certificate authentication
         if self.auth is not None:
