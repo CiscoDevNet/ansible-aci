@@ -105,7 +105,7 @@ options:
     - Number of allowed self AS.
     - Only used if C(allow-self-as) is enabled under C(bgp_controls).
     type: int
-  route_control_profile:
+  route_control_profiles:
     description:
     - List of dictionaries objects, which is used to bind the BGP Peer Connectivity Profile to Route Control Profile.
     type: list
@@ -172,7 +172,7 @@ EXAMPLES = r"""
       - send-ext-com
     peer_controls:
       - bfd
-    route_control_profile:
+    route_control_profiles:
       - tenant: "ansible_tenant"
         profile: "anstest_import"
         direction: "import"
@@ -244,7 +244,7 @@ EXAMPLES = r"""
     l3out: ansible_l3out
     node_profile: ansible_node_profile
     peer_ip: 192.168.50.3
-    route_control_profile:
+    route_control_profiles:
       - tenant: "ansible_tenant"
         profile: "anstest_import"
         direction: "import"
@@ -393,7 +393,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import (
     ACIModule,
     aci_argument_spec,
     aci_annotation_spec,
-    check_route_control_profile_attributes,
+    route_control_profile_spec,
 )
 
 
@@ -434,10 +434,10 @@ def main():
         weight=dict(type="int"),
         admin_state=dict(type="str", choices=["enabled", "disabled"]),
         allow_self_as_count=dict(type="int"),
-        route_control_profile=dict(
+        route_control_profiles=dict(
             type="list",
             elements="dict",
-            options=check_route_control_profile_attributes(),
+            options=route_control_profile_spec(),
         ),
     )
 
@@ -469,7 +469,7 @@ def main():
     weight = module.params.get("weight")
     admin_state = module.params.get("admin_state")
     allow_self_as_count = module.params.get("allow_self_as_count")
-    route_control_profile = module.params.get("route_control_profile")
+    route_control_profiles = module.params.get("route_control_profiles")
 
     aci = ACIModule(module)
     if node_id:
@@ -491,8 +491,8 @@ def main():
             )
         )
 
-    if route_control_profile:
-        for profile in route_control_profile:
+    if route_control_profiles:
+        for profile in route_control_profiles:
             if profile.get("l3out"):
                 route_control_profile_dn = "uni/tn-{0}/out-{1}/prof-{2}".format(
                     profile.get("tenant"),

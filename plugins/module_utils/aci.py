@@ -243,7 +243,7 @@ def aci_contract_dscp_spec(direction=None):
     )
 
 
-def check_route_control_profile_attributes():
+def route_control_profile_spec():
     return dict(
         profile=dict(type="str", required=True),
         l3out=dict(type="str"),

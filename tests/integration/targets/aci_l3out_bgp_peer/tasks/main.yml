@@ -518,7 +518,7 @@
     - name: Add Route Control Profile to the ansible_interface_profile (version >= 4) - check mode
       aci_l3out_bgp_peer:
         <<: *interface_profile_bgp_peer_present
-        route_control_profile:
+        route_control_profiles:
           - tenant: "ansible_tenant"
             profile: "anstest_import"
             direction: "import"
@@ -539,7 +539,7 @@
     - name: Add Route Control Profile to the ansible_interface_profile (version >= 4) - normal mode - missing param
       aci_l3out_bgp_peer:
         <<: *interface_profile_bgp_peer_present
-        route_control_profile:
+        route_control_profiles:
           - tenant: "ansible_tenant"
             profile: "anstest_import"
           - tenant: "ansible_tenant"
@@ -554,12 +554,12 @@
       assert:
         that:
           - nm_if_rtctrl_present_missing_param is failed
-          - "nm_if_rtctrl_present_missing_param.msg == 'missing required arguments: direction found in route_control_profile'"
+          - "nm_if_rtctrl_present_missing_param.msg == 'missing required arguments: direction found in route_control_profiles'"
 
     - name: Add Route Control Profile to the ansible_interface_profile (version >= 4) - normal mode
       aci_l3out_bgp_peer: &nm_if_rtctrl_present
         <<: *interface_profile_bgp_peer_present
-        route_control_profile:
+        route_control_profiles:
           - tenant: "ansible_tenant"
             profile: "anstest_import"
             direction: "import"
@@ -627,7 +627,7 @@
         l3out: ansible_l3out
         node_profile: ansible_node_profile
         peer_ip: 192.168.50.3
-        route_control_profile:
+        route_control_profiles:
           - tenant: "ansible_tenant"
             profile: "anstest_import"
             direction: "import"
@@ -682,7 +682,7 @@
     - name: Add BGP Peer to the Node Profile level (version >= 4) - normal mode - missing param
       aci_l3out_bgp_peer:
         <<: *cm_ln_rtctrl_present
-        route_control_profile:
+        route_control_profiles:
           - tenant: "ansible_tenant"
             profile: "anstest_import"
           - tenant: "ansible_tenant"
@@ -697,7 +697,7 @@
       assert:
         that:
           - nm_ln_rtctrl_present_missing_param is failed
-          - "nm_ln_rtctrl_present_missing_param.msg == 'missing required arguments: direction found in route_control_profile'"
+          - "nm_ln_rtctrl_present_missing_param.msg == 'missing required arguments: direction found in route_control_profiles'"
 
     - name: Query a BGP Peer from the Node Profile level
       aci_l3out_bgp_peer:
