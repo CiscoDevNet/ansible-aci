@@ -481,6 +481,11 @@ def main():
         path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, path_type, node_id, path_ep)
 
     child_configs = []
+    child_classes = [
+      "bgpRsPeerPfxPol",
+      "bgpAsP",
+      "bgpLocalAsnP"
+    ]
 
     if remote_asn:
         child_configs.append(
@@ -492,6 +497,7 @@ def main():
         )
 
     if route_control_profiles:
+        child_classes.append("bgpRsPeerToProfile")
         for profile in route_control_profiles:
             if profile.get("l3out"):
                 route_control_profile_dn = "uni/tn-{0}/out-{1}/prof-{2}".format(
@@ -565,12 +571,7 @@ def main():
         subclass_3=subclass_3,
         subclass_4=subclass_4,
         subclass_5=subclass_5,
-        child_classes=[
-            "bgpRsPeerPfxPol",
-            "bgpAsP",
-            "bgpLocalAsnP",
-            "bgpRsPeerToProfile",
-        ],
+        child_classes=child_classes,
     )
 
     aci.get_existing()
