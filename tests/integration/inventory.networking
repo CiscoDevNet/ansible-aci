@@ -10,4 +10,4 @@ azure_cloud ansible_host=104.42.26.226 aci_hostname=104.42.26.226 aci_password="
 aci_username=ansible_github_ci
 aci_password="sJ94G92#8dq2hx*K4qh"
 ansible_connection=local
-ansible_python_interpreter=/usr/bin/python3.8
+ansible_python_interpreter=/usr/bin/python3.9

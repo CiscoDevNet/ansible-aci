@@ -100,6 +100,7 @@ flycheck_*.el
 
 # Generated files
 .idea/**/contentModel.xml
+.DS_Store
 
 # Sensitive or high-churn files
 .idea/**/dataSources/
