@@ -482,9 +482,9 @@ def main():
 
     child_configs = []
     child_classes = [
-      "bgpRsPeerPfxPol",
-      "bgpAsP",
-      "bgpLocalAsnP"
+        "bgpRsPeerPfxPol",
+        "bgpAsP",
+        "bgpLocalAsnP"
     ]
 
     if remote_asn:
