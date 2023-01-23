@@ -115,6 +115,15 @@ EXAMPLES = r"""
     interface: 1/49
     state: query
   delegate_to: localhost
+
+- name: Query All Interfaces
+  cisco.aci.aci_interface_blacklist:
+    host: "{{ inventory_hostname }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    validate_certs: no
+    state: query
+  delegate_to: localhost
 """
 
 RETURN = r"""
@@ -254,30 +263,39 @@ def main():
     fex_id = module.params.get("fex_id")
     state = module.params.get("state")
 
-    if fex_id:
-        rn = "rsoosPath-[topology/pod-{0}/paths-{1}/extpaths-{2}/pathep-[eth{3}]]".format(pod_id, node_id, fex_id, interface)
-    else:
-        rn = "rsoosPath-[topology/pod-{0}/paths-{1}/pathep-[eth{2}]]".format(pod_id, node_id, interface)
+    root_module_object = None
+    subclass_1_module_object = None
+    tdn = None
+    rn = None
+
+    if pod_id and node_id and interface:
+        root_module_object = "fabric"
+        subclass_1_module_object = "outofsvc"
+        if fex_id:
+            tdn = "topology/pod-{0}/paths-{1}/extpaths-{2}/pathep-[eth{3}]".format(pod_id, node_id, fex_id, interface)
+        else:
+            tdn = "topology/pod-{0}/paths-{1}/pathep-[eth{2}]".format(pod_id, node_id, interface)
+        rn = "rsoosPath-[{0}]".format(tdn)
 
     aci.construct_url(
         root_class=dict(
             aci_class="fabricInst",
             aci_rn="fabric",
-            module_object="fabric",
+            module_object=root_module_object,
             target_filter={"name": "fabric"},
         ),
         subclass_1=dict(
             aci_class="fabricOOServicePol",
             aci_rn="outofsvc",
-            module_object="outofsvc",
+            module_object=subclass_1_module_object,
             target_filter={"name": "default"},
         ),
         subclass_2=dict(
             aci_class="fabricRsOosPath",
             aci_rn=rn,
+            target_filter={"tDN": tdn},
         ),
     )
-
     aci.get_existing()
 
     if state == "present":
