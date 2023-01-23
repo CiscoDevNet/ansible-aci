@@ -18,7 +18,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: debug
     state: present
-    tenant: anstest
+    tenant: ansible_test
   register: tenant_present
 
 - name: ensure vrf does not exist yet for tests to kick off
@@ -106,7 +106,7 @@
 - name: get all in tenant
   cisco.aci.aci_vrf:
     <<: *aci_query
-    tenant: anstest
+    tenant: ansible_test
   register: query_tenant
 
 - name: get all with name
@@ -131,9 +131,9 @@
       - query_tenant is not changed
       - query_tenant.current | length == 1
       - query_tenant.current.0.fvTenant.children | length == 2
-      - query_tenant.current.0.fvTenant.attributes.name == "anstest"
+      - query_tenant.current.0.fvTenant.attributes.name == "ansible_test"
       - '"rsp-subtree-class=fvCtx" in query_tenant.filter_string'
-      - '"tn-anstest.json" in query_tenant.url'
+      - '"tn-ansible_test.json" in query_tenant.url'
       - query_vrf_vrf is not changed
       - query_vrf_vrf.current != []
       - query_vrf_vrf.current.0.fvCtx.attributes.name == "anstest"
@@ -141,7 +141,7 @@
       - '"class/fvCtx.json" in query_vrf_vrf.url'
       - query_vrf is not changed
       - query_vrf.current | length == 1
-      - '"tn-anstest/ctx-anstest.json" in query_vrf.url'
+      - '"tn-ansible_test/ctx-anstest.json" in query_vrf.url'
 
 - name: delete vrf - check mode works
   cisco.aci.aci_vrf: &aci_vrf_absent

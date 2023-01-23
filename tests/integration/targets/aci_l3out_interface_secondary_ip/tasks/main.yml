@@ -24,473 +24,479 @@
 - name: Remove test tenant if it already exists
   aci_tenant:
     <<: *aci_info
-    tenant: ansible_l3_secondary
+    tenant: ansible_test
     state: absent
 
-- name: Remove port-channel IPG
-  aci_interface_policy_leaf_policy_group:
-    <<: *aci_info
-    lag_type: link
-    policy_group: ansible_port_channel_ipg
-    state: absent
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Remove vPC IPG
-  aci_interface_policy_leaf_policy_group:
-    <<: *aci_info
-    lag_type: node
-    policy_group: ansible_vpc_ipg
-    state: absent
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Remove port-channel IPG
+    aci_interface_policy_leaf_policy_group:
+      <<: *aci_info
+      lag_type: link
+      policy_group: ansible_port_channel_ipg
+      state: absent
 
-# ADD PC IPG
-- name: Add port-channel IPG
-  aci_interface_policy_leaf_policy_group:
-    <<: *aci_info
-    lag_type: link
-    policy_group: ansible_port_channel_ipg
-    state: present
+  - name: Remove vPC IPG
+    aci_interface_policy_leaf_policy_group:
+      <<: *aci_info
+      lag_type: node
+      policy_group: ansible_vpc_ipg
+      state: absent
 
-# ADD vPC IPG
-- name: Add vPC IPG
-  aci_interface_policy_leaf_policy_group:
-    <<: *aci_info
-    lag_type: node
-    policy_group: ansible_vpc_ipg
-    state: present
+  # ADD PC IPG
+  - name: Add port-channel IPG
+    aci_interface_policy_leaf_policy_group:
+      <<: *aci_info
+      lag_type: link
+      policy_group: ansible_port_channel_ipg
+      state: present
 
-# ADD domain
-- name: Add domain for l3out
-  aci_domain:
-    <<: *aci_info
-    domain: ansible_l3ext_domain
-    domain_type: l3dom
-    state: present
+  # ADD vPC IPG
+  - name: Add vPC IPG
+    aci_interface_policy_leaf_policy_group:
+      <<: *aci_info
+      lag_type: node
+      policy_group: ansible_vpc_ipg
+      state: present
 
-# ADD tenant
-- name: Add a new tenant required for l3out
-  aci_tenant:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    description: Ansible tenant
-    state: present
+  # ADD domain
+  - name: Add domain for l3out
+    aci_domain:
+      <<: *aci_info
+      domain: ansible_l3ext_domain
+      domain_type: l3dom
+      state: present
 
-# ADD VRF
-- name: Add VRF for l3out
-  aci_vrf:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    vrf: ansible_vrf
-    state: present
+  # ADD tenant
+  - name: Add a new tenant required for l3out
+    aci_tenant:
+      <<: *aci_info
+      tenant: ansible_test
+      description: Ansible tenant
+      state: present
 
-# ADD l3out
-- name: Add l3out
-  aci_l3out:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    name: ansible_l3out
-    vrf: ansible_vrf
-    domain: ansible_domain
-    route_control: export
-    state: present
+  # ADD VRF
+  - name: Add VRF for l3out
+    aci_vrf:
+      <<: *aci_info
+      tenant: ansible_test
+      vrf: ansible_vrf
+      state: present
 
-# ADD l3out logical node profile
-- name: l3out logical node profile
-  aci_l3out_logical_node_profile:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    state: present
+  # ADD l3out
+  - name: Add l3out
+    aci_l3out:
+      <<: *aci_info
+      tenant: ansible_test
+      name: ansible_l3out
+      vrf: ansible_vrf
+      domain: ansible_domain
+      route_control: export
+      state: present
 
-# ADD l3out logical interface profile
-- name: l3out logical interface profile
-  aci_l3out_logical_interface_profile:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    state: present
+  # ADD l3out logical node profile
+  - name: l3out logical node profile
+    aci_l3out_logical_node_profile:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      state: present
 
-# ADD l3out routed interface
-- name: Add routed interface
-  aci_l3out_interface:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201
-    path_ep: eth1/15
-    interface_type: l3-port
-    mode: regular
-    addr: 192.168.50.1/27
-    state: present
+  # ADD l3out logical interface profile
+  - name: l3out logical interface profile
+    aci_l3out_logical_interface_profile:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      state: present
 
-# ADD l3out routed interface po
-- name: Add routed interface port-channel
-  aci_l3out_interface:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201
-    path_ep: ansible_port_channel_ipg
-    interface_type: l3-port
-    mode: regular
-    addr: 192.168.70.1/27
-    state: present
+  # ADD l3out routed interface
+  - name: Add routed interface
+    aci_l3out_interface:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201
+      path_ep: eth1/15
+      interface_type: l3-port
+      mode: regular
+      addr: 192.168.50.1/27
+      state: present
 
-# ADD l3out routed interface vPC
-- name: Add routed interface vPC
-  aci_l3out_interface:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201-202
-    path_ep: ansible_vpc_ipg
-    interface_type: ext-svi
-    mode: native
-    encap: vlan-913
-    state: present
+  # ADD l3out routed interface po
+  - name: Add routed interface port-channel
+    aci_l3out_interface:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201
+      path_ep: ansible_port_channel_ipg
+      interface_type: l3-port
+      mode: regular
+      addr: 192.168.70.1/27
+      state: present
 
-# ADD l3out routed interface vPC member
-- name: Add routed interface vPC member
-  aci_l3out_logical_interface_vpc_member:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201-202
-    path_ep: ansible_vpc_ipg
-    side: A
-    addr: 192.168.90.1/27
-    state: present
+  # ADD l3out routed interface vPC
+  - name: Add routed interface vPC
+    aci_l3out_interface:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201-202
+      path_ep: ansible_vpc_ipg
+      interface_type: ext-svi
+      mode: native
+      encap: vlan-913
+      state: present
 
-# ADD secondary IPs to the interfaces
-- name: Add secondary IP to routed interface
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201
-    path_ep: eth1/15
-    addr: 192.168.50.2/27
-    ipv6_dad: disabled
-    state: present
-  register: secondary_intf
+  # ADD l3out routed interface vPC member
+  - name: Add routed interface vPC member
+    aci_l3out_logical_interface_vpc_member:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201-202
+      path_ep: ansible_vpc_ipg
+      side: A
+      addr: 192.168.90.1/27
+      state: present
 
-- name: Add secondary to IP routed interface port-channel
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201
-    path_ep: ansible_port_channel_ipg
-    addr: 192.168.70.2/27
-    ipv6_dad: disabled
-    state: present
-  register: secondary_po
+  # ADD secondary IPs to the interfaces
+  - name: Add secondary IP to routed interface
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201
+      path_ep: eth1/15
+      addr: 192.168.50.2/27
+      ipv6_dad: disabled
+      state: present
+    register: secondary_intf
 
-- name: Add  secondary IP to routed interface vPC
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201-202
-    path_ep: ansible_vpc_ipg
-    side: A
-    addr: 192.168.90.2/27
-    ipv6_dad: disabled
-    state: present
-  register: secondary_vpc
+  - name: Add secondary to IP routed interface port-channel
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201
+      path_ep: ansible_port_channel_ipg
+      addr: 192.168.70.2/27
+      ipv6_dad: disabled
+      state: present
+    register: secondary_po
 
-- name: Verify secondaries have been created with the correct attributes
-  assert:
-    that:
-    - secondary_intf.current.0.l3extIp.attributes.dn == "uni/tn-ansible_l3_secondary/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/addr-[192.168.50.2/27]"
-    - secondary_intf.current.0.l3extIp.attributes.ipv6Dad == "disabled"
-    - secondary_intf.current.0.l3extIp.attributes.annotation == 'orchestrator:ansible'
-    - secondary_po.current.0.l3extIp.attributes.dn== "uni/tn-ansible_l3_secondary/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/addr-[192.168.70.2/27]"
-    - secondary_po.current.0.l3extIp.attributes.ipv6Dad == "disabled"
-    - secondary_vpc.current.0.l3extIp.attributes.addr == "192.168.90.2/27"
-    - secondary_vpc.current.0.l3extIp.attributes.ipv6Dad == "disabled"
+  - name: Add  secondary IP to routed interface vPC
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201-202
+      path_ep: ansible_vpc_ipg
+      side: A
+      addr: 192.168.90.2/27
+      ipv6_dad: disabled
+      state: present
+    register: secondary_vpc
 
-# CHECK idempotency
-- name: Add secondary IP to routed interface with no changes
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201
-    path_ep: eth1/15
-    addr: 192.168.50.2/27
-    ipv6_dad: disabled
-    state: present
-  register: secondary_intf_again
+  - name: Verify secondaries have been created with the correct attributes
+    assert:
+      that:
+      - secondary_intf.current.0.l3extIp.attributes.dn == "uni/tn-ansible_test/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/addr-[192.168.50.2/27]"
+      - secondary_intf.current.0.l3extIp.attributes.ipv6Dad == "disabled"
+      - secondary_intf.current.0.l3extIp.attributes.annotation == 'orchestrator:ansible'
+      - secondary_po.current.0.l3extIp.attributes.dn== "uni/tn-ansible_test/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/addr-[192.168.70.2/27]"
+      - secondary_po.current.0.l3extIp.attributes.ipv6Dad == "disabled"
+      - secondary_vpc.current.0.l3extIp.attributes.addr == "192.168.90.2/27"
+      - secondary_vpc.current.0.l3extIp.attributes.ipv6Dad == "disabled"
 
-- name: Add secondary to IP routed interface port-channel with no changes
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201
-    path_ep: ansible_port_channel_ipg
-    addr: 192.168.70.2/27
-    ipv6_dad: disabled
-    state: present
-  register: secondary_po_again
+  # CHECK idempotency
+  - name: Add secondary IP to routed interface with no changes
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201
+      path_ep: eth1/15
+      addr: 192.168.50.2/27
+      ipv6_dad: disabled
+      state: present
+    register: secondary_intf_again
 
-- name: Add  secondary IP to routed interface vPC with no changes
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201-202
-    path_ep: ansible_vpc_ipg
-    side: A
-    addr: 192.168.90.2/27
-    ipv6_dad: disabled
-    state: present
-  register: secondary_vpc_again
+  - name: Add secondary to IP routed interface port-channel with no changes
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201
+      path_ep: ansible_port_channel_ipg
+      addr: 192.168.70.2/27
+      ipv6_dad: disabled
+      state: present
+    register: secondary_po_again
 
-- name: Verify MOs have not changed
-  assert:
-    that:
-    - secondary_intf_again is not changed
-    - secondary_po_again is not changed
-    - secondary_vpc_again is not changed
+  - name: Add  secondary IP to routed interface vPC with no changes
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201-202
+      path_ep: ansible_vpc_ipg
+      side: A
+      addr: 192.168.90.2/27
+      ipv6_dad: disabled
+      state: present
+    register: secondary_vpc_again
 
-# CHECK updates/modifications
-- name: Modify routed interface
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201
-    path_ep: eth1/15
-    addr: 192.168.50.2/27
-    ipv6_dad: enabled
-    state: present
-  register: secondary_intf_update
+  - name: Verify MOs have not changed
+    assert:
+      that:
+      - secondary_intf_again is not changed
+      - secondary_po_again is not changed
+      - secondary_vpc_again is not changed
 
-- name: Modify routed port-channel
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201
-    path_ep: ansible_port_channel_ipg
-    addr: 192.168.70.2/27
-    ipv6_dad: enabled
-    state: present
-  register: secondary_po_update
+  # CHECK updates/modifications
+  - name: Modify routed interface
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201
+      path_ep: eth1/15
+      addr: 192.168.50.2/27
+      ipv6_dad: enabled
+      state: present
+    register: secondary_intf_update
 
-- name: Modify routed vPC
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201-202
-    path_ep: ansible_vpc_ipg
-    side: A
-    addr: 192.168.90.2/27
-    ipv6_dad: enabled
-    state: present
-  register: secondary_vpc_update
+  - name: Modify routed port-channel
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201
+      path_ep: ansible_port_channel_ipg
+      addr: 192.168.70.2/27
+      ipv6_dad: enabled
+      state: present
+    register: secondary_po_update
 
-- name: Verify updates have been applied
-  assert:
-    that:
-    - secondary_intf_update is changed
-    - secondary_po_update is changed
-    - secondary_vpc_update is changed
-    - secondary_intf_update.current.0.l3extIp.attributes.ipv6Dad == "enabled"
-    - secondary_po_update.current.0.l3extIp.attributes.ipv6Dad == "enabled"
-    - secondary_vpc_update.current.0.l3extIp.attributes.ipv6Dad == "enabled"
+  - name: Modify routed vPC
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201-202
+      path_ep: ansible_vpc_ipg
+      side: A
+      addr: 192.168.90.2/27
+      ipv6_dad: enabled
+      state: present
+    register: secondary_vpc_update
 
-# QUERIES
-- name: Query secondary for interface
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201
-    path_ep: eth1/15
-    addr: 192.168.50.2/27
-    ipv6_dad: enabled
-    state: query
-  register: secondary_intf_query
+  - name: Verify updates have been applied
+    assert:
+      that:
+      - secondary_intf_update is changed
+      - secondary_po_update is changed
+      - secondary_vpc_update is changed
+      - secondary_intf_update.current.0.l3extIp.attributes.ipv6Dad == "enabled"
+      - secondary_po_update.current.0.l3extIp.attributes.ipv6Dad == "enabled"
+      - secondary_vpc_update.current.0.l3extIp.attributes.ipv6Dad == "enabled"
 
-- name: Query secondary for po
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201
-    path_ep: ansible_port_channel_ipg
-    addr: 192.168.70.2/27
-    ipv6_dad: enabled
-    state: query
-  register: secondary_po_query
+  # QUERIES
+  - name: Query secondary for interface
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201
+      path_ep: eth1/15
+      addr: 192.168.50.2/27
+      ipv6_dad: enabled
+      state: query
+    register: secondary_intf_query
 
-- name: Query secondary for vpc
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201-202
-    path_ep: ansible_vpc_ipg
-    side: A
-    addr: 192.168.90.2/27
-    ipv6_dad: enabled
-    state: query
-  register: secondary_vpc_query
+  - name: Query secondary for po
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201
+      path_ep: ansible_port_channel_ipg
+      addr: 192.168.70.2/27
+      ipv6_dad: enabled
+      state: query
+    register: secondary_po_query
 
-- name: Query all secondary IPs
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    state: query
-  register: secondary_all_query
+  - name: Query secondary for vpc
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201-202
+      path_ep: ansible_vpc_ipg
+      side: A
+      addr: 192.168.90.2/27
+      ipv6_dad: enabled
+      state: query
+    register: secondary_vpc_query
 
-- name: Verify queries
-  assert:
-    that:
-    - secondary_intf_query is not changed
-    - secondary_po_query is not changed
-    - secondary_vpc_query is not changed
-    - secondary_intf_query.current.0.l3extIp.attributes.dn == "uni/tn-ansible_l3_secondary/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/addr-[192.168.50.2/27]"
-    - secondary_intf_query.current.0.l3extIp.attributes.ipv6Dad == "enabled"
-    - secondary_po_query.current.0.l3extIp.attributes.dn== "uni/tn-ansible_l3_secondary/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/addr-[192.168.70.2/27]"
-    - secondary_po_query.current.0.l3extIp.attributes.ipv6Dad == "enabled"
-    - secondary_vpc_query.current.0.l3extIp.attributes.addr == "192.168.90.2/27"
-    - secondary_vpc_query.current.0.l3extIp.attributes.ipv6Dad == "enabled"
-    - secondary_all_query.current|length > 1
+  - name: Query all secondary IPs
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      state: query
+    register: secondary_all_query
 
-# DELETE secondary IPs
-- name: Delete secondary for interface
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201
-    path_ep: eth1/15
-    addr: 192.168.50.2/27
-    ipv6_dad: enabled
-    state: absent
-  register: secondary_intf_remove
+  - name: Verify queries
+    assert:
+      that:
+      - secondary_intf_query is not changed
+      - secondary_po_query is not changed
+      - secondary_vpc_query is not changed
+      - secondary_intf_query.current.0.l3extIp.attributes.dn == "uni/tn-ansible_test/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/addr-[192.168.50.2/27]"
+      - secondary_intf_query.current.0.l3extIp.attributes.ipv6Dad == "enabled"
+      - secondary_po_query.current.0.l3extIp.attributes.dn== "uni/tn-ansible_test/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/addr-[192.168.70.2/27]"
+      - secondary_po_query.current.0.l3extIp.attributes.ipv6Dad == "enabled"
+      - secondary_vpc_query.current.0.l3extIp.attributes.addr == "192.168.90.2/27"
+      - secondary_vpc_query.current.0.l3extIp.attributes.ipv6Dad == "enabled"
+      - secondary_all_query.current|length > 1
 
-- name: Delete secondary for po
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201
-    path_ep: ansible_port_channel_ipg
-    addr: 192.168.70.2/27
-    ipv6_dad: enabled
-    state: absent
-  register: secondary_po_remove
+  # DELETE secondary IPs
+  - name: Delete secondary for interface
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201
+      path_ep: eth1/15
+      addr: 192.168.50.2/27
+      ipv6_dad: enabled
+      state: absent
+    register: secondary_intf_remove
 
-- name: Delete secondary for vpc
-  aci_l3out_interface_secondary_ip:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    l3out: ansible_l3out
-    node_profile: ansible_node_profile
-    interface_profile: ansible_interface_profile
-    pod_id: 1
-    node_id: 201-202
-    path_ep: ansible_vpc_ipg
-    side: A
-    addr: 192.168.90.2/27
-    ipv6_dad: enabled
-    state: absent
-  register: secondary_vpc_remove
+  - name: Delete secondary for po
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201
+      path_ep: ansible_port_channel_ipg
+      addr: 192.168.70.2/27
+      ipv6_dad: enabled
+      state: absent
+    register: secondary_po_remove
 
-- name: Verify objects have been deleted
-  assert:
-    that:
-    - secondary_intf_remove.current == []
-    - secondary_po_remove.current == []
-    - secondary_vpc_remove.current == []
-    - secondary_intf_remove.previous.0.l3extIp.attributes.dn == "uni/tn-ansible_l3_secondary/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/addr-[192.168.50.2/27]"
-    - secondary_po_remove.previous.0.l3extIp.attributes.dn == "uni/tn-ansible_l3_secondary/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/addr-[192.168.70.2/27]"
-    - secondary_vpc_remove.previous.0.l3extIp.attributes.addr == "192.168.90.2/27"
- 
-# CLEAN UP
-- name: Remove tenant
-  aci_tenant:
-    <<: *aci_info
-    tenant: ansible_l3_secondary
-    state: absent
+  - name: Delete secondary for vpc
+    aci_l3out_interface_secondary_ip:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201-202
+      path_ep: ansible_vpc_ipg
+      side: A
+      addr: 192.168.90.2/27
+      ipv6_dad: enabled
+      state: absent
+    register: secondary_vpc_remove
 
-- name: Remove ext domain
-  aci_domain:
-    <<: *aci_info
-    domain: ansible_l3ext_domain
-    domain_type: l3dom
-    state: absent
+  - name: Verify objects have been deleted
+    assert:
+      that:
+      - secondary_intf_remove.current == []
+      - secondary_po_remove.current == []
+      - secondary_vpc_remove.current == []
+      - secondary_intf_remove.previous.0.l3extIp.attributes.dn == "uni/tn-ansible_test/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/addr-[192.168.50.2/27]"
+      - secondary_po_remove.previous.0.l3extIp.attributes.dn == "uni/tn-ansible_test/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[ansible_port_channel_ipg]]/addr-[192.168.70.2/27]"
+      - secondary_vpc_remove.previous.0.l3extIp.attributes.addr == "192.168.90.2/27"
+  
+  # CLEAN UP
+  - name: Remove tenant
+    aci_tenant:
+      <<: *aci_info
+      tenant: ansible_test
+      state: absent
 
-- name: Remove port-channel
-  aci_interface_policy_leaf_policy_group:
-    <<: *aci_info
-    lag_type: link
-    policy_group: ansible_port_channel_ipg
-    state: absent
+  - name: Remove ext domain
+    aci_domain:
+      <<: *aci_info
+      domain: ansible_l3ext_domain
+      domain_type: l3dom
+      state: absent
 
-- name: Remove vpc
-  aci_interface_policy_leaf_policy_group:
-    <<: *aci_info
-    lag_type: node
-    policy_group: ansible_vpc_ipg
-    state: absent
+  - name: Remove port-channel
+    aci_interface_policy_leaf_policy_group:
+      <<: *aci_info
+      lag_type: link
+      policy_group: ansible_port_channel_ipg
+      state: absent
+
+  - name: Remove vpc
+    aci_interface_policy_leaf_policy_group:
+      <<: *aci_info
+      lag_type: node
+      policy_group: ansible_vpc_ipg
+      state: absent

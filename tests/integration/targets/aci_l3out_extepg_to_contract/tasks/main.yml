@@ -9,15 +9,15 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact: 
-   aci_info: &aci_info
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
@@ -26,121 +26,127 @@
     tenant: ansible_tenant
     state: absent
 
-- name: Add a new tenant
-  aci_tenant:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    description: Ansible tenant
-    state: present
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Add a new l3out
-  aci_l3out:
-    <<: *aci_info
-    tenant: ansible_tenant
-    name: ansible_l3out
-    description: l3out for Ansible tenant
-    domain: ansible_dom
-    route_control: export
-    vrf: ansible_vrf
-    l3protocol: ospf
-    state: present
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    aci_tenant:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
 
-- name: Add a new ExtEpg
-  aci_l3out_extepg:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    name: ansible_extEpg
-    description: ExtEpg for Ansible l3out
-    state: present
-  
-- name: Bind External End Point Groups to Contracts
-  aci_l3out_extepg_to_contract:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    contract: ansible_contract
-    contract_type: provider
-    state: present
-  register: bind_extepg_provider_contract
+  - name: Add a new l3out
+    aci_l3out:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_l3out
+      description: l3out for Ansible tenant
+      domain: ansible_dom
+      route_control: export
+      vrf: ansible_vrf
+      l3protocol: ospf
+      state: present
 
-- name: Verify bind_extepg_provider_contract
-  assert:
-    that:
-    - bind_extepg_provider_contract.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
-    - bind_extepg_provider_contract.current.0.fvRsProv.attributes.annotation == 'orchestrator:ansible'
+  - name: Add a new ExtEpg
+    aci_l3out_extepg:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      name: ansible_extEpg
+      description: ExtEpg for Ansible l3out
+      state: present
+    
+  - name: Bind External End Point Groups to Contracts
+    aci_l3out_extepg_to_contract:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      contract: ansible_contract
+      contract_type: provider
+      state: present
+    register: bind_extepg_provider_contract
 
-- name: Bind second External End Point Groups to Contracts
-  aci_l3out_extepg_to_contract:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    contract: ansible_contract2
-    contract_type: provider
-    state: present
-  register: bind_extepg_provider_contract_2
+  - name: Verify bind_extepg_provider_contract
+    assert:
+      that:
+      - bind_extepg_provider_contract.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
+      - bind_extepg_provider_contract.current.0.fvRsProv.attributes.annotation == 'orchestrator:ansible'
 
-- name: Verify bind_extepg_provider_contract_2
-  assert:
-    that:
-    - bind_extepg_provider_contract_2.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract2"
+  - name: Bind second External End Point Groups to Contracts
+    aci_l3out_extepg_to_contract:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      contract: ansible_contract2
+      contract_type: provider
+      state: present
+    register: bind_extepg_provider_contract_2
 
-- name: Query the External End Point Groups
-  aci_l3out_extepg_to_contract:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    contract: ansible_contract
-    contract_type: provider
-    state: query
-  register: query_extepg
+  - name: Verify bind_extepg_provider_contract_2
+    assert:
+      that:
+      - bind_extepg_provider_contract_2.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract2"
 
-- name: Verify query_extepg
-  assert:
-    that:
-    - query_extepg is not changed
-    - query_extepg.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
+  - name: Query the External End Point Groups
+    aci_l3out_extepg_to_contract:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      contract: ansible_contract
+      contract_type: provider
+      state: query
+    register: query_extepg
 
-- name: Query all the External End Point Groups
-  aci_l3out_extepg_to_contract:
-    <<: *aci_info
-    contract_type: provider
-    state: query
-  register: query_all
+  - name: Verify query_extepg
+    assert:
+      that:
+      - query_extepg is not changed
+      - query_extepg.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
 
-- name: Remove existing contract to External End Point Groups
-  aci_l3out_extepg_to_contract:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    contract: ansible_contract
-    contract_type: provider
-    state: absent
-  register: remove_contract_extepg
+  - name: Query all the External End Point Groups
+    aci_l3out_extepg_to_contract:
+      <<: *aci_info
+      contract_type: provider
+      state: query
+    register: query_all
 
-- name: Verify remove_contract_extepg
-  assert:
-    that:
-    - remove_contract_extepg.previous.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
+  - name: Remove existing contract to External End Point Groups
+    aci_l3out_extepg_to_contract:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      contract: ansible_contract
+      contract_type: provider
+      state: absent
+    register: remove_contract_extepg
 
-- name: Bind External End Point Groups to Contracts
-  aci_l3out_extepg_to_contract:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    contract: ansible_contract
-    contract_type: consumer
-    provider_match: all
-    state: present
-  ignore_errors: yes
-  register: bind_extepg_consumer_contract
+  - name: Verify remove_contract_extepg
+    assert:
+      that:
+      - remove_contract_extepg.previous.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
 
-- name: Verify bind_extepg_consumer_contract
-  assert:
-    that:
-    - bind_extepg_consumer_contract.msg == "the 'provider_match' is only configurable for Provided Contracts"
+  - name: Bind External End Point Groups to Contracts
+    aci_l3out_extepg_to_contract:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      contract: ansible_contract
+      contract_type: consumer
+      provider_match: all
+      state: present
+    ignore_errors: yes
+    register: bind_extepg_consumer_contract
+
+  - name: Verify bind_extepg_consumer_contract
+    assert:
+      that:
+      - bind_extepg_consumer_contract.msg == "the 'provider_match' is only configurable for Provided Contracts"

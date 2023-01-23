@@ -8,326 +8,331 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-# CLEAN ENVIRONMENT
-- name: Remove AEP
-  cisco.aci.aci_aep: &aep_absent
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
-    aep: '{{ item }}'
-    state: absent
-  loop:
-    - ansible_test
-    - ansible_test2
-    - ansible_test3
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # CLEAN ENVIRONMENT
+  - name: Remove AEP
+    cisco.aci.aci_aep: &aep_absent
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+      aep: '{{ item }}'
+      state: absent
+    loop:
+      - ansible_test
+      - ansible_test2
+      - ansible_test3
 
-# ADD AEP
-- name: Add AEP (check_mode)
-  cisco.aci.aci_aep: &aep_present
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
-    aep: ansible_test
-    infra_vlan: true
-    state: present
-  check_mode: yes
-  register: cm_add_aep
+  # ADD AEP
+  - name: Add AEP (check_mode)
+    cisco.aci.aci_aep: &aep_present
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+      aep: ansible_test
+      infra_vlan: true
+      state: present
+    check_mode: yes
+    register: cm_add_aep
 
-- name: Add AEP (normal mode)
-  cisco.aci.aci_aep: *aep_present
-  register: nm_add_aep
+  - name: Add AEP (normal mode)
+    cisco.aci.aci_aep: *aep_present
+    register: nm_add_aep
 
-- name: Add another AEP (normal mode)
-  cisco.aci.aci_aep:
-    <<: *aep_present
-    aep: ansible_test2
-    infra_vlan: true
-  register: nm_add_aep2
+  - name: Add another AEP (normal mode)
+    cisco.aci.aci_aep:
+      <<: *aep_present
+      aep: ansible_test2
+      infra_vlan: true
+    register: nm_add_aep2
 
-- name: Add another AEP (normal mode)
-  cisco.aci.aci_aep:
-    <<: *aep_present
-    aep: ansible_test3
-    infra_vlan: false
-  register: nm_add_aep3
+  - name: Add another AEP (normal mode)
+    cisco.aci.aci_aep:
+      <<: *aep_present
+      aep: ansible_test3
+      infra_vlan: false
+    register: nm_add_aep3
 
-- name: Verify add_aep
-  assert:
-    that:
-    - cm_add_aep is changed
-    - nm_add_aep is changed
-    - nm_add_aep.current.0.infraAttEntityP.attributes.annotation == 'orchestrator:ansible'
-    - nm_add_aep2 is changed
-    - nm_add_aep3 is changed
-    - nm_add_aep.previous == nm_add_aep.previous == cm_add_aep.current == []
-    - nm_add_aep.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
-    - nm_add_aep.current[0].infraAttEntityP.attributes.name == 'ansible_test'
-    - cm_add_aep.proposed.infraAttEntityP.attributes.name == nm_add_aep.proposed.infraAttEntityP.attributes.name == cm_add_aep.sent.infraAttEntityP.attributes.name == nm_add_aep.sent.infraAttEntityP.attributes.name == 'ansible_test'
-    - nm_add_aep2.current[0].infraAttEntityP.children[0].infraProvAcc.attributes.name == 'provacc'
-    - nm_add_aep3.current[0].infraAttEntityP | length == 1
+  - name: Verify add_aep
+    assert:
+      that:
+      - cm_add_aep is changed
+      - nm_add_aep is changed
+      - nm_add_aep.current.0.infraAttEntityP.attributes.annotation == 'orchestrator:ansible'
+      - nm_add_aep2 is changed
+      - nm_add_aep3 is changed
+      - nm_add_aep.previous == nm_add_aep.previous == cm_add_aep.current == []
+      - nm_add_aep.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
+      - nm_add_aep.current[0].infraAttEntityP.attributes.name == 'ansible_test'
+      - cm_add_aep.proposed.infraAttEntityP.attributes.name == nm_add_aep.proposed.infraAttEntityP.attributes.name == cm_add_aep.sent.infraAttEntityP.attributes.name == nm_add_aep.sent.infraAttEntityP.attributes.name == 'ansible_test'
+      - nm_add_aep2.current[0].infraAttEntityP.children[0].infraProvAcc.attributes.name == 'provacc'
+      - nm_add_aep3.current[0].infraAttEntityP | length == 1
 
-- name: Change AEP infra(normal mode)
-  cisco.aci.aci_aep:
-    <<: *aep_present
-    aep: ansible_test2
-    infra_vlan: false
-  register: nm_add_aep_true_to_false
+  - name: Change AEP infra(normal mode)
+    cisco.aci.aci_aep:
+      <<: *aep_present
+      aep: ansible_test2
+      infra_vlan: false
+    register: nm_add_aep_true_to_false
 
-- name: Change AEP infra again(normal mode)
-  cisco.aci.aci_aep:
-    <<: *aep_present
-    aep: ansible_test2
-    infra_vlan: false
-  register: nm_add_aep_true_to_false_again
+  - name: Change AEP infra again(normal mode)
+    cisco.aci.aci_aep:
+      <<: *aep_present
+      aep: ansible_test2
+      infra_vlan: false
+    register: nm_add_aep_true_to_false_again
 
-- name: Add AEP again (check_mode)
-  cisco.aci.aci_aep:
-    <<: *aep_present
-  check_mode: yes
-  register: cm_add_aep_again
+  - name: Add AEP again (check_mode)
+    cisco.aci.aci_aep:
+      <<: *aep_present
+    check_mode: yes
+    register: cm_add_aep_again
 
-- name: Add AEP again (normal mode)
-  cisco.aci.aci_aep:
-    <<: *aep_present
-  register: nm_add_aep_again
+  - name: Add AEP again (normal mode)
+    cisco.aci.aci_aep:
+      <<: *aep_present
+    register: nm_add_aep_again
 
-- name: Verify add_aep_again
-  assert:
-    that:
-    - cm_add_aep_again is not changed
-    - nm_add_aep_again is not changed
-    - nm_add_aep_again.previous[0].infraAttEntityP.attributes.dn == nm_add_aep_again.previous[0].infraAttEntityP.attributes.dn == cm_add_aep_again.current[0].infraAttEntityP.attributes.dn == nm_add_aep_again.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
-    - nm_add_aep_again.previous[0].infraAttEntityP.attributes.name == nm_add_aep_again.previous[0].infraAttEntityP.attributes.name == cm_add_aep_again.current[0].infraAttEntityP.attributes.name == nm_add_aep_again.current[0].infraAttEntityP.attributes.name == 'ansible_test'
-    - cm_add_aep_again.proposed.infraAttEntityP.attributes.name == nm_add_aep_again.proposed.infraAttEntityP.attributes.name == 'ansible_test'
-    - cm_add_aep_again.sent == nm_add_aep_again.sent == {}
-    - nm_add_aep_true_to_false.current[0].infraAttEntityP | length == 1
-    - nm_add_aep_true_to_false_again.current[0].infraAttEntityP | length == 1
+  - name: Verify add_aep_again
+    assert:
+      that:
+      - cm_add_aep_again is not changed
+      - nm_add_aep_again is not changed
+      - nm_add_aep_again.previous[0].infraAttEntityP.attributes.dn == nm_add_aep_again.previous[0].infraAttEntityP.attributes.dn == cm_add_aep_again.current[0].infraAttEntityP.attributes.dn == nm_add_aep_again.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
+      - nm_add_aep_again.previous[0].infraAttEntityP.attributes.name == nm_add_aep_again.previous[0].infraAttEntityP.attributes.name == cm_add_aep_again.current[0].infraAttEntityP.attributes.name == nm_add_aep_again.current[0].infraAttEntityP.attributes.name == 'ansible_test'
+      - cm_add_aep_again.proposed.infraAttEntityP.attributes.name == nm_add_aep_again.proposed.infraAttEntityP.attributes.name == 'ansible_test'
+      - cm_add_aep_again.sent == nm_add_aep_again.sent == {}
+      - nm_add_aep_true_to_false.current[0].infraAttEntityP | length == 1
+      - nm_add_aep_true_to_false_again.current[0].infraAttEntityP | length == 1
 
-# CHANGE AEP
-- name: Change description of AEP (check_mode)
-  cisco.aci.aci_aep:
-    <<: *aep_present
-    description: Ansible test AEP
-  check_mode: yes
-  register: cm_add_aep_descr
+  # CHANGE AEP
+  - name: Change description of AEP (check_mode)
+    cisco.aci.aci_aep:
+      <<: *aep_present
+      description: Ansible test AEP
+    check_mode: yes
+    register: cm_add_aep_descr
 
-- name: Change description of AEP (normal mode)
-  cisco.aci.aci_aep:
-    <<: *aep_present
-    description: Ansible test AEP
-  register: nm_add_aep_descr
+  - name: Change description of AEP (normal mode)
+    cisco.aci.aci_aep:
+      <<: *aep_present
+      description: Ansible test AEP
+    register: nm_add_aep_descr
 
-- name: Verify add_aep_descr
-  assert:
-    that:
-    - cm_add_aep_descr is changed
-    - nm_add_aep_descr is changed
-    - cm_add_aep_descr.proposed.infraAttEntityP.attributes.descr == nm_add_aep_descr.proposed.infraAttEntityP.attributes.descr == 'Ansible test AEP'
-    - cm_add_aep_descr.proposed.infraAttEntityP.attributes.name == nm_add_aep_descr.proposed.infraAttEntityP.attributes.name == 'ansible_test'
-    - cm_add_aep_descr.sent.infraAttEntityP.attributes.descr == nm_add_aep_descr.sent.infraAttEntityP.attributes.descr == 'Ansible test AEP'
-    - cm_add_aep_descr.previous.0.infraAttEntityP.attributes.dn == nm_add_aep_descr.previous.0.infraAttEntityP.attributes.dn == cm_add_aep_descr.current.0.infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
-    - cm_add_aep_descr.previous.0.infraAttEntityP.attributes.name == nm_add_aep_descr.previous.0.infraAttEntityP.attributes.name == cm_add_aep_descr.current.0.infraAttEntityP.attributes.name == 'ansible_test'
-    - nm_add_aep_descr.current.0.infraAttEntityP.attributes.descr == 'Ansible test AEP'
-    - nm_add_aep_descr.current.0.infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
-    - nm_add_aep_descr.current.0.infraAttEntityP.attributes.name == 'ansible_test'
+  - name: Verify add_aep_descr
+    assert:
+      that:
+      - cm_add_aep_descr is changed
+      - nm_add_aep_descr is changed
+      - cm_add_aep_descr.proposed.infraAttEntityP.attributes.descr == nm_add_aep_descr.proposed.infraAttEntityP.attributes.descr == 'Ansible test AEP'
+      - cm_add_aep_descr.proposed.infraAttEntityP.attributes.name == nm_add_aep_descr.proposed.infraAttEntityP.attributes.name == 'ansible_test'
+      - cm_add_aep_descr.sent.infraAttEntityP.attributes.descr == nm_add_aep_descr.sent.infraAttEntityP.attributes.descr == 'Ansible test AEP'
+      - cm_add_aep_descr.previous.0.infraAttEntityP.attributes.dn == nm_add_aep_descr.previous.0.infraAttEntityP.attributes.dn == cm_add_aep_descr.current.0.infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
+      - cm_add_aep_descr.previous.0.infraAttEntityP.attributes.name == nm_add_aep_descr.previous.0.infraAttEntityP.attributes.name == cm_add_aep_descr.current.0.infraAttEntityP.attributes.name == 'ansible_test'
+      - nm_add_aep_descr.current.0.infraAttEntityP.attributes.descr == 'Ansible test AEP'
+      - nm_add_aep_descr.current.0.infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
+      - nm_add_aep_descr.current.0.infraAttEntityP.attributes.name == 'ansible_test'
 
-- name: Change description of AEP again (check_mode)
-  cisco.aci.aci_aep:
-    <<: *aep_present
-    description: Ansible test AEP
-  check_mode: yes
-  register: cm_add_aep_descr_again
+  - name: Change description of AEP again (check_mode)
+    cisco.aci.aci_aep:
+      <<: *aep_present
+      description: Ansible test AEP
+    check_mode: yes
+    register: cm_add_aep_descr_again
 
-- name: Change description of AEP again (normal mode)
-  cisco.aci.aci_aep:
-    <<: *aep_present
-    description: Ansible test AEP
-  register: nm_add_aep_descr_again
+  - name: Change description of AEP again (normal mode)
+    cisco.aci.aci_aep:
+      <<: *aep_present
+      description: Ansible test AEP
+    register: nm_add_aep_descr_again
 
-- name: Verify add_aep_descr_again
-  assert:
-    that:
-    - cm_add_aep_descr_again is not changed
-    - nm_add_aep_descr_again is not changed
-    - cm_add_aep_descr_again.proposed.infraAttEntityP.attributes.descr == nm_add_aep_descr_again.proposed.infraAttEntityP.attributes.descr == 'Ansible test AEP'
-    - cm_add_aep_descr_again.proposed.infraAttEntityP.attributes.name == nm_add_aep_descr_again.proposed.infraAttEntityP.attributes.name == 'ansible_test'
-    - cm_add_aep_descr_again.sent == nm_add_aep_descr_again.sent == {}
-    - cm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.descr == nm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.descr == cm_add_aep_descr_again.current[0].infraAttEntityP.attributes.descr == nm_add_aep_descr_again.current[0].infraAttEntityP.attributes.descr == 'Ansible test AEP'
-    - cm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.dn == nm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.dn == cm_add_aep_descr_again.current[0].infraAttEntityP.attributes.dn == nm_add_aep_descr_again.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
-    - cm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.name == nm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.name == cm_add_aep_descr_again.current[0].infraAttEntityP.attributes.name == nm_add_aep_descr_again.current[0].infraAttEntityP.attributes.name == 'ansible_test'
-
-
-# ADD AEP AGAIN
-- name: Add AEP again with no description (check_mode)
-  cisco.aci.aci_aep: *aep_present
-  check_mode: yes
-  register: cm_add_aep_again_no_descr
-
-- name: Add AEP again with no description (normal mode)
-  cisco.aci.aci_aep: *aep_present
-  register: nm_add_aep_again_no_descr
-
-- name: Verify add_aep_again_no_descr
-  assert:
-    that:
-    - cm_add_aep_again_no_descr is not changed
-    - nm_add_aep_again_no_descr is not changed
-    - cm_add_aep_again_no_descr.proposed.infraAttEntityP.attributes.name == nm_add_aep_again_no_descr.proposed.infraAttEntityP.attributes.name == 'ansible_test'
-    - cm_add_aep_again_no_descr.sent == nm_add_aep_again_no_descr.sent == {}
-    - cm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.descr == nm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.descr == cm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.descr == nm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.descr == 'Ansible test AEP'
-    - cm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.dn == nm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.dn == cm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.dn == nm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
-    - cm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.name == nm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.name == cm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.name == nm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.name == 'ansible_test'
+  - name: Verify add_aep_descr_again
+    assert:
+      that:
+      - cm_add_aep_descr_again is not changed
+      - nm_add_aep_descr_again is not changed
+      - cm_add_aep_descr_again.proposed.infraAttEntityP.attributes.descr == nm_add_aep_descr_again.proposed.infraAttEntityP.attributes.descr == 'Ansible test AEP'
+      - cm_add_aep_descr_again.proposed.infraAttEntityP.attributes.name == nm_add_aep_descr_again.proposed.infraAttEntityP.attributes.name == 'ansible_test'
+      - cm_add_aep_descr_again.sent == nm_add_aep_descr_again.sent == {}
+      - cm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.descr == nm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.descr == cm_add_aep_descr_again.current[0].infraAttEntityP.attributes.descr == nm_add_aep_descr_again.current[0].infraAttEntityP.attributes.descr == 'Ansible test AEP'
+      - cm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.dn == nm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.dn == cm_add_aep_descr_again.current[0].infraAttEntityP.attributes.dn == nm_add_aep_descr_again.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
+      - cm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.name == nm_add_aep_descr_again.previous[0].infraAttEntityP.attributes.name == cm_add_aep_descr_again.current[0].infraAttEntityP.attributes.name == nm_add_aep_descr_again.current[0].infraAttEntityP.attributes.name == 'ansible_test'
 
 
-# QUERY ALL AEPS
-- name: Query all AEPs (check_mode)
-  cisco.aci.aci_aep: &aep_query
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
-    state: query
-  check_mode: yes
-  register: cm_query_all_aeps
+  # ADD AEP AGAIN
+  - name: Add AEP again with no description (check_mode)
+    cisco.aci.aci_aep: *aep_present
+    check_mode: yes
+    register: cm_add_aep_again_no_descr
 
-- name: Query all AEPs (normal mode)
-  cisco.aci.aci_aep: *aep_query
-  register: nm_query_all_aeps
+  - name: Add AEP again with no description (normal mode)
+    cisco.aci.aci_aep: *aep_present
+    register: nm_add_aep_again_no_descr
 
-- name: Verify query_all_aeps
-  assert:
-    that:
-    - cm_query_all_aeps is not changed
-    - nm_query_all_aeps is not changed
-    - cm_query_all_aeps == nm_query_all_aeps
-    - nm_query_all_aeps.current|length >= 1
+  - name: Verify add_aep_again_no_descr
+    assert:
+      that:
+      - cm_add_aep_again_no_descr is not changed
+      - nm_add_aep_again_no_descr is not changed
+      - cm_add_aep_again_no_descr.proposed.infraAttEntityP.attributes.name == nm_add_aep_again_no_descr.proposed.infraAttEntityP.attributes.name == 'ansible_test'
+      - cm_add_aep_again_no_descr.sent == nm_add_aep_again_no_descr.sent == {}
+      - cm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.descr == nm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.descr == cm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.descr == nm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.descr == 'Ansible test AEP'
+      - cm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.dn == nm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.dn == cm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.dn == nm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
+      - cm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.name == nm_add_aep_again_no_descr.previous[0].infraAttEntityP.attributes.name == cm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.name == nm_add_aep_again_no_descr.current[0].infraAttEntityP.attributes.name == 'ansible_test'
 
 
-# QUERY A AEP
-- name: Query our AEP
-  cisco.aci.aci_aep:
-    <<: *aep_query
-    aep: ansible_test
-  check_mode: yes
-  register: cm_query_aep
+  # QUERY ALL AEPS
+  - name: Query all AEPs (check_mode)
+    cisco.aci.aci_aep: &aep_query
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+      state: query
+    check_mode: yes
+    register: cm_query_all_aeps
 
-- name: Query our AEP
-  cisco.aci.aci_aep:
-    <<: *aep_query
-    aep: ansible_test
-  register: nm_query_aep
+  - name: Query all AEPs (normal mode)
+    cisco.aci.aci_aep: *aep_query
+    register: nm_query_all_aeps
 
-- name: Verify query_aep
-  assert:
-    that:
-    - cm_query_aep is not changed
-    - nm_query_aep is not changed
-    - cm_query_aep == nm_query_aep
-    - nm_query_aep.current.0.infraAttEntityP.attributes.descr == "Ansible test AEP"
-    - nm_query_aep.current.0.infraAttEntityP.attributes.dn == "uni/infra/attentp-ansible_test"
-    - nm_query_aep.current.0.infraAttEntityP.attributes.name == "ansible_test"
-
-
-# REMOVE AEP
-- name: Remove AEP (check_mode)
-  cisco.aci.aci_aep:
-    <<: *aep_absent
-    aep: ansible_test
-  check_mode: yes
-  register: cm_remove_aep
-
-- name: Remove AEP (normal mode)
-  cisco.aci.aci_aep:
-    <<: *aep_absent
-    aep: ansible_test
-  register: nm_remove_aep
-
-- name: Verify remove_aep
-  assert:
-    that:
-    - cm_remove_aep is changed
-    - nm_remove_aep is changed
-    - cm_remove_aep.proposed == nm_remove_aep.proposed == {}
-    - cm_remove_aep.sent == nm_remove_aep.sent == {}
-    - cm_remove_aep.previous[0].infraAttEntityP.attributes.name == nm_remove_aep.previous[0].infraAttEntityP.attributes.name == cm_remove_aep.current[0].infraAttEntityP.attributes.name == 'ansible_test'
-    - cm_remove_aep.previous[0].infraAttEntityP.attributes.descr == nm_remove_aep.previous[0].infraAttEntityP.attributes.descr == cm_remove_aep.current[0].infraAttEntityP.attributes.descr == 'Ansible test AEP'
-    - cm_remove_aep.previous[0].infraAttEntityP.attributes.dn == nm_remove_aep.previous[0].infraAttEntityP.attributes.dn == cm_remove_aep.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
-    - nm_remove_aep.current == []
-
-- name: Remove AEP again (check_mode)
-  cisco.aci.aci_aep:
-    <<: *aep_absent
-    aep: ansible_test
-  check_mode: yes
-  register: cm_remove_aep_again
-
-- name: Remove AEP again (normal mode)
-  cisco.aci.aci_aep:
-    <<: *aep_absent
-    aep: ansible_test
-  register: nm_remove_aep_again
-
-- name: Verify remove_aep_again
-  assert:
-    that:
-    - cm_remove_aep_again is not changed
-    - nm_remove_aep_again is not changed
-    - cm_remove_aep_again.proposed == nm_remove_aep_again.proposed == {}
-    - cm_remove_aep_again.sent == nm_remove_aep_again.sent == {}
-    - cm_remove_aep_again.previous == nm_remove_aep_again.previous == cm_remove_aep_again.current == nm_remove_aep_again.current == []
+  - name: Verify query_all_aeps
+    assert:
+      that:
+      - cm_query_all_aeps is not changed
+      - nm_query_all_aeps is not changed
+      - cm_query_all_aeps == nm_query_all_aeps
+      - nm_query_all_aeps.current|length >= 1
 
 
-# QUERY NON-EXISTING AEP
-- name: Query non-existing AEP (check_mode)
-  cisco.aci.aci_aep:
-    <<: *aep_query
-    aep: ansible_test
-  check_mode: yes
-  register: cm_query_non_aep
+  # QUERY A AEP
+  - name: Query our AEP
+    cisco.aci.aci_aep:
+      <<: *aep_query
+      aep: ansible_test
+    check_mode: yes
+    register: cm_query_aep
 
-- name: Query non-existing AEP (normal mode)
-  cisco.aci.aci_aep:
-    <<: *aep_query
-    aep: ansible_test
-  register: nm_query_non_aep
+  - name: Query our AEP
+    cisco.aci.aci_aep:
+      <<: *aep_query
+      aep: ansible_test
+    register: nm_query_aep
 
-- name: Verify query_non_aep
-  assert:
-    that:
-    - cm_query_non_aep is not changed
-    - nm_query_non_aep is not changed
-    - cm_query_non_aep == nm_query_non_aep
-    - cm_query_non_aep.current == nm_query_non_aep.current == []
+  - name: Verify query_aep
+    assert:
+      that:
+      - cm_query_aep is not changed
+      - nm_query_aep is not changed
+      - cm_query_aep == nm_query_aep
+      - nm_query_aep.current.0.infraAttEntityP.attributes.descr == "Ansible test AEP"
+      - nm_query_aep.current.0.infraAttEntityP.attributes.dn == "uni/infra/attentp-ansible_test"
+      - nm_query_aep.current.0.infraAttEntityP.attributes.name == "ansible_test"
 
 
-# PROVOKE ERRORS
-- name: Error when required parameter is missing
-  cisco.aci.aci_aep:
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
-    state: present
-  ignore_errors: yes
-  register: error_on_missing_required_param
+  # REMOVE AEP
+  - name: Remove AEP (check_mode)
+    cisco.aci.aci_aep:
+      <<: *aep_absent
+      aep: ansible_test
+    check_mode: yes
+    register: cm_remove_aep
 
-- name: Verify error_on_missing_required_param
-  assert:
-    that:
-    - error_on_missing_required_param is failed
-    - 'error_on_missing_required_param.msg == "state is present but all of the following are missing: aep"'
+  - name: Remove AEP (normal mode)
+    cisco.aci.aci_aep:
+      <<: *aep_absent
+      aep: ansible_test
+    register: nm_remove_aep
+
+  - name: Verify remove_aep
+    assert:
+      that:
+      - cm_remove_aep is changed
+      - nm_remove_aep is changed
+      - cm_remove_aep.proposed == nm_remove_aep.proposed == {}
+      - cm_remove_aep.sent == nm_remove_aep.sent == {}
+      - cm_remove_aep.previous[0].infraAttEntityP.attributes.name == nm_remove_aep.previous[0].infraAttEntityP.attributes.name == cm_remove_aep.current[0].infraAttEntityP.attributes.name == 'ansible_test'
+      - cm_remove_aep.previous[0].infraAttEntityP.attributes.descr == nm_remove_aep.previous[0].infraAttEntityP.attributes.descr == cm_remove_aep.current[0].infraAttEntityP.attributes.descr == 'Ansible test AEP'
+      - cm_remove_aep.previous[0].infraAttEntityP.attributes.dn == nm_remove_aep.previous[0].infraAttEntityP.attributes.dn == cm_remove_aep.current[0].infraAttEntityP.attributes.dn == 'uni/infra/attentp-ansible_test'
+      - nm_remove_aep.current == []
+
+  - name: Remove AEP again (check_mode)
+    cisco.aci.aci_aep:
+      <<: *aep_absent
+      aep: ansible_test
+    check_mode: yes
+    register: cm_remove_aep_again
+
+  - name: Remove AEP again (normal mode)
+    cisco.aci.aci_aep:
+      <<: *aep_absent
+      aep: ansible_test
+    register: nm_remove_aep_again
+
+  - name: Verify remove_aep_again
+    assert:
+      that:
+      - cm_remove_aep_again is not changed
+      - nm_remove_aep_again is not changed
+      - cm_remove_aep_again.proposed == nm_remove_aep_again.proposed == {}
+      - cm_remove_aep_again.sent == nm_remove_aep_again.sent == {}
+      - cm_remove_aep_again.previous == nm_remove_aep_again.previous == cm_remove_aep_again.current == nm_remove_aep_again.current == []
+
+
+  # QUERY NON-EXISTING AEP
+  - name: Query non-existing AEP (check_mode)
+    cisco.aci.aci_aep:
+      <<: *aep_query
+      aep: ansible_test
+    check_mode: yes
+    register: cm_query_non_aep
+
+  - name: Query non-existing AEP (normal mode)
+    cisco.aci.aci_aep:
+      <<: *aep_query
+      aep: ansible_test
+    register: nm_query_non_aep
+
+  - name: Verify query_non_aep
+    assert:
+      that:
+      - cm_query_non_aep is not changed
+      - nm_query_non_aep is not changed
+      - cm_query_non_aep == nm_query_non_aep
+      - cm_query_non_aep.current == nm_query_non_aep.current == []
+
+
+  # PROVOKE ERRORS
+  - name: Error when required parameter is missing
+    cisco.aci.aci_aep:
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+      state: present
+    ignore_errors: yes
+    register: error_on_missing_required_param
+
+  - name: Verify error_on_missing_required_param
+    assert:
+      that:
+      - error_on_missing_required_param is failed
+      - 'error_on_missing_required_param.msg == "state is present but all of the following are missing: aep"'

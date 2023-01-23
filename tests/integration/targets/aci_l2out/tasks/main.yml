@@ -9,15 +9,15 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact: 
-   aci_info: &aci_info
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
@@ -26,105 +26,111 @@
     tenant: ansible_tenant
     state: absent
 
-- name: Add a new tenant
-  aci_tenant:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    description: Ansible tenant
-    state: present
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Add a new L2Out
-  aci_l2out:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l2out: ansible_l2out
-    description: Test deployment 
-    bd: ansible_bd
-    domain: l2Dom
-    vlan: 3200
-    state: present
-  register: add_l2out
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    aci_tenant:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
 
-- name: Verify add_l2out
-  assert:
-    that:
-    - add_l2out.current.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out"
-    - add_l2out.current.0.l2extOut.attributes.name == "ansible_l2out"
-    - add_l2out.current.0.l2extOut.attributes.annotation == 'orchestrator:ansible'
+  - name: Add a new L2Out
+    aci_l2out:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l2out: ansible_l2out
+      description: Test deployment 
+      bd: ansible_bd
+      domain: l2Dom
+      vlan: 3200
+      state: present
+    register: add_l2out
 
-- name: Add the L2Out again
-  aci_l2out:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l2out: ansible_l2out
-    description: Test deployment 
-    bd: ansible_bd
-    domain: l2Dom
-    vlan: 3200
-    state: present
-  register: add_l2out_again
+  - name: Verify add_l2out
+    assert:
+      that:
+      - add_l2out.current.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out"
+      - add_l2out.current.0.l2extOut.attributes.name == "ansible_l2out"
+      - add_l2out.current.0.l2extOut.attributes.annotation == 'orchestrator:ansible'
 
-- name: Verify add_l2out_again
-  assert:
-    that:
-    - add_l2out_again is not changed
+  - name: Add the L2Out again
+    aci_l2out:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l2out: ansible_l2out
+      description: Test deployment 
+      bd: ansible_bd
+      domain: l2Dom
+      vlan: 3200
+      state: present
+    register: add_l2out_again
 
-- name: Add a new L2Out 
-  aci_l2out:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l2out: ansible_l2out_2
-    description: Test deployment 
-    bd: ansible_bd
-    domain: l2Dom
-    vlan: 3200
-    state: present
-  register: add_l2out_2
+  - name: Verify add_l2out_again
+    assert:
+      that:
+      - add_l2out_again is not changed
 
-- name: Verify add_l2out_2
-  assert:
-    that:
-    - add_l2out_2.current.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out_2"
-    - add_l2out_2.current.0.l2extOut.attributes.name == "ansible_l2out_2"
+  - name: Add a new L2Out 
+    aci_l2out:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l2out: ansible_l2out_2
+      description: Test deployment 
+      bd: ansible_bd
+      domain: l2Dom
+      vlan: 3200
+      state: present
+    register: add_l2out_2
 
-- name: Query the L2Out  
-  aci_l2out:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l2out: ansible_l2out
-    state: query
-  register: query_l2out
+  - name: Verify add_l2out_2
+    assert:
+      that:
+      - add_l2out_2.current.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out_2"
+      - add_l2out_2.current.0.l2extOut.attributes.name == "ansible_l2out_2"
 
-- name: Verify query_l2out
-  assert:
-    that:
-    - query_l2out is not changed
-    - query_l2out.current.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out"
-    - query_l2out.current.0.l2extOut.attributes.name == "ansible_l2out"
+  - name: Query the L2Out  
+    aci_l2out:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l2out: ansible_l2out
+      state: query
+    register: query_l2out
 
-- name: Query all l2outs under a specific tenant
-  aci_l2out:
-    <<: *aci_info
-    tenant: ansible_tenant
-    state: query
-  register: query_l2out_all
+  - name: Verify query_l2out
+    assert:
+      that:
+      - query_l2out is not changed
+      - query_l2out.current.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out"
+      - query_l2out.current.0.l2extOut.attributes.name == "ansible_l2out"
 
-- name: Verify query_l2out_all
-  assert:
-    that:
-    - query_l2out_all is not changed
+  - name: Query all l2outs under a specific tenant
+    aci_l2out:
+      <<: *aci_info
+      tenant: ansible_tenant
+      state: query
+    register: query_l2out_all
 
-- name: Remove the L2Out 
-  aci_l2out:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l2out: ansible_l2out
-    state: absent
-  register: remove_l2out
+  - name: Verify query_l2out_all
+    assert:
+      that:
+      - query_l2out_all is not changed
 
-- name: Verify remove_l2out
-  assert:
-    that:
-    - remove_l2out is changed
-    - remove_l2out.previous.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out"
-    - remove_l2out.previous.0.l2extOut.attributes.name == "ansible_l2out"
+  - name: Remove the L2Out 
+    aci_l2out:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l2out: ansible_l2out
+      state: absent
+    register: remove_l2out
+
+  - name: Verify remove_l2out
+    assert:
+      that:
+      - remove_l2out is changed
+      - remove_l2out.previous.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out"
+      - remove_l2out.previous.0.l2extOut.attributes.name == "ansible_l2out"

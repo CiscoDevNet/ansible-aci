@@ -30,20 +30,20 @@
     aci_tenant:
       <<: *aci_info
       state: absent
-      tenant: anstest
+      tenant: ansible_test
     register: tenant_absent
 
   - name: Ensure tenant exists for tests to kick off
     aci_tenant:
       <<: *aci_info
       state: present
-      tenant: anstest
+      tenant: ansible_test
     register: tenant_present
 
   - name: Ensure aci cloud context profile does not exists
     aci_cloud_ctx_profile:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       name: ctx_profile_1
       state: absent
     register: rm_ctx_profile_1
@@ -51,7 +51,7 @@
   - name: Create aci cloud context profile
     aci_cloud_ctx_profile:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       name: ctx_profile_1
       vrf: ctx_profile_vrf_1
       region: "{{ region_2 }}"
@@ -63,7 +63,7 @@
   - name: Create non_primary CIDR (check_mode)
     aci_cloud_cidr:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       address: 10.0.0.0/16
       cloud_context_profile: ctx_profile_1
       state: present
@@ -73,7 +73,7 @@
   - name: Create non_primary CIDR (normal_mode)
     aci_cloud_cidr:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       address: 10.0.0.0/16
       cloud_context_profile: ctx_profile_1
       state: present
@@ -87,17 +87,17 @@
       - cm_non_primary_cidr.previous == []
       - nm_non_primary_cidr.previous == []
       - cm_non_primary_cidr.proposed.cloudCidr.attributes.addr == "10.0.0.0/16"
-      - cm_non_primary_cidr.proposed.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"
+      - cm_non_primary_cidr.proposed.cloudCidr.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"
       - cm_non_primary_cidr.proposed.cloudCidr.attributes.primary == "no"
       - nm_non_primary_cidr.current.0.cloudCidr.attributes.annotation == 'orchestrator:ansible'
       - nm_non_primary_cidr.current.0.cloudCidr.attributes.addr == "10.0.0.0/16"
-      - nm_non_primary_cidr.current.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"
+      - nm_non_primary_cidr.current.0.cloudCidr.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"
       - nm_non_primary_cidr.current.0.cloudCidr.attributes.primary == "no"
 
   - name: Create non_primary CIDR again
     aci_cloud_cidr:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       address: 10.0.0.0/16
       cloud_context_profile: ctx_profile_1
       state: present
@@ -108,16 +108,16 @@
       that:
       - nm_non_primary_cidr_again is not changed
       - nm_non_primary_cidr_again.previous.0.cloudCidr.attributes.addr == "10.0.0.0/16"
-      - nm_non_primary_cidr_again.previous.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"
+      - nm_non_primary_cidr_again.previous.0.cloudCidr.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"
       - nm_non_primary_cidr_again.previous.0.cloudCidr.attributes.primary == "no"
       - nm_non_primary_cidr_again.current.0.cloudCidr.attributes.addr == "10.0.0.0/16"
-      - nm_non_primary_cidr_again.current.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"
+      - nm_non_primary_cidr_again.current.0.cloudCidr.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"
       - nm_non_primary_cidr_again.current.0.cloudCidr.attributes.primary == "no"
 
   - name: Change primary CIDR to non_primary (check_mode)
     aci_cloud_cidr:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       address: 10.11.0.0/16
       cloud_context_profile: ctx_profile_1
       state: present
@@ -127,7 +127,7 @@
   - name: Change primary CIDR to non_primary (normal_mode)
     aci_cloud_cidr:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       address: 10.11.0.0/16
       cloud_context_profile: ctx_profile_1
       state: present
@@ -137,14 +137,14 @@
   - name: Verify cm_primary_cidr and nm_change_to_non_primary_cidr
     assert:
       that:
-      - nm_change_to_non_primary_cidr.msg == "APIC Error 1{{':'}} Invalid Configuration {{':'}} Exactly one Primary CIDR expected for{{':'}} uni/tn-anstest/ctxprofile-ctx_profile_1, but found{{':'}} 0"
+      - nm_change_to_non_primary_cidr.msg == "APIC Error 1{{':'}} Invalid Configuration {{':'}} Exactly one Primary CIDR expected for{{':'}} uni/tn-ansible_test/ctxprofile-ctx_profile_1, but found{{':'}} 0"
       - cm_change_to_non_primary_cidr.proposed.cloudCidr.attributes.primary == "no"
       - cm_change_to_non_primary_cidr.previous.0.cloudCidr.attributes.primary == cm_change_to_non_primary_cidr.current.0.cloudCidr.attributes.primary == "yes"
 
   - name: Remove primary CIDR (check_mode)
     aci_cloud_cidr:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       address: 10.11.0.0/16
       cloud_context_profile: ctx_profile_1
       state: absent
@@ -154,7 +154,7 @@
   - name: Remove primary CIDR (normal_mode)
     aci_cloud_cidr:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       address: 10.11.0.0/16
       cloud_context_profile: ctx_profile_1
       state: absent
@@ -164,14 +164,14 @@
   - name: Verify cm_remove_primary_cidr and nm_remove_primary_cidr
     assert:
       that:
-      - nm_remove_primary_cidr.msg == "APIC Error 1{{':'}} Invalid Configuration {{':'}} Exactly one Primary CIDR expected for{{':'}} uni/tn-anstest/ctxprofile-ctx_profile_1, but found{{':'}} 0"
+      - nm_remove_primary_cidr.msg == "APIC Error 1{{':'}} Invalid Configuration {{':'}} Exactly one Primary CIDR expected for{{':'}} uni/tn-ansible_test/ctxprofile-ctx_profile_1, but found{{':'}} 0"
       - cm_remove_primary_cidr.proposed == {}
       - cm_remove_primary_cidr.previous.0.cloudCidr.attributes.primary == cm_remove_primary_cidr.current.0.cloudCidr.attributes.primary == "yes"
 
   - name: Create second non_primary CIDR
     aci_cloud_cidr:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       address: 10.18.0.0/16
       cloud_context_profile: ctx_profile_1
       state: present
@@ -184,12 +184,12 @@
       - nm_add_second_non_primary_cidr.previous == []
       - nm_add_second_non_primary_cidr.current.0.cloudCidr.attributes.addr == "10.18.0.0/16"
       - nm_add_second_non_primary_cidr.current.0.cloudCidr.attributes.primary == "no"
-      - nm_add_second_non_primary_cidr.current.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.18.0.0/16]"
+      - nm_add_second_non_primary_cidr.current.0.cloudCidr.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.18.0.0/16]"
 
   - name: Change setting of second non_primary CIDR
     aci_cloud_cidr:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       cidr: 10.18.0.0/16
       cloud_context_profile: ctx_profile_1
       description: This is not a primary CIDR
@@ -204,12 +204,12 @@
       - change_non_primary_cidr.current.0.cloudCidr.attributes.addr == "10.18.0.0/16"
       - change_non_primary_cidr.current.0.cloudCidr.attributes.descr == "This is not a primary CIDR"
       - change_non_primary_cidr.current.0.cloudCidr.attributes.nameAlias == "cidr_block_range"
-      - change_non_primary_cidr.current.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.18.0.0/16]"
+      - change_non_primary_cidr.current.0.cloudCidr.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.18.0.0/16]"
 
   - name: Query all CIDRs
     aci_cloud_cidr:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       cloud_context_profile: ctx_profile_1
       state: query
     register: query_all
@@ -230,7 +230,7 @@
   - name: Query primary CIDR
     aci_cloud_cidr:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       cloud_context_profile: ctx_profile_1
       address: 10.11.0.0/16
       state: query
@@ -241,13 +241,13 @@
       that:
       - query_primary is not changed
       - query_primary.current.0.cloudCidr.attributes.addr == "10.11.0.0/16"
-      - query_primary.current.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.11.0.0/16]"
+      - query_primary.current.0.cloudCidr.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.11.0.0/16]"
       - query_primary.current.0.cloudCidr.attributes.primary == "yes"
 
   - name: Query non_primary CIDR
     aci_cloud_cidr:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       cloud_context_profile: ctx_profile_1
       address: 10.0.0.0/16
       state: query
@@ -258,13 +258,13 @@
       that:
       - query_non_primary is not changed
       - query_non_primary.current.0.cloudCidr.attributes.addr == "10.0.0.0/16"
-      - query_non_primary.current.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"
+      - query_non_primary.current.0.cloudCidr.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"
       - query_non_primary.current.0.cloudCidr.attributes.primary == "no"
 
   - name: Query non_exsisting CIDR
     aci_cloud_cidr:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       cloud_context_profile: ctx_profile_1
       address: non_exsisting
       state: query
@@ -279,7 +279,7 @@
   - name: Remove non_primary CIDR(check_mode)
     aci_cloud_cidr:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       address: 10.0.0.0/16
       cloud_context_profile: ctx_profile_1
       state: absent
@@ -289,7 +289,7 @@
   - name: Remove non_primary CIDR(normal_mode)
     aci_cloud_cidr:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       address: 10.0.0.0/16
       cloud_context_profile: ctx_profile_1
       state: absent
@@ -304,7 +304,7 @@
       - nm_remove_non_primary_cidr.current == []
       - cm_remove_non_primary_cidr.previous.0.cloudCidr.attributes.addr == "10.0.0.0/16"
       - cm_remove_non_primary_cidr.previous.0.cloudCidr.attributes.primary == "no"
-      - cm_remove_non_primary_cidr.previous.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"
+      - cm_remove_non_primary_cidr.previous.0.cloudCidr.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"
       - nm_remove_non_primary_cidr.previous.0.cloudCidr.attributes.addr == "10.0.0.0/16"
       - nm_remove_non_primary_cidr.previous.0.cloudCidr.attributes.primary == "no"
-      - nm_remove_non_primary_cidr.previous.0.cloudCidr.attributes.dn == "uni/tn-anstest/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"
+      - nm_remove_non_primary_cidr.previous.0.cloudCidr.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.0.0.0/16]"

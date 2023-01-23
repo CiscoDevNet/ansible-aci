@@ -25,13 +25,13 @@
 - name: Remove tenant to cleanup
   cisco.aci.aci_tenant:
     <<: *aci_info
-    tenant: tag_test
+    tenant: ansible_test
     state: absent
 
 - name: Add tenant
   cisco.aci.aci_tenant:
     <<: *aci_info
-    tenant: tag_test
+    tenant: ansible_test
     state: present
   register: query_result
 

@@ -22,175 +22,181 @@
 - name: Remove test tenant before we kickoff
   cisco.aci.aci_tenant: &tenant_absent
     <<: *aci_info
-    tenant: anstest
+    tenant: ansible_test
     state: absent
 
-- name: Ensure tenant exists for tests to kick off
-  cisco.aci.aci_tenant: &aci_tenant_present
-    <<: *aci_info
-    tenant: anstest
-    state: present
-  register: tenant_present
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Create l2out
-  cisco.aci.aci_l2out:
-    <<: *aci_info
-    tenant: anstest
-    l2out: anstest
-    bd: anstest
-    domain: anstest
-    vlan: 3200
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Ensure tenant exists for tests to kick off
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      tenant: ansible_test
+      state: present
+    register: tenant_present
 
-- name: Crete node profile
-  cisco.aci.aci_l2out_logical_node_profile: &np_present
-    <<: *aci_info
-    node_profile: anstest
-    l2out: anstest
-    tenant: anstest
-    state: present
+  - name: Create l2out
+    cisco.aci.aci_l2out:
+      <<: *aci_info
+      tenant: ansible_test
+      l2out: anstest
+      bd: anstest
+      domain: anstest
+      vlan: 3200
 
-- name: Add interface profile
-  cisco.aci.aci_l2out_logical_interface_profile: &intf_present
-    <<: *np_present
-    interface_profile: INTFS
+  - name: Crete node profile
+    cisco.aci.aci_l2out_logical_node_profile: &np_present
+      <<: *aci_info
+      node_profile: anstest
+      l2out: anstest
+      tenant: ansible_test
+      state: present
 
-- name: Add new path to interface profile (check_mode)
-  cisco.aci.aci_l2out_logical_interface_path: &path_present
-    <<: *aci_info
-    tenant: anstest
-    l2out: anstest
-    node_profile: anstest
-    interface_profile: INTFS
-    interface_type: vpc
-    pod_id: 1
-    leaves:
-      - 101
-      - 102
-    interface: '1/7'
-    state: present
-  check_mode: yes
-  register: cm_path_to_intfp
+  - name: Add interface profile
+    cisco.aci.aci_l2out_logical_interface_profile: &intf_present
+      <<: *np_present
+      interface_profile: INTFS
 
-- name: Add new path to interface profile (normal mode)
-  cisco.aci.aci_l2out_logical_interface_path:
-    <<: *path_present
-  register: nm_path_to_intfp
+  - name: Add new path to interface profile (check_mode)
+    cisco.aci.aci_l2out_logical_interface_path: &path_present
+      <<: *aci_info
+      tenant: ansible_test
+      l2out: anstest
+      node_profile: anstest
+      interface_profile: INTFS
+      interface_type: vpc
+      pod_id: 1
+      leaves:
+        - 101
+        - 102
+      interface: '1/7'
+      state: present
+    check_mode: yes
+    register: cm_path_to_intfp
 
-- name: Verify path to interface profile
-  assert:
-    that:
-      - cm_path_to_intfp is changed
-      - nm_path_to_intfp is changed
-      - cm_path_to_intfp.previous == nm_path_to_intfp.previous == []
-      - cm_path_to_intfp.proposed.l2extRsPathL2OutAtt.attributes.dn == 'uni/tn-anstest/l2out-anstest/lnodep-anstest/lifp-INTFS/rspathL2OutAtt-[topology/pod-1/protpaths-101-102/pathep-[1/7]]'
-      - nm_path_to_intfp.current.0.l2extRsPathL2OutAtt.attributes.dn == 'uni/tn-anstest/l2out-anstest/lnodep-anstest/lifp-INTFS/rspathL2OutAtt-[topology/pod-1/protpaths-101-102/pathep-[1/7]]'
-      - nm_path_to_intfp.current.0.l2extRsPathL2OutAtt.attributes.annotation == 'orchestrator:ansible'
+  - name: Add new path to interface profile (normal mode)
+    cisco.aci.aci_l2out_logical_interface_path:
+      <<: *path_present
+    register: nm_path_to_intfp
 
-- name: Add another path to interface profile - interface type switch port
-  cisco.aci.aci_l2out_logical_interface_path:
-    <<: *path_present
-    interface_type: switch_port
-    leaves: 103
-    interface: anstest
-    state: present
-  register: second_path
+  - name: Verify path to interface profile
+    assert:
+      that:
+        - cm_path_to_intfp is changed
+        - nm_path_to_intfp is changed
+        - cm_path_to_intfp.previous == nm_path_to_intfp.previous == []
+        - cm_path_to_intfp.proposed.l2extRsPathL2OutAtt.attributes.dn == 'uni/tn-ansible_test/l2out-anstest/lnodep-anstest/lifp-INTFS/rspathL2OutAtt-[topology/pod-1/protpaths-101-102/pathep-[1/7]]'
+        - nm_path_to_intfp.current.0.l2extRsPathL2OutAtt.attributes.dn == 'uni/tn-ansible_test/l2out-anstest/lnodep-anstest/lifp-INTFS/rspathL2OutAtt-[topology/pod-1/protpaths-101-102/pathep-[1/7]]'
+        - nm_path_to_intfp.current.0.l2extRsPathL2OutAtt.attributes.annotation == 'orchestrator:ansible'
 
-- name: Add third path to interface profile - interface type port channel
-  cisco.aci.aci_l2out_logical_interface_path:
-    <<: *path_present
-    interface_type: port_channel
-    leaves: 104
-    interface: anstest2
-    state: present
-  register: third_path
+  - name: Add another path to interface profile - interface type switch port
+    cisco.aci.aci_l2out_logical_interface_path:
+      <<: *path_present
+      interface_type: switch_port
+      leaves: 103
+      interface: anstest
+      state: present
+    register: second_path
 
-- name: Verify path to interface profile
-  assert:
-    that:
-      - second_path is changed
-      - third_path is changed
-      - second_path.previous == third_path.previous == []
-      - second_path.current.0.l2extRsPathL2OutAtt.attributes.dn == 'uni/tn-anstest/l2out-anstest/lnodep-anstest/lifp-INTFS/rspathL2OutAtt-[topology/pod-1/paths-103/pathep-[ethanstest]]'
-      - third_path.current.0.l2extRsPathL2OutAtt.attributes.dn == 'uni/tn-anstest/l2out-anstest/lnodep-anstest/lifp-INTFS/rspathL2OutAtt-[topology/pod-1/paths-104/pathep-[anstest2]]'
+  - name: Add third path to interface profile - interface type port channel
+    cisco.aci.aci_l2out_logical_interface_path:
+      <<: *path_present
+      interface_type: port_channel
+      leaves: 104
+      interface: anstest2
+      state: present
+    register: third_path
 
-# Add path with incorrect parameter
-- name: Use vpc interface with one leave
-  cisco.aci.aci_l2out_logical_interface_path:
-    <<: *path_present
-    interface_type: vpc
-    leaves: 105
-    interface: test
-    state: present
-  ignore_errors: yes
+  - name: Verify path to interface profile
+    assert:
+      that:
+        - second_path is changed
+        - third_path is changed
+        - second_path.previous == third_path.previous == []
+        - second_path.current.0.l2extRsPathL2OutAtt.attributes.dn == 'uni/tn-ansible_test/l2out-anstest/lnodep-anstest/lifp-INTFS/rspathL2OutAtt-[topology/pod-1/paths-103/pathep-[ethanstest]]'
+        - third_path.current.0.l2extRsPathL2OutAtt.attributes.dn == 'uni/tn-ansible_test/l2out-anstest/lnodep-anstest/lifp-INTFS/rspathL2OutAtt-[topology/pod-1/paths-104/pathep-[anstest2]]'
 
-- name: Use switch_port interface with two leaves
-  cisco.aci.aci_l2out_logical_interface_path:
-    <<: *path_present
-    interface_type: switch_port
-    leaves:
-      - 105
-      - 106
-    interface: test
-    state: present
-  ignore_errors: yes
+  # Add path with incorrect parameter
+  - name: Use vpc interface with one leave
+    cisco.aci.aci_l2out_logical_interface_path:
+      <<: *path_present
+      interface_type: vpc
+      leaves: 105
+      interface: test
+      state: present
+    ignore_errors: yes
 
-- name: Use more than two leaves
-  cisco.aci.aci_l2out_logical_interface_path:
-    <<: *path_present
-    interface_type: switch_port
-    leaves:
-      - 105
-      - 106
-      - 107
-    interface: test
-    state: present
-  ignore_errors: yes
+  - name: Use switch_port interface with two leaves
+    cisco.aci.aci_l2out_logical_interface_path:
+      <<: *path_present
+      interface_type: switch_port
+      leaves:
+        - 105
+        - 106
+      interface: test
+      state: present
+    ignore_errors: yes
 
-- name: Query all
-  cisco.aci.aci_l2out_logical_interface_path:
-    <<: *np_present
-    interface_profile: INTFS
-    state: query
-  register: query_all
+  - name: Use more than two leaves
+    cisco.aci.aci_l2out_logical_interface_path:
+      <<: *path_present
+      interface_type: switch_port
+      leaves:
+        - 105
+        - 106
+        - 107
+      interface: test
+      state: present
+    ignore_errors: yes
 
-- name: Query specific path
-  cisco.aci.aci_l2out_logical_interface_path:
-    <<: *path_present
-    state: query
-  register: query_path
+  - name: Query all
+    cisco.aci.aci_l2out_logical_interface_path:
+      <<: *np_present
+      interface_profile: INTFS
+      state: query
+    register: query_all
 
-- name: Verify query
-  assert:
-    that:
-      - query_all is not changed
-      - query_all.current.0.l2extLIfP.children | length >= 3
-      - query_path is not changed
-      - query_path.current.0.l2extRsPathL2OutAtt.attributes.dn == 'uni/tn-anstest/l2out-anstest/lnodep-anstest/lifp-INTFS/rspathL2OutAtt-[topology/pod-1/protpaths-101-102/pathep-[1/7]]'
+  - name: Query specific path
+    cisco.aci.aci_l2out_logical_interface_path:
+      <<: *path_present
+      state: query
+    register: query_path
 
-- name: Remove path from interface profile (check_mode)
-  cisco.aci.aci_l2out_logical_interface_path: &path_absent
-    <<: *path_present
-    state: absent
-  check_mode: yes
-  register: cm_rm_path
+  - name: Verify query
+    assert:
+      that:
+        - query_all is not changed
+        - query_all.current.0.l2extLIfP.children | length >= 3
+        - query_path is not changed
+        - query_path.current.0.l2extRsPathL2OutAtt.attributes.dn == 'uni/tn-ansible_test/l2out-anstest/lnodep-anstest/lifp-INTFS/rspathL2OutAtt-[topology/pod-1/protpaths-101-102/pathep-[1/7]]'
 
-- name: Remove path from interface profile (normal mode)
-  cisco.aci.aci_l2out_logical_interface_path:
-    <<: *path_absent
-  register: nm_rm_path
+  - name: Remove path from interface profile (check_mode)
+    cisco.aci.aci_l2out_logical_interface_path: &path_absent
+      <<: *path_present
+      state: absent
+    check_mode: yes
+    register: cm_rm_path
 
-# Remove non_existing path
-- name: Remove path again
-  cisco.aci.aci_l2out_logical_interface_path:
-    <<: *path_absent
-  register: rm_non_existing
+  - name: Remove path from interface profile (normal mode)
+    cisco.aci.aci_l2out_logical_interface_path:
+      <<: *path_absent
+    register: nm_rm_path
 
-- name: Verify remove path
-  assert:
-    that:
-      - cm_rm_path is changed
-      - nm_rm_path is changed
-      - cm_rm_path.proposed == {}
-      - nm_rm_path.current == []
-      - cm_rm_path.previous.0.l2extRsPathL2OutAtt.attributes.dn == nm_rm_path.previous.0.l2extRsPathL2OutAtt.attributes.dn == 'uni/tn-anstest/l2out-anstest/lnodep-anstest/lifp-INTFS/rspathL2OutAtt-[topology/pod-1/protpaths-101-102/pathep-[1/7]]'
-      - rm_non_existing is not changed
+  # Remove non_existing path
+  - name: Remove path again
+    cisco.aci.aci_l2out_logical_interface_path:
+      <<: *path_absent
+    register: rm_non_existing
+
+  - name: Verify remove path
+    assert:
+      that:
+        - cm_rm_path is changed
+        - nm_rm_path is changed
+        - cm_rm_path.proposed == {}
+        - nm_rm_path.current == []
+        - cm_rm_path.previous.0.l2extRsPathL2OutAtt.attributes.dn == nm_rm_path.previous.0.l2extRsPathL2OutAtt.attributes.dn == 'uni/tn-ansible_test/l2out-anstest/lnodep-anstest/lifp-INTFS/rspathL2OutAtt-[topology/pod-1/protpaths-101-102/pathep-[1/7]]'
+        - rm_non_existing is not changed

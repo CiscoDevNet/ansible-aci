@@ -24,14 +24,13 @@
     - name: ensure tenant is deleted for clean state
       cisco.aci.aci_tenant:
         <<: *aci_info
-        tenant: anstest
+        tenant: ansible_test
         state: absent
-      register: tenant_present
 
     - name: ensure tenant exists for tests to kick off
       cisco.aci.aci_tenant: &aci_tenant_present
         <<: *aci_info
-        tenant: anstest
+        tenant: ansible_test
         state: present
       register: tenant_present
 
@@ -153,9 +152,8 @@
 
     - name: query all
       cisco.aci.aci_contract_subject:
-        <<: *aci_tenant_present
+        <<: *aci_info
         state: query
-        tenant: "{{ fakevar | default(omit) }}"
       register: query_all
 
     - name: query assertions
@@ -164,21 +162,21 @@
           - query_tenant_contract_subject is not changed
           - query_tenant_contract_subject.current | length == 1
           - query_tenant_contract_subject.current.0.vzSubj.attributes.name == "anstest"
-          - '"tn-anstest/brc-anstest/subj-anstest.json" in query_tenant_contract_subject.url'
+          - '"tn-ansible_test/brc-anstest/subj-anstest.json" in query_tenant_contract_subject.url'
           - query_tenant_contract is not changed
           - query_tenant_contract.current | length == 1
           - query_tenant_contract.current.0.vzBrCP.attributes.name == "anstest"
           - query_tenant_contract.current.0.vzBrCP.children | length == 2
           - '"?rsp-subtree=full&rsp-subtree-class=vzInTerm,vzOutTerm,vzSubj" in query_tenant_contract.filter_string'
-          - '"tn-anstest/brc-anstest.json" in query_tenant_contract.url'
+          - '"tn-ansible_test/brc-anstest.json" in query_tenant_contract.url'
           - query_tenant_subject is not changed
           - query_tenant_subject.current | length == 1
-          - query_tenant_subject.current.0.fvTenant.attributes.name == "anstest"
+          - query_tenant_subject.current.0.fvTenant.attributes.name == "ansible_test"
           - query_tenant_subject.current.0.fvTenant.children.0.vzBrCP.children | length == 1
           - query_tenant_subject.current.0.fvTenant.children.0.vzBrCP.children.0.vzSubj.attributes.name == "anstest"
           - '"rsp-subtree-filter=eq(vzSubj.name,\"anstest\")" in query_tenant_subject.filter_string'
           - '"rsp-subtree-class=vzInTerm,vzOutTerm,vzSubj" in query_tenant_subject.filter_string'
-          - '"tn-anstest.json" in query_tenant_subject.url'
+          - '"tn-ansible_test.json" in query_tenant_subject.url'
           - query_contract_subject is not changed
           - query_contract_subject.current.0.vzBrCP.attributes.name == "anstest"
           - query_contract_subject.current.0.vzBrCP.children | length == 1
@@ -189,9 +187,9 @@
           - '"class/vzBrCP.json" in query_contract_subject.url'
           - query_tenant is not changed
           - query_tenant.current | length == 1
-          - query_tenant.current.0.fvTenant.attributes.name == "anstest"
+          - query_tenant.current.0.fvTenant.attributes.name == "ansible_test"
           - '"rsp-subtree-class=vzBrCP,vzInTerm,vzOutTerm,vzSubj" in query_tenant.filter_string'
-          - '"tn-anstest.json" in query_tenant.url'
+          - '"tn-ansible_test.json" in query_tenant.url'
           - query_contract is not changed
           - query_contract.current.0.vzBrCP.attributes.name == "anstest"
           - '"query-target-filter=eq(vzBrCP.name,\"anstest\")" in query_contract.filter_string'

@@ -45,8 +45,7 @@
     state: absent
 
 - name: Execute tasks only for non-cloud sites
-  when:
-   - query_cloud.current == []  # This condition will skip execution for cloud sites
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
   block:
   - name: Remove ansible_port_channel_ipg if it already exists
     aci_interface_policy_leaf_policy_group:

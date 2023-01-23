@@ -10,7 +10,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact: 
+  set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"

@@ -17,7 +17,6 @@
     pool_allocation_mode: static
     state: absent
 
-
 # ADD VLAN POOL
 - name: Add static vlan pool (check_mode)
   cisco.aci.aci_vlan_pool: &static_vlan_pool_present

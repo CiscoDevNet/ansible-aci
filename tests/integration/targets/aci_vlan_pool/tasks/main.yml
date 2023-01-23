@@ -8,8 +8,14 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
-- include_tasks: static.yml
-  when: static is not defined or static
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- include_tasks: dynamic.yml
-  when: dynamic is not defined or dynamic
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - include_tasks: static.yml
+    when: static is not defined or static
+
+  - include_tasks: dynamic.yml
+    when: dynamic is not defined or dynamic

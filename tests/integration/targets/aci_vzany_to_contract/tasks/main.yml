@@ -17,13 +17,13 @@
 - name: Remove test tenant1 before we kickoff
   cisco.aci.aci_tenant: &tenant1_absent
     <<: *aci_info
-    tenant: vzanytn1
+    tenant: ansible_test
     state: absent
 
 - name: Remove test tenant2 before we kickoff
   cisco.aci.aci_tenant: &tenant2_absent
     <<: *aci_info
-    tenant: vzanytn2
+    tenant: ansible_test_2
     state: absent
 
 # SETUP ENVIRONMENT
@@ -59,7 +59,7 @@
   cisco.aci.aci_contract_export:
     <<: *tenant1_present
     contract: cifsrc
-    destination_tenant: vzanytn2
+    destination_tenant: ansible_test_2
     name: testcif
 
 # BEGIN WITH TESTS

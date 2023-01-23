@@ -9,15 +9,15 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact: 
-   aci_info: &aci_info
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
@@ -26,171 +26,177 @@
     tenant: ansible_tenant
     state: absent
 
-- name: Add a new tenant
-  cisco.aci.aci_tenant: &aci_tenant
-    <<: *aci_info
-    tenant: ansible_tenant
-    state: present
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Add new bd
-  cisco.aci.aci_bd: &aci_bd
-    <<: *aci_tenant
-    bd: anstest
-  register: bd_present
-
-- name: Add a new source ap
-  cisco.aci.aci_ap:
-    <<: *aci_tenant 
-    ap: ansible_source_ap
-
-- name: Add a new dest ap
-  cisco.aci.aci_ap:
-    <<: *aci_tenant 
-    ap: ansible_dest_ap
-
-- name: Add a new dest epg
-  cisco.aci.aci_epg:
-    <<: *aci_bd 
-    ap: ansible_dest_ap
-    epg: ansible_dest_epg
-
-- name: Add a new source epg
-  cisco.aci.aci_epg:
-    <<: *aci_bd
-    ap: ansible_dest_ap
-    epg: ansible_source_epg
-
-- name: Add span dest group
-  cisco.aci.aci_tenant_span_dst_group:
-    <<: *aci_info
-    destination_group: ansible_dest_group
-    destination_ip: 10.0.0.1
-    source_ip: 10.0.2.1
-    tenant: ansible_tenant
-    ttl: 2
-    mtu: 1500
-    flow_id: 1
-    dscp: "CS1"
-    destination_epg:
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    cisco.aci.aci_tenant: &aci_tenant
+      <<: *aci_info
       tenant: ansible_tenant
+      state: present
+
+  - name: Add new bd
+    cisco.aci.aci_bd: &aci_bd
+      <<: *aci_tenant
+      bd: anstest
+    register: bd_present
+
+  - name: Add a new source ap
+    cisco.aci.aci_ap:
+      <<: *aci_tenant 
+      ap: ansible_source_ap
+
+  - name: Add a new dest ap
+    cisco.aci.aci_ap:
+      <<: *aci_tenant 
+      ap: ansible_dest_ap
+
+  - name: Add a new dest epg
+    cisco.aci.aci_epg:
+      <<: *aci_bd 
       ap: ansible_dest_ap
       epg: ansible_dest_epg
-    state: present
 
-- name: Add span dest group
-  cisco.aci.aci_tenant_span_dst_group:
-    <<: *aci_info
-    destination_group: ansible_dest_group_2
-    destination_ip: 20.0.0.1
-    source_ip: 20.0.2.1
-    tenant: ansible_tenant
-    ttl: 2
-    mtu: 1500
-    flow_id: 1
-    dscp: "CS1"
-    destination_epg:
-      tenant: ansible_tenant
+  - name: Add a new source epg
+    cisco.aci.aci_epg:
+      <<: *aci_bd
       ap: ansible_dest_ap
-      epg: ansible_dest_epg
-    state: present
+      epg: ansible_source_epg
 
-- name: Create a source group
-  cisco.aci.aci_tenant_span_src_group:
-    <<: *aci_tenant
-    name: ansible_span
-    description: ansible test description
+  - name: Add span dest group
+    cisco.aci.aci_tenant_span_dst_group:
+      <<: *aci_info
+      destination_group: ansible_dest_group
+      destination_ip: 10.0.0.1
+      source_ip: 10.0.2.1
+      tenant: ansible_tenant
+      ttl: 2
+      mtu: 1500
+      flow_id: 1
+      dscp: "CS1"
+      destination_epg:
+        tenant: ansible_tenant
+        ap: ansible_dest_ap
+        epg: ansible_dest_epg
+      state: present
 
-- name: Create another source group
-  cisco.aci.aci_tenant_span_src_group:
-    <<: *aci_tenant
-    name: ansible_span_2
-    description: ansible test description
+  - name: Add span dest group
+    cisco.aci.aci_tenant_span_dst_group:
+      <<: *aci_info
+      destination_group: ansible_dest_group_2
+      destination_ip: 20.0.0.1
+      source_ip: 20.0.2.1
+      tenant: ansible_tenant
+      ttl: 2
+      mtu: 1500
+      flow_id: 1
+      dscp: "CS1"
+      destination_epg:
+        tenant: ansible_tenant
+        ap: ansible_dest_ap
+        epg: ansible_dest_epg
+      state: present
 
-- name: Create a source group to destination (check mode)
-  cisco.aci.aci_tenant_span_src_group_to_dst_group: &aci_source_to_dest
-    <<: *aci_tenant
-    src_group: ansible_span
-    dst_group: ansible_dest_group
-  check_mode: yes
-  register: cm_create
+  - name: Create a source group
+    cisco.aci.aci_tenant_span_src_group:
+      <<: *aci_tenant
+      name: ansible_span
+      description: ansible test description
 
-- name: Create a source group to destination
-  cisco.aci.aci_tenant_span_src_group_to_dst_group:
-    <<: *aci_source_to_dest
-  register: nm_create
+  - name: Create another source group
+    cisco.aci.aci_tenant_span_src_group:
+      <<: *aci_tenant
+      name: ansible_span_2
+      description: ansible test description
 
-- name: Create a source group to destination again
-  cisco.aci.aci_tenant_span_src_group_to_dst_group:
-    <<: *aci_source_to_dest
-  register: nm_create_again
+  - name: Create a source group to destination (check mode)
+    cisco.aci.aci_tenant_span_src_group_to_dst_group: &aci_source_to_dest
+      <<: *aci_tenant
+      src_group: ansible_span
+      dst_group: ansible_dest_group
+    check_mode: yes
+    register: cm_create
 
-- name: Create another source group to destination
-  cisco.aci.aci_tenant_span_src_group_to_dst_group:
-    <<: *aci_tenant
-    src_group: ansible_span_2
-    dst_group: ansible_dest_group_2
-  register: nm_create_another
+  - name: Create a source group to destination
+    cisco.aci.aci_tenant_span_src_group_to_dst_group:
+      <<: *aci_source_to_dest
+    register: nm_create
 
-- name: Change a source group to destination (error not allowed)
-  cisco.aci.aci_tenant_span_src_group_to_dst_group:
-    <<: *aci_source_to_dest
-    dst_group: ansible_dest_group_2
-  ignore_errors: yes
-  register: error_change
+  - name: Create a source group to destination again
+    cisco.aci.aci_tenant_span_src_group_to_dst_group:
+      <<: *aci_source_to_dest
+    register: nm_create_again
 
-- name: Verify create source groups to destination
-  ansible.builtin.assert:
-    that:
-    - cm_create is changed
-    - nm_create is changed
-    - nm_create.current.0.spanSpanLbl.attributes.name == "ansible_dest_group"
-    - nm_create_again is not changed
-    - nm_create_again.current.0.spanSpanLbl.attributes.name == "ansible_dest_group"
-    - nm_create_another is changed
-    - nm_create_another.current.0.spanSpanLbl.attributes.name == "ansible_dest_group_2"
-    - error_change is not changed
-    - 'error_change.msg == "APIC Error 105: Only one span destination is supported per session"'
+  - name: Create another source group to destination
+    cisco.aci.aci_tenant_span_src_group_to_dst_group:
+      <<: *aci_tenant
+      src_group: ansible_span_2
+      dst_group: ansible_dest_group_2
+    register: nm_create_another
 
-- name: Query a a source group to destination
-  cisco.aci.aci_tenant_span_src_group_to_dst_group:
-    <<: *aci_source_to_dest
-    state: query
-  register: query_one
+  - name: Change a source group to destination (error not allowed)
+    cisco.aci.aci_tenant_span_src_group_to_dst_group:
+      <<: *aci_source_to_dest
+      dst_group: ansible_dest_group_2
+    ignore_errors: yes
+    register: error_change
 
-- name: Query all a source group to destinations
-  cisco.aci.aci_tenant_span_src_group_to_dst_group:
-    <<: *aci_info
-    state: query
-  register: query_all
+  - name: Verify create source groups to destination
+    ansible.builtin.assert:
+      that:
+      - cm_create is changed
+      - nm_create is changed
+      - nm_create.current.0.spanSpanLbl.attributes.name == "ansible_dest_group"
+      - nm_create_again is not changed
+      - nm_create_again.current.0.spanSpanLbl.attributes.name == "ansible_dest_group"
+      - nm_create_another is changed
+      - nm_create_another.current.0.spanSpanLbl.attributes.name == "ansible_dest_group_2"
+      - error_change is not changed
+      - 'error_change.msg == "APIC Error 105: Only one span destination is supported per session"'
 
-- name: Verify queries of source group to destination
-  ansible.builtin.assert:
-    that:
-    - query_one is not changed
-    - query_one.current.0.spanSpanLbl.attributes.name == "ansible_dest_group"
-    - query_all is not changed
-    - query_all.current | length == 2
+  - name: Query a a source group to destination
+    cisco.aci.aci_tenant_span_src_group_to_dst_group:
+      <<: *aci_source_to_dest
+      state: query
+    register: query_one
 
-- name: Delete a source group to destination
-  cisco.aci.aci_tenant_span_src_group_to_dst_group:
-    <<: *aci_source_to_dest
-    state: absent
-  register: delete
+  - name: Query all a source group to destinations
+    cisco.aci.aci_tenant_span_src_group_to_dst_group:
+      <<: *aci_info
+      state: query
+    register: query_all
 
-- name: Delete a source group to destination again
-  cisco.aci.aci_tenant_span_src_group_to_dst_group:
-    <<: *aci_source_to_dest
-    state: absent
-  register: delete_again
+  - name: Verify queries of source group to destination
+    ansible.builtin.assert:
+      that:
+      - query_one is not changed
+      - query_one.current.0.spanSpanLbl.attributes.name == "ansible_dest_group"
+      - query_all is not changed
+      - query_all.current | length == 2
 
-- name: Verify delete of source group to destinations
-  ansible.builtin.assert:
-    that:
-    - delete is changed
-    - delete_again is not changed
-    - delete.current == []
+  - name: Delete a source group to destination
+    cisco.aci.aci_tenant_span_src_group_to_dst_group:
+      <<: *aci_source_to_dest
+      state: absent
+    register: delete
 
-- name: Remove the ansible_tenant
-  cisco.aci.aci_tenant:
-    <<: *aci_tenant 
-    state: absent
+  - name: Delete a source group to destination again
+    cisco.aci.aci_tenant_span_src_group_to_dst_group:
+      <<: *aci_source_to_dest
+      state: absent
+    register: delete_again
+
+  - name: Verify delete of source group to destinations
+    ansible.builtin.assert:
+      that:
+      - delete is changed
+      - delete_again is not changed
+      - delete.current == []
+
+  - name: Remove the ansible_tenant
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant 
+      state: absent
