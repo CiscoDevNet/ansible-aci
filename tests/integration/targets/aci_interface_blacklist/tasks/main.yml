@@ -396,3 +396,63 @@
     that:
     - enable_fex_int_again is not changed
     - enable_fex_int_again.current.0.fabricOOServicePol.children is not defined
+
+- name: Leaf - Disable interface
+  cisco.aci.aci_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars_leaf
+    state: present
+
+- name: Spine - Disable interface
+  cisco.aci.aci_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars_spine
+    state: present
+
+- name: Fex - Disable interface
+  cisco.aci.aci_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars_fex
+    state: present
+
+- name: All - Query interfaces
+  cisco.aci.aci_interface_blacklist:
+    <<: *aci_info
+    state: query
+  register: query_all_disabled
+
+- name: All - Verify that multiple outofsvc_interface_blacklist exist
+  assert:
+    that:
+    - query_all_disabled is not changed
+    - query_all_disabled.current | length == 3
+
+- name: Leaf - Enable interface
+  cisco.aci.aci_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars_leaf
+    state: absent
+
+- name: Spine - Enable interface
+  cisco.aci.aci_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars_spine
+    state: absent
+
+- name: Fex - Enable interface
+  cisco.aci.aci_interface_blacklist:
+    <<: *aci_info
+    <<: *test_vars_fex
+    state: absent
+
+- name: All - Query interfaces
+  cisco.aci.aci_interface_blacklist:
+    <<: *aci_info
+    state: query
+  register: query_all_enabled
+  
+- name: All - Verify that no outofsvc_interface_blacklist exist
+  assert:
+    that:
+    - query_all_enabled is not changed
+    - query_all_enabled.current == []
