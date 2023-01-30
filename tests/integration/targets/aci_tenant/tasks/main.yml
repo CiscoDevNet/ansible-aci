@@ -11,7 +11,7 @@
 
 - include_tasks: httpapi_inventory_password.yml
   tags: httpapi_inventory_password
-  when: inventory_hostname == play_hosts[5]
+  when: inventory_hostname == play_hosts[6]
 
 - name: Delete old log files to clean test directory
   file:
