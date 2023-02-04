@@ -1,7 +1,7 @@
 ---
 requires_ansible: '>=2.9.10'
 action_groups:
-  aci:
+  all:
     - aci_aaa_custom_privilege
     - aci_aaa_domain
     - aci_aaa_role
