@@ -93,7 +93,7 @@ EXAMPLES = r"""
     password: SomeSecretePassword
     epg: default
     pod_id: 1
-    band_type: out_of_band
+    type: out_of_band
     node_id: 1102
     ipv4_address: "3.1.1.2/24"
     ipv4_gw: "3.1.1.1"
