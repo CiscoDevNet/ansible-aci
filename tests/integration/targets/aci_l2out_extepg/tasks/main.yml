@@ -9,15 +9,15 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact: 
-   aci_info: &aci_info
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
@@ -26,132 +26,138 @@
     tenant: ansible_tenant
     state: absent
 
-- name: Add a new tenant
-  aci_tenant:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    description: Ansible tenant
-    state: present
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Add New L2Out 
-  aci_l2out:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l2out: ansible_l2out
-    description: Ansible Test
-    bd: ansible_bd
-    domain: l2Dom
-    vlan: 3200
-    state: present
-  register: add_l2out
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    aci_tenant:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
 
-- name: Add another L2Out 
-  aci_l2out:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l2out: ansible_l2out_2
-    description: Ansible Test
-    bd: ansible_bd
-    domain: l2Dom
-    vlan: 3200
-    state: present
-  register: add_l2out_2
+  - name: Add New L2Out 
+    aci_l2out:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l2out: ansible_l2out
+      description: Ansible Test
+      bd: ansible_bd
+      domain: l2Dom
+      vlan: 3200
+      state: present
+    register: add_l2out
 
-- name: Add L2 external end point group 
-  aci_l2out_extepg:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    l2out: ansible_l2out
-    extepg: ansible_extepg
-    description: Ansible external epg
-    preferred_group: True
-    state: present
-  register: l2extepg
+  - name: Add another L2Out 
+    aci_l2out:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l2out: ansible_l2out_2
+      description: Ansible Test
+      bd: ansible_bd
+      domain: l2Dom
+      vlan: 3200
+      state: present
+    register: add_l2out_2
 
-- name: Verify l2extepg
-  assert:
-    that:
-    - l2extepg.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
-    - l2extepg.current.0.l2extInstP.attributes.annotation == 'orchestrator:ansible'
+  - name: Add L2 external end point group 
+    aci_l2out_extepg:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      l2out: ansible_l2out
+      extepg: ansible_extepg
+      description: Ansible external epg
+      preferred_group: True
+      state: present
+    register: l2extepg
 
-- name: Add L2 external end point group again
-  aci_l2out_extepg:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    l2out: ansible_l2out
-    extepg: ansible_extepg
-    description: Ansible external epg
-    preferred_group: True
-    state: present
-  register: l2extepg_again
+  - name: Verify l2extepg
+    assert:
+      that:
+      - l2extepg.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
+      - l2extepg.current.0.l2extInstP.attributes.annotation == 'orchestrator:ansible'
 
-- name: Verify l2extepg_again
-  assert:
-    that:
-    - l2extepg_again is not changed
-    - l2extepg.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
+  - name: Add L2 external end point group again
+    aci_l2out_extepg:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      l2out: ansible_l2out
+      extepg: ansible_extepg
+      description: Ansible external epg
+      preferred_group: True
+      state: present
+    register: l2extepg_again
 
-- name: Add another L2 external end point group
-  aci_l2out_extepg:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    l2out: ansible_l2out_2
-    extepg: ansible_extepg_2
-    description: Ansible external epg
-    qos_class: level1
-    preferred_group: True
-    state: present
-  register: l2extepg_2
+  - name: Verify l2extepg_again
+    assert:
+      that:
+      - l2extepg_again is not changed
+      - l2extepg.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
 
-- name: Verify l2extepg_2
-  assert:
-    that:
-    - l2extepg_2.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out_2/instP-ansible_extepg_2"
+  - name: Add another L2 external end point group
+    aci_l2out_extepg:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      l2out: ansible_l2out_2
+      extepg: ansible_extepg_2
+      description: Ansible external epg
+      qos_class: level1
+      preferred_group: True
+      state: present
+    register: l2extepg_2
 
-- name: Query the L2 external end point group
-  aci_l2out_extepg:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    l2out: ansible_l2out
-    extepg: ansible_extepg
-    state: query
-  register: query_l2extepg
+  - name: Verify l2extepg_2
+    assert:
+      that:
+      - l2extepg_2.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out_2/instP-ansible_extepg_2"
 
-- name: Query all L2 external epg in a tenant
-  aci_l2out_extepg:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    state: query
-  register: query_all_in_tenant
+  - name: Query the L2 external end point group
+    aci_l2out_extepg:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      l2out: ansible_l2out
+      extepg: ansible_extepg
+      state: query
+    register: query_l2extepg
 
-- name: Verify query_all_in_tenant
-  assert:
-    that:
-    - query_all_in_tenant is not changed
+  - name: Query all L2 external epg in a tenant
+    aci_l2out_extepg:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      state: query
+    register: query_all_in_tenant
 
-- name: Query all L2 external epgs
-  aci_l2out_extepg:
-    <<: *aci_info
-    state: query
-  register: query_all
+  - name: Verify query_all_in_tenant
+    assert:
+      that:
+      - query_all_in_tenant is not changed
 
-- name: Verify query_all
-  assert:
-    that:
-    - query_all is not changed
+  - name: Query all L2 external epgs
+    aci_l2out_extepg:
+      <<: *aci_info
+      state: query
+    register: query_all
 
-- name: Remove L2 external end point group
-  aci_l2out_extepg:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l2out: ansible_l2out
-    extepg: ansible_extepg
-    preferred_group: True
-    state: absent
-  register: remove_l2extepg
+  - name: Verify query_all
+    assert:
+      that:
+      - query_all is not changed
 
-- name: Verify remove_l2extepg
-  assert:
-    that:
-    - remove_l2extepg is changed
-    - remove_l2extepg.previous.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
+  - name: Remove L2 external end point group
+    aci_l2out_extepg:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l2out: ansible_l2out
+      extepg: ansible_extepg
+      preferred_group: True
+      state: absent
+    register: remove_l2extepg
+
+  - name: Verify remove_l2extepg
+    assert:
+      that:
+      - remove_l2extepg is changed
+      - remove_l2extepg.previous.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"

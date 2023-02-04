@@ -218,7 +218,7 @@ def main():
 
     aci = ACIModule(module)
     aci.construct_url(
-        root_class={"aci_class": "cloudBgpAsP", "aci_rn": "clouddomp/as".format(), "target_filter": {"name": name}, "module_object": None}, child_classes=[]
+        root_class={"aci_class": "cloudBgpAsP", "aci_rn": "clouddomp/as", "target_filter": {"name": name}, "module_object": None}, child_classes=[]
     )
 
     aci.get_existing()

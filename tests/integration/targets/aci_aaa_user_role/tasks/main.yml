@@ -45,6 +45,19 @@
     phone: 1-234-555-678
   register: add_user
 
+# ADD SECURITY DOMAINS
+- name: Ensure anstest-security-domain exists
+  cisco.aci.aci_aaa_domain:
+    <<: *aci_info
+    name: anstest-security-domain
+    state: present
+
+- name: Ensure anstest-security-domain-1 exists
+  cisco.aci.aci_aaa_domain:
+    <<: *aci_info
+    name: anstest-security-domain-1
+    state: present
+
 # ADD USER DOMAIN
 - name: Add "anstest-security-domain" user domain to aaa_user
   cisco.aci.aci_aaa_user_domain: &sec_domain_present
@@ -308,4 +321,16 @@
 - name: Remove aaa_user "ansible"
   cisco.aci.aci_aaa_user:
     <<: *user_present
+    state: absent
+
+- name: Remove anstest-security-domain domain
+  cisco.aci.aci_aaa_domain:
+    <<: *aci_info
+    name: anstest-security-domain
+    state: absent
+
+- name: Remove anstest-security-domain-1 domain
+  cisco.aci.aci_aaa_domain:
+    <<: *aci_info
+    name: anstest-security-domain-1
     state: absent

@@ -18,7 +18,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: debug
     state: absent
-    tenant: anstest
+    tenant: ansible_test
 
 - name: create a snapshot
   cisco.aci.aci_config_snapshot: &create_snapshot
@@ -31,7 +31,7 @@
   cisco.aci.aci_tenant: &aci_tenant
     <<: *create_snapshot
     export_policy: "{{ fakevar | default(omit) }}"
-    tenant: anstest
+    tenant: ansible_test
   register: tenant_present
 
 - name: create a new snapshot
@@ -94,7 +94,7 @@
   assert:
     that:
       - rollback_preview is not changed
-      - rollback_preview.preview.polUni.children[0].fvTenant.attributes.name == 'anstest'
+      - rollback_preview.preview.polUni.children[0].fvTenant.attributes.name == 'ansible_test'
       - rollback_preview.preview.polUni.children[0].fvTenant.attributes.status == 'created'
       - '"snapshots.diff.xml" in rollback_preview.url'
       - rollback_missing_param is failed

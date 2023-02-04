@@ -23,6 +23,20 @@
       output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT
+- name: Remove user domain from a aaa_user
+  cisco.aci.aci_aaa_user_domain:
+    <<: *aci_info
+    name: anstest-security-domain
+    aaa_user: ansible
+    state: absent
+
+- name: Remove user domain from a aaa_user
+  cisco.aci.aci_aaa_user_domain:
+    <<: *aci_info
+    name: anstest-security-domain-1
+    aaa_user: ansible
+    state: absent
+
 - name: Remove any pre-existing user
   cisco.aci.aci_aaa_user:
     <<: *aci_info

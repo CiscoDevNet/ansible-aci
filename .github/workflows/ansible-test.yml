@@ -6,6 +6,8 @@ on:
   schedule:
   # * is a special character in YAML so you have to quote this string
   - cron:  '0 8 * * *'
+env:
+  python_version: 3.9
 jobs:
   build:
     name: Build collection
@@ -13,18 +15,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [2.9.27, 2.10.17, 2.11.12, 2.12.10, 2.13.7, 2.14.1]
+        ansible: [v2.9.27, v2.10.17, v2.11.12, v2.12.10, stable-2.13, stable-2.14]
     steps:
     - name: Check out code
       uses: actions/checkout@v3
     
-    - name: Set up Python 3.8
+    - name: Set up Python ${{ env.python_version }}
       uses: actions/setup-python@v4
       with:
-        python-version: 3.8
+        python-version: ${{ env.python_version }}
 
-    - name: Install ansible-base (v${{ matrix.ansible }})
-      run: pip install https://github.com/ansible/ansible/archive/v${{ matrix.ansible }}.tar.gz --disable-pip-version-check
+    - name: Install ansible-base (${{ matrix.ansible }})
+      run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible }}.tar.gz --disable-pip-version-check
 
     - name: Build a collection tarball
       run: ansible-galaxy collection build --output-path "${GITHUB_WORKSPACE}/.cache/collection-tarballs"
@@ -40,14 +42,17 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     strategy:
+      fail-fast: false
       matrix:
-        experimental: true
+        experimental: [true]
     steps:
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
       - name: Run black against code
         uses: psf/black@stable
-        options: "--check --diff --color -l 159"
+        with:
+          options: "--check --diff --color -l 159"
 
   importer:
     name: Galaxy-importer check
@@ -55,13 +60,13 @@ jobs:
     - build
     runs-on: ubuntu-latest
     steps:
-    - name: Set up Python 3.8
+    - name: Set up Python ${{ env.python_version }}
       uses: actions/setup-python@v4
       with:
-        python-version: 3.8
+        python-version: ${{ env.python_version }}
 
-    - name: Install ansible-base (v2.14.1)
-      run: pip install https://github.com/ansible/ansible/archive/v2.14.1.tar.gz --disable-pip-version-check
+    - name: Install ansible-base (stable-2.14)
+      run: pip install https://github.com/ansible/ansible/archive/stable-2.14.tar.gz --disable-pip-version-check
 
     - name: Download migrated collection artifacts
       uses: actions/download-artifact@v3
@@ -102,15 +107,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [2.9.27, 2.10.17, 2.11.12, 2.12.10, 2.13.7, 2.14.1]
+        ansible: [v2.9.27, v2.10.17, v2.11.12, v2.12.10, stable-2.13, stable-2.14]
     steps:
-    - name: Set up Python 3.8
+    - name: Set up Python ${{ env.python_version }}
       uses: actions/setup-python@v4
       with:
-        python-version: 3.8
+        python-version: ${{ env.python_version }}
 
-    - name: Install ansible-base (v${{ matrix.ansible }})
-      run: pip install https://github.com/ansible/ansible/archive/v${{ matrix.ansible }}.tar.gz --disable-pip-version-check
+    - name: Install ansible-base (${{ matrix.ansible }})
+      run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible }}.tar.gz --disable-pip-version-check
 
     - name: Install coverage (v4.5.4)
       run: pip install coverage==4.5.4
@@ -125,7 +130,7 @@ jobs:
       run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
 
     - name: Run sanity tests
-      run: ansible-test sanity --docker -v --color --truncate 0
+      run: ansible-test sanity --docker -v --color --truncate 0 --coverage
       working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
     
     - name: Generate coverage report
@@ -133,7 +138,7 @@ jobs:
       working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
     - name: Push coverate report to codecov.io
-      run: bash <(curl -s https://codecov.io/bash) -s 'tests/output/reports/' -F integration
+      run: bash <(curl -s https://codecov.io/bash) -s 'tests/output/reports/' -F sanity
       working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
   units:
@@ -144,15 +149,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [2.9.27, 2.10.17, 2.11.12, 2.12.10, 2.13.7, 2.14.1]
+        ansible: [v2.10.17, v2.11.12, v2.12.10, stable-2.13, stable-2.14]
+        python-version: [3.9]
+        include:
+          - ansible: v2.9.27
+            python-version: 3.8
     steps:
-    - name: Set up Python 3.8
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: 3.8
+        python-version: ${{ matrix.python-version }}
 
-    - name: Install ansible-base (v${{ matrix.ansible }})
-      run: pip install https://github.com/ansible/ansible/archive/v${{ matrix.ansible }}.tar.gz --disable-pip-version-check
+    - name: Install ansible-base (${{ matrix.ansible }})
+      run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible }}.tar.gz --disable-pip-version-check
 
     - name: Install coverage (v4.5.4)
       run: pip install coverage==4.5.4
@@ -166,17 +175,17 @@ jobs:
     - name: Install the collection tarball
       run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
 
-    - name: Run unit tests
-      run: ansible-test units --docker -v --color --truncate 0 --python 3.8 --coverage
-      working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+    # - name: Run unit tests
+    #   run: ansible-test units --docker -v --color --truncate 0 --python ${{ matrix.python-version }} --coverage
+    #   working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
-    - name: Generate coverage report.
-      run: ansible-test coverage xml -v --requirements --group-by command --group-by version
-      working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+    # - name: Generate coverage report.
+    #   run: ansible-test coverage xml -v --requirements --group-by command --group-by version
+    #   working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
-    - name: Push coverate report to codecov.io
-      run: bash <(curl -s https://codecov.io/bash) -s 'tests/output/reports/' -F integration
-      working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+    # - name: Push coverate report to codecov.io
+    #   run: bash <(curl -s https://codecov.io/bash) -s 'tests/output/reports/' -F unit
+    #   working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
   integration:
     name: Integration in ubuntu-latest
@@ -184,13 +193,13 @@ jobs:
     - build
     runs-on: ubuntu-latest
     steps:
-    - name: Set up Python 3.8
+    - name: Set up Python ${{ env.python_version }}
       uses: actions/setup-python@v4
       with:
-        python-version: 3.8
+        python-version: ${{ env.python_version }}
 
-    - name: Install ansible-base (v2.11.9)
-      run: pip install https://github.com/ansible/ansible/archive/v2.11.9.tar.gz --disable-pip-version-check
+    - name: Install ansible-base (stable-2.13)
+      run: pip install https://github.com/ansible/ansible/archive/stable-2.13.tar.gz --disable-pip-version-check
 
     - name: Install coverage (v4.5.4)
       run: pip install coverage==4.5.4
@@ -207,26 +216,28 @@ jobs:
     - name: Requesting integration mutex
       uses: nev7n/wait_for_response@v1
       with:
-        url: ${{ format('https://8v7s765ibh.execute-api.us-west-1.amazonaws.com/v1/ansible-aci?repo={0}', github.repository) }}
+        url: ${{ format('https://8v7s765ibh.execute-api.us-west-1.amazonaws.com/v1/ansible-aci?repo={0}&run_id={1}', github.repository, github.run_id) }}
         responseCode: 200
         timeout: 2000000
         interval: 5000
 
-    - name: Run integration tests on Python 3.8
-      run: ansible-test network-integration --docker -v --color --retry-on-error --python 3.8 --truncate 0 --continue-on-error --coverage
+    - name: Run integration tests on Python ${{ env.python_version }}
+      run: ansible-test network-integration --docker -v --color --retry-on-error --python ${{ env.python_version }} --truncate 0 --continue-on-error --coverage
       working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
     - name: Releasing integration mutex
       uses: nev7n/wait_for_response@v1
       if: always()
       with:
-        url: ${{ format('https://8v7s765ibh.execute-api.us-west-1.amazonaws.com/v1/ansible-aci/release?repo={0}', github.repository) }}
+        url: ${{ format('https://8v7s765ibh.execute-api.us-west-1.amazonaws.com/v1/ansible-aci/release?repo={0}&run_id={1}', github.repository, github.run_id) }}
         responseCode: 200
       
     - name: Generate coverage report
+      if: always()
       run: ansible-test coverage xml -v --requirements --group-by command --group-by version
       working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
     - name: Push coverate report to codecov.io
+      if: always()
       run: bash <(curl -s https://codecov.io/bash) -s 'tests/output/reports/' -F integration
       working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci

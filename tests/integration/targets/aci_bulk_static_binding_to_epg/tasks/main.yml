@@ -19,748 +19,754 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: debug
 
-- name: Ensure anstest tenant does not exists
-  cisco.aci.aci_tenant: &tenant_absent
-    <<: *aci_info
-    tenant: anstest
-    state: absent
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Ensure anstest tenant exists
-  cisco.aci.aci_tenant: &tenant_present
-    <<: *tenant_absent
-    state: present
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Ensure ansible_test tenant does not exists
+    cisco.aci.aci_tenant: &tenant_absent
+      <<: *aci_info
+      tenant: ansible_test
+      state: absent
 
-- name: Ensure anstest ap exists
-  cisco.aci.aci_ap: &ap_present
-    <<: *tenant_present
-    ap: anstest
+  - name: Ensure ansible_test tenant exists
+    cisco.aci.aci_tenant: &tenant_present
+      <<: *tenant_absent
+      state: present
 
-- name: Ensure anstest epg exists
-  cisco.aci.aci_epg: &epg_present
-    <<: *ap_present
-    epg: anstest
+  - name: Ensure anstest ap exists
+    cisco.aci.aci_ap: &ap_present
+      <<: *tenant_present
+      ap: anstest
 
-- name: Add list of interfaces with check mode
-  cisco.aci.aci_bulk_static_binding_to_epg: &cm_interfaces_present
-    <<: *epg_present
-    interface_type: switch_port
-    interface_mode: trunk
-    deploy_immediacy: lazy
-    encap_id: 107
-    interface_configs:
-      - interface: 1/7
-        leafs: 101
-        pod: 1
-      - interface: 1/7
-        leafs: 107
-        pod: 7
-      - interface: 1/8
-        leafs: 108
-        pod: 8
-        encap_id: 108
-        primary_encap_id: 1008
-    state: present
-  check_mode: yes
-  register: cm_interfaces_present
+  - name: Ensure anstest epg exists
+    cisco.aci.aci_epg: &epg_present
+      <<: *ap_present
+      epg: anstest
 
-- name: Assertions check for add list of interfaces with check mode
-  assert:
-    that:
-      - cm_interfaces_present is changed
-      - cm_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
-      - "'children' not in cm_interfaces_present.previous.0.fvAEPg"
-      - "'children' not in cm_interfaces_present.current.0.fvAEPg"
+  - name: Add list of interfaces with check mode
+    cisco.aci.aci_bulk_static_binding_to_epg: &cm_interfaces_present
+      <<: *epg_present
+      interface_type: switch_port
+      interface_mode: trunk
+      deploy_immediacy: lazy
+      encap_id: 107
+      interface_configs:
+        - interface: 1/7
+          leafs: 101
+          pod: 1
+        - interface: 1/7
+          leafs: 107
+          pod: 7
+        - interface: 1/8
+          leafs: 108
+          pod: 8
+          encap_id: 108
+          primary_encap_id: 1008
+      state: present
+    check_mode: yes
+    register: cm_interfaces_present
 
-- name: Add list of interfaces with normal mode
-  cisco.aci.aci_bulk_static_binding_to_epg: &nm_interfaces_present
-    <<: *cm_interfaces_present
-  register: nm_interfaces_present
+  - name: Assertions check for add list of interfaces with check mode
+    assert:
+      that:
+        - cm_interfaces_present is changed
+        - cm_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
+        - "'children' not in cm_interfaces_present.previous.0.fvAEPg"
+        - "'children' not in cm_interfaces_present.current.0.fvAEPg"
 
-- name: Assertions check for add list of interfaces with normal mode
-  assert:
-    that:
-      - nm_interfaces_present is changed
-      - nm_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
-      - nm_interfaces_present.current.0.fvAEPg.children | length == 3
-      - "'children' not in nm_interfaces_present.previous.0.fvAEPg"
-      - nm_interfaces_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == ""
+  - name: Add list of interfaces with normal mode
+    cisco.aci.aci_bulk_static_binding_to_epg: &nm_interfaces_present
+      <<: *cm_interfaces_present
+    register: nm_interfaces_present
 
-- name: Add list of interfaces with normal mode - idempotency works
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *nm_interfaces_present
-  register: idempotency_interfaces_present
+  - name: Assertions check for add list of interfaces with normal mode
+    assert:
+      that:
+        - nm_interfaces_present is changed
+        - nm_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
+        - nm_interfaces_present.current.0.fvAEPg.children | length == 3
+        - "'children' not in nm_interfaces_present.previous.0.fvAEPg"
+        - nm_interfaces_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == ""
 
-- name: Idempotency assertions check for add list of interfaces with normal mode
-  assert:
-    that:
-      - idempotency_interfaces_present is not changed
-      - idempotency_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
-      - idempotency_interfaces_present.current.0.fvAEPg.children | length == 3
-      - idempotency_interfaces_present.previous.0.fvAEPg.children | length == 3
+  - name: Add list of interfaces with normal mode - idempotency works
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *nm_interfaces_present
+    register: idempotency_interfaces_present
 
-- name: Update list of interfaces - description with check mode
-  cisco.aci.aci_bulk_static_binding_to_epg: &cm_update_interfaces_present
-    <<: *nm_interfaces_present
-    description: "Description set from module level attributes"
-  check_mode: yes
-  register: cm_update_interfaces_present
+  - name: Idempotency assertions check for add list of interfaces with normal mode
+    assert:
+      that:
+        - idempotency_interfaces_present is not changed
+        - idempotency_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
+        - idempotency_interfaces_present.current.0.fvAEPg.children | length == 3
+        - idempotency_interfaces_present.previous.0.fvAEPg.children | length == 3
 
-- name: Assertions check for update list of interfaces - description with normal mode
-  assert:
-    that:
-      - cm_update_interfaces_present is changed
-      - cm_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
-      - cm_update_interfaces_present.current.0.fvAEPg.children | length == 3
-      - cm_update_interfaces_present.previous.0.fvAEPg.children | length == 3
-      - cm_update_interfaces_present.previous.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == ""
-      - cm_update_interfaces_present.current.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == ""
+  - name: Update list of interfaces - description with check mode
+    cisco.aci.aci_bulk_static_binding_to_epg: &cm_update_interfaces_present
+      <<: *nm_interfaces_present
+      description: "Description set from module level attributes"
+    check_mode: yes
+    register: cm_update_interfaces_present
 
-- name: Update list of interfaces - description with normal mode
-  cisco.aci.aci_bulk_static_binding_to_epg: &nm_update_interfaces_present
-    <<: *cm_update_interfaces_present
-  register: nm_update_interfaces_present
+  - name: Assertions check for update list of interfaces - description with normal mode
+    assert:
+      that:
+        - cm_update_interfaces_present is changed
+        - cm_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
+        - cm_update_interfaces_present.current.0.fvAEPg.children | length == 3
+        - cm_update_interfaces_present.previous.0.fvAEPg.children | length == 3
+        - cm_update_interfaces_present.previous.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == ""
+        - cm_update_interfaces_present.current.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == ""
 
-- name: Assertions check for update list of interfaces - description with normal mode
-  assert:
-    that:
-      - nm_update_interfaces_present is changed
-      - nm_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
-      - nm_update_interfaces_present.current.0.fvAEPg.children | length == 3
-      - nm_update_interfaces_present.previous.0.fvAEPg.children | length == 3
-      - nm_update_interfaces_present.previous.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == ""
-      - nm_update_interfaces_present.current.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == "Description set from module level attributes"
+  - name: Update list of interfaces - description with normal mode
+    cisco.aci.aci_bulk_static_binding_to_epg: &nm_update_interfaces_present
+      <<: *cm_update_interfaces_present
+    register: nm_update_interfaces_present
 
-- name: Update list of interfaces - description with normal mode - idempotency works
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *nm_update_interfaces_present
-  register: idempotency_nm_update_interfaces_present
+  - name: Assertions check for update list of interfaces - description with normal mode
+    assert:
+      that:
+        - nm_update_interfaces_present is changed
+        - nm_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
+        - nm_update_interfaces_present.current.0.fvAEPg.children | length == 3
+        - nm_update_interfaces_present.previous.0.fvAEPg.children | length == 3
+        - nm_update_interfaces_present.previous.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == ""
+        - nm_update_interfaces_present.current.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == "Description set from module level attributes"
 
-- name: Idempotency assertions check for update list of interfaces - description with normal mode
-  assert:
-    that:
-      - idempotency_nm_update_interfaces_present is not changed
-      - idempotency_nm_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
-      - idempotency_nm_update_interfaces_present.current.0.fvAEPg.children | length == 3
-      - idempotency_nm_update_interfaces_present.previous.0.fvAEPg.children | length == 3
-      - idempotency_nm_update_interfaces_present.current.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from module level attributes"
-      - idempotency_nm_update_interfaces_present.previous.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from module level attributes"
+  - name: Update list of interfaces - description with normal mode - idempotency works
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *nm_update_interfaces_present
+    register: idempotency_nm_update_interfaces_present
 
-- name: Update list of interfaces description using path level attributes with check mode
-  cisco.aci.aci_bulk_static_binding_to_epg: &cm_path_update_interfaces_present
-    <<: *epg_present
-    interface_type: switch_port
-    interface_mode: trunk
-    deploy_immediacy: lazy
-    interface_configs:
-      - interface: 1/7
-        leafs: 101
-        pod: 1
-        description: "Description set from path level attributes"
-      - interface: 1/7
-        leafs: 107
-        pod: 7
-        description: "Description set from path level attributes"
-      - interface: 1/8
-        leafs: 108
-        pod: 8
-        encap_id: 108
-        primary_encap_id: 1008
-        description: "Description set from path level attributes"
-    state: present
-  check_mode: yes
-  register: cm_path_update_interfaces_present
+  - name: Idempotency assertions check for update list of interfaces - description with normal mode
+    assert:
+      that:
+        - idempotency_nm_update_interfaces_present is not changed
+        - idempotency_nm_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
+        - idempotency_nm_update_interfaces_present.current.0.fvAEPg.children | length == 3
+        - idempotency_nm_update_interfaces_present.previous.0.fvAEPg.children | length == 3
+        - idempotency_nm_update_interfaces_present.current.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from module level attributes"
+        - idempotency_nm_update_interfaces_present.previous.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from module level attributes"
 
-- name: Assertions check for update list of interfaces description using path level attributes with check mode
-  assert:
-    that:
-      - cm_path_update_interfaces_present is changed
-      - cm_path_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
-      - cm_path_update_interfaces_present.current.0.fvAEPg.children | length == 3
-      - cm_path_update_interfaces_present.previous.0.fvAEPg.children | length == 3
-      - cm_path_update_interfaces_present.current.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == "Description set from module level attributes"
-      - cm_path_update_interfaces_present.previous.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from module level attributes"
-      - cm_path_update_interfaces_present.sent.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
+  - name: Update list of interfaces description using path level attributes with check mode
+    cisco.aci.aci_bulk_static_binding_to_epg: &cm_path_update_interfaces_present
+      <<: *epg_present
+      interface_type: switch_port
+      interface_mode: trunk
+      deploy_immediacy: lazy
+      interface_configs:
+        - interface: 1/7
+          leafs: 101
+          pod: 1
+          description: "Description set from path level attributes"
+        - interface: 1/7
+          leafs: 107
+          pod: 7
+          description: "Description set from path level attributes"
+        - interface: 1/8
+          leafs: 108
+          pod: 8
+          encap_id: 108
+          primary_encap_id: 1008
+          description: "Description set from path level attributes"
+      state: present
+    check_mode: yes
+    register: cm_path_update_interfaces_present
 
-- name: Update list of interfaces description using path level attributes with normal mode
-  cisco.aci.aci_bulk_static_binding_to_epg: &nm_path_update_interfaces_present
-    <<: *cm_path_update_interfaces_present
-  register: nm_path_update_interfaces_present
+  - name: Assertions check for update list of interfaces description using path level attributes with check mode
+    assert:
+      that:
+        - cm_path_update_interfaces_present is changed
+        - cm_path_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
+        - cm_path_update_interfaces_present.current.0.fvAEPg.children | length == 3
+        - cm_path_update_interfaces_present.previous.0.fvAEPg.children | length == 3
+        - cm_path_update_interfaces_present.current.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == "Description set from module level attributes"
+        - cm_path_update_interfaces_present.previous.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from module level attributes"
+        - cm_path_update_interfaces_present.sent.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
 
-- name: Assertions check for update list of interfaces description using path level attributes with normal mode
-  assert:
-    that:
-      - nm_path_update_interfaces_present is changed
-      - nm_path_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
-      - nm_path_update_interfaces_present.current.0.fvAEPg.children | length == 3
-      - nm_path_update_interfaces_present.previous.0.fvAEPg.children | length == 3
-      - nm_path_update_interfaces_present.current.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
-      - nm_path_update_interfaces_present.previous.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from module level attributes"
+  - name: Update list of interfaces description using path level attributes with normal mode
+    cisco.aci.aci_bulk_static_binding_to_epg: &nm_path_update_interfaces_present
+      <<: *cm_path_update_interfaces_present
+    register: nm_path_update_interfaces_present
 
-- name: Update list of interfaces description using path level attributes with normal mode - idempotency works
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *nm_path_update_interfaces_present
-  register: idempotency_path_update_interfaces_present
+  - name: Assertions check for update list of interfaces description using path level attributes with normal mode
+    assert:
+      that:
+        - nm_path_update_interfaces_present is changed
+        - nm_path_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
+        - nm_path_update_interfaces_present.current.0.fvAEPg.children | length == 3
+        - nm_path_update_interfaces_present.previous.0.fvAEPg.children | length == 3
+        - nm_path_update_interfaces_present.current.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
+        - nm_path_update_interfaces_present.previous.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from module level attributes"
 
-- name: Idempotency assertions check for update list of interfaces description using path level attributes with normal mode
-  assert:
-    that:
-      - idempotency_path_update_interfaces_present is not changed
-      - idempotency_path_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
-      - idempotency_path_update_interfaces_present.current.0.fvAEPg.children | length == 3
-      - idempotency_path_update_interfaces_present.previous.0.fvAEPg.children | length == 3
-      - idempotency_path_update_interfaces_present.current.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
+  - name: Update list of interfaces description using path level attributes with normal mode - idempotency works
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *nm_path_update_interfaces_present
+    register: idempotency_path_update_interfaces_present
 
-- name: Query all interfaces of an EPG
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *aci_info
-    tenant: anstest
-    ap: anstest
-    epg: anstest
-    state: query
-  register: query_result_of_anstest_epg
+  - name: Idempotency assertions check for update list of interfaces description using path level attributes with normal mode
+    assert:
+      that:
+        - idempotency_path_update_interfaces_present is not changed
+        - idempotency_path_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
+        - idempotency_path_update_interfaces_present.current.0.fvAEPg.children | length == 3
+        - idempotency_path_update_interfaces_present.previous.0.fvAEPg.children | length == 3
+        - idempotency_path_update_interfaces_present.current.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
 
-- name: Assertions check for query all interfaces of an EPG
-  assert:
-    that:
-      - query_result_of_anstest_epg is not changed
-      - query_result_of_anstest_epg.current.0.fvAEPg.children | length == 3
-      - query_result_of_anstest_epg.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
-      - query_result_of_anstest_epg.current.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
-      - query_result_of_anstest_epg.current.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
+  - name: Query all interfaces of an EPG
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      epg: anstest
+      state: query
+    register: query_result_of_anstest_epg
 
-- name: Query all interfaces
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *aci_info
-    state: query
-  register: query_all_interfaces
+  - name: Assertions check for query all interfaces of an EPG
+    assert:
+      that:
+        - query_result_of_anstest_epg is not changed
+        - query_result_of_anstest_epg.current.0.fvAEPg.children | length == 3
+        - query_result_of_anstest_epg.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
+        - query_result_of_anstest_epg.current.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
+        - query_result_of_anstest_epg.current.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
 
-- name: Assertions check for query all interfaces # Check covers only EPG level
-  assert:
-    that:
-      - query_all_interfaces is not changed
-      - query_all_interfaces.current | length >= 1
+  - name: Query all interfaces
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *aci_info
+      state: query
+    register: query_all_interfaces
 
-- name: Remove list of interfaces with check mode
-  cisco.aci.aci_bulk_static_binding_to_epg: &cm_interfaces_absent
-    <<: *cm_interfaces_present
-    state: absent
-  check_mode: yes
-  register: cm_interfaces_absent
+  - name: Assertions check for query all interfaces # Check covers only EPG level
+    assert:
+      that:
+        - query_all_interfaces is not changed
+        - query_all_interfaces.current | length >= 1
 
-- name: Assertions check for remove list of interfaces with check mode
-  assert:
-    that:
-      - cm_interfaces_absent is changed
-      - cm_interfaces_absent.current.0.fvAEPg.children | length == 3
-      - cm_interfaces_absent.current.0.fvAEPg.attributes.name == "anstest"
-      - cm_interfaces_absent.previous.0.fvAEPg.children | length == 3
-      - cm_interfaces_absent.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
-      - cm_interfaces_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
+  - name: Remove list of interfaces with check mode
+    cisco.aci.aci_bulk_static_binding_to_epg: &cm_interfaces_absent
+      <<: *cm_interfaces_present
+      state: absent
+    check_mode: yes
+    register: cm_interfaces_absent
 
-- name: Remove list of interfaces with normal mode
-  cisco.aci.aci_bulk_static_binding_to_epg: &nm_interfaces_absent
-    <<: *cm_interfaces_absent
-  register: nm_interfaces_absent
+  - name: Assertions check for remove list of interfaces with check mode
+    assert:
+      that:
+        - cm_interfaces_absent is changed
+        - cm_interfaces_absent.current.0.fvAEPg.children | length == 3
+        - cm_interfaces_absent.current.0.fvAEPg.attributes.name == "anstest"
+        - cm_interfaces_absent.previous.0.fvAEPg.children | length == 3
+        - cm_interfaces_absent.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
+        - cm_interfaces_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
 
-- name: Assertions check for remove list of interfaces with normal mode
-  assert:
-    that:
-      - nm_interfaces_absent is changed
-      - "'children' not in nm_interfaces_absent.current.0.fvAEPg"
-      - nm_interfaces_absent.current.0.fvAEPg.attributes.name == "anstest"
-      - nm_interfaces_absent.previous.0.fvAEPg.children | length == 3
-      - nm_interfaces_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
-      - nm_interfaces_absent.previous.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
-      - nm_interfaces_absent.previous.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
+  - name: Remove list of interfaces with normal mode
+    cisco.aci.aci_bulk_static_binding_to_epg: &nm_interfaces_absent
+      <<: *cm_interfaces_absent
+    register: nm_interfaces_absent
 
-- name: Remove list of interfaces with normal mode - idempotency works
-  cisco.aci.aci_bulk_static_binding_to_epg: &idempotency_interfaces_absent
-    <<: *nm_interfaces_absent
-  register: idempotency_interfaces_absent
+  - name: Assertions check for remove list of interfaces with normal mode
+    assert:
+      that:
+        - nm_interfaces_absent is changed
+        - "'children' not in nm_interfaces_absent.current.0.fvAEPg"
+        - nm_interfaces_absent.current.0.fvAEPg.attributes.name == "anstest"
+        - nm_interfaces_absent.previous.0.fvAEPg.children | length == 3
+        - nm_interfaces_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
+        - nm_interfaces_absent.previous.0.fvAEPg.children.1.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
+        - nm_interfaces_absent.previous.0.fvAEPg.children.2.fvRsPathAtt.attributes.descr == "Description set from path level attributes"
 
-- name: Idempotency assertions check for remove list of interfaces with normal mode
-  assert:
-    that:
-      - idempotency_interfaces_absent is changed
-      - "'children' not in idempotency_interfaces_absent.current.0.fvAEPg"
-      - "'children' not in idempotency_interfaces_absent.previous.0.fvAEPg"
-      - idempotency_interfaces_absent.current.0.fvAEPg.attributes.name == "anstest"
+  - name: Remove list of interfaces with normal mode - idempotency works
+    cisco.aci.aci_bulk_static_binding_to_epg: &idempotency_interfaces_absent
+      <<: *nm_interfaces_absent
+    register: idempotency_interfaces_absent
 
-- name: Add fex_port_channel interfaces to anstest epg
-  cisco.aci.aci_bulk_static_binding_to_epg: &fex_port_channel_present
-    <<: *epg_present
-    interface_mode: trunk
-    interface_type: fex_port_channel
-    deploy_immediacy: lazy
-    descr: "fex_port_channel - interface created"
-    encap_id: 222
-    interface_configs:
-      - extpaths:
-          - 1012
-        interface: 2/7
-        leafs: 102
-        pod: 2
-  register: fex_port_channel_present
+  - name: Idempotency assertions check for remove list of interfaces with normal mode
+    assert:
+      that:
+        - idempotency_interfaces_absent is changed
+        - "'children' not in idempotency_interfaces_absent.current.0.fvAEPg"
+        - "'children' not in idempotency_interfaces_absent.previous.0.fvAEPg"
+        - idempotency_interfaces_absent.current.0.fvAEPg.attributes.name == "anstest"
 
-- name: Assertions check for add fex_port_channel interfaces to anstest epg
-  assert:
-    that:
-      - fex_port_channel_present is changed
-      - fex_port_channel_present.current.0.fvAEPg.children | length == 1
-      - '"children" not in fex_port_channel_present.previous.0.fvAEPg'
-      - fex_port_channel_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-222"
-      - fex_port_channel_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-2/paths-102/extpaths-1012/pathep-[2/7]"
-      - fex_port_channel_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "fex_port_channel - interface created"
+  - name: Add fex_port_channel interfaces to anstest epg
+    cisco.aci.aci_bulk_static_binding_to_epg: &fex_port_channel_present
+      <<: *epg_present
+      interface_mode: trunk
+      interface_type: fex_port_channel
+      deploy_immediacy: lazy
+      descr: "fex_port_channel - interface created"
+      encap_id: 222
+      interface_configs:
+        - extpaths:
+            - 1012
+          interface: 2/7
+          leafs: 102
+          pod: 2
+    register: fex_port_channel_present
 
-- name: Remove fex_port_channel interfaces from anstest epg
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *fex_port_channel_present
-    state: absent
-  register: fex_port_channel_absent
+  - name: Assertions check for add fex_port_channel interfaces to anstest epg
+    assert:
+      that:
+        - fex_port_channel_present is changed
+        - fex_port_channel_present.current.0.fvAEPg.children | length == 1
+        - '"children" not in fex_port_channel_present.previous.0.fvAEPg'
+        - fex_port_channel_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-222"
+        - fex_port_channel_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-2/paths-102/extpaths-1012/pathep-[2/7]"
+        - fex_port_channel_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "fex_port_channel - interface created"
 
-- name: Assertions check for remove fex_port_channel interfaces from anstest epg
-  assert:
-    that:
-      - fex_port_channel_absent is changed
-      - fex_port_channel_absent.previous.0.fvAEPg.children | length == 1
-      - "'children' not in fex_port_channel_absent.current.0.fvAEPg"
-      - fex_port_channel_absent.previous.0.fvAEPg.attributes.name == "anstest"
-      - fex_port_channel_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-222"
-      - fex_port_channel_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-2/paths-102/extpaths-1012/pathep-[2/7]"
+  - name: Remove fex_port_channel interfaces from anstest epg
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *fex_port_channel_present
+      state: absent
+    register: fex_port_channel_absent
 
-- name: Add fex_vpc interfaces to anstest epg
-  cisco.aci.aci_bulk_static_binding_to_epg: &fex_vpc_present
-    <<: *epg_present
-    interface_mode: trunk
-    interface_type: fex_vpc
-    deploy_immediacy: lazy
-    descr: fex_vpc - interface created
-    encap_id: 223
-    interface_configs:
-      - extpaths:
-          - 103
-          - 104
-        interface: 3/7
-        leafs:
-          - 103
-          - 104
-        pod: 3
-  register: fex_vpc_present
+  - name: Assertions check for remove fex_port_channel interfaces from anstest epg
+    assert:
+      that:
+        - fex_port_channel_absent is changed
+        - fex_port_channel_absent.previous.0.fvAEPg.children | length == 1
+        - "'children' not in fex_port_channel_absent.current.0.fvAEPg"
+        - fex_port_channel_absent.previous.0.fvAEPg.attributes.name == "anstest"
+        - fex_port_channel_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-222"
+        - fex_port_channel_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-2/paths-102/extpaths-1012/pathep-[2/7]"
 
-- name: Assertions check for add fex_vpc interfaces to anstest epg
-  assert:
-    that:
-      - fex_vpc_present is changed
-      - fex_vpc_present.current.0.fvAEPg.children | length == 1
-      - "'children' not in fex_vpc_present.previous.0.fvAEPg"
-      - fex_vpc_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "fex_vpc - interface created"
-      - fex_vpc_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-223"
-      - fex_vpc_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-3/protpaths-103-104/extprotpaths-103-104/pathep-[3/7]"
+  - name: Add fex_vpc interfaces to anstest epg
+    cisco.aci.aci_bulk_static_binding_to_epg: &fex_vpc_present
+      <<: *epg_present
+      interface_mode: trunk
+      interface_type: fex_vpc
+      deploy_immediacy: lazy
+      descr: fex_vpc - interface created
+      encap_id: 223
+      interface_configs:
+        - extpaths:
+            - 103
+            - 104
+          interface: 3/7
+          leafs:
+            - 103
+            - 104
+          pod: 3
+    register: fex_vpc_present
 
-- name: Remove fex_vpc interfaces from anstest epg
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *fex_vpc_present
-    state: absent
-  register: fex_vpc_absent
+  - name: Assertions check for add fex_vpc interfaces to anstest epg
+    assert:
+      that:
+        - fex_vpc_present is changed
+        - fex_vpc_present.current.0.fvAEPg.children | length == 1
+        - "'children' not in fex_vpc_present.previous.0.fvAEPg"
+        - fex_vpc_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "fex_vpc - interface created"
+        - fex_vpc_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-223"
+        - fex_vpc_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-3/protpaths-103-104/extprotpaths-103-104/pathep-[3/7]"
 
-- name: Assertions check for remove fex_vpc interfaces from anstest epg
-  assert:
-    that:
-      - fex_vpc_absent is changed
-      - fex_vpc_absent.previous.0.fvAEPg.children | length == 1
-      - "'children' not in fex_vpc_absent.current.0.fvAEPg"
-      - fex_vpc_absent.previous.0.fvAEPg.attributes.name == "anstest"
-      - fex_vpc_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-223"
-      - fex_vpc_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-3/protpaths-103-104/extprotpaths-103-104/pathep-[3/7]"
+  - name: Remove fex_vpc interfaces from anstest epg
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *fex_vpc_present
+      state: absent
+    register: fex_vpc_absent
 
-- name: Add vpc interfaces to anstest epg
-  cisco.aci.aci_bulk_static_binding_to_epg: &vpc_present
-    <<: *epg_present
-    deploy_immediacy: lazy
-    descr: vpc - interface created
-    interface_mode: trunk
-    interface_type: vpc
-    encap_id: 224
-    interface_configs:
-      - interface: 4/7
-        leafs:
-          - 105
-          - 106
-        pod: 4
-        extpaths:
-          - 1015
-  register: vpc_present
+  - name: Assertions check for remove fex_vpc interfaces from anstest epg
+    assert:
+      that:
+        - fex_vpc_absent is changed
+        - fex_vpc_absent.previous.0.fvAEPg.children | length == 1
+        - "'children' not in fex_vpc_absent.current.0.fvAEPg"
+        - fex_vpc_absent.previous.0.fvAEPg.attributes.name == "anstest"
+        - fex_vpc_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-223"
+        - fex_vpc_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-3/protpaths-103-104/extprotpaths-103-104/pathep-[3/7]"
 
-- name: Assertions check for add vpc interfaces to anstest epg
-  assert:
-    that:
-      - vpc_present is changed
-      - vpc_present.current.0.fvAEPg.children | length == 1
-      - "'children' not in vpc_present.previous.0.fvAEPg"
-      - vpc_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "vpc - interface created"
-      - vpc_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-224"
-      - vpc_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-4/protpaths-105-106/pathep-[4/7]"
+  - name: Add vpc interfaces to anstest epg
+    cisco.aci.aci_bulk_static_binding_to_epg: &vpc_present
+      <<: *epg_present
+      deploy_immediacy: lazy
+      descr: vpc - interface created
+      interface_mode: trunk
+      interface_type: vpc
+      encap_id: 224
+      interface_configs:
+        - interface: 4/7
+          leafs:
+            - 105
+            - 106
+          pod: 4
+          extpaths:
+            - 1015
+    register: vpc_present
 
-- name: Remove vpc interfaces from anstest epg
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *vpc_present
-    state: absent
-  register: vpc_absent
+  - name: Assertions check for add vpc interfaces to anstest epg
+    assert:
+      that:
+        - vpc_present is changed
+        - vpc_present.current.0.fvAEPg.children | length == 1
+        - "'children' not in vpc_present.previous.0.fvAEPg"
+        - vpc_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "vpc - interface created"
+        - vpc_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-224"
+        - vpc_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-4/protpaths-105-106/pathep-[4/7]"
 
-- name: Assertions check for remove vpc interfaces from anstest epg
-  assert:
-    that:
-      - vpc_absent is changed
-      - vpc_absent.previous.0.fvAEPg.children | length == 1
-      - "'children' not in vpc_absent.current.0.fvAEPg"
-      - vpc_absent.previous.0.fvAEPg.attributes.name == "anstest"
-      - vpc_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-224"
-      - vpc_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-4/protpaths-105-106/pathep-[4/7]"
+  - name: Remove vpc interfaces from anstest epg
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *vpc_present
+      state: absent
+    register: vpc_absent
 
-- name: Query all interfaces before start module and path level check
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *aci_info
-    tenant: anstest
-    ap: anstest
-    epg: anstest
-    state: query
-  register: query_result
+  - name: Assertions check for remove vpc interfaces from anstest epg
+    assert:
+      that:
+        - vpc_absent is changed
+        - vpc_absent.previous.0.fvAEPg.children | length == 1
+        - "'children' not in vpc_absent.current.0.fvAEPg"
+        - vpc_absent.previous.0.fvAEPg.attributes.name == "anstest"
+        - vpc_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-224"
+        - vpc_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-4/protpaths-105-106/pathep-[4/7]"
 
-- name: Assertions check for query all interfaces before start module and path level check
-  assert:
-    that:
-      - query_result is not changed
-      - "'children' not in query_result.current.0.fvAEPg"
-      - query_result.current.0.fvAEPg.attributes.name == "anstest"
+  - name: Query all interfaces before start module and path level check
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest
+      epg: anstest
+      state: query
+    register: query_result
 
-- name: Add an interface with module level attributes
-  cisco.aci.aci_bulk_static_binding_to_epg: &module_level_check_present
-    <<: *epg_present
-    interface_type: switch_port
-    interface_mode: trunk
-    deploy_immediacy: lazy
-    encap_id: 108
-    primary_encap_id: unknown
-    description: "Module level test"
-    interface_configs:
-      - interface: 1/8
-        leafs: 108
-        pod: 8
-    state: present
-  register: module_level_check
+  - name: Assertions check for query all interfaces before start module and path level check
+    assert:
+      that:
+        - query_result is not changed
+        - "'children' not in query_result.current.0.fvAEPg"
+        - query_result.current.0.fvAEPg.attributes.name == "anstest"
 
-- name: Assertions check for add an interface with module level attributes
-  assert:
-    that:
-      - module_level_check is changed
-      - module_level_check.current.0.fvAEPg.children | length == 1
-      - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-108"
-      - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.primaryEncap == "unknown"
-      - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-8/paths-108/pathep-[eth1/8]"
-      - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Module level test"
-      - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.instrImedcy == "lazy"
-      - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.mode == "regular"
+  - name: Add an interface with module level attributes
+    cisco.aci.aci_bulk_static_binding_to_epg: &module_level_check_present
+      <<: *epg_present
+      interface_type: switch_port
+      interface_mode: trunk
+      deploy_immediacy: lazy
+      encap_id: 108
+      primary_encap_id: unknown
+      description: "Module level test"
+      interface_configs:
+        - interface: 1/8
+          leafs: 108
+          pod: 8
+      state: present
+    register: module_level_check
 
-- name: Remove an interface with module level attributes
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *module_level_check_present
-    state: absent
-  register: module_level_check_absent
+  - name: Assertions check for add an interface with module level attributes
+    assert:
+      that:
+        - module_level_check is changed
+        - module_level_check.current.0.fvAEPg.children | length == 1
+        - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-108"
+        - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.primaryEncap == "unknown"
+        - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-8/paths-108/pathep-[eth1/8]"
+        - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Module level test"
+        - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.instrImedcy == "lazy"
+        - module_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.mode == "regular"
 
-- name: Assertions check for remove an interface with module level attributes
-  assert:
-    that:
-      - module_level_check_absent is changed
-      - "'children' not in module_level_check_absent.current.0.fvAEPg"
-      - module_level_check_absent.current.0.fvAEPg.attributes.name == "anstest"
-      - module_level_check_absent.previous.0.fvAEPg.children | length == 1
-      - module_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-108"
-      - module_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.primaryEncap == "unknown"
-      - module_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Module level test"
-      - module_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-8/paths-108/pathep-[eth1/8]"
+  - name: Remove an interface with module level attributes
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *module_level_check_present
+      state: absent
+    register: module_level_check_absent
 
-- name: Add an interface with path level attributes
-  cisco.aci.aci_bulk_static_binding_to_epg: &path_level_check_present
-    <<: *epg_present
-    interface_configs:
+  - name: Assertions check for remove an interface with module level attributes
+    assert:
+      that:
+        - module_level_check_absent is changed
+        - "'children' not in module_level_check_absent.current.0.fvAEPg"
+        - module_level_check_absent.current.0.fvAEPg.attributes.name == "anstest"
+        - module_level_check_absent.previous.0.fvAEPg.children | length == 1
+        - module_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-108"
+        - module_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.primaryEncap == "unknown"
+        - module_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Module level test"
+        - module_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-8/paths-108/pathep-[eth1/8]"
+
+  - name: Add an interface with path level attributes
+    cisco.aci.aci_bulk_static_binding_to_epg: &path_level_check_present
+      <<: *epg_present
+      interface_configs:
+        - interface_type: switch_port
+          interface_mode: trunk
+          deploy_immediacy: lazy
+          encap_id: 109
+          description: "Path level test"
+          interface: 1/9
+          leafs: 109
+          pod: 9
+      state: present
+    register: path_level_check
+
+  - name: Assertions check for add an interface with path level attributes
+    assert:
+      that:
+        - path_level_check is changed
+        - path_level_check.current.0.fvAEPg.children | length == 1
+        - path_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-109"
+        - path_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-9/paths-109/pathep-[eth1/9]"
+
+  - name: Remove an interface with path level attributes
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *path_level_check_present
+      state: absent
+    register: path_level_check_absent
+
+  - name: Assertions check for remove an interface with path level attributes
+    assert:
+      that:
+        - path_level_check_absent is changed
+        - "'children' not in path_level_check_absent.current.0.fvAEPg"
+        - path_level_check_absent.current.0.fvAEPg.attributes.name == "anstest"
+        - path_level_check_absent.previous.0.fvAEPg.children | length == 1
+        - path_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-109"
+        - path_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Path level test"
+        - path_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-9/paths-109/pathep-[eth1/9]"
+
+  - name: Add an interface encap_id with path and module level attributes
+    cisco.aci.aci_bulk_static_binding_to_epg: &path_and_module_encap_id_present
+      <<: *epg_present
+      encap_id: 108
+      interface_type: switch_port
+      interface_mode: trunk
+      deploy_immediacy: lazy
+      description: "Path and Module level test"
+      interface_configs:
+        - interface: 1/7
+          leafs: 107
+          pod: 7
+          encap_id: 107
+      state: present
+    register: path_and_module_encap_id_present
+
+  - name: Assertions check for add an interface encap_id with path and module level attributes
+    assert:
+      that:
+        - path_and_module_encap_id_present is changed
+        - path_and_module_encap_id_present.current.0.fvAEPg.children | length == 1
+        - path_and_module_encap_id_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-107"
+        - path_and_module_encap_id_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-7/paths-107/pathep-[eth1/7]"
+
+  - name: Remove an interface encap_id with path and module level attributes
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *path_and_module_encap_id_present
+      state: absent
+    register: path_and_module_encap_id_absent
+
+  - name: Assertions check for remove an interface encap_id with path and module level attributes
+    assert:
+      that:
+        - path_and_module_encap_id_absent is changed
+        - "'children' not in path_and_module_encap_id_absent.current.0.fvAEPg"
+        - path_and_module_encap_id_absent.current.0.fvAEPg.attributes.name == "anstest"
+        - path_and_module_encap_id_absent.previous.0.fvAEPg.children | length == 1
+        - path_and_module_encap_id_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-107"
+        - path_and_module_encap_id_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Path and Module level test"
+        - path_and_module_encap_id_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-7/paths-107/pathep-[eth1/7]"
+
+  - name: Bind static-binding to epg - interface type switch_port - no leafs (normal mode)
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *epg_present
+      interface_configs:
       - interface_type: switch_port
         interface_mode: trunk
         deploy_immediacy: lazy
-        encap_id: 109
-        description: "Path level test"
-        interface: 1/9
-        leafs: 109
-        pod: 9
-    state: present
-  register: path_level_check
-
-- name: Assertions check for add an interface with path level attributes
-  assert:
-    that:
-      - path_level_check is changed
-      - path_level_check.current.0.fvAEPg.children | length == 1
-      - path_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-109"
-      - path_level_check.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-9/paths-109/pathep-[eth1/9]"
-
-- name: Remove an interface with path level attributes
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *path_level_check_present
-    state: absent
-  register: path_level_check_absent
-
-- name: Assertions check for remove an interface with path level attributes
-  assert:
-    that:
-      - path_level_check_absent is changed
-      - "'children' not in path_level_check_absent.current.0.fvAEPg"
-      - path_level_check_absent.current.0.fvAEPg.attributes.name == "anstest"
-      - path_level_check_absent.previous.0.fvAEPg.children | length == 1
-      - path_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-109"
-      - path_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Path level test"
-      - path_level_check_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-9/paths-109/pathep-[eth1/9]"
-
-- name: Add an interface encap_id with path and module level attributes
-  cisco.aci.aci_bulk_static_binding_to_epg: &path_and_module_encap_id_present
-    <<: *epg_present
-    encap_id: 108
-    interface_type: switch_port
-    interface_mode: trunk
-    deploy_immediacy: lazy
-    description: "Path and Module level test"
-    interface_configs:
-      - interface: 1/7
-        leafs: 107
-        pod: 7
         encap_id: 107
-    state: present
-  register: path_and_module_encap_id_present
+        interface: 'ansible_test'
+        pod: 1
+      state: present
+    ignore_errors: yes
+    register: switch_port_no_leafs
 
-- name: Assertions check for add an interface encap_id with path and module level attributes
-  assert:
-    that:
-      - path_and_module_encap_id_present is changed
-      - path_and_module_encap_id_present.current.0.fvAEPg.children | length == 1
-      - path_and_module_encap_id_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-107"
-      - path_and_module_encap_id_present.current.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-7/paths-107/pathep-[eth1/7]"
+  - name: Bind static-binding to epg - interface type fex_vpc - no extpaths (normal mode)
+    cisco.aci.aci_bulk_static_binding_to_epg: &fex_vpc_no_extpaths
+      <<: *epg_present
+      interface_configs:
+      - interface_type: fex_vpc
+        interface_mode: trunk
+        deploy_immediacy: lazy
+        encap_id: 107
+        interface: 'ansible_test'
+        leafs: 101
+        pod: 1
+      state: present
+    ignore_errors: yes
+    register: fex_vpc_no_extpaths
 
-- name: Remove an interface encap_id with path and module level attributes
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *path_and_module_encap_id_present
-    state: absent
-  register: path_and_module_encap_id_absent
+  - name: Bind static-binding to epg - interface type fex_vpc - incorrect extpaths (normal mode)
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *fex_vpc_no_extpaths
+      interface_configs:
+      - interface_type: fex_vpc
+        interface_mode: trunk
+        deploy_immediacy: lazy
+        encap_id: 107
+        interface: 'ansible_test'
+        leafs: 101
+        pod: 1
+        extpaths:
+        - 1012
+    ignore_errors: yes
+    register: fex_vpc_one_node
 
-- name: Assertions check for remove an interface encap_id with path and module level attributes
-  assert:
-    that:
-      - path_and_module_encap_id_absent is changed
-      - "'children' not in path_and_module_encap_id_absent.current.0.fvAEPg"
-      - path_and_module_encap_id_absent.current.0.fvAEPg.attributes.name == "anstest"
-      - path_and_module_encap_id_absent.previous.0.fvAEPg.children | length == 1
-      - path_and_module_encap_id_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-107"
-      - path_and_module_encap_id_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.descr == "Path and Module level test"
-      - path_and_module_encap_id_absent.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.tDn == "topology/pod-7/paths-107/pathep-[eth1/7]"
+  - name: Bind static-binding to epg - fex_vpc with one extpaths (normal mode)
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *fex_vpc_no_extpaths
+      interface_configs:
+      - interface_type: fex_vpc
+        interface_mode: trunk
+        deploy_immediacy: lazy
+        encap_id: 107
+        interface: 'ansible_test'
+        pod: 1
+        leafs:
+        - 101
+        - 102
+        extpaths:
+        - 103
+    ignore_errors: yes
+    register: fex_vpc_one_extpaths
 
-- name: Bind static-binding to epg - interface type switch_port - no leafs (normal mode)
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *epg_present
-    interface_configs:
-    - interface_type: switch_port
-      interface_mode: trunk
-      deploy_immediacy: lazy
-      encap_id: 107
-      interface: 'ansible_test'
-      pod: 1
-    state: present
-  ignore_errors: yes
-  register: switch_port_no_leafs
+  - name: Bind static-binding to epg - switch_port with two leafs (normal mode)
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *fex_vpc_no_extpaths
+      interface_configs:
+      - interface_type: switch_port
+        interface_mode: trunk
+        deploy_immediacy: lazy
+        encap_id: 107
+        interface: 'ansible_test'
+        pod: 1
+        leafs:
+        - 101
+        - 102
+    ignore_errors: yes
+    register: switch_port_two_leafs
 
-- name: Bind static-binding to epg - interface type fex_vpc - no extpaths (normal mode)
-  cisco.aci.aci_bulk_static_binding_to_epg: &fex_vpc_no_extpaths
-    <<: *epg_present
-    interface_configs:
-    - interface_type: fex_vpc
-      interface_mode: trunk
-      deploy_immediacy: lazy
-      encap_id: 107
-      interface: 'ansible_test'
-      leafs: 101
-      pod: 1
-    state: present
-  ignore_errors: yes
-  register: fex_vpc_no_extpaths
+  - name: Bind static-binding to epg - switch_port with two extpaths (normal mode)
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *fex_vpc_no_extpaths
+      interface_configs:
+      - interface_type: switch_port
+        interface_mode: trunk
+        deploy_immediacy: lazy
+        encap_id: 107
+        interface: 'ansible_test'
+        pod: 1
+        leafs:
+        - 101
+        extpaths:
+        - 102
+        - 103
+    ignore_errors: yes
+    register: switch_port_two_extpaths
 
-- name: Bind static-binding to epg - interface type fex_vpc - incorrect extpaths (normal mode)
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *fex_vpc_no_extpaths
-    interface_configs:
-    - interface_type: fex_vpc
-      interface_mode: trunk
-      deploy_immediacy: lazy
-      encap_id: 107
-      interface: 'ansible_test'
-      leafs: 101
-      pod: 1
-      extpaths:
-      - 1012
-  ignore_errors: yes
-  register: fex_vpc_one_node
+  - name: Bind static-binding to epg - fex_vpc with 3 nodes (normal mode)
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *fex_vpc_no_extpaths
+      interface_configs:
+      - interface_type: fex_vpc
+        interface_mode: trunk
+        deploy_immediacy: lazy
+        encap_id: 107
+        interface: 'ansible_test'
+        pod: 1
+        leafs:
+        - 101
+        - 102
+        - 103
+        extpaths:
+        - 101
+        - 102
+    ignore_errors: yes
+    register: fex_vpc_three_leafs
 
-- name: Bind static-binding to epg - fex_vpc with one extpaths (normal mode)
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *fex_vpc_no_extpaths
-    interface_configs:
-    - interface_type: fex_vpc
-      interface_mode: trunk
-      deploy_immediacy: lazy
-      encap_id: 107
-      interface: 'ansible_test'
-      pod: 1
-      leafs:
-      - 101
-      - 102
-      extpaths:
-      - 103
-  ignore_errors: yes
-  register: fex_vpc_one_extpaths
+  - name: Bind static-binding to epg - fex_vpc with 3 expaths (normal mode)
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *fex_vpc_no_extpaths
+      interface_configs:
+      - interface_type: fex_vpc
+        interface_mode: trunk
+        deploy_immediacy: lazy
+        encap_id: 107
+        interface: 'ansible_test'
+        pod: 1
+        leafs:
+        - 101
+        - 102
+        extpaths:
+        - 101
+        - 102
+        - 103
+    ignore_errors: yes
+    register: fex_vpc_three_expaths
 
-- name: Bind static-binding to epg - switch_port with two leafs (normal mode)
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *fex_vpc_no_extpaths
-    interface_configs:
-    - interface_type: switch_port
-      interface_mode: trunk
-      deploy_immediacy: lazy
-      encap_id: 107
-      interface: 'ansible_test'
-      pod: 1
-      leafs:
-      - 101
-      - 102
-  ignore_errors: yes
-  register: switch_port_two_leafs
+  - name: Bind static-binding to epg - switch_port with encap_id 5000 (normal mode)
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *fex_vpc_no_extpaths
+      interface_configs:
+      - interface_type: switch_port
+        interface_mode: trunk
+        deploy_immediacy: lazy
+        encap_id: 5000
+        interface: 'ansible_test'
+        pod: 1
+        leafs:
+        - 101
+    ignore_errors: yes
+    register: switch_port_encap_id_too_high
 
-- name: Bind static-binding to epg - switch_port with two extpaths (normal mode)
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *fex_vpc_no_extpaths
-    interface_configs:
-    - interface_type: switch_port
-      interface_mode: trunk
-      deploy_immediacy: lazy
-      encap_id: 107
-      interface: 'ansible_test'
-      pod: 1
-      leafs:
-      - 101
-      extpaths:
-      - 102
-      - 103
-  ignore_errors: yes
-  register: switch_port_two_extpaths
+  - name: Bind static-binding to epg - switch_port with primary_encap_id 5000 (normal mode)
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *fex_vpc_no_extpaths
+      interface_configs:
+      - interface_type: switch_port
+        interface_mode: trunk
+        deploy_immediacy: lazy
+        encap_id: 107
+        primary_encap_id: 5000
+        interface: 'ansible_test'
+        pod: 1
+        leafs:
+        - 101
+    ignore_errors: yes
+    register: switch_port_primary_encap_id_too_high
 
-- name: Bind static-binding to epg - fex_vpc with 3 nodes (normal mode)
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *fex_vpc_no_extpaths
-    interface_configs:
-    - interface_type: fex_vpc
-      interface_mode: trunk
-      deploy_immediacy: lazy
-      encap_id: 107
-      interface: 'ansible_test'
-      pod: 1
-      leafs:
-      - 101
-      - 102
-      - 103
-      extpaths:
-      - 101
-      - 102
-  ignore_errors: yes
-  register: fex_vpc_three_leafs
+  - name: Bind static-binding to epg - switch_port with primary_encap_id 5000 (normal mode)
+    cisco.aci.aci_bulk_static_binding_to_epg:
+      <<: *fex_vpc_no_extpaths
+      interface_configs:
+      - interface_type: switch_port
+        interface_mode: trunk
+        deploy_immediacy: lazy
+        encap_id: 107
+        primary_encap_id: not_unknown
+        interface: 'ansible_test'
+        pod: 1
+        leafs:
+        - 101
+    ignore_errors: yes
+    register: switch_port_primary_encap_id_not_unknown
 
-- name: Bind static-binding to epg - fex_vpc with 3 expaths (normal mode)
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *fex_vpc_no_extpaths
-    interface_configs:
-    - interface_type: fex_vpc
-      interface_mode: trunk
-      deploy_immediacy: lazy
-      encap_id: 107
-      interface: 'ansible_test'
-      pod: 1
-      leafs:
-      - 101
-      - 102
-      extpaths:
-      - 101
-      - 102
-      - 103
-  ignore_errors: yes
-  register: fex_vpc_three_expaths
+  - name: Negative assertions to check error messages
+    assert:
+      that:
+      - switch_port_no_leafs.msg == "missing required arguments{{':'}} leafs found in interface_configs"
+      - fex_vpc_no_extpaths.msg == "extpaths is required when interface_type is{{':'}} fex_vpc"
+      - fex_vpc_one_node.msg == "A interface_type of \"vpc\" requires 2 leafs"
+      - fex_vpc_one_extpaths.msg == "A interface_type of \"fex_vpc\" requires 2 extpaths"
+      - switch_port_two_leafs.msg == "The interface_types \"switch_port\", \"port_channel\", and \"fex\" do not support using multiple leafs for a single binding"
+      - switch_port_two_extpaths.msg == "The interface_types \"fex\" and \"fex_port_channel\" do not support using multiple extpaths for a single binding"
+      - fex_vpc_three_leafs.msg == "The \"leafs\" parameter must not have more than 2 entries"
+      - fex_vpc_three_expaths.msg == "The \"extpaths\" parameter must not have more than 2 entries"
+      - switch_port_encap_id_too_high.msg == "Valid VLAN assignments are from 1 to 4096"
+      - switch_port_primary_encap_id_too_high.msg == "Valid VLAN assignments are from 1 to 4096 or unknown."
+      - switch_port_primary_encap_id_not_unknown.msg.startswith("Valid VLAN assignments are from 1 to 4096 or unknown. ")
 
-- name: Bind static-binding to epg - switch_port with encap_id 5000 (normal mode)
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *fex_vpc_no_extpaths
-    interface_configs:
-    - interface_type: switch_port
-      interface_mode: trunk
-      deploy_immediacy: lazy
-      encap_id: 5000
-      interface: 'ansible_test'
-      pod: 1
-      leafs:
-      - 101
-  ignore_errors: yes
-  register: switch_port_encap_id_too_high
-
-- name: Bind static-binding to epg - switch_port with primary_encap_id 5000 (normal mode)
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *fex_vpc_no_extpaths
-    interface_configs:
-    - interface_type: switch_port
-      interface_mode: trunk
-      deploy_immediacy: lazy
-      encap_id: 107
-      primary_encap_id: 5000
-      interface: 'ansible_test'
-      pod: 1
-      leafs:
-      - 101
-  ignore_errors: yes
-  register: switch_port_primary_encap_id_too_high
-
-- name: Bind static-binding to epg - switch_port with primary_encap_id 5000 (normal mode)
-  cisco.aci.aci_bulk_static_binding_to_epg:
-    <<: *fex_vpc_no_extpaths
-    interface_configs:
-    - interface_type: switch_port
-      interface_mode: trunk
-      deploy_immediacy: lazy
-      encap_id: 107
-      primary_encap_id: not_unknown
-      interface: 'ansible_test'
-      pod: 1
-      leafs:
-      - 101
-  ignore_errors: yes
-  register: switch_port_primary_encap_id_not_unknown
-
-- name: Negative assertions to check error messages
-  assert:
-    that:
-    - switch_port_no_leafs.msg == "missing required arguments{{':'}} leafs found in interface_configs"
-    - fex_vpc_no_extpaths.msg == "extpaths is required when interface_type is{{':'}} fex_vpc"
-    - fex_vpc_one_node.msg == "A interface_type of \"vpc\" requires 2 leafs"
-    - fex_vpc_one_extpaths.msg == "A interface_type of \"fex_vpc\" requires 2 extpaths"
-    - switch_port_two_leafs.msg == "The interface_types \"switch_port\", \"port_channel\", and \"fex\" do not support using multiple leafs for a single binding"
-    - switch_port_two_extpaths.msg == "The interface_types \"fex\" and \"fex_port_channel\" do not support using multiple extpaths for a single binding"
-    - fex_vpc_three_leafs.msg == "The \"leafs\" parameter must not have more than 2 entries"
-    - fex_vpc_three_expaths.msg == "The \"extpaths\" parameter must not have more than 2 entries"
-    - switch_port_encap_id_too_high.msg == "Valid VLAN assignments are from 1 to 4096"
-    - switch_port_primary_encap_id_too_high.msg == "Valid VLAN assignments are from 1 to 4096 or unknown."
-    - switch_port_primary_encap_id_not_unknown.msg.startswith("Valid VLAN assignments are from 1 to 4096 or unknown. ")
-
-# Cleanup part
-- name: Remove anstest tenant
-  cisco.aci.aci_tenant:
-    <<: *tenant_present
-    state: absent
+  # Cleanup part
+  - name: Remove anstest tenant
+    cisco.aci.aci_tenant:
+      <<: *tenant_present
+      state: absent

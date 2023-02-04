@@ -9,15 +9,15 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact: 
-   aci_info: &aci_info
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
@@ -26,287 +26,293 @@
     tenant: ansible_tenant
     state: absent
 
-- name: Add a new tenant
-  aci_tenant:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    description: Ansible tenant
-    state: present
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Add a new l3out
-  aci_l3out:
-    <<: *aci_info
-    tenant: ansible_tenant
-    name: ansible_l3out
-    description: l3out for Ansible tenant
-    domain: ansible_dom
-    route_control: export
-    vrf: ansible_vrf
-    l3protocol: ospf
-    state: present
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    aci_tenant:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
 
-- name: Add a new ExtEpg
-  aci_l3out_extepg:
-    <<: *aci_info 
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    name: ansible_extEpg
-    description: ExtEpg for Ansible l3out
-    state: present
+  - name: Add a new l3out
+    aci_l3out:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_l3out
+      description: l3out for Ansible tenant
+      domain: ansible_dom
+      route_control: export
+      vrf: ansible_vrf
+      l3protocol: ospf
+      state: present
 
-- name: Add a subnet (check mode)
-  cisco.aci.aci_l3out_extsubnet:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    subnet_name: test
-    network: 192.0.2.0/24
-    state: present
-  check_mode: yes
-  register: cm_add_subnet
+  - name: Add a new ExtEpg
+    aci_l3out_extepg:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      name: ansible_extEpg
+      description: ExtEpg for Ansible l3out
+      state: present
 
-- name: Add a subnet (normal mode)
-  cisco.aci.aci_l3out_extsubnet:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    subnet_name: test
-    network: 192.0.2.0/24
-    state: present
-  register: nm_add_subnet
+  - name: Add a subnet (check mode)
+    cisco.aci.aci_l3out_extsubnet:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      subnet_name: test
+      network: 192.0.2.0/24
+      state: present
+    check_mode: yes
+    register: cm_add_subnet
 
-- name: Verify cm_add_subnet and nm_add_subnet
-  assert:
-    that:
-      - cm_add_subnet is changed
-      - nm_add_subnet is changed
-      - cm_add_subnet.proposed.l3extSubnet.attributes.ip == "192.0.2.0/24"
-      - cm_add_subnet.proposed.l3extSubnet.attributes.name == "test"
-      - nm_add_subnet.current.0.l3extSubnet.attributes.ip == "192.0.2.0/24"
-      - nm_add_subnet.current.0.l3extSubnet.attributes.name == "test"
-      - nm_add_subnet.current.0.l3extSubnet.attributes.scope == "import-security"
-      - nm_add_subnet.current.0.l3extSubnet.attributes.annotation == 'orchestrator:ansible'
+  - name: Add a subnet (normal mode)
+    cisco.aci.aci_l3out_extsubnet:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      subnet_name: test
+      network: 192.0.2.0/24
+      state: present
+    register: nm_add_subnet
 
-- name: Add subnet again
-  cisco.aci.aci_l3out_extsubnet:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    subnet_name: test
-    network: 192.0.2.0/24
-    state: present
-  register: nm_add_subnet_again
+  - name: Verify cm_add_subnet and nm_add_subnet
+    assert:
+      that:
+        - cm_add_subnet is changed
+        - nm_add_subnet is changed
+        - cm_add_subnet.proposed.l3extSubnet.attributes.ip == "192.0.2.0/24"
+        - cm_add_subnet.proposed.l3extSubnet.attributes.name == "test"
+        - nm_add_subnet.current.0.l3extSubnet.attributes.ip == "192.0.2.0/24"
+        - nm_add_subnet.current.0.l3extSubnet.attributes.name == "test"
+        - nm_add_subnet.current.0.l3extSubnet.attributes.scope == "import-security"
+        - nm_add_subnet.current.0.l3extSubnet.attributes.annotation == 'orchestrator:ansible'
 
-- name: Verify nm_add_subnet_again
-  assert:
-    that:
-      - nm_add_subnet_again is not changed
+  - name: Add subnet again
+    cisco.aci.aci_l3out_extsubnet:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      subnet_name: test
+      network: 192.0.2.0/24
+      state: present
+    register: nm_add_subnet_again
 
-- name: Change subnet (check_mode)
-  cisco.aci.aci_l3out_extsubnet:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    network: 192.0.2.0/24
-    subnet_name: ansible_test
-    description: description for subnet
-    scope: [ shared-security, import-security ]
-    state: present
-  check_mode: yes
-  register: cm_change_subnet
+  - name: Verify nm_add_subnet_again
+    assert:
+      that:
+        - nm_add_subnet_again is not changed
 
-- name: Change subnet (normal mode)
-  cisco.aci.aci_l3out_extsubnet:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    network: 192.0.2.0/24
-    subnet_name: ansible_test
-    description: description for subnet
-    scope: [ shared-security, import-security ]
-    state: present
-  register: nm_change_subnet
+  - name: Change subnet (check_mode)
+    cisco.aci.aci_l3out_extsubnet:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      network: 192.0.2.0/24
+      subnet_name: ansible_test
+      description: description for subnet
+      scope: [ shared-security, import-security ]
+      state: present
+    check_mode: yes
+    register: cm_change_subnet
 
-- name: Verify cm_change_subnet and nm_change_subnet
-  assert:
-    that:
-      - cm_change_subnet is changed
-      - nm_change_subnet is changed
-      - cm_change_subnet.previous.0.l3extSubnet.attributes.descr == nm_change_subnet.previous.0.l3extSubnet.attributes.descr == ""
-      - cm_change_subnet.previous.0.l3extSubnet.attributes.name == nm_change_subnet.previous.0.l3extSubnet.attributes.name == "test"
-      - cm_change_subnet.previous.0.l3extSubnet.attributes.scope == nm_change_subnet.previous.0.l3extSubnet.attributes.scope == "import-security"
-      - cm_change_subnet.proposed.l3extSubnet.attributes.descr == "description for subnet"
-      - cm_change_subnet.proposed.l3extSubnet.attributes.name == "ansible_test"
-      - cm_change_subnet.proposed.l3extSubnet.attributes.scope == "import-security,shared-security"
-      - nm_change_subnet.current.0.l3extSubnet.attributes.descr == "description for subnet"
-      - nm_change_subnet.current.0.l3extSubnet.attributes.name == "ansible_test"
-      - nm_change_subnet.current.0.l3extSubnet.attributes.scope == "import-security,shared-security"
+  - name: Change subnet (normal mode)
+    cisco.aci.aci_l3out_extsubnet:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      network: 192.0.2.0/24
+      subnet_name: ansible_test
+      description: description for subnet
+      scope: [ shared-security, import-security ]
+      state: present
+    register: nm_change_subnet
 
-- name: Add another subnet (normal mode)
-  cisco.aci.aci_l3out_extsubnet:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    network: 192.1.2.0/24
-    state: present
-  register: nm_add_another_subnet
+  - name: Verify cm_change_subnet and nm_change_subnet
+    assert:
+      that:
+        - cm_change_subnet is changed
+        - nm_change_subnet is changed
+        - cm_change_subnet.previous.0.l3extSubnet.attributes.descr == nm_change_subnet.previous.0.l3extSubnet.attributes.descr == ""
+        - cm_change_subnet.previous.0.l3extSubnet.attributes.name == nm_change_subnet.previous.0.l3extSubnet.attributes.name == "test"
+        - cm_change_subnet.previous.0.l3extSubnet.attributes.scope == nm_change_subnet.previous.0.l3extSubnet.attributes.scope == "import-security"
+        - cm_change_subnet.proposed.l3extSubnet.attributes.descr == "description for subnet"
+        - cm_change_subnet.proposed.l3extSubnet.attributes.name == "ansible_test"
+        - cm_change_subnet.proposed.l3extSubnet.attributes.scope == "import-security,shared-security"
+        - nm_change_subnet.current.0.l3extSubnet.attributes.descr == "description for subnet"
+        - nm_change_subnet.current.0.l3extSubnet.attributes.name == "ansible_test"
+        - nm_change_subnet.current.0.l3extSubnet.attributes.scope == "import-security,shared-security"
 
-- name: Verify nm_add_another_subnet
-  assert:
-    that:
-      - nm_add_another_subnet is changed
-      - nm_add_another_subnet.current.0.l3extSubnet.attributes.ip == "192.1.2.0/24"
+  - name: Add another subnet (normal mode)
+    cisco.aci.aci_l3out_extsubnet:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      network: 192.1.2.0/24
+      state: present
+    register: nm_add_another_subnet
 
-- name: Query all subnets
-  cisco.aci.aci_l3out_extsubnet:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    state: query
-  register: query_all
+  - name: Verify nm_add_another_subnet
+    assert:
+      that:
+        - nm_add_another_subnet is changed
+        - nm_add_another_subnet.current.0.l3extSubnet.attributes.ip == "192.1.2.0/24"
 
-- name: Query specific subnet
-  cisco.aci.aci_l3out_extsubnet:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    network: 192.0.2.0/24
-    state: query
-  register: query_subnet
+  - name: Query all subnets
+    cisco.aci.aci_l3out_extsubnet:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      state: query
+    register: query_all
 
-- name: Verify query_all and query_subnet
-  assert:
-    that:
-      - query_all is not changed
-      - query_subnet is not changed
-      - query_all.current.0.l3extInstP.children | length == 2
-      - query_subnet.current.0.l3extSubnet.attributes.name == "ansible_test"
-      - query_subnet.current.0.l3extSubnet.attributes.ip == "192.0.2.0/24"
+  - name: Query specific subnet
+    cisco.aci.aci_l3out_extsubnet:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      network: 192.0.2.0/24
+      state: query
+    register: query_subnet
 
-- name: Remove subnet
-  cisco.aci.aci_l3out_extsubnet:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    network: 192.0.2.0/24
-    state: absent
-  register: rm_subnet
+  - name: Verify query_all and query_subnet
+    assert:
+      that:
+        - query_all is not changed
+        - query_subnet is not changed
+        - query_all.current.0.l3extInstP.children | length == 2
+        - query_subnet.current.0.l3extSubnet.attributes.name == "ansible_test"
+        - query_subnet.current.0.l3extSubnet.attributes.ip == "192.0.2.0/24"
 
-- name: Verify rm_subnet
-  assert:
-    that:
-      - rm_subnet is changed
-      - rm_subnet.current == []
-      - rm_subnet.previous.0.l3extSubnet.attributes.ip == "192.0.2.0/24"
-      - rm_subnet.previous.0.l3extSubnet.attributes.name == "ansible_test"
+  - name: Remove subnet
+    cisco.aci.aci_l3out_extsubnet:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      network: 192.0.2.0/24
+      state: absent
+    register: rm_subnet
 
-- name: Change subnet aggregate mismatch without scope (normal mode)
-  cisco.aci.aci_l3out_extsubnet:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    network: 0.0.0.0/0
-    subnet_name: ansible_test
-    description: description for subnet
-    aggregate: [ export-rtctrl, import-rtctrl ]
-    state: present
-  register: nm_aggregate_scope_none
-  ignore_errors: yes
+  - name: Verify rm_subnet
+    assert:
+      that:
+        - rm_subnet is changed
+        - rm_subnet.current == []
+        - rm_subnet.previous.0.l3extSubnet.attributes.ip == "192.0.2.0/24"
+        - rm_subnet.previous.0.l3extSubnet.attributes.name == "ansible_test"
 
-- name: asserts failed aggregate creation tasks
-  assert:
-    that:
-      - nm_aggregate_scope_none is failed
-      - nm_aggregate_scope_none.msg.startswith("missing parameter(s) required by 'aggregate'")
+  - name: Change subnet aggregate mismatch without scope (normal mode)
+    cisco.aci.aci_l3out_extsubnet:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      network: 0.0.0.0/0
+      subnet_name: ansible_test
+      description: description for subnet
+      aggregate: [ export-rtctrl, import-rtctrl ]
+      state: present
+    register: nm_aggregate_scope_none
+    ignore_errors: yes
 
-- name: Change subnet aggregate mismatch (normal mode)
-  cisco.aci.aci_l3out_extsubnet:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    network: 0.0.0.0/0
-    subnet_name: ansible_test
-    description: description for subnet
-    scope: [ import-security ]
-    aggregate: [ export-rtctrl, import-rtctrl ]
-    state: present
-  register: nm_aggregate_scope_mismatch
-  ignore_errors: yes
+  - name: asserts failed aggregate creation tasks
+    assert:
+      that:
+        - nm_aggregate_scope_none is failed
+        - nm_aggregate_scope_none.msg.startswith("missing parameter(s) required by 'aggregate'")
 
-- name: asserts failed aggregate creation tasks
-  assert:
-    that:
-      - nm_aggregate_scope_mismatch is failed
-      - nm_aggregate_scope_mismatch.msg == "All aggregate values ['export-rtctrl', 'import-rtctrl'] need to be defined in scope ['import-security']."
+  - name: Change subnet aggregate mismatch (normal mode)
+    cisco.aci.aci_l3out_extsubnet:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      network: 0.0.0.0/0
+      subnet_name: ansible_test
+      description: description for subnet
+      scope: [ import-security ]
+      aggregate: [ export-rtctrl, import-rtctrl ]
+      state: present
+    register: nm_aggregate_scope_mismatch
+    ignore_errors: yes
 
-- name: Change subnet aggregate match (check mode)
-  cisco.aci.aci_l3out_extsubnet:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    network: 0.0.0.0/0
-    subnet_name: ansible_test
-    description: description for subnet
-    scope: [ export-rtctrl, import-rtctrl, import-security ]
-    aggregate: [ export-rtctrl, import-rtctrl ]
-    state: present
-  check_mode: yes
-  register: cm_aggregate_scope_match
+  - name: asserts failed aggregate creation tasks
+    assert:
+      that:
+        - nm_aggregate_scope_mismatch is failed
+        - nm_aggregate_scope_mismatch.msg == "All aggregate values ['export-rtctrl', 'import-rtctrl'] need to be defined in scope ['import-security']."
 
-- name: Change subnet aggregate match (normal mode)
-  cisco.aci.aci_l3out_extsubnet:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    network: 0.0.0.0/0
-    subnet_name: ansible_test
-    description: description for subnet
-    scope: [ export-rtctrl, import-rtctrl, import-security ]
-    aggregate: [ export-rtctrl, import-rtctrl ]
-    state: present
-  register: nm_aggregate_scope_match
+  - name: Change subnet aggregate match (check mode)
+    cisco.aci.aci_l3out_extsubnet:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      network: 0.0.0.0/0
+      subnet_name: ansible_test
+      description: description for subnet
+      scope: [ export-rtctrl, import-rtctrl, import-security ]
+      aggregate: [ export-rtctrl, import-rtctrl ]
+      state: present
+    check_mode: yes
+    register: cm_aggregate_scope_match
 
-- name: asserts success aggregate creation task
-  assert:
-    that:
-      - cm_aggregate_scope_match is changed
-      - cm_aggregate_scope_match.proposed.l3extSubnet.attributes.ip == "0.0.0.0/0"
-      - cm_aggregate_scope_match.proposed.l3extSubnet.attributes.name == "ansible_test"
-      - cm_aggregate_scope_match.proposed.l3extSubnet.attributes.scope == "export-rtctrl,import-rtctrl,import-security"
-      - cm_aggregate_scope_match.proposed.l3extSubnet.attributes.aggregate == "export-rtctrl,import-rtctrl"
-      - nm_aggregate_scope_match.current.0.l3extSubnet.attributes.ip == "0.0.0.0/0"
-      - nm_aggregate_scope_match.current.0.l3extSubnet.attributes.name == "ansible_test"
-      - nm_aggregate_scope_match.current.0.l3extSubnet.attributes.scope == "export-rtctrl,import-rtctrl,import-security"
-      - nm_aggregate_scope_match.current.0.l3extSubnet.attributes.aggregate == "export-rtctrl,import-rtctrl"
+  - name: Change subnet aggregate match (normal mode)
+    cisco.aci.aci_l3out_extsubnet:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      network: 0.0.0.0/0
+      subnet_name: ansible_test
+      description: description for subnet
+      scope: [ export-rtctrl, import-rtctrl, import-security ]
+      aggregate: [ export-rtctrl, import-rtctrl ]
+      state: present
+    register: nm_aggregate_scope_match
 
-- name: Change subnet other aggregate order (normal mode)
-  cisco.aci.aci_l3out_extsubnet:
-    <<: *aci_info
-    tenant: ansible_tenant
-    l3out: ansible_l3out
-    extepg: ansible_extEpg
-    network: 0.0.0.0/0
-    subnet_name: ansible_test
-    description: description for subnet
-    scope: [ export-rtctrl, import-rtctrl, import-security ]
-    aggregate: [ import-rtctrl, export-rtctrl ]
-    state: present
-  register: nm_aggregate_scope_match
+  - name: asserts success aggregate creation task
+    assert:
+      that:
+        - cm_aggregate_scope_match is changed
+        - cm_aggregate_scope_match.proposed.l3extSubnet.attributes.ip == "0.0.0.0/0"
+        - cm_aggregate_scope_match.proposed.l3extSubnet.attributes.name == "ansible_test"
+        - cm_aggregate_scope_match.proposed.l3extSubnet.attributes.scope == "export-rtctrl,import-rtctrl,import-security"
+        - cm_aggregate_scope_match.proposed.l3extSubnet.attributes.aggregate == "export-rtctrl,import-rtctrl"
+        - nm_aggregate_scope_match.current.0.l3extSubnet.attributes.ip == "0.0.0.0/0"
+        - nm_aggregate_scope_match.current.0.l3extSubnet.attributes.name == "ansible_test"
+        - nm_aggregate_scope_match.current.0.l3extSubnet.attributes.scope == "export-rtctrl,import-rtctrl,import-security"
+        - nm_aggregate_scope_match.current.0.l3extSubnet.attributes.aggregate == "export-rtctrl,import-rtctrl"
 
-- name: asserts success aggregate creation task reversed input order
-  assert:
-    that:
-      - nm_aggregate_scope_match is not changed
+  - name: Change subnet other aggregate order (normal mode)
+    cisco.aci.aci_l3out_extsubnet:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      extepg: ansible_extEpg
+      network: 0.0.0.0/0
+      subnet_name: ansible_test
+      description: description for subnet
+      scope: [ export-rtctrl, import-rtctrl, import-security ]
+      aggregate: [ import-rtctrl, export-rtctrl ]
+      state: present
+    register: nm_aggregate_scope_match
+
+  - name: asserts success aggregate creation task reversed input order
+    assert:
+      that:
+        - nm_aggregate_scope_match is not changed

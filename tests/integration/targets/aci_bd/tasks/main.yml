@@ -26,276 +26,287 @@
     state: query
   register: version
 
-- name: ensure tenant exists for tests to kick off
-  cisco.aci.aci_tenant: &aci_tenant_present
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: ensure tenant does not exists
+  cisco.aci.aci_tenant: &aci_tenant_absent
     <<: *aci_info
-    state: present
-    tenant: anstest
-  register: tenant_present
-
-- name: ensure vrf exists for tests to kick off
-  cisco.aci.aci_vrf: &aci_vrf_present
-    <<: *aci_tenant_present
-    vrf: anstest
-  register: vrf_present
-
-- name: ensure bd anstest does not exist
-  cisco.aci.aci_bd:
-    <<: *aci_tenant_present
-    bd: anstest
     state: absent
+    tenant: ansible_test
 
-- name: ensure bd anstest2 does not exist
-  cisco.aci.aci_bd:
-    <<: *aci_tenant_present
-    bd: anstest2
-    state: absent
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: ensure tenant exists for tests to kick off
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_tenant_absent
+      state: present
+    register: tenant_present
 
-- name: ensure L3out exists
-  cisco.aci.aci_l3out: &aci_l3_out_present
-    <<: *aci_tenant_present
-    tenant: anstest
-    l3out: ansible_l3out
-    domain: ansible_dom
-    route_control: export
-    vrf: anstest
-    l3protocol: ospf
-    state: present
+  - name: ensure vrf exists for tests to kick off
+    cisco.aci.aci_vrf: &aci_vrf_present
+      <<: *aci_tenant_present
+      vrf: anstest
+    register: vrf_present
 
-- name: create bd - check mode works
-  cisco.aci.aci_bd: &aci_bd_present
-    <<: *aci_tenant_present
-    bd: anstest
-    description: Ansible Test
-  check_mode: yes
-  register: bd_present_check_mode
+  - name: ensure bd anstest does not exist
+    cisco.aci.aci_bd:
+      <<: *aci_tenant_present
+      bd: anstest
+      state: absent
 
-- name: create bd - creation works
-  cisco.aci.aci_bd:
-    <<: *aci_bd_present
-  register: bd_present
+  - name: ensure bd anstest2 does not exist
+    cisco.aci.aci_bd:
+      <<: *aci_tenant_present
+      bd: anstest2
+      state: absent
 
-- name: create bd again - idempotency works
-  cisco.aci.aci_bd:
-    <<: *aci_bd_present
-  register: bd_present_idempotent
+  - name: ensure L3out exists
+    cisco.aci.aci_l3out: &aci_l3_out_present
+      <<: *aci_tenant_present
+      tenant: ansible_test
+      l3out: ansible_l3out
+      domain: ansible_dom
+      route_control: export
+      vrf: anstest
+      l3protocol: ospf
+      state: present
 
-- name: update bd - update works
-  cisco.aci.aci_bd:
-    <<: *aci_bd_present
-    vrf: anstest
-    description: Ansible Test Update
-  register: bd_update
+  - name: create bd - check mode works
+    cisco.aci.aci_bd: &aci_bd_present
+      <<: *aci_tenant_present
+      bd: anstest
+      description: Ansible Test
+    check_mode: yes
+    register: bd_present_check_mode
 
-- name: create another bd - check more params
-  cisco.aci.aci_bd:
-    <<: *aci_bd_present
-    bd: anstest2
-    bd_type: ethernet
-    endpoint_move_detect: default
-    ip_learning: "no"
-    l2_unknown_unicast: flood
-    l3_unknown_multicast: opt-flood
-    multi_dest: drop
-    enable_routing: "no"
-    arp_flooding: "yes"
-    route_profile_l3out: ansible_l3out
-    route_profile: ansible_l3out_route
-  register: bd_present_2
-  when: version.current.0.topSystem.attributes.version is version('4.2', '<')
+  - name: create bd - creation works
+    cisco.aci.aci_bd:
+      <<: *aci_bd_present
+    register: bd_present
 
-- name: create another bd - check more params (>v4.2)
-  cisco.aci.aci_bd:
-    <<: *aci_bd_present
-    bd: anstest2
-    bd_type: ethernet
-    endpoint_move_detect: default
-    ip_learning: "no"
-    l2_unknown_unicast: flood
-    l3_unknown_multicast: opt-flood
-    ipv6_l3_unknown_multicast: opt-flood
-    multi_dest: drop
-    enable_routing: "no"
-    arp_flooding: "yes"
-    route_profile_l3out: ansible_l3out
-    route_profile: ansible_l3out_route
-  register: bd_present_2b
-  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+  - name: create bd again - idempotency works
+    cisco.aci.aci_bd:
+      <<: *aci_bd_present
+    register: bd_present_idempotent
 
-- name: create bd without all necessary params - failure message works
-  cisco.aci.aci_bd:
-    <<: *aci_bd_present
-    tenant: "{{ fake_var | default(omit) }}"
-  ignore_errors: yes
-  register: bd_present_missing_param
+  - name: update bd - update works
+    cisco.aci.aci_bd:
+      <<: *aci_bd_present
+      vrf: anstest
+      description: Ansible Test Update
+    register: bd_update
 
-- name: present asserts (<v4.2)
-  assert:
-    that:
-      - bd_present_check_mode is changed
-      - bd_present_check_mode.sent.fvBD.attributes.descr == 'Ansible Test'
-      - bd_present_check_mode.sent.fvBD.attributes.name == 'anstest'
-      - bd_present is changed
-      - bd_present.current.0.fvBD.attributes.annotation == 'orchestrator:ansible'
-      - bd_present.sent == bd_present_check_mode.sent
-      - bd_present.previous == []
-      - bd_present_idempotent is not changed
-      - bd_present_idempotent.previous != []
-      - bd_update is changed
-      - bd_update.previous != []
-      - bd_update.sent != bd_update.proposed
-      - bd_update.sent.fvBD.attributes.descr == 'Ansible Test Update'
-      - bd_update.sent.fvBD.children.0.fvRsCtx.attributes.tnFvCtxName == 'anstest' 
-      - bd_present_2.sent.fvBD.attributes.arpFlood == 'yes'
-      - bd_present_2.sent.fvBD.attributes.descr == 'Ansible Test'
-      - bd_present_2.sent.fvBD.attributes.ipLearning == 'no'
-      - bd_present_2.sent.fvBD.attributes.multiDstPktAct == 'drop'
-      - bd_present_2.sent.fvBD.attributes.name == 'anstest2'
-      - bd_present_2.sent.fvBD.attributes.unicastRoute == 'no'
-      - bd_present_2.sent.fvBD.attributes.unkMacUcastAct == 'flood'
-      - bd_present_2.sent.fvBD.attributes.unkMcastAct == 'opt-flood'
-      - bd_present_2.sent.fvBD.attributes.type == 'regular'
-      - bd_present_2.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
-      - bd_present_2.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
-      - bd_present_missing_param is failed
-      - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
-  when: version.current.0.topSystem.attributes.version is version('4.2', '<')
+  - name: create another bd - check more params
+    cisco.aci.aci_bd:
+      <<: *aci_bd_present
+      bd: anstest2
+      bd_type: ethernet
+      endpoint_move_detect: default
+      ip_learning: "no"
+      l2_unknown_unicast: flood
+      l3_unknown_multicast: opt-flood
+      multi_dest: drop
+      enable_routing: "no"
+      arp_flooding: "yes"
+      route_profile_l3out: ansible_l3out
+      route_profile: ansible_l3out_route
+    register: bd_present_2
+    when: version.current.0.topSystem.attributes.version is version('4.2', '<')
 
-- name: present asserts (>v4.2)
-  assert:
-    that:
-      - bd_present_check_mode is changed
-      - bd_present_check_mode.sent.fvBD.attributes.descr == 'Ansible Test'
-      - bd_present_check_mode.sent.fvBD.attributes.name == 'anstest'
-      - bd_present is changed
-      - bd_present.sent == bd_present_check_mode.sent
-      - bd_present.previous == []
-      - bd_present_idempotent is not changed
-      - bd_present_idempotent.previous != []
-      - bd_update is changed
-      - bd_update.previous != []
-      - bd_update.sent != bd_update.proposed
-      - bd_update.sent.fvBD.attributes.descr == 'Ansible Test Update'
-      - bd_update.sent.fvBD.children.0.fvRsCtx.attributes.tnFvCtxName == 'anstest' 
-      - bd_present_2b.sent.fvBD.attributes.arpFlood == 'yes'
-      - bd_present_2b.sent.fvBD.attributes.descr == 'Ansible Test'
-      - bd_present_2b.sent.fvBD.attributes.ipLearning == 'no'
-      - bd_present_2b.sent.fvBD.attributes.multiDstPktAct == 'drop'
-      - bd_present_2b.sent.fvBD.attributes.name == 'anstest2'
-      - bd_present_2b.sent.fvBD.attributes.unicastRoute == 'no'
-      - bd_present_2b.sent.fvBD.attributes.unkMacUcastAct == 'flood'
-      - bd_present_2b.sent.fvBD.attributes.unkMcastAct == 'opt-flood'
-      - bd_present_2b.sent.fvBD.attributes.v6unkMcastAct == 'opt-flood'
-      - bd_present_2b.sent.fvBD.attributes.type == 'regular'
-      - bd_present_2b.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
-      - bd_present_2b.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
-      - bd_present_missing_param is failed
-      - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
-  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+  - name: create another bd - check more params (>v4.2)
+    cisco.aci.aci_bd:
+      <<: *aci_bd_present
+      bd: anstest2
+      bd_type: ethernet
+      endpoint_move_detect: default
+      ip_learning: "no"
+      l2_unknown_unicast: flood
+      l3_unknown_multicast: opt-flood
+      ipv6_l3_unknown_multicast: opt-flood
+      multi_dest: drop
+      enable_routing: "no"
+      arp_flooding: "yes"
+      route_profile_l3out: ansible_l3out
+      route_profile: ansible_l3out_route
+    register: bd_present_2b
+    when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
-- name: get all bd
-  cisco.aci.aci_bd: &aci_query
-    <<: *aci_tenant_present
-    state: query
-    tenant: "{{ fake_var | default(omit) }}"
-  register: query_all
+  - name: create bd without all necessary params - failure message works
+    cisco.aci.aci_bd:
+      <<: *aci_bd_present
+      tenant: "{{ fake_var | default(omit) }}"
+    ignore_errors: yes
+    register: bd_present_missing_param
 
-- name: get all in tenant
-  cisco.aci.aci_bd:
-    <<: *aci_query
-    tenant: anstest
-  register: query_tenant
+  - name: present asserts (<v4.2)
+    assert:
+      that:
+        - bd_present_check_mode is changed
+        - bd_present_check_mode.sent.fvBD.attributes.descr == 'Ansible Test'
+        - bd_present_check_mode.sent.fvBD.attributes.name == 'anstest'
+        - bd_present is changed
+        - bd_present.current.0.fvBD.attributes.annotation == 'orchestrator:ansible'
+        - bd_present.sent == bd_present_check_mode.sent
+        - bd_present.previous == []
+        - bd_present_idempotent is not changed
+        - bd_present_idempotent.previous != []
+        - bd_update is changed
+        - bd_update.previous != []
+        - bd_update.sent != bd_update.proposed
+        - bd_update.sent.fvBD.attributes.descr == 'Ansible Test Update'
+        - bd_update.sent.fvBD.children.0.fvRsCtx.attributes.tnFvCtxName == 'anstest' 
+        - bd_present_2.sent.fvBD.attributes.arpFlood == 'yes'
+        - bd_present_2.sent.fvBD.attributes.descr == 'Ansible Test'
+        - bd_present_2.sent.fvBD.attributes.ipLearning == 'no'
+        - bd_present_2.sent.fvBD.attributes.multiDstPktAct == 'drop'
+        - bd_present_2.sent.fvBD.attributes.name == 'anstest2'
+        - bd_present_2.sent.fvBD.attributes.unicastRoute == 'no'
+        - bd_present_2.sent.fvBD.attributes.unkMacUcastAct == 'flood'
+        - bd_present_2.sent.fvBD.attributes.unkMcastAct == 'opt-flood'
+        - bd_present_2.sent.fvBD.attributes.type == 'regular'
+        - bd_present_2.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
+        - bd_present_2.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
+        - bd_present_missing_param is failed
+        - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
+    when: version.current.0.topSystem.attributes.version is version('4.2', '<')
 
-- name: get all with name
-  cisco.aci.aci_bd:
-    <<: *aci_query
-    bd: anstest
-  register: query_bd_bd
+  - name: present asserts (>v4.2)
+    assert:
+      that:
+        - bd_present_check_mode is changed
+        - bd_present_check_mode.sent.fvBD.attributes.descr == 'Ansible Test'
+        - bd_present_check_mode.sent.fvBD.attributes.name == 'anstest'
+        - bd_present is changed
+        - bd_present.sent == bd_present_check_mode.sent
+        - bd_present.previous == []
+        - bd_present_idempotent is not changed
+        - bd_present_idempotent.previous != []
+        - bd_update is changed
+        - bd_update.previous != []
+        - bd_update.sent != bd_update.proposed
+        - bd_update.sent.fvBD.attributes.descr == 'Ansible Test Update'
+        - bd_update.sent.fvBD.children.0.fvRsCtx.attributes.tnFvCtxName == 'anstest' 
+        - bd_present_2b.sent.fvBD.attributes.arpFlood == 'yes'
+        - bd_present_2b.sent.fvBD.attributes.descr == 'Ansible Test'
+        - bd_present_2b.sent.fvBD.attributes.ipLearning == 'no'
+        - bd_present_2b.sent.fvBD.attributes.multiDstPktAct == 'drop'
+        - bd_present_2b.sent.fvBD.attributes.name == 'anstest2'
+        - bd_present_2b.sent.fvBD.attributes.unicastRoute == 'no'
+        - bd_present_2b.sent.fvBD.attributes.unkMacUcastAct == 'flood'
+        - bd_present_2b.sent.fvBD.attributes.unkMcastAct == 'opt-flood'
+        - bd_present_2b.sent.fvBD.attributes.v6unkMcastAct == 'opt-flood'
+        - bd_present_2b.sent.fvBD.attributes.type == 'regular'
+        - bd_present_2b.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
+        - bd_present_2b.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
+        - bd_present_missing_param is failed
+        - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
+    when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
-- name: get bd
-  cisco.aci.aci_bd:
-    <<: *aci_bd_present
-    state: query
-  register: query_bd
+  - name: get all bd
+    cisco.aci.aci_bd: &aci_query
+      <<: *aci_tenant_present
+      state: query
+      tenant: "{{ fake_var | default(omit) }}"
+    register: query_all
 
-- name: query asserts
-  assert:
-    that:
-      - query_all is not changed
-      - query_all.current | length > 1
-      - query_all.current.0.fvBD is defined
-      - '"rsp-subtree-class=fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn" in query_all.filter_string'
-      - '"class/fvBD.json" in query_all.url'
-      - query_tenant is not changed
-      - query_tenant.current | length == 1
-      - query_tenant.current.0.fvTenant.children | length == 2
-      - '"rsp-subtree-class=fvBD,fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn" in query_tenant.filter_string'
-      - '"tn-anstest.json" in query_tenant.url'
-      - query_bd_bd is not changed
-      - query_bd_bd.current != []
-      - '"query-target-filter=eq(fvBD.name,\"anstest\")" in query_bd_bd.filter_string'
-      - '"rsp-subtree-class=fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn" in query_bd_bd.filter_string'
-      - '"class/fvBD.json" in query_bd_bd.url'
-      - query_bd is not changed
-      - query_bd.current | length == 1
-      - query_bd.current.0.fvBD.attributes.name == "anstest"
-      - '"rsp-subtree-class=fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn" in query_bd.filter_string'
-      - '"tn-anstest/BD-anstest.json" in query_bd.url'
+  - name: get all in tenant
+    cisco.aci.aci_bd:
+      <<: *aci_query
+      tenant: ansible_test
+    register: query_tenant
 
-- name: delete bd - check mode works
-  cisco.aci.aci_bd: &aci_bd_absent
-    <<: *aci_bd_present
-    state: absent
-  check_mode: yes
-  register: bd_absent_check_mode
+  - name: get all with name
+    cisco.aci.aci_bd:
+      <<: *aci_query
+      bd: anstest
+    register: query_bd_bd
 
-- name: delete bd - delete works
-  cisco.aci.aci_bd:
-    <<: *aci_bd_absent
-  register: bd_absent
+  - name: get bd
+    cisco.aci.aci_bd:
+      <<: *aci_bd_present
+      state: query
+    register: query_bd
 
-- name: delete bd again - idempotency works
-  cisco.aci.aci_bd:
-    <<: *aci_bd_absent
-  register: bd_absent_idempotent
+  - name: query asserts
+    assert:
+      that:
+        - query_all is not changed
+        - query_all.current | length > 1
+        - query_all.current.0.fvBD is defined
+        - '"rsp-subtree-class=fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn" in query_all.filter_string'
+        - '"class/fvBD.json" in query_all.url'
+        - query_tenant is not changed
+        - query_tenant.current | length == 1
+        - query_tenant.current.0.fvTenant.children | length == 2
+        - '"rsp-subtree-class=fvBD,fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn" in query_tenant.filter_string'
+        - '"tn-ansible_test.json" in query_tenant.url'
+        - query_bd_bd is not changed
+        - query_bd_bd.current != []
+        - '"query-target-filter=eq(fvBD.name,\"anstest\")" in query_bd_bd.filter_string'
+        - '"rsp-subtree-class=fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn" in query_bd_bd.filter_string'
+        - '"class/fvBD.json" in query_bd_bd.url'
+        - query_bd is not changed
+        - query_bd.current | length == 1
+        - query_bd.current.0.fvBD.attributes.name == "anstest"
+        - '"rsp-subtree-class=fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn" in query_bd.filter_string'
+        - '"tn-ansible_test/BD-anstest.json" in query_bd.url'
 
-- name: delete bd - cleanup
-  cisco.aci.aci_bd:
-    <<: *aci_bd_absent
-    name: anstest2
+  - name: delete bd - check mode works
+    cisco.aci.aci_bd: &aci_bd_absent
+      <<: *aci_bd_present
+      state: absent
+    check_mode: yes
+    register: bd_absent_check_mode
 
-- name: delete bd missing param - fails properly
-  cisco.aci.aci_bd:
-    <<: *aci_bd_absent
-    bd: "{{ fakevar | default(omit) }}"
-  ignore_errors: yes
-  register: bd_absent_missing_param
+  - name: delete bd - delete works
+    cisco.aci.aci_bd:
+      <<: *aci_bd_absent
+    register: bd_absent
 
-- name: asserts for deletion task
-  assert:
-    that:
-      - bd_absent_check_mode is changed
-      - bd_absent_check_mode.proposed == {}
-      - bd_absent is changed
-      - bd_absent.previous != []
-      - bd_absent_idempotent is not changed
-      - bd_absent_idempotent.previous == []
-      - bd_absent_missing_param is failed
-      - 'bd_absent_missing_param.msg == "state is absent but all of the following are missing: bd"'
+  - name: delete bd again - idempotency works
+    cisco.aci.aci_bd:
+      <<: *aci_bd_absent
+    register: bd_absent_idempotent
 
-- name: delete vrf - cleanup before ending tests
-  cisco.aci.aci_vrf:
-    <<: *aci_vrf_present
-    state: absent
-  when: vrf_present is changed
+  - name: delete bd - cleanup
+    cisco.aci.aci_bd:
+      <<: *aci_bd_absent
+      bd: anstest2
 
-- name: delete l3out - cleanup before ending tests
-  cisco.aci.aci_l3out:
-    <<: *aci_l3_out_present
-    state: absent
+  - name: delete bd missing param - fails properly
+    cisco.aci.aci_bd:
+      <<: *aci_bd_absent
+      bd: "{{ fakevar | default(omit) }}"
+    ignore_errors: yes
+    register: bd_absent_missing_param
 
-- name: delete tenant - cleanup before ending tests
-  cisco.aci.aci_tenant:
-    <<: *aci_tenant_present
-    state: absent
-  when: tenant_present is changed
+  - name: asserts for deletion task
+    assert:
+      that:
+        - bd_absent_check_mode is changed
+        - bd_absent_check_mode.proposed == {}
+        - bd_absent is changed
+        - bd_absent.previous != []
+        - bd_absent_idempotent is not changed
+        - bd_absent_idempotent.previous == []
+        - bd_absent_missing_param is failed
+        - 'bd_absent_missing_param.msg == "state is absent but all of the following are missing: bd"'
+
+  - name: delete vrf - cleanup before ending tests
+    cisco.aci.aci_vrf:
+      <<: *aci_vrf_present
+      state: absent
+    when: vrf_present is changed
+
+  - name: delete l3out - cleanup before ending tests
+    cisco.aci.aci_l3out:
+      <<: *aci_l3_out_present
+      state: absent
+
+  - name: delete tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent
+    when: tenant_present is changed

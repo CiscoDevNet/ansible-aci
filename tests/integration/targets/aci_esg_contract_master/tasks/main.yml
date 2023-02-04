@@ -27,18 +27,23 @@
     state: query
   register: version
 
-- name: Execute tasks only for ACI v5+
-  when: version.current.0.topSystem.attributes.version is version('5', '>=')
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Ensure tenant - ansible_test does not exists before testing
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
+    output_level: debug
+    tenant: ansible_test
+    state: absent
+
+- name: Execute tasks only for ACI v5+ and non-cloud sites
+  when:
+  - version.current.0.topSystem.attributes.version is version('5', '>=')
+  - query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   # Setup part
-  - name: Ensure tenant - anstest does not exists before testing
-    cisco.aci.aci_tenant: &tenant_absent
-      <<: *aci_info
-      output_level: debug
-      tenant: anstest
-      state: absent
-
-  - name: Ensure anstest - tenant exists
+  - name: Ensure ansible_test - tenant exists
     cisco.aci.aci_tenant: &tenant_present
       <<: *tenant_absent
       state: present
@@ -73,7 +78,7 @@
   - name: Add an ESG contract master to web_esg with check mode
     cisco.aci.aci_esg_contract_master: &cm_contract_esg_present
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       ap: anstest_ap
       esg: web_esg
       contract_master_ap: contract_master_ap
@@ -88,7 +93,7 @@
         - cm_contract_esg_present is changed
         - cm_contract_esg_present.current == []
         - cm_contract_esg_present.previous == []
-        - cm_contract_esg_present.sent.fvRsSecInherited.attributes.tDn == "uni/tn-anstest/ap-contract_master_ap/esg-contract_esg"
+        - cm_contract_esg_present.sent.fvRsSecInherited.attributes.tDn == "uni/tn-ansible_test/ap-contract_master_ap/esg-contract_esg"
         - cm_contract_esg_present.sent.fvRsSecInherited.attributes.annotation == 'orchestrator:ansible'
 
   - name: Add an ESG contract master to web_esg with normal mode
@@ -102,7 +107,7 @@
         - nm_contract_esg_present is changed
         - nm_contract_esg_present.current | length == 1
         - nm_contract_esg_present.previous == []
-        - nm_contract_esg_present.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-anstest/ap-contract_master_ap/esg-contract_esg"
+        - nm_contract_esg_present.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-ansible_test/ap-contract_master_ap/esg-contract_esg"
 
   - name: Add an ESG contract master to web_esg with normal mode - Idempotency works
     cisco.aci.aci_esg_contract_master:
@@ -114,12 +119,12 @@
       that:
         - idempotency_contract_esg_present is not changed
         - idempotency_contract_esg_present.current | length == 1
-        - idempotency_contract_esg_present.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-anstest/ap-contract_master_ap/esg-contract_esg"
+        - idempotency_contract_esg_present.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-ansible_test/ap-contract_master_ap/esg-contract_esg"
 
   - name: Query an ESG contract master
     cisco.aci.aci_esg_contract_master:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       ap: anstest_ap
       esg: web_esg
       contract_master_ap: contract_master_ap
@@ -132,12 +137,12 @@
       that:
         - query_result_contract_master_esg is not changed
         - query_result_contract_master_esg.current | length == 1
-        - query_result_contract_master_esg.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-anstest/ap-contract_master_ap/esg-contract_esg"
+        - query_result_contract_master_esg.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-ansible_test/ap-contract_master_ap/esg-contract_esg"
 
   - name: Query an ESG contract master
     cisco.aci.aci_esg_contract_master:
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       ap: anstest_ap
       esg: web_esg
       state: query
@@ -148,12 +153,12 @@
       that:
         - query_all_contract_master is not changed
         - query_all_contract_master.current | length == 1
-        - query_all_contract_master.current.0.fvESg.children.0.fvRsSecInherited.attributes.tDn == "uni/tn-anstest/ap-contract_master_ap/esg-contract_esg"
+        - query_all_contract_master.current.0.fvESg.children.0.fvRsSecInherited.attributes.tDn == "uni/tn-ansible_test/ap-contract_master_ap/esg-contract_esg"
 
   - name: Remove an ESG contract master with check mode
     cisco.aci.aci_esg_contract_master: &cm_contract_esg_absent
       <<: *aci_info
-      tenant: anstest
+      tenant: ansible_test
       ap: anstest_ap
       esg: web_esg
       contract_master_ap: contract_master_ap
@@ -167,9 +172,9 @@
       that:
         - cm_contract_esg_absent is changed
         - cm_contract_esg_absent.current != []
-        - cm_contract_esg_absent.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-anstest/ap-contract_master_ap/esg-contract_esg"
+        - cm_contract_esg_absent.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-ansible_test/ap-contract_master_ap/esg-contract_esg"
         - cm_contract_esg_absent.previous | length == 1
-        - cm_contract_esg_absent.previous.0.fvRsSecInherited.attributes.tDn == "uni/tn-anstest/ap-contract_master_ap/esg-contract_esg"
+        - cm_contract_esg_absent.previous.0.fvRsSecInherited.attributes.tDn == "uni/tn-ansible_test/ap-contract_master_ap/esg-contract_esg"
 
   - name: Remove an ESG contract master with normal mode
     cisco.aci.aci_esg_contract_master: &nm_contract_esg_absent
@@ -182,7 +187,7 @@
         - nm_contract_esg_absent is changed
         - nm_contract_esg_absent.current == []
         - nm_contract_esg_absent.previous | length == 1
-        - nm_contract_esg_absent.previous.0.fvRsSecInherited.attributes.tDn == "uni/tn-anstest/ap-contract_master_ap/esg-contract_esg"
+        - nm_contract_esg_absent.previous.0.fvRsSecInherited.attributes.tDn == "uni/tn-ansible_test/ap-contract_master_ap/esg-contract_esg"
 
   - name: Remove an ESG contract master with normal mode - Idempotency works
     cisco.aci.aci_esg_contract_master:
@@ -207,7 +212,7 @@
       <<: *anstest_ap_present
       state: absent
 
-  - name: Remove anstest - tenant
+  - name: Remove ansible_test - tenant
     cisco.aci.aci_tenant:
       <<: *tenant_present
       state: absent

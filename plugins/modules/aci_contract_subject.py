@@ -380,11 +380,12 @@ def main():
                       child_classes=["vzInTerm", "vzOutTerm"])
     aci.get_existing()
     direction_options = ["both", "one-way"]
-    if aci.existing and subject_class in aci.existing[0]:
-        direction_options = ["one-way"] if "children" in aci.existing[0][subject_class] else ["both"]
-    if direction not in direction_options:
-        module.fail_json(msg="Direction is not allowed, valid option is {0}.".format(" or ".join(direction_options)))
-    # end logic to be consistent with GUI to only allow both direction or one-way
+    if state != "query":
+        if aci.existing and subject_class in aci.existing[0]:
+            direction_options = ["one-way"] if "children" in aci.existing[0][subject_class] else ["both"]
+        if direction not in direction_options:
+            module.fail_json(msg="Direction is not allowed, valid option is {0}.".format(" or ".join(direction_options)))
+        # end logic to be consistent with GUI to only allow both direction or one-way
 
     if state == "present":
 

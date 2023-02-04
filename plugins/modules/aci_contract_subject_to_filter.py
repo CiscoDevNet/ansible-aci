@@ -316,7 +316,7 @@ def main():
     if aci.existing:
         direction_options = ["consumer_to_provider", "provider_to_consumer"] if "children" in aci.existing[0]["vzSubj"] else ["both"]
 
-    if direction not in direction_options:
+    if state != "query" and direction not in direction_options:
         module.fail_json(msg="Direction is not allowed, valid option is {0}.".format(" or ".join(direction_options)))
     # end logic to be consistent with GUI to only allow both direction or a one-way connection
 

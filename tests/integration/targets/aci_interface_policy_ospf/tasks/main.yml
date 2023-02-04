@@ -19,7 +19,7 @@
     use_ssl: '{{ aci_use_ssl | default(true) }}'
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: debug
-    tenant: anstest
+    tenant: ansible_test
     state: present
   register: tenant_present
 
@@ -32,7 +32,7 @@
     use_ssl: '{{ aci_use_ssl | default(true) }}'
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
-    tenant: anstest
+    tenant: ansible_test
     ospf: ansible_ospf
     state: absent
 
@@ -47,7 +47,7 @@
     use_ssl: '{{ aci_use_ssl | default(true) }}'
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
-    tenant: anstest
+    tenant: ansible_test
     ospf: ansible_ospf
     state: present
   check_mode: yes
@@ -139,7 +139,7 @@
     use_ssl: '{{ aci_use_ssl | default(true) }}'
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
-    tenant: anstest
+    tenant: ansible_test
     state: query
   check_mode: yes
   register: cm_query_all_ospfs
@@ -161,7 +161,7 @@
 - name: Query our ospf
   cisco.aci.aci_interface_policy_ospf:
     <<: *interface_policy_ospf_query
-    tenant: anstest
+    tenant: ansible_test
     ospf: ansible_ospf
   check_mode: yes
   register: cm_query_ospf
@@ -169,7 +169,7 @@
 - name: Query our ospf
   cisco.aci.aci_interface_policy_ospf:
     <<: *interface_policy_ospf_query
-    tenant: anstest
+    tenant: ansible_test
     ospf: ansible_ospf
   register: nm_query_ospf
 

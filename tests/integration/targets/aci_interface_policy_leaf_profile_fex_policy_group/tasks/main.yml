@@ -20,270 +20,276 @@
       use_proxy: "{{ aci_use_proxy | default(true) }}"
       output_level: '{{ aci_output_level | default("info") }}'
 
-- name: Ensure anstest_fex_profile - Interface Policy Fex profile does not exists
-  cisco.aci.aci_interface_policy_leaf_profile: &fex_profile_absent
-    <<: *aci_info
-    type: fex
-    leaf_interface_profile: anstest_fex_profile
-    state: absent
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Add anstest_fex_profile - Interface Policy Fex profile
-  cisco.aci.aci_interface_policy_leaf_profile: &fex_profile_present
-    <<: *fex_profile_absent
-    state: present
-  register: fex_profile_present
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Ensure anstest_fex_profile - Interface Policy Fex profile does not exists
+    cisco.aci.aci_interface_policy_leaf_profile: &fex_profile_absent
+      <<: *aci_info
+      type: fex
+      leaf_interface_profile: anstest_fex_profile
+      state: absent
 
-- name: Add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with check mode
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
-    &cm_fex_policy_group_present
-    <<: *aci_info
-    name: anstest_fex_policy_group
-    fex_profile: anstest_fex_profile
-    state: present
-  check_mode: yes
-  register: cm_fex_policy_group_present
+  - name: Add anstest_fex_profile - Interface Policy Fex profile
+    cisco.aci.aci_interface_policy_leaf_profile: &fex_profile_present
+      <<: *fex_profile_absent
+      state: present
+    register: fex_profile_present
 
-- name: Assertions check for add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with check mode
-  assert:
-    that:
-      - cm_fex_policy_group_present is changed
-      - cm_fex_policy_group_present.current | length == 0
-      - cm_fex_policy_group_present.previous | length == 0
-      - cm_fex_policy_group_present.sent.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
-      - cm_fex_policy_group_present.sent.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
-
-- name: Add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
-    &nm_fex_policy_group_present
-    <<: *cm_fex_policy_group_present
-  register: nm_fex_policy_group_present
-
-- name: Assertions check for add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
-  assert:
-    that:
-      - nm_fex_policy_group_present is changed
-      - nm_fex_policy_group_present.current | length == 1
-      - nm_fex_policy_group_present.previous | length == 0
-      - nm_fex_policy_group_present.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
-      - nm_fex_policy_group_present.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
-
-- name: Add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode - idempotency works
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
-    &idempotency_fex_policy_group_present
-    <<: *nm_fex_policy_group_present
-  register: idempotency_fex_policy_group_present
-
-- name: Idempotency assertions check for add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
-  assert:
-    that:
-      - idempotency_fex_policy_group_present is not changed
-      - idempotency_fex_policy_group_present.current | length == 1
-      - idempotency_fex_policy_group_present.previous | length == 1
-      - idempotency_fex_policy_group_present.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
-      - idempotency_fex_policy_group_present.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
-      - idempotency_fex_policy_group_present.previous.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
-      - idempotency_fex_policy_group_present.previous.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
-
-- name: Add multiple Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
-    <<: *aci_info
-    name: "{{ item.name }}"
-    fex_profile: "{{ item.fex_profile }}"
-    state: present
-  with_items:
-    - name: anstest_fex_policy_group_1
+  - name: Add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with check mode
+    cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+      &cm_fex_policy_group_present
+      <<: *aci_info
+      name: anstest_fex_policy_group
       fex_profile: anstest_fex_profile
-    - name: anstest_fex_policy_group_2
+      state: present
+    check_mode: yes
+    register: cm_fex_policy_group_present
+
+  - name: Assertions check for add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with check mode
+    assert:
+      that:
+        - cm_fex_policy_group_present is changed
+        - cm_fex_policy_group_present.current | length == 0
+        - cm_fex_policy_group_present.previous | length == 0
+        - cm_fex_policy_group_present.sent.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
+        - cm_fex_policy_group_present.sent.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
+
+  - name: Add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
+    cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+      &nm_fex_policy_group_present
+      <<: *cm_fex_policy_group_present
+    register: nm_fex_policy_group_present
+
+  - name: Assertions check for add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
+    assert:
+      that:
+        - nm_fex_policy_group_present is changed
+        - nm_fex_policy_group_present.current | length == 1
+        - nm_fex_policy_group_present.previous | length == 0
+        - nm_fex_policy_group_present.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
+        - nm_fex_policy_group_present.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
+
+  - name: Add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode - idempotency works
+    cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+      &idempotency_fex_policy_group_present
+      <<: *nm_fex_policy_group_present
+    register: idempotency_fex_policy_group_present
+
+  - name: Idempotency assertions check for add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
+    assert:
+      that:
+        - idempotency_fex_policy_group_present is not changed
+        - idempotency_fex_policy_group_present.current | length == 1
+        - idempotency_fex_policy_group_present.previous | length == 1
+        - idempotency_fex_policy_group_present.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
+        - idempotency_fex_policy_group_present.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
+        - idempotency_fex_policy_group_present.previous.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
+        - idempotency_fex_policy_group_present.previous.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
+
+  - name: Add multiple Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
+    cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+      <<: *aci_info
+      name: "{{ item.name }}"
+      fex_profile: "{{ item.fex_profile }}"
+      state: present
+    with_items:
+      - name: anstest_fex_policy_group_1
+        fex_profile: anstest_fex_profile
+      - name: anstest_fex_policy_group_2
+        fex_profile: anstest_fex_profile
+    register: multiple_fex_policy_group_present
+
+  - name: Assertions check for add multiple Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
+    assert:
+      that:
+        - multiple_fex_policy_group_present is changed
+        - multiple_fex_policy_group_present.results.0 is changed
+        - multiple_fex_policy_group_present.results.1 is changed
+        - multiple_fex_policy_group_present.results.0.current | length == 1
+        - multiple_fex_policy_group_present.results.1.current | length == 1
+        - multiple_fex_policy_group_present.results.0.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group_1"
+        - multiple_fex_policy_group_present.results.1.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group_2"
+        - multiple_fex_policy_group_present.results.0.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group_1"
+        - multiple_fex_policy_group_present.results.1.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group_2"
+
+  - name: Ensure temp_anstest_fex_profile - Interface Policy Fex profile does not exists
+    cisco.aci.aci_interface_policy_leaf_profile: &temp_anstest_fex_profile_absent
+      <<: *aci_info
+      type: fex
+      leaf_interface_profile: temp_anstest_fex_profile
+      state: absent
+    register: temp_anstest_fex_profile_absent
+
+  - name: Assertions check for remove temp_anstest_fex_profile - Interface Policy Fex profile
+    assert:
+      that:
+        - temp_anstest_fex_profile_absent.current | length == 0
+
+  - name: Add temp_anstest_fex_profile - Interface Policy Fex profile
+    cisco.aci.aci_interface_policy_leaf_profile: &temp_anstest_fex_profile_present
+      <<: *temp_anstest_fex_profile_absent
+      state: present
+    register: temp_anstest_fex_profile_present
+
+  - name: Assertions check for add temp_anstest_fex_profile - Interface Policy Fex profile
+    assert:
+      that:
+        - temp_anstest_fex_profile_present is changed
+        - temp_anstest_fex_profile_present.current | length == 1
+        - temp_anstest_fex_profile_present.previous | length == 0
+
+  - name: Add Fex Policy Group to temp_anstest_fex_profile - Interface Policy Fex profile
+    cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+      <<: *aci_info
+      name: anstest_fex_policy_group
+      fex_profile: temp_anstest_fex_profile
+      state: present
+    register: temp_anstest_fex_policy_group_present
+
+  - name: Assertions check for add Fex Policy Group to temp_anstest_fex_profile - Interface Policy Fex profile
+    assert:
+      that:
+        - temp_anstest_fex_policy_group_present is changed
+        - temp_anstest_fex_policy_group_present.current | length == 1
+        - temp_anstest_fex_policy_group_present.previous | length == 0
+        - temp_anstest_fex_policy_group_present.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
+        - temp_anstest_fex_policy_group_present.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-temp_anstest_fex_profile/fexbundle-anstest_fex_policy_group"
+
+  - name: Query anstest_fex_policy_group - fex policy group with fex_profile
+    cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+      <<: *aci_info
+      name: anstest_fex_policy_group
       fex_profile: anstest_fex_profile
-  register: multiple_fex_policy_group_present
+      state: query
+    register: query_res_fex_policy_group_with_profile
 
-- name: Assertions check for add multiple Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
-  assert:
-    that:
-      - multiple_fex_policy_group_present is changed
-      - multiple_fex_policy_group_present.results.0 is changed
-      - multiple_fex_policy_group_present.results.1 is changed
-      - multiple_fex_policy_group_present.results.0.current | length == 1
-      - multiple_fex_policy_group_present.results.1.current | length == 1
-      - multiple_fex_policy_group_present.results.0.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group_1"
-      - multiple_fex_policy_group_present.results.1.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group_2"
-      - multiple_fex_policy_group_present.results.0.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group_1"
-      - multiple_fex_policy_group_present.results.1.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group_2"
+  - name: Assertions check for query anstest_fex_policy_group - fex policy group with fex_profile
+    assert:
+      that:
+        - query_res_fex_policy_group_with_profile is not changed
+        - query_res_fex_policy_group_with_profile.current | length == 1
+        - query_res_fex_policy_group_with_profile.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
+        - query_res_fex_policy_group_with_profile.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
 
-- name: Ensure temp_anstest_fex_profile - Interface Policy Fex profile does not exists
-  cisco.aci.aci_interface_policy_leaf_profile: &temp_anstest_fex_profile_absent
-    <<: *aci_info
-    type: fex
-    leaf_interface_profile: temp_anstest_fex_profile
-    state: absent
-  register: temp_anstest_fex_profile_absent
+  - name: Query all fex policy group under anstest_fex_profile
+    cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+      <<: *aci_info
+      fex_profile: anstest_fex_profile
+      state: query
+    register: query_all_policy_groups_under_fex_profile
 
-- name: Assertions check for remove temp_anstest_fex_profile - Interface Policy Fex profile
-  assert:
-    that:
-      - temp_anstest_fex_profile_absent.current | length == 0
+  - name: Assertions check for query all fex policy group under anstest_fex_profile
+    assert:
+      that:
+        - query_all_policy_groups_under_fex_profile is not changed
+        - query_all_policy_groups_under_fex_profile.current.0.infraFexP.children | length == 3
 
-- name: Add temp_anstest_fex_profile - Interface Policy Fex profile
-  cisco.aci.aci_interface_policy_leaf_profile: &temp_anstest_fex_profile_present
-    <<: *temp_anstest_fex_profile_absent
-    state: present
-  register: temp_anstest_fex_profile_present
+  - name: Query all anstest_fex_policy_group - fex policy groups
+    cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+      <<: *aci_info
+      name: anstest_fex_policy_group
+      state: query
+    register: query_res_anstest_fex_policy_group
 
-- name: Assertions check for add temp_anstest_fex_profile - Interface Policy Fex profile
-  assert:
-    that:
-      - temp_anstest_fex_profile_present is changed
-      - temp_anstest_fex_profile_present.current | length == 1
-      - temp_anstest_fex_profile_present.previous | length == 0
+  - name: Assertions check for query all anstest_fex_policy_group - fex policy groups
+    assert:
+      that:
+        - query_res_anstest_fex_policy_group is not changed
+        - query_res_anstest_fex_policy_group.current | length >= 2
+        - query_res_anstest_fex_policy_group.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
+        - query_res_anstest_fex_policy_group.current.1.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
 
-- name: Add Fex Policy Group to temp_anstest_fex_profile - Interface Policy Fex profile
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
-    <<: *aci_info
-    name: anstest_fex_policy_group
-    fex_profile: temp_anstest_fex_profile
-    state: present
-  register: temp_anstest_fex_policy_group_present
+  - name: Query all - fex policy groups
+    cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+      <<: *aci_info
+      state: query
+    register: all_fex_policy_groups
 
-- name: Assertions check for add Fex Policy Group to temp_anstest_fex_profile - Interface Policy Fex profile
-  assert:
-    that:
-      - temp_anstest_fex_policy_group_present is changed
-      - temp_anstest_fex_policy_group_present.current | length == 1
-      - temp_anstest_fex_policy_group_present.previous | length == 0
-      - temp_anstest_fex_policy_group_present.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
-      - temp_anstest_fex_policy_group_present.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-temp_anstest_fex_profile/fexbundle-anstest_fex_policy_group"
+  - name: Assertions check for query all - fex policy groups
+    assert:
+      that:
+        - all_fex_policy_groups is not changed
+        - all_fex_policy_groups.current | length >= 4
 
-- name: Query anstest_fex_policy_group - fex policy group with fex_profile
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
-    <<: *aci_info
-    name: anstest_fex_policy_group
-    fex_profile: anstest_fex_profile
-    state: query
-  register: query_res_fex_policy_group_with_profile
+  - name: Remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with check mode
+    cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+      &cm_anstest_fex_policy_group_absent
+      <<: *aci_info
+      name: anstest_fex_policy_group
+      fex_profile: anstest_fex_profile
+      state: absent
+    check_mode: yes
+    register: cm_anstest_fex_policy_group_absent
 
-- name: Assertions check for query anstest_fex_policy_group - fex policy group with fex_profile
-  assert:
-    that:
-      - query_res_fex_policy_group_with_profile is not changed
-      - query_res_fex_policy_group_with_profile.current | length == 1
-      - query_res_fex_policy_group_with_profile.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
-      - query_res_fex_policy_group_with_profile.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
+  - name: Assertions check for remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with check mode
+    assert:
+      that:
+        - cm_anstest_fex_policy_group_absent is changed
+        - cm_anstest_fex_policy_group_absent.current | length == 1
+        - cm_anstest_fex_policy_group_absent.previous | length == 1
+        - cm_anstest_fex_policy_group_absent.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
+        - cm_anstest_fex_policy_group_absent.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
+        - cm_anstest_fex_policy_group_absent.previous.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
+        - cm_anstest_fex_policy_group_absent.previous.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
 
-- name: Query all fex policy group under anstest_fex_profile
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
-    <<: *aci_info
-    fex_profile: anstest_fex_profile
-    state: query
-  register: query_all_policy_groups_under_fex_profile
+  - name: Remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with normal mode
+    cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+      &nm_anstest_fex_policy_group_absent
+      <<: *cm_anstest_fex_policy_group_absent
+    register: nm_anstest_fex_policy_group_absent
 
-- name: Assertions check for query all fex policy group under anstest_fex_profile
-  assert:
-    that:
-      - query_all_policy_groups_under_fex_profile is not changed
-      - query_all_policy_groups_under_fex_profile.current.0.infraFexP.children | length == 3
+  - name: Assertions check for remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with normal mode
+    assert:
+      that:
+        - nm_anstest_fex_policy_group_absent is changed
+        - nm_anstest_fex_policy_group_absent.current | length == 0
+        - nm_anstest_fex_policy_group_absent.previous | length == 1
+        - nm_anstest_fex_policy_group_absent.previous.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
+        - nm_anstest_fex_policy_group_absent.previous.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
 
-- name: Query all anstest_fex_policy_group - fex policy groups
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
-    <<: *aci_info
-    name: anstest_fex_policy_group
-    state: query
-  register: query_res_anstest_fex_policy_group
+  - name: Remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with normal mode - idempotency works
+    cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
+      &idempotency_anstest_fex_policy_group_absent
+      <<: *nm_anstest_fex_policy_group_absent
+    register: idempotency_anstest_fex_policy_group_absent
 
-- name: Assertions check for query all anstest_fex_policy_group - fex policy groups
-  assert:
-    that:
-      - query_res_anstest_fex_policy_group is not changed
-      - query_res_anstest_fex_policy_group.current | length >= 2
-      - query_res_anstest_fex_policy_group.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
-      - query_res_anstest_fex_policy_group.current.1.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
+  - name: Idempotency assertions check for remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with normal mode
+    assert:
+      that:
+        - idempotency_anstest_fex_policy_group_absent is not changed
+        - idempotency_anstest_fex_policy_group_absent.current | length == 0
+        - idempotency_anstest_fex_policy_group_absent.previous | length == 0
 
-- name: Query all - fex policy groups
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
-    <<: *aci_info
-    state: query
-  register: all_fex_policy_groups
+  - name: Remove temp_anstest_fex_profile Fex Profile
+    cisco.aci.aci_interface_policy_leaf_profile:
+      <<: *temp_anstest_fex_profile_present
+      state: absent
+    register: temp_anstest_fex_profile_absent
 
-- name: Assertions check for query all - fex policy groups
-  assert:
-    that:
-      - all_fex_policy_groups is not changed
-      - all_fex_policy_groups.current | length >= 4
+  - name: Assertions check for remove temp_anstest_fex_profile Fex Profile
+    assert:
+      that:
+        - temp_anstest_fex_profile_absent is changed
+        - temp_anstest_fex_profile_absent.current | length == 0
+        - temp_anstest_fex_profile_absent.previous | length == 1
+        - temp_anstest_fex_profile_absent.previous.0.infraFexP.attributes.name == "temp_anstest_fex_profile"
+        - temp_anstest_fex_profile_absent.previous.0.infraFexP.attributes.dn == "uni/infra/fexprof-temp_anstest_fex_profile"
 
-- name: Remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with check mode
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
-    &cm_anstest_fex_policy_group_absent
-    <<: *aci_info
-    name: anstest_fex_policy_group
-    fex_profile: anstest_fex_profile
-    state: absent
-  check_mode: yes
-  register: cm_anstest_fex_policy_group_absent
+  - name: Remove anstest_fex_profile Fex Profile
+    cisco.aci.aci_interface_policy_leaf_profile:
+      <<: *fex_profile_present
+      state: absent
+    register: fex_profile_present_absent
 
-- name: Assertions check for remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with check mode
-  assert:
-    that:
-      - cm_anstest_fex_policy_group_absent is changed
-      - cm_anstest_fex_policy_group_absent.current | length == 1
-      - cm_anstest_fex_policy_group_absent.previous | length == 1
-      - cm_anstest_fex_policy_group_absent.current.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
-      - cm_anstest_fex_policy_group_absent.current.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
-      - cm_anstest_fex_policy_group_absent.previous.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
-      - cm_anstest_fex_policy_group_absent.previous.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
-
-- name: Remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with normal mode
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
-    &nm_anstest_fex_policy_group_absent
-    <<: *cm_anstest_fex_policy_group_absent
-  register: nm_anstest_fex_policy_group_absent
-
-- name: Assertions check for remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with normal mode
-  assert:
-    that:
-      - nm_anstest_fex_policy_group_absent is changed
-      - nm_anstest_fex_policy_group_absent.current | length == 0
-      - nm_anstest_fex_policy_group_absent.previous | length == 1
-      - nm_anstest_fex_policy_group_absent.previous.0.infraFexBndlGrp.attributes.name == "anstest_fex_policy_group"
-      - nm_anstest_fex_policy_group_absent.previous.0.infraFexBndlGrp.attributes.dn == "uni/infra/fexprof-anstest_fex_profile/fexbundle-anstest_fex_policy_group"
-
-- name: Remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with normal mode - idempotency works
-  cisco.aci.aci_interface_policy_leaf_profile_fex_policy_group:
-    &idempotency_anstest_fex_policy_group_absent
-    <<: *nm_anstest_fex_policy_group_absent
-  register: idempotency_anstest_fex_policy_group_absent
-
-- name: Idempotency assertions check for remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with normal mode
-  assert:
-    that:
-      - idempotency_anstest_fex_policy_group_absent is not changed
-      - idempotency_anstest_fex_policy_group_absent.current | length == 0
-      - idempotency_anstest_fex_policy_group_absent.previous | length == 0
-
-- name: Remove temp_anstest_fex_profile Fex Profile
-  cisco.aci.aci_interface_policy_leaf_profile:
-    <<: *temp_anstest_fex_profile_present
-    state: absent
-  register: temp_anstest_fex_profile_absent
-
-- name: Assertions check for remove temp_anstest_fex_profile Fex Profile
-  assert:
-    that:
-      - temp_anstest_fex_profile_absent is changed
-      - temp_anstest_fex_profile_absent.current | length == 0
-      - temp_anstest_fex_profile_absent.previous | length == 1
-      - temp_anstest_fex_profile_absent.previous.0.infraFexP.attributes.name == "temp_anstest_fex_profile"
-      - temp_anstest_fex_profile_absent.previous.0.infraFexP.attributes.dn == "uni/infra/fexprof-temp_anstest_fex_profile"
-
-- name: Remove anstest_fex_profile Fex Profile
-  cisco.aci.aci_interface_policy_leaf_profile:
-    <<: *fex_profile_present
-    state: absent
-  register: fex_profile_present_absent
-
-- name: Assertions check for remove anstest_fex_profile Fex Profile
-  assert:
-    that:
-      - fex_profile_present_absent is changed
-      - fex_profile_present_absent.current | length == 0
-      - fex_profile_present_absent.previous | length == 1
-      - fex_profile_present_absent.previous.0.infraFexP.attributes.name == "anstest_fex_profile"
-      - fex_profile_present_absent.previous.0.infraFexP.attributes.dn == "uni/infra/fexprof-anstest_fex_profile"
+  - name: Assertions check for remove anstest_fex_profile Fex Profile
+    assert:
+      that:
+        - fex_profile_present_absent is changed
+        - fex_profile_present_absent.current | length == 0
+        - fex_profile_present_absent.previous | length == 1
+        - fex_profile_present_absent.previous.0.infraFexP.attributes.name == "anstest_fex_profile"
+        - fex_profile_present_absent.previous.0.infraFexP.attributes.dn == "uni/infra/fexprof-anstest_fex_profile"

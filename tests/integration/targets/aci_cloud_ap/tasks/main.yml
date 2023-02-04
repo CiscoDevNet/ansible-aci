@@ -18,7 +18,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: debug
     state: present
-    tenant: anstest
+    tenant: ansible_test
   register: tenant_present
 
 - name: Verify Cloud and Non-Cloud Sites in use.
@@ -113,7 +113,7 @@
   - name: query specific cloud ap
     cisco.aci.aci_cloud_ap:
       <<: *aci_cloud_ap_present
-      tenant: anstest
+      tenant: ansible_test
       name: anstest
       state: query
     register: query_cloud_ap
@@ -131,7 +131,7 @@
         - query_cloud_ap is not changed
         - query_cloud_ap.current.0.cloudApp.attributes.name == 'anstest'
         - query_cloud_ap.current.0.cloudApp.attributes.descr == 'Update Ansible Test Update'
-        - query_cloud_ap.current.0.cloudApp.attributes.dn == 'uni/tn-anstest/cloudapp-anstest'
+        - query_cloud_ap.current.0.cloudApp.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest'
 
   - name: delete cloud ap
     cisco.aci.aci_cloud_ap:

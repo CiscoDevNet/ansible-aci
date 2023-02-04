@@ -253,7 +253,7 @@ def main():
         },
         subclass_1={
             "aci_class": "cloudAwsProvider",
-            "aci_rn": "awsprovider".format(),
+            "aci_rn": "awsprovider",
             "target_filter": {"account_id": account_id},
             "module_object": account_id,
         },

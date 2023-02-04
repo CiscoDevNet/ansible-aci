@@ -27,18 +27,23 @@
     state: query
   register: version
 
-- name: Execute tasks only for ACI v5+
-  when: version.current.0.topSystem.attributes.version is version('5', '>=')
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Ensure tenant - ansible_test does not exists before testing
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
+    output_level: debug
+    tenant: ansible_test
+    state: absent
+
+- name: Execute tasks only for ACI v5+ and non-cloud sites
+  when:
+  - version.current.0.topSystem.attributes.version is version('5', '>=')
+  - query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   # Setup part
-  - name: Ensure tenant - anstest does not exists before testing
-    cisco.aci.aci_tenant: &tenant_absent
-      <<: *aci_info
-      output_level: debug
-      tenant: anstest
-      state: absent
-
-  - name: Ensure anstest - tenant exists
+  - name: Ensure ansible_test - tenant exists
     cisco.aci.aci_tenant: &tenant_present
       <<: *tenant_absent
       state: present
@@ -124,7 +129,7 @@
         - ap_1_web_esg_0_present.current | length == 1
         - ap_1_web_esg_0_present.previous | length == 0
         - ap_1_web_esg_0_present.current.0.fvESg.attributes.name == 'web_esg_0'
-        - ap_1_web_esg_0_present.current.0.fvESg.attributes.dn == "uni/tn-anstest/ap-anstest_ap_1/esg-web_esg_0"
+        - ap_1_web_esg_0_present.current.0.fvESg.attributes.dn == "uni/tn-ansible_test/ap-anstest_ap_1/esg-web_esg_0"
 
   - name: Ensure web_esg_1 - endpoint security group exists with admin_state(false -> no) - 'Admin Up' on the UI side
     cisco.aci.aci_esg:
@@ -183,7 +188,7 @@
         - query_web_esg_0 is not changed
         - query_web_esg_0.current | length == 1
         - query_web_esg_0.current.0.fvESg.attributes.name == 'web_esg_0'
-        - query_web_esg_0.current.0.fvESg.attributes.dn == "uni/tn-anstest/ap-anstest_ap/esg-web_esg_0"
+        - query_web_esg_0.current.0.fvESg.attributes.dn == "uni/tn-ansible_test/ap-anstest_ap/esg-web_esg_0"
 
   - name: Assertions check for query an ESG(web_esg_0) under ap(anstest_ap) (v5.2+)
     assert:
@@ -295,7 +300,7 @@
       <<: *anstest_ap_present
       state: absent
 
-  - name: Remove anstest - tenant
+  - name: Remove ansible_test - tenant
     cisco.aci.aci_tenant:
       <<: *tenant_present
       state: absent
