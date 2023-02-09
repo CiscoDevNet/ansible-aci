@@ -36,6 +36,7 @@ options:
   remote_protocol:
     description:
     - Protocol to use to connect to the remote host
+    type: str
     choices: [ ftp, scp, sftp ]
   auth_type:
     description:
@@ -55,11 +56,10 @@ options:
     - Private SSH key used to access the remote host. Only used if C(auth_type) is C(ssh_key)
     type: str
     aliases: [ private_key, key ]
-  private_key_passphrase:
+  passphrase:
     description:
     - Pass phrase used to decode C(private_key_contents). Only used if C(auth_type) is C(ssh_key)
     type: str
-    aliases: [ passphrase ]
   remote_path:
     description:
     - Path on which the data will reside on the remote host
@@ -252,7 +252,7 @@ def main():
         remote_user=dict(type="str"),
         remote_password=dict(type="str", no_log=True),
         private_key_contents=dict(type="str", aliases=["private_key", "key"], no_log=True),
-        private_key_passphrase=dict(type="str", aliases=["passphrase"], no_log=True),
+        passphrase=dict(type="str", no_log=True),
         management_epg=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -276,14 +276,16 @@ def main():
     remote_user = module.params.get("remote_user")
     remote_password = module.params.get("remote_password")
     private_key_contents = module.params.get("private_key_contents")
-    private_key_passphrase = module.params.get("private_key_passphrase")
+    passphrase = module.params.get("passphrase")
     management_epg = module.params.get("management_epg")
     state = module.params.get("state")
+
+    aci = ACIModule(module)
 
     if auth_type == "password":
         if private_key_contents is not None:
             aci.fail_json(msg="private_key_contents cannot be set if auth_type is password")
-        if private_key_passphrase is not None:
+        if passphrase is not None:
             aci.fail_json(msg="private_key_passphrase cannot be set if auth_type is password")
         auth = "usePassword"
     elif auth_type == "ssh_key":
@@ -293,7 +295,6 @@ def main():
     else:
         auth = None
 
-    aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
             aci_class="fileRemotePath",
@@ -328,7 +329,7 @@ def main():
                 userName=remote_user,
                 userPasswd=remote_password,
                 identityPrivateKeyContents=private_key_contents,
-                identityPrivateKeyPassphrase=private_key_passphrase,
+                identityPrivateKeyPassphrase=passphrase,
             ),
             child_configs=child_configs,
         )
