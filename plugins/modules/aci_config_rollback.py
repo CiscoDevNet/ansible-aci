@@ -304,25 +304,8 @@ def get_preview(aci):
     """
     uri = aci.url + aci.filter_string
     path = aci.path + aci.filter_string
-    resp = None
-    if aci.module._socket_path:
-        connect = Connection(aci.module._socket_path)
-        connect.set_params(aci.headers.get('Cookie'), aci.params)
-        info = connect.send_request('GET', '/{0}'.format(path), None)
-        aci.url = info.get('url')
-        aci.httpapi_logs.extend(connect.pop_messages())
-    else:
-        resp, info = fetch_url(
-            aci.module,
-            uri,
-            headers=aci.headers,
-            method="GET",
-            timeout=aci.module.params.get("timeout"),
-            use_proxy=aci.module.params.get("use_proxy"),
-        )
-    aci.method = "GET"
-    aci.response = info.get("msg")
-    aci.status = info.get("status")
+
+    resp, info = aci.api_call('GET', path, uri, data=None, output=True)
 
     # Handle APIC response
     if info.get("status") == 200:

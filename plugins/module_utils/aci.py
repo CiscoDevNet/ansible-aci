@@ -52,6 +52,7 @@ from copy import deepcopy
 from ansible.module_utils.urls import fetch_url
 from ansible.module_utils._text import to_bytes, to_native
 from ansible.module_utils.basic import env_fallback
+from ansible.module_utils._text import to_text
 from ansible.module_utils.connection import Connection
 
 # Optional, only used for APIC signature-based authentication
@@ -74,7 +75,7 @@ except ImportError:
 
 # Optional, only used for XML payload
 try:
-    import lxml.etree
+    import lxml.etree  # noqa
 
     HAS_LXML_ETREE = True
 except ImportError:
@@ -100,7 +101,6 @@ def aci_argument_spec():
         port=dict(type="int", required=False, fallback=(env_fallback, ["ACI_PORT"])),
         username=dict(
             type="str",
-            default="admin",
             aliases=["user"],
             fallback=(env_fallback, ["ACI_USERNAME", "ANSIBLE_NET_USERNAME"]),
         ),
@@ -409,19 +409,12 @@ class ACIModule(object):
         payload = {
             "aaaUser": {
                 "attributes": {
-                    "name": self.params.get("username"),
+                    "name": self.params.get("username", "admin"),
                     "pwd": self.params.get("password"),
                 }
             }
         }
-        resp, auth = fetch_url(
-            self.module,
-            url,
-            data=json.dumps(payload),
-            method="POST",
-            timeout=self.params.get("timeout"),
-            use_proxy=self.params.get("use_proxy"),
-        )
+        resp, auth = self.api_call("POST", None, url, data=json.dumps(payload), output=True)
 
         # Handle APIC response
         if auth.get("status") != 200:
@@ -558,100 +551,6 @@ class ACIModule(object):
                 self.error = self.imdata[0].get("error").get("attributes")
             except (AttributeError, IndexError, KeyError):
                 pass
-
-    def request(self, path, payload=None):
-        """Perform a REST request"""
-
-        # Ensure method is set (only do this once)
-        self.define_method()
-        self.path = path
-
-        if self.params.get("port") is not None:
-            self.url = "%(protocol)s://%(host)s:%(port)s/" % self.params + path.lstrip("/")
-        else:
-            self.url = "%(protocol)s://%(host)s/" % self.params + path.lstrip("/")
-
-        # Sign and encode request as to APIC's wishes
-        if self.params.get("private_key"):
-            self.cert_auth(path=path, payload=payload)
-
-        # Perform request
-        resp, info = fetch_url(
-            self.module,
-            self.url,
-            data=payload,
-            headers=self.headers,
-            method=self.params.get("method").upper(),
-            timeout=self.params.get("timeout"),
-            use_proxy=self.params.get("use_proxy"),
-        )
-
-        self.response = info.get("msg")
-        self.status = info.get("status")
-
-        # Handle APIC response
-        if info.get("status") != 200:
-            try:
-                # APIC error
-                self.response_json(info["body"])
-                self.fail_json(msg="APIC Error %(code)s: %(text)s" % self.error)
-            except KeyError:
-                # Connection error
-                self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
-
-        self.response_json(resp.read())
-
-    def query(self, path):
-        """Perform a query with no payload"""
-
-        self.path = path
-
-        if self.params.get("port") is not None:
-            self.url = "%(protocol)s://%(host)s:%(port)s/" % self.params + path.lstrip("/")
-        else:
-            self.url = "%(protocol)s://%(host)s/" % self.params + path.lstrip("/")
-
-        # Sign and encode request as to APIC's wishes
-        if self.params.get("private_key"):
-            self.cert_auth(path=path, method="GET")
-
-        # Perform request
-        resp, query = fetch_url(
-            self.module,
-            self.url,
-            data=None,
-            headers=self.headers,
-            method="GET",
-            timeout=self.params.get("timeout"),
-            use_proxy=self.params.get("use_proxy"),
-        )
-
-        # Handle APIC response
-        if query.get("status") != 200:
-            self.response = query.get("msg")
-            self.status = query.get("status")
-            try:
-                # APIC error
-                self.response_json(query["body"])
-                self.fail_json(msg="APIC Error %(code)s: %(text)s" % self.error)
-            except KeyError:
-                # Connection error
-                self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % query)
-
-        query = json.loads(resp.read())
-
-        return json.dumps(query.get("imdata"), sort_keys=True, indent=2) + "\n"
-
-    def request_diff(self, path, payload=None):
-        """Perform a request, including a proper diff output"""
-        self.result["diff"] = dict()
-        self.result["diff"]["before"] = self.query(path)
-        self.request(path, payload=payload)
-        # TODO: Check if we can use the request output for the 'after' diff
-        self.result["diff"]["after"] = self.query(path)
-
-        if self.result.get("diff", {}).get("before") != self.result.get("diff", {}).get("after"):
-            self.result["changed"] = True
 
     # TODO: This could be designed to update existing keys
     def update_qs(self, params):
@@ -1238,7 +1137,7 @@ class ACIModule(object):
             return
         elif not self.module.check_mode:
             # Sign and encode request as to APIC's wishes
-            self.api_call("DELETE")
+            self.api_call("DELETE", self.path, self.url, None, output=False)
         else:
             self.result["changed"] = True
             self.method = "DELETE"
@@ -1359,8 +1258,10 @@ class ACIModule(object):
         that this method can be used to supply the existing configuration when using the get_diff method. The response, status,
         and existing configuration will be added to the self.result dictionary.
         """
+        uri = self.url + self.filter_string
+        path = self.path + self.filter_string
 
-        self.api_call("GET")
+        self.api_call("GET", path, uri, data=None, output=False)
 
     @staticmethod
     def get_nested_config(proposed_child, existing_children):
@@ -1480,6 +1381,7 @@ class ACIModule(object):
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             url = self.url
             if parent_class is not None:
                 if self.params.get("port") is not None:
@@ -1528,6 +1430,9 @@ class ACIModule(object):
 =======
             self.api_call("POST")
 >>>>>>> a77aefa ([ignore] Addition of queue messages)
+=======
+            self.api_call("POST", self.path, self.url, json.dumps(self.config), output=False)
+>>>>>>> 88b1ff5 ([minor_change] Removed different functions to make requests which can now be done by using just one function)
         else:
             self.result["changed"] = True
             self.method = "POST"
@@ -1554,7 +1459,8 @@ class ACIModule(object):
             self.result["response"] = self.response
             self.result["status"] = self.status
             self.result["url"] = self.url
-            self.result["httpapi_logs"] = self.httpapi_logs
+            if self.httpapi_logs:
+                self.result["httpapi_logs"] = self.httpapi_logs
         if self.stdout:
             self.result["stdout"] = self.stdout
 
@@ -1605,6 +1511,7 @@ class ACIModule(object):
                 self.result["response"] = self.response
                 self.result["status"] = self.status
                 self.result["url"] = self.url
+            if self.httpapi_logs:
                 self.result["httpapi_logs"] = self.httpapi_logs
 
         if "state" in self.params:
@@ -1640,6 +1547,7 @@ class ACIModule(object):
                     if self.result.get("changed") is True:
                         json.dump([mo], output_file)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
     def delete_config_request(self, path):
@@ -1690,47 +1598,38 @@ def ospf_spec():
             call_path = self.path
             call_url = self.url
             data = None
+=======
+    def api_call(self, method, path, url, data=None, output=False):
+>>>>>>> 88b1ff5 ([minor_change] Removed different functions to make requests which can now be done by using just one function)
         resp = None
         if self.params.get("private_key"):
-            self.cert_auth(path=call_path, payload=data, method=method)
+            self.cert_auth(path=path, payload=data, method=method)
         if self.module._socket_path:
             self.params["validate_certs"] = False
             connect = Connection(self.module._socket_path)
             connect.get_params(self.headers.get("Cookie"), self.params)
-            info = connect.send_request(method, "/{0}".format(call_path), data)
-            self.url = info.get("url")
+            info = connect.send_request(method, "/{0}".format(path), data)
             self.httpapi_logs.extend(connect.pop_messages())
-            self.stdout = str("Through plugin")
+            self.url = info.get("url")
         else:
             resp, info = fetch_url(
                 self.module,
-                call_url,
+                url,
                 data=data,
                 headers=self.headers,
                 method=method,
                 timeout=self.params.get("timeout"),
                 use_proxy=self.params.get("use_proxy"),
             )
+
         self.response = info.get("msg")
         self.status = info.get("status")
         self.method = method
 
-        # Handle APIC response
-        if info.get("status") == 200:
-            if method == "POST" or method == "DELETE":
-                self.result["changed"] = True
-            try:
-                if method == "GET":
-                    self.existing = json.loads(resp.read())["imdata"]
-                else:
-                    self.response_json(resp.read())
-            except AttributeError:
-                if method == "GET":
-                    self.existing = info["body"]["imdata"]
-                else:
-                    self.response_json(info.get("body"))
-
+        if output:
+            return resp, info
         else:
+<<<<<<< HEAD
             try:
                 # APIC error
                 self.response_json(info["body"])
@@ -1747,3 +1646,27 @@ def ospf_spec():
 =======
                 self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
 >>>>>>> 5d0ead5 ([minor_change] Fix comments and formatting)
+=======
+            # Handle APIC response
+            if info.get("status") == 200:
+                if method == "POST" or method == "DELETE":
+                    self.result["changed"] = True
+                try:
+                    if method == "GET":
+                        self.existing = json.loads(resp.read())["imdata"]
+                    else:
+                        self.response_json(resp.read())
+                except AttributeError:
+                    if method == "GET":
+                        self.existing = info["body"]["imdata"]
+                    else:
+                        self.response_json(info.get("body"))
+            else:
+                try:
+                    # APIC error
+                    self.response_json(info["body"])
+                    self.fail_json(msg="APIC Error %(code)s: %(text)s" % self.error)
+                except KeyError:
+                    # Connection error
+                    self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
+>>>>>>> 88b1ff5 ([minor_change] Removed different functions to make requests which can now be done by using just one function)

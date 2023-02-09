@@ -279,9 +279,7 @@ except Exception:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
-from ansible.module_utils.urls import fetch_url
 from ansible.module_utils._text import to_text
-from ansible.module_utils.connection import Connection
 
 
 def update_qsl(url, params):
@@ -416,30 +414,10 @@ def main():
         path += "?rsp-subtree=modified"
         aci.url = update_qsl(aci.url, {"rsp-subtree": "modified"})
 
-    # Sign and encode request as to APIC's wishes
-    if aci.params.get("private_key") is not None:
-        aci.cert_auth(path=path, payload=payload)
-
-    aci.method = aci.params.get("method").upper()
+    method = aci.params.get("method").upper()
 
     # Perform request
-    resp = None
-    if module._socket_path:
-        connect = Connection(aci.module._socket_path)
-        connect.get_params(aci.headers.get('Cookie'), aci.params)
-        info = connect.send_request(aci.method, '/{0}'.format(path), payload)
-        aci.url = info.get('url')
-        aci.httpapi_logs.extend(connect.pop_messages())
-    else:
-        resp, info = fetch_url(module, aci.url,
-                               data=payload,
-                               headers=aci.headers,
-                               method=aci.method,
-                               timeout=aci.params.get('timeout'),
-                               use_proxy=aci.params.get('use_proxy'))
-
-    aci.response = info.get("msg")
-    aci.status = info.get("status")
+    resp, info = aci.api_call(method, path, aci.url, data=payload, output=True)
 
     # Report failure
     if info.get("status") != 200:
