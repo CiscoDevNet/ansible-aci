@@ -95,7 +95,7 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     name: ans_remote_path
     remote_host: test.example.com
-    protocol: scp
+    remote_protocol: scp
     remote_user: test_user
     auth_type: password
     remote_password: test_pass
