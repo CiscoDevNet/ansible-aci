@@ -40,7 +40,7 @@ options:
     choices: [ ftp, scp, sftp ]
   auth_type:
     description:
-    - Authentication type for the remote host. Cannot be set to C(ssh_key) if C(protocol) is C(ftp)
+    - Authentication type for the remote host. Cannot be set to ssh_key if protocol is ftp
     type: str
     choices: [ password, ssh_key ]
   remote_user:
@@ -49,15 +49,15 @@ options:
     type: str
   remote_password:
     description:
-    - Password to access the remote host. Only used if C(auth_type) is C(password)
+    - Password to access the remote host. Only used if auth_type is password
     type: str
   private_key:
     description:
-    - Private SSH key used to access the remote host. Only used if C(auth_type) is C(ssh_key)
+    - Private SSH key used to access the remote host. Only used if auth_type is ssh_key
     type: str
   passphrase:
     description:
-    - Pass phrase used to decode C(private_key_contents). Only used if C(auth_type) is C(ssh_key)
+    - Pass phrase used to decode private_key. Only used if auth_type is ssh_key
     type: str
   remote_path:
     description:
