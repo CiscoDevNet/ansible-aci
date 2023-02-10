@@ -51,7 +51,7 @@ options:
     description:
     - Password to access the remote host. Only used if auth_type is password
     type: str
-  private_key:
+  remote_key:
     description:
     - Private SSH key used to access the remote host. Only used if auth_type is ssh_key
     type: str
@@ -250,7 +250,7 @@ def main():
         auth_type=dict(type="str", choices=["password", "ssh_key"]),
         remote_user=dict(type="str"),
         remote_password=dict(type="str", no_log=True),
-        private_key=dict(type="str", no_log=True),
+        remote_key=dict(type="str", no_log=True),
         passphrase=dict(type="str", no_log=True),
         management_epg=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -274,7 +274,7 @@ def main():
     auth_type = module.params.get("auth_type")
     remote_user = module.params.get("remote_user")
     remote_password = module.params.get("remote_password")
-    private_key = module.params.get("private_key")
+    remote_key = module.params.get("remote_key")
     passphrase = module.params.get("passphrase")
     management_epg = module.params.get("management_epg")
     state = module.params.get("state")
@@ -282,8 +282,8 @@ def main():
     aci = ACIModule(module)
 
     if auth_type == "password":
-        if private_key is not None:
-            aci.fail_json(msg="private_key cannot be set if auth_type is password")
+        if remote_key is not None:
+            aci.fail_json(msg="remote_key cannot be set if auth_type is password")
         if passphrase is not None:
             aci.fail_json(msg="passphrase cannot be set if auth_type is password")
         auth = "usePassword"
@@ -327,7 +327,7 @@ def main():
                 remotePort=remote_port,
                 userName=remote_user,
                 userPasswd=remote_password,
-                identityPrivateKeyContents=private_key,
+                identityPrivateKeyContents=remote_key,
                 identityPrivateKeyPassphrase=passphrase,
             ),
             child_configs=child_configs,
