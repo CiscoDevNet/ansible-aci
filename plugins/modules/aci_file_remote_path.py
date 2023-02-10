@@ -51,11 +51,10 @@ options:
     description:
     - Password to access the remote host. Only used if C(auth_type) is C(password)
     type: str
-  private_key_contents:
+  private_key:
     description:
     - Private SSH key used to access the remote host. Only used if C(auth_type) is C(ssh_key)
     type: str
-    aliases: [ private_key, key ]
   passphrase:
     description:
     - Pass phrase used to decode C(private_key_contents). Only used if C(auth_type) is C(ssh_key)
@@ -251,7 +250,7 @@ def main():
         auth_type=dict(type="str", choices=["password", "ssh_key"]),
         remote_user=dict(type="str"),
         remote_password=dict(type="str", no_log=True),
-        private_key_contents=dict(type="str", aliases=["private_key", "key"], no_log=True),
+        private_key=dict(type="str", no_log=True),
         passphrase=dict(type="str", no_log=True),
         management_epg=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -275,7 +274,7 @@ def main():
     auth_type = module.params.get("auth_type")
     remote_user = module.params.get("remote_user")
     remote_password = module.params.get("remote_password")
-    private_key_contents = module.params.get("private_key_contents")
+    private_key = module.params.get("private_key")
     passphrase = module.params.get("passphrase")
     management_epg = module.params.get("management_epg")
     state = module.params.get("state")
@@ -283,10 +282,10 @@ def main():
     aci = ACIModule(module)
 
     if auth_type == "password":
-        if private_key_contents is not None:
-            aci.fail_json(msg="private_key_contents cannot be set if auth_type is password")
+        if private_key is not None:
+            aci.fail_json(msg="private_key cannot be set if auth_type is password")
         if passphrase is not None:
-            aci.fail_json(msg="private_key_passphrase cannot be set if auth_type is password")
+            aci.fail_json(msg="passphrase cannot be set if auth_type is password")
         auth = "usePassword"
     elif auth_type == "ssh_key":
         if remote_password is not None:
@@ -328,7 +327,7 @@ def main():
                 remotePort=remote_port,
                 userName=remote_user,
                 userPasswd=remote_password,
-                identityPrivateKeyContents=private_key_contents,
+                identityPrivateKeyContents=private_key,
                 identityPrivateKeyPassphrase=passphrase,
             ),
             child_configs=child_configs,
