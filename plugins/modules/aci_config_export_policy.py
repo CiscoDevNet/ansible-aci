@@ -37,7 +37,7 @@ options:
   snapshot:
     description:
     - Enables a snapshot of the configuration export policy. This defaults to False on the APIC.
-    type: boolean
+    type: bool
   export_destination:
     description:
     - The name of the remote path policy used for storing the generated configuration backup data for the configuration export policy.
