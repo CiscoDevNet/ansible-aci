@@ -33,6 +33,7 @@
     name: ansible_file_path
     description: Test File Path
     remote_host: test.example.com
+    remote_port: 22
     remote_protocol: scp
     remote_user: test_user
     auth_type: password
@@ -59,12 +60,14 @@
     - nm_create_path.current.0.fileRemotePath.attributes.name == "ansible_file_path"
     - nm_create_path.current.0.fileRemotePath.attributes.descr == "Test File Path"
     - nm_create_path.current.0.fileRemotePath.attributes.protocol == "scp"
+    - nm_create_path.current.0.fileRemotePath.attributes.remotePort == "22"
     - nm_create_path.current.0.fileRemotePath.attributes.authType == "usePassword"
     - nm_create_path.current.0.fileRemotePath.attributes.userName == "test_user"
     - nm_create_path.current.0.fileRemotePath.attributes.remotePath == "/tmp"
     - nm_create_path_again.current.0.fileRemotePath.attributes.name == "ansible_file_path"
     - nm_create_path_again.current.0.fileRemotePath.attributes.descr == "Test File Path"
     - nm_create_path_again.current.0.fileRemotePath.attributes.protocol == "scp"
+    - nm_create_path_again.current.0.fileRemotePath.attributes.remotePort == "22"
     - nm_create_path_again.current.0.fileRemotePath.attributes.authType == "usePassword"
     - nm_create_path_again.current.0.fileRemotePath.attributes.userName == "test_user"
     - nm_create_path_again.current.0.fileRemotePath.attributes.remotePath == "/tmp"
