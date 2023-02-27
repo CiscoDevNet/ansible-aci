@@ -51,14 +51,16 @@ options:
     description:
     - Password to access the remote host. Only used if auth_type is password
     type: str
-  remote_key:
+  remote_ssh_key:
     description:
     - Private SSH key used to access the remote host. Only used if auth_type is ssh_key
     type: str
-  passphrase:
+    aliases: [ remote_key ]
+  remote_ssh_passphrase:
     description:
     - Pass phrase used to decode private_key. Only used if auth_type is ssh_key
     type: str
+    aliases: [ passphrase ]
   remote_path:
     description:
     - Path on which the data will reside on the remote host
@@ -94,6 +96,7 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     name: ans_remote_path
     remote_host: test.example.com
+    remote_port: 22
     remote_protocol: scp
     remote_user: test_user
     auth_type: password
@@ -250,8 +253,8 @@ def main():
         auth_type=dict(type="str", choices=["password", "ssh_key"]),
         remote_user=dict(type="str"),
         remote_password=dict(type="str", no_log=True),
-        remote_key=dict(type="str", no_log=True),
-        passphrase=dict(type="str", no_log=True),
+        remote_ssh_key=dict(type="str", no_log=True, aliases=["remote_key"]),
+        remote_ssh_passphrase=dict(type="str", no_log=True, aliases=["passphrase"]),
         management_epg=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -262,6 +265,9 @@ def main():
         required_if=[
             ["state", "present", ["name", "auth_type"]],
             ["state", "absent", ["name"]],
+        ],
+        required_together=[
+            ["remote_host", "remote_port"]
         ],
     )
 
@@ -274,8 +280,8 @@ def main():
     auth_type = module.params.get("auth_type")
     remote_user = module.params.get("remote_user")
     remote_password = module.params.get("remote_password")
-    remote_key = module.params.get("remote_key")
-    passphrase = module.params.get("passphrase")
+    remote_key = module.params.get("remote_ssh_key")
+    passphrase = module.params.get("remote_ssh_passphrase")
     management_epg = module.params.get("management_epg")
     state = module.params.get("state")
 
