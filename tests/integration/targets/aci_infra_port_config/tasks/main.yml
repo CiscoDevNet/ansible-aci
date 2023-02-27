@@ -1,0 +1,469 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Sabari Jaganathan <sajagana@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for ACI v6+ and non-cloud sites
+  when:
+  - version.current.0.topSystem.attributes.version is version('6', '>=')
+  - query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:
+    # policy group setup part
+    - name: Add a leaf interface port channel(PC) policy group
+      cisco.aci.aci_interface_policy_leaf_policy_group: &ansible_pc
+        <<: *aci_info
+        policy_group: ansible_pc
+        lag_type: link
+        state: present
+      register: ansible_pc
+
+    - name: Add a leaf interface virtual port channel(PC) policy group
+      cisco.aci.aci_interface_policy_leaf_policy_group: &ansible_vpc
+        <<: *aci_info
+        policy_group: ansible_vpc
+        lag_type: node
+        state: present
+      register: ansible_vpc
+
+    - name: Add a leaf interface - leaf access port policy group
+      cisco.aci.aci_interface_policy_leaf_policy_group: &ansible_leaf_access_port
+        <<: *aci_info
+        policy_group: ansible_leaf_access_port
+        lag_type: leaf
+        state: present
+      register: ansible_leaf_access_port
+
+    #Test Part
+    - name: Ensure leaf interface with port channel(PC) policy group - does not exists
+      cisco.aci.aci_infra_port_config: &leaf_interface_with_pc_absent
+        <<: *aci_info
+        role: "leaf"
+        assoc_grp: "{{ ansible_pc.current.0.infraAccBndlGrp.attributes.dn }}"
+        node: 201
+        card: 1
+        port_id: 1
+        sub_port: 0
+        state: absent
+
+    - name: Ensure leaf interface with virtual port channel(vPC) policy group - does not exists
+      cisco.aci.aci_infra_port_config: &leaf_interface_with_vpc_absent
+        <<: *aci_info
+        role: "leaf"
+        assoc_grp: "{{ ansible_vpc.current.0.infraAccBndlGrp.attributes.dn }}"
+        node: 202
+        card: 1
+        port_id: 1
+        sub_port: 0
+        state: absent
+
+    - name: Ensure leaf interface with leaf access port policy group - does not exists
+      cisco.aci.aci_infra_port_config: &leaf_interface_with_leaf_access_port_absent
+        <<: *aci_info
+        role: "leaf"
+        assoc_grp: "{{ ansible_leaf_access_port.current.0.infraAccPortGrp.attributes.dn }}"
+        node: 203
+        card: 1
+        port_id: 1
+        sub_port: 0
+        state: absent
+
+    - name: Add leaf interface with port channel(PC) policy group - check mode
+      cisco.aci.aci_infra_port_config: &cm_leaf_interface_with_pc
+        <<: *leaf_interface_with_pc_absent
+        state: present
+      check_mode: yes
+      register: cm_leaf_interface_with_pc
+
+    - name: Add leaf interface with virtual port channel(vPC) policy group - check mode
+      cisco.aci.aci_infra_port_config: &cm_leaf_interface_with_vpc
+        <<: *leaf_interface_with_vpc_absent
+        state: present
+      check_mode: yes
+      register: cm_leaf_interface_with_vpc
+
+    - name: Add leaf interface with leaf access port policy group - check mode
+      cisco.aci.aci_infra_port_config: &cm_leaf_interface_with_leaf_access_port
+        <<: *leaf_interface_with_leaf_access_port_absent
+        state: present
+      check_mode: yes
+      register: cm_leaf_interface_with_leaf_access_port
+
+    - name: Assertions check for check mode - leaf interface with policy groups of PC, vPC and Leaf Access Port
+      assert:
+        that:
+          - cm_leaf_interface_with_pc is changed
+          - cm_leaf_interface_with_pc.current == []
+          - cm_leaf_interface_with_vpc is changed
+          - cm_leaf_interface_with_vpc.current == []
+          - cm_leaf_interface_with_leaf_access_port is changed
+          - cm_leaf_interface_with_leaf_access_port.current == []
+
+    - name: Add leaf interface with port channel(PC) policy group - normal mode
+      cisco.aci.aci_infra_port_config: &nm_leaf_interface_with_pc
+        <<: *cm_leaf_interface_with_pc
+      register: nm_leaf_interface_with_pc
+
+    - name: Add leaf interface with virtual port channel(vPC) policy group - normal mode
+      cisco.aci.aci_infra_port_config: &nm_leaf_interface_with_vpc
+        <<: *cm_leaf_interface_with_vpc
+      register: nm_leaf_interface_with_vpc
+
+    - name: Add leaf interface with leaf access port policy group - normal mode
+      cisco.aci.aci_infra_port_config: &nm_leaf_interface_with_leaf_access_port
+        <<: *cm_leaf_interface_with_leaf_access_port
+      register: nm_leaf_interface_with_leaf_access_port
+
+    - name: Assertions check for normal mode - leaf interface with policy groups of PC, vPC and Leaf Access Port
+      assert:
+        that:
+          - nm_leaf_interface_with_pc is changed
+          - nm_leaf_interface_with_pc.current != []
+          - nm_leaf_interface_with_pc.current.0.infraPortConfig.attributes.assocGrp == "uni/infra/funcprof/accbundle-ansible_pc"
+          - nm_leaf_interface_with_pc.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-201-card-1-port-1-sub-0"
+          - nm_leaf_interface_with_pc.current.0.infraPortConfig.attributes.shutdown == "no"
+          - nm_leaf_interface_with_pc.current.0.infraPortConfig.attributes.role == "leaf"
+          - nm_leaf_interface_with_vpc is changed
+          - nm_leaf_interface_with_vpc.current != []
+          - nm_leaf_interface_with_vpc.current.0.infraPortConfig.attributes.assocGrp == "uni/infra/funcprof/accbundle-ansible_vpc"
+          - nm_leaf_interface_with_vpc.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-202-card-1-port-1-sub-0"
+          - nm_leaf_interface_with_vpc.current.0.infraPortConfig.attributes.shutdown == "no"
+          - nm_leaf_interface_with_vpc.current.0.infraPortConfig.attributes.role == "leaf"
+          - nm_leaf_interface_with_leaf_access_port is changed
+          - nm_leaf_interface_with_leaf_access_port.current != []
+          - nm_leaf_interface_with_leaf_access_port.current.0.infraPortConfig.attributes.assocGrp == "uni/infra/funcprof/accportgrp-ansible_leaf_access_port"
+          - nm_leaf_interface_with_leaf_access_port.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-203-card-1-port-1-sub-0"
+          - nm_leaf_interface_with_leaf_access_port.current.0.infraPortConfig.attributes.shutdown == "no"
+          - nm_leaf_interface_with_leaf_access_port.current.0.infraPortConfig.attributes.role == "leaf"
+
+    - name: Add leaf interface with port channel(PC) policy group - normal mode with idempotency check
+      cisco.aci.aci_infra_port_config:
+        <<: *nm_leaf_interface_with_pc
+      register: idm_leaf_interface_with_pc
+
+    - name: Add leaf interface with virtual port channel(vPC) policy group - normal mode with idempotency check
+      cisco.aci.aci_infra_port_config:
+        <<: *nm_leaf_interface_with_vpc
+      register: idm_leaf_interface_with_vpc
+
+    - name: Add leaf interface with leaf access port policy group - normal mode with idempotency check
+      cisco.aci.aci_infra_port_config:
+        <<: *nm_leaf_interface_with_leaf_access_port
+      register: idm_leaf_interface_with_leaf_access_port
+
+    - name: Idempotency assertions check for leaf interface with policy groups of PC, vPC and Leaf Access Port
+      assert:
+        that:
+          - idm_leaf_interface_with_pc is not changed
+          - idm_leaf_interface_with_pc.current != []
+          - idm_leaf_interface_with_vpc is not changed
+          - idm_leaf_interface_with_vpc.current != []
+          - idm_leaf_interface_with_leaf_access_port is not changed
+          - idm_leaf_interface_with_leaf_access_port.current != []
+
+    - name: Query a leaf interface with node id - 201
+      cisco.aci.aci_infra_port_config:
+        <<: *aci_info
+        node: 201
+        state: query
+      register: query_node_id_201_result
+
+    - name: Query all leaf interfaces
+      cisco.aci.aci_infra_port_config:
+        <<: *aci_info
+        state: query
+      register: query_all_leaf_interfaces
+
+    - name: Assertions check for leaf interfaces query result
+      assert:
+        that:
+          - query_node_id_201_result is not changed
+          - query_node_id_201_result.current != []
+          - query_node_id_201_result.current.0.infraPortConfig.attributes.assocGrp == "uni/infra/funcprof/accbundle-ansible_pc"
+          - query_node_id_201_result.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-201-card-1-port-1-sub-0"
+          - query_node_id_201_result.current.0.infraPortConfig.attributes.shutdown == "no"
+          - query_node_id_201_result.current.0.infraPortConfig.attributes.role == "leaf"
+          - query_all_leaf_interfaces is not changed
+          - query_all_leaf_interfaces.current | length >= 3
+
+    # Breakout a leaf interface
+    - name: Breakout the existing interface with port channel(PC) policy group
+      cisco.aci.aci_infra_port_config: &invalid_brkout_leaf_interface
+        <<: *nm_leaf_interface_with_pc
+        brkout_map: "100g-4x"
+      register: invalid_brkout_leaf_interface
+      ignore_errors: yes
+
+    - name: Breakout the existing interface with "100g-4x"
+      cisco.aci.aci_infra_port_config: &valid_brkout_leaf_interface
+        <<: *aci_info
+        role: "leaf"
+        node: 201
+        card: 1
+        port_id: 1
+        sub_port: 0
+        brkout_map: "100g-4x"
+        state: present
+      register: valid_brkout_leaf_interface
+
+    - name: Assertions check for leaf interface breakout
+      assert:
+        that:
+          - invalid_brkout_leaf_interface is not changed
+          - invalid_brkout_leaf_interface.msg == "parameters are mutually exclusive{{':'}} assoc_grp|brkout_map"
+          - valid_brkout_leaf_interface is changed
+          - valid_brkout_leaf_interface.current != []
+          - valid_brkout_leaf_interface.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-201-card-1-port-1-sub-0"
+          - valid_brkout_leaf_interface.current.0.infraPortConfig.attributes.assocGrp == ""
+          - valid_brkout_leaf_interface.current.0.infraPortConfig.attributes.brkoutMap == "100g-4x"
+          - valid_brkout_leaf_interface.current.0.infraPortConfig.attributes.node == "201"
+          - valid_brkout_leaf_interface.previous.0.infraPortConfig.attributes.assocGrp == "uni/infra/funcprof/accbundle-ansible_pc"
+          - valid_brkout_leaf_interface.previous.0.infraPortConfig.attributes.brkoutMap == "none"
+          - valid_brkout_leaf_interface.previous.0.infraPortConfig.attributes.node == "201"
+
+    - name: Query all leaf interfaces to check the interfaces count
+      cisco.aci.aci_infra_port_config:
+        <<: *aci_info
+        state: query
+      register: query_all_leaf_interfaces_after_brkout
+
+    - name: Assertions check for query all leaf interfaces to check the interfaces count
+      assert:
+        that:
+          - query_all_leaf_interfaces_after_brkout is not changed
+          - query_all_leaf_interfaces_after_brkout.current != []
+          - query_all_leaf_interfaces_after_brkout.current | length >= 3
+
+    # Add interface with missing params
+    - name: Add leaf interface with port channel(PC) policy group - missing params check
+      cisco.aci.aci_infra_port_config: &leaf_interface_with_missing_params
+        <<: *aci_info
+        role: "leaf"
+        assoc_grp: "{{ ansible_pc.current.0.infraAccBndlGrp.attributes.dn }}"
+        card: 1
+        port_id: 1
+        sub_port: 0
+        state: present
+      register: leaf_interface_with_missing_params
+      ignore_errors: yes
+
+    - name: Assertions check for add leaf interface with port channel(PC) policy group - missing params check
+      assert:
+        that:
+          - leaf_interface_with_missing_params is not changed
+          - leaf_interface_with_missing_params.msg == "state is present but all of the following are missing{{':'}} node"
+
+    - name: Add leaf interface with Admin State down
+      cisco.aci.aci_infra_port_config: &leaf_interface_with_admin_state_down
+        <<: *cm_leaf_interface_with_pc
+        node: 204
+        sub_port: 3
+        shutdown: yes
+        state: present
+      register: leaf_interface_with_admin_state_down
+
+    - name: Update leaf interface with Admin State up and description
+      cisco.aci.aci_infra_port_config: &leaf_interface_with_admin_state_up
+        <<: *leaf_interface_with_admin_state_down
+        shutdown: no
+        description: "Admin State - Up - changed by Ansible"
+        state: present
+      register: leaf_interface_with_admin_state_up
+
+    - name: Assertions check for leaf interface Admin State check
+      assert:
+        that:
+          - leaf_interface_with_admin_state_down is changed
+          - leaf_interface_with_admin_state_down.current.0.infraPortConfig.attributes.node == "204"
+          - leaf_interface_with_admin_state_down.current.0.infraPortConfig.attributes.shutdown == "yes"
+          - leaf_interface_with_admin_state_down.current.0.infraPortConfig.attributes.subPort == "3"
+          - leaf_interface_with_admin_state_up is changed
+          - leaf_interface_with_admin_state_up.current.0.infraPortConfig.attributes.node == "204"
+          - leaf_interface_with_admin_state_up.current.0.infraPortConfig.attributes.shutdown == "no"
+          - leaf_interface_with_admin_state_up.current.0.infraPortConfig.attributes.subPort == "3"
+
+    # Clear interfaces
+    - name: Remove leaf interface with port channel(PC) policy group - missing params check
+      cisco.aci.aci_infra_port_config:
+        <<: *aci_info
+        role: "leaf"
+        port_id: 1
+        sub_port: 0
+        state: absent
+      ignore_errors: yes
+      register: missing_params_leaf_interface_with_pc_absent
+
+    - name: Remove leaf interface with port channel(PC) policy group - check mode
+      cisco.aci.aci_infra_port_config:
+        <<: *nm_leaf_interface_with_pc
+        state: absent
+      check_mode: yes
+      register: cm_leaf_interface_with_pc_absent
+
+    - name: Remove leaf interface with port channel(PC) policy group - normal mode
+      cisco.aci.aci_infra_port_config:
+        <<: *nm_leaf_interface_with_pc
+        state: absent
+      register: leaf_interface_with_pc_absent
+
+    - name: Remove leaf interface with virtual port channel(vPC) policy group - normal mode
+      cisco.aci.aci_infra_port_config:
+        <<: *nm_leaf_interface_with_vpc
+        state: absent
+      register: leaf_interface_with_vpc_absent
+
+    - name: Remove leaf interface with leaf access port policy group - normal mode
+      cisco.aci.aci_infra_port_config:
+        <<: *nm_leaf_interface_with_leaf_access_port
+        state: absent
+      register: leaf_interface_with_leaf_access_port_absent
+
+    - name: Assertions check for remove leaf interfaces
+      assert:
+        that:
+          - missing_params_leaf_interface_with_pc_absent is not changed
+          - missing_params_leaf_interface_with_pc_absent.msg == "state is absent but all of the following are missing{{':'}} node, card"
+          - cm_leaf_interface_with_pc_absent is changed
+          - cm_leaf_interface_with_pc_absent is changed
+          - cm_leaf_interface_with_pc_absent.current != []
+          - cm_leaf_interface_with_pc_absent.current.0.infraPortConfig.attributes.brkoutMap == "100g-4x"
+          - cm_leaf_interface_with_pc_absent.current.0.infraPortConfig.attributes.node == "201"
+          - leaf_interface_with_pc_absent is changed
+          - leaf_interface_with_pc_absent.current == []
+          - leaf_interface_with_vpc_absent is changed
+          - leaf_interface_with_vpc_absent.current == []
+          - leaf_interface_with_leaf_access_port_absent is changed
+          - leaf_interface_with_leaf_access_port_absent.current == []
+
+    # Clear Policy Groups
+    - name: Remove a leaf interface port channel(PC) policy group
+      cisco.aci.aci_interface_policy_leaf_policy_group:
+        <<: *ansible_pc
+        state: absent
+      register: ansible_pc_absent
+
+    - name: Remove a leaf interface virtual port channel(PC) policy group
+      cisco.aci.aci_interface_policy_leaf_policy_group:
+        <<: *ansible_vpc
+        state: absent
+      register: ansible_vpc_absent
+
+    - name: Remove a leaf interface - leaf access port policy group
+      cisco.aci.aci_interface_policy_leaf_policy_group:
+        <<: *ansible_leaf_access_port
+        state: absent
+      register: ansible_leaf_access_port_absent
+
+    - name: Assertions check for remove policy groups
+      assert:
+        that:
+          - ansible_pc_absent is changed
+          - ansible_pc_absent.current == []
+          - ansible_vpc_absent is changed
+          - ansible_vpc_absent.current == []
+          - ansible_leaf_access_port_absent is changed
+          - ansible_leaf_access_port_absent.current == []
+
+    # Need to enhance the validation tasks to cover more policy groups.
+    # Currently added a dummy policy group DN to perform the basic functionality check.
+    - name: Ensure Access Spine Port interface does not exists
+      cisco.aci.aci_infra_port_config: &spine_port_absent
+        <<: *aci_info
+        role: "spine"
+        assoc_grp: "uni/infra/funcprof/spaccportgrp-Spine_Access_Port_Policy_Group_123"
+        node: 301
+        card: 1
+        port_id: 1
+        sub_port: 0
+        description: "Spine_Access_Port_Policy_Group Added by PostMan"
+        state: absent
+      register: spine_port_absent
+
+    - name: Add Access Spine Port interface
+      cisco.aci.aci_infra_port_config: &spine_port_present
+        <<: *spine_port_absent
+        state: present
+      register: spine_port_present
+
+    - name: Ensure Fabric Spine Port interface does not exists
+      cisco.aci.aci_infra_port_config: &fabric_spine_port_absent
+        <<: *aci_info
+        role: "spine"
+        port_type: "fabric"
+        assoc_grp: "uni/fabric/funcprof/spportgrp-Spine_Fabric_Port_Policy_Group_123"
+        node: 302
+        card: 1
+        port_id: 1
+        sub_port: 0
+        description: "Spine_Fabric_Port_Policy_Group Added by PostMan"
+        state: absent
+      register: fabric_spine_port_absent
+
+    - name: Add Fabric Spine Port interface
+      cisco.aci.aci_infra_port_config: &fabric_spine_port_present
+        <<: *fabric_spine_port_absent
+        state: present
+      register: fabric_spine_port_present
+
+    - name: Query all Access interfaces
+      cisco.aci.aci_infra_port_config:
+        <<: *aci_info
+        port_type: "access"
+        state: query
+      register: query_all_leaf_interfaces_after_brkout
+
+    - name: Query all a Access interfaces with node id - 301
+      cisco.aci.aci_infra_port_config:
+        <<: *aci_info
+        port_type: "access"
+        node: 301
+        state: query
+      register: query_all_leaf_interfaces_after_brkout
+
+    - name: Query all Fabric interfaces
+      cisco.aci.aci_infra_port_config:
+        <<: *aci_info
+        port_type: "fabric"
+        state: query
+      register: query_all_leaf_interfaces_after_brkout
+
+    - name: Query all a Fabric interfaces with node id 302
+      cisco.aci.aci_infra_port_config:
+        <<: *aci_info
+        port_type: "fabric"
+        node: 302
+        state: query
+      register: query_all_leaf_interfaces_after_brkout
+
+    - name: Remove Access Spine Port interface
+      cisco.aci.aci_infra_port_config:
+        <<: *spine_port_absent
+
+    - name: Remove Fabric Spine Port interface
+      cisco.aci.aci_infra_port_config:
+        <<: *fabric_spine_port_absent
