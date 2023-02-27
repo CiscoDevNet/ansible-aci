@@ -228,7 +228,7 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "present", ["name"]],
+            ["state", "present", ["name", "export_destination"]],
             ["state", "absent", ["name"]],
         ],
     )
