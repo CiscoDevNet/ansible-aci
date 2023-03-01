@@ -10,36 +10,34 @@ __metaclass__ = type
 
 ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
+
 DOCUMENTATION = r"""
 ---
-module: aci_infra_port_config
+module: aci_interface_config
 short_description: Manage the Port Configuration of the Fabric Access Policies - Interface Configuration (infra:PortConfig)
 description:
 - Manage the Port Configuration of the Fabric Access Policies - Interface Configuration on Cisco ACI fabrics.
 options:
-  assoc_grp:
+  policy_group:
     description:
-    - The Associated Group DN of the Access Port Policy Group.
+    - The Name of the Policy Group.
     type: str
-    aliases: [ access_port_policy_group ]
-  brkout_map:
+    aliases: [ policy_group_name ]
+  breakout:
     description:
-    - The Breakout Map of the interface and assoc_grp should be empty while configuring the Breakout Map.
+    - The Breakout of the interface.
+    - The policy_group should be empty while configuring the Breakout Map.
     type: str
-    choices: [ 100g-4x, 10g-4x, 25g-4x ]
-    aliases: [ breakout_map ]
-  card:
-    description:
-    - The slot number of the Network Interface Card(NIC) and the Card ID must be between 1 to 64.
-    type: int
+    choices: [ 100g-2x, 100g-4x, 10g-4x, 25g-4x, 50g-8x ]
   description:
     description:
-    - Description of the Interface Port Configuration object.
+    - Description of the Interface Configuration object.
     type: str
     aliases: [ descr ]
   node:
     description:
-    - The ID of the Node and the value must be between 101 to 4000.
+    - The ID of the Node.
+    - The value must be between 101 to 4000.
     type: int
     aliases: [ node_id ]
   pc_member:
@@ -49,34 +47,39 @@ options:
     aliases: [ port_channel_member ]
   port_type:
     description:
-    - The type of the interface port can be either access or fabric and the default port type is access.
+    - The type of the interface can be either access or fabric.
+    - The default port_type is access.
     type: str
     default: access
     choices: [ access, fabric ]
-  port_id:
-    description:
-    - The Port ID of the Network Interface Card(NIC) and the Port ID must be between 1 to 128.
-    type: int
-    aliases: [ port_channel_member ]
   role:
     description:
-    - The type of the interface can be either a leaf or a spine and the default Node type is leaf.
+    - The role of the switch (node) can be either a leaf or a spine. The default role is leaf.
     type: str
     aliases: [ node_type ]
+    default: leaf
     choices: [ leaf, spine ]
-  shutdown:
+  admin_state:
     description:
-    - The Admin State of the Interface and the default Admin State is Up.
-    - C(no) used to set the Admin State - Up and C(yes) used to set the Admin State - Down.
+    - The Admin State of the Interface.
+    - Admin State will be Up by default.
     type: str
-    aliases: [ admin_state ]
-    choices: [ "yes", "no" ]
-  sub_port:
+    default: up
+    choices: [ up, down ]
+  interface_type:
     description:
-    - The Sub Port ID of the Network Interface Card(NIC) and the Sub Port ID must be between 1 to 16.
-    type: int
-    default: 0
-    aliases: [ sub_port_id ]
+    - The type of the interface. The default interface_type is switch_port.
+    type: str
+    default: switch_port
+    choices: [ switch_port, pc_or_vpc, fc, fc_port_channel, leaf_fabric, spine_access, spine_fabric ]
+  interface:
+    description:
+    - The address of the interface.
+    - The format of the interface value should be 1/1/1 (card/port_id/sub_port) or 1/1 (card/port_id).
+    - The Card ID must be in the range of 1 to 64.
+    - The Port ID must be in the range of 1 to 128.
+    - The Sub Port ID must be in the range of 0 to 16
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -96,65 +99,65 @@ seealso:
 author:
 - Sabari Jaganathan (@sajagana)
 """
-
 EXAMPLES = r"""
-- name: Add the interface with port channel(PC) policy group
-  cisco.aci.aci_infra_port_config:
+- name: Add an interface with port channel(PC) policy group
+  cisco.aci.aci_interface_config:
     host: apic
     username: admin
     password: SomeSecretPassword
-    role: "leaf"
-    assoc_grp: "{{ ansible_pc.current.0.infraAccBndlGrp.attributes.dn }}"
-    node: 201
-    card: 1
-    port_id: 1
-    sub_port: 0
+    role: leaf
+    port_type: access
+    interface_type: port_channel
+    policy_group: ans_test_port_channel
+    node: 502
+    interface: "2/2/2"
     state: present
   delegate_to: localhost
 
 - name: Breakout the existing interface with "100g-4x"
-  cisco.aci.aci_infra_port_config:
+  cisco.aci.aci_interface_config:
     host: apic
     username: admin
     password: SomeSecretPassword
-    role: "leaf"
-    node: 201
-    card: 1
-    port_id: 1
-    sub_port: 0
-    brkout_map: "100g-4x"
+    role: leaf
+    port_type: access
+    node: 502
+    interface: "2/2/2"
+    breakout: "100g-4x"
     state: present
   delegate_to: localhost
 
-- name: Query a access interface with node id
-  cisco.aci.aci_infra_port_config:
+- name: Query an access interface with node id
+  cisco.aci.aci_interface_config:
     host: apic
     username: admin
     password: SomeSecretPassword
+    port_type: access
     node: 201
     state: query
   delegate_to: localhost
 
 - name: Query a fabric interface with node id
-  cisco.aci.aci_infra_port_config:
+  cisco.aci.aci_interface_config:
     host: apic
     username: admin
     password: SomeSecretPassword
-    node: 201
     port_type: fabric
+    node: 202
     state: query
   delegate_to: localhost
 
 - name: Query all access interfaces
-  cisco.aci.aci_infra_port_config:
+  cisco.aci.aci_interface_config:
     host: apic
     username: admin
     password: SomeSecretPassword
+    port_type: access
     state: query
   delegate_to: localhost
 
 - name: Query all fabric interfaces
-  cisco.aci.aci_infra_port_config:
+  cisco.aci.aci_interface_config:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -163,14 +166,13 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Remove a interface
-  cisco.aci.aci_infra_port_config:
+  cisco.aci.aci_interface_config:
     host: apic
     username: admin
     password: SomeSecretPassword
+    port_type: access
     node: 201
-    card: 1
-    port_id: 1
-    sub_port: 0
+    interface: "1/1/1"
     state: absent
   delegate_to: localhost
 """
@@ -280,8 +282,35 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
 
+
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+
+PORT_TYPE_MAPPING = dict(
+    access=dict(
+        root_class="infraInfra",
+        root_class_rn="infra",
+        interface_class="infraPortConfig",
+    ),
+    fabric=dict(
+        root_class="fabricInst",
+        root_class_rn="fabric",
+        interface_class="fabricPortConfig",
+    ),
+)
+
+ADMIN_STATE_MAPPING = {"up": "no", "down": "yes"}
+
+
+POLICY_GROUP_MAPPING = dict(
+    switch_port="uni/infra/funcprof/accportgrp-{0}",
+    pc_or_vpc="uni/infra/funcprof/accbundle-{0}",
+    fc="uni/infra/funcprof/fcaccportgrp-{0}",
+    fc_port_channel="uni/infra/funcprof/fcaccbundle-{0}",
+    leaf_fabric="uni/fabric/funcprof/leportgrp-{0}",
+    spine_access="uni/infra/funcprof/spaccportgrp-{0}",
+    spine_fabric="uni/fabric/funcprof/spportgrp-{0}",
+)
 
 
 def main():
@@ -289,17 +318,20 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        assoc_grp=dict(type="str", aliases=["access_port_policy_group"]),
-        brkout_map=dict(type="str", aliases=["breakout_map"], choices=["100g-4x", "10g-4x", "25g-4x"]),
-        card=dict(type="int"),
+        policy_group=dict(type="str", aliases=["policy_group_name"]),
+        breakout=dict(type="str", choices=["100g-2x", "100g-4x", "10g-4x", "25g-4x", "50g-8x"]),
         description=dict(type="str", aliases=["descr"]),
         node=dict(type="int", aliases=["node_id"]),
         pc_member=dict(type="str", aliases=["port_channel_member"]),
         port_type=dict(type="str", default="access", choices=["access", "fabric"]),
-        port_id=dict(type="int"),
-        role=dict(type="str", choices=["leaf", "spine"], aliases=["node_type"]),
-        shutdown=dict(type="str", choices=["yes", "no"], aliases=["admin_state"]),
-        sub_port=dict(type="int", default=0, aliases=["sub_port_id"]),
+        role=dict(type="str", default="leaf", choices=["leaf", "spine"], aliases=["node_type"]),
+        admin_state=dict(type="str", default="up", choices=["up", "down"]),
+        interface_type=dict(
+            type="str",
+            default="switch_port",
+            choices=["switch_port", "pc_or_vpc", "fc", "fc_port_channel", "leaf_fabric", "spine_access", "spine_fabric"],
+        ),
+        interface=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -307,57 +339,62 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["node", "card", "port_type", "port_id", "sub_port"]],
-            ["state", "present", ["node", "card", "port_type", "port_id", "sub_port"]],
+            ["state", "absent", ["role", "node", "interface", "port_type"]],
+            ["state", "present", ["role", "node", "interface", "port_type", "interface_type"]],
             ["state", "query", ["port_type"]],
         ],
-        mutually_exclusive=[("assoc_grp", "brkout_map")],
+        mutually_exclusive=[("policy_group", "breakout")],
     )
 
-    assoc_grp = module.params.get("assoc_grp")
-    brkout_map = module.params.get("brkout_map")
-    card = module.params.get("card")
+    policy_group = module.params.get("policy_group")
+    breakout = module.params.get("breakout")
     description = module.params.get("description")
     node = module.params.get("node")
     pc_member = module.params.get("pc_member")
     port_type = module.params.get("port_type")
-    port_id = module.params.get("port_id")
     role = module.params.get("role")
-    shutdown = module.params.get("shutdown")
-    sub_port = module.params.get("sub_port")
+    admin_state = module.params.get("admin_state")
+    interface = module.params.get("interface")
+    interface_type = module.params.get("interface_type")
     state = module.params.get("state")
 
     aci = ACIModule(module)
 
-    error_message = []
-
     if node is not None and node not in range(101, 4001):
-        error_message.append("Node ID must be between 101 to 4000")
+        aci.fail_json(msg="Node ID: {0} is invalid; it must be in the range of 101 to 4000.".format(node))
 
-    if card is not None and card not in range(1, 65):
-        error_message.append("Card ID must be between 1 to 64")
+    card, port_id, sub_port = (None, None, None)
+    if interface is not None:
+        interface_parts = interface.split("/")
+        if len(interface_parts) == 3:
+            card, port_id, sub_port = interface_parts
+        elif len(interface_parts) == 2:
+            card, port_id = interface_parts
+            sub_port = 0
+        else:
+            aci.fail_json(msg="Interface: {0} is invalid; The format must be either card/port/sub_port(1/1/1) or card/port(1/1)".format(interface))
 
-    if port_id is not None and port_id not in range(1, 129):
-        error_message.append("Port ID must be between 1 to 128")
+        if card is not None and int(card) not in range(1, 65):
+            aci.fail_json(msg="Card ID: {0} is invalid; it must be in the range of 1 to 64.".format(card))
 
-    # Sub Port ID - 0 is default value
-    if sub_port is not None and sub_port not in range(0, 17):
-        error_message.append("Sub Port ID must be between 1 to 16")
+        if port_id is not None and int(port_id) not in range(1, 129):
+            aci.fail_json(msg="Port ID: {0} is invalid; it must be in the range of 1 to 128.".format(port_id))
 
-    if error_message:
-        aci.fail_json(msg="Interface Configuration failed due to: {0}".format(error_message))
+        # Sub Port ID - 0 is default value
+        if sub_port is not None and int(sub_port) not in range(0, 17):
+            aci.fail_json(msg="Sub Port ID: {0} is invalid; it must be in the range of 0 to 16.".format(sub_port))
 
-    interface_class_name = "infraPortConfig" if port_type == "access" else "fabricPortConfig"
-    root_class_name = "infraInfra" if port_type == "access" else "fabricInst"
-    root_class_rn = "infra" if port_type == "access" else "fabric"
+    root_class = PORT_TYPE_MAPPING.get(port_type)["root_class"]
+    root_class_rn = PORT_TYPE_MAPPING.get(port_type)["root_class_rn"]
+    interface_class = PORT_TYPE_MAPPING.get(port_type)["interface_class"]
 
     aci.construct_url(
         root_class=dict(
-            aci_class=root_class_name,
+            aci_class=root_class,
             aci_rn=root_class_rn,
         ),
         subclass_1=dict(
-            aci_class=interface_class_name,
+            aci_class=interface_class,
             aci_rn="portconfnode-{0}-card-{1}-port-{2}-sub-{3}".format(node, card, port_id, sub_port),
             target_filter=dict(node=node),
         ),
@@ -365,28 +402,30 @@ def main():
 
     aci.get_existing()
 
-    # To handle the existing object property
-    if brkout_map:
-        assoc_grp = ""
+    if breakout is None and policy_group:
+        policy_group_dn = POLICY_GROUP_MAPPING.get(interface_type).format(policy_group)
+    else:
+        # To handle the existing object property
+        policy_group_dn = ""
 
     if state == "present":
         aci.payload(
-            aci_class=interface_class_name,
+            aci_class=interface_class,
             class_config=dict(
-                assocGrp=assoc_grp,
-                brkoutMap=brkout_map,
+                assocGrp=policy_group_dn,
+                brkoutMap=breakout,
                 card=card,
                 description=description,
                 node=node,
                 pcMember=pc_member,
                 port=port_id,
                 role=role,
-                shutdown=shutdown,
+                shutdown=ADMIN_STATE_MAPPING.get(admin_state, ""),
                 subPort=sub_port,
             ),
         )
 
-        aci.get_diff(aci_class=interface_class_name)
+        aci.get_diff(aci_class=interface_class)
 
         aci.post_config()
 
