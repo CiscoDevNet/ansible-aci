@@ -1,0 +1,227 @@
+# Test code for the ACI modules
+# Copyright: (c) 2020, Shreyas Srish <ssrish@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # CLEAN ENVIRONMENT
+  - name: Remove policy storm control
+    aci_interface_policy_storm_control:
+      <<: *aci_info
+      stormctrl_policy: '{{ item }}'
+      state: absent
+    loop:
+    - stormctrl1
+    - stormctrl2
+    - stormctrl3
+    - stormctrl4
+
+  # ADD
+  - name: Add a storm control interface policy - burst all rate - check mode
+    aci_interface_policy_storm_control: &stormctrl1_present
+      <<: *aci_info
+      stormctrl_policy: stormctrl1
+      description: storm control 1
+      isUcMcBcStormPktCfgValid: Invalid
+      rate: 50
+      burstRate: 75
+      state: present
+    check_mode: yes
+    register: port_stormctrl1_cm
+
+  - name: Add a storm control interface policy - burst all rate - normal mode
+    aci_interface_policy_storm_control:
+      <<: *stormctrl1_present
+    register: port_stormctrl1_nm
+
+  - name: Add a storm control interface policy again - burst all rate - normal mode
+    aci_interface_policy_storm_control:
+      <<: *stormctrl1_present
+    register: port_stormctrl1_nm_again
+
+  - name: Add a storm control interface policy - burst Uc/Mc/Bc rate - check mode
+    aci_interface_policy_storm_control: &stormctrl2_present
+      <<: *aci_info
+      stormctrl_policy: stormctrl2
+      description: storm control 2
+      isUcMcBcStormPktCfgValid: Valid
+      bcRate: 50
+      bcBurstRate: 75
+      mcRate: 55
+      mcBurstRate: 80
+      uucRate: 60
+      uucBurstRate: 85
+      state: present
+    check_mode: yes
+    register: port_stormctrl2_cm
+
+  - name: Add a storm control interface policy - burst Uc/Mc/Bc rate - normal mode
+    aci_interface_policy_storm_control:
+      <<: *stormctrl2_present
+    register: port_stormctrl2_nm
+
+  - name: Add a storm control interface policy again - burst Uc/Mc/Bc rate - normal mode
+    aci_interface_policy_storm_control:
+      <<: *stormctrl2_present
+    register: port_stormctrl2_nm_again
+
+  - name: Add a storm control interface policy - burst all PPS - check mode
+    aci_interface_policy_storm_control: &stormctrl3_present
+      <<: *aci_info
+      stormctrl_policy: stormctrl3
+      description: storm control 3
+      isUcMcBcStormPktCfgValid: Invalid
+      ratePps: 50
+      burstPps: 75
+      state: present
+    check_mode: yes
+    register: port_stormctrl3_cm
+
+  - name: Add a storm control interface policy - burst all PPS - normal mode
+    aci_interface_policy_storm_control:
+      <<: *stormctrl3_present
+    register: port_stormctrl3_nm
+
+  - name: Add a storm control interface policy again - burst all PPS - normal mode
+    aci_interface_policy_storm_control:
+      <<: *stormctrl3_present
+    register: port_stormctrl3_nm_again
+
+  - name: Add a storm control interface policy - burst Uc/Mc/Bc PPS - check mode
+    aci_interface_policy_storm_control: &stormctrl4_present
+      <<: *aci_info
+      stormctrl_policy: stormctrl4
+      description: storm control 4
+      isUcMcBcStormPktCfgValid: Valid
+      bcRatePps: 50
+      bcBurstPps: 75
+      mcRatePps: 55
+      mcBurstPps: 80
+      uucRatePps: 60
+      uucBurstPps: 85
+      state: present
+    check_mode: yes
+    register: port_stormctrl4_cm
+
+  - name: Add a storm control interface policy - burst Uc/Mc/Bc PPS - normal mode
+    aci_interface_policy_storm_control:
+      <<: *stormctrl4_present
+    register: port_stormctrl4_nm
+
+  - name: Add a storm control interface policy again - burst Uc/Mc/Bc PPS - normal mode
+    aci_interface_policy_storm_control:
+      <<: *stormctrl4_present
+    register: port_stormctrl4_nm_again
+
+  - name: Add a storm control interface policy - bad rate - normal mode
+    aci_interface_policy_storm_control:
+      <<: *stormctrl1_present
+      rate: 50
+      burstRate: 110
+    ignore_errors: true
+    register: port_stormctrl1_nm_error_rate
+
+  - name: Verify present cases
+    assert:
+      that:
+      - port_stormctrl1_cm is changed
+      - port_stormctrl1_nm is changed
+      - port_stormctrl1_cm.proposed.stormctrlIfPol.attributes.dn == "uni/infra/stormctrlifp-stormctrl1"
+      - port_stormctrl1_cm.proposed.stormctrlIfPol.attributes.name == "stormctrl1"
+      - port_stormctrl1_cm.proposed.stormctrlIfPol.attributes.rate == "50.000000"
+      - port_stormctrl1_cm.proposed.stormctrlIfPol.attributes.burstRate == "75.000000"
+      - port_stormctrl1_cm.proposed.stormctrlIfPol.attributes.descr == "storm control 1"
+      - port_stormctrl1_nm.current.0.stormctrlIfPol.attributes.dn == "uni/infra/stormctrlifp-stormctrl1"
+      - port_stormctrl1_nm.current.0.stormctrlIfPol.attributes.name == "stormctrl1"
+      - port_stormctrl1_nm.current.0.stormctrlIfPol.attributes.rate == "50.000000"
+      - port_stormctrl1_nm.current.0.stormctrlIfPol.attributes.burstRate == "75.000000"
+      - port_stormctrl1_nm.current.0.stormctrlIfPol.attributes.descr == "storm control 1"
+      - port_stormctrl1_nm.current.0.stormctrlIfPol.attributes.annotation == 'orchestrator:ansible'
+      - port_stormctrl1_nm_again is not changed
+      - port_stormctrl1_nm_error_rate.msg == "Argument burstRate needs to be a value between 0 and 100 inclusive, got 110"
+      - port_stormctrl2_cm is changed
+      - port_stormctrl2_nm is changed
+      - port_stormctrl2_nm_again is not changed
+      - port_stormctrl3_cm is changed
+      - port_stormctrl3_nm is changed
+      - port_stormctrl3_nm_again is not changed
+      - port_stormctrl4_cm is changed
+      - port_stormctrl4_nm is changed
+      - port_stormctrl4_nm_again is not changed
+
+  # QUERY
+  - name: Query a storm control interface policy - normal mode
+    aci_interface_policy_storm_control:
+      <<: *aci_info
+      stormctrl_policy: stormctrl1
+      state: query
+    register: port_stormctrl1_query
+
+  - name: Query all storm control interface policies - normal mode
+    aci_interface_policy_storm_control:
+      <<: *aci_info
+      state: query
+    register: port_all_query
+
+  - name: Verify query cases
+    assert:
+      that:
+      - port_stormctrl1_query is not changed
+      - port_all_query is not changed
+      - port_stormctrl1_query.current.0.stormctrlIfPol.attributes.dn == "uni/infra/stormctrlifp-stormctrl1"
+      - port_stormctrl1_query.current.0.stormctrlIfPol.attributes.name == "stormctrl1"
+      - port_stormctrl1_query.current.0.stormctrlIfPol.attributes.rate == "50.000000"
+      - port_stormctrl1_query.current.0.stormctrlIfPol.attributes.burstRate == "75.000000"
+      - port_stormctrl1_query.current.0.stormctrlIfPol.attributes.descr == "storm control 1"
+      - port_all_query.current|length >= 1
+
+  # REMOVE
+  - name: Remove a storm control interface policy - normal mode
+    aci_interface_policy_storm_control:
+      <<: *aci_info
+      stormctrl_policy: stormctrl1
+      state: absent
+    register: port_stormctrl1_remove
+
+  - name: Verify remove cases
+    assert:
+      that:
+      - port_stormctrl1_remove is changed
+      - port_stormctrl1_remove.previous.0.stormctrlIfPol.attributes.dn == "uni/infra/stormctrlifp-stormctrl1"
+      - port_stormctrl1_remove.previous.0.stormctrlIfPol.attributes.name == "stormctrl1"
+      - port_stormctrl1_remove.previous.0.stormctrlIfPol.attributes.rate == "50.000000"
+      - port_stormctrl1_remove.previous.0.stormctrlIfPol.attributes.burstRate == "75.000000"
+      - port_stormctrl1_remove.previous.0.stormctrlIfPol.attributes.descr == "storm control 1"
+
+  # CLEAN END
+  - name: Remove all storm control policies
+    aci_interface_policy_storm_control:
+      <<: *aci_info
+      stormctrl_policy: '{{ item }}'
+      state: absent
+    loop:
+    - stormctrl1
+    - stormctrl2
+    - stormctrl3
+    - stormctrl4
