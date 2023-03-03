@@ -20,7 +20,7 @@
 
 
 # CLEAN ENVIRONMENT
-- name: Remove policy port security
+- name: Remove policy spanning tree
   aci_interface_policy_spanning_tree:
     <<: *aci_info
     stp_policy: '{{ item }}'
@@ -31,8 +31,8 @@
   - stp_both
 
 # ADD
-- name: Add a spanning tree interface policy - check mode
-  aci_interface_policy_port_security:
+- name: Add a spanning tree interface policy BPDU Guard - check mode
+  aci_interface_policy_spanning_tree:
     <<: *aci_info
     stp_policy: stp_bpduguard
     description: BPDU Guard
@@ -41,8 +41,8 @@
   check_mode: yes
   register: stp_bpduguard_cm
 
-- name: Add a spanning tree interface policy - normal mode
-  aci_interface_policy_port_security:
+- name: Add a spanning tree interface policy BPDU Guard - normal mode
+  aci_interface_policy_spanning_tree:
     <<: *aci_info
     stp_policy: stp_bpduguard
     description: BPDU Guard
@@ -50,8 +50,8 @@
     state: present
   register: stp_bpduguard_nm
 
-- name: Add a spanning tree interface policy - normal mode again
-  aci_interface_policy_port_security:
+- name: Add a spanning tree interface policy BPDU Guard - normal mode again
+  aci_interface_policy_spanning_tree:
     <<: *aci_info
     stp_policy: stp_bpduguard
     description: BPDU Guard
@@ -59,36 +59,36 @@
     state: present
   register: stp_bpduguard_nm_again
 
-- name: Add a spanning tree interface policy - check mode
-  aci_interface_policy_port_security:
+- name: Add a spanning tree interface policy BPDU Filter - check mode
+  aci_interface_policy_spanning_tree:
     <<: *aci_info
     stp_policy: stp_bpdufilter
     description: BPDU Filter
-    bpdu_guard: true
+    bpdu_filter: true
     state: present
   check_mode: yes
   register: stp_bpdufilter_cm
 
-- name: Add a spanning tree interface policy - normal mode
-  aci_interface_policy_port_security:
+- name: Add a spanning tree interface policy BPDU Filter - normal mode
+  aci_interface_policy_spanning_tree:
     <<: *aci_info
     stp_policy: stp_bpdufilter
     description: BPDU Filter
-    bpdu_guard: true
+    bpdu_filter: true
     state: present
   register: stp_bpdufilter_nm
 
-- name: Add a spanning tree interface policy - normal mode again
-  aci_interface_policy_port_security:
+- name: Add a spanning tree interface policy BPDU Filter - normal mode again
+  aci_interface_policy_spanning_tree:
     <<: *aci_info
     stp_policy: stp_bpdufilter
     description: BPDU Filter
-    bpdu_guard: true
+    bpdu_filter: true
     state: present
   register: stp_bpdufilter_nm_again
 
-- name: Add a spanning tree interface policy - normal mode
-  aci_interface_policy_port_security:
+- name: Add a spanning tree interface policy Both - normal mode
+  aci_interface_policy_spanning_tree:
     <<: *aci_info
     stp_policy: stp_both
     description: Both controls
@@ -97,8 +97,8 @@
     state: present
   register: stp_both_nm
 
-- name: Add a spanning tree interface policy - normal mode again
-  aci_interface_policy_port_security:
+- name: Add a spanning tree interface policy Both - normal mode again
+  aci_interface_policy_spanning_tree:
     <<: *aci_info
     stp_policy: stp_both
     description: Both controls
@@ -120,18 +120,18 @@
       - stp_both_nm_again is not changed
       - stp_bpduguard_nm.current.0.stpIfPol.attributes.ctrl == 'bpdu-guard' 
       - stp_bpdufilter_nm.current.0.stpIfPol.attributes.ctrl == 'bpdu-filter'
-      - stp_both_nm.current.0.stpIfPol.attributes.ctrl == 'bpdu-guard,bpdu-filter'
+      - stp_both_nm.current.0.stpIfPol.attributes.ctrl == 'bpdu-filter,bpdu-guard'
 
 # QUERY
 - name: Query a spanning tree interface policy
-  aci_interface_policy_port_security:
+  aci_interface_policy_spanning_tree:
     <<: *aci_info
     stp_policy: stp_both
     state: query
   register: stp_query_both
 
 - name: Query all spanning tree interface policies
-  aci_interface_policy_port_security:
+  aci_interface_policy_spanning_tree:
     <<: *aci_info
     state: query
   register: stp_query_all
@@ -141,7 +141,7 @@
     that:
       - stp_query_both is not changed
       - stp_query_all is not changed
-      - stp_query_both.current.0.stpIfPol.attributes.ctrl == 'bpdu-guard,bpdu-filter'
+      - stp_query_both.current.0.stpIfPol.attributes.ctrl == 'bpdu-filter,bpdu-guard'
       - stp_query_all.current|length >= 3
 
 # CLEAN ENVIRONMENT
