@@ -5,6 +5,21 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.4.1
+======
+
+Release Summary
+---------------
+
+Release v2.4.1 of the ``ansible-aci`` collection on 2023-03-08.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.4.0.
+
+
+Bugfixes
+--------
+
+- Fix missing annotation field in aci_ntp_policy and aci_ntp_server (#392)
+
 v2.4.0
 ======
 
