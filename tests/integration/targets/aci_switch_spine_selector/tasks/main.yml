@@ -1,6 +1,7 @@
 # Test code for the ACI modules
 # Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
-
+# Adapted from aci_switch_leaf_selector
+# Copyright: (c) 2023, Eric Girard <@netgirard>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
@@ -122,7 +123,7 @@
       <<: *aci_switch_policy_spine_profile_present
       #access_port_selector: anstest_accessportselector
       state: absent
-    ignore_errors: yes
+    ignore_errors: true
     register: sw_spine_selec_absent_missing_param
 
   - name: absent assertions
