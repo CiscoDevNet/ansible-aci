@@ -31,7 +31,7 @@ options:
     aliases: [ name, spine_interface_profile_name, spine_interface_profile, interface_profile_name ]
   description:
     description:
-    - Description for the Fabric access policy spine interface profile.
+    - The description for the Fabric access policy spine interface profile.
     type: str
     aliases: [ descr ]
   state:
@@ -52,7 +52,7 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(infra:AccPortP).
+  description: More information about the internal APIC class B(infra:SpAccPortP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Bruno Calogero (@brunocalogero)

@@ -25,12 +25,12 @@ description:
 options:
   spine_profile:
     description:
-    - Name of the Spine Profile to which we add a Selector.
+    - The name of the Spine Profile to which we add a Selector.
     type: str
     aliases: [ spine_profile_name ]
   interface_selector:
     description:
-    - Name of Interface Profile Selector to be added and associated with the Spine Profile.
+    - The name of Interface Profile Selector to be added and associated with the Spine Profile.
     type: str
     aliases: [ name, interface_selector_name, interface_profile_name ]
   state:
