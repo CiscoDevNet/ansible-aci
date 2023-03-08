@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2023, Eric Girard <@netgirard>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -19,7 +20,7 @@ description:
 options:
   stp_policy:
     description:
-    - Name of the STP policy.
+    - The name of the STP policy.
     type: str
     aliases: [ name ]
   description:
@@ -29,12 +30,12 @@ options:
     aliases: [ descr ]
   bpdu_guard:
     description:
-    - BPDU-Guard state.
+    - The BPDU-Guard state.
     type: bool
     default: false
   bpdu_filter:
     description:
-    - BPDU-Filter state.
+    - The BPDU-Filter state.
     type: bool
     default: false
   state:
@@ -50,6 +51,8 @@ options:
     type: str
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 seealso:
 - name: APIC Management Information Model reference
@@ -180,11 +183,13 @@ url:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         stp_policy=dict(type='str', aliases=['name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
