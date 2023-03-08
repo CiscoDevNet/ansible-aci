@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_spanning_tree
 short_description: Manage spanning tree interface policies (stp:IfPol)
@@ -60,17 +59,16 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Eric Girard (@netgirard)
-'''
+"""
 
-# FIXME: Add more, better examples
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a spanning interface policy
   cisco.aci.aci_interface_policy_spanning_tree:
     host: '{{ inventory_hostname }}'
     username: '{{ username }}'
     password: '{{ password }}'
-    stp_policy: '{{ stp_policy }}'
-    description: '{{ description }}'
+    stp_policy: 'my_policy'
+    description: 'my_description'
     bpdu_guard: true
     bpdu_filter: false
     state: present
@@ -101,9 +99,9 @@ EXAMPLES = r'''
     stp_policy: 'my_policy'
     state: absent
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -206,7 +204,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
@@ -217,53 +215,53 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        stp_policy=dict(type='str', aliases=['name']),  # Not required for querying all objects
-        description=dict(type='str', aliases=['descr']),
-        bpdu_guard=dict(type='bool', default=False),
-        bpdu_filter=dict(type='bool', default=False),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
+        stp_policy=dict(type="str", aliases=["name"]),  # Not required for querying all objects
+        description=dict(type="str", aliases=["descr"]),
+        bpdu_guard=dict(type="bool", default=False),
+        bpdu_filter=dict(type="bool", default=False),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['stp_policy']],
-            ['state', 'present', ['stp_policy']],
+            ["state", "absent", ["stp_policy"]],
+            ["state", "present", ["stp_policy"]],
         ],
     )
 
-    stp_policy = module.params.get('stp_policy')
-    description = module.params.get('description')
-    state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
+    stp_policy = module.params.get("stp_policy")
+    description = module.params.get("description")
+    state = module.params.get("state")
+    name_alias = module.params.get("name_alias")
 
     # Build ctrl value for request
     ctrl = []
-    if module.params.get('bpdu_filter') is True:
-        ctrl.append('bpdu-filter')
-    if module.params.get('bpdu_guard') is True:
-        ctrl.append('bpdu-guard')
-    
+    if module.params.get("bpdu_filter") is True:
+        ctrl.append("bpdu-filter")
+    if module.params.get("bpdu_guard") is True:
+        ctrl.append("bpdu-guard")
+
     # Order of control string must match ACI return value for idempotency
     ctrl = ",".join(sorted(ctrl)) if ctrl else None
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='stpIfPol',
-            aci_rn='infra/ifPol-{0}'.format(stp_policy),
+            aci_class="stpIfPol",
+            aci_rn="infra/ifPol-{0}".format(stp_policy),
             module_object=stp_policy,
-            target_filter={'name': stp_policy},
+            target_filter={"name": stp_policy},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='stpIfPol',
+            aci_class="stpIfPol",
             class_config=dict(
                 name=stp_policy,
                 ctrl=ctrl,
@@ -272,11 +270,11 @@ def main():
             ),
         )
 
-        aci.get_diff(aci_class='stpIfPol')
+        aci.get_diff(aci_class="stpIfPol")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()
