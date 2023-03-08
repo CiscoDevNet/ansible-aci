@@ -1,6 +1,8 @@
 # Test code for the ACI modules
 # Copyright: (c) 2020, Shreyas Srish <ssrish@cisco.com>
 # Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
+# Adapted from aci_interface_policy_leaf_profile tests
+# Copyright: (c) 2023, Eric Girard <@netgirard>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 

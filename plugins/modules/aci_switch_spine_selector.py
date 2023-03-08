@@ -3,6 +3,7 @@
 
 # Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
 # Adapted from aci_switch_leaf_selector
+# Copyright: (c) 2023, Eric Girard <@netgirard>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
