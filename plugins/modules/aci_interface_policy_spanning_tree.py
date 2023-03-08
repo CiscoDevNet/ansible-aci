@@ -219,11 +219,9 @@ def main():
         ctrl.append('bpdu-filter')
     if module.params.get('bpdu_guard') is True:
         ctrl.append('bpdu-guard')
-    if not ctrl:
-        ctrl = None
-    else:
-        ctrl.sort()
-        ctrl = ",".join(ctrl)
+    
+    # Order of control string must match ACI return value for idempotency
+    ctrl = ",".join(sorted(ctrl)) if ctrl else None
 
     aci = ACIModule(module)
     aci.construct_url(
