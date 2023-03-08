@@ -75,6 +75,32 @@ EXAMPLES = r'''
     bpdu_filter: false
     state: present
   delegate_to: localhost
+
+- name: Query a specific spanning interface policy
+  cisco.aci.aci_interface_policy_spanning_tree:
+    host: '{{ inventory_hostname }}'
+    username: '{{ username }}'
+    password: '{{ password }}'
+    stp_policy: 'my_policy'
+    state: query
+  delegate_to: localhost
+
+- name: Query all spanning interface policies
+  cisco.aci.aci_interface_policy_spanning_tree:
+    host: '{{ inventory_hostname }}'
+    username: '{{ username }}'
+    password: '{{ password }}'
+    state: query
+  delegate_to: localhost
+
+- name: Remove a specific spanning interface policy
+  cisco.aci.aci_interface_policy_spanning_tree:
+    host: '{{ inventory_hostname }}'
+    username: '{{ username }}'
+    password: '{{ password }}'
+    stp_policy: 'my_policy'
+    state: absent
+  delegate_to: localhost
 '''
 
 RETURN = r'''
