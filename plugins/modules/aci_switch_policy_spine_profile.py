@@ -25,12 +25,12 @@ description:
 options:
   spine_profile:
     description:
-    - The name of the Leaf Profile.
+    - The name of the Spine Profile.
     type: str
     aliases: [ spine_profile_name, name ]
   description:
     description:
-    - Description for the Leaf Profile.
+    - The description for the Spine Profile.
     type: str
     aliases: [ descr ]
   state:
@@ -52,7 +52,7 @@ extends_documentation_fragment:
 seealso:
 - module: cisco.aci.aci_switch_policy_spine_profile
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(infra:NodeP).
+  description: More information about the internal APIC class B(infra:SpineP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Bruno Calogero (@brunocalogero)

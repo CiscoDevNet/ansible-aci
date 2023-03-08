@@ -29,17 +29,17 @@ options:
     type: str
   spine_profile:
     description:
-    - Name of the Spine Profile to which we add a Selector.
+    - The name of the Spine Profile to which we add a Selector.
     type: str
     aliases: [ spine_profile_name ]
   spine:
     description:
-    - Name of Spine Selector.
+    - The name of Spine Selector.
     type: str
     aliases: [ name, spine_name, spine_profile_spine_name, spine_selector_name ]
   spine_node_blk:
     description:
-    - Name of Node Block range to be added to Spine Selector of given Spine Profile.
+    - The name of Node Block range to be added to Spine Selector of given Spine Profile.
     type: str
     aliases: [ spine_node_blk_name, node_blk_name ]
   spine_node_blk_description:
@@ -48,17 +48,17 @@ options:
     type: str
   from:
     description:
-    - Start of Node Block range.
+    - The start of Node Block range.
     type: int
     aliases: [ node_blk_range_from, from_range, range_from ]
   to:
     description:
-    - Start of Node Block range.
+    - The end of Node Block range.
     type: int
     aliases: [ node_blk_range_to, to_range, range_to ]
   policy_group:
     description:
-    - Name of the Policy Group to be added to Spine Selector of given Spine Profile.
+    - The name of the Policy Group to be added to Spine Selector of given Spine Profile.
     type: str
     aliases: [ name, policy_group_name ]
   state:
@@ -79,7 +79,7 @@ extends_documentation_fragment:
 
 notes:
 - This module is to be used with M(cisco.aci.aci_switch_policy_spine_profile).
-  One first creates a spine profile (infra:NodeP) and then creates an associated selector (infra:SpineS),
+  One first creates a spine profile (infra:SpineP) and then creates an associated selector (infra:SpineS),
 seealso:
 - module: cisco.aci.aci_switch_policy_spine_profile
 - name: APIC Management Information Model reference
@@ -92,7 +92,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: adding a switch policy spine profile selector associated Node Block range (w/ policy group)
+- name: Adding a switch policy spine profile selector associated Node Block range (with policy group)
   cisco.aci.aci_switch_spine_selector:
     host: apic
     username: admin
@@ -106,7 +106,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: adding a switch policy spine profile selector associated Node Block range (w/o policy group)
+- name: Adding a switch policy spine profile selector associated Node Block range (without policy group)
   cisco.aci.aci_switch_spine_selector:
     host: apic
     username: admin
