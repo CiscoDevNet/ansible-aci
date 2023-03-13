@@ -360,29 +360,32 @@ def main():
 
     aci = ACIModule(module)
 
-    if node is not None and node not in range(101, 4001):
-        aci.fail_json(msg="Node ID: {0} is invalid; it must be in the range of 101 to 4000.".format(node))
+    try:
+        if node is not None and int(node) not in range(101, 4001):
+            aci.fail_json(msg="Node ID: {0} is invalid; it must be in the range of 101 to 4000.".format(node))
 
-    card, port_id, sub_port = (None, None, None)
-    if interface is not None:
-        interface_parts = interface.split("/")
-        if len(interface_parts) == 3:
-            card, port_id, sub_port = interface_parts
-        elif len(interface_parts) == 2:
-            card, port_id = interface_parts
-            sub_port = 0
-        else:
-            aci.fail_json(msg="Interface: {0} is invalid; The format must be either card/port/sub_port(1/1/1) or card/port(1/1)".format(interface))
+        card, port_id, sub_port = (None, None, None)
+        if interface is not None:
+            interface_parts = interface.split("/")
+            if len(interface_parts) == 3:
+                card, port_id, sub_port = interface_parts
+            elif len(interface_parts) == 2:
+                card, port_id = interface_parts
+                sub_port = 0
+            else:
+                aci.fail_json(msg="Interface: {0} is invalid; The format must be either card/port/sub_port(1/1/1) or card/port(1/1)".format(interface))
 
-        if card is not None and int(card) not in range(1, 65):
-            aci.fail_json(msg="Card ID: {0} is invalid; it must be in the range of 1 to 64.".format(card))
+            if int(card) not in range(1, 65):
+                aci.fail_json(msg="Card ID: {0} is invalid; it must be in the range of 1 to 64.".format(card))
 
-        if port_id is not None and int(port_id) not in range(1, 129):
-            aci.fail_json(msg="Port ID: {0} is invalid; it must be in the range of 1 to 128.".format(port_id))
+            if int(port_id) not in range(1, 129):
+                aci.fail_json(msg="Port ID: {0} is invalid; it must be in the range of 1 to 128.".format(port_id))
 
-        # Sub Port ID - 0 is default value
-        if sub_port is not None and int(sub_port) not in range(0, 17):
-            aci.fail_json(msg="Sub Port ID: {0} is invalid; it must be in the range of 0 to 16.".format(sub_port))
+            # Sub Port ID - 0 is default value
+            if int(sub_port) not in range(0, 17):
+                aci.fail_json(msg="Sub Port ID: {0} is invalid; it must be in the range of 0 to 16.".format(sub_port))
+    except (TypeError, ValueError) as error:
+        aci.fail_json(msg="Interface configuration failed due to: {0}".format(error))
 
     root_class = PORT_TYPE_MAPPING.get(port_type)["root_class"]
     root_class_rn = PORT_TYPE_MAPPING.get(port_type)["root_class_rn"]
@@ -420,7 +423,7 @@ def main():
                 pcMember=pc_member,
                 port=port_id,
                 role=role,
-                shutdown=ADMIN_STATE_MAPPING.get(admin_state, ""),
+                shutdown=ADMIN_STATE_MAPPING.get(admin_state),
                 subPort=sub_port,
             ),
         )

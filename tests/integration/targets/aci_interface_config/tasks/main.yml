@@ -76,7 +76,7 @@
         that:
           - invalid_interface_absent.msg is match("state is absent but all of the following are missing{{':'}} node")
           - invalid_interface_details is not changed
-          - invalid_interface_details.msg is match("MODULE FAILURE\nSee stdout/stderr for the exact error")
+          - invalid_interface_details.msg is match("Interface configuration failed due to")
           - invalid_policy_group_with_breakout is not changed
           - invalid_policy_group_with_breakout.msg == "parameters are mutually exclusive{{':'}} policy_group|breakout"
 
