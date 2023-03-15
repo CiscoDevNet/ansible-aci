@@ -19,72 +19,84 @@ description:
 options:
   name:
     description:
-    - The name of the IGMP Interface Policy
+    - The name of the IGMP Interface Policy.
     type: str
   tenant:
     description:
-    - Tenant to build the IGMP Interface Policy under. Defaults to common
+    - The tenant to build the IGMP Interface Policy under.
     type: str
-    default: common
   description:
     description:
-    - Description of the IGMP Interface Policy
+    - The description of the IGMP Interface Policy.
     type: str
   group_timeout:
     description:
-    - IGMP group timeout in seconds. APIC defaults to 260
+    - The IGMP group timeout in seconds.
+    - The APIC defaults to 260 when unset during creation.
     type: int
   query_interval:
     description:
-    - IGMP query interval in seconds. APIC defaults to 125
+    - The IGMP query interval in seconds.
+    - The APIC defaults to 125 when unset during creation.
     type: int
   query_response_interval:
     description:
-    - IGMP query response interval in seconds. APIC defaults to 10
+    - The IGMP query response interval in seconds.
+    - The APIC defaults to 10 when unset during creation.
     type: int
   last_member_count:
     description:
-    - Last member query count. APIC defaults to 2
+    - The last member query count.
+    - The APIC defaults to 2 when unset during creation.
     type: int
   last_member_response:
     description:
-    - Last member response time in seconds. APIC defaults to 1
+    - The last member response time in seconds.
+    - The APIC defaults to 1 when unset during creation.
     type: int
   startup_query_count:
     description:
-    - Startup Query Count. APIC defaults to 2
+    - The Startup Query Count. 
+    - The APIC defaults to 2 when unset during creation.
     type: int
   startup_query_interval:
     description:
-    - Startup query interval in seconds. APIC defaults to 31
+    - The startup query interval in seconds.
+    - The APIC defaults to 31 when unset during creation.
     type: int
   querier_timeout:
     description:
-    - Querier timeout in seconds. APIC defaults to 255
+    - The querier timeout in seconds.
+    - The APIC defaults to 255 when unset during creation.
     type: int
   robustness_variable:
     description:
-    - Robustness factor. APIC defaults to 2
+    - The robustness factor.
+    - The APIC defaults to 2 when unset during creation.
     type: int
   igmp_version:
     description:
-    - IGMP version to run. This defaults to v2 on the APIC
+    - The IGMP version to run.
+    - The APIC defaults to v2 when unset during creation.
     type: str
     choices: [ v2, v3 ]
   allow_v3_asm:
     description:
-    - Enable the Allow v3 ASM option. Defaults to False on the APIC
-    - If this parameter is set, fast_leave and report_link_local_groups must also be set
+    - Enable the Allow v3 ASM option.
+    - The APIC defaults to False when unset during creation.
+    - If this parameter is set, fast_leave and report_link_local_groups must also be set.
     type: bool
   fast_leave:
     description:
-    - Enable the Fast Leave option. Defaults to False on the APIC
-    - If this parameter is set, allow_v3_asm and report_link_local_groups must also be set
+    - Enable the Fast Leave option.
+    - The APIC defaults to False when unset during creation.
+    - If this parameter is set, allow_v3_asm and report_link_local_groups must also be set.
     type: bool
   report_link_local_groups:
     description:
-    - Enable the Report Link Local Groups option. Defaults to False on the APIC
-    - If this parameter is set, allow_v3_asm and report_link_local_groups must also be set
+    - Enable the Report Link Local Groups option.
+    - The APIC defaults to False when unset during creation.
+    - If this parameter is set, allow_v3_asm and report_link_local_groups must also be set.
     type: bool
   state:
     description:
@@ -95,6 +107,8 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 seealso:
 - name: APIC Management Information Model reference
@@ -249,14 +263,16 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         name=dict(type="str"),
-        tenant=dict(type="str", default="common"),
+        tenant=dict(type="str"),
         description=dict(type="str"),
         group_timeout=dict(type="int"),
         query_interval=dict(type="int"),

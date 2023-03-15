@@ -65,6 +65,13 @@
     <<: *aci_igmp
   register: nm_create_igmp_intf_policy_again
 
+- name: Create IGMP interface policy with default parameters
+  cisco.aci.aci_igmp_interface_policy:
+    <<: *aci_info
+    name: ansible_igmp_dflt_intf_policy
+    tenant: ansible_tenant
+  register: default_igmp_intf_policy
+
 - name: Verify creation of IGMP interface policy
   ansible.builtin.assert:
     that:
@@ -99,6 +106,21 @@
     - nm_create_igmp_intf_policy_again.current.0.igmpIfPol.attributes.robustFac == "3"
     - nm_create_igmp_intf_policy_again.current.0.igmpIfPol.attributes.ver == "v3"
     - nm_create_igmp_intf_policy_again.current.0.igmpIfPol.attributes.ifCtrl == "allow-v3-asm,fast-leave"
+
+- name: Verify default values
+  ansible.builtin.assert:
+    that:
+    - default_igmp_intf_policy.current.0.igmpIfPol.attributes.grpTimeout == "260"
+    - default_igmp_intf_policy.current.0.igmpIfPol.attributes.queryIntvl == "125"
+    - default_igmp_intf_policy.current.0.igmpIfPol.attributes.rspIntvl == "10"
+    - default_igmp_intf_policy.current.0.igmpIfPol.attributes.lastMbrCnt == "2"
+    - default_igmp_intf_policy.current.0.igmpIfPol.attributes.lastMbrRespTime == "1"
+    - default_igmp_intf_policy.current.0.igmpIfPol.attributes.startQueryCnt == "2"
+    - default_igmp_intf_policy.current.0.igmpIfPol.attributes.startQueryIntvl == "31"
+    - default_igmp_intf_policy.current.0.igmpIfPol.attributes.querierTimeout == "255"
+    - default_igmp_intf_policy.current.0.igmpIfPol.attributes.robustFac == "2"
+    - default_igmp_intf_policy.current.0.igmpIfPol.attributes.ver == "v2"
+    - default_igmp_intf_policy.current.0.igmpIfPol.attributes.ifCtrl == ""
 
 # UPDATE IGMP INTERFACE POLICY
 - name: Update IGMP Interface Policy
@@ -186,6 +208,7 @@
     - query_one.current.0.igmpIfPol.attributes.ver == "v3"
     - query_one.current.0.igmpIfPol.attributes.ifCtrl == "allow-v3-asm"
     - query_all is not changed
+    - query_all.current | length > 1
 
 # REMOVE IGMP INTERFACE POLICY
 - name: Delete an IGMP Interface Policy
