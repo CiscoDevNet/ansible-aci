@@ -56,7 +56,7 @@ options:
     type: int
   startup_query_count:
     description:
-    - The Startup Query Count. 
+    - The Startup Query Count.
     - The APIC defaults to 2 when unset during creation.
     type: int
   startup_query_interval:
