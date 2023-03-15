@@ -415,7 +415,6 @@ def main():
 
     # Add infraRsAccBaseGrp only when policy_group was defined
     if policy_group is not None:
-
         infra_rs_acc_base_grp = dict(
             infraRsAccBaseGrp=dict(
                 attributes=dict(),

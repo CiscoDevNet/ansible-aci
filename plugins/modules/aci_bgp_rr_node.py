@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_bgp_rr_node
 short_description: Manage BGP Route Reflector objects.
@@ -47,9 +46,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new BGP Route Reflector
   cisco.aci.aci_bgp_rr_node:
     host: apic
@@ -87,9 +86,9 @@ EXAMPLES = r'''
     state: query
     delegate_to: localhost
     register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
    current:
      description: The existing configuration from the APIC after the module has finished
      returned: success
@@ -192,7 +191,7 @@ RETURN = r'''
      returned: failure or debug
      type: str
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
-   '''
+   """
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
@@ -202,54 +201,53 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        node_id=dict(type='int'),
-        pod_id=dict(type='int'),
-        description=dict(type='str'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        node_id=dict(type="int"),
+        pod_id=dict(type="int"),
+        description=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['node_id']],
-            ['state', 'present', ['node_id', 'pod_id']],
+            ["state", "absent", ["node_id"]],
+            ["state", "present", ["node_id", "pod_id"]],
         ],
     )
 
-    node_id = module.params.get('node_id')
-    pod_id = module.params.get('pod_id')
-    description = module.params.get('description')
-    state = module.params.get('state')
+    node_id = module.params.get("node_id")
+    pod_id = module.params.get("pod_id")
+    description = module.params.get("description")
+    state = module.params.get("state")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='bgpInstPol',
-            aci_rn='fabric/bgpInstP-default',
-            module_object='default',
-            target_filter={'name': 'default'},
+            aci_class="bgpInstPol",
+            aci_rn="fabric/bgpInstP-default",
+            module_object="default",
+            target_filter={"name": "default"},
         ),
         subclass_1=dict(
-            aci_class='bgpRRP',
-            aci_rn='rr',
-            module_object='name',
-            target_filter={'name': ''},
+            aci_class="bgpRRP",
+            aci_rn="rr",
+            module_object="name",
+            target_filter={"name": ""},
         ),
         subclass_2=dict(
-            aci_class='bgpRRNodePEp',
-            aci_rn='node-{0}'.format(node_id),
+            aci_class="bgpRRNodePEp",
+            aci_rn="node-{0}".format(node_id),
             module_object=node_id,
-            target_filter={'id': node_id},
+            target_filter={"id": node_id},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
-
+    if state == "present":
         aci.payload(
-            aci_class='bgpRRNodePEp',
+            aci_class="bgpRRNodePEp",
             class_config=dict(
                 descr=description,
                 id=node_id,
@@ -257,11 +255,11 @@ def main():
             ),
         )
 
-        aci.get_diff(aci_class='bgpRRNodePEp')
+        aci.get_diff(aci_class="bgpRRNodePEp")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

@@ -228,9 +228,7 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
-DIRECTION_MAP = {
-    "incoming": "in", "outgoing": "out", "both": "both"
-}
+DIRECTION_MAP = {"incoming": "in", "outgoing": "out", "both": "both"}
 
 
 def main():
@@ -255,7 +253,7 @@ def main():
             ["state", "absent", ["name", "src_group", "tenant"]],
             ["state", "present", ["name", "direction", "src_group", "tenant"]],
         ],
-        required_together=[('src_ap', 'src_epg')],
+        required_together=[("src_ap", "src_epg")],
     )
 
     aci = ACIModule(module)
@@ -294,7 +292,6 @@ def main():
     aci.get_existing()
 
     if state == "present":
-
         tdn = None
         if src_epg:
             tdn = "uni/tn-{0}/ap-{1}/epg-{2}".format(tenant, src_ap, src_epg)
@@ -302,7 +299,7 @@ def main():
         aci.payload(
             aci_class="spanSrc",
             class_config=dict(descr=description, name=name, dir=DIRECTION_MAP.get(direction)),
-            child_configs=[{"spanRsSrcToEpg": {"attributes": {"tDn": tdn}}}]
+            child_configs=[{"spanRsSrcToEpg": {"attributes": {"tDn": tdn}}}],
         )
 
         aci.get_diff(aci_class="spanSrc")

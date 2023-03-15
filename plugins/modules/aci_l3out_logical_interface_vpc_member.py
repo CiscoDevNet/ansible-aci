@@ -338,9 +338,7 @@ def main():
 
     if not path_dn:
         if pod_id and node_id and path_ep:
-            path_dn = ("topology/pod-{0}/protpaths-{1}/pathep-[{2}]".format(pod_id,
-                                                                            node_id,
-                                                                            path_ep))
+            path_dn = "topology/pod-{0}/protpaths-{1}/pathep-[{2}]".format(pod_id, node_id, path_ep)
         else:
             path_dn = None
 
