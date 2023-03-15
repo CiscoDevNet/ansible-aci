@@ -190,7 +190,7 @@
     - "'sent' not in error_on_invalid_object"
     - "'proposed' not in error_on_invalid_object"
 
-# Test case for certifcate based error issue: https://github.com/CiscoDevNet/ansible-aci/issues/339
+# Test case for certificate based error issue: https://github.com/CiscoDevNet/ansible-aci/issues/339
 # Original error was with ospfCtxPol but same behaviour detected for tenant creation thus simplifying the test case
 # Avoiding error: TypeError: must be str, not bytes
 - name: Add user certificate
