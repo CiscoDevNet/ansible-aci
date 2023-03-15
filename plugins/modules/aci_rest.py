@@ -390,11 +390,11 @@ def main():
     elif rest_type == "xml" and HAS_LXML_ETREE:
         if content and isinstance(content, dict) and HAS_XMLJSON_COBRA:
             # Validate inline YAML/JSON
-            payload = etree.tostring(cobra.etree(payload)[0], encoding='unicode')
+            payload = etree.tostring(cobra.etree(payload)[0], encoding="unicode")
         elif payload and isinstance(payload, str):
             try:
                 # Validate XML string
-                payload = etree.tostring(etree.fromstring(payload), encoding='unicode')
+                payload = etree.tostring(etree.fromstring(payload), encoding="unicode")
             except Exception as e:
                 module.fail_json(msg="Failed to parse provided XML payload: %s" % to_text(e), payload=payload)
 
