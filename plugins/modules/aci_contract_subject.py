@@ -285,8 +285,13 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, \
-    aci_contract_dscp_spec, aci_contract_qos_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+    aci_annotation_spec,
+    aci_contract_dscp_spec,
+    aci_contract_qos_spec,
+)
 
 MATCH_MAPPING = dict(
     all="All",
@@ -370,14 +375,16 @@ def main():
             aci_rn="subj-{0}".format(subject),
             module_object=subject,
             target_filter={"name": subject},
-        )
+        ),
     )
 
     # start logic to be consistent with GUI to only allow both direction or one-way
-    aci.construct_url(root_class=base_subject_dict.get("root_class"),
-                      subclass_1=base_subject_dict.get("subclass_1"),
-                      subclass_2=base_subject_dict.get("subclass_2"),
-                      child_classes=["vzInTerm", "vzOutTerm"])
+    aci.construct_url(
+        root_class=base_subject_dict.get("root_class"),
+        subclass_1=base_subject_dict.get("subclass_1"),
+        subclass_2=base_subject_dict.get("subclass_2"),
+        child_classes=["vzInTerm", "vzOutTerm"],
+    )
     aci.get_existing()
     direction_options = ["both", "one-way"]
     if state != "query":
@@ -388,7 +395,6 @@ def main():
         # end logic to be consistent with GUI to only allow both direction or one-way
 
     if state == "present":
-
         config = dict(
             name=subject,
             prio=priority,
@@ -402,19 +408,20 @@ def main():
 
         child_configs = []
         if direction == "one-way" and (
-                len(direction_options) == 2 or
-                dscp_consumer_to_provider is not None or
-                priority_consumer_to_provider is not None or
-                dscp_provider_to_consumer is not None or
-                priority_provider_to_consumer is not None):
+            len(direction_options) == 2
+            or dscp_consumer_to_provider is not None
+            or priority_consumer_to_provider is not None
+            or dscp_provider_to_consumer is not None
+            or priority_provider_to_consumer is not None
+        ):
             subj_dn = "uni/tn-{0}/brc-{1}/subj-{2}".format(tenant, contract, subject)
             child_configs = [
-                dict(vzInTerm=dict(attributes=dict(dn="{0}/intmnl".format(subj_dn),
-                                                   targetDscp=dscp_consumer_to_provider,
-                                                   prio=priority_consumer_to_provider))),
-                dict(vzOutTerm=dict(attributes=dict(dn="{0}/outtmnl".format(subj_dn),
-                                                    targetDscp=dscp_provider_to_consumer,
-                                                    prio=priority_provider_to_consumer))),
+                dict(
+                    vzInTerm=dict(attributes=dict(dn="{0}/intmnl".format(subj_dn), targetDscp=dscp_consumer_to_provider, prio=priority_consumer_to_provider))
+                ),
+                dict(
+                    vzOutTerm=dict(attributes=dict(dn="{0}/outtmnl".format(subj_dn), targetDscp=dscp_provider_to_consumer, prio=priority_provider_to_consumer))
+                ),
             ]
 
         aci.payload(aci_class=subject_class, class_config=config, child_configs=child_configs)

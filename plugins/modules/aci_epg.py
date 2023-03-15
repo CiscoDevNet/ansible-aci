@@ -341,7 +341,7 @@ def main():
         name_alias=dict(type="str"),
         monitoring_policy=dict(type="str"),
         custom_qos_policy=dict(type="str"),
-        useg=dict(type="str", choices=['yes', 'no']),
+        useg=dict(type="str", choices=["yes", "no"]),
     )
 
     module = AnsibleModule(
