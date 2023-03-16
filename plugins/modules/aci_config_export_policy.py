@@ -231,7 +231,7 @@ def main():
         snapshot=dict(type="bool"),
         export_destination=dict(type="str"),
         scheduler=dict(type="str"),
-        start_now=dict(type="str", type="bool"),
+        start_now=dict(type="bool"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
