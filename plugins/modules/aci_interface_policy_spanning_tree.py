@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# Copyright: (c) 2022, Akini Ross (@akinross)
 
+# Copyright: (c) 2023, Eric Girard <@netgirard>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,44 +12,31 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_tenant_span_src_group_src
-short_description: Manage SPAN source group sources (span:Src)
+module: aci_interface_policy_spanning_tree
+short_description: Manage spanning tree interface policies (stp:IfPol)
 description:
-- Manage SPAN source group sources on Cisco ACI fabrics.
+- Manage spanning tree interface policies on Cisco ACI fabrics.
 options:
-  name:
+  stp_policy:
     description:
-    - The name of the Span source.
+    - The name of the STP policy.
     type: str
+    aliases: [ name ]
   description:
     description:
-    - The description for Span source.
+    - The description for the policy.
     type: str
     aliases: [ descr ]
-  src_group:
+  bpdu_guard:
     description:
-    - The name of the Span source group.
-    type: str
-  tenant:
+    - The BPDU-Guard state.
+    type: bool
+    default: false
+  bpdu_filter:
     description:
-    - The name of the Tenant.
-    type: str
-    aliases: [ tenant_name ]
-  direction:
-    description:
-    - The direction of the SPAN source.
-    type: str
-    choices: [ incoming, outgoing, both ]
-  src_epg:
-    description:
-    - The name of the Span source epg.
-    type: str
-    aliases: [ epg ]
-  src_ap:
-    description:
-    - The name of the Span source ap.
-    type: str
-    aliases: [ ap ]
+    - The BPDU-Filter state.
+    type: bool
+    default: false
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -57,67 +44,61 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
-
+  name_alias:
+    description:
+    - The alias for the current object. This relates to the nameAlias field in ACI.
+    type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 - cisco.aci.owner
 
-notes:
-- The C(tenant) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) module can be used for this.
 seealso:
-- module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(span:SrcGrp).
+  description: More information about the internal APIC class B(stp:IfPol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Akini Ross (@akinross)
+- Eric Girard (@netgirard)
 """
 
 EXAMPLES = r"""
-- name: Create a SPAN source
-  cisco.aci.aci_tenant_span_src_group_src:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    src_group: my_span_source_group
-    tenant: prod
-    name: test
-    direction: incoming
-    src_epg: epg1
+- name: Add a spanning interface policy
+  cisco.aci.aci_interface_policy_spanning_tree:
+    host: '{{ inventory_hostname }}'
+    username: '{{ username }}'
+    password: '{{ password }}'
+    stp_policy: 'my_policy'
+    description: 'my_description'
+    bpdu_guard: true
+    bpdu_filter: false
     state: present
   delegate_to: localhost
 
-- name: Delete a SPAN source
-  cisco.aci.aci_tenant_span_src_group_src:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    src_group: my_span_source_group
-    tenant: prod
-    name: test
+- name: Query a specific spanning interface policy
+  cisco.aci.aci_interface_policy_spanning_tree:
+    host: '{{ inventory_hostname }}'
+    username: '{{ username }}'
+    password: '{{ password }}'
+    stp_policy: 'my_policy'
+    state: query
+  delegate_to: localhost
+
+- name: Query all spanning interface policies
+  cisco.aci.aci_interface_policy_spanning_tree:
+    host: '{{ inventory_hostname }}'
+    username: '{{ username }}'
+    password: '{{ password }}'
+    state: query
+  delegate_to: localhost
+
+- name: Remove a specific spanning interface policy
+  cisco.aci.aci_interface_policy_spanning_tree:
+    host: '{{ inventory_hostname }}'
+    username: '{{ username }}'
+    password: '{{ password }}'
+    stp_policy: 'my_policy'
     state: absent
   delegate_to: localhost
-
-- name: Query all SPAN sources
-  cisco.aci.aci_tenant_span_src_group_src:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    state: query
-  delegate_to: localhost
-  register: query_result
-
-- name: Query a specific SPAN source
-  cisco.aci.aci_tenant_span_src_group_src:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    name: test
-    state: query
-  delegate_to: localhost
-  register: query_result
 """
 
 RETURN = r"""
@@ -228,81 +209,68 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
-DIRECTION_MAP = {"incoming": "in", "outgoing": "out", "both": "both"}
-
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
+        stp_policy=dict(type="str", aliases=["name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
-        direction=dict(type="str", choices=["incoming", "outgoing", "both"]),
-        name=dict(type="str"),  # Not required for querying all objects
-        src_ap=dict(type="str", aliases=["ap"]),
-        src_epg=dict(type="str", aliases=["epg"]),
-        src_group=dict(type="str"),  # Not required for querying all objects
+        bpdu_guard=dict(type="bool", default=False),
+        bpdu_filter=dict(type="bool", default=False),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["name", "src_group", "tenant"]],
-            ["state", "present", ["name", "direction", "src_group", "tenant"]],
+            ["state", "absent", ["stp_policy"]],
+            ["state", "present", ["stp_policy"]],
         ],
-        required_together=[("src_ap", "src_epg")],
     )
 
-    aci = ACIModule(module)
-
+    stp_policy = module.params.get("stp_policy")
     description = module.params.get("description")
-    direction = module.params.get("direction")
-    name = module.params.get("name")
-    src_ap = module.params.get("src_ap")
-    src_epg = module.params.get("src_epg")
-    src_group = module.params.get("src_group")
     state = module.params.get("state")
-    tenant = module.params.get("tenant")
+    name_alias = module.params.get("name_alias")
 
+    # Build ctrl value for request
+    ctrl = []
+    if module.params.get("bpdu_filter") is True:
+        ctrl.append("bpdu-filter")
+    if module.params.get("bpdu_guard") is True:
+        ctrl.append("bpdu-guard")
+
+    # Order of control string must match ACI return value for idempotency
+    ctrl = ",".join(sorted(ctrl)) if ctrl else None
+
+    aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class="fvTenant",
-            aci_rn="tn-{0}".format(tenant),
-            module_object=tenant,
-            target_filter={"name": tenant},
+            aci_class="stpIfPol",
+            aci_rn="infra/ifPol-{0}".format(stp_policy),
+            module_object=stp_policy,
+            target_filter={"name": stp_policy},
         ),
-        subclass_1=dict(
-            aci_class="spanSrcGrp",
-            aci_rn="srcgrp-{0}".format(src_group),
-            module_object=src_group,
-            target_filter={"name": src_group},
-        ),
-        subclass_2=dict(
-            aci_class="spanSrc",
-            aci_rn="src-{0}".format(name),
-            module_object=name,
-            target_filter={"name": name},
-        ),
-        child_classes=["spanRsSrcToEpg"],
     )
 
     aci.get_existing()
 
     if state == "present":
-        tdn = None
-        if src_epg:
-            tdn = "uni/tn-{0}/ap-{1}/epg-{2}".format(tenant, src_ap, src_epg)
-
         aci.payload(
-            aci_class="spanSrc",
-            class_config=dict(descr=description, name=name, dir=DIRECTION_MAP.get(direction)),
-            child_configs=[{"spanRsSrcToEpg": {"attributes": {"tDn": tdn}}}],
+            aci_class="stpIfPol",
+            class_config=dict(
+                name=stp_policy,
+                ctrl=ctrl,
+                descr=description,
+                nameAlias=name_alias,
+            ),
         )
 
-        aci.get_diff(aci_class="spanSrc")
+        aci.get_diff(aci_class="stpIfPol")
 
         aci.post_config()
 

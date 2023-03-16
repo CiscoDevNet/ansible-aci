@@ -374,8 +374,8 @@ def main():
         switching_mode=dict(type="str", default="native", choices=["AVE", "native"]),
         epg=dict(type="str", aliases=["name", "epg_name"]),  # Not required for querying all objects
         enhanced_lag_policy=dict(type="str", aliases=["lag_policy"]),
-        vmm_uplink_active=dict(type='list', elements='str'),
-        vmm_uplink_standby=dict(type='list', elements='str'),
+        vmm_uplink_active=dict(type="list", elements="str"),
+        vmm_uplink_standby=dict(type="list", elements="str"),
         netflow=dict(type="bool"),
         primary_encap=dict(type="int"),
         resolution_immediacy=dict(type="str", choices=["immediate", "lazy", "pre-provision"]),
@@ -390,7 +390,7 @@ def main():
         port_allocation=dict(type="str", choices=["elastic", "fixed"]),
         number_of_ports=dict(type="int"),
         forged_transmits=dict(type="str", default="reject", choices=["accept", "reject"]),
-        mac_changes=dict(type="str", default="reject", choices=["accept", "reject"])
+        mac_changes=dict(type="str", default="reject", choices=["accept", "reject"]),
     )
 
     module = AnsibleModule(
@@ -440,7 +440,7 @@ def main():
         module.fail_json(msg="Domain type '%s' cannot have a 'vm_provider'" % domain_type)
 
     delimiter = module.params.get("delimiter")
-    untagged_vlan = 'yes' if module.params.get("untagged_vlan") is True else 'no'
+    untagged_vlan = "yes" if module.params.get("untagged_vlan") is True else "no"
     port_binding = module.params.get("port_binding")
     if port_binding == "static" or port_binding == "dynamic":
         port_binding = "{0}Binding".format(port_binding)
@@ -462,9 +462,9 @@ def main():
         if vmm_uplink_active is not None or vmm_uplink_standby is not None:
             uplink_order_cont = dict(fvUplinkOrderCont=dict(attributes=dict()))
             if vmm_uplink_active is not None:
-                uplink_order_cont['fvUplinkOrderCont']['attributes']['active'] = ",".join(vmm_uplink_active)
+                uplink_order_cont["fvUplinkOrderCont"]["attributes"]["active"] = ",".join(vmm_uplink_active)
             if vmm_uplink_standby is not None:
-                uplink_order_cont['fvUplinkOrderCont']['attributes']['standby'] = ",".join(vmm_uplink_standby)
+                uplink_order_cont["fvUplinkOrderCont"]["attributes"]["standby"] = ",".join(vmm_uplink_standby)
             child_configs.append(uplink_order_cont)
             child_classes.append("fvUplinkOrderCont")
 
@@ -533,7 +533,7 @@ def main():
                 untagged=untagged_vlan,
                 bindingType=port_binding,
                 portAllocation=port_allocation,
-                numPorts=number_of_ports
+                numPorts=number_of_ports,
             ),
             child_configs=child_configs,
         )

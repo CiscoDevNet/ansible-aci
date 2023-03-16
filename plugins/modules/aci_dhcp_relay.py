@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_dhcp_relay
 short_description: Manage DHCP relay policies.
@@ -51,9 +50,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new DHCP relay policy
   cisco.aci.aci_dhcp_relay:
     host: apic
@@ -95,9 +94,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
    current:
      description: The existing configuration from the APIC after the module has finished
      returned: success
@@ -200,7 +199,7 @@ RETURN = r'''
      returned: failure or debug
      type: str
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
-   '''
+   """
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
@@ -210,61 +209,57 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        name=dict(type='str', aliases=['relay_policy']),
-        description=dict(type='str'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        tenant=dict(type='str'),
+        name=dict(type="str", aliases=["relay_policy"]),
+        description=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        tenant=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['name', 'tenant']],
-            ['state', 'present', ['name', 'tenant']],
+            ["state", "absent", ["name", "tenant"]],
+            ["state", "present", ["name", "tenant"]],
         ],
     )
 
-    name = module.params.get('name')
-    description = module.params.get('description')
-    state = module.params.get('state')
-    tenant = module.params.get('tenant')
-    child_classes = ['dhcpRsProv']
+    name = module.params.get("name")
+    description = module.params.get("description")
+    state = module.params.get("state")
+    tenant = module.params.get("tenant")
+    child_classes = ["dhcpRsProv"]
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='dhcpRelayP',
-            aci_rn='relayp-{0}'.format(name),
+            aci_class="dhcpRelayP",
+            aci_rn="relayp-{0}".format(name),
             module_object=name,
-            target_filter={'name': name},
+            target_filter={"name": name},
         ),
         child_classes=child_classes,
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='dhcpRelayP',
-            class_config=dict(
-                name=name,
-                descr=description,
-                owner='tenant'
-            ),
+            aci_class="dhcpRelayP",
+            class_config=dict(name=name, descr=description, owner="tenant"),
         )
 
-        aci.get_diff(aci_class='dhcpRelayP')
+        aci.get_diff(aci_class="dhcpRelayP")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

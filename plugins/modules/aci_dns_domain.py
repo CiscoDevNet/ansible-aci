@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_dns_domain
 short_description: Manage DNS Provider (dnsDomain) objects.
@@ -54,9 +53,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new DNS domain
   cisco.aci.aci_dns_domain:
     host: apic
@@ -96,9 +95,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
    current:
      description: The existing configuration from the APIC after the module has finished
      returned: success
@@ -201,7 +200,7 @@ RETURN = r'''
      returned: failure or debug
      type: str
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
-   '''
+   """
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
@@ -211,59 +210,51 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        dns_profile=dict(type='str', aliases=['profile_name'], required=True),
-        domain=dict(type='str', aliases=['name', 'domain_name']),
-        default=dict(type='bool'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        dns_profile=dict(type="str", aliases=["profile_name"], required=True),
+        domain=dict(type="str", aliases=["name", "domain_name"]),
+        default=dict(type="bool"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['domain']],
-            ['state', 'present', ['domain']],
+            ["state", "absent", ["domain"]],
+            ["state", "present", ["domain"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    dns_profile = module.params.get('dns_profile')
-    domain = module.params.get('domain')
-    default = aci.boolean(module.params.get('default'))
-    state = module.params.get('state')
+    dns_profile = module.params.get("dns_profile")
+    domain = module.params.get("domain")
+    default = aci.boolean(module.params.get("default"))
+    state = module.params.get("state")
 
     aci.construct_url(
         root_class=dict(
-            aci_class='dnsProfile',
-            aci_rn='fabric/dnsp-{0}'.format(dns_profile),
+            aci_class="dnsProfile",
+            aci_rn="fabric/dnsp-{0}".format(dns_profile),
             module_object=dns_profile,
-            target_filter={'name': dns_profile},
+            target_filter={"name": dns_profile},
         ),
-        subclass_1=dict(
-            aci_class='dnsDomain',
-            aci_rn='dom-{0}'.format(domain),
-            module_object=domain,
-            target_filter={'name': domain}
-        ),
+        subclass_1=dict(aci_class="dnsDomain", aci_rn="dom-{0}".format(domain), module_object=domain, target_filter={"name": domain}),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='dnsDomain',
-            class_config=dict(
-                name=domain,
-                isDefault=default
-            ),
+            aci_class="dnsDomain",
+            class_config=dict(name=domain, isDefault=default),
         )
 
-        aci.get_diff(aci_class='dnsDomain')
+        aci.get_diff(aci_class="dnsDomain")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()
