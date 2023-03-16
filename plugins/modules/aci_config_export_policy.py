@@ -33,7 +33,7 @@ options:
     choices: [ json, xml ]
   target_dn:
     description:
-    - The distinguished name of the object to be exported. 
+    - The distinguished name of the object to be exported.
     - If no target_dn is included, the APIC will export the policy universe.
     type: str
   snapshot:
