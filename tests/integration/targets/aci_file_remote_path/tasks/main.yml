@@ -149,8 +149,8 @@
     - delete_again is not changed
     - delete.current == []
 
- - name: Delete Second File Remote Path
-   cisco.aci.aci_file_remote_path:
-    <<: *aci_info
-    name: ansible_second_file_path
-    state: absent
+- name: Delete Second File Remote Path
+  cisco.aci.aci_file_remote_path:
+   <<: *aci_info
+   name: ansible_second_file_path
+   state: absent
