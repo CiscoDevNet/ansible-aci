@@ -51,6 +51,16 @@
     <<: *aci_path
   register: nm_create_path_again
 
+- name: Create a second File Remote Path
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_info
+    name: ansible_second_file_path
+    auth_type: password
+    remote_host: test2.example.com
+    remote_port: 22
+    remote_protocol: scp
+    remote_path: /tmp
+
 - name: Verify creation of File Remote Path
   ansible.builtin.assert:
     that:
@@ -117,6 +127,7 @@
     - query_one.current.0.fileRemotePath.attributes.userName == "new_user"
     - query_one.current.0.fileRemotePath.attributes.remotePath == "/tmp/dummy"
     - query_all is not changed
+    - query_all.current | length > 1
 
 # REMOVE FILE REMOTE PATH
 - name: Delete a File Remote Path
@@ -137,3 +148,9 @@
     - delete is changed
     - delete_again is not changed
     - delete.current == []
+
+ - name: Delete Second File Remote Path
+   cisco.aci.aci_file_remote_path:
+    <<: *aci_info
+    name: ansible_second_file_path
+    state: absent

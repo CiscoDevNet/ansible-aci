@@ -23,51 +23,55 @@ options:
     type: str
   description:
     description:
-    - Description of the File Remote Path
+    - The description of the File Remote Path.
     type: str
   remote_host:
     description:
-    - Hostname or IP Address of the remote host
+    - The hostname or IP Address of the remote host.
     type: str
   remote_port:
     description:
-    - Port to access the remote host
+    - The port to access the remote host.
     type: int
   remote_protocol:
     description:
-    - Protocol to use to connect to the remote host
+    - The protocol to use to connect to the remote host.
     type: str
     choices: [ ftp, scp, sftp ]
   auth_type:
     description:
-    - Authentication type for the remote host. Cannot be set to ssh_key if protocol is ftp
+    - The authentication type for the remote host.
+    - Cannot be set to ssh_key if protocol is ftp.
     type: str
     choices: [ password, ssh_key ]
   remote_user:
     description:
-    - Username to access the remote host.
+    - The username to access the remote host.
     type: str
   remote_password:
     description:
-    - Password to access the remote host. Only used if auth_type is password
+    - The password to access the remote host.
+    - Only used if auth_type is password.
     type: str
   remote_ssh_key:
     description:
-    - Private SSH key used to access the remote host. Only used if auth_type is ssh_key
+    - The private SSH key used to access the remote host.
+    - Only used if auth_type is ssh_key.
     type: str
     aliases: [ remote_key ]
   remote_ssh_passphrase:
     description:
-    - Pass phrase used to decode private_key. Only used if auth_type is ssh_key
+    - The Pass phrase used to decode private_key.
+    - Only used if auth_type is ssh_key.
     type: str
     aliases: [ passphrase ]
   remote_path:
     description:
-    - Path on which the data will reside on the remote host
+    - The path on which the data will reside on the remote host.
     type: str
   management_epg:
     description:
-    - Management EPG to connect to the remote host on
+    - The management EPG to connect to the remote host on.
     type: str
   state:
     description:
@@ -78,6 +82,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 seealso:
 - name: APIC Management Information Model reference
@@ -238,11 +243,12 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         name=dict(type="str"),
         description=dict(type="str"),
