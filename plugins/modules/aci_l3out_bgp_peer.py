@@ -481,11 +481,7 @@ def main():
         path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, path_type, node_id, path_ep)
 
     child_configs = []
-    child_classes = [
-        "bgpRsPeerPfxPol",
-        "bgpAsP",
-        "bgpLocalAsnP"
-    ]
+    child_classes = ["bgpRsPeerPfxPol", "bgpAsP", "bgpLocalAsnP"]
 
     if remote_asn:
         child_configs.append(

@@ -4,7 +4,8 @@
 # Copyright: (c) 2022, Akini Ross (@akinross) <akinross@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
@@ -43,13 +44,11 @@ from ansible.plugins.lookup import LookupBase
 
 
 class LookupModule(LookupBase):
-
     def run(self, terms, **kwargs):
-
         interfaces = []
         errors = []
 
-        for interface_range in ','.join(terms).replace(" ", "").split(","):
+        for interface_range in ",".join(terms).replace(" ", "").split(","):
             if re.fullmatch(r"((\d+/)+\d+-\d+$)", interface_range):
                 slots = interface_range.rsplit("/", 1)[0]
                 range_start, range_stop = interface_range.rsplit("/", 1)[1].split("-")

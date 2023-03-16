@@ -221,7 +221,7 @@ def main():
         profile=dict(type="str", aliases=["spine_profile", "spine_switch_profile"]),
         name=dict(type="str", aliases=["association_name", "switch_association"]),
         policy_group=dict(type="str"),
-        description=dict(type='str', aliases=['descr']),
+        description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -239,7 +239,7 @@ def main():
     profile = module.params.get("profile")
     name = module.params.get("name")
     policy_group = module.params.get("policy_group")
-    description = module.params.get('description')
+    description = module.params.get("description")
     state = module.params.get("state")
     child_classes = ["fabricRsSpNodePGrp", "fabricNodeBlk"]
 

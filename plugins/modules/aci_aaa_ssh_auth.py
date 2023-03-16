@@ -5,13 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_aaa_ssh_auth
 short_description: Manage AAA SSH auth (aaaSshAuth) objects.
@@ -52,9 +51,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new SSH key
   cisco.aci.aci_aaa_ssh_auth:
     host: apic
@@ -96,9 +95,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
    current:
      description: The existing configuration from the APIC after the module has finished
      returned: success
@@ -201,7 +200,7 @@ RETURN = r'''
      returned: failure or debug
      type: str
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
-   '''
+   """
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
@@ -212,58 +211,55 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        aaa_user=dict(type='str', required=True),
-        auth_name=dict(type='str'),
-        data=dict(type='str'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        aaa_user=dict(type="str", required=True),
+        auth_name=dict(type="str"),
+        data=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['auth_name']],
-            ['state', 'present', ['auth_name', 'data']],
+            ["state", "absent", ["auth_name"]],
+            ["state", "present", ["auth_name", "data"]],
         ],
     )
 
-    aaa_user = module.params.get('aaa_user')
-    auth_name = module.params.get('auth_name')
-    data = module.params.get('data')
-    state = module.params.get('state')
+    aaa_user = module.params.get("aaa_user")
+    auth_name = module.params.get("auth_name")
+    data = module.params.get("data")
+    state = module.params.get("state")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='aaaUser',
-            aci_rn='userext/user-{0}'.format(aaa_user),
+            aci_class="aaaUser",
+            aci_rn="userext/user-{0}".format(aaa_user),
             module_object=aaa_user,
-            target_filter={'name': aaa_user},
+            target_filter={"name": aaa_user},
         ),
         subclass_1=dict(
-            aci_class='aaaSshAuth',
-            aci_rn='sshauth-{0}'.format(auth_name),
+            aci_class="aaaSshAuth",
+            aci_rn="sshauth-{0}".format(auth_name),
             module_object=auth_name,
-            target_filter={'name': auth_name},
+            target_filter={"name": auth_name},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='aaaSshAuth',
-            class_config=dict(
-                name=auth_name,
-                data=data
-            ),
+            aci_class="aaaSshAuth",
+            class_config=dict(name=auth_name, data=data),
         )
 
-        aci.get_diff(aci_class='aaaSshAuth')
+        aci.get_diff(aci_class="aaaSshAuth")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()
