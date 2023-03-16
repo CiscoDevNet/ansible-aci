@@ -19,24 +19,27 @@ description:
 options:
   name:
     description:
-    - The name of the Configuration Export Policy
+    - The name of the Configuration Export Policy.
     type: str
   description:
     description:
-    - Description of the Configuration Export Policy
+    - The description of the Configuration Export Policy.
     type: str
   format:
     description:
-    - Format of the export file. This defaults to json on the APIC.
+    - The format of the export file.
+    - This defaults to json on the APIC when unset on creation.
     type: str
     choices: [ json, xml ]
   target_dn:
     description:
-    - The distinguished name of the object to be exported. If no target_dn is included, the APIC will export the policy universe.
+    - The distinguished name of the object to be exported. 
+    - If no target_dn is included, the APIC will export the policy universe.
     type: str
   snapshot:
     description:
-    - Enables a snapshot of the configuration export policy. This defaults to False on the APIC.
+    - Enables a snapshot of the configuration export policy.
+    - This defaults to False on the APIC when unset on creation.
     type: bool
   export_destination:
     description:
@@ -46,6 +49,11 @@ options:
     description:
     - The name of the scheduler policy used for running scheduled export jobs.
     type: str
+  start_now:
+    description:
+    - Specifies if the configuration export policy should be applied now or at another time.
+    - This defaults to False on the APIC when unset on creation.
+    type: bool
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -55,6 +63,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 seealso:
 - name: APIC Management Information Model reference
@@ -208,11 +217,12 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         name=dict(type="str"),
         description=dict(type="str"),
@@ -221,6 +231,7 @@ def main():
         snapshot=dict(type="bool"),
         export_destination=dict(type="str"),
         scheduler=dict(type="str"),
+        start_now=dict(type="str", type="bool"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -242,6 +253,7 @@ def main():
     snapshot = aci.boolean(module.params.get("snapshot"))
     export_destination = module.params.get("export_destination")
     scheduler = module.params.get("scheduler")
+    start_now = aci.boolean(module.params.get("start_now"), "triggered", "untriggered")
     state = module.params.get("state")
 
     aci.construct_url(
@@ -281,6 +293,7 @@ def main():
                 format=format,
                 targetDn=target_dn,
                 snapshot=snapshot,
+                adminSt=start_now,
             ),
             child_configs=child_configs,
         )
