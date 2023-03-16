@@ -264,7 +264,6 @@ def main():
         pass
 
     if state == "present":
-
         aci.payload(
             aci_class="infraAttEntityP",
             class_config=dict(

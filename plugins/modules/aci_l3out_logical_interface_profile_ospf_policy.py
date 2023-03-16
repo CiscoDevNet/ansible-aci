@@ -314,21 +314,13 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        child_configs = [
-            dict(ospfRsIfPol=dict(attributes=dict(
-                tnOspfIfPolName=ospf_policy
-            )))
-        ]
+        child_configs = [dict(ospfRsIfPol=dict(attributes=dict(tnOspfIfPolName=ospf_policy)))]
 
         config = dict(authType=ospf_auth_type)
         if ospf_auth_key is not None:
             config.update(authKey=ospf_auth_key)
 
-        aci.payload(
-            aci_class="ospfIfP",
-            class_config=config,
-            child_configs=child_configs
-        )
+        aci.payload(aci_class="ospfIfP", class_config=config, child_configs=child_configs)
 
         aci.get_diff(aci_class="ospfIfP")
 

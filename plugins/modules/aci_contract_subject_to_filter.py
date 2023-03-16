@@ -301,16 +301,18 @@ def main():
             aci_rn="subj-{0}".format(subject),
             module_object=subject,
             target_filter={"name": subject},
-        )
+        ),
     )
 
     aci = ACIModule(module)
 
     # start logic to be consistent with GUI to only allow both direction or a one-way connection
-    aci.construct_url(root_class=base_subject_dict.get("root_class"),
-                      subclass_1=base_subject_dict.get("subclass_1"),
-                      subclass_2=base_subject_dict.get("subclass_2"),
-                      child_classes=["vzInTerm", "vzOutTerm"])
+    aci.construct_url(
+        root_class=base_subject_dict.get("root_class"),
+        subclass_1=base_subject_dict.get("subclass_1"),
+        subclass_2=base_subject_dict.get("subclass_2"),
+        child_classes=["vzInTerm", "vzOutTerm"],
+    )
     aci.get_existing()
     direction_options = ["both"]
     if aci.existing:
@@ -323,23 +325,28 @@ def main():
     if direction == "both":
         filter_class = "vzRsSubjFiltAtt"
         # dict unpacking with **base_subject_dict raises syntax error in python2.7 thus dict lookup
-        aci.construct_url(root_class=base_subject_dict.get("root_class"),
-                          subclass_1=base_subject_dict.get("subclass_1"),
-                          subclass_2=base_subject_dict.get("subclass_2"),
-                          subclass_3=dict(
-                              aci_class=filter_class,
-                              aci_rn="rssubjFiltAtt-{0}".format(filter_name),
-                              module_object=filter_name,
-                              target_filter=dict(tnVzFilterName=filter_name)))
+        aci.construct_url(
+            root_class=base_subject_dict.get("root_class"),
+            subclass_1=base_subject_dict.get("subclass_1"),
+            subclass_2=base_subject_dict.get("subclass_2"),
+            subclass_3=dict(
+                aci_class=filter_class,
+                aci_rn="rssubjFiltAtt-{0}".format(filter_name),
+                module_object=filter_name,
+                target_filter=dict(tnVzFilterName=filter_name),
+            ),
+        )
     else:
         term_class, term = ("vzInTerm", "intmnl") if direction == "consumer_to_provider" else ("vzOutTerm", "outtmnl")
         filter_class = "vzRsFiltAtt"
         # dict unpacking with **base_subject_dict raises syntax error in python2.7 thus dict lookup
-        aci.construct_url(root_class=base_subject_dict.get("root_class"),
-                          subclass_1=base_subject_dict.get("subclass_1"),
-                          subclass_2=base_subject_dict.get("subclass_2"),
-                          subclass_3=dict(aci_class=term_class, aci_rn=term),
-                          child_classes=[filter_class])
+        aci.construct_url(
+            root_class=base_subject_dict.get("root_class"),
+            subclass_1=base_subject_dict.get("subclass_1"),
+            subclass_2=base_subject_dict.get("subclass_2"),
+            subclass_3=dict(aci_class=term_class, aci_rn=term),
+            child_classes=[filter_class],
+        )
 
     aci.get_existing()
 
@@ -362,8 +369,15 @@ def main():
     else:
         # filter the output of current/previous to tnVzFilterName only since existing consist full vzInTerm/vzOutTerm
         def filter_result(input_list, name):
-            return [{key: filter_entry} for entry in input_list if 'children' in entry[term_class] for children in entry[term_class]['children']
-                    for key, filter_entry in children.items() if filter_entry['attributes']['tnVzFilterName'] == name]
+            return [
+                {key: filter_entry}
+                for entry in input_list
+                if "children" in entry[term_class]
+                for children in entry[term_class]["children"]
+                for key, filter_entry in children.items()
+                if filter_entry["attributes"]["tnVzFilterName"] == name
+            ]
+
         # pass function to
         filter_existing = (filter_result, filter_name)
         aci.exit_json(filter_existing)
