@@ -20,12 +20,26 @@
     name: ansible_export_policy
     state: absent
 
+- name: Delete Config Export Policy with scheduler
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_info
+    name: ansible_export_policy_scheduler
+    state: absent
+
+- name: Delete Config Export Policy with export destination
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_info
+    name: ansible_export_policy_destination
+    state: absent
+
 # CREATE CONFIG EXPORT POLICY
 - name: Create a Config Export Policy (check mode)
   cisco.aci.aci_config_export_policy: &aci_conf_policy
     <<: *aci_info
     name: ansible_export_policy
     description: Test Config Export Policy
+    scheduler: test_scheduler
+    export_destination: test_dest
   check_mode: yes
   register: cm_create_conf_export
 
@@ -39,10 +53,19 @@
     <<: *aci_conf_policy
   register: nm_create_conf_export_again
 
-- name: Create a second Config Export Policy
+- name: Create a Config Export Policy with scheduler
   cisco.aci.aci_config_export_policy:
     <<: *aci_info
-    name: ansible_second_export_policy
+    name: ansible_export_policy_scheduler
+    scheduler: test_scheduler
+  register: sched_policy
+
+- name: Create a Config Export Policy with export destination
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_info
+    name: ansible_export_policy_destination
+    export_destination: test_dest
+  register: dest_policy
 
 - name: Verify creation of File Remote Path
   ansible.builtin.assert:
@@ -56,6 +79,8 @@
     - nm_create_conf_export_again.current.0.configExportP.attributes.name == "ansible_export_policy"
     - nm_create_conf_export_again.current.0.configExportP.attributes.descr == "Test Config Export Policy"
     - nm_create_conf_export_again.current.0.configExportP.attributes.format == "json"
+    - sched_policy.current.0.configExportP.children.1.configRsExportScheduler.attributes.tnTrigSchedPName == "test_scheduler"
+    - dest_policy.current.0.configExportP.children.0.configRsRemotePath.attributes.tnFileRemotePathName == "test_dest"
 
 # UPDATE CONFIG EXPORT POLICY
 - name: Update Config Export Policy
@@ -118,8 +143,14 @@
     - delete_again is not changed
     - delete.current == []
 
-- name: Delete second Config Export Policy
+- name: Delete Config Export Policy with scheduler
   cisco.aci.aci_config_export_policy:
     <<: *aci_info
-    name: ansible_second_export_policy
+    name: ansible_export_policy_scheduler
+    state: absent
+
+- name: Delete Config Export Policy with export destination
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_info
+    name: ansible_export_policy_destination
     state: absent
