@@ -55,7 +55,6 @@ options:
   endpoint_move_detect:
     description:
     - Determines if GARP should be enabled to detect when End Points move.
-    - The APIC defaults to C(garp) when unset during creation.
     type: str
     choices: [ default, garp ]
   endpoint_retention_action:

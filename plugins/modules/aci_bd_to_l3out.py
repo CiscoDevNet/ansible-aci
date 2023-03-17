@@ -54,8 +54,50 @@ author:
 - Jacob McGill (@jmcgill298)
 """
 
-# FIXME: Add examples
-EXAMPLES = r""" # """
+EXAMPLES = r"""
+- name: Bind Bridge Domain to L3 Out
+  cisco.aci.aci_bd_to_l3out:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    bd: web_servers
+    l3out: prod_l3out
+    tenant: prod
+    state: present
+  delegate_to: localhost
+
+- name: Unbind Bridge Domain from L3 Out
+  cisco.aci.aci_bd_to_l3out:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    bd: web_servers
+    l3out: prod_l3out
+    tenant: prod
+    state: absent
+  delegate_to: localhost
+
+- name: Query all Bridge Domains bound to L3 Outs
+  cisco.aci.aci_bd_to_l3out:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query specific Bridge Domain(s) bound to an L3 Out
+  cisco.aci.aci_bd_to_l3out:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    bd: web_servers
+    l3out: prod_l3out
+    tenant: prod
+    state: query
+  delegate_to: localhost
+  register: query_result
+"""
 
 RETURN = r"""
 current:

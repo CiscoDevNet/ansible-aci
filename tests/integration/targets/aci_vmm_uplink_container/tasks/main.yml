@@ -68,6 +68,7 @@
       that:
       - create_container.current.0.vmmUplinkPCont.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont"
       - create_container.current.0.vmmUplinkPCont.attributes.numOfUplinks == "2"
+      - create_container.current.0.vmmUplinkPCont.attributes.annotation == 'orchestrator:ansible'
 
   # CREATE VMWARE UPLINK CONTAINER AGAIN TO CHECK IDEMPOTENCE
   - name: Create VMWare Uplink Container again

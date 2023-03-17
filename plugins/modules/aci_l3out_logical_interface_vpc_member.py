@@ -13,9 +13,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_logical_interface_vpc_member
-short_description: Manage Member Node objects (l3extMember:Member)
+short_description: Manage Member Node objects (l3ext:Member)
 description:
-- Manage Member Node objects (l3extMember:Member)
+- Manage Member Node objects (l3ext:Member)
 options:
   description:
     description:
@@ -338,9 +338,7 @@ def main():
 
     if not path_dn:
         if pod_id and node_id and path_ep:
-            path_dn = ("topology/pod-{0}/protpaths-{1}/pathep-[{2}]".format(pod_id,
-                                                                            node_id,
-                                                                            path_ep))
+            path_dn = "topology/pod-{0}/protpaths-{1}/pathep-[{2}]".format(pod_id, node_id, path_ep)
         else:
             path_dn = None
 

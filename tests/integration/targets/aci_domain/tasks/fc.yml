@@ -47,6 +47,7 @@
     - cm_add_domain.sent.fcDomP.attributes.name == nm_add_domain.sent.fcDomP.attributes.name == 'fc_dom'
     - cm_add_domain.proposed.fcDomP.attributes.name == nm_add_domain.proposed.fcDomP.attributes.name == 'fc_dom'
     - cm_add_domain.current == cm_add_domain.previous == nm_add_domain.previous == []
+    - nm_add_domain.current.0.fcDomP.attributes.annotation == 'orchestrator:ansible'
     - nm_add_domain.current.0.fcDomP.attributes.name == 'fc_dom'
     - nm_add_domain.current.0.fcDomP.attributes.dn == 'uni/fc-fc_dom'
 

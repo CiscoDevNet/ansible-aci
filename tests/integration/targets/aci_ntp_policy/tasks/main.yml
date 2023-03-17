@@ -1,0 +1,209 @@
+# Test code for the ACI modules
+# Copyright: (c) 2022, Tim Cragg (timcragg)
+#
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove any pre-existing NTP policy
+  cisco.aci.aci_ntp_policy: &policy_absent
+    <<: *aci_info
+    name: ansible_ntp_policy
+    state: absent
+
+# ADD NTP POLICY
+- name: Add NTP policy (check_mode)
+  cisco.aci.aci_ntp_policy: &policy_present
+    <<: *aci_info
+    name: ansible_ntp_policy
+    description: 'Ansible test policy'
+    admin_state: enabled
+    server_state: disabled
+    auth_state: disabled
+    state: present
+  check_mode: yes
+  register: cm_add_policy
+
+- name: Add NTP policy (normal mode)
+  cisco.aci.aci_ntp_policy:
+    <<: *policy_present
+  register: nm_add_policy
+
+- name: Add NTP policy again (check mode)
+  cisco.aci.aci_ntp_policy:
+    <<: *policy_present
+  check_mode: yes
+  register: cm_add_policy_again
+
+- name: Add NTP policy again (normal mode)
+  cisco.aci.aci_ntp_policy:
+    <<: *policy_present
+  register: nm_add_policy_again
+
+- name: Verify add policy
+  assert:
+    that:
+    - cm_add_policy is changed
+    - nm_add_policy is changed
+    - nm_add_policy.current.0.datetimePol.attributes.dn == 'uni/fabric/time-ansible_ntp_policy'
+    - nm_add_policy.current.0.datetimePol.attributes.name == 'ansible_ntp_policy'
+    - nm_add_policy.current.0.datetimePol.attributes.descr == 'Ansible test policy'
+    - nm_add_policy.current.0.datetimePol.attributes.adminSt == 'enabled'
+    - nm_add_policy.current.0.datetimePol.attributes.serverState == 'disabled'
+    - nm_add_policy.current.0.datetimePol.attributes.authSt == 'disabled'
+    - cm_add_policy_again is not changed
+    - nm_add_policy_again is not changed
+    - nm_add_policy_again.current.0.datetimePol.attributes.dn == 'uni/fabric/time-ansible_ntp_policy'
+    - nm_add_policy_again.current.0.datetimePol.attributes.name == 'ansible_ntp_policy'
+    - nm_add_policy_again.current.0.datetimePol.attributes.descr == 'Ansible test policy'
+    - nm_add_policy_again.current.0.datetimePol.attributes.adminSt == 'enabled'
+    - nm_add_policy_again.current.0.datetimePol.attributes.serverState == 'disabled'
+    - nm_add_policy_again.current.0.datetimePol.attributes.authSt == 'disabled'
+
+# MODIFY POLICY
+- name: Modify policy (check_mode)
+  cisco.aci.aci_ntp_policy: &policy_changed
+    <<: *aci_info
+    name: ansible_ntp_policy
+    description: 'Ansible updated test policy'
+    admin_state: enabled
+    server_state: enabled
+    auth_state: disabled
+    state: present
+  check_mode: yes
+  register: cm_modify_policy
+
+- name: Modify policy (normal mode)
+  cisco.aci.aci_ntp_policy:
+    <<: *policy_changed
+  register: nm_modify_policy
+
+- name: Modify policy again (check mode)
+  cisco.aci.aci_ntp_policy:
+    <<: *policy_changed
+  check_mode: yes
+  register: cm_modify_policy_again
+
+- name: Modify policy again (normal mode)
+  cisco.aci.aci_ntp_policy:
+    <<: *policy_changed
+  register: nm_modify_policy_again
+
+- name: Verify modify policy
+  assert:
+    that:
+    - cm_modify_policy is changed
+    - nm_modify_policy is changed
+    - nm_modify_policy.current.0.datetimePol.attributes.dn == 'uni/fabric/time-ansible_ntp_policy'
+    - nm_modify_policy.current.0.datetimePol.attributes.name == 'ansible_ntp_policy'
+    - nm_modify_policy.current.0.datetimePol.attributes.descr == 'Ansible updated test policy'
+    - nm_modify_policy.current.0.datetimePol.attributes.adminSt == 'enabled'
+    - nm_modify_policy.current.0.datetimePol.attributes.serverState == 'enabled'
+    - nm_modify_policy.current.0.datetimePol.attributes.authSt == 'disabled'
+    - cm_modify_policy_again is not changed
+    - nm_modify_policy_again is not changed
+    - nm_modify_policy_again.current.0.datetimePol.attributes.dn == 'uni/fabric/time-ansible_ntp_policy'
+    - nm_modify_policy_again.current.0.datetimePol.attributes.name == 'ansible_ntp_policy'
+    - nm_modify_policy_again.current.0.datetimePol.attributes.descr == 'Ansible updated test policy'
+    - nm_modify_policy_again.current.0.datetimePol.attributes.adminSt == 'enabled'
+    - nm_modify_policy_again.current.0.datetimePol.attributes.serverState == 'enabled'
+    - nm_modify_policy_again.current.0.datetimePol.attributes.authSt == 'disabled'
+
+# QUERY ALL POLICIES
+- name: Query all policies (check_mode)
+  cisco.aci.aci_ntp_policy: &policy_query_all
+    <<: *aci_info
+    state: query
+  check_mode: yes
+  register: cm_query_all_policies
+
+- name: Query all policies (normal mode)
+  cisco.aci.aci_ntp_policy:
+    <<: *policy_query_all
+  register: nm_query_all_policies
+
+- name: Verify query_all_policies
+  assert:
+    that:
+    - cm_query_all_policies is not changed
+    - nm_query_all_policies is not changed
+
+# QUERY OUR USER
+- name: Query our policy (check_mode)
+  cisco.aci.aci_ntp_policy:
+    <<: *policy_query_all
+    name: ansible_ntp_policy
+  check_mode: yes
+  register: cm_query_policy
+
+- name: Query our policy (normal mode)
+  cisco.aci.aci_ntp_policy:
+    <<: *policy_query_all
+    name: ansible_ntp_policy
+  register: nm_query_policy
+
+- name: Verify query_policy
+  assert:
+    that:
+    - cm_query_policy is not changed
+    - nm_query_policy is not changed
+    - cm_query_policy == nm_query_policy
+    - nm_query_policy.current.0.datetimePol.attributes.dn == 'uni/fabric/time-ansible_ntp_policy'
+    - nm_query_policy.current.0.datetimePol.attributes.name == 'ansible_ntp_policy'
+    - nm_query_policy.current.0.datetimePol.attributes.descr == 'Ansible updated test policy'
+    - nm_query_policy.current.0.datetimePol.attributes.adminSt == 'enabled'
+    - nm_query_policy.current.0.datetimePol.attributes.serverState == 'enabled'
+    - nm_query_policy.current.0.datetimePol.attributes.authSt == 'disabled'
+
+# REMOVE POLICY
+- name: Remove policy (check_mode)
+  cisco.aci.aci_ntp_policy:
+    <<: *policy_absent
+  check_mode: yes
+  register: cm_remove_policy
+
+- name: Remove policy (normal mode)
+  cisco.aci.aci_ntp_policy:
+    <<: *policy_absent
+  register: nm_remove_policy
+
+- name: Remove policy again (check_mode)
+  cisco.aci.aci_ntp_policy:
+    <<: *policy_absent
+  check_mode: yes
+  register: cm_remove_policy_again
+
+- name: Remove policy again (normal mode)
+  cisco.aci.aci_ntp_policy:
+    <<: *policy_absent
+  register: nm_remove_policy_again
+
+- name: Verify remove_policy
+  assert:
+    that:
+    - cm_remove_policy is changed
+    - nm_remove_policy is changed
+    - nm_remove_policy.current == []
+    - nm_remove_policy.previous.0.datetimePol.attributes.dn == 'uni/fabric/time-ansible_ntp_policy'
+    - nm_remove_policy.previous.0.datetimePol.attributes.name == 'ansible_ntp_policy'
+    - nm_remove_policy.previous.0.datetimePol.attributes.descr == 'Ansible updated test policy'
+    - nm_remove_policy.previous.0.datetimePol.attributes.adminSt == 'enabled'
+    - nm_remove_policy.previous.0.datetimePol.attributes.serverState == 'enabled'
+    - nm_remove_policy.previous.0.datetimePol.attributes.authSt == 'disabled'
+    - cm_remove_policy_again is not changed
+    - nm_remove_policy_again is not changed

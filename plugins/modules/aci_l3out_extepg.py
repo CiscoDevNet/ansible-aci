@@ -92,7 +92,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Delete ExtEpg
-  cisco.aci.aci_extepg:
+  cisco.aci.aci_l3out_extepg:
     host: apic
     username: admin
     password: SomeSecretPassword

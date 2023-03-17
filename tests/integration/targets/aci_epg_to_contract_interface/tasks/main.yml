@@ -19,171 +19,178 @@
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
 
-- name: Ensure anstest1 does not exist prior to testing
-  cisco.aci.aci_tenant: &anstest1_absent
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Ensure ansible_test does not exist prior to testing
+  cisco.aci.aci_tenant: &ansible_test_absent
     <<: *aci_info
     output_level: debug
-    tenant: anstest1
+    tenant: ansible_test
     state: absent
 
-- name: Ensure anstest2 does not exist prior to testing
-  cisco.aci.aci_tenant: &anstest2_absent
+- name: Ensure ansible_test_2 does not exist prior to testing
+  cisco.aci.aci_tenant: &ansible_test_2_absent
     <<: *aci_info
     output_level: debug
-    tenant: anstest2
+    tenant: ansible_test_2
     state: absent
 
-- name: Ensure anstest1 exist prior to testing
-  cisco.aci.aci_tenant: &anstest1_present
-    <<: *anstest1_absent
-    state: present
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Ensure ansible_test exist prior to testing
+    cisco.aci.aci_tenant: &ansible_test_present
+      <<: *ansible_test_absent
+      state: present
 
-- name: Ensure application profile exist under anstest1 tenant
-  cisco.aci.aci_ap: &anstest1_ap_present
-    <<: *anstest1_present
-    ap: anstest1_ap
-    state: present
-  register: anstest1_ap_present
+  - name: Ensure application profile exist under ansible_test tenant
+    cisco.aci.aci_ap: &anstest1_ap_present
+      <<: *ansible_test_present
+      ap: anstest1_ap
+      state: present
+    register: anstest1_ap_present
 
-- name: Ensure EPG exist under application profile - anstest1_ap
-  cisco.aci.aci_epg: &anstest1_epg_present
-    <<: *anstest1_ap_present
-    epg: anstest1_epg
-    bd: 'default'
-    description: Ansible Test
-    state: present
-  register: anstest1_epg_present
+  - name: Ensure EPG exist under application profile - anstest1_ap
+    cisco.aci.aci_epg: &anstest1_epg_present
+      <<: *anstest1_ap_present
+      epg: anstest1_epg
+      bd: 'default'
+      description: Ansible Test
+      state: present
+    register: anstest1_epg_present
 
-- name: Ensure anstest2 exists
-  cisco.aci.aci_tenant: &anstest2_present
-    <<: *anstest2_absent
-    state: present
+  - name: Ensure ansible_test_2 exists
+    cisco.aci.aci_tenant: &ansible_test_2_present
+      <<: *ansible_test_2_absent
+      state: present
 
-- name: Ensure contract exists under anstest2 tenant
-  cisco.aci.aci_contract:
-    <<: *anstest2_present
-    contract: inter_tenant_contract
-    description: Ansible Test
-    scope: global
-    state: present
-  register: inter_tenant_contract
+  - name: Ensure contract exists under ansible_test_2 tenant
+    cisco.aci.aci_contract:
+      <<: *ansible_test_2_present
+      contract: inter_tenant_contract
+      description: Ansible Test
+      scope: global
+      state: present
+    register: inter_tenant_contract
 
-- name: Ensure inter_tenant_contract exported from anstest2 to anstest1
-  cisco.aci.aci_contract_export:
-    <<: *aci_info
-    name: inter_tenant_contract_interface
-    destination_tenant: anstest1
-    contract: inter_tenant_contract
-    tenant: anstest2
-    state: present
-  register: testcif1
+  - name: Ensure inter_tenant_contract exported from ansible_test_2 to ansible_test
+    cisco.aci.aci_contract_export:
+      <<: *aci_info
+      name: inter_tenant_contract_interface
+      destination_tenant: ansible_test
+      contract: inter_tenant_contract
+      tenant: ansible_test_2
+      state: present
+    register: testcif1
 
-- name: Ensure inter_tenant_contract_interface binding exist in anstest1_epg
-  cisco.aci.aci_epg_to_contract_interface: &contract_interface_binding_present
-    <<: *aci_info
-    tenant: anstest1
-    ap: anstest1_ap
-    epg: anstest1_epg
-    contract_interface: inter_tenant_contract_interface
-    state: present
-  register: inter_tenant_contract_interface_present
+  - name: Ensure inter_tenant_contract_interface binding exist in anstest1_epg
+    cisco.aci.aci_epg_to_contract_interface: &contract_interface_binding_present
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest1_ap
+      epg: anstest1_epg
+      contract_interface: inter_tenant_contract_interface
+      state: present
+    register: inter_tenant_contract_interface_present
 
-- name: Ensure inter_tenant_contract_interface binding with anstest1_epg
-  assert:
-    that:
-      - inter_tenant_contract_interface_present is changed
-      - inter_tenant_contract_interface_present.current | length == 1
-      - inter_tenant_contract_interface_present.current.0.fvRsConsIf.attributes.tnVzCPIfName == 'inter_tenant_contract_interface'
-      - inter_tenant_contract_interface_present.current.0.fvRsConsIf.attributes.prio == 'unspecified'
+  - name: Ensure inter_tenant_contract_interface binding with anstest1_epg
+    assert:
+      that:
+        - inter_tenant_contract_interface_present is changed
+        - inter_tenant_contract_interface_present.current | length == 1
+        - inter_tenant_contract_interface_present.current.0.fvRsConsIf.attributes.tnVzCPIfName == 'inter_tenant_contract_interface'
+        - inter_tenant_contract_interface_present.current.0.fvRsConsIf.attributes.prio == 'unspecified'
+        - inter_tenant_contract_interface_present.current.0.fvRsConsIf.attributes.annotation == 'orchestrator:ansible'
 
-- name: Ensure inter_tenant_contract_interface binding with anstest1_epg - idempotency works
-  cisco.aci.aci_epg_to_contract_interface:
-    <<: *contract_interface_binding_present
-  register: idempotency_check
+  - name: Ensure inter_tenant_contract_interface binding with anstest1_epg - idempotency works
+    cisco.aci.aci_epg_to_contract_interface:
+      <<: *contract_interface_binding_present
+    register: idempotency_check
 
-- name: Verfication of idempotency_check
-  assert:
-    that:
-      - idempotency_check is not changed
+  - name: Verfication of idempotency_check
+    assert:
+      that:
+        - idempotency_check is not changed
 
-- name: Query a specific consumed contract interface
-  cisco.aci.aci_epg_to_contract_interface:
-    <<: *aci_info
-    tenant: anstest1
-    ap: anstest1_ap
-    epg: anstest1_epg
-    contract_interface: inter_tenant_contract_interface
-    state: query
-  register: single_object_query_result
+  - name: Query a specific consumed contract interface
+    cisco.aci.aci_epg_to_contract_interface:
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest1_ap
+      epg: anstest1_epg
+      contract_interface: inter_tenant_contract_interface
+      state: query
+    register: single_object_query_result
 
-- name: Verification of single consumed contract interface
-  assert:
-    that:
-      - single_object_query_result is not changed
-      - single_object_query_result.current.0.fvRsConsIf.attributes.tnVzCPIfName == 'inter_tenant_contract_interface'
-      - single_object_query_result.current.0.fvRsConsIf.attributes.tDn == 'uni/tn-anstest1/cif-inter_tenant_contract_interface'
-      - single_object_query_result.current.0.fvRsConsIf.attributes.prio == 'unspecified'
-      - single_object_query_result.current.0.fvRsConsIf.attributes.state == 'formed'
+  - name: Verification of single consumed contract interface
+    assert:
+      that:
+        - single_object_query_result is not changed
+        - single_object_query_result.current.0.fvRsConsIf.attributes.tnVzCPIfName == 'inter_tenant_contract_interface'
+        - single_object_query_result.current.0.fvRsConsIf.attributes.tDn == 'uni/tn-ansible_test/cif-inter_tenant_contract_interface'
+        - single_object_query_result.current.0.fvRsConsIf.attributes.prio == 'unspecified'
+        - single_object_query_result.current.0.fvRsConsIf.attributes.state == 'formed'
 
-- name: Query all  consumed contract interfaces
-  cisco.aci.aci_epg_to_contract_interface:
-    <<: *aci_info
-    state: query
-  register: all_object_query_result
+  - name: Query all  consumed contract interfaces
+    cisco.aci.aci_epg_to_contract_interface:
+      <<: *aci_info
+      state: query
+    register: all_object_query_result
 
-- name: Verification of all consumed contract interface
-  assert:
-    that:
-      - all_object_query_result is not changed
-      - inter_tenant_contract_interface_present.current | length >= 1
+  - name: Verification of all consumed contract interface
+    assert:
+      that:
+        - all_object_query_result is not changed
+        - inter_tenant_contract_interface_present.current | length >= 1
 
-- name: delete consumed contract interface
-  cisco.aci.aci_epg_to_contract_interface:
-    <<: *contract_interface_binding_present
-    state: absent
+  - name: delete consumed contract interface
+    cisco.aci.aci_epg_to_contract_interface:
+      <<: *contract_interface_binding_present
+      state: absent
 
-- name: Ensure temp_contract exists under anstest2 tenant
-  cisco.aci.aci_contract:
-    <<: *anstest2_present
-    contract: temp_contract
-    description: Ansible Test
-    scope: global
-    state: present
+  - name: Ensure temp_contract exists under ansible_test_2 tenant
+    cisco.aci.aci_contract:
+      <<: *ansible_test_2_present
+      contract: temp_contract
+      description: Ansible Test
+      scope: global
+      state: present
 
-- name: Negative check with invalid consumed contract interface binding with anstest1_epg
-  cisco.aci.aci_epg_to_contract_interface:
-    <<: *aci_info
-    tenant: anstest1
-    ap: anstest1_ap
-    epg: anstest1_epg
-    contract_interface: temp_contract # contract was not exported, test expected to fail
-    state: present
-  ignore_errors: yes
+  - name: Negative check with invalid consumed contract interface binding with anstest1_epg
+    cisco.aci.aci_epg_to_contract_interface:
+      <<: *aci_info
+      tenant: ansible_test
+      ap: anstest1_ap
+      epg: anstest1_epg
+      contract_interface: temp_contract # contract was not exported, test expected to fail
+      state: present
+    ignore_errors: yes
 
-- name: check missing parameters while binding consumed contract interface with anstest1_epg
-  cisco.aci.aci_epg_to_contract_interface:
-    <<: *contract_interface_binding_present
-    contract_interface: "{{ fakevar | default(omit) }}"
-    state: present
-  ignore_errors: yes
+  - name: check missing parameters while binding consumed contract interface with anstest1_epg
+    cisco.aci.aci_epg_to_contract_interface:
+      <<: *contract_interface_binding_present
+      contract_interface: "{{ fakevar | default(omit) }}"
+      state: present
+    ignore_errors: yes
 
-# cleanup session
-- name: delete anstest1_epg_present
-  cisco.aci.aci_epg:
-    <<: *anstest1_epg_present
-    state: absent
+  # cleanup session
+  - name: delete anstest1_epg_present
+    cisco.aci.aci_epg:
+      <<: *anstest1_epg_present
+      state: absent
 
-- name: delete anstest1_ap_present
-  cisco.aci.aci_ap:
-    <<: *anstest1_ap_present
-    state: absent
+  - name: delete anstest1_ap_present
+    cisco.aci.aci_ap:
+      <<: *anstest1_ap_present
+      state: absent
 
-- name: delete anstest1
-  cisco.aci.aci_tenant:
-    <<: *anstest1_present
-    state: absent
+  - name: delete ansible_test
+    cisco.aci.aci_tenant:
+      <<: *ansible_test_present
+      state: absent
 
-- name: delete anstest2
-  cisco.aci.aci_tenant:
-    <<: *anstest2_present
-    state: absent
+  - name: delete ansible_test_2
+    cisco.aci.aci_tenant:
+      <<: *ansible_test_2_present
+      state: absent

@@ -17,7 +17,6 @@
     pool_allocation_mode: static
     state: absent
 
-
 # ADD VLAN POOL
 - name: Add static vlan pool (check_mode)
   cisco.aci.aci_vlan_pool: &static_vlan_pool_present
@@ -54,6 +53,7 @@
     - nm_add_static_vlan_pool.current.0.fvnsVlanInstP.attributes.descr == ''
     - nm_add_static_vlan_pool.current.0.fvnsVlanInstP.attributes.dn == 'uni/infra/vlanns-[anstest]-static'
     - nm_add_static_vlan_pool.current.0.fvnsVlanInstP.attributes.name == 'anstest'
+    - nm_add_static_vlan_pool.current.0.fvnsVlanInstP.attributes.annotation == 'orchestrator:ansible'
 
 - name: Add static_vlan_pool again (check_mode)
   cisco.aci.aci_vlan_pool: *static_vlan_pool_present

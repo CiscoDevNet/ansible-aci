@@ -61,9 +61,9 @@ options:
   bfd:
     description:
     - Determines if bfd is required for route control.
-    - The APIC defaults to C(null) when unset during creation.
+    - The APIC defaults to C(None) when unset during creation.
     type: str
-    choices: [ bfd, null ]
+    choices: [ bfd, None ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.

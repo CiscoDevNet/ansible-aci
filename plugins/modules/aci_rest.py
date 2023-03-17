@@ -45,20 +45,18 @@ options:
     - When used instead of C(src), sets the payload of the API request directly.
     - This may be convenient to template simple requests.
     - For anything complex use the C(template) lookup plugin (see examples)
-      or the M(template) module with parameter C(src).
+      or the C(template) module with parameter C(src).
     type: raw
   src:
     description:
     - Name of the absolute path of the filename that includes the body
       of the HTTP request being sent to the ACI fabric.
     - If you require a templated payload, use the C(content) parameter
-      together with the C(template) lookup plugin, or use M(template).
+      together with the C(template) lookup plugin, or use C(template).
     type: path
     aliases: [ config_file ]
 extends_documentation_fragment:
 - cisco.aci.aci
-- cisco.aci.annotation
-- cisco.aci.owner
 
 notes:
 - Certain payloads are known not to be idempotent, so be careful when constructing payloads,
@@ -280,7 +278,7 @@ except Exception:
     HAS_YAML = False
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils.urls import fetch_url
 from ansible.module_utils._text import to_text
 
@@ -332,8 +330,6 @@ class ACIRESTModule(ACIModule):
 
 def main():
     argument_spec = aci_argument_spec()
-    argument_spec.update(aci_annotation_spec())
-    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         path=dict(type="str", required=True, aliases=["uri"]),
         method=dict(type="str", default="get", choices=["delete", "get", "post"], aliases=["action"]),
@@ -379,29 +375,26 @@ def main():
         with open(src, "r") as config_object:
             # TODO: Would be nice to template this, requires action-plugin
             payload = config_object.read()
-            payload_output_file = json.loads(payload)
 
     # Validate payload
     if rest_type == "json":
         if content and isinstance(content, dict):
             # Validate inline YAML/JSON
             payload = json.dumps(payload)
-            payload_output_file = json.loads(payload)
         elif payload and isinstance(payload, str) and HAS_YAML:
             try:
                 # Validate YAML/JSON string
                 payload = json.dumps(yaml.safe_load(payload))
-                payload_output_file = json.loads(payload)
             except Exception as e:
                 module.fail_json(msg="Failed to parse provided JSON/YAML payload: %s" % to_text(e), exception=to_text(e), payload=payload)
     elif rest_type == "xml" and HAS_LXML_ETREE:
         if content and isinstance(content, dict) and HAS_XMLJSON_COBRA:
             # Validate inline YAML/JSON
-            payload = etree.tostring(cobra.etree(payload)[0])
+            payload = etree.tostring(cobra.etree(payload)[0], encoding="unicode")
         elif payload and isinstance(payload, str):
             try:
                 # Validate XML string
-                payload = etree.tostring(etree.fromstring(payload))
+                payload = etree.tostring(etree.fromstring(payload), encoding="unicode")
             except Exception as e:
                 module.fail_json(msg="Failed to parse provided XML payload: %s" % to_text(e), payload=payload)
 
@@ -440,6 +433,7 @@ def main():
 
     aci.response_type(resp.read(), rest_type)
 
+    aci.result["status"] = aci.status
     aci.result["imdata"] = aci.imdata
     aci.result["totalCount"] = aci.totalCount
 
@@ -447,7 +441,7 @@ def main():
         output_path = aci.params.get("output_path")
         if output_path is not None:
             with open(output_path, "a") as output_file:
-                json.dump([payload_output_file], output_file)
+                output_file.write(str(payload))
 
     # Report success
     aci.exit_json(**aci.result)

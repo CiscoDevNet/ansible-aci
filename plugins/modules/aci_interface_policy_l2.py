@@ -67,17 +67,44 @@ author:
 - Dag Wieers (@dagwieers)
 """
 
-# FIXME: Add more, better examples
 EXAMPLES = r"""
-- name: Add a Layer 2 interface policy
+- name: Create a Layer2 interface policy
   cisco.aci.aci_interface_policy_l2:
-    host: '{{ hostname }}'
-    username: '{{ username }}'
-    password: '{{ password }}'
-    l2_policy: '{{ l2_policy }}'
-    vlan_scope: '{{ vlan_policy }}'
-    description: '{{ description }}'
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    l2_policy: PORT_LOCAL
+    vlan_scope: portlocal
+    state: present
   delegate_to: localhost
+
+- name: Delete a Layer2 interface policy
+  cisco.aci.aci_interface_policy_l2:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    l2_policy: PORT_LOCAL
+    state: absent
+  delegate_to: localhost
+
+- name: Query all Layer2 interface policies
+  cisco.aci.aci_interface_policy_l2:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific Layer2 interface policy
+  cisco.aci.aci_interface_policy_l2:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    l2_policy: PORT_LOCAL
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""

@@ -102,6 +102,7 @@
         - cm_epg_present.proposed.cloudExtEPg.attributes.descr == 'Aci Cloud External EPG'
         - cm_epg_present.proposed.cloudExtEPg.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudextepg-anstest'
         - cm_epg_present.proposed.cloudExtEPg.children.0.cloudRsCloudEPgCtx.attributes.tnFvCtxName == 'anstest'
+        - nm_epg_present.current.0.cloudExtEPg.attributes.annotation == 'orchestrator:ansible'
         - nm_epg_present.current.0.cloudExtEPg.attributes.name == 'anstest'
         - nm_epg_present.current.0.cloudExtEPg.attributes.descr == 'Aci Cloud External EPG'
         - nm_epg_present.current.0.cloudExtEPg.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudextepg-anstest'

@@ -51,6 +51,7 @@
   assert:
     that:
     - add_dns_provider is changed
+    - add_dns_provider.current.0.dnsProv.attributes.annotation == 'orchestrator:ansible'
     - add_dns_provider.current.0.dnsProv.attributes.dn == "uni/fabric/dnsp-ansible_dns_profile/prov-[10.20.30.40]"
     - add_dns_provider.current.0.dnsProv.attributes.addr == "10.20.30.40"
     - add_dns_provider.current.0.dnsProv.attributes.preferred == "no"

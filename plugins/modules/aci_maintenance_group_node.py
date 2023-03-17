@@ -44,25 +44,45 @@ author:
 """
 
 EXAMPLES = r"""
-- name: maintenance group
+- name: Create a maintenance group node
   cisco.aci.aci_maintenance_group_node:
-    host: "{{ inventory_hostname }}"
-    username: "{{ user }}"
-    password: "{{ pass }}"
-    validate_certs: no
-    group: maintenancegrp1
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    group: my_maintenance_group
     node: 1001
     state: present
+  delegate_to: localhost
 
-- name: maintenance group
+- name: Delete a maintenance group node
   cisco.aci.aci_maintenance_group_node:
-    host: "{{ inventory_hostname }}"
-    username: "{{ user }}"
-    password: "{{ pass }}"
-    validate_certs: no
-    group: maintenancegrp1
-    node: 1002
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    group: my_maintenance_group
+    node: 1001
     state: absent
+  delegate_to: localhost
+
+- name: Query all maintenance group nodes
+  cisco.aci.aci_maintenance_group_node:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a maintenance group node
+  cisco.aci.aci_maintenance_group_node:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    group: my_maintenance_group
+    node: 1001
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""

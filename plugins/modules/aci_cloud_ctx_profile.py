@@ -63,7 +63,6 @@ options:
     choices: [ absent, present, query ]
     type: str
     default: present
-
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation

@@ -1,0 +1,164 @@
+# Test code for the ACI modules
+# Copyright: (c) 2022, Tim Cragg (timcragg) <tcragg@cisco.com>
+# Copyright: (c) 2017, Dag Wieers (dagwieers) <dag@wieers.com>
+#
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove any pre-existing user
+  cisco.aci.aci_aaa_user:
+    <<: *aci_info
+    aaa_user: ansible
+    state: absent
+
+# ADD USER
+- name: Create AAA user
+  cisco.aci.aci_aaa_user:
+    <<: *aci_info
+    aaa_user: ansible
+    aaa_password: 12!Ab:cD!34
+    state: present
+
+
+# ADD SSH AUTH
+- name: Add a new SSH Key (Check Mode)
+  cisco.aci.aci_aaa_ssh_auth: &ssh_key_present
+    <<: *aci_info
+    aaa_user: ansible
+    auth_name: ansible_key
+    data: "{{ lookup('file', 'pki/sshkey.pub') }}"
+    state: present
+  check_mode: yes
+  register: cm_add_ssh_key
+
+- name: Add a new SSH Key (Normal Mode)
+  cisco.aci.aci_aaa_ssh_auth:
+    <<: *ssh_key_present
+  register: nm_add_ssh_key
+
+- name: Add SSH key again (Check Mode)
+  cisco.aci.aci_aaa_ssh_auth:
+    <<: *ssh_key_present
+  check_mode: yes
+  register: cm_add_ssh_key_again
+
+- name: Add SSH key again (Normal Mode)
+  cisco.aci.aci_aaa_ssh_auth:
+    <<: *ssh_key_present
+  register: nm_add_ssh_key_again
+
+- name: Verify add SSH key
+  assert:
+    that:
+    - cm_add_ssh_key is changed
+    - nm_add_ssh_key is changed
+    - nm_add_ssh_key.current.0.aaaSshAuth.attributes.dn == 'uni/userext/user-ansible/sshauth-ansible_key'
+    - nm_add_ssh_key.current.0.aaaSshAuth.attributes.name == 'ansible_key'
+    - nm_add_ssh_key.current.0.aaaSshAuth.attributes.data == lookup('file', 'pki/sshkey.pub')
+    - cm_add_ssh_key_again is not changed
+    - nm_add_ssh_key_again is not changed
+    - nm_add_ssh_key_again.current.0.aaaSshAuth.attributes.dn == 'uni/userext/user-ansible/sshauth-ansible_key'
+    - nm_add_ssh_key_again.current.0.aaaSshAuth.attributes.name == 'ansible_key'
+    - nm_add_ssh_key_again.current.0.aaaSshAuth.attributes.data == lookup('file', 'pki/sshkey.pub')
+
+# QUERY ALL SSH KEYS
+- name: Query all SSH keys (check mode)
+  cisco.aci.aci_aaa_ssh_auth: &ssh_key_query_all
+    <<: *aci_info
+    aaa_user: ansible
+    state: query
+  check_mode: yes
+  register: cm_query_all_ssh_keys
+
+- name: Query all SSH keys (normal mode)
+  cisco.aci.aci_aaa_ssh_auth:
+    <<: *ssh_key_query_all
+  register: nm_query_all_ssh_keys
+
+- name: Verify query_all_ssh_keys
+  assert:
+    that:
+    - cm_query_all_ssh_keys is not changed
+    - nm_query_all_ssh_keys is not changed
+
+# QUERY OUR SSH KEY
+- name: Query our SSH key (check mode)
+  cisco.aci.aci_aaa_ssh_auth: &ssh_key_query
+    <<: *ssh_key_query_all
+    auth_name: ansible_key
+  check_mode: yes
+  register: cm_query_ssh_key
+
+- name: Query our SSH key (normal mode)
+  cisco.aci.aci_aaa_ssh_auth:
+    <<: *ssh_key_query
+  register: nm_query_ssh_key
+
+- name: Verify query_ssh_key
+  assert:
+    that:
+    - cm_query_ssh_key is not changed
+    - nm_query_ssh_key is not changed
+    - nm_query_ssh_key.current.0.aaaSshAuth.attributes.dn == 'uni/userext/user-ansible/sshauth-ansible_key'
+    - nm_query_ssh_key.current.0.aaaSshAuth.attributes.name == 'ansible_key'
+    - nm_query_ssh_key.current.0.aaaSshAuth.attributes.data == lookup('file', 'pki/sshkey.pub')
+    - cm_query_ssh_key == nm_query_ssh_key
+
+# REMOVE SSH KEY
+- name: Remove SSH key (check mode)
+  cisco.aci.aci_aaa_ssh_auth: &ssh_key_absent
+    <<: *aci_info
+    aaa_user: ansible
+    auth_name: ansible_key
+    data: "{{ lookup('file', 'pki/sshkey.pub') }}"
+    state: absent
+  check_mode: yes
+  register: cm_remove_ssh_key
+
+- name: Remove SSH key (normal mode)
+  cisco.aci.aci_aaa_ssh_auth:
+    <<: *ssh_key_absent
+  register: nm_remove_ssh_key
+
+- name: Remove SSH key again (check mode)
+  cisco.aci.aci_aaa_ssh_auth:
+    <<: *ssh_key_absent
+  check_mode: yes
+  register: cm_remove_ssh_key_again
+
+- name: Remove SSH key again (normal mode)
+  cisco.aci.aci_aaa_ssh_auth:
+    <<: *ssh_key_absent
+  register: nm_remove_ssh_key_again
+
+- name: Verify remove_user
+  assert:
+    that:
+    - cm_remove_ssh_key is changed
+    - nm_remove_ssh_key is changed
+    - nm_remove_ssh_key.current == []
+    - cm_remove_ssh_key_again is not changed
+    - nm_remove_ssh_key_again is not changed
+
+# CLEAN UP
+- name: Remove user
+  cisco.aci.aci_aaa_user:
+    <<: *aci_info
+    aaa_user: ansible
+    state: absent

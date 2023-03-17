@@ -64,6 +64,7 @@
       - range_present.previous == []
       - range_present.sent == range_present_check_mode.sent
       - range_present.sent == range_present.proposed
+      - range_present.current.0.fvnsEncapBlk.attributes.annotation == 'orchestrator:ansible'
 
 - name: create vlan pool range - idempotency works
   cisco.aci.aci_encap_pool_range:
@@ -192,7 +193,7 @@
   assert:
     that:
       - range_present_missing_param is failed
-      - "range_present_missing_param.msg == 'state is present but all of the following are missing: range_end, range_name, range_start'"
+      - "range_present_missing_param.msg == 'state is present but all of the following are missing: range_end, range_start'"
 
 - name: missing required param - error message works
   cisco.aci.aci_encap_pool_range:

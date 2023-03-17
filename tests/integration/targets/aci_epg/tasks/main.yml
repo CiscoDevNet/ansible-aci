@@ -9,301 +9,308 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
-- name: ensure tenant exists for tests to kick off
-  cisco.aci.aci_tenant: &aci_tenant_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
-    state: present
-    tenant: anstest
-  register: tenant_present
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: ensure monitoring policy exists
-  cisco.aci.aci_epg_monitoring_policy:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
-    monitoring_policy: check
-    tenant: anstest
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: ensure tenant exists for tests to kick off
+    cisco.aci.aci_tenant: &aci_tenant_present
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+      state: present
+      tenant: ansible_test
+    register: tenant_present
 
-- name: ensure bd exists for tests to kick off
-  cisco.aci.aci_bd: &aci_bd_present
-    <<: *aci_tenant_present
-    bd: anstest
-  register: bd_present
+  - name: ensure monitoring policy exists
+    cisco.aci.aci_epg_monitoring_policy:
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+      monitoring_policy: check
+      tenant: ansible_test
 
-- name: ensure ap exists for tests to kick off
-  cisco.aci.aci_ap: &aci_ap_present
-    <<: *aci_tenant_present
-    ap: anstest
-  register: ap_present
+  - name: ensure bd exists for tests to kick off
+    cisco.aci.aci_bd: &aci_bd_present
+      <<: *aci_tenant_present
+      bd: anstest
+    register: bd_present
 
-- name: create epg - check mode works
-  cisco.aci.aci_epg: &aci_epg_present
-    <<: *aci_ap_present
-    epg: anstest
-    bd: anstest
-    description: Ansible Test
-    monitoring_policy: check
-    custom_qos_policy: check
-  check_mode: yes
-  register: epg_present_check_mode
+  - name: ensure ap exists for tests to kick off
+    cisco.aci.aci_ap: &aci_ap_present
+      <<: *aci_tenant_present
+      ap: anstest
+    register: ap_present
 
-- name: create epg - creation works
-  cisco.aci.aci_epg:
-    <<: *aci_epg_present
-  register: epg_present
+  - name: create epg - check mode works
+    cisco.aci.aci_epg: &aci_epg_present
+      <<: *aci_ap_present
+      epg: anstest
+      bd: anstest
+      description: Ansible Test
+      monitoring_policy: check
+      custom_qos_policy: check
+    check_mode: yes
+    register: epg_present_check_mode
 
-- name: create epg - idempotency works
-  cisco.aci.aci_epg:
-    <<: *aci_epg_present
-  register: epg_present_idempotent
+  - name: create epg - creation works
+    cisco.aci.aci_epg:
+      <<: *aci_epg_present
+    register: epg_present
 
-- name: update epg - update works
-  cisco.aci.aci_epg:
-    <<: *aci_epg_present
-    description: Ansible Test Update
-  register: epg_present_update
+  - name: create epg - idempotency works
+    cisco.aci.aci_epg:
+      <<: *aci_epg_present
+    register: epg_present_idempotent
 
-- name: create epg - missing param
-  cisco.aci.aci_epg:
-    <<: *aci_epg_present
-    ap: "{{ fakevar | default(omit) }}"
-  ignore_errors: yes
-  register: epg_present_missing_param
+  - name: update epg - update works
+    cisco.aci.aci_epg:
+      <<: *aci_epg_present
+      description: Ansible Test Update
+    register: epg_present_update
 
-- name: create epg - used for query
-  cisco.aci.aci_epg:
-    <<: *aci_epg_present
-    epg: anstest2
+  - name: create epg - missing param
+    cisco.aci.aci_epg:
+      <<: *aci_epg_present
+      ap: "{{ fakevar | default(omit) }}"
+    ignore_errors: yes
+    register: epg_present_missing_param
 
-- name: present assertions
-  assert:
-    that:
-      - epg_present_check_mode is changed
-      - epg_present_check_mode.previous == []
-      - epg_present_check_mode.sent.fvAEPg.attributes != {}
-      - epg_present_check_mode.sent.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == "anstest"
-      - epg_present_check_mode.sent.fvAEPg.children.1.fvRsAEPgMonPol.attributes.tnMonEPGPolName == 'check'
-      - epg_present_check_mode.sent.fvAEPg.children.2.fvRsCustQosPol.attributes.tnQosCustomPolName == 'check'
-      - epg_present is changed
-      - epg_present.sent == epg_present_check_mode.sent
-      - epg_present_idempotent is not changed
-      - epg_present_idempotent.sent == {}
-      - epg_present_update is changed
-      - epg_present_update.sent.fvAEPg.attributes.descr == 'Ansible Test Update'
-      - epg_present_missing_param is failed
-      - 'epg_present_missing_param.msg == "state is present but all of the following are missing: ap"'
+  - name: create epg - used for query
+    cisco.aci.aci_epg:
+      <<: *aci_epg_present
+      epg: anstest2
 
-- name: get specific epg
-  cisco.aci.aci_epg:
-    <<: *aci_epg_present
-    state: query
-  register: epg_query
+  - name: present assertions
+    assert:
+      that:
+        - epg_present_check_mode is changed
+        - epg_present_check_mode.previous == []
+        - epg_present_check_mode.sent.fvAEPg.attributes != {}
+        - epg_present_check_mode.sent.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == "anstest"
+        - epg_present_check_mode.sent.fvAEPg.children.1.fvRsAEPgMonPol.attributes.tnMonEPGPolName == 'check'
+        - epg_present_check_mode.sent.fvAEPg.children.2.fvRsCustQosPol.attributes.tnQosCustomPolName == 'check'
+        - epg_present is changed
+        - epg_present.sent == epg_present_check_mode.sent
+        - epg_present.current.0.fvAEPg.attributes.annotation == 'orchestrator:ansible'
+        - epg_present_idempotent is not changed
+        - epg_present_idempotent.sent == {}
+        - epg_present_update is changed
+        - epg_present_update.sent.fvAEPg.attributes.descr == 'Ansible Test Update'
+        - epg_present_missing_param is failed
+        - 'epg_present_missing_param.msg == "state is present but all of the following are missing: ap"'
 
-- name: get all epgs
-  cisco.aci.aci_epg:
-    <<: *aci_tenant_present
-    state: query
-    tenant: "{{ fakevar | default(omit) }}"
-  register: epg_query_all
+  - name: get specific epg
+    cisco.aci.aci_epg:
+      <<: *aci_epg_present
+      state: query
+    register: epg_query
 
-- name: query assertions
-  assert:
-    that:
-      - epg_query is not changed
-      - epg_query.current | length == 1
-      - epg_query.current.0.fvAEPg.attributes.name == "anstest"
-      - epg_query.current.0.fvAEPg.children.1.fvRsCustQosPol.attributes.tnQosCustomPolName == 'check'
-      - epg_query.current.0.fvAEPg.children.2.fvRsAEPgMonPol.attributes.tnMonEPGPolName == 'check'
-      - '"tn-anstest/ap-anstest/epg-anstest.json" in epg_query.url'
-      - epg_query_all is not changed
-      - epg_query_all.current | length > 1
-      - '"?rsp-subtree=full&rsp-subtree-class=fvRsAEPgMonPol,fvRsBd" in epg_query_all.filter_string'
-      - '"class/fvAEPg.json" in epg_query_all.url'
+  - name: get all epgs
+    cisco.aci.aci_epg:
+      <<: *aci_tenant_present
+      state: query
+      tenant: "{{ fakevar | default(omit) }}"
+    register: epg_query_all
 
-- name: delete epg - check mode works
-  cisco.aci.aci_epg: &aci_epg_absent
-    <<: *aci_epg_present
-    state: absent
-  check_mode: yes
-  register: delete_epg_check_mode
+  - name: query assertions
+    assert:
+      that:
+        - epg_query is not changed
+        - epg_query.current | length == 1
+        - epg_query.current.0.fvAEPg.attributes.name == "anstest"
+        - epg_query.current.0.fvAEPg.children.1.fvRsCustQosPol.attributes.tnQosCustomPolName == 'check'
+        - epg_query.current.0.fvAEPg.children.2.fvRsAEPgMonPol.attributes.tnMonEPGPolName == 'check'
+        - '"tn-ansible_test/ap-anstest/epg-anstest.json" in epg_query.url'
+        - epg_query_all is not changed
+        - epg_query_all.current | length > 1
+        - '"?rsp-subtree=full&rsp-subtree-class=fvRsAEPgMonPol,fvRsBd" in epg_query_all.filter_string'
+        - '"class/fvAEPg.json" in epg_query_all.url'
 
-- name: delete epg - delete works
-  cisco.aci.aci_epg:
-    <<: *aci_epg_absent
-  register: delete_epg
+  - name: delete epg - check mode works
+    cisco.aci.aci_epg: &aci_epg_absent
+      <<: *aci_epg_present
+      state: absent
+    check_mode: yes
+    register: delete_epg_check_mode
 
-- name: delete epg - idempotency works
-  cisco.aci.aci_epg:
-    <<: *aci_epg_absent
-  register: delete_epg_idempotent
+  - name: delete epg - delete works
+    cisco.aci.aci_epg:
+      <<: *aci_epg_absent
+    register: delete_epg
 
-- name: delete epg - cleanup extra epg
-  cisco.aci.aci_epg:
-    <<: *aci_epg_absent
-    epg: anstest2
+  - name: delete epg - idempotency works
+    cisco.aci.aci_epg:
+      <<: *aci_epg_absent
+    register: delete_epg_idempotent
 
-- name: delete epg - missing param fails
-  cisco.aci.aci_epg:
-    <<: *aci_epg_absent
-    tenant: "{{ fakevar | default(omit) }}"
-  ignore_errors: yes
-  register: delete_epg_missing_param
+  - name: delete epg - cleanup extra epg
+    cisco.aci.aci_epg:
+      <<: *aci_epg_absent
+      epg: anstest2
 
-- name: query assertions
-  assert:
-    that:
-      - delete_epg_check_mode is changed
-      - delete_epg_check_mode.previous != []
-      - delete_epg is changed
-      - delete_epg.previous == delete_epg_check_mode.previous
-      - delete_epg_idempotent is not changed
-      - delete_epg_idempotent.previous == []
-      - delete_epg_missing_param is failed
-      - 'delete_epg_missing_param.msg == "state is absent but all of the following are missing: tenant"'
+  - name: delete epg - missing param fails
+    cisco.aci.aci_epg:
+      <<: *aci_epg_absent
+      tenant: "{{ fakevar | default(omit) }}"
+    ignore_errors: yes
+    register: delete_epg_missing_param
 
-- name: create microsegmented epg with check mode
-  cisco.aci.aci_epg: &cm_useg_epg_present
-    <<: *aci_ap_present
-    epg: anstest_useg_epg
-    bd: anstest
-    useg: yes
-    description: uSeg EPG Ansible Test
-  check_mode: yes
-  register: cm_useg_epg_present
+  - name: query assertions
+    assert:
+      that:
+        - delete_epg_check_mode is changed
+        - delete_epg_check_mode.previous != []
+        - delete_epg is changed
+        - delete_epg.previous == delete_epg_check_mode.previous
+        - delete_epg_idempotent is not changed
+        - delete_epg_idempotent.previous == []
+        - delete_epg_missing_param is failed
+        - 'delete_epg_missing_param.msg == "state is absent but all of the following are missing: tenant"'
 
-- name: Assertions check for create microsegmented epg with check mode
-  assert:
-    that:
-      - cm_useg_epg_present is changed
-      - cm_useg_epg_present.current == []
-      - cm_useg_epg_present.previous == []
-      - cm_useg_epg_present.sent.fvAEPg.attributes.name == 'anstest_useg_epg'
-      - cm_useg_epg_present.sent.fvAEPg.attributes.isAttrBasedEPg == 'yes'
-      - cm_useg_epg_present.sent.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+  - name: create microsegmented epg with check mode
+    cisco.aci.aci_epg: &cm_useg_epg_present
+      <<: *aci_ap_present
+      epg: anstest_useg_epg
+      bd: anstest
+      useg: yes
+      description: uSeg EPG Ansible Test
+    check_mode: yes
+    register: cm_useg_epg_present
 
-- name: create microsegmented epg with normal mode
-  cisco.aci.aci_epg: &nm_useg_epg_present
-    <<: *cm_useg_epg_present
-  register: nm_useg_epg_present
+  - name: Assertions check for create microsegmented epg with check mode
+    assert:
+      that:
+        - cm_useg_epg_present is changed
+        - cm_useg_epg_present.current == []
+        - cm_useg_epg_present.previous == []
+        - cm_useg_epg_present.sent.fvAEPg.attributes.name == 'anstest_useg_epg'
+        - cm_useg_epg_present.sent.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+        - cm_useg_epg_present.sent.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
 
-- name: Assertions check for create microsegmented epg with normal mode
-  assert:
-    that:
-      - nm_useg_epg_present is changed
-      - nm_useg_epg_present.current | length == 1
-      - nm_useg_epg_present.previous == []
-      - nm_useg_epg_present.current.0.fvAEPg.attributes.name == 'anstest_useg_epg'
-      - nm_useg_epg_present.current.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
-      - nm_useg_epg_present.current.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
-      - nm_useg_epg_present.sent.fvAEPg.attributes.name == 'anstest_useg_epg'
-      - nm_useg_epg_present.sent.fvAEPg.attributes.isAttrBasedEPg == 'yes'
-      - nm_useg_epg_present.sent.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+  - name: create microsegmented epg with normal mode
+    cisco.aci.aci_epg: &nm_useg_epg_present
+      <<: *cm_useg_epg_present
+    register: nm_useg_epg_present
 
-- name: create microsegmented epg with normal mode - idempotency works
-  cisco.aci.aci_epg:
-    <<: *cm_useg_epg_present
-  register: idempotency_nm_useg_epg_present
+  - name: Assertions check for create microsegmented epg with normal mode
+    assert:
+      that:
+        - nm_useg_epg_present is changed
+        - nm_useg_epg_present.current | length == 1
+        - nm_useg_epg_present.previous == []
+        - nm_useg_epg_present.current.0.fvAEPg.attributes.name == 'anstest_useg_epg'
+        - nm_useg_epg_present.current.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+        - nm_useg_epg_present.current.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+        - nm_useg_epg_present.sent.fvAEPg.attributes.name == 'anstest_useg_epg'
+        - nm_useg_epg_present.sent.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+        - nm_useg_epg_present.sent.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
 
-- name: Idempotency assertions check for create microsegmented epg with normal mode
-  assert:
-    that:
-      - idempotency_nm_useg_epg_present is not changed
-      - idempotency_nm_useg_epg_present.current | length == 1
-      - idempotency_nm_useg_epg_present.previous | length == 1
-      - idempotency_nm_useg_epg_present.current.0.fvAEPg.attributes.name == 'anstest_useg_epg'
-      - idempotency_nm_useg_epg_present.previous.0.fvAEPg.attributes.name == 'anstest_useg_epg'
-      - idempotency_nm_useg_epg_present.current.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
-      - idempotency_nm_useg_epg_present.previous.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
-      - idempotency_nm_useg_epg_present.current.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
-      - idempotency_nm_useg_epg_present.previous.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+  - name: create microsegmented epg with normal mode - idempotency works
+    cisco.aci.aci_epg:
+      <<: *cm_useg_epg_present
+    register: idempotency_nm_useg_epg_present
 
-- name: get anstest_useg_epg epg
-  cisco.aci.aci_epg:
-    <<: *nm_useg_epg_present
-    state: query
-  register: useg_epg_present
+  - name: Idempotency assertions check for create microsegmented epg with normal mode
+    assert:
+      that:
+        - idempotency_nm_useg_epg_present is not changed
+        - idempotency_nm_useg_epg_present.current | length == 1
+        - idempotency_nm_useg_epg_present.previous | length == 1
+        - idempotency_nm_useg_epg_present.current.0.fvAEPg.attributes.name == 'anstest_useg_epg'
+        - idempotency_nm_useg_epg_present.previous.0.fvAEPg.attributes.name == 'anstest_useg_epg'
+        - idempotency_nm_useg_epg_present.current.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+        - idempotency_nm_useg_epg_present.previous.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+        - idempotency_nm_useg_epg_present.current.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+        - idempotency_nm_useg_epg_present.previous.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
 
-- name: Assertions check for query microsegmented epg with normal mode
-  assert:
-    that:
-      - useg_epg_present is not changed
-      - useg_epg_present.current | length == 1
-      - useg_epg_present.current.0.fvAEPg.attributes.name == 'anstest_useg_epg'
-      - useg_epg_present.current.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
-      - useg_epg_present.current.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+  - name: get anstest_useg_epg epg
+    cisco.aci.aci_epg:
+      <<: *nm_useg_epg_present
+      state: query
+    register: useg_epg_present
 
-- name: delete microsegmented epg with check mode
-  cisco.aci.aci_epg: &cm_useg_epg_absent
-    <<: *nm_useg_epg_present
-    state: absent
-  check_mode: yes
-  register: cm_useg_epg_absent
+  - name: Assertions check for query microsegmented epg with normal mode
+    assert:
+      that:
+        - useg_epg_present is not changed
+        - useg_epg_present.current | length == 1
+        - useg_epg_present.current.0.fvAEPg.attributes.name == 'anstest_useg_epg'
+        - useg_epg_present.current.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+        - useg_epg_present.current.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
 
-- name: Assertions check for delete microsegmented epg with check mode
-  assert:
-    that:
-      - cm_useg_epg_absent is changed
-      - cm_useg_epg_absent.current | length == 1
-      - cm_useg_epg_absent.previous | length == 1
-      - cm_useg_epg_absent.current.0.fvAEPg.attributes.name == 'anstest_useg_epg'
-      - cm_useg_epg_absent.current.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
-      - cm_useg_epg_absent.current.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
-      - cm_useg_epg_absent.previous.0.fvAEPg.attributes.name == 'anstest_useg_epg'
-      - cm_useg_epg_absent.previous.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
-      - cm_useg_epg_absent.previous.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+  - name: delete microsegmented epg with check mode
+    cisco.aci.aci_epg: &cm_useg_epg_absent
+      <<: *nm_useg_epg_present
+      state: absent
+    check_mode: yes
+    register: cm_useg_epg_absent
 
-- name: delete microsegmented epg with normal mode
-  cisco.aci.aci_epg: &nm_useg_epg_absent
-    <<: *cm_useg_epg_absent
-    state: absent
-  register: nm_useg_epg_absent
+  - name: Assertions check for delete microsegmented epg with check mode
+    assert:
+      that:
+        - cm_useg_epg_absent is changed
+        - cm_useg_epg_absent.current | length == 1
+        - cm_useg_epg_absent.previous | length == 1
+        - cm_useg_epg_absent.current.0.fvAEPg.attributes.name == 'anstest_useg_epg'
+        - cm_useg_epg_absent.current.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+        - cm_useg_epg_absent.current.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+        - cm_useg_epg_absent.previous.0.fvAEPg.attributes.name == 'anstest_useg_epg'
+        - cm_useg_epg_absent.previous.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+        - cm_useg_epg_absent.previous.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
 
-- name: Assertions check for delete microsegmented epg with normal mode
-  assert:
-    that:
-      - nm_useg_epg_absent is changed
-      - nm_useg_epg_absent.current | length == 0
-      - nm_useg_epg_absent.previous | length == 1
-      - nm_useg_epg_absent.previous.0.fvAEPg.attributes.name == 'anstest_useg_epg'
-      - nm_useg_epg_absent.previous.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
-      - nm_useg_epg_absent.previous.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
+  - name: delete microsegmented epg with normal mode
+    cisco.aci.aci_epg: &nm_useg_epg_absent
+      <<: *cm_useg_epg_absent
+      state: absent
+    register: nm_useg_epg_absent
 
-- name: delete microsegmented epg with normal mode - idempotency works
-  cisco.aci.aci_epg:
-    <<: *nm_useg_epg_absent
-  register: idempotency_nm_useg_epg_absent
+  - name: Assertions check for delete microsegmented epg with normal mode
+    assert:
+      that:
+        - nm_useg_epg_absent is changed
+        - nm_useg_epg_absent.current | length == 0
+        - nm_useg_epg_absent.previous | length == 1
+        - nm_useg_epg_absent.previous.0.fvAEPg.attributes.name == 'anstest_useg_epg'
+        - nm_useg_epg_absent.previous.0.fvAEPg.attributes.isAttrBasedEPg == 'yes'
+        - nm_useg_epg_absent.previous.0.fvAEPg.children.0.fvRsBd.attributes.tnFvBDName == 'anstest'
 
-- name: Idempotency assertions check for delete microsegmented epg with normal mode
-  assert:
-    that:
-      - idempotency_nm_useg_epg_absent is not changed
-      - idempotency_nm_useg_epg_absent.current | length == 0
-      - idempotency_nm_useg_epg_absent.previous | length == 0
+  - name: delete microsegmented epg with normal mode - idempotency works
+    cisco.aci.aci_epg:
+      <<: *nm_useg_epg_absent
+    register: idempotency_nm_useg_epg_absent
 
-- name: cleanup bd
-  cisco.aci.aci_bd:
-    <<: *aci_bd_present
-    state: absent
-  when: bd_present.previous == []
+  - name: Idempotency assertions check for delete microsegmented epg with normal mode
+    assert:
+      that:
+        - idempotency_nm_useg_epg_absent is not changed
+        - idempotency_nm_useg_epg_absent.current | length == 0
+        - idempotency_nm_useg_epg_absent.previous | length == 0
 
-- name: cleanup ap
-  cisco.aci.aci_ap:
-    <<: *aci_ap_present
-    state: absent
-  when: ap_present.previous == []
+  - name: cleanup bd
+    cisco.aci.aci_bd:
+      <<: *aci_bd_present
+      state: absent
+    when: bd_present.previous == []
 
-- name: cleanup tenant
-  cisco.aci.aci_tenant:
-    <<: *aci_tenant_present
-    state: absent
-  when: tenant_present.previous == []
+  - name: cleanup ap
+    cisco.aci.aci_ap:
+      <<: *aci_ap_present
+      state: absent
+    when: ap_present.previous == []
+
+  - name: cleanup tenant
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent
+    when: tenant_present.previous == []

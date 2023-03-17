@@ -61,7 +61,7 @@ options:
     choices: [ none, proxy-arp ]
   preferred_group:
     description:
-    - Whether ot not the EPG is part of the Preferred Group and can communicate without contracts.
+    - Whether or not the EPG is part of the Preferred Group and can communicate without contracts.
     - This is very convenient for migration scenarios, or when ACI is used for network automation but not for policy.
     - The APIC defaults to C(no) when unset during creation.
     type: bool
@@ -341,7 +341,7 @@ def main():
         name_alias=dict(type="str"),
         monitoring_policy=dict(type="str"),
         custom_qos_policy=dict(type="str"),
-        useg=dict(type="str", choices=['yes', 'no']),
+        useg=dict(type="str", choices=["yes", "no"]),
     )
 
     module = AnsibleModule(

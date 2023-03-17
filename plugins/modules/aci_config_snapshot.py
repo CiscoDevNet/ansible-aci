@@ -58,6 +58,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - The APIC does not provide a mechanism for naming the snapshots.
@@ -220,11 +221,12 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         description=dict(type="str", aliases=["descr"]),
         export_policy=dict(type="str", aliases=["name"]),  # Not required for querying all objects
@@ -270,7 +272,8 @@ def main():
                 target_filter={"name": export_policy},
             ),
         )
-
+        # Variable set for reuse of correct url in get_existing() triggered from exit_json() after query request
+        reset_url = aci.url
         aci.get_existing()
 
         aci.payload(
@@ -290,6 +293,15 @@ def main():
 
         # Create a new Snapshot
         aci.post_config()
+
+        # Query for job information and add to results
+        # Change state to query else aci.request() will not execute a GET request but POST
+        aci.params["state"] = "query"
+        aci.request(path="/api/node/mo/uni/backupst/jobs-[uni/fabric/configexp-{0}].json".format(export_policy))
+        aci.result["job_details"] = aci.imdata[0].get("configJobCont", {})
+        # Reset state and url to display correct in output and trigger get_existing() function with correct url
+        aci.url = reset_url
+        aci.params["state"] = "present"
 
     else:
         # Prefix the proper url to export_policy

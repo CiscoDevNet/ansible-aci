@@ -38,6 +38,7 @@
   assert:
     that:
     - add_bgp_rr_asn is changed
+    - add_bgp_rr_asn.current.0.bgpAsP.attributes.annotation == 'orchestrator:ansible'
     - add_bgp_rr_asn.current.0.bgpAsP.attributes.dn == "uni/fabric/bgpInstP-default/as"
     - add_bgp_rr_asn.current.0.bgpAsP.attributes.asn == "65001"
 

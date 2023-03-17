@@ -47,18 +47,47 @@ author:
     - Steven Gerhart (@sgerhart)
 """
 
-# FIXME: Add more, better examples
+
 EXAMPLES = r"""
-    - name: firmware group
-      cisco.aci.aci_firmware_group:
-        host: "{{ inventory_hostname }}"
-        username: "{{ user }}"
-        password: "{{ pass }}"
-        validate_certs: no
-        group: testingfwgrp1
-        firmwarepol: test2FrmPol
-        state: present
+- name: Create a firmware group
+  cisco.aci.aci_firmware_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    group: fmgroup
+    firmwarepol: fmpolicy1
+    state: present
+  delegate_to: localhost
+
+- name: Delete a firmware group
+  cisco.aci.aci_firmware_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    group: fmgroup
+    state: absent
+  delegate_to: localhost
+
+- name: Query all firmware groups
+  cisco.aci.aci_firmware_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific firmware group
+  cisco.aci.aci_firmware_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    group: fmgroup
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
+
 RETURN = """
 current:
   description: The existing configuration from the APIC after the module has finished

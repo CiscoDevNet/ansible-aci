@@ -17,126 +17,133 @@
 - name: Remove test tenant before we kickoff
   cisco.aci.aci_tenant: &tenant_absent
     <<: *aci_info
-    tenant: l3outtest
+    tenant: ansible_test
     state: absent
 
-# SETUP ENVIRONMENT
-- name: Create domain
-  cisco.aci.aci_domain: &domain_present
-    <<: *aci_info
-    domain: l3outtest
-    domain_type: l3dom
-    state: present
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Create tenant
-  cisco.aci.aci_tenant: &tenant_present
-    <<: *tenant_absent
-    state: present
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # SETUP ENVIRONMENT
+  - name: Create domain
+    cisco.aci.aci_domain: &domain_present
+      <<: *aci_info
+      domain: l3outtest
+      domain_type: l3dom
+      state: present
 
-- name: Configure VRF
-  cisco.aci.aci_vrf: &vrf_present
-    <<: *tenant_present
-    vrf: l3outtest
+  - name: Create tenant
+    cisco.aci.aci_tenant: &tenant_present
+      <<: *tenant_absent
+      state: present
 
-- name: Create L3Out
-  cisco.aci.aci_l3out:
-    <<: *vrf_present
-    l3out: l3outtest
-    domain: l3outtest
-    route_control: export 
+  - name: Configure VRF
+    cisco.aci.aci_vrf: &vrf_present
+      <<: *tenant_present
+      vrf: l3outtest
 
-- name: Crete node profile
-  cisco.aci.aci_l3out_logical_node_profile: &np_present
-    <<: *tenant_present
-    l3out: l3outtest
-    node_profile: NODES
+  - name: Create L3Out
+    cisco.aci.aci_l3out:
+      <<: *vrf_present
+      l3out: l3outtest
+      domain: l3outtest
+      route_control: export 
 
-- name: Add node
-  cisco.aci.aci_l3out_logical_node: &node_present
-    <<: *np_present
-    pod_id: 1
-    node_id: 111
-    router_id: 111.111.111.111
+  - name: Crete node profile
+    cisco.aci.aci_l3out_logical_node_profile: &np_present
+      <<: *tenant_present
+      l3out: l3outtest
+      node_profile: NODES
 
-- name: Add static route
-  cisco.aci.aci_l3out_static_routes:  &prefix_present
-    <<: *np_present
-    pod_id: 1
-    node_id: 111
-    prefix: 10.10.0.0/16
+  - name: Add node
+    cisco.aci.aci_l3out_logical_node: &node_present
+      <<: *np_present
+      pod_id: 1
+      node_id: 111
+      router_id: 111.111.111.111
 
-# MODULE CHECKS
-- name: Add a nexthop (check mode)
-  cisco.aci.aci_l3out_static_routes_nexthop:  &nh_present
-    <<: *prefix_present
-    nexthop: 1.1.1.1
-  check_mode: yes
-  register: cm_add_nh
+  - name: Add static route
+    cisco.aci.aci_l3out_static_routes:  &prefix_present
+      <<: *np_present
+      pod_id: 1
+      node_id: 111
+      prefix: 10.10.0.0/16
 
-- name: Add a nexthop (normal mode)
-  cisco.aci.aci_l3out_static_routes_nexthop: 
-    <<: *nh_present
-  register: nm_add_nh
+  # MODULE CHECKS
+  - name: Add a nexthop (check mode)
+    cisco.aci.aci_l3out_static_routes_nexthop:  &nh_present
+      <<: *prefix_present
+      nexthop: 1.1.1.1
+    check_mode: yes
+    register: cm_add_nh
 
-- name: Verify nm_add_nh
-  assert:
-    that:
-    - cm_add_nh is changed
-    - nm_add_nh is changed
-    - cm_add_nh.previous == nm_add_nh.previous == []
-    - cm_add_nh.sent.ipNexthopP.attributes.nhAddr == nm_add_nh.sent.ipNexthopP.attributes.nhAddr == '1.1.1.1'
+  - name: Add a nexthop (normal mode)
+    cisco.aci.aci_l3out_static_routes_nexthop: 
+      <<: *nh_present
+    register: nm_add_nh
 
-- name: Add nexthop  again, check if idempotency works
-  cisco.aci.aci_l3out_static_routes_nexthop: 
-    <<: *nh_present
-  register: add_nh_again
+  - name: Verify nm_add_nh
+    assert:
+      that:
+      - cm_add_nh is changed
+      - nm_add_nh is changed
+      - cm_add_nh.previous == nm_add_nh.previous == []
+      - cm_add_nh.sent.ipNexthopP.attributes.nhAddr == nm_add_nh.sent.ipNexthopP.attributes.nhAddr == '1.1.1.1'
+      - nm_add_nh.current.0.ipNexthopP.attributes.annotation == 'orchestrator:ansible'
 
-- name: Verify add_nh_again
-  assert:
-    that:
-    - add_nh_again is not changed
+  - name: Add nexthop  again, check if idempotency works
+    cisco.aci.aci_l3out_static_routes_nexthop: 
+      <<: *nh_present
+    register: add_nh_again
 
-# ADD ANOTHER NH
-- name: Add another nexthop
-  cisco.aci.aci_l3out_static_routes_nexthop: 
-    <<: *nh_present
-    nexthop: 1.1.1.2
+  - name: Verify add_nh_again
+    assert:
+      that:
+      - add_nh_again is not changed
 
-# QUERY ALL NHs
-- name: Query all nodes
-  cisco.aci.aci_l3out_static_routes_nexthop: 
-    <<: *aci_info
-    state: query
-  register: query_all_nhs
+  # ADD ANOTHER NH
+  - name: Add another nexthop
+    cisco.aci.aci_l3out_static_routes_nexthop: 
+      <<: *nh_present
+      nexthop: 1.1.1.2
 
-- name: Verify query_all_nhs
-  assert:
-    that:
-    - query_all_nhs is not changed
-    - query_all_nhs.current|length >= 1
+  # QUERY ALL NHs
+  - name: Query all nodes
+    cisco.aci.aci_l3out_static_routes_nexthop: 
+      <<: *aci_info
+      state: query
+    register: query_all_nhs
 
-# QUERY A SPECIFIC NH
-- name: Query a specific nexthop
-  cisco.aci.aci_l3out_static_routes_nexthop: 
-    <<: *nh_present
-    state: query
-  register: query_spec_nh
+  - name: Verify query_all_nhs
+    assert:
+      that:
+      - query_all_nhs is not changed
+      - query_all_nhs.current|length >= 1
 
-- name: Verify query_spec_node
-  assert:
-    that:
-    - query_spec_nh is not changed
-    - query_spec_nh.current|length == 1
+  # QUERY A SPECIFIC NH
+  - name: Query a specific nexthop
+    cisco.aci.aci_l3out_static_routes_nexthop: 
+      <<: *nh_present
+      state: query
+    register: query_spec_nh
 
-# REMOVE NH
-- name: Remove nexthop
-  cisco.aci.aci_l3out_static_routes_nexthop: 
-    <<: *nh_present
-    state: absent
-  register: remove_nh
+  - name: Verify query_spec_node
+    assert:
+      that:
+      - query_spec_nh is not changed
+      - query_spec_nh.current|length == 1
 
-- name: Verify remove_nh
-  assert:
-    that:
-    - remove_nh is changed
-    - remove_nh.current == []
+  # REMOVE NH
+  - name: Remove nexthop
+    cisco.aci.aci_l3out_static_routes_nexthop: 
+      <<: *nh_present
+      state: absent
+    register: remove_nh
+
+  - name: Verify remove_nh
+    assert:
+      that:
+      - remove_nh is changed
+      - remove_nh.current == []

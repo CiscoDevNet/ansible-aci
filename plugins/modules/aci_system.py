@@ -28,6 +28,7 @@ options:
     choices: [ query ]
     default: query
     type: str
+
 notes:
 - More information about the internal APIC class B(top:System) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).

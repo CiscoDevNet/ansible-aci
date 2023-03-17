@@ -41,6 +41,7 @@
   assert:
     that:
     - add_bgp_rr_node is changed
+    - add_bgp_rr_node.current.0.bgpRRNodePEp.attributes.annotation == 'orchestrator:ansible'
     - add_bgp_rr_node.current.0.bgpRRNodePEp.attributes.dn == "uni/fabric/bgpInstP-default/rr/node-101"
     - add_bgp_rr_node.current.0.bgpRRNodePEp.attributes.id == "101"
     - add_bgp_rr_node.current.0.bgpRRNodePEp.attributes.podId == "1"

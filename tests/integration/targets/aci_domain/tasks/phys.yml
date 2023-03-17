@@ -47,6 +47,7 @@
     - cm_add_domain.sent.physDomP.attributes.name == nm_add_domain.sent.physDomP.attributes.name == 'phys_dom'
     - cm_add_domain.proposed.physDomP.attributes.name  == nm_add_domain.proposed.physDomP.attributes.name  == 'phys_dom'
     - cm_add_domain.current == cm_add_domain.previous == nm_add_domain.previous == []
+    - nm_add_domain.current.0.physDomP.attributes.annotation == 'orchestrator:ansible'
     - nm_add_domain.current.0.physDomP.attributes.name == 'phys_dom'
     - nm_add_domain.current.0.physDomP.attributes.dn == 'uni/phys-phys_dom'
 

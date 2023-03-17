@@ -56,6 +56,7 @@
     - add_syslog_src.current.0.syslogSrc.attributes.name == "ansible_syslog_src"
     - add_syslog_src.current.0.syslogSrc.attributes.incl == "audit,events,faults"
     - add_syslog_src.current.0.syslogSrc.attributes.minSev == "errors"
+    - add_syslog_src.current.0.syslogSrc.attributes.annotation == 'orchestrator:ansible'
 
 - name: Verify that ansible_syslog_src children have correct attributes
   assert:

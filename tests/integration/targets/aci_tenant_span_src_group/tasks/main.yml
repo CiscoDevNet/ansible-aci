@@ -1,0 +1,184 @@
+# Test code for the ACI modules
+# Copyright: (c) 2022, Akini Ross (@akinross)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    cisco.aci.aci_tenant: &aci_tenant
+      <<: *aci_info
+      tenant: ansible_tenant
+      state: present
+
+  - name: Add new bd
+    cisco.aci.aci_bd: &aci_bd
+      <<: *aci_tenant
+      bd: anstest
+    register: bd_present
+
+  - name: Add a new source ap
+    cisco.aci.aci_ap:
+      <<: *aci_tenant 
+      ap: ansible_source_ap
+
+  - name: Add a new dest ap
+    cisco.aci.aci_ap:
+      <<: *aci_tenant 
+      ap: ansible_dest_ap
+
+  - name: Add a new dest epg
+    cisco.aci.aci_epg:
+      <<: *aci_bd 
+      ap: ansible_dest_ap
+      epg: ansible_dest_epg
+
+  - name: Add a new source epg
+    cisco.aci.aci_epg:
+      <<: *aci_bd
+      ap: ansible_dest_ap
+      epg: ansible_source_epg
+
+  - name: Add span dest group
+    cisco.aci.aci_tenant_span_dst_group:
+      <<: *aci_info
+      destination_group: ansible_dest_group
+      destination_ip: 10.0.0.1
+      source_ip: 10.0.2.1
+      tenant: ansible_tenant
+      ttl: 2
+      mtu: 1500
+      flow_id: 1
+      dscp: "CS1"
+      destination_epg:
+        tenant: ansible_tenant
+        ap: ansible_dest_ap
+        epg: ansible_dest_epg
+      state: present
+
+  - name: Create a source group (check mode)
+    cisco.aci.aci_tenant_span_src_group: &aci_span
+      <<: *aci_tenant
+      name: ansible_span
+      description: ansible test description
+      dst_group: ansible_dest_group
+    check_mode: yes
+    register: cm_create_with_dest
+
+  - name: Create a source group
+    cisco.aci.aci_tenant_span_src_group:
+      <<: *aci_span
+    register: nm_create_with_dest
+
+  - name: Create a source group again
+    cisco.aci.aci_tenant_span_src_group:
+      <<: *aci_span
+    register: nm_create_with_dest_again
+
+  - name: Create second source group
+    cisco.aci.aci_tenant_span_src_group:
+      <<: *aci_tenant
+      name: ansible_span_2
+      description: ansible test description
+    register: create_without_dest
+
+  - name: Change second source group
+    cisco.aci.aci_tenant_span_src_group:
+      <<: *aci_tenant
+      name: ansible_span_2
+      description: ansible test description 2
+    register: change_without_dest
+
+  - name: Verify create of source groups
+    ansible.builtin.assert:
+      that:
+      - cm_create_with_dest is changed
+      - nm_create_with_dest is changed
+      - nm_create_with_dest.current.0.spanSrcGrp.attributes.name == "ansible_span"
+      - nm_create_with_dest.current.0.spanSrcGrp.attributes.descr == "ansible test description"
+      - nm_create_with_dest.current.0.spanSrcGrp.children.0.spanSpanLbl.attributes.name == "ansible_dest_group"
+      - nm_create_with_dest_again is not changed
+      - nm_create_with_dest_again.current.0.spanSrcGrp.attributes.name == "ansible_span"
+      - nm_create_with_dest_again.current.0.spanSrcGrp.attributes.descr == "ansible test description"
+      - nm_create_with_dest_again.current.0.spanSrcGrp.children.0.spanSpanLbl.attributes.name == "ansible_dest_group"
+      - create_without_dest is changed
+      - create_without_dest.current.0.spanSrcGrp.attributes.name == "ansible_span_2"
+      - create_without_dest.current.0.spanSrcGrp.attributes.descr == "ansible test description"
+      - '"children" not in create_without_dest.current.0.spanSrcGrp'
+      - change_without_dest is changed
+      - change_without_dest.current.0.spanSrcGrp.attributes.name == "ansible_span_2"
+      - change_without_dest.current.0.spanSrcGrp.attributes.descr == "ansible test description 2"
+      - '"children" not in change_without_dest.current.0.spanSrcGrp'
+
+  - name: Query a source groups
+    cisco.aci.aci_tenant_span_src_group:
+      <<: *aci_span
+      state: query
+    register: query_one
+
+  - name: Query all source groups
+    cisco.aci.aci_tenant_span_src_group:
+      <<: *aci_info
+      state: query
+    register: query_all
+
+  - name: Verify queries to source groups
+    ansible.builtin.assert:
+      that:
+      - query_one is not changed
+      - query_one.current.0.spanSrcGrp.attributes.name == "ansible_span"
+      - query_one.current.0.spanSrcGrp.attributes.descr == "ansible test description"
+      - query_one.current.0.spanSrcGrp.children.0.spanSpanLbl.attributes.name == "ansible_dest_group"
+      - query_all is not changed
+      - query_all.current | length == 2
+
+  - name: Delete a source group
+    cisco.aci.aci_tenant_span_src_group:
+      <<: *aci_span
+      state: absent
+    register: delete
+
+  - name: Delete a source group again
+    cisco.aci.aci_tenant_span_src_group:
+      <<: *aci_span
+      state: absent
+    register: delete_again
+
+  - name: Verify delete of source group
+    ansible.builtin.assert:
+      that:
+      - delete is changed
+      - delete_again is not changed
+      - delete.current == []
+
+  - name: Remove the ansible_tenant
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant 
+      state: absent

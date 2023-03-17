@@ -55,17 +55,44 @@ author:
 - Dag Wieers (@dagwieers)
 """
 
-# FIXME: Add more, better examples
 EXAMPLES = r"""
-- name: Add a MCP interface policy
+- name: Create a MCP interface policy
   cisco.aci.aci_interface_policy_mcp:
-    host: '{{ hostname }}'
-    username: '{{ username }}'
-    password: '{{ password }}'
-    mcp: '{{ mcp }}'
-    description: '{{ descr }}'
-    admin_state: '{{ admin_state }}'
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    mcp: MCP_OFF
+    admin_state: false
+    state: present
   delegate_to: localhost
+
+- name: Delete a MCP interface policy
+  cisco.aci.aci_interface_policy_mcp:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    mcp: MCP_OFF
+    state: absent
+  delegate_to: localhost
+
+- name: Query all MCP interface policies
+  cisco.aci.aci_interface_policy_mcp:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific MCP interface policy
+  cisco.aci.aci_interface_policy_mcp:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    mcp: MCP_OFF
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""

@@ -4,19 +4,18 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_vmm_uplink_container
 short_description: Manage VMM uplink containers (vmm:UplinkPCont)
 description:
 - Manage VMM Uplink containers on Cisco ACI fabrics.
-- Individual uplinks within the container are managed using the M(aci_vmm_uplink) module
+- Individual uplinks within the container are managed using the M(cisco.aci.aci_vmm_uplink) module
 options:
   domain:
     description:
@@ -35,6 +34,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - The C(domain) used must exist before using this module in your playbook.
@@ -48,9 +48,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new uplink container
   cisco.aci.aci_vmm_uplink_container:
     host: apic
@@ -79,9 +79,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -184,72 +184,73 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        domain=dict(type='str'),
-        num_of_uplinks=dict(type='int'),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
+        domain=dict(type="str"),
+        num_of_uplinks=dict(type="int"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['domain']],
-            ['state', 'present', ['domain', 'num_of_uplinks']],
+            ["state", "absent", ["domain"]],
+            ["state", "present", ["domain", "num_of_uplinks"]],
         ],
     )
 
-    domain = module.params.get('domain')
-    num_of_uplinks = module.params.get('num_of_uplinks')
-    state = module.params.get('state')
+    domain = module.params.get("domain")
+    num_of_uplinks = module.params.get("num_of_uplinks")
+    state = module.params.get("state")
 
     aci = ACIModule(module)
 
     aci.construct_url(
         root_class=dict(
-            aci_class='vmmProvP',
-            aci_rn='vmmp-VMware',
-            module_object='VMware',
-            target_filter={'name': 'VMware'},
+            aci_class="vmmProvP",
+            aci_rn="vmmp-VMware",
+            module_object="VMware",
+            target_filter={"name": "VMware"},
         ),
         subclass_1=dict(
-            aci_class='vmmDomP',
-            aci_rn='dom-{0}'.format(domain),
+            aci_class="vmmDomP",
+            aci_rn="dom-{0}".format(domain),
             module_object=domain,
-            target_filter={'name': domain},
+            target_filter={"name": domain},
         ),
         subclass_2=dict(
-            aci_class='vmmUplinkPCont',
-            aci_rn='uplinkpcont',
-            module_object='uplinkpcont',
-            target_filter={'rn': 'uplinkpcont'},
+            aci_class="vmmUplinkPCont",
+            aci_rn="uplinkpcont",
+            module_object="uplinkpcont",
+            target_filter={"rn": "uplinkpcont"},
         ),
-        child_classes=['vmmUplinkP'],
+        child_classes=["vmmUplinkP"],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='vmmUplinkPCont',
+            aci_class="vmmUplinkPCont",
             class_config=dict(
                 numOfUplinks=num_of_uplinks,
             ),
         )
 
-        aci.get_diff(aci_class='vmmUplinkPCont')
+        aci.get_diff(aci_class="vmmUplinkPCont")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

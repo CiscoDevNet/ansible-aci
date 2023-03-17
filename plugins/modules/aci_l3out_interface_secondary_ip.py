@@ -79,6 +79,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - This is a test
@@ -267,25 +268,19 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
 
-from ansible_collections.cisco.aci.plugins.module_utils.aci import (
-    ACIModule,
-    aci_argument_spec,
-)
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 from ansible.module_utils.basic import AnsibleModule
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         l3out=dict(type="str", aliases=["l3out_name"]),
         node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
-        interface_profile=dict(
-            type="str", aliases=["interface_profile_name", "logical_interface"]
-        ),
-        state=dict(
-            type="str", default="present", choices=["absent", "present", "query"]
-        ),
+        interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         pod_id=dict(type="str"),
         node_id=dict(type="str"),
         path_ep=dict(type="str"),
@@ -351,9 +346,7 @@ def main():
 
     path_dn = None
     if pod_id and node_id and path_ep:
-        path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(
-            pod_id, path_type, node_id, path_ep
-        )
+        path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, path_type, node_id, path_ep)
 
     aci.construct_url(
         root_class=dict(
@@ -397,9 +390,7 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        aci.payload(
-            aci_class="l3extIp", class_config=dict(addr=address, ipv6Dad=ipv6_dad)
-        )
+        aci.payload(aci_class="l3extIp", class_config=dict(addr=address, ipv6Dad=ipv6_dad))
 
         aci.get_diff(aci_class="l3extIp")
         aci.post_config()

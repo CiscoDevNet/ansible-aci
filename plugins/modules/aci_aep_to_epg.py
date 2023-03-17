@@ -297,12 +297,24 @@ def main():
     aci.construct_url(
         root_class=dict(aci_class="infraAttEntityP", aci_rn="infra/attentp-{0}".format(aep), module_object=aep, target_filter={"name": aep}),
         subclass_1=dict(aci_class="infraGeneric", aci_rn="gen-default", module_object="default", target_filter={"name": "default"}),
-        child_classes=["infraRsFuncToEpg"],
+        subclass_2=dict(aci_class="infraRsFuncToEpg", aci_rn="rsfuncToEpg-[{0}]".format(epg_mo), module_object=epg_mo, target_filter={"tDn": epg_mo}),
     )
 
     aci.get_existing()
 
     if state == "present":
+        # Post configuration on infraGeneric (subclass_1) level instead of on
+        # infraRsFuncToEpg (subclass_2) level.
+        # The reason being that the MO "gen-default" (of class infraGeneric) does not
+        # exist until the first EPG to AEP association is created.
+        aci.construct_url(
+            root_class=dict(aci_class="infraAttEntityP", aci_rn="infra/attentp-{0}".format(aep), module_object=aep, target_filter={"name": aep}),
+            subclass_1=dict(aci_class="infraGeneric", aci_rn="gen-default", module_object="default", target_filter={"name": "default"}),
+            child_classes=["infraRsFuncToEpg"],
+        )
+
+        aci.get_existing()
+
         child_configs = [dict(infraRsFuncToEpg=dict(attributes=dict(encap=encap, primaryEncap=primary_encap, mode=interface_mode, tDn=epg_mo)))]
 
         aci.payload(aci_class="infraGeneric", class_config=dict(name="default"), child_configs=child_configs)

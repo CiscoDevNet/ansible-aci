@@ -19,135 +19,142 @@
 - name: Remove test tenant before we kickoff
   cisco.aci.aci_tenant: &tenant_absent
     <<: *aci_info
-    tenant: l2outintftest
+    tenant: ansible_test
     state: absent
 
-# SETUP ENVIRONMENT
-- name: Create tenant
-  cisco.aci.aci_tenant: &tenant_present
-    <<: *tenant_absent
-    state: present
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Create l2out
-  cisco.aci.aci_l2out:
-    <<: *aci_info
-    tenant: l2outintftest
-    l2out: l2outintftest
-    bd: l2outintftest
-    domain: l2outintftest
-    vlan: 3200
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # SETUP ENVIRONMENT
+  - name: Create tenant
+    cisco.aci.aci_tenant: &tenant_present
+      <<: *tenant_absent
+      state: present
 
-- name: Crete node profile
-  cisco.aci.aci_l2out_logical_node_profile: &np_present
-    <<: *aci_info
-    node_profile: l2outintftest
-    l2out: l2outintftest
-    tenant: l2outintftest
-    state: present
+  - name: Create l2out
+    cisco.aci.aci_l2out:
+      <<: *aci_info
+      tenant: ansible_test
+      l2out: l2outintftest
+      bd: l2outintftest
+      domain: l2outintftest
+      vlan: 3200
 
-# BEGIN WITH TESTS (ADD PROFILE)
-- name: Add interface profile (check_mode)
-  cisco.aci.aci_l2out_logical_interface_profile: &intf_present
-    <<: *np_present
-    interface_profile: INTFS
-  check_mode: yes
-  register: cm_add_intf
+  - name: Crete node profile
+    cisco.aci.aci_l2out_logical_node_profile: &np_present
+      <<: *aci_info
+      node_profile: l2outintftest
+      l2out: l2outintftest
+      tenant: ansible_test
+      state: present
 
-- name: Add interface profile (normal_mode)
-  cisco.aci.aci_l2out_logical_interface_profile:
-    <<: *intf_present
-  register: nm_add_intf
+  # BEGIN WITH TESTS (ADD PROFILE)
+  - name: Add interface profile (check_mode)
+    cisco.aci.aci_l2out_logical_interface_profile: &intf_present
+      <<: *np_present
+      interface_profile: INTFS
+    check_mode: yes
+    register: cm_add_intf
 
-- name: Verify nm_add_intf
-  assert:
-    that:
-    - cm_add_intf is changed
-    - nm_add_intf is changed
-    - cm_add_intf.previous == nm_add_intf.previous == []
-    - cm_add_intf.sent.l2extLIfP.attributes.name == nm_add_intf.sent.l2extLIfP.attributes.name == 'INTFS'
-  
-- name: Add profile  again, check if idempotency works
-  cisco.aci.aci_l2out_logical_interface_profile:
-    <<: *intf_present
-  register: add_intf_again
+  - name: Add interface profile (normal_mode)
+    cisco.aci.aci_l2out_logical_interface_profile:
+      <<: *intf_present
+    register: nm_add_intf
 
-- name: Verify add_intf_again
-  assert:
-    that:
-    - add_intf_again is not changed
+  - name: Verify nm_add_intf
+    assert:
+      that:
+      - cm_add_intf is changed
+      - nm_add_intf is changed
+      - cm_add_intf.previous == nm_add_intf.previous == []
+      - cm_add_intf.sent.l2extLIfP.attributes.name == nm_add_intf.sent.l2extLIfP.attributes.name == 'INTFS'
+      - nm_add_intf.current.0.l2extLIfP.attributes.annotation == 'orchestrator:ansible'
 
-# ADD ANOTHER PROFILE
-- name: Add another profile
-  cisco.aci.aci_l2out_logical_interface_profile:
-    <<: *intf_present
-    interface_profile: INTF2
+  - name: Add profile  again, check if idempotency works
+    cisco.aci.aci_l2out_logical_interface_profile:
+      <<: *intf_present
+    register: add_intf_again
 
-# QUERY ALL PROFILES
-- name: Query all profiles
-  cisco.aci.aci_l2out_logical_interface_profile:
-    <<: *aci_info
-    state: query
-    l2out: l2outintftest
-    tenant: l2outintftest
-    node_profile: l2outintftest
-  register: query_all_profiles
+  - name: Verify add_intf_again
+    assert:
+      that:
+      - add_intf_again is not changed
 
-- name: Verify query_all_profiles
-  assert:
-    that:
-    - query_all_profiles is not changed
-    - query_all_profiles.current.0.l2extLNodeP.children | length > 1
+  # ADD ANOTHER PROFILE
+  - name: Add another profile
+    cisco.aci.aci_l2out_logical_interface_profile:
+      <<: *intf_present
+      interface_profile: INTF2
 
-# QUERY A SPECIFIC PROFILE
-- name: Query a specific profile
-  cisco.aci.aci_l2out_logical_interface_profile:
-    <<: *intf_present
-    state: query
-  register: query_spec_profile
+  # QUERY ALL PROFILES
+  - name: Query all profiles
+    cisco.aci.aci_l2out_logical_interface_profile:
+      <<: *aci_info
+      state: query
+      l2out: l2outintftest
+      tenant: ansible_test
+      node_profile: l2outintftest
+    register: query_all_profiles
 
-- name: Verify query_spec_profile
-  assert:
-    that:
-    - query_spec_profile is not changed
-    - query_spec_profile.current|length == 1
-    - query_spec_profile.current.0.l2extLIfP.attributes.name == 'INTFS'
-    - query_spec_profile.current.0.l2extLIfP.attributes.dn == 'uni/tn-l2outintftest/l2out-l2outintftest/lnodep-l2outintftest/lifp-INTFS'
+  - name: Verify query_all_profiles
+    assert:
+      that:
+      - query_all_profiles is not changed
+      - query_all_profiles.current.0.l2extLNodeP.children | length > 1
 
-# QUERY A NON EXISTING PROFILE
-- name: Query a nonexisting profile
-  cisco.aci.aci_l2out_logical_interface_profile:
-    <<: *np_present
-    interface_profile: nonexist
-    state: query
-  register: query_nonexist_profile
+  # QUERY A SPECIFIC PROFILE
+  - name: Query a specific profile
+    cisco.aci.aci_l2out_logical_interface_profile:
+      <<: *intf_present
+      state: query
+    register: query_spec_profile
 
-- name: Verify query_nonexist_profile
-  assert:
-    that:
-    - query_nonexist_profile is not changed
-    - query_nonexist_profile.current == []
+  - name: Verify query_spec_profile
+    assert:
+      that:
+      - query_spec_profile is not changed
+      - query_spec_profile.current|length == 1
+      - query_spec_profile.current.0.l2extLIfP.attributes.name == 'INTFS'
+      - query_spec_profile.current.0.l2extLIfP.attributes.dn == 'uni/tn-ansible_test/l2out-l2outintftest/lnodep-l2outintftest/lifp-INTFS'
 
-# REMOVE PROFILE
-- name: Remove interface profile
-  cisco.aci.aci_l2out_logical_interface_profile: &intf_absent
-    <<: *intf_present
-    state: absent
-  register: remove_profile
+  # QUERY A NON EXISTING PROFILE
+  - name: Query a nonexisting profile
+    cisco.aci.aci_l2out_logical_interface_profile:
+      <<: *np_present
+      interface_profile: nonexist
+      state: query
+    register: query_nonexist_profile
 
-- name: Verify remove_profile
-  assert:
-    that:
-    - remove_profile is changed
-    - remove_profile.current == []
+  - name: Verify query_nonexist_profile
+    assert:
+      that:
+      - query_nonexist_profile is not changed
+      - query_nonexist_profile.current == []
 
-# REMOVE NONEXISTING PROFILE
-- name: Remove interface profile again (nonexisting)
-  cisco.aci.aci_l2out_logical_interface_profile:
-    <<: *intf_absent
-  register: remove_nonexist_profile
+  # REMOVE PROFILE
+  - name: Remove interface profile
+    cisco.aci.aci_l2out_logical_interface_profile: &intf_absent
+      <<: *intf_present
+      state: absent
+    register: remove_profile
 
-- name: Verify remove_nonexist_profile
-  assert:
-    that:
-    - remove_nonexist_profile is not changed
-    - remove_nonexist_profile.current == []
+  - name: Verify remove_profile
+    assert:
+      that:
+      - remove_profile is changed
+      - remove_profile.current == []
+
+  # REMOVE NONEXISTING PROFILE
+  - name: Remove interface profile again (nonexisting)
+    cisco.aci.aci_l2out_logical_interface_profile:
+      <<: *intf_absent
+    register: remove_nonexist_profile
+
+  - name: Verify remove_nonexist_profile
+    assert:
+      that:
+      - remove_nonexist_profile is not changed
+      - remove_nonexist_profile.current == []

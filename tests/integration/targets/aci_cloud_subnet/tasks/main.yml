@@ -129,6 +129,7 @@
       that:
       - nm_add_another_subnet is changed
       - nm_add_another_subnet.previous == []
+      - nm_add_another_subnet.current.0.cloudSubnet.attributes.annotation == 'orchestrator:ansible'
       - nm_add_another_subnet.current.0.cloudSubnet.attributes.descr == "another subnet"
       - nm_add_another_subnet.current.0.cloudSubnet.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.50.0.0/16]/subnet-[10.50.0.2]"
 

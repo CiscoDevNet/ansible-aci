@@ -40,6 +40,7 @@
     that:
     - add_switch_prf.current.0.fabricLeafP.attributes.dn == "uni/fabric/leprof-ansible_leaf_switch_prf"
     - add_switch_prf.current.0.fabricLeafP.attributes.name == "ansible_leaf_switch_prf"
+    - add_switch_prf.current.0.fabricLeafP.attributes.annotation == 'orchestrator:ansible'
 
 # CREATE SPINE SWITCH POLICY AGAIN TO TEST IDEMPOTENCE
 - name: Create ansible_leaf_switch_prf again

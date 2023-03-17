@@ -270,8 +270,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['pool', 'pool_allocation_mode', 'block_end', 'block_start']],
-            ['state', 'present', ['pool', 'pool_allocation_mode', 'block_end', 'block_start']],
+            ["state", "absent", ["pool", "pool_allocation_mode", "block_end", "block_start"]],
+            ["state", "present", ["pool", "pool_allocation_mode", "block_end", "block_start"]],
         ],
     )
 

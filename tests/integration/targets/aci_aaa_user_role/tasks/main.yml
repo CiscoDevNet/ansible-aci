@@ -1,0 +1,336 @@
+# Test code for the ACI modules
+# Copyright: (c) 2022, Tim Cragg (timcragg) <tcragg@cisco.com>
+# Copyright: (c) 2022, Sabari Jaganathan (@sajagana)
+# Copyright: (c) 2017, Dag Wieers (dagwieers) <dag@wieers.com>
+#
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove any pre-existing user
+  cisco.aci.aci_aaa_user:
+    <<: *aci_info
+    aaa_user: ansible
+    state: absent
+
+# ADD USER
+- name: Add a aaa_user
+  cisco.aci.aci_aaa_user: &user_present
+    <<: *aci_info
+    aaa_user: ansible
+    aaa_password: 12!Ab:cD!34
+    description: Ansible test user
+    email: ansible@ansible.lan
+    enabled: yes
+    expiration: never
+    expires: no
+    first_name: Ansible
+    last_name: User
+    phone: 1-234-555-678
+  register: add_user
+
+# ADD SECURITY DOMAINS
+- name: Ensure anstest-security-domain exists
+  cisco.aci.aci_aaa_domain:
+    <<: *aci_info
+    name: anstest-security-domain
+    state: present
+
+- name: Ensure anstest-security-domain-1 exists
+  cisco.aci.aci_aaa_domain:
+    <<: *aci_info
+    name: anstest-security-domain-1
+    state: present
+
+# ADD USER DOMAIN
+- name: Add "anstest-security-domain" user domain to aaa_user
+  cisco.aci.aci_aaa_user_domain: &sec_domain_present
+    <<: *aci_info
+    name: anstest-security-domain
+    aaa_user: ansible
+    state: present
+
+- name: Add "anstest-security-domain-1" user domain to aaa_user
+  cisco.aci.aci_aaa_user_domain: &sec_domain1_present
+    <<: *aci_info
+    name: anstest-security-domain-1
+    aaa_user: ansible
+    state: present
+
+# Test Part
+# ADD USER ROLE
+- name: Add user role to "anstest-security-domain" user domain with check mode
+  cisco.aci.aci_aaa_user_role: &cm_user_role_present
+    <<: *aci_info
+    aaa_user: ansible
+    user_domain: anstest-security-domain
+    name: admin
+    privilege_type: write
+    state: present
+  check_mode: yes
+  register: cm_user_role_present
+
+- name: Assertions check for add user role to "anstest-security-domain" with check mode
+  assert:
+    that:
+      - cm_user_role_present is changed
+      - cm_user_role_present.current | length == 0
+      - cm_user_role_present.previous | length == 0
+      - cm_user_role_present.sent.aaaUserRole.attributes.name == 'admin'
+      - cm_user_role_present.sent.aaaUserRole.attributes.privType == 'writePriv'
+
+- name: Add user role to "anstest-security-domain" user domain with normal mode
+  cisco.aci.aci_aaa_user_role: &nm_user_role_present
+    <<: *cm_user_role_present
+  register: nm_user_role_present
+
+- name: Assertions check for add user role to "anstest-security-domain" with normal mode
+  assert:
+    that:
+      - nm_user_role_present is changed
+      - nm_user_role_present.current | length == 1
+      - nm_user_role_present.previous | length == 0
+      - nm_user_role_present.current.0.aaaUserRole.attributes.name == 'admin'
+      - nm_user_role_present.current.0.aaaUserRole.attributes.privType == 'writePriv'
+
+- name: Add user role to "anstest-security-domain" user domain with check mode - idempotency works
+  cisco.aci.aci_aaa_user_role:
+    <<: *nm_user_role_present
+  check_mode: yes
+  register: cm_idempotency_user_role_present
+
+- name: Idempotency assertions check for add user role to "anstest-security-domain" check mode
+  assert:
+    that:
+      - cm_idempotency_user_role_present is not changed
+      - cm_idempotency_user_role_present.previous | length == 1
+      - cm_idempotency_user_role_present.current | length == 1
+      - cm_idempotency_user_role_present.current.0.aaaUserRole.attributes.name == 'admin'
+      - cm_idempotency_user_role_present.current.0.aaaUserRole.attributes.privType == 'writePriv'
+      - cm_idempotency_user_role_present.previous.0.aaaUserRole.attributes.name == 'admin'
+      - cm_idempotency_user_role_present.previous.0.aaaUserRole.attributes.privType == 'writePriv'
+
+- name: Add user role to "anstest-security-domain" user domain with normal mode - idempotency works
+  cisco.aci.aci_aaa_user_role:
+    <<: *nm_user_role_present
+  register: idempotency_user_role_present
+
+- name: Idempotency assertions check for add user role to "anstest-security-domain"
+  assert:
+    that:
+      - idempotency_user_role_present is not changed
+      - idempotency_user_role_present.previous | length == 1
+      - idempotency_user_role_present.current | length == 1
+      - idempotency_user_role_present.current.0.aaaUserRole.attributes.name == 'admin'
+      - idempotency_user_role_present.current.0.aaaUserRole.attributes.privType == 'writePriv'
+      - idempotency_user_role_present.previous.0.aaaUserRole.attributes.name == 'admin'
+      - idempotency_user_role_present.previous.0.aaaUserRole.attributes.privType == 'writePriv'
+
+- name: Add user role to "anstest-security-domain-1" user domain
+  cisco.aci.aci_aaa_user_role:
+    <<: *aci_info
+    aaa_user: ansible
+    user_domain: anstest-security-domain-1
+    name: admin
+    state: present
+  register: user_role_present_sec_domain1
+
+- name: Assertions check for add a user role to "anstest-security-domain-1"
+  assert:
+    that:
+      - user_role_present_sec_domain1 is changed
+      - user_role_present_sec_domain1.current | length == 1
+      - user_role_present_sec_domain1.previous | length == 0
+      - user_role_present_sec_domain1.current.0.aaaUserRole.attributes.name == 'admin'
+      - user_role_present_sec_domain1.current.0.aaaUserRole.attributes.privType == 'readPriv'
+
+# UPDATE USER ROLE
+- name: Update user role to "anstest-security-domain" user domain with check mode
+  cisco.aci.aci_aaa_user_role:
+    <<: *nm_user_role_present
+    privilege_type: read
+  check_mode: yes
+  register: cm_update_user_role_present
+
+- name: Assertions check for update user role to "anstest-security-domain" with check mode
+  assert:
+    that:
+      - cm_update_user_role_present is changed
+      - cm_update_user_role_present.current | length == 1
+      - cm_update_user_role_present.previous | length == 1
+      - cm_update_user_role_present.sent.aaaUserRole.attributes.privType == 'readPriv'
+
+- name: Update user role to "anstest-security-domain" user domain with normal mode
+  cisco.aci.aci_aaa_user_role:
+    <<: *nm_user_role_present
+    privilege_type: read
+  register: update_user_role_present
+
+- name: Assertions check for update user role to "anstest-security-domain" with normal mode
+  assert:
+    that:
+      - update_user_role_present is changed
+      - update_user_role_present.current | length == 1
+      - update_user_role_present.previous | length == 1
+      - update_user_role_present.current.0.aaaUserRole.attributes.name == 'admin'
+      - update_user_role_present.current.0.aaaUserRole.attributes.privType == 'readPriv'
+
+- name: Add list of user roles to a user domain
+  cisco.aci.aci_aaa_user_role:
+    <<: *aci_info
+    aaa_user: ansible
+    user_domain: anstest-security-domain
+    name: "{{ item.name }}"
+    privilege_type: "{{ item.privilege_type }}"
+    state: present
+  with_items:
+    - name: aaa
+      privilege_type: write
+    - name: access-admin
+      privilege_type: write
+    - name: ops
+      privilege_type: write
+
+# QUERY USER ROLE
+- name: Query a user role from "anstest-security-domain-1" user domain
+  cisco.aci.aci_aaa_user_role:
+    <<: *aci_info
+    user_domain: anstest-security-domain-1
+    name: admin
+    state: query
+  register: query_user_role_from_sec_domain
+
+- name: Assertions check for query a user role from "anstest-security-domain-1" user domain
+  assert:
+    that:
+      - query_user_role_from_sec_domain is not changed
+      - query_user_role_from_sec_domain.current | length == 1
+      - query_user_role_from_sec_domain.current.0.aaaUserDomain.children | length == 1
+      - query_user_role_from_sec_domain.current.0.aaaUserDomain.children.0.aaaUserRole.attributes.name == 'admin'
+      - query_user_role_from_sec_domain.current.0.aaaUserDomain.children.0.aaaUserRole.attributes.privType == 'readPriv'
+
+# QUERY ALL USER ROLES
+- name: Query all user roles from "anstest-security-domain" user domain
+  cisco.aci.aci_aaa_user_role:
+    <<: *aci_info
+    aaa_user: ansible
+    user_domain: anstest-security-domain
+    state: query
+  register: query_all_user_roles_of_sec_domain
+
+- name: Assertions check for query all user roles from "anstest-security-domain" user domain
+  assert:
+    that:
+      - query_all_user_roles_of_sec_domain is not changed
+      - query_all_user_roles_of_sec_domain.current | length == 1
+      - query_all_user_roles_of_sec_domain.current.0.aaaUserDomain.attributes.name == 'anstest-security-domain'
+      - query_all_user_roles_of_sec_domain.current.0.aaaUserDomain.children | length == 4
+
+- name: Query all user roles from a user
+  cisco.aci.aci_aaa_user_role:
+    <<: *aci_info
+    aaa_user: ansible
+    state: query
+  register: query_all_user_roles_from_a_user
+
+- name: Assertions check for query all user roles from a user
+  assert:
+    that:
+      - query_all_user_roles_from_a_user is not changed
+      - query_all_user_roles_from_a_user.current | length == 1
+      - query_all_user_roles_from_a_user.current.0.aaaUser.attributes.name == 'ansible'
+      - query_all_user_roles_from_a_user.current.0.aaaUser.children | length == 3 # count of user domains including common
+
+- name: Query all user roles
+  cisco.aci.aci_aaa_user_role:
+    <<: *aci_info
+    state: query
+  register: query_all_user_roles
+
+- name: Assertions check for query all user roles
+  assert:
+    that:
+      - query_all_user_roles is not changed
+      - query_all_user_roles.current | length >= 6 # count of user roles including common sec domain user role
+
+# REMOVE USER ROLE
+- name: Remove user role from a user domain with check mode
+  cisco.aci.aci_aaa_user_role: &cm_user_role_absent
+    <<: *aci_info
+    aaa_user: ansible
+    user_domain: anstest-security-domain-1
+    name: admin
+    state: absent
+  check_mode: yes
+  register: cm_user_role_absent
+
+- name: Assertions check for removing a user role from "anstest-security-domain-1" with check mode
+  assert:
+    that:
+      - cm_user_role_absent is changed
+      - cm_user_role_absent.current | length == 1
+      - cm_user_role_absent.current.0.aaaUserRole.attributes.name == 'admin'
+      - cm_user_role_absent.current.0.aaaUserRole.attributes.privType == 'readPriv'
+      - cm_user_role_absent.previous | length == 1
+      - cm_user_role_absent.previous.0.aaaUserRole.attributes.name == 'admin'
+      - cm_user_role_absent.previous.0.aaaUserRole.attributes.privType == 'readPriv'
+
+- name: Remove user role from a user domain with normal mode
+  cisco.aci.aci_aaa_user_role: &nm_user_role_absent
+    <<: *cm_user_role_absent
+  register: nm_user_role_absent
+
+- name: Assertions check for removing a user role from "anstest-security-domain-1" with normal mode
+  assert:
+    that:
+      - nm_user_role_absent is changed
+      - nm_user_role_absent.current == []
+      - nm_user_role_absent.previous | length == 1
+      - nm_user_role_absent.previous.0.aaaUserRole.attributes.name == 'admin'
+      - nm_user_role_absent.previous.0.aaaUserRole.attributes.privType == 'readPriv'
+
+- name: Remove user role from a user domain with normal mode - idempotency works
+  cisco.aci.aci_aaa_user_role:
+    <<: *nm_user_role_absent
+  register: idempotency_user_role_absent
+
+- name: Idempotency assertions check for removing a user role from "anstest-security-domain-1"
+  assert:
+    that:
+      - idempotency_user_role_absent is not changed
+      - idempotency_user_role_absent.current == []
+      - idempotency_user_role_absent.previous == []
+
+# Cleanup part
+- name: Remove aaa_user "ansible"
+  cisco.aci.aci_aaa_user:
+    <<: *user_present
+    state: absent
+
+- name: Remove anstest-security-domain domain
+  cisco.aci.aci_aaa_domain:
+    <<: *aci_info
+    name: anstest-security-domain
+    state: absent
+
+- name: Remove anstest-security-domain-1 domain
+  cisco.aci.aci_aaa_domain:
+    <<: *aci_info
+    name: anstest-security-domain-1
+    state: absent

@@ -84,15 +84,43 @@ except ImportError:
 
 def aci_argument_spec():
     return dict(
-        host=dict(type="str", required=True, aliases=["hostname"], fallback=(env_fallback, ["ACI_HOST"])),
+        host=dict(
+            type="str",
+            required=True,
+            aliases=["hostname"],
+            fallback=(env_fallback, ["ACI_HOST"]),
+        ),
         port=dict(type="int", required=False, fallback=(env_fallback, ["ACI_PORT"])),
-        username=dict(type="str", default="admin", aliases=["user"], fallback=(env_fallback, ["ACI_USERNAME", "ANSIBLE_NET_USERNAME"])),
-        password=dict(type="str", no_log=True, fallback=(env_fallback, ["ACI_PASSWORD", "ANSIBLE_NET_PASSWORD"])),
+        username=dict(
+            type="str",
+            default="admin",
+            aliases=["user"],
+            fallback=(env_fallback, ["ACI_USERNAME", "ANSIBLE_NET_USERNAME"]),
+        ),
+        password=dict(
+            type="str",
+            no_log=True,
+            fallback=(env_fallback, ["ACI_PASSWORD", "ANSIBLE_NET_PASSWORD"]),
+        ),
         # Beware, this is not the same as client_key !
-        private_key=dict(type="str", aliases=["cert_key"], no_log=True, fallback=(env_fallback, ["ACI_PRIVATE_KEY", "ANSIBLE_NET_SSH_KEYFILE"])),
+        private_key=dict(
+            type="str",
+            aliases=["cert_key"],
+            no_log=True,
+            fallback=(env_fallback, ["ACI_PRIVATE_KEY", "ANSIBLE_NET_SSH_KEYFILE"]),
+        ),
         # Beware, this is not the same as client_cert !
-        certificate_name=dict(type="str", aliases=["cert_name"], fallback=(env_fallback, ["ACI_CERTIFICATE_NAME"])),
-        output_level=dict(type="str", default="normal", choices=["debug", "info", "normal"], fallback=(env_fallback, ["ACI_OUTPUT_LEVEL"])),
+        certificate_name=dict(
+            type="str",
+            aliases=["cert_name"],
+            fallback=(env_fallback, ["ACI_CERTIFICATE_NAME"]),
+        ),
+        output_level=dict(
+            type="str",
+            default="normal",
+            choices=["debug", "info", "normal"],
+            fallback=(env_fallback, ["ACI_OUTPUT_LEVEL"]),
+        ),
         timeout=dict(type="int", default=30, fallback=(env_fallback, ["ACI_TIMEOUT"])),
         use_proxy=dict(type="bool", default=True, fallback=(env_fallback, ["ACI_USE_PROXY"])),
         use_ssl=dict(type="bool", default=True, fallback=(env_fallback, ["ACI_USE_SSL"])),
@@ -103,7 +131,11 @@ def aci_argument_spec():
 
 def aci_annotation_spec():
     return dict(
-        annotation=dict(type="str", fallback=(env_fallback, ["ACI_ANNOTATION"])),
+        annotation=dict(
+            type="str",
+            default="orchestrator:ansible",
+            fallback=(env_fallback, ["ACI_ANNOTATION"]),
+        ),
     )
 
 
@@ -159,8 +191,64 @@ def netflow_spec():
 def expression_spec():
     return dict(
         key=dict(type="str", required=True, no_log=False),
-        operator=dict(type="str", choices=["not_in", "in", "equals", "not_equals", "has_key", "does_not_have_key"], required=True),
+        operator=dict(
+            type="str",
+            choices=[
+                "not_in",
+                "in",
+                "equals",
+                "not_equals",
+                "has_key",
+                "does_not_have_key",
+            ],
+            required=True,
+        ),
         value=dict(type="str"),
+    )
+
+
+def aci_contract_qos_spec():
+    return dict(type="str", choices=["level1", "level2", "level3", "unspecified"])
+
+
+def aci_contract_dscp_spec(direction=None):
+    return dict(
+        type="str",
+        aliases=["target" if not direction else "target_{0}".format(direction)],
+        choices=[
+            "AF11",
+            "AF12",
+            "AF13",
+            "AF21",
+            "AF22",
+            "AF23",
+            "AF31",
+            "AF32",
+            "AF33",
+            "AF41",
+            "AF42",
+            "AF43",
+            "CS0",
+            "CS1",
+            "CS2",
+            "CS3",
+            "CS4",
+            "CS5",
+            "CS6",
+            "CS7",
+            "EF",
+            "VA",
+            "unspecified",
+        ],
+    )
+
+
+def route_control_profile_spec():
+    return dict(
+        profile=dict(type="str", required=True),
+        l3out=dict(type="str"),
+        direction=dict(type="str", required=True),
+        tenant=dict(type="str", required=True),
     )
 
 
@@ -236,7 +324,12 @@ class ACIModule(object):
             return dt.isoformat(timespec="milliseconds")
         except Exception:
             tz = dt.strftime("%z")
-            return "%s.%03d%s:%s" % (dt.strftime("%Y-%m-%dT%H:%M:%S"), dt.microsecond / 1000, tz[:3], tz[3:])
+            return "%s.%03d%s:%s" % (
+                dt.strftime("%Y-%m-%dT%H:%M:%S"),
+                dt.microsecond / 1000,
+                tz[:3],
+                tz[3:],
+            )
 
     def define_protocol(self):
         """Set protocol based on use_ssl parameter"""
@@ -259,9 +352,21 @@ class ACIModule(object):
             url = "%(protocol)s://%(host)s:%(port)s/api/aaaLogin.json" % self.params
         else:
             url = "%(protocol)s://%(host)s/api/aaaLogin.json" % self.params
-        payload = {"aaaUser": {"attributes": {"name": self.params.get("username"), "pwd": self.params.get("password")}}}
+        payload = {
+            "aaaUser": {
+                "attributes": {
+                    "name": self.params.get("username"),
+                    "pwd": self.params.get("password"),
+                }
+            }
+        }
         resp, auth = fetch_url(
-            self.module, url, data=json.dumps(payload), method="POST", timeout=self.params.get("timeout"), use_proxy=self.params.get("use_proxy")
+            self.module,
+            url,
+            data=json.dumps(payload),
+            method="POST",
+            timeout=self.params.get("timeout"),
+            use_proxy=self.params.get("use_proxy"),
         )
 
         # Handle APIC response
@@ -455,7 +560,13 @@ class ACIModule(object):
 
         # Perform request
         resp, query = fetch_url(
-            self.module, self.url, data=None, headers=self.headers, method="GET", timeout=self.params.get("timeout"), use_proxy=self.params.get("use_proxy")
+            self.module,
+            self.url,
+            data=None,
+            headers=self.headers,
+            method="GET",
+            timeout=self.params.get("timeout"),
+            use_proxy=self.params.get("use_proxy"),
         )
 
         # Handle APIC response
@@ -540,10 +651,14 @@ class ACIModule(object):
             self.url = "{protocol}://{host}/{path}".format(path=self.path, **self.module.params)
 
         if self.child_classes:
-            self.update_qs({"rsp-subtree": "full", "rsp-subtree-class": ",".join(sorted(self.child_classes))})
+            self.update_qs(
+                {
+                    "rsp-subtree": "full",
+                    "rsp-subtree-class": ",".join(sorted(self.child_classes)),
+                }
+            )
 
     def _deep_url_parent_object(self, parent_objects, parent_class):
-
         for parent_object in parent_objects:
             if parent_object.get("aci_class") is parent_class:
                 return parent_object
@@ -682,9 +797,16 @@ class ACIModule(object):
         self._deep_url_path_builder(url_path_object)
 
     def construct_url(
-        self, root_class, subclass_1=None, subclass_2=None, subclass_3=None, subclass_4=None, subclass_5=None, child_classes=None, config_only=True
+        self,
+        root_class,
+        subclass_1=None,
+        subclass_2=None,
+        subclass_3=None,
+        subclass_4=None,
+        subclass_5=None,
+        child_classes=None,
+        config_only=True,
     ):
-
         """
         This method is used to retrieve the appropriate URL path and filter_string to make the request to the APIC.
 
@@ -710,7 +832,15 @@ class ACIModule(object):
             self.child_classes = set(child_classes)
 
         if subclass_5 is not None:
-            self._construct_url_6(root_class, subclass_1, subclass_2, subclass_3, subclass_4, subclass_5, config_only)
+            self._construct_url_6(
+                root_class,
+                subclass_1,
+                subclass_2,
+                subclass_3,
+                subclass_4,
+                subclass_5,
+                config_only,
+            )
         elif subclass_4 is not None:
             self._construct_url_5(root_class, subclass_1, subclass_2, subclass_3, subclass_4, config_only)
         elif subclass_3 is not None:
@@ -729,7 +859,12 @@ class ACIModule(object):
 
         if self.child_classes:
             # Append child_classes to filter_string if filter string is empty
-            self.update_qs({"rsp-subtree": "full", "rsp-subtree-class": ",".join(sorted(self.child_classes))})
+            self.update_qs(
+                {
+                    "rsp-subtree": "full",
+                    "rsp-subtree-class": ",".join(sorted(self.child_classes)),
+                }
+            )
 
     def _construct_url_1(self, obj, config_only=True):
         """
@@ -1054,7 +1189,12 @@ class ACIModule(object):
                 self.cert_auth(method="DELETE")
 
             resp, info = fetch_url(
-                self.module, self.url, headers=self.headers, method="DELETE", timeout=self.params.get("timeout"), use_proxy=self.params.get("use_proxy")
+                self.module,
+                self.url,
+                headers=self.headers,
+                method="DELETE",
+                timeout=self.params.get("timeout"),
+                use_proxy=self.params.get("use_proxy"),
             )
 
             self.response = info.get("msg")
@@ -1154,6 +1294,7 @@ class ACIModule(object):
             proposed_children = self.proposed[aci_class].get("children")
         else:
             proposed_children = proposed_obj
+
         if proposed_children:
             child_updates = []
             if existing_obj is None:
@@ -1164,7 +1305,10 @@ class ACIModule(object):
             # Loop through proposed child configs and compare against existing child configuration
             for child in proposed_children:
                 child_class, proposed_child, existing_child = self.get_nested_config(child, existing_children)
-                proposed_child_children, existing_child_children = self.get_nested_children(child, existing_children)
+                (
+                    proposed_child_children,
+                    existing_child_children,
+                ) = self.get_nested_children(child, existing_children)
 
                 if existing_child is None:
                     child_update = child
@@ -1175,8 +1319,6 @@ class ACIModule(object):
 
                         if child_update_children:
                             child_update = child
-                    elif existing_child_children:
-                        child_update = child
 
                 # Update list of updated child configs only if the child config is different than what exists
                 if child_update:
@@ -1201,7 +1343,12 @@ class ACIModule(object):
             self.cert_auth(path=self.path + self.filter_string, method="GET")
 
         resp, info = fetch_url(
-            self.module, uri, headers=self.headers, method="GET", timeout=self.params.get("timeout"), use_proxy=self.params.get("use_proxy")
+            self.module,
+            uri,
+            headers=self.headers,
+            method="GET",
+            timeout=self.params.get("timeout"),
+            use_proxy=self.params.get("use_proxy"),
         )
         self.response = info.get("msg")
         self.status = info.get("status")
@@ -1370,12 +1517,18 @@ class ACIModule(object):
             self.result["changed"] = True
             self.method = "POST"
 
-    def exit_json(self, **kwargs):
+    def exit_json(self, filter_existing=None, **kwargs):
+        """
+        :param filter_existing: tuple consisting of the function at (index 0) and the args at (index 1)
+        CAUTION: the function should always take in self.existing in its first parameter
+        :param kwargs: kwargs to be passed to ansible module exit_json()
+        filter_existing is not passed via kwargs since it cant handle function type and should not be exposed to user
+        """
 
         if "state" in self.params:
             if self.params.get("state") in ("absent", "present"):
                 if self.params.get("output_level") in ("debug", "info"):
-                    self.result["previous"] = self.existing
+                    self.result["previous"] = self.existing if not filter_existing else filter_existing[0](self.existing, filter_existing[1])
 
         # Return the gory details when we need it
         if self.params.get("output_level") == "debug":
@@ -1399,7 +1552,7 @@ class ACIModule(object):
             #         before=json.dumps(self.original, sort_keys=True, indent=4),
             #         after=json.dumps(self.existing, sort_keys=True, indent=4),
             #     )
-            self.result["current"] = self.existing
+            self.result["current"] = self.existing if not filter_existing else filter_existing[0](self.existing, filter_existing[1])
 
             if self.params.get("output_level") in ("debug", "info"):
                 self.result["sent"] = self.config
@@ -1410,7 +1563,6 @@ class ACIModule(object):
         self.module.exit_json(**self.result)
 
     def fail_json(self, msg, **kwargs):
-
         # Return error information, if we have it
         if self.error.get("code") is not None and self.error.get("text") is not None:
             self.result["error"] = self.error

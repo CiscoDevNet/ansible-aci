@@ -8,11 +8,17 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
-- include_tasks: vlan.yml
-  when: "vlan is not defined or (vlan is defined and vlan == 'True')"
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- include_tasks: vxlan.yml
-  when: "vxlan is not defined or (vxlan is defined and vxlan == 'True')"
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - include_tasks: vlan.yml
+    when: "vlan is not defined or (vlan is defined and vlan == 'True')"
 
-- include_tasks: vsan.yml
-  when: "vsan is not defined or (vsan is defined and vsan == 'True')"
+  - include_tasks: vxlan.yml
+    when: "vxlan is not defined or (vxlan is defined and vxlan == 'True')"
+
+  - include_tasks: vsan.yml
+    when: "vsan is not defined or (vsan is defined and vsan == 'True')"

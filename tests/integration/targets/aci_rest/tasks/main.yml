@@ -26,3 +26,6 @@
 
 - include_tasks: error_handling.yml
   tags: error_handling
+
+- include_tasks: xml_file.yml
+  tags: xml_file

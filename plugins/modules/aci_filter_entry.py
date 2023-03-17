@@ -115,20 +115,53 @@ author:
 - Jacob McGill (@jmcgill298)
 """
 
-# FIXME: Add more, better examples
 EXAMPLES = r"""
-- cisco.aci.aci_filter_entry:
-    host: "{{ inventory_hostname }}"
-    username: "{{ user }}"
-    password: "{{ pass }}"
-    state: "{{ state }}"
-    entry: "{{ entry }}"
-    tenant: "{{ tenant }}"
-    ether_name: "{{  ether_name }}"
-    icmp_msg_type: "{{ icmp_msg_type }}"
-    filter: "{{ filter }}"
-    descr: "{{ descr }}"
+- name: Create a filter entry
+  cisco.aci.aci_filter_entry:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    entry: https_allow
+    filter: web_filter
+    tenant: prod
+    ether_type: ip
+    ip_protocol: tcp
+    dst_port_start: 443
+    dst_port_end: 443
+    state: present
   delegate_to: localhost
+
+- name: Delete a filter entry
+  cisco.aci.aci_filter_entry:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    entry: https_allow
+    filter: web_filter
+    tenant: prod
+    state: absent
+  delegate_to: localhost
+
+- name: Query all filter entries
+  cisco.aci.aci_filter_entry:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific filter entry
+  cisco.aci.aci_filter_entry:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    entry: https_allow
+    filter: web_filter
+    tenant: prod
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""

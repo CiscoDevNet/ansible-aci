@@ -56,18 +56,43 @@ author:
 - Dag Wieers (@dagwieers)
 """
 
-# FIXME: Add more, better examples
 EXAMPLES = r"""
-- name: Add a Fibre Channel interface policy
+- name: Create a Fibre Channel interface policy
   cisco.aci.aci_interface_policy_fc:
-    host: '{{ hostname }}'
-    username: '{{ username }}'
-    password: '{{ password }}'
-    fc_policy: '{{ fc_policy }}'
-    port_mode: '{{ port_mode }}'
-    description: '{{ description }}'
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    fc_policy: fcpolicy1
     state: present
   delegate_to: localhost
+
+- name: Delete a Fibre Channel interface policy
+  cisco.aci.aci_interface_policy_fc:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    fc_policy: fcpolicy1
+    state: absent
+  delegate_to: localhost
+
+- name: Query all Fibre Channel interface policies
+  cisco.aci.aci_interface_policy_fc:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific Fibre Channel interface policy
+  cisco.aci.aci_interface_policy_fc:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    fc_policy: fcpolicy1
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""

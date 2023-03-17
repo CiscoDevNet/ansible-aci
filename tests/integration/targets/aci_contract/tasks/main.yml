@@ -17,7 +17,7 @@
     use_ssl: '{{ aci_use_ssl | default(true) }}'
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: debug
-    tenant: anstest
+    tenant: ansible_test
     state: present
   register: tenant_present
 
@@ -64,6 +64,7 @@
       - present_check_mode.sent.vzBrCP.attributes.name == 'anstest'
       - present_check_mode.sent.vzBrCP.attributes.descr == 'Ansible Test'
       - contract_present is changed
+      - contract_present.current.0.vzBrCP.attributes.annotation == 'orchestrator:ansible'
       - contract_present.sent == present_check_mode.sent
       - present_idempotent is not changed
       - present_update is changed
@@ -102,12 +103,12 @@
     that:
       - query_contract is not changed
       - query_contract.current | length == 1
-      - '"tn-anstest/brc-anstest.json" in query_contract.url'
+      - '"tn-ansible_test/brc-anstest.json" in query_contract.url'
       - query_tenant is not changed
       - query_tenant.current | length == 1
       - query_tenant.current.0.fvTenant.children | length > 1
       - '"rsp-subtree-class=vzBrCP" in query_tenant.filter_string'
-      - '"tn-anstest.json" in query_tenant.url'
+      - '"tn-ansible_test.json" in query_tenant.url'
       - query_name is not changed
       - query_name.current != []
       - '"query-target-filter=eq(vzBrCP.name,\"anstest\")" in query_name.filter_string'

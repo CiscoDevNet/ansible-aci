@@ -102,6 +102,7 @@
         - cm_selector_present.proposed.cloudEPSelector.attributes.matchExpression == "IP in('10.10.10.1')"
         - cm_selector_present.proposed.cloudEPSelector.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudepg-anstest/epselector-ansible_selector'
         - cm_selector_present.proposed.cloudEPSelector.attributes.name == 'ansible_selector'
+        - nm_selector_present.current.0.cloudEPSelector.attributes.annotation == 'orchestrator:ansible'
         - nm_selector_present.current.0.cloudEPSelector.attributes.descr == 'cloud epg selector'
         - nm_selector_present.current.0.cloudEPSelector.attributes.matchExpression == "IP in('10.10.10.1')"
         - nm_selector_present.current.0.cloudEPSelector.attributes.dn == 'uni/tn-ansible_test/cloudapp-anstest/cloudepg-anstest/epselector-ansible_selector'

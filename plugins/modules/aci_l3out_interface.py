@@ -90,6 +90,11 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
+  auto_state:
+    description:
+    - SVI auto state.
+    type: str
+    choices: [ enabled, disabled ]
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -297,20 +302,18 @@ def main():
         node_id=dict(type="str"),
         path_ep=dict(type="str"),
         address=dict(type="str", aliases=["addr", "ip_address"]),
-        mtu=dict(type='str'),
+        mtu=dict(type="str"),
         ipv6_dad=dict(type="str", choices=["enabled", "disabled"]),
         interface_type=dict(type="str", choices=["l3-port", "sub-interface", "ext-svi"]),
         mode=dict(type="str", choices=["regular", "native", "untagged"]),
         encap=dict(type="str"),
+        auto_state=dict(type="str", choices=["enabled", "disabled"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[
-            ["state", "present", ["interface_type", "pod_id", "node_id", "path_ep"]],
-            ["state", "absent", ["pod_id", "node_id", "path_ep"]]
-        ]
+        required_if=[["state", "present", ["interface_type", "pod_id", "node_id", "path_ep"]], ["state", "absent", ["pod_id", "node_id", "path_ep"]]],
     )
 
     tenant = module.params.get("tenant")
@@ -322,11 +325,12 @@ def main():
     node_id = module.params.get("node_id")
     path_ep = module.params.get("path_ep")
     address = module.params.get("address")
-    mtu = module.params.get('mtu')
+    mtu = module.params.get("mtu")
     ipv6_dad = module.params.get("ipv6_dad")
     interface_type = module.params.get("interface_type")
     mode = module.params.get("mode")
     encap = module.params.get("encap")
+    auto_state = module.params.get("auto_state")
 
     aci = ACIModule(module)
     if node_id and "-" in node_id:
@@ -363,12 +367,7 @@ def main():
             module_object=interface_profile,
             target_filter={"name": interface_profile},
         ),
-        subclass_4=dict(
-            aci_class='l3extRsPathL3OutAtt',
-            aci_rn='rspathL3OutAtt-[{0}]'.format(path_dn),
-            module_object=path_dn,
-            target_filter={'tDn': path_dn}
-        )
+        subclass_4=dict(aci_class="l3extRsPathL3OutAtt", aci_rn="rspathL3OutAtt-[{0}]".format(path_dn), module_object=path_dn, target_filter={"tDn": path_dn}),
     )
 
     aci.get_existing()
@@ -376,15 +375,7 @@ def main():
     if state == "present":
         aci.payload(
             aci_class="l3extRsPathL3OutAtt",
-            class_config=dict(
-                tDn=path_dn,
-                addr=address,
-                ipv6Dad=ipv6_dad,
-                mtu=mtu,
-                ifInstT=interface_type,
-                mode=mode,
-                encap=encap
-            ),
+            class_config=dict(tDn=path_dn, addr=address, ipv6Dad=ipv6_dad, mtu=mtu, ifInstT=interface_type, mode=mode, encap=encap, autostate=auto_state),
         )
 
         aci.get_diff(aci_class="l3extRsPathL3OutAtt")

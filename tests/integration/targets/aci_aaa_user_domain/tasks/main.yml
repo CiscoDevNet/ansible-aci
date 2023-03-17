@@ -1,0 +1,224 @@
+# Test code for the ACI modules
+# Copyright: (c) 2022, Tim Cragg (timcragg) <tcragg@cisco.com>
+# Copyright: (c) 2022, Sabari Jaganathan (@sajagana)
+# Copyright: (c) 2017, Dag Wieers (dagwieers) <dag@wieers.com>
+#
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove user domain from a aaa_user
+  cisco.aci.aci_aaa_user_domain:
+    <<: *aci_info
+    name: anstest-security-domain
+    aaa_user: ansible
+    state: absent
+
+- name: Remove user domain from a aaa_user
+  cisco.aci.aci_aaa_user_domain:
+    <<: *aci_info
+    name: anstest-security-domain-1
+    aaa_user: ansible
+    state: absent
+
+- name: Remove any pre-existing user
+  cisco.aci.aci_aaa_user:
+    <<: *aci_info
+    aaa_user: ansible
+    state: absent
+
+# ADD USER
+- name: Add a aaa_user
+  cisco.aci.aci_aaa_user: &user_present
+    <<: *aci_info
+    aaa_user: ansible
+    aaa_password: 12!Ab:cD!34
+    description: Ansible test user
+    email: ansible@ansible.lan
+    enabled: yes
+    expiration: never
+    expires: no
+    first_name: Ansible
+    last_name: User
+    phone: 1-234-555-678
+  register: add_user
+
+# ADD AAA USER DOMAIN
+- name: Add user domain to aaa_user with check mode
+  cisco.aci.aci_aaa_user_domain: &cm_sec_domain_present
+    <<: *aci_info
+    name: anstest-security-domain
+    aaa_user: ansible
+    state: present
+  check_mode: yes
+  register: cm_sec_domain_present
+
+- name: Assertions check for add user domain to aaa_user with check mode
+  assert:
+    that:
+      - cm_sec_domain_present is changed
+      - cm_sec_domain_present.current | length == 0
+      - cm_sec_domain_present.previous | length == 0
+      - cm_sec_domain_present.sent.aaaUserDomain.attributes.name == 'anstest-security-domain'
+
+- name: Add user domain to aaa_user with normal mode
+  cisco.aci.aci_aaa_user_domain: &nm_sec_domain_present
+    <<: *cm_sec_domain_present
+  register: nm_sec_domain_present
+
+- name: Assertions check for add user domain to aaa_user with normal mode
+  assert:
+    that:
+      - nm_sec_domain_present is changed
+      - nm_sec_domain_present.current | length == 1
+      - nm_sec_domain_present.previous | length == 0
+      - nm_sec_domain_present.current.0.aaaUserDomain.attributes.name == 'anstest-security-domain'
+
+- name: Add user domain to aaa_user with check mode - idempotency works
+  cisco.aci.aci_aaa_user_domain:
+    <<: *cm_sec_domain_present
+  check_mode: yes
+  register: cm_idempotency_sec_domain_present
+
+- name: Idempotency assertions check for add user domain to aaa_user with check mode
+  assert:
+    that:
+      - cm_idempotency_sec_domain_present is not changed
+      - cm_idempotency_sec_domain_present.current | length == 1
+      - cm_idempotency_sec_domain_present.previous | length == 1
+      - cm_idempotency_sec_domain_present.current.0.aaaUserDomain.attributes.name == 'anstest-security-domain'
+      - cm_idempotency_sec_domain_present.previous.0.aaaUserDomain.attributes.name == 'anstest-security-domain'
+
+- name: Add user domain to aaa_user with normal mode - idempotency works
+  cisco.aci.aci_aaa_user_domain:
+    <<: *nm_sec_domain_present
+  register: idempotency_sec_domain_present
+
+- name: Idempotency assertions check for add user domain to aaa_user with normal mode
+  assert:
+    that:
+      - idempotency_sec_domain_present is not changed
+      - idempotency_sec_domain_present.current | length == 1
+      - idempotency_sec_domain_present.previous | length == 1
+      - idempotency_sec_domain_present.current.0.aaaUserDomain.attributes.name == 'anstest-security-domain'
+      - idempotency_sec_domain_present.previous.0.aaaUserDomain.attributes.name == 'anstest-security-domain'
+
+- name: Add list of user domains to a aaa_user
+  cisco.aci.aci_aaa_user_domain:
+    <<: *aci_info
+    name: "{{ item.name }}"
+    aaa_user: ansible
+    state: present
+  with_items:
+    - name: all
+    - name: mgmt
+
+# QUERY A USER DOMAIN
+- name: Query a user domain from a aaa_user
+  cisco.aci.aci_aaa_user_domain:
+    <<: *aci_info
+    name: anstest-security-domain
+    aaa_user: ansible
+    state: query
+  register: query_anstest_sec_domain
+
+- name: Assertions check for query a user domain from a aaa_user
+  assert:
+    that:
+      - query_anstest_sec_domain is not changed
+      - query_anstest_sec_domain.current | length == 1
+      - query_anstest_sec_domain.current.0.aaaUserDomain.attributes.name == 'anstest-security-domain'
+
+# QUERY ALL USER DOMAINS
+- name: Query all user domains from a aaa_user
+  cisco.aci.aci_aaa_user_domain:
+    <<: *aci_info
+    aaa_user: ansible
+    state: query
+  register: query_aaa_user_domains
+
+- name: Assertions check for query all user domains from a aaa_user
+  assert:
+    that:
+      - query_aaa_user_domains is not changed
+      - query_aaa_user_domains.current | length == 1
+      - query_aaa_user_domains.current.0.aaaUser.children | length == 4
+
+- name: Query all user domains
+  cisco.aci.aci_aaa_user_domain:
+    <<: *aci_info
+    state: query
+  register: query_all_aaa_user_domains
+
+- name: Assertions check for query all user domains
+  assert:
+    that:
+      - query_all_aaa_user_domains is not changed
+      - query_all_aaa_user_domains.current | length >= 3
+
+# REMOVE USER DOMAIN
+- name: Remove user domain from a aaa_user with check mode
+  cisco.aci.aci_aaa_user_domain: &cm_sec_domain_absent
+    <<: *nm_sec_domain_present
+    state: absent
+  check_mode: yes
+  register: cm_sec_domain_absent
+
+- name: Assertions check for removing user domain from a aaa_user with check mode
+  assert:
+    that:
+      - cm_sec_domain_absent is changed
+      - cm_sec_domain_absent.current | length == 1
+      - cm_sec_domain_absent.current.0.aaaUserDomain.attributes.name == 'anstest-security-domain'
+      - cm_sec_domain_absent.previous | length == 1
+      - cm_sec_domain_absent.previous.0.aaaUserDomain.attributes.name == 'anstest-security-domain'
+
+- name: Remove user domain from a aaa_user with normal mode
+  cisco.aci.aci_aaa_user_domain: &nm_sec_domain_absent
+    <<: *cm_sec_domain_absent
+    state: absent
+  register: nm_sec_domain_absent
+
+- name: Assertions check for removing user domain from a aaa_user with normal mode
+  assert:
+    that:
+      - nm_sec_domain_absent is changed
+      - nm_sec_domain_absent.current == []
+      - nm_sec_domain_absent.previous | length == 1
+      - nm_sec_domain_absent.previous.0.aaaUserDomain.attributes.name == 'anstest-security-domain'
+
+- name: Remove user domain from a aaa_user with normal mode - idempotency works
+  cisco.aci.aci_aaa_user_domain:
+    <<: *nm_sec_domain_absent
+    state: absent
+  check_mode: yes
+  register: idempotency_sec_domain_absent
+
+- name: Idempotency assertions check for removing user domain
+  assert:
+    that:
+      - idempotency_sec_domain_absent is not changed
+      - idempotency_sec_domain_absent.current == []
+      - idempotency_sec_domain_absent.previous == []
+
+# Cleanup part
+- name: Remove a aaa_user
+  cisco.aci.aci_aaa_user:
+    <<: *user_present
+    state: absent

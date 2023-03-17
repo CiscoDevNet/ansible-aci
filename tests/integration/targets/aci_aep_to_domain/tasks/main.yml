@@ -3,210 +3,221 @@
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
-# CLEAN ENVIRONMENT
-- name: Remove AEP to domain binding
-  cisco.aci.aci_aep_to_domain: &binding_absent
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
-    aep: test_aep
-    domain: phys_dom
-    domain_type: phys
-    state: absent
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Create AEP
-  cisco.aci.aci_aep:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
-    aep: test_aep
-    description: Test AEP
-    state: present
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # CLEAN ENVIRONMENT
+  - name: Remove AEP to domain binding
+    cisco.aci.aci_aep_to_domain: &binding_absent
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+      aep: test_aep
+      domain: phys_dom
+      domain_type: phys
+      state: absent
 
-- name: Create physical domain
-  cisco.aci.aci_domain:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
-    domain: phys_dom
-    domain_type: phys
-    state: present
+  - name: Create AEP
+    cisco.aci.aci_aep:
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+      aep: test_aep
+      description: Test AEP
+      state: present
 
-
-# ADD BINDING
-- name: Add AEP to domain binding (check_mode)
-  cisco.aci.aci_aep_to_domain: &binding_present
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
-    aep: test_aep
-    domain: phys_dom
-    domain_type: phys
-    state: present
-  check_mode: yes
-  register: cm_add_binding
-
-- name: Add AEP to domain binding (normal mode)
-  cisco.aci.aci_aep_to_domain: *binding_present
-  register: nm_add_binding
-
-- name: Verify add_binding
-  assert:
-    that:
-    - cm_add_binding is changed
-    - nm_add_binding is changed
-    - cm_add_binding.sent.infraRsDomP.attributes.tDn == nm_add_binding.sent.infraRsDomP.attributes.tDn == 'uni/phys-phys_dom'
-    - cm_add_binding.proposed.infraRsDomP.attributes.tDn == nm_add_binding.proposed.infraRsDomP.attributes.tDn == 'uni/phys-phys_dom'
-    - cm_add_binding.current == cm_add_binding.previous == nm_add_binding.previous == []
-    - nm_add_binding.current[0].infraRsDomP.attributes.dn == 'uni/infra/attentp-test_aep/rsdomP-[uni/phys-phys_dom]'
-    - nm_add_binding.current[0].infraRsDomP.attributes.tDn == 'uni/phys-phys_dom'
-
-- name: Add AEP to domain binding again (check_mode)
-  cisco.aci.aci_aep_to_domain: *binding_present
-  check_mode: yes
-  register: cm_add_binding_again
-
-- name: Add AEP to domain binding again (normal mode)
-  cisco.aci.aci_aep_to_domain: *binding_present
-  register: nm_add_binding_again
-
-- name: Verify add_binding_again
-  assert:
-    that:
-    - cm_add_binding_again is not changed
-    - nm_add_binding_again is not changed
+  - name: Create physical domain
+    cisco.aci.aci_domain:
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+      domain: phys_dom
+      domain_type: phys
+      state: present
 
 
-# QUERY ALL BINDINGS
-- name: Query all AEP to domain bindings (check_mode)
-  cisco.aci.aci_aep_to_domain: &binding_query
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
-    state: query
-  check_mode: yes
-  register: cm_query_all_bindings
+  # ADD BINDING
+  - name: Add AEP to domain binding (check_mode)
+    cisco.aci.aci_aep_to_domain: &binding_present
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+      aep: test_aep
+      domain: phys_dom
+      domain_type: phys
+      state: present
+    check_mode: yes
+    register: cm_add_binding
 
-- name: Query all AEP to domain bindings (normal mode)
-  cisco.aci.aci_aep_to_domain: *binding_query
-  register: nm_query_all_bindings
+  - name: Add AEP to domain binding (normal mode)
+    cisco.aci.aci_aep_to_domain: *binding_present
+    register: nm_add_binding
 
-- name: Verify query_all_bindings
-  assert:
-    that:
-    - cm_query_all_bindings is not changed
-    - nm_query_all_bindings is not changed
-    - cm_query_all_bindings == nm_query_all_bindings
-    - nm_query_all_bindings.current|length >= 1
+  - name: Verify add_binding
+    assert:
+      that:
+      - cm_add_binding is changed
+      - nm_add_binding is changed
+      - nm_add_binding.current.0.infraRsDomP.attributes.annotation == 'orchestrator:ansible'
+      - cm_add_binding.sent.infraRsDomP.attributes.tDn == nm_add_binding.sent.infraRsDomP.attributes.tDn == 'uni/phys-phys_dom'
+      - cm_add_binding.proposed.infraRsDomP.attributes.tDn == nm_add_binding.proposed.infraRsDomP.attributes.tDn == 'uni/phys-phys_dom'
+      - cm_add_binding.current == cm_add_binding.previous == nm_add_binding.previous == []
+      - nm_add_binding.current[0].infraRsDomP.attributes.dn == 'uni/infra/attentp-test_aep/rsdomP-[uni/phys-phys_dom]'
+      - nm_add_binding.current[0].infraRsDomP.attributes.tDn == 'uni/phys-phys_dom'
 
+  - name: Add AEP to domain binding again (check_mode)
+    cisco.aci.aci_aep_to_domain: *binding_present
+    check_mode: yes
+    register: cm_add_binding_again
 
-# QUERY A BINDING
-- name: Query our AEP to domain binding (check_mode)
-  cisco.aci.aci_aep_to_domain:
-    <<: *binding_query
-    aep: test_aep
-    domain: phys_dom
-    domain_type: phys
-  check_mode: yes
-  register: cm_query_binding
+  - name: Add AEP to domain binding again (normal mode)
+    cisco.aci.aci_aep_to_domain: *binding_present
+    register: nm_add_binding_again
 
-- name: Query our AEP to domain binding (normal mode)
-  cisco.aci.aci_aep_to_domain:
-    <<: *binding_query
-    aep: test_aep
-    domain: phys_dom
-    domain_type: phys
-  register: nm_query_binding
-
-- name: Verify query_binding
-  assert:
-    that:
-    - cm_query_binding is not changed
-    - nm_query_binding is not changed
-    - cm_query_binding == nm_query_binding
-    - nm_query_binding.current.0.infraRsDomP.attributes.dn == 'uni/infra/attentp-test_aep/rsdomP-[uni/phys-phys_dom]'
-    - nm_query_binding.current.0.infraRsDomP.attributes.tCl == 'physDomP'
-    - nm_query_binding.current.0.infraRsDomP.attributes.tDn == 'uni/phys-phys_dom'
+  - name: Verify add_binding_again
+    assert:
+      that:
+      - cm_add_binding_again is not changed
+      - nm_add_binding_again is not changed
 
 
-# REMOVE BINDING
-- name: Remove AEP to domain binding (check_mode)
-  cisco.aci.aci_aep_to_domain: *binding_absent
-  check_mode: yes
-  register: cm_remove_binding
+  # QUERY ALL BINDINGS
+  - name: Query all AEP to domain bindings (check_mode)
+    cisco.aci.aci_aep_to_domain: &binding_query
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+      state: query
+    check_mode: yes
+    register: cm_query_all_bindings
 
-- name: Remove AEP to domain binding (normal mode)
-  cisco.aci.aci_aep_to_domain: *binding_absent
-  register: nm_remove_binding
+  - name: Query all AEP to domain bindings (normal mode)
+    cisco.aci.aci_aep_to_domain: *binding_query
+    register: nm_query_all_bindings
 
-- name: Verify remove_binding
-  assert:
-    that:
-    - cm_remove_binding is changed
-    - nm_remove_binding is changed
-    - cm_remove_binding.current.0.infraRsDomP.attributes.dn == cm_remove_binding.previous.0.infraRsDomP.attributes.dn == nm_remove_binding.previous.0.infraRsDomP.attributes.dn == 'uni/infra/attentp-test_aep/rsdomP-[uni/phys-phys_dom]'
-    - cm_remove_binding.current.0.infraRsDomP.attributes.tDn == cm_remove_binding.previous.0.infraRsDomP.attributes.tDn == nm_remove_binding.previous.0.infraRsDomP.attributes.tDn == 'uni/phys-phys_dom'
-    - nm_remove_binding.current == []
-
-- name: Remove AEP to domain binding again (check_mode)
-  cisco.aci.aci_aep_to_domain: *binding_absent
-  check_mode: yes
-  register: cm_remove_binding_again
-
-- name: Remove AEP to domain binding again (normal mode)
-  cisco.aci.aci_aep_to_domain: *binding_absent
-  register: nm_remove_binding_again
-
-- name: Verify remove_binding_again
-  assert:
-    that:
-    - cm_remove_binding_again is not changed
-    - nm_remove_binding_again is not changed
+  - name: Verify query_all_bindings
+    assert:
+      that:
+      - cm_query_all_bindings is not changed
+      - nm_query_all_bindings is not changed
+      - cm_query_all_bindings == nm_query_all_bindings
+      - nm_query_all_bindings.current|length >= 1
 
 
-# QUERY NON-EXISTING BINDING
-- name: Query non-existing AEP to domain binding (check_mode)
-  cisco.aci.aci_aep_to_domain:
-    <<: *binding_query
-    aep: test_aep
-    domain: phys_dom
-    domain_type: phys
-  check_mode: yes
-  register: cm_query_non_binding
+  # QUERY A BINDING
+  - name: Query our AEP to domain binding (check_mode)
+    cisco.aci.aci_aep_to_domain:
+      <<: *binding_query
+      aep: test_aep
+      domain: phys_dom
+      domain_type: phys
+    check_mode: yes
+    register: cm_query_binding
 
-- name: Query non-existing AEP to domain binding (normal mode)
-  cisco.aci.aci_aep_to_domain:
-    <<: *binding_query
-    aep: test_aep
-    domain: phys_dom
-    domain_type: phys
-  register: nm_query_non_binding
+  - name: Query our AEP to domain binding (normal mode)
+    cisco.aci.aci_aep_to_domain:
+      <<: *binding_query
+      aep: test_aep
+      domain: phys_dom
+      domain_type: phys
+    register: nm_query_binding
 
-- name: Verify query_non_binding
-  assert:
-    that:
-    - cm_query_non_binding is not changed
-    - nm_query_non_binding is not changed
-    - cm_query_non_binding == nm_query_non_binding
-    - nm_query_non_binding.current == []
+  - name: Verify query_binding
+    assert:
+      that:
+      - cm_query_binding is not changed
+      - nm_query_binding is not changed
+      - cm_query_binding == nm_query_binding
+      - nm_query_binding.current.0.infraRsDomP.attributes.dn == 'uni/infra/attentp-test_aep/rsdomP-[uni/phys-phys_dom]'
+      - nm_query_binding.current.0.infraRsDomP.attributes.tCl == 'physDomP'
+      - nm_query_binding.current.0.infraRsDomP.attributes.tDn == 'uni/phys-phys_dom'
+
+
+  # REMOVE BINDING
+  - name: Remove AEP to domain binding (check_mode)
+    cisco.aci.aci_aep_to_domain: *binding_absent
+    check_mode: yes
+    register: cm_remove_binding
+
+  - name: Remove AEP to domain binding (normal mode)
+    cisco.aci.aci_aep_to_domain: *binding_absent
+    register: nm_remove_binding
+
+  - name: Verify remove_binding
+    assert:
+      that:
+      - cm_remove_binding is changed
+      - nm_remove_binding is changed
+      - cm_remove_binding.current.0.infraRsDomP.attributes.dn == cm_remove_binding.previous.0.infraRsDomP.attributes.dn == nm_remove_binding.previous.0.infraRsDomP.attributes.dn == 'uni/infra/attentp-test_aep/rsdomP-[uni/phys-phys_dom]'
+      - cm_remove_binding.current.0.infraRsDomP.attributes.tDn == cm_remove_binding.previous.0.infraRsDomP.attributes.tDn == nm_remove_binding.previous.0.infraRsDomP.attributes.tDn == 'uni/phys-phys_dom'
+      - nm_remove_binding.current == []
+
+  - name: Remove AEP to domain binding again (check_mode)
+    cisco.aci.aci_aep_to_domain: *binding_absent
+    check_mode: yes
+    register: cm_remove_binding_again
+
+  - name: Remove AEP to domain binding again (normal mode)
+    cisco.aci.aci_aep_to_domain: *binding_absent
+    register: nm_remove_binding_again
+
+  - name: Verify remove_binding_again
+    assert:
+      that:
+      - cm_remove_binding_again is not changed
+      - nm_remove_binding_again is not changed
+
+
+  # QUERY NON-EXISTING BINDING
+  - name: Query non-existing AEP to domain binding (check_mode)
+    cisco.aci.aci_aep_to_domain:
+      <<: *binding_query
+      aep: test_aep
+      domain: phys_dom
+      domain_type: phys
+    check_mode: yes
+    register: cm_query_non_binding
+
+  - name: Query non-existing AEP to domain binding (normal mode)
+    cisco.aci.aci_aep_to_domain:
+      <<: *binding_query
+      aep: test_aep
+      domain: phys_dom
+      domain_type: phys
+    register: nm_query_non_binding
+
+  - name: Verify query_non_binding
+    assert:
+      that:
+      - cm_query_non_binding is not changed
+      - nm_query_non_binding is not changed
+      - cm_query_non_binding == nm_query_non_binding
+      - nm_query_non_binding.current == []

@@ -23,11 +23,11 @@ options:
     choices: [ query ]
     default: query
     type: str
+
 notes:
 - More information about the internal APIC class B(cloud:ProvP) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 - This module is used to query Cloud Provider information.
-
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation

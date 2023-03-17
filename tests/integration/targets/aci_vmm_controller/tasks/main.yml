@@ -77,6 +77,7 @@
       - nm_add_controller.previous == []
       - nm_add_controller.current.0.vmmCtrlrP.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/ctrlr-vCenter1'
       - nm_add_controller.current.0.vmmCtrlrP.attributes.name == 'vCenter1'
+      - nm_add_controller.current.0.vmmCtrlrP.attributes.annotation == 'orchestrator:ansible'
 
   - name: Add another controller to all VMM domain
     aci_vmm_controller:

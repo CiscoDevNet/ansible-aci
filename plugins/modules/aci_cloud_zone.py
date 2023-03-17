@@ -45,7 +45,6 @@ options:
     choices: [ query ]
     default: query
     type: str
-
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation

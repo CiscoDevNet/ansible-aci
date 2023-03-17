@@ -62,7 +62,51 @@ author:
 """
 
 EXAMPLES = r"""
-See module aci_l2out_logical_interface_path.
+- name: Add new interface profile
+  cisco.aci.aci_l2out_logical_interface_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l2out: my_l2out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    state: present
+  delegate_to: localhost
+
+- name: Delete interface profile
+  cisco.aci.aci_l2out_logical_interface_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l2out: my_l2out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    state: absent
+  delegate_to: localhost
+
+- name: Query an interface profile
+  cisco.aci.aci_l2out_logical_interface_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l2out: my_l2out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query all interface profiles
+  cisco.aci.aci_l2out_logical_interface_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""

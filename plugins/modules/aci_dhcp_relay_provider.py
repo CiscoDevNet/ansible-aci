@@ -1,17 +1,16 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) <year>, <Name> (@<github id>)
+# Copyright: (c) 2022, Tim Cragg (@timcragg)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_dhcp_relay_provider
 short_description: Manage DHCP relay policy providers.
@@ -83,6 +82,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - The C(tenant) and C(relay_policy) must exist before using this module in your playbook.
@@ -93,9 +93,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new DHCP relay App EPG provider
   cisco.aci.aci_dhcp_relay_provider:
     host: apic
@@ -150,9 +150,9 @@ EXAMPLES = r'''
     state: query
   delegate_to: localhost
   register: query_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
    current:
      description: The existing configuration from the APIC after the module has finished
      returned: success
@@ -255,126 +255,117 @@ RETURN = r'''
      returned: failure or debug
      type: str
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
-   '''
+   """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        relay_policy=dict(type='str', aliases=['relay_policy_name']),
-        epg_type=dict(type='str', required=True,
-                      choices=['epg',
-                               'l2_external',
-                               'l3_external',
-                               'dn']),
-        anp=dict(type='str'),
-        epg=dict(type='str', aliases=['app_epg']),
-        l2out_name=dict(type='str'),
-        l3out_name=dict(type='str'),
-        external_epg=dict(type='str', aliases=['external_net']),
-        dhcp_server_addr=dict(type='str'),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query']),
-        tenant=dict(type='str'),
-        provider_tenant=dict(type='str'),
-        dn=dict(type='str'),
+        relay_policy=dict(type="str", aliases=["relay_policy_name"]),
+        epg_type=dict(type="str", required=True, choices=["epg", "l2_external", "l3_external", "dn"]),
+        anp=dict(type="str"),
+        epg=dict(type="str", aliases=["app_epg"]),
+        l2out_name=dict(type="str"),
+        l3out_name=dict(type="str"),
+        external_epg=dict(type="str", aliases=["external_net"]),
+        dhcp_server_addr=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        tenant=dict(type="str"),
+        provider_tenant=dict(type="str"),
+        dn=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['relay_policy', 'tenant']],
-            ['state', 'present', ['relay_policy', 'tenant']],
-            ['epg_type', 'epg', ['anp', 'epg']],
-            ['epg_type', 'l2_external', ['l2out_name', 'external_epg']],
-            ['epg_type', 'l3_external', ['l3out_name', 'external_epg']],
-            ['epg_type', 'dn', ['dn']],
+            ["state", "absent", ["relay_policy", "tenant"]],
+            ["state", "present", ["relay_policy", "tenant"]],
+            ["epg_type", "epg", ["anp", "epg"]],
+            ["epg_type", "l2_external", ["l2out_name", "external_epg"]],
+            ["epg_type", "l3_external", ["l3out_name", "external_epg"]],
+            ["epg_type", "dn", ["dn"]],
         ],
         mutually_exclusive=[
-            ['anp', 'l2out_name'],
-            ['anp', 'l3out_name'],
-            ['anp', 'external_epg'],
-            ['anp', 'dn'],
-            ['epg', 'l2out_name'],
-            ['epg', 'l3out_name'],
-            ['epg', 'external_epg'],
-            ['epg', 'dn'],
-            ['l2out_name', 'l3out_name'],
-            ['l2out_name', 'dn'],
-            ['l3out_name', 'dn'],
-            ['external_epg', 'dn'],
+            ["anp", "l2out_name"],
+            ["anp", "l3out_name"],
+            ["anp", "external_epg"],
+            ["anp", "dn"],
+            ["epg", "l2out_name"],
+            ["epg", "l3out_name"],
+            ["epg", "external_epg"],
+            ["epg", "dn"],
+            ["l2out_name", "l3out_name"],
+            ["l2out_name", "dn"],
+            ["l3out_name", "dn"],
+            ["external_epg", "dn"],
         ],
     )
 
-    relay_policy = module.params.get('relay_policy')
-    state = module.params.get('state')
-    tenant = module.params.get('tenant')
-    epg_type = module.params.get('epg_type')
-    anp = module.params.get('anp')
-    epg = module.params.get('epg')
-    l2out_name = module.params.get('l2out_name')
-    l3out_name = module.params.get('l3out_name')
-    external_epg = module.params.get('external_epg')
-    dhcp_server_addr = module.params.get('dhcp_server_addr')
-    provider_tenant = module.params.get('provider_tenant')
-    dn = module.params.get('dn')
+    relay_policy = module.params.get("relay_policy")
+    state = module.params.get("state")
+    tenant = module.params.get("tenant")
+    epg_type = module.params.get("epg_type")
+    anp = module.params.get("anp")
+    epg = module.params.get("epg")
+    l2out_name = module.params.get("l2out_name")
+    l3out_name = module.params.get("l3out_name")
+    external_epg = module.params.get("external_epg")
+    dhcp_server_addr = module.params.get("dhcp_server_addr")
+    provider_tenant = module.params.get("provider_tenant")
+    dn = module.params.get("dn")
 
     if provider_tenant is None:
         provider_tenant = tenant
 
-    if epg_type == 'epg':
-        tdn = 'uni/tn-{0}/ap-{1}/epg-{2}'.format(provider_tenant, anp, epg)
-    elif epg_type == 'l2_external':
-        tdn = ('uni/tn-{0}/l2out-{1}/instP-{2}'
-               .format(provider_tenant, l2out_name, external_epg))
-    elif epg_type == 'l3_external':
-        tdn = ('uni/tn-{0}/out-{1}/instP-{2}'
-               .format(provider_tenant, l3out_name, external_epg))
-    elif epg_type == 'dn':
+    if epg_type == "epg":
+        tdn = "uni/tn-{0}/ap-{1}/epg-{2}".format(provider_tenant, anp, epg)
+    elif epg_type == "l2_external":
+        tdn = "uni/tn-{0}/l2out-{1}/instP-{2}".format(provider_tenant, l2out_name, external_epg)
+    elif epg_type == "l3_external":
+        tdn = "uni/tn-{0}/out-{1}/instP-{2}".format(provider_tenant, l3out_name, external_epg)
+    elif epg_type == "dn":
         tdn = dn
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='dhcpRelayP',
-            aci_rn='relayp-{0}'.format(relay_policy),
+            aci_class="dhcpRelayP",
+            aci_rn="relayp-{0}".format(relay_policy),
             module_object=relay_policy,
-            target_filter={'name': relay_policy},
+            target_filter={"name": relay_policy},
         ),
         subclass_2=dict(
-            aci_class='dhcpRsProv',
-            aci_rn='rsprov-[{0}]'.format(tdn),
+            aci_class="dhcpRsProv",
+            aci_rn="rsprov-[{0}]".format(tdn),
             module_object=tdn,
-            target_filter={'tDn': tdn},
+            target_filter={"tDn": tdn},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='dhcpRsProv',
-            class_config=dict(
-                addr=dhcp_server_addr,
-                tDn=tdn
-            ),
+            aci_class="dhcpRsProv",
+            class_config=dict(addr=dhcp_server_addr, tDn=tdn),
         )
 
-        aci.get_diff(aci_class='dhcpRsProv')
+        aci.get_diff(aci_class="dhcpRsProv")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

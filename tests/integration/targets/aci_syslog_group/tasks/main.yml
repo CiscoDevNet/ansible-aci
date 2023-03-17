@@ -74,6 +74,7 @@
     - add_syslog_group.current.0.syslogGroup.attributes.format == "aci"
     - add_syslog_group.current.0.syslogGroup.attributes.includeMilliSeconds == "yes"
     - add_syslog_group.current.0.syslogGroup.attributes.includeTimeZone == "yes"
+    - add_syslog_group.current.0.syslogGroup.attributes.annotation == 'orchestrator:ansible'
   when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
 - name: Verify that ansible_syslog_group has been created with correct attributes (version < 4)
@@ -83,6 +84,7 @@
     - add_syslog_group_32.current.0.syslogGroup.attributes.name == "ansible_syslog_group"
     - add_syslog_group_32.current.0.syslogGroup.attributes.format == "aci"
     - add_syslog_group_32.current.0.syslogGroup.attributes.includeMilliSeconds == "yes"
+    - add_syslog_group_32.current.0.syslogGroup.attributes.annotation == 'orchestrator:ansible'
   when: version.current.0.topSystem.attributes.version is version('4', '<')
   
 - name: Verify that ansible_syslog_group children have correct attributes (version >= 4)

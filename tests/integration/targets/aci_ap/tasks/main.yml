@@ -9,8 +9,11 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
-- name: ensure tenant exists for tests to kick off
-  cisco.aci.aci_tenant: &aci_tenant_present
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: ensure tenant does not exists
+  cisco.aci.aci_tenant: &aci_tenant_absent
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -18,173 +21,182 @@
     use_ssl: '{{ aci_use_ssl | default(true) }}'
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: debug
-    state: present
-    tenant: anstest
-  register: tenant_present
-
-- name: ensure monitoring policy exists
-  cisco.aci.aci_epg_monitoring_policy:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
-    monitoring_policy: check
-    tenant: anstest
-
-- name: ensure ap does not exist initially
-  cisco.aci.aci_ap:
-    <<: *aci_tenant_present
-    ap: anstest
     state: absent
+    tenant: ansible_test
 
-- name: create ap - check mode works
-  cisco.aci.aci_ap: &aci_ap_present
-    <<: *aci_tenant_present
-    ap: anstest
-    description: Ansible Test
-    monitoring_policy: check
-  check_mode: yes
-  register: ap_present_check_mode
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: ensure tenant exists for tests to kick off
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_tenant_absent
+      state: present
+    register: tenant_present
 
-- name: create ap - creation works
-  cisco.aci.aci_ap:
-    <<: *aci_ap_present
-  register: ap_present
+  - name: ensure monitoring policy exists
+    cisco.aci.aci_epg_monitoring_policy:
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+      monitoring_policy: check
+      tenant: ansible_test
 
-- name: create ap - extra for query
-  cisco.aci.aci_ap:
-    <<: *aci_tenant_present
-    ap: anstest2
- 
-- name: create ap - idempotency works
-  cisco.aci.aci_ap:
-    <<: *aci_ap_present
-  register: ap_present_idempotent
+  - name: ensure ap does not exist initially
+    cisco.aci.aci_ap:
+      <<: *aci_tenant_present
+      ap: anstest
+      state: absent
 
-- name: update ap - update works
-  cisco.aci.aci_ap:
-    <<: *aci_ap_present
-    description: Ansible Test Update
-  register: ap_present_update
+  - name: create ap - check mode works
+    cisco.aci.aci_ap: &aci_ap_present
+      <<: *aci_tenant_present
+      ap: anstest
+      description: Ansible Test
+      monitoring_policy: check
+    check_mode: yes
+    register: ap_present_check_mode
 
-- name: create ap - creation works
-  cisco.aci.aci_ap:
-    <<: *aci_tenant_present
-  ignore_errors: yes
-  register: ap_present_missing_param
+  - name: create ap - creation works
+    cisco.aci.aci_ap:
+      <<: *aci_ap_present
+    register: ap_present
 
-- name: present asserts
-  assert:
-    that:
-      - ap_present_check_mode is changed
-      - ap_present is changed
-      - ap_present.previous == []
-      - ap_present.current.0.fvAp.children.0.fvRsApMonPol.attributes.tnMonEPGPolName == 'check'
-      - ap_present.sent == ap_present_check_mode.sent
-      - ap_present.sent.fvAp.attributes.descr == 'Ansible Test'
-      - ap_present.sent.fvAp.attributes.name == 'anstest'
-      - ap_present_idempotent is not changed
-      - ap_present_idempotent.previous != []
-      - ap_present_idempotent.sent == {}
-      - ap_present_update is changed
-      - ap_present_update.sent.fvAp.attributes.descr == 'Ansible Test Update'
-      - ap_present_missing_param is failed
-      - 'ap_present_missing_param.msg == "state is present but all of the following are missing: ap"'
+  - name: create ap - extra for query
+    cisco.aci.aci_ap:
+      <<: *aci_tenant_present
+      ap: anstest2
+  
+  - name: create ap - idempotency works
+    cisco.aci.aci_ap:
+      <<: *aci_ap_present
+    register: ap_present_idempotent
 
-- name: get ap - query specific ap
-  cisco.aci.aci_ap: &aci_ap_query
-    <<: *aci_ap_present
-    state: query
-  register: query_ap
+  - name: update ap - update works
+    cisco.aci.aci_ap:
+      <<: *aci_ap_present
+      description: Ansible Test Update
+    register: ap_present_update
 
-- name: get all ap for tenant - query tenant aps
-  cisco.aci.aci_ap:
-    <<: *aci_ap_query
-    ap: "{{ fakevar | default(omit) }}"
-  register: query_ap_tenant
+  - name: create ap - creation works
+    cisco.aci.aci_ap:
+      <<: *aci_tenant_present
+    ignore_errors: yes
+    register: ap_present_missing_param
 
-- name: get all ap by name - query ap name
-  cisco.aci.aci_ap:
-    <<: *aci_ap_query
-    tenant: "{{ fakevar | default(omit) }}"
-  register: query_ap_ap
+  - name: present asserts
+    assert:
+      that:
+        - ap_present_check_mode is changed
+        - ap_present is changed
+        - ap_present.previous == []
+        - ap_present.current.0.fvAp.children.0.fvRsApMonPol.attributes.tnMonEPGPolName == 'check'
+        - ap_present.current.0.fvAp.attributes.annotation == 'orchestrator:ansible'
+        - ap_present.sent == ap_present_check_mode.sent
+        - ap_present.sent.fvAp.attributes.descr == 'Ansible Test'
+        - ap_present.sent.fvAp.attributes.name == 'anstest'
+        - ap_present_idempotent is not changed
+        - ap_present_idempotent.previous != []
+        - ap_present_idempotent.sent == {}
+        - ap_present_update is changed
+        - ap_present_update.sent.fvAp.attributes.descr == 'Ansible Test Update'
+        - ap_present_missing_param is failed
+        - 'ap_present_missing_param.msg == "state is present but all of the following are missing: ap"'
 
-- name: get all aps - query general
-  cisco.aci.aci_ap:
-    <<: *aci_ap_query
-    tenant: "{{ fakevar | default(omit) }}"
-    ap: "{{ fakevar | default(omit) }}"
-  register: query_all
+  - name: get ap - query specific ap
+    cisco.aci.aci_ap: &aci_ap_query
+      <<: *aci_ap_present
+      state: query
+    register: query_ap
 
-- name: query assertions
-  assert:
-    that:
-      - query_ap is not changed
-      - query_ap.current | length == 1
-      - query_ap.current.0.fvAp.attributes.name == "anstest"
-      - query_ap.current.0.fvAp.children.0.fvRsApMonPol.attributes.tnMonEPGPolName == 'check'
-      - '"tn-anstest/ap-anstest.json" in query_ap.url'
-      - query_ap_tenant is not changed
-      - query_ap_tenant.current | length == 1
-      - query_ap_tenant.current.0.fvTenant.children | length == 2
-      - '"rsp-subtree-class=fvAp" in query_ap_tenant.filter_string'
-      - '"tn-anstest.json" in query_ap_tenant.url'
-      - query_ap_ap is not changed
-      - query_ap_ap.current != []
-      - query_ap_ap.current.0.fvAp is defined
-      - '"query-target-filter=eq(fvAp.name,\"anstest\")" in query_ap_ap.filter_string'
-      - '"class/fvAp.json" in query_ap_ap.url'
-      - query_all is not changed
-      - query_all.current | length > 1
-      - '"class/fvAp.json" in query_all.url'
+  - name: get all ap for tenant - query tenant aps
+    cisco.aci.aci_ap:
+      <<: *aci_ap_query
+      ap: "{{ fakevar | default(omit) }}"
+    register: query_ap_tenant
 
-- name: delete ap - check_mode works
-  cisco.aci.aci_ap: &aci_ap_absent
-    <<: *aci_ap_present
-    state: absent
-  check_mode: yes
-  register: ap_delete_check_mode
+  - name: get all ap by name - query ap name
+    cisco.aci.aci_ap:
+      <<: *aci_ap_query
+      tenant: "{{ fakevar | default(omit) }}"
+    register: query_ap_ap
 
-- name: delete ap - delete works
-  cisco.aci.aci_ap:
-    <<: *aci_ap_absent
-  register: ap_delete
+  - name: get all aps - query general
+    cisco.aci.aci_ap:
+      <<: *aci_ap_query
+      tenant: "{{ fakevar | default(omit) }}"
+      ap: "{{ fakevar | default(omit) }}"
+    register: query_all
 
-- name: delete ap - delete idempotency works
-  cisco.aci.aci_ap:
-    <<: *aci_ap_absent
-  register: ap_delete_idempotent
+  - name: query assertions
+    assert:
+      that:
+        - query_ap is not changed
+        - query_ap.current | length == 1
+        - query_ap.current.0.fvAp.attributes.name == "anstest"
+        - query_ap.current.0.fvAp.children.0.fvRsApMonPol.attributes.tnMonEPGPolName == 'check'
+        - '"tn-ansible_test/ap-anstest.json" in query_ap.url'
+        - query_ap_tenant is not changed
+        - query_ap_tenant.current | length == 1
+        - query_ap_tenant.current.0.fvTenant.children | length == 2
+        - '"rsp-subtree-class=fvAp" in query_ap_tenant.filter_string'
+        - '"tn-ansible_test.json" in query_ap_tenant.url'
+        - query_ap_ap is not changed
+        - query_ap_ap.current != []
+        - query_ap_ap.current.0.fvAp is defined
+        - '"query-target-filter=eq(fvAp.name,\"anstest\")" in query_ap_ap.filter_string'
+        - '"class/fvAp.json" in query_ap_ap.url'
+        - query_all is not changed
+        - query_all.current | length > 1
+        - '"class/fvAp.json" in query_all.url'
 
-- name: delete ap - missing param error
-  cisco.aci.aci_ap:
-    <<: *aci_ap_absent
-    tenant: "{{ fakevar | default(omit) }}"
-  ignore_errors: yes
-  register: ap_delete_missing_param
+  - name: delete ap - check_mode works
+    cisco.aci.aci_ap: &aci_ap_absent
+      <<: *aci_ap_present
+      state: absent
+    check_mode: yes
+    register: ap_delete_check_mode
 
-- name: delete ap remove ap used for query
-  cisco.aci.aci_ap:
-    <<: *aci_ap_absent
-    ap: anstest2
+  - name: delete ap - delete works
+    cisco.aci.aci_ap:
+      <<: *aci_ap_absent
+    register: ap_delete
 
-- name: absent assertions
-  assert:
-    that:
-      - ap_delete_check_mode is changed
-      - ap_delete_check_mode.previous != []
-      - '"tn-anstest/ap-anstest.json" in ap_delete_check_mode.url'
-      - ap_delete is changed
-      - ap_delete.previous == ap_delete_check_mode.previous
-      - ap_delete_idempotent is not changed
-      - ap_delete_idempotent.previous == []
-      - ap_delete_missing_param is failed
-      - 'ap_delete_missing_param.msg == "state is absent but all of the following are missing: tenant"'
+  - name: delete ap - delete idempotency works
+    cisco.aci.aci_ap:
+      <<: *aci_ap_absent
+    register: ap_delete_idempotent
 
-- name: delete tenant - cleanup before ending tests
-  cisco.aci.aci_tenant:
-    <<: *aci_tenant_present
-    state: absent
-  when: tenant_present is changed
+  - name: delete ap - missing param error
+    cisco.aci.aci_ap:
+      <<: *aci_ap_absent
+      tenant: "{{ fakevar | default(omit) }}"
+    ignore_errors: yes
+    register: ap_delete_missing_param
+
+  - name: delete ap remove ap used for query
+    cisco.aci.aci_ap:
+      <<: *aci_ap_absent
+      ap: anstest2
+
+  - name: absent assertions
+    assert:
+      that:
+        - ap_delete_check_mode is changed
+        - ap_delete_check_mode.previous != []
+        - '"tn-ansible_test/ap-anstest.json" in ap_delete_check_mode.url'
+        - ap_delete is changed
+        - ap_delete.previous == ap_delete_check_mode.previous
+        - ap_delete_idempotent is not changed
+        - ap_delete_idempotent.previous == []
+        - ap_delete_missing_param is failed
+        - 'ap_delete_missing_param.msg == "state is absent but all of the following are missing: tenant"'
+
+  - name: delete tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent
+    when: tenant_present is changed

@@ -20,16 +20,6 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("debug") }}'
 
-- name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
-
-- name: ensure tenant exists for tests to kick off
-  cisco.aci.aci_tenant: &aci_tenant_present
-    <<: *aci_info
-    tenant: anstest
-    state: present
-  register: tenant_present
-
 - name: Query system information
   aci_system:
     <<: *aci_info
@@ -37,312 +27,709 @@
     state: query
   register: version
 
-- name: ensure ap exists for tests to kick off
-  cisco.aci.aci_ap: &aci_ap_present
-    <<: *aci_tenant_present
-    ap: anstest
-  register: ap_present
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: delete epg to make sure setup is clean
-  cisco.aci.aci_epg:
-    <<: *aci_ap_present
-    epg: anstest
-    state: absent
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: ensure tenant exists for tests to kick off
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      tenant: ansible_test
+      state: present
+    register: tenant_present
+  - name: ensure ap exists for tests to kick off
+    cisco.aci.aci_ap: &aci_ap_present
+      <<: *aci_tenant_present
+      ap: anstest
+    register: ap_present
 
-- name: ensure epg exists for tests to kick off
-  cisco.aci.aci_epg: &aci_epg_present
-    <<: *aci_ap_present
-    epg: anstest
-  register: epg_present
+  - name: delete epg to make sure setup is clean
+    cisco.aci.aci_epg:
+      <<: *aci_ap_present
+      epg: anstest
+      state: absent
 
-- name: ensure phys domain exists for tests to kick off
-  cisco.aci.aci_rest: &aci_rest_phys_domain
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
-    method: post
-    path: api/mo/uni/phys-anstest.json
-    content: {"physDomP": {"attributes": {}}}
-  register: phys_domain_post
+  - name: ensure epg exists for tests to kick off
+    cisco.aci.aci_epg: &aci_epg_present
+      <<: *aci_ap_present
+      epg: anstest
+    register: epg_present
 
-- name: ensure vmm domain exists for tests to kick off
-  cisco.aci.aci_rest: &aci_rest_vmm_domain
-    <<: *aci_rest_phys_domain
-    path: api/mo/uni/vmmp-VMware/dom-anstest.json
-    content: {"vmmDomP": {"attributes": {}}}
-  register: vmm_domain_post
-  when: query_cloud.current == []  # This condition will skip execution for cloud sites
+  - name: ensure phys domain exists for tests to kick off
+    cisco.aci.aci_rest: &aci_rest_phys_domain
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+      method: post
+      path: api/mo/uni/phys-anstest.json
+      content: {"physDomP": {"attributes": {}}}
+    register: phys_domain_post
 
-- name: ensure l2dom domain exists for tests to kick off
-  cisco.aci.aci_rest: &aci_rest_l2dom_domain
-    <<: *aci_rest_phys_domain
-    path: api/mo/uni/l2dom-anstest.json
-    content: {"l2extDomP": {"attributes": {}}}
-  register: l2dom_domain_post
+  - name: ensure vmm domain exists for tests to kick off
+    cisco.aci.aci_rest: &aci_rest_vmm_domain
+      <<: *aci_rest_phys_domain
+      path: api/mo/uni/vmmp-VMware/dom-anstest.json
+      content: {"vmmDomP": {"attributes": {}}}
+    register: vmm_domain_post
 
-- name: bind phys domain to epg - check mode works
-  cisco.aci.aci_epg_to_domain: &aci_epg_to_domain_present
-    <<: *aci_epg_present
-    domain: anstest
-    domain_type: phys
-  check_mode: yes
-  register: phys_check_mode_present
+  - name: ensure l2dom domain exists for tests to kick off
+    cisco.aci.aci_rest: &aci_rest_l2dom_domain
+      <<: *aci_rest_phys_domain
+      path: api/mo/uni/l2dom-anstest.json
+      content: {"l2extDomP": {"attributes": {}}}
+    register: l2dom_domain_post
 
-- name: bind phys domain to epg - creation works
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_epg_to_domain_present
-  register: phys_present
+  - name: bind phys domain to epg - check mode works
+    cisco.aci.aci_epg_to_domain: &aci_epg_to_domain_present
+      <<: *aci_epg_present
+      domain: anstest
+      domain_type: phys
+    check_mode: yes
+    register: phys_check_mode_present
 
-- name: bind phys domain to epg - idempotency works
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_epg_to_domain_present 
-  register: phys_idempotent
+  - name: bind phys domain to epg - creation works
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_epg_to_domain_present
+    register: phys_present
 
-- name: bind phys domain to epg - update works
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_epg_to_domain_present
-    deploy_immediacy: immediate
-  register: phys_update
+  - name: bind phys domain to epg - idempotency works
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_epg_to_domain_present 
+    register: phys_idempotent
 
-- name: bind l2dom domain to epg
-  cisco.aci.aci_epg_to_domain: &aci_epg_to_domain_l2dom_present
-    <<: *aci_epg_present
-    domain: anstest
-    domain_type: l2dom
-  register: l2_present
+  - name: bind phys domain to epg - update works
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_epg_to_domain_present
+      deploy_immediacy: immediate
+    register: phys_update
 
-- name: bind vmm domain to epg - creation works
-  cisco.aci.aci_epg_to_domain: &aci_epg_to_domain_vmm_present
-    <<: *aci_epg_to_domain_present
-    domain_type: vmm
-    vm_provider: vmware
-    resolution_immediacy: pre-provision
-    promiscuous: accept
-  register: vmm_present_promiscuous_accept
+  - name: bind l2dom domain to epg
+    cisco.aci.aci_epg_to_domain: &aci_epg_to_domain_l2dom_present
+      <<: *aci_epg_present
+      domain: anstest
+      domain_type: l2dom
+    register: l2_present
 
-- name: bind vmm domain to epg - creation works
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_epg_to_domain_present
-    domain_type: vmm
-    vm_provider: vmware
-    resolution_immediacy: pre-provision
-    promiscuous: reject
-  register: vmm_present_promiscuous_reject
+  - name: bind vmm domain to epg - creation works
+    cisco.aci.aci_epg_to_domain: &aci_epg_to_domain_vmm_present
+      <<: *aci_epg_to_domain_present
+      domain_type: vmm
+      vm_provider: vmware
+      resolution_immediacy: pre-provision
+      promiscuous: accept
+    register: vmm_present_promiscuous_accept
 
-- name: bind vmm domain to epg - missing params
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_epg_to_domain_vmm_present
-    vm_provider: "{{ fake_var | default(omit) }}"
-  ignore_errors: yes
-  register: present_missing_params
+  - name: bind vmm domain to epg - creation works
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_epg_to_domain_present
+      domain_type: vmm
+      vm_provider: vmware
+      resolution_immediacy: pre-provision
+      promiscuous: reject
+    register: vmm_present_promiscuous_reject
 
-- name: bind vmm domain to epg - valid vlan
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_epg_to_domain_present
-    encap: 1
-  register: valid_vlan
+  - name: bind vmm domain to epg - missing params
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_epg_to_domain_vmm_present
+      vm_provider: "{{ fake_var | default(omit) }}"
+    ignore_errors: yes
+    register: present_missing_params
 
-- name: bind vmm domain to epg - valid vlan (primary_encap)
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_epg_to_domain_present
-    primary_encap: 25
-  register: valid_vlan_primary_encap
+  - name: bind vmm domain to epg - valid vlan
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_epg_to_domain_present
+      encap: 1
+    register: valid_vlan
 
-- name: bind vmm domain to epg - invalid vlan
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_epg_to_domain_present
-    encap: 4097
-  ignore_errors: yes
-  register: invalid_vlan
+  - name: bind vmm domain to epg - valid vlan (primary_encap)
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_epg_to_domain_present
+      primary_encap: 25
+    register: valid_vlan_primary_encap
 
-- name: bind vmm domain to epg - invalid vlan (primary_encap)
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_epg_to_domain_present
-    primary_encap: 4097
-  ignore_errors: yes
-  register: invalid_vlan_primary_encap
+  - name: bind vmm domain to epg - invalid vlan
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_epg_to_domain_present
+      encap: 4097
+    ignore_errors: yes
+    register: invalid_vlan
 
-- name: bind vmm domain to epg - incompatible params
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_epg_to_domain_present
-    vm_provider: vmware
-  ignore_errors: yes
-  register: incompatible_params
+  - name: bind vmm domain to epg - invalid vlan (primary_encap)
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_epg_to_domain_present
+      primary_encap: 4097
+    ignore_errors: yes
+    register: invalid_vlan_primary_encap
 
-- name: Create enhanced lag policy
-  cisco.aci.aci_rest: &enhanced_lag_policy_present
-    <<: *aci_info
-    path: api/node/mo/uni/vmmp-VMware/dom-anstest/vswitchpolcont.json
-    method: post
-    content: |
-      {
-        "vmmVSwitchPolicyCont": {
-          "attributes": {
-            "dn": "uni/vmmp-VMware/dom-anstest/vswitchpolcont",
-            "status": "created,modified"
-          },
-          "children": [{
-                "lacpEnhancedLagPol": {
-                    "attributes": {
-                        "lbmode": "src-dst-ip",
-                        "mode": "active",
-                        "name": "enhanced",
-                        "numLinks": "2"
-                    }
-                }
-          }]
+  - name: bind vmm domain to epg - incompatible params
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_epg_to_domain_present
+      vm_provider: vmware
+    ignore_errors: yes
+    register: incompatible_params
+
+  - name: Create enhanced lag policy
+    cisco.aci.aci_rest: &enhanced_lag_policy_present
+      <<: *aci_info
+      path: api/node/mo/uni/vmmp-VMware/dom-anstest/vswitchpolcont.json
+      method: post
+      content: |
+        {
+          "vmmVSwitchPolicyCont": {
+            "attributes": {
+              "dn": "uni/vmmp-VMware/dom-anstest/vswitchpolcont",
+              "status": "created,modified"
+            },
+            "children": [{
+                  "lacpEnhancedLagPol": {
+                      "attributes": {
+                          "lbmode": "src-dst-ip",
+                          "mode": "active",
+                          "name": "enhanced",
+                          "numLinks": "2"
+                      }
+                  }
+            }]
+          }
         }
-      }
-  register: add_enhanced_lag_policy
-  when: query_cloud.current == []  # This condition will skip execution for cloud sites
+    register: add_enhanced_lag_policy
 
-- name: bind vmm domain to epg - enhanced_lag_policy
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_epg_to_domain_present
-    domain_type: vmm
-    vm_provider: vmware
-    enhanced_lag_policy: enhanced
-  register: enhanced_lag_policy
+  - name: bind vmm domain to epg - enhanced_lag_policy
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_epg_to_domain_present
+      domain_type: vmm
+      vm_provider: vmware
+      enhanced_lag_policy: enhanced
+    register: enhanced_lag_policy
 
-- name: change custom epg name
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_epg_to_domain_present
-    domain_type: vmm
-    vm_provider: vmware
-    custom_epg_name: anstest_epg
-  register: custom_epg_name
-  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+  - name: Initialize and test active/stanby vmm uplinks
+    when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+    block:
+      - name: bind vmm domain to epg - vmm_uplink
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_epg_to_domain_present
+          domain_type: vmm
+          vm_provider: vmware
+          vmm_uplink_active: [ 1, 2 ]
+          vmm_uplink_standby: [ 3, 4 ]
+        register: vmm_uplink
 
-- name: Verify custom epg name
-  assert:
-    that:
-      - custom_epg_name.current.0.fvRsDomAtt.attributes.customEpgName == "anstest_epg"
-  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+      - name: bind vmm domain to epg - vmm_uplink change standby
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_epg_to_domain_present
+          domain_type: vmm
+          vm_provider: vmware
+          vmm_uplink_standby: [ 5, 6 ]
+        register: vmm_uplink_change_standby
 
-- name: present assertions
-  assert:
-    that:
-      - phys_check_mode_present is changed
-      - phys_present is changed
-      - phys_present.previous == []
-      - phys_present.sent.fvRsDomAtt.attributes.switchingMode == 'native'
-      - '"[uni/phys-anstest].json" in phys_present.url'
-      - phys_idempotent is not changed
-      - phys_idempotent.sent == {}
-      - phys_update is changed
-      - phys_update.sent.fvRsDomAtt.attributes.instrImedcy == 'immediate'
-      - vmm_present_promiscuous_accept is changed
-      - vmm_present_promiscuous_reject is changed
-      - vmm_present_promiscuous_accept.current.0.fvRsDomAtt.children.0.vmmSecP.attributes.allowPromiscuous == 'accept'
-      - vmm_present_promiscuous_reject.current.0.fvRsDomAtt.children.0.vmmSecP.attributes.allowPromiscuous == 'reject'
-      - vmm_present_promiscuous_accept.sent.fvRsDomAtt.attributes.resImedcy == 'pre-provision'
-      - vmm_present_promiscuous_accept.sent.fvRsDomAtt.attributes.switchingMode == 'native'
-      - '"[uni/vmmp-VMware/dom-anstest].json" in vmm_present_promiscuous_accept.url'
-      - present_missing_params is failed
-      - 'present_missing_params.msg == "domain_type is vmm but all of the following are missing: vm_provider"'
-      - invalid_vlan is failed
-      - invalid_vlan.msg == "Valid VLAN assignments are from 1 to 4096"
-      - incompatible_params is failed
-      - incompatible_params.msg == "Domain type 'phys' cannot have a 'vm_provider'"
-      - invalid_vlan_primary_encap.msg == "Valid VLAN assignments are from 1 to 4096"
-      - '"[uni/l2dom-anstest].json" in l2_present.url'
-      - valid_vlan_primary_encap.current.0.fvRsDomAtt.attributes.dn == "uni/tn-anstest/ap-anstest/epg-anstest/rsdomAtt-[uni/phys-anstest]"
-      - enhanced_lag_policy.current.0.fvRsDomAtt.children | length == 2
-      - enhanced_lag_policy.current.0.fvRsDomAtt.children.0.fvAEPgLagPolAtt.children.0.fvRsVmmVSwitchEnhancedLagPol.attributes.tDn == "uni/vmmp-VMware/dom-anstest/vswitchpolcont/enlacplagp-enhanced"
+      - name: bind vmm domain to epg - vmm_uplink change active
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_epg_to_domain_present
+          domain_type: vmm
+          vm_provider: vmware
+          vmm_uplink_active: [ 3, 4 ]
+        register: vmm_uplink_change_active
 
-- name: get domain epg binding
-  cisco.aci.aci_epg_to_domain: &aci_epg_domain_query
-    <<: *aci_tenant_present
-    state: query
-    tenant: "{{ fake_var | default(omit) }}"
-  register: binding_query
+      - name: vmm_uplink assertions
+        assert:
+          that:
+            - vmm_uplink is changed
+            - vmm_uplink.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "1,2"
+            - vmm_uplink.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == "3,4"
+            - vmm_uplink_change_standby is changed
+            - vmm_uplink_change_standby.previous.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "1,2"
+            - vmm_uplink_change_standby.previous.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == "3,4"
+            - vmm_uplink_change_standby.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "1,2"
+            - vmm_uplink_change_standby.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == "5,6"
+            - vmm_uplink_change_active is changed
+            - vmm_uplink_change_active.previous.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "1,2"
+            - vmm_uplink_change_active.previous.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == "5,6"
+            - vmm_uplink_change_active.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "3,4"
+            - vmm_uplink_change_active.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == "5,6"
 
-- name: query assertions
-  assert:
-    that:
-      - binding_query is not changed
-      - binding_query.current | length > 1
-      - '"class/fvRsDomAtt.json" in binding_query.url'
+      - name: bind vmm domain to epg - vmm_uplink change standby to same as active
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_epg_to_domain_present
+          domain_type: vmm
+          vm_provider: vmware
+          vmm_uplink_standby: [ 3, 4 ]
+        register: vmm_uplink_change_active_same_as_standby
+        ignore_errors: yes
 
-- name: delete domain epg binding - check mode
-  cisco.aci.aci_epg_to_domain: &aci_epg_to_domain_absent
-    <<: *aci_epg_to_domain_present
-    state: absent
-  check_mode: yes
-  register: epg_domain_check_mode_absent
+      - name: bind vmm domain to epg - vmm_uplink change 0 value
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_epg_to_domain_present
+          domain_type: vmm
+          vm_provider: vmware
+          vmm_uplink_active: [ 0 ]
+        register: vmm_uplink_0_value
 
-- name: delete phys domain epg binding - delete works
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_epg_to_domain_absent
-  register: epg_domain_absent
+      - name: bind vmm domain to epg - vmm_uplink change 32 value
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_epg_to_domain_present
+          domain_type: vmm
+          vm_provider: vmware
+          vmm_uplink_active: [ 32 ]
+        register: vmm_uplink_32_value
 
-- name: delete vmm domain epg binding - delete works
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_epg_to_domain_vmm_present
-    state: absent
-  register: epg_vmm_domain_absent
+      - name: bind vmm domain to epg - vmm_uplink change empty value standby
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_epg_to_domain_present
+          domain_type: vmm
+          vm_provider: vmware
+          vmm_uplink_standby: []
+        register: vmm_uplink_empty_value_standby
 
-- name: delete domain epg binding - idempotency works
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_epg_to_domain_absent
-  register: idempotency_absent
+      - name: vmm_uplink assertions
+        assert:
+          that:
+            - vmm_uplink_0_value is changed
+            - vmm_uplink_0_value.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "0"
+            - vmm_uplink_32_value is changed
+            - vmm_uplink_32_value.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "32"
+            - vmm_uplink_empty_value_standby is changed
+            - vmm_uplink_empty_value_standby.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == ""
 
-- name: delete domain epg binding - missing param
-  cisco.aci.aci_epg_to_domain:
-    <<: *aci_tenant_present
-    state: absent
-  ignore_errors: true
-  register: absent_missing_param
+      - name: bind vmm domain to epg - vmm_uplink change empty value active
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_epg_to_domain_present
+          domain_type: vmm
+          vm_provider: vmware
+          vmm_uplink_active: []
+        ignore_errors: yes
+        register: vmm_uplink_empty_value_active
 
-- name: absent assertions
-  assert:
-    that:
-      - epg_domain_check_mode_absent is changed
-      - epg_domain_check_mode_absent.previous != []
-      - epg_domain_absent is changed
-      - epg_domain_absent.previous == epg_domain_check_mode_absent.previous
-      - epg_vmm_domain_absent is changed
-      - idempotency_absent is not changed
-      - idempotency_absent.previous == []
-      - absent_missing_param is failed
-      - 'absent_missing_param.msg == "state is absent but all of the following are missing: ap, domain, domain_type, epg"'
+      - name: bind vmm domain to epg - vmm_uplink change string value
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_epg_to_domain_present
+          domain_type: vmm
+          vm_provider: vmware
+          vmm_uplink_active: [ testing ]
+        ignore_errors: yes
+        register: vmm_uplink_string_value
 
-- name: remove vmm domain - cleanup
-  cisco.aci.aci_rest:
-    <<: *aci_rest_vmm_domain
-    method: delete
-  when: vmm_domain_post is changed
+      - name: bind vmm domain to epg - vmm_uplink change 33 value
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_epg_to_domain_present
+          domain_type: vmm
+          vm_provider: vmware
+          vmm_uplink_active: [ 33 ]
+        ignore_errors: yes
+        register: vmm_uplink_33_value
 
-- name: remove phys domain - cleanup
-  cisco.aci.aci_rest:
-    <<: *aci_rest_phys_domain
-    method: delete
-  when: phys_domain_post is changed
+      - name: vmm_uplink error assertions
+        assert:
+          that:
+            - 'vmm_uplink_change_active_same_as_standby.msg == "APIC Error 120: Invalid Configuration. Uplink Id entered more than once or delimiter was  misused."'
+            - 'vmm_uplink_empty_value_active.msg == "APIC Error 801: property active of uni/tn-ansible_test/ap-anstest/epg-anstest/rsdomAtt-[uni/vmmp-VMware/dom-anstest]/uplinkorder failed validation for value ''''"'
+            - 'vmm_uplink_string_value.msg == "APIC Error 801: property active of uni/tn-ansible_test/ap-anstest/epg-anstest/rsdomAtt-[uni/vmmp-VMware/dom-anstest]/uplinkorder failed validation for value ''testing''"'
 
-- name: remove l2 domain - cleanup
-  cisco.aci.aci_rest:
-    <<: *aci_rest_l2dom_domain
-    method: delete
-  when: l2dom_domain_post is changed
+      - name: vmm_uplink error assertions for non-cloud
+        assert:
+          that:
+            - 'vmm_uplink_33_value.msg == "APIC Error 120: Invalid Configuration. Uplink Id can not be higher than 32."'
 
-- name: remove epg - cleanup
-  cisco.aci.aci_epg:
-    <<: *aci_epg_present
-    state: absent
-  when: epg_present is changed
+      - name: change custom epg name
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_epg_to_domain_present
+          domain_type: vmm
+          vm_provider: vmware
+          custom_epg_name: anstest_epg
+        register: custom_epg_name
 
-- name: remove ap - cleanup
-  cisco.aci.aci_ap:
-    <<: *aci_ap_present
-    state: absent
-  when: ap_present is changed
+      - name: Verify custom epg name
+        assert:
+          that:
+            - custom_epg_name.current.0.fvRsDomAtt.attributes.customEpgName == "anstest_epg"
 
-- name: remove tenant - cleanup
-  cisco.aci.aci_tenant:
-    <<: *aci_tenant_present
-    state: absent
-  when: tenant_present is changed
+  - name: domain with delimiter
+    cisco.aci.aci_epg_to_domain: &aci_delimiter
+      <<: *aci_epg_to_domain_present
+      domain: "ansdelim_{{ index }}"
+      domain_type: vmm
+      vm_provider: vmware
+      delimiter: "{{ item }}"
+    register: delimeter
+    loop:
+      - "|"
+      - "~"
+      - "!"
+      - "@"
+      - "^"
+      - "+"
+      - "="
+    loop_control:
+      index_var: index
+
+  - name: domain with delimiter not allowed input
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_delimiter
+      domain: ansdelim_not_allowed
+      delimiter: not_allowed
+    register: delimiter_not_allowed
+    ignore_errors: true
+
+  - name: delete domains with delimiter
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_epg_to_domain_present
+      domain: "ansdelim_{{ item }}"
+      domain_type: vmm
+      vm_provider: vmware
+      state: absent
+    register: delimeter_absent
+    loop: "{{ range(0, 7, 1)|list }}"
+
+  - name: domains with delimiter assertions
+    assert:
+      that:
+        - delimeter.results.0 is changed
+        - delimeter.results.0.current.0.fvRsDomAtt.attributes.delimiter == "|"
+        - delimeter.results.1 is changed
+        - delimeter.results.1.current.0.fvRsDomAtt.attributes.delimiter == "~"
+        - delimeter.results.2 is changed
+        - delimeter.results.2.current.0.fvRsDomAtt.attributes.delimiter == "!"
+        - delimeter.results.3 is changed
+        - delimeter.results.3.current.0.fvRsDomAtt.attributes.delimiter == "@"
+        - delimeter.results.4 is changed
+        - delimeter.results.4.current.0.fvRsDomAtt.attributes.delimiter == "^"
+        - delimeter.results.5 is changed
+        - delimeter.results.5.current.0.fvRsDomAtt.attributes.delimiter == "+"
+        - delimeter.results.6 is changed
+        - delimeter.results.6.current.0.fvRsDomAtt.attributes.delimiter == "="
+        - delimiter_not_allowed is not changed
+        - 'delimiter_not_allowed.msg == "value of delimiter must be one of: |, ~, !, @, ^, +, =, got: not_allowed"'
+        - delimeter_absent.results.0 is changed
+        - delimeter_absent.results.0.current == []
+        - delimeter_absent.results.1 is changed
+        - delimeter_absent.results.1.current == []
+        - delimeter_absent.results.2 is changed
+        - delimeter_absent.results.2.current == []
+        - delimeter_absent.results.3 is changed
+        - delimeter_absent.results.3.current == []
+        - delimeter_absent.results.4 is changed
+        - delimeter_absent.results.4.current == []
+        - delimeter_absent.results.5 is changed
+        - delimeter_absent.results.5.current == []
+        - delimeter_absent.results.6 is changed
+        - delimeter_absent.results.6.current == []
+
+  - name: domain with untagged vlan true
+    cisco.aci.aci_epg_to_domain: &aci_untagged
+      <<: *aci_epg_to_domain_present
+      domain: ansuntagged
+      domain_type: vmm
+      vm_provider: vmware
+      untagged_vlan: true
+    register: untagged_vlan_true
+
+  - name: domain with untagged vlan false
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_untagged
+      untagged_vlan: false
+    register: untagged_vlan_false
+
+  - name: delete domain with untagged vlan
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_untagged
+      state: absent
+    register: untagged_vlan_absent
+
+  - name: domains with untagged vlan assertions
+    assert:
+      that:
+        - untagged_vlan_true is changed
+        - untagged_vlan_true.current.0.fvRsDomAtt.attributes.untagged == "yes"
+        - untagged_vlan_false is changed
+        - untagged_vlan_false.current.0.fvRsDomAtt.attributes.untagged == "no"
+        - untagged_vlan_absent is changed
+        - untagged_vlan_absent.current == []
+
+  - name: Test domain with port binding
+    when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+    block:
+      - name: domain with port binding dynamic
+        cisco.aci.aci_epg_to_domain: &aci_port_binding
+          <<: *aci_epg_to_domain_present
+          domain: ansportbind
+          domain_type: vmm
+          vm_provider: vmware
+          port_binding: dynamic
+        register: port_binding_dynamic
+
+      - name: change domain with port binding to static
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_port_binding
+          port_binding: static
+        register: port_binding_static
+
+      - name: change domain with port binding to ephemeral
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_port_binding
+          port_binding: ephemeral
+        register: port_binding_ephemeral
+
+      - name: domain with port binding not allowed input
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_port_binding
+          domain: ansdelim_not_allowed
+          port_binding: not_allowed
+        register: port_binding_not_allowed
+        ignore_errors: true
+
+      - name: delete domain with port binding
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_port_binding
+          state: absent
+        register: port_binding_absent
+
+      - name: domains with port binding assertions
+        assert:
+          that:
+            - port_binding_dynamic is changed
+            - port_binding_dynamic.current.0.fvRsDomAtt.attributes.bindingType == "dynamicBinding"
+            - port_binding_static is changed
+            - port_binding_static.current.0.fvRsDomAtt.attributes.bindingType == "staticBinding"
+            - port_binding_ephemeral is changed
+            - port_binding_ephemeral.current.0.fvRsDomAtt.attributes.bindingType == "ephemeral"
+            - port_binding_not_allowed is not changed
+            - 'port_binding_not_allowed.msg == "value of port_binding must be one of: dynamic, ephemeral, static, got: not_allowed"'
+            - port_binding_absent is changed
+            - port_binding_absent.current == []
+
+      - name: domain with port allocation elastic
+        cisco.aci.aci_epg_to_domain: &aci_port_allocation
+          <<: *aci_epg_to_domain_present
+          domain: ansportalloc
+          domain_type: vmm
+          vm_provider: vmware
+          port_allocation: elastic
+        register: port_allocation_elastic
+
+      - name: change domain with port allocation to fixed
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_port_allocation
+          port_allocation: fixed
+        register: port_allocation_fixed
+
+      - name: domain with port allocation not allowed input
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_port_allocation
+          domain: ansdelim_not_allowed
+          port_allocation: not_allowed
+        register: port_allocation_not_allowed
+        ignore_errors: true
+
+      - name: delete domain with port allocation
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_port_allocation
+          state: absent
+        register: port_allocation_absent
+
+      - name: domains with port allocation assertions
+        assert:
+          that:
+            - port_allocation_elastic is changed
+            - port_allocation_elastic.current.0.fvRsDomAtt.attributes.portAllocation == "elastic"
+            - port_allocation_fixed is changed
+            - port_allocation_fixed.current.0.fvRsDomAtt.attributes.portAllocation == "fixed"
+            - port_allocation_not_allowed is not changed
+            - 'port_allocation_not_allowed.msg == "value of port_allocation must be one of: elastic, fixed, got: not_allowed"'
+            - port_allocation_absent is changed
+            - port_allocation_absent.current == []
+
+      - name: domain with number of ports of 2
+        cisco.aci.aci_epg_to_domain: &aci_number_port
+          <<: *aci_epg_to_domain_present
+          domain: ansportnum
+          domain_type: vmm
+          vm_provider: vmware
+          number_of_ports: 2
+        register: number_of_ports_2
+
+      - name: change domain with number of ports to 3
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_number_port
+          number_of_ports: 3
+        register: number_of_ports_3
+
+      - name: delete domain with number of ports
+        cisco.aci.aci_epg_to_domain:
+          <<: *aci_number_port
+          state: absent
+        register: number_of_ports_absent
+
+      - name: domains with number of ports assertions
+        assert:
+          that:
+            - number_of_ports_2 is changed
+            - number_of_ports_2.current.0.fvRsDomAtt.attributes.numPorts == "2"
+            - number_of_ports_3 is changed
+            - number_of_ports_3.current.0.fvRsDomAtt.attributes.numPorts == "3"
+            - number_of_ports_absent is changed
+            - number_of_ports_absent.current == []
+
+  - name: domain with forged transmits and mac changes
+    cisco.aci.aci_epg_to_domain: &aci_forged_transmits_and_mac_changes
+      <<: *aci_epg_to_domain_present
+      domain: ansforgedmac
+      domain_type: vmm
+      vm_provider: vmware
+      forged_transmits: accept
+      mac_changes: accept
+    register: forged_transmits_and_mac_changes_accept
+
+  - name: change domain with forged transmits and mac changes to reject
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_forged_transmits_and_mac_changes
+      forged_transmits: reject
+      mac_changes: reject
+    register: forged_transmits_and_mac_changes_reject
+
+  - name: delete domain with forged transmits and mac changes
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_forged_transmits_and_mac_changes
+      state: absent
+    register: forged_transmits_and_mac_changes_absent
+
+  - name: domains with forged transmits and mac changes assertions
+    assert:
+      that:
+        - forged_transmits_and_mac_changes_accept is changed
+        - forged_transmits_and_mac_changes_accept.current.0.fvRsDomAtt.children.0.vmmSecP.attributes.forgedTransmits == "accept"
+        - forged_transmits_and_mac_changes_accept.current.0.fvRsDomAtt.children.0.vmmSecP.attributes.macChanges == "accept"
+        - forged_transmits_and_mac_changes_reject is changed
+        - forged_transmits_and_mac_changes_reject.current.0.fvRsDomAtt.children.0.vmmSecP.attributes.forgedTransmits == "reject"
+        - forged_transmits_and_mac_changes_reject.current.0.fvRsDomAtt.children.0.vmmSecP.attributes.macChanges == "reject"
+        - forged_transmits_and_mac_changes_absent is changed
+        - forged_transmits_and_mac_changes_absent.current == []
+
+  - name: present assertions
+    assert:
+      that:
+        - phys_check_mode_present is changed
+        - phys_present is changed
+        - phys_present.previous == []
+        - phys_present.sent.fvRsDomAtt.attributes.switchingMode == 'native'
+        - phys_present.current.0.fvRsDomAtt.attributes.annotation == 'orchestrator:ansible'
+        - '"[uni/phys-anstest].json" in phys_present.url'
+        - phys_idempotent is not changed
+        - phys_idempotent.sent == {}
+        - phys_update is changed
+        - phys_update.sent.fvRsDomAtt.attributes.instrImedcy == 'immediate'
+        - vmm_present_promiscuous_accept is changed
+        - vmm_present_promiscuous_reject is changed
+        - vmm_present_promiscuous_accept.current.0.fvRsDomAtt.children.0.vmmSecP.attributes.allowPromiscuous == 'accept'
+        - vmm_present_promiscuous_reject.current.0.fvRsDomAtt.children.0.vmmSecP.attributes.allowPromiscuous == 'reject'
+        - vmm_present_promiscuous_accept.sent.fvRsDomAtt.attributes.resImedcy == 'pre-provision'
+        - vmm_present_promiscuous_accept.sent.fvRsDomAtt.attributes.switchingMode == 'native'
+        - '"[uni/vmmp-VMware/dom-anstest].json" in vmm_present_promiscuous_accept.url'
+        - present_missing_params is failed
+        - 'present_missing_params.msg == "domain_type is vmm but all of the following are missing: vm_provider"'
+        - invalid_vlan is failed
+        - invalid_vlan.msg == "Valid VLAN assignments are from 1 to 4096"
+        - incompatible_params is failed
+        - incompatible_params.msg == "Domain type 'phys' cannot have a 'vm_provider'"
+        - invalid_vlan_primary_encap.msg == "Valid VLAN assignments are from 1 to 4096"
+        - '"[uni/l2dom-anstest].json" in l2_present.url'
+        - valid_vlan_primary_encap.current.0.fvRsDomAtt.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rsdomAtt-[uni/phys-anstest]"
+        - enhanced_lag_policy.current.0.fvRsDomAtt.children | length == 2
+        - enhanced_lag_policy.current.0.fvRsDomAtt.children.0.fvAEPgLagPolAtt.children.0.fvRsVmmVSwitchEnhancedLagPol.attributes.tDn == "uni/vmmp-VMware/dom-anstest/vswitchpolcont/enlacplagp-enhanced"
+
+  - name: get domain epg binding
+    cisco.aci.aci_epg_to_domain: &aci_epg_domain_query
+      <<: *aci_tenant_present
+      state: query
+      tenant: "{{ fake_var | default(omit) }}"
+    register: binding_query
+
+  - name: query assertions
+    assert:
+      that:
+        - binding_query is not changed
+        - binding_query.current | length > 1
+        - '"class/fvRsDomAtt.json" in binding_query.url'
+
+  - name: delete domain epg binding - check mode
+    cisco.aci.aci_epg_to_domain: &aci_epg_to_domain_absent
+      <<: *aci_epg_to_domain_present
+      state: absent
+    check_mode: yes
+    register: epg_domain_check_mode_absent
+
+  - name: delete phys domain epg binding - delete works
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_epg_to_domain_absent
+    register: epg_domain_absent
+
+  - name: delete vmm domain epg binding - delete works
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_epg_to_domain_vmm_present
+      state: absent
+    register: epg_vmm_domain_absent
+
+  - name: delete domain epg binding - idempotency works
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_epg_to_domain_absent
+    register: idempotency_absent
+
+  - name: delete domain epg binding - missing param
+    cisco.aci.aci_epg_to_domain:
+      <<: *aci_tenant_present
+      state: absent
+    ignore_errors: true
+    register: absent_missing_param
+
+  - name: absent assertions
+    assert:
+      that:
+        - epg_domain_check_mode_absent is changed
+        - epg_domain_check_mode_absent.previous != []
+        - epg_domain_absent is changed
+        - epg_domain_absent.previous == epg_domain_check_mode_absent.previous
+        - epg_vmm_domain_absent is changed
+        - idempotency_absent is not changed
+        - idempotency_absent.previous == []
+        - absent_missing_param is failed
+        - 'absent_missing_param.msg == "state is absent but all of the following are missing: ap, domain, domain_type, epg"'
+
+  - name: remove vmm domain - cleanup
+    cisco.aci.aci_rest:
+      <<: *aci_rest_vmm_domain
+      method: delete
+    when: vmm_domain_post is changed
+
+  - name: remove phys domain - cleanup
+    cisco.aci.aci_rest:
+      <<: *aci_rest_phys_domain
+      method: delete
+    when: phys_domain_post is changed
+
+  - name: remove l2 domain - cleanup
+    cisco.aci.aci_rest:
+      <<: *aci_rest_l2dom_domain
+      method: delete
+    when: l2dom_domain_post is changed
+
+  - name: remove epg - cleanup
+    cisco.aci.aci_epg:
+      <<: *aci_epg_present
+      state: absent
+    when: epg_present is changed
+
+  - name: remove ap - cleanup
+    cisco.aci.aci_ap:
+      <<: *aci_ap_present
+      state: absent
+    when: ap_present is changed
+
+  - name: remove tenant - cleanup
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent
+    when: tenant_present is changed
