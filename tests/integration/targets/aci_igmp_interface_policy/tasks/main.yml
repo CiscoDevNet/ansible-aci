@@ -12,6 +12,7 @@
   set_fact:
    aci_info: &aci_info
     host: "{{ aci_hostname }}"
+    port: "{{ aci_port | default(omit) }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
     validate_certs: '{{ aci_validate_certs | default(false) }}'
