@@ -96,7 +96,7 @@ options:
     description:
     - Enable the Report Link Local Groups option.
     - The APIC defaults to False when unset during creation.
-    - If this parameter is set, allow_v3_asm and report_link_local_groups must also be set.
+    - If this parameter is set, allow_v3_asm and fast_leave must also be set.
     type: bool
   state:
     description:
@@ -330,10 +330,10 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='igmpIfPol',
-            aci_rn='igmpIfPol-{0}'.format(name),
+            aci_class="igmpIfPol",
+            aci_rn="igmpIfPol-{0}".format(name),
             module_object=name,
-            target_filter={'name': name},
+            target_filter={"name": name},
         ),
     )
     aci.get_existing()
