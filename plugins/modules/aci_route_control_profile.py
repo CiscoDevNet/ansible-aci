@@ -41,6 +41,7 @@ options:
     - Type of the Route Control Profile
     - For "Match Prefix AND Routing Policy", choose combinable
     - For "Match Routing Policy Only", choose global
+    - The APIC defaults to combinable when unset during creation.
     type: str
     choices: [ combinable, global ]
   autocontinue:
@@ -56,6 +57,8 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 notes:
 - The C(tenant) and C(l3out) used must exist before using this module in your playbook.
@@ -222,11 +225,13 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         l3out=dict(type="str", aliases=["l3out_name"]),

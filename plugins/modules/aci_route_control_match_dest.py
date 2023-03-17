@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_route_control_match_dest
-short_description: Manage Route Control Match Destination Rule objects (rtctrlMatchRtDest)
+short_description: Manage Route Control Match Destination Rule objects (rtctrl:MatchRtDest)
 description:
 - Manage Route Control Match Destination Rules on Cisco ACI fabrics.
 options:
@@ -52,6 +52,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - The C(tenant) and C(subject_name) used must exist before using this module in your playbook.
@@ -219,12 +220,14 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
 
+import re
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         subject_name=dict(type="str"),
@@ -255,7 +258,11 @@ def main():
     state = module.params.get("state")
 
     if ip is not None:
-        mask = int(ip.split("/")[1])
+        ipv4_regex = r"^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/(?:[0-9]|[1-2][0-9]|3[0-2])$"
+        if bool(re.match(ipv4_regex, ip)):
+            mask = int(ip.split("/")[1])
+        else:
+            aci.fail_json("ip must be in CIDR format, e.g. 10.20.30.0/24")
 
     if greater_than is not None:
         if greater_than <= mask:

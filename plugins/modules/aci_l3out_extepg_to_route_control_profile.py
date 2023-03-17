@@ -51,6 +51,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - The C(tenant), C(l3out), and C(ext_epg) used must exist before using this module in your playbook.
@@ -103,6 +104,15 @@ EXAMPLES = r"""
     ext_epg: my_ext_epg
     profile: my_route_control_profile
     direction: import
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query All Route Control Profile bindings
+  cisco.aci.aci_l3out_extepg_to_route_control_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
     state: query
   delegate_to: localhost
   register: query_result
@@ -214,11 +224,12 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         l3out=dict(type="str", aliases=["l3out_name"]),
@@ -269,7 +280,7 @@ def main():
             aci_class="l3extRsInstPToProfile",
             aci_rn="rsinstPToProfile-[{0}]-{1}".format(profile, direction),
             module_object=direction,
-            target_filter={"direction": direction},
+            target_filter={"tnRtctrlProfileName": profile, "direction": direction},
         ),
     )
 

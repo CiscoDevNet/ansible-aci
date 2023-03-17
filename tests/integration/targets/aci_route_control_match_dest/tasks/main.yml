@@ -73,6 +73,17 @@
     that:
     - add_match_dest_again is not changed
 
+- name: Add second route control match destination
+  cisco.aci.aci_route_control_match_dest:
+    <<: *aci_info
+    tenant: ansible_tenant
+    subject_name: ansible_rtctrl_subject2
+    ip: 10.20.31.0/24
+    aggregate: no
+    gt: 26
+    lt: 28
+    state: present
+
 # UPDATE MATCH DESTINATION
 - name: Update Match Destination
   cisco.aci.aci_route_control_match_dest:
@@ -102,7 +113,7 @@
   assert:
     that:
     - query_all_match_destinations is not changed
-    - query_all_match_destinations.current|length >= 1
+    - query_all_match_destinations.current | length > 1
 
 # QUERY A SPECIFIC MATCH DESTINATION
 - name: Query a specific match destination
@@ -115,7 +126,7 @@
   assert:
     that:
     - query_spec_match_dest is not changed
-    - query_spec_match_dest.current|length == 1
+    - query_spec_match_dest.current | length == 1
     - query_spec_match_dest.current.0.rtctrlMatchRtDest.attributes.ip == '10.20.30.0/24'
     - query_spec_match_dest.current.0.rtctrlMatchRtDest.attributes.fromPfxLen == '0'
     - query_spec_match_dest.current.0.rtctrlMatchRtDest.attributes.toPfxLen == '0'

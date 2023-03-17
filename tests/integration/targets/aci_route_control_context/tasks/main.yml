@@ -93,6 +93,17 @@
     that:
     - add_context_again is not changed
 
+- name: Add second route control context
+  cisco.aci.aci_route_control_context:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    profile: ansible_rtctrl_profile
+    context: ansible_rtctrl_context2
+    order: 1
+    action: permit
+    state: present
+
 # UPDATE CONTEXT
 - name: Change route control context
   cisco.aci.aci_route_control_context: &context_update
@@ -119,7 +130,7 @@
   assert:
     that:
     - query_all_contexts is not changed
-    - query_all_contexts.current|length >= 1
+    - query_all_contexts.current | length > 1
 
 # QUERY A SPECIFIC CONTEXT
 - name: Query a specific context
@@ -132,7 +143,7 @@
   assert:
     that:
     - query_spec_context is not changed
-    - query_spec_context.current|length == 1
+    - query_spec_context.current | length == 1
     - query_spec_context.current.0.rtctrlCtxP.attributes.order == '0'
     - query_spec_context.current.0.rtctrlCtxP.attributes.action == 'deny'
     

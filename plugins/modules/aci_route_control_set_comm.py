@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_route_control_set_comm
-short_description: Manage Route Control Set Community objects (rtctrlSetComm)
+short_description: Manage Route Control Set Community objects (rtctrl:SetComm)
 description:
 - Manage Route Control Set Community on Cisco ACI fabrics.
 options:
@@ -49,6 +49,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - The C(tenant) and C(attr_name) used must exist before using this module in your playbook.
@@ -57,7 +58,7 @@ seealso:
 - module: cisco.aci.aci_tenant
 - module: cisco.aci.aci_route_control_attr
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(rtctrl:AttrP).
+  description: More information about the internal APIC class B(rtctrl:SetComm).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -204,11 +205,12 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         attr_name=dict(type="str", aliases=["attribute_name"]),

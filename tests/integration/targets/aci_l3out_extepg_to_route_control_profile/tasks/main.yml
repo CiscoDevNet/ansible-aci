@@ -16,7 +16,7 @@
     validate_certs: '{{ aci_validate_certs | default(false) }}'
     use_ssl: '{{ aci_use_ssl | default(true) }}'
     use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
+    output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
@@ -97,6 +97,16 @@
     <<: *binding_present
   register: nm_add_binding
 
+- name: Add second route control profile binding
+  cisco.aci.aci_l3out_extepg_to_route_control_profile:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    ext_epg: ansible_extEpg
+    profile: ansible_second_rtctrl_profile
+    direction: import
+    state: present
+
 - name: Verify add route control profile binding
   assert:
     that:
@@ -141,7 +151,7 @@
   assert:
     that:
     - query_all_bindings is not changed
-    - query_all_bindings.current|length >= 1
+    - query_all_bindings.current | length > 1
 
 # QUERY A SPECIFIC BINDINGS
 - name: Query a specific route control profile binding

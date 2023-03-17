@@ -83,6 +83,16 @@
     that:
     - add_profile_again is not changed
 
+- name: Add a second profile
+  cisco.aci.aci_route_control_profile:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    profile: ansible_rtctrl_profile2
+    prof_type: global
+    autocontinue: false
+    state: present
+
 # UPDATE PROFILE
 - name: Change route control profile
   cisco.aci.aci_route_control_profile: &profile_update
@@ -109,7 +119,7 @@
   assert:
     that:
     - query_all_profiles is not changed
-    - query_all_profiles.current|length >= 1
+    - query_all_profiles.current | length > 1
 
 # QUERY A SPECIFIC PROFILE
 - name: Query a specific profile

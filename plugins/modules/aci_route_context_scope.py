@@ -35,6 +35,7 @@ options:
     description:
     - Name of the Route Control Profile Context
     type: str
+    aliases: [ name ]
   description:
     description:
     - Description of the Route Control Profile Context
@@ -53,6 +54,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - The C(tenant), C(l3out), C(profile) and C(context) used must exist before using this module in your playbook.
@@ -225,16 +227,17 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         l3out=dict(type="str", aliases=["l3out_name"]),
         profile=dict(type="str", aliases=["profile_name", "route_control_profile"]),
-        context=dict(type="str"),
+        context=dict(type="str", aliases=["name"]),
         description=dict(type="str", aliases=["descr"]),
         set_action_rule_profile=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),

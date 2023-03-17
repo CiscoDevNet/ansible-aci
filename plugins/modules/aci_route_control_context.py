@@ -59,6 +59,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - The C(tenant), C(l3out) and C(profile) used must exist before using this module in your playbook.
@@ -68,7 +69,7 @@ seealso:
 - module: cisco.aci.aci_l3out
 - module: cisco.aci.aci_route_control_profile
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(rtctrl:Profile).
+  description: More information about the internal APIC class B(rtctrl:CtxP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -230,11 +231,12 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         l3out=dict(type="str", aliases=["l3out_name"]),
