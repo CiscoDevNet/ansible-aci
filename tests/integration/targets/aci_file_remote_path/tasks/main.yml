@@ -60,6 +60,8 @@
     remote_port: 22
     remote_protocol: scp
     remote_path: /tmp
+    management_epg: oob-default
+  register: create_second_path
 
 - name: Verify creation of File Remote Path
   ansible.builtin.assert:
@@ -81,6 +83,7 @@
     - nm_create_path_again.current.0.fileRemotePath.attributes.authType == "usePassword"
     - nm_create_path_again.current.0.fileRemotePath.attributes.userName == "test_user"
     - nm_create_path_again.current.0.fileRemotePath.attributes.remotePath == "/tmp"
+    - create_second_path.current.0.fileRemotePath.children.0.fileRsARemoteHostToEpg.attributes.tDn == "uni/tn-mgmt/mgmtp-default/oob-default"
 
 # UPDATE FILE REMOTE PATH
 - name: Update File Remote Path
