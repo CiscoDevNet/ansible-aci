@@ -54,17 +54,16 @@ options:
     choices: [ access, fabric ]
   role:
     description:
-    - The role of the switch (node) can be either a leaf or a spine. The default role is leaf.
+    - The role of the switch (node) can be either a leaf or a spine.
+    - The default role is leaf.
     type: str
     aliases: [ node_type ]
-    default: leaf
     choices: [ leaf, spine ]
   admin_state:
     description:
     - The Admin State of the Interface.
     - Admin State will be Up by default.
     type: str
-    default: up
     choices: [ up, down ]
   interface_type:
     description:
@@ -324,8 +323,8 @@ def main():
         node=dict(type="int", aliases=["node_id"]),
         pc_member=dict(type="str", aliases=["port_channel_member"]),
         port_type=dict(type="str", default="access", choices=["access", "fabric"]),
-        role=dict(type="str", default="leaf", choices=["leaf", "spine"], aliases=["node_type"]),
-        admin_state=dict(type="str", default="up", choices=["up", "down"]),
+        role=dict(type="str", choices=["leaf", "spine"], aliases=["node_type"]),
+        admin_state=dict(type="str", choices=["up", "down"]),
         interface_type=dict(
             type="str",
             default="switch_port",
@@ -339,9 +338,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["role", "node", "interface", "port_type"]],
-            ["state", "present", ["role", "node", "interface", "port_type", "interface_type"]],
-            ["state", "query", ["port_type"]],
+            ["state", "absent", ["node", "interface"]],
+            ["state", "present", ["node", "interface"]],
         ],
         mutually_exclusive=[("policy_group", "breakout")],
     )
