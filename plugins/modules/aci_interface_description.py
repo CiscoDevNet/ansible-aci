@@ -337,7 +337,6 @@ def main():
         aci.post_config()
 
     elif state == "absent":
-
         aci.delete_config()
 
     aci.exit_json()
