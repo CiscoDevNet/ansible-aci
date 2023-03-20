@@ -330,9 +330,7 @@ authentication"
             error_text = "Unable to parse output as XML, see 'raw' output. Couldn't find end of Start Tag aaa line 1, line 1, column 6 (line 1)"
 
         else:
-            error_text = (
-                "Unable to parse output as XML, see 'raw' output. Couldn't find end of Start Tag aaa line 1, line 1, column 6 (<string>, line 1)"
-            )
+            error_text = "Unable to parse output as XML, see 'raw' output. Couldn't find end of Start Tag aaa line 1, line 1, column 6 (<string>, line 1)"
 
         error = dict(
             code=-1,
