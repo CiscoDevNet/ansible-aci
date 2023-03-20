@@ -244,9 +244,9 @@ authentication"
         self.maxDiffi = None
 
         if PY2:
-            error_text = "Unable to parse output as JSON, see 'raw' output. " "No JSON object could be decoded"
+            error_text = "Unable to parse output as JSON, see 'raw' output. No JSON object could be decoded"
         else:
-            error_text = "Unable to parse output as JSON, see 'raw' output. " "Expecting value: line 1 column 1 (char 0)"
+            error_text = "Unable to parse output as JSON, see 'raw' output. Expecting value: line 1 column 1 (char 0)"
 
         error = dict(
             code=-1,
@@ -264,11 +264,11 @@ authentication"
             return
 
         elif etree.LXML_VERSION < (3, 3, 0, 0):
-            error_text = (("Unable to parse output as XML, see 'raw' output. " "None"),)
+            error_text = "Unable to parse output as XML, see 'raw' output. None"
         elif etree.LXML_VERSION < (4, 0, 0, 0):
-            error_text = to_native(("Unable to parse output as XML, see 'raw' output. " "None (line 0)"), errors="surrogate_or_strict")
+            error_text = to_native("Unable to parse output as XML, see 'raw' output. None (line 0)", errors="surrogate_or_strict")
         elif PY2:
-            error_text = "Unable to parse output as XML, see 'raw' output. " "Document is empty, line 1, column 1 (line 1)"
+            error_text = "Unable to parse output as XML, see 'raw' output. Document is empty, line 1, column 1 (line 1)"
         else:
             error_text = None
 
@@ -279,8 +279,8 @@ authentication"
             # errors vary on Python 3.8+ for unknown reasons
             # accept any of the following error messages
             errors = (
-                ("Unable to parse output as XML, see 'raw' output. " "None (line 0)"),
-                ("Unable to parse output as XML, see 'raw' output. " "Document is empty, line 1, column 1 (<string>, line 1)"),
+                ("Unable to parse output as XML, see 'raw' output. None (line 0)"),
+                ("Unable to parse output as XML, see 'raw' output. Document is empty, line 1, column 1 (<string>, line 1)"),
             )
 
             for error in errors:
@@ -302,11 +302,11 @@ authentication"
         self.maxDiff = None
 
         if sys.version_info < (2, 7):
-            error_text = "Unable to parse output as JSON, see 'raw' output." " Expecting object: line 1 column 8 (char 8)"
+            error_text = "Unable to parse output as JSON, see 'raw' output. Expecting object: line 1 column 8 (char 8)"
         elif PY2:
-            error_text = "Unable to parse output as JSON, see 'raw' output." " No JSON object could be decoded"
+            error_text = "Unable to parse output as JSON, see 'raw' output. No JSON object could be decoded"
         else:
-            error_text = "Unable to parse output as JSON, see 'raw' output." " Expecting value: line 1 column 9 (char 8)"
+            error_text = "Unable to parse output as JSON, see 'raw' output. Expecting value: line 1 column 9 (char 8)"
 
         error = dict(
             code=-1,
@@ -325,13 +325,13 @@ authentication"
             return
 
         elif etree.LXML_VERSION < (3, 3, 0, 0):
-            error_text = "Unable to parse output as XML, see 'raw' output. " "Couldn't find end of Start Tag aaa line 1, line 1, column 5"
+            error_text = "Unable to parse output as XML, see 'raw' output. Couldn't find end of Start Tag aaa line 1, line 1, column 5"
         elif PY2:
-            error_text = "Unable to parse output as XML, see 'raw' output. " "Couldn't find end of Start Tag aaa line 1, line 1, column 6 " "(line 1)"
+            error_text = "Unable to parse output as XML, see 'raw' output. Couldn't find end of Start Tag aaa line 1, line 1, column 6 (line 1)"
 
         else:
             error_text = (
-                "Unable to parse output as XML, see 'raw' output. " "Couldn't find end of Start Tag aaa line 1, line 1, column 6 " "(<string>, line 1)"
+                "Unable to parse output as XML, see 'raw' output. Couldn't find end of Start Tag aaa line 1, line 1, column 6 (<string>, line 1)"
             )
 
         error = dict(
