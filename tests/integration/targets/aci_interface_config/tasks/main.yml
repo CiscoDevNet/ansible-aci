@@ -19,6 +19,7 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("debug") }}'
 
+
 - name: Query system information
   cisco.aci.aci_system:
     <<: *aci_info
@@ -34,6 +35,7 @@
   - version.current.0.topSystem.attributes.version is version('6', '>=')
   - query_cloud.current == []  # This condition will execute only non-cloud sites
   block:
+    # Negative test cases
     - name: Ensure Interface does not exists, invalid test without node id
       cisco.aci.aci_interface_config:
         <<: *aci_info
@@ -79,6 +81,65 @@
           - invalid_interface_details.msg is match("Interface configuration failed due to")
           - invalid_policy_group_with_breakout is not changed
           - invalid_policy_group_with_breakout.msg == "parameters are mutually exclusive{{':'}} policy_group|breakout"
+
+    - name: Invalid Node ID check
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        node: 5000
+        interface: "1/1/1"
+        state: present
+      register: invalid_node
+      ignore_errors: yes
+
+    - name: Invalid Interface ID check
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        node: 101
+        interface: "1"
+        state: present
+      register: invalid_interface
+      ignore_errors: yes
+
+    - name: Invalid Card ID check
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        node: 101
+        interface: "1000/1/1"
+        state: present
+      register: invalid_card
+      ignore_errors: yes
+
+    - name: Invalid Port ID check
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        node: 101
+        interface: "1/500/1"
+        state: present
+      register: invalid_port
+      ignore_errors: yes
+
+    - name: Invalid Sub Port ID check
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        node: 101
+        interface: "1/1/100"
+        state: present
+      register: invalid_sub_port
+      ignore_errors: yes
+
+    - name: Assertions check for invalid interface configuration tasks
+      assert:
+        that:
+          - invalid_node is not changed
+          - invalid_node.msg is match("^Node ID{{':'}} .+? is invalid; it must be in the range of 101 to 4000.")
+          - invalid_interface is not changed
+          - invalid_interface.msg is match("^Interface{{':'}} .+? is invalid; The format must be either card\/port\/sub_port\(1\/1\/1\) or card\/port\(1\/1\)")
+          - invalid_card is not changed
+          - invalid_card.msg is match("^Card ID{{':'}} .+? is invalid; it must be in the range of 1 to 64.")
+          - invalid_port is not changed
+          - invalid_port.msg is match("^Port ID{{':'}} .+? is invalid; it must be in the range of 1 to 128.")
+          - invalid_sub_port is not changed
+          - invalid_sub_port.msg is match("^Sub Port ID{{':'}} .+? is invalid; it must be in the range of 0 to 16.")
 
     - name: Ensure Interface 501 with leaf access with policy_group - switch_port absent
       cisco.aci.aci_interface_config: &interface_501_absent

@@ -20,18 +20,20 @@ description:
 options:
   policy_group:
     description:
-    - The Name of the Policy Group.
+    - The name of the Policy Group.
+    - The Name of the Policy Group being associated with the Port.
+    - The I(policy_group) and I(breakout) cannot be configured simultaneously.
     type: str
     aliases: [ policy_group_name ]
   breakout:
     description:
-    - The Breakout of the interface.
-    - The policy_group should be empty while configuring the Breakout Map.
+    - The Breakout Map of the interface.
+    - The I(policy_group) and I(breakout) cannot be configured simultaneously.
     type: str
     choices: [ 100g-2x, 100g-4x, 10g-4x, 25g-4x, 50g-8x ]
   description:
     description:
-    - Description of the Interface Configuration object.
+    - The description of the Interface Configuration object.
     type: str
     aliases: [ descr ]
   node:
@@ -48,26 +50,25 @@ options:
   port_type:
     description:
     - The type of the interface can be either access or fabric.
-    - The default port_type is access.
     type: str
     default: access
     choices: [ access, fabric ]
   role:
     description:
     - The role of the switch (node) can be either a leaf or a spine.
-    - The default role is leaf.
+    - The APIC defaults to leaf when unset during creation.
     type: str
     aliases: [ node_type ]
     choices: [ leaf, spine ]
   admin_state:
     description:
     - The Admin State of the Interface.
-    - Admin State will be Up by default.
+    - The APIC defaults to up when unset during creation.
     type: str
     choices: [ up, down ]
   interface_type:
     description:
-    - The type of the interface. The default interface_type is switch_port.
+    - The type of the interface.
     type: str
     default: switch_port
     choices: [ switch_port, pc_or_vpc, fc, fc_port_channel, leaf_fabric, spine_access, spine_fabric ]
