@@ -108,7 +108,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 """
-
+# hi
 RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
