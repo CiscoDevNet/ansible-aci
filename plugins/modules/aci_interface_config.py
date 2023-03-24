@@ -20,8 +20,7 @@ description:
 options:
   policy_group:
     description:
-    - The name of the Policy Group.
-    - The Name of the Policy Group being associated with the Port.
+    - The name of the Policy Group being associated with the Port.
     - The I(policy_group) and I(breakout) cannot be configured simultaneously.
     type: str
     aliases: [ policy_group_name ]
