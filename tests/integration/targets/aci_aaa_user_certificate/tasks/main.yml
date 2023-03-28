@@ -311,7 +311,7 @@
     aaa_user: ansible_test
     aaa_password: ansible_5351
     expiration: never
-    expires: no
+    expires: false
     state: present
 
 - name: Add user certificate

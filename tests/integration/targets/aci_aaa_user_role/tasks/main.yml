@@ -37,9 +37,9 @@
     aaa_password: 12!Ab:cD!34
     description: Ansible test user
     email: ansible@ansible.lan
-    enabled: yes
+    enabled: true
     expiration: never
-    expires: no
+    expires: false
     first_name: Ansible
     last_name: User
     phone: 1-234-555-678

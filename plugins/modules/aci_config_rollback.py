@@ -135,7 +135,7 @@ EXAMPLES = r"""
     description: Rollback 8-27 changes
     import_mode: atomic
     import_type: replace
-    fail_on_decrypt: yes
+    fail_on_decrypt: true
     state: rollback
   delegate_to: localhost
 """

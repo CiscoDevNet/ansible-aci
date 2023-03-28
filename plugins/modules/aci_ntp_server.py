@@ -90,7 +90,7 @@ EXAMPLES = r"""
     ntp_server: 10.20.30.40
     min_poll: 3
     max_poll: 8
-    preferred: yes
+    preferred: true
     state: present
   delegate_to: localhost
 

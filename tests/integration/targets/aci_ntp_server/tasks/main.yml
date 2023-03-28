@@ -46,7 +46,7 @@
     description: 'Ansible test server'
     min_poll: 5
     max_poll: 10
-    preferred: yes
+    preferred: true
     state: present
   check_mode: true
   register: cm_add_server
@@ -96,7 +96,7 @@
     description: 'Ansible test server'
     min_poll: 6
     max_poll: 9
-    preferred: yes
+    preferred: true
     epg_type: oob
     epg_name: default
     state: present

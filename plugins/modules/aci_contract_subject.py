@@ -140,7 +140,7 @@ EXAMPLES = r"""
     contract: web_to_db
     subject: default
     description: test
-    reverse_filter: yes
+    reverse_filter: true
     priority: level1
     dscp: unspecified
     state: present

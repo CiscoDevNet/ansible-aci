@@ -75,7 +75,7 @@ options:
     type: str
   useg:
     description:
-    - Use C(true) to create uSeg EPG and C(false) is used to create Application EPG.
+    - Use C(yes) to create uSeg EPG and C(no) is used to create Application EPG.
     type: str
     choices: [ 'yes', 'no' ]
   state:
@@ -119,7 +119,7 @@ EXAMPLES = r"""
     description: Web Intranet EPG
     bd: prod_bd
     monitoring_policy: default
-    preferred_group: yes
+    preferred_group: true
     state: present
   delegate_to: localhost
 
@@ -153,8 +153,8 @@ EXAMPLES = r"""
     description: Web Intranet EPG
     bd: prod_bd
     monitoring_policy: default
-    preferred_group: yes
-    useg: yes
+    preferred_group: true
+    useg: 'yes'
     state: present
   delegate_to: localhost
 

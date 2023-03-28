@@ -192,7 +192,7 @@ EXAMPLES = r"""
   retries: 120
   delay: 30
   delegate_to: localhost
-  run_once: yes
+  run_once: true
 """
 
 RETURN = r"""

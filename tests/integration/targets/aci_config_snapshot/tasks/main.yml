@@ -18,7 +18,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: debug
     export_policy: anstest
-    include_secure: no
+    include_secure: false
     format: json
     description: ansible test
   register: create
@@ -27,7 +27,7 @@
   cisco.aci.aci_config_snapshot:
     <<: *create_snapshot
     max_count: 10
-    include_secure: yes
+    include_secure: true
     format: xml
   register: create_update
 

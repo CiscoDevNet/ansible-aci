@@ -113,7 +113,7 @@ EXAMPLES = r"""
     aaa_user: dag
     aaa_password: AnotherSecretPassword
     expiration: never
-    expires: no
+    expires: false
     email: dag@wieers.com
     phone: 1-234-555-678
     first_name: Dag
@@ -308,7 +308,7 @@ def main():
     aaa_password_lifetime = module.params.get("aaa_password_lifetime")
     aaa_password_update_required = aci.boolean(module.params.get("aaa_password_update_required"))
     aaa_user = module.params.get("aaa_user")
-    clear_password_history = aci.boolean(module.params.get("clear_password_history"), "yes", "no")
+    clear_password_history = aci.boolean(module.params.get("clear_password_history"))
     description = module.params.get("description")
     email = module.params.get("email")
     enabled = aci.boolean(module.params.get("enabled"), "active", "inactive")

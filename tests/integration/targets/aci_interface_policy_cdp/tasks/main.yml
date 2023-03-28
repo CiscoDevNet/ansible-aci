@@ -80,7 +80,7 @@
       use_proxy: '{{ aci_use_proxy | default(false) }}'
   #    output_level: debug
       state: present
-      admin_state: no
+      admin_state: false
     register: cdp_disable
   - debug: 
       var: cdp_disable
