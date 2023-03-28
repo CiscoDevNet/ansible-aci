@@ -71,7 +71,7 @@
       description: tag-selector-description
       state: present
     register: selector_0_cm_present
-    check_mode: yes
+    check_mode: true
 
   - name: Add a tag selector under web_esg with name and value(normal_mode)
     cisco.aci.aci_esg_tag_selector:
@@ -143,7 +143,7 @@
       match_value: tag-value-0
       state: absent
     register: selector_0_cm_absent_with_name_and_value
-    check_mode: yes
+    check_mode: true
 
   - name: Remove a Tag Selector with name and value(normal_mode)
     cisco.aci.aci_esg_tag_selector:

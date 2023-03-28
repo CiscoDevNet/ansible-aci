@@ -57,7 +57,7 @@
       ap: anstest
       description: Ansible Test
       monitoring_policy: check
-    check_mode: yes
+    check_mode: true
     register: ap_present_check_mode
 
   - name: create ap - creation works
@@ -84,7 +84,7 @@
   - name: create ap - creation works
     cisco.aci.aci_ap:
       <<: *aci_tenant_present
-    ignore_errors: yes
+    ignore_errors: true
     register: ap_present_missing_param
 
   - name: present asserts
@@ -157,7 +157,7 @@
     cisco.aci.aci_ap: &aci_ap_absent
       <<: *aci_ap_present
       state: absent
-    check_mode: yes
+    check_mode: true
     register: ap_delete_check_mode
 
   - name: delete ap - delete works
@@ -174,7 +174,7 @@
     cisco.aci.aci_ap:
       <<: *aci_ap_absent
       tenant: "{{ fakevar | default(omit) }}"
-    ignore_errors: yes
+    ignore_errors: true
     register: ap_delete_missing_param
 
   - name: delete ap remove ap used for query

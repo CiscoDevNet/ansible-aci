@@ -134,7 +134,7 @@
       <<: *aci_info
       tenant: ansible_tenant
       state: query
-    ignore_errors: yes
+    ignore_errors: true
     register: query_result
 
   - name: Remove a VPC member

@@ -27,7 +27,7 @@
     <<: *aci_tenant_present
     contract: anstest
     state: absent
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: ensure contract exists for tests to kick off
   cisco.aci.aci_contract: &aci_contract_present
@@ -45,7 +45,7 @@
   cisco.aci.aci_contract_subject_to_service_graph: &aci_subject_service_graph_present
     <<: *aci_subject_present
     service_graph: anstest
-  check_mode: yes
+  check_mode: true
   register: subject_service_graph_present_check_mode
 
 - name: create subject service graph binding - creation works
@@ -67,7 +67,7 @@
 - name: missing param - failure message works
   cisco.aci.aci_contract_subject_to_service_graph:
     <<: *aci_tenant_present
-  ignore_errors: yes
+  ignore_errors: true
   register: present_missing_param
 
 - name: present assertions
@@ -113,7 +113,7 @@
   cisco.aci.aci_contract_subject_to_service_graph: &aci_subject_service_graph_absent
     <<: *aci_subject_service_graph_present
     state: absent
-  check_mode: yes
+  check_mode: true
   register: subject_service_graph_absent_check_mode
 
 - name: delete subject service graph binding - deletion works
@@ -130,7 +130,7 @@
   cisco.aci.aci_contract_subject_to_service_graph:
     <<: *aci_subject_service_graph_absent
     service_graph: "{{ fakevar | default(omit) }}"
-  ignore_errors: yes
+  ignore_errors: true
   register: absent_missing_param
 
 - name: absent assertions

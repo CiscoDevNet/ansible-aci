@@ -63,7 +63,7 @@ options:
     description:
     - Whether or not the EPG is part of the Preferred Group and can communicate without contracts.
     - This is very convenient for migration scenarios, or when ACI is used for network automation but not for policy.
-    - The APIC defaults to C(no) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   monitoring_policy:
     description:
@@ -75,7 +75,7 @@ options:
     type: str
   useg:
     description:
-    - Use C(yes) to create uSeg EPG and C(no) is used to create Application EPG.
+    - Use C(true) to create uSeg EPG and C(false) is used to create Application EPG.
     type: str
     choices: [ 'yes', 'no' ]
   state:
@@ -163,7 +163,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    validate_certs: no
+    validate_certs: false
     tenant: production
     app_profile: intranet
     epg: web_epg
@@ -197,7 +197,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    validate_certs: no
+    validate_certs: false
     epg: web_epg
     state: query
   delegate_to: localhost
@@ -208,7 +208,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    validate_certs: no
+    validate_certs: false
     ap: ticketing
     state: query
   delegate_to: localhost

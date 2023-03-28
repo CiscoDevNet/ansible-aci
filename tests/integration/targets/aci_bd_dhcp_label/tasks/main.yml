@@ -55,7 +55,7 @@
       dhcp_label: label1
       owner: infra
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_dhcp_label1
 
   - name: Verify creation of label1 in check mode

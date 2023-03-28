@@ -70,7 +70,7 @@
       domain: phys_dom
       domain_type: phys
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_binding
 
   - name: Add AEP to domain binding (normal mode)
@@ -91,7 +91,7 @@
 
   - name: Add AEP to domain binding again (check_mode)
     cisco.aci.aci_aep_to_domain: *binding_present
-    check_mode: yes
+    check_mode: true
     register: cm_add_binding_again
 
   - name: Add AEP to domain binding again (normal mode)
@@ -116,7 +116,7 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
       state: query
-    check_mode: yes
+    check_mode: true
     register: cm_query_all_bindings
 
   - name: Query all AEP to domain bindings (normal mode)
@@ -139,7 +139,7 @@
       aep: test_aep
       domain: phys_dom
       domain_type: phys
-    check_mode: yes
+    check_mode: true
     register: cm_query_binding
 
   - name: Query our AEP to domain binding (normal mode)
@@ -164,7 +164,7 @@
   # REMOVE BINDING
   - name: Remove AEP to domain binding (check_mode)
     cisco.aci.aci_aep_to_domain: *binding_absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_binding
 
   - name: Remove AEP to domain binding (normal mode)
@@ -182,7 +182,7 @@
 
   - name: Remove AEP to domain binding again (check_mode)
     cisco.aci.aci_aep_to_domain: *binding_absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_binding_again
 
   - name: Remove AEP to domain binding again (normal mode)
@@ -203,7 +203,7 @@
       aep: test_aep
       domain: phys_dom
       domain_type: phys
-    check_mode: yes
+    check_mode: true
     register: cm_query_non_binding
 
   - name: Query non-existing AEP to domain binding (normal mode)

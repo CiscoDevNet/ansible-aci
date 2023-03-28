@@ -44,7 +44,7 @@ options:
     description:
     - The encap type of C(pool).
     type: str
-    required: yes
+    required: true
     aliases: [ type ]
     choices: [ vlan, vxlan, vsan]
   range_end:

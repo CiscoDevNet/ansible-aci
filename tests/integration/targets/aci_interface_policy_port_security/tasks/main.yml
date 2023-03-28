@@ -45,7 +45,7 @@
       max_end_points: 300
       port_security_timeout: 190
       state: present
-    check_mode: yes
+    check_mode: true
     register: port_security1_cm
 
   - name: Add a port security interface policy - normal mode
@@ -76,7 +76,7 @@
       max_end_points: 300
       port_security_timeout: 10
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: port_security1_nm_error_timeout
 
   - name: Add a port security interface policy - normal mode
@@ -87,7 +87,7 @@
       max_end_points: 15000
       port_security_timeout: 60
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: port_security1_nm_error_max
 
   - name: Add a port security interface policy again for security 3- normal mode
@@ -98,7 +98,7 @@
       max_end_points: 12000
       port_security_timeout: 60
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: port_security1_nm_with_no_error
 
   - name: Verify present cases

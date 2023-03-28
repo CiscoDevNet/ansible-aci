@@ -35,7 +35,7 @@
     <<: *aci_tenant_present
     vrf: anstest
     description: Ansible Test
-  check_mode: yes
+  check_mode: true
   register: vrf_present_check_mode
 
 - name: create vrf - creation works
@@ -68,7 +68,7 @@
   cisco.aci.aci_vrf:
     <<: *aci_vrf_present
     tenant: "{{ fake_var | default(omit) }}"
-  ignore_errors: yes
+  ignore_errors: true
   register: vrf_present_missing_param
 
 - name: present asserts
@@ -147,7 +147,7 @@
   cisco.aci.aci_vrf: &aci_vrf_absent
     <<: *aci_vrf_present
     state: absent
-  check_mode: yes
+  check_mode: true
   register: vrf_absent_check_mode
 
 - name: delete vrf - delete works
@@ -169,7 +169,7 @@
   cisco.aci.aci_vrf:
     <<: *aci_vrf_absent
     vrf: "{{ fakevar | default(omit) }}"
-  ignore_errors: yes
+  ignore_errors: true
   register: vrf_absent_missing_param
 
 - name: asserts for deletion task

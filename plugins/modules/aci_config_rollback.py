@@ -37,7 +37,7 @@ options:
   fail_on_decrypt:
     description:
     - Determines if the APIC should fail the rollback if unable to decrypt secured data.
-    - The APIC defaults to C(yes) when unset.
+    - The APIC defaults to C(true) when unset.
     type: bool
   import_mode:
     description:
@@ -60,7 +60,7 @@ options:
     - The name of the snapshot to rollback to, or the base snapshot to use for comparison.
     - The C(aci_snapshot) module can be used to query the list of available snapshots.
     type: str
-    required: yes
+    required: true
   state:
     description:
     - Use C(preview) for previewing the diff between two snapshots.

@@ -25,7 +25,7 @@ options:
     description:
     - Name of an existing NTP policy
     type: str
-    required: yes
+    required: true
     aliases: [ policy_name ]
   ntp_server:
     description:

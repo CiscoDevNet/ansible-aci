@@ -60,7 +60,7 @@
       l3out: ansible_l3out
       tenant: ansible_tenant
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_node_profile
 
   - name: Add L3out node profile (normal mode)
@@ -103,7 +103,7 @@
       l3out: ansible_l3out
       tenant: ansible_tenant
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_mod_node_profile
 
   - name: Modify node profile (normal mode)
@@ -127,7 +127,7 @@
       l3out: ansible_l3out
       tenant: ansible_tenant
       state: query
-    check_mode: yes
+    check_mode: true
     register: cm_query_node_profile
 
   - name: Query existing node profile (normal mode)
@@ -141,7 +141,7 @@
       l3out: ansible_l3out
       tenant: ansible_tenant
       state: query
-    check_mode: yes
+    check_mode: true
     register: nm_query_fake_node_profile
 
   - name: Query all node profile for L3out
@@ -172,7 +172,7 @@
       l3out: ansible_l3out
       tenant: ansible_tenant
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_node_profile
 
   - name: Remove node profile (normal mode)
@@ -190,7 +190,7 @@
       l3out: ansible_l3out
       tenant: ansible_tenant
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_second_node_profile
 
   - name: Remove second node profile (normal mode)

@@ -246,7 +246,7 @@
       vm_provider: vmware
       pool_allocation_mode: dynamic
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: phys_vlan_with_vmm
 
   - name: Add domain to encap pool binding (phys, pool_type=vlan, no allocation mode)
@@ -257,7 +257,7 @@
       pool: test_pool
       pool_type: vlan
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: phys_vlan_no_alloc
 
   - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=vmware, pool_type=vxlan)
@@ -270,7 +270,7 @@
       pool_allocation_mode: dynamic
       vm_provider: vmware
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: vmm_vmware_vxlan
 
   - name: Add domain to encap pool binding (phys, pool_type=vlan) missing domain_type
@@ -281,7 +281,7 @@
       pool_type: vlan
       pool_allocation_mode: dynamic
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: phys_missing_domain_type
 
   - name: Add domain to encap pool binding (phys, pool_type=vlan) missing pool_type
@@ -292,7 +292,7 @@
       pool: test_pool
       pool_allocation_mode: dynamic
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: phys_missing_pool_type
 
   - name: Verify add operation for All Sites

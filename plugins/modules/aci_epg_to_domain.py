@@ -91,7 +91,7 @@ options:
   netflow:
     description:
     - Determines if netflow should be enabled.
-    - The APIC defaults to C(no) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   primary_encap:
     description:

@@ -32,7 +32,7 @@ options:
     description:
     - Enable infrastructure VLAN.
     - The hypervisor functions of the AEP.
-    - C(no) will disable the infrastructure vlan if it is enabled.
+    - C(false) will disable the infrastructure vlan if it is enabled.
     type: bool
     aliases: [ infrastructure_vlan ]
   state:

@@ -68,7 +68,7 @@
     cisco.aci.aci_interface_selector_to_switch_policy_leaf_profile: &aci_interface_selector_to_switch_policy_leaf_profile_present
       <<: *aci_switch_policy_leaf_profile_present
       interface_selector: leafintprftest
-    check_mode: yes
+    check_mode: true
     register: intftoleaf_check_mode_present
 
   - name: Bind an Interface Selector to a Switch Policy Leaf Profile - creation works
@@ -132,7 +132,7 @@
       <<: *aci_switch_policy_leaf_profile_present
       interface_selector: leafintprftest
       state: absent
-    check_mode: yes
+    check_mode: true
     register: intftoleaf_check_mode_absent
 
   - name: Remove binding of interface access port selector and Interface Policy Leaf Profile - delete works
@@ -149,7 +149,7 @@
     cisco.aci.aci_interface_selector_to_switch_policy_leaf_profile:
       <<: *aci_switch_policy_leaf_profile_present
       state: absent
-    ignore_errors: yes
+    ignore_errors: true
     register: intftoleaf_absent_missing_param
 
   - name: absent assertions

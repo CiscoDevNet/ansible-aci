@@ -30,7 +30,7 @@ options:
     - 'C(phys): The physical domain profile stores the physical resources and encap resources that should be used for EPGs associated with this domain.'
     - 'C(vmm): The VMM domain profile is a policy for grouping VM controllers with similar networking policy requirements.'
     type: str
-    required: yes
+    required: true
     choices: [ fc, l2dom, l3dom, phys, vmm ]
     aliases: [ type ]
   dscp:

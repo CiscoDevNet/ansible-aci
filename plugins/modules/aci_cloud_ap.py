@@ -68,7 +68,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    validate_certs: no
+    validate_certs: false
     tenant: production
     name: intranet
     state: absent
@@ -99,7 +99,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    validate_certs: no
+    validate_certs: false
     name: ticketing
     state: query
   delegate_to: localhost
@@ -110,7 +110,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    validate_certs: no
+    validate_certs: false
     tenant: production
     state: query
   delegate_to: localhost

@@ -74,7 +74,7 @@
       availability_zone: "{{ availability_zone | default(omit) }}"
       address: 10.50.0.1
       description: test description
-    check_mode: yes
+    check_mode: true
     register: cm_add_subnet
 
   - name: Create aci cloud subnet (normal_mode)
@@ -216,7 +216,7 @@
       cidr: '10.50.0.0/16'
       address: 10.50.0.3
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_subnet_3
 
   - name: Verify cm_remove_subnet_3

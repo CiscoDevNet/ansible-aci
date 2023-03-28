@@ -21,7 +21,7 @@ options:
     description:
     - Name of an existing AAA user
     type: str
-    required: yes
+    required: true
   auth_name:
     description:
     - Name of the AAA SSH Auth key

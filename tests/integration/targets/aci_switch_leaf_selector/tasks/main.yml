@@ -48,7 +48,7 @@
       leaf_node_blk: node_blk_name
       from: 1011
       to: 1011
-    check_mode: yes
+    check_mode: true
     register: sw_leaf_selec_check_mode_present
 
   - name: Adding a switch policy leaf profile selector associated Node Block range (w/o policy group) - creation works
@@ -104,7 +104,7 @@
       <<: *aci_switch_policy_leaf_profile_present
       leaf: leaf_selector_name
       state: absent
-    check_mode: yes
+    check_mode: true
     register: sw_leaf_selec_check_mode_absent
 
   - name: Remove switch policy leaf profile selector - delete works
@@ -122,7 +122,7 @@
       <<: *aci_switch_policy_leaf_profile_present
       #access_port_selector: anstest_accessportselector
       state: absent
-    ignore_errors: yes
+    ignore_errors: true
     register: sw_leaf_selec_absent_missing_param
 
   - name: absent assertions

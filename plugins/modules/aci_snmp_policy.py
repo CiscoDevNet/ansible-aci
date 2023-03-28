@@ -64,7 +64,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    validate_certs: no
+    validate_certs: false
     admin_state: enabled
     name: my_snmp_policy
     state: present

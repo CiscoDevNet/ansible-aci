@@ -80,7 +80,7 @@
       <<: *aci_info
       <<: *test_vars_leaf
       state: present
-    check_mode: yes
+    check_mode: true
     register: disable_leaf_int_check
 
   - name: Leaf - Verify that outofsvc_interface_blacklist is not created after check mode
@@ -138,7 +138,7 @@
       <<: *aci_info
       <<: *test_vars_leaf
       state: absent
-    check_mode: yes
+    check_mode: true
     register: enable_leaf_int_check
 
   - name: Leaf - Verify that outofsvc_interface_blacklist remains created after check mode
@@ -196,7 +196,7 @@
       <<: *aci_info
       <<: *test_vars_spine
       state: present
-    check_mode: yes
+    check_mode: true
     register: disable_spine_int_check
 
   - name: Spine - Verify that outofsvc_interface_blacklist is not created after check mode
@@ -253,7 +253,7 @@
       <<: *aci_info
       <<: *test_vars_spine
       state: absent
-    check_mode: yes
+    check_mode: true
     register: enable_spine_int_check
 
   - name: Spine - Verify that outofsvc_interface_blacklist remains created after check mode
@@ -311,7 +311,7 @@
       <<: *aci_info
       <<: *test_vars_fex
       state: present
-    check_mode: yes
+    check_mode: true
     register: disable_fex_int_check
 
   - name: Fex - Verify that outofsvc_interface_blacklist is not created after check mode
@@ -368,7 +368,7 @@
       <<: *aci_info
       <<: *test_vars_fex
       state: absent
-    check_mode: yes
+    check_mode: true
     register: enable_fex_int_check
 
   - name: Fex - Verify that outofsvc_interface_blacklist remains created after check mode

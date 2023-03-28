@@ -31,7 +31,7 @@
     pool: anstest
     pool_allocation_mode: dynamic
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_add_dynamic_vlan_pool
 
 - name: Add dynamic vlan pool (normal mode)
@@ -58,7 +58,7 @@
 
 - name: Add dynamic_vlan_pool again (check_mode)
   cisco.aci.aci_vlan_pool: *dynamic_vlan_pool_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_dynamic_vlan_pool_again
 
 - name: Add dynamic vlan pool again (normal mode)
@@ -78,7 +78,7 @@
   cisco.aci.aci_vlan_pool:
     <<: *dynamic_vlan_pool_present
     description: Ansible test dynamic vlan pool
-  check_mode: yes
+  check_mode: true
   register: cm_add_dynamic_vlan_pool_descr
 
 - name: Change description of dynamic vlan pool (normal mode)
@@ -106,7 +106,7 @@
   cisco.aci.aci_vlan_pool:
     <<: *dynamic_vlan_pool_present
     description: Ansible test dynamic vlan pool
-  check_mode: yes
+  check_mode: true
   register: cm_add_dynamic_vlan_pool_descr_again
 
 - name: Change description of dynamic vlan pool again (normal mode)
@@ -126,7 +126,7 @@
 # ADD VLAN POOL AGAIN
 - name: Add dynamic vlan pool again with no description (check_mode)
   cisco.aci.aci_vlan_pool: *dynamic_vlan_pool_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_dynamic_vlan_pool_again_no_descr
 
 - name: Add dynamic vlan pool again with no description (normal mode)
@@ -152,7 +152,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     state: query
-  check_mode: yes
+  check_mode: true
   register: cm_query_all_dynamic_vlan_pools
 
 - name: Query all dynamic vlan pools (normal mode)
@@ -174,7 +174,7 @@
     <<: *dynamic_vlan_pool_query
     pool: anstest
     pool_allocation_mode: dynamic
-  check_mode: yes
+  check_mode: true
   register: cm_query_dynamic_vlan_pool
 
 - name: Query our dynamic vlan pool
@@ -199,7 +199,7 @@
 # REMOVE VLAN POOL
 - name: Remove dynamic vlan pool (check_mode)
   cisco.aci.aci_vlan_pool: *dynamic_vlan_pool_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_dynamic_vlan_pool
 
 - name: Remove dynamic vlan pool (normal mode)
@@ -219,7 +219,7 @@
 
 - name: Remove dynamic vlan pool again (check_mode)
   cisco.aci.aci_vlan_pool: *dynamic_vlan_pool_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_dynamic_vlan_pool_again
 
 - name: Remove dynamic vlan pool again (normal mode)
@@ -243,7 +243,7 @@
     <<: *dynamic_vlan_pool_query
     pool: anstest
     pool_allocation_mode: dynamic
-  check_mode: yes
+  check_mode: true
   register: cm_query_non_dynamic_vlan_pool
 
 - name: Query non-existing dynamic vlan pool (normal mode)
@@ -274,7 +274,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     state: present
-  ignore_errors: yes
+  ignore_errors: true
   register: error_on_missing_required_param
 
 - name: Verify error_on_missing_required_param
@@ -294,7 +294,7 @@
     output_level: '{{ aci_output_level | default("info") }}'
     pool: anstest
     state: present
-  ignore_errors: yes
+  ignore_errors: true
   register: error_on_missing_together_param
 
 - name: Verify error_on_missing_together_param

@@ -40,7 +40,7 @@
       access_mode: read-write
       enable_vm_folder: true
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_domain
 
   - name: Add VMM domain (normal mode)
@@ -61,7 +61,7 @@
 
   - name: Add VMM domain again (check_mode)
     cisco.aci.aci_domain: *domain_present
-    check_mode: yes
+    check_mode: true
     register: cm_add_domain_again
 
   - name: Add VMM domain again (normal mode)
@@ -79,7 +79,7 @@
       <<: *domain_present
       add_infra_pg: true
       tag_collection: true
-    check_mode: yes
+    check_mode: true
     register: cm_update_domain
     when: version.current.0.topSystem.attributes.version is version('4.1', '>=')
 
@@ -115,7 +115,7 @@
       domain_type: vmm
       vm_provider: vmware
       state: query
-    check_mode: yes
+    check_mode: true
     register: cm_query_all_domains
 
   - name: Query all VMM domains (normal mode)
@@ -137,7 +137,7 @@
       <<: *domain_query
       domain: vmm_dom
       vm_provider: vmware
-    check_mode: yes
+    check_mode: true
     register: cm_query_domain
 
   - name: Query our VMM domain (normal mode)
@@ -159,7 +159,7 @@
   # REMOVE DOMAIN
   - name: Remove VMM domain (check_mode)
     cisco.aci.aci_domain: *domain_absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_domain
 
   - name: Remove VMM domain (normal mode)
@@ -178,7 +178,7 @@
 
   - name: Remove VMM domain again (check_mode)
     cisco.aci.aci_domain: *domain_absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_domain_again
 
   - name: Remove VMM domain again (normal mode)
@@ -198,7 +198,7 @@
       <<: *domain_query
       domain: vmm_dom
       vm_provider: vmware
-    check_mode: yes
+    check_mode: true
     register: cm_query_non_domain
 
   - name: Query non-existing VMM domain (normal mode)

@@ -32,7 +32,7 @@
     domain: l3_dom
     domain_type: l3dom
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_add_domain
 
 - name: Add L3 domain (normal mode)
@@ -53,7 +53,7 @@
 
 - name: Add L3 domain again (check_mode)
   cisco.aci.aci_domain: *domain_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_domain_again
 
 - name: Add L3 domain again (normal mode)
@@ -70,60 +70,60 @@
   cisco.aci.aci_domain:
     <<: *domain_present
     vm_provider: vmware
-  check_mode: yes
-  ignore_errors: yes
+  check_mode: true
+  ignore_errors: true
   register: cm_incorrect_vm_provider
 
 - name: Update L3 domain with incorrect parameter vm_provider (normal mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     vm_provider: vmware
-  ignore_errors: yes
+  ignore_errors: true
   register: nm_incorrect_vm_provider
 
 - name: Update L3 domain with incorrect parameter encap_mode (check_mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     encap_mode: vlan
-  check_mode: yes
-  ignore_errors: yes
+  check_mode: true
+  ignore_errors: true
   register: cm_incorrect_encap_mode
 
 - name: Update L3 domain with incorrect parameter encap_mode (normal mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     encap_mode: vlan
-  ignore_errors: yes
+  ignore_errors: true
   register: nm_incorrect_encap_mode
 
 - name: Update L3 domain with incorrect parameter multicast_address (check_mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     multicast_address: 10.10.10.0
-  check_mode: yes
-  ignore_errors: yes
+  check_mode: true
+  ignore_errors: true
   register: cm_incorrect_multicast_address
 
 - name: Update L3 domain with incorrect parameter multicast_address (normal mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     multicast_address: 10.10.10.0
-  ignore_errors: yes
+  ignore_errors: true
   register: nm_incorrect_multicast_address
 
 - name: Update L3m domain with incorrect parameter vswitch (check_mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     vswitch: avs
-  check_mode: yes
-  ignore_errors: yes
+  check_mode: true
+  ignore_errors: true
   register: cm_incorrect_vswitch
 
 - name: Update L3 domain with incorrect parameter vswitch (normal mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     vswitch: avs
-  ignore_errors: yes
+  ignore_errors: true
   register: nm_incorrect_vswitch
 
 - name: Verify incorrect parameter
@@ -151,7 +151,7 @@
     output_level: '{{ aci_output_level | default("info") }}'
     domain_type: l3dom
     state: query
-  check_mode: yes
+  check_mode: true
   register: cm_query_all_domains
 
 - name: Query all L3 domains (normal mode)
@@ -172,7 +172,7 @@
   cisco.aci.aci_domain:
     <<: *domain_query
     domain: l3_dom
-  check_mode: yes
+  check_mode: true
   register: cm_query_domain
 
 - name: Query our L3 domain (normal mode)
@@ -194,7 +194,7 @@
 # REMOVE DOMAIN
 - name: Remove L3 domain (check_mode)
   cisco.aci.aci_domain: *domain_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_domain
 
 - name: Remove L3 domain (normal mode)
@@ -212,7 +212,7 @@
 
 - name: Remove L3 domain again (check_mode)
   cisco.aci.aci_domain: *domain_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_domain_again
 
 - name: Remove L3 domain again (normal mode)
@@ -231,7 +231,7 @@
   cisco.aci.aci_domain:
     <<: *domain_query
     domain: l3_dom
-  check_mode: yes
+  check_mode: true
   register: cm_query_non_domain
 
 - name: Query non-existing L3 domain (normal mode)

@@ -70,7 +70,7 @@
       link_level_policy: linklevelpolicy
       fibre_channel_interface_policy: fiberchannelpolicy
       state: present
-    check_mode: yes
+    check_mode: true
     register: intf_policy_leaf_polgrp_check_mode_present
 
   - name: Adding a interface policy leaf policy group (PC) - creation works
@@ -130,7 +130,7 @@
   - name: Remove interface policy leaf policy group (PC) - check mode
     cisco.aci.aci_interface_policy_leaf_policy_group:
       <<: *aci_interface_policy_leaf_policy_group_link_absent
-    check_mode: yes
+    check_mode: true
     register: intf_policy_leaf_polgrp_check_mode_absent
 
   - name: Remove interface policy leaf policy group (PC) - delete works
@@ -155,7 +155,7 @@
       policy_group: policygroupname_link
       #lag_type: link
       state: absent
-    ignore_errors: yes
+    ignore_errors: true
     register: intf_policy_leaf_polgrp_absent_missing_param
 
   - name: absent assertions
@@ -193,7 +193,7 @@
       link_level_policy: linklevelpolicy
       fibre_channel_interface_policy: fiberchannelpolicy
       state: present
-    check_mode: yes
+    check_mode: true
     register: intf_policy_leaf_polgrp_check_mode_present
 
   - name: Adding a interface policy leaf policy group (VPC) - creation works
@@ -280,7 +280,7 @@
   - name: Remove interface policy leaf policy group (VPC) - check mode
     cisco.aci.aci_interface_policy_leaf_policy_group:
       <<: *aci_interface_policy_leaf_policy_group_node_absent
-    check_mode: yes
+    check_mode: true
     register: intf_policy_leaf_polgrp_check_mode_absent
 
   - name: Remove interface policy leaf policy group (VPC) - delete works
@@ -305,7 +305,7 @@
       policy_group: policygroupname_node
       #lag_type: node
       state: absent
-    ignore_errors: yes
+    ignore_errors: true
     register: intf_policy_leaf_polgrp_absent_missing_param
 
   - name: absent assertions
@@ -343,7 +343,7 @@
       link_level_policy: linklevelpolicy
       fibre_channel_interface_policy: fiberchannelpolicy
       state: present
-    check_mode: yes
+    check_mode: true
     register: intf_policy_leaf_polgrp_check_mode_present
 
   - name: Adding a interface policy leaf policy group (Leaf Access Port) - creation works
@@ -366,14 +366,14 @@
     cisco.aci.aci_interface_policy_leaf_policy_group:
       <<: *aci_interface_policy_leaf_policy_group_leaf_present
       port_channel_policy: null
-    ignore_errors: yes
+    ignore_errors: true
     register: intf_policy_leaf_polgrp_parameter
 
   - name: Adding a interface policy leaf policy group (Leaf Access Port) - port_channel_policy not supported error
     cisco.aci.aci_interface_policy_leaf_policy_group:
       <<: *aci_interface_policy_leaf_policy_group_leaf_present
       port_channel_policy: "default"
-    ignore_errors: yes
+    ignore_errors: true
     register: intf_policy_leaf_polgrp_pc_policy_error
 
   # TODO: also test for errors
@@ -417,7 +417,7 @@
   - name: Remove interface policy leaf policy group (Leaf Access Port) - check mode
     cisco.aci.aci_interface_policy_leaf_policy_group:
       <<: *aci_interface_policy_leaf_policy_group_leaf_absent
-    check_mode: yes
+    check_mode: true
     register: intf_policy_leaf_polgrp_check_mode_absent
 
   - name: Remove interface policy leaf policy group (Leaf Access Port) - delete works
@@ -442,7 +442,7 @@
       policy_group: policygroupname_leaf
       #lag_type: leaf
       state: absent
-    ignore_errors: yes
+    ignore_errors: true
     register: intf_policy_leaf_polgrp_absent_missing_param
 
   - name: absent assertions

@@ -64,7 +64,7 @@ EXAMPLES = r"""
         host: "{{ inventory_hostname }}"
         username: "{{ user }}"
         password: "{{ pass }}"
-        validate_certs: no
+        validate_certs: false
         name: test2FrmPol
         version: n9000-13.2(1m)
         ignoreCompat: False

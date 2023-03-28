@@ -128,7 +128,7 @@ options:
         - The pod number part of the tDn.
         - C(pod_id) is usually an integer below C(10).
         type: int
-        required: yes
+        required: true
         aliases: [ pod, pod_number ]
       leafs:
         description:
@@ -138,14 +138,14 @@ options:
         - The C(leafs) value is usually something like '101' or '101-102' depending on C(connection_type).
         type: list
         elements: str
-        required: yes
+        required: true
         aliases: [ leaves, nodes, paths, switches ]
       interface:
         description:
         - The C(interface) string value part of the tDn.
         - Usually a policy group like C(test-IntPolGrp) or an interface of the following format C(1/7) depending on C(interface_type).
         type: str
-        required: yes
+        required: true
       extpaths:
         description:
         - The C(extpaths) integer value part of the tDn.

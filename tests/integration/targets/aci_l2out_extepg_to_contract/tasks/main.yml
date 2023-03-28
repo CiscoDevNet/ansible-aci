@@ -208,7 +208,7 @@
       contract_type: consumer
       provider_match: all
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: bind_extepg_consumer_contract
 
   - name: Verify bind_extepg_consumer_contract

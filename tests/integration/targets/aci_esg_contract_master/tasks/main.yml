@@ -84,7 +84,7 @@
       contract_master_ap: contract_master_ap
       contract_master_esg: contract_esg
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_contract_esg_present
 
   - name: Assertions check for add an ESG contract master to web_esg with check mode
@@ -164,7 +164,7 @@
       contract_master_ap: contract_master_ap
       contract_master_esg: contract_esg
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_contract_esg_absent
 
   - name: Assertions check for remove an ESG contract master with check mode

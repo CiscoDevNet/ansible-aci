@@ -66,7 +66,7 @@ EXAMPLES = r"""
     password: SomeSecretePassword
     tenant: ansible_test
     account_id: 111111111111
-    is_trusted: yes
+    is_trusted: true
     state: present
   delegate_to: localhost
 
@@ -77,7 +77,7 @@ EXAMPLES = r"""
     password: SomeSecretePassword
     tenant: ansible_test
     account_id: 111111111111
-    is_trusted: yes
+    is_trusted: true
     state: absent
   delegate_to: localhost
 

@@ -35,7 +35,7 @@ options:
   vepa:
     description:
     - Determines if Virtual Ethernet Port Aggregator is disabled or enabled.
-    - The APIC defaults to C(no) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   vlan_scope:
     description:

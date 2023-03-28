@@ -34,7 +34,7 @@ options:
     - C(link) for Port Channel (PC)
     - C(node) for Virtual Port Channel (VPC)
     type: str
-    required: yes
+    required: true
     choices: [ leaf, link, node ]
     aliases: [ lag_type_name ]
   link_level_policy:

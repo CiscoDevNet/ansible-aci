@@ -42,7 +42,7 @@
       name: anstest
       description: Ansible Test Cloud APIC
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_create_cloud_ap
 
   - name: create cloud ap - normal mode

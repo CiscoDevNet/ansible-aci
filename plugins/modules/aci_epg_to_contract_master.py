@@ -22,18 +22,18 @@ options:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-    required: yes
+    required: true
   ap:
     description:
     - Name of an existing application network profile, that will contain the EPGs.
     type: str
-    required: yes
+    required: true
     aliases: [ app_profile, app_profile_name ]
   epg:
     description:
     - Name of the end point group.
     type: str
-    required: yes
+    required: true
     aliases: [ epg_name, name ]
   contract_master_ap:
     description:
