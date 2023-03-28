@@ -67,7 +67,7 @@
     <<: *create_snapshot
     state: rollback
     snapshot: "{{ sorted_snapshots[1].configSnapshot.attributes.name }}"
-  ignore_errors: yes
+  ignore_errors: true
   register: rollback_missing_param
 
 - name: rollback to snapshot

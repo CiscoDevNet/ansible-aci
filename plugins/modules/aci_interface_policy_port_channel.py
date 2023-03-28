@@ -50,35 +50,35 @@ options:
     - Determines if Fast Select is enabled for Hot Standby Ports.
     - This makes up the LACP Policy Control Policy; if one setting is defined, then all other Control Properties
       left undefined or set to false will not exist after the task is ran.
-    - The APIC defaults to C(yes) when unset during creation.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   graceful_convergence:
     description:
     - Determines if Graceful Convergence is enabled.
     - This makes up the LACP Policy Control Policy; if one setting is defined, then all other Control Properties
       left undefined or set to false will not exist after the task is ran.
-    - The APIC defaults to C(yes) when unset during creation.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   load_defer:
     description:
     - Determines if Load Defer is enabled.
     - This makes up the LACP Policy Control Policy; if one setting is defined, then all other Control Properties
       left undefined or set to false will not exist after the task is ran.
-    - The APIC defaults to C(no) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   suspend_individual:
     description:
     - Determines if Suspend Individual is enabled.
     - This makes up the LACP Policy Control Policy; if one setting is defined, then all other Control Properties
       left undefined or set to false will not exist after the task is ran.
-    - The APIC defaults to C(yes) when unset during creation.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   symmetric_hash:
     description:
     - Determines if Symmetric Hashing is enabled.
     - This makes up the LACP Policy Control Policy; if one setting is defined, then all other Control Properties
       left undefined or set to false will not exist after the task is ran.
-    - The APIC defaults to C(no) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   state:
     description:

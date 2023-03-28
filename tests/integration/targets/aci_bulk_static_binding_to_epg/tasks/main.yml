@@ -66,7 +66,7 @@
           encap_id: 108
           primary_encap_id: 1008
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_interfaces_present
 
   - name: Assertions check for add list of interfaces with check mode
@@ -108,7 +108,7 @@
     cisco.aci.aci_bulk_static_binding_to_epg: &cm_update_interfaces_present
       <<: *nm_interfaces_present
       description: "Description set from module level attributes"
-    check_mode: yes
+    check_mode: true
     register: cm_update_interfaces_present
 
   - name: Assertions check for update list of interfaces - description with normal mode
@@ -173,7 +173,7 @@
           primary_encap_id: 1008
           description: "Description set from path level attributes"
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_path_update_interfaces_present
 
   - name: Assertions check for update list of interfaces description using path level attributes with check mode
@@ -250,7 +250,7 @@
     cisco.aci.aci_bulk_static_binding_to_epg: &cm_interfaces_absent
       <<: *cm_interfaces_present
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_interfaces_absent
 
   - name: Assertions check for remove list of interfaces with check mode
@@ -577,7 +577,7 @@
         interface: 'ansible_test'
         pod: 1
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: switch_port_no_leafs
 
   - name: Bind static-binding to epg - interface type fex_vpc - no extpaths (normal mode)
@@ -592,7 +592,7 @@
         leafs: 101
         pod: 1
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: fex_vpc_no_extpaths
 
   - name: Bind static-binding to epg - interface type fex_vpc - incorrect extpaths (normal mode)
@@ -608,7 +608,7 @@
         pod: 1
         extpaths:
         - 1012
-    ignore_errors: yes
+    ignore_errors: true
     register: fex_vpc_one_node
 
   - name: Bind static-binding to epg - fex_vpc with one extpaths (normal mode)
@@ -626,7 +626,7 @@
         - 102
         extpaths:
         - 103
-    ignore_errors: yes
+    ignore_errors: true
     register: fex_vpc_one_extpaths
 
   - name: Bind static-binding to epg - switch_port with two leafs (normal mode)
@@ -642,7 +642,7 @@
         leafs:
         - 101
         - 102
-    ignore_errors: yes
+    ignore_errors: true
     register: switch_port_two_leafs
 
   - name: Bind static-binding to epg - switch_port with two extpaths (normal mode)
@@ -660,7 +660,7 @@
         extpaths:
         - 102
         - 103
-    ignore_errors: yes
+    ignore_errors: true
     register: switch_port_two_extpaths
 
   - name: Bind static-binding to epg - fex_vpc with 3 nodes (normal mode)
@@ -680,7 +680,7 @@
         extpaths:
         - 101
         - 102
-    ignore_errors: yes
+    ignore_errors: true
     register: fex_vpc_three_leafs
 
   - name: Bind static-binding to epg - fex_vpc with 3 expaths (normal mode)
@@ -700,7 +700,7 @@
         - 101
         - 102
         - 103
-    ignore_errors: yes
+    ignore_errors: true
     register: fex_vpc_three_expaths
 
   - name: Bind static-binding to epg - switch_port with encap_id 5000 (normal mode)
@@ -715,7 +715,7 @@
         pod: 1
         leafs:
         - 101
-    ignore_errors: yes
+    ignore_errors: true
     register: switch_port_encap_id_too_high
 
   - name: Bind static-binding to epg - switch_port with primary_encap_id 5000 (normal mode)
@@ -731,7 +731,7 @@
         pod: 1
         leafs:
         - 101
-    ignore_errors: yes
+    ignore_errors: true
     register: switch_port_primary_encap_id_too_high
 
   - name: Bind static-binding to epg - switch_port with primary_encap_id 5000 (normal mode)
@@ -747,7 +747,7 @@
         pod: 1
         leafs:
         - 101
-    ignore_errors: yes
+    ignore_errors: true
     register: switch_port_primary_encap_id_not_unknown
 
   - name: Negative assertions to check error messages

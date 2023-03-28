@@ -40,7 +40,7 @@ options:
     description:
     - This depicts whether this External EPG is part of the Preferred Group and can communicate without contracts.
     - This is convenient for migration scenarios, or when ACI is used for network automation but not for policy.
-    - The APIC defaults to C(no) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   qos_class:
     description:

@@ -33,12 +33,12 @@ options:
     - The cloud provider.
     choices: [ aws, azure ]
     type: str
-    required: yes
+    required: true
   region:
     description:
     - The name of the cloud provider's region.
     type: str
-    required: yes
+    required: true
   state:
     description:
     - Use C(query) for listing an object or multiple objects.
@@ -56,7 +56,7 @@ EXAMPLES = r"""
     host: apic
     username: userName
     password: somePassword
-    validate_certs: no
+    validate_certs: false
     cloud: 'aws'
     region: regionName
     state: query
@@ -67,7 +67,7 @@ EXAMPLES = r"""
     host: apic
     username: userName
     password: somePassword
-    validate_certs: no
+    validate_certs: false
     cloud: 'aws'
     region: regionName
     zone: zoneName

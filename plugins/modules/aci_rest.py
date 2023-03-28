@@ -38,7 +38,7 @@ options:
     - URI being used to execute API calls.
     - Must end in C(.xml) or C(.json).
     type: str
-    required: yes
+    required: true
     aliases: [ uri ]
   content:
     description:
@@ -104,7 +104,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     private_key: pki/admin.key
-    validate_certs: no
+    validate_certs: false
     path: /api/mo/uni.json
     method: post
     content:
@@ -119,7 +119,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     private_key: pki/admin.key
-    validate_certs: no
+    validate_certs: false
     path: /api/mo/uni.json
     method: post
     content:
@@ -138,7 +138,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     private_key: pki/{{ aci_username }}.key
-    validate_certs: no
+    validate_certs: false
     path: /api/mo/uni.xml
     method: post
     content: '<fvTenant name="Sales" descr="Sales departement"/>'
@@ -169,7 +169,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     private_key: pki/admin.key
-    validate_certs: no
+    validate_certs: false
     method: post
     path: /api/mo/uni/controller/nodeidentpol.xml
     content:
@@ -185,7 +185,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     private_key: pki/admin.key
-    validate_certs: no
+    validate_certs: false
     path: /api/node/class/topSystem.json?query-target-filter=eq(topSystem.role,"controller")
   register: apics
   until: "'totalCount' in apics and apics.totalCount|int >= groups['apic']|count"

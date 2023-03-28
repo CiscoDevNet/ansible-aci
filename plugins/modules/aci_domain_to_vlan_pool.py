@@ -26,7 +26,7 @@ options:
     description:
     - Determines if the Domain is physical (phys) or virtual (vmm).
     type: str
-    required: yes
+    required: true
     choices: [ fc, l2dom, l3dom, phys, vmm ]
   pool:
     description:
@@ -37,7 +37,7 @@ options:
     description:
     - The method used for allocating VLANs to resources.
     type: str
-    required: yes
+    required: true
     choices: [ dynamic, static]
     aliases: [ allocation_mode, mode ]
   state:

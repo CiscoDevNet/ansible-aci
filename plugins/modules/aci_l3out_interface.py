@@ -21,25 +21,25 @@ options:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-    required: yes
+    required: true
   l3out:
     description:
     - Name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
-    required: yes
+    required: true
   node_profile:
     description:
     - Name of the node profile.
     type: str
     aliases: [ node_profile_name, logical_node ]
-    required: yes
+    required: true
   interface_profile:
     description:
     - Name of the interface profile.
     type: str
     aliases: [ interface_profile_name, logical_interface ]
-    required: yes
+    required: true
   pod_id:
     description:
     - Pod to build the interface on.

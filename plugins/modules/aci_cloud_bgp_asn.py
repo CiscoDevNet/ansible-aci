@@ -68,7 +68,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    validate_certs: no
+    validate_certs: false
     state: absent
   delegate_to: localhost
 - name: Query a cloud BGP ASN

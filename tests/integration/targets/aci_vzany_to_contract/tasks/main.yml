@@ -68,7 +68,7 @@
     <<: *vrf_present
     contract: testcp
     contract_type: provider
-  check_mode: yes
+  check_mode: true
   register: cm_vzany_prov
 
 - name: Attach contract as provider to vzAny (normal_mode)

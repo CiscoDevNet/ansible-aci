@@ -90,14 +90,14 @@
   ansible.builtin.debug:
     msg: "{{ item }}"
   with_items: "{{ query('cisco.aci.interface_range', 'not matching pattern') }}"
-  ignore_errors: yes
+  ignore_errors: true
   register: invalid_pattern
 
 - name: Invalid input end smaller than start
   ansible.builtin.debug:
     msg: "{{ item }}"
   with_items: "{{ query('cisco.aci.interface_range', '1/4-1') }}"
-  ignore_errors: yes
+  ignore_errors: true
   register: invalid_range_order
 
 - name: Invalid input assertions

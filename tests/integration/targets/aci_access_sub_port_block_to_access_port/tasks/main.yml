@@ -43,7 +43,7 @@
       toPort: 13
       fromSubPort: 1
       toSubPort: 3
-    check_mode: yes
+    check_mode: true
     register: accesssubportblock_to_accessport_check_mode_present
 
   - name: Bind an Access Sub Port Block to an Interface Access Port Selector - creation works
@@ -98,7 +98,7 @@
     cisco.aci.aci_access_sub_port_block_to_access_port: &aci_access_sub_port_block_to_access_port_absent
       <<: *aci_access_sub_port_block_to_access_port_present
       state: absent
-    check_mode: yes
+    check_mode: true
     register: accesssubportblock_to_accessport_check_mode_absent
 
   - name: Remove binding of Access Sub Port Block and Interface Access Port Selector - delete works
@@ -116,7 +116,7 @@
       <<: *aci_access_port_to_interface_policy_leaf_profile_present
       #leaf_port_blk: anstest_leafportblkname
       state: absent
-    ignore_errors: yes
+    ignore_errors: true
     register: accesssubportblock_to_accessport_absent_missing_param
 
   - name: absent assertions

@@ -29,7 +29,7 @@
     path: /api/mo/uni.xml
     src: "./targets/aci_rest/tasks/xml_files/tn-ans_test_create.xml"
     method: post
-  check_mode: yes
+  check_mode: true
   register: cm_add_tenant
 
 - name: Assertions check for add tenant using ans_test_create xml template file with check mode
@@ -89,7 +89,7 @@
     path: /api/mo/uni.xml
     src: "./targets/aci_rest/tasks/xml_files/tn-ans_test_update.xml"
     method: post
-  check_mode: yes
+  check_mode: true
   register: cm_update_tenant
 
 - name: Assertions check for update tenant description using ans_test_update xml template file with check mode
@@ -149,7 +149,7 @@
     src: "./targets/aci_rest/tasks/xml_files/tn-ans_test_negative_update_check.xml"
     method: post
   register: negative_update_tenant_check
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Assertions check for update tenant name using ans_test_negative_update_check xml template file with normal mode
   assert:
@@ -162,7 +162,7 @@
     path: /api/mo/uni.xml
     src: "./targets/aci_rest/tasks/xml_files/tn-ans_test_delete.xml"
     method: post
-  check_mode: yes
+  check_mode: true
   register: cm_delete_tenant
 
 - name: Assertions check for delete tenant using ans_test_delete xml template file with check mode

@@ -95,7 +95,7 @@
       &aci_access_port_to_interface_policy_leaf_profile_present
       <<: *aci_interface_policy_leaf_profile_present
       access_port_selector: anstest_accessportselector
-    check_mode: yes
+    check_mode: true
     register: accessport_to_intf_check_mode_present
 
   - name: Bind an Interface Access Port Selector to an Interface Policy Leaf Profile with a Policy Group - creation works
@@ -252,7 +252,7 @@
   - name: Remove binding of interface access port selector and Interface Policy Leaf Profile - check mode
     cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
       <<: *aci_access_port_to_interface_policy_leaf_profile_absent
-    check_mode: yes
+    check_mode: true
     register: accessport_to_intf_check_mode_absent
 
   - name: Remove binding of interface access port selector and Interface Policy Leaf Profile - delete works
@@ -314,7 +314,7 @@
       interface_type: fex_port_channel
       access_port_selector: anstest_fex_port_channel
       policy_group: policygroupname_link_fpc
-    check_mode: yes
+    check_mode: true
     register: cm_fpc_present
 
   - name: Assertion check for bind anstest_fex_port_channel Access Port Selector with policygroupname_link_fpc Policy Group - check mode
@@ -343,7 +343,7 @@
     cisco.aci.aci_access_port_to_interface_policy_leaf_profile: &cm_fpc_absent
       <<: *nm_fpc_present
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_fpc_absent
 
   - name: Assertion check for remove anstest_fex_port_channel Access Port Selector with policygroupname_link_fpc Policy Group - check mode
@@ -410,7 +410,7 @@
       interface_type: fex_vpc
       access_port_selector: anstest_fex_vpc
       policy_group: policygroupname_node_fvpc
-    check_mode: yes
+    check_mode: true
     register: cm_fex_vpc_present
 
   - name: Assertion check for bind anstest_fex_vpc Access Port Selector with policygroupname_node_fvpc Policy Group - check mode
@@ -439,7 +439,7 @@
     cisco.aci.aci_access_port_to_interface_policy_leaf_profile: &cm_fex_vpc_absent
       <<: *cm_fex_vpc_present
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_fex_vpc_absent
 
   - name: Assertion check for remove anstest_fex_vpc Access Port Selector with policygroupname_node_fvpc Policy Group - check mode
@@ -608,7 +608,7 @@
       type: fex
       state: present
     register: temp_anstest_fex_profile_access_port_present
-    ignore_errors: yes
+    ignore_errors: true
 
   - name: Assertion check for bind temp_anstest_fex_profile with anstest_fex_profile - Fex Profile Policy Group
     assert:
@@ -678,7 +678,7 @@
       fex_id: 999
       type: leaf
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: anstest_leaf_profile_access_port_wrong_fex_id
 
   - name: Assertion check for bind anstest_leaf_profile with wrong fex_id
@@ -695,7 +695,7 @@
       interface_type: fex_profile
       type: leaf
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: anstest_leaf_profile_access_port_no_fex_id
 
   - name: Assertion check for bind anstest_leaf_profile with no fex_id

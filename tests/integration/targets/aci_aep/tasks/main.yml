@@ -44,7 +44,7 @@
       aep: ansible_test
       infra_vlan: true
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_aep
 
   - name: Add AEP (normal mode)
@@ -97,7 +97,7 @@
   - name: Add AEP again (check_mode)
     cisco.aci.aci_aep:
       <<: *aep_present
-    check_mode: yes
+    check_mode: true
     register: cm_add_aep_again
 
   - name: Add AEP again (normal mode)
@@ -122,7 +122,7 @@
     cisco.aci.aci_aep:
       <<: *aep_present
       description: Ansible test AEP
-    check_mode: yes
+    check_mode: true
     register: cm_add_aep_descr
 
   - name: Change description of AEP (normal mode)
@@ -149,7 +149,7 @@
     cisco.aci.aci_aep:
       <<: *aep_present
       description: Ansible test AEP
-    check_mode: yes
+    check_mode: true
     register: cm_add_aep_descr_again
 
   - name: Change description of AEP again (normal mode)
@@ -174,7 +174,7 @@
   # ADD AEP AGAIN
   - name: Add AEP again with no description (check_mode)
     cisco.aci.aci_aep: *aep_present
-    check_mode: yes
+    check_mode: true
     register: cm_add_aep_again_no_descr
 
   - name: Add AEP again with no description (normal mode)
@@ -204,7 +204,7 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
       state: query
-    check_mode: yes
+    check_mode: true
     register: cm_query_all_aeps
 
   - name: Query all AEPs (normal mode)
@@ -225,7 +225,7 @@
     cisco.aci.aci_aep:
       <<: *aep_query
       aep: ansible_test
-    check_mode: yes
+    check_mode: true
     register: cm_query_aep
 
   - name: Query our AEP
@@ -250,7 +250,7 @@
     cisco.aci.aci_aep:
       <<: *aep_absent
       aep: ansible_test
-    check_mode: yes
+    check_mode: true
     register: cm_remove_aep
 
   - name: Remove AEP (normal mode)
@@ -275,7 +275,7 @@
     cisco.aci.aci_aep:
       <<: *aep_absent
       aep: ansible_test
-    check_mode: yes
+    check_mode: true
     register: cm_remove_aep_again
 
   - name: Remove AEP again (normal mode)
@@ -299,7 +299,7 @@
     cisco.aci.aci_aep:
       <<: *aep_query
       aep: ansible_test
-    check_mode: yes
+    check_mode: true
     register: cm_query_non_aep
 
   - name: Query non-existing AEP (normal mode)
@@ -328,7 +328,7 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: error_on_missing_required_param
 
   - name: Verify error_on_missing_required_param

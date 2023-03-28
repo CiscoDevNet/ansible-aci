@@ -30,7 +30,7 @@ options:
   graceful:
     description:
     - Whether the system will bring down the nodes gracefully during an upgrade, which reduces traffic lost.
-    - The APIC defaults to C(no) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   scheduler:
     description:
@@ -45,7 +45,7 @@ options:
   ignoreCompat:
     description:
     - To check whether compatibility checks should be ignored
-    - The APIC defaults to C(no) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   state:
     description:

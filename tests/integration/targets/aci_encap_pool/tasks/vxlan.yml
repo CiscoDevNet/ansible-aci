@@ -27,7 +27,7 @@
     <<: *aci_vxlan_absent
     state: present
     descr: Ansible Test
-  check_mode: yes
+  check_mode: true
   register: create_vxlan_check_mode
 
 - name: assertion test - present
@@ -90,7 +90,7 @@
     <<: *aci_vxlan_present
     name: anstest_3
     pool_allocation_mode: dynamic
-  ignore_errors: yes
+  ignore_errors: true
   register: create_vxlan_alloc_mode
 
 - name: assertion test - present
@@ -128,7 +128,7 @@
 - name: delete vxlan pool - check mode works
   cisco.aci.aci_encap_pool:
     <<: *aci_vxlan_absent
-  check_mode: yes
+  check_mode: true
   register: delete_vxlan_check_mode
 
 - name: assertion test - absent
@@ -158,7 +158,7 @@
   cisco.aci.aci_encap_pool:
     <<: *aci_vxlan_absent
     pool: "{{ fake_var | default(omit) }}"
-  ignore_errors: yes
+  ignore_errors: true
   register: delete_vxlan_pool_fail
 
 - name: assertion test - absent

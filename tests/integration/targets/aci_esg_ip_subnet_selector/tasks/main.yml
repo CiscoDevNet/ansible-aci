@@ -70,7 +70,7 @@
       ip: "10.0.0.1"
       description: "IP Subnet Selector"
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_subnet_ip_present
 
   - name: Assertions check for add IP Subnet selector with check mode
@@ -127,7 +127,7 @@
     cisco.aci.aci_esg_ip_subnet_selector: &cm_subnet_ip_absent
       <<: *cm_subnet_ip_present
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_subnet_ip_absent
 
   - name: Assertions check for remove IP Subnet selector with check mode

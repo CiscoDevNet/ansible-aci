@@ -67,7 +67,7 @@
       esg: web_esg_0
       vrf: default
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_web_esg_0_present
 
   - name: Assertions check for add web_esg_0 with check mode
@@ -258,7 +258,7 @@
       esg: web_esg_0
       state: absent
     register: cm_web_esg_0_absent
-    check_mode: yes
+    check_mode: true
 
   - name: Assertions check for remove an ESG with check mode
     assert:

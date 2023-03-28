@@ -84,7 +84,7 @@
       epg: anstest_epg
       description: Ans Test EPG Selector
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_epg_selector_present
 
   - name: Assertions check for add an EPG selector with check mode
@@ -110,7 +110,7 @@
   - name: Add an EPG selector with check mode - idempotency works
     cisco.aci.aci_esg_epg_selector: &cm_idempotency_epg_selector_present
       <<: *cm_epg_selector_present
-    check_mode: yes
+    check_mode: true
     register: cm_idempotency_epg_selector_present
 
   - name: Idempotency assertions check for add an EPG selector with check mode
@@ -187,7 +187,7 @@
       epg_ap: epg_ap
       epg: anstest_epg
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_epg_selector_absent
 
   - name: Assertions check for remove an EPG selector with check mode
@@ -213,7 +213,7 @@
   - name: Remove a EPG selector with check mode - idempotency works
     cisco.aci.aci_esg_epg_selector: &cm_idempotency_epg_selector_absent
       <<: *cm_epg_selector_absent
-    check_mode: yes
+    check_mode: true
     register: cm_idempotency_epg_selector_absent
 
   - name: Idempotency assertions check for EPG selector with check mode

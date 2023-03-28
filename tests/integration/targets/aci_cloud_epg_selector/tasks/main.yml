@@ -78,7 +78,7 @@
           operator: in
           value: 10.10.10.1
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_selector_present
 
   - name: Create aci cloud epg selector (normal mode)
@@ -149,7 +149,7 @@
       expressions:
         - key: ip
           operator: has_key
-    ignore_errors: yes
+    ignore_errors: true
     register: ip_has_key
 
   - name: Create selector with incorrect parameter - does_not_have_key with value
@@ -160,7 +160,7 @@
         - key: ctm_test
           operator: does_not_have_key
           value: test_value
-    ignore_errors: yes
+    ignore_errors: true
     register: does_not_without_key
 
   - name: Create selector with incorrect parameter - without value
@@ -170,7 +170,7 @@
       expressions:
         - key: ctm_test
           operator: equals
-    ignore_errors: yes
+    ignore_errors: true
     register: equals_without_value
 
   - name: Verify creation of other selectors

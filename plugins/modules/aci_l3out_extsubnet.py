@@ -21,19 +21,19 @@ options:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-    required: yes
+    required: true
   l3out:
     description:
     - Name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
-    required: yes
+    required: true
   extepg:
     description:
     - Name of an existing ExtEpg.
     type: str
     aliases: [ extepg_name ]
-    required: yes
+    required: true
   network:
     description:
     - The network address for the Subnet.

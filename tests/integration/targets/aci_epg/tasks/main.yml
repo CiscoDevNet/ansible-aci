@@ -60,7 +60,7 @@
       description: Ansible Test
       monitoring_policy: check
       custom_qos_policy: check
-    check_mode: yes
+    check_mode: true
     register: epg_present_check_mode
 
   - name: create epg - creation works
@@ -83,7 +83,7 @@
     cisco.aci.aci_epg:
       <<: *aci_epg_present
       ap: "{{ fakevar | default(omit) }}"
-    ignore_errors: yes
+    ignore_errors: true
     register: epg_present_missing_param
 
   - name: create epg - used for query
@@ -141,7 +141,7 @@
     cisco.aci.aci_epg: &aci_epg_absent
       <<: *aci_epg_present
       state: absent
-    check_mode: yes
+    check_mode: true
     register: delete_epg_check_mode
 
   - name: delete epg - delete works
@@ -163,7 +163,7 @@
     cisco.aci.aci_epg:
       <<: *aci_epg_absent
       tenant: "{{ fakevar | default(omit) }}"
-    ignore_errors: yes
+    ignore_errors: true
     register: delete_epg_missing_param
 
   - name: query assertions
@@ -185,7 +185,7 @@
       bd: anstest
       useg: yes
       description: uSeg EPG Ansible Test
-    check_mode: yes
+    check_mode: true
     register: cm_useg_epg_present
 
   - name: Assertions check for create microsegmented epg with check mode
@@ -253,7 +253,7 @@
     cisco.aci.aci_epg: &cm_useg_epg_absent
       <<: *nm_useg_epg_present
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_useg_epg_absent
 
   - name: Assertions check for delete microsegmented epg with check mode

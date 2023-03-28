@@ -41,7 +41,7 @@ options:
     description:
     - Determines if the APIC should reverse the src and dst ports to allow the
       return traffic back, since ACI is stateless filter.
-    - The APIC defaults to C(yes) when unset during creation.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   priority:
     description:

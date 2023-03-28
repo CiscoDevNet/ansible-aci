@@ -92,7 +92,7 @@ EXAMPLES = r"""
         host: "{{ inventory_hostname }}"
         username: "{{ user }}"
         password: "{{ pass }}"
-        validate_certs: no
+        validate_certs: false
         name: simpleScheduler
         state: present
    - name: Remove Simple Scheduler
@@ -100,7 +100,7 @@ EXAMPLES = r"""
         host: "{{ inventory_hostname }}"
         username: "{{ user }}"
         password: "{{ pass }}"
-        validate_certs: no
+        validate_certs: false
         name: simpleScheduler
         state: absent
    - name: One Time Scheduler
@@ -108,7 +108,7 @@ EXAMPLES = r"""
         host: "{{ inventory_hostname }}"
         username: "{{ user }}"
         password: "{{ pass }}"
-        validate_certs: no
+        validate_certs: false
         name: OneTime
         windowname: OneTime
         recurring: False
@@ -120,7 +120,7 @@ EXAMPLES = r"""
         host: "{{ inventory_hostname }}"
         username: "{{ user }}"
         password: "{{ pass }}"
-        validate_certs: no
+        validate_certs: false
         name: Recurring
         windowname: Recurring
         recurring: True

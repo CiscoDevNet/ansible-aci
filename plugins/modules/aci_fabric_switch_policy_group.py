@@ -31,7 +31,7 @@ options:
     - Whether this is a leaf or spine policy group
     type: str
     choices: [ leaf, spine ]
-    required: yes
+    required: true
   monitoring_policy:
     description:
     - Monitoring Policy to attach to this Policy Group

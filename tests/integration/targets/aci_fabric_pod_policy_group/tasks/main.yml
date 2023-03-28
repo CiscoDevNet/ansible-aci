@@ -42,7 +42,7 @@
     snmp_policy: default
     macsec_policy: default
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_add_group
 
 - name: Add pod policy group (normal mode)
@@ -53,7 +53,7 @@
 - name: Add pod policy group again (check mode)
   cisco.aci.aci_fabric_pod_policy_group:
     <<: *group_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_group_again
 
 - name: Add pod policy group again (normal mode)
@@ -121,7 +121,7 @@
     snmp_policy: ''
     macsec_policy: ''
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_modify_group
 
 - name: Modify pod policy group (normal mode)
@@ -132,7 +132,7 @@
 - name: Modify policy group again (check mode)
   cisco.aci.aci_fabric_pod_policy_group:
     <<: *group_changed
-  check_mode: yes
+  check_mode: true
   register: cm_modify_group_again
 
 - name: Modify policy group again (normal mode)
@@ -177,7 +177,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     state: query
-  check_mode: yes
+  check_mode: true
   register: cm_query_all_groups
 
 - name: Query all groups (normal mode)
@@ -196,7 +196,7 @@
   cisco.aci.aci_fabric_pod_policy_group:
     <<: *group_query_all
     name: ansible_pod_policy_group
-  check_mode: yes
+  check_mode: true
   register: cm_query_group
 
 - name: Query a specific pod policy (normal mode)
@@ -226,7 +226,7 @@
   cisco.aci.aci_fabric_pod_policy_group: &group_absent
     <<: *group_present
     state: absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_group
 
 - name: Remove policy group (normal mode)
@@ -237,7 +237,7 @@
 - name: Remove policy group again (check mode)
   cisco.aci.aci_fabric_pod_policy_group:
     <<: *group_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_group_again
 
 - name: Remove policy group again (normal mode)

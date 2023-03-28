@@ -36,12 +36,12 @@ options:
     description:
     - The name of the Tenant.
     type: str
-    required: yes
+    required: true
   cloud_context_profile:
     description:
     - The name of the Cloud Context Profile.
     type: str
-    required: yes
+    required: true
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.

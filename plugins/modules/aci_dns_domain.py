@@ -22,7 +22,7 @@ options:
     - Name of the DNS profile.
     type: str
     aliases: [ profile_name ]
-    required: yes
+    required: true
   domain:
     description:
     - DNS domain name

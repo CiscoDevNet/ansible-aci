@@ -66,7 +66,7 @@
         <<: *aci_subject_present
         filter: anstest
         log: log
-      check_mode: yes
+      check_mode: true
       register: subject_filter_present_check_mode
 
     - name: create subject filter binding - creation works
@@ -94,7 +94,7 @@
     - name: missing param - failure message works
       cisco.aci.aci_contract_subject_to_filter:
         <<: *aci_tenant_present
-      ignore_errors: yes
+      ignore_errors: true
       register: present_missing_param
 
     - name: present assertions
@@ -142,7 +142,7 @@
       cisco.aci.aci_contract_subject_to_filter: &aci_subject_filter_absent
         <<: *aci_subject_filter_present
         state: absent
-      check_mode: yes
+      check_mode: true
       register: subject_filter_absent_check_mode
 
     - name: delete subject filter binding - deletion works
@@ -159,7 +159,7 @@
       cisco.aci.aci_contract_subject_to_filter:
         <<: *aci_subject_filter_absent
         filter: "{{ fakevar | default(omit) }}"
-      ignore_errors: yes
+      ignore_errors: true
       register: absent_missing_param
 
     - name: cleanup subject filter binding
@@ -216,7 +216,7 @@
         directive: log
         priority_override: level1
         state: present
-      check_mode: yes
+      check_mode: true
       register: cm_filter1_present_default
 
     - name: apply subject filter1 with direction both as default
@@ -229,14 +229,14 @@
         <<: *aci_subject_both_to_filter
         direction: provider_to_consumer
       register: nm_filter1_present_p2c
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: apply subject filter1 with direction consumer to provider (error)
       cisco.aci.aci_contract_subject_to_filter:
         <<: *aci_subject_both_to_filter
         direction: consumer_to_provider
       register: nm_filter1_present_c2p
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: apply subject filter1 with direction both set
       cisco.aci.aci_contract_subject_to_filter:
@@ -272,7 +272,7 @@
         <<: *aci_subject_one_way_to_filter
         direction: both
       register: nm_filter2_present_both
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: filter assertions
       assert:
@@ -346,7 +346,7 @@
           <<: *aci_subject_both_to_filter
           action: deny
         register: filter_present_deny_cloud
-        ignore_errors: yes
+        ignore_errors: true
 
       - name: create subject filter with action deny for cloud p2c
         cisco.aci.aci_contract_subject_to_filter:
@@ -354,7 +354,7 @@
           direction: provider_to_consumer
           action: deny
         register: filter_present_deny_cloud_p2c
-        ignore_errors: yes
+        ignore_errors: true
 
       - name: create subject filter with action deny for cloud p2c
         cisco.aci.aci_contract_subject_to_filter:
@@ -362,7 +362,7 @@
           direction: provider_to_consumer
           action: deny
         register: filter_present_deny_cloud_c2p
-        ignore_errors: yes
+        ignore_errors: true
 
       - name: cloud assertions
         assert:
