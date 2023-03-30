@@ -45,7 +45,7 @@
         interface: "1/1/1"
         state: absent
       register: invalid_interface_absent
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Ensure Interface 501 does not exists, invalid test with invalid interface details
       cisco.aci.aci_interface_config:
@@ -57,7 +57,7 @@
         interface: "a/b/c"
         state: absent
       register: invalid_interface_details
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Add Interface 501, invalid test with policy_group and breakout
       cisco.aci.aci_interface_config:
@@ -71,7 +71,7 @@
         interface: "1/1/1"
         state: present
       register: invalid_policy_group_with_breakout
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Assertions check for the invalid tasks
       assert:
@@ -89,7 +89,7 @@
         interface: "1/1/1"
         state: present
       register: invalid_node
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Invalid Interface ID check
       cisco.aci.aci_interface_config:
@@ -98,7 +98,7 @@
         interface: "1"
         state: present
       register: invalid_interface
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Invalid Card ID check
       cisco.aci.aci_interface_config:
@@ -107,7 +107,7 @@
         interface: "1000/1/1"
         state: present
       register: invalid_card
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Invalid Port ID check
       cisco.aci.aci_interface_config:
@@ -116,7 +116,7 @@
         interface: "1/500/1"
         state: present
       register: invalid_port
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Invalid Sub Port ID check
       cisco.aci.aci_interface_config:
@@ -125,7 +125,7 @@
         interface: "1/1/100"
         state: present
       register: invalid_sub_port
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Assertions check for invalid interface configuration tasks
       assert:
@@ -159,7 +159,7 @@
       cisco.aci.aci_interface_config: &cm_interface_501_present
         <<: *interface_501_absent
         state: present
-      check_mode: yes
+      check_mode: true
       register: cm_interface_501_present
 
     - name: Ensure Interface 501 with leaf access with policy_group - switch_port present - normal mode
@@ -203,7 +203,7 @@
       cisco.aci.aci_interface_config: &cm_interface_502_present
         <<: *interface_502_absent
         state: present
-      check_mode: yes
+      check_mode: true
       register: cm_interface_502_present
 
     - name: Ensure Interface 502 with leaf access with policy_group - pc_or_vpc present - normal mode
@@ -247,7 +247,7 @@
       cisco.aci.aci_interface_config: &cm_interface_505_present
         <<: *interface_505_absent
         state: present
-      check_mode: yes
+      check_mode: true
       register: cm_interface_505_present
 
     - name: Ensure Interface 505 with leaf access with policy_group - fc present - normal mode
@@ -291,7 +291,7 @@
       cisco.aci.aci_interface_config: &cm_interface_506_present
         <<: *interface_506_absent
         state: present
-      check_mode: yes
+      check_mode: true
       register: cm_interface_506_present
 
     - name: Ensure Interface 506 with leaf access with policy_group - fc_port_channel present - normal mode
@@ -335,7 +335,7 @@
       cisco.aci.aci_interface_config: &cm_interface_507_present
         <<: *interface_507_absent
         state: present
-      check_mode: yes
+      check_mode: true
       register: cm_interface_507_present
 
     - name: Ensure Interface 507 with leaf fabric with policy_group - leaf_fabric present - normal mode
@@ -375,7 +375,7 @@
       cisco.aci.aci_interface_config: &cm_interface_508_present
         <<: *interface_508_absent
         state: present
-      check_mode: yes
+      check_mode: true
       register: cm_interface_508_present
 
     - name: Ensure Interface 508 with spine access with policy_group - spine_access present - normal mode
@@ -415,7 +415,7 @@
       cisco.aci.aci_interface_config: &cm_interface_509_present
         <<: *interface_509_absent
         state: present
-      check_mode: yes
+      check_mode: true
       register: cm_interface_509_present
 
     - name: Ensure Interface 509 with spine fabric with policy_group - spine_fabric present - normal mode
@@ -465,7 +465,7 @@
         description: "Interface - 501 added by Ansible"
         state: present
       register: invalid_breakout_501_present
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Convert the interface 501 to breakout(100g-4x) - check mode
       cisco.aci.aci_interface_config: &valid_breakout_501_present
@@ -479,7 +479,7 @@
         description: "Interface - 501 added by Ansible"
         admin_state: "down"
         state: present
-      check_mode: yes
+      check_mode: true
       register: cm_valid_breakout_501_present
 
     - name: Convert the interface 501 to breakout(100g-4x) - normal mode
@@ -636,7 +636,7 @@
       cisco.aci.aci_interface_config:
         <<: *interface_509_absent
         state: absent
-      check_mode: yes
+      check_mode: true
       register: cm_rm_interface_509_present
 
     - name: Ensure Interface 509 with spine fabric with policy_group - spine_fabric absent - normal mode
