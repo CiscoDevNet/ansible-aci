@@ -326,3 +326,20 @@ releases:
 
         '
     release_date: '2023-02-04'
+  2.5.0:
+    changes:
+      bugfixes:
+      - Fix missing annotation field in aci_ntp_policy and aci_ntp_server (#392)
+      - Forced unicode encoding for lxml XML fragment validation output  to fix issue
+        with Certificate authentication and aci_rest with XML payload (#341)
+      minor_changes:
+      - Add aci_interface_config module for new interface configuration available
+        in ACI v5.2(5)+ (#383)
+      - Add aci_interface_policy_spanning_tree  module (#387)
+      release_summary: 'Release v2.5.0 of the ``ansible-aci`` collection on 2023-03-31.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.4.0.
+
+        '
+    release_date: '2023-03-31'
