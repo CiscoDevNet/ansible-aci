@@ -1,0 +1,680 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Sabari Jaganathan <sajagana@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for ACI v6+ and non-cloud sites
+  when:
+  - version.current.0.topSystem.attributes.version is version('6', '>=')
+  - query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:
+    # Negative test cases
+    - name: Ensure Interface does not exists, invalid test without node id
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        role: leaf
+        port_type: access
+        interface_type: switch_port
+        interface: "1/1/1"
+        state: absent
+      register: invalid_interface_absent
+      ignore_errors: true
+
+    - name: Ensure Interface 501 does not exists, invalid test with invalid interface details
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        role: leaf
+        port_type: access
+        interface_type: switch_port
+        node: 501
+        interface: "a/b/c"
+        state: absent
+      register: invalid_interface_details
+      ignore_errors: true
+
+    - name: Add Interface 501, invalid test with policy_group and breakout
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        role: leaf
+        port_type: access
+        interface_type: switch_port
+        policy_group: ans_test_switch_port
+        node: 501
+        breakout: "100g-4x"
+        interface: "1/1/1"
+        state: present
+      register: invalid_policy_group_with_breakout
+      ignore_errors: true
+
+    - name: Assertions check for the invalid tasks
+      assert:
+        that:
+          - invalid_interface_absent.msg is match("state is absent but all of the following are missing{{':'}} node")
+          - invalid_interface_details is not changed
+          - invalid_interface_details.msg is match("Interface configuration failed due to")
+          - invalid_policy_group_with_breakout is not changed
+          - invalid_policy_group_with_breakout.msg == "parameters are mutually exclusive{{':'}} policy_group|breakout"
+
+    - name: Invalid Node ID check
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        node: 5000
+        interface: "1/1/1"
+        state: present
+      register: invalid_node
+      ignore_errors: true
+
+    - name: Invalid Interface ID check
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        node: 101
+        interface: "1"
+        state: present
+      register: invalid_interface
+      ignore_errors: true
+
+    - name: Invalid Card ID check
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        node: 101
+        interface: "1000/1/1"
+        state: present
+      register: invalid_card
+      ignore_errors: true
+
+    - name: Invalid Port ID check
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        node: 101
+        interface: "1/500/1"
+        state: present
+      register: invalid_port
+      ignore_errors: true
+
+    - name: Invalid Sub Port ID check
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        node: 101
+        interface: "1/1/100"
+        state: present
+      register: invalid_sub_port
+      ignore_errors: true
+
+    - name: Assertions check for invalid interface configuration tasks
+      assert:
+        that:
+          - invalid_node is not changed
+          - invalid_node.msg is match("^Node ID{{':'}} .+? is invalid; it must be in the range of 101 to 4000.")
+          - invalid_interface is not changed
+          - invalid_interface.msg is match("^Interface{{':'}} .+? is invalid; The format must be either card\/port\/sub_port\(1\/1\/1\) or card\/port\(1\/1\)")
+          - invalid_card is not changed
+          - invalid_card.msg is match("^Card ID{{':'}} .+? is invalid; it must be in the range of 1 to 64.")
+          - invalid_port is not changed
+          - invalid_port.msg is match("^Port ID{{':'}} .+? is invalid; it must be in the range of 1 to 128.")
+          - invalid_sub_port is not changed
+          - invalid_sub_port.msg is match("^Sub Port ID{{':'}} .+? is invalid; it must be in the range of 0 to 16.")
+
+    - name: Ensure Interface 501 with leaf access with policy_group - switch_port absent
+      cisco.aci.aci_interface_config: &interface_501_absent
+        <<: *aci_info
+        role: leaf
+        port_type: access
+        interface_type: switch_port
+        policy_group: ans_test_switch_port
+        node: 501
+        interface: "1/1/1"
+        description: "Interface - 501 added by Ansible"
+        admin_state: "down"
+        state: absent
+      register: interface_501_absent
+
+    - name: Ensure Interface 501 with leaf access with policy_group - switch_port present - check mode
+      cisco.aci.aci_interface_config: &cm_interface_501_present
+        <<: *interface_501_absent
+        state: present
+      check_mode: true
+      register: cm_interface_501_present
+
+    - name: Ensure Interface 501 with leaf access with policy_group - switch_port present - normal mode
+      cisco.aci.aci_interface_config: &nm_interface_501_present
+        <<: *interface_501_absent
+        state: present
+      register: nm_interface_501_present
+
+    - name: Assertions check for an interface 501
+      assert:
+        that:
+          - interface_501_absent.current == []
+          - cm_interface_501_present is changed
+          - cm_interface_501_present.current == []
+          - nm_interface_501_present is changed
+          - nm_interface_501_present.current != []
+          - nm_interface_501_present.current.0.infraPortConfig.attributes.assocGrp == "uni/infra/funcprof/accportgrp-ans_test_switch_port"
+          - nm_interface_501_present.current.0.infraPortConfig.attributes.brkoutMap == "none"
+          - nm_interface_501_present.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-501-card-1-port-1-sub-1"
+          - nm_interface_501_present.current.0.infraPortConfig.attributes.node == "501"
+          - nm_interface_501_present.current.0.infraPortConfig.attributes.role == "leaf"
+          - nm_interface_501_present.current.0.infraPortConfig.attributes.shutdown == "yes"
+          - nm_interface_501_present.current.0.infraPortConfig.attributes.card == "1"
+          - nm_interface_501_present.current.0.infraPortConfig.attributes.port == "1"
+          - nm_interface_501_present.current.0.infraPortConfig.attributes.subPort == "1"
+
+    - name: Ensure Interface 502 with leaf access with policy_group - pc_or_vpc absent
+      cisco.aci.aci_interface_config: &interface_502_absent
+        <<: *aci_info
+        role: leaf
+        port_type: access
+        interface_type: pc_or_vpc
+        policy_group: ans_test_pc_or_vpc
+        node: 502
+        interface: "2/2/2"
+        description: "Interface - 502 added by Ansible"
+        state: absent
+      register: interface_502_absent
+
+    - name: Ensure Interface 502 with leaf access with policy_group - pc_or_vpc present - check mode
+      cisco.aci.aci_interface_config: &cm_interface_502_present
+        <<: *interface_502_absent
+        state: present
+      check_mode: true
+      register: cm_interface_502_present
+
+    - name: Ensure Interface 502 with leaf access with policy_group - pc_or_vpc present - normal mode
+      cisco.aci.aci_interface_config: &nm_interface_502_present
+        <<: *interface_502_absent
+        state: present
+      register: nm_interface_502_present
+
+    - name: Assertions check for an interface 502
+      assert:
+        that:
+          - interface_502_absent.current == []
+          - cm_interface_502_present is changed
+          - cm_interface_502_present.current == []
+          - nm_interface_502_present is changed
+          - nm_interface_502_present.current != []
+          - nm_interface_502_present.current.0.infraPortConfig.attributes.assocGrp == "uni/infra/funcprof/accbundle-ans_test_pc_or_vpc"
+          - nm_interface_502_present.current.0.infraPortConfig.attributes.brkoutMap == "none"
+          - nm_interface_502_present.current.0.infraPortConfig.attributes.card == "2"
+          - nm_interface_502_present.current.0.infraPortConfig.attributes.description == "Interface - 502 added by Ansible"
+          - nm_interface_502_present.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-502-card-2-port-2-sub-2"
+          - nm_interface_502_present.current.0.infraPortConfig.attributes.node == "502"
+          - nm_interface_502_present.current.0.infraPortConfig.attributes.port == "2"
+          - nm_interface_502_present.current.0.infraPortConfig.attributes.role == "leaf"
+          - nm_interface_502_present.current.0.infraPortConfig.attributes.shutdown == "no"
+
+    - name: Ensure Interface 505 with leaf access with policy_group - fc absent
+      cisco.aci.aci_interface_config: &interface_505_absent
+        <<: *aci_info
+        role: leaf
+        port_type: access
+        interface_type: fc
+        policy_group: ans_test_fc
+        node: 505
+        interface: "5/5/5"
+        description: "Interface - 505 added by Ansible"
+        state: absent
+      register: interface_505_absent
+
+    - name: Ensure Interface 505 with leaf access with policy_group - fc present - check mode
+      cisco.aci.aci_interface_config: &cm_interface_505_present
+        <<: *interface_505_absent
+        state: present
+      check_mode: true
+      register: cm_interface_505_present
+
+    - name: Ensure Interface 505 with leaf access with policy_group - fc present - normal mode
+      cisco.aci.aci_interface_config: &nm_interface_505_present
+        <<: *interface_505_absent
+        state: present
+      register: nm_interface_505_present
+
+    - name: Assertions check for an interface 505
+      assert:
+        that:
+          - interface_505_absent.current == []
+          - cm_interface_505_present is changed
+          - cm_interface_505_present.current == []
+          - nm_interface_505_present is changed
+          - nm_interface_505_present.current != []
+          - nm_interface_505_present.current.0.infraPortConfig.attributes.assocGrp == "uni/infra/funcprof/fcaccportgrp-ans_test_fc"
+          - nm_interface_505_present.current.0.infraPortConfig.attributes.brkoutMap == "none"
+          - nm_interface_505_present.current.0.infraPortConfig.attributes.card == "5"
+          - nm_interface_505_present.current.0.infraPortConfig.attributes.description == "Interface - 505 added by Ansible"
+          - nm_interface_505_present.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-505-card-5-port-5-sub-5"
+          - nm_interface_505_present.current.0.infraPortConfig.attributes.node == "505"
+          - nm_interface_505_present.current.0.infraPortConfig.attributes.port == "5"
+          - nm_interface_505_present.current.0.infraPortConfig.attributes.role == "leaf"
+          - nm_interface_505_present.current.0.infraPortConfig.attributes.shutdown == "no"
+
+    - name: Ensure Interface 506 with leaf access with policy_group - fc_port_channel absent
+      cisco.aci.aci_interface_config: &interface_506_absent
+        <<: *aci_info
+        role: leaf
+        port_type: access
+        interface_type: fc_port_channel
+        policy_group: ans_test_fc_port_channel
+        node: 506
+        interface: "6/6/6"
+        description: "Interface - 506 added by Ansible"
+        state: absent
+      register: interface_506_absent
+
+    - name: Ensure Interface 506 with leaf access with policy_group - fc_port_channel present - check mode
+      cisco.aci.aci_interface_config: &cm_interface_506_present
+        <<: *interface_506_absent
+        state: present
+      check_mode: true
+      register: cm_interface_506_present
+
+    - name: Ensure Interface 506 with leaf access with policy_group - fc_port_channel present - normal mode
+      cisco.aci.aci_interface_config: &nm_interface_506_present
+        <<: *interface_506_absent
+        state: present
+      register: nm_interface_506_present
+
+    - name: Assertions check for an interface 506
+      assert:
+        that:
+          - interface_506_absent.current == []
+          - cm_interface_506_present is changed
+          - cm_interface_506_present.current == []
+          - nm_interface_506_present is changed
+          - nm_interface_506_present.current != []
+          - nm_interface_506_present.current.0.infraPortConfig.attributes.assocGrp == "uni/infra/funcprof/fcaccbundle-ans_test_fc_port_channel"
+          - nm_interface_506_present.current.0.infraPortConfig.attributes.brkoutMap == "none"
+          - nm_interface_506_present.current.0.infraPortConfig.attributes.card == "6"
+          - nm_interface_506_present.current.0.infraPortConfig.attributes.description == "Interface - 506 added by Ansible"
+          - nm_interface_506_present.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-506-card-6-port-6-sub-6"
+          - nm_interface_506_present.current.0.infraPortConfig.attributes.node == "506"
+          - nm_interface_506_present.current.0.infraPortConfig.attributes.port == "6"
+          - nm_interface_506_present.current.0.infraPortConfig.attributes.role == "leaf"
+          - nm_interface_506_present.current.0.infraPortConfig.attributes.shutdown == "no"
+
+    - name: Ensure Interface 507 with leaf fabric with policy_group - leaf_fabric absent
+      cisco.aci.aci_interface_config: &interface_507_absent
+        <<: *aci_info
+        role: leaf
+        port_type: fabric
+        interface_type: leaf_fabric
+        policy_group: ans_test_leaf_fabric
+        node: 507
+        interface: "7/7/7"
+        description: "Interface - 507 added by Ansible"
+        state: absent
+      register: interface_507_absent
+
+    - name: Ensure Interface 507 with leaf fabric with policy_group - leaf_fabric present - check mode
+      cisco.aci.aci_interface_config: &cm_interface_507_present
+        <<: *interface_507_absent
+        state: present
+      check_mode: true
+      register: cm_interface_507_present
+
+    - name: Ensure Interface 507 with leaf fabric with policy_group - leaf_fabric present - normal mode
+      cisco.aci.aci_interface_config: &nm_interface_507_present
+        <<: *interface_507_absent
+        state: present
+      register: nm_interface_507_present
+
+    - name: Assertions check for an interface 507
+      assert:
+        that:
+          - interface_507_absent.current == []
+          - cm_interface_507_present is changed
+          - cm_interface_507_present.current == []
+          - nm_interface_507_present is changed
+          - nm_interface_507_present.current != []
+          - nm_interface_507_present.current.0.fabricPortConfig.attributes.assocGrp == "uni/fabric/funcprof/leportgrp-ans_test_leaf_fabric"
+          - nm_interface_507_present.current.0.fabricPortConfig.attributes.description == "Interface - 507 added by Ansible"
+          - nm_interface_507_present.current.0.fabricPortConfig.attributes.dn == "uni/fabric/portconfnode-507-card-7-port-7-sub-7"
+          - nm_interface_507_present.current.0.fabricPortConfig.attributes.role == "leaf"
+          - nm_interface_507_present.current.0.fabricPortConfig.attributes.shutdown == "no"
+
+    - name: Ensure Interface 508 with spine access with policy_group - spine_access absent
+      cisco.aci.aci_interface_config: &interface_508_absent
+        <<: *aci_info
+        role: spine
+        port_type: access
+        interface_type: spine_access
+        policy_group: ans_test_spine_access
+        node: 508
+        interface: "8/8/8"
+        description: "Interface - 508 added by Ansible"
+        state: absent
+      register: interface_508_absent
+
+    - name: Ensure Interface 508 with spine access with policy_group - spine_access present - check mode
+      cisco.aci.aci_interface_config: &cm_interface_508_present
+        <<: *interface_508_absent
+        state: present
+      check_mode: true
+      register: cm_interface_508_present
+
+    - name: Ensure Interface 508 with spine access with policy_group - spine_access present - normal mode
+      cisco.aci.aci_interface_config: &nm_interface_508_present
+        <<: *interface_508_absent
+        state: present
+      register: nm_interface_508_present
+
+    - name: Assertions check for an interface 508
+      assert:
+        that:
+          - interface_508_absent.current == []
+          - cm_interface_508_present is changed
+          - cm_interface_508_present.current == []
+          - nm_interface_508_present is changed
+          - nm_interface_508_present.current != []
+          - nm_interface_508_present.current.0.infraPortConfig.attributes.assocGrp == "uni/infra/funcprof/spaccportgrp-ans_test_spine_access"
+          - nm_interface_508_present.current.0.infraPortConfig.attributes.description == "Interface - 508 added by Ansible"
+          - nm_interface_508_present.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-508-card-8-port-8-sub-8"
+          - nm_interface_508_present.current.0.infraPortConfig.attributes.role == "spine"
+          - nm_interface_508_present.current.0.infraPortConfig.attributes.shutdown == "no"
+
+    - name: Ensure Interface 509 with spine fabric with policy_group - spine_fabric absent
+      cisco.aci.aci_interface_config: &interface_509_absent
+        <<: *aci_info
+        role: spine
+        port_type: fabric
+        interface_type: spine_fabric
+        policy_group: ans_test_spine_fabric
+        node: 509
+        interface: "9/9/9"
+        description: "Interface - 509 added by Ansible"
+        state: absent
+      register: interface_509_absent
+
+    - name: Ensure Interface 509 with spine fabric with policy_group - spine_fabric present - check mode
+      cisco.aci.aci_interface_config: &cm_interface_509_present
+        <<: *interface_509_absent
+        state: present
+      check_mode: true
+      register: cm_interface_509_present
+
+    - name: Ensure Interface 509 with spine fabric with policy_group - spine_fabric present - normal mode
+      cisco.aci.aci_interface_config: &nm_interface_509_present
+        <<: *interface_509_absent
+        state: present
+      register: nm_interface_509_present
+
+    - name: Ensure Interface 509 with spine fabric with policy_group - spine_fabric present - normal mode with idempotency check
+      cisco.aci.aci_interface_config:
+        <<: *interface_509_absent
+        state: present
+      register: idm_interface_509_present
+
+    - name: Assertions check for an interface 509
+      assert:
+        that:
+          - interface_509_absent.current == []
+          - cm_interface_509_present is changed
+          - cm_interface_509_present.current == []
+          - nm_interface_509_present is changed
+          - nm_interface_509_present.current != []
+          - nm_interface_509_present.current.0.fabricPortConfig.attributes.assocGrp == "uni/fabric/funcprof/spportgrp-ans_test_spine_fabric"
+          - nm_interface_509_present.current.0.fabricPortConfig.attributes.description == "Interface - 509 added by Ansible"
+          - nm_interface_509_present.current.0.fabricPortConfig.attributes.dn == "uni/fabric/portconfnode-509-card-9-port-9-sub-9"
+          - nm_interface_509_present.current.0.fabricPortConfig.attributes.role == "spine"
+          - nm_interface_509_present.current.0.fabricPortConfig.attributes.shutdown == "no"
+          - idm_interface_509_present is not changed
+          - idm_interface_509_present.current != []
+          - idm_interface_509_present.current.0.fabricPortConfig.attributes.assocGrp == "uni/fabric/funcprof/spportgrp-ans_test_spine_fabric"
+          - idm_interface_509_present.current.0.fabricPortConfig.attributes.description == "Interface - 509 added by Ansible"
+          - idm_interface_509_present.current.0.fabricPortConfig.attributes.dn == "uni/fabric/portconfnode-509-card-9-port-9-sub-9"
+          - idm_interface_509_present.current.0.fabricPortConfig.attributes.role == "spine"
+          - idm_interface_509_present.current.0.fabricPortConfig.attributes.shutdown == "no"
+
+    # Breakout part begins
+    - name: Convert the interface 501 to breakout(100g-4x) with policy group - invalid test
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        role: leaf
+        port_type: access
+        interface_type: switch_port
+        policy_group: ans_test_switch_port
+        breakout: "100g-4x"
+        node: 501
+        interface: "1/1/1"
+        description: "Interface - 501 added by Ansible"
+        state: present
+      register: invalid_breakout_501_present
+      ignore_errors: true
+
+    - name: Convert the interface 501 to breakout(100g-4x) - check mode
+      cisco.aci.aci_interface_config: &valid_breakout_501_present
+        <<: *aci_info
+        role: leaf
+        port_type: access
+        interface_type: switch_port
+        breakout: "100g-4x"
+        node: 501
+        interface: "1/1/1"
+        description: "Interface - 501 added by Ansible"
+        admin_state: "down"
+        state: present
+      check_mode: true
+      register: cm_valid_breakout_501_present
+
+    - name: Convert the interface 501 to breakout(100g-4x) - normal mode
+      cisco.aci.aci_interface_config:
+        <<: *valid_breakout_501_present
+      register: nm_valid_breakout_501_present
+
+    - name: Convert the interface 501 to breakout(100g-4x) - normal mode with idempotency check
+      cisco.aci.aci_interface_config:
+        <<: *valid_breakout_501_present
+      register: idm_breakout_501_present
+
+    - name: Assertions check for convert the interface 501 to breakout(100g-4x)
+      assert:
+        that:
+          - invalid_breakout_501_present is not changed
+          - invalid_breakout_501_present.msg == "parameters are mutually exclusive{{':'}} policy_group|breakout"
+          - cm_valid_breakout_501_present is changed
+          - cm_valid_breakout_501_present.current != []
+          - cm_valid_breakout_501_present.current.0.infraPortConfig.attributes.brkoutMap == "none"
+          - nm_valid_breakout_501_present is changed
+          - nm_valid_breakout_501_present.current != []
+          - nm_valid_breakout_501_present.current.0.infraPortConfig.attributes.brkoutMap == "100g-4x"
+          - nm_valid_breakout_501_present.current.0.infraPortConfig.attributes.description == "Interface - 501 added by Ansible"
+          - nm_valid_breakout_501_present.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-501-card-1-port-1-sub-1"
+          - nm_valid_breakout_501_present.current.0.infraPortConfig.attributes.role == "leaf"
+          - nm_valid_breakout_501_present.current.0.infraPortConfig.attributes.shutdown == "yes"
+          - idm_breakout_501_present is not changed
+          - idm_breakout_501_present.current != []
+          - idm_breakout_501_present.current.0.infraPortConfig.attributes.brkoutMap == "100g-4x"
+          - idm_breakout_501_present.current.0.infraPortConfig.attributes.description == "Interface - 501 added by Ansible"
+          - idm_breakout_501_present.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-501-card-1-port-1-sub-1"
+          - idm_breakout_501_present.current.0.infraPortConfig.attributes.role == "leaf"
+          - idm_breakout_501_present.current.0.infraPortConfig.attributes.shutdown == "yes"
+    # Breakup part ends
+
+    - name: Query all access interfaces
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        port_type: access
+        state: query
+      register: query_all_access_interfaces
+
+    - name: Assertions check for query all access interfaces
+      assert:
+        that:
+          - query_all_access_interfaces is not changed
+          - query_all_access_interfaces.current|length >= 6
+
+    - name: Query all fabric interfaces
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        port_type: fabric
+        state: query
+      register: query_all_fabric_interfaces
+
+    - name: Assertions check for query all fabric interfaces
+      assert:
+        that:
+          - query_all_fabric_interfaces is not changed
+          - query_all_fabric_interfaces.current|length >= 2
+
+    - name: Query a access interface with node id 502
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        port_type: access
+        node: 502
+        state: query
+      register: query_access_interface_502
+
+    - name: Assertions check for query a access interface with node id 502
+      assert:
+        that:
+          - query_access_interface_502 is not changed
+          - query_access_interface_502.current|length == 1
+          - query_access_interface_502.current.0.infraPortConfig.attributes.brkoutMap == "none"
+          - query_access_interface_502.current.0.infraPortConfig.attributes.description == "Interface - 502 added by Ansible"
+          - query_access_interface_502.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-502-card-2-port-2-sub-2"
+          - query_access_interface_502.current.0.infraPortConfig.attributes.role == "leaf"
+          - query_access_interface_502.current.0.infraPortConfig.attributes.shutdown == "no"
+
+    - name: Query a fabric interface with node id 509
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        port_type: fabric
+        node: 509
+        state: query
+      register: query_access_fabric_509
+
+    - name: Assertions check for query a fabric interface with node id 509
+      assert:
+        that:
+          - query_access_fabric_509 is not changed
+          - query_access_fabric_509.current|length == 1
+          - query_access_fabric_509.current.0.fabricPortConfig.attributes.assocGrp == "uni/fabric/funcprof/spportgrp-ans_test_spine_fabric"
+          - query_access_fabric_509.current.0.fabricPortConfig.attributes.description == "Interface - 509 added by Ansible"
+          - query_access_fabric_509.current.0.fabricPortConfig.attributes.dn == "uni/fabric/portconfnode-509-card-9-port-9-sub-9"
+          - query_access_fabric_509.current.0.fabricPortConfig.attributes.role == "spine"
+          - query_access_fabric_509.current.0.fabricPortConfig.attributes.shutdown == "no"
+
+    - name: Ensure Breakout Interface 501 absent
+      cisco.aci.aci_interface_config:
+        <<: *valid_breakout_501_present
+        state: absent
+      register: rm_interface_501_present
+
+    - name: Ensure Interface 502 with leaf access with policy_group - pc_or_vpc absent
+      cisco.aci.aci_interface_config:
+        <<: *interface_502_absent
+        state: absent
+      register: rm_interface_502_present
+
+    - name: Ensure Interface 505 with leaf access with policy_group - fc absent
+      cisco.aci.aci_interface_config:
+        <<: *interface_505_absent
+        state: absent
+      register: rm_interface_505_present
+
+    - name: Ensure Interface 506 with leaf access with policy_group - fc_port_channel absent
+      cisco.aci.aci_interface_config:
+        <<: *interface_506_absent
+        state: absent
+      register: rm_interface_506_present
+
+    - name: Ensure Interface 507 with leaf fabric with policy_group - leaf_fabric absent
+      cisco.aci.aci_interface_config:
+        <<: *interface_507_absent
+        state: absent
+      register: rm_interface_507_present
+
+    - name: Ensure Interface 508 with spine access with policy_group - spine_access absent
+      cisco.aci.aci_interface_config:
+        <<: *interface_508_absent
+        state: absent
+      register: rm_interface_508_present
+
+    - name: Assertions check for remove Interfaces 501 to 508
+      assert:
+        that:
+          - rm_interface_501_present is changed
+          - rm_interface_501_present.current == []
+          - rm_interface_502_present is changed
+          - rm_interface_502_present.current == []
+          - rm_interface_505_present is changed
+          - rm_interface_505_present.current == []
+          - rm_interface_506_present is changed
+          - rm_interface_506_present.current == []
+          - rm_interface_507_present is changed
+          - rm_interface_507_present.current == []
+          - rm_interface_508_present is changed
+          - rm_interface_508_present.current == []
+
+    - name: Ensure Interface 509 with spine fabric with policy_group - spine_fabric absent - check mode
+      cisco.aci.aci_interface_config:
+        <<: *interface_509_absent
+        state: absent
+      check_mode: true
+      register: cm_rm_interface_509_present
+
+    - name: Ensure Interface 509 with spine fabric with policy_group - spine_fabric absent - normal mode
+      cisco.aci.aci_interface_config:
+        <<: *interface_509_absent
+        state: absent
+      register: nm_rm_interface_509_present
+
+    - name: Assertions check for remove Interface 509
+      assert:
+        that:
+          - cm_rm_interface_509_present is changed
+          - cm_rm_interface_509_present.current != []
+          - nm_rm_interface_509_present is changed
+          - nm_rm_interface_509_present.current == []
+
+    - name: Ensure Interface 509 with spine fabric with policy_group - spine_fabric absent - normal mode with idempotency check
+      cisco.aci.aci_interface_config:
+        <<: *interface_509_absent
+        state: absent
+      register: idm_rm_interface_509_present
+
+    - name: Assertions check for remove Interface 509 with idempotency check
+      assert:
+        that:
+          - idm_rm_interface_509_present is not changed
+          - idm_rm_interface_509_present.current == []
+
+    - name: Query an interface 509 after removed from the APIC
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        node: 509
+        port_type: "fabric"
+        state: query
+      register: query_interface_509
+
+    - name: Assertions check for query an interface 509 after removed from the APIC
+      assert:
+        that:
+          - query_interface_509 is not changed
+          - query_interface_509.current == []
