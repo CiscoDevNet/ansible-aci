@@ -14,9 +14,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_interface_config
-short_description: Manage the Port Configuration of the Fabric Access Policies - Interface Configuration (infra:PortConfig)
+short_description: Manage Interface Configuration of Access (infra:PortConfig) and Fabric (fabric:PortConfig) Ports is only supported for ACI 5.2(5)+
 description:
-- Manage the Port Configuration of the Fabric Access Policies - Interface Configuration on Cisco ACI fabrics.
+- Manage Interface Configuration of Access (infra:PortConfig) and Fabric (fabric:PortConfig) Ports is only supported for ACI 5.2(5)+
 options:
   policy_group:
     description:
@@ -382,7 +382,7 @@ def main():
             # Sub Port ID - 0 is default value
             if int(sub_port) not in range(0, 17):
                 aci.fail_json(msg="Sub Port ID: {0} is invalid; it must be in the range of 0 to 16.".format(sub_port))
-    except (TypeError, ValueError) as error:
+    except ValueError as error:
         aci.fail_json(msg="Interface configuration failed due to: {0}".format(error))
 
     root_class = PORT_TYPE_MAPPING.get(port_type)["root_class"]
