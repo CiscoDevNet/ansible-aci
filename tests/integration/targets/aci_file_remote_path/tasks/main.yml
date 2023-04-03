@@ -63,6 +63,18 @@
     management_epg: oob-default
   register: create_second_path
 
+- name: Create File Remote Path using SSH Key auth
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_info
+    name: ansible_ssh_auth_file_path
+    auth_type: ssh_key
+    remote_key: "{{ lookup('file', 'pki/rsa_ansible.key') }}"
+    remote_host: test3.example.com
+    remote_port: 22
+    remote_protocol: scp
+    remote_path: /tmp
+  register: create_key_auth_path
+
 - name: Verify creation of File Remote Path
   ansible.builtin.assert:
     that:
@@ -84,6 +96,7 @@
     - nm_create_path_again.current.0.fileRemotePath.attributes.userName == "test_user"
     - nm_create_path_again.current.0.fileRemotePath.attributes.remotePath == "/tmp"
     - create_second_path.current.0.fileRemotePath.children.0.fileRsARemoteHostToEpg.attributes.tDn == "uni/tn-mgmt/mgmtp-default/oob-default"
+    - create_key_auth_path.current.0.fileRemotePath.attributes.authType == "useSshKeyContents"
 
 # UPDATE FILE REMOTE PATH
 - name: Update File Remote Path
@@ -132,6 +145,59 @@
     - query_all is not changed
     - query_all.current | length > 1
 
+# VALIDATE ERROR CHECKING
+- name: Create Remote Path with remote_key when auth_type is password
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_info
+    name: incorrect_auth_type1
+    remote_host: test2.example.com
+    remote_port: 22
+    remote_protocol: scp
+    remote_user: test_user
+    auth_type: password
+    remote_key: "{{ lookup('file', 'pki/rsa_ansible.key') }}"
+    remote_path: /tmp
+  ignore_errors: yes
+  register: incorrect_auth_type1
+
+- name: Create Remote Path with passphrase when auth_type is password
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_info
+    name: incorrect_auth_type2
+    remote_host: test2.example.com
+    remote_port: 22
+    remote_protocol: scp
+    remote_user: test_user
+    auth_type: password
+    passphrase: ansible_passphrase
+    remote_path: /tmp
+  ignore_errors: yes
+  register: incorrect_auth_type2
+
+- name: Create Remote Path with password when auth_type is ssh_key
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_info
+    name: incorrect_auth_type3
+    remote_host: test2.example.com
+    remote_port: 22
+    remote_protocol: scp
+    remote_user: test_user
+    auth_type: ssh_key
+    remote_password: test_password
+    remote_path: /tmp
+  ignore_errors: yes
+  register: incorrect_auth_type3
+
+- name: Validate error checking
+  ansible.builtin.assert:
+    that:
+    - incorrect_auth_type1 is failed
+    - incorrect_auth_type2 is failed
+    - incorrect_auth_type3 is failed
+    - incorrect_auth_type1.msg == "remote_key cannot be set if auth_type is password"
+    - incorrect_auth_type2.msg == "passphrase cannot be set if auth_type is password"
+    - incorrect_auth_type3.msg == "remote_password cannot be set if auth_type is ssh_key"
+
 # REMOVE FILE REMOTE PATH
 - name: Delete a File Remote Path
   cisco.aci.aci_file_remote_path:
@@ -156,4 +222,10 @@
   cisco.aci.aci_file_remote_path:
    <<: *aci_info
    name: ansible_second_file_path
+   state: absent
+
+- name: Delete SSH Key Auth File Remote Path
+  cisco.aci.aci_file_remote_path:
+   <<: *aci_info
+   name: ansible_ssh_auth_file_path
    state: absent
