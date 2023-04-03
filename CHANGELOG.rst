@@ -11,7 +11,7 @@ v2.5.0
 Release Summary
 ---------------
 
-Release v2.5.0 of the ``ansible-aci`` collection on 2023-03-31.
+Release v2.5.0 of the ``ansible-aci`` collection on 2023-04-03.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.4.0.
 
 
