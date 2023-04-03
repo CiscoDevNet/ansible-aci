@@ -138,7 +138,7 @@
     querier_timeout: 180
     robustness_variable: 5
     igmp_version: v2
-    allow_v3_asm: true
+    allow_v3_asm: false
     fast_leave: false
     report_link_local_groups: true
   register: update_igmp_intf_policy
@@ -168,14 +168,14 @@
     - update_igmp_intf_policy.current.0.igmpIfPol.attributes.querierTimeout == "180"
     - update_igmp_intf_policy.current.0.igmpIfPol.attributes.robustFac == "5"
     - update_igmp_intf_policy.current.0.igmpIfPol.attributes.ver == "v2"
-    - update_igmp_intf_policy.current.0.igmpIfPol.attributes.ifCtrl == "allow-v3-asm,rep-ll"
+    - update_igmp_intf_policy.current.0.igmpIfPol.attributes.ifCtrl == "rep-ll"
 
 - name: Verify an update without ifCtrl options present leaves existing ifCtrl in place
   ansible.builtin.assert:
     that:
     - update_igmp_no_ifctrl is changed
     - update_igmp_no_ifctrl.current.0.igmpIfPol.attributes.ver == "v3"
-    - update_igmp_no_ifctrl.current.0.igmpIfPol.attributes.ifCtrl == "allow-v3-asm,rep-ll"
+    - update_igmp_no_ifctrl.current.0.igmpIfPol.attributes.ifCtrl == "rep-ll"
 
 # QUERY IGMP INTERFACE POLICY
 - name: Query an IGMP Interface Policy
@@ -207,7 +207,7 @@
     - query_one.current.0.igmpIfPol.attributes.querierTimeout == "180"
     - query_one.current.0.igmpIfPol.attributes.robustFac == "5"
     - query_one.current.0.igmpIfPol.attributes.ver == "v3"
-    - query_one.current.0.igmpIfPol.attributes.ifCtrl == "allow-v3-asm,rep-ll"
+    - query_one.current.0.igmpIfPol.attributes.ifCtrl == "rep-ll"
     - query_all is not changed
     - query_all.current | length > 1
 
