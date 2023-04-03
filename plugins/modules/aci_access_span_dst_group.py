@@ -374,9 +374,9 @@ def destination_epg_spec():
                 "AF41",
                 "AF42",
                 "AF43",
-                "unspecified"
-            ]
-        )
+                "unspecified",
+            ],
+        ),
     )
 
 
@@ -385,7 +385,7 @@ def access_interface_spec():
         pod=dict(type="int", required=True, aliases=["pod_id", "pod_number"]),
         node=dict(type="int", required=True, aliases=["node_id"]),
         path=dict(type="str", required=True),
-        mtu=dict(type="int")
+        mtu=dict(type="int"),
     )
 
 
@@ -441,16 +441,11 @@ def main():
     aci.get_existing()
 
     if state == "present":
-
         if destination_epg:
             attributes = dict(
-                tDn="uni/tn-{0}/ap-{1}/epg-{2}".format(
-                    destination_epg.get("tenant"),
-                    destination_epg.get("ap"),
-                    destination_epg.get("epg")
-                ),
+                tDn="uni/tn-{0}/ap-{1}/epg-{2}".format(destination_epg.get("tenant"), destination_epg.get("ap"), destination_epg.get("epg")),
                 ip=destination_epg.get("destination_ip"),
-                srcIpPrefix=destination_epg.get("source_ip")
+                srcIpPrefix=destination_epg.get("source_ip"),
             )
             if destination_epg.get("span_version") is not None:
                 attributes["ver"] = "ver1" if destination_epg.get("span_version") == "version_1" else "ver2"
@@ -467,11 +462,9 @@ def main():
             span_rs_dest = dict(spanRsDestEpg=dict(attributes=attributes))
 
         else:
-            attributes = dict(tDn="topology/pod-{0}/paths-{1}/pathep-[{2}]".format(
-                access_interface.get("pod"),
-                access_interface.get("node"),
-                access_interface.get("path")
-            ))
+            attributes = dict(
+                tDn="topology/pod-{0}/paths-{1}/pathep-[{2}]".format(access_interface.get("pod"), access_interface.get("node"), access_interface.get("path"))
+            )
             if access_interface.get("mtu") is not None:
                 attributes["mtu"] = str(access_interface.get("mtu"))
             span_rs_dest = dict(spanRsDestPathEp=dict(attributes=attributes))
@@ -479,7 +472,7 @@ def main():
         aci.payload(
             aci_class="spanDestGrp",
             class_config=dict(name=destination_group, descr=description, nameAlias=name_alias),
-            child_configs=[dict(spanDest=dict(attributes=dict(name=destination_group), children=[span_rs_dest]))]
+            child_configs=[dict(spanDest=dict(attributes=dict(name=destination_group), children=[span_rs_dest]))],
         )
 
         aci.get_diff(aci_class="spanDestGrp")
