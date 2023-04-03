@@ -40,6 +40,7 @@
     description: Test Config Export Policy
     scheduler: test_scheduler
     export_destination: test_dest
+    start_now: no
   check_mode: yes
   register: cm_create_conf_export
 
@@ -53,11 +54,12 @@
     <<: *aci_conf_policy
   register: nm_create_conf_export_again
 
-- name: Create a Config Export Policy with scheduler
+- name: Create a Config Export Policy with scheduler, set to start_now
   cisco.aci.aci_config_export_policy:
     <<: *aci_info
     name: ansible_export_policy_scheduler
     scheduler: test_scheduler
+    start_now: yes
   register: sched_policy
 
 - name: Create a Config Export Policy with export destination
@@ -76,10 +78,13 @@
     - nm_create_conf_export.current.0.configExportP.attributes.name == "ansible_export_policy"
     - nm_create_conf_export.current.0.configExportP.attributes.descr == "Test Config Export Policy"
     - nm_create_conf_export.current.0.configExportP.attributes.format == "json"
+    - nm_create_conf_export.current.0.configExportP.attributes.adminSt == "untriggered"
     - nm_create_conf_export_again.current.0.configExportP.attributes.name == "ansible_export_policy"
     - nm_create_conf_export_again.current.0.configExportP.attributes.descr == "Test Config Export Policy"
     - nm_create_conf_export_again.current.0.configExportP.attributes.format == "json"
+    - nm_create_conf_export_again.current.0.configExportP.attributes.adminSt == "untriggered"
     - sched_policy.current.0.configExportP.children.1.configRsExportScheduler.attributes.tnTrigSchedPName == "test_scheduler"
+    - sched_policy.sent.configExportP.attributes.adminSt == "triggered"
     - dest_policy.current.0.configExportP.children.0.configRsRemotePath.attributes.tnFileRemotePathName == "test_dest"
 
 # UPDATE CONFIG EXPORT POLICY
