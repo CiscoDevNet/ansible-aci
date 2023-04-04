@@ -236,7 +236,7 @@
     state: query
   register: query_all
 
-- name: Verify remove access span destination groups
+- name: Verify querying access span destination groups
   ansible.builtin.assert:
     that:
     - query_one is not changed
