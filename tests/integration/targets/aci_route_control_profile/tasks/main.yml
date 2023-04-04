@@ -52,7 +52,7 @@
     tenant: ansible_tenant
     l3out: ansible_l3out
     profile: ansible_rtctrl_profile
-    prof_type: global
+    profile_type: global
     autocontinue: false
     state: present
   check_mode: yes
@@ -64,7 +64,7 @@
   register: nm_add_profile
 
 - name: Verify add profile
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_profile is changed
     - nm_add_profile is changed
@@ -79,7 +79,7 @@
   register: add_profile_again
 
 - name: Verify add_profile_again
-  assert:
+  ansible.builtin.assert:
     that:
     - add_profile_again is not changed
 
@@ -89,7 +89,7 @@
     tenant: ansible_tenant
     l3out: ansible_l3out
     profile: ansible_rtctrl_profile2
-    prof_type: global
+    profile_type: global
     autocontinue: false
     state: present
 
@@ -97,11 +97,11 @@
 - name: Change route control profile
   cisco.aci.aci_route_control_profile: &profile_update
     <<: *profile_present
-    prof_type: combinable
+    profile_type: combinable
   register: update_profile
 
 - name: Verify update_profile
-  assert:
+  ansible.builtin.assert:
     that:
     - update_profile is changed
     - update_profile.previous != []
@@ -116,7 +116,7 @@
   register: query_all_profiles
 
 - name: Verify query_all_profiles
-  assert:
+  ansible.builtin.assert:
     that:
     - query_all_profiles is not changed
     - query_all_profiles.current | length > 1
@@ -129,7 +129,7 @@
   register: query_spec_profile
 
 - name: Verify query_spec_profile
-  assert:
+  ansible.builtin.assert:
     that:
     - query_spec_profile is not changed
     - query_spec_profile.current|length == 1
@@ -145,7 +145,7 @@
   register: remove_profile
 
 - name: Verify remove_profile
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_profile is changed
     - remove_profile.current == []
@@ -158,7 +158,7 @@
   register: remove_profile_again
 
 - name: Verify remove_profile
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_profile_again is not changed
     - remove_profile_again.current == []

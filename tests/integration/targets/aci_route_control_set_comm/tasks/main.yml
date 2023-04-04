@@ -51,7 +51,7 @@
   register: nm_add_comm
 
 - name: Verify add community
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_comm is changed
     - nm_add_comm is changed
@@ -65,7 +65,7 @@
   register: add_comm_again
 
 - name: Verify add_comm_again
-  assert:
+  ansible.builtin.assert:
     that:
     - add_comm_again is not changed
 
@@ -78,7 +78,7 @@
   register: update_comm
 
 - name: Verify nm_update_comm
-  assert:
+  ansible.builtin.assert:
     that:
     - update_comm is changed
     - update_comm.sent.rtctrlSetComm.attributes.community == 'extended:as4-nn2:5:17'
@@ -92,7 +92,7 @@
   register: query_all_comms
 
 - name: Verify query_all_comms
-  assert:
+  ansible.builtin.assert:
     that:
     - query_all_comms is not changed
     - query_all_comms.current|length >= 1
@@ -105,7 +105,7 @@
   register: query_spec_comm
 
 - name: Verify query_spec_comm
-  assert:
+  ansible.builtin.assert:
     that:
     - query_spec_comm is not changed
     - query_spec_comm.current|length == 1
@@ -120,7 +120,7 @@
   register: remove_comm
 
 - name: Verify remove_comm
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_comm is changed
     - remove_comm.current == []
@@ -133,7 +133,7 @@
   register: remove_comm_again
 
 - name: Verify remove_comm_again
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_comm_again is not changed
     - remove_comm_again.current == []

@@ -53,7 +53,7 @@
   register: nm_add_match_dest
 
 - name: Verify add match destination
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_match_dest is changed
     - nm_add_match_dest is changed
@@ -69,7 +69,7 @@
   register: add_match_dest_again
 
 - name: Verify add_match_dest_again
-  assert:
+  ansible.builtin.assert:
     that:
     - add_match_dest_again is not changed
 
@@ -94,7 +94,7 @@
   register: update_match_dest
 
 - name: Verify update_match_dest
-  assert:
+  ansible.builtin.assert:
     that:
     - update_match_dest is changed
     - update_match_dest.current.0.rtctrlMatchRtDest.attributes.ip == '10.20.30.0/24'
@@ -110,7 +110,7 @@
   register: query_all_match_destinations
 
 - name: Verify query_all_match_destinations
-  assert:
+  ansible.builtin.assert:
     that:
     - query_all_match_destinations is not changed
     - query_all_match_destinations.current | length > 1
@@ -123,7 +123,7 @@
   register: query_spec_match_dest
 
 - name: Verify query_spec_subject
-  assert:
+  ansible.builtin.assert:
     that:
     - query_spec_match_dest is not changed
     - query_spec_match_dest.current | length == 1
@@ -141,7 +141,7 @@
   register: remove_match_dest
 
 - name: Verify remove_subject
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_match_dest is changed
     - remove_match_dest.current == []
@@ -154,7 +154,7 @@
   register: remove_match_dest_again
 
 - name: Verify remove_match_dest_again
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_match_dest_again is not changed
     - remove_match_dest_again.current == []

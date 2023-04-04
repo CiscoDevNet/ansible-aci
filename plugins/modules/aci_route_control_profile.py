@@ -18,35 +18,35 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   l3out:
     description:
-    - Name of an existing L3Out.
+    - The name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
   description:
     description:
-    - Description of the Route Control Profile.
+    - The description of the Route Control Profile.
     type: str
     aliases: [ descr ]
   name:
     description:
-    - Name of the Route Control Profile
+    - The name of the Route Control Profile.
     type: str
     aliases: [ profile, profile_name, route_control_profile ]
   profile_type:
     description:
-    - Type of the Route Control Profile
-    - For "Match Prefix AND Routing Policy", choose combinable
-    - For "Match Routing Policy Only", choose global
+    - The type of the Route Control Profile.
+    - For "Match Prefix AND Routing Policy", choose combinable.
+    - For "Match Routing Policy Only", choose global.
     - The APIC defaults to combinable when unset during creation.
     type: str
     choices: [ combinable, global ]
   autocontinue:
     description:
-    - Autocontinue
+    - The value of the autocontinue parameter.
     type: bool
   state:
     description:

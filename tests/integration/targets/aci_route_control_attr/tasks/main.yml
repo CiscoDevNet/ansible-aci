@@ -42,7 +42,7 @@
   register: nm_add_attr
 
 - name: Verify add attribute
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_attr is changed
     - nm_add_attr is changed
@@ -55,7 +55,7 @@
   register: add_attr_again
 
 - name: Verify add_attr_again
-  assert:
+  ansible.builtin.assert:
     that:
     - add_attr_again is not changed
 
@@ -74,7 +74,7 @@
   register: query_all_attrs
 
 - name: Verify query_all_attrs
-  assert:
+  ansible.builtin.assert:
     that:
     - query_all_attrs is not changed
     - query_all_attrs.current | length > 1
@@ -87,7 +87,7 @@
   register: query_spec_attr
 
 - name: Verify query_spec_attr
-  assert:
+  ansible.builtin.assert:
     that:
     - query_spec_attr is not changed
     - query_spec_attr.current | length == 1
@@ -101,7 +101,7 @@
   register: remove_attr
 
 - name: Verify remove_attr
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_attr is changed
     - remove_attr.current == []
@@ -114,7 +114,7 @@
   register: remove_attr_again
 
 - name: Verify remove_attr_again
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_attr_again is not changed
     - remove_attr_again.current == []

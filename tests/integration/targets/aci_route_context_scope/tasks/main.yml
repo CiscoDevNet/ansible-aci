@@ -118,7 +118,7 @@
   register: nm_add_scope
 
 - name: Verify add scope
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_scope is changed
     - nm_add_scope is changed
@@ -131,7 +131,7 @@
   register: add_scope_again
 
 - name: Verify add_scope_again
-  assert:
+  ansible.builtin.assert:
     that:
     - add_scope_again is not changed
 
@@ -153,7 +153,7 @@
   register: update_scope
 
 - name: Verify update_context
-  assert:
+  ansible.builtin.assert:
     that:
     - update_scope is changed
     - update_scope.previous != []
@@ -167,7 +167,7 @@
   register: query_all_scopes
 
 - name: Verify query_all_scopes
-  assert:
+  ansible.builtin.assert:
     that:
     - query_all_scopes is not changed
     - query_all_scopes.current | length > 1
@@ -180,7 +180,7 @@
   register: query_spec_scope
 
 - name: Verify query_spec_scope
-  assert:
+  ansible.builtin.assert:
     that:
     - query_spec_scope is not changed
     - query_spec_scope.current | length == 1
@@ -195,7 +195,7 @@
   register: remove_scope
 
 - name: Verify remove_scope
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_scope is changed
     - remove_scope.current == []
@@ -208,7 +208,7 @@
   register: remove_scope_again
 
 - name: Verify remove_scope_again
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_scope_again is not changed
     - remove_scope_again.current == []

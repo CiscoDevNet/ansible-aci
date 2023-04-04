@@ -42,7 +42,7 @@
   register: nm_add_subject
 
 - name: Verify add subject
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_subject is changed
     - nm_add_subject is changed
@@ -55,7 +55,7 @@
   register: add_subject_again
 
 - name: Verify add_subject_again
-  assert:
+  ansible.builtin.assert:
     that:
     - add_subject_again is not changed
 
@@ -74,7 +74,7 @@
   register: query_all_subjects
 
 - name: Verify query_all_subjects
-  assert:
+  ansible.builtin.assert:
     that:
     - query_all_subjects is not changed
     - query_all_subjects.current|length > 1
@@ -87,7 +87,7 @@
   register: query_spec_subject
 
 - name: Verify query_spec_subject
-  assert:
+  ansible.builtin.assert:
     that:
     - query_spec_subject is not changed
     - query_spec_subject.current|length == 1
@@ -101,7 +101,7 @@
   register: remove_subject
 
 - name: Verify remove_subject
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_subject is changed
     - remove_subject.current == []
@@ -114,7 +114,7 @@
   register: remove_subject_again
 
 - name: Verify remove_subject_again
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_subject_again is not changed
     - remove_subject_again.current == []

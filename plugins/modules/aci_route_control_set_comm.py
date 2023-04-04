@@ -18,26 +18,26 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   attr_name:
     description:
-    - Attribute name
+    - The attribute name.
     type: str
     aliases: [ attribute_name ]
   description:
     description:
-    - Description of the Set Community object
+    - The description of the Set Community object.
     type: str
     aliases: [ descr ]
   community:
     description:
-    - Community to set
+    - The community to set.
     type: str
   set_criteria:
     description:
-    - Whether to append or replace communities
+    - Whether to append or replace communities.
     type: str
     choices: [ append, replace, none ]
   state:
@@ -254,8 +254,8 @@ def main():
         subclass_2=dict(
             aci_class="rtctrlSetComm",
             aci_rn="scomm",
-            module_object=name,
-            target_filter={"name": name},
+            module_object=None,
+            target_filter=None,
         ),
     )
 

@@ -20,7 +20,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant: &tenant_absent
+  cisco.aci.aci_tenant: &tenant_absent
     <<: *aci_info
     tenant: ansible_tenant
     state: absent
@@ -34,14 +34,14 @@
     state: present
 
 - name: Add a new ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     tenant: ansible_tenant
     description: Ansible tenant
     state: present
 
 - name: Add a new l3out
-  aci_l3out:
+  cisco.aci.aci_l3out:
     <<: *aci_info
     tenant: ansible_tenant
     name: ansible_l3out
@@ -53,7 +53,7 @@
     state: present
 
 - name: Add a new ExtEpg
-  aci_l3out_extepg:
+  cisco.aci.aci_l3out_extepg:
     <<: *aci_info
     tenant: ansible_tenant
     l3out: ansible_l3out
@@ -108,7 +108,7 @@
     state: present
 
 - name: Verify add route control profile binding
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_binding is changed
     - nm_add_binding is changed
@@ -122,7 +122,7 @@
   register: add_binding_again
 
 - name: Verify add_binding_again
-  assert:
+  ansible.builtin.assert:
     that:
     - add_binding_again is not changed
 
@@ -134,7 +134,7 @@
   register: update_binding
 
 - name: Verify update_binding
-  assert:
+  ansible.builtin.assert:
     that:
     - update_binding is changed
     - update_binding.sent.l3extRsInstPToProfile.attributes.tnRtctrlProfileName == 'ansible_rtctrl_profile2'
@@ -148,7 +148,7 @@
   register: query_all_bindings
 
 - name: Verify query_all_bindings
-  assert:
+  ansible.builtin.assert:
     that:
     - query_all_bindings is not changed
     - query_all_bindings.current | length > 1
@@ -161,7 +161,7 @@
   register: query_spec_binding
 
 - name: Verify query_spec_binding
-  assert:
+  ansible.builtin.assert:
     that:
     - query_spec_binding is not changed
     - query_spec_binding.current|length == 1
@@ -175,7 +175,7 @@
   register: remove_binding
 
 - name: Verify remove_binding
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_binding is changed
     - remove_binding.current == []
@@ -190,7 +190,7 @@
   register: remove_binding_again
 
 - name: Verify remove_binding_again
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_binding_again is not changed
     - remove_binding_again.current == []

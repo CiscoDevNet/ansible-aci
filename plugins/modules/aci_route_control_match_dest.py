@@ -220,7 +220,7 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
 
-import re
+import ipaddress
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
@@ -258,11 +258,14 @@ def main():
     state = module.params.get("state")
 
     if ip is not None:
-        ipv4_regex = r"^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/(?:[0-9]|[1-2][0-9]|3[0-2])$"
-        if bool(re.match(ipv4_regex, ip)):
-            mask = int(ip.split("/")[1])
+        if "/" not in ip:
+            aci.fail_json("ip must include the prefix length, e.g. '10.20.30.0/24' or 'fd80::/64'")
         else:
-            aci.fail_json("ip must be in CIDR format, e.g. 10.20.30.0/24")
+            try:
+                ipaddress.ip_interface(ip)
+            except ValueError:
+                aci.fail_json("ip must be a valid IPv4 or IPv6 network")
+            mask = int(ip.split("/")[1])
 
     if greater_than is not None:
         if greater_than <= mask:

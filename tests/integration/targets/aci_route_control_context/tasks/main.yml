@@ -74,7 +74,7 @@
   register: nm_add_context
 
 - name: Verify add context
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_context is changed
     - nm_add_context is changed
@@ -89,7 +89,7 @@
   register: add_context_again
 
 - name: Verify add_context_again
-  assert:
+  ansible.builtin.assert:
     that:
     - add_context_again is not changed
 
@@ -112,7 +112,7 @@
   register: update_context
 
 - name: Verify update_context
-  assert:
+  ansible.builtin.assert:
     that:
     - update_context is changed
     - update_context.previous != []
@@ -127,7 +127,7 @@
   register: query_all_contexts
 
 - name: Verify query_all_contexts
-  assert:
+  ansible.builtin.assert:
     that:
     - query_all_contexts is not changed
     - query_all_contexts.current | length > 1
@@ -140,7 +140,7 @@
   register: query_spec_context
 
 - name: Verify query_spec_context
-  assert:
+  ansible.builtin.assert:
     that:
     - query_spec_context is not changed
     - query_spec_context.current | length == 1
@@ -156,7 +156,7 @@
   register: remove_context
 
 - name: Verify remove_context
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_context is changed
     - remove_context.current == []
@@ -169,7 +169,7 @@
   register: remove_context_again
 
 - name: Verify remove_context_again
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_context_again is not changed
     - remove_context_again.current == []
