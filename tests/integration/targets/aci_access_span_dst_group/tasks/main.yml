@@ -36,7 +36,7 @@
 
 # TEST CREATE AND UPDATE DESTINATION GROUPS
 
-- name: Add access span destination group type epg
+- name: Add access span destination group type epg ( check mode )
   cisco.aci.aci_access_span_dst_group: &add_ansible_group_1
     <<: *aci_info
     destination_group: ansible_group_1
@@ -48,43 +48,58 @@
       ap: ansible_test
       epg: ansible_test
     state: present
-  register: add_ansible_group_1
+  check_mode: true
+  register: cm_add_ansible_group_1
+
+- name: Add access span destination group type epg
+  cisco.aci.aci_access_span_dst_group:
+    <<: *add_ansible_group_1
+  register: nm_add_ansible_group_1
 
 - name: Add span ansible_group again
   cisco.aci.aci_access_span_dst_group:
     <<: *add_ansible_group_1
-  register: add_ansible_group_1_again
+  register: nm_add_ansible_group_1_again
 
 - name: Verify add access span destination group type epg
   ansible.builtin.assert:
     that:
-    - add_ansible_group_1 is changed
-    - add_ansible_group_1.previous == []
-    - add_ansible_group_1.current.0.spanDestGrp.attributes.name == "ansible_group_1"
-    - add_ansible_group_1.current.0.spanDestGrp.attributes.descr == "test span epg"
-    - add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group_1"
-    - add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "unspecified"
-    - add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
-    - add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
-    - add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1518"
-    - add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
-    - add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.tDn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test"
-    - add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "64"
-    - add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver2"
-    - add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
-    - add_ansible_group_1_again is not changed
-    - add_ansible_group_1_again.current.0.spanDestGrp.attributes.name == "ansible_group_1"
-    - add_ansible_group_1_again.current.0.spanDestGrp.attributes.descr == "test span epg"
-    - add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group_1"
-    - add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "unspecified"
-    - add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
-    - add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
-    - add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1518"
-    - add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
-    - add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.tDn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test"
-    - add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "64"
-    - add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver2"
-    - add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
+    - cm_add_ansible_group_1 is changed
+    - cm_add_ansible_group_1.current == []
+    - cm_add_ansible_group_1.previous == []
+    - cm_add_ansible_group_1.proposed.spanDestGrp.attributes.name == "ansible_group_1"
+    - cm_add_ansible_group_1.proposed.spanDestGrp.attributes.descr == "test span epg"
+    - cm_add_ansible_group_1.proposed.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group_1"
+    - cm_add_ansible_group_1.proposed.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
+    - cm_add_ansible_group_1.proposed.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
+    - cm_add_ansible_group_1.proposed.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.tDn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test"
+    - nm_add_ansible_group_1 is changed
+    - nm_add_ansible_group_1.previous == []
+    - nm_add_ansible_group_1.current.0.spanDestGrp.attributes.name == "ansible_group_1"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.attributes.descr == "test span epg"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group_1"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "unspecified"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1518"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.tDn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "64"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver2"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
+    - nm_add_ansible_group_1_again is not changed
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.attributes.name == "ansible_group_1"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.attributes.descr == "test span epg"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group_1"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "unspecified"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1518"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.tDn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "64"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver2"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
 
 - name: Change span ansible_group
   cisco.aci.aci_access_span_dst_group: &change_ansible_group_1
@@ -247,45 +262,54 @@
 
 # TEST REMOVAL DESTINATION GROUPS
 
-- name: Remove span ansible_group
-  cisco.aci.aci_access_span_dst_group:
+- name: Remove span ansible_group ( check mode )
+  cisco.aci.aci_access_span_dst_group: &remove_ansible_group_1
     <<: *add_ansible_group_1
     state: absent
-  register: remove_ansible_group_1
+  check_mode: true
+  register: cm_remove_ansible_group_1
+
+- name: Remove span ansible_group
+  cisco.aci.aci_access_span_dst_group:
+    <<: *remove_ansible_group_1
+  register: nm_remove_ansible_group_1
 
 - name: Remove span ansible_group again
   cisco.aci.aci_access_span_dst_group:
-    <<: *add_ansible_group_1
-    state: absent
-  register: remove_ansible_group_1_again
+    <<: *remove_ansible_group_1
+  register: nm_remove_ansible_group_1_again
 
 - name: Remove span ansible_group_2
   cisco.aci.aci_access_span_dst_group:
     <<: *add_ansible_group_2
     state: absent
-  register: remove_ansible_group_2
+  register: nm_remove_ansible_group_2
 
 - name: Remove span ansible_group_3
   cisco.aci.aci_access_span_dst_group:
     <<: *add_ansible_group_3
     state: absent
-  register: remove_ansible_group_3
+  register: nm_remove_ansible_group_3
 
 - name: Verify remove access span destination groups
   ansible.builtin.assert:
     that:
-    - remove_ansible_group_1 is changed
-    - remove_ansible_group_1.current == []
-    - remove_ansible_group_1.previous | length == 1
-    - remove_ansible_group_1_again is not changed
-    - remove_ansible_group_1_again.current == []
-    - remove_ansible_group_1_again.previous == []
-    - remove_ansible_group_2 is changed
-    - remove_ansible_group_2.current == []
-    - remove_ansible_group_2.previous | length == 1
-    - remove_ansible_group_3 is changed
-    - remove_ansible_group_3.current == []
-    - remove_ansible_group_3.previous | length == 1
+    - cm_remove_ansible_group_1 is changed
+    - cm_remove_ansible_group_1.current | length == 1
+    - cm_remove_ansible_group_1.previous | length == 1
+    - cm_remove_ansible_group_1.proposed == {}
+    - nm_remove_ansible_group_1 is changed
+    - nm_remove_ansible_group_1.current == []
+    - nm_remove_ansible_group_1.previous | length == 1
+    - nm_remove_ansible_group_1_again is not changed
+    - nm_remove_ansible_group_1_again.current == []
+    - nm_remove_ansible_group_1_again.previous == []
+    - nm_remove_ansible_group_2 is changed
+    - nm_remove_ansible_group_2.current == []
+    - nm_remove_ansible_group_2.previous | length == 1
+    - nm_remove_ansible_group_3 is changed
+    - nm_remove_ansible_group_3.current == []
+    - nm_remove_ansible_group_3.previous | length == 1
 
 # TEST INCORRECT MODULE INPUT
 
