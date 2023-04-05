@@ -51,9 +51,9 @@
     aaa_password: 12!Ab:cD!34
     description: Ansible test user
     email: ansible@ansible.lan
-    enabled: yes
+    enabled: true
     expiration: never
-    expires: no
+    expires: false
     first_name: Ansible
     last_name: User
     phone: 1-234-555-678
@@ -66,7 +66,7 @@
     name: anstest-security-domain
     aaa_user: ansible
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_sec_domain_present
 
 - name: Assertions check for add user domain to aaa_user with check mode
@@ -93,7 +93,7 @@
 - name: Add user domain to aaa_user with check mode - idempotency works
   cisco.aci.aci_aaa_user_domain:
     <<: *cm_sec_domain_present
-  check_mode: yes
+  check_mode: true
   register: cm_idempotency_sec_domain_present
 
 - name: Idempotency assertions check for add user domain to aaa_user with check mode
@@ -177,7 +177,7 @@
   cisco.aci.aci_aaa_user_domain: &cm_sec_domain_absent
     <<: *nm_sec_domain_present
     state: absent
-  check_mode: yes
+  check_mode: true
   register: cm_sec_domain_absent
 
 - name: Assertions check for removing user domain from a aaa_user with check mode
@@ -207,7 +207,7 @@
   cisco.aci.aci_aaa_user_domain:
     <<: *nm_sec_domain_absent
     state: absent
-  check_mode: yes
+  check_mode: true
   register: idempotency_sec_domain_absent
 
 - name: Idempotency assertions check for removing user domain

@@ -533,7 +533,7 @@
               direction: "export"
               l3out: "anstest_l3out"
           state: present
-        check_mode: yes
+        check_mode: true
         register: cm_if_rtctrl_present
 
       - name: Assertions check for add Route Control Profile to the ansible_interface_profile (version >= 4) - check mode
@@ -554,7 +554,7 @@
               l3out: "anstest_l3out"
           state: present
         register: nm_if_rtctrl_present_missing_param
-        ignore_errors: yes
+        ignore_errors: true
 
       - name: Assertions check for add Route Control Profile to the ansible_interface_profile (version >= 4) - normal mode - missing param
         assert:
@@ -642,7 +642,7 @@
               direction: "export"
               l3out: "anstest_l3out"
           state: present
-        check_mode: yes
+        check_mode: true
         register: cm_ln_rtctrl_present
 
       - name: Assertions check for add BGP Peer to the Node Profile level (version >= 4) - check mode
@@ -697,7 +697,7 @@
               l3out: "anstest_l3out"
           state: present
         register: nm_ln_rtctrl_present_missing_param
-        ignore_errors: yes
+        ignore_errors: true
 
       - name: Assertions check for add BGP Peer to the Node Profile level (version >= 4) - normal mode - missing param
         assert:

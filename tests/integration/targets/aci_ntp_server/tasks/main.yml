@@ -46,9 +46,9 @@
     description: 'Ansible test server'
     min_poll: 5
     max_poll: 10
-    preferred: yes
+    preferred: true
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_add_server
 
 - name: Add NTP server (normal mode)
@@ -59,7 +59,7 @@
 - name: Add NTP server again (check mode)
   cisco.aci.aci_ntp_server:
     <<: *server_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_server_again
 
 - name: Add NTP server again (normal mode)
@@ -96,11 +96,11 @@
     description: 'Ansible test server'
     min_poll: 6
     max_poll: 9
-    preferred: yes
+    preferred: true
     epg_type: oob
     epg_name: default
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_modify_server
 
 - name: Modify server (normal mode)
@@ -111,7 +111,7 @@
 - name: Modify server again (check mode)
   cisco.aci.aci_ntp_server:
     <<: *server_changed
-  check_mode: yes
+  check_mode: true
   register: cm_modify_server_again
 
 - name: Modify server again (normal mode)
@@ -147,7 +147,7 @@
     <<: *aci_info
     ntp_policy: ansible_ntp_policy
     state: query
-  check_mode: yes
+  check_mode: true
   register: cm_query_all_servers
 
 - name: Query all servers (normal mode)
@@ -166,7 +166,7 @@
   cisco.aci.aci_ntp_server:
     <<: *server_query_all
     ntp_server: 10.20.30.40
-  check_mode: yes
+  check_mode: true
   register: cm_query_server
 
 - name: Query our server (normal mode)
@@ -195,7 +195,7 @@
     ntp_policy: ansible_ntp_policy
     ntp_server: 10.20.30.40
     state: absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_server
 
 - name: Remove server (normal mode)
@@ -206,7 +206,7 @@
 - name: Remove server again (check mode)
   cisco.aci.aci_ntp_server:
     <<: *server_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_server_again
 
 - name: Remove server again (normal mode)

@@ -50,7 +50,7 @@
     tenant: ansible_test
     ospf: ansible_ospf
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_add_ospf_interface_policy
 
 - name: Add ospf interface policy (normal mode)
@@ -59,7 +59,7 @@
 
 - name: Add ospf interface policy again (check_mode)
   cisco.aci.aci_interface_policy_ospf: *interface_policy_ospf_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_ospf_interface_policy_again
 
 - name: Add ospf interface policy again (normal mode)
@@ -81,7 +81,7 @@
   cisco.aci.aci_interface_policy_ospf:
     <<: *interface_policy_ospf_present
     description: Ansible test ospf interface policy
-  check_mode: yes
+  check_mode: true
   register: cm_add_ospf_descr
 
 - name: Change description of ospf interface policy (normal mode)
@@ -94,7 +94,7 @@
   cisco.aci.aci_interface_policy_ospf:
     <<: *interface_policy_ospf_present
     description: Ansible test ospf interface policy
-  check_mode: yes
+  check_mode: true
   register: cm_add_ospf_descr_again
 
 - name: Change description of ospf interface policy again (normal mode)
@@ -115,7 +115,7 @@
 # ADD OSPF INTERFACE POLICY AGAIN
 - name: Add ospf interface policy again with no description (check_mode)
   cisco.aci.aci_interface_policy_ospf: *interface_policy_ospf_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_ospf_again_no_descr
 
 - name: Add ospf interface policy again with no description (normal mode)
@@ -141,7 +141,7 @@
     output_level: '{{ aci_output_level | default("info") }}'
     tenant: ansible_test
     state: query
-  check_mode: yes
+  check_mode: true
   register: cm_query_all_ospfs
 
 - name: Query all ospfs (normal mode)
@@ -163,7 +163,7 @@
     <<: *interface_policy_ospf_query
     tenant: ansible_test
     ospf: ansible_ospf
-  check_mode: yes
+  check_mode: true
   register: cm_query_ospf
 
 - name: Query our ospf
@@ -184,7 +184,7 @@
 # REMOVE OSPF INTERFACE POLICY
 - name: Remove ospf (check_mode)
   cisco.aci.aci_interface_policy_ospf: *interface_policy_ospf_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_ospf
 
 - name: Remove ospf (normal mode)
@@ -193,7 +193,7 @@
 
 - name: Remove ospf again (check_mode)
   cisco.aci.aci_interface_policy_ospf: *interface_policy_ospf_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_ospf_again
 
 - name: Remove ospf again (normal mode)
@@ -214,7 +214,7 @@
   cisco.aci.aci_interface_policy_ospf:
     <<: *interface_policy_ospf_query
     ospf: ansible_ospf
-  check_mode: yes
+  check_mode: true
   register: cm_query_non_ospf
 
 - name: Query non-existing ospf (normal mode)

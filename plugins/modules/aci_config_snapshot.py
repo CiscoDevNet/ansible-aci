@@ -37,7 +37,7 @@ options:
   include_secure:
     description:
     - Determines if secure information should be included in the backup.
-    - The APIC defaults to C(yes) when unset.
+    - The APIC defaults to C(true) when unset.
     type: bool
   max_count:
     description:

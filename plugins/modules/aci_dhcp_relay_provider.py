@@ -36,7 +36,7 @@ options:
     - Type of EPG the DHCP server is in
     type: str
     choices: [ epg, l2_external, l3_external, dn ]
-    required: yes
+    required: true
   anp:
     description:
     - Application Profile the EPG is in.

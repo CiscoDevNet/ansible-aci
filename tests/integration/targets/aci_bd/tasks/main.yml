@@ -78,7 +78,7 @@
       <<: *aci_tenant_present
       bd: anstest
       description: Ansible Test
-    check_mode: yes
+    check_mode: true
     register: bd_present_check_mode
 
   - name: create bd - creation works
@@ -137,7 +137,7 @@
     cisco.aci.aci_bd:
       <<: *aci_bd_present
       tenant: "{{ fake_var | default(omit) }}"
-    ignore_errors: yes
+    ignore_errors: true
     register: bd_present_missing_param
 
   - name: present asserts (<v4.2)
@@ -257,7 +257,7 @@
     cisco.aci.aci_bd: &aci_bd_absent
       <<: *aci_bd_present
       state: absent
-    check_mode: yes
+    check_mode: true
     register: bd_absent_check_mode
 
   - name: delete bd - delete works
@@ -279,7 +279,7 @@
     cisco.aci.aci_bd:
       <<: *aci_bd_absent
       bd: "{{ fakevar | default(omit) }}"
-    ignore_errors: yes
+    ignore_errors: true
     register: bd_absent_missing_param
 
   - name: asserts for deletion task

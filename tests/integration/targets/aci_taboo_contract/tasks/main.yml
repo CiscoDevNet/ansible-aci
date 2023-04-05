@@ -44,7 +44,7 @@
     tenant: ansible_test
     taboo_contract: taboo_contract_test
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_add_taboo_contract
 
 - name: Add taboo contract (normal mode)
@@ -68,7 +68,7 @@
 
 - name: Add taboo_contract again (check_mode)
   cisco.aci.aci_taboo_contract: *taboo_contract_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_taboo_contract_again
 
 - name: Add taboo contract again (normal mode)
@@ -88,7 +88,7 @@
   cisco.aci.aci_taboo_contract:
     <<: *taboo_contract_present
     description: Ansible test taboo contract
-  check_mode: yes
+  check_mode: true
   register: cm_add_taboo_contract_descr
 
 - name: Change description of taboo contract (normal mode)
@@ -114,7 +114,7 @@
   cisco.aci.aci_taboo_contract:
     <<: *taboo_contract_present
     description: Ansible test taboo contract
-  check_mode: yes
+  check_mode: true
   register: cm_add_taboo_contract_descr_again
 
 - name: Change description of taboo contract again (normal mode)
@@ -134,7 +134,7 @@
 # ADD TABOO CONTRACT AGAIN
 - name: Add taboo contract again with no description (check_mode)
   cisco.aci.aci_taboo_contract: *taboo_contract_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_taboo_contract_again_no_descr
 
 - name: Add taboo contract again with no description (normal mode)
@@ -160,7 +160,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     state: query
-  check_mode: yes
+  check_mode: true
   register: cm_query_all_taboo_contracts
 
 - name: Query all taboo contracts (normal mode)
@@ -182,7 +182,7 @@
     <<: *taboo_contract_query
     tenant: ansible_test
     taboo_contract: taboo_contract_test
-  check_mode: yes
+  check_mode: true
   register: cm_query_taboo_contract
 
 - name: Query our taboo contract
@@ -206,7 +206,7 @@
 # REMOVE TABOO CONTRACT
 - name: Remove taboo contract (check_mode)
   cisco.aci.aci_taboo_contract: *taboo_contract_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_taboo_contract
 
 - name: Remove taboo contract (normal mode)
@@ -225,7 +225,7 @@
 
 - name: Remove taboo contract again (check_mode)
   cisco.aci.aci_taboo_contract: *taboo_contract_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_taboo_contract_again
 
 - name: Remove taboo contract again (normal mode)
@@ -249,7 +249,7 @@
     <<: *taboo_contract_query
     tenant: ansible_test
     taboo_contract: taboo_contract_test
-  check_mode: yes
+  check_mode: true
   register: cm_query_non_taboo_contract
 
 - name: Query non-existing taboo contract (normal mode)
@@ -280,7 +280,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     state: present
-  ignore_errors: yes
+  ignore_errors: true
   register: error_on_missing_required_param
 
 - name: Verify error_on_missing_required_param

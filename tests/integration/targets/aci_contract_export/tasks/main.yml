@@ -53,7 +53,7 @@
     contract: src_contract1
     destination_tenant: ansible_test_2
     name: testcif1
-  check_mode: yes
+  check_mode: true
   register: cm_add_intf
 
 - name: Create contract interface (normal_mode)

@@ -36,7 +36,7 @@ options:
     - Determines if this is a provided or consumed contract or a consumed contract interface.
     type: str
     aliases: [ contract_type ]
-    required: yes
+    required: true
     choices: [ provider, consumer, interface ]
   state:
     description:

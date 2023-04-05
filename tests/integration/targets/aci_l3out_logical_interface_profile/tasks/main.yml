@@ -62,7 +62,7 @@
     cisco.aci.aci_l3out_logical_interface_profile: &intf_present
       <<: *np_present
       interface_profile: INTFS
-    check_mode: yes
+    check_mode: true
     register: cm_add_intf
 
   - name: Add interface profile (normal_mode)

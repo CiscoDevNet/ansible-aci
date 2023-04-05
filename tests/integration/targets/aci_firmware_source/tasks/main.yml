@@ -34,7 +34,7 @@
     url: foobar.cisco.com/download/cisco/aci/aci-msft-pkg-3.1.1i.zip
     url_protocol: http
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_add_source
 
 - name: Add source (normal mode)
@@ -61,7 +61,7 @@
 
 - name: Add source again (check_mode)
   aci_firmware_source: *source_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_source_again
 
 - name: Add source again (normal mode)
@@ -91,7 +91,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     state: query
-  check_mode: yes
+  check_mode: true
   register: cm_query_all_sources
 
 - name: Query all sources (normal mode)
@@ -111,7 +111,7 @@
   aci_firmware_source:
     <<: *source_query
     source: ansible_test_1
-  check_mode: yes
+  check_mode: true
   register: cm_query_source
 
 - name: Query our source (normal mode)
@@ -135,7 +135,7 @@
     <<: *source_query
     source: ansible_test_1
     state: absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_source
 
 - name: Remove source (normal mode)
@@ -152,7 +152,7 @@
 
 - name: Remove source again (check_mode)
   aci_firmware_source: *source_remove
-  check_mode: yes
+  check_mode: true
   register: cm_remove_source_again
 
 - name: Remove source again (normal mode)
@@ -170,7 +170,7 @@
   aci_firmware_source:
     <<: *source_query
     source: non_existing_source
-  check_mode: yes
+  check_mode: true
   register: cm_query_non_source
 
 - name: Query non-existing source (normal mode)
@@ -198,7 +198,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     state: present
-  ignore_errors: yes
+  ignore_errors: true
   register: error_on_missing_required_param
 
 - name: Verify error_on_missing_required_param

@@ -43,17 +43,17 @@ options:
     description:
     - The name of tenant.
     type: str
-    required: yes
+    required: true
   cloud_context_profile:
     description:
     - The name of cloud context profile.
     type: str
-    required: yes
+    required: true
   cidr:
     description:
     - Address of cloud cidr.
     type: str
-    required: yes
+    required: true
   availability_zone:
     description:
     - The cloud zone which is attached to the given cloud context profile.
@@ -83,7 +83,7 @@ EXAMPLES = r"""
     host: apic
     username: userName
     password: somePassword
-    validate_certs: no
+    validate_certs: false
     tenant: anstest
     cloud_context_profile: aws_cloudCtxProfile
     cidr: '10.10.0.0/16'
@@ -96,7 +96,7 @@ EXAMPLES = r"""
     host: apic
     username: userName
     password: somePassword
-    validate_certs: no
+    validate_certs: false
     tenant: anstest
     cloud_context_profile: ctx_profile_1
     cidr: '10.10.0.0/16'
@@ -109,7 +109,7 @@ EXAMPLES = r"""
     host: apic
     username: userName
     password: somePassword
-    validate_certs: no
+    validate_certs: false
     tenant: anstest
     cloud_context_profile: ctx_profile_1
     cidr: '10.10.0.0/16'

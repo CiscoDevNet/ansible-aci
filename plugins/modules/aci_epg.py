@@ -63,7 +63,7 @@ options:
     description:
     - Whether or not the EPG is part of the Preferred Group and can communicate without contracts.
     - This is very convenient for migration scenarios, or when ACI is used for network automation but not for policy.
-    - The APIC defaults to C(no) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   monitoring_policy:
     description:
@@ -119,7 +119,7 @@ EXAMPLES = r"""
     description: Web Intranet EPG
     bd: prod_bd
     monitoring_policy: default
-    preferred_group: yes
+    preferred_group: true
     state: present
   delegate_to: localhost
 
@@ -153,8 +153,8 @@ EXAMPLES = r"""
     description: Web Intranet EPG
     bd: prod_bd
     monitoring_policy: default
-    preferred_group: yes
-    useg: yes
+    preferred_group: true
+    useg: 'yes'
     state: present
   delegate_to: localhost
 
@@ -163,7 +163,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    validate_certs: no
+    validate_certs: false
     tenant: production
     app_profile: intranet
     epg: web_epg
@@ -197,7 +197,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    validate_certs: no
+    validate_certs: false
     epg: web_epg
     state: query
   delegate_to: localhost
@@ -208,7 +208,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    validate_certs: no
+    validate_certs: false
     ap: ticketing
     state: query
   delegate_to: localhost

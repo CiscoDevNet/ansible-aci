@@ -67,7 +67,7 @@
       address: 10.0.0.0/16
       cloud_context_profile: ctx_profile_1
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_non_primary_cidr
 
   - name: Create non_primary CIDR (normal_mode)
@@ -121,7 +121,7 @@
       address: 10.11.0.0/16
       cloud_context_profile: ctx_profile_1
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_change_to_non_primary_cidr
 
   - name: Change primary CIDR to non_primary (normal_mode)
@@ -131,7 +131,7 @@
       address: 10.11.0.0/16
       cloud_context_profile: ctx_profile_1
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: nm_change_to_non_primary_cidr
 
   - name: Verify cm_primary_cidr and nm_change_to_non_primary_cidr
@@ -148,7 +148,7 @@
       address: 10.11.0.0/16
       cloud_context_profile: ctx_profile_1
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_primary_cidr
 
   - name: Remove primary CIDR (normal_mode)
@@ -158,7 +158,7 @@
       address: 10.11.0.0/16
       cloud_context_profile: ctx_profile_1
       state: absent
-    ignore_errors: yes
+    ignore_errors: true
     register: nm_remove_primary_cidr
 
   - name: Verify cm_remove_primary_cidr and nm_remove_primary_cidr
@@ -268,7 +268,7 @@
       cloud_context_profile: ctx_profile_1
       address: non_exsisting
       state: query
-    ignore_errors: yes
+    ignore_errors: true
     register: query_non_existing
 
   - name: Verify query_non_existing
@@ -283,7 +283,7 @@
       address: 10.0.0.0/16
       cloud_context_profile: ctx_profile_1
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_non_primary_cidr
 
   - name: Remove non_primary CIDR(normal_mode)

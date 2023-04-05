@@ -89,7 +89,7 @@
       name: subnet1
       subnet: 10.0.0.0/16
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_epg_present
 
   - name: Create aci cloud external epg selector (normal mode)

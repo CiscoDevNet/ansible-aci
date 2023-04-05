@@ -20,7 +20,7 @@
       fvTenant:
         attributes:
           name: ansible_test
-  ignore_errors: yes
+  ignore_errors: true
   register: error_on_name_resolution
 
 - name: Verify error_on_name_resolution
@@ -48,7 +48,7 @@
       fvTenant:
         attributes:
           name: ansible_test
-  ignore_errors: yes
+  ignore_errors: true
   register: error_on_missing_required_param
 
 - name: Verify error_on_missing_required_param
@@ -76,7 +76,7 @@
     content:
       fvTenant:
         children:
-  ignore_errors: yes
+  ignore_errors: true
   register: error_on_missing_attributes
 
 - name: Verify error_on_missing_attributes
@@ -109,7 +109,7 @@
         attributes:
           name: ansible_test
           descr: This is an [invalid] description
-  ignore_errors: yes
+  ignore_errors: true
   register: error_on_input_validation
 
 - name: Verify error_on_input_validation
@@ -142,7 +142,7 @@
         attributes:
           name: ansible_test
           description: This is an "invalid" description
-  ignore_errors: yes
+  ignore_errors: true
   register: error_on_invalid_attributes
 
 - name: Verify error_on_invalid_attributes
@@ -174,7 +174,7 @@
       fvFoobar:
         attributes:
           name: ansible_test
-  ignore_errors: yes
+  ignore_errors: true
   register: error_on_invalid_object
 
 - name: Verify error_on_invalid_object

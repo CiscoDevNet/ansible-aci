@@ -57,7 +57,7 @@
     owner_key: ansible_key
     owner_tag: ansible_tag
     output_path: "{{ ansible_host }}_cm_add_tenant.json"
-  check_mode: yes
+  check_mode: true
   register: cm_add_tenant
 
 - name: Dump content of files
@@ -74,7 +74,7 @@
   cisco.aci.aci_tenant:
     <<: *tenant_present
     output_path: "{{ ansible_host }}_cm_add_tenant_again.json"
-  check_mode: yes
+  check_mode: true
   register: cm_add_tenant_again
 
 - name: Add tenant again (normal mode)
@@ -129,7 +129,7 @@
     owner_key: ansible_key_changed
     owner_tag: ansible_tag_changed
     output_path: "{{ ansible_host }}_cm_add_tenant_descr.json"
-  check_mode: yes
+  check_mode: true
   register: cm_add_tenant_descr
 
 - name: Change description and annotation/owner_tag/owner_key of tenant (normal mode)
@@ -150,7 +150,7 @@
     owner_key: ansible_key_changed
     owner_tag: ansible_tag_changed
     output_path: "{{ ansible_host }}_cm_add_tenant_descr_again.json"
-  check_mode: yes
+  check_mode: true
   register: cm_add_tenant_descr_again
 
 - name: Change description and annotation of tenant again (normal mode)
@@ -206,7 +206,7 @@
     annotation: ansible_test_changed
     owner_key: ansible_key_changed
     owner_tag: ansible_tag_changed
-  check_mode: yes
+  check_mode: true
   register: cm_add_tenant_again_no_descr
 
 - name: Add tenant again with no description (normal mode)
@@ -235,7 +235,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     state: query
-  check_mode: yes
+  check_mode: true
   register: cm_query_all_tenants
 
 - name: Query all tenants (normal mode)
@@ -256,7 +256,7 @@
   cisco.aci.aci_tenant:
     <<: *tenant_query
     tenant: ansible_test
-  check_mode: yes
+  check_mode: true
   register: cm_query_tenant
 
 - name: Query our tenant
@@ -296,7 +296,7 @@
   cisco.aci.aci_tenant:
     <<: *tenant_absent
     output_path: "{{ ansible_host }}_cm_remove_tenant.json"
-  check_mode: yes
+  check_mode: true
   register: cm_remove_tenant
 
 - name: Remove tenant (normal mode)
@@ -309,7 +309,7 @@
   cisco.aci.aci_tenant:
     <<: *tenant_absent
     output_path: "{{ ansible_host }}_cm_remove_tenant_again.json"
-  check_mode: yes
+  check_mode: true
   register: cm_remove_tenant_again
 
 - name: Remove tenant again (normal mode)
@@ -348,7 +348,7 @@
   cisco.aci.aci_tenant:
     <<: *tenant_query
     tenant: ansible_test
-  check_mode: yes
+  check_mode: true
   register: cm_query_non_tenant
 
 - name: Query non-existing tenant (normal mode)

@@ -42,7 +42,7 @@
       description: description for ansible_breakout_port
       breakout_map: 10g-4x
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_create_brkout_port
 
   - name: Create leaf breakout port group (normal_mode)

@@ -65,7 +65,7 @@
     name: admin
     certificate: "{{ lookup('file', 'pki/admin.crt') }}"
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_add_cert
 
 - name: Add user certificate (normal mode)
@@ -74,7 +74,7 @@
 
 - name: Add user certificate again (check mode)
   cisco.aci.aci_aaa_user_certificate: *cert_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_cert_again
 
 - name: Add user certificate again (normal mode)
@@ -119,7 +119,7 @@
     output_level: '{{ aci_output_level | default("info") }}'
     aaa_user: '{{ aci_username }}'
     state: query
-  check_mode: yes
+  check_mode: true
   register: cm_query_all_certs
 
 - name: Query all user certificates using signature-based authentication (normal mode)
@@ -174,7 +174,7 @@
   cisco.aci.aci_aaa_user_certificate:
     <<: *cert_query
     name: admin
-  check_mode: yes
+  check_mode: true
   register: cm_query_cert
 
 - name: Query our certificate using signature-based authentication (normal mode)
@@ -196,7 +196,7 @@
     private_key: '{{ role_path }}/pki/admin_invalid.key'
     name: admin
   register: query_cert_invalid_key
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Query our certificate using signature-based authentication (certificate file)
   cisco.aci.aci_aaa_user_certificate:
@@ -204,7 +204,7 @@
     private_key: '{{ role_path }}/pki/admin.crt'
     name: admin
   register: query_cert_valid_key
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Query our certificate using signature-based authentication (ansible rsa private key file)
   cisco.aci.aci_aaa_user_certificate:
@@ -213,7 +213,7 @@
     certificate_name: rsa_user
     name: rsa_user
   register: query_cert_openssh_rsa_key
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Query our certificate using signature-based authentication (valid rsa private key file)
   cisco.aci.aci_aaa_user_certificate:
@@ -266,7 +266,7 @@
     aaa_user: '{{ aci_username }}'
     name: admin
     state: absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_cert
 
 - name: Remove certificate (normal mode)
@@ -275,7 +275,7 @@
 
 - name: Remove certificate again (check_mode)
   cisco.aci.aci_aaa_user_certificate: *cert_delete
-  check_mode: yes
+  check_mode: true
   register: cm_remove_cert_again
 
 - name: Remove certificate again (normal mode)
@@ -311,7 +311,7 @@
     aaa_user: ansible_test
     aaa_password: ansible_5351
     expiration: never
-    expires: no
+    expires: false
     state: present
 
 - name: Add user certificate

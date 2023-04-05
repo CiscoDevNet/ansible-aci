@@ -44,7 +44,7 @@
     auth_name: ansible_key
     data: "{{ lookup('file', 'pki/sshkey.pub') }}"
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_add_ssh_key
 
 - name: Add a new SSH Key (Normal Mode)
@@ -55,7 +55,7 @@
 - name: Add SSH key again (Check Mode)
   cisco.aci.aci_aaa_ssh_auth:
     <<: *ssh_key_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_ssh_key_again
 
 - name: Add SSH key again (Normal Mode)
@@ -83,7 +83,7 @@
     <<: *aci_info
     aaa_user: ansible
     state: query
-  check_mode: yes
+  check_mode: true
   register: cm_query_all_ssh_keys
 
 - name: Query all SSH keys (normal mode)
@@ -102,7 +102,7 @@
   cisco.aci.aci_aaa_ssh_auth: &ssh_key_query
     <<: *ssh_key_query_all
     auth_name: ansible_key
-  check_mode: yes
+  check_mode: true
   register: cm_query_ssh_key
 
 - name: Query our SSH key (normal mode)
@@ -128,7 +128,7 @@
     auth_name: ansible_key
     data: "{{ lookup('file', 'pki/sshkey.pub') }}"
     state: absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_ssh_key
 
 - name: Remove SSH key (normal mode)
@@ -139,7 +139,7 @@
 - name: Remove SSH key again (check mode)
   cisco.aci.aci_aaa_ssh_auth:
     <<: *ssh_key_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_ssh_key_again
 
 - name: Remove SSH key again (normal mode)

@@ -89,7 +89,7 @@
       name: ansible_span
       description: ansible test description
       dst_group: ansible_dest_group
-    check_mode: yes
+    check_mode: true
     register: cm_create_with_dest
 
   - name: Create a source group

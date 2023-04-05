@@ -89,7 +89,7 @@
       pod_id: 1 
       prefix: 10.1.0.1/24
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_route
 
   - name: Add static routes (normal_mode)
@@ -111,7 +111,7 @@
   - name: Add static routes again (check_mode)
     aci_l3out_static_routes:
       <<: *route_present
-    check_mode: yes
+    check_mode: true
     register: cm_add_route_again
 
   - name: Add static routes again (normal_mode)
@@ -185,7 +185,7 @@
       <<: *aci_info
       tenant: ansible_tenant
       state: query
-    ignore_errors: yes
+    ignore_errors: true
     register: query_all_relationships
 
   - name: Verify query_all_relationships
@@ -216,7 +216,7 @@
       pod_id: 1
       prefix: 10.1.0.1/24
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_static_routes
 
   - name: Remove static routes (normal_mode)
@@ -235,7 +235,7 @@
   - name: Remove static routes again (check_mode)
     aci_l3out_static_routes:
       <<: *route_absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_static_routes_again
 
   - name: Remove static routes again (normal_mode)

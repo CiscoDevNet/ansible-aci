@@ -67,7 +67,7 @@
     cisco.aci.aci_l3out_logical_interface_profile_ospf_policy: &ospfIfP_present
       <<: *intf_present
       ospf_policy: default
-    check_mode: yes
+    check_mode: true
     register: cm_add_ospfIfP
 
   - name: Add ospf policy to interface profile (normal mode)

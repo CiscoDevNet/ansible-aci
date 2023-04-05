@@ -117,7 +117,7 @@
       <<: *aci_tenant
       src_group: ansible_span
       dst_group: ansible_dest_group
-    check_mode: yes
+    check_mode: true
     register: cm_create
 
   - name: Create a source group to destination
@@ -141,7 +141,7 @@
     cisco.aci.aci_tenant_span_src_group_to_dst_group:
       <<: *aci_source_to_dest
       dst_group: ansible_dest_group_2
-    ignore_errors: yes
+    ignore_errors: true
     register: error_change
 
   - name: Verify create source groups to destination

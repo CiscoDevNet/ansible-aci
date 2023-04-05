@@ -43,7 +43,7 @@
       write_privilege: custom-privilege-1
       read_privilege: custom-privilege-1
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_cp_present
 
   - name: Assertions check for add a custom privilege with check mode
@@ -186,7 +186,7 @@
       <<: *aci_info
       name: fabricPod
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_cp_absent
 
   - name: Assertions check for remove a custom privilege with check mode

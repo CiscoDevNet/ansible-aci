@@ -29,7 +29,7 @@ options:
     - The vendor of the controller
     choices: [ aws, azure ]
     type: str
-    required: yes
+    required: true
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -53,7 +53,7 @@ EXAMPLES = r"""
     host: apic
     username: userName
     password: somePassword
-    validate_certs: no
+    validate_certs: false
     cloud: 'aws'
     state: query
   delegate_to: localhost
@@ -63,7 +63,7 @@ EXAMPLES = r"""
     host: apic
     username: userName
     password: somePassword
-    validate_certs: no
+    validate_certs: false
     cloud: 'aws'
     region: eu-west-2
     state: query

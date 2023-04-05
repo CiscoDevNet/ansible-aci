@@ -45,8 +45,8 @@
     local_file_log_severity: warnings
     console_logging: enabled
     console_log_severity: critical
-    include_ms: yes
-    include_time_zone: yes
+    include_ms: true
+    include_time_zone: true
     state: present
   register: add_syslog_group
   when: version.current.0.topSystem.attributes.version is version('4', '>=')
@@ -61,7 +61,7 @@
     local_file_log_severity: warnings
     console_logging: enabled
     console_log_severity: critical
-    include_ms: yes
+    include_ms: true
     state: present
   register: add_syslog_group_32
   when: version.current.0.topSystem.attributes.version is version('4', '<')
@@ -143,8 +143,8 @@
     local_file_log_severity: debugging
     console_logging: disabled
     console_log_severity: emergencies
-    include_ms: no
-    include_time_zone: no
+    include_ms: false
+    include_time_zone: false
     state: present
   register: update_syslog_group
   when: version.current.0.topSystem.attributes.version is version('4', '>=')
@@ -159,7 +159,7 @@
     local_file_log_severity: debugging
     console_logging: disabled
     console_log_severity: emergencies
-    include_ms: no
+    include_ms: false
     state: present
   register: update_syslog_group_32
   when: version.current.0.topSystem.attributes.version is version('4', '<')
