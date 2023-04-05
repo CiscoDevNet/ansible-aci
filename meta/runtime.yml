@@ -81,6 +81,7 @@ action_groups:
     - aci_firmware_group_node
     - aci_firmware_policy
     - aci_firmware_source
+    - aci_igmp_interface_policy
     - aci_interface_blacklist
     - aci_interface_config
     - aci_interface_description
