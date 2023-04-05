@@ -272,9 +272,7 @@ def main():
             ["state", "present", ["name", "auth_type"]],
             ["state", "absent", ["name"]],
         ],
-        required_together=[
-            ["remote_host", "remote_port"]
-        ],
+        required_together=[["remote_host", "remote_port"]],
     )
 
     name = module.params.get("name")
@@ -313,7 +311,7 @@ def main():
             module_object=name,
             target_filter={"name": name},
         ),
-        child_classes=["fileRsARemoteHostToEpg"]
+        child_classes=["fileRsARemoteHostToEpg"],
     )
     aci.get_existing()
 
