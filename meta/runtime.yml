@@ -38,6 +38,7 @@ action_groups:
     - aci_cloud_subnet
     - aci_cloud_vpn_gateway
     - aci_cloud_zone
+    - aci_config_export_policy
     - aci_config_rollback
     - aci_config_snapshot
     - aci_contract
@@ -81,6 +82,7 @@ action_groups:
     - aci_firmware_group_node
     - aci_firmware_policy
     - aci_firmware_source
+    - aci_igmp_interface_policy
     - aci_interface_blacklist
     - aci_interface_config
     - aci_interface_description
