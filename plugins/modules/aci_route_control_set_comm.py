@@ -31,6 +31,11 @@ options:
     - The description of the Set Community object.
     type: str
     aliases: [ descr ]
+  name:
+    description:
+    - The name of the Set Community object.
+    - This defaults to an empty string when creating the Set Community object through the APIC GUI.
+    type: str
   community:
     description:
     - The community to set.
@@ -93,7 +98,16 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
-    name: my_attr
+    attr_name: my_attr
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query All Route Control Communities
+  cisco.aci.aci_route_control_set_comm:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
     state: query
   delegate_to: localhost
   register: query_result
@@ -214,6 +228,7 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         attr_name=dict(type="str", aliases=["attribute_name"]),
+        name=dict(type="str"),
         description=dict(type="str", aliases=["descr"]),
         community=dict(type="str"),
         set_criteria=dict(type="str", choices=["append", "replace", "none"]),
@@ -232,9 +247,10 @@ def main():
     aci = ACIModule(module)
 
     tenant = module.params.get("tenant")
-    name = module.params.get("attr_name")
+    attr_name = module.params.get("attr_name")
     description = module.params.get("description")
     community = module.params.get("community")
+    name = module.params.get("name")
     set_criteria = module.params.get("set_criteria")
     state = module.params.get("state")
 
@@ -247,15 +263,15 @@ def main():
         ),
         subclass_1=dict(
             aci_class="rtctrlAttrP",
-            aci_rn="attr-{0}".format(name),
-            module_object=name,
-            target_filter={"name": name},
+            aci_rn="attr-{0}".format(attr_name),
+            module_object=attr_name,
+            target_filter={"name": attr_name},
         ),
         subclass_2=dict(
             aci_class="rtctrlSetComm",
             aci_rn="scomm",
-            module_object=name,
-            target_filter={"name": name},
+            module_object=community,
+            target_filter={"community": community},
         ),
     )
 

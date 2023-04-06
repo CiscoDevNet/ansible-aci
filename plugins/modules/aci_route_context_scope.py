@@ -307,9 +307,7 @@ def main():
             child_configs=[
                 dict(
                     rtctrlRsScopeToAttrP=dict(
-                        attributes=dict(
-                            tnRtctrlAttrPName=set_action_rule_profile
-                        ),
+                        attributes=dict(tnRtctrlAttrPName=set_action_rule_profile),
                     ),
                 ),
             ],
