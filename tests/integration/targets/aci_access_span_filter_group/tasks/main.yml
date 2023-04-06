@@ -141,3 +141,14 @@
       - nm_remove_ansible_filter_group_1_again is not changed
       - nm_remove_ansible_filter_group_1_again.previous == []
       - nm_remove_ansible_filter_group_1_again.current == []
+
+  # CLEAN TEST ENVIRONMENT
+
+  - name: Clean created access span filter groups
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      filter_group: "{{ item }}"
+      state: absent
+    loop:
+    - ansible_group_2
+    - ansible_group_3

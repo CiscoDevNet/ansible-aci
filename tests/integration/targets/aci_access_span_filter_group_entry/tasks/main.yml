@@ -42,13 +42,13 @@
       state: absent
     loop: "{{ query_for_clean.current }}"
 
-  - name: Add access span filter group
+  - name: Add access span filter group 1
     cisco.aci.aci_access_span_filter_group: &add_ansible_filter_group_1
       <<: *aci_info
       filter_group: ansible_group_1
       state: present
 
-  - name: Add access span filter group
+  - name: Add access span filter group 2
     cisco.aci.aci_access_span_filter_group: &add_ansible_filter_group_2
       <<: *aci_info
       filter_group: ansible_group_2
@@ -56,7 +56,7 @@
 
   # TEST CREATE FILTER GROUP ENTRIES
 
-  - name: Add access span filter group entry ( checkmode )
+  - name: Add access span filter group entry 1 to ansible_group_1 ( checkmode )
     cisco.aci.aci_access_span_filter_group_entry: &add_ansible_filter_group_entry_1
       <<: *add_ansible_filter_group_1
       source_ip: 1.1.1.1
@@ -66,17 +66,17 @@
     check_mode: true
     register: cm_add_ansible_filter_group_entry_1
 
-  - name: Add access span filter group entry
+  - name: Add access span filter group entry 1 to ansible_group_1
     cisco.aci.aci_access_span_filter_group_entry:
       <<: *add_ansible_filter_group_entry_1
     register: nm_add_ansible_filter_group_entry_1
 
-  - name: Add access span filter group entry again
+  - name: Add access span filter group entry 1 to ansible_group_1 again
     cisco.aci.aci_access_span_filter_group_entry:
       <<: *add_ansible_filter_group_entry_1
     register: nm_add_ansible_filter_group_entry_1_again
 
-  - name: Add access span filter group entry
+  - name: Add access span filter group entry 2 to ansible_group_1
     cisco.aci.aci_access_span_filter_group_entry:
       <<: *add_ansible_filter_group_1
       source_ip: 1.1.1.1
@@ -88,14 +88,14 @@
       ip_protocol: tcp
     register: nm_add_ansible_filter_group_entry_2
 
-  - name: Add access span filter group entry
+  - name: Add access span filter group entry 3 to ansible_group_1
     cisco.aci.aci_access_span_filter_group_entry:
       <<: *add_ansible_filter_group_1
       source_ip: 2.2.2.2
       destination_ip: 5.5.5.5
     register: nm_add_ansible_filter_group_entry_3
 
-  - name: Add access span filter group entry in different filter group
+  - name: Add access span filter group entry 4 to ansible_group_2
     cisco.aci.aci_access_span_filter_group_entry:
       <<: *add_ansible_filter_group_2
       source_ip: 2.2.2.2
@@ -248,3 +248,14 @@
       - nm_remove_ansible_filter_group_1_entry_again is not changed
       - nm_remove_ansible_filter_group_1_entry_again.current == []
       - nm_remove_ansible_filter_group_1_entry_again.previous == []
+
+  # CLEAN TEST ENVIRONMENT
+
+  - name: Clean created access span filter groups
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      filter_group: "{{ item }}"
+      state: absent
+    loop:
+    - ansible_group_1
+    - ansible_group_2
