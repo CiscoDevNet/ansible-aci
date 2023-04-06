@@ -20,106 +20,113 @@
     tenant: ansible_tenant
     state: absent
 
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+
 # SETUP ENVIRONMENT
-- name: Create tenant
-  cisco.aci.aci_tenant: &tenant_present
-    <<: *tenant_absent
-    state: present
+  - name: Create tenant
+    cisco.aci.aci_tenant: &tenant_present
+      <<: *tenant_absent
+      state: present
 
 # BEGIN WITH TESTS
-- name: Add route control attribute (check_mode)
-  cisco.aci.aci_route_control_attr: &attr_present
-    <<: *aci_info
-    tenant: ansible_tenant
-    name: ansible_attr
-    state: present
-  check_mode: yes
-  register: cm_add_attr
+  - name: Add route control attribute (check_mode)
+    cisco.aci.aci_route_control_attr: &attr_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_attr
+      state: present
+    check_mode: yes
+    register: cm_add_attr
 
-- name: Add route control attribute (normal mode)
-  cisco.aci.aci_route_control_attr:
-    <<: *attr_present
-  register: nm_add_attr
+  - name: Add route control attribute (normal mode)
+    cisco.aci.aci_route_control_attr:
+      <<: *attr_present
+    register: nm_add_attr
 
-- name: Verify add attribute
-  ansible.builtin.assert:
-    that:
-    - cm_add_attr is changed
-    - nm_add_attr is changed
-    - cm_add_attr.previous == nm_add_attr.previous == []
-    - cm_add_attr.sent.rtctrlAttrP.attributes.name == nm_add_attr.sent.rtctrlAttrP.attributes.name == 'ansible_attr'
+  - name: Verify add attribute
+    ansible.builtin.assert:
+      that:
+      - cm_add_attr is changed
+      - nm_add_attr is changed
+      - cm_add_attr.previous == nm_add_attr.previous == []
+      - cm_add_attr.sent.rtctrlAttrP.attributes.name == nm_add_attr.sent.rtctrlAttrP.attributes.name == 'ansible_attr'
 
-- name: Add route control attribute again, check if idempotency works
-  cisco.aci.aci_route_control_attr:
-    <<: *attr_present
-  register: add_attr_again
+  - name: Add route control attribute again, check if idempotency works
+    cisco.aci.aci_route_control_attr:
+      <<: *attr_present
+    register: add_attr_again
 
-- name: Verify add_attr_again
-  ansible.builtin.assert:
-    that:
-    - add_attr_again is not changed
+  - name: Verify add_attr_again
+    ansible.builtin.assert:
+      that:
+      - add_attr_again is not changed
 
-- name: Add second route control attribute
-  cisco.aci.aci_route_control_attr:
-    <<: *aci_info
-    tenant: ansible_tenant
-    name: ansible_attr2
-    state: present
+  - name: Add second route control attribute
+    cisco.aci.aci_route_control_attr:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_attr2
+      state: present
 
 # QUERY ALL ATTRS
-- name: Query all route control attributes
-  cisco.aci.aci_route_control_attr:
-    <<: *aci_info
-    state: query
-  register: query_all_attrs
+  - name: Query all route control attributes
+    cisco.aci.aci_route_control_attr:
+      <<: *aci_info
+      state: query
+    register: query_all_attrs
 
-- name: Verify query_all_attrs
-  ansible.builtin.assert:
-    that:
-    - query_all_attrs is not changed
-    - query_all_attrs.current | length > 1
+  - name: Verify query_all_attrs
+    ansible.builtin.assert:
+      that:
+      - query_all_attrs is not changed
+      - query_all_attrs.current | length > 1
 
 # QUERY A SPECIFIC ATTRIBUTES
-- name: Query a specific route control attribute
-  cisco.aci.aci_route_control_attr:
-    <<: *attr_present
-    state: query
-  register: query_spec_attr
+  - name: Query a specific route control attribute
+    cisco.aci.aci_route_control_attr:
+      <<: *attr_present
+      state: query
+    register: query_spec_attr
 
-- name: Verify query_spec_attr
-  ansible.builtin.assert:
-    that:
-    - query_spec_attr is not changed
-    - query_spec_attr.current | length == 1
-    - query_spec_attr.current.0.rtctrlAttrP.attributes.name == 'ansible_attr'
+  - name: Verify query_spec_attr
+    ansible.builtin.assert:
+      that:
+      - query_spec_attr is not changed
+      - query_spec_attr.current | length == 1
+      - query_spec_attr.current.0.rtctrlAttrP.attributes.name == 'ansible_attr'
 
 # REMOVE ATTR
-- name: Remove route control attribution
-  cisco.aci.aci_route_control_attr:
-    <<: *attr_present
-    state: absent
-  register: remove_attr
+  - name: Remove route control attribution
+    cisco.aci.aci_route_control_attr:
+      <<: *attr_present
+      state: absent
+    register: remove_attr
 
-- name: Verify remove_attr
-  ansible.builtin.assert:
-    that:
-    - remove_attr is changed
-    - remove_attr.current == []
+  - name: Verify remove_attr
+    ansible.builtin.assert:
+      that:
+      - remove_attr is changed
+      - remove_attr.current == []
 
 # REMOVE ATTR AGAIN TO TEST IDEMPOTENCE
-- name: Remove route control attribute again
-  cisco.aci.aci_route_control_attr:
-    <<: *attr_present
-    state: absent
-  register: remove_attr_again
+  - name: Remove route control attribute again
+    cisco.aci.aci_route_control_attr:
+      <<: *attr_present
+      state: absent
+    register: remove_attr_again
 
-- name: Verify remove_attr_again
-  ansible.builtin.assert:
-    that:
-    - remove_attr_again is not changed
-    - remove_attr_again.current == []
+  - name: Verify remove_attr_again
+    ansible.builtin.assert:
+      that:
+      - remove_attr_again is not changed
+      - remove_attr_again.current == []
 
 # CLEAN UP
-- name: Remove test tenant
-  cisco.aci.aci_tenant:
-    <<: *tenant_absent
+  - name: Remove test tenant
+    cisco.aci.aci_tenant:
+      <<: *tenant_absent

@@ -236,7 +236,7 @@ def main():
         tenant=dict(type="str", aliases=["tenant_name"]),
         l3out=dict(type="str", aliases=["l3out_name"]),
         description=dict(type="str", aliases=["descr"]),
-        name=dict(type="str", aliases=["profile, ""profile_name", "route_control_profile"]),
+        name=dict(type="str", aliases=["profile", "profile_name", "route_control_profile"]),
         profile_type=dict(type="str", choices=["combinable", "global"]),
         autocontinue=dict(type="bool"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -246,8 +246,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["l3out", "tenant", "profile"]],
-            ["state", "present", ["l3out", "tenant", "profile"]],
+            ["state", "absent", ["l3out", "tenant", "name"]],
+            ["state", "present", ["l3out", "tenant", "name"]],
         ],
     )
 

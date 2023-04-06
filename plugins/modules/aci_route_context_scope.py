@@ -248,7 +248,7 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["l3out", "tenant", "profile", "context"]],
-            ["state", "present", ["l3out", "tenant", "profile", "context", "attr_name"]],
+            ["state", "present", ["l3out", "tenant", "profile", "context", "set_action_rule_profile"]],
         ],
     )
 

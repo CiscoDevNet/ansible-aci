@@ -254,8 +254,8 @@ def main():
         subclass_2=dict(
             aci_class="rtctrlSetComm",
             aci_rn="scomm",
-            module_object=None,
-            target_filter=None,
+            module_object=name,
+            target_filter={"name": name},
         ),
     )
 
