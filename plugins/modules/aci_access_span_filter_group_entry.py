@@ -243,6 +243,10 @@ PROTOCOL_CHOICES = ["unspecified", "egp", "eigrp", "icmp", "icmpv6", "igmp", "ig
 CHOICE_MAPPING = {"ftp": "ftpData"}
 
 
+def get_port_value(port):
+    return CHOICE_MAPPING.get(port, port) if port else "unspecified"
+
+
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
@@ -298,10 +302,10 @@ def main():
                 ip_protocol if module.params.get("ip_protocol") else "unspecified",
                 source_ip,
                 destination_ip,
-                CHOICE_MAPPING.get(first_src_port, first_src_port) if first_src_port else "unspecified",
-                CHOICE_MAPPING.get(last_src_port, last_src_port) if last_src_port else "unspecified",
-                CHOICE_MAPPING.get(first_dest_port, first_dest_port) if first_dest_port else "unspecified",
-                CHOICE_MAPPING.get(last_dest_port, last_dest_port) if last_dest_port else "unspecified",
+                get_port_value(first_src_port),
+                get_port_value(last_src_port),
+                get_port_value(first_dest_port),
+                get_port_value(last_dest_port),
             ),
             target_filter={
                 "dstAddr": destination_ip,
