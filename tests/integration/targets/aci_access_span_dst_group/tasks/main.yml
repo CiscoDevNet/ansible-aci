@@ -1,0 +1,347 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Akini Ross (akinross@cisco.com)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN TEST ENVIRONMENT
+
+- name: Query all access span destination groups
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    state: query
+  register: query_for_clean
+
+- name: Clean access span destination groups
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    destination_group: "{{ item.spanDestGrp.attributes.name }}"
+    state: absent
+  loop: "{{ query_for_clean.current }}"
+
+# TEST CREATE AND UPDATE DESTINATION GROUPS
+
+- name: Add access span destination group type epg ( check mode )
+  cisco.aci.aci_access_span_dst_group: &add_ansible_group_1
+    <<: *aci_info
+    destination_group: ansible_group_1
+    description: test span epg
+    destination_epg:
+      destination_ip: 10.0.0.1
+      source_ip: 10.0.2.1
+      tenant: ansible_test
+      ap: ansible_test
+      epg: ansible_test
+    state: present
+  check_mode: true
+  register: cm_add_ansible_group_1
+
+- name: Add access span destination group type epg
+  cisco.aci.aci_access_span_dst_group:
+    <<: *add_ansible_group_1
+  register: nm_add_ansible_group_1
+
+- name: Add access span destination group type epg again
+  cisco.aci.aci_access_span_dst_group:
+    <<: *add_ansible_group_1
+  register: nm_add_ansible_group_1_again
+
+- name: Verify add access span destination group type epg
+  ansible.builtin.assert:
+    that:
+    - cm_add_ansible_group_1 is changed
+    - cm_add_ansible_group_1.current == []
+    - cm_add_ansible_group_1.previous == []
+    - cm_add_ansible_group_1.proposed.spanDestGrp.attributes.name == "ansible_group_1"
+    - cm_add_ansible_group_1.proposed.spanDestGrp.attributes.descr == "test span epg"
+    - cm_add_ansible_group_1.proposed.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group_1"
+    - cm_add_ansible_group_1.proposed.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
+    - cm_add_ansible_group_1.proposed.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
+    - cm_add_ansible_group_1.proposed.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.tDn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test"
+    - nm_add_ansible_group_1 is changed
+    - nm_add_ansible_group_1.previous == []
+    - nm_add_ansible_group_1.current.0.spanDestGrp.attributes.name == "ansible_group_1"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.attributes.descr == "test span epg"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group_1"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "unspecified"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1518"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.tDn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "64"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver2"
+    - nm_add_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
+    - nm_add_ansible_group_1_again is not changed
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.attributes.name == "ansible_group_1"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.attributes.descr == "test span epg"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group_1"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "unspecified"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1518"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.tDn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "64"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver2"
+    - nm_add_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
+
+- name: Change access span destination group type epg
+  cisco.aci.aci_access_span_dst_group: &change_ansible_group_1
+    <<: *aci_info
+    destination_group: ansible_group_1
+    description: changed test span epg
+    destination_epg:
+      destination_ip: 10.0.0.2
+      source_ip: 10.0.2.2
+      tenant: ansible_test
+      ap: ansible_test
+      epg: ansible_test
+      version_enforced: true
+      span_version: version_1
+      ttl: 4
+      mtu: 1500
+      flow_id: 2
+      dscp: "VA"
+  register: change_ansible_group_1
+
+- name: Apply same changes to access span destination group type epg
+  cisco.aci.aci_access_span_dst_group:
+    <<: *change_ansible_group_1
+  register: change_ansible_group_1_again
+
+- name: Verify change access span destination group type epg
+  ansible.builtin.assert:
+    that:
+    - change_ansible_group_1 is changed
+    - change_ansible_group_1.previous.0.spanDestGrp.attributes.name == "ansible_group_1"
+    - change_ansible_group_1.previous.0.spanDestGrp.attributes.descr == "test span epg"
+    - change_ansible_group_1.previous.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group_1"
+    - change_ansible_group_1.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "unspecified"
+    - change_ansible_group_1.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "1"
+    - change_ansible_group_1.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.1"
+    - change_ansible_group_1.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1518"
+    - change_ansible_group_1.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.1"
+    - change_ansible_group_1.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.tDn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test"
+    - change_ansible_group_1.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "64"
+    - change_ansible_group_1.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver2"
+    - change_ansible_group_1.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "no"
+    - change_ansible_group_1.current.0.spanDestGrp.attributes.name == "ansible_group_1"
+    - change_ansible_group_1.current.0.spanDestGrp.attributes.descr == "changed test span epg"
+    - change_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group_1"
+    - change_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "VA"
+    - change_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "2"
+    - change_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.2"
+    - change_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1500"
+    - change_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.2"
+    - change_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.tDn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test"
+    - change_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "4"
+    - change_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver1"
+    - change_ansible_group_1.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "yes"
+    - change_ansible_group_1_again is not changed
+    - change_ansible_group_1_again.previous.0.spanDestGrp.attributes.name == "ansible_group_1"
+    - change_ansible_group_1_again.previous.0.spanDestGrp.attributes.descr == "changed test span epg"
+    - change_ansible_group_1_again.previous.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group_1"
+    - change_ansible_group_1_again.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "VA"
+    - change_ansible_group_1_again.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "2"
+    - change_ansible_group_1_again.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.2"
+    - change_ansible_group_1_again.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1500"
+    - change_ansible_group_1_again.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.2"
+    - change_ansible_group_1_again.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.tDn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test"
+    - change_ansible_group_1_again.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "4"
+    - change_ansible_group_1_again.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver1"
+    - change_ansible_group_1_again.previous.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "yes"
+    - change_ansible_group_1_again.current.0.spanDestGrp.attributes.name == "ansible_group_1"
+    - change_ansible_group_1_again.current.0.spanDestGrp.attributes.descr == "changed test span epg"
+    - change_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group_1"
+    - change_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.dscp == "VA"
+    - change_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.flowId == "2"
+    - change_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ip == "10.0.0.2"
+    - change_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.mtu == "1500"
+    - change_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.srcIpPrefix == "10.0.2.2"
+    - change_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.tDn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test"
+    - change_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ttl == "4"
+    - change_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.ver == "ver1"
+    - change_ansible_group_1_again.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestEpg.attributes.verEnforced == "yes"
+
+- name: Change access span destination group type epg path information (error)
+  cisco.aci.aci_access_span_dst_group:
+    <<: *add_ansible_group_1
+    destination_epg:
+      destination_ip: 10.0.0.2
+      source_ip: 10.0.2.2
+      tenant: ansible_test_2
+      ap: ansible_test_2
+      epg: ansible_test_2
+  register: error_on_path_change_ansible_group_1
+  ignore_errors: true
+
+- name: Verify change access span destination group type epg path information (error)
+  ansible.builtin.assert:
+    that:
+    - error_on_path_change_ansible_group_1.msg == "APIC Error 105{{':'}} Span source or destination relation target configuration cannot be dynamically modified"
+
+- name: Add access span destination group type access interface port
+  cisco.aci.aci_access_span_dst_group: &add_ansible_group_2
+    <<: *aci_info
+    destination_group: ansible_group_2
+    description: test span access interface port
+    access_interface:
+      pod: 1
+      node: 101
+      path: eth1/1
+      mtu: 1500
+    state: present
+  register: add_ansible_group_2
+
+- name: Add access span destination group type access interface direct port channel
+  cisco.aci.aci_access_span_dst_group: &add_ansible_group_3
+    <<: *aci_info
+    destination_group: ansible_group_3
+    description: test span access interface port channel
+    access_interface:
+      pod: 1
+      node: 101
+      path: test-PolGrp
+    state: present
+  register: add_ansible_group_3
+
+- name: Verify add access span destination groups type access interface port and direct port channel
+  ansible.builtin.assert:
+    that:
+    - add_ansible_group_2 is changed
+    - add_ansible_group_2.current.0.spanDestGrp.attributes.name == "ansible_group_2"
+    - add_ansible_group_2.current.0.spanDestGrp.attributes.descr == "test span access interface port"
+    - add_ansible_group_2.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group_2"
+    - add_ansible_group_2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestPathEp.attributes.mtu == "1500"
+    - add_ansible_group_2.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestPathEp.attributes.tDn == "topology/pod-1/paths-101/pathep-[eth1/1]"
+    - add_ansible_group_3 is changed
+    - add_ansible_group_3.current.0.spanDestGrp.attributes.name == "ansible_group_3"
+    - add_ansible_group_3.current.0.spanDestGrp.attributes.descr == "test span access interface port channel"
+    - add_ansible_group_3.current.0.spanDestGrp.children.0.spanDest.attributes.name == "ansible_group_3"
+    - add_ansible_group_3.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestPathEp.attributes.mtu == "1518"
+    - add_ansible_group_3.current.0.spanDestGrp.children.0.spanDest.children.0.spanRsDestPathEp.attributes.tDn == "topology/pod-1/paths-101/pathep-[test-PolGrp]"
+
+# TEST QUERY DESTINATION GROUPS
+
+- name: Query one access span destination group
+  cisco.aci.aci_access_span_dst_group:
+    <<: *add_ansible_group_1
+    state: query
+  register: query_one
+
+- name: Query all access span destination group
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Verify querying access span destination groups
+  ansible.builtin.assert:
+    that:
+    - query_one is not changed
+    - query_one.current | length == 1
+    - query_one.current.0.spanDestGrp.attributes.name == "ansible_group_1"
+    - query_all is not changed
+    - query_all.current | length >= 3  # greater or equal because there could be configuration present that is not access span but is returned in ( class based ) query all
+
+# TEST REMOVAL DESTINATION GROUPS
+
+- name: Remove access span destination group type epg ( check mode )
+  cisco.aci.aci_access_span_dst_group: &remove_ansible_group_1
+    <<: *add_ansible_group_1
+    state: absent
+  check_mode: true
+  register: cm_remove_ansible_group_1
+
+- name: Remove access span destination group type epg 
+  cisco.aci.aci_access_span_dst_group:
+    <<: *remove_ansible_group_1
+  register: nm_remove_ansible_group_1
+
+- name: Remove access span destination group type epg again
+  cisco.aci.aci_access_span_dst_group:
+    <<: *remove_ansible_group_1
+  register: nm_remove_ansible_group_1_again
+
+- name: Remove access span destination group type access interface port
+  cisco.aci.aci_access_span_dst_group:
+    <<: *add_ansible_group_2
+    state: absent
+  register: nm_remove_ansible_group_2
+
+- name: Remove access span destination group type access interface direct port channel
+  cisco.aci.aci_access_span_dst_group:
+    <<: *add_ansible_group_3
+    state: absent
+  register: nm_remove_ansible_group_3
+
+- name: Verify remove access span destination groups
+  ansible.builtin.assert:
+    that:
+    - cm_remove_ansible_group_1 is changed
+    - cm_remove_ansible_group_1.current | length == 1
+    - cm_remove_ansible_group_1.previous | length == 1
+    - cm_remove_ansible_group_1.proposed == {}
+    - nm_remove_ansible_group_1 is changed
+    - nm_remove_ansible_group_1.current == []
+    - nm_remove_ansible_group_1.previous | length == 1
+    - nm_remove_ansible_group_1_again is not changed
+    - nm_remove_ansible_group_1_again.current == []
+    - nm_remove_ansible_group_1_again.previous == []
+    - nm_remove_ansible_group_2 is changed
+    - nm_remove_ansible_group_2.current == []
+    - nm_remove_ansible_group_2.previous | length == 1
+    - nm_remove_ansible_group_3 is changed
+    - nm_remove_ansible_group_3.current == []
+    - nm_remove_ansible_group_3.previous | length == 1
+
+# TEST INCORRECT MODULE INPUT
+
+- name: Mutually exclusive parameters provided together (error)
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    destination_group: ansible_group_1
+    description: test span epg
+    destination_epg:
+      destination_ip: 10.0.0.1
+      source_ip: 10.0.2.1
+      tenant: ansible_test
+      ap: ansible_test
+      epg: ansible_test
+    access_interface:
+      pod: 1
+      node: 101
+      path: test-PolGrp
+    state: present
+  register: incorrect_input_both_types
+  ignore_errors: true
+
+- name: Missing input parameters for state is present (error)
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    destination_group: ansible_group_1
+    description: test span epg
+  register: incorrect_input_no_types
+  ignore_errors: true
+
+- name: Verify incorrect module input
+  ansible.builtin.assert:
+    that:
+    - incorrect_input_both_types.msg == "parameters are mutually exclusive{{':'}} access_interface|destination_epg"
+    - incorrect_input_no_types.msg == "state is present but any of the following are missing{{':'}} access_interface, destination_epg"
