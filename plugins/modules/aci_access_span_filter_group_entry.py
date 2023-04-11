@@ -32,33 +32,33 @@ options:
   first_src_port:
     description:
     - The first source port (from port).
+    - Accepted values are any valid TCP/UDP port range.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
-    choices: [ unspecified, dns, ftp, http, https, pop3, rtsp, smtp, ssh ]
   last_src_port:
     description:
     - The last source port (to port).
+    - Accepted values are any valid TCP/UDP port range.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
-    choices: [ unspecified, dns, ftp, http, https, pop3, rtsp, smtp, ssh ]
   first_dest_port:
     description:
     - The first destination port (from port).
+    - Accepted values are any valid TCP/UDP port range.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
-    choices: [ unspecified, dns, ftp, http, https, pop3, rtsp, smtp, ssh ]
   last_dest_port:
     description:
     - The last destination port (to port).
+    - Accepted values are any valid TCP/UDP port range.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
-    choices: [ unspecified, dns, ftp, http, https, pop3, rtsp, smtp, ssh ]
   ip_protocol:
     description:
     - The IP Protocol.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
-    choices: [ unspecified, egp, eigrp, icmp, icmpv6, igmp, igp, l2tp, ospfigp, pim, tcp, udp ]
+    choices: [ eigrp, egp, icmp, icmpv6, igmp, igp, l2tp, ospfigp, pim, tcp, udp, unspecified ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -236,15 +236,11 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
-
-
-PORT_CHOICES = ["unspecified", "dns", "ftp", "http", "https", "pop3", "rtsp", "smtp", "ssh"]
-PROTOCOL_CHOICES = ["unspecified", "egp", "eigrp", "icmp", "icmpv6", "igmp", "igp", "l2tp", "ospfigp", "pim", "tcp", "udp"]
-CHOICE_MAPPING = {"ftp": "ftpData"}
+from ansible_collections.cisco.aci.plugins.module_utils.constants import VALID_IP_PROTOCOLS, FILTER_PORT_MAPPING
 
 
 def get_port_value(port):
-    return CHOICE_MAPPING.get(port, port) if port else "unspecified"
+    return FILTER_PORT_MAPPING.get(port, port) if port else "unspecified"
 
 
 def main():
@@ -254,11 +250,11 @@ def main():
         filter_group=dict(type="str"),  # Not required for querying all objects
         source_ip=dict(type="str"),  # Not required for querying all objects
         destination_ip=dict(type="str"),  # Not required for querying all objects
-        first_src_port=dict(type="str", choices=PORT_CHOICES),
-        last_src_port=dict(type="str", choices=PORT_CHOICES),
-        first_dest_port=dict(type="str", choices=PORT_CHOICES),
-        last_dest_port=dict(type="str", choices=PORT_CHOICES),
-        ip_protocol=dict(type="str", choices=PROTOCOL_CHOICES),
+        first_src_port=dict(type="str"),
+        last_src_port=dict(type="str"),
+        first_dest_port=dict(type="str"),
+        last_dest_port=dict(type="str"),
+        ip_protocol=dict(type="str", choices=VALID_IP_PROTOCOLS),
         name_alias=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )

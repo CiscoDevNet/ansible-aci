@@ -76,15 +76,15 @@
       <<: *add_ansible_filter_group_entry_1
     register: nm_add_ansible_filter_group_entry_1_again
 
-  - name: Add access span filter group entry 2 to ansible_group_1
+  - name: Add access span filter group entry 2 to ansible_group_1 with ports as digits
     cisco.aci.aci_access_span_filter_group_entry:
       <<: *add_ansible_filter_group_1
       source_ip: 1.1.1.1
       destination_ip: 3.3.3.3
       first_src_port: http
       last_src_port: https
-      first_dest_port: http
-      last_dest_port: https
+      first_dest_port: 80
+      last_dest_port: 443
       ip_protocol: tcp
     register: nm_add_ansible_filter_group_entry_2
 
@@ -203,6 +203,15 @@
       state: query
     register: query_match
 
+  - name: Query access span filter group entries that match source_ip and first_dest_port with ports as digits
+    cisco.aci.aci_access_span_filter_group_entry:
+      <<: *aci_info
+      source_ip: 1.1.1.1
+      first_src_port: 80
+      last_src_port: 443
+      state: query
+    register: query_match_port_number
+
   - name: Verify access span filter group queries
     ansible.builtin.assert:
       that:
@@ -217,6 +226,10 @@
       - query_match.current | length == 2
       - query_match.current.0.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-unspecified-src-[1.1.1.1]-dst-[2.2.2.2]-srcPortFrom-http-srcPortTo-https-dstPortFrom-unspecified-dstPortTo-unspecified"
       - query_match.current.1.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-tcp-src-[1.1.1.1]-dst-[3.3.3.3]-srcPortFrom-http-srcPortTo-https-dstPortFrom-http-dstPortTo-https"
+      - query_match_port_number is not changed
+      - query_match_port_number.current | length == 2
+      - query_match_port_number.current.0.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-unspecified-src-[1.1.1.1]-dst-[2.2.2.2]-srcPortFrom-http-srcPortTo-https-dstPortFrom-unspecified-dstPortTo-unspecified"
+      - query_match_port_number.current.1.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-tcp-src-[1.1.1.1]-dst-[3.3.3.3]-srcPortFrom-http-srcPortTo-https-dstPortFrom-http-dstPortTo-https"
 
   # TEST REMOVAL FILTER GROUP ENTRIES
 
