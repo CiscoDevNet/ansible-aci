@@ -75,6 +75,11 @@ options:
     description:
     - The HTTP URI to use as the SLA destination.
     type: str
+  http_method:
+    description:
+    - The HTTP method used for SLA tests.
+    type: str
+    choices: [ get ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -84,8 +89,8 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
-- cisco.aci.aci_annotation
-- cisco.aci.aci_owner
+- cisco.aci.annotation
+- cisco.aci.owner
 
 notes:
 - The C(tenant) must exist before using this module in your playbook.
@@ -287,6 +292,7 @@ def main():
         traffic_class=dict(type="int"),
         http_version=dict(type="str", choices=["1.0", "1.1"]),
         http_uri=dict(type="str"),
+        http_method=dict(type="str", choices=["get"]),
     )
 
     module = AnsibleModule(
@@ -307,22 +313,9 @@ def main():
     traffic_class = module.params.get("traffic_class")
     http_version = module.params.get("http_version")
     http_uri = module.params.get("http_uri")
+    http_method = module.params.get("http_method")
 
     aci = ACIModule(module)
-
-    if sla_port is not None:
-        if sla_type != "tcp":
-            aci.fail_json("sla_port is only used if sla_type is tcp")
-
-    if http_version == "1.0":
-        parsed_http = "HTTP10"
-    elif http_version == "1.1":
-        parsed_http = "HTTP11"
-    else:
-        parsed_http = None
-
-    if sla_type == "http":
-        sla_port = 80
 
     aci.construct_url(
         root_class=dict(
@@ -336,6 +329,22 @@ def main():
     aci.get_existing()
 
     if state == "present":
+        if sla_port is not None:
+            if sla_type != "tcp":
+                aci.fail_json("sla_port is only used if sla_type is tcp")
+
+        if http_version == "1.0":
+            parsed_http = "HTTP10"
+        elif http_version == "1.1":
+            parsed_http = "HTTP11"
+        else:
+            parsed_http = None
+
+        if sla_type == "http":
+            sla_port = 80
+        elif sla_type != "tcp":
+            sla_port = 0
+
         aci.payload(
             aci_class="fvIPSLAMonitoringPol",
             class_config=dict(
@@ -351,6 +360,7 @@ def main():
                 ipv6TrfClass=traffic_class,
                 httpVersion=parsed_http,
                 httpUri=http_uri,
+                httpMethod=http_method,
             ),
         )
         aci.get_diff(aci_class="fvIPSLAMonitoringPol")

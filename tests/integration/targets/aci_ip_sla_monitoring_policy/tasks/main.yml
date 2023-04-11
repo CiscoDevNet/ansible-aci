@@ -20,6 +20,13 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: debug
 
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
   cisco.aci.aci_tenant:
@@ -72,6 +79,53 @@
   assert:
     that:
     - create_icmp_sla_again is not changed
+
+# CREATE SECOND SLA POLICY
+- name: Create Second SLA policy again
+  cisco.aci.aci_ip_sla_monitoring_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    sla_policy: second_ansible_sla
+    sla_type: icmp
+    frequency: 40
+    multiplier: 6
+    state: present
+
+# CREATE HTTP SLA POLICY
+- name: Create HTTP SLA policy
+  cisco.aci.aci_ip_sla_monitoring_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    sla_policy: ansible_http_sla
+    sla_type: http
+    frequency: 40
+    multiplier: 6
+    http_version: 1.1
+    http_uri: /test
+    http_method: get
+    request_data_size: 100
+    operation_timeout: 2100
+    threshold: 2000
+    state: present
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+  register: http_sla
+
+- name: Verify HTTP SLA creation
+  ansible.builtin.assert:
+    that:
+    - http_sla.current.0.fvIPSLAMonitoringPol.attributes.dn == "uni/tn-ansible_tenant/ipslaMonitoringPol-ansible_http_sla"
+    - http_sla.current.0.fvIPSLAMonitoringPol.attributes.name == "ansible_http_sla"
+    - http_sla.current.0.fvIPSLAMonitoringPol.attributes.slaDetectMultiplier == "6"
+    - http_sla.current.0.fvIPSLAMonitoringPol.attributes.slaFrequency == "40"
+    - http_sla.current.0.fvIPSLAMonitoringPol.attributes.slaPort == "80"
+    - http_sla.current.0.fvIPSLAMonitoringPol.attributes.slaType == "http"
+    - http_sla.current.0.fvIPSLAMonitoringPol.attributes.reqDataSize == "100"
+    - http_sla.current.0.fvIPSLAMonitoringPol.attributes.timeout == "2100"
+    - http_sla.current.0.fvIPSLAMonitoringPol.attributes.threshold == "2000"
+    - http_sla.current.0.fvIPSLAMonitoringPol.attributes.httpVersion == "HTTP11"
+    - http_sla.current.0.fvIPSLAMonitoringPol.attributes.httpUri == "/test"
+    - http_sla.current.0.fvIPSLAMonitoringPol.attributes.httpMethod == "get"
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
 
 # MODIFY SLA POLICY
 - name: Convert ICMP SLA policy to TCP
@@ -127,6 +181,7 @@
   assert:
     that:
     - query_sla_all is not changed
+    - query_sla_all | length > 1
 
 # DELETE SLA POLICY
 - name: Remove IP SLA monitor
