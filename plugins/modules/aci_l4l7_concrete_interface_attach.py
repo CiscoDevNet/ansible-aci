@@ -47,13 +47,14 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 seealso:
 - module: aci_l4l7_logical_interface
 - module: aci_l4l7_concrete_device
 - module: aci_l4l7_concrete_interface
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(vnsRsCIfAttN)
+  description: More information about the internal APIC classes B(vns:RsCIfAttN)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -208,11 +209,12 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type='str', aliases=['tenant_name']),
         device=dict(type='str'),
@@ -273,7 +275,7 @@ def main():
             aci_class='vnsRsCIfAttN',
             aci_rn='rscIfAttN-[{0}]'.format(tdn),
             module_object=tdn,
-            target_filter={'name': tdn},
+            target_filter={'tDn': tdn},
         )
     )
 

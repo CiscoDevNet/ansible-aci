@@ -19,36 +19,41 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   device:
     description:
-    - Name of an existing logical device
+    - The name of an existing logical device.
     type: str
   concrete_device:
     description:
-    - Name of an existing concrete device
+    - The name of an existing concrete device.
     type: str
-  concrete_interface:
+  name:
     description:
-    - Name of the concrete interface
+    - The name of the concrete interface.
     type: str
+    aliases: [ concrete_interface ]
   pod_id:
     description:
-    - Pod ID the concrete interface exists on
+    - The pod ID the concrete interface exists on.
     type: int
   node_id:
     description:
-    - Node ID the concrete interface exists on
-    - For Ports and Port-channels this is a single node-id
-    - For vPCs this is a hyphen separated pair of node-ids, e.g. "201-202"
+    - The node ID the concrete interface exists on.
+    - For Ports and Port-channels this is a single node-id.
+    - For vPCs this is a hyphen separated pair of node-ids, e.g. "201-202".
     type: str
   path_ep:
     description:
-    - Path to the physical interface
-    - For single ports, this is the port name, e.g. "eth1/15"
-    - For Port-channels and vPCs, this is the Interface Policy Group name
+    - The path to the physical interface.
+    - For single ports, this is the port name, e.g. "eth1/15".
+    - For Port-channels and vPCs, this is the Interface Policy Group name.
+    type: str
+  vnic_name:
+    description:
+    - The concrete interface vNIC name.
     type: str
   state:
     description:
@@ -59,12 +64,13 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 seealso:
 - module: aci_l4l7_device
 - module: aci_l4l7_concrete_device
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes, B(vnsCIf) and B(vnsRsCIfPathAtt)
+  description: More information about the internal APIC classes, B(vns:CIf) and B(vns:RsCIfPathAtt)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -79,7 +85,7 @@ EXAMPLES = r'''
     tenant: my_tenant
     device: my_device
     concrete_device: my_concrete_device
-    concrete_interface: my_concrete_interface
+    name: my_concrete_interface
     pod_id: 1
     node_id: 201
     path_ep: eth1/16
@@ -94,7 +100,7 @@ EXAMPLES = r'''
     tenant: my_tenant
     device: my_device
     concrete_device: my_concrete_device
-    concrete_interface: my_concrete_interface
+    name: my_concrete_interface
     pod_id: 1
     node_id: 201-202
     path_ep: my_vpc_ipg
@@ -109,7 +115,7 @@ EXAMPLES = r'''
     tenant: my_tenant
     device: my_device
     concrete_device: my_concrete_device
-    concrete_interface: my_concrete_interface
+    name: my_concrete_interface
     pod_id: 1
     node_id: 201-202
     path_ep: my_vpc_ipg
@@ -124,7 +130,7 @@ EXAMPLES = r'''
     tenant: my_tenant
     device: my_device
     concrete_device: my_concrete_device
-    concrete_interface: my_concrete_interface
+    name: my_concrete_interface
     pod_id: 1
     node_id: 201-202
     path_ep: my_vpc_ipg
@@ -250,21 +256,23 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type='str', aliases=['tenant_name']),
         device=dict(type='str'),
         concrete_device=dict(type='str'),
         state=dict(type='str', default='present',
                    choices=['absent', 'present', 'query']),
-        concrete_interface=dict(type='str'),
+        name=dict(type='str', aliases=['concrete_interface']),
         pod_id=dict(type='int'),
         node_id=dict(type='str'),
         path_ep=dict(type='str'),
+        vnic_name=dict(type="str"),
     )
 
     module = AnsibleModule(
@@ -283,10 +291,11 @@ def main():
     state = module.params.get('state')
     device = module.params.get('device')
     concrete_device = module.params.get('concrete_device')
-    concrete_interface = module.params.get('concrete_interface')
+    name = module.params.get('name')
     pod_id = module.params.get('pod_id')
     node_id = module.params.get('node_id')
     path_ep = module.params.get('path_ep')
+    vnic_name = module.params.get('vnic_name')
 
     aci = ACIModule(module)
 
@@ -311,9 +320,9 @@ def main():
         ),
         subclass_3=dict(
             aci_class='vnsCIf',
-            aci_rn='cIf-[{0}]'.format(concrete_interface),
-            module_object=concrete_interface,
-            target_filter={'name': concrete_interface},
+            aci_rn='cIf-[{0}]'.format(name),
+            module_object=name,
+            target_filter={'name': name},
         ),
         child_classes=['vnsRsCIfPathAtt']
     )
@@ -333,7 +342,8 @@ def main():
         aci.payload(
             aci_class='vnsCIf',
             class_config=dict(
-                name=concrete_interface
+                name=name,
+                vnicName=vnic_name,
             ),
             child_configs=[
                 dict(

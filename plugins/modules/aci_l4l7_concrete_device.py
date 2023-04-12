@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_l4l7_concrete_device
 short_description: Manage L4-L7 Concrete Devices (vns:CDev)
@@ -19,19 +18,28 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   device:
     description:
-    - Name of the logical device (vns:lDevVip) the concrete device is attached to
+    - The name of the logical device (vns:lDevVip) the concrete device is attached to.
+    - The logical device can be configured using the M(cisco.aci.aci_l4l7_device) module.
     type: str
     aliases: [ device_name, logical_device_name ]
-  concrete_device:
+  name:
     description:
-    - Name of the concrete device
+    - The name of the concrete device.
     type: str
-    aliases: [ concrete_device_name ]
+    aliases: [ concrete_device, concrete_device_name ]
+  vcenter_name:
+    description:
+    - The virtual center name on which the device is hosted in the L4-L7 device cluster.
+    type: str
+  vm_name:
+    description:
+    - The virtual center VM name on which the device is hosted in the L4-L7 device cluster.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -41,6 +49,7 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - The C(tenant) and C(device) must exist before using this module in your playbook.
@@ -48,13 +57,13 @@ notes:
 seealso:
 - module: aci_l4l7_device
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(vnsCDev)
+  description: More information about the internal APIC classes B(vns:CDev)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new concrete device
   cisco.aci.aci_l4l7_concrete_device:
     host: apic
@@ -98,9 +107,9 @@ EXAMPLES = r'''
   delegate_to: localhost
   register: query_result
 
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -203,75 +212,77 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),
-        device=dict(type='str', aliases=['device_name',
-                                         'logical_device_name']),
-        concrete_device=dict(type='str', aliases=['concrete_device_name']),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query']),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        device=dict(type="str", aliases=["device_name", "logical_device_name"]),
+        concrete_device=dict(type="str", aliases=["concrete_device_name"]),
+        vcenter_name=dict(type="str"),
+        vm_name=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[
-            ['state', 'absent', ['tenant', 'device', 'concrete_device']],
-            ['state', 'present', ['tenant', 'device', 'concrete_device']]
-        ]
+        required_if=[["state", "absent", ["tenant", "device", "concrete_device"]], ["state", "present", ["tenant", "device", "concrete_device"]]],
     )
 
-    tenant = module.params.get('tenant')
-    state = module.params.get('state')
-    device = module.params.get('device')
-    concrete_device = module.params.get('concrete_device')
+    tenant = module.params.get("tenant")
+    state = module.params.get("state")
+    device = module.params.get("device")
+    concrete_device = module.params.get("concrete_device")
+    vcenter_name = module.params.get("vcenter_name")
+    vm_name = module.params.get("vm_name")
 
     aci = ACIModule(module)
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='vnsLDevVip',
-            aci_rn='lDevVip-{0}'.format(device),
+            aci_class="vnsLDevVip",
+            aci_rn="lDevVip-{0}".format(device),
             module_object=device,
-            target_filter={'name': device},
+            target_filter={"name": device},
         ),
         subclass_2=dict(
-            aci_class='vnsCDev',
-            aci_rn='cDev-{0}'.format(concrete_device),
+            aci_class="vnsCDev",
+            aci_rn="cDev-{0}".format(concrete_device),
             module_object=concrete_device,
-            target_filter={'name': concrete_device},
-        )
+            target_filter={"name": concrete_device},
+        ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='vnsCDev',
+            aci_class="vnsCDev",
             class_config=dict(
                 name=concrete_device,
+                vcenterName=vcenter_name,
+                vmName=vm_name,
             ),
         )
-        aci.get_diff(aci_class='vnsCDev')
+        aci.get_diff(aci_class="vnsCDev")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

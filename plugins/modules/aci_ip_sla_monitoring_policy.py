@@ -51,7 +51,7 @@ options:
   type_of_service:
     description:
     - The Type of Service (ToS) value to set in the IPv4 header.
-    type: str
+    type: int
     aliases: [ tos ]
   operation_timeout:
     description:
@@ -97,7 +97,7 @@ notes:
   The M(cisco.aci.aci_tenant) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(fvIPSLAMonitoringPol)
+  description: More information about the internal APIC class B(fv:IPSLAMonitoringPol)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
