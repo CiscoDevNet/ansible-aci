@@ -148,9 +148,9 @@
     ansible.builtin.assert:
       that:
       - invalid_ipv4 is failed
-      - invalid_ipv4.msg == "ip must be a valid IPv4 or IPv6 network"
+      - invalid_ipv4.msg == "ip must be a valid IPv4 or IPv6 prefix, e.g. '10.20.30.0/24' or 'fd80::/64'"
       - invalid_ipv6 is failed
-      - invalid_ipv6.msg == "ip must be a valid IPv4 or IPv6 network"
+      - invalid_ipv6.msg == "ip must be a valid IPv4 or IPv6 prefix, e.g. '10.20.30.0/24' or 'fd80::/64'"
       - no_pfx_length is failed
       - no_pfx_length.msg == "ip must include the prefix length, e.g. '10.20.30.0/24' or 'fd80::/64'"
       - invalid_gt is failed

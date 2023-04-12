@@ -220,7 +220,7 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
 
-import ipaddress
+import re
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
@@ -257,18 +257,20 @@ def main():
     less_than = module.params.get("less_than_mask")
     state = module.params.get("state")
 
+    ipv4_regex = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/(?:[0-9]|[0-2][0-9]|3[0-2])$"
+    ipv6_regex = r"^(?:(?:(?:[A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})|::[A-Fa-f0-9]{1,4})/(?:[0-9]|[0-9][0-9]|1[01][0-9]|12[0-8])$"
+    combined_regex = r"(?:{0}|{1})".format(ipv4_regex, ipv6_regex)
+
     if ip is not None:
         if "/" not in ip:
             aci.fail_json("ip must include the prefix length, e.g. '10.20.30.0/24' or 'fd80::/64'")
         else:
-            try:
-                ipaddress.ip_interface(ip)
-            except ValueError:
-                aci.fail_json("ip must be a valid IPv4 or IPv6 network")
-            mask = int(ip.split("/")[1])
+            mask = ip.split("/")[1]
+            if not re.search(combined_regex, ip):
+                aci.fail_json("ip must be a valid IPv4 or IPv6 prefix, e.g. '10.20.30.0/24' or 'fd80::/64'")
 
     if greater_than is not None:
-        if greater_than <= mask:
+        if greater_than <= int(mask):
             if greater_than > 0:
                 aci.fail_json(msg="greater_than must be greater than the prefix mask")
         if less_than is not None:
