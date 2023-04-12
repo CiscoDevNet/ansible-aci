@@ -4,16 +4,8 @@ cn-dmz-apic-m1-03-v52 ansible_host=173.36.219.69 aci_hostname=173.36.219.69
 cn-dmz-apic-m1-04-v60 ansible_host=173.36.219.70 aci_hostname=173.36.219.70
 cn-dmz-apic-m1-07-v32 ansible_host=173.36.219.73 aci_hostname=173.36.219.73
 aws_cloud ansible_host=52.52.20.121 aci_hostname=52.52.20.121 aci_password="sJ94G92#8dq2hx*K4qh" cloud_type=aws region=us-east-1 region_2=us-west-1 availability_zone=us-west-1a
-<<<<<<< HEAD
 azure_cloud ansible_host=20.245.236.136 aci_hostname=20.245.236.136 aci_password="sJ94G92#8dq2hx*K4qh" cloud_type=azure region=westus region_2=westus2 vnet_gateway=true
-=======
-azure_cloud ansible_host=104.42.26.226 aci_hostname=104.42.26.226 aci_password="sJ94G92#8dq2hx*K4qh" cloud_type=azure region=westus region_2=westus2 vnet_gateway=true
-<<<<<<< HEAD
-inventory_hosts aci_hostname=173.36.219.68 ansible_connection=ansible.netcommon.httpapi
->>>>>>> 1293725 ([ignore_changes] Add inventory_hosts=6 to the test file)
-=======
-#inventory_hosts aci_hostname=173.36.219.69 ansible_user=ansible_github_ci ansible_password="sJ94G92#8dq2hx*K4qh" ansible_command_timeout=3 ansible_connection=ansible.netcommon.httpapi ansible_network_os=cisco.aci.aci ansible_httpapi_validate_certs=False ansible_httpapi_use_ssl=True ansible_httpapi_use_proxy=True ansible_httpapi_port=443
->>>>>>> 29a664c ([minor_change] Removed different functions to make requests which can now be done by using just one function)
+#inventory_hosts aci_hostname=173.36.219.72 ansible_user=ansible_github_ci ansible_password="sJ94G92#8dq2hx*K4qh" ansible_command_timeout=5 ansible_connection=ansible.netcommon.httpapi ansible_network_os=cisco.aci.aci ansible_httpapi_validate_certs=False ansible_httpapi_use_ssl=True ansible_httpapi_use_proxy=True ansible_httpapi_port=443
 
 [aci:vars]
 aci_username=ansible_github_ci

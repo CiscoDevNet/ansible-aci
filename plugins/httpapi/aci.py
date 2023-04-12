@@ -16,8 +16,6 @@
 
 
 from __future__ import absolute_import, division, print_function
-from importlib.resources import path
-from operator import methodcaller
 
 __metaclass__ = type
 
@@ -42,6 +40,7 @@ import re
 from ansible.module_utils._text import to_text, to_native
 from ansible.module_utils.connection import ConnectionError
 from ansible.plugins.httpapi import HttpApiBase
+from copy import copy
 
 # Optional, only used for APIC signature-based authentication
 try:
@@ -61,38 +60,37 @@ try:
 except ImportError:
     HAS_CRYPTOGRAPHY = False
 
+CONNECTION_MAP = {"username": "remote_user", "timeout": "persistent_command_timeout"}
+RESET_KEYS = ["username", "password", "port"]
+CONNECTION_KEYS = RESET_KEYS + ["timeout", "use_proxy", "use_ssl", "validate_certs"]
 
 class HttpApi(HttpApiBase):
     def __init__(self, *args, **kwargs):
         super(HttpApi, self).__init__(*args, **kwargs)
         self.auth = None
         self.params = None
-        self.check_auth_from_private_key_task = False
-        self.check_auth_from_credentials_task = False
-        self.check_auth_from_private_key_inventory = False
-        self.check_auth_from_credentials_inventory = False
+        self.result = {}
+        self.check_authentication = ""
         self.backup_hosts = None
         self.inventory_hosts = []
         self.host_counter = 0
-        self.entered_exception = False
         self.connection_error_check = False
+        self.connection_parameters = {}
+        self.begin_task = False
+        self.executed_exit_function = False
+        self.current_host = None
+        self.provided_hosts = None
+        self.get_first_item = []
 
-    def get_params(self, auth, params):
+    def set_params(self, auth, params):
         self.params = params
         self.auth = auth
-
-    def get_backup_hosts_from_inventory(self):
-        # append is used here to store the first list of hosts available in self.connection.get_option("host") in the 0th position of the list inventory_host.
-        # This is done because we keep changing the value of 'host' constantly using self.connection.set_option("host") when a list of hosts is provided.
-        # We always want access to the original list of hosts from the inventory when the tasks are running on them.
-        # Case: Host is provided in the inventory
-        self.inventory_hosts.append(re.sub(r"[[\]]", "", self.connection.get_option("host")).split(","))
 
     # Login function is executed until connection to a host is established or until all the hosts in the list are exhausted
     def login(self, username, password):
         """Log in to APIC"""
         # Perform login request
-        self.connection.queue_message("step:", "Establishing connection to {0}".format(self.connection.get_option("host")))
+        self.connection.queue_message("step:", "Establishing login to {0}".format(self.connection.get_option("host")))
         method = "POST"
         path = "/api/aaaLogin.json"
         payload = {"aaaUser": {"attributes": {"name": username, "pwd": password}}}
@@ -104,10 +102,9 @@ class HttpApi(HttpApiBase):
                 "Cookie": "APIC-Cookie={0}".format(self._response_to_json(response_value).get("imdata")[0]["aaaLogin"]["attributes"]["token"])
             }
             self.connection.queue_message("step:", "Connection to {0} was successful".format(self.connection.get_option("host")))
-        except Exception as exc:
-            # Catch exception from HTTPError()
-            if "401" in str(exc):
-                raise
+        except Exception as exc_response:
+            self.connection.queue_message("step:", "Connection to {0} has failed: {1}".format(self.connection.get_option("host"), exc_response))
+            self.handle_connection_error(exc_response)
 
     def logout(self):
         method = "POST"
@@ -122,141 +119,66 @@ class HttpApi(HttpApiBase):
         self.connection._auth = None
         self._verify_response(response, method, path, response_data)
 
-    def set_parameters(self, method, path, data):
-        if self.params.get("port") is not None:
-            self.connection.set_option("port", self.params.get("port"))
+    def set_parameters(self):
+        connection_parameters = {}
+        for key in CONNECTION_KEYS:
+            value = self.params.get(key) if self.params.get(key) is not None else self.connection.get_option(CONNECTION_MAP.get(key, key))
+            self.connection.set_option(CONNECTION_MAP.get(key, key), value)
+            if key == "timeout" and self.params.get(key) is not None:
+                self.connection.set_option("persistent_connect_timeout", value + 30)
 
-        if self.params.get("username") is not None:
-            self.connection.set_option("remote_user", self.params.get("username"))
-
-        if self.params.get("use_proxy") is not None:
-            self.connection.set_option("use_proxy", self.params.get("use_proxy"))
-
-        if self.params.get("use_ssl") is not None:
-            self.connection.set_option("use_ssl", self.params.get("use_ssl"))
-
-        if self.params.get("validate_certs") is not None:
-            self.connection.set_option("validate_certs", self.params.get("validate_certs"))
-
-        # The command timeout which is the response timeout from APIC
-        # If the persistent_connect_timeout is less than the response timeout from APIC the persistent socket connection will fail
-        if self.params.get("timeout") is not None:
-            self.connection.set_option("persistent_command_timeout", self.params.get("timeout"))
-            self.connection.set_option("persistent_connect_timeout", self.params.get("timeout") + 30)
-
-        # Start with certificate authentication
-        if self.auth is not None:
-            # If session_key is present in the inventory, certificate in the task is ignored. In order to avoid this, we explicitly set session_key to None
-            # to give preference to credentials/certificate at the task level.
-            if self.connection.get_option("session_key") is not None:
-                self.connection.set_option("session_key", None)
-            # Check if the previous task was running with the credentials at the task level/inventory or the certificate in the inventory
-            if self.check_auth_from_credentials_task or self.check_auth_from_credentials_inventory or self.check_auth_from_private_key_inventory:
-                self.host_counter = 0
-                self.check_auth_from_credentials_task = False
-                self.check_auth_from_credentials_inventory = False
-                self.check_auth_from_private_key_inventory = False
-            self.check_auth_from_private_key_task = True
-            self.connection._auth = {"Cookie": "{0}".format(self.auth)}
-            self.connection.queue_message("step:", "Setting certificate authentication at task level")
-            # Override parameter in @ensure_connect
-            self.connection._connected = True
-        # Start with credential authentication
-        elif self.params.get("password") is not None:
-            # If session_key is present in the inventory, certificate in the task is ignored. In order to avoid this, we explicitly set session_key to None
-            # to give preference to credentials/certificate at the task level.
-            if self.connection.get_option("session_key") is not None:
-                self.connection.set_option("session_key", None)
-            self.connection.set_option("password", self.params.get("password"))
-            # Check if the previous task was running with the certificate in at the task level/inventory or the credentials in the inventory
-            if self.check_auth_from_private_key_task or self.check_auth_from_credentials_inventory or self.check_auth_from_private_key_inventory:
-                self.host_counter = 0
-                # Enforce @ensure_connect
+            connection_parameters[key] = value
+            if self.connection_parameters and value != self.connection_parameters.get(key) and key in RESET_KEYS:
                 self.connection._connected = False
-                self.check_auth_from_private_key_task = False
-                self.check_auth_from_credentials_inventory = False
-                self.check_auth_from_private_key_inventory = False
-            self.check_auth_from_credentials_task = True
-            self.connection.queue_message("step:", "Setting credential authentication at task level")
-        # Note: session_key takes precedence over password if both of them are present in the inventory
-        elif self.connection.get_option("session_key") is not None:
-            # Check if the previous task was running with the certificate at the task level or the credentials in the inventory/task
-            if self.check_auth_from_credentials_inventory or self.check_auth_from_private_key_task or self.check_auth_from_credentials_task:
-                self.host_counter = 0
-                self.check_auth_from_credentials_inventory = False
-                self.check_auth_from_private_key_task = False
-                self.check_auth_from_credentials_task = False
-            self.check_auth_from_private_key_inventory = True
-            self.connection.queue_message("step:", "Setting certificate authentication from inventory")
-            self.connection._auth = {"Cookie": "{0}".format(self.cert_auth(path, method, data).get("Cookie"))}
-            # Override parameter in @ensure_connect
-            self.connection._connected = True
-        # No session_key provided. Use password in the inventory instead
-        else:
-            # Check if the previous task was running with the certificate at the task/inventory level or the credentials in the task
-            if self.check_auth_from_private_key_inventory or self.check_auth_from_private_key_task or self.check_auth_from_credentials_task:
-                self.host_counter = 0
-                # Enforce @ensure_connect
-                self.connection._connected = False
-                self.check_auth_from_private_key_inventory = False
-                self.check_auth_from_private_key_task = False
-                self.check_auth_from_credentials_task = False
-            self.check_auth_from_credentials_inventory = True
-            self.connection.queue_message("step:", "Setting credential authentication from inventory")
+                self.connection.queue_message("step", "Re-setting connection due to change in {0}".format(key))
+
+            # if self.auth is not None or self.connection.get_option("session_key") is not None:
+            #     self.connection._connected = True
+
+        if self.connection_parameters != connection_parameters:
+            self.connection_parameters = copy(connection_parameters)
+
+    def set_hosts(self):
+         if self.params.get("host") is not None:
+            get_hosts = ast.literal_eval(self.params.get("host")) if "[" in self.params.get("host") else self.params.get("host").split(",") 
+         else:
+            self.get_first_item.append(re.sub(r"[[\]]", "", self.connection.get_option("host")).split(","))
+            get_hosts = self.get_first_item[0]
+
+         if self.provided_hosts is None:
+            self.provided_hosts = get_hosts
+            self.connection.queue_message(
+                "step:", "Provided Hosts: {0}".format(self.provided_hosts)
+            )
+            self.backup_hosts = self.provided_hosts
+            self.current_host = self.backup_hosts.pop(0)
+         elif (len(self.backup_hosts) != 0 and self.current_host not in get_hosts) or self.connection_error_check == True:
+            self.connection_error_check = False
+            self.connection._connected = False
+            self.connection.queue_message(
+                "step:", "Provided hosts have changed: {0}".format(get_hosts)
+            )
+            self.backup_hosts = get_hosts
+            self.current_host = self.backup_hosts.pop(0)
+         self.connection.set_option("host", self.current_host)
 
     # One API call is made via each call to send_request from aci.py in module_utils
     # As long as a host is active in the list we make sure that the API call goes through
     def send_request(self, method, path, data):
         """This method handles all APIC REST API requests other than login"""
 
-        # Note: Preference is given to Hosts mentioned at task level in the playbook
-        if self.params.get("host") is not None:
-            # Case: Host is provided in the task of a playbook
-            task_hosts = ast.literal_eval(self.params.get("host")) if "[" in self.params.get("host") else self.params.get("host").split(",")
+        self.set_parameters()
+        self.set_hosts()
 
-            # We check whether:
-            # 1.The list of hosts provided in two consecutive tasks are not the same
-            # 2.connection_error_check was set in the previous task
-            # If yes, we begin the operation on the first host of the list. (Memory of the host in the list-reset).
-            # If no, we continue operation on the same host on which previous task was running (Memory of the host in the list-preserved).
-            if (self.backup_hosts is not None and self.backup_hosts != task_hosts) or self.connection_error_check:
-                self.host_counter = 0
-                self.connection_error_check = False
-                self.connection._connected = False
-
-            self.backup_hosts = task_hosts
-        else:
-            # Case: Hosts from the inventory are used
-            self.get_backup_hosts_from_inventory()
-
-            # We check whether:
-            # 1.The list of hosts provided in two consecutive tasks are not the same
-            # 2.connection_error_check was set in the previous task
-            # If yes, we begin the operation on the first host of the list. (Memory of the host in the list-reset).
-            # If no, we continue operation on the same host on which previous task was running (Memory of the host in the list-preserved).
-            if (self.backup_hosts is not None and self.backup_hosts != self.inventory_hosts[0]) or self.connection_error_check:
-                self.host_counter = 0
-                self.connection_error_check = False
-                self.connection._connected = False
-
-            # Set backup host/hosts from the inventory. Host is not provided in the task.
-            self.backup_hosts = self.inventory_hosts[0]
-
-        # Set parameters from the task
-        self.set_parameters(method, path, data)
-
-        # Start operation on the host
-        self.connection.set_option("host", self.backup_hosts[self.host_counter])
-        self.connection.queue_message("step:", "Initializing operation on host {0}".format(self.connection.get_option("host")))
-
-        # If the credentials are mentioned, the first attempt at login is performed automatically via @ensure_connect before making a request.
         try:
             response, response_data = self.connection.send(path, data, method=method)
             self.connection.queue_message(
                 "step:", "Received response from {0} for {1} operation with HTTP: {2}".format(self.connection.get_option("host"), method, response.getcode())
             )
         except Exception as exc_response:
-            self.connection.queue_message("step:", "Connection to {0} has failed: {1}".format(self.connection.get_option("host"), exc_response))
+            if len(self.backup_hosts) == 0:
+                return self._return_info("", method, re.match(r'^.*?\.json',self.connection._url+path).group(0), str(exc_response))
+            self.connection.queue_message("step:", "Connection to {0} has failed in between operations with: {1}".format(self.connection.get_option("host"), exc_response))
             self.handle_connection_error(exc_response)
             self.connection.queue_message("step:", "Retrying request on {0}".format(self.connection.get_option("host")))
             # recurse through function for retrying the request
@@ -266,28 +188,28 @@ class HttpApi(HttpApiBase):
 
     # Custom error handler
     def handle_connection_error(self, exception):
-        self.host_counter += 1
-        if self.host_counter >= len(self.backup_hosts):
-            # Base Case for send_request. All hosts are exhausted in the list.
+        if len(self.backup_hosts) == 0:
             self.connection_error_check = True
             raise ConnectionError(
                 "No hosts left in cluster to continue operation!!! Error on final host {0}: {1}".format(self.connection.get_option("host"), exception)
             )
+        self.current_host = self.backup_hosts.pop(0)
         self.connection.queue_message(
-            "step:", "Switching host from {0} to {1}".format(self.connection.get_option("host"), self.backup_hosts[self.host_counter])
+            "step:", "Switching host from {0} to {1}".format(self.connection.get_option("host"), self.current_host)
         )
-        self.connection.set_option("host", self.backup_hosts[self.host_counter])
-        if self.auth is not None or (self.connection.get_option("session_key") is not None and self.auth is None):
-            return
-        else:
-            # Login function is called until connection to a host is established or until all the hosts in the list are exhausted
-            self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
+        self.connection.set_option("host", self.current_host)
+        # Login function is called until connection to a host is established or until all the hosts in the list are exhausted
+        self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
 
     # Built-in-function
     def handle_httperror(self, exc):
         self.connection.queue_message("step:", "Failed to receive response from {0}: {1}".format(self.connection.get_option("host"), exc))
-        if str(exc) == "HTTP Error 401: Unauthorized":
-            raise ConnectionError("Connection to {0} has failed with {1}".format(self.connection.get_option("host"), exc))
+        if exc.code == 401:
+            return False
+        elif exc.code == 403:
+            self.connection._auth = None
+            self.login(self.connection.get_option('remote_user'), self.connection.get_option('password'))
+            return True
         return exc
 
     def _verify_response(self, response, method, path, response_data):
@@ -325,7 +247,8 @@ class HttpApi(HttpApiBase):
         info["method"] = method
         info["url"] = path
         info["msg"] = msg
-        info["body"] = respond_data
+        if respond_data is not None:
+            info["body"] = respond_data
         return info
 
     def cert_auth(self, path, method, payload=""):

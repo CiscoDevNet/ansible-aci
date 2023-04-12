@@ -128,10 +128,10 @@ def aci_argument_spec():
             choices=["debug", "info", "normal"],
             fallback=(env_fallback, ["ACI_OUTPUT_LEVEL"]),
         ),
-        timeout=dict(type="int", default=30, fallback=(env_fallback, ["ACI_TIMEOUT"])),
-        use_proxy=dict(type="bool", default=True, fallback=(env_fallback, ["ACI_USE_PROXY"])),
-        use_ssl=dict(type="bool", default=True, fallback=(env_fallback, ["ACI_USE_SSL"])),
-        validate_certs=dict(type="bool", default=True, fallback=(env_fallback, ["ACI_VALIDATE_CERTS"])),
+        timeout=dict(type="int", fallback=(env_fallback, ["ACI_TIMEOUT"])),
+        use_proxy=dict(type="bool", fallback=(env_fallback, ["ACI_USE_PROXY"])),
+        use_ssl=dict(type="bool", fallback=(env_fallback, ["ACI_USE_SSL"])),
+        validate_certs=dict(type="bool", fallback=(env_fallback, ["ACI_VALIDATE_CERTS"])),
         output_path=dict(type="str", fallback=(env_fallback, ["ACI_OUTPUT_PATH"])),
     )
 
@@ -1602,15 +1602,15 @@ def ospf_spec():
     def api_call(self, method, path, url, data=None, output=False):
 >>>>>>> 88b1ff5 ([minor_change] Removed different functions to make requests which can now be done by using just one function)
         resp = None
+        info = {}
         if self.params.get("private_key"):
             self.cert_auth(path=path, payload=data, method=method)
         if self.module._socket_path:
-            self.params["validate_certs"] = False
             connect = Connection(self.module._socket_path)
-            connect.get_params(self.headers.get("Cookie"), self.params)
+            connect.set_params(self.headers.get("Cookie"), self.params)
             info = connect.send_request(method, "/{0}".format(path), data)
-            self.httpapi_logs.extend(connect.pop_messages())
             self.url = info.get("url")
+            self.httpapi_logs.extend(connect.pop_messages())
         else:
             resp, info = fetch_url(
                 self.module,
@@ -1618,10 +1618,11 @@ def ospf_spec():
                 data=data,
                 headers=self.headers,
                 method=method,
-                timeout=self.params.get("timeout"),
-                use_proxy=self.params.get("use_proxy"),
+                timeout=self.params.get("timeout", 30),
+                use_proxy=self.params.get("use_proxy", True),
             )
 
+        
         self.response = info.get("msg")
         self.status = info.get("status")
         self.method = method
