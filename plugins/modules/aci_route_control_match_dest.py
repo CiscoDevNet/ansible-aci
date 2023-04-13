@@ -265,12 +265,12 @@ def main():
         if "/" not in ip:
             aci.fail_json("ip must include the prefix length, e.g. '10.20.30.0/24' or 'fd80::/64'")
         else:
-            mask = ip.split("/")[1]
+            mask = int(ip.split("/")[1])
             if not re.search(combined_regex, ip):
                 aci.fail_json("ip must be a valid IPv4 or IPv6 prefix, e.g. '10.20.30.0/24' or 'fd80::/64'")
 
     if greater_than is not None:
-        if greater_than <= int(mask):
+        if greater_than <= mask:
             if greater_than > 0:
                 aci.fail_json(msg="greater_than must be greater than the prefix mask")
         if less_than is not None:
