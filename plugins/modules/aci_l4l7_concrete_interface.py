@@ -280,9 +280,9 @@ def main():
         supports_check_mode=True,
         required_if=[
             ['state', 'absent', ['tenant', 'device', 'concrete_device',
-                                 'concrete_interface']],
+                                 'name']],
             ['state', 'present', ['tenant', 'device', 'concrete_device',
-                                  'concrete_interface', 'pod_id', 'node_id',
+                                  'name', 'pod_id', 'node_id',
                                   'path_ep']]
         ]
     )

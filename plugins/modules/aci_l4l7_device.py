@@ -104,7 +104,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
-    device: my_device
+    name: my_device
     state: present
     domain: phys
     func_type: GoTo
@@ -123,9 +123,20 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
-    device: my_device
+    name: my_device
     state: absent
   delegate_to: localhost
+
+- name: Query an L4-L7 device
+  cisco.aci.aci_l4l7_device:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    name: my_device
+    state: query
+  delegate_to: localhost
+  register: query_result
 
 - name: Query all L4-L7 devices
   cisco.aci.aci_l4l7_device:
@@ -269,7 +280,7 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "absent", ["tenant", "device"]], ["state", "present", ["tenant", "device"]]],
+        required_if=[["state", "absent", ["tenant", "name"]], ["state", "present", ["tenant", "name"]]],
         required_together=[["dev_type", "domain"]],
     )
 

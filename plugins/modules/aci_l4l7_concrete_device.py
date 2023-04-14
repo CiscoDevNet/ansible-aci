@@ -225,7 +225,7 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         device=dict(type="str", aliases=["device_name", "logical_device_name"]),
-        concrete_device=dict(type="str", aliases=["concrete_device_name"]),
+        name=dict(type="str", aliases=["concrete_device", "concrete_device_name"]),
         vcenter_name=dict(type="str"),
         vm_name=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -240,7 +240,7 @@ def main():
     tenant = module.params.get("tenant")
     state = module.params.get("state")
     device = module.params.get("device")
-    concrete_device = module.params.get("concrete_device")
+    name = module.params.get("name")
     vcenter_name = module.params.get("vcenter_name")
     vm_name = module.params.get("vm_name")
 
@@ -261,9 +261,9 @@ def main():
         ),
         subclass_2=dict(
             aci_class="vnsCDev",
-            aci_rn="cDev-{0}".format(concrete_device),
-            module_object=concrete_device,
-            target_filter={"name": concrete_device},
+            aci_rn="cDev-{0}".format(name),
+            module_object=name,
+            target_filter={"name": name},
         ),
     )
 
@@ -273,7 +273,7 @@ def main():
         aci.payload(
             aci_class="vnsCDev",
             class_config=dict(
-                name=concrete_device,
+                name=name,
                 vcenterName=vcenter_name,
                 vmName=vm_name,
             ),

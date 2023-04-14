@@ -70,7 +70,7 @@ options:
     description:
     - The HTTP version to use.
     type: str
-    choices: [ 1.0, 1.1 ]
+    choices: [ http_1.0, http_1.1 ]
   http_uri:
     description:
     - The HTTP URI to use as the SLA destination.
@@ -290,7 +290,7 @@ def main():
         operation_timeout=dict(type="int"),
         threshold=dict(type="int"),
         traffic_class=dict(type="int"),
-        http_version=dict(type="str", choices=["1.0", "1.1"]),
+        http_version=dict(type="str", choices=["http_1.0", "http_1.1"]),
         http_uri=dict(type="str"),
         http_method=dict(type="str", choices=["get"]),
     )
@@ -333,9 +333,9 @@ def main():
             if sla_type != "tcp":
                 aci.fail_json("sla_port is only used if sla_type is tcp")
 
-        if http_version == "1.0":
+        if http_version == "http_1.0":
             parsed_http = "HTTP10"
-        elif http_version == "1.1":
+        elif http_version == "http_1.1":
             parsed_http = "HTTP11"
         else:
             parsed_http = None

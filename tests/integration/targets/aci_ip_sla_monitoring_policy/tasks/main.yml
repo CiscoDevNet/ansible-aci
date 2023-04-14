@@ -100,7 +100,7 @@
     sla_type: http
     frequency: 40
     multiplier: 6
-    http_version: 1.1
+    http_version: http_1.1
     http_uri: /test
     http_method: get
     request_data_size: 100
