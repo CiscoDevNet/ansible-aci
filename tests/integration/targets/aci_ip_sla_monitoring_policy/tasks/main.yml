@@ -181,7 +181,7 @@
   assert:
     that:
     - query_sla_all is not changed
-    - query_sla_all | length > 1
+    - query_sla_all.current | length > 1
 
 # DELETE SLA POLICY
 - name: Remove IP SLA monitor
