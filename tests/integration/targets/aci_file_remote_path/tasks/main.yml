@@ -38,7 +38,7 @@
     remote_user: test_user
     auth_type: password
     remote_path: /tmp
-  check_mode: yes
+  check_mode: true
   register: cm_create_path
 
 - name: Create a File Remote Path
@@ -157,7 +157,7 @@
     auth_type: password
     remote_key: "{{ lookup('file', 'pki/rsa_ansible.key') }}"
     remote_path: /tmp
-  ignore_errors: yes
+  ignore_errors: true
   register: incorrect_auth_type1
 
 - name: Create Remote Path with passphrase when auth_type is password
@@ -171,7 +171,7 @@
     auth_type: password
     passphrase: ansible_passphrase
     remote_path: /tmp
-  ignore_errors: yes
+  ignore_errors: true
   register: incorrect_auth_type2
 
 - name: Create Remote Path with password when auth_type is ssh_key
@@ -185,7 +185,7 @@
     auth_type: ssh_key
     remote_password: test_password
     remote_path: /tmp
-  ignore_errors: yes
+  ignore_errors: true
   register: incorrect_auth_type3
 
 - name: Validate error checking
