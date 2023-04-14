@@ -18,7 +18,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
@@ -49,8 +49,8 @@
     tenant: ansible_tenant
     service_graph: ansible_graph
     connection_name: C1
-    direct_connect: yes
-    unicast_route: yes
+    direct_connect: true
+    unicast_route: true
     adjacency_type: L3
     state: present
   register: add_l4l7_abs_conn
@@ -74,8 +74,8 @@
     tenant: ansible_tenant
     service_graph: ansible_graph
     connection_name: C1
-    direct_connect: yes
-    unicast_route: yes
+    direct_connect: true
+    unicast_route: true
     adjacency_type: L3
     state: present
   register: add_l4l7_abs_conn_again
@@ -100,8 +100,8 @@
     tenant: ansible_tenant
     service_graph: ansible_graph
     connection_name: C1
-    direct_connect: no
-    unicast_route: no
+    direct_connect: false
+    unicast_route: false
     adjacency_type: L2
     state: present
   register: update_l4l7_abs_conn

@@ -18,7 +18,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
@@ -51,12 +51,12 @@
     domain: ansible_phys_dom
     func_type: GoTo
     context_aware: single
-    is_copy: no
-    managed: no
+    is_copy: false
+    managed: false
     dev_type: physical
     svc_type: adc
-    trunking: no
-    prom_mode: yes
+    trunking: false
+    prom_mode: true
     state: present
 
 # ADD SERVICE GRAPH TEMPLATE
@@ -77,7 +77,7 @@
     func_template_type: adc_one_arm
     func_type: GoTo
     device: ansible_device
-    managed: no
+    managed: false
     routing_mode: Redirect
     state: present
 

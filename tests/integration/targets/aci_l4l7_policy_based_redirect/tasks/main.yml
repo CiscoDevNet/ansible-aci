@@ -18,7 +18,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
@@ -49,13 +49,13 @@
     policy_name: ansible_pbr_policy
     dest_type: L3
     hash_algorithm: dip
-    resilient_hash: yes
+    resilient_hash: true
     min_threshold: 60
     max_threshold: 90
-    threshold_enable: yes
+    threshold_enable: true
     threshold_down_action: permit
-    pod_aware: yes
-    anycast_enabled: no
+    pod_aware: true
+    anycast_enabled: false
     state: present
   register: add_pbr_policy_v4
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
@@ -66,13 +66,13 @@
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
     hash_algorithm: dip
-    resilient_hash: yes
+    resilient_hash: true
     min_threshold: 60
     max_threshold: 90
-    threshold_enable: yes
+    threshold_enable: true
     threshold_down_action: permit
-    pod_aware: yes
-    anycast_enabled: no
+    pod_aware: true
+    anycast_enabled: false
     state: present
   register: add_pbr_policy_v3
   when: version.current.0.topSystem.attributes.version is version('4.2', '<')
@@ -116,13 +116,13 @@
     policy_name: ansible_pbr_policy
     dest_type: L3
     hash_algorithm: dip
-    resilient_hash: yes
+    resilient_hash: true
     min_threshold: 60
     max_threshold: 90
-    threshold_enable: yes
+    threshold_enable: true
     threshold_down_action: permit
-    pod_aware: yes
-    anycast_enabled: no
+    pod_aware: true
+    anycast_enabled: false
     state: present
   register: add_pbr_policy_v4_again
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
@@ -133,13 +133,13 @@
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
     hash_algorithm: dip
-    resilient_hash: yes
+    resilient_hash: true
     min_threshold: 60
     max_threshold: 90
-    threshold_enable: yes
+    threshold_enable: true
     threshold_down_action: permit
-    pod_aware: yes
-    anycast_enabled: no
+    pod_aware: true
+    anycast_enabled: false
     state: present
   register: add_pbr_policy_v3_again
   when: version.current.0.topSystem.attributes.version is version('4.2', '<')
@@ -185,13 +185,13 @@
     policy_name: ansible_pbr_policy
     dest_type: L2
     hash_algorithm: sip-dip-prototype
-    resilient_hash: no
+    resilient_hash: false
     min_threshold: 50
     max_threshold: 80
-    threshold_enable: no
+    threshold_enable: false
     threshold_down_action: deny
-    pod_aware: no
-    anycast_enabled: no
+    pod_aware: false
+    anycast_enabled: false
     state: present
   register: update_pbr_policy_v4
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
@@ -202,13 +202,13 @@
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
     hash_algorithm: sip-dip-prototype
-    resilient_hash: no
+    resilient_hash: false
     min_threshold: 50
     max_threshold: 80
-    threshold_enable: no
+    threshold_enable: false
     threshold_down_action: deny
-    pod_aware: no
-    anycast_enabled: no
+    pod_aware: false
+    anycast_enabled: false
     state: present
   register: update_pbr_policy_v3
   when: version.current.0.topSystem.attributes.version is version('4.2', '<')

@@ -18,7 +18,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
@@ -58,12 +58,12 @@
     domain: ansible_phys_dom
     func_type: GoTo
     context_aware: single
-    is_copy: no
-    managed: no
+    is_copy: false
+    managed: false
     dev_type: physical
     svc_type: adc
-    trunking: no
-    prom_mode: yes
+    trunking: false
+    prom_mode: true
     state: present
   register: create_l4l7_device
 
@@ -95,12 +95,12 @@
     domain: ansible_phys_dom
     func_type: GoTo
     context_aware: single
-    is_copy: no
-    managed: no
+    is_copy: false
+    managed: false
     dev_type: physical
     svc_type: adc
-    trunking: no
-    prom_mode: yes
+    trunking: false
+    prom_mode: true
     state: present
   register: create_l4l7_device_again
 
@@ -133,12 +133,12 @@
     domain: ansible_phys_dom
     func_type: GoThrough
     context_aware: multi
-    is_copy: no
-    managed: no
+    is_copy: false
+    managed: false
     dev_type: physical
     svc_type: fw
-    trunking: yes
-    prom_mode: no
+    trunking: true
+    prom_mode: false
     state: present
   register: update_l4l7_device
 
