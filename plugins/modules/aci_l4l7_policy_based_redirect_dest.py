@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_l4l7_policy_based_redirect_dest
 short_description: Manage L4-L7 Policy Based Redirect Destinations (vns:RedirectDest)
@@ -63,9 +62,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add destination to a Policy Based Redirect Policy
   cisco.aci.aci_l4l7_policy_based_redirect_dest:
     host: apic
@@ -110,9 +109,9 @@ EXAMPLES = r'''
   delegate_to: localhost
   register: query_result
 
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -215,7 +214,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 
 from ansible.module_utils.basic import AnsibleModule
@@ -225,74 +224,65 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),
-        policy=dict(type='str', aliases=['policy_name']),
-        redirect_ip=dict(type='str'),
-        redirect_mac=dict(type='str'),
-        dest_name=dict(type='str'),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query']),
-        pod_id=dict(type='int'),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        policy=dict(type="str", aliases=["policy_name"]),
+        redirect_ip=dict(type="str"),
+        redirect_mac=dict(type="str"),
+        dest_name=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        pod_id=dict(type="int"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[
-            ['state', 'absent', ['tenant', 'policy', 'redirect_ip']],
-            ['state', 'present', ['tenant', 'policy', 'redirect_ip']]
-        ]
+        required_if=[["state", "absent", ["tenant", "policy", "redirect_ip"]], ["state", "present", ["tenant", "policy", "redirect_ip"]]],
     )
 
-    tenant = module.params.get('tenant')
-    state = module.params.get('state')
-    policy = module.params.get('policy')
-    redirect_ip = module.params.get('redirect_ip')
-    redirect_mac = module.params.get('redirect_mac')
-    dest_name = module.params.get('dest_name')
-    state = module.params.get('state')
-    pod_id = module.params.get('pod_id')
+    tenant = module.params.get("tenant")
+    state = module.params.get("state")
+    policy = module.params.get("policy")
+    redirect_ip = module.params.get("redirect_ip")
+    redirect_mac = module.params.get("redirect_mac")
+    dest_name = module.params.get("dest_name")
+    state = module.params.get("state")
+    pod_id = module.params.get("pod_id")
 
     aci = ACIModule(module)
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='vnsSvcRedirectPol',
-            aci_rn='svcCont/svcRedirectPol-{0}'.format(policy),
+            aci_class="vnsSvcRedirectPol",
+            aci_rn="svcCont/svcRedirectPol-{0}".format(policy),
             module_object=policy,
-            target_filter={'name': policy},
+            target_filter={"name": policy},
         ),
         subclass_2=dict(
-            aci_class='vnsRedirectDest',
-            aci_rn='RedirectDest_ip-[{0}]'.format(redirect_ip),
+            aci_class="vnsRedirectDest",
+            aci_rn="RedirectDest_ip-[{0}]".format(redirect_ip),
             module_object=redirect_ip,
-            target_filter={'ip': redirect_ip},
+            target_filter={"ip": redirect_ip},
         ),
-        child_classes=['vnsRsRedirectHealthGroup']
+        child_classes=["vnsRsRedirectHealthGroup"],
     )
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='vnsRedirectDest',
-            class_config=dict(
-                ip=redirect_ip,
-                mac=redirect_mac,
-                destName=dest_name,
-                podId=pod_id
-            ),
+            aci_class="vnsRedirectDest",
+            class_config=dict(ip=redirect_ip, mac=redirect_mac, destName=dest_name, podId=pod_id),
         )
-        aci.get_diff(aci_class='vnsRedirectDest')
+        aci.get_diff(aci_class="vnsRedirectDest")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

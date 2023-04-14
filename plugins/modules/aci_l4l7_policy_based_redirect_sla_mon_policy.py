@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_l4l7_policy_based_redirect_sla_mon_policy
 short_description: Manage L4-L7 Policy Based Redirect SLA Monitor Policies (vns:RsIPSLAMonitoringPol)
@@ -54,9 +53,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Bind an IP SLA monitoring policy to a Policy Based Redirect Policy
   cisco.aci.aci_l4l7_policy_based_redirect_sla_mon_policy:
     host: apic
@@ -99,9 +98,9 @@ EXAMPLES = r'''
   delegate_to: localhost
   register: query_result
 
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -204,7 +203,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 
 from ansible.module_utils.basic import AnsibleModule
@@ -214,65 +213,58 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),
-        pbr_name=dict(type='str', aliases=['policy', 'policy_based_redirect']),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query']),
-        monitor_policy=dict(type='str', aliases=['sla', 'sla_policy'])
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        pbr_name=dict(type="str", aliases=["policy", "policy_based_redirect"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        monitor_policy=dict(type="str", aliases=["sla", "sla_policy"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[
-            ['state', 'absent', ['tenant', 'pbr_name', 'monitor_policy']],
-            ['state', 'present', ['tenant', 'pbr_name', 'monitor_policy']]
-        ]
+        required_if=[["state", "absent", ["tenant", "pbr_name", "monitor_policy"]], ["state", "present", ["tenant", "pbr_name", "monitor_policy"]]],
     )
 
-    tenant = module.params.get('tenant')
-    state = module.params.get('state')
-    pbr_name = module.params.get('pbr_name')
-    monitor_policy = module.params.get('monitor_policy')
+    tenant = module.params.get("tenant")
+    state = module.params.get("state")
+    pbr_name = module.params.get("pbr_name")
+    monitor_policy = module.params.get("monitor_policy")
 
     aci = ACIModule(module)
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='svcRedirectPol',
-            aci_rn='svcCont/svcRedirectPol-{0}'.format(pbr_name),
+            aci_class="svcRedirectPol",
+            aci_rn="svcCont/svcRedirectPol-{0}".format(pbr_name),
             module_object=pbr_name,
-            target_filter={'name': pbr_name},
+            target_filter={"name": pbr_name},
         ),
         subclass_2=dict(
-            aci_class='vnsRsIPSLAMonitoringPol',
-            aci_rn='rsIPSLAMonitoringPol',
+            aci_class="vnsRsIPSLAMonitoringPol",
+            aci_rn="rsIPSLAMonitoringPol",
             module_object=monitor_policy,
-            target_filter={'tDn': 'uni/tn-{0}/ipslaMonitoringPol-{1}'
-                           .format(tenant, monitor_policy)},
-        )
+            target_filter={"tDn": "uni/tn-{0}/ipslaMonitoringPol-{1}".format(tenant, monitor_policy)},
+        ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='vnsRsIPSLAMonitoringPol',
-            class_config=dict(
-                tDn='uni/tn-{0}/ipslaMonitoringPol-{1}'.format(tenant, monitor_policy)
-            ),
+            aci_class="vnsRsIPSLAMonitoringPol",
+            class_config=dict(tDn="uni/tn-{0}/ipslaMonitoringPol-{1}".format(tenant, monitor_policy)),
         )
-        aci.get_diff(aci_class='vnsRsIPSLAMonitoringPol')
+        aci.get_diff(aci_class="vnsRsIPSLAMonitoringPol")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

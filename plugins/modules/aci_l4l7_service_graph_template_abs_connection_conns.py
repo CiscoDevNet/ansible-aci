@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_l4l7_service_graph_template_abs_connection_conns
 short_description: Manage L4-L7 Service Graph Template Connections (vns:RsAbsConnectionConns)
@@ -66,9 +65,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new connection to a node
   cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     host: apic
@@ -119,9 +118,9 @@ EXAMPLES = r'''
   delegate_to: localhost
   register: query_result
 
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -224,7 +223,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 
 from ansible.module_utils.basic import AnsibleModule
@@ -234,83 +233,77 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),
-        service_graph=dict(type='str'),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query']),
-        connection_name=dict(type='str'),
-        direction=dict(type='str', choices=['consumer', 'provider']),
-        connected_node=dict(type='str'),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        service_graph=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        connection_name=dict(type="str"),
+        direction=dict(type="str", choices=["consumer", "provider"]),
+        connected_node=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['tenant', 'service_graph', 'connection_name', 'direction']],
-            ['state', 'present', ['tenant', 'service_graph', 'connection_name', 'direction']]
-        ]
+            ["state", "absent", ["tenant", "service_graph", "connection_name", "direction"]],
+            ["state", "present", ["tenant", "service_graph", "connection_name", "direction"]],
+        ],
     )
 
-    tenant = module.params.get('tenant')
-    service_graph = module.params.get('service_graph')
-    state = module.params.get('state')
-    connection_name = module.params.get('connection_name')
-    direction = module.params.get('direction')
-    connected_node = module.params.get('connected_node')
+    tenant = module.params.get("tenant")
+    service_graph = module.params.get("service_graph")
+    state = module.params.get("state")
+    connection_name = module.params.get("connection_name")
+    direction = module.params.get("direction")
+    connected_node = module.params.get("connected_node")
 
     aci = ACIModule(module)
     if connected_node:
-        tdn = ('uni/tn-{0}/AbsGraph-{1}/AbsNode-{2}/AbsFConn-{3}'
-               .format(tenant, service_graph, connected_node, direction))
-    elif direction == 'consumer':
-        tdn = ('uni/tn-{0}/AbsGraph-{1}/AbsTermNodeCon-T1/AbsTConn'
-               .format(tenant, service_graph))
-    elif direction == 'provider':
-        tdn = ('uni/tn-{0}/AbsGraph-{1}/AbsTermNodeProv-T2/AbsTConn'
-               .format(tenant, service_graph))
+        tdn = "uni/tn-{0}/AbsGraph-{1}/AbsNode-{2}/AbsFConn-{3}".format(tenant, service_graph, connected_node, direction)
+    elif direction == "consumer":
+        tdn = "uni/tn-{0}/AbsGraph-{1}/AbsTermNodeCon-T1/AbsTConn".format(tenant, service_graph)
+    elif direction == "provider":
+        tdn = "uni/tn-{0}/AbsGraph-{1}/AbsTermNodeProv-T2/AbsTConn".format(tenant, service_graph)
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='vnsAbsGraph',
-            aci_rn='AbsGraph-{0}'.format(service_graph),
+            aci_class="vnsAbsGraph",
+            aci_rn="AbsGraph-{0}".format(service_graph),
             module_object=service_graph,
-            target_filter={'name': service_graph},
+            target_filter={"name": service_graph},
         ),
         subclass_2=dict(
-            aci_class='vnsAbsConnection',
-            aci_rn='AbsConnection-{0}'.format(connection_name),
+            aci_class="vnsAbsConnection",
+            aci_rn="AbsConnection-{0}".format(connection_name),
             module_object=connection_name,
-            target_filter={'name': connection_name},
+            target_filter={"name": connection_name},
         ),
         subclass_3=dict(
-            aci_class='vnsRsAbsConnectionConns',
-            aci_rn='rsabsConnectionConns-[{0}]'.format(tdn),
+            aci_class="vnsRsAbsConnectionConns",
+            aci_rn="rsabsConnectionConns-[{0}]".format(tdn),
             module_object=tdn,
-            target_filter={'tDn': tdn},
-        )
+            target_filter={"tDn": tdn},
+        ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='vnsRsAbsConnectionConns',
-            class_config=dict(
-                tDn=tdn
-            ),
+            aci_class="vnsRsAbsConnectionConns",
+            class_config=dict(tDn=tdn),
         )
-        aci.get_diff(aci_class='vnsRsAbsConnectionConns')
+        aci.get_diff(aci_class="vnsRsAbsConnectionConns")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

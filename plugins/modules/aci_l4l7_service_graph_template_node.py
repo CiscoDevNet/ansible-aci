@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_l4l7_service_graph_template_node
 short_description: Manage L4-L7 Service Graph Templates Nodes (vns:AbsNode)
@@ -79,9 +78,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new Service Graph Template Node
   cisco.aci.aci_l4l7_service_graph_template_node:
     host: apic
@@ -130,9 +129,9 @@ EXAMPLES = r'''
   delegate_to: localhost
   register: query_result
 
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -235,7 +234,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 
 from ansible.module_utils.basic import AnsibleModule
@@ -245,48 +244,36 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),
-        service_graph=dict(type='str'),
-        node=dict(type='str'),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query']),
-        func_template_type=dict(type='str', choices=['fw_trans',
-                                                     'fw_routed',
-                                                     'adc_one_arm',
-                                                     'adc_two_arm',
-                                                     'other']),
-        func_type=dict(type='str', choices=['None',
-                                            'GoTo',
-                                            'GoThrough',
-                                            'L1',
-                                            'L2']),
-        device=dict(type='str'),
-        device_tenant=dict(type='str'),
-        managed=dict(type='bool'),
-        routing_mode=dict(type='str'),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        service_graph=dict(type="str"),
+        node=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        func_template_type=dict(type="str", choices=["fw_trans", "fw_routed", "adc_one_arm", "adc_two_arm", "other"]),
+        func_type=dict(type="str", choices=["None", "GoTo", "GoThrough", "L1", "L2"]),
+        device=dict(type="str"),
+        device_tenant=dict(type="str"),
+        managed=dict(type="bool"),
+        routing_mode=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[
-            ['state', 'absent', ['tenant', 'service_graph', 'node']],
-            ['state', 'present', ['tenant', 'service_graph', 'node', 'device']]
-        ]
+        required_if=[["state", "absent", ["tenant", "service_graph", "node"]], ["state", "present", ["tenant", "service_graph", "node", "device"]]],
     )
 
     aci = ACIModule(module)
 
-    tenant = module.params.get('tenant')
-    service_graph = module.params.get('service_graph')
-    node = module.params.get('node')
-    state = module.params.get('state')
-    func_template_type = module.params.get('func_template_type')
-    func_type = module.params.get('func_type')
-    device = module.params.get('device')
-    device_tenant = module.params.get('device_tenant')
-    managed = aci.boolean(module.params.get('managed'))
-    routing_mode = module.params.get('routing_mode')
+    tenant = module.params.get("tenant")
+    service_graph = module.params.get("service_graph")
+    node = module.params.get("node")
+    state = module.params.get("state")
+    func_template_type = module.params.get("func_template_type")
+    func_type = module.params.get("func_type")
+    device = module.params.get("device")
+    device_tenant = module.params.get("device_tenant")
+    managed = aci.boolean(module.params.get("managed"))
+    routing_mode = module.params.get("routing_mode")
 
     if func_template_type:
         func_template_upper = func_template_type.upper()
@@ -295,56 +282,48 @@ def main():
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='vnsAbsGraph',
-            aci_rn='AbsGraph-{0}'.format(service_graph),
+            aci_class="vnsAbsGraph",
+            aci_rn="AbsGraph-{0}".format(service_graph),
             module_object=service_graph,
-            target_filter={'name': service_graph},
+            target_filter={"name": service_graph},
         ),
         subclass_2=dict(
-            aci_class='vnsAbsNode',
-            aci_rn='AbsNode-{0}'.format(node),
+            aci_class="vnsAbsNode",
+            aci_rn="AbsNode-{0}".format(node),
             module_object=node,
-            target_filter={'name': node},
+            target_filter={"name": node},
         ),
-        child_classes=['vnsRsNodeToLDev']
+        child_classes=["vnsRsNodeToLDev"],
     )
 
     aci.get_existing()
     if not device_tenant:
         device_tenant = tenant
-    dev_tdn = 'uni/tn-{0}/lDevVip-{1}'.format(device_tenant, device)
+    dev_tdn = "uni/tn-{0}/lDevVip-{1}".format(device_tenant, device)
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='vnsAbsNode',
-            class_config=dict(
-                name=node,
-                funcTemplateType=func_template_upper,
-                funcType=func_type,
-                managed=managed,
-                routingMode=routing_mode
-            ),
+            aci_class="vnsAbsNode",
+            class_config=dict(name=node, funcTemplateType=func_template_upper, funcType=func_type, managed=managed, routingMode=routing_mode),
             child_configs=[
                 dict(
                     vnsRsNodeToLDev=dict(
-                        attributes=dict(
-                            tDn=dev_tdn
-                        ),
+                        attributes=dict(tDn=dev_tdn),
                     ),
                 ),
             ],
         )
-        aci.get_diff(aci_class='vnsAbsNode')
+        aci.get_diff(aci_class="vnsAbsNode")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

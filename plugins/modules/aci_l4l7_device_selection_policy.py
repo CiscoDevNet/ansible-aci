@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_l4l7_device_selection_policy
 short_description: Manage L4-L7 Device Selection Policies (vns:LDevCtx)
@@ -57,9 +56,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new device selection policy
   cisco.aci.aci_l4l7_device_selection_policy:
     host: apic
@@ -97,9 +96,9 @@ EXAMPLES = r'''
   delegate_to: localhost
   register: query_result
 
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -202,7 +201,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 
 from ansible.module_utils.basic import AnsibleModule
@@ -212,63 +211,54 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),
-        contract=dict(type='str', aliases=['contract_name']),
-        graph=dict(type='str', aliases=['service_graph',
-                                        'service_graph_name']),
-        node=dict(type='str', aliases=['node_name']),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query']),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        contract=dict(type="str", aliases=["contract_name"]),
+        graph=dict(type="str", aliases=["service_graph", "service_graph_name"]),
+        node=dict(type="str", aliases=["node_name"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[
-            ['state', 'absent', ['tenant', 'contract', 'graph', 'node']],
-            ['state', 'present', ['tenant', 'contract', 'graph', 'node']]
-        ]
+        required_if=[["state", "absent", ["tenant", "contract", "graph", "node"]], ["state", "present", ["tenant", "contract", "graph", "node"]]],
     )
 
-    tenant = module.params.get('tenant')
-    state = module.params.get('state')
-    contract = module.params.get('contract')
-    graph = module.params.get('graph')
-    node = module.params.get('node')
+    tenant = module.params.get("tenant")
+    state = module.params.get("state")
+    contract = module.params.get("contract")
+    graph = module.params.get("graph")
+    node = module.params.get("node")
 
     aci = ACIModule(module)
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='vnsLDevCtx',
-            aci_rn='ldevCtx-c-{0}-g-{1}-n-{2}'.format(contract, graph, node),
-            module_object='ldevCtx-c-{0}-g-{1}-n-{2}'.format(contract, graph, node),
-            target_filter={'dn': 'ldevCtx-c-{0}-g-{1}-n-{2}'.format(contract, graph, node)},
-        )
+            aci_class="vnsLDevCtx",
+            aci_rn="ldevCtx-c-{0}-g-{1}-n-{2}".format(contract, graph, node),
+            module_object="ldevCtx-c-{0}-g-{1}-n-{2}".format(contract, graph, node),
+            target_filter={"dn": "ldevCtx-c-{0}-g-{1}-n-{2}".format(contract, graph, node)},
+        ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='vnsLDevCtx',
-            class_config=dict(
-                ctrctNameOrLbl=contract,
-                graphNameOrLbl=graph,
-                nodeNameOrLbl=node
-            ),
+            aci_class="vnsLDevCtx",
+            class_config=dict(ctrctNameOrLbl=contract, graphNameOrLbl=graph, nodeNameOrLbl=node),
         )
-        aci.get_diff(aci_class='vnsLDevCtx')
+        aci.get_diff(aci_class="vnsLDevCtx")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

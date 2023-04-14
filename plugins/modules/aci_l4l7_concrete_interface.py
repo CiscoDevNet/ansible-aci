@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_l4l7_concrete_interface
 short_description: Manage L4-L7 Concrete Interfaces (vns:CIf)
@@ -74,9 +73,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new concrete interface on a single port
   cisco.aci.aci_l4l7_concrete_interface:
     host: apic
@@ -147,9 +146,9 @@ EXAMPLES = r'''
   delegate_to: localhost
   register: query_result
 
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -252,7 +251,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 
 from ansible.module_utils.basic import AnsibleModule
@@ -263,15 +262,14 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),
-        device=dict(type='str'),
-        concrete_device=dict(type='str'),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query']),
-        name=dict(type='str', aliases=['concrete_interface']),
-        pod_id=dict(type='int'),
-        node_id=dict(type='str'),
-        path_ep=dict(type='str'),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        device=dict(type="str"),
+        concrete_device=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name=dict(type="str", aliases=["concrete_interface"]),
+        pod_id=dict(type="int"),
+        node_id=dict(type="str"),
+        path_ep=dict(type="str"),
         vnic_name=dict(type="str"),
     )
 
@@ -279,68 +277,62 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['tenant', 'device', 'concrete_device',
-                                 'name']],
-            ['state', 'present', ['tenant', 'device', 'concrete_device',
-                                  'name', 'pod_id', 'node_id',
-                                  'path_ep']]
-        ]
+            ["state", "absent", ["tenant", "device", "concrete_device", "name"]],
+            ["state", "present", ["tenant", "device", "concrete_device", "name", "pod_id", "node_id", "path_ep"]],
+        ],
     )
 
-    tenant = module.params.get('tenant')
-    state = module.params.get('state')
-    device = module.params.get('device')
-    concrete_device = module.params.get('concrete_device')
-    name = module.params.get('name')
-    pod_id = module.params.get('pod_id')
-    node_id = module.params.get('node_id')
-    path_ep = module.params.get('path_ep')
-    vnic_name = module.params.get('vnic_name')
+    tenant = module.params.get("tenant")
+    state = module.params.get("state")
+    device = module.params.get("device")
+    concrete_device = module.params.get("concrete_device")
+    name = module.params.get("name")
+    pod_id = module.params.get("pod_id")
+    node_id = module.params.get("node_id")
+    path_ep = module.params.get("path_ep")
+    vnic_name = module.params.get("vnic_name")
 
     aci = ACIModule(module)
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='vnsLDevVip',
-            aci_rn='lDevVip-{0}'.format(device),
+            aci_class="vnsLDevVip",
+            aci_rn="lDevVip-{0}".format(device),
             module_object=device,
-            target_filter={'name': device},
+            target_filter={"name": device},
         ),
         subclass_2=dict(
-            aci_class='vnsCDev',
-            aci_rn='cDev-{0}'.format(concrete_device),
+            aci_class="vnsCDev",
+            aci_rn="cDev-{0}".format(concrete_device),
             module_object=concrete_device,
-            target_filter={'name': concrete_device},
+            target_filter={"name": concrete_device},
         ),
         subclass_3=dict(
-            aci_class='vnsCIf',
-            aci_rn='cIf-[{0}]'.format(name),
+            aci_class="vnsCIf",
+            aci_rn="cIf-[{0}]".format(name),
             module_object=name,
-            target_filter={'name': name},
+            target_filter={"name": name},
         ),
-        child_classes=['vnsRsCIfPathAtt']
+        child_classes=["vnsRsCIfPathAtt"],
     )
 
     aci.get_existing()
 
-    if state == 'present':
-        if '-' in node_id:
-            path_type = 'protpaths'
+    if state == "present":
+        if "-" in node_id:
+            path_type = "protpaths"
         else:
-            path_type = 'paths'
+            path_type = "paths"
 
-        path_dn = ('topology/pod-{0}/{1}-{2}/pathep-[{3}]'.format(pod_id,
-                                                                  path_type,
-                                                                  node_id,
-                                                                  path_ep))
+        path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, path_type, node_id, path_ep)
         aci.payload(
-            aci_class='vnsCIf',
+            aci_class="vnsCIf",
             class_config=dict(
                 name=name,
                 vnicName=vnic_name,
@@ -348,18 +340,16 @@ def main():
             child_configs=[
                 dict(
                     vnsRsCIfPathAtt=dict(
-                        attributes=dict(
-                            tDn=path_dn
-                        ),
+                        attributes=dict(tDn=path_dn),
                     ),
                 ),
             ],
         )
-        aci.get_diff(aci_class='vnsCIf')
+        aci.get_diff(aci_class="vnsCIf")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()

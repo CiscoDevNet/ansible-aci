@@ -4,13 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_l4l7_service_graph_template
 short_description: Manage L4-L7 Service Graph Templates (vns:AbsGraph)
@@ -46,9 +45,9 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add a new L4-L7 Service Graph Template
   cisco.aci.aci_l4l7_service_graph_template:
     host: apic
@@ -89,9 +88,9 @@ EXAMPLES = r'''
   delegate_to: localhost
   register: query_result
 
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -194,7 +193,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 
 from ansible.module_utils.basic import AnsibleModule
@@ -204,60 +203,53 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(
-        tenant=dict(type='str', aliases=['tenant_name']),
-        service_graph=dict(type='str'),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present', 'query']),
-        ui_template_type=dict(type='str'),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        service_graph=dict(type="str"),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        ui_template_type=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[
-            ['state', 'absent', ['tenant', 'service_graph']],
-            ['state', 'present', ['tenant', 'service_graph']]
-        ]
+        required_if=[["state", "absent", ["tenant", "service_graph"]], ["state", "present", ["tenant", "service_graph"]]],
     )
 
-    tenant = module.params.get('tenant')
-    service_graph = module.params.get('service_graph')
-    state = module.params.get('state')
-    ui_template_type = module.params.get('ui_template_type')
+    tenant = module.params.get("tenant")
+    service_graph = module.params.get("service_graph")
+    state = module.params.get("state")
+    ui_template_type = module.params.get("ui_template_type")
 
     aci = ACIModule(module)
 
     aci.construct_url(
         root_class=dict(
-            aci_class='fvTenant',
-            aci_rn='tn-{0}'.format(tenant),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
-            target_filter={'name': tenant},
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class='vnsAbsGraph',
-            aci_rn='AbsGraph-{0}'.format(service_graph),
+            aci_class="vnsAbsGraph",
+            aci_rn="AbsGraph-{0}".format(service_graph),
             module_object=service_graph,
-            target_filter={'name': service_graph},
+            target_filter={"name": service_graph},
         ),
-        child_classes=['vnsAbsTermNodeProv', 'vnsAbsTermNodeCon']
+        child_classes=["vnsAbsTermNodeProv", "vnsAbsTermNodeCon"],
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='vnsAbsGraph',
-            class_config=dict(
-                name=service_graph,
-                uiTemplateType=ui_template_type
-            ),
+            aci_class="vnsAbsGraph",
+            class_config=dict(name=service_graph, uiTemplateType=ui_template_type),
         )
-        aci.get_diff(aci_class='vnsAbsGraph')
+        aci.get_diff(aci_class="vnsAbsGraph")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()
