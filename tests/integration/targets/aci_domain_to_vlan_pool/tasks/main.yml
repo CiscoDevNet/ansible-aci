@@ -68,7 +68,7 @@
       pool: test_pool
       pool_allocation_mode: dynamic
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_binding
 
   - name: Add domain to VLAN pool binding (normal mode)
@@ -92,7 +92,7 @@
 
   - name: Add domain to VLAN pool binding again (check_mode)
     cisco.aci.aci_domain_to_vlan_pool: *binding_present
-    check_mode: yes
+    check_mode: true
     register: cm_add_binding_again
 
   - name: Add domain to VLAN pool binding again (normal mode)
@@ -119,7 +119,7 @@
       domain_type: phys
       pool_allocation_mode: dynamic
       state: query
-    check_mode: yes
+    check_mode: true
     register: cm_query_all_bindings
 
   - name: Query all domain to VLAN pool bindings (normal mode)
@@ -142,7 +142,7 @@
       domain: phys_dom
       pool: test_pool
       pool_allocation_mode: dynamic
-    check_mode: yes
+    check_mode: true
     register: cm_query_binding
 
   - name: Query our domain to VLAN pool binding (normal mode)
@@ -168,7 +168,7 @@
   # REMOVE BINDING
   - name: Remove domain to VLAN pool binding (check_mode)
     cisco.aci.aci_domain_to_vlan_pool: *binding_absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_binding
 
   - name: Remove domain to VLAN pool binding (normal mode)
@@ -187,7 +187,7 @@
 
   - name: Remove domain to VLAN pool binding again (check_mode)
     cisco.aci.aci_domain_to_vlan_pool: *binding_absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_binding_again
 
   - name: Remove domain to VLAN pool binding again (normal mode)
@@ -208,7 +208,7 @@
       domain: phys_dom
       pool: test_pool
       pool_allocation_mode: dynamic
-    check_mode: yes
+    check_mode: true
     register: cm_query_non_binding
 
   - name: Query non-existing domain to VLAN pool binding (normal mode)

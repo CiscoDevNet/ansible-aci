@@ -69,7 +69,7 @@
       subnet_name: test
       network: 192.0.2.0/24
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_subnet
 
   - name: Add a subnet (normal mode)
@@ -122,7 +122,7 @@
       description: description for subnet
       scope: [ shared-security, import-security ]
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_change_subnet
 
   - name: Change subnet (normal mode)
@@ -227,7 +227,7 @@
       aggregate: [ export-rtctrl, import-rtctrl ]
       state: present
     register: nm_aggregate_scope_none
-    ignore_errors: yes
+    ignore_errors: true
 
   - name: asserts failed aggregate creation tasks
     assert:
@@ -248,7 +248,7 @@
       aggregate: [ export-rtctrl, import-rtctrl ]
       state: present
     register: nm_aggregate_scope_mismatch
-    ignore_errors: yes
+    ignore_errors: true
 
   - name: asserts failed aggregate creation tasks
     assert:
@@ -268,7 +268,7 @@
       scope: [ export-rtctrl, import-rtctrl, import-security ]
       aggregate: [ export-rtctrl, import-rtctrl ]
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_aggregate_scope_match
 
   - name: Change subnet aggregate match (normal mode)

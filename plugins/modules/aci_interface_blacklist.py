@@ -59,7 +59,7 @@ EXAMPLES = r"""
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
-    validate_certs: no
+    validate_certs: false
     pod_id: 1
     node_id: 105
     interface: 1/49
@@ -71,7 +71,7 @@ EXAMPLES = r"""
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
-    validate_certs: no
+    validate_certs: false
     pod_id: 1
     node_id: 105
     interface: 1/49
@@ -83,7 +83,7 @@ EXAMPLES = r"""
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
-    validate_certs: no
+    validate_certs: false
     pod_id: 1
     node_id: 105
     fex_id: 123
@@ -96,7 +96,7 @@ EXAMPLES = r"""
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
-    validate_certs: no
+    validate_certs: false
     pod_id: 1
     node_id: 105
     fex_id: 123
@@ -109,7 +109,7 @@ EXAMPLES = r"""
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
-    validate_certs: no
+    validate_certs: false
     pod_id: 1
     node_id: 105
     interface: 1/49
@@ -121,7 +121,7 @@ EXAMPLES = r"""
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
-    validate_certs: no
+    validate_certs: false
     state: query
   delegate_to: localhost
 """

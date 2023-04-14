@@ -33,7 +33,7 @@ options:
     - Type of tag object.
     type: str
     choices: [ annotation, instance, tag ]
-    required: yes
+    required: true
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.

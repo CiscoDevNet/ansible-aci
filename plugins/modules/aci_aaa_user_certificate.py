@@ -21,7 +21,7 @@ options:
     description:
     - The name of the user to add a certificate to.
     type: str
-    required: yes
+    required: true
   aaa_user_type:
     description:
     - Whether this is a normal user or an appuser.

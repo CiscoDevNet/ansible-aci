@@ -36,7 +36,7 @@
     server_state: disabled
     auth_state: disabled
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_add_policy
 
 - name: Add NTP policy (normal mode)
@@ -47,7 +47,7 @@
 - name: Add NTP policy again (check mode)
   cisco.aci.aci_ntp_policy:
     <<: *policy_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_policy_again
 
 - name: Add NTP policy again (normal mode)
@@ -85,7 +85,7 @@
     server_state: enabled
     auth_state: disabled
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_modify_policy
 
 - name: Modify policy (normal mode)
@@ -96,7 +96,7 @@
 - name: Modify policy again (check mode)
   cisco.aci.aci_ntp_policy:
     <<: *policy_changed
-  check_mode: yes
+  check_mode: true
   register: cm_modify_policy_again
 
 - name: Modify policy again (normal mode)
@@ -129,7 +129,7 @@
   cisco.aci.aci_ntp_policy: &policy_query_all
     <<: *aci_info
     state: query
-  check_mode: yes
+  check_mode: true
   register: cm_query_all_policies
 
 - name: Query all policies (normal mode)
@@ -148,7 +148,7 @@
   cisco.aci.aci_ntp_policy:
     <<: *policy_query_all
     name: ansible_ntp_policy
-  check_mode: yes
+  check_mode: true
   register: cm_query_policy
 
 - name: Query our policy (normal mode)
@@ -174,7 +174,7 @@
 - name: Remove policy (check_mode)
   cisco.aci.aci_ntp_policy:
     <<: *policy_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_policy
 
 - name: Remove policy (normal mode)
@@ -185,7 +185,7 @@
 - name: Remove policy again (check_mode)
   cisco.aci.aci_ntp_policy:
     <<: *policy_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_policy_again
 
 - name: Remove policy again (normal mode)

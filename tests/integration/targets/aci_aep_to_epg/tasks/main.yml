@@ -75,7 +75,7 @@
       epg: epg1
       encap: 1984
       interface_mode: trunk
-    check_mode: yes
+    check_mode: true
     register: cm_add_assoc
 
   - name: Add EPG to AEP association (normal mode)
@@ -97,7 +97,7 @@
   - name: Add EPG to AEP association again, check if idempotency works (check_mode)
     cisco.aci.aci_aep_to_epg:
       <<: *assoc_present
-    check_mode: yes
+    check_mode: true
     register: cm_add_assoc_again
 
   - name: Add EPG to AEP association again, check if idempotency works (normal_mode)
@@ -117,7 +117,7 @@
       <<: *assoc_present
       encap: 1985
       primary_encap: 1986
-    check_mode: yes
+    check_mode: true
     register: cm_update_assoc
 
   - name: Change encap (normal_mode)
@@ -172,7 +172,7 @@
     cisco.aci.aci_aep_to_epg: &assoc_remove
       <<: *assoc_update
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_spec_assoc
 
   - name: Remove EPG1 to AEP association (normal mode)

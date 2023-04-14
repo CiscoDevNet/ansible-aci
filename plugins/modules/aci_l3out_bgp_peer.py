@@ -115,12 +115,12 @@ options:
         description:
         - Name of the tenant.
         type: str
-        required: yes
+        required: true
       profile:
         description:
         - Name of the Route Control Profile.
         type: str
-        required: yes
+        required: true
       l3out:
         description:
         - Name of the L3 Out.
@@ -129,7 +129,7 @@ options:
         description:
         - Name of the Route Control Profile direction.
         type: str
-        required: yes
+        required: true
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.

@@ -46,7 +46,7 @@
       name: anstest_fex_policy_group
       fex_profile: anstest_fex_profile
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_fex_policy_group_present
 
   - name: Assertions check for add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with check mode
@@ -222,7 +222,7 @@
       name: anstest_fex_policy_group
       fex_profile: anstest_fex_profile
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_anstest_fex_policy_group_absent
 
   - name: Assertions check for remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with check mode

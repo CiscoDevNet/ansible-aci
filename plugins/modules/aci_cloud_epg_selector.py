@@ -57,17 +57,17 @@ options:
   tenant:
     description:
     - The name of the existing tenant.
-    required: yes
+    required: true
     type: str
   ap:
     description:
     - The name of the cloud application profile.
-    required: yes
+    required: true
     type: str
   epg:
     description:
     - The name of the cloud EPG.
-    required: yes
+    required: true
     type: str
   state:
     description:

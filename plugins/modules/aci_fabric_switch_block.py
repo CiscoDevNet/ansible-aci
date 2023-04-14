@@ -27,7 +27,7 @@ options:
     - Type of switch profile, leaf or spine
     type: str
     choices: [ leaf, spine ]
-    required: yes
+    required: true
   profile:
     description:
     - Name of an existing fabric spine or leaf switch profile

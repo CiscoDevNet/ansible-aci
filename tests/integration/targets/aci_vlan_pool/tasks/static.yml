@@ -30,7 +30,7 @@
     pool: anstest
     pool_allocation_mode: static
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_add_static_vlan_pool
 
 - name: Add static vlan pool (normal mode)
@@ -57,7 +57,7 @@
 
 - name: Add static_vlan_pool again (check_mode)
   cisco.aci.aci_vlan_pool: *static_vlan_pool_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_static_vlan_pool_again
 
 - name: Add static vlan pool again (normal mode)
@@ -77,7 +77,7 @@
   cisco.aci.aci_vlan_pool:
     <<: *static_vlan_pool_present
     description: Ansible test static vlan pool
-  check_mode: yes
+  check_mode: true
   register: cm_add_static_vlan_pool_descr
 
 - name: Change description of static vlan pool (normal mode)
@@ -105,7 +105,7 @@
   cisco.aci.aci_vlan_pool:
     <<: *static_vlan_pool_present
     description: Ansible test static vlan pool
-  check_mode: yes
+  check_mode: true
   register: cm_add_static_vlan_pool_descr_again
 
 - name: Change description of static vlan pool again (normal mode)
@@ -125,7 +125,7 @@
 # ADD VLAN POOL AGAIN
 - name: Add static vlan pool again with no description (check_mode)
   cisco.aci.aci_vlan_pool: *static_vlan_pool_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_static_vlan_pool_again_no_descr
 
 - name: Add static vlan pool again with no description (normal mode)
@@ -151,7 +151,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     state: query
-  check_mode: yes
+  check_mode: true
   register: cm_query_all_static_vlan_pools
 
 - name: Query all static vlan pools (normal mode)
@@ -173,7 +173,7 @@
     <<: *static_vlan_pool_query
     pool: anstest
     pool_allocation_mode: static
-  check_mode: yes
+  check_mode: true
   register: cm_query_static_vlan_pool
 
 - name: Query our static vlan pool
@@ -198,7 +198,7 @@
 # REMOVE VLAN POOL
 - name: Remove static vlan pool (check_mode)
   cisco.aci.aci_vlan_pool: *static_vlan_pool_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_static_vlan_pool
 
 - name: Remove static vlan pool (normal mode)
@@ -218,7 +218,7 @@
 
 - name: Remove static vlan pool again (check_mode)
   cisco.aci.aci_vlan_pool: *static_vlan_pool_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_static_vlan_pool_again
 
 - name: Remove static vlan pool again (normal mode)
@@ -242,7 +242,7 @@
     <<: *static_vlan_pool_query
     pool: anstest
     pool_allocation_mode: static
-  check_mode: yes
+  check_mode: true
   register: cm_query_non_static_vlan_pool
 
 - name: Query non-existing static vlan pool (normal mode)
@@ -273,7 +273,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     state: present
-  ignore_errors: yes
+  ignore_errors: true
   register: error_on_missing_required_param
 
 - name: Verify error_on_missing_required_param
@@ -293,7 +293,7 @@
     output_level: '{{ aci_output_level | default("info") }}'
     pool: anstest
     state: present
-  ignore_errors: yes
+  ignore_errors: true
   register: error_on_missing_together_param
 
 - name: Verify error_on_missing_together_param

@@ -57,7 +57,7 @@
       credential_password: mySecretPassword
       vm_provider: vmware
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_credential
 
   - name: Remove vmware VMM credential (normal mode)
@@ -81,7 +81,7 @@
       credential_password: mySecretPassword
       vm_provider: vmware
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_credential
 
   # NOTE: Setting password is not idempotent
@@ -92,7 +92,7 @@
   # NOTE: Setting password is not idempotent
   - name: Add vmware VMM credential again (check mode)
     cisco.aci.aci_vmm_credential: *credential_present
-    check_mode: yes
+    check_mode: true
     register: cm_add_credential_again
 
   - name: Verify add_credential
@@ -124,7 +124,7 @@
       credential_password: myNewSecretPassword
       vm_provider: vmware
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_mod_credential
 
   - name: Modify vmware VMM credential (normal mode)
@@ -153,7 +153,7 @@
       domain: vmm_dom
       vm_provider: vmware
       state: query
-    check_mode: yes
+    check_mode: true
     register: cm_query_credential
 
   - name: Query existing vmware VMM credential (normal mode)
@@ -174,7 +174,7 @@
       <<: *aci_info
       vm_provider: vmware
       state: query
-    check_mode: yes
+    check_mode: true
     register: cm_query_all_credential
 
   - name: Query all vmware VMM credentials (normal mode)
@@ -197,7 +197,7 @@
 
   - name: Remove credential (check_mode)
     cisco.aci.aci_vmm_credential: *credential_absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_credential_again
 
   - name: Remove credential (normal_mode)

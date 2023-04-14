@@ -38,7 +38,7 @@
     node_id: 105
     switch: anstest
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_add_fabric_node
 
 - name: Add fabric node (normal mode)
@@ -47,7 +47,7 @@
 
 - name: Add fabric node again (check_mode)
   cisco.aci.aci_fabric_node: *aci_fabric_node_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_fabric_node_again
 
 - name: Add fabric node again (normal mode)
@@ -70,7 +70,7 @@
   cisco.aci.aci_fabric_node:
     <<: *aci_fabric_node_present
     description: Ansible test fabric node
-  check_mode: yes
+  check_mode: true
   register: cm_add_fabric_node_descr
 
 - name: Change description of fabric node (normal mode)
@@ -83,7 +83,7 @@
   cisco.aci.aci_fabric_node:
     <<: *aci_fabric_node_present
     description: Ansible test fabric node
-  check_mode: yes
+  check_mode: true
   register: cm_add_fabric_node_descr_again
 
 - name: Change description of fabric node again (normal mode)
@@ -105,7 +105,7 @@
 # ADD FABRIC NODE AGAIN
 - name: Add fabric node again with no description (check_mode)
   cisco.aci.aci_fabric_node: *aci_fabric_node_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_fabric_node_again_no_descr
 
 - name: Add fabric node again with no description (normal mode)
@@ -131,7 +131,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     state: query
-  check_mode: yes
+  check_mode: true
   register: cm_query_all_fabric_nodes
 
 - name: Query all fabric nodes (normal mode)
@@ -151,7 +151,7 @@
   cisco.aci.aci_fabric_node:
     <<: *aci_fabric_node_query
     serial: ansible_test # might need node_id too
-  check_mode: yes
+  check_mode: true
   register: cm_query_fabric_node
 
 - name: Query our fabric_node
@@ -171,7 +171,7 @@
 # REMOVE FABRIC NODE
 - name: Remove fabric_node (check_mode)
   cisco.aci.aci_fabric_node: *aci_fabric_node_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_fabric_node
 
 - name: Remove fabric_node (normal mode)
@@ -180,7 +180,7 @@
 
 - name: Remove fabric_node again (check_mode)
   cisco.aci.aci_fabric_node: *aci_fabric_node_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_fabric_node_again
 
 - name: Remove fabric_node again (normal mode)
@@ -201,7 +201,7 @@
   cisco.aci.aci_fabric_node:
     <<: *aci_fabric_node_query
     serial: ansible_test
-  check_mode: yes
+  check_mode: true
   register: cm_query_non_fabric_node
 
 - name: Query non-existing fabric_node (normal mode)

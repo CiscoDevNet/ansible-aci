@@ -45,7 +45,7 @@
         <<: *aci_contract_present
         subject: anstest
         description: Ansible Test
-      check_mode: yes
+      check_mode: true
       register: subject_present_check_mode
 
     - name: create subject - creation works
@@ -79,7 +79,7 @@
     - name: missing param - failure message works
       cisco.aci.aci_contract_subject:
         <<: *aci_tenant_present
-      ignore_errors: yes
+      ignore_errors: true
       register: present_missing_param
 
     - name: present assertions
@@ -208,7 +208,7 @@
       cisco.aci.aci_contract_subject: &aci_subject_absent
         <<: *aci_subject_present
         state: absent
-      check_mode: yes
+      check_mode: true
       register: subject_absent_check_mode
 
     - name: delete subject - deletion works
@@ -230,7 +230,7 @@
       cisco.aci.aci_contract_subject:
         <<: *aci_subject_absent
         subject: "{{ fakevar | default(omit) }}"
-      ignore_errors: yes
+      ignore_errors: true
       register: absent_missing_param
 
     - name: absent assertions
@@ -256,7 +256,7 @@
       cisco.aci.aci_contract_subject: &aci_subject_both
         <<: *aci_contract1
         subject: subjectboth
-      check_mode: yes
+      check_mode: true
       register: cm_subject_present_both_default
 
     - name: create subject both
@@ -275,7 +275,7 @@
         <<: *aci_contract1
         subject: subjectoneway
         apply_both_direction: one-way
-      check_mode: yes
+      check_mode: true
       register: cm_subject_present_one_way
 
     - name: create subject one-way
@@ -305,14 +305,14 @@
         <<: *aci_subject_both
         apply_both_direction: one-way
       register: nm_subject_reverse_to_one_way
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: reverse subject one-way to both
       cisco.aci.aci_contract_subject:
         <<: *aci_subject_one_way
         apply_both_direction: both
       register: nm_subject_reverse_to_both
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: subject assertions
       assert:

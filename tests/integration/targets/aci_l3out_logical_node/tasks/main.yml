@@ -65,7 +65,7 @@
       node_id: 111
       router_id: 111.111.111.111
       router_id_as_loopback: 'no'
-    check_mode: yes
+    check_mode: true
     register: cm_add_node
 
   - name: Add node (normal mode)

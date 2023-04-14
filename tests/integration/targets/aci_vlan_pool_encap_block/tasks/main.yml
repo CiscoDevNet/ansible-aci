@@ -54,7 +54,7 @@
       pool_allocation_mode: static
       allocation_mode: inherit
       description: Ansible Test
-    check_mode: yes
+    check_mode: true
     register: encap_block_present_check_mode
 
   - name: Present assertions
@@ -124,7 +124,7 @@
     cisco.aci.aci_vlan_pool_encap_block:
       <<: *aci_encap_block_present
       block_start: 0
-    ignore_errors: yes
+    ignore_errors: true
     register: encap_block_start_low
 
   - name: Present assertions
@@ -137,7 +137,7 @@
     cisco.aci.aci_vlan_pool_encap_block:
       <<: *aci_encap_block_present
       block_start: 4096
-    ignore_errors: yes
+    ignore_errors: true
     register: encap_block_start_high
 
   - name: Present assertions
@@ -150,7 +150,7 @@
     cisco.aci.aci_vlan_pool_encap_block:
       <<: *aci_encap_block_present
       block_end: 0
-    ignore_errors: yes
+    ignore_errors: true
     register: encap_block_end_low
 
   - name: Present assertions
@@ -163,7 +163,7 @@
     cisco.aci.aci_vlan_pool_encap_block:
       <<: *aci_encap_block_present
       block_end: 4096
-    ignore_errors: yes
+    ignore_errors: true
     register: encap_block_end_high
 
   - name: Present assertions
@@ -176,7 +176,7 @@
     cisco.aci.aci_vlan_pool_encap_block:
       <<: *aci_encap_block_present
       block_start: 1000
-    ignore_errors: yes
+    ignore_errors: true
     register: encap_block_start_end
 
   - name: Present assertions
@@ -188,7 +188,7 @@
   - name: Missing required param - error message works
     cisco.aci.aci_vlan_pool_encap_block:
       <<: *aci_pool_present
-    ignore_errors: yes
+    ignore_errors: true
     register: encap_block_present_missing_param
 
   - name: Present assertions
@@ -340,7 +340,7 @@
     cisco.aci.aci_vlan_pool_encap_block: &aci_encap_block_absent
       <<: *aci_encap_block_present_2
       state: absent
-    check_mode: yes
+    check_mode: true
     register: delete_check_mode
 
   - name: Absent assertions

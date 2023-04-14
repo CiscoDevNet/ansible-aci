@@ -29,7 +29,7 @@ options:
   enable_vip:
     description:
     - Determines if the Subnet should be treated as a VIP; used when the BD is extended to multiple sites.
-    - The APIC defaults to C(no) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   gateway:
     description:
@@ -52,7 +52,7 @@ options:
     description:
     - Determines if the Subnet is preferred over all available Subnets. Only one Subnet per Address Family (IPv4/IPv6).
       can be preferred in the Bridge Domain.
-    - The APIC defaults to C(no) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   route_profile:
     description:

@@ -32,7 +32,7 @@
     domain: fc_dom
     domain_type: fc
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_add_domain
 
 - name: Add FC domain (normal mode)
@@ -53,7 +53,7 @@
 
 - name: Add FC domain again (check_mode)
   cisco.aci.aci_domain: *domain_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_domain_again
 
 - name: Add FC domain again (normal mode)
@@ -70,105 +70,105 @@
   cisco.aci.aci_domain:
     <<: *domain_present
     vm_provider: vmware
-  check_mode: yes
-  ignore_errors: yes
+  check_mode: true
+  ignore_errors: true
   register: cm_incorrect_vm_provider
 
 - name: Update FC domain with incorrect parameter vm_provider (normal mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     vm_provider: vmware
-  ignore_errors: yes
+  ignore_errors: true
   register: nm_incorrect_vm_provider
 
 - name: Update FC domain with incorrect parameter encap_mode (check_mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     encap_mode: vlan
-  check_mode: yes
-  ignore_errors: yes
+  check_mode: true
+  ignore_errors: true
   register: cm_incorrect_encap_mode
 
 - name: Update FC domain with incorrect parameter encap_mode (normal mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     encap_mode: vlan
-  ignore_errors: yes
+  ignore_errors: true
   register: nm_incorrect_encap_mode
 
 - name: Update FC domain with incorrect parameter multicast_address (check_mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     multicast_address: 10.10.10.0
-  check_mode: yes
-  ignore_errors: yes
+  check_mode: true
+  ignore_errors: true
   register: cm_incorrect_multicast_address
 
 - name: Update FC domain with incorrect parameter multicast_address (normal mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     multicast_address: 10.10.10.0
-  ignore_errors: yes
+  ignore_errors: true
   register: nm_incorrect_multicast_address
 
 - name: Update FC domain with incorrect parameter vswitch (check_mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     vswitch: avs
-  check_mode: yes
-  ignore_errors: yes
+  check_mode: true
+  ignore_errors: true
   register: cm_incorrect_vswitch
 
 - name: Update FC domain with incorrect parameter vswitch (normal mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     vswitch: avs
-  ignore_errors: yes
+  ignore_errors: true
   register: nm_incorrect_vswitch
 
 - name: Update FC domain with incorrect parameter dscp (check mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     dscp: unspecified
-  check_mode: yes
-  ignore_errors: yes
+  check_mode: true
+  ignore_errors: true
   register: cm_incorrect_dscp
 
 - name: Update FC domain with incorrect parameter dscp (normal mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     dscp: unspecified
-  ignore_errors: yes
+  ignore_errors: true
   register: nm_incorrect_dscp
 
 - name: Update FC domain with incorrect parameter access_mode (check mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     access_mode: read-write
-  check_mode: yes
-  ignore_errors: yes
+  check_mode: true
+  ignore_errors: true
   register: cm_incorrect_access_mode
 
 - name: Update FC domain with incorrect parameter access_mode (normal mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     access_mode: read-write
-  ignore_errors: yes
+  ignore_errors: true
   register: nm_incorrect_access_mode
 
 - name: Update FC domain with incorrect parameter enable_vm_folder (check mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     enable_vm_folder: true
-  check_mode: yes
-  ignore_errors: yes
+  check_mode: true
+  ignore_errors: true
   register: cm_incorrect_enable_vm_folder
 
 - name: Update FC domain with incorrect parameter enable_vm_folder (normal mode)
   cisco.aci.aci_domain:
     <<: *domain_present
     enable_vm_folder: true
-  ignore_errors: yes
+  ignore_errors: true
   register: nm_incorrect_enable_vm_folder
 
 - name: Verify incorrect parameter
@@ -201,7 +201,7 @@
     output_level: '{{ aci_output_level | default("info") }}'
     domain_type: fc
     state: query
-  check_mode: yes
+  check_mode: true
   register: cm_query_all_domains
 
 - name: Query all FC domains (normal mode)
@@ -222,7 +222,7 @@
   cisco.aci.aci_domain:
     <<: *domain_query
     domain: fc_dom
-  check_mode: yes
+  check_mode: true
   register: cm_query_domain
 
 - name: Query our FC domain (normal mode)
@@ -244,7 +244,7 @@
 # REMOVE DOMAIN
 - name: Remove FC domain (check_mode)
   cisco.aci.aci_domain: *domain_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_domain
 
 - name: Remove FC domain (normal mode)
@@ -262,7 +262,7 @@
 
 - name: Remove FC domain again (check_mode)
   cisco.aci.aci_domain: *domain_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_domain_again
 
 - name: Remove FC domain again (normal mode)
@@ -281,7 +281,7 @@
   cisco.aci.aci_domain:
     <<: *domain_query
     domain: fc_dom
-  check_mode: yes
+  check_mode: true
   register: cm_query_non_domain
 
 - name: Query non-existing FC domain (normal mode)

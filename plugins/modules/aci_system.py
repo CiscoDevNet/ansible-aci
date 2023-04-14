@@ -44,7 +44,7 @@ EXAMPLES = r"""
     host: apic
     username: userName
     password: somePassword
-    validate_certs: no
+    validate_certs: false
     state: query
   delegate_to: localhost
 
@@ -53,7 +53,7 @@ EXAMPLES = r"""
     host: apic
     username: userName
     password: somePassword
-    validate_certs: no
+    validate_certs: false
     id: 1
     state: query
   delegate_to: localhost

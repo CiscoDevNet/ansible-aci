@@ -40,7 +40,7 @@
       output_level: '{{ aci_output_level | default("info") }}'
       leaf_profile: ansible_test
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_switch_leaf_profile
 
   - name: Add leaf profile (normal mode)
@@ -49,7 +49,7 @@
 
   - name: Add leaf profile again (check_mode)
     cisco.aci.aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_present
-    check_mode: yes
+    check_mode: true
     register: cm_add_switch_leaf_profile_again
 
   - name: Add leaf profile again (normal mode)
@@ -71,7 +71,7 @@
     cisco.aci.aci_switch_policy_leaf_profile:
       <<: *aci_switch_policy_leaf_profile_present
       description: Ansible test leaf profile
-    check_mode: yes
+    check_mode: true
     register: cm_add_switch_leaf_profile_descr
 
   - name: Change description of leaf profile (normal mode)
@@ -84,7 +84,7 @@
     cisco.aci.aci_switch_policy_leaf_profile:
       <<: *aci_switch_policy_leaf_profile_present
       description: Ansible test leaf profile
-    check_mode: yes
+    check_mode: true
     register: cm_add_switch_leaf_profile_descr_again
 
   - name: Change description of leaf profile again (normal mode)
@@ -105,7 +105,7 @@
   # ADD LEAF PROFILE AGAIN
   - name: Add leaf profile again with no description (check_mode)
     cisco.aci.aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_present
-    check_mode: yes
+    check_mode: true
     register: cm_add_switch_leaf_profile_again_no_descr
 
   - name: Add leaf profile again with no description (normal mode)
@@ -130,7 +130,7 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
       state: query
-    check_mode: yes
+    check_mode: true
     register: cm_query_all_switch_leaf_profiles
 
   - name: Query all switch_leaf_profiles (normal mode)
@@ -151,7 +151,7 @@
     cisco.aci.aci_switch_policy_leaf_profile:
       <<: *aci_switch_policy_leaf_profile_query
       leaf_profile: ansible_test
-    check_mode: yes
+    check_mode: true
     register: cm_query_switch_leaf_profile
 
   - name: Query our switch_leaf_profile
@@ -171,7 +171,7 @@
   # REMOVE LEAF PROFILE
   - name: Remove switch_leaf_profile (check_mode)
     cisco.aci.aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_switch_leaf_profile
 
   - name: Remove switch_leaf_profile (normal mode)
@@ -180,7 +180,7 @@
 
   - name: Remove switch_leaf_profile again (check_mode)
     cisco.aci.aci_switch_policy_leaf_profile: *aci_switch_policy_leaf_profile_absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_switch_leaf_profile_again
 
   - name: Remove switch_leaf_profile again (normal mode)
@@ -201,7 +201,7 @@
     cisco.aci.aci_switch_policy_leaf_profile:
       <<: *aci_switch_policy_leaf_profile_query
       leaf_profile: ansible_test
-    check_mode: yes
+    check_mode: true
     register: cm_query_non_switch_leaf_profile
 
   - name: Query non-existing switch_leaf_profile (normal mode)

@@ -68,7 +68,7 @@
       contract: anstest_http
       contract_label: anstest_contract_label
       subject_label: anstest_subject_label
-    check_mode: yes
+    check_mode: true
     register: provide_present_check_mode
 
   - name: bind contract to epg - provide works
@@ -101,20 +101,20 @@
     cisco.aci.aci_epg_to_contract:
       <<: *aci_tenant_present
       contract_type: provider
-    ignore_errors: yes
+    ignore_errors: true
     register: missing_param_present
 
   - name: missing required param - failure message works
     cisco.aci.aci_epg_to_contract:
       <<: *aci_tenant_present
-    ignore_errors: yes
+    ignore_errors: true
     register: missing_required_present
 
   - name: incompatible param - failure message works
     cisco.aci.aci_epg_to_contract:
       <<: *aci_epg_consume_present
       provider_match: all
-    ignore_errors: yes
+    ignore_errors: true
     register: incompatible_present
 
   - name: present assertions
@@ -162,7 +162,7 @@
     cisco.aci.aci_epg_to_contract:
       <<: *aci_tenant_present
       state: query
-    ignore_errors: yes
+    ignore_errors: true
     register: missing_required_query
 
   - name: query assertions
@@ -183,7 +183,7 @@
     cisco.aci.aci_epg_to_contract: &aci_epg_consume_absent
       <<: *aci_epg_consume_present
       state: absent
-    check_mode: yes
+    check_mode: true
     register: consume_absent_check_mode
 
   - name: delete consume binding - deletion works
@@ -212,14 +212,14 @@
     cisco.aci.aci_epg_to_contract:
       <<: *aci_epg_consume_absent
       contract: "{{ fakevar | default(omit) }}"
-    ignore_errors: yes
+    ignore_errors: true
     register: missing_param_absent
 
   - name: missing required param - failure message works
     cisco.aci.aci_epg_to_contract:
       <<: *aci_epg_consume_absent
       contract_type: "{{ fakevar | default(omit) }}"
-    ignore_errors: yes
+    ignore_errors: true
     register: missing_required_absent
 
   - name: absent assertions

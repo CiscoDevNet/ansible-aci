@@ -78,7 +78,7 @@
       name: anstest
       route_reachability: internet
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_epg_present
 
   - name: Create aci cloud external epg (normal mode)

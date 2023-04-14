@@ -90,7 +90,7 @@
       <<: *aci_epg_present
       domain: anstest
       domain_type: phys
-    check_mode: yes
+    check_mode: true
     register: phys_check_mode_present
 
   - name: bind phys domain to epg - creation works
@@ -138,7 +138,7 @@
     cisco.aci.aci_epg_to_domain:
       <<: *aci_epg_to_domain_vmm_present
       vm_provider: "{{ fake_var | default(omit) }}"
-    ignore_errors: yes
+    ignore_errors: true
     register: present_missing_params
 
   - name: bind vmm domain to epg - valid vlan
@@ -157,21 +157,21 @@
     cisco.aci.aci_epg_to_domain:
       <<: *aci_epg_to_domain_present
       encap: 4097
-    ignore_errors: yes
+    ignore_errors: true
     register: invalid_vlan
 
   - name: bind vmm domain to epg - invalid vlan (primary_encap)
     cisco.aci.aci_epg_to_domain:
       <<: *aci_epg_to_domain_present
       primary_encap: 4097
-    ignore_errors: yes
+    ignore_errors: true
     register: invalid_vlan_primary_encap
 
   - name: bind vmm domain to epg - incompatible params
     cisco.aci.aci_epg_to_domain:
       <<: *aci_epg_to_domain_present
       vm_provider: vmware
-    ignore_errors: yes
+    ignore_errors: true
     register: incompatible_params
 
   - name: Create enhanced lag policy
@@ -260,7 +260,7 @@
           vm_provider: vmware
           vmm_uplink_standby: [ 3, 4 ]
         register: vmm_uplink_change_active_same_as_standby
-        ignore_errors: yes
+        ignore_errors: true
 
       - name: bind vmm domain to epg - vmm_uplink change 0 value
         cisco.aci.aci_epg_to_domain:
@@ -302,7 +302,7 @@
           domain_type: vmm
           vm_provider: vmware
           vmm_uplink_active: []
-        ignore_errors: yes
+        ignore_errors: true
         register: vmm_uplink_empty_value_active
 
       - name: bind vmm domain to epg - vmm_uplink change string value
@@ -311,7 +311,7 @@
           domain_type: vmm
           vm_provider: vmware
           vmm_uplink_active: [ testing ]
-        ignore_errors: yes
+        ignore_errors: true
         register: vmm_uplink_string_value
 
       - name: bind vmm domain to epg - vmm_uplink change 33 value
@@ -320,7 +320,7 @@
           domain_type: vmm
           vm_provider: vmware
           vmm_uplink_active: [ 33 ]
-        ignore_errors: yes
+        ignore_errors: true
         register: vmm_uplink_33_value
 
       - name: vmm_uplink error assertions
@@ -659,7 +659,7 @@
     cisco.aci.aci_epg_to_domain: &aci_epg_to_domain_absent
       <<: *aci_epg_to_domain_present
       state: absent
-    check_mode: yes
+    check_mode: true
     register: epg_domain_check_mode_absent
 
   - name: delete phys domain epg binding - delete works

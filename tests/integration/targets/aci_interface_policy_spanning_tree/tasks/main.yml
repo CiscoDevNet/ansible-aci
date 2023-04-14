@@ -19,139 +19,144 @@
     use_proxy: "{{ aci_use_proxy | default(true) }}"
     output_level: "{{ aci_output_level | default('info') }}"
 
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-# CLEAN ENVIRONMENT
-- name: Remove policy spanning tree
-  aci_interface_policy_spanning_tree:
-    <<: *aci_info
-    stp_policy: "{{ item }}"
-    state: absent
-  loop:
-  - stp_bpduguard
-  - stp_bpdufilter
-  - stp_both
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # CLEAN ENVIRONMENT
+  - name: Remove policy spanning tree
+    aci_interface_policy_spanning_tree:
+      <<: *aci_info
+      stp_policy: "{{ item }}"
+      state: absent
+    loop:
+    - stp_bpduguard
+    - stp_bpdufilter
+    - stp_both
 
-# ADD
-- name: Add a spanning tree interface policy BPDU Guard - check mode
-  aci_interface_policy_spanning_tree:
-    <<: *aci_info
-    stp_policy: stp_bpduguard
-    description: BPDU Guard
-    bpdu_guard: true
-    state: present
-  check_mode: yes
-  register: stp_bpduguard_cm
+  # ADD
+  - name: Add a spanning tree interface policy BPDU Guard - check mode
+    aci_interface_policy_spanning_tree:
+      <<: *aci_info
+      stp_policy: stp_bpduguard
+      description: BPDU Guard
+      bpdu_guard: true
+      state: present
+    check_mode: true
+    register: stp_bpduguard_cm
 
-- name: Add a spanning tree interface policy BPDU Guard - normal mode
-  aci_interface_policy_spanning_tree:
-    <<: *aci_info
-    stp_policy: stp_bpduguard
-    description: BPDU Guard
-    bpdu_guard: true
-    state: present
-  register: stp_bpduguard_nm
+  - name: Add a spanning tree interface policy BPDU Guard - normal mode
+    aci_interface_policy_spanning_tree:
+      <<: *aci_info
+      stp_policy: stp_bpduguard
+      description: BPDU Guard
+      bpdu_guard: true
+      state: present
+    register: stp_bpduguard_nm
 
-- name: Add a spanning tree interface policy BPDU Guard - normal mode again
-  aci_interface_policy_spanning_tree:
-    <<: *aci_info
-    stp_policy: stp_bpduguard
-    description: BPDU Guard
-    bpdu_guard: true
-    state: present
-  register: stp_bpduguard_nm_again
+  - name: Add a spanning tree interface policy BPDU Guard - normal mode again
+    aci_interface_policy_spanning_tree:
+      <<: *aci_info
+      stp_policy: stp_bpduguard
+      description: BPDU Guard
+      bpdu_guard: true
+      state: present
+    register: stp_bpduguard_nm_again
 
-- name: Add a spanning tree interface policy BPDU Filter - check mode
-  aci_interface_policy_spanning_tree:
-    <<: *aci_info
-    stp_policy: stp_bpdufilter
-    description: BPDU Filter
-    bpdu_filter: true
-    state: present
-  check_mode: yes
-  register: stp_bpdufilter_cm
+  - name: Add a spanning tree interface policy BPDU Filter - check mode
+    aci_interface_policy_spanning_tree:
+      <<: *aci_info
+      stp_policy: stp_bpdufilter
+      description: BPDU Filter
+      bpdu_filter: true
+      state: present
+    check_mode: true
+    register: stp_bpdufilter_cm
 
-- name: Add a spanning tree interface policy BPDU Filter - normal mode
-  aci_interface_policy_spanning_tree:
-    <<: *aci_info
-    stp_policy: stp_bpdufilter
-    description: BPDU Filter
-    bpdu_filter: true
-    state: present
-  register: stp_bpdufilter_nm
+  - name: Add a spanning tree interface policy BPDU Filter - normal mode
+    aci_interface_policy_spanning_tree:
+      <<: *aci_info
+      stp_policy: stp_bpdufilter
+      description: BPDU Filter
+      bpdu_filter: true
+      state: present
+    register: stp_bpdufilter_nm
 
-- name: Add a spanning tree interface policy BPDU Filter - normal mode again
-  aci_interface_policy_spanning_tree:
-    <<: *aci_info
-    stp_policy: stp_bpdufilter
-    description: BPDU Filter
-    bpdu_filter: true
-    state: present
-  register: stp_bpdufilter_nm_again
+  - name: Add a spanning tree interface policy BPDU Filter - normal mode again
+    aci_interface_policy_spanning_tree:
+      <<: *aci_info
+      stp_policy: stp_bpdufilter
+      description: BPDU Filter
+      bpdu_filter: true
+      state: present
+    register: stp_bpdufilter_nm_again
 
-- name: Add a spanning tree interface policy Both - normal mode
-  aci_interface_policy_spanning_tree:
-    <<: *aci_info
-    stp_policy: stp_both
-    description: Both controls
-    bpdu_guard: true
-    bpdu_filter: true
-    state: present
-  register: stp_both_nm
+  - name: Add a spanning tree interface policy Both - normal mode
+    aci_interface_policy_spanning_tree:
+      <<: *aci_info
+      stp_policy: stp_both
+      description: Both controls
+      bpdu_guard: true
+      bpdu_filter: true
+      state: present
+    register: stp_both_nm
 
-- name: Add a spanning tree interface policy Both - normal mode again
-  aci_interface_policy_spanning_tree:
-    <<: *aci_info
-    stp_policy: stp_both
-    description: Both controls
-    bpdu_guard: true
-    bpdu_filter: true
-    state: present
-  register: stp_both_nm_again
+  - name: Add a spanning tree interface policy Both - normal mode again
+    aci_interface_policy_spanning_tree:
+      <<: *aci_info
+      stp_policy: stp_both
+      description: Both controls
+      bpdu_guard: true
+      bpdu_filter: true
+      state: present
+    register: stp_both_nm_again
 
-- name: verify add tasks
-  assert:
-    that:
-      - stp_bpduguard_cm is changed
-      - stp_bpduguard_nm is changed
-      - stp_bpduguard_nm_again is not changed
-      - stp_bpdufilter_cm is changed
-      - stp_bpdufilter_nm is changed
-      - stp_bpdufilter_nm_again is not changed
-      - stp_both_nm is changed
-      - stp_both_nm_again is not changed
-      - stp_bpduguard_nm.current.0.stpIfPol.attributes.ctrl == 'bpdu-guard' 
-      - stp_bpdufilter_nm.current.0.stpIfPol.attributes.ctrl == 'bpdu-filter'
-      - stp_both_nm.current.0.stpIfPol.attributes.ctrl == 'bpdu-filter,bpdu-guard'
+  - name: verify add tasks
+    assert:
+      that:
+        - stp_bpduguard_cm is changed
+        - stp_bpduguard_nm is changed
+        - stp_bpduguard_nm_again is not changed
+        - stp_bpdufilter_cm is changed
+        - stp_bpdufilter_nm is changed
+        - stp_bpdufilter_nm_again is not changed
+        - stp_both_nm is changed
+        - stp_both_nm_again is not changed
+        - stp_bpduguard_nm.current.0.stpIfPol.attributes.ctrl == 'bpdu-guard' 
+        - stp_bpdufilter_nm.current.0.stpIfPol.attributes.ctrl == 'bpdu-filter'
+        - stp_both_nm.current.0.stpIfPol.attributes.ctrl == 'bpdu-filter,bpdu-guard'
 
-# QUERY
-- name: Query a spanning tree interface policy
-  aci_interface_policy_spanning_tree:
-    <<: *aci_info
-    stp_policy: stp_both
-    state: query
-  register: stp_query_both
+  # QUERY
+  - name: Query a spanning tree interface policy
+    aci_interface_policy_spanning_tree:
+      <<: *aci_info
+      stp_policy: stp_both
+      state: query
+    register: stp_query_both
 
-- name: Query all spanning tree interface policies
-  aci_interface_policy_spanning_tree:
-    <<: *aci_info
-    state: query
-  register: stp_query_all
+  - name: Query all spanning tree interface policies
+    aci_interface_policy_spanning_tree:
+      <<: *aci_info
+      state: query
+    register: stp_query_all
 
-- name: verify query tasks
-  assert:
-    that:
-      - stp_query_both is not changed
-      - stp_query_all is not changed
-      - stp_query_both.current.0.stpIfPol.attributes.ctrl == 'bpdu-filter,bpdu-guard'
-      - stp_query_all.current|length >= 3
+  - name: verify query tasks
+    assert:
+      that:
+        - stp_query_both is not changed
+        - stp_query_all is not changed
+        - stp_query_both.current.0.stpIfPol.attributes.ctrl == 'bpdu-filter,bpdu-guard'
+        - stp_query_all.current|length >= 3
 
-# CLEAN ENVIRONMENT
-- name: Remove policy port security
-  aci_interface_policy_spanning_tree:
-    <<: *aci_info
-    stp_policy: "{{ item }}"
-    state: absent
-  loop:
-  - stp_bpduguard
-  - stp_bpdufilter
-  - stp_both
+  # CLEAN ENVIRONMENT
+  - name: Remove policy port security
+    aci_interface_policy_spanning_tree:
+      <<: *aci_info
+      stp_policy: "{{ item }}"
+      state: absent
+    loop:
+    - stp_bpduguard
+    - stp_bpdufilter
+    - stp_both

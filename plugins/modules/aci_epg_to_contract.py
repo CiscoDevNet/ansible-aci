@@ -33,7 +33,7 @@ options:
     description:
     - Determines if the EPG should Provide or Consume the Contract.
     type: str
-    required: yes
+    required: true
     choices: [ consumer, provider ]
   epg:
     description:

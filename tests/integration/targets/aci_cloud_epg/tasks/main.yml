@@ -69,7 +69,7 @@
       description: Aci Cloud EPG
       name: anstest
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_epg_present
 
   - name: Create aci cloud epg (normal mode)

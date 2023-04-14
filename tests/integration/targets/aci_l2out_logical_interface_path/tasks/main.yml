@@ -74,7 +74,7 @@
         - 102
       interface: '1/7'
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_path_to_intfp
 
   - name: Add new path to interface profile (normal mode)
@@ -127,7 +127,7 @@
       leaves: 105
       interface: test
       state: present
-    ignore_errors: yes
+    ignore_errors: true
 
   - name: Use switch_port interface with two leaves
     cisco.aci.aci_l2out_logical_interface_path:
@@ -138,7 +138,7 @@
         - 106
       interface: test
       state: present
-    ignore_errors: yes
+    ignore_errors: true
 
   - name: Use more than two leaves
     cisco.aci.aci_l2out_logical_interface_path:
@@ -150,7 +150,7 @@
         - 107
       interface: test
       state: present
-    ignore_errors: yes
+    ignore_errors: true
 
   - name: Query all
     cisco.aci.aci_l2out_logical_interface_path:
@@ -177,7 +177,7 @@
     cisco.aci.aci_l2out_logical_interface_path: &path_absent
       <<: *path_present
       state: absent
-    check_mode: yes
+    check_mode: true
     register: cm_rm_path
 
   - name: Remove path from interface profile (normal mode)

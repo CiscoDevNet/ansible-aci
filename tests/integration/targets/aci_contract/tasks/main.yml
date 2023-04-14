@@ -26,7 +26,7 @@
     <<: *aci_tenant_present
     contract: anstest
     description: Ansible Test
-  check_mode: yes
+  check_mode: true
   register: present_check_mode
 
 - name: create contract - creation works
@@ -53,7 +53,7 @@
 - name: missing param - failure message works
   cisco.aci.aci_contract:
     <<: *aci_tenant_present
-  ignore_errors: yes
+  ignore_errors: true
   register: present_missing_param
 
 - name: present assertions
@@ -121,7 +121,7 @@
   cisco.aci.aci_contract: &aci_contract_absent
     <<: *aci_contract_present
     state: absent
-  check_mode: yes
+  check_mode: true
   register: absent_check_mode
 
 - name: delete contract - deletion works
@@ -143,7 +143,7 @@
   cisco.aci.aci_contract:
     <<: *aci_contract_absent
     tenant: "{{ fakevar | default(omit) }}"
-  ignore_errors: yes
+  ignore_errors: true
   register: absent_missing_param
 
 - name: absent assertions

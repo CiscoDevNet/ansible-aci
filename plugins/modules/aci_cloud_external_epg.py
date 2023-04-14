@@ -82,7 +82,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    validate_certs: no
+    validate_certs: false
     tenant: tenant1
     ap: ap1
     name: ext_epg

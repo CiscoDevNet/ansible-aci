@@ -45,7 +45,7 @@
       <<: *aci_info
       tenant: ansible_test
       account_id: 111111111111
-      is_trusted: yes
+      is_trusted: true
       state: present
     register: aws_present
 
@@ -54,7 +54,7 @@
       <<: *aci_info
       tenant: ansible_test
       account_id: 111111111111
-      is_trusted: yes
+      is_trusted: true
       state: present
     register: aws_present_again
 
@@ -63,7 +63,7 @@
       <<: *aci_info
       tenant: ansible_test
       account_id: 111111111111
-      is_trusted: no
+      is_trusted: false
       state: present
     register: aws_present_not_trusted
     ignore_errors: true
@@ -80,7 +80,7 @@
       <<: *aci_info
       tenant: ansible_test
       account_id: 111111111111
-      is_trusted: no
+      is_trusted: false
       access_key_id: 1
       secret_access_key: 1
       state: present
@@ -91,10 +91,10 @@
       <<: *aci_info
       tenant: ansible_test
       account_id: 111111111111
-      is_trusted: no
+      is_trusted: false
       access_key_id: 1
       secret_access_key: 1
-      is_account_in_org: yes
+      is_account_in_org: true
       state: present
     register: aws_present_add_in_org
 

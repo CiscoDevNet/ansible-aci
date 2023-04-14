@@ -40,7 +40,7 @@
       output_level: '{{ aci_output_level | default("info") }}'
       link_level_policy: ansible_test
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_policy
 
   - name: Add Link Level Policy (normal mode)
@@ -60,7 +60,7 @@
 
   - name: Add Link Level Policy again (check mode)
     aci_interface_policy_link_level: *interface_policy_link_level_present
-    check_mode: yes
+    check_mode: true
     register: cm_add_policy_again
 
   - name: Add Link Level Policy again (normal mode)
@@ -81,7 +81,7 @@
     aci_interface_policy_link_level:
       <<: *interface_policy_link_level_present
       description: Ansible test Link Level Policy
-    check_mode: yes
+    check_mode: true
     register: cm_add_policy_descr
 
   - name: Change description of Link Level Policy (normal mode)
@@ -102,7 +102,7 @@
     aci_interface_policy_link_level:
       <<: *interface_policy_link_level_present
       description: Ansible test Link Level Policy
-    check_mode: yes
+    check_mode: true
     register: cm_add_policy_descr_again
 
   - name: Change description of Link Level Policy again (normal mode)
@@ -123,7 +123,7 @@
   # ADD LINK LEVEL POLICY AGAIN WITH NO DESCRIPTION
   - name: Add Link Level Policy again with no description (check mode)
     aci_interface_policy_link_level: *interface_policy_link_level_present
-    check_mode: yes
+    check_mode: true
     register: cm_add_policy_again_no_descr
 
   - name: Add Link Level Policy again with no description (normal mode)
@@ -150,7 +150,7 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
       state: query
-    check_mode: yes
+    check_mode: true
     register: cm_query_all_policies
 
   - name: Query all Link Level Policies (normal mode)
@@ -170,7 +170,7 @@
     aci_interface_policy_link_level:
       <<: *interface_policy_link_level_query
       link_level_policy: ansible_test
-    check_mode: yes
+    check_mode: true
     register: cm_query_policy
 
   - name: Query our Link Level Policy (normal mode)
@@ -192,7 +192,7 @@
   # REMOVE LINK LEVEL POLICY
   - name: Remove Link Level Policy (check mode)
     aci_interface_policy_link_level: *interface_policy_link_level_absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_policy
 
   - name: Remove Link Level Policy (normal mode)
@@ -211,7 +211,7 @@
 
   - name: Remove Link Level Policy again (check mode)
     aci_interface_policy_link_level: *interface_policy_link_level_absent
-    check_mode: yes
+    check_mode: true
     register: cm_remove_policy_again
 
   - name: Remove Link Level Policy again (normal mode)
@@ -232,7 +232,7 @@
     aci_interface_policy_link_level:
       <<: *interface_policy_link_level_query
       link_level_policy: ansible_test
-    check_mode: yes
+    check_mode: true
     register: cm_query_non_policy
 
   - name: Query non-existing Link Level Policy (normal mode)
@@ -260,7 +260,7 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
       state: present
-    ignore_errors: yes
+    ignore_errors: true
     register: error_on_missing_required_param
 
   - name: Verify error_on_missing_required_param
@@ -282,7 +282,7 @@
       state: present
       link_level_policy: ansible_test
       link_debounce_interval: 5005
-    ignore_errors: yes
+    ignore_errors: true
     register: error_on_debounce_out_of_range
 
   - name: Verify error_on_debounce_out_of_range

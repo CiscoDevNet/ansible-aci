@@ -52,7 +52,7 @@
       state: present
       subnet_name: anstest
       descr: Ansible Test
-    check_mode: yes
+    check_mode: true
     register: create_check_mode
 
   - name: create subnet - creation works
@@ -87,14 +87,14 @@
       <<: *aci_subnet_present
       scope: [private, public]
     register: create_bad_scope
-    ignore_errors: yes
+    ignore_errors: true
 
   - name: create subnet without all necessary params - failure message works
     cisco.aci.aci_bd_subnet:
       <<: *aci_subnet_present
       bd: "{{ fake_var | default(omit) }}"
     register: create_incomplete_data
-    ignore_errors: yes
+    ignore_errors: true
 
   - name: asserts for subnet creation tasks
     assert:
@@ -206,7 +206,7 @@
   - name: delete subnet - check mode works
     cisco.aci.aci_bd_subnet:
       <<: *aci_subnet_absent
-    check_mode: yes
+    check_mode: true
     register: delete_check_mode
 
   - name: delete subnet - delete works

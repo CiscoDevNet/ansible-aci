@@ -19,7 +19,7 @@ options:
   arp_flooding:
     description:
     - Determines if the Bridge Domain should flood ARP traffic.
-    - The APIC defaults to C(no) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   bd:
     description:
@@ -39,18 +39,18 @@ options:
   enable_multicast:
     description:
     - Determines if PIM is enabled.
-    - The APIC defaults to C(no) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   enable_routing:
     description:
     - Determines if IP forwarding should be allowed.
-    - The APIC defaults to C(yes) when unset during creation.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   endpoint_clear:
     description:
-    - Clears all End Points in all Leaves when C(yes).
+    - Clears all End Points in all Leaves when C(true).
     - The value is not reset to disabled once End Points have been cleared; that requires a second task.
-    - The APIC defaults to C(no) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   endpoint_move_detect:
     description:
@@ -76,7 +76,7 @@ options:
   ip_learning:
     description:
     - Determines if the Bridge Domain should learn End Point IPs.
-    - The APIC defaults to C(yes) when unset during creation.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   ipv6_nd_policy:
     description:
@@ -104,7 +104,7 @@ options:
   limit_ip_learn:
     description:
     - Determines if the BD should limit IP learning to only subnets owned by the Bridge Domain.
-    - The APIC defaults to C(yes) when unset during creation.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   mac_address:
     description:
@@ -170,7 +170,7 @@ EXAMPLES = r"""
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
-    validate_certs: no
+    validate_certs: false
     tenant: prod
     bd: web_servers
     mac_address: 00:22:BD:F8:19:FE
@@ -183,12 +183,12 @@ EXAMPLES = r"""
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
-    validate_certs: no
+    validate_certs: false
     tenant: prod
     bd: storage
     bd_type: fc
     vrf: fc_vrf
-    enable_routing: no
+    enable_routing: false
     state: present
   delegate_to: localhost
 
@@ -197,10 +197,10 @@ EXAMPLES = r"""
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
-    validate_certs: yes
+    validate_certs: true
     tenant: prod
     bd: web_servers
-    arp_flooding: yes
+    arp_flooding: true
     l2_unknown_unicast: flood
     state: present
   delegate_to: localhost
@@ -210,7 +210,7 @@ EXAMPLES = r"""
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
-    validate_certs: yes
+    validate_certs: true
     state: query
   delegate_to: localhost
   register: query_result
@@ -220,7 +220,7 @@ EXAMPLES = r"""
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
-    validate_certs: yes
+    validate_certs: true
     tenant: prod
     bd: web_servers
     state: query
@@ -232,7 +232,7 @@ EXAMPLES = r"""
     host: "{{ inventory_hostname }}"
     username: "{{ username }}"
     password: "{{ password }}"
-    validate_certs: yes
+    validate_certs: true
     tenant: prod
     bd: web_servers
     state: absent

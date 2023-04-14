@@ -23,7 +23,7 @@
     <<: *aci_pool_absent_static
     state: present
     descr: Ansible Test
-  check_mode: yes
+  check_mode: true
   register: create_check_mode
 
 - name: assertion test - present
@@ -121,7 +121,7 @@
   cisco.aci.aci_encap_pool:
     <<: *aci_pool_present_dynamic
     pool_allocation_mode: "{{ fake_var | default(omit) }}"
-  ignore_errors: yes
+  ignore_errors: true
   register: vlan_alloc_fail
 
 - name: assertion test - present
@@ -134,7 +134,7 @@
   cisco.aci.aci_encap_pool:
     <<: *aci_pool_present_dynamic
     pool: "{{ fake_var | default(omit) }}"
-  ignore_errors: yes
+  ignore_errors: true
   register: vlan_pool_fail
 
 - name: assertion test - present
@@ -147,7 +147,7 @@
   cisco.aci.aci_encap_pool:
     <<: *aci_pool_present_dynamic
     pool_type: "{{ fake_var | default(omit) }}"
-  ignore_errors: yes
+  ignore_errors: true
   register: vlan_pool_type_fail
 
 - name: assertion test - present
@@ -206,7 +206,7 @@
     <<: *aci_pool_absent_dynamic
     state: query
     pool_type: "{{ fake_var | default(omit) }}"
-  ignore_errors: yes
+  ignore_errors: true
   register: vlan_query_pool_type_fail
 
 - name: assertion test - query
@@ -231,7 +231,7 @@
 - name: delete dynamic vlan pool - check mode works
   cisco.aci.aci_encap_pool:
     <<: *aci_pool_absent_dynamic
-  check_mode: yes
+  check_mode: true
   register: delete_check_mode
 
 - name: assertion test - absent

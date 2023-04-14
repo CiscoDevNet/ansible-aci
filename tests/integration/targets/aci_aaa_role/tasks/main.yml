@@ -38,7 +38,7 @@
     <<: *anstest_role_absent
     priv: aaa
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_anstest_role_present
 
 - name: Assertions check for add an anstest_role aaa role with check mode
@@ -142,14 +142,14 @@
     <<: *nm_anstest_role_present
     priv: [ "admin", "aaa", "tenant-connectivity123"]
   register: anstest_role_with_invalid_list_priv
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Update an anstest_role with invalid privilege
   cisco.aci.aci_aaa_role:
     <<: *nm_anstest_role_present
     priv: "admin123"
   register: anstest_role_with_invalid_priv
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Assertions check for query a aaa role with name
   assert:
@@ -188,7 +188,7 @@
   cisco.aci.aci_aaa_role: &cm_anstest_role_absent
     <<: *nm_anstest_role_present
     state: absent
-  check_mode: yes
+  check_mode: true
   register: cm_anstest_role_absent
 
 - name: Assertions check for remove an anstest_role aaa role with check mode

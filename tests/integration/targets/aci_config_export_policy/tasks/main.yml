@@ -1,0 +1,161 @@
+# Author: Tim Cragg (@timcragg)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_export_policy
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_info
+    name: ansible_export_policy
+    state: absent
+
+- name: Delete Config Export Policy with scheduler
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_info
+    name: ansible_export_policy_scheduler
+    state: absent
+
+- name: Delete Config Export Policy with export destination
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_info
+    name: ansible_export_policy_destination
+    state: absent
+
+# CREATE CONFIG EXPORT POLICY
+- name: Create a Config Export Policy (check mode)
+  cisco.aci.aci_config_export_policy: &aci_conf_policy
+    <<: *aci_info
+    name: ansible_export_policy
+    description: Test Config Export Policy
+    scheduler: test_scheduler
+    export_destination: test_dest
+    start_now: no
+  check_mode: yes
+  register: cm_create_conf_export
+
+- name: Create a Config Export Policy
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_conf_policy
+  register: nm_create_conf_export
+
+- name: Create a Config Export Policy again
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_conf_policy
+  register: nm_create_conf_export_again
+
+- name: Create a Config Export Policy with scheduler, set to start_now
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_info
+    name: ansible_export_policy_scheduler
+    scheduler: test_scheduler
+    start_now: yes
+  register: sched_policy
+
+- name: Create a Config Export Policy with export destination
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_info
+    name: ansible_export_policy_destination
+    export_destination: test_dest
+  register: dest_policy
+
+- name: Verify creation of File Remote Path
+  ansible.builtin.assert:
+    that:
+    - cm_create_conf_export is changed
+    - nm_create_conf_export is changed
+    - nm_create_conf_export_again is not changed
+    - nm_create_conf_export.current.0.configExportP.attributes.name == "ansible_export_policy"
+    - nm_create_conf_export.current.0.configExportP.attributes.descr == "Test Config Export Policy"
+    - nm_create_conf_export.current.0.configExportP.attributes.format == "json"
+    - nm_create_conf_export.current.0.configExportP.attributes.adminSt == "untriggered"
+    - nm_create_conf_export_again.current.0.configExportP.attributes.name == "ansible_export_policy"
+    - nm_create_conf_export_again.current.0.configExportP.attributes.descr == "Test Config Export Policy"
+    - nm_create_conf_export_again.current.0.configExportP.attributes.format == "json"
+    - nm_create_conf_export_again.current.0.configExportP.attributes.adminSt == "untriggered"
+    - sched_policy.current.0.configExportP.children.1.configRsExportScheduler.attributes.tnTrigSchedPName == "test_scheduler"
+    - sched_policy.sent.configExportP.attributes.adminSt == "triggered"
+    - dest_policy.current.0.configExportP.children.0.configRsRemotePath.attributes.tnFileRemotePathName == "test_dest"
+
+# UPDATE CONFIG EXPORT POLICY
+- name: Update Config Export Policy
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_conf_policy
+    format: xml
+    target_dn: uni/tn-common
+  register: update_conf_export
+
+- name: Verify update of File Remote Path
+  ansible.builtin.assert:
+    that:
+    - update_conf_export is changed
+    - update_conf_export.current.0.configExportP.attributes.name == "ansible_export_policy"
+    - update_conf_export.current.0.configExportP.attributes.descr == "Test Config Export Policy"
+    - update_conf_export.current.0.configExportP.attributes.format == "xml"
+    - update_conf_export.current.0.configExportP.attributes.targetDn == "uni/tn-common"
+
+# QUERY CONFIG EXPORT POLICY
+- name: Query Config Export Policy
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_conf_policy
+    state: query
+  register: query_one
+
+- name: Query all Config Export Policies
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Verify Config Export Policy queries
+  ansible.builtin.assert:
+    that:
+    - query_one is not changed
+    - query_one.current.0.configExportP.attributes.name == "ansible_export_policy"
+    - query_one.current.0.configExportP.attributes.descr == "Test Config Export Policy"
+    - query_one.current.0.configExportP.attributes.format == "xml"
+    - query_one.current.0.configExportP.attributes.targetDn == "uni/tn-common"
+    - query_all is not changed
+    - query_all.current | length > 1
+
+# REMOVE CONFIG EXPORT POLICY
+- name: Delete a Config Export Policy
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_conf_policy
+    state: absent
+  register: delete
+
+- name: Delete File Config Export Policy again
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_conf_policy
+    state: absent
+  register: delete_again
+
+- name: Verify deletion of Config Export Policy
+  ansible.builtin.assert:
+    that:
+    - delete is changed
+    - delete_again is not changed
+    - delete.current == []
+
+- name: Delete Config Export Policy with scheduler
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_info
+    name: ansible_export_policy_scheduler
+    state: absent
+
+- name: Delete Config Export Policy with export destination
+  cisco.aci.aci_config_export_policy:
+    <<: *aci_info
+    name: ansible_export_policy_destination
+    state: absent

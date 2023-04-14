@@ -76,7 +76,7 @@
       region: "{{ region }}"
       primary_cidr: '10.100.0.0/16'
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_aci_ctx_profile
 
   - name: Create aci cloud context profile (normal mode)
@@ -124,7 +124,7 @@
       region: "{{ region }}"
       primary_cidr: '10.100.0.0/16'
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_aci_ctx_profile_again
 
   - name: Verify cm_add_aci_ctx_profile_again
@@ -171,7 +171,7 @@
       primary_cidr: '10.101.0.0/16'
       description: "add ctx_profile_2"
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_another_aci_ctx_profile
 
   - name: Verify cm_add_another_aci_ctx_profile

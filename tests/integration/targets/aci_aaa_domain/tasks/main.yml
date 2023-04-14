@@ -38,7 +38,7 @@
   cisco.aci.aci_aaa_domain: &cm_sec_domain_present
     <<: *sec_domain_absent
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_sec_domain_present
 
 - name: Assertions check for add anstest_sec_domain security domain with check mode
@@ -163,7 +163,7 @@
   cisco.aci.aci_aaa_domain: &cm_sec_domain_absent
     <<: *nm_sec_domain_present
     state: absent
-  check_mode: yes
+  check_mode: true
   register: cm_sec_domain_absent
 
 - name: Assertions check for remove anstest_sec_domain security domain with check mode

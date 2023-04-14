@@ -76,7 +76,7 @@
     cisco.aci.aci_l3out_static_routes_nexthop:  &nh_present
       <<: *prefix_present
       nexthop: 1.1.1.1
-    check_mode: yes
+    check_mode: true
     register: cm_add_nh
 
   - name: Add a nexthop (normal mode)

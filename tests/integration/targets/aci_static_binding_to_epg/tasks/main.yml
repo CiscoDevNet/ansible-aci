@@ -85,13 +85,13 @@
       pod: 1
       leafs: 101
       interface: '1/7'
-    check_mode: yes
+    check_mode: true
     register: provide_present_check_mode
 
   - name: Bind static-binding to epg - provide works (creation w/o check-mode)
     cisco.aci.aci_static_binding_to_epg:
       <<: *aci_static_binding_to_epg_present
-    ignore_errors: yes
+    ignore_errors: true
     register: provide_present
 
   - name: Bind static-binding to epg - switch port with multiple leafs
@@ -100,7 +100,7 @@
       leafs:
         - 101
         - 102
-    ignore_errors: yes
+    ignore_errors: true
     register: nm_multiple_leafs
 
   - name: Bind static-binding to epg - three leafs
@@ -110,7 +110,7 @@
         - 101
         - 102
         - 103
-    ignore_errors: yes
+    ignore_errors: true
     register: nm_multiple_leafs
 
   - name: Bind static-binding to epg - primary_encap_id works
@@ -123,7 +123,7 @@
     cisco.aci.aci_static_binding_to_epg:
       <<: *primary_encap_id_present
       primary_encap_id: invalid-vlan
-    ignore_errors: yes
+    ignore_errors: true
     register: primary_encap_id_invalid
 
   - name: Bind contract to epg - idempotency works again
@@ -135,7 +135,7 @@
     cisco.aci.aci_static_binding_to_epg:
       <<: *primary_encap_id_present
       description: Binding description
-    check_mode: yes
+    check_mode: true
     register: description_cm
 
   - name: Bind contract to epg - update description (run mode)
@@ -159,7 +159,7 @@
   - name: Missing required param - failure message works
     cisco.aci.aci_static_binding_to_epg:
       <<: *aci_tenant_present
-    ignore_errors: yes
+    ignore_errors: true
     register: missing_required_present
 
   - name: Present assertions
@@ -223,14 +223,14 @@
     cisco.aci.aci_static_binding_to_epg:
       <<: *aci_static_binding_to_epg_present
       primary_encap_id: 4098
-    ignore_errors: yes
+    ignore_errors: true
     register: primary_ecap_id_range
 
   - name: Bind static-binding to epg - out of range encap_id
     cisco.aci.aci_static_binding_to_epg:
       <<: *aci_static_binding_to_epg_present
       encap_id: 4098
-    ignore_errors: yes
+    ignore_errors: true
     register: encap_id_range
 
   - name: primary_ecap_id assertions
@@ -249,7 +249,7 @@
       <<: *aci_static_binding_to_epg_present
       interface_type: fex_port_channel
       extpaths: 1011
-    check_mode: yes
+    check_mode: true
     register: cm_fex_port_channel
 
   - name: Bind static-binding to epg - interface type fex_port_channel (normal mode)
@@ -265,7 +265,7 @@
       interface_type: fex_vpc
       extpaths:
         - 1012
-    ignore_errors: yes
+    ignore_errors: true
 
   - name: Bind static-binding to epg - interface type fex_vpc (normal mode)
     cisco.aci.aci_static_binding_to_epg:
@@ -290,7 +290,7 @@
       interface: 'ansible_test'
       extpaths:
         - 103
-    ignore_errors: yes
+    ignore_errors: true
     register: fex_vpc_one_extpaths
 
   - name: Bind static-binding to epg - fex_vpc with three extpaths (normal mode)
@@ -305,7 +305,7 @@
         - 103
         - 104
         - 105
-    ignore_errors: yes
+    ignore_errors: true
     register: fex_vpc_three extpaths
 
   - name: Bind static-binding to epg - fex_port_channel with multiple extpaths (check_mode)
@@ -315,8 +315,8 @@
       extpaths:
         - 101
         - 102
-    check_mode: yes
-    ignore_errors: yes
+    check_mode: true
+    ignore_errors: true
     register: cm_multiple_extpaths
 
   - name: Bind static-binding to epg - fex_port_channel with multiple extpaths (normal mode)
@@ -326,7 +326,7 @@
       extpaths:
         - 101
         - 102
-    ignore_errors: yes
+    ignore_errors: true
     register: nm_multiple_extpaths
 
   - name: Verify interface type and extpaths
@@ -357,7 +357,7 @@
     cisco.aci.aci_static_binding_to_epg:
       <<: *aci_tenant_present
       state: absent
-    ignore_errors: yes
+    ignore_errors: true
     register: missing_param_absent
 
   - name: Absent assertions

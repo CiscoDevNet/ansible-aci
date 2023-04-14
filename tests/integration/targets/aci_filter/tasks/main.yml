@@ -47,12 +47,12 @@
     tenant: ansible_test
     filter: filter_test
     state: present
-  check_mode: yes
+  check_mode: true
   register: cm_add_filter
 
 - name: Add filter again (check_mode)
   cisco.aci.aci_filter: *filter_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_filter_again
 
 - name: Add filter (normal mode)
@@ -77,14 +77,14 @@
   cisco.aci.aci_filter:
     <<: *filter_present
     description: Ansible test filter
-  check_mode: yes
+  check_mode: true
   register: cm_add_filter_descr
 
 - name: Change description of filter again (check_mode)
   cisco.aci.aci_filter:
     <<: *filter_present
     description: Ansible test filter
-  check_mode: yes
+  check_mode: true
   register: cm_add_filter_descr_again
 
 - name: Change description of filter (normal mode)
@@ -110,7 +110,7 @@
 # ADD FILTER AGAIN
 - name: Add filter again with no description (check_mode)
   cisco.aci.aci_filter: *filter_present
-  check_mode: yes
+  check_mode: true
   register: cm_add_filter_again_no_descr
 
 - name: Add filter again with no description (normal mode)
@@ -134,7 +134,7 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
     state: query
-  check_mode: yes
+  check_mode: true
   register: cm_query_all_filters
 
 - name: Query all filters (normal mode)
@@ -155,7 +155,7 @@
     <<: *filter_query
     tenant: ansible_test
     filter: filter_test
-  check_mode: yes
+  check_mode: true
   register: cm_query_filter
 
 - name: Query our filter
@@ -175,12 +175,12 @@
 # REMOVE FILTER
 - name: Remove filter (check_mode)
   cisco.aci.aci_filter: *filter_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_filter
 
 - name: Remove filter again (check_mode)
   cisco.aci.aci_filter: *filter_absent
-  check_mode: yes
+  check_mode: true
   register: cm_remove_filter_again
 
 - name: Remove filter (normal mode)
@@ -206,7 +206,7 @@
     <<: *filter_query
     tenant: ansible_test
     filter: filter_test
-  check_mode: yes
+  check_mode: true
   register: cm_query_non_filter
 
 - name: Query non-existing filter (normal mode)

@@ -82,6 +82,7 @@ action_groups:
     - aci_firmware_policy
     - aci_firmware_source
     - aci_interface_blacklist
+    - aci_interface_config
     - aci_interface_description
     - aci_interface_policy_cdp
     - aci_interface_policy_fc
@@ -96,6 +97,7 @@ action_groups:
     - aci_interface_policy_ospf
     - aci_interface_policy_port_channel
     - aci_interface_policy_port_security
+    - aci_interface_policy_spanning_tree
     - aci_interface_selector_to_switch_policy_leaf_profile
     - aci_l2out
     - aci_l2out_extepg

@@ -100,7 +100,7 @@
       src_ap: ansible_source_ap
       src_epg: ansible_source_epg
       src_group: ansible_span
-    check_mode: yes
+    check_mode: true
     register: cm_create_with_epg
 
   - name: Create a ansible_source SPAN Source
