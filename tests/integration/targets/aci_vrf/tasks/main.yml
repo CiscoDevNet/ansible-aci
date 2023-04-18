@@ -35,6 +35,7 @@
     <<: *aci_tenant_present
     vrf: anstest
     description: Ansible Test
+    dataplane: disabled
   check_mode: true
   register: vrf_present_check_mode
 
@@ -62,6 +63,7 @@
     policy_control_direction: egress
     preferred_group: enabled
     match_type: all
+    dataplane: "{{ fake_var | default(omit) }}"
   register: vrf_present_2
 
 - name: create vrf without all necessary params - failure message works
@@ -80,6 +82,7 @@
       - vrf_present is changed
       - vrf_present.sent == vrf_present_check_mode.sent
       - vrf_present.current.0.fvCtx.attributes.annotation == 'orchestrator:ansible'
+      - vrf_present.current.0.fvCtx.attributes.ipDataPlaneLearning == 'disabled'
       - vrf_present.previous == []
       - vrf_present_idempotent is not changed
       - vrf_present_idempotent.previous != []
@@ -88,9 +91,11 @@
       - vrf_update.sent != vrf_update.proposed
       - vrf_update.sent.fvCtx.attributes.descr == 'Ansible Test Update'
       - vrf_update.sent.fvCtx.attributes.pcEnfPref == 'unenforced'
+      - vrf_update.current.0.fvCtx.attributes.ipDataPlaneLearning == 'disabled'
       - vrf_present_2.sent.fvCtx.attributes.name == 'anstest2'
       - vrf_present_2.sent.fvCtx.attributes.pcEnfDir == 'egress'
       - vrf_present_2.sent.fvCtx.attributes.descr == 'Ansible Test'
+      - vrf_present_2.current.0.fvCtx.attributes.ipDataPlaneLearning == 'enabled'
       - vrf_present_2.current.0.fvCtx.children.0.vzAny.attributes.matchT == 'All'
       - vrf_present_2.current.0.fvCtx.children.0.vzAny.attributes.prefGrMemb == 'enabled'
       - vrf_present_missing_param is failed

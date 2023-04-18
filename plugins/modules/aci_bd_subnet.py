@@ -91,6 +91,13 @@ options:
     - The name of the Subnet.
     type: str
     aliases: [ name ]
+  dataplane:
+    description:
+    - The Dataplane IP Address Learning.
+    - The APIC defaults to C(enabled) when unset during creation.
+    type: str
+    choices: [ enabled, disabled ]
+    aliases: [ ip_dataplane ]
   tenant:
     description:
     - The name of the Tenant.
@@ -369,6 +376,7 @@ def main():
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         name_alias=dict(type="str"),
+        dataplane=dict(type="str", choices=["enabled", "disabled"], aliases=["ip_dataplane"]),
     )
 
     module = AnsibleModule(
@@ -410,7 +418,7 @@ def main():
     if subnet_control:
         subnet_control = SUBNET_CONTROL_MAPPING[subnet_control]
     name_alias = module.params.get("name_alias")
-
+    dataplane = module.params.get("dataplane")
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -447,6 +455,7 @@ def main():
                 scope=scope,
                 virtual=enable_vip,
                 nameAlias=name_alias,
+                ipDPLearning=dataplane,
             ),
             child_configs=[
                 {"fvRsBDSubnetToProfile": {"attributes": {"tnL3extOutName": route_profile_l3_out, "tnRtctrlProfileName": route_profile}}},

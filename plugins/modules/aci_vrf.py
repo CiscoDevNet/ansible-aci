@@ -43,6 +43,13 @@ options:
     - The description for the VRF.
     type: str
     aliases: [ descr ]
+  dataplane:
+    description:
+    - The Dataplane IP Address Learning.
+    - The APIC defaults to C(enabled) when unset during creation.
+    type: str
+    choices: [ enabled, disabled ]
+    aliases: [ ip_dataplane ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -256,6 +263,7 @@ def main():
         preferred_group=dict(type="str", choices=["enabled", "disabled"]),
         match_type=dict(type="str", choices=["all", "at_least_one", "at_most_one", "none"]),
         name_alias=dict(type="str"),
+        dataplane=dict(type="str", choices=["enabled", "disabled"], aliases=["ip_dataplane"]),
     )
 
     module = AnsibleModule(
@@ -276,6 +284,7 @@ def main():
     name_alias = module.params.get("name_alias")
     preferred_group = module.params.get("preferred_group")
     match_type = module.params.get("match_type")
+    dataplane = module.params.get("dataplane")
 
     if match_type is not None:
         match_type = MATCH_TYPE_MAPPING[match_type]
@@ -308,6 +317,7 @@ def main():
                 pcEnfPref=policy_control_preference,
                 name=vrf,
                 nameAlias=name_alias,
+                ipDataPlaneLearning=dataplane,
             ),
             child_configs=[
                 dict(vzAny=dict(attributes=dict(prefGrMemb=preferred_group, matchT=match_type))),

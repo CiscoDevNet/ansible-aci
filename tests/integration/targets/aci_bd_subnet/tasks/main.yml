@@ -68,6 +68,7 @@
       scope: [private, shared]
       route_profile: default
       route_profile_l3_out: default
+      dataplane: disabled
     register: create_subnet2
 
   - name: create subnet again - idempotency works
@@ -105,8 +106,10 @@
         - create_check_mode.sent.fvSubnet.attributes.name == create_subnet.sent.fvSubnet.attributes.name == 'anstest'
         - create_subnet is changed
         - create_subnet.current.0.fvSubnet.attributes.annotation == 'orchestrator:ansible'
+        - create_subnet.current.0.fvSubnet.attributes.ipDPLearning == 'enabled'
         - create_subnet.previous == []
         - create_subnet2 is changed
+        - create_subnet2.current.0.fvSubnet.attributes.ipDPLearning == 'disabled'
         - create_subnet2.sent == create_subnet2.proposed
         - create_subnet2.sent.fvSubnet.attributes.scope == "private,shared"
         - create_subnet2.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes.tnL3extOutName == 'default'
