@@ -23,7 +23,7 @@ options:
     aliases: [ tenant_name ]
   subject_name:
     description:
-    - Name of the Route Match Destination object
+    - Name of the Route Match Destination object.
     type: str
     aliases: [ name ]
   state:
