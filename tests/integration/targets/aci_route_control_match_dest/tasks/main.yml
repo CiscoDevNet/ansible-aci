@@ -142,7 +142,7 @@
       less_than: 28
       state: present
     register: invalid_lt
-    ignore_errors: yes
+    ignore_errors: true
 
   - name: Verify error handling
     ansible.builtin.assert:
