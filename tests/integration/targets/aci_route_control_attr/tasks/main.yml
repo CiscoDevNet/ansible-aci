@@ -40,7 +40,7 @@
       tenant: ansible_tenant
       name: ansible_attr
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_attr
 
   - name: Add route control attribute (normal mode)
