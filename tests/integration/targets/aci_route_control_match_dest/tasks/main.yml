@@ -109,7 +109,7 @@
       ip: fe80:fgh::/64
       state: present
     register: invalid_ipv6
-    ignore_errors: yes
+    ignore_errors: true
 
   - name: Add route control match destination without pfx length
     cisco.aci.aci_route_control_match_dest:
