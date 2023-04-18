@@ -116,7 +116,7 @@
       context: ansible_rtctrl_context
       set_action_rule_profile: ansible_rtctrl_attr
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_scope
 
   - name: Add scope (normal mode)
