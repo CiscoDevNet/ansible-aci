@@ -48,7 +48,7 @@ options:
     choices: [ permit, deny ]
   order:
     description:
-    - Order of the Route Control Context within the profile
+    - Order of the Route Control Context within the profile.
     type: int
   state:
     description:
