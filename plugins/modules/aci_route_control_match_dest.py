@@ -32,7 +32,7 @@ options:
     type: str
   aggregate:
     description:
-    - When Aggregate is false, the IP addresses are matched exactly
+    - When Aggregate is false, the IP addresses are matched exactly.
     type: bool
   greater_than_mask:
     description:
