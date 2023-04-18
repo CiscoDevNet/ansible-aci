@@ -233,7 +233,9 @@ def main():
 
     if state == "present":
         aci.payload(aci_class="spanFilterGrp", class_config=dict(name=filter_group, nameAlias=name_alias))
+
         aci.get_diff(aci_class="spanFilterGrp")
+
         aci.post_config()
 
     elif state == "absent":
