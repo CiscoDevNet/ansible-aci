@@ -49,7 +49,7 @@
       set_criteria: append
       community: extended:as4-nn2:5:16
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_comm
 
   - name: Add route control community (normal mode)
