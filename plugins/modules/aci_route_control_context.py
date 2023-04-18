@@ -44,7 +44,7 @@ options:
     aliases: [ descr ]
   action:
     description:
-    - Action of the Route Control Context
+    - Action of the Route Control Context.
     type: str
     choices: [ permit, deny ]
   order:
