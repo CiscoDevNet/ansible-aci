@@ -34,7 +34,7 @@ options:
     aliases: [ external_epg ]
   profile:
     description:
-    - Name of the Route Control Profile to bind to the external EPG
+    - Name of the Route Control Profile to bind to the external EPG.
     type: str
     aliases: [ profile_name, route_control_profile ]
   direction:
