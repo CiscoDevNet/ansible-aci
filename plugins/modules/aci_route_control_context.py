@@ -29,7 +29,7 @@ options:
     aliases: [ l3out_name ]
   profile:
     description:
-    - Name of the Route Control Profile
+    - Name of the Route Control Profile.
     type: str
     aliases: [ profile_name, route_control_profile ]
   context:
