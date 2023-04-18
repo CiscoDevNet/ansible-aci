@@ -29,7 +29,7 @@ options:
     aliases: [ l3out_name ]
   ext_epg:
     description:
-    - Name of an existing external EPG within the L3Out
+    - Name of an existing external EPG within the L3Out.
     type: str
     aliases: [ external_epg ]
   profile:
