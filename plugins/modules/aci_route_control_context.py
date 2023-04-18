@@ -39,7 +39,7 @@ options:
     aliases: [ name, route_control_context ]
   description:
     description:
-    - Description of the Route Control Context
+    - Description of the Route Control Context.
     type: str
     aliases: [ descr ]
   action:
