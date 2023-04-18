@@ -39,7 +39,7 @@ options:
     aliases: [ name ]
   description:
     description:
-    - Description of the Route Control Profile Context
+    - Description of the Route Control Profile Context.
     type: str
     aliases: [ descr ]
   set_action_rule_profile:
