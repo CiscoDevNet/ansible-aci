@@ -62,7 +62,7 @@
       profile_type: global
       autocontinue: false
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_profile
 
   - name: Add profile (normal mode)
