@@ -96,7 +96,7 @@
       profile: ansible_rtctrl_profile
       direction: import
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_binding
 
   - name: Add route control profile binding (normal mode)
