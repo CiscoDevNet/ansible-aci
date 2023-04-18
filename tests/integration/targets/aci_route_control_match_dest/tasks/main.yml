@@ -51,7 +51,7 @@
       gt: 26
       lt: 28
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_match_dest
 
   - name: Add match destination (normal mode)
