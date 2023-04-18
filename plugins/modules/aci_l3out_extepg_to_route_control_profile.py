@@ -39,7 +39,7 @@ options:
     aliases: [ profile_name, route_control_profile ]
   direction:
     description:
-    - Direction to apply the Route Control Profile
+    - Direction to apply the Route Control Profile.
     type: str
     choices: [ import, export ]
     aliases: [ route_control_profile_direction ]
