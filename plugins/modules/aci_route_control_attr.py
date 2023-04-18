@@ -29,7 +29,7 @@ options:
     aliases: [ attr_name, attribute_name ]
   description:
     description:
-    - Description of the Route Control Attribute
+    - Description of the Route Control Attribute.
     type: str
     aliases: [ descr ]
   state:
