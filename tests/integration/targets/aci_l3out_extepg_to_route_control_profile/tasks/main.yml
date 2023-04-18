@@ -68,6 +68,15 @@
       description: ExtEpg for Ansible l3out
       state: present
 
+  - name: Add a second ExtEPg
+    cisco.aci.aci_l3out_extepg:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      name: ansible_second_extEpg
+      description: ExtEpg for Ansible l3out
+      state: present
+
   - name: Add route control profile - ansible_rtctrl_profile
     cisco.aci.aci_route_control_profile:
       <<: *aci_info
@@ -128,8 +137,8 @@
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
-      ext_epg: ansible_extEpg
-      profile: ansible_second_rtctrl_profile
+      ext_epg: ansible_second_extEpg
+      profile: ansible_rtctrl_profile2
       direction: import
       state: present
 

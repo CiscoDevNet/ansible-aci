@@ -271,13 +271,10 @@ def main():
             mask = int(ip.split("/")[1])
 
     if greater_than is not None:
-        if greater_than <= mask:
-            if greater_than > 0:
-                aci.fail_json(msg="greater_than must be greater than the prefix mask")
-        if less_than is not None:
-            if less_than > 0:
-                if less_than < greater_than:
-                    aci.fail_json(msg="greater_than must be less than less_than")
+        if greater_than <= mask and greater_than > 0:
+            aci.fail_json(msg="greater_than must be greater than the prefix mask")
+        if less_than is not None and less_than > 0 and less_than < greater_than:
+            aci.fail_json(msg="greater_than must be less than less_than")
 
     aci.construct_url(
         root_class=dict(
