@@ -34,7 +34,7 @@ options:
     aliases: [ profile_name, route_control_profile ]
   context:
     description:
-    - Name of the Route Control Profile Context
+    - Name of the Route Control Profile Context.
     type: str
     aliases: [ name ]
   description:
