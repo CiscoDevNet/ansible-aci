@@ -72,7 +72,7 @@
       order: 0
       action: permit
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_context
 
   - name: Add context (normal mode)
