@@ -119,7 +119,7 @@
       ip: 10.20.32.0
       state: present
     register: no_pfx_length
-    ignore_errors: yes
+    ignore_errors: true
 
   - name: Add route control match destination with invalid greater_than
     cisco.aci.aci_route_control_match_dest:
