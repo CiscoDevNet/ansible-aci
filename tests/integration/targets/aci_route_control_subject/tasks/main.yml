@@ -40,7 +40,7 @@
       tenant: ansible_tenant
       subject_name: ansible_rtctrl_subject
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_subject
 
   - name: Add subject (normal mode)
