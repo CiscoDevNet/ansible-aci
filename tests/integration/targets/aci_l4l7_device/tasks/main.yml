@@ -22,13 +22,13 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain if it already exists
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -36,14 +36,14 @@
 
 # CREATE TENANT
 - name: Create ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: present
 
 # CREATE DOMAIN
 - name: Create ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -51,7 +51,7 @@
 
 # ADD L4-L7 DEVICE
 - name: Create L4-L7 Device
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -68,7 +68,7 @@
   register: create_l4l7_device
 
 - name: Verify L4-L7 device has been created
-  assert:
+  ansible.builtin.assert:
     that:
     - create_l4l7_device.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
     - create_l4l7_device.current.0.vnsLDevVip.attributes.name == "ansible_device"
@@ -82,13 +82,13 @@
     - create_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "no"
 
 - name: Verify domain binding object has been created
-  assert:
+  ansible.builtin.assert:
     that:
     - create_l4l7_device.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/phys-ansible_phys_dom"
 
 # ADD device again to check idempotence
 - name: Create L4-L7 device again
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -105,7 +105,7 @@
   register: create_l4l7_device_again
 
 - name: Verify L4-L7 device has been created
-  assert:
+  ansible.builtin.assert:
     that:
     - create_l4l7_device_again is not changed
     - create_l4l7_device_again.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
@@ -120,13 +120,13 @@
     - create_l4l7_device_again.current.0.vnsLDevVip.attributes.trunking == "no"
 
 - name: Verify domain binding object has been created
-  assert:
+  ansible.builtin.assert:
     that:
     - create_l4l7_device_again.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/phys-ansible_phys_dom"
 
 # MODIFY L4-L7 Device
 - name: Update L4-L7 device
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -143,7 +143,7 @@
   register: update_l4l7_device
 
 - name: Verify L4-L7 device has been updated
-  assert:
+  ansible.builtin.assert:
     that:
     - update_l4l7_device is changed
     - update_l4l7_device.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
@@ -158,13 +158,13 @@
     - update_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "yes"
 
 - name: Verify domain binding object
-  assert:
+  ansible.builtin.assert:
     that:
     - update_l4l7_device.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/phys-ansible_phys_dom"
 
 # QUERY DEVICE
 - name: Query L4-L7 Device
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -172,7 +172,7 @@
   register: query_l4l7_device
 
 - name: Verify L4-L7 Device attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - query_l4l7_device is not changed
     - query_l4l7_device.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
@@ -187,19 +187,19 @@
     - query_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "yes"
 
 - name: Query all L4-L7 Devices
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     state: query
   register: query_l4l7_device_all
 
 - name: Verify L4-L7 Device query idempotence
-  assert:
+  ansible.builtin.assert:
     that:
       query_l4l7_device_all is not changed
 
 # DELETE DEVICE
 - name: Delete L4-L7 Device
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -207,7 +207,7 @@
   register: remove_l4l7_device
 
 - name: Verify L4-L7 Device deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_l4l7_device is changed
     - remove_l4l7_device.current == []
@@ -216,7 +216,7 @@
 
 # DELETE DEVICE AGAIN TO TEST IDEMPOTENCE
 - name: Delete L4-L7 Device again
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -224,20 +224,20 @@
   register: remove_l4l7_device_again
 
 - name: Verify L4-L7 Device deletion idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_l4l7_device_again is not changed
     - remove_l4l7_device_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys

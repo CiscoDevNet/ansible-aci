@@ -22,21 +22,21 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 # CREATE TENANT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: present
 
 # CREATE REDIRECT HEALTH GROUP
 - name: Add a new Redirect Health Group
-  aci_l4l7_redirect_health_group:
+  cisco.aci.aci_l4l7_redirect_health_group:
     <<: *aci_info
     tenant: ansible_tenant
     health_group: ansible_health_group
@@ -44,14 +44,14 @@
   register: add_health_group
 
 - name: Verify L4-L7 Health Group
-  assert:
+  ansible.builtin.assert:
     that:
     - add_health_group.current.0.vnsRedirectHealthGroup.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
     - add_health_group.current.0.vnsRedirectHealthGroup.attributes.name == "ansible_health_group"
 
 # CREATE REDIRECT HEALTH GROUP AGAIN TO TEST IDEMPOTENCE
 - name: Add a new Redirect Health Group again
-  aci_l4l7_redirect_health_group:
+  cisco.aci.aci_l4l7_redirect_health_group:
     <<: *aci_info
     tenant: ansible_tenant
     health_group: ansible_health_group
@@ -59,7 +59,7 @@
   register: add_health_group_again
 
 - name: Verify L4-L7 Health Group idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - add_health_group_again is not changed
     - add_health_group_again.current.0.vnsRedirectHealthGroup.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
@@ -67,7 +67,7 @@
 
 # QUERY REDIRECT HEALTH GROUP
 - name: Query Redirect Health Group
-  aci_l4l7_redirect_health_group:
+  cisco.aci.aci_l4l7_redirect_health_group:
     <<: *aci_info
     tenant: ansible_tenant
     health_group: ansible_health_group
@@ -75,7 +75,7 @@
   register: query_health_group
 
 - name: Verify L4-L7 Health Group query
-  assert:
+  ansible.builtin.assert:
     that:
     - query_health_group is not changed
     - query_health_group.current.0.vnsRedirectHealthGroup.attributes.dn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
@@ -83,7 +83,7 @@
 
 # REMOVE L4-L7 HEALTH GROUP
 - name: Remove Redirect Health Group
-  aci_l4l7_redirect_health_group:
+  cisco.aci.aci_l4l7_redirect_health_group:
     <<: *aci_info
     tenant: ansible_tenant
     health_group: ansible_health_group
@@ -91,7 +91,7 @@
   register: delete_health_group
 
 - name: Verify L4-L7 Health Group removal
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_health_group is changed
     - delete_health_group.current == []
@@ -100,7 +100,7 @@
 
 # REMOVE L4-L7 HEALTH GROUP AGAIN TO TEST IDEMPOTENCE
 - name: Remove Redirect Health Group again
-  aci_l4l7_redirect_health_group:
+  cisco.aci.aci_l4l7_redirect_health_group:
     <<: *aci_info
     tenant: ansible_tenant
     health_group: ansible_health_group
@@ -108,14 +108,14 @@
   register: delete_health_group_again
 
 - name: Verify L4-L7 Health Group removal idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_health_group_again is not changed
     - delete_health_group_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent

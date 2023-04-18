@@ -22,20 +22,20 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 # CREATE TENANT
 - name: Create ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: present
 
 - name: Query system information
-  aci_system:
+  cisco.aci.aci_system:
     <<: *aci_info
     id: 1
     state: query
@@ -43,7 +43,7 @@
 
 # CREATE L4-L7 POLICY BASED REDIRECT
 - name: Create L4-L7 Policy Based Redirect (v4)
-  aci_l4l7_policy_based_redirect:
+  cisco.aci.aci_l4l7_policy_based_redirect:
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
@@ -61,7 +61,7 @@
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: Create L4-L7 Policy Based Redirect (v3)
-  aci_l4l7_policy_based_redirect:
+  cisco.aci.aci_l4l7_policy_based_redirect:
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
@@ -78,7 +78,7 @@
   when: version.current.0.topSystem.attributes.version is version('4.2', '<')
 
 - name: Verify PBR Attributes v4
-  assert:
+  ansible.builtin.assert:
     that:
     - add_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
     - add_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
@@ -94,7 +94,7 @@
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: Verify PBR Attributes v3
-  assert:
+  ansible.builtin.assert:
     that:
     - add_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
     - add_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
@@ -110,7 +110,7 @@
 
 # ADD L4-L7 PBR AGAIN TO CHECK IDEMPOTENCY
 - name: Add L4-L7 Policy Based Redirect again (v4)
-  aci_l4l7_policy_based_redirect:
+  cisco.aci.aci_l4l7_policy_based_redirect:
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
@@ -128,7 +128,7 @@
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: Add L4-L7 Policy Based Redirect again (v3)
-  aci_l4l7_policy_based_redirect:
+  cisco.aci.aci_l4l7_policy_based_redirect:
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
@@ -145,7 +145,7 @@
   when: version.current.0.topSystem.attributes.version is version('4.2', '<')
 
 - name: Verify PBR Attributes (v4)
-  assert:
+  ansible.builtin.assert:
     that:
     - add_pbr_policy_v4_again is not changed
     - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
@@ -162,7 +162,7 @@
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: Verify PBR Attributes (v3)
-  assert:
+  ansible.builtin.assert:
     that:
     - add_pbr_policy_v3_again is not changed
     - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
@@ -179,7 +179,7 @@
 
 # MODIFY L4-L7 PBR POLICY
 - name: Update L4-L7 Policy Based Redirect (v4)
-  aci_l4l7_policy_based_redirect:
+  cisco.aci.aci_l4l7_policy_based_redirect:
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
@@ -197,7 +197,7 @@
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: Update L4-L7 Policy Based Redirect (v3)
-  aci_l4l7_policy_based_redirect:
+  cisco.aci.aci_l4l7_policy_based_redirect:
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
@@ -214,7 +214,7 @@
   when: version.current.0.topSystem.attributes.version is version('4.2', '<')
 
 - name: Verify PBR Attributes (v4)
-  assert:
+  ansible.builtin.assert:
     that:
     - update_pbr_policy_v4 is changed
     - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
@@ -231,7 +231,7 @@
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: Verify PBR Attributes (v3)
-  assert:
+  ansible.builtin.assert:
     that:
     - update_pbr_policy_v3 is changed
     - update_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
@@ -248,7 +248,7 @@
 
 # QUERY L4-L7 PBR POLICY
 - name: Query L4-L7 Policy Based Redirect (v4)
-  aci_l4l7_policy_based_redirect:
+  cisco.aci.aci_l4l7_policy_based_redirect:
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
@@ -257,7 +257,7 @@
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: Query L4-L7 Policy Based Redirect (v3)
-  aci_l4l7_policy_based_redirect:
+  cisco.aci.aci_l4l7_policy_based_redirect:
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
@@ -266,7 +266,7 @@
   when: version.current.0.topSystem.attributes.version is version('4.2', '<')
 
 - name: Verify PBR Attributes (v4)
-  assert:
+  ansible.builtin.assert:
     that:
     - query_pbr_policy_v4 is not changed
     - query_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
@@ -283,7 +283,7 @@
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: Verify PBR Attributes (v3)
-  assert:
+  ansible.builtin.assert:
     that:
     - query_pbr_policy_v3 is not changed
     - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
@@ -299,19 +299,19 @@
   when: version.current.0.topSystem.attributes.version is version('4.2', '<')
 
 - name: Query all L4-L7 Policy Based Redirect Policies
-  aci_l4l7_policy_based_redirect:
+  cisco.aci.aci_l4l7_policy_based_redirect:
     <<: *aci_info
     state: query
   register: query_pbr_policy_all
 
 - name: Verify PBR Attributes are unchanged
-  assert:
+  ansible.builtin.assert:
     that:
     - query_pbr_policy_all is not changed
 
 # DELETE L4-L7 POLICY BASED REDIRECT POLICY
 - name: Delete L4-L7 Policy Based Redirect
-  aci_l4l7_policy_based_redirect:
+  cisco.aci.aci_l4l7_policy_based_redirect:
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
@@ -319,7 +319,7 @@
   register: delete_pbr_policy
 
 - name: Confirm PBR Policy Removal
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_pbr_policy is changed
     - delete_pbr_policy.current == []
@@ -336,7 +336,7 @@
 
 # DELETE L4-L7 POLICY BASED REDIRECT POLICY AGAIN TO TEST IDEMPOTENCE
 - name: Delete L4-L7 Policy Based Redirect again
-  aci_l4l7_policy_based_redirect:
+  cisco.aci.aci_l4l7_policy_based_redirect:
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
@@ -344,14 +344,14 @@
   register: delete_pbr_policy_again
 
 - name: Confirm PBR Policy Removal idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_pbr_policy_again is not changed
     - delete_pbr_policy_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent

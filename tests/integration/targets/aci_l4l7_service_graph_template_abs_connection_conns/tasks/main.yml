@@ -22,13 +22,13 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain if it already exists
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -36,14 +36,14 @@
 
 # CREATE TENANT
 - name: Create ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: present
 
 # CREATE DOMAIN
 - name: Create ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -51,7 +51,7 @@
 
 # ADD SERVICE GRAPH TEMPLATE
 - name: Create L4-L7 Service Graph Template
-  aci_l4l7_service_graph_template:
+  cisco.aci.aci_l4l7_service_graph_template:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -59,7 +59,7 @@
 
 # ADD L4-L7 LOGICAL DEVICES
 - name: Create PBR Device 1
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device1
@@ -75,7 +75,7 @@
     state: present
 
 - name: Create PBR Device 2
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device2
@@ -92,7 +92,7 @@
 
 # ADD SERVICE GRAPH NODES
 - name: Add Service Graph Template Node 1
-  aci_l4l7_service_graph_template_node:
+  cisco.aci.aci_l4l7_service_graph_template_node:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -105,7 +105,7 @@
     state: present
 
 - name: Add Service Graph Template Node 2
-  aci_l4l7_service_graph_template_node:
+  cisco.aci.aci_l4l7_service_graph_template_node:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -119,7 +119,7 @@
 
 # ADD SERVICE GRAPH ABS CONNECTIONS
 - name: Create L4-L7 Service Graph Abs Connection C1
-  aci_l4l7_service_graph_template_abs_conn:
+  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -130,7 +130,7 @@
     state: present
 
 - name: Create L4-L7 Service Graph Abs Connection C2
-  aci_l4l7_service_graph_template_abs_conn:
+  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -141,7 +141,7 @@
     state: present
 
 - name: Create L4-L7 Service Graph Abs Connection C3
-  aci_l4l7_service_graph_template_abs_conn:
+  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -153,7 +153,7 @@
 
 # CREATE CONNECTION CONNS
 - name: Add C1 node connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -164,7 +164,7 @@
   register: add_c1_node_conn
 
 - name: Add C1 term connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -174,7 +174,7 @@
   register: add_c1_term_conn
 
 - name: Add C2 provider connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -185,7 +185,7 @@
   register: add_c2_prov_conn
 
 - name: Add C2 consumer connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -196,7 +196,7 @@
   register: add_c2_cons_conn
 
 - name: Add C3 node connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -207,7 +207,7 @@
   register: add_c3_node_conn
 
 - name: Add C3 term connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -218,44 +218,44 @@
 
 # VERIFY CONNECTION ATTRIBUTES
 - name: Verify C1 Node Connection
-  assert:
+  ansible.builtin.assert:
     that:
     - add_c1_node_conn.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C1/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node1/AbsFConn-consumer]"
     - add_c1_node_conn.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node1/AbsFConn-consumer"
 
 - name: Verify C1 Term Node Connection
-  assert:
+  ansible.builtin.assert:
     that:
     - add_c1_term_conn.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C1/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeCon-T1/AbsTConn]"
     - add_c1_term_conn.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeCon-T1/AbsTConn"
 
 - name: Verify C2 Provider Connection
-  assert:
+  ansible.builtin.assert:
     that:
     - add_c2_prov_conn.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C2/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node1/AbsFConn-provider]"
     - add_c2_prov_conn.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node1/AbsFConn-provider"
 
 - name: Verify C2 Consumer Connection
-  assert:
+  ansible.builtin.assert:
     that:
     - add_c2_cons_conn.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C2/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node2/AbsFConn-consumer]"
     - add_c2_cons_conn.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node2/AbsFConn-consumer"
 
 - name: Verify C3 Node Connection
-  assert:
+  ansible.builtin.assert:
     that:
     - add_c3_node_conn.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C3/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node2/AbsFConn-provider]"
     - add_c3_node_conn.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node2/AbsFConn-provider"
 
 - name: Verify C3 Term Node Connection
-  assert:
+  ansible.builtin.assert:
     that:
     - add_c3_term_conn.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C3/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeProv-T2/AbsTConn]"
     - add_c3_term_conn.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeProv-T2/AbsTConn"
 
 # ADD CONNECTIONS AGAIN TO TEST IDEMPOTENCE
 - name: Add C1 node connection again
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -266,7 +266,7 @@
   register: add_c1_node_conn_again
 
 - name: Add C1 term connection again
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -276,7 +276,7 @@
   register: add_c1_term_conn_again
 
 - name: Add C2 provider connection again
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -287,7 +287,7 @@
   register: add_c2_prov_conn_again
 
 - name: Add C2 consumer connection again
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -298,7 +298,7 @@
   register: add_c2_cons_conn_again
 
 - name: Add C3 node connection again
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -309,7 +309,7 @@
   register: add_c3_node_conn_again
 
 - name: Add C3 term connection again
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -320,42 +320,42 @@
 
 # VERIFY CONNECTION ATTRIBUTES
 - name: Verify C1 Node Connection is unchanged
-  assert:
+  ansible.builtin.assert:
     that:
     - add_c1_node_conn_again is not changed
     - add_c1_node_conn_again.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C1/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node1/AbsFConn-consumer]"
     - add_c1_node_conn_again.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node1/AbsFConn-consumer"
 
 - name: Verify C1 Term Node Connection is unchanged
-  assert:
+  ansible.builtin.assert:
     that:
     - add_c1_term_conn_again is not changed
     - add_c1_term_conn_again.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C1/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeCon-T1/AbsTConn]"
     - add_c1_term_conn_again.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeCon-T1/AbsTConn"
 
 - name: Verify C2 Provider Connection is unchanged
-  assert:
+  ansible.builtin.assert:
     that:
     - add_c2_prov_conn_again is not changed
     - add_c2_prov_conn_again.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C2/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node1/AbsFConn-provider]"
     - add_c2_prov_conn_again.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node1/AbsFConn-provider"
 
 - name: Verify C2 Consumer Connection is unchanged
-  assert:
+  ansible.builtin.assert:
     that:
     - add_c2_cons_conn_again is not changed
     - add_c2_cons_conn_again.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C2/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node2/AbsFConn-consumer]"
     - add_c2_cons_conn_again.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node2/AbsFConn-consumer"
 
 - name: Verify C3 Node Connection is unchanged
-  assert:
+  ansible.builtin.assert:
     that:
     - add_c3_node_conn_again is not changed
     - add_c3_node_conn_again.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C3/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node2/AbsFConn-provider]"
     - add_c3_node_conn_again.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node2/AbsFConn-provider"
 
 - name: Verify C3 Term Node Connection is unchanged
-  assert:
+  ansible.builtin.assert:
     that:
     - add_c3_term_conn_again is not changed
     - add_c3_term_conn_again.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C3/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeProv-T2/AbsTConn]"
@@ -363,7 +363,7 @@
 
 # QUERY CONNECTION ATTRIBUTES
 - name: Query C1 node connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -374,7 +374,7 @@
   register: query_c1_node_conn
 
 - name: Query C1 term connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -384,7 +384,7 @@
   register: query_c1_term_conn
 
 - name: Query C2 provider connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -395,7 +395,7 @@
   register: query_c2_prov_conn
 
 - name: Query C2 consumer connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -406,7 +406,7 @@
   register: query_c2_cons_conn
 
 - name: Query C3 node connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -417,7 +417,7 @@
   register: query_c3_node_conn
 
 - name: Query C3 term connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -427,42 +427,42 @@
   register: query_c3_term_conn
 
 - name: Verify C1 Node Connection
-  assert:
+  ansible.builtin.assert:
     that:
     - query_c1_node_conn is not changed
     - query_c1_node_conn.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C1/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node1/AbsFConn-consumer]"
     - query_c1_node_conn.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node1/AbsFConn-consumer"
 
 - name: Verify C1 Term Node Connection
-  assert:
+  ansible.builtin.assert:
     that:
     - query_c1_term_conn is not changed
     - query_c1_term_conn.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C1/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeCon-T1/AbsTConn]"
     - query_c1_term_conn.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeCon-T1/AbsTConn"
 
 - name: Verify C2 Provider Connection
-  assert:
+  ansible.builtin.assert:
     that:
     - query_c2_prov_conn is not changed
     - query_c2_prov_conn.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C2/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node1/AbsFConn-provider]"
     - query_c2_prov_conn.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node1/AbsFConn-provider"
 
 - name: Verify C2 Consumer Connection
-  assert:
+  ansible.builtin.assert:
     that:
     - query_c2_cons_conn is not changed
     - query_c2_cons_conn.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C2/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node2/AbsFConn-consumer]"
     - query_c2_cons_conn.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node2/AbsFConn-consumer"
 
 - name: Verify C3 Node Connection
-  assert:
+  ansible.builtin.assert:
     that:
     - query_c3_node_conn is not changed
     - query_c3_node_conn.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C3/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node2/AbsFConn-provider]"
     - query_c3_node_conn.current.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node2/AbsFConn-provider"
 
 - name: Verify C3 Term Node Connection
-  assert:
+  ansible.builtin.assert:
     that:
     - query_c3_term_conn is not changed
     - query_c3_term_conn.current.0.vnsRsAbsConnectionConns.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C3/rsabsConnectionConns-[uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeProv-T2/AbsTConn]"
@@ -470,7 +470,7 @@
 
 # DELETE CONNECTIONS
 - name: Delete C1 node connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -481,7 +481,7 @@
   register: delete_c1_node_conn
 
 - name: Delete C1 term connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -491,7 +491,7 @@
   register: delete_c1_term_conn
 
 - name: Delete C2 provider connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -502,7 +502,7 @@
   register: delete_c2_prov_conn
 
 - name: Delete C2 consumer connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -513,7 +513,7 @@
   register: delete_c2_cons_conn
 
 - name: Delete C3 node connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -524,7 +524,7 @@
   register: delete_c3_node_conn
 
 - name: Delete C3 term connection
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -534,7 +534,7 @@
   register: delete_c3_term_conn
 
 - name: Verify C1 Node Connection Removal
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_c1_node_conn is changed
     - delete_c1_node_conn.current == []
@@ -542,7 +542,7 @@
     - delete_c1_node_conn.previous.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node1/AbsFConn-consumer"
 
 - name: Verify C1 Term Node Connection Removal
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_c1_term_conn is changed
     - delete_c1_term_conn.current == []
@@ -550,7 +550,7 @@
     - delete_c1_term_conn.previous.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeCon-T1/AbsTConn"
 
 - name: Verify C2 Provider Connection Removal
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_c2_prov_conn is changed
     - delete_c2_prov_conn.current == []
@@ -558,7 +558,7 @@
     - delete_c2_prov_conn.previous.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node1/AbsFConn-provider"
 
 - name: Verify C2 Consumer Connection Removal
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_c2_cons_conn is changed
     - delete_c2_cons_conn.current == []
@@ -566,7 +566,7 @@
     - delete_c2_cons_conn.previous.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node2/AbsFConn-consumer"
 
 - name: Verify C3 Node Connection Removal
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_c3_node_conn is changed
     - delete_c3_node_conn.current == []
@@ -574,7 +574,7 @@
     - delete_c3_node_conn.previous.0.vnsRsAbsConnectionConns.attributes.tDn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node2/AbsFConn-provider"
 
 - name: Verify C3 Term Node Connection Removal
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_c3_term_conn is changed
     - delete_c3_term_conn.current == []
@@ -583,7 +583,7 @@
 
 # REMOVE CONNECTIONS AGAIN TO TEST IDEMPOTENCE
 - name: Delete C1 node connection again
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -594,7 +594,7 @@
   register: delete_c1_node_conn_again
 
 - name: Delete C1 term connection again
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -604,7 +604,7 @@
   register: delete_c1_term_conn_again
 
 - name: Delete C2 provider connection again
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -615,7 +615,7 @@
   register: delete_c2_prov_conn_again
 
 - name: Delete C2 consumer connection again
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -626,7 +626,7 @@
   register: delete_c2_cons_conn_again
 
 - name: Delete C3 node connection again
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -637,7 +637,7 @@
   register: delete_c3_node_conn_again
 
 - name: Delete C3 term connection again
-  aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -647,50 +647,50 @@
   register: delete_c3_term_conn_again
 
 - name: Verify C1 Node Connection Removal idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_c1_node_conn_again is not changed
     - delete_c1_node_conn_again.current == []
 
 - name: Verify C1 Term Node Connection Removal idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_c1_term_conn_again is not changed
     - delete_c1_term_conn_again.current == []
 
 - name: Verify C2 Provider Connection Removal idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_c2_prov_conn_again is not changed
     - delete_c2_prov_conn_again.current == []
 
 - name: Verify C2 Consumer Connection Removal idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_c2_cons_conn_again is not changed
     - delete_c2_cons_conn_again.current == []
 
 - name: Verify C3 Node Connection Removal idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_c3_node_conn_again is not changed
     - delete_c3_node_conn_again.current == []
 
 - name: Verify C3 Term Node Connection Removal idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_c3_term_conn_again is not changed
     - delete_c3_term_conn_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys

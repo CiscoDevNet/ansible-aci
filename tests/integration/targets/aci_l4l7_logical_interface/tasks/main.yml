@@ -22,13 +22,13 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain if it already exists
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -36,14 +36,14 @@
 
 # CREATE TENANT
 - name: Create ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: present
 
 # CREATE DOMAIN
 - name: Create ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -51,7 +51,7 @@
 
 # CREATE L4-L7 LOGICAL DEVICE
 - name: Create L4-L7 Device
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -68,7 +68,7 @@
 
 # CREATE L4-L7 LOGICAL INTERFACE
 - name: Add Logical Interface
-  aci_l4l7_logical_interface:
+  cisco.aci.aci_l4l7_logical_interface:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -78,7 +78,7 @@
   register: add_logical_interface
 
 - name: Verify Logical Interface Attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - add_logical_interface.current.0.vnsLIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
     - add_logical_interface.current.0.vnsLIf.attributes.name == "ansible_log_intf"
@@ -86,7 +86,7 @@
 
 # ADD L4-L7 LOGICAL INTERFACE AGAIN TO CHECK IDEMPOTENCE
 - name: Add Logical Interface again
-  aci_l4l7_logical_interface:
+  cisco.aci.aci_l4l7_logical_interface:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -96,7 +96,7 @@
   register: add_logical_interface_again
 
 - name: Verify Logical Interface Attributes have not changed
-  assert:
+  ansible.builtin.assert:
     that:
     - add_logical_interface_again is not changed
     - add_logical_interface_again.current.0.vnsLIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
@@ -105,7 +105,7 @@
 
 # MODIFY L4-L7 LOGICAL INTERFACE
 - name: Update L4-L7 Logical Interface
-  aci_l4l7_logical_interface:
+  cisco.aci.aci_l4l7_logical_interface:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -115,7 +115,7 @@
   register: update_logical_interface
 
 - name: Verify Logical Interface update
-  assert:
+  ansible.builtin.assert:
     that:
     - update_logical_interface is changed
     - update_logical_interface.current.0.vnsLIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
@@ -124,7 +124,7 @@
 
 # QUERY L4-L7 LOGICAL INTERFACE
 - name: Query L4-L7 Logical Interface
-  aci_l4l7_logical_interface:
+  cisco.aci.aci_l4l7_logical_interface:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -133,7 +133,7 @@
   register: query_logical_interface
 
 - name: Verify Logical Interface Attributes have not changed
-  assert:
+  ansible.builtin.assert:
     that:
     - query_logical_interface is not changed
     - query_logical_interface.current.0.vnsLIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
@@ -142,19 +142,19 @@
 
 # QUERY ALL L4-L7 LOGICAL INTERFACES
 - name: Query All L4-L7 Logical Interfaces
-  aci_l4l7_logical_interface:
+  cisco.aci.aci_l4l7_logical_interface:
     <<: *aci_info
     state: query
   register: query_logical_interface_all
 
 - name: Verify Logical Interface Attributes have not changed
-  assert:
+  ansible.builtin.assert:
     that:
     - query_logical_interface_all is not changed
 
 # DELETE L4-L7 LOGICAL INTERFACE
 - name: Remove L4-L7 Logical Interface
-  aci_l4l7_logical_interface:
+  cisco.aci.aci_l4l7_logical_interface:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -163,7 +163,7 @@
   register: delete_logical_interface
 
 - name: Verify Logical Interface Deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_logical_interface is changed
     - delete_logical_interface.current == []
@@ -173,7 +173,7 @@
 
 # DELETE L4-L7 LOGICAL INTERFACE AGAIN TO TEST IDEMPOTENCE
 - name: Remove L4-L7 Logical Interface
-  aci_l4l7_logical_interface:
+  cisco.aci.aci_l4l7_logical_interface:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -182,20 +182,20 @@
   register: delete_logical_interface_again
 
 - name: Verify Logical Interface Deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_logical_interface_again is not changed
     - delete_logical_interface_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys

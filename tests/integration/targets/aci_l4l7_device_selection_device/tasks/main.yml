@@ -22,13 +22,13 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain if it already exists
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -36,14 +36,14 @@
 
 # CREATE TENANT
 - name: Create ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: present
 
 # CREATE DOMAIN
 - name: Create ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -51,7 +51,7 @@
 
 # CREATE L4-L7 LOGICAL DEVICE
 - name: Create L4-L7 Device
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -68,7 +68,7 @@
 
 # CREATE CONTRACT
 - name: Create contract
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -77,7 +77,7 @@
 
 # CREATE L4-L7 SERVICE GRAPH
 - name: Create L4-L7 Service Graph
-  aci_l4l7_service_graph_template:
+  cisco.aci.aci_l4l7_service_graph_template:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -85,7 +85,7 @@
 
 # CREATE L4-L7 DEVICE SELECTION POLICY
 - name: Create L4-L7 Device Selection Policy
-  aci_l4l7_device_selection_policy:
+  cisco.aci.aci_l4l7_device_selection_policy:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -95,7 +95,7 @@
 
 # BIND LOGICAL DEVICE TO POLICY
 - name: Bind Logical Device to Policy
-  aci_l4l7_device_selection_device:
+  cisco.aci.aci_l4l7_device_selection_device:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -106,14 +106,14 @@
   register: add_device_binding
 
 - name: Verify Device Binding
-  assert:
+  ansible.builtin.assert:
     that:
     - add_device_binding.current.0.vnsRsLDevCtxToLDev.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/rsLDevCtxToLDev"
     - add_device_binding.current.0.vnsRsLDevCtxToLDev.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
 
 # BIND LOGICAL DEVICE TO POLICY AGAIN TO CHECK IDEMPOTENCE
 - name: Bind Logical Device to Policy again
-  aci_l4l7_device_selection_device:
+  cisco.aci.aci_l4l7_device_selection_device:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -124,7 +124,7 @@
   register: add_device_binding_again
 
 - name: Verify Device Binding is not changed
-  assert:
+  ansible.builtin.assert:
     that:
     - add_device_binding_again is not changed
     - add_device_binding_again.current.0.vnsRsLDevCtxToLDev.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/rsLDevCtxToLDev"
@@ -132,7 +132,7 @@
 
 # QUERY DEVICE BINDING
 - name: Query Logical Device Binding to Policy
-  aci_l4l7_device_selection_device:
+  cisco.aci.aci_l4l7_device_selection_device:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -142,7 +142,7 @@
   register: query_device_binding
 
 - name: Verify Device Binding is not changed
-  assert:
+  ansible.builtin.assert:
     that:
     - query_device_binding is not changed
     - query_device_binding.current.0.vnsRsLDevCtxToLDev.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/rsLDevCtxToLDev"
@@ -150,7 +150,7 @@
 
 # REMOVE DEVICE BINDING
 - name: Remove Logical Device Binding from Policy
-  aci_l4l7_device_selection_device:
+  cisco.aci.aci_l4l7_device_selection_device:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -161,7 +161,7 @@
   register: delete_device_binding
 
 - name: Verify Device Binding Deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_device_binding is changed
     - delete_device_binding.current == []
@@ -170,7 +170,7 @@
 
 # REMOVE DEVICE BINDING AGAIN TO TEST IDEMPOTENCE
 - name: Remove Logical Device Binding from Policy again
-  aci_l4l7_device_selection_device:
+  cisco.aci.aci_l4l7_device_selection_device:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -181,20 +181,20 @@
   register: delete_device_binding_again
 
 - name: Verify Device Binding Deletion idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_device_binding_again is not changed
     - delete_device_binding_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys

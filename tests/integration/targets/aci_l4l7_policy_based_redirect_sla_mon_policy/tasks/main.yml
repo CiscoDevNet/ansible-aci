@@ -22,21 +22,21 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 # CREATE TENANT
 - name: Create ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: present
 
 # CREATE SLA POLICIES
 - name: Create ICMP SLA policy
-  aci_ip_sla_monitoring_policy:
+  cisco.aci.aci_ip_sla_monitoring_policy:
     <<: *aci_info
     tenant: ansible_tenant
     sla_policy: ansible_icmp_sla
@@ -46,7 +46,7 @@
     state: present
 
 - name: Create TCP SLA policy
-  aci_ip_sla_monitoring_policy:
+  cisco.aci.aci_ip_sla_monitoring_policy:
     <<: *aci_info
     tenant: ansible_tenant
     sla_policy: ansible_tcp_sla
@@ -58,7 +58,7 @@
 
 # CREATE L4-L7 POLICY BASED REDIRECT POLICY
 - name: Create PBR policy
-  aci_l4l7_policy_based_redirect:
+  cisco.aci.aci_l4l7_policy_based_redirect:
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
@@ -68,7 +68,7 @@
 
 # BIND SLA POLICY TO POLICY BASED REDIRECT
 - name: Bind ICMP SLA policy to PBR
-  aci_l4l7_policy_based_redirect_sla_mon_policy:
+  cisco.aci.aci_l4l7_policy_based_redirect_sla_mon_policy:
     <<: *aci_info
     tenant: ansible_tenant
     pbr_name: ansible_pbr_policy
@@ -77,14 +77,14 @@
   register: add_icmp_sla_binding
 
 - name: Verify SLA policy binding
-  assert:
+  ansible.builtin.assert:
     that:
     - add_icmp_sla_binding.current.0.vnsRsIPSLAMonitoringPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/rsIPSLAMonitoringPol"
     - add_icmp_sla_binding.current.0.vnsRsIPSLAMonitoringPol.attributes.tDn == "uni/tn-ansible_tenant/ipslaMonitoringPol-ansible_icmp_sla"
 
 # BIND SLA POLICY AGAIN TO TEST IDEMPOTENCE
 - name: Bind ICMP SLA policy to PBR again
-  aci_l4l7_policy_based_redirect_sla_mon_policy:
+  cisco.aci.aci_l4l7_policy_based_redirect_sla_mon_policy:
     <<: *aci_info
     tenant: ansible_tenant
     pbr_name: ansible_pbr_policy
@@ -93,7 +93,7 @@
   register: add_icmp_sla_binding_again
 
 - name: Verify SLA policy binding is unchanged
-  assert:
+  ansible.builtin.assert:
     that:
     - add_icmp_sla_binding_again is not changed
     - add_icmp_sla_binding_again.current.0.vnsRsIPSLAMonitoringPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/rsIPSLAMonitoringPol"
@@ -101,7 +101,7 @@
 
 # CHANGE BINDING TO TCP SLA POLICY
 - name: Bind TCP SLA policy to PBR
-  aci_l4l7_policy_based_redirect_sla_mon_policy:
+  cisco.aci.aci_l4l7_policy_based_redirect_sla_mon_policy:
     <<: *aci_info
     tenant: ansible_tenant
     pbr_name: ansible_pbr_policy
@@ -110,7 +110,7 @@
   register: add_tcp_sla_binding
 
 - name: Verify SLA policy binding is updated
-  assert:
+  ansible.builtin.assert:
     that:
     - add_tcp_sla_binding is changed
     - add_tcp_sla_binding.current.0.vnsRsIPSLAMonitoringPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/rsIPSLAMonitoringPol"
@@ -118,7 +118,7 @@
 
 # QUERY SLA POLICY BINDING
 - name: Query SLA policy binding
-  aci_l4l7_policy_based_redirect_sla_mon_policy:
+  cisco.aci.aci_l4l7_policy_based_redirect_sla_mon_policy:
     <<: *aci_info
     tenant: ansible_tenant
     pbr_name: ansible_pbr_policy
@@ -126,25 +126,25 @@
   register: query_sla_binding
 
 - name: Verify SLA policy binding query
-  assert:
+  ansible.builtin.assert:
     that:
     - query_sla_binding is not changed
     - query_sla_binding.current.0.vnsSvcRedirectPol.children.0.vnsRsIPSLAMonitoringPol.attributes.tDn == "uni/tn-ansible_tenant/ipslaMonitoringPol-ansible_tcp_sla"
 
 - name: Query all SLA policy bindings
-  aci_l4l7_policy_based_redirect_sla_mon_policy:
+  cisco.aci.aci_l4l7_policy_based_redirect_sla_mon_policy:
     <<: *aci_info
     state: query
   register: query_sla_binding_all
 
 - name: Verify query all bindings
-  assert:
+  ansible.builtin.assert:
     that:
     - query_sla_binding_all is not changed
 
 # REMOVE SLA POLICY BINDING
 - name: Delete SLA policy binding
-  aci_l4l7_policy_based_redirect_sla_mon_policy:
+  cisco.aci.aci_l4l7_policy_based_redirect_sla_mon_policy:
     <<: *aci_info
     tenant: ansible_tenant
     pbr_name: ansible_pbr_policy
@@ -153,7 +153,7 @@
   register: delete_sla_binding
 
 - name: Verify SLA policy binding deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_sla_binding is changed
     - delete_sla_binding.current == []
@@ -162,7 +162,7 @@
 
 # REMOVE SLA POLICY BINDING AGAIN TO TEST IDEMPOTENCE
 - name: Delete SLA policy binding again
-  aci_l4l7_policy_based_redirect_sla_mon_policy:
+  cisco.aci.aci_l4l7_policy_based_redirect_sla_mon_policy:
     <<: *aci_info
     tenant: ansible_tenant
     pbr_name: ansible_pbr_policy
@@ -171,13 +171,13 @@
   register: delete_sla_binding_again
 
 - name: Verify SLA policy binding deletion idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_sla_binding_again is not changed
 
 # CLEAN UP
 - name: remove ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent

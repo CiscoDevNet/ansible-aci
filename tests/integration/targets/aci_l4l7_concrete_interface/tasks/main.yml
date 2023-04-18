@@ -22,13 +22,13 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain if it already exists
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -36,14 +36,14 @@
 
 # CREATE TENANT
 - name: Create ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: present
 
 # CREATE DOMAIN
 - name: Create ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -51,7 +51,7 @@
 
 # CREATE L4-L7 LOGICAL DEVICE
 - name: Create L4-L7 Device
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -68,7 +68,7 @@
 
 # ADD L4-L7 CONCRETE DEVICE
 - name: Create L4-L7 Concrete Device
-  aci_l4l7_concrete_device:
+  cisco.aci.aci_l4l7_concrete_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -77,7 +77,7 @@
 
 # ADD L4-L7 CONCRETE INTERFACE
 - name: Create L4-L7 Concrete Interface
-  aci_l4l7_concrete_interface:
+  cisco.aci.aci_l4l7_concrete_interface:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -90,19 +90,19 @@
   register: add_concrete_interface
 
 - name: Verify L4-L7 Concrete Interface Attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - add_concrete_interface.current.0.vnsCIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
     - add_concrete_interface.current.0.vnsCIf.attributes.name == "ansible_concrete_interface"
 
 - name: Verify Path Attribute
-  assert:
+  ansible.builtin.assert:
     that:
     - add_concrete_interface.current.0.vnsCIf.children.0.vnsRsCIfPathAtt.attributes.tDn == "topology/pod-1/paths-201/pathep-[eth1/16]"
 
 # ADD L4-L7 CONCRETE INTERFACE AGAIN TO CHECK IDEMPOTENCE
 - name: Create L4-L7 Concrete Interface again
-  aci_l4l7_concrete_interface:
+  cisco.aci.aci_l4l7_concrete_interface:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -115,20 +115,20 @@
   register: add_concrete_interface_again
 
 - name: Verify L4-L7 Concrete Interface Attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - add_concrete_interface_again is not changed
     - add_concrete_interface_again.current.0.vnsCIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
     - add_concrete_interface_again.current.0.vnsCIf.attributes.name == "ansible_concrete_interface"
 
 - name: Verify Path Attribute
-  assert:
+  ansible.builtin.assert:
     that:
     - add_concrete_interface_again.current.0.vnsCIf.children.0.vnsRsCIfPathAtt.attributes.tDn == "topology/pod-1/paths-201/pathep-[eth1/16]"
 
 # QUERY L4-L7 CONCRETE INTERFACE
 - name: Query L4-L7 Concrete Interface
-  aci_l4l7_concrete_interface:
+  cisco.aci.aci_l4l7_concrete_interface:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -141,32 +141,32 @@
   register: query_concrete_interface
 
 - name: Verify L4-L7 Concrete Interface Attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - query_concrete_interface is not changed
     - query_concrete_interface.current.0.vnsCIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
     - query_concrete_interface.current.0.vnsCIf.attributes.name == "ansible_concrete_interface"
 
 - name: Verify Path Attribute
-  assert:
+  ansible.builtin.assert:
     that:
     - query_concrete_interface.current.0.vnsCIf.children.0.vnsRsCIfPathAtt.attributes.tDn == "topology/pod-1/paths-201/pathep-[eth1/16]"
 
 # QUERY ALL L4-L7 CONCRETE INTERFACES
 - name: Query all L4-L7 Concrete Interfaces
-  aci_l4l7_concrete_interface:
+  cisco.aci.aci_l4l7_concrete_interface:
     <<: *aci_info
     state: query
   register: query_concrete_interface_all
 
 - name: Verify L4-L7 Concrete Interface Attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - query_concrete_interface is not changed
 
 # DELETE L4-L7 CONCRETE INTERFACE
 - name: Remove L4-L7 Concrete Interface
-  aci_l4l7_concrete_interface:
+  cisco.aci.aci_l4l7_concrete_interface:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -179,7 +179,7 @@
   register: delete_concrete_interface
 
 - name: Verify L4-L7 Concrete Interface Deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_concrete_interface is changed
     - delete_concrete_interface.current == []
@@ -188,7 +188,7 @@
 
 # DELETE L4-L7 CONCRETE INTERFACE AGAIN TO TEST IDEMPOTENCE
 - name: Remove L4-L7 Concrete Interface
-  aci_l4l7_concrete_interface:
+  cisco.aci.aci_l4l7_concrete_interface:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -201,20 +201,20 @@
   register: delete_concrete_interface_again
 
 - name: Verify L4-L7 Concrete Interface Deletion idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_concrete_interface_again is not changed
     - delete_concrete_interface_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys

@@ -22,21 +22,21 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 # CREATE TENANT
 - name: Create ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: present
 
 # ADD service graph template
 - name: Create L4-L7 Service Graph Template
-  aci_l4l7_service_graph_template:
+  cisco.aci.aci_l4l7_service_graph_template:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_service_graph
@@ -44,14 +44,14 @@
   register: create_sgt
 
 - name: Verify L4-L7 Service Graph Template has been created
-  assert:
+  ansible.builtin.assert:
     that:
     - create_sgt.current.0.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph"
     - create_sgt.current.0.vnsAbsGraph.attributes.name == "ansible_service_graph"
 
 # ADD service graph template again to check idempotence
 - name: Create L4-L7 Service Graph Template again
-  aci_l4l7_service_graph_template:
+  cisco.aci.aci_l4l7_service_graph_template:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_service_graph
@@ -59,7 +59,7 @@
   register: create_sgt_again
 
 - name: Verify L4-L7 Service Graph Template attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - create_sgt_again is not changed
     - create_sgt_again.current.0.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph"
@@ -67,7 +67,7 @@
 
 # QUERY service graph template
 - name: Query L4-L7 Service Graph Template
-  aci_l4l7_service_graph_template:
+  cisco.aci.aci_l4l7_service_graph_template:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_service_graph
@@ -75,26 +75,26 @@
   register: query_sgt
 
 - name: Verify L4-L7 Service Graph Template attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - query_sgt is not changed
     - query_sgt.current.0.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph"
     - query_sgt.current.0.vnsAbsGraph.attributes.name == "ansible_service_graph"
 
 - name: Query all L4-L7 Service Graph Templates
-  aci_l4l7_service_graph_template:
+  cisco.aci.aci_l4l7_service_graph_template:
     <<: *aci_info
     state: query
   register: query_sgt_all
 
 - name: Verify L4-L7 Service Graph Template attributes
-  assert:
+  ansible.builtin.assert:
     that:
       query_sgt_all is not changed
 
 # DELETE service graph template
 - name: Remove L4-L7 Service Graph Template
-  aci_l4l7_service_graph_template:
+  cisco.aci.aci_l4l7_service_graph_template:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_service_graph
@@ -102,7 +102,7 @@
   register: remove_sgt
 
 - name: Verify L4-L7 Service Graph Template deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_sgt is changed
     - remove_sgt.current == []
@@ -111,7 +111,7 @@
 
 # DELETE SERVICE GRAPH TEMPLATE AGAIN TO TEST IDEMPOTENCE
 - name: Remove L4-L7 Service Graph Template
-  aci_l4l7_service_graph_template:
+  cisco.aci.aci_l4l7_service_graph_template:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_service_graph
@@ -119,14 +119,14 @@
   register: remove_sgt_again
 
 - name: Verify L4-L7 Service Graph Template deletion idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_sgt_again is not changed
     - remove_sgt_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent

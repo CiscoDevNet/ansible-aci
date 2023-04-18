@@ -54,7 +54,7 @@
   register: create_icmp_sla
 
 - name: Verify SLA creation
-  assert:
+  ansible.builtin.assert:
     that:
     - create_icmp_sla.current.0.fvIPSLAMonitoringPol.attributes.dn == "uni/tn-ansible_tenant/ipslaMonitoringPol-ansible_sla"
     - create_icmp_sla.current.0.fvIPSLAMonitoringPol.attributes.name == "ansible_sla"
@@ -76,7 +76,7 @@
   register: create_icmp_sla_again
 
 - name: Verify SLA creation idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - create_icmp_sla_again is not changed
 
@@ -141,7 +141,7 @@
   register: update_tcp_sla
 
 - name: Verify SLA update
-  assert:
+  ansible.builtin.assert:
     that:
     - update_tcp_sla.current.0.fvIPSLAMonitoringPol.attributes.dn == "uni/tn-ansible_tenant/ipslaMonitoringPol-ansible_sla"
     - update_tcp_sla.current.0.fvIPSLAMonitoringPol.attributes.name == "ansible_sla"
@@ -160,7 +160,7 @@
   register: query_tcp_sla
 
 - name: Verify SLA query
-  assert:
+  ansible.builtin.assert:
     that:
     - query_tcp_sla is not changed
     - query_tcp_sla.current.0.fvIPSLAMonitoringPol.attributes.dn == "uni/tn-ansible_tenant/ipslaMonitoringPol-ansible_sla"
@@ -178,7 +178,7 @@
   register: query_sla_all
 
 - name: Verify all SLA query
-  assert:
+  ansible.builtin.assert:
     that:
     - query_sla_all is not changed
     - query_sla_all.current | length > 1
@@ -193,7 +193,7 @@
   register: remove_tcp_sla
 
 - name: Verify IP SLA deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_tcp_sla is changed
     - remove_tcp_sla.current == []
@@ -210,7 +210,7 @@
   register: remove_tcp_sla_again
 
 - name: Verify IP SLA deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_tcp_sla_again is not changed
 

@@ -22,21 +22,21 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 # CREATE TENANT
 - name: Create ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: present
 
 # ADD SERVICE GRAPH TEMPLATE
 - name: Create L4-L7 Service Graph Template
-  aci_l4l7_service_graph_template:
+  cisco.aci.aci_l4l7_service_graph_template:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -44,7 +44,7 @@
 
 # ADD SERVICE GRAPH TERM NODE
 - name: Create L4-L7 T1 Service Graph Node
-  aci_l4l7_service_graph_template_term_node:
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -54,14 +54,14 @@
 
 # VERIFY TERM NODE CREATION
 - name: Verify Term Node Creation
-  assert:
+  ansible.builtin.assert:
     that:
     - add_l4l7_term_node.current.0.vnsAbsTermNodeCon.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeCon-T1"
     - add_l4l7_term_node.current.0.vnsAbsTermNodeCon.attributes.name == "T1"
 
 # ADD SERVICE GRAPH TERM NODE AGAIN TO CHECK IDEMPOTENCE
 - name: Create L4-L7 T1 Service Graph Node again
-  aci_l4l7_service_graph_template_term_node:
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -71,7 +71,7 @@
 
 # VERIFY TERM NODE UNCHANGED
 - name: Verify Term Node is not changed
-  assert:
+  ansible.builtin.assert:
     that:
     - add_l4l7_term_node_again is not changed
     - add_l4l7_term_node_again.current.0.vnsAbsTermNodeCon.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeCon-T1"
@@ -79,7 +79,7 @@
 
 # QUERY TERM NODE
 - name: Query L4-L7 T1 Service Graph Node
-  aci_l4l7_service_graph_template_term_node:
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -89,7 +89,7 @@
 
 # VERIFY TERM NODE QUERY
 - name: Verify Term Node attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - query_l4l7_term_node is not changed
     - query_l4l7_term_node.current.0.vnsAbsTermNodeCon.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeCon-T1"
@@ -97,7 +97,7 @@
 
 # DELETE TERM NODE T1
 - name: Remove L4-L7 T1 Service Graph Node
-  aci_l4l7_service_graph_template_term_node:
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -107,7 +107,7 @@
 
 # VERIFY DELETION
 - name: Verify Term Node attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_l4l7_term_node is changed
     - delete_l4l7_term_node.current == []
@@ -116,7 +116,7 @@
 
 # ADD SERVICE GRAPH TERM NODE
 - name: Create L4-L7 T2 Service Graph Node
-  aci_l4l7_service_graph_template_term_node:
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -126,14 +126,14 @@
 
 # VERIFY TERM NODE CREATION
 - name: Verify Term Node Creation
-  assert:
+  ansible.builtin.assert:
     that:
     - add_l4l7_term_node2.current.0.vnsAbsTermNodeProv.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeProv-T2"
     - add_l4l7_term_node2.current.0.vnsAbsTermNodeProv.attributes.name == "T2"
 
 # ADD SERVICE GRAPH TERM NODE AGAIN TO CHECK IDEMPOTENCE
 - name: Create L4-L7 T2 Service Graph Node again
-  aci_l4l7_service_graph_template_term_node:
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -143,7 +143,7 @@
 
 # VERIFY TERM NODE UNCHANGED
 - name: Verify Term Node is not changed
-  assert:
+  ansible.builtin.assert:
     that:
     - add_l4l7_term_node2_again is not changed
     - add_l4l7_term_node2_again.current.0.vnsAbsTermNodeProv.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeProv-T2"
@@ -151,7 +151,7 @@
 
 # QUERY TERM NODE
 - name: Query L4-L7 T2 Service Graph Node
-  aci_l4l7_service_graph_template_term_node:
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -161,7 +161,7 @@
 
 # VERIFY TERM NODE QUERY
 - name: Verify Term Node attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - query_l4l7_term_node2 is not changed
     - query_l4l7_term_node2.current.0.vnsAbsTermNodeProv.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeProv-T2"
@@ -169,7 +169,7 @@
 
 # DELETE TERM NODE T2
 - name: Remove L4-L7 T2 Service Graph Node
-  aci_l4l7_service_graph_template_term_node:
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -179,7 +179,7 @@
 
 # VERIFY DELETION
 - name: Verify Term Node T2 deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_l4l7_term_node2 is changed
     - delete_l4l7_term_node2.current == []
@@ -188,7 +188,7 @@
 
 # DELETE TERM NODE T2 AGAIN TO TEST IDEMPOTENCE
 - name: Remove L4-L7 T2 Service Graph Node
-  aci_l4l7_service_graph_template_term_node:
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -198,14 +198,14 @@
 
 # VERIFY DELETION IDEMPOTENCE
 - name: Verify Term Node T2 deletion idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_l4l7_term_node2_again is not changed
     - delete_l4l7_term_node2_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent

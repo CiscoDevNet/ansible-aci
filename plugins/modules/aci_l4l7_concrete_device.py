@@ -234,7 +234,7 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "absent", ["tenant", "device", "concrete_device"]], ["state", "present", ["tenant", "device", "concrete_device"]]],
+        required_if=[["state", "absent", ["tenant", "device", "name"]], ["state", "present", ["tenant", "device", "name"]]],
     )
 
     tenant = module.params.get("tenant")

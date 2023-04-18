@@ -22,21 +22,21 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 # CREATE TENANT
 - name: Create ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: present
 
 # CREATE DOMAIN
 - name: Create ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -44,7 +44,7 @@
 
 # ADD DEVICE
 - name: Create L4-L7 Device
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -61,7 +61,7 @@
 
 # ADD SERVICE GRAPH TEMPLATE
 - name: Create L4-L7 Service Graph Template
-  aci_l4l7_service_graph_template:
+  cisco.aci.aci_l4l7_service_graph_template:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -69,7 +69,7 @@
 
 # ADD SERVICE GRAPH NODE
 - name: Create L4-L7 Service Graph Node
-  aci_l4l7_service_graph_template_node:
+  cisco.aci.aci_l4l7_service_graph_template_node:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -83,7 +83,7 @@
 
 # ADD FUNCTIONAL CONNECTIONS
 - name: Create Consumer Func Conn
-  aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -93,7 +93,7 @@
   register: add_cons_func_conn
 
 - name: Create Provider Func Conn
-  aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -104,20 +104,20 @@
 
 # VERIFY ATTRIBUTES
 - name: Verify Consumer Func Conn Creation
-  assert:
+  ansible.builtin.assert:
     that:
     - add_cons_func_conn.current.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-consumer"
     - add_cons_func_conn.current.0.vnsAbsFuncConn.attributes.name == "consumer"
 
 - name: Verify Provider Func Conn Creation
-  assert:
+  ansible.builtin.assert:
     that:
     - add_prov_func_conn.current.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-provider"
     - add_prov_func_conn.current.0.vnsAbsFuncConn.attributes.name == "provider"
 
 # ADD FUNC CONNS AGAIN TO TEST IDEMPOTENCE
 - name: Add Consumer Func Conn again
-  aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -127,7 +127,7 @@
   register: add_cons_func_conn_again
 
 - name: Add Provider Func Conn again
-  aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -137,14 +137,14 @@
   register: add_prov_func_conn_again
 
 - name: Verify Consumer Func Conn is not changed
-  assert:
+  ansible.builtin.assert:
     that:
     - add_cons_func_conn_again is not changed
     - add_cons_func_conn_again.current.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-consumer"
     - add_cons_func_conn_again.current.0.vnsAbsFuncConn.attributes.name == "consumer"
 
 - name: Verify Provider Func Conn is not changed
-  assert:
+  ansible.builtin.assert:
     that:
     - add_prov_func_conn_again is not changed
     - add_prov_func_conn_again.current.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-provider"
@@ -152,7 +152,7 @@
 
 # QUERY FUNC CONNS
 - name: Query Consumer Func Conn
-  aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -162,7 +162,7 @@
   register: query_cons_func_conn
 
 - name: Query Provider Func Conn
-  aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -173,14 +173,14 @@
 
 # VERIFY ATTRIBUTES
 - name: Verify Consumer Func Conn Attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - query_cons_func_conn is not changed
     - query_cons_func_conn.current.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-consumer"
     - query_cons_func_conn.current.0.vnsAbsFuncConn.attributes.name == "consumer"
 
 - name: Verify Provider Func Conn Attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - query_prov_func_conn is not changed
     - query_prov_func_conn.current.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-provider"
@@ -188,14 +188,14 @@
 
 # QUERY ALL FUNC CONNS
 - name: Query All Func Conns
-  aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
     <<: *aci_info
     state: query
   register: query_func_conn_all
 
 # DELETE FUNC CONNS
 - name: Delete Consumer Func Conn
-  aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -205,7 +205,7 @@
   register: delete_cons_func_conn
 
 - name: Delete Provider Func Conn
-  aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -216,7 +216,7 @@
 
 # VERIFY ATTRIBUTES
 - name: Verify Consumer Func Conn Removal
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_cons_func_conn is changed
     - delete_cons_func_conn.current == []
@@ -224,7 +224,7 @@
     - delete_cons_func_conn.previous.0.vnsAbsFuncConn.attributes.name == "consumer"
 
 - name: Verify Provider Func Conn Removal
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_prov_func_conn is changed
     - delete_prov_func_conn.current == []
@@ -233,7 +233,7 @@
 
 # DELETE FUNC CONN AGAIN TO TEST IDEMPOTENCE
 - name: Delete Consumer Func Conn again
-  aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -243,20 +243,20 @@
   register: delete_cons_func_conn_again
 
 - name: Verify Consumer Func Conn Removal idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_cons_func_conn_again is not changed
     - delete_cons_func_conn_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_dom
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys

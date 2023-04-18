@@ -22,13 +22,13 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain if it already exists
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -36,14 +36,14 @@
 
 # CREATE TENANT
 - name: Create ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: present
 
 # CREATE DOMAIN
 - name: Create ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -51,7 +51,7 @@
 
 # CREATE L4-L7 LOGICAL DEVICE
 - name: Create L4-L7 Device
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -68,7 +68,7 @@
 
 # CREATE L4-L7 LOGICAL INTERFACE
 - name: Add Logical Interface
-  aci_l4l7_logical_interface:
+  cisco.aci.aci_l4l7_logical_interface:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -78,7 +78,7 @@
 
 # CREATE L4-L7 CONCRETE INTERFACE
 - name: Create L4-L7 Concrete Device
-  aci_l4l7_concrete_device:
+  cisco.aci.aci_l4l7_concrete_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -87,7 +87,7 @@
 
 # CREATE L4-L7 CONCRETE INTERFACE
 - name: Create L4-L7 Concrete Interface
-  aci_l4l7_concrete_interface:
+  cisco.aci.aci_l4l7_concrete_interface:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -99,7 +99,7 @@
     state: present
 
 - name: Add a new concrete interface attachment
-  aci_l4l7_concrete_interface_attach:
+  cisco.aci.aci_l4l7_concrete_interface_attach:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -110,14 +110,14 @@
   register: add_concrete_intf_attach
 
 - name: Verify interface attachment
-  assert:
+  ansible.builtin.assert:
     that:
     - add_concrete_intf_attach.current.0.vnsRsCIfAttN.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf/rscIfAttN-[uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]]"
     - add_concrete_intf_attach.current.0.vnsRsCIfAttN.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
 
 # ADD CONCRETE INTERFACE ATTACHMENT AGAIN TO TEST IDEMPOTENCE
 - name: Add concrete interface attachment again
-  aci_l4l7_concrete_interface_attach:
+  cisco.aci.aci_l4l7_concrete_interface_attach:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -128,7 +128,7 @@
   register: add_concrete_intf_attach_again
 
 - name: Verify interface attachment
-  assert:
+  ansible.builtin.assert:
     that:
     - add_concrete_intf_attach_again is not changed
     - add_concrete_intf_attach_again.current.0.vnsRsCIfAttN.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf/rscIfAttN-[uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]]"
@@ -136,7 +136,7 @@
 
 # QUERY CONCRETE INTERFACE ATTACHMENT
 - name: Query concrete interface attachment
-  aci_l4l7_concrete_interface_attach:
+  cisco.aci.aci_l4l7_concrete_interface_attach:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -147,7 +147,7 @@
   register: query_concrete_intf_attach
 
 - name: Verify interface attachment
-  assert:
+  ansible.builtin.assert:
     that:
     - query_concrete_intf_attach is not changed
     - query_concrete_intf_attach.current.0.vnsRsCIfAttN.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf/rscIfAttN-[uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]]"
@@ -155,7 +155,7 @@
 
 # DELETE CONCRETE INTERFACE ATTACHMENT
 - name: Remove concrete interface attachment
-  aci_l4l7_concrete_interface_attach:
+  cisco.aci.aci_l4l7_concrete_interface_attach:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -166,7 +166,7 @@
   register: delete_concrete_intf_attach
 
 - name: Verify interface attachment removal
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_concrete_intf_attach is changed
     - delete_concrete_intf_attach.current == []
@@ -175,7 +175,7 @@
 
 # DELETE CONCRETE INTERFACE ATTACHMENT AGAIN TO TEST IDEMPOTENCE
 - name: Remove concrete interface attachment again
-  aci_l4l7_concrete_interface_attach:
+  cisco.aci.aci_l4l7_concrete_interface_attach:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -186,20 +186,20 @@
   register: delete_concrete_intf_attach_again
 
 - name: Verify interface attachment removal idemptence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_concrete_intf_attach_again is not changed
     - delete_concrete_intf_attach_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys

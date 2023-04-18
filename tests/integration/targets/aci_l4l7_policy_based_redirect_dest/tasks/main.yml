@@ -22,21 +22,21 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 # CREATE TENANT
 - name: Create ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: present
 
 # CREATE L4-L7 POLICY BASED REDIRECT
 - name: Create L4-L7 Policy Based Redirect
-  aci_l4l7_policy_based_redirect:
+  cisco.aci.aci_l4l7_policy_based_redirect:
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
@@ -52,7 +52,7 @@
 
 # CREATE L4-L7 PBR DESTINATION
 - name: Create L4-L7 Policy Based Redirect Destination
-  aci_l4l7_policy_based_redirect_dest:
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
     <<: *aci_info
     tenant: ansible_tenant
     policy: ansible_pbr_policy
@@ -64,7 +64,7 @@
   register: add_pbr_dest
 
 - name: Verify L4-L7 Policy Based Redirect Destination creation
-  assert:
+  ansible.builtin.assert:
     that:
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]"
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.ip == "192.168.10.1"
@@ -74,7 +74,7 @@
 
 # ADD L4-L7 PBR DESTINATION AGAIN TO TEST IDEMPOTENCE
 - name: Add L4-L7 Policy Based Redirect Destination again
-  aci_l4l7_policy_based_redirect_dest:
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
     <<: *aci_info
     tenant: ansible_tenant
     policy: ansible_pbr_policy
@@ -86,7 +86,7 @@
   register: add_pbr_dest_again
 
 - name: Verify L4-L7 Policy Based Redirect Destination
-  assert:
+  ansible.builtin.assert:
     that:
     - add_pbr_dest_again is not changed
     - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]"
@@ -97,7 +97,7 @@
 
 # MODIFY L4-L7 PBR DESTINATION
 - name: Modify L4-L7 Policy Based Redirect Destination
-  aci_l4l7_policy_based_redirect_dest:
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
     <<: *aci_info
     tenant: ansible_tenant
     policy: ansible_pbr_policy
@@ -109,7 +109,7 @@
   register: update_pbr_dest
 
 - name: Verify L4-L7 Policy Based Redirect Destination update
-  assert:
+  ansible.builtin.assert:
     that:
     - update_pbr_dest is changed
     - update_pbr_dest.current.0.vnsRedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]"
@@ -120,7 +120,7 @@
 
 # QUERY L4-L7 PBR DESTINATION
 - name: Query L4-L7 Policy Based Redirect Destination
-  aci_l4l7_policy_based_redirect_dest:
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
     <<: *aci_info
     tenant: ansible_tenant
     policy: ansible_pbr_policy
@@ -129,7 +129,7 @@
   register: query_pbr_dest
 
 - name: Verify L4-L7 Policy Based Redirect Destination query
-  assert:
+  ansible.builtin.assert:
     that:
     - query_pbr_dest is not changed
     - query_pbr_dest.current.0.vnsRedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]"
@@ -139,19 +139,19 @@
     - query_pbr_dest.current.0.vnsRedirectDest.attributes.podId == "1"
 
 - name: Query All L4-L7 Policy Based Redirect Destinations
-  aci_l4l7_policy_based_redirect_dest:
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
     <<: *aci_info
     state: query
   register: query_pbr_dest_all
 
 - name: Verify query_pbr_dest_all
-  assert:
+  ansible.builtin.assert:
     that:
     - query_pbr_dest_all is not changed
 
 # DELETE L4-L7 PBR DESTINATION
 - name: Delete L4-L7 Policy Based Redirect Destination
-  aci_l4l7_policy_based_redirect_dest:
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
     <<: *aci_info
     tenant: ansible_tenant
     policy: ansible_pbr_policy
@@ -160,7 +160,7 @@
   register: delete_pbr_dest
 
 - name: Verify L4-L7 Policy Based Redirect Destination deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_pbr_dest is changed
     - delete_pbr_dest.current == []
@@ -172,7 +172,7 @@
 
 # DELETE L4-L7 PBR DESTINATION AGAIN TO TEST IDEMPOTENCE
 - name: Delete L4-L7 Policy Based Redirect Destination
-  aci_l4l7_policy_based_redirect_dest:
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
     <<: *aci_info
     tenant: ansible_tenant
     policy: ansible_pbr_policy
@@ -181,14 +181,14 @@
   register: delete_pbr_dest_again
 
 - name: Verify L4-L7 Policy Based Redirect Destination deletion idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_pbr_dest_again is not changed
     - delete_pbr_dest_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent

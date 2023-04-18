@@ -22,13 +22,13 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain if it already exists
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -36,14 +36,14 @@
 
 # CREATE TENANT
 - name: Create ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: present
 
 # CREATE DOMAIN
 - name: Create ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -51,7 +51,7 @@
 
 # CREATE CONTRACT
 - name: Create contract
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -60,7 +60,7 @@
 
 # CREATE L4-L7 DEVICE
 - name: Create L4-L7 Device
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -77,7 +77,7 @@
 
 # CREATE L4-L7 SERVICE GRAPH
 - name: Create L4-L7 Service Graph
-  aci_l4l7_service_graph_template:
+  cisco.aci.aci_l4l7_service_graph_template:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -99,7 +99,7 @@
 
 # CREATE L4-L7 DEVICE SELECTION POLICY
 - name: Add a new device selection policy
-  aci_l4l7_device_selection_policy:
+  cisco.aci.aci_l4l7_device_selection_policy:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -109,7 +109,7 @@
 
 # CREATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT
 - name: Create L4-L7 Device Selection Logical Interface Context
-  aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_if_context:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -120,14 +120,14 @@
   register: add_context
 
 - name: Verify context creation
-  assert:
+  ansible.builtin.assert:
     that:
     - add_context.current.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
     - add_context.current.0.vnsLIfCtx.attributes.connNameOrLbl == "provider"
 
 # CREATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT AGAIN TO TEST IDEMPOTENCE
 - name: Create L4-L7 Device Selection Logical Interface Context again
-  aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_if_context:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -138,7 +138,7 @@
   register: add_context_again
 
 - name: Verify context creation idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - add_context_again is not changed
     - add_context_again.current.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
@@ -146,7 +146,7 @@
 
 # QUERY L4-L7 DEVICE SELECTION INTERFACE CONTEXT
 - name: Query L4-L7 Device Selection Logical Interface Context
-  aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_if_context:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -157,7 +157,7 @@
   register: query_context
 
 - name: Verify context query
-  assert:
+  ansible.builtin.assert:
     that:
     - add_context_again is not changed
     - add_context_again.current.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
@@ -165,7 +165,7 @@
 
 # DELETE L4-L7 DEVICE SELECTION INTERFACE CONTEXT
 - name: Delete L4-L7 Device Selection Logical Interface Context
-  aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_if_context:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -176,7 +176,7 @@
   register: delete_context
 
 - name: Verify context deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_context is changed
     - delete_context.current == []
@@ -185,7 +185,7 @@
 
 # DELETE L4-L7 DEVICE SELECTION INTERFACE CONTEXT AGAIN TO TEST IDEMPOTENCE
 - name: Delete L4-L7 Device Selection Logical Interface Context again
-  aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_if_context:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -196,20 +196,20 @@
   register: delete_context_again
 
 - name: Verify context deletion idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_context_again is not changed
     - delete_context_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys

@@ -22,13 +22,13 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain if it already exists
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -36,14 +36,14 @@
 
 # CREATE TENANT
 - name: Create ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: present
 
 # CREATE DOMAIN
 - name: Create ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
@@ -51,7 +51,7 @@
 
 # CREATE L4-L7 LOGICAL DEVICE
 - name: Create L4-L7 Device
-  aci_l4l7_device:
+  cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -68,7 +68,7 @@
 
 # CREATE CONTRACT
 - name: Create contract
-  aci_contract:
+  cisco.aci.aci_contract:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -77,7 +77,7 @@
 
 # CREATE L4-L7 SERVICE GRAPH
 - name: Create L4-L7 Service Graph
-  aci_l4l7_service_graph_template:
+  cisco.aci.aci_l4l7_service_graph_template:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -85,7 +85,7 @@
 
 # CREATE L4-L7 DEVICE SELECTION POLICY
 - name: Create L4-L7 Device Selection Policy
-  aci_l4l7_device_selection_policy:
+  cisco.aci.aci_l4l7_device_selection_policy:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -95,7 +95,7 @@
 
 # CREATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT
 - name: Create L4-L7 Device Selection Logical Interface Context
-  aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_if_context:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -106,7 +106,7 @@
 
 # CREATE L4-L7 LOGICAL INTERFACE 1
 - name: Create L4-L7 Logical Interface 1
-  aci_l4l7_logical_interface:
+  cisco.aci.aci_l4l7_logical_interface:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -116,7 +116,7 @@
 
 # CREATE L4-L7 LOGICAL INTERFACE 2
 - name: Create L4-L7 Logical Interface 2
-  aci_l4l7_logical_interface:
+  cisco.aci.aci_l4l7_logical_interface:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -126,7 +126,7 @@
 
 # BIND LOGICAL INTERFACE 1 TO INTERFACE CONTEXT
 - name: Add a new logical interface binding
-  aci_l4l7_device_selection_if_context_to_log_intf:
+  cisco.aci.aci_l4l7_device_selection_if_context_to_log_intf:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -139,14 +139,14 @@
   register: add_intf_binding
 
 - name: Verify logical interface binding
-  assert:
+  ansible.builtin.assert:
     that:
     - add_intf_binding.current.0.vnsRsLIfCtxToLIf.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider/rsLIfCtxToLIf"
     - add_intf_binding.current.0.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ans_log_intf1"
 
 # BIND LOGICAL INTERFACE 1 TO INTERFACE CONTEXT AGAIN TO TEST IDEMPOTENCE
 - name: Add a new logical interface binding again
-  aci_l4l7_device_selection_if_context_to_log_intf:
+  cisco.aci.aci_l4l7_device_selection_if_context_to_log_intf:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -159,7 +159,7 @@
   register: add_intf_binding_again
 
 - name: Verify logical interface binding idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - add_intf_binding_again is not changed
     - add_intf_binding_again.current.0.vnsRsLIfCtxToLIf.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider/rsLIfCtxToLIf"
@@ -167,7 +167,7 @@
 
 # BIND LOGICAL INTERFACE 2 TO INTERFACE CONTEXT
 - name: Modify logical interface binding
-  aci_l4l7_device_selection_if_context_to_log_intf:
+  cisco.aci.aci_l4l7_device_selection_if_context_to_log_intf:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -180,7 +180,7 @@
   register: update_intf_binding
 
 - name: Verify logical interface binding update
-  assert:
+  ansible.builtin.assert:
     that:
     - update_intf_binding is changed
     - update_intf_binding.current.0.vnsRsLIfCtxToLIf.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider/rsLIfCtxToLIf"
@@ -188,7 +188,7 @@
 
 # QUERY LOGICAL INTERFACE BINDING
 - name: Query logical interface binding
-  aci_l4l7_device_selection_if_context_to_log_intf:
+  cisco.aci.aci_l4l7_device_selection_if_context_to_log_intf:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -200,7 +200,7 @@
   register: query_intf_binding
 
 - name: Verify logical interface binding query
-  assert:
+  ansible.builtin.assert:
     that:
     - query_intf_binding is not changed
     - query_intf_binding.current.0.vnsRsLIfCtxToLIf.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider/rsLIfCtxToLIf"
@@ -208,7 +208,7 @@
 
 # REMOVE LOGICAL INTERFACE BINDING
 - name: Query logical interface binding
-  aci_l4l7_device_selection_if_context_to_log_intf:
+  cisco.aci.aci_l4l7_device_selection_if_context_to_log_intf:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -221,7 +221,7 @@
   register: remove_intf_binding
 
 - name: Verify logical interface binding removal
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_intf_binding is changed
     - remove_intf_binding.current == []
@@ -230,7 +230,7 @@
 
 # REMOVE LOGICAL INTERFACE BINDING AGAIN TO TEST IDEMPOTENCE
 - name: Query logical interface binding again
-  aci_l4l7_device_selection_if_context_to_log_intf:
+  cisco.aci.aci_l4l7_device_selection_if_context_to_log_intf:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -243,20 +243,20 @@
   register: remove_intf_binding_again
 
 - name: Verify logical interface binding removal
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_intf_binding_again is not changed
     - remove_intf_binding_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
     state: absent
 
 - name: Remove ansible_phys_domain
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
