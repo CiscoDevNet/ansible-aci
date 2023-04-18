@@ -108,7 +108,7 @@
       context: ansible_rtctrl_context
       subject_profile: ansible_rtctrl_subject
       state: present
-    check_mode: yes
+    check_mode: true
     register: cm_add_binding
 
   - name: Add context-to-subject binding (normal mode)
