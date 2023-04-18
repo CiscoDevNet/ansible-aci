@@ -23,7 +23,7 @@ options:
     aliases: [ tenant_name ]
   name:
     description:
-    - Attribute name
+    - Name of the Route Control Attribute.
     type: str
     aliases: [ attr_name, attribute_name ]
   description:
