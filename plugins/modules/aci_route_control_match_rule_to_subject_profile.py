@@ -39,7 +39,7 @@ options:
     aliases: [ route_control_context ]
   subject_profile:
     description:
-    - Name of the Subject Profile object which is mapped to the Route Control Context Match Rules
+    - Name of the Subject Profile object which is mapped to the Route Control Context Match Rules.
     type: str
     aliases: [ name ]
   state:
