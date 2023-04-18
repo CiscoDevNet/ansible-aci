@@ -99,7 +99,7 @@
       ip: 10.20.31.300/24
       state: present
     register: invalid_ipv4
-    ignore_errors: yes
+    ignore_errors: true
 
   - name: Add invalid IPv6 route control match destination
     cisco.aci.aci_route_control_match_dest:
