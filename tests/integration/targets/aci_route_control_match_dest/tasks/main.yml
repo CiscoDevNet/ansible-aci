@@ -130,7 +130,7 @@
       greater_than: 22
       state: present
     register: invalid_gt
-    ignore_errors: yes
+    ignore_errors: true
   
   - name: Add route control match destination with invalid less_than
     cisco.aci.aci_route_control_match_dest:
