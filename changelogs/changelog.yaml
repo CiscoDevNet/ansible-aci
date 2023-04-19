@@ -359,3 +359,15 @@ releases:
 
         '
     release_date: '2023-04-19'
+  2.7.0:
+    changes:
+      minor_changes:
+      - Add ip_data_plane_learning attribute to aci_bd_subnet and aci_vrf modules
+        (#413)
+      release_summary: 'Release v2.7.0 of the ``ansible-aci`` collection on 2023-04-19.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.6.0.
+
+        '
+    release_date: '2023-04-19'
