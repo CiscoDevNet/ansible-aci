@@ -68,7 +68,7 @@
       scope: [private, shared]
       route_profile: default
       route_profile_l3_out: default
-      dataplane: disabled
+      ip_data_plane_learning: disabled
     register: create_subnet2
 
   - name: create subnet again - idempotency works
