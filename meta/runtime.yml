@@ -12,6 +12,9 @@ action_groups:
     - aci_aaa_user_role
     - aci_access_port_block_to_access_port
     - aci_access_port_to_interface_policy_leaf_profile
+    - aci_access_span_dst_group
+    - aci_access_span_filter_group
+    - aci_access_span_filter_group_entry
     - aci_access_sub_port_block_to_access_port
     - aci_aep
     - aci_aep_to_domain
@@ -38,6 +41,7 @@ action_groups:
     - aci_cloud_subnet
     - aci_cloud_vpn_gateway
     - aci_cloud_zone
+    - aci_config_export_policy
     - aci_config_rollback
     - aci_config_snapshot
     - aci_contract
@@ -81,6 +85,7 @@ action_groups:
     - aci_firmware_group_node
     - aci_firmware_policy
     - aci_firmware_source
+    - aci_igmp_interface_policy
     - aci_interface_blacklist
     - aci_interface_config
     - aci_interface_description

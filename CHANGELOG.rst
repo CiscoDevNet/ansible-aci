@@ -5,6 +5,24 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.6.0
+======
+
+Release Summary
+---------------
+
+Release v2.6.0 of the ``ansible-aci`` collection on 2023-04-19.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.5.0.
+
+
+Minor Changes
+-------------
+
+- Add aci_access_span_dst_group module for fabric access policies span destination group support (#405)
+- Add aci_access_span_filter_group and aci_access_span_filter_group_entry modules for access span filter group support (#407)
+- Add aci_config_export_policy module (#380)
+- Add aci_igmp_interface_policy module (#381)
+
 v2.5.0
 ======
 
