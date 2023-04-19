@@ -1,0 +1,274 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Akini Ross (akinross@cisco.com)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when:
+  - query_cloud.current == []
+  block:
+  
+  # CLEAN TEST ENVIRONMENT
+
+  - name: Query all access span filter groups
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      state: query
+    register: query_for_clean
+
+  - name: Clean access span filter groups
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      filter_group: "{{ item.spanFilterGrp.attributes.name }}"
+      state: absent
+    loop: "{{ query_for_clean.current }}"
+
+  - name: Add access span filter group 1
+    cisco.aci.aci_access_span_filter_group: &add_ansible_filter_group_1
+      <<: *aci_info
+      filter_group: ansible_group_1
+      state: present
+
+  - name: Add access span filter group 2
+    cisco.aci.aci_access_span_filter_group: &add_ansible_filter_group_2
+      <<: *aci_info
+      filter_group: ansible_group_2
+      state: present
+
+  # TEST CREATE FILTER GROUP ENTRIES
+
+  - name: Add access span filter group entry 1 to ansible_group_1 ( checkmode )
+    cisco.aci.aci_access_span_filter_group_entry: &add_ansible_filter_group_entry_1
+      <<: *add_ansible_filter_group_1
+      source_ip: 1.1.1.1
+      destination_ip: 2.2.2.2
+      first_src_port: http
+      last_src_port: https
+    check_mode: true
+    register: cm_add_ansible_filter_group_entry_1
+
+  - name: Add access span filter group entry 1 to ansible_group_1
+    cisco.aci.aci_access_span_filter_group_entry:
+      <<: *add_ansible_filter_group_entry_1
+    register: nm_add_ansible_filter_group_entry_1
+
+  - name: Add access span filter group entry 1 to ansible_group_1 again
+    cisco.aci.aci_access_span_filter_group_entry:
+      <<: *add_ansible_filter_group_entry_1
+    register: nm_add_ansible_filter_group_entry_1_again
+
+  - name: Add access span filter group entry 2 to ansible_group_1 with ports as digits
+    cisco.aci.aci_access_span_filter_group_entry:
+      <<: *add_ansible_filter_group_1
+      source_ip: 1.1.1.1
+      destination_ip: 3.3.3.3
+      first_src_port: http
+      last_src_port: https
+      first_dest_port: 80
+      last_dest_port: 443
+      ip_protocol: tcp
+    register: nm_add_ansible_filter_group_entry_2
+
+  - name: Add access span filter group entry 3 to ansible_group_1
+    cisco.aci.aci_access_span_filter_group_entry:
+      <<: *add_ansible_filter_group_1
+      source_ip: 2.2.2.2
+      destination_ip: 5.5.5.5
+    register: nm_add_ansible_filter_group_entry_3
+
+  - name: Add access span filter group entry 4 to ansible_group_2
+    cisco.aci.aci_access_span_filter_group_entry:
+      <<: *add_ansible_filter_group_2
+      source_ip: 2.2.2.2
+      destination_ip: 5.5.5.5
+    register: nm_add_ansible_filter_group_entry_4
+
+  - name: Verify add access span filter group entires
+    ansible.builtin.assert:
+      that:
+      - cm_add_ansible_filter_group_entry_1 is changed
+      - cm_add_ansible_filter_group_entry_1.previous == []
+      - cm_add_ansible_filter_group_entry_1.current == []
+      - cm_add_ansible_filter_group_entry_1.proposed.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-unspecified-src-[1.1.1.1]-dst-[2.2.2.2]-srcPortFrom-http-srcPortTo-https-dstPortFrom-unspecified-dstPortTo-unspecified"
+      - cm_add_ansible_filter_group_entry_1.proposed.spanFilterEntry.attributes.dstAddr == "2.2.2.2"
+      - cm_add_ansible_filter_group_entry_1.proposed.spanFilterEntry.attributes.srcAddr == "1.1.1.1"
+      - cm_add_ansible_filter_group_entry_1.proposed.spanFilterEntry.attributes.srcPortFrom == "http"
+      - cm_add_ansible_filter_group_entry_1.proposed.spanFilterEntry.attributes.srcPortTo == "https"
+      - nm_add_ansible_filter_group_entry_1 is changed
+      - nm_add_ansible_filter_group_entry_1.previous == []
+      - nm_add_ansible_filter_group_entry_1.current.0.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-unspecified-src-[1.1.1.1]-dst-[2.2.2.2]-srcPortFrom-http-srcPortTo-https-dstPortFrom-unspecified-dstPortTo-unspecified"
+      - nm_add_ansible_filter_group_entry_1.current.0.spanFilterEntry.attributes.dstAddr == "2.2.2.2"
+      - nm_add_ansible_filter_group_entry_1.current.0.spanFilterEntry.attributes.srcAddr == "1.1.1.1"
+      - nm_add_ansible_filter_group_entry_1.current.0.spanFilterEntry.attributes.srcPortFrom == "http"
+      - nm_add_ansible_filter_group_entry_1.current.0.spanFilterEntry.attributes.srcPortTo == "https"
+      - nm_add_ansible_filter_group_entry_1.current.0.spanFilterEntry.attributes.dstPortFrom == "unspecified"
+      - nm_add_ansible_filter_group_entry_1.current.0.spanFilterEntry.attributes.dstPortTo == "unspecified"
+      - nm_add_ansible_filter_group_entry_1.current.0.spanFilterEntry.attributes.ipProto == "unspecified"
+      - nm_add_ansible_filter_group_entry_1_again is not changed
+      - nm_add_ansible_filter_group_entry_1_again.previous.0.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-unspecified-src-[1.1.1.1]-dst-[2.2.2.2]-srcPortFrom-http-srcPortTo-https-dstPortFrom-unspecified-dstPortTo-unspecified"
+      - nm_add_ansible_filter_group_entry_1_again.previous.0.spanFilterEntry.attributes.dstAddr == "2.2.2.2"
+      - nm_add_ansible_filter_group_entry_1_again.previous.0.spanFilterEntry.attributes.srcAddr == "1.1.1.1"
+      - nm_add_ansible_filter_group_entry_1_again.previous.0.spanFilterEntry.attributes.srcPortFrom == "http"
+      - nm_add_ansible_filter_group_entry_1_again.previous.0.spanFilterEntry.attributes.srcPortTo == "https"
+      - nm_add_ansible_filter_group_entry_1_again.previous.0.spanFilterEntry.attributes.dstPortFrom == "unspecified"
+      - nm_add_ansible_filter_group_entry_1_again.previous.0.spanFilterEntry.attributes.dstPortTo == "unspecified"
+      - nm_add_ansible_filter_group_entry_1_again.previous.0.spanFilterEntry.attributes.ipProto == "unspecified"
+      - nm_add_ansible_filter_group_entry_1_again.current.0.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-unspecified-src-[1.1.1.1]-dst-[2.2.2.2]-srcPortFrom-http-srcPortTo-https-dstPortFrom-unspecified-dstPortTo-unspecified"
+      - nm_add_ansible_filter_group_entry_1_again.current.0.spanFilterEntry.attributes.dstAddr == "2.2.2.2"
+      - nm_add_ansible_filter_group_entry_1_again.current.0.spanFilterEntry.attributes.srcAddr == "1.1.1.1"
+      - nm_add_ansible_filter_group_entry_1_again.current.0.spanFilterEntry.attributes.srcPortFrom == "http"
+      - nm_add_ansible_filter_group_entry_1_again.current.0.spanFilterEntry.attributes.srcPortTo == "https"
+      - nm_add_ansible_filter_group_entry_1_again.current.0.spanFilterEntry.attributes.dstPortFrom == "unspecified"
+      - nm_add_ansible_filter_group_entry_1_again.current.0.spanFilterEntry.attributes.dstPortTo == "unspecified"
+      - nm_add_ansible_filter_group_entry_1_again.current.0.spanFilterEntry.attributes.ipProto == "unspecified"
+      - nm_add_ansible_filter_group_entry_2 is changed
+      - nm_add_ansible_filter_group_entry_2.previous == []
+      - nm_add_ansible_filter_group_entry_2.current.0.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-tcp-src-[1.1.1.1]-dst-[3.3.3.3]-srcPortFrom-http-srcPortTo-https-dstPortFrom-http-dstPortTo-https"
+      - nm_add_ansible_filter_group_entry_2.current.0.spanFilterEntry.attributes.dstAddr == "3.3.3.3"
+      - nm_add_ansible_filter_group_entry_2.current.0.spanFilterEntry.attributes.srcAddr == "1.1.1.1"
+      - nm_add_ansible_filter_group_entry_2.current.0.spanFilterEntry.attributes.srcPortFrom == "http"
+      - nm_add_ansible_filter_group_entry_2.current.0.spanFilterEntry.attributes.srcPortTo == "https"
+      - nm_add_ansible_filter_group_entry_2.current.0.spanFilterEntry.attributes.dstPortFrom == "http"
+      - nm_add_ansible_filter_group_entry_2.current.0.spanFilterEntry.attributes.dstPortTo == "https"
+      - nm_add_ansible_filter_group_entry_2.current.0.spanFilterEntry.attributes.ipProto == "tcp"
+      - nm_add_ansible_filter_group_entry_3 is changed
+      - nm_add_ansible_filter_group_entry_3.previous == []
+      - nm_add_ansible_filter_group_entry_3.current.0.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-unspecified-src-[2.2.2.2]-dst-[5.5.5.5]-srcPortFrom-unspecified-srcPortTo-unspecified-dstPortFrom-unspecified-dstPortTo-unspecified"
+      - nm_add_ansible_filter_group_entry_3.current.0.spanFilterEntry.attributes.dstAddr == "5.5.5.5"
+      - nm_add_ansible_filter_group_entry_3.current.0.spanFilterEntry.attributes.srcAddr == "2.2.2.2"
+      - nm_add_ansible_filter_group_entry_3.current.0.spanFilterEntry.attributes.srcPortFrom == "unspecified"
+      - nm_add_ansible_filter_group_entry_3.current.0.spanFilterEntry.attributes.srcPortTo == "unspecified"
+      - nm_add_ansible_filter_group_entry_3.current.0.spanFilterEntry.attributes.dstPortFrom == "unspecified"
+      - nm_add_ansible_filter_group_entry_3.current.0.spanFilterEntry.attributes.dstPortTo == "unspecified"
+      - nm_add_ansible_filter_group_entry_3.current.0.spanFilterEntry.attributes.ipProto == "unspecified"
+      - nm_add_ansible_filter_group_entry_4 is changed
+      - nm_add_ansible_filter_group_entry_4.previous == []
+      - nm_add_ansible_filter_group_entry_4.current.0.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_2/proto-unspecified-src-[2.2.2.2]-dst-[5.5.5.5]-srcPortFrom-unspecified-srcPortTo-unspecified-dstPortFrom-unspecified-dstPortTo-unspecified"
+      - nm_add_ansible_filter_group_entry_4.current.0.spanFilterEntry.attributes.dstAddr == "5.5.5.5"
+      - nm_add_ansible_filter_group_entry_4.current.0.spanFilterEntry.attributes.srcAddr == "2.2.2.2"
+      - nm_add_ansible_filter_group_entry_4.current.0.spanFilterEntry.attributes.srcPortFrom == "unspecified"
+      - nm_add_ansible_filter_group_entry_4.current.0.spanFilterEntry.attributes.srcPortTo == "unspecified"
+      - nm_add_ansible_filter_group_entry_4.current.0.spanFilterEntry.attributes.dstPortFrom == "unspecified"
+      - nm_add_ansible_filter_group_entry_4.current.0.spanFilterEntry.attributes.dstPortTo == "unspecified"
+      - nm_add_ansible_filter_group_entry_4.current.0.spanFilterEntry.attributes.ipProto == "unspecified"
+
+  # TEST QUERY FILTER GROUP ENTRIES
+
+  - name: Query one specific access span filter group entry
+    cisco.aci.aci_access_span_filter_group_entry:
+      <<: *aci_info
+      source_ip: 1.1.1.1
+      destination_ip: 2.2.2.2
+      first_src_port: http
+      last_src_port: https
+      state: query
+    register: query_one
+
+  - name: Query all access span filter group entries of one entire group
+    cisco.aci.aci_access_span_filter_group_entry:
+      <<: *add_ansible_filter_group_1
+      state: query
+    register: query_one_group
+
+  - name: Query all access span filter group entries ( class query )
+    cisco.aci.aci_access_span_filter_group_entry:
+      <<: *aci_info
+      state: query
+    register: query_all
+
+  - name: Query access span filter group entries that match source_ip and first_dest_port
+    cisco.aci.aci_access_span_filter_group_entry:
+      <<: *aci_info
+      source_ip: 1.1.1.1
+      first_src_port: http
+      state: query
+    register: query_match
+
+  - name: Query access span filter group entries that match source_ip and first_dest_port with ports as digits
+    cisco.aci.aci_access_span_filter_group_entry:
+      <<: *aci_info
+      source_ip: 1.1.1.1
+      first_src_port: 80
+      last_src_port: 443
+      state: query
+    register: query_match_port_number
+
+  - name: Verify access span filter group queries
+    ansible.builtin.assert:
+      that:
+      - query_one is not changed
+      - query_one.current | length == 1
+      - query_one.current.0.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-unspecified-src-[1.1.1.1]-dst-[2.2.2.2]-srcPortFrom-http-srcPortTo-https-dstPortFrom-unspecified-dstPortTo-unspecified"
+      - query_one_group is not changed
+      - query_one_group.current.0.spanFilterGrp.children | length == 3
+      - query_all is not changed
+      - query_all.current | length == 4
+      - query_match is not changed
+      - query_match.current | length == 2
+      - query_match.current.0.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-unspecified-src-[1.1.1.1]-dst-[2.2.2.2]-srcPortFrom-http-srcPortTo-https-dstPortFrom-unspecified-dstPortTo-unspecified"
+      - query_match.current.1.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-tcp-src-[1.1.1.1]-dst-[3.3.3.3]-srcPortFrom-http-srcPortTo-https-dstPortFrom-http-dstPortTo-https"
+      - query_match_port_number is not changed
+      - query_match_port_number.current | length == 2
+      - query_match_port_number.current.0.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-unspecified-src-[1.1.1.1]-dst-[2.2.2.2]-srcPortFrom-http-srcPortTo-https-dstPortFrom-unspecified-dstPortTo-unspecified"
+      - query_match_port_number.current.1.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-tcp-src-[1.1.1.1]-dst-[3.3.3.3]-srcPortFrom-http-srcPortTo-https-dstPortFrom-http-dstPortTo-https"
+
+  # TEST REMOVAL FILTER GROUP ENTRIES
+
+  - name: Remove access span filter group ( checkmode )
+    cisco.aci.aci_access_span_filter_group_entry: &remove_ansible_filter_group_entry_1
+      <<: *add_ansible_filter_group_entry_1
+      state: absent
+    check_mode: true
+    register: cm_remove_ansible_filter_group_1_entry
+
+  - name: Remove access span filter group
+    cisco.aci.aci_access_span_filter_group_entry:
+      <<: *remove_ansible_filter_group_entry_1
+    register: nm_remove_ansible_filter_group_1_entry
+
+  - name: Remove access span filter group again
+    cisco.aci.aci_access_span_filter_group_entry:
+      <<: *remove_ansible_filter_group_entry_1
+    register: nm_remove_ansible_filter_group_1_entry_again
+
+  - name: Verify access span filter group entries removal
+    ansible.builtin.assert:
+      that:
+      - cm_remove_ansible_filter_group_1_entry is changed
+      - cm_remove_ansible_filter_group_1_entry.proposed == {}
+      - nm_remove_ansible_filter_group_1_entry is changed
+      - nm_remove_ansible_filter_group_1_entry.current == []
+      - nm_remove_ansible_filter_group_1_entry.previous.0.spanFilterEntry.attributes.dn == "uni/infra/filtergrp-ansible_group_1/proto-unspecified-src-[1.1.1.1]-dst-[2.2.2.2]-srcPortFrom-http-srcPortTo-https-dstPortFrom-unspecified-dstPortTo-unspecified"
+      - nm_remove_ansible_filter_group_1_entry_again is not changed
+      - nm_remove_ansible_filter_group_1_entry_again.current == []
+      - nm_remove_ansible_filter_group_1_entry_again.previous == []
+
+  # CLEAN TEST ENVIRONMENT
+
+  - name: Clean created access span filter groups
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      filter_group: "{{ item }}"
+      state: absent
+    loop:
+    - ansible_group_1
+    - ansible_group_2

@@ -1,0 +1,154 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Akini Ross (akinross@cisco.com)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when:
+  - query_cloud.current == []
+  block:
+    
+  # CLEAN TEST ENVIRONMENT
+
+  - name: Query all access span filter groups
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      state: query
+    register: query_for_clean
+
+  - name: Clean access span filter groups
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      filter_group: "{{ item.spanFilterGrp.attributes.name }}"
+      state: absent
+    loop: "{{ query_for_clean.current }}"
+
+  # TEST CREATE FILTER GROUPS
+
+  - name: Add access span filter group ( check mode )
+    cisco.aci.aci_access_span_filter_group: &add_ansible_filter_group_1
+      <<: *aci_info
+      filter_group: ansible_group_1
+      state: present
+    check_mode: true
+    register: cm_add_ansible_group_1
+
+  - name: Add access span filter group
+    cisco.aci.aci_access_span_filter_group:
+      <<: *add_ansible_filter_group_1
+    register: nm_add_ansible_group_1
+
+  - name: Add access span filter group again
+    cisco.aci.aci_access_span_filter_group:
+      <<: *add_ansible_filter_group_1
+    register: nm_add_ansible_group_1_again
+
+  - name: Verify add access span filter group
+    ansible.builtin.assert:
+      that:
+      - cm_add_ansible_group_1 is changed
+      - cm_add_ansible_group_1.current == []
+      - cm_add_ansible_group_1.previous == []
+      - cm_add_ansible_group_1.proposed.spanFilterGrp.attributes.name == "ansible_group_1"
+      - nm_add_ansible_group_1 is changed
+      - nm_add_ansible_group_1.previous == []
+      - nm_add_ansible_group_1.current.0.spanFilterGrp.attributes.name == "ansible_group_1"
+      - nm_add_ansible_group_1_again is not changed
+      - nm_add_ansible_group_1_again.previous.0.spanFilterGrp.attributes.name == "ansible_group_1"
+      - nm_add_ansible_group_1_again.current.0.spanFilterGrp.attributes.name == "ansible_group_1"
+
+  - name: Add two more access span filter groups
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      filter_group: "{{ item }}"
+      state: present
+    loop:
+      - ansible_group_2
+      - ansible_group_3
+
+  # TEST QUERY FILTER GROUPS
+
+  - name: Query access span filter group
+    cisco.aci.aci_access_span_filter_group:
+      <<: *add_ansible_filter_group_1
+      state: query
+    register: query_one
+
+  - name: Query all access span filter group ( class query )
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      state: query
+    register: query_all
+
+  - name: Verify access span filter group queries
+    ansible.builtin.assert:
+      that:
+      - query_one is not changed
+      - query_one.current | length == 1
+      - query_one.current.0.spanFilterGrp.attributes.name == "ansible_group_1"
+      - query_all is not changed
+      - query_all.current | length == 3
+      - query_all.current.0.spanFilterGrp.attributes.name == "ansible_group_1"
+      - query_all.current.1.spanFilterGrp.attributes.name == "ansible_group_2"
+      - query_all.current.2.spanFilterGrp.attributes.name == "ansible_group_3"
+
+  # TEST REMOVAL FILTER GROUPS
+
+  - name: Remove access span filter group ( check mode )
+    cisco.aci.aci_access_span_filter_group: &remove_ansible_filter_group_1
+      <<: *add_ansible_filter_group_1
+      state: absent
+    check_mode: true
+    register: cm_remove_ansible_filter_group_1
+
+  - name: Remove access span filter group
+    cisco.aci.aci_access_span_filter_group:
+      <<: *remove_ansible_filter_group_1
+    register: nm_remove_ansible_filter_group_1
+
+  - name: Remove access span filter group again
+    cisco.aci.aci_access_span_filter_group:
+      <<: *remove_ansible_filter_group_1
+    register: nm_remove_ansible_filter_group_1_again
+
+  - name: Verify access span filter group removal
+    ansible.builtin.assert:
+      that:
+      - cm_remove_ansible_filter_group_1 is changed
+      - cm_remove_ansible_filter_group_1.proposed == {}
+      - nm_remove_ansible_filter_group_1 is changed
+      - nm_remove_ansible_filter_group_1.previous.0.spanFilterGrp.attributes.name == "ansible_group_1"
+      - nm_remove_ansible_filter_group_1.current == []
+      - nm_remove_ansible_filter_group_1_again is not changed
+      - nm_remove_ansible_filter_group_1_again.previous == []
+      - nm_remove_ansible_filter_group_1_again.current == []
+
+  # CLEAN TEST ENVIRONMENT
+
+  - name: Clean created access span filter groups
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      filter_group: "{{ item }}"
+      state: absent
+    loop:
+    - ansible_group_2
+    - ansible_group_3
