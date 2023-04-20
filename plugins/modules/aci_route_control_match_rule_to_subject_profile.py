@@ -245,8 +245,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["l3out", "tenant", "profile", "context", "subject_profile"]],
-            ["state", "present", ["l3out", "tenant", "profile", "context", "subject_profile"]],
+            ["state", "absent", ["tenant", "profile", "context", "subject_profile"]],
+            ["state", "present", ["tenant", "profile", "context", "subject_profile"]],
         ],
     )
 
@@ -259,38 +259,66 @@ def main():
     context = module.params.get("context")
     subj_name = module.params.get("subject_profile")
 
-    aci.construct_url(
-        root_class=dict(
-            aci_class="fvTenant",
-            aci_rn="tn-{0}".format(tenant),
-            module_object=tenant,
-            target_filter={"name": tenant},
-        ),
-        subclass_1=dict(
-            aci_class="l3extOut",
-            aci_rn="out-{0}".format(l3out),
-            module_object=l3out,
-            target_filter={"name": l3out},
-        ),
-        subclass_2=dict(
-            aci_class="rtctrlProfile",
-            aci_rn="prof-{0}".format(profile),
-            module_object=profile,
-            target_filter={"name": profile},
-        ),
-        subclass_3=dict(
-            aci_class="rtctrlCtxP",
-            aci_rn="ctx-{0}".format(context),
-            module_object=context,
-            target_filter={"name": context},
-        ),
-        subclass_4=dict(
-            aci_class="rtctrlRsCtxPToSubjP",
-            aci_rn="/rsctxPToSubjP-{0}".format(subj_name),
-            module_object=subj_name,
-            target_filter={"tnRtctrlSubjPName": subj_name},
-        ),
-    )
+    if l3out is not None:
+        aci.construct_url(
+            root_class=dict(
+                aci_class="fvTenant",
+                aci_rn="tn-{0}".format(tenant),
+                module_object=tenant,
+                target_filter={"name": tenant},
+            ),
+            subclass_1=dict(
+                aci_class="l3extOut",
+                aci_rn="out-{0}".format(l3out),
+                module_object=l3out,
+                target_filter={"name": l3out},
+            ),
+            subclass_2=dict(
+                aci_class="rtctrlProfile",
+                aci_rn="prof-{0}".format(profile),
+                module_object=profile,
+                target_filter={"name": profile},
+            ),
+            subclass_3=dict(
+                aci_class="rtctrlCtxP",
+                aci_rn="ctx-{0}".format(context),
+                module_object=context,
+                target_filter={"name": context},
+            ),
+            subclass_4=dict(
+                aci_class="rtctrlRsCtxPToSubjP",
+                aci_rn="/rsctxPToSubjP-{0}".format(subj_name),
+                module_object=subj_name,
+                target_filter={"tnRtctrlSubjPName": subj_name},
+            ),
+        )
+    else:
+        aci.construct_url(
+            root_class=dict(
+                aci_class="fvTenant",
+                aci_rn="tn-{0}".format(tenant),
+                module_object=tenant,
+                target_filter={"name": tenant},
+            ),
+            subclass_1=dict(
+                aci_class="rtctrlProfile",
+                aci_rn="prof-{0}".format(profile),
+                module_object=profile,
+                target_filter={"name": profile},
+            ),
+            subclass_2=dict(
+                aci_class="rtctrlCtxP",
+                aci_rn="ctx-{0}".format(context),
+                module_object=context,
+                target_filter={"name": context},
+            ),
+            subclass_3=dict(
+                aci_class="rtctrlRsCtxPToSubjP",
+                aci_rn="rsctxPToSubjP-{0}".format(subj_name),
+                module_object=subj_name,
+                target_filter={"tnRtctrlSubjPName": subj_name},
+            ),
+        )
 
     aci.get_existing()
 

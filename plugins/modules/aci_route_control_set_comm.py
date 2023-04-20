@@ -24,12 +24,12 @@ options:
     aliases: [ tenant_name ]
   attr_name:
     description:
-    - The attribute name.
+    - The name of an existing rtctrl:AttrP object.
     type: str
     aliases: [ attribute_name ]
   description:
     description:
-    - The description of the Set Community object.
+    - The description of the Action Rule Profile - Set Communities object.
     type: str
     aliases: [ descr ]
   name:
@@ -39,7 +39,7 @@ options:
     type: str
   community:
     description:
-    - The community to set.
+    - The community value to set.
     type: str
   set_criteria:
     description:

@@ -25,6 +25,7 @@ options:
   l3out:
     description:
     - Name of an existing L3Out.
+    - This is required if the profile is built under an L3Out, but not if the profile is built directly under the tenant.
     type: str
     aliases: [ l3out_name ]
   profile:
@@ -248,8 +249,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["l3out", "tenant", "profile", "context"]],
-            ["state", "present", ["l3out", "tenant", "profile", "context", "set_action_rule_profile"]],
+            ["state", "absent", ["tenant", "profile", "context"]],
+            ["state", "present", ["tenant", "profile", "context", "set_action_rule_profile"]],
         ],
     )
 
@@ -263,39 +264,68 @@ def main():
     description = module.params.get("description")
     set_action_rule_profile = module.params.get("set_action_rule_profile")
 
-    aci.construct_url(
-        root_class=dict(
-            aci_class="fvTenant",
-            aci_rn="tn-{0}".format(tenant),
-            module_object=tenant,
-            target_filter={"name": tenant},
-        ),
-        subclass_1=dict(
-            aci_class="l3extOut",
-            aci_rn="out-{0}".format(l3out),
-            module_object=l3out,
-            target_filter={"name": l3out},
-        ),
-        subclass_2=dict(
-            aci_class="rtctrlProfile",
-            aci_rn="prof-{0}".format(profile),
-            module_object=profile,
-            target_filter={"name": profile},
-        ),
-        subclass_3=dict(
-            aci_class="rtctrlCtxP",
-            aci_rn="ctx-{0}".format(context),
-            module_object=context,
-            target_filter={"name": context},
-        ),
-        subclass_4=dict(
-            aci_class="rtctrlScope",
-            aci_rn="/scp",
-            module_object="",
-            target_filter={"name": ""},
-        ),
-        child_classes=["rtctrlRsScopeToAttrP"],
-    )
+    if l3out is not None:
+        aci.construct_url(
+            root_class=dict(
+                aci_class="fvTenant",
+                aci_rn="tn-{0}".format(tenant),
+                module_object=tenant,
+                target_filter={"name": tenant},
+            ),
+            subclass_1=dict(
+                aci_class="l3extOut",
+                aci_rn="out-{0}".format(l3out),
+                module_object=l3out,
+                target_filter={"name": l3out},
+            ),
+            subclass_2=dict(
+                aci_class="rtctrlProfile",
+                aci_rn="prof-{0}".format(profile),
+                module_object=profile,
+                target_filter={"name": profile},
+            ),
+            subclass_3=dict(
+                aci_class="rtctrlCtxP",
+                aci_rn="ctx-{0}".format(context),
+                module_object=context,
+                target_filter={"name": context},
+            ),
+            subclass_4=dict(
+                aci_class="rtctrlScope",
+                aci_rn="/scp",
+                module_object="",
+                target_filter={"name": ""},
+            ),
+            child_classes=["rtctrlRsScopeToAttrP"],
+        )
+    else:
+        aci.construct_url(
+            root_class=dict(
+                aci_class="fvTenant",
+                aci_rn="tn-{0}".format(tenant),
+                module_object=tenant,
+                target_filter={"name": tenant},
+            ),
+            subclass_1=dict(
+                aci_class="rtctrlProfile",
+                aci_rn="prof-{0}".format(profile),
+                module_object=profile,
+                target_filter={"name": profile},
+            ),
+            subclass_2=dict(
+                aci_class="rtctrlCtxP",
+                aci_rn="ctx-{0}".format(context),
+                module_object=context,
+                target_filter={"name": context},
+            ),
+            subclass_3=dict(
+                aci_class="rtctrlScope",
+                aci_rn="scp",
+                module_object="",
+                target_filter={"name": ""},
+            ),
+            child_classes=["rtctrlRsScopeToAttrP"],
+        )
 
     aci.get_existing()
 

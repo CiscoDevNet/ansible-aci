@@ -25,6 +25,7 @@ options:
   l3out:
     description:
     - The name of an existing L3Out.
+    - If this is omitted, the profile will be created directly under the tenant instead of within the L3out.
     type: str
     aliases: [ l3out_name ]
   description:
@@ -48,6 +49,7 @@ options:
   autocontinue:
     description:
     - The value of the autocontinue parameter.
+    - The APIC defaults to false on when unset during creation.
     type: bool
   state:
     description:
@@ -247,8 +249,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["l3out", "tenant", "name"]],
-            ["state", "present", ["l3out", "tenant", "name"]],
+            ["state", "absent", ["tenant", "name"]],
+            ["state", "present", ["tenant", "name"]],
         ],
     )
 
@@ -264,27 +266,44 @@ def main():
 
     child_classes = ["rtctrlCtxP", "rtctrlRtInstPToProfile", "rtctrlRsCtxPToSubjP"]
 
-    aci.construct_url(
-        root_class=dict(
-            aci_class="fvTenant",
-            aci_rn="tn-{0}".format(tenant),
-            module_object=tenant,
-            target_filter={"name": tenant},
-        ),
-        subclass_1=dict(
-            aci_class="l3extOut",
-            aci_rn="out-{0}".format(l3out),
-            module_object=l3out,
-            target_filter={"name": l3out},
-        ),
-        subclass_2=dict(
-            aci_class="rtctrlProfile",
-            aci_rn="prof-{0}".format(profile),
-            module_object=profile,
-            target_filter={"name": profile},
-        ),
-        child_classes=child_classes,
-    )
+    if l3out is not None:
+        aci.construct_url(
+            root_class=dict(
+                aci_class="fvTenant",
+                aci_rn="tn-{0}".format(tenant),
+                module_object=tenant,
+                target_filter={"name": tenant},
+            ),
+            subclass_1=dict(
+                aci_class="l3extOut",
+                aci_rn="out-{0}".format(l3out),
+                module_object=l3out,
+                target_filter={"name": l3out},
+            ),
+            subclass_2=dict(
+                aci_class="rtctrlProfile",
+                aci_rn="prof-{0}".format(profile),
+                module_object=profile,
+                target_filter={"name": profile},
+            ),
+            child_classes=child_classes,
+        )
+    else:
+        aci.construct_url(
+            root_class=dict(
+                aci_class="fvTenant",
+                aci_rn="tn-{0}".format(tenant),
+                module_object=tenant,
+                target_filter={"name": tenant},
+            ),
+            subclass_1=dict(
+                aci_class="rtctrlProfile",
+                aci_rn="prof-{0}".format(profile),
+                module_object=profile,
+                target_filter={"name": profile},
+            ),
+            child_classes=child_classes,
+        )
 
     aci.get_existing()
 

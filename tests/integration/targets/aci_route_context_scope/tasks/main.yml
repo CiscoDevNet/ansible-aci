@@ -70,6 +70,14 @@
       profile_type: global
       state: present
 
+  - name: Create tenant route control profile
+    cisco.aci.aci_route_control_profile:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_tenant_rtctrl_profile
+      profile_type: global
+      state: present
+
   - name: Add route control context
     cisco.aci.aci_route_control_context:
       <<: *aci_info
@@ -88,6 +96,16 @@
       l3out: ansible_l3out
       profile: ansible_rtctrl_profile2
       context: ansible_rtctrl_context2
+      order: 0
+      action: permit
+      state: present
+
+  - name: Add tenant route control context
+    cisco.aci.aci_route_control_context:
+      <<: *aci_info
+      tenant: ansible_tenant
+      profile: ansible_tenant_rtctrl_profile
+      context: ansible_tenant_rtctrl_context
       order: 0
       action: permit
       state: present
@@ -152,6 +170,23 @@
       set_action_rule_profile: ansible_rtctrl_attr
       state: present
 
+  - name: Add tenant route context scope
+    cisco.aci.aci_route_context_scope: &tenant_scope_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      profile: ansible_tenant_rtctrl_profile
+      context: ansible_tenant_rtctrl_context
+      set_action_rule_profile: ansible_rtctrl_attr
+      state: present
+    register: add_tenant_scope
+
+  - name: Verify add_tenant_scope
+    ansible.builtin.assert:
+      that:
+      - add_tenant_scope is changed
+      - add_tenant_scope.sent.rtctrlScope.children.0.rtctrlRsScopeToAttrP.attributes.tnRtctrlAttrPName == 'ansible_rtctrl_attr'
+
+
 # UPDATE SCOPE
   - name: Change route context scope
     cisco.aci.aci_route_context_scope:
@@ -193,6 +228,18 @@
       - query_spec_scope.current | length == 1
       - query_spec_scope.current.0.rtctrlScope.children.0.rtctrlRsScopeToAttrP.attributes.tnRtctrlAttrPName == 'ansible_rtctrl_attr2'
 
+  - name: Query tenant scope
+    cisco.aci.aci_route_context_scope:
+      <<: *tenant_scope_present
+      state: query
+    register: query_tenant_scope
+
+  - name: Verify query_tenant_scope
+    ansible.builtin.assert:
+      that:
+      - query_tenant_scope is not changed
+      - query_tenant_scope.current | length == 1
+      - query_tenant_scope.current.0.rtctrlScope.children.0.rtctrlRsScopeToAttrP.attributes.tnRtctrlAttrPName == 'ansible_rtctrl_attr'
 
 # REMOVE SCOPE
   - name: Remove scope
@@ -206,6 +253,18 @@
       that:
       - remove_scope is changed
       - remove_scope.current == []
+
+  - name: Remove tenant scope
+    cisco.aci.aci_route_context_scope:
+      <<: *tenant_scope_present
+      state: absent
+    register: remove_tenant_scope
+
+  - name: Verify remove_tenant_scope
+    ansible.builtin.assert:
+      that:
+      - remove_tenant_scope is changed
+      - remove_tenant_scope.current == []
 
 # REMOVE SCOPE AGAIN TO TEST IDEMPOTENCE
   - name: Remove scope again

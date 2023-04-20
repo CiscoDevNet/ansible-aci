@@ -61,6 +61,14 @@
       profile_type: global
       state: present
 
+  - name: Create tenant route control profile
+    cisco.aci.aci_route_control_profile:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_tenant_rtctrl_profile
+      profile_type: global
+      state: present
+
   - name: Add route control context
     cisco.aci.aci_route_control_context:
       <<: *aci_info
@@ -80,6 +88,16 @@
       profile: ansible_rtctrl_profile
       context: ansible_rtctrl_context2
       order: 1
+      action: permit
+      state: present
+
+  - name: Add tenant route control context
+    cisco.aci.aci_route_control_context:
+      <<: *aci_info
+      tenant: ansible_tenant
+      profile: ansible_tenant_rtctrl_profile
+      context: ansible_tenant_rtctrl_context
+      order: 0
       action: permit
       state: present
 
@@ -144,6 +162,22 @@
       subject_profile: ansible_rtctrl_subject2
       state: present
 
+  - name: Add context-to-subject binding under tenant profile
+    cisco.aci.aci_route_control_match_rule_to_subject_profile: &tenant_binding_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      profile: ansible_tenant_rtctrl_profile
+      context: ansible_tenant_rtctrl_context
+      subject_profile: ansible_rtctrl_subject
+      state: present
+    register: add_tenant_binding
+
+  - name: Verify add_tenant_binding
+    ansible.builtin.assert:
+      that:
+      - add_tenant_binding is changed
+      - add_tenant_binding.sent.rtctrlRsCtxPToSubjP.attributes.tnRtctrlSubjPName == 'ansible_rtctrl_subject'
+
 # QUERY ALL BINDINGS
   - name: Query all bindings
     cisco.aci.aci_route_control_match_rule_to_subject_profile:
@@ -171,6 +205,18 @@
       - query_spec_binding.current | length == 1
       - query_spec_binding.current.0.rtctrlRsCtxPToSubjP.attributes.tnRtctrlSubjPName == 'ansible_rtctrl_subject'
 
+  - name: Query binding under tenant profile
+    cisco.aci.aci_route_control_match_rule_to_subject_profile:
+      <<: *tenant_binding_present
+      state: query
+    register: query_tenant_binding
+
+  - name: Verify query_spec_binding
+    ansible.builtin.assert:
+      that:
+      - query_tenant_binding is not changed
+      - query_tenant_binding.current | length == 1
+      - query_tenant_binding.current.0.rtctrlRsCtxPToSubjP.attributes.tnRtctrlSubjPName == 'ansible_rtctrl_subject'
 
 # REMOVE BINDING
   - name: Remove binding
@@ -184,6 +230,18 @@
       that:
       - remove_binding is changed
       - remove_binding.current == []
+
+  - name: Remove binding under tenant profile
+    cisco.aci.aci_route_control_match_rule_to_subject_profile:
+      <<: *tenant_binding_present
+      state: absent
+    register: remove_tenant_binding
+
+  - name: Verify remove_tenant_binding
+    ansible.builtin.assert:
+      that:
+      - remove_tenant_binding is changed
+      - remove_tenant_binding.current == []
 
 # REMOVE BINDING AGAIN TO TEST IDEMPOTENCE
   - name: Remove binding again
