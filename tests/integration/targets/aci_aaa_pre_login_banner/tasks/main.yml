@@ -1,0 +1,98 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+
+# STORE EXISTING BANNER
+- name: Retrieve Existing AAA Login Banner
+  cisco.aci.aci_aaa_pre_login_banner:
+    <<: *aci_info
+    state: query
+  register: stored_banner
+
+# UPDATE AAA PRE-LOGIN BANNER
+- name: Update AAA pre-login banner (check mode)
+  cisco.aci.aci_aaa_pre_login_banner: &aci_banner
+    <<: *aci_info
+    banner_message: Test Banner Message
+    switch_message: Test Switch Banner Message
+    gui_message_text: Test GUI Banner Message
+    is_gui_message_text: yes
+    message: Test Message
+    banner_message_severity: major
+  check_mode: yes
+  register: cm_update_banner
+
+- name: Update AAA pre-login banner
+  cisco.aci.aci_aaa_pre_login_banner:
+    <<: *aci_banner
+  register: nm_update_banner
+
+- name: Test Update Idempotence
+  cisco.aci.aci_aaa_pre_login_banner:
+    <<: *aci_banner
+  register: nm_update_banner_again
+
+- name: Verify creation of File Remote Path
+  ansible.builtin.assert:
+    that:
+    - cm_update_banner is changed
+    - nm_update_banner is changed
+    - nm_update_banner_again is not changed
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.bannerMessage == "Test Banner Message"
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.bannerMessageSeverity == "major"
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.guiTextMessage == "Test GUI Banner Message"
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.isGuiMessageText == "yes"
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.message == "Test Message"
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.switchMessage == "Test Switch Banner Message"
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.bannerMessage == "Test Banner Message"
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.bannerMessageSeverity == "major"
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.guiTextMessage == "Test GUI Banner Message"
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.isGuiMessageText == "yes"
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.message == "Test Message"
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.switchMessage == "Test Switch Banner Message"
+
+# QUERY AAA PRE-LOGIN BANNER
+- name: Query AAA pre-login banner
+  cisco.aci.aci_aaa_pre_login_banner:
+    <<: *aci_banner
+    state: query
+  register: query_one
+
+- name: Verify AAA pre-login banner query
+  ansible.builtin.assert:
+    that:
+    - query_one is not changed
+    - query_one.current.0.aaaPreLoginBanner.attributes.bannerMessage == "Test Banner Message"
+    - query_one.current.0.aaaPreLoginBanner.attributes.bannerMessageSeverity == "major"
+    - query_one.current.0.aaaPreLoginBanner.attributes.guiTextMessage == "Test GUI Banner Message"
+    - query_one.current.0.aaaPreLoginBanner.attributes.isGuiMessageText == "yes"
+    - query_one.current.0.aaaPreLoginBanner.attributes.message == "Test Message"
+    - query_one.current.0.aaaPreLoginBanner.attributes.switchMessage == "Test Switch Banner Message"
+
+# RESTORE ORIGINAL AAA PRE-LOGIN BANNER
+- name: Restore original AAA pre-login banner
+  cisco.aci.aci_aaa_pre_login_banner:
+    <<: *aci_info
+    banner_message: stored_banner.current.0.aaaPreLoginBanner.attributes.bannerMessage
+    switch_message: stored_banner.current.0.aaaPreLoginBanner.attributes.switchMessage
+    gui_message_text: stored_banner.current.0.aaaPreLoginBanner.attributes.guiTextMessage
+    is_gui_message_text: stored_banner.current.0.aaaPreLoginBanner.attributes.isGuiMessageText
+    message: stored_banner.current.0.aaaPreLoginBanner.attributes.message
+    banner_message_severity: stored_banner.current.0.aaaPreLoginBanner.attributes.bannerMessageSeverity
