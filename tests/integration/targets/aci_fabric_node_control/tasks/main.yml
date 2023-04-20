@@ -1,0 +1,124 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove Fabric Node Control
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_info
+    name: ansible_fnc
+    state: absent
+      
+# CREATE FABRIC NODE CONTROL
+- name: Create Fabric Node Control (check mode)
+  cisco.aci.aci_fabric_node_control: &aci_fnc
+    <<: *aci_info
+    name: ansible_fnc
+    description: Ansible Test Fabric Node Control
+    enable_dom: yes
+    feature_selection: netflow
+  check_mode: yes
+  register: cm_create_fnc
+
+- name: Create Fabric Node Control (normal mode)
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_fnc
+  register: nm_create_fnc
+
+- name: Create Fabric Node Control again
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_fnc
+  register: nm_create_fnc_again
+
+- name: Verify Fabric Node Control creation
+  ansible.builtin.assert:
+    that:
+    - cm_create_fnc is changed
+    - nm_create_fnc is changed
+    - nm_create_fnc_again is not changed
+    - nm_create_fnc.current.0.fabricNodeControl.attributes.control == "Dom"
+    - nm_create_fnc.current.0.fabricNodeControl.attributes.descr == "Ansible Test Fabric Node Control"
+    - nm_create_fnc.current.0.fabricNodeControl.attributes.featureSel == "netflow"
+    - nm_create_fnc.current.0.fabricNodeControl.attributes.name == "ansible_fnc"
+    - nm_create_fnc_again.current.0.fabricNodeControl.attributes.control == "Dom"
+    - nm_create_fnc_again.current.0.fabricNodeControl.attributes.descr == "Ansible Test Fabric Node Control"
+    - nm_create_fnc_again.current.0.fabricNodeControl.attributes.featureSel == "netflow"
+    - nm_create_fnc_again.current.0.fabricNodeControl.attributes.name == "ansible_fnc"
+
+# UPDATE FABRIC NODE CONTROL
+- name: Update Fabric Node Control
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_fnc
+    description: Updated Ansible Test Fabric Node Control
+    enable_dom: no
+    feature_selection: analytics
+  register: update_fnc
+
+- name: Verify Fabric Node Control update
+  ansible.builtin.assert:
+    that:
+    - update_fnc is changed
+    - update_fnc.current.0.fabricNodeControl.attributes.control == ""
+    - update_fnc.current.0.fabricNodeControl.attributes.descr == "Updated Ansible Test Fabric Node Control"
+    - update_fnc.current.0.fabricNodeControl.attributes.featureSel == "analytics"
+    - update_fnc.current.0.fabricNodeControl.attributes.name == "ansible_fnc"
+
+# QUERY FABRIC NODE CONTROL
+- name: Query a Fabric Node Control
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_fnc
+    state: query
+  register: query_one
+
+- name: Query all Fabric Node Controls
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Verify Fabric Node Control queries
+  ansible.builtin.assert:
+    that:
+    - query_one is not changed
+    - query_one.current.0.fabricNodeControl.attributes.control == ""
+    - query_one.current.0.fabricNodeControl.attributes.descr == "Updated Ansible Test Fabric Node Control"
+    - query_one.current.0.fabricNodeControl.attributes.featureSel == "analytics"
+    - query_one.current.0.fabricNodeControl.attributes.name == "ansible_fnc"
+    - query_all is not changed
+
+# DELETE FABRIC NODE CONTROL
+- name: Delete Fabric Node Control
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_fnc
+    state: absent
+  register: delete
+
+- name: Delete Fabric Node Control again
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_fnc
+    state: absent
+  register: delete_again
+
+- name: Verify Fabric Node Control deletion
+  ansible.builtin.assert:
+    that:
+    - delete is changed
+    - delete_again is not changed
+    - delete.current == []
