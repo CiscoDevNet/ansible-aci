@@ -33,13 +33,13 @@
     banner_message: Test Banner Message
     switch_message: Test Switch Banner Message
     gui_message_text: Test GUI Banner Message
-    is_gui_message_text: yes
+    is_gui_message_text: true
     message: Test Message
     banner_message_severity: major
-  check_mode: yes
+  check_mode: true
   register: cm_update_banner
 
-- name: Update AAA pre-login banner
+- name: Update AAA pre-login banner (normal mode)
   cisco.aci.aci_aaa_pre_login_banner:
     <<: *aci_banner
   register: nm_update_banner
@@ -49,7 +49,7 @@
     <<: *aci_banner
   register: nm_update_banner_again
 
-- name: Verify creation of File Remote Path
+- name: Verify AAA pre-login banner update
   ansible.builtin.assert:
     that:
     - cm_update_banner is changed

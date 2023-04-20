@@ -19,43 +19,47 @@ description:
 options:
   description:
     description:
-    - Description of the AAA login banner
+    - The description of the AAA login banner.
     type: str
   banner_message:
     description:
-    - Application Banner Message
+    - The Application Banner Message.
     type: str
   banner_message_severity:
     description:
-    - Application Banner Severity - defaults to info on the APIC
+    - The Application Banner Severity.
+    - This defaults to info when unset on the APIC.
     type: str
     choices: [ critical, info, major, minor, warning ]
   gui_message:
     description:
-    - The contents of the GUI informational banner to be displayed before user login authentication
-    - The value is defined as a URL of a site hosting the desired HTML
-    - Note that the URL site owner must allow the site to be placed in an iFrame to display the informational banner
+    - The contents of the GUI informational banner to be displayed before user login authentication.
+    - The value is defined as a URL of a site hosting the desired HTML.
+    - Note that the URL site owner must allow the site to be placed in an iFrame to display the informational banner.
     type: str
   gui_message_text:
     description:
-    - Login GUI string message
+    - The login GUI string message.
     type: str
   is_gui_message_text:
     description:
-    - Use text-based pre-login GUI banner message - defaults to false on the APIC
+    - Use text-based pre-login GUI banner message.
+    - This defaults to false when unset on the APIC.
     type: bool
   message:
     description:
-    - The contents of the CLI informational banner to be displayed before user login authentication
-    - The CLI banner is a text based string printed as-is to the console
+    - The contents of the CLI informational banner to be displayed before user login authentication.
+    - The CLI banner is a text based string printed as-is to the console.
+    - This defaults to "Application Policy Infrastructure Controller" when unset on the APIC.
     type: str
   show_banner_message:
     description:
-    - Show Application Banner - defaults to false on the APIC
-    type: str
+    - Show Application Banner.
+    - This defaults to false when unset on the APIC.
+    type: bool
   switch_message:
     description:
-    - Switch Login Banner Message
+    - The Switch Login Banner Message.
     type: str
   state:
     description:
@@ -218,7 +222,7 @@ def main():
         gui_message_text=dict(type="str"),
         is_gui_message_text=dict(type="bool"),
         message=dict(type="str"),
-        show_banner_message=dict(type="str"),
+        show_banner_message=dict(type="bool"),
         switch_message=dict(type="str"),
         state=dict(type="str", default="present", choices=["present", "query"]),
     )
@@ -236,7 +240,7 @@ def main():
     gui_message_text = module.params.get("gui_message_text")
     is_gui_message_text = aci.boolean(module.params.get("is_gui_message_text"))
     message = module.params.get("message")
-    show_banner_message = module.params.get("show_banner_message")
+    show_banner_message = aci.boolean(module.params.get("show_banner_message"))
     switch_message = module.params.get("switch_message")
     state = module.params.get("state")
 
@@ -251,6 +255,9 @@ def main():
     aci.get_existing()
 
     if state == "present":
+        if gui_message is not None and is_gui_message_text == "no" and not gui_message.startswith(("http://", "https://")):
+            aci.fail_json(msg="gui_message must begin with either 'http://' or 'https://' when is_gui_message_text is false")
+
         aci.payload(
             aci_class="aaaPreLoginBanner",
             class_config=dict(
