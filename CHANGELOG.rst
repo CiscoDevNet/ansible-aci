@@ -5,6 +5,22 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.7.0
+======
+
+Release Summary
+---------------
+
+Release v2.7.0 of the ``ansible-aci`` collection on 2023-04-20.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.6.0.
+
+
+Minor Changes
+-------------
+
+- Add aci_file_remote_path module (#379)
+- Add ip_data_plane_learning attribute to aci_bd_subnet and aci_vrf modules (#413)
+
 v2.6.0
 ======
 
