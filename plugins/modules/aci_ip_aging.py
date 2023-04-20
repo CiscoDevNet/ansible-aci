@@ -203,7 +203,6 @@ def main():
     aci.get_existing()
 
     if state == "present":
-
         aci.payload(
             aci_class="epIpAgingP",
             class_config=dict(

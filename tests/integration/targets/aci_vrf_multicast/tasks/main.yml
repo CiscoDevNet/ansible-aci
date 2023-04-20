@@ -1,0 +1,126 @@
+# Test code for the ACI modules
+# Copyright: (c) 2022, Sabari Jaganathan (@sajagana)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
+
+- name: Re-create ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: present
+
+- name: Create ansible_vrf
+  cisco.aci.aci_vrf: &aci_vrf
+    <<: *aci_info
+    tenant: ansible_tenant
+    vrf: ansible_vrf
+    state: present
+
+# ENABLE MULTICAST
+- name: Enable multicast on VRF (check mode)
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_vrf
+    mtu: 2500
+  check_mode: yes
+  register: cm_enable_multicast
+
+- name: Enable multicast on VRF (normal mode)
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_vrf
+    mtu: 2500
+  register: nm_enable_multicast
+
+- name: Enable multicast on VRF again, to test idempotence
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_vrf
+    mtu: 2500
+  register: nm_enable_multicast_again
+
+- name: Check multicast object creation
+  ansible.builtin.assert:
+    that:
+    - cm_enable_multicast is changed
+    - nm_enable_multicast is changed
+    - nm_enable_multicast_again is not changed
+    - nm_enable_multicast.current.0.pimCtxP.attributes.mtu == "2500"
+    - nm_enable_multicast_again.current.0.pimCtxP.attributes.mtu == "2500"
+
+# UPDATE MULTICAST SETTINGS
+- name: Update multicast on VRF
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_vrf
+    mtu: 2000
+  register: update_multicast
+
+- name: Check multicast update
+  ansible.builtin.assert:
+    that:
+    - update_multicast is changed
+    - update_multicast.current.0.pimCtxP.attributes.mtu == "2000"
+
+# QUERY MULTICAST SETTINGS
+- name: Query multicast on VRF
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_vrf
+    state: query
+  register: query_multicast
+
+- name: Check multicast query
+  ansible.builtin.assert:
+    that:
+    - query_multicast is not changed
+    - query_multicast.current.0.fvCtx.children.0.pimCtxP.attributes.mtu == "2000"
+
+# DISABLE MULTICAST
+- name: Disable multicast on VRF
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_vrf
+    state: absent
+  register: disable_multicast
+
+- name: Disable multicast on VRF again, to test idempotence
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_vrf
+    state: absent
+  register: disable_multicast_again
+
+- name: Check multicast object deletion
+  ansible.builtin.assert:
+    that:
+    - disable_multicast is changed
+    - disable_multicast_again is not changed
+    - disable_multicast.current | length == 0
+    - disable_multicast.previous | length == 1
+    - disable_multicast_again.current | length == 0
+    - disable_multicast_again.previous | length == 0
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
