@@ -1622,3 +1622,19 @@ class ACIModule(object):
                 with open(output_path, "a") as output_file:
                     if self.result.get("changed") is True:
                         json.dump([mo], output_file)
+
+    def delete_config_request(self, path):
+        self._config_request(path, "absent")
+        self.result["changed"] = True
+
+    def get_config_request(self, path):
+        self._config_request(path, "query")
+        return self.imdata
+
+    def _config_request(self, path, state):
+        reset_url = self.url
+        reset_state = self.params["state"]
+        self.params["state"] = state
+        self.request(path)
+        self.url = reset_url
+        self.params["state"] = reset_state
