@@ -1,0 +1,231 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_remote_path
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_info
+    name: ansible_file_path
+    state: absent
+
+# CREATE FILE REMOTE PATH
+- name: Create a File Remote Path (check mode)
+  cisco.aci.aci_file_remote_path: &aci_path
+    <<: *aci_info
+    name: ansible_file_path
+    description: Test File Path
+    remote_host: test.example.com
+    remote_port: 22
+    remote_protocol: scp
+    remote_user: test_user
+    auth_type: password
+    remote_path: /tmp
+  check_mode: true
+  register: cm_create_path
+
+- name: Create a File Remote Path
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_path
+  register: nm_create_path
+
+- name: Create a File Remote Path Again
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_path
+  register: nm_create_path_again
+
+- name: Create a second File Remote Path
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_info
+    name: ansible_second_file_path
+    auth_type: password
+    remote_host: test2.example.com
+    remote_port: 22
+    remote_protocol: scp
+    remote_path: /tmp
+    management_epg: oob-default
+  register: create_second_path
+
+- name: Create File Remote Path using SSH Key auth
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_info
+    name: ansible_ssh_auth_file_path
+    auth_type: ssh_key
+    remote_key: "{{ lookup('file', 'pki/rsa_ansible.key') }}"
+    remote_host: test3.example.com
+    remote_port: 22
+    remote_protocol: scp
+    remote_path: /tmp
+  register: create_key_auth_path
+
+- name: Verify creation of File Remote Path
+  ansible.builtin.assert:
+    that:
+    - cm_create_path is changed
+    - nm_create_path is changed
+    - nm_create_path_again is not changed
+    - nm_create_path.current.0.fileRemotePath.attributes.name == "ansible_file_path"
+    - nm_create_path.current.0.fileRemotePath.attributes.descr == "Test File Path"
+    - nm_create_path.current.0.fileRemotePath.attributes.protocol == "scp"
+    - nm_create_path.current.0.fileRemotePath.attributes.remotePort == "22"
+    - nm_create_path.current.0.fileRemotePath.attributes.authType == "usePassword"
+    - nm_create_path.current.0.fileRemotePath.attributes.userName == "test_user"
+    - nm_create_path.current.0.fileRemotePath.attributes.remotePath == "/tmp"
+    - nm_create_path_again.current.0.fileRemotePath.attributes.name == "ansible_file_path"
+    - nm_create_path_again.current.0.fileRemotePath.attributes.descr == "Test File Path"
+    - nm_create_path_again.current.0.fileRemotePath.attributes.protocol == "scp"
+    - nm_create_path_again.current.0.fileRemotePath.attributes.remotePort == "22"
+    - nm_create_path_again.current.0.fileRemotePath.attributes.authType == "usePassword"
+    - nm_create_path_again.current.0.fileRemotePath.attributes.userName == "test_user"
+    - nm_create_path_again.current.0.fileRemotePath.attributes.remotePath == "/tmp"
+    - create_second_path.current.0.fileRemotePath.children.0.fileRsARemoteHostToEpg.attributes.tDn == "uni/tn-mgmt/mgmtp-default/oob-default"
+    - create_key_auth_path.current.0.fileRemotePath.attributes.authType == "useSshKeyContents"
+
+# UPDATE FILE REMOTE PATH
+- name: Update File Remote Path
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_path
+    remote_protocol: sftp
+    remote_user: new_user
+    remote_password: new_pass
+    remote_path: /tmp/dummy
+  register: update_path
+
+- name: Verify update of File Remote Path
+  ansible.builtin.assert:
+    that:
+    - update_path is changed
+    - update_path.current.0.fileRemotePath.attributes.name == "ansible_file_path"
+    - update_path.current.0.fileRemotePath.attributes.descr == "Test File Path"
+    - update_path.current.0.fileRemotePath.attributes.protocol == "sftp"
+    - update_path.current.0.fileRemotePath.attributes.authType == "usePassword"
+    - update_path.current.0.fileRemotePath.attributes.userName == "new_user"
+    - update_path.current.0.fileRemotePath.attributes.remotePath == "/tmp/dummy"
+
+# QUERY FILE REMOTE PATH
+- name: Query a File Remote Path
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_path
+    state: query
+  register: query_one
+
+- name: Query all File Remote Paths
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Verify File Remote Path queries
+  ansible.builtin.assert:
+    that:
+    - query_one is not changed
+    - query_one.current.0.fileRemotePath.attributes.name == "ansible_file_path"
+    - query_one.current.0.fileRemotePath.attributes.descr == "Test File Path"
+    - query_one.current.0.fileRemotePath.attributes.protocol == "sftp"
+    - query_one.current.0.fileRemotePath.attributes.authType == "usePassword"
+    - query_one.current.0.fileRemotePath.attributes.userName == "new_user"
+    - query_one.current.0.fileRemotePath.attributes.remotePath == "/tmp/dummy"
+    - query_all is not changed
+    - query_all.current | length > 1
+
+# VALIDATE ERROR CHECKING
+- name: Create Remote Path with remote_key when auth_type is password
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_info
+    name: incorrect_auth_type1
+    remote_host: test2.example.com
+    remote_port: 22
+    remote_protocol: scp
+    remote_user: test_user
+    auth_type: password
+    remote_key: "{{ lookup('file', 'pki/rsa_ansible.key') }}"
+    remote_path: /tmp
+  ignore_errors: true
+  register: incorrect_auth_type1
+
+- name: Create Remote Path with passphrase when auth_type is password
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_info
+    name: incorrect_auth_type2
+    remote_host: test2.example.com
+    remote_port: 22
+    remote_protocol: scp
+    remote_user: test_user
+    auth_type: password
+    passphrase: ansible_passphrase
+    remote_path: /tmp
+  ignore_errors: true
+  register: incorrect_auth_type2
+
+- name: Create Remote Path with password when auth_type is ssh_key
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_info
+    name: incorrect_auth_type3
+    remote_host: test2.example.com
+    remote_port: 22
+    remote_protocol: scp
+    remote_user: test_user
+    auth_type: ssh_key
+    remote_password: test_password
+    remote_path: /tmp
+  ignore_errors: true
+  register: incorrect_auth_type3
+
+- name: Validate error checking
+  ansible.builtin.assert:
+    that:
+    - incorrect_auth_type1 is failed
+    - incorrect_auth_type2 is failed
+    - incorrect_auth_type3 is failed
+    - incorrect_auth_type1.msg == "remote_key cannot be set if auth_type is password"
+    - incorrect_auth_type2.msg == "passphrase cannot be set if auth_type is password"
+    - incorrect_auth_type3.msg == "remote_password cannot be set if auth_type is ssh_key"
+
+# REMOVE FILE REMOTE PATH
+- name: Delete a File Remote Path
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_path
+    state: absent
+  register: delete
+
+- name: Delete File Remote Path again
+  cisco.aci.aci_file_remote_path:
+    <<: *aci_path
+    state: absent
+  register: delete_again
+
+- name: Verify deletion of File Remote Path
+  ansible.builtin.assert:
+    that:
+    - delete is changed
+    - delete_again is not changed
+    - delete.current == []
+
+- name: Delete Second File Remote Path
+  cisco.aci.aci_file_remote_path:
+   <<: *aci_info
+   name: ansible_second_file_path
+   state: absent
+
+- name: Delete SSH Key Auth File Remote Path
+  cisco.aci.aci_file_remote_path:
+   <<: *aci_info
+   name: ansible_ssh_auth_file_path
+   state: absent
