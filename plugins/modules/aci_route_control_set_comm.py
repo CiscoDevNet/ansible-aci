@@ -22,11 +22,11 @@ options:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  attr_name:
+  action_rule_profile:
     description:
     - The name of an existing rtctrl:AttrP object.
     type: str
-    aliases: [ attribute_name ]
+    aliases: [ attr_name, attribute_name ]
   description:
     description:
     - The description of the Action Rule Profile - Set Communities object.
@@ -43,7 +43,7 @@ options:
     type: str
   set_criteria:
     description:
-    - Whether to append or replace communities.
+    - Whether to append or replace the community, or set it to none.
     type: str
     choices: [ append, replace, none ]
   state:
@@ -77,7 +77,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
-    attr_name: my_attr
+    action_rule_profile: my_attr
     set_criteria: append
     community: extended:as4-nn2:5:16
     state: present
@@ -89,7 +89,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
-    attr_name: my_attr
+    action_rule_profile: my_attr
     state: absent
   delegate_to: localhost
 
@@ -99,7 +99,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
-    attr_name: my_attr
+    action_rule_profile: my_attr
     state: query
   delegate_to: localhost
   register: query_result
@@ -228,7 +228,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
-        attr_name=dict(type="str", aliases=["attribute_name"]),
+        action_rule_profile=dict(type="str", aliases=["attr_name", "attribute_name"]),
         name=dict(type="str"),
         description=dict(type="str", aliases=["descr"]),
         community=dict(type="str"),
@@ -240,15 +240,15 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "attr_name", "community"]],
-            ["state", "present", ["tenant", "attr_name", "community"]],
+            ["state", "absent", ["tenant", "action_rule_profile", "community"]],
+            ["state", "present", ["tenant", "action_rule_profile", "community"]],
         ],
     )
 
     aci = ACIModule(module)
 
     tenant = module.params.get("tenant")
-    attr_name = module.params.get("attr_name")
+    action_rule_profile = module.params.get("action_rule_profile")
     description = module.params.get("description")
     community = module.params.get("community")
     name = module.params.get("name")
@@ -264,9 +264,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="rtctrlAttrP",
-            aci_rn="attr-{0}".format(attr_name),
-            module_object=attr_name,
-            target_filter={"name": attr_name},
+            aci_rn="attr-{0}".format(action_rule_profile),
+            module_object=action_rule_profile,
+            target_filter={"name": action_rule_profile},
         ),
         subclass_2=dict(
             aci_class="rtctrlSetComm",
@@ -279,6 +279,8 @@ def main():
     aci.get_existing()
 
     if state == "present":
+        if set_criteria == "none" and community is not None:
+            aci.fail_json(msg="community can not be set if set_criteria is none")
         aci.payload(
             aci_class="rtctrlSetComm",
             class_config=dict(

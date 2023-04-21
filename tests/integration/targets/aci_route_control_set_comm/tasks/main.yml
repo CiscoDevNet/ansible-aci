@@ -45,7 +45,7 @@
     cisco.aci.aci_route_control_set_comm: &comm_present
       <<: *aci_info
       tenant: ansible_tenant
-      attr_name: ansible_attr
+      action_rule_profile: ansible_attr
       set_criteria: append
       community: extended:as4-nn2:5:16
       state: present
