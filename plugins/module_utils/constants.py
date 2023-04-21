@@ -27,3 +27,5 @@ ICMP6_MAPPING = dict(
 TCP_FLAGS = dict(acknowledgment="ack", established="est", finish="fin", reset="rst", synchronize="syn", unspecified="unspecified")
 
 SUBNET_CONTROL_MAPPING = {"nd_ra_prefix": "nd", "no_default_gateway": "no-default-gateway", "querier_ip": "querier", "unspecified": ""}
+
+SPAN_DIRECTION_MAP = {"incoming": "in", "outgoing": "out", "both": "both"}
