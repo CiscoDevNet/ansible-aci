@@ -18,10 +18,7 @@ options:
     - IP Address or hostname of APIC resolvable by Ansible control host.
     - If the value is not specified in the task, the value of environment variable C(ACI_HOST) will be used instead.
     type: str
-<<<<<<< HEAD
     required: true
-=======
->>>>>>> 82a0f1c ([ignore] Addition of code to include High Availability at task level)
     aliases: [ hostname ]
   port:
     description:

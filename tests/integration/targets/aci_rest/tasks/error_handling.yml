@@ -20,12 +20,7 @@
       fvTenant:
         attributes:
           name: ansible_test
-<<<<<<< HEAD
   ignore_errors: true
-=======
-  ignore_errors: yes
-  delegate_to: localhost
->>>>>>> 1620e2b (Added plugin option to aci_rest)
   register: error_on_name_resolution
 
 - name: Verify error_on_name_resolution
