@@ -40,7 +40,7 @@ import re
 from ansible.module_utils._text import to_text, to_native
 from ansible.module_utils.connection import ConnectionError
 from ansible.plugins.httpapi import HttpApiBase
-from copy import copy
+from copy import copy, deepcopy
 
 # Optional, only used for APIC signature-based authentication
 try:
@@ -67,24 +67,17 @@ CONNECTION_KEYS = RESET_KEYS + ["timeout", "use_proxy", "use_ssl", "validate_cer
 class HttpApi(HttpApiBase):
     def __init__(self, *args, **kwargs):
         super(HttpApi, self).__init__(*args, **kwargs)
-        self.auth = None
         self.params = None
         self.result = {}
-        self.check_authentication = ""
         self.backup_hosts = None
-        self.inventory_hosts = []
-        self.host_counter = 0
         self.connection_error_check = False
         self.connection_parameters = {}
-        self.begin_task = False
-        self.executed_exit_function = False
         self.current_host = None
         self.provided_hosts = None
-        self.get_first_item = []
+        self.inventory_hosts = None
 
-    def set_params(self, auth, params):
+    def set_params(self, params):
         self.params = params
-        self.auth = auth
 
     # Login function is executed until connection to a host is established or until all the hosts in the list are exhausted
     def login(self, username, password):
@@ -95,6 +88,7 @@ class HttpApi(HttpApiBase):
         path = "/api/aaaLogin.json"
         payload = {"aaaUser": {"attributes": {"name": username, "pwd": password}}}
         data = json.dumps(payload)
+        self.connection._connected = True
         try:
             response, response_data = self.connection.send(path, data, method=method)
             response_value = self._get_response_value(response_data)
@@ -102,9 +96,9 @@ class HttpApi(HttpApiBase):
                 "Cookie": "APIC-Cookie={0}".format(self._response_to_json(response_value).get("imdata")[0]["aaaLogin"]["attributes"]["token"])
             }
             self.connection.queue_message("step:", "Connection to {0} was successful".format(self.connection.get_option("host")))
-        except Exception as exc_response:
-            self.connection.queue_message("step:", "Connection to {0} has failed: {1}".format(self.connection.get_option("host"), exc_response))
-            self.handle_connection_error(exc_response)
+        except Exception:
+            self.connection._connected = False
+            raise
 
     def logout(self):
         method = "POST"
@@ -132,81 +126,101 @@ class HttpApi(HttpApiBase):
                 self.connection._connected = False
                 self.connection.queue_message("step", "Re-setting connection due to change in {0}".format(key))
 
-            # if self.auth is not None or self.connection.get_option("session_key") is not None:
-            #     self.connection._connected = True
+        if self.params.get("private_key") is not None:
+            self.connection.set_option("session_key", None)
+            connection_parameters["certificate_name"] = self.params.get("certificate_name")
+            connection_parameters["private_key"] = self.params.get("private_key")
+        elif self.connection.get_option("session_key") is not None and self.params.get("password") is None:
+            connection_parameters["certificate_name"] = list(self.connection.get_option("session_key").keys())[0]
+            connection_parameters["private_key"] = list(self.connection.get_option("session_key").values())[0]
+        else:
+            if self.connection_parameters.get("private_key") is not None:
+                self.connection._connected = False
+            self.connection.set_option("session_key", None)
+            connection_parameters["private_key"] = None
+            connection_parameters["certificate_name"] = None
 
         if self.connection_parameters != connection_parameters:
             self.connection_parameters = copy(connection_parameters)
+
+        self.set_hosts()
 
     def set_hosts(self):
          if self.params.get("host") is not None:
             get_hosts = ast.literal_eval(self.params.get("host")) if "[" in self.params.get("host") else self.params.get("host").split(",") 
          else:
-            self.get_first_item.append(re.sub(r"[[\]]", "", self.connection.get_option("host")).split(","))
-            get_hosts = self.get_first_item[0]
+            if self.inventory_hosts is None:
+                self.inventory_hosts = re.sub(r"[[\]]", "", self.connection.get_option("host")).split(",")
+            get_hosts = self.inventory_hosts
 
          if self.provided_hosts is None:
-            self.provided_hosts = get_hosts
+            self.provided_hosts = deepcopy(get_hosts)
             self.connection.queue_message(
                 "step:", "Provided Hosts: {0}".format(self.provided_hosts)
             )
-            self.backup_hosts = self.provided_hosts
+            self.backup_hosts = deepcopy(get_hosts)
             self.current_host = self.backup_hosts.pop(0)
-         elif (len(self.backup_hosts) != 0 and self.current_host not in get_hosts) or self.connection_error_check == True:
-            self.connection_error_check = False
-            self.connection._connected = False
+         elif self.provided_hosts != get_hosts:
+            self.provided_hosts = deepcopy(get_hosts)
             self.connection.queue_message(
-                "step:", "Provided hosts have changed: {0}".format(get_hosts)
+                "step:", "Provided Hosts have changed: {0}".format(self.provided_hosts)
             )
-            self.backup_hosts = get_hosts
-            self.current_host = self.backup_hosts.pop(0)
+            self.backup_hosts = deepcopy(get_hosts)
+            try:
+                index = self.backup_hosts.index(self.current_host)
+                self.backup_hosts.pop(index)
+                self.connection.queue_message(
+                "step:", "Continuing the operations on the connected host: {0}".format(self.current_host)
+                ) 
+            except:
+                self.current_host = self.backup_hosts.pop(0)
          self.connection.set_option("host", self.current_host)
 
     # One API call is made via each call to send_request from aci.py in module_utils
-    # As long as a host is active in the list we make sure that the API call goes through
+    # As long as a host is active in the list the API call will go through
     def send_request(self, method, path, data):
         """This method handles all APIC REST API requests other than login"""
 
         self.set_parameters()
-        self.set_hosts()
+
+        if self.connection_parameters.get("private_key") is not None:
+            try:
+                self.connection._auth = {"Cookie": "{0}".format(self.cert_auth(method, path, data).get("Cookie"))}
+                self.connection._connected = True
+            except Exception as exc_response:
+                self.connection._connected = False
+                return self._return_info("", method, re.match(r'^.*?\.json',self.connection._url+path).group(0), str(exc_response))
 
         try:
+            if self.connection._connected is False:
+                self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
             response, response_data = self.connection.send(path, data, method=method)
             self.connection.queue_message(
                 "step:", "Received response from {0} for {1} operation with HTTP: {2}".format(self.connection.get_option("host"), method, response.getcode())
             )
         except Exception as exc_response:
+            self.connection.queue_message("step:", "Connection to {0} has failed: {1}".format(self.connection.get_option("host"), exc_response))
             if len(self.backup_hosts) == 0:
-                return self._return_info("", method, re.match(r'^.*?\.json',self.connection._url+path).group(0), str(exc_response))
-            self.connection.queue_message("step:", "Connection to {0} has failed in between operations with: {1}".format(self.connection.get_option("host"), exc_response))
-            self.handle_connection_error(exc_response)
-            self.connection.queue_message("step:", "Retrying request on {0}".format(self.connection.get_option("host")))
+                self.connection._connected = False
+                msg = str("No hosts left in the cluster to continue operation! Error on final host {0}: {1}".format(self.connection.get_option("host"), exc_response))
+                return self._return_info("", method, re.match(r'^.*?\.json',self.connection._url+path).group(0), msg)
+            else:
+                self.current_host = self.backup_hosts.pop(0)
+                self.connection.queue_message(
+                    "step:", "Switching host from {0} to {1}".format(self.connection.get_option("host"), self.current_host)
+                )
+                self.connection.set_option("host", self.current_host)
             # recurse through function for retrying the request
             return self.send_request(method, path, data)
         # return statement executed upon each successful response from the request function
         return self._verify_response(response, method, path, response_data)
-
-    # Custom error handler
-    def handle_connection_error(self, exception):
-        if len(self.backup_hosts) == 0:
-            self.connection_error_check = True
-            raise ConnectionError(
-                "No hosts left in cluster to continue operation!!! Error on final host {0}: {1}".format(self.connection.get_option("host"), exception)
-            )
-        self.current_host = self.backup_hosts.pop(0)
-        self.connection.queue_message(
-            "step:", "Switching host from {0} to {1}".format(self.connection.get_option("host"), self.current_host)
-        )
-        self.connection.set_option("host", self.current_host)
-        # Login function is called until connection to a host is established or until all the hosts in the list are exhausted
-        self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
 
     # Built-in-function
     def handle_httperror(self, exc):
         self.connection.queue_message("step:", "Failed to receive response from {0}: {1}".format(self.connection.get_option("host"), exc))
         if exc.code == 401:
             return False
-        elif exc.code == 403:
+        elif exc.code == 403 and self.connection_parameters.get("private_key") is None:
             self.connection._auth = None
             self.login(self.connection.get_option('remote_user'), self.connection.get_option('password'))
             return True
@@ -251,52 +265,56 @@ class HttpApi(HttpApiBase):
             info["body"] = respond_data
         return info
 
-    def cert_auth(self, path, method, payload=""):
+    def cert_auth(self, method, path, payload=""):
         """Perform APIC signature-based authentication, not the expected SSL client certificate authentication."""
-
-        headers = dict()
 
         if payload is None:
             payload = ""
 
+        headers = dict()
+
         try:
             if HAS_CRYPTOGRAPHY:
-                key = list(self.connection.get_option("session_key").values())[0].encode()
+                key = self.connection_parameters.get("private_key").encode()
                 sig_key = serialization.load_pem_private_key(
                     key,
                     password=None,
                     backend=default_backend(),
                 )
             else:
-                sig_key = load_privatekey(FILETYPE_PEM, list(self.connection.get_option("session_key").values())[0])
+                sig_key = load_privatekey(FILETYPE_PEM, self.connection_parameters.get("private_key"))
         except Exception:
-            if os.path.exists(list(self.connection.get_option("session_key").values())[0]):
+            if os.path.exists(self.connection_parameters.get("private_key")):
                 try:
                     permission = "r"
                     if HAS_CRYPTOGRAPHY:
                         permission = "rb"
-                    with open(list(self.connection.get_option("session_key").values())[0], permission) as fh:
+                    with open(self.connection_parameters.get("private_key"), permission) as fh:
                         private_key_content = fh.read()
                 except Exception:
-                    raise ConnectionError("Cannot open private key file {0}".format(list(self.connection.get_option("session_key").values())[0]))
+                    raise ConnectionError("Cannot open private key file {0}".format(self.connection_parameters.get("private_key")))
                 try:
                     if HAS_CRYPTOGRAPHY:
                         sig_key = serialization.load_pem_private_key(private_key_content, password=None, backend=default_backend())
                     else:
                         sig_key = load_privatekey(FILETYPE_PEM, private_key_content)
                 except Exception:
-                    raise ConnectionError("Cannot load private key file {0}".format(list(self.connection.get_option("session_key").values())[0]))
+                    raise ConnectionError("Cannot load private key file {0}".format(self.connection_parameters.get("private_key")))
+                if self.connection_parameters.get("certificate_name") is None:
+                    self.connection_parameters["certificate_name"] = os.path.basename(os.path.splitext(self.connection_parameters.get("private_key"))[0])
             else:
                 raise ConnectionError(
-                    "Provided private key {0} does not appear to be a private key.".format(list(self.connection.get_option("session_key").values())[0])
+                    "Provided private key {0} does not appear to be a private key.".format(self.connection_parameters.get("private_key"))
                 )
+        if self.connection_parameters.get("certificate_name") is None:
+            self.connection_parameters["certificate_name"] = self.connection.get_option("remote_user")
         sig_request = method + path + payload
         if HAS_CRYPTOGRAPHY:
             sig_signature = sig_key.sign(sig_request.encode(), padding.PKCS1v15(), hashes.SHA256())
         else:
             sig_signature = sign(sig_key, sig_request, "sha256")
         sig_dn = "uni/userext/user-{0}/usercert-{1}".format(
-            self.connection.get_option("remote_user"), list(self.connection.get_option("session_key").keys())[0]
+            self.connection.get_option("remote_user"), self.connection_parameters.get("certificate_name")
         )
         headers["Cookie"] = (
             "APIC-Certificate-Algorithm=v1.0; "

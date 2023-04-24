@@ -331,6 +331,7 @@ class ACIModule(object):
         self.response = None
         self.status = None
         self.url = None
+        self.connection = None
         self.httpapi_logs = list()
 
         # aci_rest output
@@ -351,7 +352,7 @@ class ACIModule(object):
                     msg="Cannot use signature-based authentication because cryptography (preferred) or pyopenssl are not available")
             elif self.params.get("password") is not None:
                 self.module.warn("When doing ACI signatured-based authentication, providing parameter 'password' is not required")
-        elif self.module._socket_path is None:
+        elif self.get_connection() is None:
             if self.params.get("password"):
                 # Perform password-based authentication, log on using password
                 self.login()
@@ -397,6 +398,15 @@ class ACIModule(object):
         # Set method for further use
         state_map = dict(absent="delete", present="post", query="get")
         self.params["method"] = state_map.get(self.params.get("state"))
+
+    def get_connection(self):
+        if self.connection:
+            return self.connection
+        
+        if self.module._socket_path:
+            self.connection = Connection(self.module._socket_path)
+
+        return self.connection
 
     def login(self):
         """Log in to APIC"""
@@ -1602,15 +1612,13 @@ def ospf_spec():
     def api_call(self, method, path, url, data=None, output=False):
 >>>>>>> 88b1ff5 ([minor_change] Removed different functions to make requests which can now be done by using just one function)
         resp = None
-        info = {}
         if self.params.get("private_key"):
             self.cert_auth(path=path, payload=data, method=method)
-        if self.module._socket_path:
-            connect = Connection(self.module._socket_path)
-            connect.set_params(self.headers.get("Cookie"), self.params)
-            info = connect.send_request(method, "/{0}".format(path), data)
+        if self.get_connection() is not None:
+            self.get_connection().set_params(self.params)
+            info = self.get_connection().send_request(method, "/{0}".format(path), data)
             self.url = info.get("url")
-            self.httpapi_logs.extend(connect.pop_messages())
+            self.httpapi_logs.extend(self.get_connection().pop_messages())
         else:
             resp, info = fetch_url(
                 self.module,
