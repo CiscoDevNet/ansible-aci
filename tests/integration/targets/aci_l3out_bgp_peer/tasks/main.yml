@@ -380,6 +380,7 @@
       ttl: 4
       admin_state: disabled
       local_as_number: 101
+      local_as_number_config: "dual-as"
       state: present
     register: update_eth_bgp_peer
     when: version.current.0.topSystem.attributes.version is version('4', '>=')
@@ -423,7 +424,7 @@
         - update_eth_bgp_peer.current.0.bgpPeerP.attributes.ttl == "4"
         - update_eth_bgp_peer.current.0.bgpPeerP.attributes.allowedSelfAsCnt == "3"
         - update_eth_bgp_peer.current.0.bgpPeerP.attributes.privateASctrl == "remove-exclusive"
-        - update_eth_bgp_peer.current.0.bgpPeerP.children.0.bgpLocalAsnP.attributes.asnPropagate == "replace-as"
+        - update_eth_bgp_peer.current.0.bgpPeerP.children.0.bgpLocalAsnP.attributes.asnPropagate == "dual-as"
         - update_eth_bgp_peer.current.0.bgpPeerP.children.0.bgpLocalAsnP.attributes.localAsn == "101"
     when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
