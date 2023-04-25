@@ -74,11 +74,13 @@ options:
         - The name of application profile.
         type: str
         required: true
+        aliases: [ ap_name, app_profile, app_profile_name ]
       epg:
         description:
         - The name of the end point group.
         type: str
         required: true
+        aliases: [ epg_name ]
       span_version:
         description:
         - The SPAN version.
@@ -332,50 +334,7 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-
-
-def destination_epg_spec():
-    return dict(
-        tenant=dict(type="str", required=True, aliases=["tenant_name"]),
-        ap=dict(type="str", required=True),
-        epg=dict(type="str", required=True),
-        source_ip=dict(type="str", required=True),
-        destination_ip=dict(type="str", required=True),
-        span_version=dict(type="str", choices=["version_1", "version_2"]),
-        version_enforced=dict(type="bool"),
-        flow_id=dict(type="int"),
-        ttl=dict(type="int"),
-        mtu=dict(type="int"),
-        dscp=dict(
-            type="str",
-            choices=[
-                "CS0",
-                "CS1",
-                "CS2",
-                "CS3",
-                "CS4",
-                "CS5",
-                "CS6",
-                "CS7",
-                "EF",
-                "VA",
-                "AF11",
-                "AF12",
-                "AF13",
-                "AF21",
-                "AF22",
-                "AF23",
-                "AF31",
-                "AF32",
-                "AF33",
-                "AF41",
-                "AF42",
-                "AF43",
-                "unspecified",
-            ],
-        ),
-    )
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec, destination_epg_spec
 
 
 def access_interface_spec():
