@@ -83,7 +83,7 @@ class HttpApi(HttpApiBase):
     def login(self, username, password):
         """Log in to APIC"""
         # Perform login request
-        self.connection.queue_message("step:", "Establishing login to {0}".format(self.connection.get_option("host")))
+        self.connection.queue_message("debug", "Establishing login to {0}".format(self.connection.get_option("host")))
         method = "POST"
         path = "/api/aaaLogin.json"
         payload = {"aaaUser": {"attributes": {"name": username, "pwd": password}}}
@@ -95,7 +95,7 @@ class HttpApi(HttpApiBase):
             self.connection._auth = {
                 "Cookie": "APIC-Cookie={0}".format(self._response_to_json(response_value).get("imdata")[0]["aaaLogin"]["attributes"]["token"])
             }
-            self.connection.queue_message("step:", "Connection to {0} was successful".format(self.connection.get_option("host")))
+            self.connection.queue_message("debug", "Connection to {0} was successful".format(self.connection.get_option("host")))
         except Exception:
             self.connection._connected = False
             raise
@@ -136,6 +136,7 @@ class HttpApi(HttpApiBase):
         else:
             if self.connection_parameters.get("private_key") is not None:
                 self.connection._connected = False
+                self.connection.queue_message("step", "Re-setting connection due to change from private/session key authentication to password authentication")
             self.connection.set_option("session_key", None)
             connection_parameters["private_key"] = None
             connection_parameters["certificate_name"] = None
@@ -147,33 +148,39 @@ class HttpApi(HttpApiBase):
 
     def set_hosts(self):
          if self.params.get("host") is not None:
-            get_hosts = ast.literal_eval(self.params.get("host")) if "[" in self.params.get("host") else self.params.get("host").split(",") 
+            hosts = ast.literal_eval(self.params.get("host")) if "[" in self.params.get("host") else self.params.get("host").split(",")
          else:
             if self.inventory_hosts is None:
                 self.inventory_hosts = re.sub(r"[[\]]", "", self.connection.get_option("host")).split(",")
-            get_hosts = self.inventory_hosts
+            hosts = self.inventory_hosts
 
          if self.provided_hosts is None:
-            self.provided_hosts = deepcopy(get_hosts)
+            self.provided_hosts = deepcopy(hosts)
             self.connection.queue_message(
-                "step:", "Provided Hosts: {0}".format(self.provided_hosts)
+                "debug", "Provided Hosts: {0}".format(self.provided_hosts)
             )
-            self.backup_hosts = deepcopy(get_hosts)
+            self.backup_hosts = deepcopy(hosts)
             self.current_host = self.backup_hosts.pop(0)
-         elif self.provided_hosts != get_hosts:
-            self.provided_hosts = deepcopy(get_hosts)
             self.connection.queue_message(
-                "step:", "Provided Hosts have changed: {0}".format(self.provided_hosts)
+                "debug", "Initializing operation on {0}".format(self.current_host)
+            ) 
+         elif self.provided_hosts != hosts:
+            self.provided_hosts = deepcopy(hosts)
+            self.connection.queue_message(
+                "debug", "Provided Hosts have changed: {0}".format(self.provided_hosts)
             )
-            self.backup_hosts = deepcopy(get_hosts)
+            self.backup_hosts = deepcopy(hosts)
             try:
-                index = self.backup_hosts.index(self.current_host)
-                self.backup_hosts.pop(index)
+                self.backup_hosts.pop(self.backup_hosts.index(self.current_host))
                 self.connection.queue_message(
-                "step:", "Continuing the operations on the connected host: {0}".format(self.current_host)
+                "debug", "Connected host {0} found in the provided hosts. Continuing with it.".format(self.current_host)
                 ) 
-            except:
+            except Exception:
                 self.current_host = self.backup_hosts.pop(0)
+                self.connection._connected = False
+                self.connection.queue_message(
+                "debug", "Initializing operation on {0}".format(self.current_host)
+                )
          self.connection.set_option("host", self.current_host)
 
     # One API call is made via each call to send_request from aci.py in module_utils
@@ -189,25 +196,29 @@ class HttpApi(HttpApiBase):
                 self.connection._connected = True
             except Exception as exc_response:
                 self.connection._connected = False
-                return self._return_info("", method, re.match(r'^.*?\.json',self.connection._url+path).group(0), str(exc_response))
+                return self._return_info("", method, self.validate_url(self.connection._url+path), str(exc_response))
 
         try:
             if self.connection._connected is False:
                 self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
+            self.connection.queue_message(
+                "debug", "Sending {0} request to {1}".format(method, self.connection._url+path)
+            )
             response, response_data = self.connection.send(path, data, method=method)
             self.connection.queue_message(
-                "step:", "Received response from {0} for {1} operation with HTTP: {2}".format(self.connection.get_option("host"), method, response.getcode())
+                "debug", "Received response from {0} for {1} operation with HTTP: {2}".format(self.connection.get_option("host"), method, response.getcode())
             )
         except Exception as exc_response:
-            self.connection.queue_message("step:", "Connection to {0} has failed: {1}".format(self.connection.get_option("host"), exc_response))
+            self.connection.queue_message("debug", "Connection to {0} has failed: {1}".format(self.connection.get_option("host"), exc_response))
             if len(self.backup_hosts) == 0:
+                self.provided_hosts = None
                 self.connection._connected = False
                 msg = str("No hosts left in the cluster to continue operation! Error on final host {0}: {1}".format(self.connection.get_option("host"), exc_response))
-                return self._return_info("", method, re.match(r'^.*?\.json',self.connection._url+path).group(0), msg)
+                return self._return_info("", method, self.validate_url(self.connection._url+path), msg)
             else:
                 self.current_host = self.backup_hosts.pop(0)
                 self.connection.queue_message(
-                    "step:", "Switching host from {0} to {1}".format(self.connection.get_option("host"), self.current_host)
+                    "debug", "Switching host from {0} to {1}".format(self.connection.get_option("host"), self.current_host)
                 )
                 self.connection.set_option("host", self.current_host)
             # recurse through function for retrying the request
@@ -217,14 +228,16 @@ class HttpApi(HttpApiBase):
 
     # Built-in-function
     def handle_httperror(self, exc):
-        self.connection.queue_message("step:", "Failed to receive response from {0}: {1}".format(self.connection.get_option("host"), exc))
         if exc.code == 401:
-            return False
+            raise ConnectionError(exc)
         elif exc.code == 403 and self.connection_parameters.get("private_key") is None:
             self.connection._auth = None
             self.login(self.connection.get_option('remote_user'), self.connection.get_option('password'))
             return True
         return exc
+
+    def validate_url(self, url):
+        return re.match(r'^.*?\.json|^.*?\.xml', url).group(0)
 
     def _verify_response(self, response, method, path, response_data):
         """Process the return code and response object from APIC"""
@@ -234,7 +247,7 @@ class HttpApi(HttpApiBase):
         else:
             respond_data = response_value
         response_code = response.getcode()
-        path = re.match(r'^.*?\.json|^.*?\.xml', response.url).group(0)
+        path = self.validate_url(response.url)
         # Response check to remain consistent with fetch_url's response
         if str(response) == "HTTP Error 400: Bad Request":
             msg = "{0}".format(response)

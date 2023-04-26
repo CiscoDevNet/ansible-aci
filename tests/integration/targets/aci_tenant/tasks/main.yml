@@ -1,8 +1,8 @@
-# # Test code for the ACI modules
-# # Copyright: (c) 2017, Dag Wieers (@dagwieers) <dag@wieers.com>
-# # Copyright: (c) 2020, Lionel Hercot (@lhercot) <lhercot@cisco.com>
+# Test code for the ACI modules
+# Copyright: (c) 2017, Dag Wieers (@dagwieers) <dag@wieers.com>
+# Copyright: (c) 2020, Lionel Hercot (@lhercot) <lhercot@cisco.com>
 
-# # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
   fail:
@@ -59,7 +59,7 @@
     annotation: ansible_test
     owner_key: ansible_key
     owner_tag: ansible_tag
-    output_path: "{{ ansible_host }}_cm_add_tenant.json"
+    output_path: "{{ aci_hostname }}_cm_add_tenant.json"
   check_mode: true
   register: cm_add_tenant
 
@@ -95,7 +95,7 @@
 - name: Add tenant again (check_mode)
   cisco.aci.aci_tenant:
     <<: *tenant_present
-    output_path: "{{ ansible_host }}_cm_add_tenant_again.json"
+    output_path: "{{ aci_hostname }}_cm_add_tenant_again.json"
   check_mode: true
   register: cm_add_tenant_again
 
@@ -149,7 +149,7 @@
     annotation: ansible_test_changed
     owner_key: ansible_key_changed
     owner_tag: ansible_tag_changed
-    output_path: "{{ ansible_host }}_cm_add_tenant_descr.json"
+    output_path: "{{ aci_hostname }}_cm_add_tenant_descr.json"
   check_mode: true
   register: cm_add_tenant_descr
 
@@ -170,7 +170,7 @@
     annotation: ansible_test_changed
     owner_key: ansible_key_changed
     owner_tag: ansible_tag_changed
-    output_path: "{{ ansible_host }}_cm_add_tenant_descr_again.json"
+    output_path: "{{ aci_hostname }}_cm_add_tenant_descr_again.json"
   check_mode: true
   register: cm_add_tenant_descr_again
 
@@ -316,7 +316,7 @@
 - name: Remove tenant (check_mode)
   cisco.aci.aci_tenant:
     <<: *tenant_absent
-    output_path: "{{ ansible_host }}_cm_remove_tenant.json"
+    output_path: "{{ aci_hostname }}_cm_remove_tenant.json"
   check_mode: true
   register: cm_remove_tenant
 
@@ -329,7 +329,7 @@
 - name: Remove tenant again (check_mode)
   cisco.aci.aci_tenant:
     <<: *tenant_absent
-    output_path: "{{ ansible_host }}_cm_remove_tenant_again.json"
+    output_path: "{{ aci_hostname }}_cm_remove_tenant_again.json"
   check_mode: true
   register: cm_remove_tenant_again
 

@@ -52,7 +52,6 @@ from copy import deepcopy
 from ansible.module_utils.urls import fetch_url
 from ansible.module_utils._text import to_bytes, to_native
 from ansible.module_utils.basic import env_fallback
-from ansible.module_utils._text import to_text
 from ansible.module_utils.connection import Connection
 
 # Optional, only used for APIC signature-based authentication
@@ -75,7 +74,7 @@ except ImportError:
 
 # Optional, only used for XML payload
 try:
-    import lxml.etree  # noqa
+    import lxml.etree
 
     HAS_LXML_ETREE = True
 except ImportError:
@@ -511,10 +510,7 @@ class ACIModule(object):
     def response_json(self, rawoutput):
         """Handle APIC JSON response output"""
         try:
-            if isinstance(rawoutput, dict):
-                jsondata = rawoutput
-            else:
-                jsondata = json.loads(rawoutput)
+            jsondata = json.loads(rawoutput)
         except Exception as e:
             # Expose RAW output for troubleshooting
             self.error = dict(code=-1, text="Unable to parse output as JSON, see 'raw' output. %s" % e)
@@ -625,6 +621,7 @@ class ACIModule(object):
             )
 
     def _deep_url_parent_object(self, parent_objects, parent_class):
+
         for parent_object in parent_objects:
             if parent_object.get("aci_class") is parent_class:
                 return parent_object
@@ -773,6 +770,7 @@ class ACIModule(object):
         child_classes=None,
         config_only=True,
     ):
+
         """
         This method is used to retrieve the appropriate URL path and filter_string to make the request to the APIC.
 
@@ -1495,6 +1493,7 @@ class ACIModule(object):
         self.module.exit_json(**self.result)
 
     def fail_json(self, msg, **kwargs):
+
         # Return error information, if we have it
         if self.error.get("code") is not None and self.error.get("text") is not None:
             self.result["error"] = self.error
