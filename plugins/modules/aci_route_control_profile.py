@@ -43,7 +43,7 @@ options:
     - The type of the Route Control Profile.
     - For "Match Prefix AND Routing Policy", choose combinable.
     - For "Match Routing Policy Only", choose global.
-    - - The APIC defaults to C(combinable) when unset during creation.
+    - The APIC defaults to C(combinable) when unset during creation.
     type: str
     choices: [ combinable, global ]
   autocontinue:
