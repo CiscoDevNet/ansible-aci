@@ -277,6 +277,8 @@ RETURN = r"""
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
    """
 
+import re
+
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
@@ -344,17 +346,22 @@ def main():
     usb_configuration_policy = module.params.get("usb_configuration_policy")
     state = module.params.get("state")
 
+    aci = ACIModule(module)
+
+    apic_version = aci.get_apic_version()
+
+    version_regex = r"(\d+)\.(\d+)\((.*)\)"
+    parsed_version = re.findall(version_regex, apic_version)[0]
+    major_version = int(parsed_version[0])
+    minor_version = int(parsed_version[1])
+
     child_classes = [
         "infraRsTopoctrlFwdScaleProfPol",
-        "infraRsLeafTopoctrlUsbConfigProfilePol",
         "infraRsLeafPGrpToLldpIfPol",
         "infraRsLeafPGrpToCdpIfPol",
         "infraRsBfdIpv4InstPol",
         "infraRsBfdIpv6InstPol",
-        "infraRsSynceInstPol",
         "infraRsPoeInstPol",
-        "infraRsBfdMhIpv4InstPol",
-        "infraRsBfdMhIpv6InstPol",
         "infraRsEquipmentFlashConfigPol",
         "infraRsMonNodeInfraPol",
         "infraRsFcInstPol",
@@ -365,10 +372,17 @@ def main():
         "infraRsL2NodeAuthPol",
         "infraRsIaclLeafProfile",
         "infraRsNetflowNodePol",
-        "infraRsPtpInstPol",
     ]
 
-    aci = ACIModule(module)
+    if major_version >= 5 and minor_version >= 2:
+        child_classes.append("infraRsLeafTopoctrlUsbConfigProfilePol")
+        child_classes.append("infraRsSynceInstPol")
+        child_classes.append("infraRsPtpInstPol")
+
+    if major_version >= 5:
+        child_classes.append("infraRsBfdMhIpv4InstPol")
+        child_classes.append("infraRsBfdMhIpv6InstPol")
+
     aci.construct_url(
         root_class=dict(
             aci_class="infraAccNodePGrp",
@@ -385,7 +399,7 @@ def main():
         child_configs = []
         if forward_scale_profile_policy is not None:
             child_configs.append({"infraRsTopoctrlFwdScaleProfPol": {"attributes": {"tnTopoctrlFwdScaleProfilePolName": forward_scale_profile_policy}}})
-        if usb_configuration_policy is not None:
+        if usb_configuration_policy is not None and major_version >= 5 and minor_version >= 2:
             child_configs.append({"infraRsLeafTopoctrlUsbConfigProfilePol": {"attributes": {"tnTopoctrlUsbConfigProfilePolName": usb_configuration_policy}}})
         if lldp_policy is not None:
             child_configs.append({"infraRsLeafPGrpToLldpIfPol": {"attributes": {"tnLldpIfPolName": lldp_policy}}})
@@ -395,13 +409,13 @@ def main():
             child_configs.append({"infraRsBfdIpv4InstPol": {"attributes": {"tnBfdIpv4InstPolName": bfd_ipv4_policy}}})
         if bfd_ipv6_policy is not None:
             child_configs.append({"infraRsBfdIpv6InstPol": {"attributes": {"tnBfdIpv6InstPolName": bfd_ipv6_policy}}})
-        if synce_node_policy is not None:
+        if synce_node_policy is not None and major_version >= 5 and minor_version >= 2:
             child_configs.append({"infraRsSynceInstPol": {"attributes": {"tnSynceInstPolName": synce_node_policy}}})
         if poe_node_policy is not None:
             child_configs.append({"infraRsPoeInstPol": {"attributes": {"tnPoeInstPolName": poe_node_policy}}})
-        if bfd_multihop_ipv4_policy is not None:
+        if bfd_multihop_ipv4_policy is not None and major_version >= 5:
             child_configs.append({"infraRsBfdMhIpv4InstPol": {"attributes": {"tnBfdMhIpv4InstPolName": bfd_multihop_ipv4_policy}}})
-        if bfd_multihop_ipv6_policy is not None:
+        if bfd_multihop_ipv6_policy is not None and major_version >= 5:
             child_configs.append({"infraRsBfdMhIpv6InstPol": {"attributes": {"tnBfdMhIpv6InstPolName": bfd_multihop_ipv6_policy}}})
         if equipment_flash_policy is not None:
             child_configs.append({"infraRsEquipmentFlashConfigPol": {"attributes": {"tnEquipmentFlashConfigPolName": equipment_flash_policy}}})
@@ -425,7 +439,7 @@ def main():
             child_configs.append({"infraRsIaclLeafProfile": {"attributes": {"tnIaclLeafProfileName": copp_pre_filter_policy}}})
         if netflow_node_policy is not None:
             child_configs.append({"infraRsNetflowNodePol": {"attributes": {"tnNetflowNodePolName": netflow_node_policy}}})
-        if ptp_node_policy is not None:
+        if ptp_node_policy is not None and major_version >= 5 and minor_version >= 2:
             child_configs.append({"infraRsPtpInstPol": {"attributes": {"tnPtpInstPolName": ptp_node_policy}}})
 
         aci.payload(

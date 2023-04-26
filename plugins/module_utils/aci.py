@@ -13,6 +13,7 @@
 # Copyright: (c) 2019, Rob Huelga (@RobW3LGA)
 # Copyright: (c) 2020, Lionel Hercot (@lhercot) <lhercot@cisco.com>
 # Copyright: (c) 2020, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
+# Copyright: (c) 2023, Tim Cragg (@timcragg) <tcragg@cisco.com>
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without modification,
@@ -1622,3 +1623,51 @@ class ACIModule(object):
                 with open(output_path, "a") as output_file:
                     if self.result.get("changed") is True:
                         json.dump([mo], output_file)
+
+    def get_apic_version(self):
+        """Get the running firmware version of the APIC controllers"""
+
+        if self.params.get("port") is not None:
+            get_version_url = "%(protocol)s://%(host)s:%(port)s/api/node/class/topSystem.json" % self.params
+        else:
+            get_version_url = "%(protocol)s://%(host)s/api/node/class/topSystem.json" % self.params
+
+        # Sign and encode request as to APIC's wishes
+        if self.params.get("private_key"):
+            self.cert_auth(path="/api/node/class/topSystem.json", method="GET")
+
+        # Perform request
+        resp, query = fetch_url(
+            self.module,
+            get_version_url,
+            data=None,
+            headers=self.headers,
+            method="GET",
+            timeout=self.params.get("timeout"),
+            use_proxy=self.params.get("use_proxy"),
+        )
+
+        # Handle APIC response
+        if query.get("status") != 200:
+            self.response = query.get("msg")
+            self.status = query.get("status")
+            try:
+                # APIC error
+                self.response_json(query["body"])
+                self.fail_json(msg="APIC Error %(code)s: %(text)s" % self.error)
+            except KeyError:
+                # Connection error
+                self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % query)
+
+        query = json.loads(resp.read())
+
+        # Parse the response and get the firmware version running on the APICs
+        for node in query["imdata"]:
+            role = node["topSystem"]["attributes"]["role"]
+            if role == "controller":
+                version = node["topSystem"]["attributes"]["version"]
+                break
+            else:
+                continue
+
+        return version

@@ -20,231 +20,663 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
 
-# CLEAN ENVIRONMENT
-- name: Remove the ansible access switch policy group
-  cisco.aci.aci_access_switch_policy_group:
+- name: Query system information
+  aci_system:
     <<: *aci_info
-    name: ansible_access_switch_pol_grp
-    state: absent
-
-# CREATE ACCESS SWITCH POLICY GROUP
-- name: Create the ansible access switch policy group (check mode)
-  cisco.aci.aci_access_switch_policy_group: &aci_pol_grp
-    <<: *aci_info
-    name: ansible_access_switch_pol_grp
-    spanning_tree_policy: default
-    bfd_ipv4_policy: default
-    bfd_ipv6_policy: default
-    bfd_multihop_ipv4_policy: default
-    bfd_multihop_ipv6_policy: default
-    fibre_channel_node_policy: default
-    poe_node_policy: default
-    fibre_channel_san_policy: default
-    monitoring_policy: default
-    netflow_node_policy: default
-    copp_leaf_policy: default
-    forward_scale_profile_policy: default
-    fast_link_failover_policy: default
-    node_802_1x_authentication_policy: default
-    copp_pre_filter_policy: default
-    equipment_flash_policy: default
-    cdp_policy: default
-    lldp_policy: default
-    synce_node_policy: default
-    ptp_node_policy: default
-    usb_configuration_policy: default
-    state: present
-  check_mode: yes
-  register: cm_create_policy_group
-
-- name: Create the ansible access switch policy group (normal mode)
-  cisco.aci.aci_access_switch_policy_group:
-    <<: *aci_pol_grp
-  register: nm_create_policy_group
-
-- name: Create the ansible access switch policy group again
-  cisco.aci.aci_access_switch_policy_group:
-    <<: *aci_pol_grp
-  register: nm_create_policy_group_again
-
-- name: Create second ansible access switch policy group
-  cisco.aci.aci_access_switch_policy_group:
-    <<: *aci_info
-    name: ansible_access_switch_pol_grp2
-
-- name: Verify creation of access switch policy group
-  ansible.builtin.assert:
-    that:
-    - cm_create_policy_group is changed
-    - nm_create_policy_group is changed
-    - nm_create_policy_group_again is not changed
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.0.infraRsLeafTopoctrlUsbConfigProfilePol.attributes.tnTopoctrlUsbConfigProfilePolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.1.infraRsBfdMhIpv6InstPol.attributes.tnBfdMhIpv6InstPolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.2.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.3.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.4.infraRsPtpInstPol.attributes.tnPtpInstPolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.5.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.6.infraRsSynceInstPol.attributes.tnSynceInstPolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.7.infraRsBfdMhIpv4InstPol.attributes.tnBfdMhIpv4InstPolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.8.infraRsPoeInstPol.attributes.tnPoeInstPolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.9.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.10.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.11.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.12.infraRsFcInstPol.attributes.tnFcInstPolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.13.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.14.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.15.infraRsMstInstPol.attributes.tnStpInstPolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.16.infraRsFcFabricPol.attributes.tnFcFabricPolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.17.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.18.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.19.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == "default"
-    - nm_create_policy_group.current.0.infraAccNodePGrp.children.20.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.0.infraRsLeafTopoctrlUsbConfigProfilePol.attributes.tnTopoctrlUsbConfigProfilePolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.1.infraRsBfdMhIpv6InstPol.attributes.tnBfdMhIpv6InstPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.2.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.3.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.4.infraRsPtpInstPol.attributes.tnPtpInstPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.5.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.6.infraRsSynceInstPol.attributes.tnSynceInstPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.7.infraRsBfdMhIpv4InstPol.attributes.tnBfdMhIpv4InstPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.8.infraRsPoeInstPol.attributes.tnPoeInstPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.9.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.10.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.11.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.12.infraRsFcInstPol.attributes.tnFcInstPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.13.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.14.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.15.infraRsMstInstPol.attributes.tnStpInstPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.16.infraRsFcFabricPol.attributes.tnFcFabricPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.17.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.18.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.19.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == "default"
-    - nm_create_policy_group_again.current.0.infraAccNodePGrp.children.20.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == "default"
-    
-# UPDATE ACCESS SWITCH POLICY GROUP
-- name: Update the ansible access switch policy group
-  cisco.aci.aci_access_switch_policy_group:
-    <<: *aci_info
-    name: ansible_access_switch_pol_grp
-    spanning_tree_policy: ""
-    bfd_ipv4_policy: ""
-    bfd_ipv6_policy: ""
-    bfd_multihop_ipv4_policy: ""
-    bfd_multihop_ipv6_policy: ""
-    fibre_channel_node_policy: ""
-    poe_node_policy: ""
-    fibre_channel_san_policy: ""
-    monitoring_policy: ""
-    netflow_node_policy: ""
-    copp_leaf_policy: ""
-    forward_scale_profile_policy: ""
-    fast_link_failover_policy: ""
-    node_802_1x_authentication_policy: ""
-    copp_pre_filter_policy: ""
-    equipment_flash_policy: ""
-    cdp_policy: ""
-    lldp_policy: ""
-    synce_node_policy: ""
-    ptp_node_policy: ""
-    usb_configuration_policy: ""
-  register: update_policy_group
-
-- name: Verify update of access switch policy group
-  ansible.builtin.assert:
-    that:
-    - update_policy_group is changed
-    - update_policy_group.current.0.infraAccNodePGrp.children.0.infraRsLeafTopoctrlUsbConfigProfilePol.attributes.tnTopoctrlUsbConfigProfilePolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.1.infraRsBfdMhIpv6InstPol.attributes.tnBfdMhIpv6InstPolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.2.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.3.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.4.infraRsPtpInstPol.attributes.tnPtpInstPolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.5.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.6.infraRsSynceInstPol.attributes.tnSynceInstPolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.7.infraRsBfdMhIpv4InstPol.attributes.tnBfdMhIpv4InstPolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.8.infraRsPoeInstPol.attributes.tnPoeInstPolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.9.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.10.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.11.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.12.infraRsFcInstPol.attributes.tnFcInstPolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.13.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.14.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.15.infraRsMstInstPol.attributes.tnStpInstPolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.16.infraRsFcFabricPol.attributes.tnFcFabricPolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.17.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.18.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.19.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == ""
-    - update_policy_group.current.0.infraAccNodePGrp.children.20.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == ""
-
-# QUERY ACCESS SWITCH POLICY GROUP
-- name: Query an access switch policy group
-  cisco.aci.aci_access_switch_policy_group:
-    <<: *aci_info
-    name: ansible_access_switch_pol_grp
+    id: 1
     state: query
-  register: query_one
+  register: version
 
-- name: Query all access switch policy groups
-  cisco.aci.aci_access_switch_policy_group:
-    <<: *aci_info
-    state: query
-  register: query_all
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Verify access switch policy group queries
-  ansible.builtin.assert:
-    that:
-    - query_one is not changed
-    - query_one.current.0.infraAccNodePGrp.children.0.infraRsLeafTopoctrlUsbConfigProfilePol.attributes.tnTopoctrlUsbConfigProfilePolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.1.infraRsBfdMhIpv6InstPol.attributes.tnBfdMhIpv6InstPolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.2.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.3.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.4.infraRsPtpInstPol.attributes.tnPtpInstPolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.5.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.6.infraRsSynceInstPol.attributes.tnSynceInstPolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.7.infraRsBfdMhIpv4InstPol.attributes.tnBfdMhIpv4InstPolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.8.infraRsPoeInstPol.attributes.tnPoeInstPolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.9.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.10.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.11.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.12.infraRsFcInstPol.attributes.tnFcInstPolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.13.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.14.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == ""
-    - query_one.current.0.infraAccNodePGrp.children.15.infraRsMstInstPol.attributes.tnStpInstPolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.16.infraRsFcFabricPol.attributes.tnFcFabricPolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.17.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == ""
-    - query_one.current.0.infraAccNodePGrp.children.18.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.19.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == ""
-    - query_one.current.0.infraAccNodePGrp.children.20.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == ""
-    - query_all is not changed
-    - query_all.current | length > 1
+- name: Execute tasks only for non-cloud sites running ACI v6.0
+  when: (query_cloud.current == []) and (version.current.0.topSystem.attributes.version is version('6.0', '>='))
+  block:  # block specifies execution of tasks within, based on conditions
 
-# REMOVE ACCESS SWITCH POLICY GROUP
-- name: Delete an access switch policy group
-  cisco.aci.aci_access_switch_policy_group:
-    <<: *aci_info
-    name: ansible_access_switch_pol_grp
-    state: absent
-  register: delete
+  # CLEAN ENVIRONMENT
+  - name: Remove the ansible access switch policy group (v6.0)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      state: absent
 
-- name: Delete an access switch policy group
-  cisco.aci.aci_access_switch_policy_group:
-    <<: *aci_info
-    name: ansible_access_switch_pol_grp
-    state: absent
-  register: delete_again
+  # CREATE ACCESS SWITCH POLICY GROUP
+  - name: Create the ansible access switch policy group (check mode) (v6.0)
+    cisco.aci.aci_access_switch_policy_group: &aci_pol_grp_v60
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      spanning_tree_policy: default
+      bfd_ipv4_policy: default
+      bfd_ipv6_policy: default
+      bfd_multihop_ipv4_policy: default
+      bfd_multihop_ipv6_policy: default
+      fibre_channel_node_policy: default
+      poe_node_policy: default
+      fibre_channel_san_policy: default
+      monitoring_policy: default
+      netflow_node_policy: default
+      copp_leaf_policy: default
+      forward_scale_profile_policy: default
+      fast_link_failover_policy: default
+      node_802_1x_authentication_policy: default
+      copp_pre_filter_policy: default
+      equipment_flash_policy: default
+      cdp_policy: default
+      lldp_policy: default
+      state: present
+    check_mode: yes
+    register: cm_create_policy_group_v60
 
-- name: Verify deletion of access switch policy group
-  ansible.builtin.assert:
-    that:
-    - delete is changed
-    - delete_again is not changed
-    - delete.current == []
-    - delete.previous | length == 1
-    - delete_again.current == []
-    - delete_again.previous | length == 0
+  - name: Create the ansible access switch policy group (normal mode) (v6.0)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_pol_grp_v60
+    register: nm_create_policy_group_v60
 
-# CLEAN UP
-- name: Delete the second access switch policy group
-  cisco.aci.aci_access_switch_policy_group:
-    <<: *aci_info
-    name: ansible_access_switch_pol_grp2
-    state: absent
+  - name: Create the ansible access switch policy group again (v6.0)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_pol_grp_v60
+    register: nm_create_policy_group_again_v60
+
+  - name: Create second ansible access switch policy group (v6.0)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp2
+
+  - name: Verify creation of access switch policy group (v6.0)
+    ansible.builtin.assert:
+      that:
+      - cm_create_policy_group_v60 is changed
+      - nm_create_policy_group_v60 is changed
+      - nm_create_policy_group_again_v60 is not changed
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.0.infraRsBfdMhIpv6InstPol.attributes.tnBfdMhIpv6InstPolName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.1.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.2.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.3.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.4.infraRsBfdMhIpv4InstPol.attributes.tnBfdMhIpv4InstPolName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.5.infraRsPoeInstPol.attributes.tnPoeInstPolName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.6.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.7.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.8.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.9.infraRsFcInstPol.attributes.tnFcInstPolName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.10.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.11.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.12.infraRsMstInstPol.attributes.tnStpInstPolName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.13.infraRsFcFabricPol.attributes.tnFcFabricPolName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.14.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.15.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.16.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == "default"
+      - nm_create_policy_group_v60.current.0.infraAccNodePGrp.children.17.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.0.infraRsBfdMhIpv6InstPol.attributes.tnBfdMhIpv6InstPolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.1.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.2.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.3.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.4.infraRsBfdMhIpv4InstPol.attributes.tnBfdMhIpv4InstPolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.5.infraRsPoeInstPol.attributes.tnPoeInstPolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.6.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.7.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.8.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.9.infraRsFcInstPol.attributes.tnFcInstPolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.10.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.11.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.12.infraRsMstInstPol.attributes.tnStpInstPolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.13.infraRsFcFabricPol.attributes.tnFcFabricPolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.14.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.15.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.16.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == "default"
+      - nm_create_policy_group_again_v60.current.0.infraAccNodePGrp.children.17.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == "default"
+
+  # UPDATE ACCESS SWITCH POLICY GROUP
+  - name: Update the ansible access switch policy group (v6.0)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      spanning_tree_policy: ""
+      bfd_ipv4_policy: ""
+      bfd_ipv6_policy: ""
+      bfd_multihop_ipv4_policy: ""
+      bfd_multihop_ipv6_policy: ""
+      fibre_channel_node_policy: ""
+      poe_node_policy: ""
+      fibre_channel_san_policy: ""
+      monitoring_policy: ""
+      netflow_node_policy: ""
+      copp_leaf_policy: ""
+      forward_scale_profile_policy: ""
+      fast_link_failover_policy: ""
+      node_802_1x_authentication_policy: ""
+      copp_pre_filter_policy: ""
+      equipment_flash_policy: ""
+      cdp_policy: ""
+      lldp_policy: ""
+    register: update_policy_group_v60
+
+  - name: Verify update of access switch policy group (v6.0)
+    ansible.builtin.assert:
+      that:
+      - update_policy_group_v60 is changed
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.0.infraRsBfdMhIpv6InstPol.attributes.tnBfdMhIpv6InstPolName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.1.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.2.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.3.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.4.infraRsBfdMhIpv4InstPol.attributes.tnBfdMhIpv4InstPolName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.5.infraRsPoeInstPol.attributes.tnPoeInstPolName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.6.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.7.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.8.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.9.infraRsFcInstPol.attributes.tnFcInstPolName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.10.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.11.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.12.infraRsMstInstPol.attributes.tnStpInstPolName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.13.infraRsFcFabricPol.attributes.tnFcFabricPolName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.14.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.15.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.16.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == ""
+      - update_policy_group_v60.current.0.infraAccNodePGrp.children.17.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == ""
+
+  # QUERY ACCESS SWITCH POLICY GROUP
+  - name: Query an access switch policy group (v6.0)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      state: query
+    register: query_one_v60
+
+  - name: Query all access switch policy groups (v6.0)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      state: query
+    register: query_all_v60
+
+  - name: Verify access switch policy group queries (v6.0)
+    ansible.builtin.assert:
+      that:
+      - query_one_v60 is not changed
+      - query_one_v60.current.0.infraAccNodePGrp.children.0.infraRsBfdMhIpv6InstPol.attributes.tnBfdMhIpv6InstPolName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.1.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.2.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.3.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.4.infraRsBfdMhIpv4InstPol.attributes.tnBfdMhIpv4InstPolName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.5.infraRsPoeInstPol.attributes.tnPoeInstPolName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.6.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.7.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.8.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.9.infraRsFcInstPol.attributes.tnFcInstPolName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.10.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.11.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.12.infraRsMstInstPol.attributes.tnStpInstPolName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.13.infraRsFcFabricPol.attributes.tnFcFabricPolName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.14.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.15.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.16.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == ""
+      - query_one_v60.current.0.infraAccNodePGrp.children.17.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == ""
+      - query_all_v60 is not changed
+      - query_all_v60.current | length > 1
+
+  # REMOVE ACCESS SWITCH POLICY GROUP
+  - name: Delete an access switch policy group (v6.0)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      state: absent
+    register: delete_v60
+
+  - name: Delete an access switch policy group (v6.0)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      state: absent
+    register: delete_again_v60
+
+  - name: Verify deletion of access switch policy group (v6.0)
+    ansible.builtin.assert:
+      that:
+      - delete_v60 is changed
+      - delete_again_v60 is not changed
+      - delete_v60.current == []
+      - delete_v60.previous | length == 1
+      - delete_again_v60.current == []
+      - delete_again_v60.previous | length == 0
+
+  # CLEAN UP
+  - name: Delete the second access switch policy group (v6.0)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp2
+      state: absent
+
+- name: Execute tasks only for non-cloud sites running ACI v5.2
+  when: (query_cloud.current == []) and (version.current.0.topSystem.attributes.version is version('5.2', '>=')) and (version.current.0.topSystem.attributes.version is version('6.0', '<'))
+  block:  # block specifies execution of tasks within, based on conditions
+
+  # CLEAN ENVIRONMENT
+  - name: Remove the ansible access switch policy group (v5.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      state: absent
+
+  # CREATE ACCESS SWITCH POLICY GROUP
+  - name: Create the ansible access switch policy group (check mode) (v5.2)
+    cisco.aci.aci_access_switch_policy_group: &aci_pol_grp_v52
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      spanning_tree_policy: default
+      bfd_ipv4_policy: default
+      bfd_ipv6_policy: default
+      bfd_multihop_ipv4_policy: default
+      bfd_multihop_ipv6_policy: default
+      fibre_channel_node_policy: default
+      poe_node_policy: default
+      fibre_channel_san_policy: default
+      monitoring_policy: default
+      netflow_node_policy: default
+      copp_leaf_policy: default
+      forward_scale_profile_policy: default
+      fast_link_failover_policy: default
+      node_802_1x_authentication_policy: default
+      copp_pre_filter_policy: default
+      equipment_flash_policy: default
+      cdp_policy: default
+      lldp_policy: default
+      synce_node_policy: default
+      ptp_node_policy: default
+      usb_configuration_policy: default
+      state: present
+    check_mode: yes
+    register: cm_create_policy_group_v52
+
+  - name: Create the ansible access switch policy group (normal mode) (v5.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_pol_grp_v52
+    register: nm_create_policy_group_v52
+
+  - name: Create the ansible access switch policy group again (v5.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_pol_grp_v52
+    register: nm_create_policy_group_again_v52
+
+  - name: Create second ansible access switch policy group (v5.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp2
+
+  - name: Verify creation of access switch policy group (v5.2)
+    ansible.builtin.assert:
+      that:
+      - cm_create_policy_group_v52 is changed
+      - nm_create_policy_group_v52 is changed
+      - nm_create_policy_group_again_v52 is not changed
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.0.infraRsLeafTopoctrlUsbConfigProfilePol.attributes.tnTopoctrlUsbConfigProfilePolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.1.infraRsBfdMhIpv6InstPol.attributes.tnBfdMhIpv6InstPolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.2.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.3.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.4.infraRsPtpInstPol.attributes.tnPtpInstPolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.5.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.6.infraRsSynceInstPol.attributes.tnSynceInstPolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.7.infraRsBfdMhIpv4InstPol.attributes.tnBfdMhIpv4InstPolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.8.infraRsPoeInstPol.attributes.tnPoeInstPolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.9.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.10.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.11.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.12.infraRsFcInstPol.attributes.tnFcInstPolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.13.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.14.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.15.infraRsMstInstPol.attributes.tnStpInstPolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.16.infraRsFcFabricPol.attributes.tnFcFabricPolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.17.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.18.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.19.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == "default"
+      - nm_create_policy_group_v52.current.0.infraAccNodePGrp.children.20.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.0.infraRsLeafTopoctrlUsbConfigProfilePol.attributes.tnTopoctrlUsbConfigProfilePolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.1.infraRsBfdMhIpv6InstPol.attributes.tnBfdMhIpv6InstPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.2.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.3.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.4.infraRsPtpInstPol.attributes.tnPtpInstPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.5.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.6.infraRsSynceInstPol.attributes.tnSynceInstPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.7.infraRsBfdMhIpv4InstPol.attributes.tnBfdMhIpv4InstPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.8.infraRsPoeInstPol.attributes.tnPoeInstPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.9.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.10.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.11.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.12.infraRsFcInstPol.attributes.tnFcInstPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.13.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.14.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.15.infraRsMstInstPol.attributes.tnStpInstPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.16.infraRsFcFabricPol.attributes.tnFcFabricPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.17.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.18.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.19.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == "default"
+      - nm_create_policy_group_again_v52.current.0.infraAccNodePGrp.children.20.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == "default"
+
+  # UPDATE ACCESS SWITCH POLICY GROUP
+  - name: Update the ansible access switch policy group (v5.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      spanning_tree_policy: ""
+      bfd_ipv4_policy: ""
+      bfd_ipv6_policy: ""
+      bfd_multihop_ipv4_policy: ""
+      bfd_multihop_ipv6_policy: ""
+      fibre_channel_node_policy: ""
+      poe_node_policy: ""
+      fibre_channel_san_policy: ""
+      monitoring_policy: ""
+      netflow_node_policy: ""
+      copp_leaf_policy: ""
+      forward_scale_profile_policy: ""
+      fast_link_failover_policy: ""
+      node_802_1x_authentication_policy: ""
+      copp_pre_filter_policy: ""
+      equipment_flash_policy: ""
+      cdp_policy: ""
+      lldp_policy: ""
+      synce_node_policy: ""
+      ptp_node_policy: ""
+      usb_configuration_policy: ""
+    register: update_policy_group_v52
+
+  - name: Verify update of access switch policy group (v5.2)
+    ansible.builtin.assert:
+      that:
+      - update_policy_group_v52 is changed
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.0.infraRsLeafTopoctrlUsbConfigProfilePol.attributes.tnTopoctrlUsbConfigProfilePolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.1.infraRsBfdMhIpv6InstPol.attributes.tnBfdMhIpv6InstPolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.2.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.3.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.4.infraRsPtpInstPol.attributes.tnPtpInstPolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.5.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.6.infraRsSynceInstPol.attributes.tnSynceInstPolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.7.infraRsBfdMhIpv4InstPol.attributes.tnBfdMhIpv4InstPolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.8.infraRsPoeInstPol.attributes.tnPoeInstPolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.9.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.10.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.11.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.12.infraRsFcInstPol.attributes.tnFcInstPolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.13.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.14.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.15.infraRsMstInstPol.attributes.tnStpInstPolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.16.infraRsFcFabricPol.attributes.tnFcFabricPolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.17.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.18.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.19.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == ""
+      - update_policy_group_v52.current.0.infraAccNodePGrp.children.20.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == ""
+
+  # QUERY ACCESS SWITCH POLICY GROUP
+  - name: Query an access switch policy group (v5.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      state: query
+    register: query_one_v52
+
+  - name: Query all access switch policy groups (v5.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      state: query
+    register: query_all_v52
+
+  - name: Verify access switch policy group queries (v5.2)
+    ansible.builtin.assert:
+      that:
+      - query_one_v52 is not changed
+      - query_one_v52.current.0.infraAccNodePGrp.children.0.infraRsLeafTopoctrlUsbConfigProfilePol.attributes.tnTopoctrlUsbConfigProfilePolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.1.infraRsBfdMhIpv6InstPol.attributes.tnBfdMhIpv6InstPolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.2.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.3.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.4.infraRsPtpInstPol.attributes.tnPtpInstPolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.5.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.6.infraRsSynceInstPol.attributes.tnSynceInstPolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.7.infraRsBfdMhIpv4InstPol.attributes.tnBfdMhIpv4InstPolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.8.infraRsPoeInstPol.attributes.tnPoeInstPolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.9.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.10.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.11.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.12.infraRsFcInstPol.attributes.tnFcInstPolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.13.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.14.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.15.infraRsMstInstPol.attributes.tnStpInstPolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.16.infraRsFcFabricPol.attributes.tnFcFabricPolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.17.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.18.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.19.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == ""
+      - query_one_v52.current.0.infraAccNodePGrp.children.20.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == ""
+      - query_all_v52 is not changed
+      - query_all_v52.current | length > 1
+
+  # REMOVE ACCESS SWITCH POLICY GROUP
+  - name: Delete an access switch policy group (v5.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      state: absent
+    register: delete_v52
+
+  - name: Delete an access switch policy group (v5.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      state: absent
+    register: delete_again_v52
+
+  - name: Verify deletion of access switch policy group (v5.2)
+    ansible.builtin.assert:
+      that:
+      - delete_v52 is changed
+      - delete_again_v52 is not changed
+      - delete_v52.current == []
+      - delete_v52.previous | length == 1
+      - delete_again_v52.current == []
+      - delete_again_v52.previous | length == 0
+
+  # CLEAN UP
+  - name: Delete the second access switch policy group (v5.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp2
+      state: absent
+
+- name: Execute tasks only for non-cloud sites running ACI v4.2
+  when: (query_cloud.current == []) and (version.current.0.topSystem.attributes.version is version('5.0', '<'))
+  block:  # block specifies execution of tasks within, based on conditions
+
+  # CLEAN ENVIRONMENT
+  - name: Remove the ansible access switch policy group (v4.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      state: absent
+
+  # CREATE ACCESS SWITCH POLICY GROUP
+  - name: Create the ansible access switch policy group (check mode) (v4.2)
+    cisco.aci.aci_access_switch_policy_group: &aci_pol_grp_v42
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      spanning_tree_policy: default
+      bfd_ipv4_policy: default
+      bfd_ipv6_policy: default
+      fibre_channel_node_policy: default
+      poe_node_policy: default
+      fibre_channel_san_policy: default
+      monitoring_policy: default
+      netflow_node_policy: default
+      copp_leaf_policy: default
+      forward_scale_profile_policy: default
+      fast_link_failover_policy: default
+      node_802_1x_authentication_policy: default
+      copp_pre_filter_policy: default
+      equipment_flash_policy: default
+      cdp_policy: default
+      lldp_policy: default
+      state: present
+    check_mode: yes
+    register: cm_create_policy_group_v42
+
+  - name: Create the ansible access switch policy group (normal mode) (v4.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_pol_grp_v42
+    register: nm_create_policy_group_v42
+
+  - name: Create the ansible access switch policy group again (v4.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_pol_grp_v42
+    register: nm_create_policy_group_again_v42
+
+  - name: Create second ansible access switch policy group (v4.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp2
+
+  - name: Verify creation of access switch policy group (v4.2)
+    ansible.builtin.assert:
+      that:
+      - cm_create_policy_group_v42 is changed
+      - nm_create_policy_group_v42 is changed
+      - nm_create_policy_group_again_v42 is not changed
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.0.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == "default"
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.1.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == "default"
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.2.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == "default"
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.3.infraRsPoeInstPol.attributes.tnPoeInstPolName == "default"
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.4.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == "default"
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.5.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == "default"
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.6.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == "default"
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.7.infraRsFcInstPol.attributes.tnFcInstPolName == "default"
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.8.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == "default"
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.9.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == "default"
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.10.infraRsMstInstPol.attributes.tnStpInstPolName == "default"
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.11.infraRsFcFabricPol.attributes.tnFcFabricPolName == "default"
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.12.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == "default"
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.13.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == "default"
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.14.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == "default"
+      - nm_create_policy_group_v42.current.0.infraAccNodePGrp.children.15.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.0.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.1.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.2.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.3.infraRsPoeInstPol.attributes.tnPoeInstPolName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.4.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.5.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.6.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.7.infraRsFcInstPol.attributes.tnFcInstPolName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.8.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.9.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.10.infraRsMstInstPol.attributes.tnStpInstPolName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.11.infraRsFcFabricPol.attributes.tnFcFabricPolName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.12.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.13.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.14.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == "default"
+      - nm_create_policy_group_again_v42.current.0.infraAccNodePGrp.children.15.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == "default"
+
+  # UPDATE ACCESS SWITCH POLICY GROUP
+  - name: Update the ansible access switch policy group (v4.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      spanning_tree_policy: ""
+      bfd_ipv4_policy: ""
+      bfd_ipv6_policy: ""
+      fibre_channel_node_policy: ""
+      poe_node_policy: ""
+      fibre_channel_san_policy: ""
+      monitoring_policy: ""
+      netflow_node_policy: ""
+      copp_leaf_policy: ""
+      forward_scale_profile_policy: ""
+      fast_link_failover_policy: ""
+      node_802_1x_authentication_policy: ""
+      copp_pre_filter_policy: ""
+      equipment_flash_policy: ""
+      cdp_policy: ""
+      lldp_policy: ""
+    register: update_policy_group_v42
+
+  - name: Verify update of access switch policy group (v4.2)
+    ansible.builtin.assert:
+      that:
+      - update_policy_group_v42 is changed
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.0.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == ""
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.1.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == ""
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.2.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == ""
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.3.infraRsPoeInstPol.attributes.tnPoeInstPolName == ""
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.4.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == ""
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.5.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == ""
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.6.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == ""
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.7.infraRsFcInstPol.attributes.tnFcInstPolName == ""
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.8.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == ""
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.9.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == ""
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.10.infraRsMstInstPol.attributes.tnStpInstPolName == ""
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.11.infraRsFcFabricPol.attributes.tnFcFabricPolName == ""
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.12.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == ""
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.13.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == ""
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.14.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == ""
+      - update_policy_group_v42.current.0.infraAccNodePGrp.children.15.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == ""
+
+  # QUERY ACCESS SWITCH POLICY GROUP
+  - name: Query an access switch policy group (v4.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      state: query
+    register: query_one_v42
+
+  - name: Query all access switch policy groups (v4.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      state: query
+    register: query_all_v42
+
+  - name: Verify access switch policy group queries (v4.2)
+    ansible.builtin.assert:
+      that:
+      - query_one_v42 is not changed
+      - query_one_v42.current.0.infraAccNodePGrp.children.0.infraRsLeafPGrpToLldpIfPol.attributes.tnLldpIfPolName == ""
+      - query_one_v42.current.0.infraAccNodePGrp.children.1.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == ""
+      - query_one_v42.current.0.infraAccNodePGrp.children.2.infraRsEquipmentFlashConfigPol.attributes.tnEquipmentFlashConfigPolName == ""
+      - query_one_v42.current.0.infraAccNodePGrp.children.3.infraRsPoeInstPol.attributes.tnPoeInstPolName == ""
+      - query_one_v42.current.0.infraAccNodePGrp.children.4.infraRsNetflowNodePol.attributes.tnNetflowNodePolName == ""
+      - query_one_v42.current.0.infraAccNodePGrp.children.5.infraRsBfdIpv6InstPol.attributes.tnBfdIpv6InstPolName == ""
+      - query_one_v42.current.0.infraAccNodePGrp.children.6.infraRsMonNodeInfraPol.attributes.tnMonInfraPolName == ""
+      - query_one_v42.current.0.infraAccNodePGrp.children.7.infraRsFcInstPol.attributes.tnFcInstPolName == ""
+      - query_one_v42.current.0.infraAccNodePGrp.children.8.infraRsTopoctrlFastLinkFailoverInstPol.attributes.tnTopoctrlFastLinkFailoverInstPolName == ""
+      - query_one_v42.current.0.infraAccNodePGrp.children.9.infraRsIaclLeafProfile.attributes.tnIaclLeafProfileName == ""
+      - query_one_v42.current.0.infraAccNodePGrp.children.10.infraRsMstInstPol.attributes.tnStpInstPolName == ""
+      - query_one_v42.current.0.infraAccNodePGrp.children.11.infraRsFcFabricPol.attributes.tnFcFabricPolName == ""
+      - query_one_v42.current.0.infraAccNodePGrp.children.12.infraRsLeafCoppProfile.attributes.tnCoppLeafProfileName == ""
+      - query_one_v42.current.0.infraAccNodePGrp.children.13.infraRsTopoctrlFwdScaleProfPol.attributes.tnTopoctrlFwdScaleProfilePolName == ""
+      - query_one_v42.current.0.infraAccNodePGrp.children.14.infraRsBfdIpv4InstPol.attributes.tnBfdIpv4InstPolName == ""
+      - query_one_v42.current.0.infraAccNodePGrp.children.15.infraRsL2NodeAuthPol.attributes.tnL2NodeAuthPolName == ""
+      - query_all_v42 is not changed
+      - query_all_v42.current | length > 1
+
+  # REMOVE ACCESS SWITCH POLICY GROUP
+  - name: Delete an access switch policy group (v4.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      state: absent
+    register: delete_v42
+
+  - name: Delete an access switch policy group (v4.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp
+      state: absent
+    register: delete_again_v42
+
+  - name: Verify deletion of access switch policy group (v4.2)
+    ansible.builtin.assert:
+      that:
+      - delete_v42 is changed
+      - delete_again_v42 is not changed
+      - delete_v42.current == []
+      - delete_v42.previous | length == 1
+      - delete_again_v42.current == []
+      - delete_again_v42.previous | length == 0
+
+  # CLEAN UP
+  - name: Delete the second access switch policy group (v4.2)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      name: ansible_access_switch_pol_grp2
+      state: absent

@@ -27,6 +27,11 @@
   register: stored_banner
 
 # UPDATE AAA PRE-LOGIN BANNER
+- name: Set Severity
+  cisco.aci.aci_aaa_pre_login_banner:
+    <<: *aci_info
+    banner_message_severity: info
+
 - name: Update AAA pre-login banner (check mode)
   cisco.aci.aci_aaa_pre_login_banner: &aci_banner
     <<: *aci_info
@@ -90,9 +95,9 @@
 - name: Restore original AAA pre-login banner
   cisco.aci.aci_aaa_pre_login_banner:
     <<: *aci_info
-    banner_message: stored_banner.current.0.aaaPreLoginBanner.attributes.bannerMessage
-    switch_message: stored_banner.current.0.aaaPreLoginBanner.attributes.switchMessage
-    gui_message_text: stored_banner.current.0.aaaPreLoginBanner.attributes.guiTextMessage
-    is_gui_message_text: stored_banner.current.0.aaaPreLoginBanner.attributes.isGuiMessageText
-    message: stored_banner.current.0.aaaPreLoginBanner.attributes.message
-    banner_message_severity: stored_banner.current.0.aaaPreLoginBanner.attributes.bannerMessageSeverity
+    banner_message: "{{ stored_banner.current.0.aaaPreLoginBanner.attributes.bannerMessage }}"
+    switch_message: "{{ stored_banner.current.0.aaaPreLoginBanner.attributes.switchMessage }}"
+    gui_message_text: "{{ stored_banner.current.0.aaaPreLoginBanner.attributes.guiTextMessage }}"
+    is_gui_message_text: "{{ stored_banner.current.0.aaaPreLoginBanner.attributes.isGuiMessageText }}"
+    message: "{{ stored_banner.current.0.aaaPreLoginBanner.attributes.message }}"
+    banner_message_severity: "{{ stored_banner.current.0.aaaPreLoginBanner.attributes.bannerMessageSeverity }}"
