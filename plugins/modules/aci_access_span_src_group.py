@@ -29,7 +29,7 @@ options:
     aliases: [ descr ]
   admin_state:
     description:
-    - Enable or disable the span sources.
+    - Enable C(true) or disable C(false) the span sources.
     - The APIC defaults to C(true) when unset during creation.
     type: bool
   filter_group:
@@ -76,8 +76,8 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    src_group: my_span_source_group
-    dst_group: my_span_dest_group
+    source_group: my_span_source_group
+    destination_group: my_span_dest_group
     state: present
   delegate_to: localhost
 
@@ -86,7 +86,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    src_group: my_span_source_group
+    source_group: my_span_source_group
     state: absent
   delegate_to: localhost
 
@@ -104,7 +104,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    src_group: my_span_source_group
+    source_group: my_span_source_group
     state: query
   delegate_to: localhost
   register: query_result
