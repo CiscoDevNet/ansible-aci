@@ -243,7 +243,7 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_together=[["ssl_opflex_tls_10", "ssl_opflex_tls_11", "ssl_opflex_tls_10"]],
+        required_together=[["ssl_opflex_tls_10", "ssl_opflex_tls_11", "ssl_opflex_tls_12"]],
     )
 
     aci = ACIModule(module)
