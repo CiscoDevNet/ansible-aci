@@ -29,7 +29,7 @@ options:
     aliases: [ descr ]
   admin_state:
     description:
-    - Enable or disable the span sources.
+    - Enable C(true) or disable C(false) the span sources.
     - The APIC defaults to C(true) when unset during creation.
     type: bool
   destination_group:
