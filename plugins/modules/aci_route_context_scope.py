@@ -292,7 +292,7 @@ def main():
             ),
             subclass_4=dict(
                 aci_class="rtctrlScope",
-                aci_rn="/scp",
+                aci_rn="scp",
                 module_object="",
                 target_filter={"name": ""},
             ),

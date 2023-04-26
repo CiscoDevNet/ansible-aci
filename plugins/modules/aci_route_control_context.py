@@ -46,6 +46,7 @@ options:
   action:
     description:
     - Action of the Route Control Context.
+    - The APIC defaults to C(permit) when unset during creation.
     type: str
     choices: [ permit, deny ]
   order:

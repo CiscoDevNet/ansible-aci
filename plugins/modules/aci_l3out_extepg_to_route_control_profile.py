@@ -40,6 +40,7 @@ options:
   direction:
     description:
     - Direction to apply the Route Control Profile.
+    - The APIC defaults to C(import) when unset during creation.
     type: str
     choices: [ import, export ]
     aliases: [ route_control_profile_direction ]

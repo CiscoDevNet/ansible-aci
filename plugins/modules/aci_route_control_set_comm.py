@@ -44,6 +44,7 @@ options:
   set_criteria:
     description:
     - Whether to append or replace the community, or set it to none.
+    - The APIC defaults to C(none) when unset during creation.
     type: str
     choices: [ append, replace, none ]
   state:
