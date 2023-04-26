@@ -46,7 +46,7 @@ options:
     - Use text-based pre-login GUI banner message.
     - This defaults to false when unset on the APIC.
     type: bool
-  message:
+  cli_message:
     description:
     - The contents of the CLI informational banner to be displayed before user login authentication.
     - The CLI banner is a text based string printed as-is to the console.
@@ -221,7 +221,7 @@ def main():
         gui_message=dict(type="str"),
         gui_message_text=dict(type="str"),
         is_gui_message_text=dict(type="bool"),
-        message=dict(type="str"),
+        cli_message=dict(type="str"),
         show_banner_message=dict(type="bool"),
         switch_message=dict(type="str"),
         state=dict(type="str", default="present", choices=["present", "query"]),
@@ -239,7 +239,7 @@ def main():
     gui_message = module.params.get("gui_message")
     gui_message_text = module.params.get("gui_message_text")
     is_gui_message_text = aci.boolean(module.params.get("is_gui_message_text"))
-    message = module.params.get("message")
+    message = module.params.get("cli_message")
     show_banner_message = aci.boolean(module.params.get("show_banner_message"))
     switch_message = module.params.get("switch_message")
     state = module.params.get("state")

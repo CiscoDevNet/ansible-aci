@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2023, Tim Cragg (@timcragg) <tcragg@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,47 +11,28 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_config_export_policy
-short_description: Manage Configuration Export Policy (config:ExportP)
+module: aci_export_encryption
+short_description: Manage Global AES Passphrase Encryption Settings (pki:ExportEncryptionKey)
 description:
-- Manage Configuration Export Policies on Cisco ACI fabrics.
+- Manage Global AES Passphrase Encryption Settings on Cisco ACI fabrics.
 options:
-  name:
+  passphrase:
     description:
-    - The name of the Configuration Export Policy
+    - The AES passphrase to use for configuration export encryption.
+    - This cannot be modified once in place on the APIC. To modify an existing passphrase, you must delete it by sending a request with state C(absent).
+    - The value of the passphrase will not be shown in the results of a C(query).
     type: str
-  description:
+  strong_encryption:
     description:
-    - Description of the Configuration Export Policy
-    type: str
-  format:
-    description:
-    - Format of the export file.
-    - This defaults to json on the APIC when unset during creation.
-    type: str
-    choices: [ json, xml ]
-  target_dn:
-    description:
-    - The distinguished name of the object to be exported.
-    - If no target_dn is included, the APIC will export the policy universe.
-    type: str
-  snapshot:
-    description:
-    - Enables a snapshot of the configuration export policy.
+    - Enable strong encryption.
     - This defaults to False on the APIC when unset during creation.
+    - Note that this will be set back to False when deleting an existing passphrase.
     type: bool
-  export_destination:
-    description:
-    - The name of the remote path policy used for storing the generated configuration backup data for the configuration export policy.
-    type: str
-  scheduler:
-    description:
-    - The name of the scheduler policy used for running scheduled export jobs.
-    type: str
   state:
     description:
-    - Use C(present) or C(absent) for adding or removing.
-    - Use C(query) for listing an object or multiple objects.
+    - Use C(present) to create a passphrase or to change the strong_encryption setting.
+    - Use C(absent) to delete the existing passphrase.
+    - Use C(query) for showing current configuration.
     type: str
     choices: [ absent, present, query ]
     default: present
@@ -62,48 +42,40 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(config:ExportP).
+  description: More information about the internal APIC class B(pki:ExportEncryptionKey).
   link: https://developer.cisco.com/docs/apic-mim-ref/
-
 author:
 - Tim Cragg (@timcragg)
 """
 
 EXAMPLES = r"""
-- name: Add a Configuration Export Policy
-  cisco.aci.aci_config_export_policy:
+- name: Set a passphrase
+  cisco.aci.aci_export_encryption:
     host: apic
     username: admin
     password: SomeSecretPassword
-    name: ans_conf_export
+    passphrase: ansible_passphrase
+    strong_encryption: yes
     state: present
   delegate_to: localhost
 
-- name: Query a Configuration Export Policy
-  cisco.aci.aci_config_export_policy:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    name: ans_conf_export
-    state: query
-  delegate_to: localhost
-
-- name: Query all Configuration Export Policies
-  cisco.aci.aci_config_export_policy:
+- name: Query passphrase settings
+  cisco.aci.aci_export_encryption:
     host: apic
     username: admin
     password: SomeSecretPassword
     state: query
   delegate_to: localhost
+  register: query_result
 
-- name: Remove a Configuration Export Policies
-  cisco.aci.aci_file_remote_path:
+- name: Delete passphrase
+  cisco.aci.aci_export_encryption:
     host: apic
     username: admin
     password: SomeSecretPassword
-    name: ans_conf_export
     state: absent
   delegate_to: localhost
+
 """
 
 RETURN = r"""
@@ -212,90 +184,65 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        name=dict(type="str"),
-        description=dict(type="str"),
-        format=dict(type="str", choices=["json", "xml"]),
-        target_dn=dict(type="str"),
-        snapshot=dict(type="bool"),
-        export_destination=dict(type="str"),
-        scheduler=dict(type="str"),
+        passphrase=dict(type="str", no_log=True),
+        strong_encryption=dict(type="bool"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[
-            ["state", "present", ["name"]],
-            ["state", "absent", ["name"]],
-        ],
     )
 
     aci = ACIModule(module)
 
-    name = module.params.get("name")
-    description = module.params.get("description")
-    format = module.params.get("format")
-    target_dn = module.params.get("target_dn")
-    snapshot = aci.boolean(module.params.get("snapshot"))
-    export_destination = module.params.get("export_destination")
-    scheduler = module.params.get("scheduler")
+    passphrase = module.params.get("passphrase")
+    strong_encryption = aci.boolean(module.params.get("strong_encryption"))
     state = module.params.get("state")
 
     aci.construct_url(
         root_class=dict(
-            aci_class="configExportP",
-            aci_rn="fabric/configexp-{0}".format(name),
-            module_object=name,
-            target_filter={"name": name},
+            aci_class="pkiExportEncryptionKey",
+            aci_rn="exportcryptkey",
+            module_object=None,
+            target_filter=None,
         ),
-        child_classes=["configRsExportScheduler", "configRsRemotePath"],
     )
+
     aci.get_existing()
 
     if state == "present":
-        child_configs = []
-        if scheduler is not None:
-            child_configs.append(
-                dict(
-                    configRsExportScheduler=dict(
-                        attributes=dict(tnTrigSchedPName=scheduler),
-                    )
-                )
-            )
-        if export_destination is not None:
-            child_configs.append(
-                dict(
-                    configRsRemotePath=dict(
-                        attributes=dict(tnFileRemotePathName=export_destination),
-                    )
-                )
-            )
         aci.payload(
-            aci_class="configExportP",
+            aci_class="pkiExportEncryptionKey",
             class_config=dict(
-                name=name,
-                descr=description,
-                format=format,
-                targetDn=target_dn,
-                snapshot=snapshot,
+                passphrase=passphrase,
+                strongEncryptionEnabled=strong_encryption,
             ),
-            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class="configExportP")
+        aci.get_diff(aci_class="pkiExportEncryptionKey")
 
         aci.post_config()
 
     elif state == "absent":
-        aci.delete_config()
+        aci.payload(
+            aci_class="pkiExportEncryptionKey",
+            class_config=dict(
+                clearEncryptionKey="yes",
+            ),
+        )
+
+        aci.get_diff(aci_class="pkiExportEncryptionKey")
+
+        aci.post_config()
 
     aci.exit_json()
 

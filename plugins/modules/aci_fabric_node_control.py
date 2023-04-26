@@ -71,7 +71,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query Fabric Node Control
-  cisco.aci.aci_fabric_node_control
+  cisco.aci.aci_fabric_node_control:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -80,7 +80,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query All Fabric Node Controls
-  cisco.aci.aci_fabric_node_control
+  cisco.aci.aci_fabric_node_control:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -88,7 +88,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Delete Fabric Node Control
-  cisco.aci.aci_fabric_node_control
+  cisco.aci.aci_fabric_node_control:
     host: apic
     username: admin
     password: SomeSecretPassword

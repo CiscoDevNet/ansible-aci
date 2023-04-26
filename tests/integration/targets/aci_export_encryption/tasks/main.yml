@@ -20,59 +20,59 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
 
-  # CLEAN ENVIRONMENT
-  - name: Clear existing passphrase
-    cisco.aci.aci_export_encryption:
-      <<: *aci_info
-      state: absent
+# CLEAN ENVIRONMENT
+- name: Clear existing passphrase
+  cisco.aci.aci_export_encryption:
+    <<: *aci_info
+    state: absent
 
-  # SET PASSPHRASE
-  - name: Set passphrase
-    cisco.aci.aci_export_encryption:
-      <<: *aci_info
-      passphrase: ansible_passphrase
-      state: present
+# SET PASSPHRASE
+- name: Set passphrase
+  cisco.aci.aci_export_encryption:
+    <<: *aci_info
+    passphrase: ansible_passphrase
+    state: present
 
-  - name: Query passphrase
-    cisco.aci.aci_export_encryption:
-     <<: *aci_info
-     state: query
-    register: query_passphrase
+- name: Query passphrase
+  cisco.aci.aci_export_encryption:
+   <<: *aci_info
+   state: query
+  register: query_passphrase
 
-  - name: Set Strong Encryption
-    cisco.aci.aci_export_encryption:
-      <<: *aci_info
-      strong_encryption: yes
-      state: present
+- name: Set Strong Encryption
+  cisco.aci.aci_export_encryption:
+    <<: *aci_info
+    strong_encryption: yes
+    state: present
 
-  - name: Query Strong Encryption
-    cisco.aci.aci_export_encryption:
-     <<: *aci_info
-     state: query
-    register: query_encryption
+- name: Query Strong Encryption
+  cisco.aci.aci_export_encryption:
+   <<: *aci_info
+   state: query
+  register: query_encryption
 
-  - name: Verify Passphrase Creation
-    ansible.builtin.assert:
-      that:
-      - query_passphrase.current.0.pkiExportEncryptionKey.attributes.keyConfigured == "yes"
-      - query_passphrase.current.0.pkiExportEncryptionKey.attributes.strongEncryptionEnabled == "no"
-      - query_encryption.current.0.pkiExportEncryptionKey.attributes.keyConfigured == "yes"
-      - query_encryption.current.0.pkiExportEncryptionKey.attributes.strongEncryptionEnabled == "yes"
+- name: Verify Passphrase Creation
+  ansible.builtin.assert:
+    that:
+    - query_passphrase.current.0.pkiExportEncryptionKey.attributes.keyConfigured == "yes"
+    - query_passphrase.current.0.pkiExportEncryptionKey.attributes.strongEncryptionEnabled == "no"
+    - query_encryption.current.0.pkiExportEncryptionKey.attributes.keyConfigured == "yes"
+    - query_encryption.current.0.pkiExportEncryptionKey.attributes.strongEncryptionEnabled == "yes"
 
-  # CLEAR PASSPHRASE
-  - name: Delete passphrase
-    cisco.aci.aci_export_encryption:
-      <<: *aci_info
-      state: absent
+# CLEAR PASSPHRASE
+- name: Delete passphrase
+  cisco.aci.aci_export_encryption:
+    <<: *aci_info
+    state: absent
 
-  - name: Query deleted passphrase
-    cisco.aci.aci_export_encryption:
-      <<: *aci_info
-      state: query
-    register: query_deletion
+- name: Query deleted passphrase
+  cisco.aci.aci_export_encryption:
+    <<: *aci_info
+    state: query
+  register: query_deletion
 
-  - name: Verify deletion
-    ansible.builtin.assert:
-      that:
-      - query_deletion.current.0.pkiExportEncryptionKey.attributes.keyConfigured == "no"
-      - query_deletion.current.0.pkiExportEncryptionKey.attributes.strongEncryptionEnabled == "no"
+- name: Verify deletion
+  ansible.builtin.assert:
+    that:
+    - query_deletion.current.0.pkiExportEncryptionKey.attributes.keyConfigured == "no"
+    - query_deletion.current.0.pkiExportEncryptionKey.attributes.strongEncryptionEnabled == "no"

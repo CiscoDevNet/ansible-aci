@@ -95,8 +95,8 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    disable_remote_ep_learning: yes
-    enforce_epg_vlan_validation
+    disable_remote_ep_learning: true
+    enforce_epg_vlan_validation: true
     state: present
   delegate_to: localhost
 
