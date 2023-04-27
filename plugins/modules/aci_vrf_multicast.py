@@ -31,6 +31,7 @@ options:
   mtu:
     description:
     - The MTU size supported for multicast.
+    - The APIC defaults to C(1500) when unset during creation.
     type: int
   state:
     description:
@@ -42,6 +43,7 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
+- cisco.aci.owner
 
 notes:
 - The C(tenant) and C(vrf) must exist before using this module in your playbook.
@@ -195,12 +197,13 @@ RETURN = r"""
    """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", required=True),
         vrf=dict(type="str", required=True),

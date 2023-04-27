@@ -120,6 +120,7 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
+- cisco.aci.owner
 
 notes:
 - The C(tenant) and C(vrf) must exist before using this module in your playbook.
@@ -280,12 +281,13 @@ RETURN = r"""
 import re
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         name=dict(type="str", aliases=["policy_group"]),
         description=dict(type="str"),

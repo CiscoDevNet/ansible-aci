@@ -29,12 +29,12 @@ options:
   enable_dom:
     description:
     - Enable digital optical monitoring (DOM) for the fabric node control.
-    - This defaults to false on the APIC when unset during creation.
+   - The APIC defaults to C(false) when unset during creation.
     type: bool
   feature_selection:
     description:
     - The feature selection for the Node Control.
-    - This defaults to telemetry on the APIC when unset during creation.
+    - The APIC defaults to C(telemetry) when unset during creation.
     type: str
     choices: [ analytics, netflow, telemetry ]
     aliases: [ feature ]
@@ -48,6 +48,7 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
+- cisco.aci.owner
 
 seealso:
 - name: APIC Management Information Model reference
@@ -203,12 +204,13 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         name=dict(type="str", aliases=["fabric_node_control"]),
         description=dict(type="str"),
