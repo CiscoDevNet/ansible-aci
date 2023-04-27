@@ -201,6 +201,7 @@
       address_type_controls:
         - af-ucast
       ttl: 2
+      local_as_number_config: "replace-as"
       state: present
     register: add_eth_bgp_peer
     when: version.current.0.topSystem.attributes.version is version('4', '>=')
@@ -239,6 +240,8 @@
         - add_eth_bgp_peer.current.0.bgpPeerP.attributes.peerCtrl == "bfd"
         - add_eth_bgp_peer.current.0.bgpPeerP.attributes.ttl == "2"
         - add_eth_bgp_peer.current.0.bgpPeerP.attributes.annotation == 'orchestrator:ansible'
+        - add_eth_bgp_peer.current.0.bgpPeerP.children.0.bgpLocalAsnP.attributes.asnPropagate == "replace-as"
+        - add_eth_bgp_peer.current.0.bgpPeerP.children.0.bgpLocalAsnP.attributes.localAsn == "0"
     when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
   - name: verify BGP peer has been created with correct attributes (version < 4)
@@ -255,7 +258,7 @@
   - name: verify remote AS object has been created correctly
     assert:
       that:
-        - add_eth_bgp_peer.current.0.bgpPeerP.children.1.bgpAsP.attributes.asn == "65456"
+        - add_eth_bgp_peer.current.0.bgpPeerP.children.2.bgpAsP.attributes.asn == "65456"
     when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
   - name: verify remote AS object has been created correctly
@@ -340,7 +343,7 @@
   - name: verify remote AS object is still correct (version >= 4)
     assert:
       that:
-        - add_eth_bgp_peer_again.current.0.bgpPeerP.children.1.bgpAsP.attributes.asn == "65456"
+        - add_eth_bgp_peer_again.current.0.bgpPeerP.children.2.bgpAsP.attributes.asn == "65456"
     when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
   - name: verify remote AS object his still correct (version < 4)
@@ -376,6 +379,8 @@
       allow_self_as_count: 3
       ttl: 4
       admin_state: disabled
+      local_as_number: 101
+      local_as_number_config: "dual-as"
       state: present
     register: update_eth_bgp_peer
     when: version.current.0.topSystem.attributes.version is version('4', '>=')
@@ -419,6 +424,8 @@
         - update_eth_bgp_peer.current.0.bgpPeerP.attributes.ttl == "4"
         - update_eth_bgp_peer.current.0.bgpPeerP.attributes.allowedSelfAsCnt == "3"
         - update_eth_bgp_peer.current.0.bgpPeerP.attributes.privateASctrl == "remove-exclusive"
+        - update_eth_bgp_peer.current.0.bgpPeerP.children.0.bgpLocalAsnP.attributes.asnPropagate == "dual-as"
+        - update_eth_bgp_peer.current.0.bgpPeerP.children.0.bgpLocalAsnP.attributes.localAsn == "101"
     when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
   - name: verify BGP peer has been updated with correct attributes (version < 4)
@@ -437,7 +444,7 @@
   - name: verify remote AS object has been updated correctly (version >= 4)
     assert:
       that:
-        - update_eth_bgp_peer.current.0.bgpPeerP.children.1.bgpAsP.attributes.asn == "65457"
+        - update_eth_bgp_peer.current.0.bgpPeerP.children.2.bgpAsP.attributes.asn == "65457"
     when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
   - name: verify remote AS object has been updated correctly (version < 4)
@@ -508,7 +515,7 @@
   - name: verify BGP remote AS (version >= 4)
     assert:
       that:
-        - query_eth_bgp_peer.current.0.bgpPeerP.children.1.bgpAsP.attributes.asn == "65457"
+        - query_eth_bgp_peer.current.0.bgpPeerP.children.2.bgpAsP.attributes.asn == "65457"
     when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
   - name: verify BGP remote AS (version < 4)
@@ -641,6 +648,8 @@
               profile: "anstest_export"
               direction: "export"
               l3out: "anstest_l3out"
+          local_as_number_config: "dual-as"
+          local_as_number: 100
           state: present
         check_mode: true
         register: cm_ln_rtctrl_present
@@ -668,6 +677,8 @@
             - nm_ln_rtctrl_present.previous | length == 0
             - nm_ln_rtctrl_present.current.0.bgpPeerP.attributes.addr == "192.168.50.3"
             - nm_ln_rtctrl_present.current.0.bgpPeerP.children | length >= 2
+            - nm_ln_rtctrl_present.current.0.bgpPeerP.children.2.bgpLocalAsnP.attributes.asnPropagate == "dual-as"
+            - nm_ln_rtctrl_present.current.0.bgpPeerP.children.2.bgpLocalAsnP.attributes.localAsn == "100"
 
       - name: Add BGP Peer to the Node Profile level (version >= 4) - normal mode - idempotency works
         aci_l3out_bgp_peer:
