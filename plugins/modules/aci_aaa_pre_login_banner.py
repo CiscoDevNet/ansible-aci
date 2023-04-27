@@ -28,7 +28,7 @@ options:
   banner_message_severity:
     description:
     - The Application Banner Severity.
-    - This defaults to info when unset on the APIC.
+    - The APIC defaults to C(info) when unset during creation.
     type: str
     choices: [ critical, info, major, minor, warning ]
   gui_message:
@@ -44,18 +44,18 @@ options:
   is_gui_message_text:
     description:
     - Use text-based pre-login GUI banner message.
-    - This defaults to false when unset on the APIC.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   cli_message:
     description:
     - The contents of the CLI informational banner to be displayed before user login authentication.
     - The CLI banner is a text based string printed as-is to the console.
-    - This defaults to "Application Policy Infrastructure Controller" when unset on the APIC.
+    - The APIC defaults to I(Application Policy Infrastructure Controller) when unset during creation.
     type: str
   show_banner_message:
     description:
-    - Show Application Banner.
-    - This defaults to false when unset on the APIC.
+    - Whether to show the application banner.
+   - The APIC defaults to C(false) when unset during creation.
     type: bool
   switch_message:
     description:
@@ -70,6 +70,8 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 seealso:
 - name: APIC Management Information Model reference
@@ -209,11 +211,13 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         description=dict(type="str"),
         banner_message=dict(type="str"),

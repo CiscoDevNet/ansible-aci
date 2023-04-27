@@ -25,7 +25,7 @@ options:
   strong_encryption:
     description:
     - Enable strong encryption.
-    - This defaults to False on the APIC when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     - Note that this will be set back to False when deleting an existing passphrase.
     type: bool
   state:
@@ -39,6 +39,7 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
+- cisco.aci.owner
 
 seealso:
 - name: APIC Management Information Model reference
@@ -184,12 +185,13 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         passphrase=dict(type="str", no_log=True),
         strong_encryption=dict(type="bool"),
