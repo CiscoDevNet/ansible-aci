@@ -83,10 +83,7 @@ options:
     - The APIC defaults to C(private) when unset during creation.
     type: list
     elements: str
-    choices:
-      - private
-      - public
-      - shared
+    choices: [ private, public, shared ]
   subnet_control:
     description:
     - Determines the Subnet's Control State.
