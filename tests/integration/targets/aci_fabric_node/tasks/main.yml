@@ -8,38 +8,51 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
 
 # CLEAN ENVIRONMENT
 - name: Remove fabric node
   cisco.aci.aci_fabric_node: &aci_fabric_node_absent
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     serial: ansible_test
     node_id: 105
     state: absent
 
+- name: Remove fabric node 2
+  cisco.aci.aci_fabric_node: &aci_fabric_node_absent_2
+    <<: *aci_info
+    serial: ansible_test_2
+    node_id: 106
+    state: absent
 
 # ADD FABRIC NODE
-- name: Add fabric node (check_mode)
+- name: Add fabric node with tier-2 leaf (check_mode)
   cisco.aci.aci_fabric_node: &aci_fabric_node_present
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
-    serial: ansible_test
-    node_id: 105
+    <<: *aci_fabric_node_absent
     switch: anstest
+    role: leaf
+    node_type: tier-2
     state: present
   check_mode: true
-  register: cm_add_fabric_node
+  register: cm_add_fabric_node_tier_2
+
+- name: Add fabric node with remote leaf
+  cisco.aci.aci_fabric_node: &aci_fabric_node_present_2
+    <<: *aci_fabric_node_absent_2
+    switch: anstest_2
+    role: leaf
+    remote_leaf_pool_id: 2
+    state: present
+  register: nm_add_fabric_node_remote
 
 - name: Add fabric node (normal mode)
   cisco.aci.aci_fabric_node: *aci_fabric_node_present
@@ -54,15 +67,28 @@
   cisco.aci.aci_fabric_node: *aci_fabric_node_present
   register: nm_add_fabric_node_again
 
+- name: test error - mutually exclusive attributes
+  cisco.aci.aci_fabric_node:
+    <<: *aci_fabric_node_present_2
+    node_type: tier-2
+  register: test_error_fabric_node
+  ignore_errors: true
+
 - name: Verify add_fabric_node
   assert:
     that:
-    - cm_add_fabric_node is changed
+    - cm_add_fabric_node_tier_2 is changed
     - nm_add_fabric_node is changed
     - nm_add_fabric_node.current.0.fabricNodeIdentP.attributes.annotation == 'orchestrator:ansible'
+    - nm_add_fabric_node.current.0.fabricNodeIdentP.attributes.role == 'leaf'
+    - nm_add_fabric_node.current.0.fabricNodeIdentP.attributes.nodeType == 'tier-2-leaf'
+    - nm_add_fabric_node_remote is changed
+    - nm_add_fabric_node_remote.current.0.fabricNodeIdentP.attributes.nodeType == 'remote-leaf-wan'
+    - nm_add_fabric_node_remote.current.0.fabricNodeIdentP.attributes.extPoolId == '2'
     # FIXME: Module is not idempotent
     - cm_add_fabric_node_again is not changed
     - nm_add_fabric_node_again is not changed
+    - test_error_fabric_node.msg == "parameters are mutually exclusive: node_type|remote_leaf_pool_id"
 
 
 # CHANGE FABRIC NODE

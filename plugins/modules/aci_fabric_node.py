@@ -46,6 +46,15 @@ options:
     type: str
     aliases: [ role_name ]
     choices: [ leaf, spine, unspecified ]
+  node_type:
+    description:
+    - Type for the new Fabric Node Member.
+    type: str
+    choices: [ tier_2, remote, virtual, unspecified ]
+  remote_leaf_pool_id:
+    description:
+    - External Pool Id for remote leaf.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -61,6 +70,8 @@ extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
+notes:
+- C(node_type) and C(remote_leaf_pool_id) are mutually exclusive as adding an External Pool Id will automatically switch the type of the node to C(remote).
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fabric:NodeIdentP).
@@ -207,6 +218,7 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.cisco.aci.plugins.module_utils.constants import NODE_TYPE_MAPPING
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
@@ -222,6 +234,8 @@ def main():
         node_id=dict(type="int"),  # Not required for querying all objects
         pod_id=dict(type="int"),
         role=dict(type="str", choices=["leaf", "spine", "unspecified"], aliases=["role_name"]),
+        node_type=dict(type="str", choices=["tier_2", "virtual", "unspecified"]),
+        remote_leaf_pool_id=dict(type="str"),
         serial=dict(type="str", aliases=["serial_number"]),  # Not required for querying all objects
         switch=dict(type="str", aliases=["name", "switch_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -235,6 +249,7 @@ def main():
             ["state", "absent", ["node_id", "serial"]],
             ["state", "present", ["node_id", "serial"]],
         ],
+        mutually_exclusive=[("node_type", "remote_leaf_pool_id")],
     )
 
     pod_id = module.params.get("pod_id")
@@ -243,10 +258,19 @@ def main():
     switch = module.params.get("switch")
     description = module.params.get("description")
     role = module.params.get("role")
+    node_type = module.params.get("node_type")
+    remote_leaf_pool_id = module.params.get("remote_leaf_pool_id")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
+
+    if node_type is not None:
+        node_type = NODE_TYPE_MAPPING.get(node_type)
+
+    if remote_leaf_pool_id is not None:
+        node_type = NODE_TYPE_MAPPING.get("remote")
+
     aci.construct_url(
         root_class=dict(
             aci_class="fabricNodeIdentP",
@@ -271,6 +295,8 @@ def main():
                 dn="uni/controller/nodeidentpol/nodep-{0}".format(serial),
                 # rn='nodep-{0}'.format(serial),
                 role=role,
+                nodeType=node_type,
+                extPoolId=remote_leaf_pool_id,
                 serial=serial,
                 nameAlias=name_alias,
             ),
