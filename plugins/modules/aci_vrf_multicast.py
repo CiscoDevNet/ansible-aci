@@ -22,12 +22,10 @@ options:
     description:
     - The name of an existing tenant.
     type: str
-    required: yes
   vrf:
     description:
     - The name of an existing VRF.
     type: str
-    required: yes
   mtu:
     description:
     - The MTU size supported for multicast.
@@ -85,6 +83,15 @@ EXAMPLES = r"""
     password: SomeSecretePassword
     tenant: ansible_tenant
     vrf: ansible_vrf
+    state: query
+    delegate_to: localhost
+    register: query_result
+
+- name: Query Multicast Settings on all VRFs
+  cisco.aci.aci_vrf_multicast:
+    host: apic
+    username: admin
+    password: SomeSecretePassword
     state: query
     delegate_to: localhost
     register: query_result
@@ -205,8 +212,8 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        tenant=dict(type="str", required=True),
-        vrf=dict(type="str", required=True),
+        tenant=dict(type="str"),
+        vrf=dict(type="str"),
         mtu=dict(type="int"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -214,6 +221,10 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
+        required_if=[
+            ["state", "absent", ["tenant", "vrf"]],
+            ["state", "present", ["tenant", "vrf"]],
+        ],
     )
 
     tenant = module.params.get("tenant")
@@ -238,8 +249,7 @@ def main():
         subclass_2=dict(
             aci_class="pimCtxP",
             aci_rn="pimctxp",
-            module_object=None,
-            target_filter=None,
+            target_filter={"name": ""}
         ),
     )
 

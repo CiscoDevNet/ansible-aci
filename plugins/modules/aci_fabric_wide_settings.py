@@ -19,56 +19,69 @@ options:
   disable_remote_ep_learning:
     description:
     - Disable remote endpoint learning in VRFs containing external bridged/routed domains.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   enforce_subnet_check:
     description:
     - Disable IP address learning on the outside of subnets configured in a VRF, for all VRFs.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   enforce_epg_vlan_validation:
     description:
     - Validation check that prevents overlapping VLAN pools from being associated to an EPG.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   enforce_domain_validation:
     description:
     - Validation check if a static path is added but no domain is associated to an EPG.
     - Asking for domain validation is a one time operation. Once enabled, it cannot be disabled.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   spine_opflex_client_auth:
     description:
     - Enforce Opflex client certificate authentication on spine switches for GOLF and Linux.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   leaf_opflex_client_auth:
     description:
     - Enforce Opflex client certificate authentication on leaf switches for GOLF and Linux.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   spine_ssl_opflex:
     description:
     - Enable SSL Opflex transport for spine switches.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   leaf_ssl_opflex:
     description:
     - Enable SSL Opflex transport for leaf switches.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   ssl_opflex_tls_10:
     description:
     - Enable Opflex TLS1.0.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   ssl_opflex_tls_11:
     description:
     - Enable Opflex TLS1.1.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   ssl_opflex_tls_12:
     description:
     - Enable Opflex TLS1.2.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   reallocate_gipo:
     description:
     - Reallocate some non-stretched BD gipos to make room for stretched BDs.
     - Asking for gipo reallocation is a one time operation. Once enabled, it cannot be disabled.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   restrict_infra_vlan_traffic:
     description:
     - Restrict infra VLAN traffic to only specified network paths. These enabled network paths are defined by infra security entry policies.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   state:
     description:
@@ -269,8 +282,6 @@ def main():
         root_class=dict(
             aci_class="infraSetPol",
             aci_rn="infra/settings",
-            module_object=None,
-            target_filter=None,
         ),
     )
 

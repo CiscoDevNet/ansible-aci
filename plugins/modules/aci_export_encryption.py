@@ -213,8 +213,6 @@ def main():
         root_class=dict(
             aci_class="pkiExportEncryptionKey",
             aci_rn="exportcryptkey",
-            module_object=None,
-            target_filter=None,
         ),
     )
 

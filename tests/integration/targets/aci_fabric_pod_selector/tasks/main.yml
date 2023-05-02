@@ -25,7 +25,7 @@
     <<: *aci_info
     pod_profile: default
     name: ansible_fabric_pod_sel
-    selector_type: ALL
+    selector_type: all
     state: absent
 
 - name: Remove the ansible_fabric_pod_pol_grp1 Policy Group
@@ -57,7 +57,7 @@
     pod_profile: default
     name: ansible_fabric_pod_sel
     description: Ansible Pod Selector
-    selector_type: ALL
+    selector_type: all
     policy_group: ansible_fabric_pod_pol_grp1
   check_mode: yes
   register: cm_create_pod_sel

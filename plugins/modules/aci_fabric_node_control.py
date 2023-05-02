@@ -29,7 +29,7 @@ options:
   enable_dom:
     description:
     - Enable digital optical monitoring (DOM) for the fabric node control.
-   - The APIC defaults to C(false) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   feature_selection:
     description:

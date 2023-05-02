@@ -29,86 +29,107 @@ options:
   spanning_tree_policy:
     description:
     - The spanning tree policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   bfd_ipv4_policy:
     description:
     - The BFD IPv4 policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   bfd_ipv6_policy:
     description:
     - The BFD IPv6 policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   bfd_multihop_ipv4_policy:
     description:
     - The BFD multihop IPv4 policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   bfd_multihop_ipv6_policy:
     description:
     - The BFD multihop IPv6 policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   fibre_channel_node_policy:
     description:
     - The fibre channel node policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   poe_node_policy:
     description:
     - The PoE node policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   fibre_channel_san_policy:
     description:
     - The fibre channel SAN policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   monitoring_policy:
     description:
     - The monitoring policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   netflow_node_policy:
     description:
     - The netflow node policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   copp_leaf_policy:
     description:
     - The CoPP leaf policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   forward_scale_profile_policy:
     description:
     - The forward scale profile policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   fast_link_failover_policy:
     description:
     - The fast link failover policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   node_802_1x_authentication_policy:
     description:
     - The 802.1x node authentication policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   copp_pre_filter_policy:
     description:
     - The CoPP pre-filter policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   equipment_flash_policy:
     description:
     - The equipment flash policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   cdp_policy:
     description:
     - The CDP policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   lldp_policy:
     description:
     - The LLDP policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   synce_node_policy:
     description:
     - The SyncE node policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   ptp_node_policy:
     description:
     - The PTP node policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   usb_configuration_policy:
     description:
     - The USB configuration policy bound to the access switch policy group.
+    - The APIC defaults to C("") when unset during creation.
     type: str
   state:
     description:

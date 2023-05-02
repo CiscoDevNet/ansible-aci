@@ -16,12 +16,12 @@ short_description: Manage IP Aging Control (ep:IpAgingP)
 description:
 - Manage IP Aging Control on Cisco ACI fabrics.
 options:
-  enabled:
+  admin_state:
     description:
     - Enable IP Aging Controls on the fabric.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
-    aliases: [ admin_enabled ]
+    aliases: [ admin_enabled, enabled ]
   state:
     description:
     - Use C(present) for updating configuration.
@@ -48,7 +48,16 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    enabled: yes
+    admin_state: true
+    state: present
+  delegate_to: localhost
+
+- name: Enable IP Aging
+  cisco.aci.aci_ip_aging:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    admin_state: false
     state: present
   delegate_to: localhost
 
@@ -177,7 +186,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        enabled=dict(type="bool", aliases=["admin_enabled"]),
+        admin_state=dict(type="bool", aliases=["admin_enabled", "enabled"]),
         state=dict(type="str", default="present", choices=["present", "query"]),
     )
 
@@ -185,21 +194,19 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "present", ["enabled"]],
+            ["state", "present", ["admin_state"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    enabled = aci.boolean(module.params.get("enabled"), "enabled", "disabled")
+    admin_state = aci.boolean(module.params.get("admin_state"), "enabled", "disabled")
     state = module.params.get("state")
 
     aci.construct_url(
         root_class=dict(
             aci_class="epIpAgingP",
             aci_rn="infra/ipAgingP-default",
-            module_object=None,
-            target_filter=None,
         ),
     )
 
@@ -209,7 +216,7 @@ def main():
         aci.payload(
             aci_class="epIpAgingP",
             class_config=dict(
-                adminSt=enabled,
+                adminSt=admin_state,
             ),
         )
 

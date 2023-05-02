@@ -35,6 +35,7 @@ options:
     description:
     - The contents of the GUI informational banner to be displayed before user login authentication.
     - The value is defined as a URL of a site hosting the desired HTML.
+    - The I(http://) or I(https://) prefix does not need to be included.
     - Note that the URL site owner must allow the site to be placed in an iFrame to display the informational banner.
     type: str
   gui_message_text:
@@ -46,6 +47,13 @@ options:
     - Use text-based pre-login GUI banner message.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
+  gui_message_proto:
+    description:
+    - The protocol used for the GUI message.
+    - This is only used when is_gui_message_text is C(false), and gui_message does not start with either http:// or https://
+    type: str
+    choices: [ http, https ]
+    default: https
   cli_message:
     description:
     - The contents of the CLI informational banner to be displayed before user login authentication.
@@ -55,7 +63,7 @@ options:
   show_banner_message:
     description:
     - Whether to show the application banner.
-   - The APIC defaults to C(false) when unset during creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   switch_message:
     description:
@@ -225,6 +233,7 @@ def main():
         gui_message=dict(type="str"),
         gui_message_text=dict(type="str"),
         is_gui_message_text=dict(type="bool"),
+        gui_message_proto=dict(type="str", default="https", choices=["http", "https"]),
         cli_message=dict(type="str"),
         show_banner_message=dict(type="bool"),
         switch_message=dict(type="str"),
@@ -243,6 +252,7 @@ def main():
     gui_message = module.params.get("gui_message")
     gui_message_text = module.params.get("gui_message_text")
     is_gui_message_text = aci.boolean(module.params.get("is_gui_message_text"))
+    gui_message_proto = module.params.get()
     message = module.params.get("cli_message")
     show_banner_message = aci.boolean(module.params.get("show_banner_message"))
     switch_message = module.params.get("switch_message")
@@ -252,15 +262,13 @@ def main():
         root_class=dict(
             aci_class="aaaPreLoginBanner",
             aci_rn="userext/preloginbanner",
-            module_object=None,
-            target_filter=None,
         ),
     )
     aci.get_existing()
 
     if state == "present":
         if gui_message is not None and is_gui_message_text == "no" and not gui_message.startswith(("http://", "https://")):
-            aci.fail_json(msg="gui_message must begin with either 'http://' or 'https://' when is_gui_message_text is false")
+            gui_message = "{0}://{1}".format(gui_message_proto, gui_message)
 
         aci.payload(
             aci_class="aaaPreLoginBanner",

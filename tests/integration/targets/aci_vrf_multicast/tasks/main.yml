@@ -40,6 +40,13 @@
     vrf: ansible_vrf
     state: present
 
+- name: Create ansible_second_vrf
+  cisco.aci.aci_vrf: &aci_second_vrf
+    <<: *aci_info
+    tenant: ansible_tenant
+    vrf: ansible_second_vrf
+    state: present
+
 # ENABLE MULTICAST
 - name: Enable multicast on VRF (check mode)
   cisco.aci.aci_vrf_multicast:
@@ -59,6 +66,10 @@
     <<: *aci_vrf
     mtu: 2500
   register: nm_enable_multicast_again
+
+- name: Enable multicast on second VRF
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_second_vrf
 
 - name: Check multicast object creation
   ansible.builtin.assert:
@@ -94,6 +105,18 @@
     that:
     - query_multicast is not changed
     - query_multicast.current.0.fvCtx.children.0.pimCtxP.attributes.mtu == "2000"
+
+- name: Query multicast on all VRFs
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Check multicast all VRF query
+  ansible.builtin.assert:
+    that:
+    - query_all is not changed
+    - query_all.current | length > 1
 
 # DISABLE MULTICAST
 - name: Disable multicast on VRF

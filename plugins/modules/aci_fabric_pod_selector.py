@@ -215,6 +215,11 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
+SELECTOR_TYPE_MAPPING = dict(
+    all="ALL",
+    range="range",
+)
+
 
 def main():
     argument_spec = aci_argument_spec()
@@ -244,7 +249,10 @@ def main():
     name_alias = module.params.get("name_alias")
     pod_profile = module.params.get("pod_profile")
     name = module.params.get("name")
-    selector_type = module.params.get("selector_type")
+    if module.params.get("selector_type") is not None:
+        selector_type = SELECTOR_TYPE_MAPPING[module.params.get("selector_type")]
+    else:
+        selector_type = None
     policy_group = module.params.get("policy_group")
     description = module.params.get("description")
     state = module.params.get("state")
@@ -262,7 +270,7 @@ def main():
             aci_class="fabricPodS",
             aci_rn="pods-{0}-typ-{1}".format(name, selector_type),
             module_object=name,
-            target_filter={"name": name},
+            target_filter={"name": name, "type": selector_type},
         ),
         child_classes=child_classes,
     )
