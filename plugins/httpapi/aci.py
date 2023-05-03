@@ -83,7 +83,7 @@ class HttpApi(HttpApiBase):
     def login(self, username, password):
         """Log in to APIC"""
         # Perform login request
-        self.connection.queue_message("debug", "Establishing login to {0}".format(self.connection.get_option("host")))
+        self.connection.queue_message("debug", "Establishing login for {0} to {1}".format(username, self.connection.get_option("host")))
         method = "POST"
         path = "/api/aaaLogin.json"
         payload = {"aaaUser": {"attributes": {"name": username, "pwd": password}}}
@@ -124,7 +124,7 @@ class HttpApi(HttpApiBase):
             connection_parameters[key] = value
             if self.connection_parameters and value != self.connection_parameters.get(key) and key in RESET_KEYS:
                 self.connection._connected = False
-                self.connection.queue_message("step", "Re-setting connection due to change in {0}".format(key))
+                self.connection.queue_message("debug", "Re-setting connection due to change in {0}".format(key))
 
         if self.params.get("private_key") is not None:
             self.connection.set_option("session_key", None)
@@ -136,7 +136,7 @@ class HttpApi(HttpApiBase):
         else:
             if self.connection_parameters.get("private_key") is not None:
                 self.connection._connected = False
-                self.connection.queue_message("step", "Re-setting connection due to change from private/session key authentication to password authentication")
+                self.connection.queue_message("debug", "Re-setting connection due to change from private/session key authentication to password authentication")
             self.connection.set_option("session_key", None)
             connection_parameters["private_key"] = None
             connection_parameters["certificate_name"] = None
@@ -228,6 +228,9 @@ class HttpApi(HttpApiBase):
 
     # Built-in-function
     def handle_httperror(self, exc):
+        self.connection.queue_message(
+            "debug", "Failed to receive response from {0} with {1}".format(self.connection.get_option("host"), exc)
+        )
         if exc.code == 401:
             raise ConnectionError(exc)
         elif exc.code == 403 and self.connection_parameters.get("private_key") is None:

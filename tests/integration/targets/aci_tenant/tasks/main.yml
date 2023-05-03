@@ -9,9 +9,8 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
-- include_tasks: httpapi_inventory_password.yml
-  tags: httpapi_inventory_password
-  when: inventory_hostname == play_hosts[6]
+- include_tasks: httpapi_connection.yml
+  tags: httpapi_connection
 
 - name: Delete old log files to clean test directory
   file:

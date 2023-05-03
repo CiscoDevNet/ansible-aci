@@ -303,9 +303,8 @@ def get_preview(aci):
     This function is used to generate a preview between two snapshots and add the parsed results to the aci module return data.
     """
     uri = aci.url + aci.filter_string
-    path = aci.path + aci.filter_string
 
-    resp, info = aci.api_call('GET', path, uri, data=None, output=True)
+    resp, info = aci.api_call('GET', uri, data=None, output=True)
 
     # Handle APIC response
     if info.get("status") == 200:

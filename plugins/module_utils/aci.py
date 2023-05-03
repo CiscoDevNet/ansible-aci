@@ -48,6 +48,7 @@ import base64
 import json
 import os
 from copy import deepcopy
+from urllib.parse import urlparse
 
 from ansible.module_utils.urls import fetch_url
 from ansible.module_utils._text import to_bytes, to_native
@@ -423,7 +424,7 @@ class ACIModule(object):
                 }
             }
         }
-        resp, auth = self.api_call("POST", None, url, data=json.dumps(payload), output=True)
+        resp, auth = self.api_call("POST", url, data=json.dumps(payload), output=True)
 
         # Handle APIC response
         if auth.get("status") != 200:
@@ -1145,7 +1146,7 @@ class ACIModule(object):
             return
         elif not self.module.check_mode:
             # Sign and encode request as to APIC's wishes
-            self.api_call("DELETE", self.path, self.url, None, output=False)
+            self.api_call("DELETE", self.url, None, output=False)
         else:
             self.result["changed"] = True
             self.method = "DELETE"
@@ -1267,9 +1268,8 @@ class ACIModule(object):
         and existing configuration will be added to the self.result dictionary.
         """
         uri = self.url + self.filter_string
-        path = self.path + self.filter_string
 
-        self.api_call("GET", path, uri, data=None, output=False)
+        self.api_call("GET", uri, data=None, output=False)
 
     @staticmethod
     def get_nested_config(proposed_child, existing_children):
@@ -1390,6 +1390,7 @@ class ACIModule(object):
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             url = self.url
             if parent_class is not None:
                 if self.params.get("port") is not None:
@@ -1441,6 +1442,9 @@ class ACIModule(object):
 =======
             self.api_call("POST", self.path, self.url, json.dumps(self.config), output=False)
 >>>>>>> 88b1ff5 ([minor_change] Removed different functions to make requests which can now be done by using just one function)
+=======
+            self.api_call("POST", self.url, json.dumps(self.config), output=False)
+>>>>>>> f20fdfe ([ignore_changes] New test file created)
         else:
             self.result["changed"] = True
             self.method = "POST"
@@ -1559,6 +1563,7 @@ class ACIModule(object):
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     def delete_config_request(self, path):
         self._config_request(path, "absent")
         self.result["changed"] = True
@@ -1610,15 +1615,19 @@ def ospf_spec():
 =======
     def api_call(self, method, path, url, data=None, output=False):
 >>>>>>> 88b1ff5 ([minor_change] Removed different functions to make requests which can now be done by using just one function)
+=======
+    def api_call(self, method, url, data=None, output=False):
+>>>>>>> f20fdfe ([ignore_changes] New test file created)
         resp = None
-        if self.params.get("private_key"):
-            self.cert_auth(path=path, payload=data, method=method)
+        path = urlparse(url).path
         if self.get_connection() is not None:
             self.get_connection().set_params(self.params)
-            info = self.get_connection().send_request(method, "/{0}".format(path), data)
+            info = self.get_connection().send_request(method, path, data)
             self.url = info.get("url")
             self.httpapi_logs.extend(self.get_connection().pop_messages())
         else:
+            if self.params.get("private_key"):
+                self.cert_auth(path=path, payload=data, method=method)
             resp, info = fetch_url(
                 self.module,
                 url,
@@ -1629,7 +1638,6 @@ def ospf_spec():
                 use_proxy=self.params.get("use_proxy", True),
             )
 
-        
         self.response = info.get("msg")
         self.status = info.get("status")
         self.method = method

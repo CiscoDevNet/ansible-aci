@@ -334,6 +334,7 @@ def main():
         method=dict(type="str", default="get", choices=["delete", "get", "post"], aliases=["action"]),
         src=dict(type="path", aliases=["config_file"]),
         content=dict(type="raw"),
+        rsp_subtree_preserve=dict(type=bool, default=False),
     )
 
     module = AnsibleModule(
@@ -344,6 +345,7 @@ def main():
     content = module.params.get("content")
     path = module.params.get("path")
     src = module.params.get("src")
+    rsp_subtree_preserve = module.params.get("rsp_subtree_preserve")
 
     # Report missing file
     file_exists = False
@@ -402,14 +404,14 @@ def main():
         aci.url = "%(protocol)s://%(host)s:%(port)s/" % aci.params + path.lstrip("/")
     else:
         aci.url = "%(protocol)s://%(host)s/" % aci.params + path.lstrip("/")
-    if aci.params.get("method") != "get":
-        path += "?rsp-subtree=modified"
+    if aci.params.get("method") != "get" and not rsp_subtree_preserve:
+        #path += "?rsp-subtree=modified"
         aci.url = update_qsl(aci.url, {"rsp-subtree": "modified"})
 
     method = aci.params.get("method").upper()
 
     # Perform request
-    resp, info = aci.api_call(method, path, aci.url, data=payload, output=True)
+    resp, info = aci.api_call(method, aci.url, data=payload, output=True)
 
     # Report failure
     if info.get("status") != 200:
