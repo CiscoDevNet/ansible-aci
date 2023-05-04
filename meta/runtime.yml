@@ -61,6 +61,7 @@ action_groups:
     - aci_encap_pool_range
     - aci_epg
     - aci_epg_monitoring_policy
+    - aci_epg_subnet
     - aci_epg_to_contract
     - aci_epg_to_contract_interface
     - aci_epg_to_contract_master
@@ -79,6 +80,7 @@ action_groups:
     - aci_fabric_spine_switch_assoc
     - aci_fabric_switch_block
     - aci_fabric_switch_policy_group
+    - aci_file_remote_path
     - aci_filter
     - aci_filter_entry
     - aci_firmware_group
