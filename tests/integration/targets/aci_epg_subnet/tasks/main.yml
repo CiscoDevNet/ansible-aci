@@ -1,0 +1,258 @@
+# Test code for the ACI modules
+
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Query system information
+  aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: ensure tenant does not exists
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info
+    state: absent
+    tenant: ansible_test
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: ensure tenant exists for tests to kick off
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_tenant_absent
+      state: present
+      tenant: ansible_test
+    register: tenant_present
+
+  - name: ensure ap exists for tests to kick off
+    cisco.aci.aci_ap: &aci_ap_present
+      <<: *aci_tenant_present
+      ap: anstest
+    register: ap_present
+
+  - name: ensure epg exists for tests to kick off
+    cisco.aci.aci_epg: &aci_epg_present
+      <<: *aci_ap_present
+      epg: anstest
+    register: epg_present
+
+  - name: create subnet - check mode works
+    cisco.aci.aci_epg_subnet: &aci_subnet_present
+      <<: *aci_epg_present
+      state: present
+      subnet_name: anstest
+      gateway: 10.100.100.1
+      mask: 24
+      descr: Ansible Test
+    check_mode: true
+    register: create_check_mode
+
+  - name: create subnet - creation works
+    cisco.aci.aci_epg_subnet:
+      <<: *aci_subnet_present
+    register: create_subnet
+
+  - name: create new subnet with IpDP_learning disabled - APIC version >= 5.0
+    cisco.aci.aci_epg_subnet:
+      <<: *aci_epg_present
+      state: present
+      descr: Ansible Test
+      gateway: 10.100.101.1
+      mask: 32
+      scope: [private, shared]
+      route_profile: default
+      route_profile_l3out: default
+      subnet_control: no_default_gateway
+      ip_data_plane_learning: disabled
+    register: create_subnet2_5
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+  - name: create new subnet - creation works for APIC version < 5.0
+    cisco.aci.aci_epg_subnet: &aci_subnet2_present
+      <<: *aci_epg_present
+      state: present
+      descr: Ansible Test
+      gateway: 10.100.101.1
+      mask: 32
+      scope: [private, shared]
+      route_profile: default
+      route_profile_l3out: default
+      subnet_control: no_default_gateway
+    register: create_subnet2
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+
+  - name: create subnet again with IpDP_learning disabled - idempotency works for APIC version >= 5 
+    cisco.aci.aci_epg_subnet:
+      <<: *aci_subnet2_present
+      ip_data_plane_learning: disabled
+    register: create_idempotency_5
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+  - name: create subnet again - idempotency works for APIC version < 5 
+    cisco.aci.aci_epg_subnet:
+      <<: *aci_subnet2_present
+    register: create_idempotency
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+
+  - name: create subnet with bad scope - failure message works
+    cisco.aci.aci_epg_subnet:
+      <<: *aci_subnet_present
+      scope: [private, public]
+    register: create_bad_scope
+    ignore_errors: true
+
+  - name: create subnet without all necessary params - failure message works
+    cisco.aci.aci_epg_subnet:
+      <<: *aci_subnet_present
+      epg: "{{ fake_var | default(omit) }}"
+    register: create_incomplete_data
+    ignore_errors: true
+
+  - name: create subnet without valid mask - failure message works
+    cisco.aci.aci_epg_subnet:
+      <<: *aci_subnet_present
+      mask: 130
+    register: create_wrong_mask
+    ignore_errors: true
+
+  - name: asserts for subnet creation tasks
+    assert:
+      that:
+        - create_check_mode is changed
+        - create_check_mode.sent.fvSubnet.attributes.descr == create_subnet.sent.fvSubnet.attributes.descr == 'Ansible Test'
+        - create_check_mode.sent.fvSubnet.attributes.ip == create_subnet.sent.fvSubnet.attributes.ip == '10.100.100.1/24'
+        - create_check_mode.sent.fvSubnet.attributes.name == create_subnet.sent.fvSubnet.attributes.name == 'anstest'
+        - create_subnet is changed
+        - create_subnet.current.0.fvSubnet.attributes.annotation == 'orchestrator:ansible'
+        - create_subnet.previous == []
+        - create_bad_scope is failed
+        - create_bad_scope.msg.startswith("Parameter 'scope' cannot be both 'private' and 'public'")
+        - create_incomplete_data is failed
+        - 'create_incomplete_data.msg == "state is present but all of the following are missing: epg"'
+        - create_wrong_mask is failed
+        - create_wrong_mask.msg == "Valid Subnet Masks are 0 to 32 for IPv4 Addresses and 0 to 128 for IPv6 addresses"
+
+  - name: assert for subnet IpDPlearning tasks version >=5
+    assert:
+      that:
+        - create_subnet2_5 is changed
+        - create_subnet2_5.current.0.fvSubnet.attributes.ctrl == 'no-default-gateway'
+        - create_subnet2_5.sent == create_subnet2_5.proposed
+        - create_subnet2_5.sent.fvSubnet.attributes.scope == "private,shared"
+        - create_subnet2_5.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes.tnL3extOutName == 'default'
+        - create_subnet2_5.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes.tnRtctrlProfileName == 'default'
+        - create_idempotency_5 is not changed
+        - create_idempotency_5.previous != []
+        - create_subnet.current.0.fvSubnet.attributes.ipDPLearning == 'enabled'
+        - create_subnet2_5.current.0.fvSubnet.attributes.ipDPLearning == 'disabled'
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+  - name: assert for subnet IpDPlearning tasks version < 5
+    assert:
+      that:
+        - create_subnet2 is changed
+        - create_subnet2.current.0.fvSubnet.attributes.ctrl == 'no-default-gateway'
+        - create_subnet2.sent == create_subnet2.proposed
+        - create_subnet2.sent.fvSubnet.attributes.scope == "private,shared"
+        - create_subnet2.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes.tnL3extOutName == 'default'
+        - create_subnet2.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes.tnRtctrlProfileName == 'default'
+        - create_idempotency is not changed
+        - create_idempotency.previous != []
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+
+  - name: get all in epg
+    cisco.aci.aci_epg_subnet:
+      <<: *aci_epg_present
+      state: query
+    register: get_all_epg
+
+  - name: get specific subnet
+    cisco.aci.aci_epg_subnet:
+      <<: *aci_subnet_present
+      state: query
+    register: get_subnet
+
+  - name: get all subnets matching gateway
+    cisco.aci.aci_epg_subnet:
+      <<: *aci_subnet_present
+      state: query
+      tenant: "{{ fake_var | default(omit) }}"
+      ap: "{{ fake_var | default(omit) }}"
+      epg: "{{ fake_var | default(omit) }}"
+    register: get_subnets_gateway
+
+  - name: asserts for query tasks
+    assert:
+      that:
+        - get_all_epg is not changed
+        - '"rsp-subtree-class=fvRsBDSubnetToProfile,fvRsNdPfxPol,fvSubnet" in get_all_epg.filter_string'
+        - '"tn-ansible_test/ap-anstest/epg-anstest.json" in get_all_epg.url'
+        - get_subnet is not changed
+        - get_subnet.current | length == 1
+        - '"tn-ansible_test/ap-anstest/epg-anstest/subnet-[10.100.100.1/24].json" in get_subnet.url'
+        - get_subnets_gateway is not changed
+        - '"query-target-filter=eq(fvSubnet.ip,\"10.100.100.1/24\")" in get_subnets_gateway.filter_string'
+        - '"class/fvSubnet.json" in get_subnets_gateway.url'
+
+  - name: delete subnet - check mode works
+    cisco.aci.aci_epg_subnet:
+      <<: *aci_subnet_present
+      state: absent
+    check_mode: true
+    register: delete_check_mode
+
+  - name: delete subnet - delete works
+    cisco.aci.aci_epg_subnet:
+      <<: *aci_subnet_present
+      state: absent
+    register: delete_subnet
+
+  - name: delete subnet - cleanup
+    cisco.aci.aci_epg_subnet:
+      <<: *aci_subnet2_present
+      state: absent
+
+  - name: delete subnet again - idempotency works
+    cisco.aci.aci_epg_subnet:
+      <<: *aci_subnet2_present
+      state: absent
+    register: delete_idempotency
+
+  - name: asserts for deletion task
+    assert:
+      that:
+        - delete_check_mode is changed
+        - delete_check_mode.proposed == {}
+        - delete_subnet is changed
+        - delete_subnet.previous != []
+        - delete_subnet.method == "DELETE"
+        - delete_idempotency is not changed
+        - delete_idempotency.previous == []
+
+  - name: delete tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent
+    when: tenant_present is changed
