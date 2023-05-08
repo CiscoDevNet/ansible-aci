@@ -21,12 +21,12 @@ options:
     description:
     - The name of the Access SPAN source group.
     type: str
-    aliases: [ name, src_group ]
+    aliases: [ src_group ]
   source:
     description:
     - The name of the Access SPAN source.
     type: str
-    aliases: [ name, src ]
+    aliases: [ src ]
   pod:
     description:
     - The pod id of the source access path.
@@ -59,8 +59,8 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(source_group), and C(source) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_access_span_src_group), and M(cisco.aci.aci_access_span_src_group_src) modules can be used for this.
+- The I(source_group) and I(source) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_access_span_src_group) and M(cisco.aci.aci_access_span_src_group_src) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_access_span_src_group
 - module: cisco.aci.aci_access_span_src_group_src
@@ -282,7 +282,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         source_group=dict(type="str", aliases=["src_group"]),  # Not required for querying all objects
-        source=dict(type="str", aliases=["name", "src"]),  # Not required for querying all objects
+        source=dict(type="str", aliases=["src"]),  # Not required for querying all objects
         pod=dict(type="int", aliases=["pod_id", "pod_number"]),  # Not required for querying all objects
         nodes=dict(type="list", elements="int", aliases=["node_ids"]),  # Not required for querying all objects
         path_ep=dict(type="str"),  # Not required for querying all objects

@@ -236,7 +236,7 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         description=dict(type="str", aliases=["descr"]),
-        direction=dict(type="str", choices=["incoming", "outgoing", "both"]),
+        direction=dict(type="str", choices=list(SPAN_DIRECTION_MAP.keys())),
         name=dict(type="str"),  # Not required for querying all objects
         src_ap=dict(type="str", aliases=["ap"]),
         src_epg=dict(type="str", aliases=["epg"]),

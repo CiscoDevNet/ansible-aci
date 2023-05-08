@@ -58,8 +58,8 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(filter_group), and C(destination_group) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_access_span_filter_group), and M(cisco.aci.aci_access_span_dst_group) modules can be used for this.
+- The I(filter_group) and I(destination_group) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_access_span_filter_group) and M(cisco.aci.aci_access_span_dst_group) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_access_span_filter_group
 - module: cisco.aci.aci_access_span_dst_group
