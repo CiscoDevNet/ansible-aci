@@ -19,15 +19,15 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
 
-# CLEAN TEST ENVIRONMENT
+# CLEAN TEST ENVIRONMENT BEFORE TESTS
 
-- name: Query all fabric span destination groups
+- name: Query all fabric span destination groups ( clean before )
   cisco.aci.aci_fabric_span_dst_group:
     <<: *aci_info
     state: query
   register: query_for_clean
 
-- name: Clean fabric span destination groups
+- name: Clean fabric span destination groups ( clean before )
   cisco.aci.aci_fabric_span_dst_group:
     <<: *aci_info
     destination_group: "{{ item.spanDestGrp.attributes.name }}"
@@ -248,15 +248,15 @@
     - nm_remove_ansible_group_1_again.current == []
     - nm_remove_ansible_group_1_again.previous == []
 
-# CLEAN TEST ENVIRONMENT
+# CLEAN TEST ENVIRONMENT AFTER TESTS
 
-- name: Query all fabric span destination groups
+- name: Query all fabric span destination groups ( clean after )
   cisco.aci.aci_fabric_span_dst_group:
     <<: *aci_info
     state: query
   register: query_for_clean
 
-- name: Clean fabric span destination groups
+- name: Clean fabric span destination groups ( clean after )
   cisco.aci.aci_fabric_span_dst_group:
     <<: *aci_info
     destination_group: "{{ item.spanDestGrp.attributes.name }}"

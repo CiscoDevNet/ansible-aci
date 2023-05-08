@@ -26,7 +26,7 @@ options:
     description:
     - The name of the Fabric SPAN source group.
     type: str
-    aliases: [ name, src_group ]
+    aliases: [ src_group ]
   source:
     description:
     - The name of the Fabric SPAN source.
@@ -96,8 +96,8 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(source_group) must exist before using this module in your playbook.
-  The  and M(cisco.aci.aci_fabric_span_src_group) modules can be used for this.
+- The I(source_group) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_fabric_span_src_group) module can be used for this.
 seealso:
 - module: cisco.aci.aci_fabric_span_src_group
 - module: cisco.aci.aci_tenant
@@ -296,7 +296,7 @@ def main():
         source_group=dict(type="str", aliases=["src_group"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         source=dict(type="str", aliases=["name", "src"]),  # Not required for querying all objects
-        direction=dict(type="str", choices=["incoming", "outgoing", "both"]),
+        direction=dict(type="str", choices=list(SPAN_DIRECTION_MAP.keys())),
         drop_packets=dict(type="bool"),
         vrf=dict(
             type="dict",
