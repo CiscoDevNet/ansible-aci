@@ -40,7 +40,7 @@
     <<: *aci_fabric_node_absent
     switch: anstest
     role: leaf
-    node_type: tier-2
+    node_type: tier_2
     state: present
   check_mode: true
   register: cm_add_fabric_node_tier_2
@@ -50,6 +50,7 @@
     <<: *aci_fabric_node_absent_2
     switch: anstest_2
     role: leaf
+    node_type: remote
     remote_leaf_pool_id: 2
     state: present
   register: nm_add_fabric_node_remote
@@ -70,7 +71,7 @@
 - name: test error - mutually exclusive attributes
   cisco.aci.aci_fabric_node:
     <<: *aci_fabric_node_present_2
-    node_type: tier-2
+    node_type: tier_2
   register: test_error_fabric_node
   ignore_errors: true
 
@@ -88,7 +89,7 @@
     # FIXME: Module is not idempotent
     - cm_add_fabric_node_again is not changed
     - nm_add_fabric_node_again is not changed
-    - test_error_fabric_node.msg == "parameters are mutually exclusive: node_type|remote_leaf_pool_id"
+    - test_error_fabric_node.msg == "External Pool Id is not compatible with a node type other than 'remote'."
 
 
 # CHANGE FABRIC NODE

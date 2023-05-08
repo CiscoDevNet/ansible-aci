@@ -53,8 +53,9 @@ options:
     choices: [ tier_2, remote, virtual, unspecified ]
   remote_leaf_pool_id:
     description:
-    - External Pool Id for remote leaf.
+    - External Pool Id of the remote leaf.
     type: str
+    aliases: [ pool_id ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -71,7 +72,8 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- C(node_type) and C(remote_leaf_pool_id) are mutually exclusive as adding an External Pool Id will automatically switch the type of the node to C(remote).
+- C(remote_leaf_pool_id) is incompatible with C(node_type) other than C(remote).
+- C(remote_leaf_pool_id) is required if C(node_type) is C(remote).
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fabric:NodeIdentP).
@@ -234,8 +236,8 @@ def main():
         node_id=dict(type="int"),  # Not required for querying all objects
         pod_id=dict(type="int"),
         role=dict(type="str", choices=["leaf", "spine", "unspecified"], aliases=["role_name"]),
-        node_type=dict(type="str", choices=["tier_2", "virtual", "unspecified"]),
-        remote_leaf_pool_id=dict(type="str"),
+        node_type=dict(type="str", choices=list(NODE_TYPE_MAPPING.keys())),
+        remote_leaf_pool_id=dict(type="str", aliases=["pool_id"]),
         serial=dict(type="str", aliases=["serial_number"]),  # Not required for querying all objects
         switch=dict(type="str", aliases=["name", "switch_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -248,8 +250,8 @@ def main():
         required_if=[
             ["state", "absent", ["node_id", "serial"]],
             ["state", "present", ["node_id", "serial"]],
+            ["node_type", "remote", ["remote_leaf_pool_id"]],
         ],
-        mutually_exclusive=[("node_type", "remote_leaf_pool_id")],
     )
 
     pod_id = module.params.get("pod_id")
@@ -265,11 +267,11 @@ def main():
 
     aci = ACIModule(module)
 
-    if node_type is not None:
-        node_type = NODE_TYPE_MAPPING.get(node_type)
-
-    if remote_leaf_pool_id is not None:
-        node_type = NODE_TYPE_MAPPING.get("remote")
+    if node_type != "remote" and remote_leaf_pool_id is not None:
+        module.fail_json(msg="External Pool Id is not compatible with a node type other than 'remote'.")
+    else:
+        if node_type is not None:
+            node_type = NODE_TYPE_MAPPING.get(node_type)
 
     aci.construct_url(
         root_class=dict(
