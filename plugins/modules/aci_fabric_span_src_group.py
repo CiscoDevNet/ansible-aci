@@ -54,8 +54,8 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(destination_group) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_fabric_span_dst_group) modules can be used for this.
+- The I(destination_group) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_fabric_span_dst_group) module can be used for this.
 seealso:
 - module: cisco.aci.aci_fabric_span_dst_group
 - name: APIC Management Information Model reference

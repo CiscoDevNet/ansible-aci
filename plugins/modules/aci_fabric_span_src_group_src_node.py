@@ -16,18 +16,18 @@ module: aci_fabric_span_src_group_src_node
 short_description: Manage Fabric SPAN source nodes (span:RsSrcToNode)
 description:
 - Manage Fabric SPAN source nodes on Cisco ACI fabrics.
-- Source nodes are only configurable when the C(source_group) provided has C(drop_packets) set to I(true).
+- Source nodes are only configurable when the I(source_group) provided has I(drop_packets) set to C(true).
 options:
   source_group:
     description:
     - The name of the Fabric SPAN source group.
     type: str
-    aliases: [ name, src_group ]
+    aliases: [ src_group ]
   source:
     description:
     - The name of the Fabric SPAN source.
     type: str
-    aliases: [ name, src ]
+    aliases: [ src ]
   pod:
     description:
     - The pod id of the source access node.
@@ -50,8 +50,8 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(source_group), and C(source) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_fabric_span_src_group), and M(cisco.aci.aci_fabric_span_src_group_src) modules can be used for this.
+- The I(source_group), and I(source) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_fabric_span_src_group) and M(cisco.aci.aci_fabric_span_src_group_src) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_fabric_span_src_group
 - module: cisco.aci.aci_fabric_span_src_group_src
@@ -224,7 +224,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         source_group=dict(type="str", aliases=["src_group"]),  # Not required for querying all objects
-        source=dict(type="str", aliases=["name", "src"]),  # Not required for querying all objects
+        source=dict(type="str", aliases=["src"]),  # Not required for querying all objects
         pod=dict(type="int", aliases=["pod_id", "pod_number"]),  # Not required for querying all objects
         node=dict(type="int", aliases=["node_id"]),  # Not required for querying all objects
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
