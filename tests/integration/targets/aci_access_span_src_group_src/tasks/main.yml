@@ -22,52 +22,52 @@
 - name: Verify Cloud and Non-Cloud Sites in use.
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-# CLEAN TEST ENVIRONMENT
+# CLEAN TEST ENVIRONMENT BEFORE TESTS
 
-- name: Query all span source groups
+- name: Query all span source groups ( clean before )
   cisco.aci.aci_access_span_src_group:
     <<: *aci_info
     state: query
   register: query_for_clean
 
-- name: Clean access span source groups
+- name: Clean access span source groups ( clean before )
   cisco.aci.aci_access_span_src_group:
     <<: *aci_info
     source_group: "{{ item.spanSrcGrp.attributes.name }}"
     state: absent
   loop: "{{ query_for_clean.current }}"
 
-- name: Query all span destination groups
+- name: Query all span destination groups ( clean before )
   cisco.aci.aci_access_span_dst_group:
     <<: *aci_info
     state: query
   register: query_for_clean
 
-- name: Clean access span destination groups
+- name: Clean access span destination groups ( clean before )
   cisco.aci.aci_access_span_dst_group:
     <<: *aci_info
     destination_group: "{{ item.spanDestGrp.attributes.name }}"
     state: absent
   loop: "{{ query_for_clean.current }}"
 
-- name: Execute tasks only for non-cloud sites
+- name: Execute tasks only for non-cloud sites ( clean before )
   when:
   - query_cloud.current == []
   block:
-  - name: Query all access span filter groups
+  - name: Query all access span filter groups ( clean before )
     cisco.aci.aci_access_span_filter_group:
       <<: *aci_info
       state: query
     register: query_for_clean
     
-  - name: Clean access span filter groups
+  - name: Clean access span filter groups ( clean before )
     cisco.aci.aci_access_span_filter_group:
       <<: *aci_info
       filter_group: "{{ item.spanFilterGrp.attributes.name }}"
       state: absent
     loop: "{{ query_for_clean.current }}"
 
-  - name: Add a access span filter groups
+  - name: Add a access span filter groups ( clean before )
     cisco.aci.aci_access_span_filter_group:
       <<: *aci_info
       filter_group: "{{ item }}"
@@ -76,7 +76,7 @@
     - span_filter_group_1
     - span_filter_group_2
 
-- name: Add access span destination group type epg
+- name: Add access span destination group type epg ( clean before )
   cisco.aci.aci_access_span_dst_group:
     <<: *aci_info
     destination_group: span_dest_1
@@ -89,7 +89,7 @@
       epg: ansible_test
     state: present
 
-- name: Add access span source group 1
+- name: Add access span source group 1 ( clean before )
   cisco.aci.aci_access_span_src_group:
     <<: *aci_info
     source_group: "{{ item }}"
@@ -486,45 +486,45 @@
     - nm_remove_span_src_1_again.current == []
     - nm_remove_span_src_1_again.previous == []
 
-# CLEAN TEST ENVIRONMENT
+# CLEAN TEST ENVIRONMENT AFTER TESTS
 
-- name: Query all span source groups
+- name: Query all span source groups ( clean after )
   cisco.aci.aci_access_span_src_group:
     <<: *aci_info
     state: query
   register: query_for_clean
 
-- name: Clean access span source groups
+- name: Clean access span source groups ( clean after )
   cisco.aci.aci_access_span_src_group:
     <<: *aci_info
     source_group: "{{ item.spanSrcGrp.attributes.name }}"
     state: absent
   loop: "{{ query_for_clean.current }}"
 
-- name: Query all span destination groups
+- name: Query all span destination groups ( clean after )
   cisco.aci.aci_access_span_dst_group:
     <<: *aci_info
     state: query
   register: query_for_clean
 
-- name: Clean access span destination groups
+- name: Clean access span destination groups ( clean after )
   cisco.aci.aci_access_span_dst_group:
     <<: *aci_info
     destination_group: "{{ item.spanDestGrp.attributes.name }}"
     state: absent
   loop: "{{ query_for_clean.current }}"
 
-- name: Execute tasks only for non-cloud sites
+- name: Execute tasks only for non-cloud sites ( clean after )
   when:
   - query_cloud.current == []
   block:
-  - name: Query all access span filter groups
+  - name: Query all access span filter groups ( clean after )
     cisco.aci.aci_access_span_filter_group:
       <<: *aci_info
       state: query
     register: query_for_clean
 
-  - name: Clean access span filter groups
+  - name: Clean access span filter groups ( clean after )
     cisco.aci.aci_access_span_filter_group:
       <<: *aci_info
       filter_group: "{{ item.spanFilterGrp.attributes.name }}"
