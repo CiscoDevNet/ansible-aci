@@ -119,6 +119,7 @@ EXAMPLES = r"""
     destination_ip: 2.2.2.2
     state: query
   delegate_to: localhost
+  register: query_result
 
 - name: Query all Access SPAN filter groups
   cisco.aci.aci_access_span_filter_group_entry:
@@ -127,6 +128,7 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     state: query
   delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
