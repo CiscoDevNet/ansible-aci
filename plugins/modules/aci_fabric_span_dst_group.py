@@ -155,6 +155,7 @@ EXAMPLES = r"""
     destination_group: group1
     state: query
   delegate_to: localhost
+  register: query_result
 
 - name: Query all Fabric SPAN destination groups
   cisco.aci.aci_fabric_span_dst_group:
@@ -163,6 +164,7 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     state: query
   delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
