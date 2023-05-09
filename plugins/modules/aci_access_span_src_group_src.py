@@ -334,11 +334,11 @@ def main():
     name_alias = module.params.get("name_alias")
 
     if filter_group and drop_packets:
-        module.fail_json(msg="It is not allowed to configure 'drop_packets: true' when 'filter_group' is configured on the source.")
+        module.fail_json(msg="Setting 'drop_packets' to 'true' is not allowed when 'filter_group' is configured on the source.")
     elif epg and drop_packets:
-        module.fail_json(msg="It is not allowed to configure 'drop_packets: true' when 'epg' is configured on the source.")
+        module.fail_json(msg="Setting 'drop_packets' to 'true' is not allowed when 'epg' is configured on the source.")
     elif routed_outside and drop_packets:
-        module.fail_json(msg="It is not allowed to configure 'drop_packets: true' when 'routed_outside' is configured on the source.")
+        module.fail_json(msg="Setting 'drop_packets' to 'true' is not allowed when 'routed_outside' is configured on the source.")
 
     aci.construct_url(
         root_class=dict(

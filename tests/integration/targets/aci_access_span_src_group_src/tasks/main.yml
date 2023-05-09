@@ -448,9 +448,9 @@
   ansible.builtin.assert:
     that:
     - err_mutually_exclusive_epg_routed_outside.msg == "parameters are mutually exclusive{{':'}} epg|routed_outside"
-    - err_filter_group_drop_packets.msg == "It is not allowed to configure 'drop_packets{{':'}} true' when 'filter_group' is configured on the source."
-    - err_epg_drop_packets.msg == "It is not allowed to configure 'drop_packets{{':'}} true' when 'epg' is configured on the source."
-    - err_routed_outside_drop_packets.msg == "It is not allowed to configure 'drop_packets{{':'}} true' when 'routed_outside' is configured on the source."
+    - err_filter_group_drop_packets.msg == "Setting 'drop_packets' to 'true' is not allowed when 'filter_group' is configured on the source."
+    - err_epg_drop_packets.msg == "Setting 'drop_packets' to 'true' is not allowed when 'epg' is configured on the source."
+    - err_routed_outside_drop_packets.msg == "Setting 'drop_packets' to 'true' is not allowed when 'routed_outside' is configured on the source."
     - err_parent_filter_and_drop_packets.msg == "APIC Error 105{{':'}} Span on drop not supported for the configuration"
 
 # TEST REMOVAL SOURCE
