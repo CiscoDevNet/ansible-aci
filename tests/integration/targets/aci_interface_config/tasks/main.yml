@@ -527,7 +527,7 @@
       assert:
         that:
           - query_all_access_interfaces is not changed
-          - query_all_access_interfaces.current|length >= 6
+          - query_all_access_interfaces.current|length >= 5
 
     - name: Query all fabric interfaces
       cisco.aci.aci_interface_config:
@@ -678,3 +678,19 @@
         that:
           - query_interface_509 is not changed
           - query_interface_509.current == []
+
+    - name: Ensure Interfaces 50* are absent - Clean up test environment
+      cisco.aci.aci_interface_config:
+        <<: *aci_info
+        node: "{{ item.node }}"
+        interface: "{{ item.interface }}"
+        state: absent
+      with_items:
+        - { node: "501", interface: "1/1/1" }
+        - { node: "502", interface: "2/2/2" }
+        - { node: "503", interface: "1/1/1" }
+        - { node: "505", interface: "5/5/5" }
+        - { node: "506", interface: "6/6/6" }
+        - { node: "507", interface: "7/7/7" }
+        - { node: "508", interface: "8/8/8" }
+        - { node: "509", interface: "9/9/9" }

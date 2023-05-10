@@ -45,6 +45,40 @@
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
+
+  - name: Query blacklisted interfaces
+    cisco.aci.aci_interface_blacklist:
+      <<: *aci_info
+      state: query
+    register: enable_and_clear
+
+  - name: set regex
+    set_fact: 
+      regexp: '(topology/pod-)(\d)(/paths-)(\d*)(/pathep-\[eth)(.*)(])'
+
+  - name: Save Target DNs
+    set_fact: 
+      tdn: "{{ item.fabricRsOosPath.attributes.tDn }}"
+    loop: "{{ enable_and_clear.current }}"
+    register: enabled_tdn
+
+  - name: Enable interfaces that were blacklisted
+    cisco.aci.aci_interface_blacklist:
+      <<: *aci_info
+      pod_id: "{{ item.ansible_facts.tdn | regex_search(regexp, '\\2')  | first }}"
+      node_id: "{{ item.ansible_facts.tdn | regex_search(regexp, '\\4') | first }}"
+      interface: "{{ item.ansible_facts.tdn | regex_search(regexp, '\\6') | first }}"
+      state: absent
+    loop: "{{ enabled_tdn.results }}"
+
+  - name: Ensure Interfaces are absent - Clean up test environment
+    cisco.aci.aci_interface_config:
+      <<: *aci_info
+      node: "{{ item.ansible_facts.tdn | regex_search(regexp, '\\4') | first }}"
+      interface: "{{ item.ansible_facts.tdn | regex_search(regexp, '\\6') | first }}"
+      state: absent
+    loop: "{{ enabled_tdn.results }}"
+
   - name: Spine - Clean test environment with enabled interface
     cisco.aci.aci_interface_blacklist:
       <<: *aci_info

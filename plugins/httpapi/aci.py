@@ -96,8 +96,9 @@ class HttpApi(HttpApiBase):
                 "Cookie": "APIC-Cookie={0}".format(self._response_to_json(response_value).get("imdata")[0]["aaaLogin"]["attributes"]["token"])
             }
             self.connection.queue_message("debug", "Connection to {0} was successful".format(self.connection.get_option("host")))
-        except Exception:
+        except Exception as exc_login:
             self.connection._connected = False
+            exc_login.path = path
             raise
 
     def logout(self):
@@ -109,7 +110,7 @@ class HttpApi(HttpApiBase):
             response, response_data = self.connection.send(path, data, method=method)
         except Exception as exc_logout:
             msg = "Error on attempt to logout from APIC. {0}".format(exc_logout)
-            raise ConnectionError(self._return_info(None, method, path, msg))
+            raise ConnectionError(self._return_info("", method, path, msg))
         self.connection._auth = None
         self._verify_response(response, method, path, response_data)
 
@@ -213,8 +214,10 @@ class HttpApi(HttpApiBase):
             if len(self.backup_hosts) == 0:
                 self.provided_hosts = None
                 self.connection._connected = False
-                msg = str("No hosts left in the cluster to continue operation! Error on final host {0}: {1}".format(self.connection.get_option("host"), exc_response))
-                return self._return_info("", method, self.validate_url(self.connection._url+path), msg)
+                error = dict(code=-1, text="No hosts left in the cluster to continue operation! Error on final host {0}".format(self.connection.get_option("host")))
+                if 'path' in dir(exc_response):
+                    path = exc_response.path
+                return self._return_info("", method, self.validate_url(self.connection._url+path), str(exc_response), error=error)
             else:
                 self.current_host = self.backup_hosts.pop(0)
                 self.connection.queue_message(
@@ -240,15 +243,15 @@ class HttpApi(HttpApiBase):
         return exc
 
     def validate_url(self, url):
-        return re.match(r'^.*?\.json|^.*?\.xml', url).group(0)
+        validated_url = re.match(r'^.*?\.json|^.*?\.xml', url).group(0)
+        if self.connection_parameters.get("port") is None:
+            return validated_url.replace(re.match(r'(https?:\/\/.*)(:\d*)\/?(.*)',url).group(2),"")
+        else:
+            return validated_url
 
     def _verify_response(self, response, method, path, response_data):
         """Process the return code and response object from APIC"""
         response_value = self._get_response_value(response_data)
-        if path.find(".json") != -1:
-            respond_data = self._response_to_json(response_value)
-        else:
-            respond_data = response_value
         response_code = response.getcode()
         path = self.validate_url(response.url)
         # Response check to remain consistent with fetch_url's response
@@ -256,7 +259,7 @@ class HttpApi(HttpApiBase):
             msg = "{0}".format(response)
         else:
             msg = "{0} ({1} bytes)".format(response.msg, len(response_value))
-        return self._return_info(response_code, method, path, msg, respond_data)
+        return self._return_info(response_code, method, path, msg, respond_data=response_value)
 
     def _get_response_value(self, response_data):
         """Extract string data from response_data returned from APIC"""
@@ -270,13 +273,15 @@ class HttpApi(HttpApiBase):
         except Exception:
             return "Invalid JSON response: {0}".format(response_text)
 
-    def _return_info(self, response_code, method, path, msg, respond_data=None):
+    def _return_info(self, response_code, method, path, msg, respond_data=None, error={}):
         """Format success/error data and return with consistent format"""
         info = {}
         info["status"] = response_code
         info["method"] = method
         info["url"] = path
         info["msg"] = msg
+        info["error"] = error
+        # Response check to trigger key error if response_data is invalid
         if respond_data is not None:
             info["body"] = respond_data
         return info
@@ -320,7 +325,7 @@ class HttpApi(HttpApiBase):
                     self.connection_parameters["certificate_name"] = os.path.basename(os.path.splitext(self.connection_parameters.get("private_key"))[0])
             else:
                 raise ConnectionError(
-                    "Provided private key {0} does not appear to be a private key.".format(self.connection_parameters.get("private_key"))
+                    "Provided private key {0} does not appear to be a private key or provided file does not exist.".format(self.connection_parameters.get("private_key"))
                 )
         if self.connection_parameters.get("certificate_name") is None:
             self.connection_parameters["certificate_name"] = self.connection.get_option("remote_user")

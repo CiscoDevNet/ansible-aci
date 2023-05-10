@@ -62,25 +62,6 @@
   check_mode: true
   register: cm_add_tenant
 
-# ADD TENANT
-- name: Add tenant (check_mode)
-  cisco.aci.aci_tenant: &tenant_present
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
-    tenant: ansible_test
-    state: present
-    annotation: ansible_test
-    owner_key: ansible_key
-    owner_tag: ansible_tag
-    output_path: "{{ aci_hostname }}_cm_add_tenant.json"
-  check_mode: yes
-  register: cm_add_tenant
-
 - name: Dump content of files
   debug:
     msg: "{{ lookup('file', aci_hostname +'_cm_add_tenant.json')}}"

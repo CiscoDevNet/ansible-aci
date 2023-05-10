@@ -6,8 +6,9 @@
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
       password: "{{ aci_password }}"
-      validate_certs: "{{ validate_certs | default(false) }}"
-      use_ssl: "{{ use_ssl | default(true) }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
       timeout: 5
       output_level: debug
 
@@ -19,15 +20,25 @@
 
 - name: Set the connection to httpapi and set session key used in the inventory
   ansible.builtin.set_fact:
+    ansible_user: "{{ aci_username }}"
+    ansible_password: "{{ aci_password }}"
     ansible_connection: ansible.netcommon.httpapi
-    ansible_httpapi_session_key: {'admin': "{{ lookup('file', 'certs/admin.key') }}"}
+    ansible_httpapi_session_key: {'admin': "{{ lookup('file', 'pki/admin.key') }}"}
+    ansible_httpapi_validate_certs: "{{ aci_validate_certs | default(false) }}"
+    ansible_httpapi_use_ssl: "{{ aci_use_ssl | default(true) }}"
+    ansible_httpapi_use_proxy: "{{ aci_use_proxy | default(true) }}"
+    ansible_httpapi_port: 443
+    ansible_command_timeout: 5
+
+- name: Run aci_aaa_user_certificate through the plugin
+  include_tasks: ../../../../../../integration/targets/aci_aaa_user_certificate/tasks/main.yml
 
 - name: Add user certificate to be used later in the test
   cisco.aci.aci_aaa_user_certificate:
     <<: *aci_info
     aaa_user: "{{ aci_username }}"
     name: admin
-    certificate: "{{ lookup('file', 'certs/admin.crt') }}"
+    certificate: "{{ lookup('file', 'pki/admin.crt') }}"
     state: present
 
 # XML operation, APIC HTTP Error and Connection reset upon changed parameter tests
@@ -136,7 +147,7 @@
 - name: Delete Tenant with password and private key in the task (private_key takes precedence)
   cisco.aci.aci_tenant:
     <<: *aci_info
-    private_key: "{{ lookup('file', 'certs/admin.key') }}"
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
     tenant: ansible_test
     state: absent
   register: op1_task_private_key_delete_tenant
@@ -144,7 +155,7 @@
 - name: Add Tenant with password and private key in the task (Check for execution on the provided aci_hostname with no attempts at re-connection)
   cisco.aci.aci_tenant:
     <<: *aci_info
-    private_key: "{{ lookup('file', 'certs/admin.key') }}"
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
     tenant: ansible_test
     state: present
   register: op1_task_private_key_add_tenant
@@ -316,7 +327,7 @@
 - name: Verify failure when no hosts are active
   assert:
     that:
-      - op7_task_pwd_delete_tenant.response | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
+      - op7_task_pwd_delete_tenant.error.text | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
       - op7_task_pwd_add_tenant is not changed
 
 # Switching of hosts test with the the inventory password
@@ -403,14 +414,14 @@
 - name: Verify failure when no hosts are active in the inventory
   assert:
     that:
-      - op10_inventory_pwd_delete_tenant.response | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
+      - op10_inventory_pwd_delete_tenant.error.text | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
 
 # Switching of hosts test with the private key in the task
 - name: Delete Tenant with only private key in the task (Check for successful operation on the last host)
   cisco.aci.aci_tenant:
     <<: *aci_info
     host: "{{ last_host_active }}"
-    private_key: "{{ lookup('file', 'certs/admin.key') }}"
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
     tenant: ansible_test
     state: absent
   register: op11_task_private_key_delete_tenant
@@ -419,7 +430,7 @@
   cisco.aci.aci_tenant:
     <<: *aci_info
     host: "{{ last_host_active }}"
-    private_key: "{{ lookup('file', 'certs/admin.key') }}"
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
     tenant: ansible_test
     state: present
   register: op11_task_private_key_add_tenant
@@ -444,7 +455,7 @@
   cisco.aci.aci_tenant:
     <<: *aci_info
     host: "{{ second_host_active }}"
-    private_key: "{{ lookup('file', 'certs/admin.key') }}"
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
     tenant: ansible_test
     state: absent
   register: op12_task_private_key_delete_tenant
@@ -453,7 +464,7 @@
   cisco.aci.aci_tenant:
     <<: *aci_info
     host: "{{ second_host_active }}"
-    private_key: "{{ lookup('file', 'certs/admin.key') }}"
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
     tenant: ansible_test
     state: present
   register: op12_task_private_key_add_tenant
@@ -476,7 +487,7 @@
   cisco.aci.aci_tenant:
     <<: *aci_info
     host: "{{ no_host_active }}"
-    private_key: "{{ lookup('file', 'certs/admin.key') }}"
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
     tenant: ansible_test
     state: absent
   register: op13_task_private_key_delete_tenant
@@ -486,7 +497,7 @@
   cisco.aci.aci_tenant:
     <<: *aci_info
     host: "{{ second_host_active }}"
-    private_key: "{{ lookup('file', 'certs/admin.key') }}"
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
     tenant: ansible_test
     state: present
   register: op13_task_private_key_add_tenant
@@ -494,14 +505,14 @@
 - name: Verify failure when no hosts are active in the task
   assert:
     that:
-      - op13_task_private_key_delete_tenant.response | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
+      - op13_task_private_key_delete_tenant.error.text | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
       - op13_task_private_key_add_tenant is not changed
 
 # Switching of hosts test with the the inventory session key
 - name: Set list of hosts in the inventory with the last host as active
   ansible.builtin.set_fact:
     ansible_host: "{{aci_hostname|generate_random_ips(5,5)}}"
-    ansible_httpapi_session_key: {'admin': "{{ lookup('file', 'certs/admin.key') }}"}
+    ansible_httpapi_session_key: {'admin': "{{ lookup('file', 'pki/admin.key') }}"}
 
 - name: Delete Tenant with session key in the inventory (Check for successful operation on the last host)
   cisco.aci.aci_tenant:
@@ -582,7 +593,7 @@
 - name: Verify failure when no hosts are active in the inventory
   assert:
     that:
-      - op16_inventory_session_key_delete_tenant.response | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
+      - op16_inventory_session_key_delete_tenant.error.text | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
 
 # Clean up Environment
 - name: Delete a tenant using an XML string
@@ -597,18 +608,18 @@
     <<: *aci_info
     aaa_user: "{{ aci_username }}"
     name: admin
-    certificate: "{{ lookup('file', 'certs/admin.crt') }}"
+    certificate: "{{ lookup('file', 'pki/admin.crt') }}"
     state: absent
 
 - name: Delete Tenant
   cisco.aci.aci_tenant:
     <<: *aci_info
+    port: 443
     tenant: ansible_test
     state: absent
 
 - name: Remove session key used in the inventory
   ansible.builtin.set_fact:
-    ansible_connection: local
     ansible_httpapi_session_key:
 
 - name: refresh inventory for other tests in integration

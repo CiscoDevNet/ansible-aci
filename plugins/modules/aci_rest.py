@@ -405,19 +405,18 @@ def main():
     else:
         aci.url = "%(protocol)s://%(host)s/" % aci.params + path.lstrip("/")
     if aci.params.get("method") != "get" and not rsp_subtree_preserve:
-        #path += "?rsp-subtree=modified"
         aci.url = update_qsl(aci.url, {"rsp-subtree": "modified"})
 
     method = aci.params.get("method").upper()
 
     # Perform request
-    resp, info = aci.api_call(method, aci.url, data=payload, output=True)
+    resp, info = aci.api_call(method, aci.url, data=payload, return_response=True)
 
     # Report failure
     if info.get("status") != 200:
         try:
             # APIC error
-            aci.response_type(info.get("body"), rest_type)
+            aci.response_type(info["body"], rest_type)
             aci.fail_json(msg="APIC Error %(code)s: %(text)s" % aci.error)
         except KeyError:
             # Connection error

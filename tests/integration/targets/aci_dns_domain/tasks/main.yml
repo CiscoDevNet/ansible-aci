@@ -26,7 +26,6 @@
     <<: *aci_info
     profile_name: ansible_dns_profile
     state: absent
-  delegate_to: localhost
 
 # ADD DNS PROFILE
 - name: Add DNS profile
@@ -34,7 +33,6 @@
     <<: *aci_info
     profile_name: ansible_dns_profile
     state: present
-  delegate_to: localhost
 
 # ADD DNS DOMAIN
 - name: Add a new DNS domain
@@ -44,7 +42,6 @@
     domain: example.com
     default: false
     state: present
-  delegate_to: localhost
   register: add_dns_domain
 
 - name: Verify DNS domain creation
@@ -64,7 +61,6 @@
     domain: example.com
     default: false
     state: present
-  delegate_to: localhost
   register: add_dns_domain_again
 
 - name: Verify DNS domain creation idempotence
@@ -83,7 +79,6 @@
     domain: example.com
     default: true
     state: present
-  delegate_to: localhost
   register: update_dns_domain
 
 - name: Verify DNS domain update
@@ -101,7 +96,6 @@
     dns_profile: ansible_dns_profile
     domain: example.com
     state: query
-  delegate_to: localhost
   register: query_dns_domain
 
 - name: Verify DNS domain attributes
@@ -118,7 +112,6 @@
     <<: *aci_info
     dns_profile: ansible_dns_profile
     state: query
-  delegate_to: localhost
   register: query_dns_domain_all
 
 - name: Verify DNS domain query idempotence
@@ -133,7 +126,6 @@
     dns_profile: ansible_dns_profile
     domain: example.com
     state: absent
-  delegate_to: localhost
   register: delete_dns_domain
 
 - name: Verify DNS domain deletion
@@ -152,7 +144,6 @@
     dns_profile: ansible_dns_profile
     domain: example.com
     state: absent
-  delegate_to: localhost
   register: delete_dns_domain_again
 
 - name: Verify DNS domain deletion idempotence
@@ -166,4 +157,3 @@
     <<: *aci_info
     profile_name: ansible_dns_profile
     state: absent
-  delegate_to: localhost

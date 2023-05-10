@@ -309,11 +309,11 @@ def main():
             port_url = "%(protocol)s://%(host)s:%(port)s/" % aci.params + path.lstrip("/")
         else:
             port_url = "%(protocol)s://%(host)s/" % aci.params + path.lstrip("/")
-        resp, info = aci.api_call('GET', port_url, data=None, output=True)
+        resp, info = aci.api_call('GET', port_url, data=None, return_response=True)
         try:
             aci.imdata = json.loads(resp.read())["imdata"]
         except AttributeError:
-            aci.imdata = info["body"]["imdata"]
+            aci.imdata = json.loads(info.get("body"))["imdata"]
 
         aci.result["job_details"] = aci.imdata[0].get("configJobCont", {})
         # Reset state and url to display correct in output and trigger get_existing() function with correct url

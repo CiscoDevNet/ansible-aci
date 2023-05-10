@@ -26,7 +26,6 @@
     <<: *aci_info
     profile_name: ansible_dns_profile
     state: absent
-  delegate_to: localhost
 
 # ADD DNS PROFILE
 - name: Add DNS profile
@@ -34,7 +33,6 @@
     <<: *aci_info
     profile_name: ansible_dns_profile
     state: present
-  delegate_to: localhost
 
 # ADD DNS PROVIDER
 - name: Add a new DNS provider
@@ -44,7 +42,6 @@
     addr: 10.20.30.40
     preferred: false
     state: present
-  delegate_to: localhost
   register: add_dns_provider
 
 - name: Verify DNS provider creation
@@ -64,7 +61,6 @@
     addr: 10.20.30.40
     preferred: false
     state: present
-  delegate_to: localhost
   register: add_dns_provider_again
 
 - name: Verify DNS provider creation idempotence
@@ -83,7 +79,6 @@
     addr: 10.20.30.40
     preferred: true
     state: present
-  delegate_to: localhost
   register: update_dns_provider
 
 - name: Verify DNS provider update
@@ -101,7 +96,6 @@
     dns_profile: ansible_dns_profile
     addr: 10.20.30.40
     state: query
-  delegate_to: localhost
   register: query_dns_provider
 
 - name: Verify DNS provider attributes
@@ -118,7 +112,6 @@
     <<: *aci_info
     dns_profile: ansible_dns_profile
     state: query
-  delegate_to: localhost
   register: query_dns_provider_all
 
 - name: Verify DNS provider query idempotence
@@ -133,7 +126,6 @@
     dns_profile: ansible_dns_profile
     addr: 10.20.30.40
     state: absent
-  delegate_to: localhost
   register: delete_dns_provider
 
 - name: Verify DNS provider deletion
@@ -152,7 +144,6 @@
     dns_profile: ansible_dns_profile
     addr: 10.20.30.40
     state: absent
-  delegate_to: localhost
   register: delete_dns_provider_again
 
 - name: Verify DNS provider deletion idempotence
@@ -166,4 +157,3 @@
     <<: *aci_info
     profile_name: ansible_dns_profile
     state: absent
-  delegate_to: localhost

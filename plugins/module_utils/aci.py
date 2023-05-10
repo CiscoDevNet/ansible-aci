@@ -48,7 +48,6 @@ import base64
 import json
 import os
 from copy import deepcopy
-from urllib.parse import urlparse
 
 from ansible.module_utils.urls import fetch_url
 from ansible.module_utils._text import to_bytes, to_native
@@ -88,6 +87,13 @@ try:
     HAS_XMLJSON_COBRA = True
 except ImportError:
     HAS_XMLJSON_COBRA = False
+
+try:
+    from ansible.module_utils.six.moves.urllib.parse import urlparse
+
+    HAS_URLPARSE = True
+except Exception:
+    HAS_URLPARSE = False
 
 
 def aci_argument_spec():
@@ -309,6 +315,7 @@ class ACIModule(object):
         self.result = dict(changed=False)
         self.headers = dict()
         self.child_classes = set()
+        self.connection = None
 
         # error output
         self.error = dict(code=None, text=None)
@@ -331,7 +338,6 @@ class ACIModule(object):
         self.response = None
         self.status = None
         self.url = None
-        self.connection = None
         self.httpapi_logs = list()
 
         # aci_rest output
@@ -400,7 +406,7 @@ class ACIModule(object):
         self.params["method"] = state_map.get(self.params.get("state"))
 
     def get_connection(self):
-        if self.connection:
+        if self.connection is not None:
             return self.connection
         
         if self.module._socket_path:
@@ -424,7 +430,7 @@ class ACIModule(object):
                 }
             }
         }
-        resp, auth = self.api_call("POST", url, data=json.dumps(payload), output=True)
+        resp, auth = self.api_call("POST", url, data=json.dumps(payload), return_response=True)
 
         # Handle APIC response
         if auth.get("status") != 200:
@@ -490,7 +496,7 @@ class ACIModule(object):
                 if self.params.get("certificate_name") is None:
                     self.params["certificate_name"] = os.path.basename(os.path.splitext(self.params.get("private_key"))[0])
             else:
-                self.module.fail_json(msg="Provided private key '%(private_key)s' does not appear to be a private key." % self.params)
+                self.module.fail_json(msg="Provided private key '%(private_key)s' does not appear to be a private key or provided file does not exist." % self.params)
 
         if self.params.get('certificate_name') is None:
             self.params['certificate_name'] = self.params.get('username', 'admin')
@@ -1146,7 +1152,7 @@ class ACIModule(object):
             return
         elif not self.module.check_mode:
             # Sign and encode request as to APIC's wishes
-            self.api_call("DELETE", self.url, None, output=False)
+            self.api_call("DELETE", self.url, None, return_response=False)
         else:
             self.result["changed"] = True
             self.method = "DELETE"
@@ -1269,7 +1275,7 @@ class ACIModule(object):
         """
         uri = self.url + self.filter_string
 
-        self.api_call("GET", uri, data=None, output=False)
+        self.api_call("GET", uri, data=None, return_response=False)
 
     @staticmethod
     def get_nested_config(proposed_child, existing_children):
@@ -1391,6 +1397,7 @@ class ACIModule(object):
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             url = self.url
             if parent_class is not None:
                 if self.params.get("port") is not None:
@@ -1445,6 +1452,9 @@ class ACIModule(object):
 =======
             self.api_call("POST", self.url, json.dumps(self.config), output=False)
 >>>>>>> f20fdfe ([ignore_changes] New test file created)
+=======
+            self.api_call("POST", self.url, json.dumps(self.config), return_response=False)
+>>>>>>> a774f00 ([ignore_changes] Changes made to test files for intergration tests)
         else:
             self.result["changed"] = True
             self.method = "POST"
@@ -1471,7 +1481,7 @@ class ACIModule(object):
             self.result["response"] = self.response
             self.result["status"] = self.status
             self.result["url"] = self.url
-            if self.httpapi_logs:
+            if self.httpapi_logs is not None:
                 self.result["httpapi_logs"] = self.httpapi_logs
         if self.stdout:
             self.result["stdout"] = self.stdout
@@ -1502,12 +1512,13 @@ class ACIModule(object):
         if self.error.get("code") is not None and self.error.get("text") is not None:
             self.result["error"] = self.error
 
+        if self.stdout:
+            self.result["stdout"] = self.stdout
+
         if "state" in self.params:
             if self.params.get("state") in ("absent", "present"):
                 if self.params.get("output_level") in ("debug", "info"):
                     self.result["previous"] = self.existing
-                if self.stdout:
-                    self.result["stdout"] = self.stdout
 
             # Return the gory details when we need it
             if self.params.get("output_level") == "debug":
@@ -1524,7 +1535,7 @@ class ACIModule(object):
                 self.result["response"] = self.response
                 self.result["status"] = self.status
                 self.result["url"] = self.url
-            if self.httpapi_logs:
+            if self.httpapi_logs is not None:
                 self.result["httpapi_logs"] = self.httpapi_logs
 
         if "state" in self.params:
@@ -1560,6 +1571,7 @@ class ACIModule(object):
                     if self.result.get("changed") is True:
                         json.dump([mo], output_file)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1618,16 +1630,26 @@ def ospf_spec():
 =======
     def api_call(self, method, url, data=None, output=False):
 >>>>>>> f20fdfe ([ignore_changes] New test file created)
+=======
+    def parsed_url_path(self, url):
+        parse_result = urlparse(url)
+        if parse_result.query == '':
+            return parse_result.path
+        else: 
+            return parse_result.path + '?' + parse_result.query
+
+    def api_call(self, method, url, data=None, return_response=False):
+>>>>>>> a774f00 ([ignore_changes] Changes made to test files for intergration tests)
         resp = None
-        path = urlparse(url).path
         if self.get_connection() is not None:
             self.get_connection().set_params(self.params)
-            info = self.get_connection().send_request(method, path, data)
+            info = self.get_connection().send_request(method, self.parsed_url_path(url), data)
             self.url = info.get("url")
+            self.error = info.get("error")
             self.httpapi_logs.extend(self.get_connection().pop_messages())
         else:
             if self.params.get("private_key"):
-                self.cert_auth(path=path, payload=data, method=method)
+                self.cert_auth(path=self.parsed_url_path(url), payload=data, method=method)
             resp, info = fetch_url(
                 self.module,
                 url,
@@ -1642,7 +1664,7 @@ def ospf_spec():
         self.status = info.get("status")
         self.method = method
 
-        if output:
+        if return_response:
             return resp, info
         else:
 <<<<<<< HEAD
@@ -1674,7 +1696,7 @@ def ospf_spec():
                         self.response_json(resp.read())
                 except AttributeError:
                     if method == "GET":
-                        self.existing = info["body"]["imdata"]
+                        self.existing = json.loads(info.get("body"))["imdata"]
                     else:
                         self.response_json(info.get("body"))
             else:

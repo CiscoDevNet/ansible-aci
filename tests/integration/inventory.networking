@@ -9,12 +9,6 @@ azure_cloud ansible_host=20.245.236.136 aci_hostname=20.245.236.136 cloud_type=a
 [aci:vars]
 aci_username=ansible_github_ci
 aci_password="sJ94G92#8dq2hx*K4qh"
-ansible_user=ansible_github_ci 
-ansible_password="sJ94G92#8dq2hx*K4qh"
 ansible_network_os=cisco.aci.aci
-ansible_connection=local
-ansible_httpapi_validate_certs=False
-ansible_httpapi_use_ssl=True
-ansible_httpapi_use_proxy=True
-ansible_httpapi_port=443
+ansible_connection=ansible.netcommon.httpapi
 ansible_python_interpreter=/usr/bin/python3.9

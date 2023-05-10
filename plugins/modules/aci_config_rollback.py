@@ -304,7 +304,7 @@ def get_preview(aci):
     """
     uri = aci.url + aci.filter_string
 
-    resp, info = aci.api_call('GET', uri, data=None, output=True)
+    resp, info = aci.api_call('GET', uri, data=None, return_response=True)
 
     # Handle APIC response
     if info.get("status") == 200:
