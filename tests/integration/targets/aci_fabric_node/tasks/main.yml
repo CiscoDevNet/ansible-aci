@@ -72,7 +72,21 @@
   cisco.aci.aci_fabric_node:
     <<: *aci_fabric_node_present_2
     node_type: tier_2
-  register: test_error_fabric_node
+  register: test_error_mutually_exclusive
+  ignore_errors: true
+
+- name: test error - check failure when changing node type
+  cisco.aci.aci_fabric_node:
+    <<: *aci_fabric_node_present
+    node_type: virtual
+  register: test_error_change__node_type
+  ignore_errors: true
+
+- name: test error - check failure when changing Pool Id
+  cisco.aci.aci_fabric_node:
+    <<: *aci_fabric_node_present_2
+    remote_leaf_pool_id: 3
+  register: test_error_change_Pool_Id
   ignore_errors: true
 
 - name: Verify add_fabric_node
@@ -89,7 +103,9 @@
     # FIXME: Module is not idempotent
     - cm_add_fabric_node_again is not changed
     - nm_add_fabric_node_again is not changed
-    - test_error_fabric_node.msg == "External Pool Id is not compatible with a node type other than 'remote'."
+    - test_error_mutually_exclusive.msg == "External Pool Id is not compatible with a node type other than 'remote'."
+    - test_error_change__node_type.error.text == "Create-only and naming props cannot be modified after creation, class=fabricNodeIdentP, prop=nodeType"
+    - test_error_change_Pool_Id.error.text == "Create-only and naming props cannot be modified after creation, class=fabricNodeIdentP, prop=extPoolId"
 
 
 # CHANGE FABRIC NODE

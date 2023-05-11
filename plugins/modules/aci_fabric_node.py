@@ -54,6 +54,8 @@ options:
   remote_leaf_pool_id:
     description:
     - External Pool Id of the remote leaf.
+    - I(remote_leaf_pool_id) is incompatible with I(node_type) other than C(remote).
+    - I(remote_leaf_pool_id) is required if I(node_type) is C(remote).
     type: str
     aliases: [ pool_id ]
   state:
@@ -71,9 +73,6 @@ extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
-notes:
-- C(remote_leaf_pool_id) is incompatible with C(node_type) other than C(remote).
-- C(remote_leaf_pool_id) is required if C(node_type) is C(remote).
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fabric:NodeIdentP).
@@ -267,11 +266,10 @@ def main():
 
     aci = ACIModule(module)
 
-    if node_type != "remote" and remote_leaf_pool_id is not None:
+    if node_type != "remote" and remote_leaf_pool_id:
         module.fail_json(msg="External Pool Id is not compatible with a node type other than 'remote'.")
-    else:
-        if node_type is not None:
-            node_type = NODE_TYPE_MAPPING.get(node_type)
+
+    node_type = NODE_TYPE_MAPPING.get(node_type)
 
     aci.construct_url(
         root_class=dict(
