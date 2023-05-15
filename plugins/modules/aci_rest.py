@@ -55,6 +55,11 @@ options:
       together with the C(template) lookup plugin, or use C(template).
     type: path
     aliases: [ config_file ]
+  rsp_subtree_preserve:
+    description:
+    - Preserve the response for the provided path.
+    type: bool
+    default: false
 extends_documentation_fragment:
 - cisco.aci.aci
 
@@ -334,7 +339,7 @@ def main():
         method=dict(type="str", default="get", choices=["delete", "get", "post"], aliases=["action"]),
         src=dict(type="path", aliases=["config_file"]),
         content=dict(type="raw"),
-        rsp_subtree_preserve=dict(type=bool, default=False),
+        rsp_subtree_preserve=dict(type="bool", default=False),
     )
 
     module = AnsibleModule(

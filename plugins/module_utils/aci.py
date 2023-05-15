@@ -100,7 +100,6 @@ def aci_argument_spec():
     return dict(
         host=dict(
             type="str",
-            required=False,
             aliases=["hostname"],
             fallback=(env_fallback, ["ACI_HOST"]),
         ),
@@ -347,6 +346,9 @@ class ACIModule(object):
         # Ensure protocol is set
         self.define_protocol()
 
+        # Set Connection plugin
+        self.set_connection()
+
         if self.module._debug:
             self.module.warn("Enable debug output because ANSIBLE_DEBUG was set.")
             self.params["output_level"] = "debug"
@@ -358,7 +360,7 @@ class ACIModule(object):
                     msg="Cannot use signature-based authentication because cryptography (preferred) or pyopenssl are not available")
             elif self.params.get("password") is not None:
                 self.module.warn("When doing ACI signatured-based authentication, providing parameter 'password' is not required")
-        elif self.get_connection() is None:
+        elif self.connection is None:
             if self.params.get("password"):
                 # Perform password-based authentication, log on using password
                 self.login()
@@ -405,14 +407,9 @@ class ACIModule(object):
         state_map = dict(absent="delete", present="post", query="get")
         self.params["method"] = state_map.get(self.params.get("state"))
 
-    def get_connection(self):
-        if self.connection is not None:
-            return self.connection
-        
-        if self.module._socket_path:
+    def set_connection(self):
+        if self.connection is None and self.module._socket_path:
             self.connection = Connection(self.module._socket_path)
-
-        return self.connection
 
     def login(self):
         """Log in to APIC"""
@@ -496,7 +493,8 @@ class ACIModule(object):
                 if self.params.get("certificate_name") is None:
                     self.params["certificate_name"] = os.path.basename(os.path.splitext(self.params.get("private_key"))[0])
             else:
-                self.module.fail_json(msg="Provided private key '%(private_key)s' does not appear to be a private key or provided file does not exist." % self.params)
+                self.module.fail_json(msg="Provided private key %(private_key)s does not appear to be a private key or provided file does not exist."
+                                      % self.params)
 
         if self.params.get('certificate_name') is None:
             self.params['certificate_name'] = self.params.get('username', 'admin')
@@ -1632,21 +1630,23 @@ def ospf_spec():
 >>>>>>> f20fdfe ([ignore_changes] New test file created)
 =======
     def parsed_url_path(self, url):
+        if not HAS_URLPARSE:
+            self.fail_json(msg='urlparse is not installed')
         parse_result = urlparse(url)
         if parse_result.query == '':
             return parse_result.path
-        else: 
+        else:
             return parse_result.path + '?' + parse_result.query
 
     def api_call(self, method, url, data=None, return_response=False):
 >>>>>>> a774f00 ([ignore_changes] Changes made to test files for intergration tests)
         resp = None
-        if self.get_connection() is not None:
-            self.get_connection().set_params(self.params)
-            info = self.get_connection().send_request(method, self.parsed_url_path(url), data)
+        if self.connection is not None:
+            self.connection.set_params(self.params)
+            info = self.connection.send_request(method, self.parsed_url_path(url), data)
             self.url = info.get("url")
             self.error = info.get("error")
-            self.httpapi_logs.extend(self.get_connection().pop_messages())
+            self.httpapi_logs.extend(self.connection.pop_messages())
         else:
             if self.params.get("private_key"):
                 self.cert_auth(path=self.parsed_url_path(url), payload=data, method=method)

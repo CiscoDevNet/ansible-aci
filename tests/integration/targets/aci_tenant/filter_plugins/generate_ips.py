@@ -1,8 +1,8 @@
-#!/usr/bin/python
 from ipaddress import ip_network
 import random
 
 RANGE_IPV4 = list(ip_network("192.0.2.0/24").hosts()) + list(ip_network("198.51.100.0/24").hosts()) + list(ip_network("203.0.113.0/24").hosts())
+
 
 class FilterModule(object):
     def filters(self):

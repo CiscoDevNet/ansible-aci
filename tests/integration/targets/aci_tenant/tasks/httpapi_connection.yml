@@ -18,6 +18,10 @@
     second_host_active: "{{aci_hostname|generate_random_ips(2,5)}}"
     no_host_active: "{{aci_hostname|generate_random_ips(0,5)}}"
 
+- name: Set the actual connection type specified in the inventory (this var is used at the end of this test)
+  ansible.builtin.set_fact:
+    old_connection: "{{ ansible_connection }}"
+
 - name: Set the connection to httpapi and set session key used in the inventory
   ansible.builtin.set_fact:
     ansible_user: "{{ aci_username }}"
@@ -618,9 +622,8 @@
     tenant: ansible_test
     state: absent
 
-- name: Remove session key used in the inventory
+- name: Cleanup facts to continue operation using the inventory file
   ansible.builtin.set_fact:
+    ansible_host: "{{ aci_hostname }}"
+    ansible_connection: "{{ old_connection }}"
     ansible_httpapi_session_key:
-
-- name: refresh inventory for other tests in integration
-  meta: refresh_inventory 

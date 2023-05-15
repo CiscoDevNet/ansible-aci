@@ -381,7 +381,7 @@
     that:
     - query_test is not changed
     - query_test_pk_file is not changed
-    - query_test_non_existent_key.response == "Provided private key ******** does not appear to be a private key or provided file does not exist."
+    - '"Provided private key ******** does not appear to be a private key or provided file does not exist." in query_test_non_existent_key.msg'
     - query_test_pk_content is not changed
 
 # Cleanup environment

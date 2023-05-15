@@ -64,6 +64,7 @@ CONNECTION_MAP = {"username": "remote_user", "timeout": "persistent_command_time
 RESET_KEYS = ["username", "password", "port"]
 CONNECTION_KEYS = RESET_KEYS + ["timeout", "use_proxy", "use_ssl", "validate_certs"]
 
+
 class HttpApi(HttpApiBase):
     def __init__(self, *args, **kwargs):
         super(HttpApi, self).__init__(*args, **kwargs)
@@ -148,14 +149,14 @@ class HttpApi(HttpApiBase):
         self.set_hosts()
 
     def set_hosts(self):
-         if self.params.get("host") is not None:
+        if self.params.get("host") is not None:
             hosts = ast.literal_eval(self.params.get("host")) if "[" in self.params.get("host") else self.params.get("host").split(",")
-         else:
+        else:
             if self.inventory_hosts is None:
                 self.inventory_hosts = re.sub(r"[[\]]", "", self.connection.get_option("host")).split(",")
             hosts = self.inventory_hosts
 
-         if self.provided_hosts is None:
+        if self.provided_hosts is None:
             self.provided_hosts = deepcopy(hosts)
             self.connection.queue_message(
                 "debug", "Provided Hosts: {0}".format(self.provided_hosts)
@@ -164,8 +165,8 @@ class HttpApi(HttpApiBase):
             self.current_host = self.backup_hosts.pop(0)
             self.connection.queue_message(
                 "debug", "Initializing operation on {0}".format(self.current_host)
-            ) 
-         elif self.provided_hosts != hosts:
+            )
+        elif self.provided_hosts != hosts:
             self.provided_hosts = deepcopy(hosts)
             self.connection.queue_message(
                 "debug", "Provided Hosts have changed: {0}".format(self.provided_hosts)
@@ -174,15 +175,15 @@ class HttpApi(HttpApiBase):
             try:
                 self.backup_hosts.pop(self.backup_hosts.index(self.current_host))
                 self.connection.queue_message(
-                "debug", "Connected host {0} found in the provided hosts. Continuing with it.".format(self.current_host)
-                ) 
+                    "debug", "Connected host {0} found in the provided hosts. Continuing with it.".format(self.current_host)
+                )
             except Exception:
                 self.current_host = self.backup_hosts.pop(0)
                 self.connection._connected = False
                 self.connection.queue_message(
-                "debug", "Initializing operation on {0}".format(self.current_host)
+                    "debug", "Initializing operation on {0}".format(self.current_host)
                 )
-         self.connection.set_option("host", self.current_host)
+        self.connection.set_option("host", self.current_host)
 
     # One API call is made via each call to send_request from aci.py in module_utils
     # As long as a host is active in the list the API call will go through
@@ -197,13 +198,13 @@ class HttpApi(HttpApiBase):
                 self.connection._connected = True
             except Exception as exc_response:
                 self.connection._connected = False
-                return self._return_info("", method, self.validate_url(self.connection._url+path), str(exc_response))
+                return self._return_info("", method, self.validate_url(self.connection._url + path), str(exc_response))
 
         try:
             if self.connection._connected is False:
                 self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
             self.connection.queue_message(
-                "debug", "Sending {0} request to {1}".format(method, self.connection._url+path)
+                "debug", "Sending {0} request to {1}".format(method, self.connection._url + path)
             )
             response, response_data = self.connection.send(path, data, method=method)
             self.connection.queue_message(
@@ -214,10 +215,11 @@ class HttpApi(HttpApiBase):
             if len(self.backup_hosts) == 0:
                 self.provided_hosts = None
                 self.connection._connected = False
-                error = dict(code=-1, text="No hosts left in the cluster to continue operation! Error on final host {0}".format(self.connection.get_option("host")))
+                error = dict(code=-1, text="No hosts left in the cluster to continue operation! Error on final host {0}"
+                             .format(self.connection.get_option("host")))
                 if 'path' in dir(exc_response):
                     path = exc_response.path
-                return self._return_info("", method, self.validate_url(self.connection._url+path), str(exc_response), error=error)
+                return self._return_info("", method, self.validate_url(self.connection._url + path), str(exc_response), error=error)
             else:
                 self.current_host = self.backup_hosts.pop(0)
                 self.connection.queue_message(
@@ -245,7 +247,7 @@ class HttpApi(HttpApiBase):
     def validate_url(self, url):
         validated_url = re.match(r'^.*?\.json|^.*?\.xml', url).group(0)
         if self.connection_parameters.get("port") is None:
-            return validated_url.replace(re.match(r'(https?:\/\/.*)(:\d*)\/?(.*)',url).group(2),"")
+            return validated_url.replace(re.match(r'(https?:\/\/.*)(:\d*)\/?(.*)', url).group(2), "")
         else:
             return validated_url
 
@@ -273,14 +275,17 @@ class HttpApi(HttpApiBase):
         except Exception:
             return "Invalid JSON response: {0}".format(response_text)
 
-    def _return_info(self, response_code, method, path, msg, respond_data=None, error={}):
+    def _return_info(self, response_code, method, path, msg, respond_data=None, error=None):
         """Format success/error data and return with consistent format"""
         info = {}
         info["status"] = response_code
         info["method"] = method
         info["url"] = path
         info["msg"] = msg
-        info["error"] = error
+        if error is not None:
+            info["error"] = error
+        else:
+            info["error"] = {}
         # Response check to trigger key error if response_data is invalid
         if respond_data is not None:
             info["body"] = respond_data
@@ -325,7 +330,8 @@ class HttpApi(HttpApiBase):
                     self.connection_parameters["certificate_name"] = os.path.basename(os.path.splitext(self.connection_parameters.get("private_key"))[0])
             else:
                 raise ConnectionError(
-                    "Provided private key {0} does not appear to be a private key or provided file does not exist.".format(self.connection_parameters.get("private_key"))
+                    "Provided private key {0} does not appear to be a private key or provided file does not exist.".format(
+                        self.connection_parameters.get("private_key"))
                 )
         if self.connection_parameters.get("certificate_name") is None:
             self.connection_parameters["certificate_name"] = self.connection.get_option("remote_user")
