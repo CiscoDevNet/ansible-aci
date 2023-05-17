@@ -625,7 +625,6 @@ class ACIModule(object):
             )
 
     def _deep_url_parent_object(self, parent_objects, parent_class):
-
         for parent_object in parent_objects:
             if parent_object.get("aci_class") is parent_class:
                 return parent_object
@@ -774,7 +773,6 @@ class ACIModule(object):
         child_classes=None,
         config_only=True,
     ):
-
         """
         This method is used to retrieve the appropriate URL path and filter_string to make the request to the APIC.
 
@@ -1504,7 +1502,6 @@ class ACIModule(object):
         self.module.exit_json(**self.result)
 
     def fail_json(self, msg, **kwargs):
-
         # Return error information, if we have it
         if self.error.get("code") is not None and self.error.get("text") is not None:
             self.result["error"] = self.error
