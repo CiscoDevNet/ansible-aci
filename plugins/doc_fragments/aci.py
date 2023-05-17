@@ -80,7 +80,7 @@ options:
     description:
     - If C(false), an HTTP connection will be used instead of the default HTTPS connection.
     - If the value is not specified in the task, the value of environment variable C(ACI_USE_SSL) will be used instead.
-    - The default value is true.
+    - The default value is true when the connection is local.
     type: bool
   validate_certs:
     description:

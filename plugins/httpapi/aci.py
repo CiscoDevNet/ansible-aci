@@ -119,6 +119,8 @@ class HttpApi(HttpApiBase):
         connection_parameters = {}
         for key in CONNECTION_KEYS:
             value = self.params.get(key) if self.params.get(key) is not None else self.connection.get_option(CONNECTION_MAP.get(key, key))
+            if key == "username" and value is None:
+                value = "admin"
             self.connection.set_option(CONNECTION_MAP.get(key, key), value)
             if key == "timeout" and self.params.get(key) is not None:
                 self.connection.set_option("persistent_connect_timeout", value + 30)
@@ -126,7 +128,7 @@ class HttpApi(HttpApiBase):
             connection_parameters[key] = value
             if self.connection_parameters and value != self.connection_parameters.get(key) and key in RESET_KEYS:
                 self.connection._connected = False
-                self.connection.queue_message("debug", "Re-setting connection due to change in {0}".format(key))
+                self.connection.queue_message("debug", "Re-setting connection due to change in the {0}".format(key))
 
         if self.params.get("private_key") is not None:
             self.connection.set_option("session_key", None)
@@ -138,7 +140,9 @@ class HttpApi(HttpApiBase):
         else:
             if self.connection_parameters.get("private_key") is not None:
                 self.connection._connected = False
-                self.connection.queue_message("debug", "Re-setting connection due to change from private/session key authentication to password authentication")
+                self.connection.queue_message(
+                    "debug", "Re-setting connection due to change from private/session key authentication to password authentication"
+                )
             self.connection.set_option("session_key", None)
             connection_parameters["private_key"] = None
             connection_parameters["certificate_name"] = None
@@ -158,31 +162,21 @@ class HttpApi(HttpApiBase):
 
         if self.provided_hosts is None:
             self.provided_hosts = deepcopy(hosts)
-            self.connection.queue_message(
-                "debug", "Provided Hosts: {0}".format(self.provided_hosts)
-            )
+            self.connection.queue_message("debug", "Provided Hosts: {0}".format(self.provided_hosts))
             self.backup_hosts = deepcopy(hosts)
             self.current_host = self.backup_hosts.pop(0)
-            self.connection.queue_message(
-                "debug", "Initializing operation on {0}".format(self.current_host)
-            )
+            self.connection.queue_message("debug", "Initializing operation on {0}".format(self.current_host))
         elif self.provided_hosts != hosts:
             self.provided_hosts = deepcopy(hosts)
-            self.connection.queue_message(
-                "debug", "Provided Hosts have changed: {0}".format(self.provided_hosts)
-            )
+            self.connection.queue_message("debug", "Provided Hosts have changed: {0}".format(self.provided_hosts))
             self.backup_hosts = deepcopy(hosts)
             try:
                 self.backup_hosts.pop(self.backup_hosts.index(self.current_host))
-                self.connection.queue_message(
-                    "debug", "Connected host {0} found in the provided hosts. Continuing with it.".format(self.current_host)
-                )
+                self.connection.queue_message("debug", "Connected host {0} found in the provided hosts. Continuing with it.".format(self.current_host))
             except Exception:
                 self.current_host = self.backup_hosts.pop(0)
                 self.connection._connected = False
-                self.connection.queue_message(
-                    "debug", "Initializing operation on {0}".format(self.current_host)
-                )
+                self.connection.queue_message("debug", "Initializing operation on {0}".format(self.current_host))
         self.connection.set_option("host", self.current_host)
 
     # One API call is made via each call to send_request from aci.py in module_utils
@@ -203,9 +197,7 @@ class HttpApi(HttpApiBase):
         try:
             if self.connection._connected is False:
                 self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
-            self.connection.queue_message(
-                "debug", "Sending {0} request to {1}".format(method, self.connection._url + path)
-            )
+            self.connection.queue_message("debug", "Sending {0} request to {1}".format(method, self.connection._url + path))
             response, response_data = self.connection.send(path, data, method=method)
             self.connection.queue_message(
                 "debug", "Received response from {0} for {1} operation with HTTP: {2}".format(self.connection.get_option("host"), method, response.getcode())
@@ -215,16 +207,15 @@ class HttpApi(HttpApiBase):
             if len(self.backup_hosts) == 0:
                 self.provided_hosts = None
                 self.connection._connected = False
-                error = dict(code=-1, text="No hosts left in the cluster to continue operation! Error on final host {0}"
-                             .format(self.connection.get_option("host")))
-                if 'path' in dir(exc_response):
+                error = dict(
+                    code=-1, text="No hosts left in the cluster to continue operation! Error on final host {0}".format(self.connection.get_option("host"))
+                )
+                if "path" in dir(exc_response):
                     path = exc_response.path
                 return self._return_info("", method, self.validate_url(self.connection._url + path), str(exc_response), error=error)
             else:
                 self.current_host = self.backup_hosts.pop(0)
-                self.connection.queue_message(
-                    "debug", "Switching host from {0} to {1}".format(self.connection.get_option("host"), self.current_host)
-                )
+                self.connection.queue_message("debug", "Switching host from {0} to {1}".format(self.connection.get_option("host"), self.current_host))
                 self.connection.set_option("host", self.current_host)
             # recurse through function for retrying the request
             return self.send_request(method, path, data)
@@ -233,21 +224,19 @@ class HttpApi(HttpApiBase):
 
     # Built-in-function
     def handle_httperror(self, exc):
-        self.connection.queue_message(
-            "debug", "Failed to receive response from {0} with {1}".format(self.connection.get_option("host"), exc)
-        )
+        self.connection.queue_message("debug", "Failed to receive response from {0} with {1}".format(self.connection.get_option("host"), exc))
         if exc.code == 401:
             raise ConnectionError(exc)
         elif exc.code == 403 and self.connection_parameters.get("private_key") is None:
             self.connection._auth = None
-            self.login(self.connection.get_option('remote_user'), self.connection.get_option('password'))
+            self.login(self.connection.get_option("remote_user"), self.connection.get_option("password"))
             return True
         return exc
 
     def validate_url(self, url):
-        validated_url = re.match(r'^.*?\.json|^.*?\.xml', url).group(0)
+        validated_url = re.match(r"^.*?\.json|^.*?\.xml", url).group(0)
         if self.connection_parameters.get("port") is None:
-            return validated_url.replace(re.match(r'(https?:\/\/.*)(:\d*)\/?(.*)', url).group(2), "")
+            return validated_url.replace(re.match(r"(https?:\/\/.*)(:\d*)\/?(.*)", url).group(2), "")
         else:
             return validated_url
 
@@ -331,7 +320,8 @@ class HttpApi(HttpApiBase):
             else:
                 raise ConnectionError(
                     "Provided private key {0} does not appear to be a private key or provided file does not exist.".format(
-                        self.connection_parameters.get("private_key"))
+                        self.connection_parameters.get("private_key")
+                    )
                 )
         if self.connection_parameters.get("certificate_name") is None:
             self.connection_parameters["certificate_name"] = self.connection.get_option("remote_user")
@@ -340,13 +330,11 @@ class HttpApi(HttpApiBase):
             sig_signature = sig_key.sign(sig_request.encode(), padding.PKCS1v15(), hashes.SHA256())
         else:
             sig_signature = sign(sig_key, sig_request, "sha256")
-        sig_dn = "uni/userext/user-{0}/usercert-{1}".format(
-            self.connection.get_option("remote_user"), self.connection_parameters.get("certificate_name")
-        )
+        sig_dn = "uni/userext/user-{0}/usercert-{1}".format(self.connection.get_option("remote_user"), self.connection_parameters.get("certificate_name"))
         headers["Cookie"] = (
             "APIC-Certificate-Algorithm=v1.0; "
-            + "APIC-Certificate-DN=%s; " % sig_dn
+            + "APIC-Certificate-DN={0}; ".format(sig_dn)
             + "APIC-Certificate-Fingerprint=fingerprint; "
-            + "APIC-Request-Signature=%s" % to_native(base64.b64encode(sig_signature))
+            + "APIC-Request-Signature={0}".format(to_native(base64.b64encode(sig_signature)))
         )
         return headers

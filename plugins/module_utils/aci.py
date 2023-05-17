@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 
 # This code is part of Ansible, but is an independent component
@@ -356,8 +355,7 @@ class ACIModule(object):
         if self.params.get("private_key"):
             # Perform signature-based authentication, no need to log on separately
             if not HAS_CRYPTOGRAPHY and not HAS_OPENSSL:
-                self.module.fail_json(
-                    msg="Cannot use signature-based authentication because cryptography (preferred) or pyopenssl are not available")
+                self.module.fail_json(msg="Cannot use signature-based authentication because cryptography (preferred) or pyopenssl are not available")
             elif self.params.get("password") is not None:
                 self.module.warn("When doing ACI signatured-based authentication, providing parameter 'password' is not required")
         elif self.connection is None:
@@ -416,9 +414,9 @@ class ACIModule(object):
 
         # Perform login request
         if self.params.get("port") is not None:
-            url = "%(protocol)s://%(host)s:%(port)s/api/aaaLogin.json" % self.params
+            url = "{protocol}://{host}:{port}/api/aaaLogin.json".format_map(self.params)
         else:
-            url = "%(protocol)s://%(host)s/api/aaaLogin.json" % self.params
+            url = "{protocol}://{host}/api/aaaLogin.json".format_map(self.params)
         payload = {
             "aaaUser": {
                 "attributes": {
@@ -436,10 +434,10 @@ class ACIModule(object):
             try:
                 # APIC error
                 self.response_json(auth["body"])
-                self.fail_json(msg="Authentication failed: %(code)s %(text)s" % self.error)
+                self.fail_json(msg="Authentication failed: {code} {text}".format_map(self.error))
             except KeyError:
                 # Connection error
-                self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % auth)
+                self.fail_json(msg="Connection failed for {url}. {msg}".format_map(auth))
 
         # Retain cookie for later use
         self.headers["Cookie"] = resp.headers.get("Set-Cookie")
@@ -478,7 +476,7 @@ class ACIModule(object):
                     with open(self.params.get("private_key"), permission) as fh:
                         private_key_content = fh.read()
                 except Exception:
-                    self.module.fail_json(msg="Cannot open private key file '%(private_key)s'." % self.params)
+                    self.module.fail_json(msg="Cannot open private key file '{private_key}'.".format_map(self.params))
                 try:
                     if HAS_CRYPTOGRAPHY:
                         sig_key = serialization.load_pem_private_key(
@@ -489,27 +487,28 @@ class ACIModule(object):
                     else:
                         sig_key = load_privatekey(FILETYPE_PEM, private_key_content)
                 except Exception:
-                    self.module.fail_json(msg="Cannot load private key file '%(private_key)s'." % self.params)
+                    self.module.fail_json(msg="Cannot load private key file '{private_key}'.".format_map(self.params))
                 if self.params.get("certificate_name") is None:
                     self.params["certificate_name"] = os.path.basename(os.path.splitext(self.params.get("private_key"))[0])
             else:
-                self.module.fail_json(msg="Provided private key %(private_key)s does not appear to be a private key or provided file does not exist."
-                                      % self.params)
+                self.module.fail_json(
+                    msg="Provided private key {private_key} does not appear to be a private key or provided file does not exist.".format_map(self.params)
+                )
 
-        if self.params.get('certificate_name') is None:
-            self.params['certificate_name'] = self.params.get('username', 'admin')
+        if self.params.get("certificate_name") is None:
+            self.params["certificate_name"] = self.params.get("username", "admin")
         # NOTE: ACI documentation incorrectly adds a space between method and path
         sig_request = method + path + payload
         if HAS_CRYPTOGRAPHY:
             sig_signature = sig_key.sign(sig_request.encode(), padding.PKCS1v15(), hashes.SHA256())
         else:
             sig_signature = sign(sig_key, sig_request, "sha256")
-        sig_dn = "uni/userext/user-%(username)s/usercert-%(certificate_name)s" % self.params
+        sig_dn = "uni/userext/user-{username}/usercert-{certificate_name}".format_map(self.params)
         self.headers["Cookie"] = (
             "APIC-Certificate-Algorithm=v1.0; "
-            + "APIC-Certificate-DN=%s; " % sig_dn
+            + "APIC-Certificate-DN={0}; ".format(sig_dn)
             + "APIC-Certificate-Fingerprint=fingerprint; "
-            + "APIC-Request-Signature=%s" % to_native(base64.b64encode(sig_signature))
+            + "APIC-Request-Signature={0}".format(to_native(base64.b64encode(sig_signature)))
         )
 
     def response_json(self, rawoutput):
@@ -518,7 +517,7 @@ class ACIModule(object):
             jsondata = json.loads(rawoutput)
         except Exception as e:
             # Expose RAW output for troubleshooting
-            self.error = dict(code=-1, text="Unable to parse output as JSON, see 'raw' output. %s" % e)
+            self.error = dict(code=-1, text="Unable to parse output as JSON, see 'raw' output. {0}".format(e))
             self.result["raw"] = rawoutput
             return
 
@@ -540,7 +539,7 @@ class ACIModule(object):
             xmldata = cobra.data(xml)
         except Exception as e:
             # Expose RAW output for troubleshooting
-            self.error = dict(code=-1, text="Unable to parse output as XML, see 'raw' output. %s" % e)
+            self.error = dict(code=-1, text="Unable to parse output as XML, see 'raw' output. {0}".format(e))
             self.result["raw"] = rawoutput
             return
 
@@ -1631,12 +1630,12 @@ def ospf_spec():
 =======
     def parsed_url_path(self, url):
         if not HAS_URLPARSE:
-            self.fail_json(msg='urlparse is not installed')
+            self.fail_json(msg="urlparse is not installed")
         parse_result = urlparse(url)
-        if parse_result.query == '':
+        if parse_result.query == "":
             return parse_result.path
         else:
-            return parse_result.path + '?' + parse_result.query
+            return parse_result.path + "?" + parse_result.query
 
     def api_call(self, method, url, data=None, return_response=False):
 >>>>>>> a774f00 ([ignore_changes] Changes made to test files for intergration tests)
@@ -1703,8 +1702,12 @@ def ospf_spec():
                 try:
                     # APIC error
                     self.response_json(info["body"])
-                    self.fail_json(msg="APIC Error %(code)s: %(text)s" % self.error)
+                    self.fail_json(msg="APIC Error {code}: {text}".format_map(self.error))
                 except KeyError:
                     # Connection error
+<<<<<<< HEAD
                     self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
 >>>>>>> 88b1ff5 ([minor_change] Removed different functions to make requests which can now be done by using just one function)
+=======
+                    self.fail_json(msg="Connection failed for {url}. {msg}".format_map(info))
+>>>>>>> a10677f ([ignore_changes] Applied the black format to the code)

@@ -74,19 +74,43 @@
   ignore_errors: true
   register: wrong_credentials
 
+- name: Set the username to null
+  ansible.builtin.set_fact:
+    ansible_user:
+
+- name: Delete Tenant with no username in the task or inventory (Check that username is set to the default value)
+  cisco.aci.aci_tenant:
+    host: "{{ aci_hostname }}"
+    password: "{{ aci_password }}"
+    validate_certs: "{{ aci_validate_certs | default(false) }}"
+    use_ssl: "{{ aci_use_ssl | default(true) }}"
+    use_proxy: "{{ aci_use_proxy | default(true) }}"
+    timeout: 5
+    output_level: debug
+    tenant: ansible_test
+    state: absent
+  ignore_errors: true
+  register: no_username
+
+- name: Revert the username to its original value
+  ansible.builtin.set_fact:
+    ansible_user: "{{ aci_username }}"
+
 - name: Flatten the registered instances
   ansible.builtin.set_fact:
     ap_non_existent_tenant_flattened: "{{ ap_non_existent_tenant.httpapi_logs | flatten }}"
     wrong_credentials_flattened: "{{ wrong_credentials.httpapi_logs | flatten }}"
+    no_username_flattened: "{{ no_username.httpapi_logs | flatten }}"
 
 - name: Verify XML operation and HTTP error returned by APIC
   assert:
     that:
       - tenant_xml_plugin.status == 200
       - '"Received response from {{ aci_hostname }} for POST operation with HTTP: 400" in ap_non_existent_tenant_flattened'
-      - '"Re-setting connection due to change in username" in wrong_credentials_flattened'
-      - '"Re-setting connection due to change in password" in wrong_credentials_flattened'
+      - '"Re-setting connection due to change in the username" in wrong_credentials_flattened'
+      - '"Re-setting connection due to change in the password" in wrong_credentials_flattened'
       - '"Connection to {{ aci_hostname }} has failed: HTTP Error 401: Unauthorized" in wrong_credentials_flattened'
+      - '"Establishing login for admin to {{ aci_hostname }}" in no_username_flattened'
 
 # Simulate HTTP 403 error test
 - name: Delete Tenant with only password in the task (Check for 403)

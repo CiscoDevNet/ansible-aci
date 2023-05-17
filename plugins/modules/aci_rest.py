@@ -358,7 +358,7 @@ def main():
         if os.path.isfile(src):
             file_exists = True
         else:
-            module.fail_json(msg="Cannot find/access src '%s'" % src)
+            module.fail_json(msg="Cannot find/access src '{0}'".format(src))
 
     # Find request type
     if path.find(".xml") != -1:
@@ -392,7 +392,7 @@ def main():
                 # Validate YAML/JSON string
                 payload = json.dumps(yaml.safe_load(payload))
             except Exception as e:
-                module.fail_json(msg="Failed to parse provided JSON/YAML payload: %s" % to_text(e), exception=to_text(e), payload=payload)
+                module.fail_json(msg="Failed to parse provided JSON/YAML payload: {0}".format(to_text(e)), exception=to_text(e), payload=payload)
     elif rest_type == "xml" and HAS_LXML_ETREE:
         if content and isinstance(content, dict) and HAS_XMLJSON_COBRA:
             # Validate inline YAML/JSON
@@ -402,13 +402,13 @@ def main():
                 # Validate XML string
                 payload = etree.tostring(etree.fromstring(payload), encoding="unicode")
             except Exception as e:
-                module.fail_json(msg="Failed to parse provided XML payload: %s" % to_text(e), payload=payload)
+                module.fail_json(msg="Failed to parse provided XML payload: {0}".format(to_text(e)), payload=payload)
 
     # Perform actual request using auth cookie (Same as aci.request(), but also supports XML)
     if "port" in aci.params and aci.params.get("port") is not None:
-        aci.url = "%(protocol)s://%(host)s:%(port)s/" % aci.params + path.lstrip("/")
+        aci.url = "{protocol}://{host}:{port}/".format_map(aci.params) + path.lstrip("/")
     else:
-        aci.url = "%(protocol)s://%(host)s/" % aci.params + path.lstrip("/")
+        aci.url = "{protocol}://{host}/".format_map(aci.params) + path.lstrip("/")
     if aci.params.get("method") != "get" and not rsp_subtree_preserve:
         aci.url = update_qsl(aci.url, {"rsp-subtree": "modified"})
 
@@ -422,15 +422,15 @@ def main():
         try:
             # APIC error
             aci.response_type(info["body"], rest_type)
-            aci.fail_json(msg="APIC Error %(code)s: %(text)s" % aci.error)
+            aci.fail_json(msg="APIC Error {code}: {text}".format_map(aci.error))
         except KeyError:
             # Connection error
-            aci.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
+            aci.fail_json(msg="Connection failed for {url}. {msg}".format_map(info))
 
     try:
         aci.response_type(resp.read(), rest_type)
     except AttributeError:
-        aci.response_type(info.get('body'), rest_type)
+        aci.response_type(info.get("body"), rest_type)
 
     aci.result["status"] = aci.status
     aci.result["imdata"] = aci.imdata

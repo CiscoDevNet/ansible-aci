@@ -285,12 +285,11 @@ def main():
         aci.post_config()
 
     elif state == "preview":
-        aci.url = "%(protocol)s://%(host)s/mqapi2/snapshots.diff.xml" % module.params
-        aci.path = "mqapi2/snapshots.diff.xml"
+        aci.url = "{protocol}://{host}/mqapi2/snapshots.diff.xml".format_map(module.params)
         aci.filter_string = (
-            "?s1dn=uni/backupst/snapshots-[uni/fabric/configexp-%(export_policy)s]/snapshot-%(snapshot)s&"
-            "s2dn=uni/backupst/snapshots-[uni/fabric/configexp-%(compare_export_policy)s]/snapshot-%(compare_snapshot)s"
-        ) % module.params
+            "?s1dn=uni/backupst/snapshots-[uni/fabric/configexp-{export_policy}]/snapshot-{snapshot}&"
+            "s2dn=uni/backupst/snapshots-[uni/fabric/configexp-{compare_export_policy}]/snapshot-{compare_snapshot}"
+        ).format_map(module.params)
 
         # Generate rollback comparison
         get_preview(aci)
@@ -304,7 +303,7 @@ def get_preview(aci):
     """
     uri = aci.url + aci.filter_string
 
-    resp, info = aci.api_call('GET', uri, data=None, return_response=True)
+    resp, info = aci.api_call("GET", uri, data=None, return_response=True)
 
     # Handle APIC response
     if info.get("status") == 200:
@@ -317,9 +316,7 @@ def get_preview(aci):
             aci.result["raw"] = resp.read()
         except AttributeError:
             aci.result["raw"] = info.get("body")
-        aci.fail_json(
-            msg="Request failed: %(code)s %(text)s (see 'raw' output)" % aci.error
-        )
+        aci.fail_json(msg="Request failed: {code} {text} (see 'raw' output)".format_map(aci.error))
 
 
 def xml_to_json(aci, response_data):

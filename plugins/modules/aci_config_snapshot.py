@@ -306,10 +306,10 @@ def main():
         # Query for job information and add to results
         path = "/api/node/mo/uni/backupst/jobs-[uni/fabric/configexp-{0}].json".format(export_policy)
         if "port" in aci.params and aci.params.get("port") is not None:
-            port_url = "%(protocol)s://%(host)s:%(port)s/" % aci.params + path.lstrip("/")
+            port_url = "{protocol}://{host}:{port}/".format_map(aci.params) + path.lstrip("/")
         else:
-            port_url = "%(protocol)s://%(host)s/" % aci.params + path.lstrip("/")
-        resp, info = aci.api_call('GET', port_url, data=None, return_response=True)
+            port_url = "{protocol}://{host}/".format_map(aci.params) + path.lstrip("/")
+        resp, info = aci.api_call("GET", port_url, data=None, return_response=True)
         try:
             aci.imdata = json.loads(resp.read())["imdata"]
         except AttributeError:
@@ -318,7 +318,6 @@ def main():
         aci.result["job_details"] = aci.imdata[0].get("configJobCont", {})
         # Reset state and url to display correct in output and trigger get_existing() function with correct url
         aci.url = reset_url
-        aci.params["state"] = "present"
 
     else:
         # Prefix the proper url to export_policy
