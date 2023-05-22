@@ -77,7 +77,7 @@ options:
         type: int
       ttl:
         description:
-        - The time to live of the span session packets.
+        - The time to live of the SPAN session packets.
         - The APIC defaults to C(64) when unset during creation.
         type: int
       mtu:

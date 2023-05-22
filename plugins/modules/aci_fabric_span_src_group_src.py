@@ -45,37 +45,37 @@ options:
     type: bool
   vrf:
     description:
-    - The Span source VRF details.
+    - The SPAN source VRF details.
     - The I(vrf) and I(bd) cannot be configured simultaneously.
     type: dict
     suboptions:
       tenant:
         description:
-        - The name of the Span source Tenant.
+        - The name of the SPAN source Tenant.
         type: str
         required: true
         aliases: [ tenant_name ]
       vrf:
         description:
-        - The name of the Span source VRF.
+        - The name of the SPAN source VRF.
         type: str
         required: true
         aliases: [ vrf_name ]
   bd:
     description:
-    - The Span source BD details.
+    - The SPAN source BD details.
     - The I(vrf) and I(bd) cannot be configured simultaneously.
     type: dict
     suboptions:
       tenant:
         description:
-        - The name of the Span source Tenant.
+        - The name of the SPAN source Tenant.
         type: str
         required: true
         aliases: [ tenant_name ]
       bd:
         description:
-        - The name of the Span source BD.
+        - The name of the SPAN source BD.
         type: str
         required: true
         aliases: [ bd_name, bridge_domain ]
