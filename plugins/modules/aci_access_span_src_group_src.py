@@ -49,25 +49,25 @@ options:
     type: bool
   epg:
     description:
-    - The Span source EPG details.
+    - The SPAN source EPG details.
     - The I(epg) and I(routed_outside) cannot be configured simultaneously.
     type: dict
     suboptions:
       tenant:
         description:
-        - The name of the Span source Tenant.
+        - The name of the SPAN source Tenant.
         type: str
         required: true
         aliases: [ tenant_name ]
       ap:
         description:
-        - The name of the Span source AP.
+        - The name of the SPAN source AP.
         type: str
         required: true
         aliases: [ ap_name, app_profile, app_profile_name ]
       epg:
         description:
-        - The name of the Span source EPG.
+        - The name of the SPAN source EPG.
         type: str
         required: true
         aliases: [ epg_name ]
@@ -79,12 +79,12 @@ options:
     suboptions:
       tenant:
         description:
-        - The name of the Span source Tenant.
+        - The name of the SPAN source Tenant.
         type: str
         aliases: [ tenant_name ]
       l3out:
         description:
-        - The name of the Span source L3Out.
+        - The name of the SPAN source L3Out.
         type: str
         aliases: [ l3out_name ]
       encap:
