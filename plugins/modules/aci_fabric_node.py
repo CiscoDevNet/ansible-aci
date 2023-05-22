@@ -293,9 +293,7 @@ def main():
                 nodeId=node_id,
                 podId=pod_id,
                 # NOTE: Originally we were sending 'rn', but now we need 'dn' for idempotency
-                # FIXME: Did this change with ACI version ?
                 dn="uni/controller/nodeidentpol/nodep-{0}".format(serial),
-                # rn='nodep-{0}'.format(serial),
                 role=role,
                 nodeType=node_type,
                 extPoolId=remote_leaf_pool_id,

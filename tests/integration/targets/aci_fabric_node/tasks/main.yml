@@ -194,7 +194,7 @@
 - name: Query our fabric_node
   cisco.aci.aci_fabric_node:
     <<: *aci_fabric_node_query
-    serial: ansible_test # might need node_id too
+    serial: ansible_test
   check_mode: true
   register: cm_query_fabric_node
 
