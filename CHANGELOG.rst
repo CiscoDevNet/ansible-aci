@@ -5,6 +5,29 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.7.0
+======
+
+Release Summary
+---------------
+
+Release v2.7.0 of the ``ansible-aci`` collection on 2023-05-24.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.6.0.
+
+
+Minor Changes
+-------------
+
+- Add aci_access_span_src_group module for access span source group support
+- Add aci_access_span_src_group_src module for access span source support
+- Add aci_access_span_src_group_src_path module for access span source path support
+- Add aci_epg_subnet module (#424)
+- Add aci_file_remote_path module (#379)
+- Add ip_data_plane_learning attribute to aci_bd_subnet and aci_vrf modules (#413)
+- Add local_as_number_config and local_as_number attributes to support bgpLocalAsnP child object in aci_l3out_bgp_peer module (#416)
+- Add source_port, source_port_start, source_port_end, tcp_flags and match_only_fragments attributes to aci_filter_entry module (#426)
+- Create methods for handling delete and get requests for other objects as the module is handling
+
 v2.6.0
 ======
 
