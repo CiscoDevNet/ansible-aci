@@ -15,6 +15,9 @@ action_groups:
     - aci_access_span_dst_group
     - aci_access_span_filter_group
     - aci_access_span_filter_group_entry
+    - aci_access_span_src_group
+    - aci_access_span_src_group_src
+    - aci_access_span_src_group_src_path
     - aci_access_sub_port_block_to_access_port
     - aci_aep
     - aci_aep_to_domain
@@ -61,6 +64,7 @@ action_groups:
     - aci_encap_pool_range
     - aci_epg
     - aci_epg_monitoring_policy
+    - aci_epg_subnet
     - aci_epg_to_contract
     - aci_epg_to_contract_interface
     - aci_epg_to_contract_master
@@ -75,10 +79,16 @@ action_groups:
     - aci_fabric_node
     - aci_fabric_pod_policy_group
     - aci_fabric_scheduler
+    - aci_fabric_span_dst_group
+    - aci_fabric_span_src_group
+    - aci_fabric_span_src_group_src
+    - aci_fabric_span_src_group_src_node
+    - aci_fabric_span_src_group_src_path
     - aci_fabric_spine_profile
     - aci_fabric_spine_switch_assoc
     - aci_fabric_switch_block
     - aci_fabric_switch_policy_group
+    - aci_file_remote_path
     - aci_filter
     - aci_filter_entry
     - aci_firmware_group
