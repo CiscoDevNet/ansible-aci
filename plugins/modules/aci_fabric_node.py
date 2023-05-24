@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
+# Copyright: (c) 2023, Gaspard Micol <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -46,6 +47,18 @@ options:
     type: str
     aliases: [ role_name ]
     choices: [ leaf, spine, unspecified ]
+  node_type:
+    description:
+    - Type for the new Fabric Node Member.
+    type: str
+    choices: [ tier_2, remote, virtual, unspecified ]
+  remote_leaf_pool_id:
+    description:
+    - External Pool Id of the remote leaf.
+    - I(remote_leaf_pool_id) is incompatible with I(node_type) other than C(remote).
+    - I(remote_leaf_pool_id) is required if I(node_type) is C(remote).
+    type: str
+    aliases: [ pool_id ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -67,6 +80,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Bruno Calogero (@brunocalogero)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
@@ -207,6 +221,7 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.cisco.aci.plugins.module_utils.constants import NODE_TYPE_MAPPING
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
@@ -222,6 +237,8 @@ def main():
         node_id=dict(type="int"),  # Not required for querying all objects
         pod_id=dict(type="int"),
         role=dict(type="str", choices=["leaf", "spine", "unspecified"], aliases=["role_name"]),
+        node_type=dict(type="str", choices=list(NODE_TYPE_MAPPING.keys())),
+        remote_leaf_pool_id=dict(type="str", aliases=["pool_id"]),
         serial=dict(type="str", aliases=["serial_number"]),  # Not required for querying all objects
         switch=dict(type="str", aliases=["name", "switch_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -234,6 +251,7 @@ def main():
         required_if=[
             ["state", "absent", ["node_id", "serial"]],
             ["state", "present", ["node_id", "serial"]],
+            ["node_type", "remote", ["remote_leaf_pool_id"]],
         ],
     )
 
@@ -243,10 +261,18 @@ def main():
     switch = module.params.get("switch")
     description = module.params.get("description")
     role = module.params.get("role")
+    node_type = module.params.get("node_type")
+    remote_leaf_pool_id = module.params.get("remote_leaf_pool_id")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
+
+    if node_type != "remote" and remote_leaf_pool_id:
+        module.fail_json(msg="External Pool Id is not compatible with a node type other than 'remote'.")
+
+    node_type = NODE_TYPE_MAPPING.get(node_type)
+
     aci.construct_url(
         root_class=dict(
             aci_class="fabricNodeIdentP",
@@ -267,10 +293,10 @@ def main():
                 nodeId=node_id,
                 podId=pod_id,
                 # NOTE: Originally we were sending 'rn', but now we need 'dn' for idempotency
-                # FIXME: Did this change with ACI version ?
                 dn="uni/controller/nodeidentpol/nodep-{0}".format(serial),
-                # rn='nodep-{0}'.format(serial),
                 role=role,
+                nodeType=node_type,
+                extPoolId=remote_leaf_pool_id,
                 serial=serial,
                 nameAlias=name_alias,
             ),
