@@ -241,6 +241,7 @@ def main():
         egress_dpp_policy=dict(type="str", default=""),
         ingress_dpp_policy=dict(type="str", default=""),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        description=dict(type="str", aliases=["descr"]),
     )
 
     module = AnsibleModule(
@@ -260,6 +261,7 @@ def main():
     egress_dpp_policy = module.params.get("egress_dpp_policy")
     ingress_dpp_policy = module.params.get("ingress_dpp_policy")
     state = module.params.get("state")
+    description = module.params.get("description")
 
     aci = ACIModule(module)
 
@@ -299,7 +301,14 @@ def main():
             dict(l3extRsIngressQosDppPol=dict(attributes=dict(tnQosDppPolName=ingress_dpp_policy))),
             dict(l3extRsEgressQosDppPol=dict(attributes=dict(tnQosDppPolName=egress_dpp_policy))),
         ]
-        aci.payload(aci_class="l3extLIfP", class_config=dict(name=interface_profile), child_configs=child_configs)
+        aci.payload(
+            aci_class="l3extLIfP", 
+            class_config=dict(
+              name=interface_profile,
+              descr=description
+            ), 
+            child_configs=child_configs
+        )
 
         aci.get_diff(aci_class="l3extLIfP")
 
