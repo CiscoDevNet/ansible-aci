@@ -62,7 +62,7 @@
     cisco.aci.aci_l3out_logical_interface_profile: &intf_present
       <<: *np_present
       interface_profile: INTFS
-      description: Abraham test
+      description: test
     check_mode: true
     register: cm_add_intf
 
@@ -78,7 +78,7 @@
       - nm_add_intf is changed
       - cm_add_intf.previous == nm_add_intf.previous == []
       - cm_add_intf.sent.l3extLIfP.attributes.name == nm_add_intf.sent.l3extLIfP.attributes.name == 'INTFS'
-      - cm_add_intf.sent.l3extLIfP.attributes.descr == nm_add_intf.sent.l3extLIfP.attributes.descr == 'Abraham test'
+      - cm_add_intf.sent.l3extLIfP.attributes.descr == nm_add_intf.sent.l3extLIfP.attributes.descr == 'test'
       - nm_add_intf.current.0.l3extLIfP.attributes.annotation == 'orchestrator:ansible'
 
   - name: Add profile  again, check if idempotency works
@@ -96,11 +96,13 @@
     cisco.aci.aci_l3out_logical_interface_profile: &intf_update
       <<: *intf_present
       nd_policy: NDTEST
+      description: new test
     register: update_intf
 
   - name: Verify update_intf
     assert:
       that:
+      - update_intf.sent.l3extLIfP.attributes.descr == 'new test'
       - update_intf is changed
       - update_intf.previous != []
 
