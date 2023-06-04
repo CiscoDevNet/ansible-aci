@@ -58,6 +58,12 @@ options:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
+  version:
+    description:
+        - The version of the firmware associated with this policy. This value is very import as well as constructing
+        - it correctly. The syntax for this field is n9000-xx.x. If you look at the firmware repository using the UI
+        - each version will have a "Full Version" column, this is the value you need to use. So, if the Full Version
+        - is 13.1(1i), the value for this field would be n9000-13.1(1i)
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -230,6 +236,7 @@ def main():
         adminst=dict(type="str", default="untriggered", choices=["triggered", "untriggered"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
+        version=dict(type="str"),
     )
 
     module = AnsibleModule(
@@ -251,6 +258,7 @@ def main():
     graceful = aci.boolean(module.params.get("graceful"))
     ignoreCompat = aci.boolean(module.params.get("ignoreCompat"))
     name_alias = module.params.get("name_alias")
+    version = module.params.get("version")
 
     aci.construct_url(
         root_class=dict(
@@ -274,6 +282,7 @@ def main():
                 adminSt=adminst,
                 ignoreCompat=ignoreCompat,
                 nameAlias=name_alias,
+                version=version,
             ),
             child_configs=[
                 dict(
