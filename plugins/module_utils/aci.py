@@ -1683,6 +1683,7 @@ class ACIModule(object):
         self.url = reset_url
         self.params["state"] = reset_state
 
+
 def ospf_spec():
     return dict(
         area_cost=dict(type="int"),
