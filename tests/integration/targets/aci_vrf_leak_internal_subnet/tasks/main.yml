@@ -1,0 +1,58 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Abraham Mughal (@abmughal)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# - name: Test that we have an ACI APIC host, ACI username and ACI password
+#   fail:
+#     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+#   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# - name: ensure tenant exists for tests to kick off
+#   cisco.aci.aci_tenant: &aci_tenant_present
+#     host: "{{ aci_hostname }}"
+#     username: "{{ aci_username }}"
+#     password: "{{ aci_password }}"
+#     validate_certs: '{{ aci_validate_certs | default(false) }}'
+#     use_ssl: '{{ aci_use_ssl | default(true) }}'
+#     use_proxy: '{{ aci_use_proxy | default(true) }}'
+#     output_level: debug
+#     state: present
+#     tenant: ansible_test
+#   register: tenant_present
+
+# - name: create vrf - check mode works
+#   cisco.aci.aci_vrf: &aci_vrf_present
+#     <<: *aci_tenant_present
+#     vrf: anstest
+#     description: Ansible Test
+#   check_mode: true
+#   register: vrf_present_check_mode
+
+# - name: create vrf - creation works
+#   cisco.aci.aci_vrf:
+#     <<: *aci_vrf_present
+#   register: vrf_present
+  
+
+- name: create leakInternalSubnet
+  cisco.aci.aci_vrf_leak_internal_subnet: &aci_vrf_leakInternalSubnet
+    #<<: *aci_vrf_present
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+    state: present
+    tenant: abmughal
+    vrf: test
+    leak_internal_subnet: leakintsubnet
+    description: Ansible Test
+    ip: 1.1.1.2
+  check_mode: true
+  register: vrf_present_check_mode
+
+#uni/tn-abmughal/ctx-test/leakroutes/leakintsubnet-[1.1.1.1]
+#uni/tn-ansible_test/ctx-anstest/leakroutes/leakintsubnet-1.1.1.1
