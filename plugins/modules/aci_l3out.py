@@ -8,7 +8,11 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "certified",
+}
 
 DOCUMENTATION = r"""
 ---
@@ -56,14 +60,14 @@ options:
     - Routing protocol for the L3Out.
     - Protocols must be re-provided with their paramaters each time an l3out with existing protocols is modified if the protocols were to be kept.
     - The Protocols are otherwise deleted if not provided each time an l3out is modified.
-    - Example 1: To add BGP protocol to an l3out with OSPF protocol, the user must enter [bgp,ospf] even though "ospf" was provided before.
-    - Example 2: To change the protocol from OSPF to EIGRP, the user must simply enter [eigrp] and the previous OSPF protocol will be deleted.
-    - To remove all existing protocols, the user must enter [static].
+    - First example, to add BGP protocol to an l3out with OSPF protocol, the user must enter C([ bgp, ospf ]) even though "ospf" was provided before.
+    - Second example, to change the protocol from OSPF to EIGRP, the user must simply enter C([ eigrp ]) and the previous OSPF protocol will be deleted.
+    - To remove all existing protocols, the user must enter C([ static ]).
     type: list
     elements: str
     choices: [ bgp, eigrp, ospf, pim, static ]
   ospf:
-    descritpion:
+    description:
     - Parameters for the OSPF protocol.
     type: dict
     suboptions:
@@ -78,7 +82,7 @@ options:
         elements: str
         choices: [ redistribute, summary, suppress-fa, unspecified ]
       area_id:
-        descritpion:
+        description:
         - The OSPF Area ID.
         - An area is a logical collection of OSPF networks, routers, and links that have the same area identification.
         - A router within an area must maintain a topological database for the area to which it belongs.
@@ -91,12 +95,12 @@ options:
         - Cisco IOS software supports area IDs expressed in IP address format or decimal format, for example, area 0.0.0.0 is equal to area 0.
         type: str
       area_type:
-        descritpion:
+        description:
         - The OSPF area type.
         type: str
         choices: [ nssa, regular, stub ]
       description:
-        descritpion:
+        description:
         - Specifies the description of a policy component.
         type: str
         aliases: [ descr ]
@@ -104,9 +108,9 @@ options:
         description:
         - Start OSPF in WAN instance instead of default.
         type: str
-        choices: [ no, yes ]
+        choices: [ "no", "yes" ]
       name_alias:
-        descritpion:
+        description:
         - The alias for the current object. This relates to the nameAlias field in ACI.
         type: str
   asn:
@@ -293,20 +297,35 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+    aci_annotation_spec,
+    aci_owner_spec,
+)
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ospf_spec
+
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        l3out=dict(type="str", aliases=["l3out_name", "name"]),  # Not required for querying all objects
+        tenant=dict(
+            type="str", aliases=["tenant_name"]
+        ),  # Not required for querying all objects
+        l3out=dict(
+            type="str", aliases=["l3out_name", "name"]
+        ),  # Not required for querying all objects
         domain=dict(type="str", aliases=["ext_routed_domain_name", "routed_domain"]),
         vrf=dict(type="str", aliases=["vrf_name"]),
         description=dict(type="str", aliases=["descr"]),
-        route_control=dict(type="list", elements="str", choices=["export", "import"], aliases=["route_control_enforcement"]),
+        route_control=dict(
+            type="list",
+            elements="str",
+            choices=["export", "import"],
+            aliases=["route_control_enforcement"],
+        ),
         dscp=dict(
             type="str",
             choices=[
@@ -336,10 +355,16 @@ def main():
             ],
             aliases=["target"],
         ),
-        l3protocol=dict(type="list", elements="str", choices=["bgp", "eigrp", "ospf", "pim", "static"]),
+        l3protocol=dict(
+            type="list",
+            elements="str",
+            choices=["bgp", "eigrp", "ospf", "pim", "static"],
+        ),
         ospf=dict(type="dict", options=ospf_spec()),
         asn=dict(type="int", aliases=["as_number"]),
-        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        state=dict(
+            type="str", default="present", choices=["absent", "present", "query"]
+        ),
         name_alias=dict(type="str"),
     )
 
@@ -369,14 +394,20 @@ def main():
 
     if l3protocol:
         if "eigrp" in l3protocol and asn is None:
-            module.fail_json(msg="Parameter 'asn' is required when l3protocol is 'eigrp'")
+            module.fail_json(
+                msg="Parameter 'asn' is required when l3protocol is 'eigrp'"
+            )
         if "eigrp" not in l3protocol and asn is not None:
-            module.warn("Parameter 'asn' is only applicable when l3protocol is 'eigrp'. The ASN will be ignored")
+            module.warn(
+                "Parameter 'asn' is only applicable when l3protocol is 'eigrp'. The ASN will be ignored"
+            )
 
     enforce_ctrl = ""
     if enforceRtctrl is not None:
         if len(enforceRtctrl) == 1 and enforceRtctrl[0] == "import":
-            aci.fail_json("The route_control parameter is invalid: allowed options are export or import,export only")
+            aci.fail_json(
+                "The route_control parameter is invalid: allowed options are export or import,export only"
+            )
         elif len(enforceRtctrl) == 1 and enforceRtctrl[0] == "export":
             enforce_ctrl = "export"
         else:
@@ -384,7 +415,14 @@ def main():
     else:
         enforce_ctrl = "export"
 
-    child_classes = ["l3extRsL3DomAtt", "l3extRsEctx", "bgpExtP", "ospfExtP", "eigrpExtP", "pimExtP"]
+    child_classes = [
+        "l3extRsL3DomAtt",
+        "l3extRsEctx",
+        "bgpExtP",
+        "ospfExtP",
+        "eigrpExtP",
+        "pimExtP",
+    ]
 
     child_configs = [
         dict(l3extRsL3DomAtt=dict(attributes=dict(tDn="uni/l3dom-{0}".format(domain)))),
@@ -392,35 +430,41 @@ def main():
     ]
     if l3protocol is not None:
         l3protocol_child_configs = dict(
-            bgp = dict(bgpExtP=dict(attributes=dict(status="deleted"))),
-            eigrp = dict(eigrpExtP=dict(attributes=dict(status="deleted"))),
-            ospf = dict(ospfExtP=dict(attributes=dict(status="deleted"))),
-            pim = dict(pimExtP=dict(attributes=dict(status="deleted"))),
+            bgp=dict(bgpExtP=dict(attributes=dict(status="deleted"))),
+            eigrp=dict(eigrpExtP=dict(attributes=dict(status="deleted"))),
+            ospf=dict(ospfExtP=dict(attributes=dict(status="deleted"))),
+            pim=dict(pimExtP=dict(attributes=dict(status="deleted"))),
         )
         for protocol in l3protocol:
             if protocol == "bgp":
-                l3protocol_child_configs["bgp"] = dict(bgpExtP=dict(attributes=dict(descr="", nameAlias="")))
+                l3protocol_child_configs["bgp"] = dict(
+                    bgpExtP=dict(attributes=dict(descr="", nameAlias=""))
+                )
             elif protocol == "eigrp":
-                l3protocol_child_configs["eigrp"] = dict(eigrpExtP=dict(attributes=dict(descr="", nameAlias="", asn=asn)))
-            elif protocol == "ospf" and isinstance(ospf,dict):
+                l3protocol_child_configs["eigrp"] = dict(
+                    eigrpExtP=dict(attributes=dict(descr="", nameAlias="", asn=asn))
+                )
+            elif protocol == "ospf" and isinstance(ospf, dict):
                 ospf["area_ctrl"] = ",".join(ospf.get("area_ctrl"))
                 l3protocol_child_configs["ospf"] = dict(
-                  ospfExtP=dict(
-                    attributes=dict(
-                      areaCost=ospf.get("area_cost"),
-                      areaCtrl=ospf.get("area_ctrl"),
-                      areaId=ospf.get("area_id"),
-                      areaType=ospf.get("area_type"),
-                      descr=ospf.get("description"),
-                      multipodInternal=ospf.get("multipod_internal"),
-                      nameAlias=ospf.get("name_alias"),
-                      )
+                    ospfExtP=dict(
+                        attributes=dict(
+                            areaCost=ospf.get("area_cost"),
+                            areaCtrl=ospf.get("area_ctrl"),
+                            areaId=ospf.get("area_id"),
+                            areaType=ospf.get("area_type"),
+                            descr=ospf.get("description"),
+                            multipodInternal=ospf.get("multipod_internal"),
+                            nameAlias=ospf.get("name_alias"),
+                        )
                     )
-                  )
+                )
             elif protocol == "pim":
-                l3protocol_child_configs["pim"] = dict(pimExtP=dict(attributes=dict(descr="", nameAlias="")))
+                l3protocol_child_configs["pim"] = dict(
+                    pimExtP=dict(attributes=dict(descr="", nameAlias=""))
+                )
         child_configs.extend(list(l3protocol_child_configs.values()))
-                
+
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",

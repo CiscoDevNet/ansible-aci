@@ -78,7 +78,7 @@
   - name: Add export and import to route_control 
     aci_l3out:
       <<: *aci_l3out_present
-      route_control: [import,export]
+      route_control: [ import, export ]
     register: nm_add_l3out_import_export
 
   - name: Add export to route_control 
@@ -160,7 +160,7 @@
       l3protocol: ospf
       ospf:
         area_cost: 1
-        area_ctrl: [summary,redistribute]
+        area_ctrl: [ summary, redistribute ]
         area_id: 0.0.0.1
         area_type: regular
         multipod_internal: no
