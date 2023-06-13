@@ -29,13 +29,34 @@
 #   check_mode: true
 #   register: vrf_present_check_mode
 
-# - name: create vrf - creation works
-#   cisco.aci.aci_vrf:
-#     <<: *aci_vrf_present
-#   register: vrf_present
-  
+- name: create vrf - check mode works
+  cisco.aci.aci_vrf: &aci_vrf_present
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+    state: present
+    tenant: abmughal
+    vrf: test2
+    description: Ansible Test
+  check_mode: true
+  register: vrf_present_check_mode
 
-- name: create leakInternalSubnet
+- name: create vrf - creation works
+  cisco.aci.aci_vrf:
+    <<: *aci_vrf_present
+  register: vrf_present
+
+- name: create test3 - creation works
+  cisco.aci.aci_vrf:
+    <<: *aci_vrf_present
+    vrf: test3
+  register: vrf_present
+
+- name: create leakInternalSubnet - check_mode
   cisco.aci.aci_vrf_leak_internal_subnet: &aci_vrf_leakInternalSubnet
     #<<: *aci_vrf_present
     host: "{{ aci_hostname }}"
@@ -48,11 +69,31 @@
     state: present
     tenant: abmughal
     vrf: test
-    leak_internal_subnet: leakintsubnet
+    leak_internal_subnet: 
+      - ctxName: "test2"
+      - ctxName: "test3"
     description: Ansible Test
     ip: 1.1.1.2
   check_mode: true
   register: vrf_present_check_mode
 
-#uni/tn-abmughal/ctx-test/leakroutes/leakintsubnet-[1.1.1.1]
-#uni/tn-ansible_test/ctx-anstest/leakroutes/leakintsubnet-1.1.1.1
+- name: create leakInternalSubnet
+  cisco.aci.aci_vrf_leak_internal_subnet: 
+    <<: *aci_vrf_leakInternalSubnet
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: debug
+    state: present
+    tenant: abmughal
+    vrf: test
+    leak_internal_subnet: 
+      - ctxName: "test2"
+      - ctxName: "test3"
+    description: Ansible Test
+    ip: 1.1.1.2
+  register: vrf_present
+

@@ -256,7 +256,13 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         vrf=dict(type="str", aliases=["context", "name", "vrf_name"]),  # Not required for querying all objects
-        leak_internal_subnet=dict(type="str", aliases=["leak_internal_subnet_name"]),
+        leak_internal_subnet=dict(
+          type="list", 
+          elements="dict",
+          options=dict(
+            ctxName=dict(type="str",aliases=["name"]),
+          ),
+        ),
         description=dict(type="str", aliases=["descr"]),
         policy_control_direction=dict(type="str", choices=["egress", "ingress"]),
         policy_control_preference=dict(type="str", choices=["enforced", "unenforced"]),
@@ -278,14 +284,11 @@ def main():
     )
 
     description = module.params.get("description")
-    policy_control_direction = module.params.get("policy_control_direction")
-    policy_control_preference = module.params.get("policy_control_preference")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
     vrf = module.params.get("vrf")
     leak_internal_subnet = module.params.get("leak_internal_subnet")
     name_alias = module.params.get("name_alias")
-    #preferred_group = module.params.get("preferred_group")
     match_type = module.params.get("match_type")
     scope = module.params.get("scope")
     ip = module.params.get("ip")
@@ -317,16 +320,26 @@ def main():
             aci_rn="leakintsubnet-[{0}]".format(ip),
             module_object=ip,
         ),
-        #child_classes=["leakTo"],
+        child_classes=["leakTo"],
     )
 
     aci.get_existing()
 
     if state == "present":
-        #loop for child_config list of dict
-        child_configs = []
-        """for key in leak_internal_subnet:
-          child_configs.append(leak_internal_subnet[key])"""
+        #loop for child_config list of dict    
+        child_configs = []    
+        for subnet in leak_internal_subnet:
+            child_configs.append(dict(leakTo=dict(
+                attributes=dict(
+                  ctxName=subnet.get("ctxName"),
+                  rn="to-[{0}]-[{1}]".format(tenant,subnet.get("ctxName")),
+                  scope=scope,
+                  tenantName=tenant,
+                )
+              )
+            )
+          )  
+
         aci.payload(
             aci_class="leakInternalSubnet",
             class_config=dict(
