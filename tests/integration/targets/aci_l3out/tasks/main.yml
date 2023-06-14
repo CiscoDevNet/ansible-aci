@@ -57,6 +57,7 @@
       description: Second L3Out
       domain: ansible_dom
       vrf: ansible_vrf
+      l3protocol: ospf
       state: absent
   
   - name: Add a new L3Out (check_mode)
@@ -131,11 +132,13 @@
       l3protocol: bgp
     register: nm_add_l3out_bgp_again
 
-  - name: Add PIM protocol and asn - warning message works for asn
+  - name: Add PIM protocol, ospf_spec and asn - warning message works for asn
     aci_l3out:
       <<: *aci_l3out_present
       l3protocol: pim
       asn: 1
+      ospf:
+        description: test warning message for opsf_spec
     register: nm_add_l3out_pim
 
   - name: Add EIGRP protocol
@@ -183,13 +186,13 @@
         description: test for ospf protocol
     register: nm_add_l3out_ospf
 
-  - name: Add OSPF protocol without ospf spec - failure message works
-    aci_l3out:
-      <<: *aci_l3out_present
-      l3protocol: ospf
-      ospf: null
-    register: nm_add_l3out_wout_ospf_spec
-    ignore_errors: true
+  # - name: Add OSPF protocol without ospf spec - failure message works
+  #   aci_l3out:
+  #     <<: *aci_l3out_present
+  #     l3protocol: ospf
+  #     ospf: null
+  #   register: nm_add_l3out_wout_ospf_spec
+  #   ignore_errors: true
 
   - name: asserts for l3out OSPF protocol tasks
     assert:
@@ -201,7 +204,7 @@
         - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.areaType == "regular"
         - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.descr == "test for ospf protocol"
         - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.multipodInternal == "no"
-        - nm_add_l3out_wout_ospf_spec.msg == "ospf specifications are required when l3protocol is 'ospf'"
+        # - nm_add_l3out_wout_ospf_spec.msg == "ospf specifications are required when l3protocol is 'ospf'"
 
   - name: get all in l3out
     aci_l3out:
@@ -221,6 +224,8 @@
         - get_l3out is not changed
         - '"rsp-subtree=full&rsp-subtree-class=bgpExtP,eigrpExtP,l3extRsEctx,l3extRsL3DomAtt,ospfExtP,pimExtP" in get_l3out.filter_string'
         - '"tn-ansible_tenant/out-ansible_l3out.json" in get_l3out.url'
+        - get_all_l3out is not changed
+        - get_all_l3out.current | length >= 2
 
   - name: delete l3out - check mod works
     aci_l3out:

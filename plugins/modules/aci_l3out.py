@@ -118,7 +118,7 @@ options:
       multipod_internal:
         description:
         - Start OSPF in WAN instance instead of default.
-        -The APIC defaults to C(no) when unset during creation.
+        - The APIC defaults to C(no) when unset during creation.
         type: str
         choices: [ "no", "yes" ]
       name_alias:
@@ -154,7 +154,7 @@ extends_documentation_fragment:
 
 notes:
 - The C(tenant) and C(domain) and C(vrf) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_domain) and M(cisco.aci.aci_vrf) modules can be used for this.
+- The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_domain) and M(cisco.aci.aci_vrf) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
 - module: cisco.aci.aci_domain
@@ -411,8 +411,8 @@ def main():
             module.fail_json(msg="Parameter 'asn' is required when l3protocol is 'eigrp'")
         if "eigrp" not in l3protocol and asn is not None:
             module.warn("Parameter 'asn' is only applicable when l3protocol is 'eigrp'. The ASN will be ignored")
-        if "ospf" in l3protocol and ospf is None:
-            module.fail_json(msg="ospf specifications are required when l3protocol is 'ospf'")
+        # if "ospf" in l3protocol and ospf is None:
+        #     module.fail_json(msg="ospf specifications are required when l3protocol is 'ospf'")
         if "ospf" not in l3protocol and ospf is not None:
             module.warn("Parameter 'ospf' is only applicable when l3protocol is 'ospf'. The OPSF specifications will be ignored")
 
