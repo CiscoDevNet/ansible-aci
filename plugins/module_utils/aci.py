@@ -1692,5 +1692,5 @@ def ospf_spec():
         area_type=dict(type="str", choices=["nssa", "regular", "stub"]),
         description=dict(type="str", aliases=["descr"]),
         multipod_internal=dict(type="str", choices=["no", "yes"]),
-        name_alias=dict(type="str")
+        name_alias=dict(type="str"),
     )

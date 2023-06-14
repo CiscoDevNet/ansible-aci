@@ -51,10 +51,17 @@ options:
   route_control:
     description:
     - Route Control enforcement direction. The only allowed values are export or import,export.
+    - The APIC defaults to C(export) when unset during creation.
     type: list
     elements: str
     choices: [ export, import ]
     aliases: [ route_control_enforcement ]
+  mpls:
+    description:
+    - Indicate whether MPLS is enabled or not.
+    - The APIC defaults to C(no) when unset during creation.
+    type: str
+    choices: [ "no", "yes" ]
   l3protocol:
     description:
     - Routing protocol for the L3Out.
@@ -74,10 +81,12 @@ options:
       area_cost:
         description:
         - The OSPF area cost.
+        - The APIC defaults to C(1) when unset during creation.
         type: int
       area_ctrl:
         description:
         - The controls of redistribution and summary LSA generation into NSSA and Stub areas.
+        - The APIC defaults to C(redistribute,summary) when unset during creation.
         type: list
         elements: str
         choices: [ redistribute, summary, suppress-fa, unspecified ]
@@ -93,10 +102,12 @@ options:
         - The main benefit of creating areas is a reduction in the number of routes to propagate-by the filtering and the summarization of routes.
         - Areas are identified by an area ID.
         - Cisco IOS software supports area IDs expressed in IP address format or decimal format, for example, area 0.0.0.0 is equal to area 0.
+        - The APIC defaults to C(1) when unset during creation.
         type: str
       area_type:
         description:
         - The OSPF area type.
+        - The APIC defaults to C(nssa) when unset during creation.
         type: str
         choices: [ nssa, regular, stub ]
       description:
@@ -107,6 +118,7 @@ options:
       multipod_internal:
         description:
         - Start OSPF in WAN instance instead of default.
+        -The APIC defaults to C(no) when unset during creation.
         type: str
         choices: [ "no", "yes" ]
       name_alias:
@@ -165,7 +177,13 @@ EXAMPLES = r"""
     description: L3Out for Production tenant
     domain: l3dom_prod
     vrf: prod
-    l3protocol: bgp
+    l3protocol: ospf
+    ospf:
+      area_cost: 1
+      area_ctrl: [ summary, redistribute ]
+      area_id: 0.0.0.1
+      area_type: regular
+      multipod_internal: no
     state: present
   delegate_to: localhost
 
@@ -311,12 +329,8 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        tenant=dict(
-            type="str", aliases=["tenant_name"]
-        ),  # Not required for querying all objects
-        l3out=dict(
-            type="str", aliases=["l3out_name", "name"]
-        ),  # Not required for querying all objects
+        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        l3out=dict(type="str", aliases=["l3out_name", "name"]),  # Not required for querying all objects
         domain=dict(type="str", aliases=["ext_routed_domain_name", "routed_domain"]),
         vrf=dict(type="str", aliases=["vrf_name"]),
         description=dict(type="str", aliases=["descr"]),
@@ -326,6 +340,7 @@ def main():
             choices=["export", "import"],
             aliases=["route_control_enforcement"],
         ),
+        mpls=dict(type="str", choices=["no", "yes"]),
         dscp=dict(
             type="str",
             choices=[
@@ -362,9 +377,7 @@ def main():
         ),
         ospf=dict(type="dict", options=ospf_spec()),
         asn=dict(type="int", aliases=["as_number"]),
-        state=dict(
-            type="str", default="present", choices=["absent", "present", "query"]
-        ),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
 
@@ -383,7 +396,8 @@ def main():
     domain = module.params.get("domain")
     dscp = module.params.get("dscp")
     description = module.params.get("description")
-    enforceRtctrl = module.params.get("route_control")
+    route_control = module.params.get("route_control")
+    mpls = module.params.get("mpls")
     vrf = module.params.get("vrf")
     l3protocol = module.params.get("l3protocol")
     ospf = module.params.get("ospf")
@@ -394,26 +408,20 @@ def main():
 
     if l3protocol:
         if "eigrp" in l3protocol and asn is None:
-            module.fail_json(
-                msg="Parameter 'asn' is required when l3protocol is 'eigrp'"
-            )
+            module.fail_json(msg="Parameter 'asn' is required when l3protocol is 'eigrp'")
         if "eigrp" not in l3protocol and asn is not None:
-            module.warn(
-                "Parameter 'asn' is only applicable when l3protocol is 'eigrp'. The ASN will be ignored"
-            )
+            module.warn("Parameter 'asn' is only applicable when l3protocol is 'eigrp'. The ASN will be ignored")
+        if "ospf" in l3protocol and ospf is None:
+            module.fail_json(msg="ospf specifications are required when l3protocol is 'ospf'")
+        if "ospf" not in l3protocol and ospf is not None:
+            module.warn("Parameter 'ospf' is only applicable when l3protocol is 'ospf'. The OPSF specifications will be ignored")
 
-    enforce_ctrl = ""
-    if enforceRtctrl is not None:
-        if len(enforceRtctrl) == 1 and enforceRtctrl[0] == "import":
-            aci.fail_json(
-                "The route_control parameter is invalid: allowed options are export or import,export only"
-            )
-        elif len(enforceRtctrl) == 1 and enforceRtctrl[0] == "export":
-            enforce_ctrl = "export"
+    enforce_ctrl = None
+    if route_control is not None:
+        if len(route_control) == 1 and route_control[0] == "import":
+            aci.fail_json("The route_control parameter is invalid: allowed options are export or import,export only")
         else:
-            enforce_ctrl = "export,import"
-    else:
-        enforce_ctrl = "export"
+            enforce_ctrl = ",".join(route_control)
 
     child_classes = [
         "l3extRsL3DomAtt",
@@ -437,13 +445,9 @@ def main():
         )
         for protocol in l3protocol:
             if protocol == "bgp":
-                l3protocol_child_configs["bgp"] = dict(
-                    bgpExtP=dict(attributes=dict(descr="", nameAlias=""))
-                )
+                l3protocol_child_configs["bgp"] = dict(bgpExtP=dict(attributes=dict()))
             elif protocol == "eigrp":
-                l3protocol_child_configs["eigrp"] = dict(
-                    eigrpExtP=dict(attributes=dict(descr="", nameAlias="", asn=asn))
-                )
+                l3protocol_child_configs["eigrp"] = dict(eigrpExtP=dict(attributes=dict(asn=asn)))
             elif protocol == "ospf" and isinstance(ospf, dict):
                 ospf["area_ctrl"] = ",".join(ospf.get("area_ctrl"))
                 l3protocol_child_configs["ospf"] = dict(
@@ -460,9 +464,7 @@ def main():
                     )
                 )
             elif protocol == "pim":
-                l3protocol_child_configs["pim"] = dict(
-                    pimExtP=dict(attributes=dict(descr="", nameAlias=""))
-                )
+                l3protocol_child_configs["pim"] = dict(pimExtP=dict(attributes=dict()))
         child_configs.extend(list(l3protocol_child_configs.values()))
 
     aci.construct_url(
@@ -489,8 +491,8 @@ def main():
             class_config=dict(
                 name=l3out,
                 descr=description,
-                dn="uni/tn-{0}/out-{1}".format(tenant, l3out),
                 enforceRtctrl=enforce_ctrl,
+                mplsEnabled=mpls,
                 targetDscp=dscp,
                 nameAlias=name_alias,
             ),

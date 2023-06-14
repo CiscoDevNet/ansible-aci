@@ -48,6 +48,16 @@
       domain: ansible_dom
       vrf: ansible_vrf
       state: absent
+
+  - name: Remove the second ansible_l3out
+    aci_l3out: &aci_l3out_2_absent
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_l3out_2
+      description: Second L3Out
+      domain: ansible_dom
+      vrf: ansible_vrf
+      state: absent
   
   - name: Add a new L3Out (check_mode)
     aci_l3out: &aci_l3out_present
@@ -65,6 +75,12 @@
     aci_l3out:
       <<: *aci_l3out_present
     register: create_idempotency
+
+  - name: Add the second ansible_l3out
+    aci_l3out:
+      <<: *aci_l3out_2_absent
+      state: present
+    register: cm_add_l3out_2
 
   - name: asserts for l3out creation tasks
     assert:
@@ -98,7 +114,7 @@
     assert:
       that:
         - nm_add_l3out_import_export is changed
-        - nm_add_l3out_import_export.sent.l3extOut.attributes.enforceRtctrl == "export,import"
+        - nm_add_l3out_import_export.sent.l3extOut.attributes.enforceRtctrl == "import,export"
         - nm_add_l3out_export is changed
         - nm_add_l3out_export.sent.l3extOut.attributes.enforceRtctrl == "export"
         - nm_add_l3out_import_error.msg == "The route_control parameter is invalid: allowed options are export or import,export only"
@@ -122,7 +138,7 @@
       asn: 1
     register: nm_add_l3out_pim
 
-  - name: Add a new L3Out with EIGRP protocol
+  - name: Add EIGRP protocol
     aci_l3out:
       <<: *aci_l3out_present
       l3protocol: eigrp
@@ -167,6 +183,14 @@
         description: test for ospf protocol
     register: nm_add_l3out_ospf
 
+  - name: Add OSPF protocol without ospf spec - failure message works
+    aci_l3out:
+      <<: *aci_l3out_present
+      l3protocol: ospf
+      ospf: null
+    register: nm_add_l3out_wout_ospf_spec
+    ignore_errors: true
+
   - name: asserts for l3out OSPF protocol tasks
     assert:
       that:
@@ -177,19 +201,26 @@
         - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.areaType == "regular"
         - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.descr == "test for ospf protocol"
         - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.multipodInternal == "no"
+        - nm_add_l3out_wout_ospf_spec.msg == "ospf specifications are required when l3protocol is 'ospf'"
 
   - name: get all in l3out
     aci_l3out:
       <<: *aci_l3out_present
+      state: query
+    register: get_l3out
+
+  - name: get all l3out
+    aci_l3out:
+      <<: *aci_info
       state: query
     register: get_all_l3out
 
   - name: asserts query tasks
     assert:
       that:
-        - get_all_l3out is not changed
-        - '"rsp-subtree=full&rsp-subtree-class=bgpExtP,eigrpExtP,l3extRsEctx,l3extRsL3DomAtt,ospfExtP,pimExtP" in get_all_l3out.filter_string'
-        - '"tn-ansible_tenant/out-ansible_l3out.json" in get_all_l3out.url'
+        - get_l3out is not changed
+        - '"rsp-subtree=full&rsp-subtree-class=bgpExtP,eigrpExtP,l3extRsEctx,l3extRsL3DomAtt,ospfExtP,pimExtP" in get_l3out.filter_string'
+        - '"tn-ansible_tenant/out-ansible_l3out.json" in get_l3out.url'
 
   - name: delete l3out - check mod works
     aci_l3out:
