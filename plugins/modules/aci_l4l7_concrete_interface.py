@@ -69,7 +69,7 @@ seealso:
 - module: aci_l4l7_device
 - module: aci_l4l7_concrete_device
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes, B(vns:CIf) and B(vns:RsCIfPathAtt)
+  description: More information about the internal APIC class B(vns:CIf)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -330,12 +330,8 @@ def main():
     if state == "present":
         if not re.search(node_regex, node_id):
             aci.fail_json(msg="node_id must be a single integer for ports or port-channels, or a hyphen separated pair of integers for vPCs")
-        if "-" in node_id:
-            path_type = "protpaths"
-        else:
-            path_type = "paths"
 
-        path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, path_type, node_id, path_ep)
+        path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, "protpaths" if "-" in node_id else "paths", node_id, path_ep)
         aci.payload(
             aci_class="vnsCIf",
             class_config=dict(

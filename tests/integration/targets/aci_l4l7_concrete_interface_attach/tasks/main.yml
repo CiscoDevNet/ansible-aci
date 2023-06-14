@@ -76,6 +76,15 @@
     encap: vlan-987
     state: present
 
+- name: Add Second Logical Interface
+  cisco.aci.aci_l4l7_logical_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ansible_second_log_intf
+    encap: vlan-988
+    state: present
+
 # CREATE L4-L7 CONCRETE INTERFACE
 - name: Create L4-L7 Concrete Device
   cisco.aci.aci_l4l7_concrete_device:
@@ -98,6 +107,18 @@
     path_ep: eth1/16
     state: present
 
+- name: Create Second L4-L7 Concrete Interface
+  cisco.aci.aci_l4l7_concrete_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    concrete_device: ansible_concrete_device
+    concrete_interface: ansible_second_concrete_interface
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/17
+    state: present
+
 - name: Add a new concrete interface attachment
   cisco.aci.aci_l4l7_concrete_interface_attach:
     <<: *aci_info
@@ -106,6 +127,17 @@
     logical_interface: ansible_log_intf
     concrete_device: ansible_concrete_device
     concrete_interface: ansible_concrete_interface
+    state: present
+  register: add_concrete_intf_attach
+
+- name: Add a second concrete interface attachment
+  cisco.aci.aci_l4l7_concrete_interface_attach:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ansible_second_log_intf
+    concrete_device: ansible_concrete_device
+    concrete_interface: ansible_second_concrete_interface
     state: present
   register: add_concrete_intf_attach
 
@@ -152,6 +184,18 @@
     - query_concrete_intf_attach is not changed
     - query_concrete_intf_attach.current.0.vnsRsCIfAttN.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf/rscIfAttN-[uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]]"
     - query_concrete_intf_attach.current.0.vnsRsCIfAttN.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
+
+- name: Query all concrete interface attachments
+  cisco.aci.aci_l4l7_concrete_interface_attach:
+    <<: *aci_info
+    state: query
+  register: query_all_attachments
+
+- name: Verify query all
+  ansible.builtin.assert:
+    that:
+    - query_all_attachments is not changed
+    - query_all_attachments.current | length > 1
 
 # DELETE CONCRETE INTERFACE ATTACHMENT
 - name: Remove concrete interface attachment

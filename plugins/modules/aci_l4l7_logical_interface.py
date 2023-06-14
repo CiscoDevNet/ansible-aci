@@ -18,20 +18,20 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   device:
     description:
-    - Name of an existing Logical Device
+    - The name of an existing Logical Device.
     type: str
   logical_interface:
     description:
-    - Logical Interface name
+    - The name of an existing Logical Interface.
     type: str
   encap:
     description:
-    - Encapsulation for the link
+    - The encapsulation of the Logical Interface.
     type: str
   state:
     description:
@@ -42,14 +42,15 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
-- The C(tenant) and C(device) must exist before using this module in your playbook.
+- The I(tenant) and I(device) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l4l7_device) modules can be used for this.
 seealso:
 - module: aci_l4l7_device
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(vnsLIf)
+  description: More information about the internal APIC class B(vns:LIf)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -209,11 +210,12 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         device=dict(type="str"),
@@ -225,7 +227,10 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "absent", ["tenant", "device", "logical_interface"]], ["state", "present", ["tenant", "device", "logical_interface"]]],
+        required_if=[
+            ["state", "absent", ["tenant", "device", "logical_interface"]],
+            ["state", "present", ["tenant", "device", "logical_interface"]],
+        ],
     )
 
     tenant = module.params.get("tenant")

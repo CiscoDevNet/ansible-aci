@@ -34,6 +34,14 @@
     domain_type: phys
     state: absent
 
+- name: Remove ansible_vmm_domain if it already exists
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_vmm_dom
+    domain_type: vmm
+    vm_provider: vmware
+    state: absent
+
 # CREATE TENANT
 - name: Create ansible_tenant
   cisco.aci.aci_tenant:
@@ -41,7 +49,7 @@
     name: ansible_tenant
     state: present
 
-# CREATE DOMAIN
+# CREATE DOMAINS
 - name: Create ansible_phys_domain
   cisco.aci.aci_domain:
     <<: *aci_info
@@ -49,8 +57,16 @@
     domain_type: phys
     state: present
 
+- name: Create ansible_vmm_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_vmm_dom
+    domain_type: vmm
+    vm_provider: vmware
+    state: present
+
 # ADD L4-L7 DEVICE
-- name: Create L4-L7 Device
+- name: Create L4-L7 Physical Device
   cisco.aci.aci_l4l7_device:
     <<: *aci_info
     tenant: ansible_tenant
@@ -67,6 +83,23 @@
     state: present
   register: create_l4l7_device
 
+- name: Create L4-L7 Virtual Device
+  cisco.aci.aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_virt_device
+    domain: ansible_vmm_dom
+    func_type: GoTo
+    context_aware: single
+    is_copy: false
+    managed: false
+    dev_type: virtual
+    svc_type: adc
+    trunking: false
+    prom_mode: true
+    state: present
+  register: create_virt_l4l7_device
+
 - name: Verify L4-L7 device has been created
   ansible.builtin.assert:
     that:
@@ -80,11 +113,22 @@
     - create_l4l7_device.current.0.vnsLDevVip.attributes.promMode == "yes"
     - create_l4l7_device.current.0.vnsLDevVip.attributes.svcType == "ADC"
     - create_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "no"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_virt_device"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.name == "ansible_virt_device"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.contextAware == "single-Context"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.devtype == "VIRTUAL"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.funcType == "GoTo"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.isCopy == "no"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.managed == "no"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.promMode == "yes"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.svcType == "ADC"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "no"
 
 - name: Verify domain binding object has been created
   ansible.builtin.assert:
     that:
     - create_l4l7_device.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/phys-ansible_phys_dom"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/vmmp-VMWare/dom-ansible_vmm_dom"
 
 # ADD device again to check idempotence
 - name: Create L4-L7 device again
@@ -104,10 +148,28 @@
     state: present
   register: create_l4l7_device_again
 
-- name: Verify L4-L7 device has been created
+- name: Create L4-L7 Virtual Device again
+  cisco.aci.aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_virt_device
+    domain: ansible_vmm_dom
+    func_type: GoTo
+    context_aware: single
+    is_copy: false
+    managed: false
+    dev_type: virtual
+    svc_type: adc
+    trunking: false
+    prom_mode: true
+    state: present
+  register: create_virt_l4l7_device_again
+
+- name: Verify L4-L7 device idempotence
   ansible.builtin.assert:
     that:
     - create_l4l7_device_again is not changed
+    - create_virt_l4l7_device_again is not changed
     - create_l4l7_device_again.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
     - create_l4l7_device_again.current.0.vnsLDevVip.attributes.name == "ansible_device"
     - create_l4l7_device_again.current.0.vnsLDevVip.attributes.contextAware == "single-Context"
@@ -118,11 +180,22 @@
     - create_l4l7_device_again.current.0.vnsLDevVip.attributes.promMode == "yes"
     - create_l4l7_device_again.current.0.vnsLDevVip.attributes.svcType == "ADC"
     - create_l4l7_device_again.current.0.vnsLDevVip.attributes.trunking == "no"
+    - create_virt_l4l7_device_again.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_virt_device"
+    - create_virt_l4l7_device_again.current.0.vnsLDevVip.attributes.name == "ansible_virt_device"
+    - create_virt_l4l7_device_again.current.0.vnsLDevVip.attributes.contextAware == "single-Context"
+    - create_virt_l4l7_device_again.current.0.vnsLDevVip.attributes.devtype == "VIRTUAL"
+    - create_virt_l4l7_device_again.current.0.vnsLDevVip.attributes.funcType == "GoTo"
+    - create_virt_l4l7_device_again.current.0.vnsLDevVip.attributes.isCopy == "no"
+    - create_virt_l4l7_device_again.current.0.vnsLDevVip.attributes.managed == "no"
+    - create_virt_l4l7_device_again.current.0.vnsLDevVip.attributes.promMode == "yes"
+    - create_virt_l4l7_device_again.current.0.vnsLDevVip.attributes.svcType == "ADC"
+    - create_virt_l4l7_device_again.current.0.vnsLDevVip.attributes.trunking == "no"
 
-- name: Verify domain binding object has been created
+- name: Verify domain binding object is still correct
   ansible.builtin.assert:
     that:
     - create_l4l7_device_again.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/phys-ansible_phys_dom"
+    - create_virt_l4l7_device_again.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/vmmp-VMWare/dom-ansible_vmm_dom"
 
 # MODIFY L4-L7 Device
 - name: Update L4-L7 device
@@ -241,4 +314,12 @@
     <<: *aci_info
     domain: ansible_phys_dom
     domain_type: phys
+    state: absent
+
+- name: Remove ansible_vmm_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_vmm_dom
+    domain_type: vmm
+    vm_provider: vmware
     state: absent

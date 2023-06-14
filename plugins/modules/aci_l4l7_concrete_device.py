@@ -52,12 +52,12 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(tenant) and C(device) must exist before using this module in your playbook.
+- The I(tenant) and I(device) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l4l7_device) modules can be used for this.
 seealso:
 - module: aci_l4l7_device
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(vns:CDev)
+  description: More information about the internal APIC class B(vns:CDev)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -234,7 +234,10 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "absent", ["tenant", "device", "name"]], ["state", "present", ["tenant", "device", "name"]]],
+        required_if=[
+            ["state", "absent", ["tenant", "device", "name"]],
+            ["state", "present", ["tenant", "device", "name"]],
+        ],
     )
 
     tenant = module.params.get("tenant")

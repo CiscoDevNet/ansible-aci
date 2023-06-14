@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l4l7_device
-short_description: Manage L4-L7 Devices (vns:LDevVip, vns:RsALDevToPhysDomP, vns:RsALDevToDomP)
+short_description: Manage L4-L7 Devices (vns:LDevVip)
 description:
 - Manage L4-L7 Devices.
 options:
@@ -28,47 +28,42 @@ options:
     aliases: [ device, device_name, logical_device_name ]
   context_aware:
     description:
-      - Is device Single or Multi context aware.
-      - This defaults to single on the APIC if not provided during object creation.
+    - Is device Single or Multi context aware.
+    - The APIC defaults to C(single) when unset during creation.
     type: str
     choices: [ multi, single ]
   dev_type:
     description:
     - The type of the device.
-    - This defaults to physical on the APIC if not provided during object creation.
+    - The APIC defaults to C(physical) when unset during creation.
     type: str
     choices: [ physical, virtual ]
   func_type:
     description:
     - The function type of the device.
-    - This defaults to GoTo on the APIC if not provided during object creation.
+    - The APIC defaults to C(go_to) when unset during creation.
     type: str
-    choices: [ None, GoTo, GoThrough, L1, L2 ]
-  is_copy:
-    description:
-    - Is the device a copy device.
-    - This defaults to false on the APIC if not provided during object creation.
-    type: bool
+    choices: [ go_to, go_through, l1, l2 ]
   managed:
     description:
     - Is the device a managed device.
-    - This defaults to true on the APIC if not provided during object creation.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   prom_mode:
     description:
     - Enable promiscuous mode.
-    - This defaults to false on the APIC if not provided during object creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   svc_type:
     description:
     - The service type running on the device.
-    - This defaults to others on the APIC if not provided during object creation.
+    - The APIC defaults to C(others) when unset during creation.
     type: str
-    choices: [ adc, fw, others, copy ]
+    choices: [ adc, fw, others ]
   trunking:
     description:
     - Enable trunking.
-    - This defaults to false on the APIC if not provided during object creation.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   domain:
     description:
@@ -87,11 +82,11 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(tenant) must exist before using this module in your playbook.
+- The I(tenant) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(vns:LDevVip), B(vns:RsALDevToPhysDomP) and B(vns:RsALDevToDomP)
+  description: More information about the internal APIC class B(vns:LDevVip)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -107,9 +102,8 @@ EXAMPLES = r"""
     name: my_device
     state: present
     domain: phys
-    func_type: GoTo
+    func_type: go_to
     context_aware: single
-    is_copy: no
     managed: no
     dev_type: physical
     svc_type: adc
@@ -257,6 +251,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+from ansible_collections.cisco.aci.plugins.module_utils.constants import L4L7_FUNC_TYPES_MAPPING
 
 
 def main():
@@ -268,11 +263,10 @@ def main():
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         context_aware=dict(type="str", choices=["single", "multi"]),
         dev_type=dict(type="str", choices=["physical", "virtual"]),
-        func_type=dict(type="str", choices=["None", "GoTo", "GoThrough", "L1", "L2"]),
-        is_copy=dict(type="bool"),
+        func_type=dict(type="str", choices=["go_to", "go_through", "l1", "l2"]),
         managed=dict(type="bool"),
         prom_mode=dict(type="bool"),
-        svc_type=dict(type="str", choices=["adc", "fw", "others", "copy"]),
+        svc_type=dict(type="str", choices=["adc", "fw", "others"]),
         trunking=dict(type="bool"),
         domain=dict(type="str"),
     )
@@ -280,8 +274,10 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "absent", ["tenant", "name"]], ["state", "present", ["tenant", "name"]]],
-        required_together=[["dev_type", "domain"]],
+        required_if=[
+            ["state", "absent", ["tenant", "name"]],
+            ["state", "present", ["tenant", "name", "dev_type", "domain"]],
+        ],
     )
 
     aci = ACIModule(module)
@@ -291,8 +287,7 @@ def main():
     name = module.params.get("name")
     context_aware = module.params.get("context_aware")
     dev_type = module.params.get("dev_type")
-    func_type = module.params.get("func_type")
-    is_copy = aci.boolean(module.params.get("is_copy"))
+    func_type = L4L7_FUNC_TYPES_MAPPING.get(module.params.get("func_type"))
     managed = aci.boolean(module.params.get("managed"))
     prom_mode = aci.boolean(module.params.get("prom_mode"))
     svc_type = module.params.get("svc_type")
@@ -319,14 +314,13 @@ def main():
 
     if state == "present":
         child_configs = []
-        if domain is not None:
-            if dev_type == "physical":
-                dom_class = "vnsRsALDevToPhysDomP"
-                tdn = "uni/phys-{0}".format(domain)
-            if dev_type == "virtual":
-                dom_class = "vnsRsALDevToDomP"
-                tdn = "uni/vmmp-VMWare/dom-{0}".format(domain)
-            child_configs.append({dom_class: {"attributes": {"tDn": tdn}}})
+        if dev_type == "virtual":
+            dom_class = "vnsRsALDevToDomP"
+            tdn = "uni/vmmp-VMWare/dom-{0}".format(domain)
+        else:
+            dom_class = "vnsRsALDevToPhysDomP"
+            tdn = "uni/phys-{0}".format(domain)
+        child_configs.append({dom_class: {"attributes": {"tDn": tdn}}})
 
         aci.payload(
             aci_class="vnsLDevVip",
@@ -335,7 +329,6 @@ def main():
                 contextAware="{0}-Context".format(context_aware),
                 devtype=dev_type.upper(),
                 funcType=func_type,
-                isCopy=is_copy,
                 managed=managed,
                 promMode=prom_mode,
                 svcType=svc_type.upper(),

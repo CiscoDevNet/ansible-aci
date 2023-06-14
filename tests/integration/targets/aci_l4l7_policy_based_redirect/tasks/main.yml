@@ -41,14 +41,22 @@
     state: query
   register: version
 
+- name: Create IP SLA Monitoring Policy
+  cisco.aci.aci_ip_sla_monitoring_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_ip_sla_mon_policy
+    sla_type: icmp
+    state: present
+
 # CREATE L4-L7 POLICY BASED REDIRECT
 - name: Create L4-L7 Policy Based Redirect (v4)
   cisco.aci.aci_l4l7_policy_based_redirect:
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
-    dest_type: L3
-    hash_algorithm: dip
+    dest_type: l3
+    hash_algorithm: destination_ip
     resilient_hash: true
     min_threshold: 60
     max_threshold: 90
@@ -65,7 +73,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
-    hash_algorithm: dip
+    hash_algorithm: destination_ip
     resilient_hash: true
     min_threshold: 60
     max_threshold: 90
@@ -114,8 +122,8 @@
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
-    dest_type: L3
-    hash_algorithm: dip
+    dest_type: l3
+    hash_algorithm: destination_ip
     resilient_hash: true
     min_threshold: 60
     max_threshold: 90
@@ -132,7 +140,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
-    hash_algorithm: dip
+    hash_algorithm: destination_ip
     resilient_hash: true
     min_threshold: 60
     max_threshold: 90
@@ -183,14 +191,15 @@
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
-    dest_type: L2
-    hash_algorithm: sip-dip-prototype
+    dest_type: l2
+    hash_algorithm: ip_and_protocol
     resilient_hash: false
     min_threshold: 50
     max_threshold: 80
     threshold_enable: false
     threshold_down_action: deny
     pod_aware: false
+    monitor_policy: ansible_ip_sla_mon_policy
     anycast_enabled: false
     state: present
   register: update_pbr_policy_v4
@@ -201,7 +210,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
-    hash_algorithm: sip-dip-prototype
+    hash_algorithm: ip_and_protocol
     resilient_hash: false
     min_threshold: 50
     max_threshold: 80
@@ -228,6 +237,7 @@
     - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.resilientHashEnabled == "no"
     - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "deny"
     - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "no"
+    - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.children.0.vnsRsIPSLAMonitoringPol.attributes.tDn == "uni/tn-ansible_tenant/ipslaMonitoringPol-ansible_ip_sla_mon_policy"
   when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
 - name: Verify PBR Attributes (v3)
@@ -245,6 +255,21 @@
     - update_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "deny"
     - update_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "no"
   when: version.current.0.topSystem.attributes.version is version('4.2', '<')
+
+- name: Remove Monitoring Policy
+  cisco.aci.aci_l4l7_policy_based_redirect:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy_name: ansible_pbr_policy
+    dest_type: l2
+    state: present
+  register: remove_monitoring_policy
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+
+- name: Verify Monitoring Policy Removal
+  ansible.builtin.assert:
+    that:
+    - remove_monitoring_policy.current.0.children is not defined
 
 # QUERY L4-L7 PBR POLICY
 - name: Query L4-L7 Policy Based Redirect (v4)

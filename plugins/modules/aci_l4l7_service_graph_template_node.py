@@ -18,44 +18,47 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   service_graph:
     description:
-    - Name of an existing Service Graph
+    - The name of an existing Service Graph.
     type: str
   node:
     description:
-    - Name of the Service Graph Template Node
+    - The name of the Service Graph Template Node.
     type: str
   func_template_type:
     description:
-    - Functional template type for the node
+    - The functional template type for the node.
+    - The APIC defaults to C(other) when unset during creation.
     type: str
     choices: [ fw_trans, fw_routed, adc_one_arm, adc_two_arm, other ]
   func_type:
     description:
-    - Type of connection
+    - The type of connection.
+    - The APIC defaults to C(go_to) when unset during creation.
     type: str
-    choices: [ None, GoTo, GoThrough, L1, L2 ]
+    choices: [ go_to, go_through, l1, l2 ]
   device:
     description:
-    - Name of an existing logical device
+    - The name of an existing logical device.
     type: str
   device_tenant:
     description:
-    - Tenant the logical device exists under
-    - Not required if logical device and node exist within the same tenant
-    - Intended use case is when the device is in the C(common) tenant but the node is not
+    - The tenant the logical device exists under.
+    - This variable is only used if logical device and node exist within different tenants.
+    - Intended use case is when the device is in the C(common) tenant but the node is not.
     type: str
   managed:
     description:
-    - Is this device managed by the apic
+    - Whether this device managed by the apic.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   routing_mode:
     description:
-    - Routing mode for the node
+    - The routing mode for the node.
     type: str
   state:
     description:
@@ -66,9 +69,11 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 notes:
-- The C(tenant) and C(service_graph) must exist before using this module in your playbook.
+- The I(tenant) and I(service_graph) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l4l7_service_graph_template_node) modules can be used for this.
 seealso:
 - module: aci_l4l7_service_graph_template
@@ -238,18 +243,21 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.constants import L4L7_FUNC_TYPES_MAPPING
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         service_graph=dict(type="str"),
         node=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         func_template_type=dict(type="str", choices=["fw_trans", "fw_routed", "adc_one_arm", "adc_two_arm", "other"]),
-        func_type=dict(type="str", choices=["None", "GoTo", "GoThrough", "L1", "L2"]),
+        func_type=dict(type="str", choices=["go_to", "go_through", "l1", "l2"]),
         device=dict(type="str"),
         device_tenant=dict(type="str"),
         managed=dict(type="bool"),
@@ -269,7 +277,7 @@ def main():
     node = module.params.get("node")
     state = module.params.get("state")
     func_template_type = module.params.get("func_template_type")
-    func_type = module.params.get("func_type")
+    func_type = L4L7_FUNC_TYPES_MAPPING.get(module.params.get("func_type"))
     device = module.params.get("device")
     device_tenant = module.params.get("device_tenant")
     managed = aci.boolean(module.params.get("managed"))

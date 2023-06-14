@@ -18,30 +18,33 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   service_graph:
     description:
-    - Name of an existing Service Graph
+    - The name of an existing Service Graph.
     type: str
   connection_name:
     description:
-    - Name of the connection, e.g C1 or C2
+    - The name of the connection, e.g C1 or C2.
     type: str
   direct_connect:
     description:
-    - Enable direct connections
+    - Whether to enable direct connections.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   unicast_route:
     description:
-    - Enable unicast routing
+    - Whether to enable unicast routing.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   adjacency_type:
     description:
-    - Is the adjacecncy Layer2 or Layer3
+    - Whether the adjacecncy Layer2 or Layer3.
+    - The APIC defaults to C(l2) when unset during creation.
     type: str
-    choices: [ L2, L3 ]
+    choices: [ l2, l3 ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -51,15 +54,17 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 notes:
-- The C(tenant) and C(service_graph) must exist before using this module in your playbook.
+- The I(tenant) and I(service_graph) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l4l7_service_graph_template_node) modules can be used for this.
 
 seealso:
 - module: aci_l4l7_service_graph_template
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes, B(vnsAbsConnection)
+  description: More information about the internal APIC class, B(vns:AbsConnection)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -218,11 +223,13 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         service_graph=dict(type="str"),
@@ -230,7 +237,7 @@ def main():
         connection_name=dict(type="str"),
         direct_connect=dict(type="bool"),
         unicast_route=dict(type="bool"),
-        adjacency_type=dict(type="str", choices=["L2", "L3"]),
+        adjacency_type=dict(type="str", choices=["l2", "l3"]),
     )
 
     module = AnsibleModule(
@@ -249,7 +256,7 @@ def main():
     state = module.params.get("state")
     connection_name = module.params.get("connection_name")
     unicast_route = aci.boolean(module.params.get("unicast_route"))
-    adjacency_type = module.params.get("adjacency_type")
+    adjacency_type = module.params.get("adjacency_type").upper() if module.params.get("adjacency_type") is not None else None
     direct_connect = aci.boolean(module.params.get("direct_connect"))
 
     aci.construct_url(

@@ -432,3 +432,9 @@ POLICY_LABEL_COLORS = [
     "yellow",
     "yellow_green",
 ]
+
+HTTP_VERSIONS_MAPPING = {"1.0": "HTTP10", "1.1": "HTTP11"}
+
+L4L7_FUNC_TYPES_MAPPING = {"go_to": "GoTo", "go_through": "GoThrough", "l1": "L1", "l2": "L2"}
+
+L4L7_HASH_ALGORITHMS_MAPPING = {"source_ip": "sip", "destination_ip": "dip", "ip_and_protocol": "sip-dip-prototype"}

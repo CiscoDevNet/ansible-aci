@@ -18,16 +18,16 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   service_graph:
     description:
-    - Name of an existing Service graph
+    - The name of an existing Service graph.
     type: str
   node_name:
     description:
-    - Name of the Term Node
+    - The name of the Term Node.
     type: str
     choices: [ T1, T2 ]
   state:
@@ -39,15 +39,17 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 notes:
-- The C(tenant) and C(service_graph) must exist before using this module in your playbook.
+- The I(tenant) and I(service_graph) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l4l7_service_graph_template_node) modules can be used for this.
 
 seealso:
 - module: aci_l4l7_service_graph_template
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes, B(vnsAbsTermNodeCon), B(vnsAbsTermNodeProv), B(vnsAbsTermConn)
+  description: More information about the internal APIC classes, B(vns:AbsTermNodeCon), B(vns:AbsTermNodeProv), B(vns:AbsTermConn)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -197,11 +199,13 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         service_graph=dict(type="str"),

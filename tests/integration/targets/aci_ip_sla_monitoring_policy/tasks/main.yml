@@ -100,9 +100,8 @@
     sla_type: http
     frequency: 40
     multiplier: 6
-    http_version: http_1.1
+    http_version: 1.1
     http_uri: /test
-    http_method: get
     request_data_size: 100
     operation_timeout: 2100
     threshold: 2000
@@ -126,6 +125,37 @@
     - http_sla.current.0.fvIPSLAMonitoringPol.attributes.httpUri == "/test"
     - http_sla.current.0.fvIPSLAMonitoringPol.attributes.httpMethod == "get"
   when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+
+# TEST ERROR CHECKING
+- name: Create ICMP Monitoring Policy with sla_port
+  cisco.aci.aci_ip_sla_monitoring_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    sla_policy: ansible_http_sla
+    sla_type: icmp
+    sla_port: 8080
+    state: present
+  ignore_errors: true
+  register: icmp_with_sla_port
+
+- name: Create ICMP Monitoring Policy with request_data_size
+  cisco.aci.aci_ip_sla_monitoring_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    sla_policy: ansible_http_sla
+    sla_type: icmp
+    request_data_size: 2000
+    state: present
+  ignore_errors: true
+  register: icmp_with_request_data_size
+
+- name: Verify Errors
+  ansible.builtin.assert:
+    that:
+    - icmp_with_sla_port is failed
+    - icmp_with_request_data_size is failed
+    - icmp_with_sla_port.msg == "Setting 'sla_port' is not allowed when 'sla_type' is not set to 'tcp'."
+    - icmp_with_request_data_size.msg == "Setting 'request_data_size' is not allowed when 'sla_type' is not set to 'http."
 
 # MODIFY SLA POLICY
 - name: Convert ICMP SLA policy to TCP

@@ -18,20 +18,20 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   service_graph:
     description:
-    - Name of an existing Service Graph
+    - The name of an existing Service Graph.
     type: str
   node:
     description:
-    - Name an existing Service Graph Node
+    - The name an existing Service Graph Node.
     type: str
   connection_name:
     description:
-    - Whether this Functional Connection is the consumer or provider
+    - Whether this Functional Connection is the consumer or provider.
     type: str
     choices: [ consumer, provider ]
   state:
@@ -43,16 +43,18 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 notes:
-- The C(tenant), C(service_graph) and C(node) must exist before using this module in your playbook.
+- The I(tenant), I(service_graph) and I(node) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l4l7_service_graph_template) and M(cisco.aci.aci_l4l7_service_graph_template_node) modules can be used for this.
 
 seealso:
 - module: aci_l4l7_service_graph_template
 - module: aci_l4l7_service_graph_template_node
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes, B(vnsAbsFuncConn)
+  description: More information about the internal APIC classes, B(vns:AbsFuncConn)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -214,11 +216,13 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         service_graph=dict(type="str"),

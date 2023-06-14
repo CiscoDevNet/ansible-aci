@@ -18,28 +18,28 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   service_graph:
     description:
-    - Name of an existing Service Graph
+    - The name of an existing Service Graph.
     type: str
   connection_name:
     description:
-    - Name of an existing vns:AbsConnection object
+    - The name of an existing vns:AbsConnection object.
     type: str
   direction:
     description:
-    - Direction of the connection
-    - If this links to a terminal node, both vns:RsAbsConnectionConns will use the same direction
-    - Otherwise one vns:RsAbsConnectionConns will be consumer, and the other will be provider
+    - The direction of the connection.
+    - If this links to a terminal node, both vns:RsAbsConnectionConns will use the same direction.
+    - Otherwise one vns:RsAbsConnectionConns will be consumer, and the other will be provider.
     type: str
     choices: [ consumer, provider ]
   connected_node:
     description:
-    - Name of an existing node
-    - Omit this variable for connections to terminal nodes
+    - The name of an existing node.
+    - Omit this variable for connections to terminal nodes.
     type: str
   state:
     description:
@@ -50,9 +50,10 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
-- The C(tenant), C(service_graph) and C(connection_name) must exist before using this module in your playbook.
+- The I(tenant), I(service_graph) and I(connection_name) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l4l7_service_graph_template_node)
   and M(cisco.aci.aci_l4l7_service_graph_template_abs_conn) modules can be used for this.
 
@@ -61,7 +62,7 @@ seealso:
 - module: aci_l4l7_service_graph_template_abs_connection
 - module: aci_l4l7_service_graph_template_node
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes, B(vnsRsAbsConnectionConns)
+  description: More information about the internal APIC class, B(vns:RsAbsConnectionConns)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -227,11 +228,12 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         service_graph=dict(type="str"),

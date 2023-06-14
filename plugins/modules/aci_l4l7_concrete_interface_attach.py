@@ -18,24 +18,24 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   device:
     description:
-    - Name of an existing Logical Device
+    - The name of an existing Logical Device.
     type: str
   logical_interface:
     description:
-    - Name of an existing Logical Interface
+    - The name of an existing Logical Interface.
     type: str
   concrete_device:
     description:
-    - Name of an existing Concrete Device
+    - The name of an existing Concrete Device.
     type: str
   concrete_interface:
     description:
-    - Name of an existing Concrete Interface
+    - The name of an existing Concrete Interface.
     type: str
   state:
     description:
@@ -53,7 +53,7 @@ seealso:
 - module: aci_l4l7_concrete_device
 - module: aci_l4l7_concrete_interface
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(vns:RsCIfAttN)
+  description: More information about the internal APIC class B(vns:RsCIfAttN)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -98,7 +98,15 @@ EXAMPLES = r"""
     concrete_interface: my_conc_intf
     state: query
   delegate_to: localhost
+  register: query_result
 
+- name: Query all concrete interface attachments
+  cisco.aci.aci_l4l7_concrete_interface_attach:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
@@ -229,7 +237,9 @@ def main():
         required_if=[
             ["state", "absent", ["tenant", "device", "logical_interface", "concrete_device", "concrete_interface"]],
             ["state", "present", ["tenant", "device", "logical_interface", "concrete_device", "concrete_interface"]],
-            ["state", "query", ["tenant", "device", "logical_interface", "concrete_device", "concrete_interface"]],
+        ],
+        required_together=[
+            ["tenant", "device", "concrete_device", "concrete_interface"],
         ],
     )
 
@@ -242,7 +252,7 @@ def main():
 
     aci = ACIModule(module)
 
-    tdn = "uni/tn-{0}/lDevVip-{1}/cDev-{2}/cIf-[{3}]".format(tenant, device, concrete_device, concrete_interface)
+    tdn = "uni/tn-{0}/lDevVip-{1}/cDev-{2}/cIf-[{3}]".format(tenant, device, concrete_device, concrete_interface) if concrete_interface is not None else None
 
     aci.construct_url(
         root_class=dict(

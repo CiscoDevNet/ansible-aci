@@ -29,6 +29,7 @@ options:
   sla_type:
     description:
     - The type of monitoring.
+    - The APIC defaults to C(icmp) when unset during creation.
     type: str
     choices: [ icmp, tcp, l2ping, http ]
   sla_port:
@@ -38,48 +39,52 @@ options:
   frequency:
     description:
     - How often to probe.
+    - The APIC defaults to C(60) when unset during creation.
     type: int
   multiplier:
     description:
     - How many probes must fail for the SLA to be down.
+    - The APIC defaults to C(3) when unset during creation.
     type: int
   request_data_size:
     description:
     - The number of bytes to send in the request.
-    - Only used if C(sla_type) is C(http)
+    - Only used if I(sla_type) is set to C(http).
+    - The APIC defaults to C(28) when unset during creation.
     type: int
   type_of_service:
     description:
     - The Type of Service (ToS) value to set in the IPv4 header.
+    - The APIC defaults to C(0) when unset during creation.
     type: int
     aliases: [ tos ]
   operation_timeout:
     description:
     - The amount of time in milliseconds that the IP SLA operation waits for a response from its request packet.
+    - The APIC defaults to C(900) when unset during creation.
     type: int
   threshold:
     description:
     - The upper threshold value in milliseconds for calculating network monitoring statistics created by the IP SLA operation.
     - The value specified for this property must not exceed the value specified for operation_timeout.
+    - The APIC defaults to C(900) when unset during creation.
     type: int
   traffic_class:
     description:
     - The Traffic Class value to set in the IPv6 header.
+    - The APIC defaults to C(0) when unset during creation.
     type: int
   http_version:
     description:
     - The HTTP version to use.
+    - The APIC defaults to C(1.0) when unset during creation.
     type: str
-    choices: [ http_1.0, http_1.1 ]
+    choices: [ "1.0", "1.1" ]
   http_uri:
     description:
     - The HTTP URI to use as the SLA destination.
+    - The APIC defaults to C(/) when unset during creation.
     type: str
-  http_method:
-    description:
-    - The HTTP method used for SLA tests.
-    type: str
-    choices: [ get ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -93,7 +98,7 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant) must exist before using this module in your playbook.
+- The I(tenant) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
@@ -271,6 +276,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.constants import HTTP_VERSIONS_MAPPING
 
 
 def main():
@@ -290,13 +296,17 @@ def main():
         operation_timeout=dict(type="int"),
         threshold=dict(type="int"),
         traffic_class=dict(type="int"),
-        http_version=dict(type="str", choices=["http_1.0", "http_1.1"]),
+        http_version=dict(type="str", choices=["1.0", "1.1"]),
         http_uri=dict(type="str"),
-        http_method=dict(type="str", choices=["get"]),
     )
 
     module = AnsibleModule(
-        argument_spec=argument_spec, supports_check_mode=True, required_if=[["state", "absent", ["tenant", "name"]], ["state", "present", ["tenant", "name"]]]
+        argument_spec=argument_spec,
+        supports_check_mode=True,
+        required_if=[
+            ["state", "absent", ["tenant", "name"]],
+            ["state", "present", ["tenant", "name"]],
+        ],
     )
 
     tenant = module.params.get("tenant")
@@ -311,9 +321,8 @@ def main():
     operation_timeout = module.params.get("operation_timeout")
     threshold = module.params.get("threshold")
     traffic_class = module.params.get("traffic_class")
-    http_version = module.params.get("http_version")
+    http_version = HTTP_VERSIONS_MAPPING.get(module.params.get("http_version"))
     http_uri = module.params.get("http_uri")
-    http_method = module.params.get("http_method")
 
     aci = ACIModule(module)
 
@@ -324,21 +333,20 @@ def main():
             module_object=tenant,
             target_filter={"name": tenant},
         ),
-        subclass_1=dict(aci_class="fvIPSLAMonitoringPol", aci_rn="ipslaMonitoringPol-{0}".format(name), module_object=name, target_filter={"name": name}),
+        subclass_1=dict(
+            aci_class="fvIPSLAMonitoringPol",
+            aci_rn="ipslaMonitoringPol-{0}".format(name),
+            module_object=name,
+            target_filter={"name": name}
+        ),
     )
     aci.get_existing()
 
     if state == "present":
-        if sla_port is not None:
-            if sla_type != "tcp":
-                aci.fail_json("sla_port is only used if sla_type is tcp")
-
-        if http_version == "http_1.0":
-            parsed_http = "HTTP10"
-        elif http_version == "http_1.1":
-            parsed_http = "HTTP11"
-        else:
-            parsed_http = None
+        if sla_port is not None and sla_type != "tcp":
+            aci.fail_json("Setting 'sla_port' is not allowed when 'sla_type' is not set to 'tcp'.")
+        if sla_type != "http" and request_data_size is not None:
+            aci.fail_json("Setting 'request_data_size' is not allowed when 'sla_type' is not set to 'http.")
 
         if sla_type == "http":
             sla_port = 80
@@ -358,9 +366,8 @@ def main():
                 timeout=operation_timeout,
                 threshold=threshold,
                 ipv6TrfClass=traffic_class,
-                httpVersion=parsed_http,
+                httpVersion=http_version,
                 httpUri=http_uri,
-                httpMethod=http_method,
             ),
         )
         aci.get_diff(aci_class="fvIPSLAMonitoringPol")

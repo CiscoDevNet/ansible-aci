@@ -18,12 +18,12 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   health_group:
     description:
-    - Name of the Health Group
+    - The name of the Health Group.
     type: str
   state:
     description:
@@ -34,13 +34,15 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 notes:
-- The C(tenant) must exist before using this module in your playbook.
+- The I(tenant) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) module can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(vnsRedirectHealthGroup)
+  description: More information about the internal APIC class B(vns:RedirectHealthGroup)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -78,6 +80,14 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
+- name: Query all Redirect Health Groups
+  cisco.aci.aci_l4l7_redirect_health_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
@@ -187,11 +197,13 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -201,7 +213,10 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "absent", ["tenant", "health_group"]], ["state", "present", ["tenant", "health_group"]]],
+        required_if=[
+            ["state", "absent", ["tenant", "health_group"]],
+            ["state", "present", ["tenant", "health_group"]],
+        ],
     )
 
     tenant = module.params.get("tenant")

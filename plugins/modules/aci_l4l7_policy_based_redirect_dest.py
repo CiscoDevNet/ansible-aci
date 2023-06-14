@@ -12,36 +12,71 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l4l7_policy_based_redirect_dest
-short_description: Manage L4-L7 Policy Based Redirect Destinations (vns:RedirectDest)
+short_description: Manage L4-L7 Policy Based Redirect Destinations (vns:RedirectDest and vns:L1L2RedirectDest)
 description:
 - Manage L4-L7 Policy Based Redirect Destinations
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   policy:
     description:
-    - Name of an existing Policy Based Redirect Policy
+    - The name of an existing Policy Based Redirect Policy.
     type: str
     aliases: [ policy_name ]
-  redirect_ip:
+  ip:
     description:
-    - Destination IP for redirection
+    - The destination IP for redirection.
+    - Only used if I(dest_type=l3)
+    aliases: [ redirect_ip ]
     type: str
-  redirect_mac:
+  additional_ip:
     description:
-    - Destination MAC address for redirection
+    - The Additional IP Address for the Destination.
+    - Only used if I(dest_type=l3)
     type: str
+  logical_dev:
+    description:
+    - The destination Logical Device for redirection.
+    - Only used if I(dest_type=l1/l2)
+    type: str
+  concrete_dev:
+    description:
+    - The destination Concrete Device for redirection.
+    - Only used if I(dest_type=l1/l2)
+    type: str
+  concrete_intf:
+    description:
+    - The destination Concrete Interface for redirection.
+    - Only used if I(dest_type=l1/l2)
+    type: str
+  mac:
+    description:
+    - The destination MAC address for redirection.
+    type: str
+    aliases: [ redirect_mac ]
   dest_name:
     description:
-    - Name for Policy Based Redirect destination
+    - The name for Policy Based Redirect destination.
     type: str
+  dest_type:
+    description:
+    - The destination type.
+    type: str
+    choices: [ l1/l2, l3 ]
+    default: l3
   pod_id:
     description:
-    - Pod ID to deploy Policy Based Redirect destination on
+    - The Pod ID to deploy Policy Based Redirect destination on.
+    - The APIC defaults to C(1) when unset during creation.
     type: int
+  health_group:
+    description:
+    - The Health Group to bind the Policy Based Redirection Destination to.
+    - To remove an existing binding from a Health Group, submit a request with I(state=present) and no I(health_group) value.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -51,14 +86,16 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 notes:
-- The C(tenant) and C(policy) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l4l7_policy_based_redirect)modules can be used for this.
+- The I(tenant) and I(policy) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l4l7_policy_based_redirect) modules can be used for this.
 seealso:
 - module: aci_l4l7_policy_based_redirect
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(vnsRedirectDest)
+  description: More information about the internal APIC class B(vns:RedirectDest)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -72,8 +109,9 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     tenant: my_tenant
     policy: my_pbr_policy
-    redirect_ip: 192.168.10.1
-    redirect_mac: AB:CD:EF:12:34:56
+    dest_type: l3
+    ip: 192.168.10.1
+    mac: AB:CD:EF:12:34:56
     dest_name: redirect_dest
     pod_id: 1
     state: present
@@ -218,17 +256,25 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         policy=dict(type="str", aliases=["policy_name"]),
-        redirect_ip=dict(type="str"),
-        redirect_mac=dict(type="str"),
+        ip=dict(type="str", aliases=["redirect_ip"]),
+        additional_ip=dict(type="str"),
+        mac=dict(type="str", aliases=["redirect_mac"]),
+        logical_dev=dict(type="str"),
+        concrete_dev=dict(type="str"),
+        concrete_intf=dict(type="str"),
         dest_name=dict(type="str"),
+        dest_type=dict(type="str", default="l3", choices=["l1/l2", "l3"]),
+        health_group=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         pod_id=dict(type="int"),
     )
@@ -236,19 +282,40 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "absent", ["tenant", "policy", "redirect_ip"]], ["state", "present", ["tenant", "policy", "redirect_ip"]]],
+        required_if=[["state", "absent", ["tenant", "policy"]], ["state", "present", ["tenant", "policy"]]],
     )
+
+    aci = ACIModule(module)
 
     tenant = module.params.get("tenant")
     state = module.params.get("state")
     policy = module.params.get("policy")
-    redirect_ip = module.params.get("redirect_ip")
-    redirect_mac = module.params.get("redirect_mac")
+    ip = module.params.get("ip")
+    additional_ip = module.params.get("additional_ip")
+    mac = module.params.get("mac")
+    logical_dev = module.params.get("logical_dev")
+    concrete_dev = module.params.get("concrete_dev")
+    concrete_intf = module.params.get("concrete_intf")
     dest_name = module.params.get("dest_name")
+    dest_type = module.params.get("dest_type")
+    health_group = module.params.get("health_group")
     state = module.params.get("state")
     pod_id = module.params.get("pod_id")
 
-    aci = ACIModule(module)
+    if dest_type == "l3":
+        aci_class = "vnsRedirectDest"
+        aci_rn = "RedirectDest_ip-[{0}]".format(ip)
+        module_object = ip
+        target_filter = {"ip": ip}
+        child_classes = ["vnsRsRedirectHealthGroup"]
+        redirect_hg_class = "vnsRsRedirectHealthGroup"
+    elif dest_type == "l1/l2":
+        aci_class = "vnsL1L2RedirectDest"
+        aci_rn = "L1L2RedirectDest-[{0}]".format(dest_name)
+        module_object = dest_name
+        target_filter = {"destName": dest_name}
+        child_classes = ["vnsRsL1L2RedirectHealthGroup", "vnsRsToCIf"]
+        redirect_hg_class = "vnsRsL1L2RedirectHealthGroup"
 
     aci.construct_url(
         root_class=dict(
@@ -264,21 +331,56 @@ def main():
             target_filter={"name": policy},
         ),
         subclass_2=dict(
-            aci_class="vnsRedirectDest",
-            aci_rn="RedirectDest_ip-[{0}]".format(redirect_ip),
-            module_object=redirect_ip,
-            target_filter={"ip": redirect_ip},
+            aci_class=aci_class,
+            aci_rn=aci_rn,
+            module_object=module_object,
+            target_filter=target_filter,
         ),
-        child_classes=["vnsRsRedirectHealthGroup"],
+        child_classes=child_classes,
     )
     aci.get_existing()
 
     if state == "present":
+        if dest_type == "l3" and ip is None:
+            aci.fail_json(msg="You must provide an ip when configuring an l3 destination")
+        elif dest_type == "l1/l2" and additional_ip is not None:
+            aci.fail_json(msg="You cannot provide an additional_ip when configuring an l3 destination")
+        elif dest_type == "l3" and (logical_dev, concrete_dev, concrete_intf) != (None, None, None):
+            aci.fail_json(msg="You cannot provide a logical_dev, concrete_dev or concrete_intf when configuring an l3 destination")
+        elif dest_type == "l1/l2" and (logical_dev, concrete_dev, concrete_intf) == (None, None, None):
+            aci.fail_json(msg="You must provide a logical_dev, concrete_dev and concrete_intf when configuring an l1/l2 destination")
+        elif dest_type == "l1/l2" and ip is not None:
+            aci.fail_json(msg="You cannot provide an ip when configuring an l1/l2 destination")
+        if dest_type == "l3":
+            child_configs = []
+        elif dest_type == "l1/l2":
+            child_configs = [
+                {"vnsRsToCIf": {"attributes": {"tDn": "uni/tn-{0}/lDevVip-{1}/cDev-{2}/cIf-[{3}]".format(tenant, logical_dev, concrete_dev, concrete_intf)}}}
+            ]
+        if health_group is not None:
+            health_group_tdn = "uni/tn-{0}/svcCont/redirectHealthGroup-{1}".format(tenant, health_group)
+            child_configs.append({redirect_hg_class: {"attributes": {"tDn": health_group_tdn}}})
+        else:
+            health_group_tdn = None
+        if isinstance(aci.existing, list) and len(aci.existing) > 0:
+            for child in aci.existing[0].get(aci_class, {}).get("children", {}):
+                if child.get(redirect_hg_class) and child.get(redirect_hg_class).get("attributes").get("tDn") != health_group_tdn:
+                    child_configs.append(
+                        {
+                            redirect_hg_class: {
+                                "attributes": {
+                                    "dn": child.get(redirect_hg_class).get("attributes").get("dn"),
+                                    "status": "deleted",
+                                }
+                            }
+                        }
+                    )
         aci.payload(
-            aci_class="vnsRedirectDest",
-            class_config=dict(ip=redirect_ip, mac=redirect_mac, destName=dest_name, podId=pod_id),
+            aci_class=aci_class,
+            class_config=dict(ip=ip, mac=mac, destName=dest_name, podId=pod_id, ip2=additional_ip),
+            child_configs=child_configs,
         )
-        aci.get_diff(aci_class="vnsRedirectDest")
+        aci.get_diff(aci_class=aci_class)
 
         aci.post_config()
 

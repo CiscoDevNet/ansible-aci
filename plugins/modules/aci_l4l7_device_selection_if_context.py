@@ -18,36 +18,62 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   contract:
     description:
-    - Name of an existing contract
+    - The name of an existing contract.
     type: str
     aliases: [ contract_name ]
   graph:
     description:
-    - Name of an existing Service Graph Template
+    - The name of an existing Service Graph Template.
     type: str
     aliases: [ service_graph, service_graph_name ]
   node:
     description:
-    - Name of an existing Service Graph Node
+    - The name of an existing Service Graph Node.
     type: str
     aliases: [ node_name ]
   context:
     description:
-    - Name of the logical interface context, typically either consumer or provider
+    - The name of the logical interface context.
     type: str
   l3_dest:
     description:
-    - Is the context a Layer3 destination
+    - Whether the context is a Layer3 destination.
+    - The APIC defaults to C(true) when unset during creation.
     type: bool
   permit_log:
     description:
-    - Log permitted traffic
+    - Whether to log permitted traffic.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
+  bridge_domain:
+    description:
+    - The Bridge Domain to bind to the Context.
+    type: str
+    aliases: [ bd, bd_name ]
+  bridge_domain_tenant:
+    description:
+    - The tenant the Bridge Domain resides in.
+    - Omit this variable if both context and Bridge Domain are in the same tenant.
+    - Intended use case is for when the Bridge Domain is in the common tenant, but the context is not.
+    type: str
+    aliases: [ bd_tenant ]
+  logical_device:
+    description:
+    - The Logical Device to bind the context to.
+    type: str
+  logical_interface:
+    description:
+    - The Logical Interface to bind the context to.
+    type: str
+  redirect_policy:
+    description:
+    - The Redirect Policy to bind the context to.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -57,15 +83,17 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
-- The C(tenant) and C(device selection policy) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l4l7_device_selection_policy) modules can be used for this.
+- The I(tenant), I(graph), I(contract) and I(node) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l4l7_service_graph_template), M(cisco.aci.aci_contract)
+  and M(cisco.aci.aci_l4l7_service_graph_template_node) modules can be used for this.
 seealso:
 - module: aci_l3out
 - module: aci_l3out_logical_node_profile
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes, B(vnsLIfCtx)
+  description: More information about the internal APIC class, B(vns:LIfCtx)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -98,7 +126,6 @@ EXAMPLES = r"""
     state: absent
   delegate_to: localhost
 
-
 - name: Query an interface context
   cisco.aci.aci_l4l7_device_selection_if_context:
     host: apic
@@ -113,6 +140,14 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
+- name: Query all interface contexts
+  cisco.aci.aci_l4l7_device_selection_if_context:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
@@ -222,11 +257,12 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         contract=dict(type="str", aliases=["contract_name"]),
@@ -236,8 +272,12 @@ def main():
         context=dict(type="str"),
         l3_dest=dict(type="bool"),
         permit_log=dict(type="bool"),
+        bridge_domain=dict(type="str", aliases=["bd", "bd_name"]),
+        bridge_domain_tenant=dict(type="str", aliases=["bd_tenant"]),
+        logical_device=dict(type="str"),
+        logical_interface=dict(type="str"),
+        redirect_policy=dict(type="str"),
     )
-
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
@@ -257,6 +297,13 @@ def main():
     context = module.params.get("context")
     l3_dest = aci.boolean(module.params.get("l3_dest"))
     permit_log = aci.boolean(module.params.get("permit_log"))
+    bridge_domain = module.params.get("bridge_domain")
+    bridge_domain_tenant = module.params.get("bridge_domain_tenant")
+    logical_device = module.params.get("logical_device")
+    logical_interface = module.params.get("logical_interface")
+    redirect_policy = module.params.get("redirect_policy")
+
+    ldev_ctx_rn = "ldevCtx-c-{0}-g-{1}-n-{2}".format(contract, graph, node) if (contract, graph, node) != (None, None, None) else None
 
     aci.construct_url(
         root_class=dict(
@@ -267,9 +314,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="vnsLDevCtx",
-            aci_rn="ldevCtx-c-{0}-g-{1}-n-{2}".format(contract, graph, node),
-            module_object="ldevCtx-c-{0}-g-{1}-n-{2}".format(contract, graph, node),
-            target_filter={"dn": "ldevCtx-c-{0}-g-{1}-n-{2}".format(contract, graph, node)},
+            aci_rn=ldev_ctx_rn,
+            module_object=ldev_ctx_rn,
+            target_filter={"dn": ldev_ctx_rn},
         ),
         subclass_2=dict(
             aci_class="vnsLIfCtx",
@@ -277,14 +324,70 @@ def main():
             module_object=context,
             target_filter={"connNameOrLbl": context},
         ),
+        child_classes=["vnsRsLIfCtxToBD", "vnsRsLIfCtxToLIf", "vnsRsLIfCtxToSvcRedirectPol"],
     )
 
     aci.get_existing()
 
     if state == "present":
+        child_configs = []
+        if bridge_domain is not None:
+            if bridge_domain_tenant is None:
+                bridge_domain_tenant = tenant
+            bd_tdn = "uni/tn-{0}/BD-{1}".format(bridge_domain_tenant, bridge_domain)
+            child_configs.append({"vnsRsLIfCtxToBD": {"attributes": {"tDn": bd_tdn}}})
+        else:
+            bd_tdn = None
+        if logical_interface is not None:
+            log_intf_tdn = "uni/tn-{0}/lDevVip-{1}/lIf-{2}".format(tenant, logical_device, logical_interface)
+            child_configs.append({"vnsRsLIfCtxToLIf": {"attributes": {"tDn": log_intf_tdn}}})
+        else:
+            log_intf_tdn = None
+        if redirect_policy is not None:
+            redir_pol_tdn = "uni/tn-{0}/svcCont/svcRedirectPol-{1}".format(tenant, redirect_policy)
+            child_configs.append({"vnsRsLIfCtxToSvcRedirectPol": {"attributes": {"tDn": redir_pol_tdn}}})
+        else:
+            redir_pol_tdn = None
+        # Validate if existing and remove child objects when do not match provided configuration
+        if isinstance(aci.existing, list) and len(aci.existing) > 0:
+            for child in aci.existing[0].get("vnsLIfCtx", {}).get("children", {}):
+                if child.get("vnsRsLIfCtxToBD") and child.get("vnsRsLIfCtxToBD").get("attributes").get("tDn") != bd_tdn:
+                    child_configs.append(
+                        {
+                            "vnsRsLIfCtxToBD": {
+                                "attributes": {
+                                    "dn": child.get("vnsRsLIfCtxToBD").get("attributes").get("dn"),
+                                    "status": "deleted",
+                                }
+                            }
+                        }
+                    )
+                elif child.get("vnsRsLIfCtxToLIf") and child.get("vnsRsLIfCtxToLIf").get("attributes").get("tDn") != log_intf_tdn:
+                    child_configs.append(
+                        {
+                            "vnsRsLIfCtxToLIf": {
+                                "attributes": {
+                                    "dn": child.get("vnsRsLIfCtxToLIf").get("attributes").get("dn"),
+                                    "status": "deleted",
+                                }
+                            }
+                        }
+                    )
+                elif child.get("vnsRsLIfCtxToSvcRedirectPol") and child.get("vnsRsLIfCtxToSvcRedirectPol").get("attributes").get("tDn") != redir_pol_tdn:
+                    child_configs.append(
+                        {
+                            "vnsRsLIfCtxToSvcRedirectPol": {
+                                "attributes": {
+                                    "dn": child.get("vnsRsLIfCtxToSvcRedirectPol").get("attributes").get("dn"),
+                                    "status": "deleted",
+                                }
+                            }
+                        }
+                    )
         aci.payload(
             aci_class="vnsLIfCtx",
             class_config=dict(connNameOrLbl=context, l3Dest=l3_dest, permitLog=permit_log),
+            child_configs=child_configs,
         )
         aci.get_diff(aci_class="vnsLIfCtx")
 

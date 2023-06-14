@@ -34,13 +34,72 @@
     name: ansible_tenant
     state: present
 
+# CREATE DOMAIN
+- name: Create ansible_phys_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: present
+
+# CREATE L4-L7 LOGICAL DEVICE
+- name: Create L4-L7 Device
+  cisco.aci.aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    domain: ansible_phys_dom
+    func_type: go_to
+    context_aware: single
+    is_copy: false
+    managed: false
+    dev_type: physical
+    svc_type: adc
+    trunking: false
+    prom_mode: true
+    state: present
+
+# ADD L4-L7 CONCRETE DEVICE
+- name: Create L4-L7 Concrete Device
+  cisco.aci.aci_l4l7_concrete_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    concrete_device: ansible_concrete_device
+    state: present
+
+# ADD L4-L7 CONCRETE INTERFACE
+- name: Create L4-L7 Concrete Interface
+  cisco.aci.aci_l4l7_concrete_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    concrete_device: ansible_concrete_device
+    concrete_interface: ansible_concrete_interface
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/12
+    state: present
+
+- name: Create second L4-L7 Concrete Interface
+  cisco.aci.aci_l4l7_concrete_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    concrete_device: ansible_concrete_device
+    concrete_interface: ansible_second_concrete_interface
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/13
+    state: present
+
 # CREATE L4-L7 POLICY BASED REDIRECT
 - name: Create L4-L7 Policy Based Redirect
   cisco.aci.aci_l4l7_policy_based_redirect:
     <<: *aci_info
     tenant: ansible_tenant
     policy_name: ansible_pbr_policy
-    hash_algorithm: dip
+    hash_algorithm: destination_ip
     resilient_hash: true
     min_threshold: 60
     max_threshold: 90
@@ -50,6 +109,31 @@
     anycast_enabled: false
     state: present
 
+# CREATE L4-L7 L2 POLICY BASED REDIRECT
+- name: Create L4-L7 L2 Policy Based Redirect
+  cisco.aci.aci_l4l7_policy_based_redirect:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy_name: ansible_pbr_l2_policy
+    hash_algorithm: destination_ip
+    dest_type: l2
+    resilient_hash: true
+    min_threshold: 60
+    max_threshold: 90
+    threshold_enable: true
+    threshold_down_action: permit
+    pod_aware: true
+    anycast_enabled: false
+    state: present
+
+# CREATE HEALTH GROUP
+- name: Add a new Redirect Health Group
+  cisco.aci.aci_l4l7_redirect_health_group:
+    <<: *aci_info
+    tenant: ansible_tenant
+    health_group: ansible_health_group
+    state: present
+
 # CREATE L4-L7 PBR DESTINATION
 - name: Create L4-L7 Policy Based Redirect Destination
   cisco.aci.aci_l4l7_policy_based_redirect_dest:
@@ -57,20 +141,71 @@
     tenant: ansible_tenant
     policy: ansible_pbr_policy
     redirect_ip: 192.168.10.1
+    additional_ip: 192.168.50.1
     redirect_mac: AB:CD:EF:12:34:56
     dest_name: redirect_dest
+    health_group: ansible_health_group
     pod_id: 1
     state: present
   register: add_pbr_dest
+
+- name: Create L4-L7 L1/L2 Policy Based Redirect Destination
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_l2_policy
+    redirect_mac: AB:CD:EF:12:34:57
+    dest_name: l1l2_redirect_dest
+    dest_type: l1/l2
+    logical_dev: ansible_device
+    concrete_dev: ansible_concrete_device
+    concrete_intf: ansible_concrete_interface
+    health_group: ansible_health_group
+    pod_id: 1
+    state: present
+  register: add_pbr_l1l2_dest
+
+- name: Create Second L4-L7 Policy Based Redirect Destination
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_policy
+    redirect_ip: 192.168.30.1
+    redirect_mac: AB:CD:EF:12:34:60
+    dest_name: second_redirect_dest
+    pod_id: 1
+    state: present
+
+- name: Create Second L4-L7 L1/L2 Policy Based Redirect Destination
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_l2_policy
+    redirect_mac: AB:CD:EF:12:34:61
+    dest_name: second_l1l2_redirect_dest
+    dest_type: l1/l2
+    logical_dev: ansible_device
+    concrete_dev: ansible_concrete_device
+    concrete_intf: ansible_second_concrete_interface
+    pod_id: 1
+    state: present
 
 - name: Verify L4-L7 Policy Based Redirect Destination creation
   ansible.builtin.assert:
     that:
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]"
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.ip == "192.168.10.1"
+    - add_pbr_dest.current.0.vnsRedirectDest.attributes.ip2 == "192.168.50.1"
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.mac == "AB:CD:EF:12:34:56"
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.destName == "redirect_dest"
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.podId == "1"
+    - add_pbr_dest.current.0.vnsRedirectDest.children.0.vnsRsRedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - add_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_l2_policy/L1L2RedirectDest-l1l2_redirect_dest"
+    - add_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.attributes.mac == "AB:CD:EF:12:34:57"
+    - add_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.attributes.destName == "l1l2_redirect_dest"
+    - add_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.attributes.podId == "1"
+    - add_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.children.0.vnsRsToCIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
+    - add_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.children.1.vnsRsL1L2RedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
 
 # ADD L4-L7 PBR DESTINATION AGAIN TO TEST IDEMPOTENCE
 - name: Add L4-L7 Policy Based Redirect Destination again
@@ -79,21 +214,48 @@
     tenant: ansible_tenant
     policy: ansible_pbr_policy
     redirect_ip: 192.168.10.1
+    additional_ip: 192.168.50.1
     redirect_mac: AB:CD:EF:12:34:56
     dest_name: redirect_dest
+    health_group: ansible_health_group
     pod_id: 1
     state: present
   register: add_pbr_dest_again
+
+- name: Add L4-L7 L1/L2 Policy Based Redirect Destination again
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_l2_policy
+    redirect_mac: AB:CD:EF:12:34:57
+    dest_name: l1l2_redirect_dest
+    dest_type: l1/l2
+    logical_dev: ansible_device
+    concrete_dev: ansible_concrete_device
+    concrete_intf: ansible_concrete_interface
+    health_group: ansible_health_group
+    pod_id: 1
+    state: present
+  register: add_pbr_l1l2_dest_again
 
 - name: Verify L4-L7 Policy Based Redirect Destination
   ansible.builtin.assert:
     that:
     - add_pbr_dest_again is not changed
+    - add_pbr_l1l2_dest_again is not changed
     - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]"
     - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.ip == "192.168.10.1"
+    - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.ip2 == "192.168.50.1"
     - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.mac == "AB:CD:EF:12:34:56"
     - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.destName == "redirect_dest"
     - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.podId == "1"
+    - add_pbr_dest_again.current.0.vnsRedirectDest.children.0.vnsRsRedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_l2_policy/L1L2RedirectDest-l1l2_redirect_dest"
+    - add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.attributes.mac == "AB:CD:EF:12:34:57"
+    - add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.attributes.destName == "l1l2_redirect_dest"
+    - add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.attributes.podId == "1"
+    - add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.children.0.vnsRsToCIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
+    - add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.children.1.vnsRsL1L2RedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
 
 # MODIFY L4-L7 PBR DESTINATION
 - name: Modify L4-L7 Policy Based Redirect Destination
@@ -108,7 +270,22 @@
     state: present
   register: update_pbr_dest
 
-- name: Verify L4-L7 Policy Based Redirect Destination update
+- name: Modify L4-L7 L1/L2 Policy Based Redirect Destination
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_l2_policy
+    redirect_mac: AB:CD:EF:12:34:58
+    dest_name: l1l2_redirect_dest
+    dest_type: l1/l2
+    logical_dev: ansible_device
+    concrete_dev: ansible_concrete_device
+    concrete_intf: ansible_concrete_interface
+    pod_id: 1
+    state: present
+  register: update_pbr_l1l2_dest
+
+- name: Verify L4-L7 Policy Based Redirect Destination update, including removal of health group bindings
   ansible.builtin.assert:
     that:
     - update_pbr_dest is changed
@@ -117,6 +294,13 @@
     - update_pbr_dest.current.0.vnsRedirectDest.attributes.mac == "AB:CD:EF:12:34:57"
     - update_pbr_dest.current.0.vnsRedirectDest.attributes.destName == "updated_redirect_dest"
     - update_pbr_dest.current.0.vnsRedirectDest.attributes.podId == "1"
+    - update_pbr_dest.current.0.vnsRedirectDest.children is not defined
+    - update_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_l2_policy/L1L2RedirectDest-l1l2_redirect_dest"
+    - update_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.attributes.mac == "AB:CD:EF:12:34:58"
+    - update_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.attributes.destName == "l1l2_redirect_dest"
+    - update_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.attributes.podId == "1"
+    - update_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.children.0.vnsRsToCIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
+    - update_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.children | length == 1
 
 # QUERY L4-L7 PBR DESTINATION
 - name: Query L4-L7 Policy Based Redirect Destination
@@ -128,26 +312,51 @@
     state: query
   register: query_pbr_dest
 
+- name: Query L4-L7 Policy Based Redirect L1/L2 Destination
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_l2_policy
+    dest_name: l1l2_redirect_dest
+    dest_type: l1/l2
+    state: query
+  register: query_l1l2_pbr_dest
+
 - name: Verify L4-L7 Policy Based Redirect Destination query
   ansible.builtin.assert:
     that:
     - query_pbr_dest is not changed
+    - query_l1l2_pbr_dest is not changed
     - query_pbr_dest.current.0.vnsRedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]"
     - query_pbr_dest.current.0.vnsRedirectDest.attributes.ip == "192.168.10.1"
     - query_pbr_dest.current.0.vnsRedirectDest.attributes.mac == "AB:CD:EF:12:34:57"
     - query_pbr_dest.current.0.vnsRedirectDest.attributes.destName == "updated_redirect_dest"
     - query_pbr_dest.current.0.vnsRedirectDest.attributes.podId == "1"
+    - query_l1l2_pbr_dest.current.0.vnsL1L2RedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_l2_policy/L1L2RedirectDest-l1l2_redirect_dest"
+    - query_l1l2_pbr_dest.current.0.vnsL1L2RedirectDest.attributes.mac == "AB:CD:EF:12:34:58"
+    - query_l1l2_pbr_dest.current.0.vnsL1L2RedirectDest.attributes.destName == "l1l2_redirect_dest"
+    - query_l1l2_pbr_dest.current.0.vnsL1L2RedirectDest.attributes.podId == "1"
+    - query_l1l2_pbr_dest.current.0.vnsL1L2RedirectDest.children.0.vnsRsToCIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
 
-- name: Query All L4-L7 Policy Based Redirect Destinations
+- name: Query All L4-L7 Policy Based Redirect L3 Destinations
   cisco.aci.aci_l4l7_policy_based_redirect_dest:
     <<: *aci_info
     state: query
   register: query_pbr_dest_all
 
+- name: Query All L4-L7 Policy Based Redirect L1/L2 Destinations
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
+    <<: *aci_info
+    state: query
+  register: query_pbr_l1l2_dest_all
+
 - name: Verify query_pbr_dest_all
   ansible.builtin.assert:
     that:
     - query_pbr_dest_all is not changed
+    - query_pbr_l1l2_dest_all is not changed
+    - query_pbr_dest_all.current | length > 1
+    - query_pbr_l1l2_dest_all.current | length > 1
 
 # DELETE L4-L7 PBR DESTINATION
 - name: Delete L4-L7 Policy Based Redirect Destination
@@ -159,19 +368,36 @@
     state: absent
   register: delete_pbr_dest
 
+- name: Delete L4-L7 L1/L2 Policy Based Redirect Destination
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_l2_policy
+    dest_name: l1l2_redirect_dest
+    dest_type: l1/l2
+    state: absent
+  register: delete_pbr_l1l2_dest
+
 - name: Verify L4-L7 Policy Based Redirect Destination deletion
   ansible.builtin.assert:
     that:
     - delete_pbr_dest is changed
     - delete_pbr_dest.current == []
+    - delete_pbr_l1l2_dest is changed
+    - delete_pbr_l1l2_dest.current == []
     - delete_pbr_dest.previous.0.vnsRedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]"
     - delete_pbr_dest.previous.0.vnsRedirectDest.attributes.ip == "192.168.10.1"
     - delete_pbr_dest.previous.0.vnsRedirectDest.attributes.mac == "AB:CD:EF:12:34:57"
     - delete_pbr_dest.previous.0.vnsRedirectDest.attributes.destName == "updated_redirect_dest"
     - delete_pbr_dest.previous.0.vnsRedirectDest.attributes.podId == "1"
+    - delete_pbr_l1l2_dest.previous.0.vnsL1L2RedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_l2_policy/L1L2RedirectDest-l1l2_redirect_dest"
+    - delete_pbr_l1l2_dest.previous.0.vnsL1L2RedirectDest.attributes.mac == "AB:CD:EF:12:34:58"
+    - delete_pbr_l1l2_dest.previous.0.vnsL1L2RedirectDest.attributes.destName == "l1l2_redirect_dest"
+    - delete_pbr_l1l2_dest.previous.0.vnsL1L2RedirectDest.attributes.podId == "1"
+
 
 # DELETE L4-L7 PBR DESTINATION AGAIN TO TEST IDEMPOTENCE
-- name: Delete L4-L7 Policy Based Redirect Destination
+- name: Delete L4-L7 Policy Based Redirect Destination again
   cisco.aci.aci_l4l7_policy_based_redirect_dest:
     <<: *aci_info
     tenant: ansible_tenant
@@ -180,15 +406,34 @@
     state: absent
   register: delete_pbr_dest_again
 
+- name: Delete L4-L7 L1/L2 Policy Based Redirect Destination again
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_l2_policy
+    dest_name: l1l2_redirect_dest
+    dest_type: l1/l2
+    state: absent
+  register: delete_pbr_l1l2_dest_again
+
 - name: Verify L4-L7 Policy Based Redirect Destination deletion idempotence
   ansible.builtin.assert:
     that:
     - delete_pbr_dest_again is not changed
     - delete_pbr_dest_again.current == []
+    - delete_pbr_l1l2_dest_again is not changed
+    - delete_pbr_l1l2_dest_again.current == []
 
 # CLEAN UP
 - name: Remove ansible_tenant
   cisco.aci.aci_tenant:
     <<: *aci_info
     name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
     state: absent

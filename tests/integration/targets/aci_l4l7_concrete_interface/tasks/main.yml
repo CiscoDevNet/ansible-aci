@@ -126,6 +126,27 @@
     that:
     - add_concrete_interface_again.current.0.vnsCIf.children.0.vnsRsCIfPathAtt.attributes.tDn == "topology/pod-1/paths-201/pathep-[eth1/16]"
 
+# TEST ERROR CHECKING
+- name: Create L4-L7 Concrete Interface with invalid node_id
+  cisco.aci.aci_l4l7_concrete_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    concrete_device: ansible_concrete_device
+    concrete_interface: ansible_concrete_interface
+    pod_id: 1
+    node_id: 201_202
+    path_ep: eth1/16
+    state: present
+  register: invalid_node_id
+  ignore_errors: true
+
+- name: Verify error message
+  ansible.builtin.assert:
+    that:
+    - invalid_node_id is failed
+    - invalid_node_id.msg == "node_id must be a single integer for ports or port-channels, or a hyphen separated pair of integers for vPCs"
+
 # QUERY L4-L7 CONCRETE INTERFACE
 - name: Query L4-L7 Concrete Interface
   cisco.aci.aci_l4l7_concrete_interface:

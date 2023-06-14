@@ -18,24 +18,31 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   contract:
     description:
-    - Name of an existing contract
+    - The name of an existing contract.
+    - The APIC defaults to C(any) when unset during creation.
     type: str
     aliases: [ contract_name ]
   graph:
     description:
-    - Name of an existing contract
+    - The name of an existing service graph.
+    - The APIC defaults to C(any) when unset during creation.
     type: str
     aliases: [ service_graph, service_graph_name ]
   node:
     description:
-    - Name of an existing L4-L7 node
+    - The name of an existing L4-L7 node.
+    - The APIC defaults to C(any) when unset during creation.
     type: str
     aliases: [ node_name ]
+  device:
+    description:
+    - The name of the L4-L7 Device to bind to the policy.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -45,14 +52,15 @@ options:
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
-- The C(tenant), C(contract), C(graph) and C(node) must exist before using this module in your playbook.
+- The I(tenant), I(contract), I(graph) and I(node) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant), M(cisco.aci.aci_contract), M(cisco.aci.aci_l4l7_service_graph) and M(cisco.aci.aci_l4l7_device) modules can be used for this.
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes, B(vnsLDevCtx)
+  description: More information about the internal APIC class B(vns:LDevCtx)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -96,6 +104,14 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
+- name: Query all device selection policies
+  cisco.aci.aci_l4l7_device_selection_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
@@ -205,23 +221,28 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         contract=dict(type="str", aliases=["contract_name"]),
         graph=dict(type="str", aliases=["service_graph", "service_graph_name"]),
         node=dict(type="str", aliases=["node_name"]),
+        device=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "absent", ["tenant", "contract", "graph", "node"]], ["state", "present", ["tenant", "contract", "graph", "node"]]],
+        required_if=[
+            ["state", "absent", ["tenant", "contract", "graph", "node"]],
+            ["state", "present", ["tenant", "contract", "graph", "node"]],
+        ],
     )
 
     tenant = module.params.get("tenant")
@@ -229,6 +250,9 @@ def main():
     contract = module.params.get("contract")
     graph = module.params.get("graph")
     node = module.params.get("node")
+    device = module.params.get("device")
+
+    policy_dn = "ldevCtx-c-{0}-g-{1}-n-{2}".format(contract, graph, node) if (contract, graph, node) != (None, None, None) else None
 
     aci = ACIModule(module)
 
@@ -241,18 +265,40 @@ def main():
         ),
         subclass_1=dict(
             aci_class="vnsLDevCtx",
-            aci_rn="ldevCtx-c-{0}-g-{1}-n-{2}".format(contract, graph, node),
-            module_object="ldevCtx-c-{0}-g-{1}-n-{2}".format(contract, graph, node),
-            target_filter={"dn": "ldevCtx-c-{0}-g-{1}-n-{2}".format(contract, graph, node)},
+            aci_rn=policy_dn,
+            module_object=policy_dn,
+            target_filter={"dn": policy_dn},
         ),
+        child_classes=["vnsRsLDevCtxToLDev"],
     )
 
     aci.get_existing()
 
     if state == "present":
+        child_configs = []
+        if device is not None:
+            device_tdn = "uni/tn-{0}/lDevVip-{1}".format(tenant, device)
+            child_configs.append({"vnsRsLDevCtxToLDev": {"attributes": {"tDn": device_tdn}}})
+        else:
+            device_tdn = None
+        # Validate if existing and remove child objects when do not match provided configuration
+        if isinstance(aci.existing, list) and len(aci.existing) > 0:
+            for child in aci.existing[0].get("vnsLDevCtx", {}).get("children", {}):
+                if child.get("vnsRsLDevCtxToLDev") and child.get("vnsRsLDevCtxToLDev").get("attributes").get("tDn") != device_tdn:
+                    child_configs.append(
+                        {
+                            "vnsRsLDevCtxToLDev": {
+                                "attributes": {
+                                    "dn": child.get("vnsRsLDevCtxToLDev").get("attributes").get("dn"),
+                                    "status": "deleted",
+                                }
+                            }
+                        }
+                    )
         aci.payload(
             aci_class="vnsLDevCtx",
             class_config=dict(ctrctNameOrLbl=contract, graphNameOrLbl=graph, nodeNameOrLbl=node),
+            child_configs=child_configs,
         )
         aci.get_diff(aci_class="vnsLDevCtx")
 

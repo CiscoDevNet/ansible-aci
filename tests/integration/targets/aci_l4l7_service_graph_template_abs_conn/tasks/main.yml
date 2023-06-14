@@ -51,7 +51,7 @@
     connection_name: C1
     direct_connect: true
     unicast_route: true
-    adjacency_type: L3
+    adjacency_type: l3
     state: present
   register: add_l4l7_abs_conn
 
@@ -76,7 +76,7 @@
     connection_name: C1
     direct_connect: true
     unicast_route: true
-    adjacency_type: L3
+    adjacency_type: l3
     state: present
   register: add_l4l7_abs_conn_again
 
@@ -102,7 +102,7 @@
     connection_name: C1
     direct_connect: false
     unicast_route: false
-    adjacency_type: L2
+    adjacency_type: l2
     state: present
   register: update_l4l7_abs_conn
 
