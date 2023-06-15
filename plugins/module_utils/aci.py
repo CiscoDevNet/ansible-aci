@@ -1657,7 +1657,9 @@ class ACIModule(object):
 
             elif self.params.get("state") == "absent" and self.existing:
                 for aci_class in self.existing[0]:
-                    mo[aci_class] = dict(attributes=dict(dn=dn_path, status="deleted"))
+                    attributes = deepcopy(self.existing[0][aci_class]["attributes"])
+                    attributes["status"] = "deleted"
+                    mo[aci_class] = dict(attributes=attributes)
 
             self.result["mo"] = mo
             output_path = self.params.get("output_path")
