@@ -186,14 +186,6 @@
         description: test for ospf protocol
     register: nm_add_l3out_ospf
 
-  # - name: Add OSPF protocol without ospf spec - failure message works
-  #   aci_l3out:
-  #     <<: *aci_l3out_present
-  #     l3protocol: ospf
-  #     ospf: null
-  #   register: nm_add_l3out_wout_ospf_spec
-  #   ignore_errors: true
-
   - name: asserts for l3out OSPF protocol tasks
     assert:
       that:
@@ -204,7 +196,6 @@
         - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.areaType == "regular"
         - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.descr == "test for ospf protocol"
         - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.multipodInternal == "no"
-        # - nm_add_l3out_wout_ospf_spec.msg == "ospf specifications are required when l3protocol is 'ospf'"
 
   - name: get all in l3out
     aci_l3out:
