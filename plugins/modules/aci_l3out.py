@@ -411,8 +411,6 @@ def main():
             module.fail_json(msg="Parameter 'asn' is required when l3protocol is 'eigrp'")
         if "eigrp" not in l3protocol and asn is not None:
             module.warn("Parameter 'asn' is only applicable when l3protocol is 'eigrp'. The ASN will be ignored")
-        # if "ospf" in l3protocol and ospf is None:
-        #     module.fail_json(msg="ospf specifications are required when l3protocol is 'ospf'")
         if "ospf" not in l3protocol and ospf is not None:
             module.warn("Parameter 'ospf' is only applicable when l3protocol is 'ospf'. The OPSF specifications will be ignored")
 
