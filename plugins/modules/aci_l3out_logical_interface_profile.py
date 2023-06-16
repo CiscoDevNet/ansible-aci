@@ -48,6 +48,11 @@ options:
     description:
     - Name of the ingress data plane policing policy.
     type: str
+  description:
+    description:
+    - The description for the logical interface profile.
+    type: str
+    aliases: [ descr ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -241,6 +246,7 @@ def main():
         egress_dpp_policy=dict(type="str", default=""),
         ingress_dpp_policy=dict(type="str", default=""),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        description=dict(type="str", aliases=["descr"]),
     )
 
     module = AnsibleModule(
@@ -259,6 +265,7 @@ def main():
     nd_policy = module.params.get("nd_policy")
     egress_dpp_policy = module.params.get("egress_dpp_policy")
     ingress_dpp_policy = module.params.get("ingress_dpp_policy")
+    description = module.params.get("description")
     state = module.params.get("state")
 
     aci = ACIModule(module)
@@ -299,7 +306,7 @@ def main():
             dict(l3extRsIngressQosDppPol=dict(attributes=dict(tnQosDppPolName=ingress_dpp_policy))),
             dict(l3extRsEgressQosDppPol=dict(attributes=dict(tnQosDppPolName=egress_dpp_policy))),
         ]
-        aci.payload(aci_class="l3extLIfP", class_config=dict(name=interface_profile), child_configs=child_configs)
+        aci.payload(aci_class="l3extLIfP", class_config=dict(name=interface_profile, descr=description), child_configs=child_configs)
 
         aci.get_diff(aci_class="l3extLIfP")
 
