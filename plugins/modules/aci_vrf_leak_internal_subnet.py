@@ -57,6 +57,7 @@ options:
     description: 
     - The subnets being leaked to
     type: list
+    elements: dict
     suboptions:
       tenant:
         description:
