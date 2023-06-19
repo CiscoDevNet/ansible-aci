@@ -11,12 +11,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_vrf
-short_description: Manage contexts or VRFs (fv:Ctx)
+module: aci_vrf_leak_internal_subnet
+short_description: Manage contexts or VRFs (fv:leakInternalSubnet)
 description:
-- Manage contexts or VRFs on Cisco ACI fabrics.
-- Each context is a private network associated to a tenant, i.e. VRF.
-- Enable Preferred Groups for VRF
+- Manage leaking subnets under VRF.
 options:
   tenant:
     description:
@@ -28,28 +26,11 @@ options:
     - The name of the VRF.
     type: str
     aliases: [ context, name, vrf_name ]
-  policy_control_direction:
-    description:
-    - Determines if the policy should be enforced by the fabric on ingress or egress.
-    type: str
-    choices: [ egress, ingress ]
-  policy_control_preference:
-    description:
-    - Determines if the fabric should enforce contract policies to allow routing and packet forwarding.
-    type: str
-    choices: [ enforced, unenforced ]
   description:
     description:
     - The description for the VRF.
     type: str
     aliases: [ descr ]
-  ip_data_plane_learning:
-    description:
-    - Whether IP data plane learning is enabled or disabled.
-    - The APIC defaults to C(enabled) when unset during creation.
-    type: str
-    choices: [ enabled, disabled ]
-    aliases: [ ip_dataplane_learning ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -61,11 +42,6 @@ options:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
-  preferred_group:
-    description:
-    - Enables preferred groups for the VRF under vzAny
-    type: str
-    choices: [enabled, disabled]
   match_type:
     description:
     - Configures match type for contracts under vzAny
@@ -85,49 +61,45 @@ seealso:
   description: More information about the internal APIC class B(fv:Ctx).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Jacob McGill (@jmcgill298)
+- Abraham Mughal (@abmughal)
 """
 
 EXAMPLES = r"""
-- name: Add a new VRF to a tenant
-  cisco.aci.aci_vrf:
+- name: Create leakInternalSubnet
+  cisco.aci.aci_vrf_leak_internal_subnet:
     host: apic
     username: admin
     password: SomeSecretPassword
     vrf: vrf_lab
     tenant: lab_tenant
     descr: Lab VRF
-    policy_control_preference: enforced
-    policy_control_direction: ingress
     state: present
+    leak_internal_subnet: 
+      - ctxName: "test"
+        tenant: "lab_tenant"
+    description: Ansible Test
+    ip: 1.1.1.2
   delegate_to: localhost
 
-- name: Remove a VRF for a tenant
-  cisco.aci.aci_vrf:
+- name: Remove a subnet from leaking
+  cisco.aci.aci_vrf_leak_internal_subnet:
     host: apic
     username: admin
     password: SomeSecretPassword
     vrf: vrf_lab
     tenant: lab_tenant
-    state: absent
+    leak_internal_subnet: "{{ fake_var | default(omit) }}"
+    description: Ansible Test
+    ip: 1.1.1.2
   delegate_to: localhost
 
-- name: Query a VRF of a tenant
-  cisco.aci.aci_vrf:
+- name: Query leakInternalSubnet
+  cisco.aci.aci_vrf_leak_internal_subnet:
     host: apic
     username: admin
     password: SomeSecretPassword
     vrf: vrf_lab
     tenant: lab_tenant
-    state: query
-  delegate_to: localhost
-  register: query_result
-
-- name: Query all VRFs
-  cisco.aci.aci_vrf:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
     state: query
   delegate_to: localhost
   register: query_result
@@ -260,14 +232,12 @@ def main():
           type="list", 
           elements="dict",
           options=dict(
-            ctxName=dict(type="str",aliases=["name"]),
+            ctxName=dict(type="str"),
+            tenant=dict(type="str", aliases=["tenantName"])
           ),
         ),
         description=dict(type="str", aliases=["descr"]),
-        policy_control_direction=dict(type="str", choices=["egress", "ingress"]),
-        policy_control_preference=dict(type="str", choices=["enforced", "unenforced"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        preferred_group=dict(type="str", choices=["enabled", "disabled"]),
         match_type=dict(type="str", choices=["all", "at_least_one", "at_most_one", "none"]),
         name_alias=dict(type="str"),
         scope=dict(type="str", default="private", choices=["public","private","shared"]),
@@ -325,20 +295,39 @@ def main():
 
     aci.get_existing()
 
-    if state == "present":
-        #loop for child_config list of dict    
+    if state == "present":  
         child_configs = []    
+
+        custom = []
+        #for loop for customer configs, key is to-[tenant]-[ctxName]
         for subnet in leak_internal_subnet:
+            custom.append("to-[{0}]-[{1}]".format(subnet.get("tenant"),subnet.get("ctxName")))
             child_configs.append(dict(leakTo=dict(
                 attributes=dict(
                   ctxName=subnet.get("ctxName"),
-                  rn="to-[{0}]-[{1}]".format(tenant,subnet.get("ctxName")),
+                  rn="to-[{0}]-[{1}]".format(subnet.get("tenant"),subnet.get("ctxName")),
                   scope=scope,
                   tenantName=tenant,
+                  )
                 )
               )
-            )
-          )  
+            )  
+
+        #loop through existing and delete if it's found
+        if isinstance(aci.existing, list) and len(aci.existing) > 0: #if there are existing children
+            for child in aci.existing[0].get("leakInternalSubnet", {}).get("children", {}):
+                if child.get("leakTo") and "to-[{0}]-[{1}]".format(child.get("leakTo").get("attributes").get("tenantName"),child.get("leakTo").get("attributes").get("ctxName")) not in custom:
+                    child_configs.append(
+                            {
+                                "leakTo": {
+                                    "attributes": {
+                                        "dn": "uni/tn-{0}/ctx-{1}/leakroutes/leakintsubnet-[{2}]/to-[{3}]-[{4}]".format(child.get("leakTo").get("attributes").get("tenantName"), vrf, ip,child.get("leakTo").get("attributes").get("tenantName"),
+                                                                                                                            child.get("leakTo").get("attributes").get("ctxName")),
+                                        "status": "deleted"
+                                    }
+                                }
+                            }      
+                        )      
 
         aci.payload(
             aci_class="leakInternalSubnet",

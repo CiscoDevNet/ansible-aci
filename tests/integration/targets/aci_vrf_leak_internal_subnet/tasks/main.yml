@@ -3,34 +3,13 @@
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-# - name: Test that we have an ACI APIC host, ACI username and ACI password
-#   fail:
-#     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
-#   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
-# - name: ensure tenant exists for tests to kick off
-#   cisco.aci.aci_tenant: &aci_tenant_present
-#     host: "{{ aci_hostname }}"
-#     username: "{{ aci_username }}"
-#     password: "{{ aci_password }}"
-#     validate_certs: '{{ aci_validate_certs | default(false) }}'
-#     use_ssl: '{{ aci_use_ssl | default(true) }}'
-#     use_proxy: '{{ aci_use_proxy | default(true) }}'
-#     output_level: debug
-#     state: present
-#     tenant: ansible_test
-#   register: tenant_present
-
-# - name: create vrf - check mode works
-#   cisco.aci.aci_vrf: &aci_vrf_present
-#     <<: *aci_tenant_present
-#     vrf: anstest
-#     description: Ansible Test
-#   check_mode: true
-#   register: vrf_present_check_mode
-
-- name: create vrf - check mode works
-  cisco.aci.aci_vrf: &aci_vrf_present
+- name: ensure tenant exists for tests to kick off
+  cisco.aci.aci_tenant: &aci_tenant_present
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -40,6 +19,11 @@
     output_level: debug
     state: present
     tenant: abmughal
+  register: tenant_present
+
+- name: create vrf - check mode works
+  cisco.aci.aci_vrf: &aci_vrf_present
+    <<: *aci_tenant_present
     vrf: test2
     description: Ansible Test
   check_mode: true
@@ -50,36 +34,19 @@
     <<: *aci_vrf_present
   register: vrf_present
 
+- name: create vrf again - idempotency works
+  cisco.aci.aci_vrf:
+    <<: *aci_vrf_present
+  register: vrf_present_idempotent
+
 - name: create test3 - creation works
   cisco.aci.aci_vrf:
     <<: *aci_vrf_present
     vrf: test3
   register: vrf_present
 
-- name: create leakInternalSubnet - check_mode
-  cisco.aci.aci_vrf_leak_internal_subnet: &aci_vrf_leakInternalSubnet
-    #<<: *aci_vrf_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
-    state: present
-    tenant: abmughal
-    vrf: test
-    leak_internal_subnet: 
-      - ctxName: "test2"
-      - ctxName: "test3"
-    description: Ansible Test
-    ip: 1.1.1.2
-  check_mode: true
-  register: vrf_present_check_mode
-
 - name: create leakInternalSubnet
   cisco.aci.aci_vrf_leak_internal_subnet: 
-    <<: *aci_vrf_leakInternalSubnet
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
     password: "{{ aci_password }}"
@@ -92,8 +59,45 @@
     vrf: test
     leak_internal_subnet: 
       - ctxName: "test2"
+        tenant: "abmughal"
       - ctxName: "test3"
+        tenant: "abmughal"
     description: Ansible Test
     ip: 1.1.1.2
-  register: vrf_present
+  register: vrf_leak
 
+- name: test leak_internal_subnet delete
+  cisco.aci.aci_vrf_leak_internal_subnet: 
+    <<: *aci_vrf_present
+    vrf: test
+    leak_internal_subnet: 
+      - ctxName: "test2"
+        tenant: "abmughal"
+    ip: 1.1.1.2
+  register: vrf_leak_delete
+
+- name: get vrf query
+  cisco.aci.aci_vrf_leak_internal_subnet: &aci_query
+    <<: *aci_tenant_present
+    state: query
+    vrf: test
+  register: query_all  
+
+- name: delete tenant - cleanup before ending tests
+  cisco.aci.aci_tenant:
+    <<: *aci_tenant_present
+    state: absent
+  when: tenant_present is changed
+
+# - name: delete vrf again - idempotency works
+#   cisco.aci.aci_vrf_leak_internal_subnet: 
+#     <<: *aci_vrf_absent
+#   register: vrf_absent_idempotent
+
+# - name: delete vrf - cleanup
+#   cisco.aci.aci_vrf_leak_internal_subnet: 
+#     <<: *aci_vrf_absent
+#     name: test2
+# #check for idempotency, mod, and delete
+# #add and delete children
+# #query 
