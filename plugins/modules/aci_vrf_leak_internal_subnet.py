@@ -354,6 +354,7 @@ def main():
                                         child.get("leakTo").get("attributes").get("ctxName"),
                                     ),
                                     "status": "deleted",
+                                
                                 }      
                             }
                         }
