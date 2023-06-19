@@ -54,19 +54,19 @@ options:
     choices: [ public, private, shared ]
     default: private
   leak_internal_subnet:
-    description: 
+    description:
     - The subnets being leaked to
     type: list
     elements: dict
     suboptions:
       tenant:
         description:
-        - Name of the tenant 
+        - Name of the tenant
         type: str
         aliases: [ tenantName ]
-      ctxName: 
+      ctxName:
         description:
-        - Name of the VRF 
+        - Name of the VRF
         type: str
   ip:
     description:
@@ -99,7 +99,7 @@ EXAMPLES = r"""
     tenant: lab_tenant
     descr: Lab VRF
     state: present
-    leak_internal_subnet: 
+    leak_internal_subnet:
       - ctxName: "test"
         tenant: "lab_tenant"
     description: Ansible Test
