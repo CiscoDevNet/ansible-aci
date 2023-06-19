@@ -353,9 +353,8 @@ def main():
                                         child.get("leakTo").get("attributes").get("tenantName"),
                                         child.get("leakTo").get("attributes").get("ctxName"),
                                     ),
-                                    "status": "deleted",
-                                
-                                }      
+                                    "status": "deleted",                               
+                                }  
                             }
                         }
                     )
