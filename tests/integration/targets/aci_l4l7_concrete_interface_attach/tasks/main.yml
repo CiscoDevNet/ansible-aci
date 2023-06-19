@@ -56,9 +56,8 @@
     tenant: ansible_tenant
     device: ansible_device
     domain: ansible_phys_dom
-    func_type: GoTo
+    func_type: go_to
     context_aware: single
-    is_copy: false
     managed: false
     dev_type: physical
     svc_type: adc
@@ -81,7 +80,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
-    logical_interface: ansible_second_log_intf
+    logical_interface: second_log_intf
     encap: vlan-988
     state: present
 
@@ -135,11 +134,10 @@
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
-    logical_interface: ansible_second_log_intf
+    logical_interface: second_log_intf
     concrete_device: ansible_concrete_device
     concrete_interface: ansible_second_concrete_interface
     state: present
-  register: add_concrete_intf_attach
 
 - name: Verify interface attachment
   ansible.builtin.assert:

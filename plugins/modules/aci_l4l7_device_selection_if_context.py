@@ -352,15 +352,20 @@ def main():
         if isinstance(aci.existing, list) and len(aci.existing) > 0:
             for child in aci.existing[0].get("vnsLIfCtx", {}).get("children", {}):
                 if child.get("vnsRsLIfCtxToBD") and child.get("vnsRsLIfCtxToBD").get("attributes").get("tDn") != bd_tdn:
-                    child_configs.append(
-                        {
-                            "vnsRsLIfCtxToBD": {
-                                "attributes": {
-                                    "dn": child.get("vnsRsLIfCtxToBD").get("attributes").get("dn"),
-                                    "status": "deleted",
-                                }
-                            }
-                        }
+                    # Appending to child_config list not possible because of APIC Error 103: child (Rn) of class vnsRsLIfCtxToBD is already attached.
+                    # A seperate delete request to dn of the vnsRsLIfCtxToBD is needed to remove the object prior to adding to child_configs.
+                    # child_configs.append(
+                    #     {
+                    #         "vnsRsLIfCtxToBD": {
+                    #             "attributes": {
+                    #                 "dn": child.get("vnsRsLIfCtxToBD").get("attributes").get("dn"),
+                    #                 "status": "deleted",
+                    #             }
+                    #         }
+                    #     }
+                    # )
+                    aci.delete_config_request(
+                        "/api/mo/uni/tn-{0}/ldevCtx-c-{1}-g-{2}-n-{3}/lIfCtx-c-{4}/rsLIfCtxToBD.json".format(tenant, contract, graph, node, context)
                     )
                 elif child.get("vnsRsLIfCtxToLIf") and child.get("vnsRsLIfCtxToLIf").get("attributes").get("tDn") != log_intf_tdn:
                     child_configs.append(

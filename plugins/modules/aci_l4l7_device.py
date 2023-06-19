@@ -316,7 +316,7 @@ def main():
         child_configs = []
         if dev_type == "virtual":
             dom_class = "vnsRsALDevToDomP"
-            tdn = "uni/vmmp-VMWare/dom-{0}".format(domain)
+            tdn = "uni/vmmp-VMware/dom-{0}".format(domain)
         else:
             dom_class = "vnsRsALDevToPhysDomP"
             tdn = "uni/phys-{0}".format(domain)

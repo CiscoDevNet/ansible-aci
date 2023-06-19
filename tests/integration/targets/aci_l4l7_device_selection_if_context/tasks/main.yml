@@ -65,7 +65,7 @@
     tenant: ansible_tenant
     device: ansible_device
     domain: ansible_phys_dom
-    func_type: GoTo
+    func_type: go_to
     context_aware: single
     managed: false
     dev_type: physical
@@ -90,7 +90,7 @@
     service_graph: ansible_graph
     node: ansible_node
     func_template_type: adc_one_arm
-    func_type: GoTo
+    func_type: go_to
     device: ansible_device
     managed: false
     routing_mode: Redirect
@@ -165,9 +165,9 @@
     that:
     - add_context.current.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
     - add_context.current.0.vnsLIfCtx.attributes.connNameOrLbl == "provider"
-    - add_context.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-ansible_tenant/BD-ansible_bd"
-    - add_context.current.0.vnsLIfCtx.children.1.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
-    - add_context.current.0.vnsLIfCtx.children.2.vnsRsLIfCtxToSvcRedirectPol.tDn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - add_context.current.0.vnsLIfCtx.children.1.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-ansible_tenant/BD-ansible_bd"
+    - add_context.current.0.vnsLIfCtx.children.2.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
+    - add_context.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToSvcRedirectPol.attributes.tDn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
 
 # CREATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT AGAIN TO TEST IDEMPOTENCE
 - name: Create L4-L7 Device Selection Logical Interface Context again
@@ -191,9 +191,9 @@
     - add_context_again is not changed
     - add_context_again.current.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
     - add_context_again.current.0.vnsLIfCtx.attributes.connNameOrLbl == "provider"
-    - add_context_again.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-ansible_tenant/BD-ansible_bd"
-    - add_context_again.current.0.vnsLIfCtx.children.1.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
-    - add_context_again.current.0.vnsLIfCtx.children.2.vnsRsLIfCtxToSvcRedirectPol.tDn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - add_context_again.current.0.vnsLIfCtx.children.1.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-ansible_tenant/BD-ansible_bd"
+    - add_context_again.current.0.vnsLIfCtx.children.2.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
+    - add_context_again.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToSvcRedirectPol.attributes.tDn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
 
 # UPDATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT
 - name: Create L4-L7 Device Selection Logical Interface Context again

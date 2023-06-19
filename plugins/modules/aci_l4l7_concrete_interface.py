@@ -295,8 +295,6 @@ def main():
 
     aci = ACIModule(module)
 
-    node_regex = r"^\d+(?:\-\d+)?$"
-
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -328,9 +326,6 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        if not re.search(node_regex, node_id):
-            aci.fail_json(msg="node_id must be a single integer for ports or port-channels, or a hyphen separated pair of integers for vPCs")
-
         path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, "protpaths" if "-" in node_id else "paths", node_id, path_ep)
         aci.payload(
             aci_class="vnsCIf",

@@ -72,9 +72,8 @@
     tenant: ansible_tenant
     device: ansible_device
     domain: ansible_phys_dom
-    func_type: GoTo
+    func_type: go_to
     context_aware: single
-    is_copy: false
     managed: false
     dev_type: physical
     svc_type: adc
@@ -89,9 +88,8 @@
     tenant: ansible_tenant
     device: ansible_virt_device
     domain: ansible_vmm_dom
-    func_type: GoTo
+    func_type: go_to
     context_aware: single
-    is_copy: false
     managed: false
     dev_type: virtual
     svc_type: adc
@@ -128,7 +126,7 @@
   ansible.builtin.assert:
     that:
     - create_l4l7_device.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/phys-ansible_phys_dom"
-    - create_virt_l4l7_device.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/vmmp-VMWare/dom-ansible_vmm_dom"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.children.0.vnsRsALDevToDomP.attributes.tDn == "uni/vmmp-VMware/dom-ansible_vmm_dom"
 
 # ADD device again to check idempotence
 - name: Create L4-L7 device again
@@ -137,9 +135,8 @@
     tenant: ansible_tenant
     device: ansible_device
     domain: ansible_phys_dom
-    func_type: GoTo
+    func_type: go_to
     context_aware: single
-    is_copy: false
     managed: false
     dev_type: physical
     svc_type: adc
@@ -154,9 +151,8 @@
     tenant: ansible_tenant
     device: ansible_virt_device
     domain: ansible_vmm_dom
-    func_type: GoTo
+    func_type: go_to
     context_aware: single
-    is_copy: false
     managed: false
     dev_type: virtual
     svc_type: adc
@@ -195,7 +191,7 @@
   ansible.builtin.assert:
     that:
     - create_l4l7_device_again.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/phys-ansible_phys_dom"
-    - create_virt_l4l7_device_again.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/vmmp-VMWare/dom-ansible_vmm_dom"
+    - create_virt_l4l7_device_again.current.0.vnsLDevVip.children.0.vnsRsALDevToDomP.attributes.tDn == "uni/vmmp-VMware/dom-ansible_vmm_dom"
 
 # MODIFY L4-L7 Device
 - name: Update L4-L7 device
@@ -204,9 +200,8 @@
     tenant: ansible_tenant
     device: ansible_device
     domain: ansible_phys_dom
-    func_type: GoThrough
+    func_type: go_through
     context_aware: multi
-    is_copy: false
     managed: false
     dev_type: physical
     svc_type: fw
