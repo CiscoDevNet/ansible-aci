@@ -52,6 +52,7 @@ options:
     - Scope of the object
     type: str
     choices: [ public, private, shared ]
+    default: private
   leak_internal_subnet:
     description: 
     - The subnets being leaked to
@@ -316,7 +317,7 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        child_configs = []  
+        child_configs = []
 
         custom = []
         for subnet in leak_internal_subnet:
@@ -334,7 +335,7 @@ def main():
                 )
             )
 
-        if isinstance(aci.existing, list) and len(aci.existing) > 0: 
+        if isinstance(aci.existing, list) and len(aci.existing) > 0:
             for child in aci.existing[0].get("leakInternalSubnet", {}).get("children", {}):
                 if (
                     child.get("leakTo")
@@ -353,7 +354,7 @@ def main():
                                         child.get("leakTo").get("attributes").get("ctxName"),
                                     ),
                                     "status": "deleted",
-                                 }      
+                                }      
                             }
                         }
                     )
