@@ -1673,6 +1673,7 @@ class ACIModule(object):
                     if self.result.get("changed") is True:
                         json.dump([mo], output_file)
 
+<<<<<<< HEAD
     def parsed_url_path(self, url):
         if not HAS_URLPARSE:
             self.fail_json(msg="urlparse is not installed")
@@ -1732,3 +1733,20 @@ class ACIModule(object):
                 except KeyError:
                     # Connection error
                     self.fail_json(msg="Connection failed for {url}. {msg}".format_map(info))
+=======
+    def delete_config_request(self, path):
+        self._config_request(path, "absent")
+        self.result["changed"] = True
+
+    def get_config_request(self, path):
+        self._config_request(path, "query")
+        return self.imdata
+
+    def _config_request(self, path, state):
+        reset_url = self.url
+        reset_state = self.params["state"]
+        self.params["state"] = state
+        self.request(path)
+        self.url = reset_url
+        self.params["state"] = reset_state
+>>>>>>> e05fd41 (fix: minor update)
