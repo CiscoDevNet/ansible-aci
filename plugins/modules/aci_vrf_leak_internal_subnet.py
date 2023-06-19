@@ -47,6 +47,29 @@ options:
     - Configures match type for contracts under vzAny
     type: str
     choices: [ all, at_least_one, at_most_one, none]
+  scope:
+    description:
+    - Scope of the object
+    type: str
+    choices: [ public, private, shared ]
+  leak_internal_subnet:
+    description: 
+    - The subnets being leaked to
+    type: list
+    suboptions:
+      tenant:
+        description:
+        - Name of the tenant 
+        type: str
+        aliases: [ tenantName ]
+      ctxName: 
+        description:
+        - Name of the VRF 
+        type: str
+  ip:
+    description:
+    - The IP address
+    type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -229,18 +252,15 @@ def main():
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         vrf=dict(type="str", aliases=["context", "name", "vrf_name"]),  # Not required for querying all objects
         leak_internal_subnet=dict(
-          type="list", 
-          elements="dict",
-          options=dict(
-            ctxName=dict(type="str"),
-            tenant=dict(type="str", aliases=["tenantName"])
-          ),
+            type="list",
+            elements="dict",
+            options=dict(ctxName=dict(type="str"), tenant=dict(type="str", aliases=["tenantName"])),
         ),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         match_type=dict(type="str", choices=["all", "at_least_one", "at_most_one", "none"]),
         name_alias=dict(type="str"),
-        scope=dict(type="str", default="private", choices=["public","private","shared"]),
+        scope=dict(type="str", default="private", choices=["public", "private", "shared"]),
         ip=dict(type="str"),
     )
 
@@ -248,8 +268,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "vrf","leak_internal_subnet"]],
-            ["state", "present", ["tenant", "vrf","leak_internal_subnet"]],
+            ["state", "absent", ["tenant", "vrf", "leak_internal_subnet"]],
+            ["state", "present", ["tenant", "vrf", "leak_internal_subnet"]],
         ],
     )
 
@@ -295,39 +315,48 @@ def main():
 
     aci.get_existing()
 
-    if state == "present":  
-        child_configs = []    
+    if state == "present":
+        child_configs = []  
 
         custom = []
-        #for loop for customer configs, key is to-[tenant]-[ctxName]
         for subnet in leak_internal_subnet:
-            custom.append("to-[{0}]-[{1}]".format(subnet.get("tenant"),subnet.get("ctxName")))
-            child_configs.append(dict(leakTo=dict(
-                attributes=dict(
-                  ctxName=subnet.get("ctxName"),
-                  rn="to-[{0}]-[{1}]".format(subnet.get("tenant"),subnet.get("ctxName")),
-                  scope=scope,
-                  tenantName=tenant,
-                  )
+            custom.append("to-[{0}]-[{1}]".format(subnet.get("tenant"), subnet.get("ctxName")))
+            child_configs.append(
+                dict(
+                    leakTo=dict(
+                        attributes=dict(
+                            ctxName=subnet.get("ctxName"),
+                            rn="to-[{0}]-[{1}]".format(subnet.get("tenant"), subnet.get("ctxName")),
+                            scope=scope,
+                            tenantName=tenant,
+                        )
+                    )
                 )
-              )
-            )  
+            )
 
-        #loop through existing and delete if it's found
-        if isinstance(aci.existing, list) and len(aci.existing) > 0: #if there are existing children
+        if isinstance(aci.existing, list) and len(aci.existing) > 0: 
             for child in aci.existing[0].get("leakInternalSubnet", {}).get("children", {}):
-                if child.get("leakTo") and "to-[{0}]-[{1}]".format(child.get("leakTo").get("attributes").get("tenantName"),child.get("leakTo").get("attributes").get("ctxName")) not in custom:
+                if (
+                    child.get("leakTo")
+                    and "to-[{0}]-[{1}]".format(child.get("leakTo").get("attributes").get("tenantName"), child.get("leakTo").get("attributes").get("ctxName"))
+                    not in custom
+                ):
                     child_configs.append(
-                            {
-                                "leakTo": {
-                                    "attributes": {
-                                        "dn": "uni/tn-{0}/ctx-{1}/leakroutes/leakintsubnet-[{2}]/to-[{3}]-[{4}]".format(child.get("leakTo").get("attributes").get("tenantName"), vrf, ip,child.get("leakTo").get("attributes").get("tenantName"),
-                                                                                                                            child.get("leakTo").get("attributes").get("ctxName")),
-                                        "status": "deleted"
-                                    }
-                                }
-                            }      
-                        )      
+                        {
+                            "leakTo": {
+                                "attributes": {
+                                    "dn": "uni/tn-{0}/ctx-{1}/leakroutes/leakintsubnet-[{2}]/to-[{3}]-[{4}]".format(
+                                        child.get("leakTo").get("attributes").get("tenantName"),
+                                        vrf,
+                                        ip,
+                                        child.get("leakTo").get("attributes").get("tenantName"),
+                                        child.get("leakTo").get("attributes").get("ctxName"),
+                                    ),
+                                    "status": "deleted",
+                                 }      
+                            }
+                        }
+                    )
 
         aci.payload(
             aci_class="leakInternalSubnet",
