@@ -267,7 +267,10 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "absent", ["tenant", "service_graph", "node"]], ["state", "present", ["tenant", "service_graph", "node", "device"]]],
+        required_if=[
+            ["state", "absent", ["tenant", "service_graph", "node"]],
+            ["state", "present", ["tenant", "service_graph", "node", "device"]],
+        ],
     )
 
     aci = ACIModule(module)

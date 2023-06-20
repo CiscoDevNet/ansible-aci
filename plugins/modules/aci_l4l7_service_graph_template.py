@@ -216,7 +216,10 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "absent", ["tenant", "service_graph"]], ["state", "present", ["tenant", "service_graph"]]],
+        required_if=[
+            ["state", "absent", ["tenant", "service_graph"]],
+            ["state", "present", ["tenant", "service_graph"]],
+        ],
     )
 
     tenant = module.params.get("tenant")
