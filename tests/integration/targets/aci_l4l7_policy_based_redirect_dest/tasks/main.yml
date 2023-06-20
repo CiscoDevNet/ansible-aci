@@ -51,7 +51,6 @@
     domain: ansible_phys_dom
     func_type: go_to
     context_aware: single
-    is_copy: false
     managed: false
     dev_type: physical
     svc_type: adc

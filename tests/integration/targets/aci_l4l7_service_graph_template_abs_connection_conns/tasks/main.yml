@@ -64,9 +64,8 @@
     tenant: ansible_tenant
     device: ansible_device1
     domain: ansible_phys_dom
-    func_type: GoTo
+    func_type: go_to
     context_aware: single
-    is_copy: false
     managed: false
     dev_type: physical
     svc_type: adc
@@ -80,9 +79,8 @@
     tenant: ansible_tenant
     device: ansible_device2
     domain: ansible_phys_dom
-    func_type: GoTo
+    func_type: go_to
     context_aware: single
-    is_copy: false
     managed: false
     dev_type: physical
     svc_type: adc
@@ -98,7 +96,7 @@
     service_graph: ansible_graph
     node: ansible_node1
     func_template_type: adc_one_arm
-    func_type: GoTo
+    func_type: go_to
     device: ansible_device1
     managed: false
     routing_mode: Redirect
@@ -111,7 +109,7 @@
     service_graph: ansible_graph
     node: ansible_node2
     func_template_type: adc_one_arm
-    func_type: GoTo
+    func_type: go_to
     device: ansible_device2
     managed: false
     routing_mode: Redirect
@@ -126,7 +124,7 @@
     connection_name: C1
     direct_connect: true
     unicast_route: true
-    adjacency_type: L3
+    adjacency_type: l3
     state: present
 
 - name: Create L4-L7 Service Graph Abs Connection C2
@@ -137,7 +135,7 @@
     connection_name: C2
     direct_connect: true
     unicast_route: true
-    adjacency_type: L3
+    adjacency_type: l3
     state: present
 
 - name: Create L4-L7 Service Graph Abs Connection C3
@@ -148,7 +146,7 @@
     connection_name: C3
     direct_connect: true
     unicast_route: true
-    adjacency_type: L3
+    adjacency_type: l3
     state: present
 
 # CREATE CONNECTION CONNS

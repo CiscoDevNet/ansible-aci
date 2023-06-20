@@ -196,7 +196,7 @@
     - add_context_again.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToSvcRedirectPol.attributes.tDn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
 
 # UPDATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT
-- name: Create L4-L7 Device Selection Logical Interface Context again
+- name: Modify L4-L7 Device Selection Logical Interface Context
   cisco.aci.aci_l4l7_device_selection_if_context:
     <<: *aci_info
     tenant: ansible_tenant

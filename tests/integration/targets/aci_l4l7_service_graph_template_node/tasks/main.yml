@@ -49,9 +49,8 @@
     tenant: ansible_tenant
     device: ansible_device
     domain: ansible_phys_dom
-    func_type: GoTo
+    func_type: go_to
     context_aware: single
-    is_copy: false
     managed: false
     dev_type: physical
     svc_type: adc
@@ -75,7 +74,7 @@
     service_graph: ansible_graph
     node: ansible_node
     func_template_type: adc_one_arm
-    func_type: GoTo
+    func_type: go_to
     device: ansible_device
     managed: false
     routing_mode: Redirect
@@ -107,7 +106,7 @@
     service_graph: ansible_graph
     node: ansible_node
     func_template_type: adc_one_arm
-    func_type: GoTo
+    func_type: go_to
     device: ansible_device
     managed: false
     routing_mode: Redirect
@@ -141,7 +140,7 @@
     service_graph: ansible_graph
     node: ansible_node
     func_template_type: adc_two_arm
-    func_type: GoThrough
+    func_type: go_through
     device: ansible_device
     managed: true
     routing_mode: Redirect
