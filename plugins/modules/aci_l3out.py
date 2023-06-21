@@ -58,14 +58,14 @@ options:
     aliases: [ route_control_enforcement ]
   mpls:
     description:
-    - Indicate whether MPLS is enabled or not.
+    - Indicate whether MPLS (Multi-Protocol Label Switching) is enabled or not.
     - The APIC defaults to C(no) when unset during creation.
     type: str
     choices: [ "no", "yes" ]
   l3protocol:
     description:
     - Routing protocol for the L3Out.
-    - Protocols must be re-provided with their paramaters each time an l3out with existing protocols is modified if the protocols were to be kept.
+    - Protocols already associated with an l3out must be provided again when the l3out is modified if the associated protocols are to be kept.
     - The Protocols are otherwise deleted if not provided each time an l3out is modified.
     - First example, to add BGP protocol to an l3out with OSPF protocol, the user must enter C([ bgp, ospf ]) even though "ospf" was provided before.
     - Second example, to change the protocol from OSPF to EIGRP, the user must simply enter C([ eigrp ]) and the previous OSPF protocol will be deleted.
@@ -164,6 +164,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Rostyslav Davydenko (@rost-d)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
