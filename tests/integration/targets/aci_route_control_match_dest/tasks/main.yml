@@ -86,7 +86,7 @@
       tenant: ansible_tenant
       subject_name: ansible_rtctrl_subject
       ip: 10.20.31.0/24
-      aggregate: no
+      aggregate: false
       gt: 26
       lt: 28
       state: present
@@ -162,7 +162,7 @@
   - name: Update Match Destination
     cisco.aci.aci_route_control_match_dest:
       <<: *match_dest_present
-      aggregate: yes
+      aggregate: true
       gt: 0
       lt: 0
     register: update_match_dest
