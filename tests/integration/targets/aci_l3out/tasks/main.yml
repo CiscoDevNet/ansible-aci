@@ -118,7 +118,7 @@
         - nm_add_l3out_import_export.sent.l3extOut.attributes.enforceRtctrl == "import,export"
         - nm_add_l3out_export is changed
         - nm_add_l3out_export.sent.l3extOut.attributes.enforceRtctrl == "export"
-        - nm_add_l3out_import_error.msg == "The route_control parameter is invalid: allowed options are export or import,export only"
+        - nm_add_l3out_import_error.msg == "The route_control parameter is invalid{{':'}} allowed options are export or import,export only"
 
   - name: Add BGP protocol
     aci_l3out:
@@ -137,15 +137,15 @@
       <<: *aci_l3out_present
       l3protocol: pim
       asn: 1
-      ospf:
-        description: test warning message for opsf_spec
     register: nm_add_l3out_pim
 
-  - name: Add EIGRP protocol
+  - name: Add EIGRP protocol - warning message works for OSPF spec
     aci_l3out:
       <<: *aci_l3out_present
       l3protocol: eigrp
       asn: 1
+      ospf:
+        description: OSPF warnings message works
     register: nm_add_l3out_eigrp
 
   - name: remove asn - failure message works
@@ -168,8 +168,10 @@
         - nm_add_l3out_bgp is changed
         - nm_add_l3out_bgp_again is changed
         - nm_add_l3out_pim is changed
+        - nm_add_l3out_pim.warnings.0 == "Parameter 'asn' is only applicable when l3protocol is 'eigrp'. The ASN will be ignored"
         - nm_add_l3out_eigrp is changed
         - nm_add_l3out_eigrp.sent.l3extOut.children.1.eigrpExtP.attributes.asn == "1"
+        - nm_add_l3out_eigrp.warnings.0 == "Parameter 'ospf' is only applicable when l3protocol is 'ospf'. The OPSF specifications will be ignored"
         - add_l3out_without_asn.msg == "Parameter 'asn' is required when l3protocol is 'eigrp'"
         - nm_remove_l3protocol is changed
 
