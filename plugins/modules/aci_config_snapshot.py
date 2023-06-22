@@ -64,7 +64,7 @@ notes:
 - The APIC does not provide a mechanism for naming the snapshots.
 - 'Snapshot files use the following naming structure: ce_<config export policy name>-<yyyy>-<mm>-<dd>T<hh>:<mm>:<ss>.<mss>+<hh>:<mm>.'
 - 'Snapshot objects use the following naming structure: run-<yyyy>-<mm>-<dd>T<hh>-<mm>-<ss>.'
-- It's strongly recommended to add a pause task after creating a Snapshot. 
+- It's strongly recommended to add a pause task after creating a Snapshot.
 - Wait for the Snapshot to be finished before querying, comparing Snapshots or processing to Rollbacks.
 seealso:
 - module: cisco.aci.aci_config_rollback

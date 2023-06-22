@@ -73,7 +73,7 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- It's strongly recommended to add a pause task after creating a Snapshot. 
+- It's strongly recommended to add a pause task after creating a Snapshot.
 - Wait for the Snapshot to be finished before querying, comparing Snapshots or processing to Rollbacks.
 seealso:
 - module: cisco.aci.aci_config_snapshot
@@ -98,7 +98,7 @@ EXAMPLES = r"""
 - name: Wait for snapshot to be finished before querying
   pause:
     seconds: 10
-  
+
 - name: Query Existing Snapshots
   cisco.aci.aci_config_snapshot:
     host: apic
