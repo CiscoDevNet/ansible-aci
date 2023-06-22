@@ -76,6 +76,22 @@
       that:
       - add_comm_again is not changed
 
+  - name: Add invalid community
+    cisco.aci.aci_route_control_set_comm:
+      <<: *aci_info
+      tenant: ansible_tenant
+      action_rule_profile: invalid_attr
+      set_criteria: none
+      community: extended:as4-nn2:5:16
+    register: invalid_comm
+    ignore_errors: true
+
+  - name: Verify invalid community error
+    ansible.builtin.assert:
+      that:
+      - invalid_comm is failed
+      - invalid_comm.msg == "community can not be set if set_criteria is none"
+
 # MODIFY COMMUNITY
   - name: Update route control community
     cisco.aci.aci_route_control_set_comm:
