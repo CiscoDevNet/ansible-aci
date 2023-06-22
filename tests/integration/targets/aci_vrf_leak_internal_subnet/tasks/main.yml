@@ -8,23 +8,35 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# - name: delete existing tenant
+#   cisco.aci.aci_tenant: 
+#     <<: *aci_info
+#     state: absent
+#     tenant: ansible_test3
+#   register: tenant_present
+
 - name: ensure tenant exists for tests to kick off
   cisco.aci.aci_tenant: &aci_tenant_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
+    <<: *aci_info
     state: present
-    tenant: abmughal
+    tenant: ansible_test3
   register: tenant_present
 
 - name: create vrf - check mode works
   cisco.aci.aci_vrf: &aci_vrf_present
     <<: *aci_tenant_present
-    vrf: test2
+    vrf: test
     description: Ansible Test
   check_mode: true
   register: vrf_present_check_mode
@@ -34,10 +46,11 @@
     <<: *aci_vrf_present
   register: vrf_present
 
-- name: create vrf again - idempotency works
+- name: create test - creation works
   cisco.aci.aci_vrf:
     <<: *aci_vrf_present
-  register: vrf_present_idempotent
+    vrf: test2
+  register: vrf_present
 
 - name: create test3 - creation works
   cisco.aci.aci_vrf:
@@ -45,37 +58,45 @@
     vrf: test3
   register: vrf_present
 
-- name: create leakInternalSubnet
+- name: create leak internal subnet
   cisco.aci.aci_vrf_leak_internal_subnet: 
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
+    <<: *aci_info
     state: present
-    tenant: abmughal
+    tenant: ansible_test3
     vrf: test
+    ip: 1.1.1.2
     leak_internal_subnet: 
-      - ctxName: "test2"
-        tenant: "abmughal"
-      - ctxName: "test3"
-        tenant: "abmughal"
+      - vrf: "test2"
+        tenant: "ansible_test3"
+      - vrf: "test3"
+        tenant: "ansible_test3"
+    description: Ansible Test
+  register: vrf_present
+
+- name: create leak internal subnet 2
+  cisco.aci.aci_vrf_leak_internal_subnet: 
+    <<: *aci_info
+    tenant: ansible_test3
+    vrf: test2
+    leak_internal_subnet: 
+      - vrf: "test"
+        tenant: "ansible_test3"
     description: Ansible Test
     ip: 1.1.1.2
+    state: absent
   register: vrf_leak
 
-- name: test leak_internal_subnet delete
+- name: Delete leak_internal_subnet
   cisco.aci.aci_vrf_leak_internal_subnet: 
     <<: *aci_vrf_present
     vrf: test
     leak_internal_subnet: 
-      - ctxName: "test2"
-        tenant: "abmughal"
+      - vrf: "test2"
+        tenant: "ansible_test3"
     ip: 1.1.1.2
   register: vrf_leak_delete
 
+#add delete again task
 - name: get vrf query
   cisco.aci.aci_vrf_leak_internal_subnet: &aci_query
     <<: *aci_tenant_present
@@ -83,21 +104,6 @@
     vrf: test
   register: query_all  
 
-- name: delete tenant - cleanup before ending tests
-  cisco.aci.aci_tenant:
-    <<: *aci_tenant_present
-    state: absent
-  when: tenant_present is changed
-
-# - name: delete vrf again - idempotency works
-#   cisco.aci.aci_vrf_leak_internal_subnet: 
-#     <<: *aci_vrf_absent
-#   register: vrf_absent_idempotent
-
-# - name: delete vrf - cleanup
-#   cisco.aci.aci_vrf_leak_internal_subnet: 
-#     <<: *aci_vrf_absent
-#     name: test2
 # #check for idempotency, mod, and delete
 # #add and delete children
 # #query 

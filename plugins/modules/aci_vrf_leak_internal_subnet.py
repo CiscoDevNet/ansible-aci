@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2023, <> (@abmughal)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -63,11 +64,12 @@ options:
         description:
         - Name of the tenant
         type: str
-        aliases: [ tenantName ]
-      ctxName:
+        aliases: [ tenant_name ]
+      vrf:
         description:
         - Name of the VRF
         type: str
+        aliases: [ vrf_name ]
   ip:
     description:
     - The IP address
@@ -90,7 +92,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create leakInternalSubnet
+- name: Create leak internal subnet
   cisco.aci.aci_vrf_leak_internal_subnet:
     host: apic
     username: admin
@@ -100,7 +102,7 @@ EXAMPLES = r"""
     descr: Lab VRF
     state: present
     leak_internal_subnet:
-      - ctxName: "test"
+      - vrf: "test"
         tenant: "lab_tenant"
     description: Ansible Test
     ip: 1.1.1.2
@@ -118,7 +120,7 @@ EXAMPLES = r"""
     ip: 1.1.1.2
   delegate_to: localhost
 
-- name: Query leakInternalSubnet
+- name: Query leak internal subnet
   cisco.aci.aci_vrf_leak_internal_subnet:
     host: apic
     username: admin
@@ -256,7 +258,10 @@ def main():
         leak_internal_subnet=dict(
             type="list",
             elements="dict",
-            options=dict(ctxName=dict(type="str"), tenant=dict(type="str", aliases=["tenantName"])),
+            options=dict(
+                vrf=dict(type="str", aliases=["vrf_name"]), 
+                tenant=dict(type="str", aliases=["tenantName"]),
+            ),
         ),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -285,8 +290,7 @@ def main():
     scope = module.params.get("scope")
     ip = module.params.get("ip")
 
-    if match_type is not None:
-        match_type = MATCH_TYPE_MAPPING[match_type]
+    match_type = MATCH_TYPE_MAPPING.get(match_type)
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -310,7 +314,8 @@ def main():
         subclass_3=dict(
             aci_class="leakInternalSubnet",
             aci_rn="leakintsubnet-[{0}]".format(ip),
-            module_object=ip,
+            module_object=ip, 
+            target_filter={"ip": ip},
         ),
         child_classes=["leakTo"],
     )
@@ -320,15 +325,15 @@ def main():
     if state == "present":
         child_configs = []
 
-        custom = []
+        subnet_rn_list = []
         for subnet in leak_internal_subnet:
-            custom.append("to-[{0}]-[{1}]".format(subnet.get("tenant"), subnet.get("ctxName")))
+            subnet_rn_list.append("to-[{0}]-[{1}]".format(subnet.get("tenant"), subnet.get("vrf")))
             child_configs.append(
                 dict(
                     leakTo=dict(
                         attributes=dict(
-                            ctxName=subnet.get("ctxName"),
-                            rn="to-[{0}]-[{1}]".format(subnet.get("tenant"), subnet.get("ctxName")),
+                            ctxName=subnet.get("vrf"),
+                            rn="to-[{0}]-[{1}]".format(subnet.get("tenant"), subnet.get("vrf")),
                             scope=scope,
                             tenantName=tenant,
                         )
@@ -338,21 +343,22 @@ def main():
 
         if isinstance(aci.existing, list) and len(aci.existing) > 0:
             for child in aci.existing[0].get("leakInternalSubnet", {}).get("children", {}):
+                child_attributes = child.get("leakTo", {}).get("attributes", {})
                 if (
                     child.get("leakTo")
-                    and "to-[{0}]-[{1}]".format(child.get("leakTo").get("attributes").get("tenantName"), child.get("leakTo").get("attributes").get("ctxName"))
-                    not in custom
+                    and "to-[{0}]-[{1}]".format(child_attributes.get("tenantName"), child_attributes.get("ctxName"))
+                    not in subnet_rn_list
                 ):
                     child_configs.append(
                         {
                             "leakTo": {
                                 "attributes": {
                                     "dn": "uni/tn-{0}/ctx-{1}/leakroutes/leakintsubnet-[{2}]/to-[{3}]-[{4}]".format(
-                                        child.get("leakTo").get("attributes").get("tenantName"),
+                                        child_attributes.get("tenantName"),
                                         vrf,
                                         ip,
-                                        child.get("leakTo").get("attributes").get("tenantName"),
-                                        child.get("leakTo").get("attributes").get("ctxName"),
+                                        child_attributes.get("tenantName"),
+                                        child_attributes.get("ctxName"),
                                     ),
                                     "status": "deleted",
                                 }
