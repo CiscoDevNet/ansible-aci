@@ -333,9 +333,8 @@ def main():
                     leakTo=dict(
                         attributes=dict(
                             ctxName=subnet.get("vrf"),
-                            rn="to-[{0}]-[{1}]".format(subnet.get("tenant"), subnet.get("vrf")),
-                            scope=scope,
                             tenantName=subnet.get("tenant"),
+                            scope=scope,                          
                         )
                     )
                 )
@@ -350,20 +349,15 @@ def main():
                     not in subnet_rn_list
                 ):
                     child_configs.append(
-                        {
-                            "leakTo": {
-                                "attributes": {
-                                    "dn": "uni/tn-{0}/ctx-{1}/leakroutes/leakintsubnet-[{2}]/to-[{3}]-[{4}]".format(
-                                        child_attributes.get("tenantName"),
-                                        vrf,
-                                        ip,
-                                        child_attributes.get("tenantName"),
-                                        child_attributes.get("ctxName"),
-                                    ),
-                                    "status": "deleted",
-                                }
-                            }
-                        }
+                        dict(
+                            leakTo=dict(
+                                attributes=dict(
+                                    ctxName=child_attributes.get("ctxName"),
+                                    tenantName=child_attributes.get("tenantName"),
+                                    status="deleted",                                    
+                                )
+                            )
+                        )
                     )
 
         aci.payload(
