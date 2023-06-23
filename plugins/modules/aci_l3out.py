@@ -208,6 +208,15 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Query all L3Outs
+  cisco.aci.aci_l3out:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_all_result
 """
 
 RETURN = r"""
