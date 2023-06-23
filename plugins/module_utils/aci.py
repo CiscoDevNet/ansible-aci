@@ -320,6 +320,7 @@ class ACIModule(object):
         self.obj_filter = None
         self.method = None
         self.path = None
+        self.parent_path = None
         self.response = None
         self.status = None
         self.url = None
@@ -921,6 +922,7 @@ class ACIModule(object):
         if self.module.params.get("state") in ("absent", "present"):
             # State is absent or present
             self.path = "api/mo/uni/{0}.json".format(obj_rn)
+            self.parent_path = "api/mo/uni.json"
             if config_only:
                 self.update_qs({"rsp-prop-include": "config-only"})
             self.obj_filter = obj_filter
@@ -947,6 +949,7 @@ class ACIModule(object):
         if self.module.params.get("state") in ("absent", "present"):
             # State is absent or present
             self.path = "api/mo/uni/{0}/{1}.json".format(parent_rn, obj_rn)
+            self.parent_path = "api/mo/uni/{0}.json".format(parent_rn)
             if config_only:
                 self.update_qs({"rsp-prop-include": "config-only"})
             self.obj_filter = obj_filter
@@ -984,6 +987,7 @@ class ACIModule(object):
         if self.module.params.get("state") in ("absent", "present"):
             # State is absent or present
             self.path = "api/mo/uni/{0}/{1}/{2}.json".format(root_rn, parent_rn, obj_rn)
+            self.parent_path = "api/mo/uni/{0}/{1}.json".format(root_rn, parent_rn)
             if config_only:
                 self.update_qs({"rsp-prop-include": "config-only"})
             self.obj_filter = obj_filter
@@ -1053,6 +1057,7 @@ class ACIModule(object):
         if self.module.params.get("state") in ("absent", "present"):
             # State is absent or present
             self.path = "api/mo/uni/{0}/{1}/{2}/{3}.json".format(root_rn, sec_rn, parent_rn, obj_rn)
+            self.parent_path = "api/mo/uni/{0}/{1}/{2}.json".format(root_rn, sec_rn, parent_rn)
             if config_only:
                 self.update_qs({"rsp-prop-include": "config-only"})
             self.obj_filter = obj_filter
@@ -1108,6 +1113,7 @@ class ACIModule(object):
         if self.module.params.get("state") in ("absent", "present"):
             # State is absent or present
             self.path = "api/mo/uni/{0}/{1}/{2}/{3}/{4}.json".format(root_rn, ter_rn, sec_rn, parent_rn, obj_rn)
+            self.parent_path = "api/mo/uni/{0}/{1}/{2}/{3}.json".format(root_rn, ter_rn, sec_rn, parent_rn)
             if config_only:
                 self.update_qs({"rsp-prop-include": "config-only"})
             self.obj_filter = obj_filter
@@ -1517,7 +1523,7 @@ class ACIModule(object):
             if children:
                 self.proposed[aci_class].update(dict(children=children))
 
-    def post_config(self):
+    def post_config(self, parent_class=None):
         """
         This method is used to handle the logic when the modules state is equal to present. The method only pushes a change if
         the object has differences than what exists on the APIC, and if check_mode is False. A successful change will mark the
@@ -1527,6 +1533,9 @@ class ACIModule(object):
             return
         elif not self.module.check_mode:
             # Sign and encode request as to APIC's wishes
+            if parent_class is not None:
+                self.url = "{protocol}://{host}/{path}".format(path=self.parent_path, **self.module.params)
+                self.config = {parent_class: {"attributes": {}, "children": [self.config]}}
             if self.params.get("private_key"):
                 self.cert_auth(method="POST", payload=json.dumps(self.config))
 

@@ -17,14 +17,14 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
 
-# - name: delete existing tenant
-#   cisco.aci.aci_tenant: 
-#     <<: *aci_info
-#     state: absent
-#     tenant: ansible_test3
-#   register: tenant_present
+- name: delete existing tenant
+  cisco.aci.aci_tenant: 
+    <<: *aci_info
+    state: absent
+    tenant: ansible_test3
+  register: tenant_present
 
 - name: ensure tenant exists for tests to kick off
   cisco.aci.aci_tenant: &aci_tenant_present
@@ -72,6 +72,9 @@
         tenant: "ansible_test3"
     description: Ansible Test
   register: vrf_present
+
+# why isn't leakRoutes being created in this call
+# have to instantiate leakRoutes beforehand?
 
 - name: create leak internal subnet 2
   cisco.aci.aci_vrf_leak_internal_subnet: 

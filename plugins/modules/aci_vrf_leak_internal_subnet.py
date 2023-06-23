@@ -335,7 +335,7 @@ def main():
                             ctxName=subnet.get("vrf"),
                             rn="to-[{0}]-[{1}]".format(subnet.get("tenant"), subnet.get("vrf")),
                             scope=scope,
-                            tenantName=tenant,
+                            tenantName=subnet.get("tenant"),
                         )
                     )
                 )
@@ -379,7 +379,10 @@ def main():
 
         aci.get_diff(aci_class="leakInternalSubnet")
 
-        aci.post_config()
+        if aci.existing:
+            aci.post_config()
+        else:
+            aci.post_config(parent_class="leakRoutes")
 
     elif state == "absent":
         aci.delete_config()
