@@ -256,6 +256,87 @@
     - add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.children.0.vnsRsToCIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
     - add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.children.1.vnsRsL1L2RedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
 
+# TEST ERROR CHECKING
+- name: Add L4-L7 L1/L2 Policy Based Redirect Destination with ip
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_l2_policy
+    redirect_mac: AB:CD:EF:12:34:57
+    dest_name: l1l2_redirect_dest
+    dest_type: l1/l2
+    logical_dev: ansible_device
+    concrete_dev: ansible_concrete_device
+    concrete_intf: ansible_concrete_interface
+    health_group: ansible_health_group
+    pod_id: 1
+    ip: 10.20.30.40
+    state: present
+  register: add_pbr_l1l2_ip
+  ignore_errors: true
+
+- name: Add L4-L7 L1/L2 Policy Based Redirect Destination with additional ip
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_l2_policy
+    redirect_mac: AB:CD:EF:12:34:57
+    dest_name: l1l2_redirect_dest
+    dest_type: l1/l2
+    logical_dev: ansible_device
+    concrete_dev: ansible_concrete_device
+    concrete_intf: ansible_concrete_interface
+    health_group: ansible_health_group
+    pod_id: 1
+    additional_ip: 10.20.30.40
+    state: present
+  register: add_pbr_l1l2_add_ip
+  ignore_errors: true
+
+- name: Add L4-L7 L3 Policy Based Redirect Destination with redirect interface
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_l2_policy
+    redirect_mac: AB:CD:EF:12:34:57
+    dest_name: l3_redirect_dest
+    dest_type: l3
+    logical_dev: ansible_device
+    concrete_dev: ansible_concrete_device
+    concrete_intf: ansible_concrete_interface
+    health_group: ansible_health_group
+    pod_id: 1
+    ip: 10.20.30.40
+    state: present
+  register: add_pbr_l3_redirect_intf
+  ignore_errors: true
+
+- name: Add L4-L7 L1/L2 Policy Based Redirect Destination with no redirect interface
+  cisco.aci.aci_l4l7_policy_based_redirect_dest:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy: ansible_pbr_l2_policy
+    redirect_mac: AB:CD:EF:12:34:57
+    dest_name: l1l2_redirect_dest
+    dest_type: l1/l2
+    health_group: ansible_health_group
+    pod_id: 1
+    state: present
+  register: add_pbr_l1l2_no_redirect_intf
+  ignore_errors: true
+
+- name: Validate error messages
+  ansible.builtin.assert:
+    that:
+    - add_pbr_l1l2_ip is failed
+    - add_pbr_l1l2_ip.msg == "You cannot provide an ip when configuring an l1/l2 destination"
+    - add_pbr_l1l2_add_ip is failed
+    - add_pbr_l1l2_add_ip.msg == "You cannot provide an additional_ip when configuring an l1/l2 destination"
+    - add_pbr_l3_redirect_intf is failed
+    - add_pbr_l3_redirect_intf.msg == "You cannot provide a logical_dev, concrete_dev or concrete_intf when configuring an l3 destination"
+    - add_pbr_l1l2_no_redirect_intf is failed
+    - add_pbr_l1l2_no_redirect_intf.msg == "You must provide a logical_dev, concrete_dev and concrete_intf when configuring an l1/l2 destination"
+
 # MODIFY L4-L7 PBR DESTINATION
 - name: Modify L4-L7 Policy Based Redirect Destination
   cisco.aci.aci_l4l7_policy_based_redirect_dest:

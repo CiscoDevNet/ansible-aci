@@ -218,6 +218,37 @@
     - update_context.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-common/BD-ansible_if_context_bd"
     - update_context.current.0.vnsLIfCtx.children | length == 1
 
+- name: Remove L4-L7 Device Selection Logical Interface Context BD
+  cisco.aci.aci_l4l7_device_selection_if_context:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    state: present
+  register: update_context
+
+- name: Verify BD binding removal
+  ansible.builtin.assert:
+    that:
+    - update_context is changed
+    - update_context.current.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
+    - update_context.current.0.vnsLIfCtx.attributes.connNameOrLbl == "provider"
+    - update_context.current.0.vnsLIfCtx.children is not defined
+
+- name: Re-add L4-L7 Device Selection Logical Interface Context BD binding
+  cisco.aci.aci_l4l7_device_selection_if_context:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    bridge_domain: ansible_if_context_bd
+    bridge_domain_tenant: common
+    state: present
+
 # QUERY L4-L7 DEVICE SELECTION INTERFACE CONTEXT
 - name: Query L4-L7 Device Selection Logical Interface Context
   cisco.aci.aci_l4l7_device_selection_if_context:

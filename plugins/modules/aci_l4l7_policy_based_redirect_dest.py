@@ -342,9 +342,7 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        if dest_type == "l3" and ip is None:
-            aci.fail_json(msg="You must provide an ip when configuring an l3 destination")
-        elif dest_type == "l1/l2" and additional_ip is not None:
+        if dest_type == "l1/l2" and additional_ip is not None:
             aci.fail_json(msg="You cannot provide an additional_ip when configuring an l1/l2 destination")
         elif dest_type == "l3" and (logical_dev, concrete_dev, concrete_intf) != (None, None, None):
             aci.fail_json(msg="You cannot provide a logical_dev, concrete_dev or concrete_intf when configuring an l3 destination")

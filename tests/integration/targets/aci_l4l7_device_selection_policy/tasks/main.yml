@@ -82,6 +82,20 @@
     service_graph: ansible_service_graph
     state: present
 
+# CREATE L4-L7 SERVICE GRAPH NODE
+- name: Create Service Graph Template Node
+  cisco.aci.aci_l4l7_service_graph_template_node:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_service_graph
+    node: ansible_node
+    func_template_type: adc_one_arm
+    func_type: go_to
+    device: ansible_device
+    managed: false
+    routing_mode: Redirect
+    state: present
+
 # CREATE L4-L7 DEVICE SELECTION POLICY
 - name: Create L4-L7 Device Selection Policy
   cisco.aci.aci_l4l7_device_selection_policy:
@@ -89,17 +103,19 @@
     tenant: ansible_tenant
     contract: ansible_contract
     graph: ansible_graph
-    node: ansible_device
+    node: ansible_node
+    device: ansible_device
     state: present
   register: add_l4l7_device_selection_policy
 
 - name: Verify L4-L7 Device Selection Policy attributes
   ansible.builtin.assert:
     that:
-    - add_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_device"
+    - add_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node"
     - add_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.ctrctNameOrLbl == "ansible_contract"
     - add_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.graphNameOrLbl == "ansible_graph"
-    - add_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_device"
+    - add_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_node"
+    - add_l4l7_device_selection_policy.current.0.vnsLDevCtx.children.0.vnsRsLDevCtxToLDev.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
 
 # ADD L4-L7 DEVICE SELECTION POLICY AGAIN TO CHECK IDEMPOTENCE
 - name: Add L4-L7 Device Selection Policy again
@@ -108,7 +124,8 @@
     tenant: ansible_tenant
     contract: ansible_contract
     graph: ansible_graph
-    node: ansible_device
+    node: ansible_node
+    device: ansible_device
     state: present
   register: add_l4l7_device_selection_policy_again
 
@@ -116,10 +133,32 @@
   ansible.builtin.assert:
     that:
     - add_l4l7_device_selection_policy_again is not changed
-    - add_l4l7_device_selection_policy_again.current.0.vnsLDevCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_device"
+    - add_l4l7_device_selection_policy_again.current.0.vnsLDevCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node"
     - add_l4l7_device_selection_policy_again.current.0.vnsLDevCtx.attributes.ctrctNameOrLbl == "ansible_contract"
     - add_l4l7_device_selection_policy_again.current.0.vnsLDevCtx.attributes.graphNameOrLbl == "ansible_graph"
-    - add_l4l7_device_selection_policy_again.current.0.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_device"
+    - add_l4l7_device_selection_policy_again.current.0.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_node"
+    - add_l4l7_device_selection_policy_again.current.0.vnsLDevCtx.children.0.vnsRsLDevCtxToLDev.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+
+# REMOVE LOGICAL DEVICE BINDING
+- name: Remove L4-L7 Device Selection Policy Device Binding
+  cisco.aci.aci_l4l7_device_selection_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    state: present
+  register: remove_l4l7_device_selection_policy_device_binding
+
+- name: Verify L4-L7 Device Selection Policy Device Binding removal
+  ansible.builtin.assert:
+    that:
+    - remove_l4l7_device_selection_policy_device_binding is changed
+    - remove_l4l7_device_selection_policy_device_binding.current.0.vnsLDevCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node"
+    - remove_l4l7_device_selection_policy_device_binding.current.0.vnsLDevCtx.attributes.ctrctNameOrLbl == "ansible_contract"
+    - remove_l4l7_device_selection_policy_device_binding.current.0.vnsLDevCtx.attributes.graphNameOrLbl == "ansible_graph"
+    - remove_l4l7_device_selection_policy_device_binding.current.0.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_node"
+    - remove_l4l7_device_selection_policy_device_binding.current.0.vnsLDevCtx.children is not defined
 
 # QUERY L4-L7 DEVICE SELECTION POLICY
 - name: Query L4-L7 Device Selection Policy
@@ -128,7 +167,7 @@
     tenant: ansible_tenant
     contract: ansible_contract
     graph: ansible_graph
-    node: ansible_device
+    node: ansible_node
     state: query
   register: query_l4l7_device_selection_policy
 
@@ -136,10 +175,10 @@
   ansible.builtin.assert:
     that:
     - query_l4l7_device_selection_policy is not changed
-    - query_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_device"
+    - query_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node"
     - query_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.ctrctNameOrLbl == "ansible_contract"
     - query_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.graphNameOrLbl == "ansible_graph"
-    - query_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_device"
+    - query_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_node"
 
 # DELETE L4-L7 DEVICE SELECTION POLICY
 - name: Delete L4-L7 Device Selection Policy
@@ -148,7 +187,7 @@
     tenant: ansible_tenant
     contract: ansible_contract
     graph: ansible_graph
-    node: ansible_device
+    node: ansible_node
     state: absent
   register: delete_l4l7_device_selection_policy
 
@@ -157,10 +196,10 @@
     that:
     - delete_l4l7_device_selection_policy is changed
     - delete_l4l7_device_selection_policy.current == []
-    - delete_l4l7_device_selection_policy.previous.0.vnsLDevCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_device"
+    - delete_l4l7_device_selection_policy.previous.0.vnsLDevCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node"
     - delete_l4l7_device_selection_policy.previous.0.vnsLDevCtx.attributes.ctrctNameOrLbl == "ansible_contract"
     - delete_l4l7_device_selection_policy.previous.0.vnsLDevCtx.attributes.graphNameOrLbl == "ansible_graph"
-    - delete_l4l7_device_selection_policy.previous.0.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_device"
+    - delete_l4l7_device_selection_policy.previous.0.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_node"
 
 # DELETE L4-L7 DEVICE SELECTION POLICY AGAIN TO TEST IDEMPOTENCE
 - name: Delete L4-L7 Device Selection Policy
@@ -169,7 +208,7 @@
     tenant: ansible_tenant
     contract: ansible_contract
     graph: ansible_graph
-    node: ansible_device
+    node: ansible_node
     state: absent
   register: delete_l4l7_device_selection_policy_again
 
