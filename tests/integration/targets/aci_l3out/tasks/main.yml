@@ -72,7 +72,7 @@
       <<: *aci_l3out_present
     register: nm_add_l3out
   
-  - name: create L3Out again - idempotency works
+  - name: create L3Out again - testing idempotency
     aci_l3out:
       <<: *aci_l3out_present
     register: create_idempotency
@@ -104,7 +104,7 @@
       route_control: export
     register: nm_add_l3out_export
 
-  - name: Add just import to route_control - failure message works
+  - name: Add just import to route_control - testing failure message
     aci_l3out:
       <<: *aci_l3out_present
       route_control: import
@@ -126,20 +126,20 @@
       l3protocol: bgp
     register: nm_add_l3out_bgp
 
-  - name: Add BGP protocol again - L3protocol changes work
+  - name: Add BGP protocol again - testing L3protocol changes
     aci_l3out:
       <<: *aci_l3out_present
       l3protocol: bgp
     register: nm_add_l3out_bgp_again
 
-  - name: Add PIM protocol, ospf_spec and asn - warning message works for asn
+  - name: Add PIM protocol, ospf_spec and asn - testing warning message for asn
     aci_l3out:
       <<: *aci_l3out_present
       l3protocol: pim
       asn: 1
     register: nm_add_l3out_pim
 
-  - name: Add EIGRP protocol - warning message works for OSPF spec
+  - name: Add EIGRP protocol - testing warning message for OSPF spec
     aci_l3out:
       <<: *aci_l3out_present
       l3protocol: eigrp
@@ -148,7 +148,7 @@
         description: OSPF warnings message works
     register: nm_add_l3out_eigrp
 
-  - name: remove asn - failure message works
+  - name: remove asn - testing failure message
     aci_l3out:
       <<: *aci_l3out_present
       l3protocol: eigrp
@@ -156,7 +156,7 @@
     register: add_l3out_without_asn
     ignore_errors: true
   
-  - name: remove protocol - static protocol works
+  - name: remove protocol - testing static protocol
     aci_l3out:
       <<: *aci_l3out_present
       l3protocol: static
@@ -199,13 +199,13 @@
         - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.descr == "test for ospf protocol"
         - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.multipodInternal == "no"
 
-  - name: get all in l3out
+  - name: get ansible_l3out
     aci_l3out:
       <<: *aci_l3out_present
       state: query
     register: get_l3out
 
-  - name: get all l3out
+  - name: get all l3outs
     aci_l3out:
       <<: *aci_info
       state: query
@@ -220,20 +220,20 @@
         - get_all_l3out is not changed
         - get_all_l3out.current | length >= 2
 
-  - name: delete l3out - check mod works
+  - name: delete l3out (check_mode)
     aci_l3out:
       <<: *aci_l3out_present
       state: absent
     check_mode: true
     register: delete_cm
 
-  - name: delete l3out - delete works
+  - name: delete l3out (normal_mode)
     aci_l3out:
       <<: *aci_l3out_present
       state: absent
     register: delete_l3out
 
-  - name: delete l3out again - idempotency works
+  - name: delete l3out again - testing idempotency
     aci_l3out:
       <<: *aci_l3out_present
       state: absent
