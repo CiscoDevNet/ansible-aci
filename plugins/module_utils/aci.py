@@ -1733,7 +1733,7 @@ class ACIModule(object):
                 except KeyError:
                     # Connection error
                     self.fail_json(msg="Connection failed for {url}. {msg}".format_map(info))
-=======
+
     def delete_config_request(self, path):
         self._config_request(path, "absent")
         self.result["changed"] = True
@@ -1749,4 +1749,3 @@ class ACIModule(object):
         self.request(path)
         self.url = reset_url
         self.params["state"] = reset_state
->>>>>>> e05fd41 (fix: minor update)

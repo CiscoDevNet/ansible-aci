@@ -433,6 +433,10 @@ POLICY_LABEL_COLORS = [
     "yellow_green",
 ]
 
+NODE_TYPE_MAPPING = {"tier_2": "tier-2-leaf", "remote": "remote-leaf-wan", "virtual": "virtual", "unspecified": "unspecified"}
+
+SPAN_DIRECTION_MAP = {"incoming": "in", "outgoing": "out", "both": "both"}
+
 HTTP_VERSIONS_MAPPING = {"1.0": "HTTP10", "1.1": "HTTP11"}
 
 L4L7_FUNC_TYPES_MAPPING = {"go_to": "GoTo", "go_through": "GoThrough", "l1": "L1", "l2": "L2"}
