@@ -259,7 +259,7 @@ def main():
             type="list",
             elements="dict",
             options=dict(
-                vrf=dict(type="str", aliases=["vrf_name"]), 
+                vrf=dict(type="str", aliases=["vrf_name"]),
                 tenant=dict(type="str", aliases=["tenantName"]),
             ),
         ),
@@ -314,7 +314,7 @@ def main():
         subclass_3=dict(
             aci_class="leakInternalSubnet",
             aci_rn="leakintsubnet-[{0}]".format(ip),
-            module_object=ip, 
+            module_object=ip,
             target_filter={"ip": ip},
         ),
         child_classes=["leakTo"],
@@ -343,11 +343,7 @@ def main():
         if isinstance(aci.existing, list) and len(aci.existing) > 0:
             for child in aci.existing[0].get("leakInternalSubnet", {}).get("children", {}):
                 child_attributes = child.get("leakTo", {}).get("attributes", {})
-                if (
-                    child.get("leakTo")
-                    and "to-[{0}]-[{1}]".format(child_attributes.get("tenantName"), child_attributes.get("ctxName"))
-                    not in subnet_rn_list
-                ):
+                if child.get("leakTo") and "to-[{0}]-[{1}]".format(child_attributes.get("tenantName"), child_attributes.get("ctxName")) not in subnet_rn_list:
                     child_configs.append(
                         dict(
                             leakTo=dict(
