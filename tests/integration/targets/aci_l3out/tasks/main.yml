@@ -87,9 +87,11 @@
     assert:
       that:
         - cm_add_l3out is changed
+        - cm_add_l3out.previous == []
+        - cm_add_l3out.current == []
         - nm_add_l3out is changed
-        - nm_add_l3out.sent.l3extOut.attributes.descr == cm_add_l3out.sent.l3extOut.attributes.descr == "L3Out for ansible_tenant tenant"
-        - nm_add_l3out.sent.l3extOut.attributes.name == cm_add_l3out.sent.l3extOut.attributes.name == "ansible_l3out"
+        - nm_add_l3out.current.0.l3extOut.attributes.descr == cm_add_l3out.sent.l3extOut.attributes.descr == "L3Out for ansible_tenant tenant"
+        - nm_add_l3out.current.0.l3extOut.attributes.name == cm_add_l3out.sent.l3extOut.attributes.name == "ansible_l3out"
         - create_idempotency is not changed
 
   - name: Add export and import to route_control 
@@ -115,9 +117,9 @@
     assert:
       that:
         - nm_add_l3out_import_export is changed
-        - nm_add_l3out_import_export.sent.l3extOut.attributes.enforceRtctrl == "import,export"
+        - nm_add_l3out_import_export.current.0.l3extOut.attributes.enforceRtctrl == "export,import"
         - nm_add_l3out_export is changed
-        - nm_add_l3out_export.sent.l3extOut.attributes.enforceRtctrl == "export"
+        - nm_add_l3out_export.current.0.l3extOut.attributes.enforceRtctrl == "export"
         - nm_add_l3out_import_error.msg == "The route_control parameter is invalid{{':'}} allowed options are export or import,export only"
 
   - name: Add BGP protocol
@@ -170,7 +172,7 @@
         - nm_add_l3out_pim is changed
         - nm_add_l3out_pim.warnings.0 == "Parameter 'asn' is only applicable when l3protocol is 'eigrp'. The ASN will be ignored"
         - nm_add_l3out_eigrp is changed
-        - nm_add_l3out_eigrp.sent.l3extOut.children.1.eigrpExtP.attributes.asn == "1"
+        - nm_add_l3out_eigrp.current.0.l3extOut.children.0.eigrpExtP.attributes.asn == "1"
         - nm_add_l3out_eigrp.warnings.0 == "Parameter 'ospf' is only applicable when l3protocol is 'ospf'. The OPSF specifications will be ignored"
         - add_l3out_without_asn.msg == "Parameter 'asn' is required when l3protocol is 'eigrp'"
         - nm_remove_l3protocol is changed
@@ -192,12 +194,12 @@
     assert:
       that:
         - nm_add_l3out_ospf is changed
-        - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.areaCost == "1"
-        - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.areaCtrl == "summary,redistribute"
-        - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.areaId == "0.0.0.1"
-        - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.areaType == "regular"
-        - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.descr == "test for ospf protocol"
-        - nm_add_l3out_ospf.sent.l3extOut.children.2.ospfExtP.attributes.multipodInternal == "no"
+        - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.areaCost == "1"
+        - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.areaCtrl == "redistribute,summary"
+        - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.areaId == "0.0.0.1"
+        - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.areaType == "regular"
+        - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.descr == "test for ospf protocol"
+        - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.multipodInternal == "no"
 
   - name: get ansible_l3out
     aci_l3out:
