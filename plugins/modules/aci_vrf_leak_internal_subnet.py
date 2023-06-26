@@ -64,7 +64,7 @@ options:
         description:
         - Name of the tenant
         type: str
-        aliases: [ tenant_name ]
+        aliases: [ tenantName ]
       vrf:
         description:
         - Name of the VRF
@@ -334,7 +334,7 @@ def main():
                         attributes=dict(
                             ctxName=subnet.get("vrf"),
                             tenantName=subnet.get("tenant"),
-                            scope=scope,                          
+                            scope=scope,
                         )
                     )
                 )
@@ -350,7 +350,7 @@ def main():
                                 attributes=dict(
                                     ctxName=child_attributes.get("ctxName"),
                                     tenantName=child_attributes.get("tenantName"),
-                                    status="deleted",                                    
+                                    status="deleted",
                                 )
                             )
                         )

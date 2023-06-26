@@ -33,32 +33,47 @@
     tenant: ansible_test3
   register: tenant_present
 
-- name: create vrf - check mode works
+- name: create vrf 
   cisco.aci.aci_vrf: &aci_vrf_present
     <<: *aci_tenant_present
     vrf: test
     description: Ansible Test
-  check_mode: true
-  register: vrf_present_check_mode
-
-- name: create vrf - creation works
-  cisco.aci.aci_vrf:
-    <<: *aci_vrf_present
   register: vrf_present
 
-- name: create test - creation works
+- name: create second vrf - creation works
   cisco.aci.aci_vrf:
     <<: *aci_vrf_present
     vrf: test2
   register: vrf_present
 
-- name: create test3 - creation works
+- name: create third vrf - creation works
   cisco.aci.aci_vrf:
     <<: *aci_vrf_present
     vrf: test3
   register: vrf_present
 
-- name: create leak internal subnet
+- name: create leak internal subnet - check_mode
+  cisco.aci.aci_vrf_leak_internal_subnet: &aci_leak_internal_subnet
+    <<: *aci_info
+    state: present
+    tenant: ansible_test3
+    vrf: test
+    ip: 1.1.1.2
+    leak_internal_subnet: 
+      - vrf: "test2"
+        tenant: "ansible_test3"
+      - vrf: "test3"
+        tenant: "ansible_test3"
+    description: Ansible Test
+  check_mode: true
+  register: leak_sub_check_mode
+
+- name: create leak internal subnet 
+  cisco.aci.aci_vrf_leak_internal_subnet:
+    <<: *aci_leak_internal_subnet
+  register: leak_sub_present
+
+- name: create leak internal subnet - idempotency check
   cisco.aci.aci_vrf_leak_internal_subnet: 
     <<: *aci_info
     state: present
@@ -71,12 +86,47 @@
       - vrf: "test3"
         tenant: "ansible_test3"
     description: Ansible Test
-  register: vrf_present
+  register: leak_sub_idempotent
 
-# why isn't leakRoutes being created in this call
-# have to instantiate leakRoutes beforehand?
+- name: create second leak internal subnet
+  cisco.aci.aci_vrf_leak_internal_subnet: 
+    <<: *aci_info
+    tenant: ansible_test3
+    vrf: test2
+    leak_internal_subnet: 
+      - vrf: "test"
+        tenant: "ansible_test3"
+    description: Ansible Test
+    ip: 1.1.1.2
+  register: leak_sub_present_2
 
-- name: create leak internal subnet 2
+- name: present asserts
+  assert:
+    that:
+      - vrf_present is changed
+      - leak_sub_check_mode is changed
+      - leak_sub_present.sent.leakRoutes.children.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test2'
+      - leak_sub_present.sent.leakRoutes.children.0.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
+      - leak_sub_present.sent.leakRoutes.children.0.leakInternalSubnet.children.1.leakTo.attributes.ctxName == 'test3'
+      - leak_sub_present.sent.leakRoutes.children.0.leakInternalSubnet.children.1.leakTo.attributes.tenantName == 'ansible_test3'
+      - leak_sub_idempotent is not changed
+      - leak_sub_present_2.sent.leakRoutes.children.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test'
+      - leak_sub_present_2.sent.leakRoutes.children.0.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
+
+- name: query all
+  cisco.aci.aci_vrf_leak_internal_subnet: &aci_query
+    <<: *aci_tenant_present
+    state: query
+  register: query_all
+
+- name: query vrf
+  cisco.aci.aci_vrf_leak_internal_subnet: 
+    <<: *aci_tenant_present
+    state: query
+    vrf: test
+  register: query
+
+- name: absent case
   cisco.aci.aci_vrf_leak_internal_subnet: 
     <<: *aci_info
     tenant: ansible_test3
@@ -87,9 +137,30 @@
     description: Ansible Test
     ip: 1.1.1.2
     state: absent
-  register: vrf_leak
+  register: leak_sub_absent
 
-- name: Delete leak_internal_subnet
+- name: query asserts
+  assert:
+    that:
+      - query_all is not changed
+      - query is not changed
+      - query_all.current.0.fvTenant.children.0.fvCtx.children.0.leakRoutes.children.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test'
+      - query_all.current.0.fvTenant.children.0.fvCtx.children.0.leakRoutes.children.0.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
+      - query.current.0.leakRoutes.children.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test3'
+      - query.current.0.leakRoutes.children.0.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
+      - leak_sub_absent.proposed == {}
+
+- name: delete leak internal subnet
+  cisco.aci.aci_vrf_leak_internal_subnet: 
+    <<: *aci_vrf_present
+    vrf: test
+    leak_internal_subnet: 
+      - vrf: "test3"
+        tenant: "ansible_test3"
+    ip: 1.1.1.2
+  register: leak_sub_delete
+
+- name: delete leak internal subnet again
   cisco.aci.aci_vrf_leak_internal_subnet: 
     <<: *aci_vrf_present
     vrf: test
@@ -97,16 +168,16 @@
       - vrf: "test2"
         tenant: "ansible_test3"
     ip: 1.1.1.2
-  register: vrf_leak_delete
+  register: leak_sub_delete_2
 
-#add delete again task
-- name: get vrf query
-  cisco.aci.aci_vrf_leak_internal_subnet: &aci_query
-    <<: *aci_tenant_present
-    state: query
-    vrf: test
-  register: query_all  
-
-# #check for idempotency, mod, and delete
-# #add and delete children
-# #query 
+- name: delete asserts
+  assert:
+    that:
+      - leak_sub_delete is changed
+      - leak_sub_delete.previous != []
+      - leak_sub_delete_2 is changed
+      - leak_sub_delete.sent.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test2'
+      - leak_sub_delete.sent.leakInternalSubnet.children.0.leakTo.attributes.status == 'deleted'
+      - leak_sub_delete_2.sent.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test2'
+      - leak_sub_delete_2.sent.leakInternalSubnet.children.1.leakTo.attributes.ctxName == 'test3'
+      - leak_sub_delete_2.sent.leakInternalSubnet.children.1.leakTo.attributes.status == 'deleted'
