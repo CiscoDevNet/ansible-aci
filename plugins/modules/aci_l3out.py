@@ -453,7 +453,7 @@ def main():
         )
         for protocol in l3protocol:
             if protocol == "bgp":
-                l3protocol_child_configs["bgp"] = dict(bgpExtP=dict(attributes=dict()))
+                l3protocol_child_configs["bgp"] = dict(bgpExtP=dict(attributes=dict(descr="", nameAlias="")))
             elif protocol == "eigrp":
                 l3protocol_child_configs["eigrp"] = dict(eigrpExtP=dict(attributes=dict(asn=asn)))
             elif protocol == "ospf" and isinstance(ospf, dict):
@@ -472,7 +472,7 @@ def main():
                     )
                 )
             elif protocol == "pim":
-                l3protocol_child_configs["pim"] = dict(pimExtP=dict(attributes=dict()))
+                l3protocol_child_configs["pim"] = dict(pimExtP=dict(attributes=dict(descr="", nameAlias="")))
         child_configs.extend(list(l3protocol_child_configs.values()))
 
     aci.construct_url(
