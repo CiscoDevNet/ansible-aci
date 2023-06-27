@@ -453,26 +453,29 @@ def main():
         )
         for protocol in l3protocol:
             if protocol == "bgp":
-                l3protocol_child_configs["bgp"] = dict(bgpExtP=dict(attributes=dict(descr="", nameAlias="")))
+                l3protocol_child_configs["bgp"] = dict(bgpExtP=dict(attributes=dict(descr="")))
             elif protocol == "eigrp":
                 l3protocol_child_configs["eigrp"] = dict(eigrpExtP=dict(attributes=dict(asn=asn)))
-            elif protocol == "ospf" and isinstance(ospf, dict):
-                ospf["area_ctrl"] = ",".join(ospf.get("area_ctrl"))
-                l3protocol_child_configs["ospf"] = dict(
-                    ospfExtP=dict(
-                        attributes=dict(
-                            areaCost=ospf.get("area_cost"),
-                            areaCtrl=ospf.get("area_ctrl"),
-                            areaId=ospf.get("area_id"),
-                            areaType=ospf.get("area_type"),
-                            descr=ospf.get("description"),
-                            multipodInternal=ospf.get("multipod_internal"),
-                            nameAlias=ospf.get("name_alias"),
+            elif protocol == "ospf":
+                if isinstance(ospf, dict):
+                    ospf["area_ctrl"] = ",".join(ospf.get("area_ctrl"))
+                    l3protocol_child_configs["ospf"] = dict(
+                        ospfExtP=dict(
+                            attributes=dict(
+                                areaCost=ospf.get("area_cost"),
+                                areaCtrl=ospf.get("area_ctrl"),
+                                areaId=ospf.get("area_id"),
+                                areaType=ospf.get("area_type"),
+                                descr=ospf.get("description"),
+                                multipodInternal=ospf.get("multipod_internal"),
+                                nameAlias=ospf.get("name_alias"),
+                            )
                         )
                     )
-                )
+                else:
+                    l3protocol_child_configs["ospf"] = dict(ospfExtP=dict(attributes=dict(descr="")))
             elif protocol == "pim":
-                l3protocol_child_configs["pim"] = dict(pimExtP=dict(attributes=dict(descr="", nameAlias="")))
+                l3protocol_child_configs["pim"] = dict(pimExtP=dict(attributes=dict(descr="")))
         child_configs.extend(list(l3protocol_child_configs.values()))
 
     aci.construct_url(
