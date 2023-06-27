@@ -265,7 +265,7 @@ def main():
         ),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        match_type=dict(type="str", choices=["all", "at_least_one", "at_most_one", "none"]),
+        match_type=dict(type="str", choices=list(MATCH_TYPE_MAPPING.keys())),
         name_alias=dict(type="str"),
         scope=dict(type="str", default="private", choices=["public", "private", "shared"]),
         ip=dict(type="str"),
