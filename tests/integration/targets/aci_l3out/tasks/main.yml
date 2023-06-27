@@ -57,7 +57,7 @@
       description: Second L3Out
       domain: ansible_dom
       vrf: ansible_vrf
-      l3protocol: ospf
+      l3protocol: [ ospf, bgp ]
       state: absent
   
   - name: Add a new L3Out (check_mode)
@@ -184,7 +184,7 @@
       ospf:
         area_cost: 1
         area_ctrl: [ summary, redistribute ]
-        area_id: 0.0.0.1
+        area_id: 0.0.0.2
         area_type: regular
         multipod_internal: no
         description: test for ospf protocol
@@ -196,7 +196,7 @@
         - nm_add_l3out_ospf is changed
         - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.areaCost == "1"
         - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.areaCtrl == "redistribute,summary"
-        - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.areaId == "0.0.0.1"
+        - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.areaId == "0.0.0.2"
         - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.areaType == "regular"
         - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.descr == "test for ospf protocol"
         - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.multipodInternal == "no"
@@ -207,18 +207,29 @@
       state: query
     register: get_l3out
 
+  - name: get all l3outs in ansible_tenant
+    aci_l3out:
+      <<: *aci_info
+      tenant: ansible_tenant
+      state: query
+    register: get_all_l3out_ansible_tenant
+
   - name: get all l3outs
     aci_l3out:
       <<: *aci_info
       state: query
     register: get_all_l3out
-
+  
   - name: asserts query tasks
     assert:
       that:
         - get_l3out is not changed
         - '"rsp-subtree=full&rsp-subtree-class=bgpExtP,eigrpExtP,l3extRsEctx,l3extRsL3DomAtt,ospfExtP,pimExtP" in get_l3out.filter_string'
         - '"tn-ansible_tenant/out-ansible_l3out.json" in get_l3out.url'
+        - get_all_l3out_ansible_tenant is not changed
+        - '"ospfExtP" in get_all_l3out_ansible_tenant.current.0.fvTenant.children.0.l3extOut.children.2'
+        - '"ospfExtP" in get_all_l3out_ansible_tenant.current.0.fvTenant.children.1.l3extOut.children.2'
+        - '"bgpExtP" in get_all_l3out_ansible_tenant.current.0.fvTenant.children.1.l3extOut.children.3'
         - get_all_l3out is not changed
         - get_all_l3out.current | length >= 2
 
