@@ -333,12 +333,7 @@ def main():
             module_object=tenant,
             target_filter={"name": tenant},
         ),
-        subclass_1=dict(
-            aci_class="fvIPSLAMonitoringPol",
-            aci_rn="ipslaMonitoringPol-{0}".format(name),
-            module_object=name,
-            target_filter={"name": name}
-        ),
+        subclass_1=dict(aci_class="fvIPSLAMonitoringPol", aci_rn="ipslaMonitoringPol-{0}".format(name), module_object=name, target_filter={"name": name}),
     )
     aci.get_existing()
 

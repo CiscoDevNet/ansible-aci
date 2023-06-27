@@ -280,10 +280,7 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[
-            ["state", "absent", ["tenant", "policy"]],
-            ["state", "present", ["tenant", "policy"]]
-        ],
+        required_if=[["state", "absent", ["tenant", "policy"]], ["state", "present", ["tenant", "policy"]]],
     )
 
     aci = ACIModule(module)
