@@ -45,34 +45,34 @@ options:
     type: str
   match_type:
     description:
-    - Configures match type for contracts under vzAny
+    - Configures match type for contracts under vzAny.
     type: str
     choices: [ all, at_least_one, at_most_one, none]
   scope:
     description:
-    - Scope of the object
+    - Scope of the object.
     type: str
     choices: [ public, private, shared ]
     default: private
   leak_internal_subnet:
     description:
-    - The subnets being leaked to
+    - The subnets being leaked to.
     type: list
     elements: dict
     suboptions:
       tenant:
         description:
-        - Name of the tenant
+        - Name of the tenant.
         type: str
-        aliases: [ tenantName ]
+        aliases: [ tenant_name ]
       vrf:
         description:
-        - Name of the VRF
+        - Name of the VRF.
         type: str
         aliases: [ vrf_name ]
   ip:
     description:
-    - The IP address
+    - The IP address.
     type: str
 extends_documentation_fragment:
 - cisco.aci.aci
@@ -80,12 +80,13 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) module can be used for this.
+- The C(tenant) and C(vrf) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_vrf) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_vrf
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(fv:Ctx).
+  description: More information about the internal APIC class B(leak:InternalSubnet).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Abraham Mughal (@abmughal)
@@ -120,6 +121,16 @@ EXAMPLES = r"""
     ip: 1.1.1.2
   delegate_to: localhost
 
+- name: Query all leak internal subnet
+  cisco.aci.aci_vrf_leak_internal_subnet:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+    ip: 1.1.1.2
+  delegate_to: localhost
+  register: query_result
+
 - name: Query leak internal subnet
   cisco.aci.aci_vrf_leak_internal_subnet:
     host: apic
@@ -128,6 +139,7 @@ EXAMPLES = r"""
     vrf: vrf_lab
     tenant: lab_tenant
     state: query
+    ip: 1.1.1.2
   delegate_to: localhost
   register: query_result
 """
@@ -247,7 +259,6 @@ MATCH_TYPE_MAPPING = dict(
     none="None",
 )
 
-
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
@@ -260,7 +271,7 @@ def main():
             elements="dict",
             options=dict(
                 vrf=dict(type="str", aliases=["vrf_name"]),
-                tenant=dict(type="str", aliases=["tenantName"]),
+                tenant=dict(type="str", aliases=["tenant_name"]),
             ),
         ),
         description=dict(type="str", aliases=["descr"]),
