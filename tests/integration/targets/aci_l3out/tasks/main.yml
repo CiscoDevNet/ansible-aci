@@ -1,0 +1,270 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+    
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  aci_tenant:
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    aci_tenant:
+      <<: *aci_info 
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
+
+  - name: Remove the ansible_l3out
+    aci_l3out: &aci_l3out_absent
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_l3out
+      description: L3Out for ansible_tenant tenant
+      domain: ansible_dom
+      vrf: ansible_vrf
+      state: absent
+
+  - name: Remove the second ansible_l3out
+    aci_l3out: &aci_l3out_2_absent
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_l3out_2
+      description: Second L3Out
+      domain: ansible_dom
+      vrf: ansible_vrf
+      l3protocol: [ ospf, bgp ]
+      state: absent
+  
+  - name: Add a new L3Out (check_mode)
+    aci_l3out: &aci_l3out_present
+      <<: *aci_l3out_absent
+      state: present
+    check_mode: true
+    register: cm_add_l3out
+
+  - name: Add a new L3Out (normal_mode)
+    aci_l3out:
+      <<: *aci_l3out_present
+    register: nm_add_l3out
+  
+  - name: create L3Out again - testing idempotency
+    aci_l3out:
+      <<: *aci_l3out_present
+    register: create_idempotency
+
+  - name: Add the second ansible_l3out
+    aci_l3out:
+      <<: *aci_l3out_2_absent
+      state: present
+    register: cm_add_l3out_2
+
+  - name: asserts for l3out creation tasks
+    assert:
+      that:
+        - cm_add_l3out is changed
+        - cm_add_l3out.previous == []
+        - cm_add_l3out.current == []
+        - nm_add_l3out is changed
+        - nm_add_l3out.current.0.l3extOut.attributes.descr == cm_add_l3out.sent.l3extOut.attributes.descr == "L3Out for ansible_tenant tenant"
+        - nm_add_l3out.current.0.l3extOut.attributes.name == cm_add_l3out.sent.l3extOut.attributes.name == "ansible_l3out"
+        - create_idempotency is not changed
+
+  - name: Add export and import to route_control 
+    aci_l3out:
+      <<: *aci_l3out_present
+      route_control: [ import, export ]
+    register: nm_add_l3out_import_export
+
+  - name: Add export to route_control 
+    aci_l3out:
+      <<: *aci_l3out_present
+      route_control: export
+    register: nm_add_l3out_export
+
+  - name: Add just import to route_control - testing failure message
+    aci_l3out:
+      <<: *aci_l3out_present
+      route_control: import
+    register: nm_add_l3out_import_error
+    ignore_errors: true
+
+  - name: asserts for l3out route control tasks
+    assert:
+      that:
+        - nm_add_l3out_import_export is changed
+        - nm_add_l3out_import_export.current.0.l3extOut.attributes.enforceRtctrl == "export,import"
+        - nm_add_l3out_export is changed
+        - nm_add_l3out_export.current.0.l3extOut.attributes.enforceRtctrl == "export"
+        - nm_add_l3out_import_error.msg == "The route_control parameter is invalid{{':'}} allowed options are export or import,export only"
+
+  - name: Add BGP protocol
+    aci_l3out:
+      <<: *aci_l3out_present
+      l3protocol: bgp
+    register: nm_add_l3out_bgp
+
+  - name: Add BGP protocol again - testing L3protocol changes
+    aci_l3out:
+      <<: *aci_l3out_present
+      l3protocol: bgp
+    register: nm_add_l3out_bgp_again
+
+  - name: Add PIM protocol, ospf_spec and asn - testing warning message for asn
+    aci_l3out:
+      <<: *aci_l3out_present
+      l3protocol: pim
+      asn: 1
+    register: nm_add_l3out_pim
+
+  - name: Add EIGRP protocol - testing warning message for OSPF spec
+    aci_l3out:
+      <<: *aci_l3out_present
+      l3protocol: eigrp
+      asn: 1
+      ospf:
+        description: OSPF warnings message works
+    register: nm_add_l3out_eigrp
+
+  - name: remove asn - testing failure message
+    aci_l3out:
+      <<: *aci_l3out_present
+      l3protocol: eigrp
+      asn: null
+    register: add_l3out_without_asn
+    ignore_errors: true
+  
+  - name: remove protocol - testing static protocol
+    aci_l3out:
+      <<: *aci_l3out_present
+      l3protocol: static
+    register: nm_remove_l3protocol
+
+  - name: asserts for l3out protocols tasks
+    assert:
+      that:
+        - nm_add_l3out_bgp is changed
+        - nm_add_l3out_bgp_again is changed
+        - nm_add_l3out_pim is changed
+        - nm_add_l3out_pim.warnings.0 == "Parameter 'asn' is only applicable when l3protocol is 'eigrp'. The ASN will be ignored"
+        - nm_add_l3out_eigrp is changed
+        - nm_add_l3out_eigrp.current.0.l3extOut.children.0.eigrpExtP.attributes.asn == "1"
+        - nm_add_l3out_eigrp.warnings.0 == "Parameter 'ospf' is only applicable when l3protocol is 'ospf'. The OPSF specifications will be ignored"
+        - add_l3out_without_asn.msg == "Parameter 'asn' is required when l3protocol is 'eigrp'"
+        - nm_remove_l3protocol is changed
+
+  - name: Add OSPF protocol
+    aci_l3out:
+      <<: *aci_l3out_present
+      l3protocol: ospf
+      ospf:
+        area_cost: 1
+        area_ctrl: [ summary, redistribute ]
+        area_id: 0.0.0.2
+        area_type: regular
+        multipod_internal: no
+        description: test for ospf protocol
+    register: nm_add_l3out_ospf
+
+  - name: asserts for l3out OSPF protocol tasks
+    assert:
+      that:
+        - nm_add_l3out_ospf is changed
+        - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.areaCost == "1"
+        - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.areaCtrl == "redistribute,summary"
+        - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.areaId == "0.0.0.2"
+        - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.areaType == "regular"
+        - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.descr == "test for ospf protocol"
+        - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.multipodInternal == "no"
+
+  - name: get ansible_l3out
+    aci_l3out:
+      <<: *aci_l3out_present
+      state: query
+    register: get_l3out
+
+  - name: get all l3outs in ansible_tenant
+    aci_l3out:
+      <<: *aci_info
+      tenant: ansible_tenant
+      state: query
+    register: get_all_l3out_ansible_tenant
+
+  - name: get all l3outs
+    aci_l3out:
+      <<: *aci_info
+      state: query
+    register: get_all_l3out
+  
+  - name: asserts query tasks
+    assert:
+      that:
+        - get_l3out is not changed
+        - '"rsp-subtree=full&rsp-subtree-class=bgpExtP,eigrpExtP,l3extRsEctx,l3extRsL3DomAtt,ospfExtP,pimExtP" in get_l3out.filter_string'
+        - '"tn-ansible_tenant/out-ansible_l3out.json" in get_l3out.url'
+        - get_all_l3out_ansible_tenant is not changed
+        - '"ospfExtP" in get_all_l3out_ansible_tenant.current.0.fvTenant.children.0.l3extOut.children.2'
+        - '"ospfExtP" in get_all_l3out_ansible_tenant.current.0.fvTenant.children.1.l3extOut.children.2'
+        - '"bgpExtP" in get_all_l3out_ansible_tenant.current.0.fvTenant.children.1.l3extOut.children.3'
+        - get_all_l3out is not changed
+        - get_all_l3out.current | length >= 2
+
+  - name: delete l3out (check_mode)
+    aci_l3out:
+      <<: *aci_l3out_present
+      state: absent
+    check_mode: true
+    register: delete_cm
+
+  - name: delete l3out (normal_mode)
+    aci_l3out:
+      <<: *aci_l3out_present
+      state: absent
+    register: delete_l3out
+
+  - name: delete l3out again - testing idempotency
+    aci_l3out:
+      <<: *aci_l3out_present
+      state: absent
+    register: delete_idempotency
+
+  - name: asserts for deletion tasks
+    assert:
+      that:
+        - delete_cm is changed
+        - delete_cm.proposed == {}
+        - delete_l3out is changed
+        - delete_l3out.previous != []
+        - delete_l3out.method == "DELETE"
+        - delete_idempotency is not changed
+        - delete_idempotency.previous == []
+
+  - name: Delete the ansible_tenant - cleanup before ending tests
+    aci_tenant:
+      <<: *aci_info
+      tenant: ansible_tenant
+      state: absent

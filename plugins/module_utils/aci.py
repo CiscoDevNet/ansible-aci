@@ -14,6 +14,7 @@
 # Copyright: (c) 2020, Lionel Hercot (@lhercot) <lhercot@cisco.com>
 # Copyright: (c) 2020, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
 # Copyright: (c) 2023, Tim Cragg (@timcragg) <tcragg@cisco.com>
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without modification,
@@ -1730,3 +1731,15 @@ class ACIModule(object):
         self.request(path)
         self.url = reset_url
         self.params["state"] = reset_state
+
+
+def ospf_spec():
+    return dict(
+        area_cost=dict(type="int"),
+        area_ctrl=dict(type="list", elements="str", choices=["redistribute", "summary", "suppress-fa", "unspecified"]),
+        area_id=dict(type="str"),
+        area_type=dict(type="str", choices=["nssa", "regular", "stub"]),
+        description=dict(type="str", aliases=["descr"]),
+        multipod_internal=dict(type="str", choices=["no", "yes"]),
+        name_alias=dict(type="str"),
+    )
