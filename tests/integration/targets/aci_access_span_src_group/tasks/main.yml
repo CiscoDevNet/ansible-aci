@@ -1,0 +1,334 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Akini Ross (@akinross)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+# CLEAN TEST ENVIRONMENT BEFORE TESTS
+
+- name: Query all span source groups ( clean before )
+  cisco.aci.aci_access_span_src_group:
+    <<: *aci_info
+    state: query
+  register: query_for_clean
+
+- name: Clean access span source groups ( clean before )
+  cisco.aci.aci_access_span_src_group:
+    <<: *aci_info
+    source_group: "{{ item.spanSrcGrp.attributes.name }}"
+    state: absent
+  loop: "{{ query_for_clean.current }}"
+
+- name: Query all span destination groups ( clean before )
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    state: query
+  register: query_for_clean
+
+- name: Clean access span destination groups ( clean before )
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    destination_group: "{{ item.spanDestGrp.attributes.name }}"
+    state: absent
+  loop: "{{ query_for_clean.current }}"
+
+- name: Execute tasks only for non-cloud sites ( clean before )
+  when:
+  - query_cloud.current == []
+  block:
+  - name: Query all access span filter groups ( clean before )
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      state: query
+    register: query_for_clean
+    
+  - name: Clean access span filter groups ( clean before )
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      filter_group: "{{ item.spanFilterGrp.attributes.name }}"
+      state: absent
+    loop: "{{ query_for_clean.current }}"
+
+  - name: Add a access span filter groups ( clean before )
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      filter_group: "{{ item }}"
+      state: present
+    loop:
+    - span_filter_group_1
+    - span_filter_group_2
+
+- name: Add access span destination group type epg ( clean before )
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    destination_group: span_dest_1
+    description: test span epg
+    destination_epg:
+      destination_ip: 10.0.0.1
+      source_ip: 10.0.2.1
+      tenant: ansible_test
+      ap: ansible_test
+      epg: ansible_test
+    state: present
+
+- name: Add access span destination group type access interface port ( clean before )
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    destination_group: span_dest_2
+    description: test span access interface port
+    access_interface:
+      pod: 1
+      node: 101
+      path: eth1/1
+      mtu: 1500
+    state: present
+
+- name: Add access span destination group type access interface direct port channel ( clean before )
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    destination_group: span_dest_3
+    description: test span access interface port channel
+    access_interface:
+      pod: 1
+      node: 101
+      path: test-PolGrp
+    state: present
+
+# TEST CREATE SOURCE GROUPS
+
+- name: Add access span source group 1 ( checkmode )
+  cisco.aci.aci_access_span_src_group: &span_src_1
+    <<: *aci_info
+    source_group: span_src_1
+    destination_group: span_dest_1
+    filter_group: span_filter_group_1
+    state: present
+  check_mode: true
+  register: cm_span_src_1
+
+- name: Add access span source group 1
+  cisco.aci.aci_access_span_src_group:
+    <<: *span_src_1
+  register: nm_span_src_1
+
+- name: Add access span source group 1 again
+  cisco.aci.aci_access_span_src_group:
+    <<: *span_src_1
+  register: nm_span_src_1_again
+
+- name: Verify add access span source group 1
+  ansible.builtin.assert:
+    that:
+    - cm_span_src_1 is changed
+    - cm_span_src_1.previous == []
+    - cm_span_src_1.current == []
+    - cm_span_src_1.proposed.spanSrcGrp.attributes.name == "span_src_1"
+    - cm_span_src_1.proposed.spanSrcGrp.children.0.spanSpanLbl.attributes.name == "span_dest_1"
+    - cm_span_src_1.proposed.spanSrcGrp.children.1.spanRsSrcGrpToFilterGrp.attributes.tDn == "uni/infra/filtergrp-span_filter_group_1"
+    - nm_span_src_1 is changed
+    - nm_span_src_1.previous == []
+    - nm_span_src_1.current.0.spanSrcGrp.attributes.name == "span_src_1"
+    - nm_span_src_1.current.0.spanSrcGrp.attributes.descr == ""
+    - nm_span_src_1.current.0.spanSrcGrp.attributes.adminSt == "enabled"
+    - nm_span_src_1.current.0.spanSrcGrp.children.1.spanSpanLbl.attributes.name == "span_dest_1"
+    - nm_span_src_1.current.0.spanSrcGrp.children.0.spanRsSrcGrpToFilterGrp.attributes.tDn == "uni/infra/filtergrp-span_filter_group_1"
+    - nm_span_src_1_again is not changed
+    - nm_span_src_1_again.previous.0.spanSrcGrp.attributes.name == "span_src_1"
+    - nm_span_src_1_again.previous.0.spanSrcGrp.attributes.descr == ""
+    - nm_span_src_1_again.previous.0.spanSrcGrp.attributes.adminSt == "enabled"
+    - nm_span_src_1_again.previous.0.spanSrcGrp.children.1.spanSpanLbl.attributes.name == "span_dest_1"
+    - nm_span_src_1_again.previous.0.spanSrcGrp.children.0.spanRsSrcGrpToFilterGrp.attributes.tDn == "uni/infra/filtergrp-span_filter_group_1"
+    - nm_span_src_1_again.current.0.spanSrcGrp.attributes.name == "span_src_1"
+    - nm_span_src_1_again.current.0.spanSrcGrp.attributes.descr == ""
+    - nm_span_src_1_again.current.0.spanSrcGrp.attributes.adminSt == "enabled"
+    - nm_span_src_1_again.current.0.spanSrcGrp.children.1.spanSpanLbl.attributes.name == "span_dest_1"
+    - nm_span_src_1_again.current.0.spanSrcGrp.children.0.spanRsSrcGrpToFilterGrp.attributes.tDn == "uni/infra/filtergrp-span_filter_group_1"
+
+- name: Change access span source group 1
+  cisco.aci.aci_access_span_src_group: &change_span_src_1
+    <<: *span_src_1
+    destination_group: span_dest_2
+    filter_group: span_filter_group_2
+    description: "changed description"
+    admin_state: false
+  register: nm_changed_span_src_1
+
+- name: Change access span source group 1 again
+  cisco.aci.aci_access_span_src_group:
+    <<: *change_span_src_1
+  register: nm_changed_span_src_1_again
+
+- name: Change access span source group 1 remove filter group
+  cisco.aci.aci_access_span_src_group:
+    <<: *aci_info
+    source_group: span_src_1
+    destination_group: span_dest_2
+  register: nm_changed_span_src_1_remove_filter_group
+
+- name: Verify changed access span source group 1
+  ansible.builtin.assert:
+    that:
+    - nm_changed_span_src_1 is changed
+    - nm_changed_span_src_1.previous.0.spanSrcGrp.attributes.descr == ""
+    - nm_changed_span_src_1.previous.0.spanSrcGrp.attributes.adminSt == "enabled"
+    - nm_changed_span_src_1.previous.0.spanSrcGrp.children.1.spanSpanLbl.attributes.name == "span_dest_1"
+    - nm_changed_span_src_1.previous.0.spanSrcGrp.children.0.spanRsSrcGrpToFilterGrp.attributes.tDn == "uni/infra/filtergrp-span_filter_group_1"
+    - nm_changed_span_src_1.current.0.spanSrcGrp.attributes.descr == "changed description"
+    - nm_changed_span_src_1.current.0.spanSrcGrp.attributes.adminSt == "disabled"
+    - nm_changed_span_src_1.current.0.spanSrcGrp.children.1.spanSpanLbl.attributes.name == "span_dest_2"
+    - nm_changed_span_src_1.current.0.spanSrcGrp.children.0.spanRsSrcGrpToFilterGrp.attributes.tDn == "uni/infra/filtergrp-span_filter_group_2"
+    - nm_changed_span_src_1_again is not changed
+    - nm_changed_span_src_1_again.previous.0.spanSrcGrp.attributes.descr == "changed description"
+    - nm_changed_span_src_1_again.previous.0.spanSrcGrp.attributes.adminSt == "disabled"
+    - nm_changed_span_src_1_again.previous.0.spanSrcGrp.children.1.spanSpanLbl.attributes.name == "span_dest_2"
+    - nm_changed_span_src_1_again.previous.0.spanSrcGrp.children.0.spanRsSrcGrpToFilterGrp.attributes.tDn == "uni/infra/filtergrp-span_filter_group_2"
+    - nm_changed_span_src_1_again.current.0.spanSrcGrp.attributes.descr == "changed description"
+    - nm_changed_span_src_1_again.current.0.spanSrcGrp.attributes.adminSt == "disabled"
+    - nm_changed_span_src_1_again.current.0.spanSrcGrp.children.1.spanSpanLbl.attributes.name == "span_dest_2"
+    - nm_changed_span_src_1_again.current.0.spanSrcGrp.children.0.spanRsSrcGrpToFilterGrp.attributes.tDn == "uni/infra/filtergrp-span_filter_group_2"
+    - nm_changed_span_src_1_remove_filter_group is changed
+    - nm_changed_span_src_1_remove_filter_group.current.0.spanSrcGrp.children | length == 1
+    - nm_changed_span_src_1_remove_filter_group.current.0.spanSrcGrp.children.0.spanSpanLbl.attributes.name == "span_dest_2"
+
+- name: Add access span source group 2 with admin_state to false
+  cisco.aci.aci_access_span_src_group:
+    <<: *change_span_src_1
+    source_group: span_src_2
+    destination_group: span_dest_2
+    admin_state: false
+  register: nm_changed_span_src_2_admin_state_false
+
+- name: Add another access span source group 3 with admin_state to true
+  cisco.aci.aci_access_span_src_group:
+    <<: *change_span_src_1
+    source_group: span_src_3
+    destination_group: span_dest_3
+    admin_state: true
+  register: nm_changed_span_src_3_admin_state_true
+
+- name: Verify admin_state sets for access span source group 2 and 3
+  ansible.builtin.assert:
+    that:
+    - nm_changed_span_src_2_admin_state_false is changed
+    - nm_changed_span_src_2_admin_state_false.current.0.spanSrcGrp.attributes.adminSt == "disabled"
+    - nm_changed_span_src_3_admin_state_true is changed
+    - nm_changed_span_src_3_admin_state_true.current.0.spanSrcGrp.attributes.adminSt == "enabled"
+
+# TEST QUERY SOURCE GROUPS
+
+- name: Query span source group span_src_1
+  cisco.aci.aci_access_span_src_group:
+    <<: *change_span_src_1
+    state: query
+  register: query_one
+
+- name: Query all span source groups
+  cisco.aci.aci_access_span_src_group:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Verify querying access span destination groups
+  ansible.builtin.assert:
+    that:
+    - query_one is not changed
+    - query_one.current | length == 1
+    - query_one.current.0.spanSrcGrp.attributes.name == "span_src_1"
+    - query_all is not changed
+    - query_all.current | length >= 3
+  
+# TEST REMOVAL SOURCE GROUPS
+
+- name: Remove span source group ( checkmode )
+  cisco.aci.aci_access_span_src_group: &remove_span_src_1
+    <<: *change_span_src_1
+    state: absent
+  check_mode: true
+  register: cm_remove_span_src_1
+
+- name: Remove span source group
+  cisco.aci.aci_access_span_src_group:
+    <<: *remove_span_src_1
+  register: nm_remove_span_src_1
+
+- name: Remove span source group again
+  cisco.aci.aci_access_span_src_group:
+    <<: *remove_span_src_1
+  register: nm_remove_span_src_1_again
+
+- name: Verify remove access span destination groups
+  ansible.builtin.assert:
+    that:
+    - cm_remove_span_src_1 is changed
+    - cm_remove_span_src_1.current | length == 1
+    - cm_remove_span_src_1.previous | length == 1
+    - cm_remove_span_src_1.proposed == {}
+    - nm_remove_span_src_1 is changed
+    - nm_remove_span_src_1.current == []
+    - nm_remove_span_src_1.previous | length == 1
+    - nm_remove_span_src_1_again is not changed
+    - nm_remove_span_src_1_again.current == []
+    - nm_remove_span_src_1_again.previous == []
+
+# CLEAN TEST ENVIRONMENT AFTER TESTS
+
+- name: Query all span source groups ( clean after )
+  cisco.aci.aci_access_span_src_group:
+    <<: *aci_info
+    state: query
+  register: query_for_clean
+
+- name: Clean access span source groups ( clean after )
+  cisco.aci.aci_access_span_src_group:
+    <<: *aci_info
+    source_group: "{{ item.spanSrcGrp.attributes.name }}"
+    state: absent
+  loop: "{{ query_for_clean.current }}"
+
+- name: Query all span destination groups ( clean after )
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    state: query
+  register: query_for_clean
+
+- name: Clean access span destination groups ( clean after )
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    destination_group: "{{ item.spanDestGrp.attributes.name }}"
+    state: absent
+  loop: "{{ query_for_clean.current }}"
+
+- name: Execute tasks only for non-cloud sites ( clean after )
+  when:
+  - query_cloud.current == []
+  block:
+  - name: Query all access span filter groups ( clean after )
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      state: query
+    register: query_for_clean
+
+  - name: Clean access span filter groups ( clean after )
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      filter_group: "{{ item.spanFilterGrp.attributes.name }}"
+      state: absent
+    loop: "{{ query_for_clean.current }}"

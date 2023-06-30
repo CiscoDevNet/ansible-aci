@@ -146,3 +146,82 @@
       - delete_idempotent.previous == []
       - delete_missing_param is failed
       - 'delete_missing_param.msg == "state is absent but all of the following are missing: snapshot"'
+
+# Create, query and delete snapshot with certificate authentication Ref# 427
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
+      output_level: debug
+
+- name: Add a user certificate to be used in the test
+  cisco.aci.aci_aaa_user_certificate:
+    <<: *aci_info
+    password: "{{ aci_password }}"
+    aaa_user: "{{ aci_username }}"
+    name: admin
+    certificate: "{{ lookup('file', 'pki/admin.crt') }}"
+    state: present
+
+- name: create a snapshot using the private key
+  cisco.aci.aci_config_snapshot:
+    <<: *aci_info
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
+    export_policy: anstest
+    include_secure: false
+    format: json
+    description: ansible test
+  register: create_private_key
+
+- name: creation assertion tests with private key
+  assert:
+    that:
+      - create_private_key is not failed
+      - create_private_key is changed
+      - create_private_key.sent.configExportP.attributes.adminSt == "triggered"
+
+- name: query the snapshot using the private key
+  cisco.aci.aci_config_snapshot:
+    <<: *aci_info
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
+    export_policy: anstest
+    state: query
+  register: query_private_key
+
+- name: generate snapshot name using query_private_key
+  set_fact:
+    test_snapshot_private_key: "{{ query_private_key.current.0.configSnapshotCont.children.0.configSnapshot.attributes.rn.strip('snapshot-') }}"
+
+- name: query assertion tests with private key
+  assert:
+    that:
+      - query_private_key is not failed
+      - query_private_key is not changed
+      - '"snapshots-[uni/fabric/configexp-anstest].json" in query_private_key.url'
+
+- name: delete using the private key
+  cisco.aci.aci_config_snapshot:
+    <<: *aci_info
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
+    export_policy: anstest
+    snapshot: "{{ test_snapshot_private_key }}"
+    state: absent
+  register: delete_snapshot_private_key
+
+- name: delete assertion tests with the private key
+  assert:
+    that:
+      - delete_snapshot_private_key is not failed
+      - delete_snapshot_private_key is changed
+
+- name: Remove the user certificate
+  cisco.aci.aci_aaa_user_certificate:
+    <<: *aci_info
+    password: "{{ aci_password }}"
+    aaa_user: "{{ aci_username }}"
+    name: admin
+    state: absent

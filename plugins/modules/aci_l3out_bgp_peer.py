@@ -130,6 +130,19 @@ options:
         - Name of the Route Control Profile direction.
         type: str
         required: true
+  local_as_number_config:
+    description:
+    - The local Autonomous System Number (ASN) configuration of the L3Out BGP Peer.
+    - The APIC defaults to C(none) when unset during creation.
+    type: str
+    choices: [ dual-as, no-prepend, none, replace-as ]
+    aliases: [ local_as_num_config ]
+  local_as_number:
+    description:
+    - The local Autonomous System Number (ASN) of the L3Out BGP Peer.
+    - The APIC defaults to 0 when unset during creation.
+    type: int
+    aliases: [ local_as_num ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -439,6 +452,8 @@ def main():
             elements="dict",
             options=route_control_profile_spec(),
         ),
+        local_as_number_config=dict(type="str", choices=["dual-as", "no-prepend", "none", "replace-as"], aliases=["local_as_num_config"]),
+        local_as_number=dict(type="int", aliases=["local_as_num"]),
     )
 
     module = AnsibleModule(
@@ -470,6 +485,8 @@ def main():
     admin_state = module.params.get("admin_state")
     allow_self_as_count = module.params.get("allow_self_as_count")
     route_control_profiles = module.params.get("route_control_profiles")
+    local_as_number_config = module.params.get("local_as_number_config")
+    local_as_number = module.params.get("local_as_number")
 
     aci = ACIModule(module)
     if node_id:
@@ -488,6 +505,15 @@ def main():
             dict(
                 bgpAsP=dict(
                     attributes=dict(asn=remote_asn),
+                ),
+            )
+        )
+
+    if local_as_number_config or local_as_number:
+        child_configs.append(
+            dict(
+                bgpLocalAsnP=dict(
+                    attributes=dict(asnPropagate=local_as_number_config, localAsn=local_as_number),
                 ),
             )
         )

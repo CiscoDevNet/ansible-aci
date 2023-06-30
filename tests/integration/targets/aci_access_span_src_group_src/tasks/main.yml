@@ -1,0 +1,532 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Akini Ross (@akinross)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+# CLEAN TEST ENVIRONMENT BEFORE TESTS
+
+- name: Query all span source groups ( clean before )
+  cisco.aci.aci_access_span_src_group:
+    <<: *aci_info
+    state: query
+  register: query_for_clean
+
+- name: Clean access span source groups ( clean before )
+  cisco.aci.aci_access_span_src_group:
+    <<: *aci_info
+    source_group: "{{ item.spanSrcGrp.attributes.name }}"
+    state: absent
+  loop: "{{ query_for_clean.current }}"
+
+- name: Query all span destination groups ( clean before )
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    state: query
+  register: query_for_clean
+
+- name: Clean access span destination groups ( clean before )
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    destination_group: "{{ item.spanDestGrp.attributes.name }}"
+    state: absent
+  loop: "{{ query_for_clean.current }}"
+
+- name: Execute tasks only for non-cloud sites ( clean before )
+  when:
+  - query_cloud.current == []
+  block:
+  - name: Query all access span filter groups ( clean before )
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      state: query
+    register: query_for_clean
+    
+  - name: Clean access span filter groups ( clean before )
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      filter_group: "{{ item.spanFilterGrp.attributes.name }}"
+      state: absent
+    loop: "{{ query_for_clean.current }}"
+
+  - name: Add a access span filter groups ( clean before )
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      filter_group: "{{ item }}"
+      state: present
+    loop:
+    - span_filter_group_1
+    - span_filter_group_2
+
+- name: Add access span destination group type epg ( clean before )
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    destination_group: span_dest_1
+    description: test span epg
+    destination_epg:
+      destination_ip: 10.0.0.1
+      source_ip: 10.0.2.1
+      tenant: ansible_test
+      ap: ansible_test
+      epg: ansible_test
+    state: present
+
+- name: Add access span source group 1 ( clean before )
+  cisco.aci.aci_access_span_src_group:
+    <<: *aci_info
+    source_group: "{{ item }}"
+    destination_group: span_dest_1
+    state: present
+  loop:
+    - span_src_group_1
+    - span_src_group_2
+    - span_src_group_3
+
+# TEST CREATE SOURCE
+
+- name: Add access span source 1 ( checkmode )
+  cisco.aci.aci_access_span_src_group_src: &span_src_1
+    <<: *aci_info
+    source_group: span_src_group_1
+    filter_group: span_filter_group_1
+    source: span_src_1
+    state: present
+  check_mode: true
+  register: cm_span_src_1
+
+- name: Add access span source 1
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *span_src_1
+  register: nm_span_src_1
+
+- name: Add access span source 1 again
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *span_src_1
+  register: nm_span_src_1_again
+
+- name: Verify add access span source group 1
+  ansible.builtin.assert:
+    that:
+    - cm_span_src_1 is changed
+    - cm_span_src_1.previous == []
+    - cm_span_src_1.current == []
+    - cm_span_src_1.proposed.spanSrc.attributes.name == "span_src_1"
+    - cm_span_src_1.proposed.spanSrc.attributes.dn == "uni/infra/srcgrp-span_src_group_1/src-span_src_1"
+    - cm_span_src_1.proposed.spanSrc.children.0.spanRsSrcToFilterGrp.attributes.tDn == "uni/infra/filtergrp-span_filter_group_1"
+    - nm_span_src_1 is changed
+    - nm_span_src_1.previous == []
+    - nm_span_src_1.current.0.spanSrc.attributes.name == "span_src_1"
+    - nm_span_src_1.current.0.spanSrc.attributes.descr == ""
+    - nm_span_src_1.current.0.spanSrc.attributes.dir == "both"
+    - nm_span_src_1.current.0.spanSrc.attributes.dn == "uni/infra/srcgrp-span_src_group_1/src-span_src_1"
+    - nm_span_src_1.current.0.spanSrc.children.0.spanRsSrcToFilterGrp.attributes.tDn == "uni/infra/filtergrp-span_filter_group_1"
+    - nm_span_src_1_again is not changed
+    - nm_span_src_1_again.previous.0.spanSrc.attributes.name == "span_src_1"
+    - nm_span_src_1_again.previous.0.spanSrc.attributes.descr == ""
+    - nm_span_src_1_again.previous.0.spanSrc.attributes.dir == "both"
+    - nm_span_src_1_again.previous.0.spanSrc.attributes.dn == "uni/infra/srcgrp-span_src_group_1/src-span_src_1"
+    - nm_span_src_1_again.previous.0.spanSrc.children.0.spanRsSrcToFilterGrp.attributes.tDn == "uni/infra/filtergrp-span_filter_group_1"
+    - nm_span_src_1_again.current.0.spanSrc.attributes.name == "span_src_1"
+    - nm_span_src_1_again.current.0.spanSrc.attributes.descr == ""
+    - nm_span_src_1_again.current.0.spanSrc.attributes.dir == "both"
+    - nm_span_src_1_again.current.0.spanSrc.attributes.dn == "uni/infra/srcgrp-span_src_group_1/src-span_src_1"
+    - nm_span_src_1_again.current.0.spanSrc.children.0.spanRsSrcToFilterGrp.attributes.tDn == "uni/infra/filtergrp-span_filter_group_1"
+
+- name: Change access span source group 1
+  cisco.aci.aci_access_span_src_group_src: &change_span_src_1
+    <<: *span_src_1
+    source: span_src_1
+    filter_group: span_filter_group_2
+    description: "changed description"
+    direction: both
+  register: nm_changed_span_src_1
+
+- name: Change access span source group 1 direction incoming
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *change_span_src_1
+    direction: incoming
+  register: nm_changed_span_src_1_incoming
+
+- name: Change access span source group 1 direction outgoing
+  cisco.aci.aci_access_span_src_group_src: &change_span_src_1_again
+    <<: *change_span_src_1
+    direction: outgoing
+  register: nm_changed_span_src_1_outgoing
+
+- name: Change access span source group 1 again
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *change_span_src_1_again
+  register: nm_changed_span_src_1_again
+
+- name: Verify changed access span source group 1
+  ansible.builtin.assert:
+    that:
+    - nm_changed_span_src_1 is changed
+    - nm_changed_span_src_1.previous.0.spanSrc.attributes.name == "span_src_1"
+    - nm_changed_span_src_1.previous.0.spanSrc.attributes.descr == ""
+    - nm_changed_span_src_1.previous.0.spanSrc.attributes.dir == "both"
+    - nm_changed_span_src_1.previous.0.spanSrc.attributes.dn == "uni/infra/srcgrp-span_src_group_1/src-span_src_1"
+    - nm_changed_span_src_1.previous.0.spanSrc.children.0.spanRsSrcToFilterGrp.attributes.tDn == "uni/infra/filtergrp-span_filter_group_1"
+    - nm_changed_span_src_1.current.0.spanSrc.attributes.name == "span_src_1"
+    - nm_changed_span_src_1.current.0.spanSrc.attributes.descr == "changed description"
+    - nm_changed_span_src_1.current.0.spanSrc.attributes.dir == "both"
+    - nm_changed_span_src_1.current.0.spanSrc.attributes.dn == "uni/infra/srcgrp-span_src_group_1/src-span_src_1"
+    - nm_changed_span_src_1.current.0.spanSrc.children.0.spanRsSrcToFilterGrp.attributes.tDn == "uni/infra/filtergrp-span_filter_group_2"
+    - nm_changed_span_src_1_incoming.current.0.spanSrc.attributes.dir == "in"
+    - nm_changed_span_src_1_outgoing.current.0.spanSrc.attributes.dir == "out"
+    - nm_changed_span_src_1_again is not changed
+
+- name: Add access span source 2 of epg type
+  cisco.aci.aci_access_span_src_group_src: &span_src_epg
+    <<: *aci_info
+    source_group: span_src_group_2
+    epg:
+      tenant: tenant1
+      ap: ap1
+      epg: epg1
+    source: span_src_2
+    state: present
+  register: nm_span_src_2
+
+- name: Change access span source 2 of epg type
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *span_src_epg
+    epg:
+      tenant: tenant1
+      ap: ap1
+      epg: epg2
+  register: nm_changed_span_src_2
+
+- name: Change access span source 2 of epg type to none type
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *aci_info
+    source_group: span_src_group_2
+    source: span_src_2
+    state: present
+  register: nm_changed_span_src_2_type_none
+
+- name: Add access span source 3 of routed_outside type
+  cisco.aci.aci_access_span_src_group_src: &span_src_routed_outside
+    <<: *aci_info
+    source_group: span_src_group_3
+    routed_outside:
+      tenant: tenant1
+      l3out: l3out1
+      encap: 1089
+    source: span_src_3
+    state: present
+  register: nm_span_src_3
+
+- name: Add access span source 3 of routed_outside type without l3out
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *span_src_routed_outside
+    routed_outside:
+      tenant: tenant1
+      encap: 1089
+    state: present
+  register: nm_changed_span_src_3_no_l3out
+
+- name: Add access span source 3 of routed_outside type without encap
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *span_src_routed_outside
+    routed_outside:
+      tenant: tenant1
+      l3out: l3out1
+    state: present
+  register: nm_changed_span_src_3_no_encap
+
+- name: Add access span source 3 of routed_outside type without tenant
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *span_src_routed_outside
+    routed_outside:
+      l3out: l3out1
+      encap: 1089
+    state: present
+  register: nm_changed_span_src_3_no_tenant
+
+- name: Change access span source 3 of routed_outside type
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *span_src_routed_outside
+    routed_outside:
+      tenant: tenant1
+      l3out: l3out2
+      encap: 1090
+  register: nm_changed_span_src_3
+
+- name: Change access span source 3 of routed_outside type to epg type
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *aci_info
+    source_group: span_src_group_3
+    source: span_src_3
+    epg:
+      tenant: tenant1
+      ap: ap1
+      epg: epg3
+    state: present
+  register: nm_changed_span_src_3_type_epg
+
+- name: Verify changed access span source types group 2 and 3
+  ansible.builtin.assert:
+    that:
+    - nm_span_src_2 is changed
+    - nm_span_src_2.current.0.spanSrc.attributes.name == "span_src_2"
+    - nm_span_src_2.current.0.spanSrc.children.0.spanRsSrcToEpg.attributes.tDn == "uni/tn-tenant1/ap-ap1/epg-epg1"
+    - nm_changed_span_src_2 is changed
+    - nm_changed_span_src_2.current.0.spanSrc.attributes.name == "span_src_2"
+    - nm_changed_span_src_2.current.0.spanSrc.children.0.spanRsSrcToEpg.attributes.tDn == "uni/tn-tenant1/ap-ap1/epg-epg2"
+    - nm_changed_span_src_2_type_none is changed
+    - nm_changed_span_src_2_type_none.previous.0.spanSrc.children.0.spanRsSrcToEpg.attributes.tDn == "uni/tn-tenant1/ap-ap1/epg-epg2"
+    - '"children" not in nm_changed_span_src_2_type_none.current.0.spanSrc'
+    - nm_span_src_3 is changed
+    - nm_span_src_3.current.0.spanSrc.attributes.name == "span_src_3"
+    - nm_span_src_3.current.0.spanSrc.children.0.spanRsSrcToL3extOut.attributes.tDn == "uni/tn-tenant1/out-l3out1"
+    - nm_span_src_3.current.0.spanSrc.children.0.spanRsSrcToL3extOut.attributes.encap == "vlan-1089"
+    - nm_changed_span_src_3 is changed
+    - nm_changed_span_src_3.current.0.spanSrc.attributes.name == "span_src_3"
+    - nm_changed_span_src_3.current.0.spanSrc.children.0.spanRsSrcToL3extOut.attributes.tDn == "uni/tn-tenant1/out-l3out2"
+    - nm_changed_span_src_3.current.0.spanSrc.children.0.spanRsSrcToL3extOut.attributes.encap == "vlan-1090"
+    - nm_changed_span_src_3_type_epg is changed
+    - nm_changed_span_src_3_type_epg.current.0.spanSrc.attributes.name == "span_src_3"
+    - nm_changed_span_src_3_type_epg.current.0.spanSrc.children.0.spanRsSrcToEpg.attributes.tDn == "uni/tn-tenant1/ap-ap1/epg-epg3"
+    - nm_changed_span_src_3_no_l3out is changed
+    - nm_changed_span_src_3_no_l3out.current.0.spanSrc.attributes.name == "span_src_3"
+    - nm_changed_span_src_3_no_l3out.current.0.spanSrc.children.0.spanRsSrcToL3extOut.attributes.encap == "vlan-1089"
+    - nm_changed_span_src_3_no_l3out.current.0.spanSrc.children.0.spanRsSrcToL3extOut.attributes.tDn == ""
+    - nm_changed_span_src_3_no_tenant is changed
+    - nm_changed_span_src_3_no_tenant.current.0.spanSrc.attributes.name == "span_src_3"
+    - nm_changed_span_src_3_no_tenant.current.0.spanSrc.children.0.spanRsSrcToL3extOut.attributes.encap == "vlan-1089"
+    - nm_changed_span_src_3_no_tenant.current.0.spanSrc.children.0.spanRsSrcToL3extOut.attributes.tDn == ""
+    - nm_changed_span_src_3_no_encap is changed
+    - nm_changed_span_src_3_no_encap.current.0.spanSrc.attributes.name == "span_src_3"
+    - nm_changed_span_src_3_no_encap.current.0.spanSrc.children.0.spanRsSrcToL3extOut.attributes.encap == "unknown"
+    - nm_changed_span_src_3_no_encap.current.0.spanSrc.children.0.spanRsSrcToL3extOut.attributes.tDn == "uni/tn-tenant1/out-l3out1"
+
+- name: Change access span source 2 drop_packets true
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *aci_info
+    source_group: span_src_group_2
+    source: span_src_2
+    drop_packets: true
+    state: present
+  register: nm_changed_span_src_2_type_drop_packets_true
+
+- name: Change access span source 2 drop_packets false
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *aci_info
+    source_group: span_src_group_2
+    source: span_src_2
+    drop_packets: false
+    state: present
+  register: nm_changed_span_src_2_type_drop_packets_false
+
+- name: Verify changed access span source group 1 drop packets
+  ansible.builtin.assert:
+    that:
+    - nm_changed_span_src_2_type_drop_packets_true is changed
+    - nm_changed_span_src_2_type_drop_packets_true.current.0.spanSrc.attributes.name == "span_src_2"
+    - nm_changed_span_src_2_type_drop_packets_true.current.0.spanSrc.attributes.spanOnDrop == "yes"
+    - nm_changed_span_src_2_type_drop_packets_false is changed
+    - nm_changed_span_src_2_type_drop_packets_false.current.0.spanSrc.attributes.name == "span_src_2"
+    - nm_changed_span_src_2_type_drop_packets_false.current.0.spanSrc.attributes.spanOnDrop == "no"
+
+# TEST QUERY SOURCE
+
+- name: Query span source group span_src_1
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *aci_info
+    source: span_src_1
+    state: query
+  register: query_one
+
+- name: Query all span source groups
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Verify querying access span sources
+  ansible.builtin.assert:
+    that:
+    - query_one is not changed
+    - query_one.current | length == 1
+    - query_one.current.0.spanSrc.attributes.dn == "uni/infra/srcgrp-span_src_group_1/src-span_src_1"
+    - query_all is not changed
+    - query_all.current | length >= 3
+
+# TEST ERRORS SOURCE
+
+- name: Add access span source group 4
+  cisco.aci.aci_access_span_src_group:
+    <<: *aci_info
+    source_group: span_src_group_4
+    destination_group: span_dest_1
+    filter_group: span_filter_group_1
+    state: present
+
+- name: Add access span source 4 with epg and routed_outside ( mutually exclusive error )
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *aci_info
+    source_group: span_src_group_4
+    epg:
+      tenant: tenant1
+      ap: ap1
+      epg: epg3
+    routed_outside:
+      tenant: tenant1
+      l3out: l3out2
+      encap: 1090
+    source: span_src_4
+    state: present
+  ignore_errors: true
+  register: err_mutually_exclusive_epg_routed_outside
+
+- name: Add access span source 4 with filter_group and drop_packets( drop_packets true error )
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *aci_info
+    source_group: span_src_group_4
+    filter_group: span_filter_group_1
+    source: span_src_4
+    drop_packets: true
+  ignore_errors: true
+  register: err_filter_group_drop_packets
+
+- name: Add access span source 4 with epg and drop_packets ( drop_packets true error )
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *aci_info
+    source_group: span_src_group_4
+    source: span_src_4
+    epg:
+      tenant: tenant1
+      ap: ap1
+      epg: epg3
+    drop_packets: true
+  ignore_errors: true
+  register: err_epg_drop_packets
+
+- name: Add access span source 4 with routed_outside and drop_packets ( drop_packets true error )
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *aci_info
+    source_group: span_src_group_4
+    source: span_src_4
+    routed_outside:
+      tenant: tenant1
+      l3out: l3out2
+      encap: 1090
+    drop_packets: true
+  ignore_errors: true
+  register: err_routed_outside_drop_packets
+
+- name: Add access span source 4 with drop_packets true ( parent filter group config error )
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *aci_info
+    source_group: span_src_group_4
+    source: span_src_4
+    drop_packets: true
+    state: present
+  ignore_errors: true
+  register: err_parent_filter_and_drop_packets
+
+- name: Verify errors on incorrect input
+  ansible.builtin.assert:
+    that:
+    - err_mutually_exclusive_epg_routed_outside.msg == "parameters are mutually exclusive{{':'}} epg|routed_outside"
+    - err_filter_group_drop_packets.msg == "Setting 'drop_packets' to 'true' is not allowed when 'filter_group' is configured on the source."
+    - err_epg_drop_packets.msg == "Setting 'drop_packets' to 'true' is not allowed when 'epg' is configured on the source."
+    - err_routed_outside_drop_packets.msg == "Setting 'drop_packets' to 'true' is not allowed when 'routed_outside' is configured on the source."
+    - err_parent_filter_and_drop_packets.msg == "APIC Error 105{{':'}} Span on drop not supported for the configuration"
+
+# TEST REMOVAL SOURCE
+
+- name: Remove span source group ( checkmode )
+  cisco.aci.aci_access_span_src_group_src: &remove_span_src_1
+    <<: *change_span_src_1
+    state: absent
+  check_mode: true
+  register: cm_remove_span_src_1
+
+- name: Remove span source group
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *remove_span_src_1
+  register: nm_remove_span_src_1
+
+- name: Remove span source group again
+  cisco.aci.aci_access_span_src_group_src:
+    <<: *remove_span_src_1
+  register: nm_remove_span_src_1_again
+
+- name: Verify remove access span destination groups
+  ansible.builtin.assert:
+    that:
+    - cm_remove_span_src_1 is changed
+    - cm_remove_span_src_1.current | length == 1
+    - cm_remove_span_src_1.previous | length == 1
+    - cm_remove_span_src_1.proposed == {}
+    - nm_remove_span_src_1 is changed
+    - nm_remove_span_src_1.current == []
+    - nm_remove_span_src_1.previous | length == 1
+    - nm_remove_span_src_1_again is not changed
+    - nm_remove_span_src_1_again.current == []
+    - nm_remove_span_src_1_again.previous == []
+
+# CLEAN TEST ENVIRONMENT AFTER TESTS
+
+- name: Query all span source groups ( clean after )
+  cisco.aci.aci_access_span_src_group:
+    <<: *aci_info
+    state: query
+  register: query_for_clean
+
+- name: Clean access span source groups ( clean after )
+  cisco.aci.aci_access_span_src_group:
+    <<: *aci_info
+    source_group: "{{ item.spanSrcGrp.attributes.name }}"
+    state: absent
+  loop: "{{ query_for_clean.current }}"
+
+- name: Query all span destination groups ( clean after )
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    state: query
+  register: query_for_clean
+
+- name: Clean access span destination groups ( clean after )
+  cisco.aci.aci_access_span_dst_group:
+    <<: *aci_info
+    destination_group: "{{ item.spanDestGrp.attributes.name }}"
+    state: absent
+  loop: "{{ query_for_clean.current }}"
+
+- name: Execute tasks only for non-cloud sites ( clean after )
+  when:
+  - query_cloud.current == []
+  block:
+  - name: Query all access span filter groups ( clean after )
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      state: query
+    register: query_for_clean
+
+  - name: Clean access span filter groups ( clean after )
+    cisco.aci.aci_access_span_filter_group:
+      <<: *aci_info
+      filter_group: "{{ item.spanFilterGrp.attributes.name }}"
+      state: absent
+    loop: "{{ query_for_clean.current }}"

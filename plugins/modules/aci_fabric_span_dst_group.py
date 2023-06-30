@@ -12,55 +12,24 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_access_span_dst_group
-short_description: Manage Access SPAN destination groups (span:DestGrp)
+module: aci_fabric_span_dst_group
+short_description: Manage Fabric SPAN destination groups (span:DestGrp)
 description:
-- Manage Access SPAN destination groups on Cisco ACI fabrics.
+- Manage Fabric SPAN destination groups on Cisco ACI fabrics.
 options:
   destination_group:
     description:
-    - The name of the Access SPAN destination group.
+    - The name of the Fabric SPAN destination group.
     type: str
     aliases: [ name, dst_group ]
   description:
     description:
-    - The description of the Access SPAN destination group.
+    - The description of the Fabric SPAN destination group.
     type: str
     aliases: [ descr ]
-  access_interface:
-    description:
-    - The destination access interface.
-    - The I(access_interface) and I(destination_epg) cannot be configured simultaneously.
-    type: dict
-    suboptions:
-      pod:
-        description:
-        - The pod id part of the destination path.
-        type: int
-        required: true
-        aliases: [ pod_id, pod_number ]
-      node:
-        description:
-        - The node id part of the destination path.
-        type: int
-        required: true
-        aliases: [ node_id ]
-      path:
-        description:
-        - The interface part of the destination path.
-        - When path is of type port a interface like C(eth1/7) must be provided.
-        - When path is of type direct_port_channel the name of a policy group like C(test_PolGrp) must be provided.
-        type: str
-        required: true
-      mtu:
-        description:
-        - The MTU truncation size for the packets.
-        - The APIC defaults to C(1518) when unset during creation.
-        type: int
   destination_epg:
     description:
     - The destination end point group.
-    - The I(access_interface) and I(destination_epg) cannot be configured simultaneously.
     type: dict
     suboptions:
       tenant:
@@ -108,7 +77,7 @@ options:
         type: int
       ttl:
         description:
-        - The time to live of the span session packets.
+        - The time to live of the SPAN session packets.
         - The APIC defaults to C(64) when unset during creation.
         type: int
       mtu:
@@ -147,8 +116,8 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a Access SPAN destination group of type EPG
-  cisco.aci.aci_access_span_dst_group:
+- name: Add a Fabric SPAN destination group
+  cisco.aci.aci_fabric_span_dst_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -169,38 +138,8 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Add a Access SPAN destination group of type access interface port
-  cisco.aci.aci_access_span_dst_group:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    destination_group: group1
-    description: Test span
-    access_interface:
-      pod: 1
-      node: 101
-      path: 1/1
-      mtu: 1500
-    state: present
-  delegate_to: localhost
-
-- name: Add a Access SPAN destination group of type access interface direct_port_channel
-  cisco.aci.aci_access_span_dst_group:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    destination_group: group1
-    description: Test span
-    access_interface:
-      pod: 1
-      node: 101
-      path: Switch101_1-ports-1-2_PolGrp
-      mtu: 1500
-    state: present
-  delegate_to: localhost
-
-- name: Remove a Access SPAN destination group
-  cisco.aci.aci_access_span_dst_group:
+- name: Remove a Fabric SPAN destination group
+  cisco.aci.aci_fabric_span_dst_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -208,8 +147,8 @@ EXAMPLES = r"""
     state: absent
   delegate_to: localhost
 
-- name: Query a Access SPAN destination group
-  cisco.aci.aci_access_span_dst_group:
+- name: Query a Fabric SPAN destination group
+  cisco.aci.aci_fabric_span_dst_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -218,8 +157,8 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query all Access SPAN destination groups
-  cisco.aci.aci_access_span_dst_group:
+- name: Query all Fabric SPAN destination groups
+  cisco.aci.aci_fabric_span_dst_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -337,15 +276,6 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec, destination_epg_spec
 
 
-def access_interface_spec():
-    return dict(
-        pod=dict(type="int", required=True, aliases=["pod_id", "pod_number"]),
-        node=dict(type="int", required=True, aliases=["node_id"]),
-        path=dict(type="str", required=True),
-        mtu=dict(type="int"),
-    )
-
-
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
@@ -353,7 +283,6 @@ def main():
     argument_spec.update(
         destination_group=dict(type="str", aliases=["name", "dst_group"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
-        access_interface=dict(type="dict", options=access_interface_spec()),
         destination_epg=dict(type="dict", options=destination_epg_spec()),
         name_alias=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -364,11 +293,7 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["destination_group"]],
-            ["state", "present", ["destination_group"]],
-            ["state", "present", ["access_interface", "destination_epg"], True],
-        ],
-        mutually_exclusive=[
-            ("access_interface", "destination_epg"),
+            ["state", "present", ["destination_group", "destination_epg"]],
         ],
     )
 
@@ -376,15 +301,14 @@ def main():
 
     destination_group = module.params.get("destination_group")
     description = module.params.get("description")
-    access_interface = module.params.get("access_interface")
     destination_epg = module.params.get("destination_epg")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
     aci.construct_url(
         root_class=dict(
-            aci_class="infra",
-            aci_rn="infra",
+            aci_class="fabric",
+            aci_rn="fabric",
         ),
         subclass_1=dict(
             aci_class="spanDestGrp",
@@ -398,33 +322,24 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        if destination_epg:
-            attributes = dict(
-                tDn="uni/tn-{0}/ap-{1}/epg-{2}".format(destination_epg.get("tenant"), destination_epg.get("ap"), destination_epg.get("epg")),
-                ip=destination_epg.get("destination_ip"),
-                srcIpPrefix=destination_epg.get("source_ip"),
-            )
-            if destination_epg.get("span_version") is not None:
-                attributes["ver"] = "ver1" if destination_epg.get("span_version") == "version_1" else "ver2"
-            if destination_epg.get("version_enforced") is not None:
-                attributes["verEnforced"] = "yes" if destination_epg.get("version_enforced") else "no"
-            if destination_epg.get("ttl") is not None:
-                attributes["ttl"] = str(destination_epg.get("ttl"))
-            if destination_epg.get("mtu") is not None:
-                attributes["mtu"] = str(destination_epg.get("mtu"))
-            if destination_epg.get("flow_id") is not None:
-                attributes["flowId"] = str(destination_epg.get("flow_id"))
-            if destination_epg.get("dscp") is not None:
-                attributes["dscp"] = destination_epg.get("dscp")
-            span_rs_dest = dict(spanRsDestEpg=dict(attributes=attributes))
-
-        else:
-            attributes = dict(
-                tDn="topology/pod-{0}/paths-{1}/pathep-[{2}]".format(access_interface.get("pod"), access_interface.get("node"), access_interface.get("path"))
-            )
-            if access_interface.get("mtu") is not None:
-                attributes["mtu"] = str(access_interface.get("mtu"))
-            span_rs_dest = dict(spanRsDestPathEp=dict(attributes=attributes))
+        attributes = dict(
+            tDn="uni/tn-{0}/ap-{1}/epg-{2}".format(destination_epg.get("tenant"), destination_epg.get("ap"), destination_epg.get("epg")),
+            ip=destination_epg.get("destination_ip"),
+            srcIpPrefix=destination_epg.get("source_ip"),
+        )
+        if destination_epg.get("span_version") is not None:
+            attributes["ver"] = "ver1" if destination_epg.get("span_version") == "version_1" else "ver2"
+        if destination_epg.get("version_enforced") is not None:
+            attributes["verEnforced"] = "yes" if destination_epg.get("version_enforced") else "no"
+        if destination_epg.get("ttl") is not None:
+            attributes["ttl"] = str(destination_epg.get("ttl"))
+        if destination_epg.get("mtu") is not None:
+            attributes["mtu"] = str(destination_epg.get("mtu"))
+        if destination_epg.get("flow_id") is not None:
+            attributes["flowId"] = str(destination_epg.get("flow_id"))
+        if destination_epg.get("dscp") is not None:
+            attributes["dscp"] = destination_epg.get("dscp")
+        span_rs_dest = dict(spanRsDestEpg=dict(attributes=attributes))
 
         aci.payload(
             aci_class="spanDestGrp",

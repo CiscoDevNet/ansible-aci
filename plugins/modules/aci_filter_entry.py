@@ -27,24 +27,63 @@ options:
     - Description for the Filter Entry.
     type: str
     aliases: [ descr ]
-  dst_port:
+  destination_port:
     description:
     - Used to set both destination start and end ports to the same value when ip_protocol is tcp or udp.
     - Accepted values are any valid TCP/UDP port range.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
-  dst_port_end:
+    aliases: [ dst_port ]
+  destination_port_end:
     description:
     - Used to set the destination end port when ip_protocol is tcp or udp.
     - Accepted values are any valid TCP/UDP port range.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
-  dst_port_start:
+    aliases: [ dst_port_end ]
+  destination_port_start:
     description:
     - Used to set the destination start port when ip_protocol is tcp or udp.
     - Accepted values are any valid TCP/UDP port range.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
+    aliases: [ dst_port_start ]
+  source_port:
+    description:
+    - Used to set both source start and end ports to the same value when ip_protocol is tcp or udp.
+    - Accepted values are any valid TCP/UDP port range.
+    - The APIC defaults to C(unspecified) when unset during creation.
+    type: str
+    aliases: [ src_port ]
+  source_port_end:
+    description:
+    - Used to set the source end port when ip_protocol is tcp or udp.
+    - Accepted values are any valid TCP/UDP port range.
+    - The APIC defaults to C(unspecified) when unset during creation.
+    type: str
+    aliases: [ src_port_end ]
+  source_port_start:
+    description:
+    - Used to set the source start port when ip_protocol is tcp or udp.
+    - Accepted values are any valid TCP/UDP port range.
+    - The APIC defaults to C(unspecified) when unset during creation.
+    type: str
+    aliases: [ src_port_start ]
+  tcp_flags:
+    description:
+    - The TCP flags of the filter entry.
+    - The TCP C(established) cannot be combined with other tcp rules.
+    - The APIC defaults to C(unspecified) when unset during creation.
+    type: list
+    elements: str
+    choices: [ acknowledgment, established, finish, reset, synchronize, unspecified ]
+  match_only_fragments:
+    description:
+    - The match only packet fragments of the filter entry.
+    - When enabled C(true) the rule applies to any fragments with offset greater than 0 (all fragments except first).
+    - When disabled C(false) it applies to all packets (including all fragments)
+    - The APIC defaults to C(false) when unset during creation.
+    type: bool
   entry:
     description:
     - Then name of the Filter Entry.
@@ -128,6 +167,25 @@ EXAMPLES = r"""
     ip_protocol: tcp
     dst_port_start: 443
     dst_port_end: 443
+    source_port_start: 20
+    source_port_end: 22
+    tcp_flags:
+      - acknowledgment
+      - finish
+    state: present
+  delegate_to: localhost
+
+- name: Create a filter entry with the match only packet fragments enabled
+  cisco.aci.aci_filter_entry:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    entry: https_allow
+    filter: web_filter
+    tenant: prod
+    ether_type: ip
+    ip_protocol: tcp
+    match_only_fragments: true
     state: present
   delegate_to: localhost
 
@@ -271,45 +329,14 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
-from ansible_collections.cisco.aci.plugins.module_utils.constants import VALID_IP_PROTOCOLS, FILTER_PORT_MAPPING
-
-
-VALID_ARP_FLAGS = ["arp_reply", "arp_request", "unspecified"]
-VALID_ETHER_TYPES = ["arp", "fcoe", "ip", "ipv4", "ipv6", "mac_security", "mpls_ucast", "trill", "unspecified"]
-VALID_ICMP_TYPES = ["dst_unreachable", "echo", "echo_reply", "src_quench", "time_exceeded", "unspecified"]
-VALID_ICMP6_TYPES = [
-    "dst_unreachable",
-    "echo_request",
-    "echo_reply",
-    "neighbor_advertisement",
-    "neighbor_solicitation",
-    "redirect",
-    "time_exceeded",
-    "unspecified",
-]
-
-# mapping dicts are used to normalize the proposed data to what the APIC expects, which will keep diffs accurate
-ARP_FLAG_MAPPING = dict(arp_reply="reply", arp_request="req", unspecified=None)
-
-ICMP_MAPPING = {
-    "dst_unreachable": "dst-unreach",
-    "echo": "echo",
-    "echo_reply": "echo-rep",
-    "src_quench": "src-quench",
-    "time_exceeded": "time-exceeded",
-    "unspecified": "unspecified",
-    "echo-rep": "echo-rep",
-    "dst-unreach": "dst-unreach",
-}
-ICMP6_MAPPING = dict(
-    dst_unreachable="dst-unreach",
-    echo_request="echo-req",
-    echo_reply="echo-rep",
-    neighbor_advertisement="nbr-advert",
-    neighbor_solicitation="nbr-solicit",
-    redirect="redirect",
-    time_exceeded="time-exceeded",
-    unspecified="unspecified",
+from ansible_collections.cisco.aci.plugins.module_utils.constants import (
+    VALID_IP_PROTOCOLS,
+    FILTER_PORT_MAPPING,
+    VALID_ETHER_TYPES,
+    ARP_FLAG_MAPPING,
+    ICMP4_MAPPING,
+    ICMP6_MAPPING,
+    TCP_FLAGS,
 )
 
 
@@ -317,16 +344,21 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        arp_flag=dict(type="str", choices=VALID_ARP_FLAGS),
+        arp_flag=dict(type="str", choices=list(ARP_FLAG_MAPPING.keys())),
         description=dict(type="str", aliases=["descr"]),
-        dst_port=dict(type="str"),
-        dst_port_end=dict(type="str"),
-        dst_port_start=dict(type="str"),
+        destination_port=dict(type="str", aliases=["dst_port"]),
+        destination_port_end=dict(type="str", aliases=["dst_port_end"]),
+        destination_port_start=dict(type="str", aliases=["dst_port_start"]),
+        source_port=dict(type="str", aliases=["src_port"]),
+        source_port_end=dict(type="str", aliases=["src_port_end"]),
+        source_port_start=dict(type="str", aliases=["src_port_start"]),
+        tcp_flags=dict(type="list", elements="str", choices=list(TCP_FLAGS.keys())),
+        match_only_fragments=dict(type="bool"),
         entry=dict(type="str", aliases=["entry_name", "filter_entry", "name"]),  # Not required for querying all objects
         ether_type=dict(choices=VALID_ETHER_TYPES, type="str"),
         filter=dict(type="str", aliases=["filter_name"]),  # Not required for querying all objects
-        icmp_msg_type=dict(type="str", choices=VALID_ICMP_TYPES),
-        icmp6_msg_type=dict(type="str", choices=VALID_ICMP6_TYPES),
+        icmp_msg_type=dict(type="str", choices=list(ICMP4_MAPPING.keys())),
+        icmp6_msg_type=dict(type="str", choices=list(ICMP6_MAPPING.keys())),
         ip_protocol=dict(choices=VALID_IP_PROTOCOLS, type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         stateful=dict(type="bool"),
@@ -349,21 +381,21 @@ def main():
     if arp_flag is not None:
         arp_flag = ARP_FLAG_MAPPING.get(arp_flag)
     description = module.params.get("description")
-    dst_port = module.params.get("dst_port")
+    dst_port = module.params.get("destination_port")
     if FILTER_PORT_MAPPING.get(dst_port) is not None:
         dst_port = FILTER_PORT_MAPPING.get(dst_port)
-    dst_end = module.params.get("dst_port_end")
-    if FILTER_PORT_MAPPING.get(dst_end) is not None:
-        dst_end = FILTER_PORT_MAPPING.get(dst_end)
-    dst_start = module.params.get("dst_port_start")
-    if FILTER_PORT_MAPPING.get(dst_start) is not None:
-        dst_start = FILTER_PORT_MAPPING.get(dst_start)
+    dst_port_end = module.params.get("destination_port_end")
+    if FILTER_PORT_MAPPING.get(dst_port_end) is not None:
+        dst_port_end = FILTER_PORT_MAPPING.get(dst_port_end)
+    dst_port_start = module.params.get("destination_port_start")
+    if FILTER_PORT_MAPPING.get(dst_port_start) is not None:
+        dst_port_start = FILTER_PORT_MAPPING.get(dst_port_start)
     entry = module.params.get("entry")
     ether_type = module.params.get("ether_type")
     filter_name = module.params.get("filter")
     icmp_msg_type = module.params.get("icmp_msg_type")
     if icmp_msg_type is not None:
-        icmp_msg_type = ICMP_MAPPING.get(icmp_msg_type)
+        icmp_msg_type = ICMP4_MAPPING.get(icmp_msg_type)
     icmp6_msg_type = module.params.get("icmp6_msg_type")
     if icmp6_msg_type is not None:
         icmp6_msg_type = ICMP6_MAPPING.get(icmp6_msg_type)
@@ -373,12 +405,46 @@ def main():
     tenant = module.params.get("tenant")
     name_alias = module.params.get("name_alias")
 
-    # validate that dst_port is not passed with dst_start or dst_end
-    if dst_port is not None and (dst_end is not None or dst_start is not None):
-        module.fail_json(msg="Parameter 'dst_port' cannot be used with 'dst_end' and 'dst_start'")
+    source_port = module.params.get("source_port")
+    if FILTER_PORT_MAPPING.get(source_port) is not None:
+        source_port = FILTER_PORT_MAPPING.get(source_port)
+    source_port_end = module.params.get("source_port_end")
+    if FILTER_PORT_MAPPING.get(source_port_end) is not None:
+        source_port_end = FILTER_PORT_MAPPING.get(source_port_end)
+    source_port_start = module.params.get("source_port_start")
+    if FILTER_PORT_MAPPING.get(source_port_start) is not None:
+        source_port_start = FILTER_PORT_MAPPING.get(source_port_start)
+
+    # validate that dst_port is not passed with dst_port_end or dst_port_start
+    if dst_port is not None and (dst_port_end is not None or dst_port_start is not None):
+        module.fail_json(msg="Parameter 'dst_port' cannot be used with 'dst_port_end' and 'dst_port_start'")
+    elif dst_port_end is not None and dst_port_start is None:
+        module.fail_json(msg="Parameter 'dst_port_end' cannot be configured when the 'dst_port_start' is not defined")
     elif dst_port is not None:
-        dst_end = dst_port
-        dst_start = dst_port
+        dst_port_end = dst_port
+        dst_port_start = dst_port
+
+    # validate that source_port is not passed with source_port_end or source_port_start
+    if source_port is not None and (source_port_end is not None or source_port_start is not None):
+        module.fail_json(msg="Parameter 'source_port' cannot be used with 'source_port_end' and 'source_port_start'")
+    elif source_port_end is not None and source_port_start is None:
+        module.fail_json(msg="Parameter 'source_port_end' cannot be configured when the 'source_port_start' is not defined")
+    elif source_port is not None:
+        source_port_end = source_port
+        source_port_start = source_port
+
+    tcp_flags = module.params.get("tcp_flags")
+    tcp_flags_list = list()
+    if tcp_flags is not None:
+        if len(tcp_flags) >= 2 and "established" in tcp_flags:
+            module.fail_json(msg="TCP established cannot be combined with other tcp rules")
+        else:
+            for tcp_flag in tcp_flags:
+                tcp_flags_list.append(TCP_FLAGS.get(tcp_flag))
+
+    match_only_fragments = aci.boolean(module.params.get("match_only_fragments"))
+    if match_only_fragments == "yes" and (dst_port or source_port or source_port_start or source_port_end or dst_port_start or dst_port_end):
+        module.fail_json(msg="Parameter 'match_only_fragments' cannot be used with 'Layer 4 Port' value")
 
     aci.construct_url(
         root_class=dict(
@@ -409,8 +475,8 @@ def main():
             class_config=dict(
                 arpOpc=arp_flag,
                 descr=description,
-                dFromPort=dst_start,
-                dToPort=dst_end,
+                dFromPort=dst_port_start,
+                dToPort=dst_port_end,
                 etherT=ether_type,
                 icmpv4T=icmp_msg_type,
                 icmpv6T=icmp6_msg_type,
@@ -418,6 +484,10 @@ def main():
                 prot=ip_protocol,
                 stateful=stateful,
                 nameAlias=name_alias,
+                applyToFrag=match_only_fragments,
+                sFromPort=source_port_start,
+                sToPort=source_port_end,
+                tcpRules=",".join(tcp_flags_list),
             ),
         )
 

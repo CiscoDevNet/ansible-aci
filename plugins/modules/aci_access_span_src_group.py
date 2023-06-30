@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# Copyright: (c) 2022, Akini Ross (@akinross)
 
+# Copyright: (c) 2023, Akini Ross <akinross@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,44 +12,35 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_tenant_span_src_group_src
-short_description: Manage SPAN source group sources (span:Src)
+module: aci_access_span_src_group
+short_description: Manage Access SPAN source groups (span:SrcGrp)
 description:
-- Manage SPAN source group sources on Cisco ACI fabrics.
+- Manage SPAN source groups on Cisco ACI fabrics.
 options:
-  name:
+  source_group:
     description:
-    - The name of the Span source.
+    - The name of the Access SPAN source group.
     type: str
+    aliases: [ name, src_group ]
   description:
     description:
-    - The description for Span source.
+    - The description for Access SPAN source group.
     type: str
     aliases: [ descr ]
-  src_group:
+  admin_state:
     description:
-    - The name of the Span source group.
-    type: str
-  tenant:
+    - Enable C(true) or disable C(false) the SPAN sources.
+    - The APIC defaults to C(true) when unset during creation.
+    type: bool
+  filter_group:
     description:
-    - The name of the Tenant.
+    - The name of the Access SPAN filter group to associate with the source group.
     type: str
-    aliases: [ tenant_name ]
-  direction:
+  destination_group:
     description:
-    - The direction of the SPAN source.
+    - The name of the Access SPAN destination group to associate with the source group.
     type: str
-    choices: [ incoming, outgoing, both ]
-  src_epg:
-    description:
-    - The name of the Span source epg.
-    type: str
-    aliases: [ epg ]
-  src_ap:
-    description:
-    - The name of the Span source ap.
-    type: str
-    aliases: [ ap ]
+    aliases: [ dst_group ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -57,17 +48,21 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
-
+  name_alias:
+    description:
+    - The alias for the current object. This relates to the nameAlias field in ACI.
+    type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 - cisco.aci.owner
 
 notes:
-- The C(tenant) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) module can be used for this.
+- The I(filter_group) and I(destination_group) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_access_span_filter_group) and M(cisco.aci.aci_access_span_dst_group) modules can be used for this.
 seealso:
-- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_access_span_filter_group
+- module: cisco.aci.aci_access_span_dst_group
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(span:SrcGrp).
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -76,32 +71,27 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create a SPAN source
-  cisco.aci.aci_tenant_span_src_group_src:
+- name: Create a Access SPAN source group
+  cisco.aci.aci_access_span_src_group:
     host: apic
     username: admin
     password: SomeSecretPassword
-    src_group: my_span_source_group
-    tenant: prod
-    name: test
-    direction: incoming
-    src_epg: epg1
+    source_group: my_span_source_group
+    destination_group: my_span_dest_group
     state: present
   delegate_to: localhost
 
-- name: Delete a SPAN source
-  cisco.aci.aci_tenant_span_src_group_src:
+- name: Delete a Access SPAN source group
+  cisco.aci.aci_access_span_src_group:
     host: apic
     username: admin
     password: SomeSecretPassword
-    src_group: my_span_source_group
-    tenant: prod
-    name: test
+    source_group: my_span_source_group
     state: absent
   delegate_to: localhost
 
-- name: Query all SPAN sources
-  cisco.aci.aci_tenant_span_src_group_src:
+- name: Query all Access SPAN source groups
+  cisco.aci.aci_access_span_src_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -109,12 +99,12 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query a specific SPAN source
-  cisco.aci.aci_tenant_span_src_group_src:
+- name: Query a specific Access SPAN source group
+  cisco.aci.aci_access_span_src_group:
     host: apic
     username: admin
     password: SomeSecretPassword
-    name: test
+    source_group: my_span_source_group
     state: query
   delegate_to: localhost
   register: query_result
@@ -227,7 +217,6 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-from ansible_collections.cisco.aci.plugins.module_utils.constants import SPAN_DIRECTION_MAP
 
 
 def main():
@@ -235,73 +224,95 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
+        source_group=dict(type="str", aliases=["name", "src_group"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
-        direction=dict(type="str", choices=list(SPAN_DIRECTION_MAP.keys())),
-        name=dict(type="str"),  # Not required for querying all objects
-        src_ap=dict(type="str", aliases=["ap"]),
-        src_epg=dict(type="str", aliases=["epg"]),
-        src_group=dict(type="str"),  # Not required for querying all objects
+        admin_state=dict(type="bool"),
+        filter_group=dict(type="str"),
+        destination_group=dict(type="str", aliases=["dst_group"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["name", "src_group", "tenant"]],
-            ["state", "present", ["name", "direction", "src_group", "tenant"]],
+            ["state", "absent", ["source_group"]],
+            ["state", "present", ["source_group", "destination_group"]],
         ],
-        required_together=[("src_ap", "src_epg")],
     )
 
     aci = ACIModule(module)
 
+    source_group = module.params.get("source_group")
     description = module.params.get("description")
-    direction = module.params.get("direction")
-    name = module.params.get("name")
-    src_ap = module.params.get("src_ap")
-    src_epg = module.params.get("src_epg")
-    src_group = module.params.get("src_group")
+    admin_state = aci.boolean(module.params.get("admin_state"), "enabled", "disabled")
+    filter_group = module.params.get("filter_group")
+    destination_group = module.params.get("destination_group")
     state = module.params.get("state")
-    tenant = module.params.get("tenant")
+    name_alias = module.params.get("name_alias")
 
     aci.construct_url(
         root_class=dict(
-            aci_class="fvTenant",
-            aci_rn="tn-{0}".format(tenant),
-            module_object=tenant,
-            target_filter={"name": tenant},
+            aci_class="infra",
+            aci_rn="infra",
         ),
         subclass_1=dict(
             aci_class="spanSrcGrp",
-            aci_rn="srcgrp-{0}".format(src_group),
-            module_object=src_group,
-            target_filter={"name": src_group},
+            aci_rn="srcgrp-{0}".format(source_group),
+            module_object=source_group,
+            target_filter={"name": source_group},
         ),
-        subclass_2=dict(
-            aci_class="spanSrc",
-            aci_rn="src-{0}".format(name),
-            module_object=name,
-            target_filter={"name": name},
-        ),
-        child_classes=["spanRsSrcToEpg"],
+        child_classes=["spanSpanLbl", "spanRsSrcGrpToFilterGrp"],
     )
 
     aci.get_existing()
 
     if state == "present":
-        tdn = None
-        if src_epg:
-            tdn = "uni/tn-{0}/ap-{1}/epg-{2}".format(tenant, src_ap, src_epg)
+        # Create new child configs payload
+        filter_group_tdn = "uni/infra/filtergrp-{0}".format(filter_group)
+        child_configs = [{"spanSpanLbl": {"attributes": {"name": destination_group}}}]
+        if filter_group:
+            child_configs.append({"spanRsSrcGrpToFilterGrp": {"attributes": {"tDn": filter_group_tdn}}})
+
+        # Validate if existing and remove child objects when do not match provided configuration
+        if isinstance(aci.existing, list) and len(aci.existing) > 0:
+            for child in aci.existing[0].get("spanSrcGrp", {}).get("children", {}):
+                if child.get("spanRsSrcGrpToFilterGrp") and child.get("spanRsSrcGrpToFilterGrp").get("attributes").get("tDn") != filter_group_tdn:
+                    # Appending to child_config list not possible because of APIC Error 103: child (Rn) of class spanRsSrcGrpToFilterGrp is already attached.
+                    # A seperate delete request to dn of the spanRsSrcGrpToFilterGrp is needed to remove the object prior to adding to child_configs.
+                    # Failed child_config is displayed in below:
+                    #
+                    # child_configs.append(
+                    #     {
+                    #         "spanRsSrcGrpToFilterGrp": {
+                    #             "attributes": {
+                    #                 "dn": "uni/infra/srcgrp-{0}/rssrcGrpToFilterGrp".format(source_group),
+                    #                 "status": "deleted",
+                    #             }
+                    #         }
+                    #     }
+                    # )
+                    aci.delete_config_request("/api/mo/uni/infra/srcgrp-{0}/rssrcGrpToFilterGrp.json".format(source_group))
+                elif child.get("spanSpanLbl") and child.get("spanSpanLbl").get("attributes").get("name") != destination_group:
+                    child_configs.append(
+                        {
+                            "spanSpanLbl": {
+                                "attributes": {
+                                    "dn": "uni/infra/srcgrp-{0}/spanlbl-{1}".format(source_group, child.get("spanSpanLbl").get("attributes").get("name")),
+                                    "status": "deleted",
+                                }
+                            }
+                        }
+                    )
 
         aci.payload(
-            aci_class="spanSrc",
-            class_config=dict(descr=description, name=name, dir=SPAN_DIRECTION_MAP.get(direction)),
-            child_configs=[{"spanRsSrcToEpg": {"attributes": {"tDn": tdn}}}],
+            aci_class="spanSrcGrp",
+            class_config=dict(adminSt=admin_state, descr=description, name=source_group, nameAlias=name_alias),
+            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class="spanSrc")
+        aci.get_diff(aci_class="spanSrcGrp")
 
         aci.post_config()
 

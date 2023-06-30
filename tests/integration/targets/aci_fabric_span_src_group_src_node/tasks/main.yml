@@ -1,0 +1,238 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Akini Ross (@akinross)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN TEST ENVIRONMENT BEFORE TESTS
+
+- name: Query all fabric span source groups ( clean before )
+  cisco.aci.aci_fabric_span_src_group:
+    <<: *aci_info
+    state: query
+  register: query_for_clean
+
+- name: Clean fabric span source groups ( clean before )
+  cisco.aci.aci_fabric_span_src_group:
+    <<: *aci_info
+    source_group: "{{ item.spanSrcGrp.attributes.name }}"
+    state: absent
+  loop: "{{ query_for_clean.current }}"
+
+- name: Query all fabric span destination groups ( clean before )
+  cisco.aci.aci_fabric_span_dst_group:
+    <<: *aci_info
+    state: query
+  register: query_for_clean
+
+- name: Clean fabric span destination groups ( clean before )
+  cisco.aci.aci_fabric_span_dst_group:
+    <<: *aci_info
+    destination_group: "{{ item.spanDestGrp.attributes.name }}"
+    state: absent
+  loop: "{{ query_for_clean.current }}"
+
+- name: Add fabric span destination group type epg ( clean before )
+  cisco.aci.aci_fabric_span_dst_group:
+    <<: *aci_info
+    destination_group: span_dest_1
+    description: test span epg
+    destination_epg:
+      destination_ip: 10.0.0.1
+      source_ip: 10.0.2.1
+      tenant: ansible_test
+      ap: ansible_test
+      epg: ansible_test
+    state: present
+
+- name: Add fabric span source group 1 ( clean before )
+  cisco.aci.aci_fabric_span_src_group:
+    <<: *aci_info
+    source_group: span_src_group_1
+    destination_group: span_dest_1
+    state: present
+
+- name: Add fabric span source group source 1 ( clean before )
+  cisco.aci.aci_fabric_span_src_group_src:
+    <<: *aci_info
+    source_group: span_src_group_1
+    source: span_src_1
+    drop_packets: true
+    state: present
+
+- name: Add fabric span source group source 2 for error handling ( clean before )
+  cisco.aci.aci_fabric_span_src_group_src:
+    <<: *aci_info
+    source_group: span_src_group_1
+    source: span_src_2
+    drop_packets: false
+    state: present
+
+
+# TEST CREATE SOURCE NODES
+
+- name: Add fabric span source node 1 ( checkmode )
+  cisco.aci.aci_fabric_span_src_group_src_node: &span_src_node_1
+    <<: *aci_info
+    source_group: span_src_group_1
+    source: span_src_1
+    pod: 1
+    node: 101
+    state: present
+  check_mode: true
+  register: cm_span_src_node_1
+
+- name: Add fabric span source node 1
+  cisco.aci.aci_fabric_span_src_group_src_node:
+    <<: *span_src_node_1
+  register: nm_span_src_node_1
+
+- name: Add fabric span source node 1 again
+  cisco.aci.aci_fabric_span_src_group_src_node:
+    <<: *span_src_node_1
+  register: nm_span_src_node_1_again
+
+- name: Verify add fabric span source node 1
+  ansible.builtin.assert:
+    that:
+    - cm_span_src_node_1 is changed
+    - cm_span_src_node_1.previous == []
+    - cm_span_src_node_1.current == []
+    - cm_span_src_node_1.proposed.spanRsSrcToNode.attributes.dn == "uni/fabric/srcgrp-span_src_group_1/src-span_src_1/rssrcToNode-[topology/pod-1/node-101]"
+    - cm_span_src_node_1.proposed.spanRsSrcToNode.attributes.tDn == "topology/pod-1/node-101"
+    - nm_span_src_node_1 is changed
+    - nm_span_src_node_1.current.0.spanRsSrcToNode.attributes.dn == "uni/fabric/srcgrp-span_src_group_1/src-span_src_1/rssrcToNode-[topology/pod-1/node-101]"
+    - nm_span_src_node_1.current.0.spanRsSrcToNode.attributes.tDn == "topology/pod-1/node-101"
+    - nm_span_src_node_1.previous == []
+    - nm_span_src_node_1_again is not changed
+    - nm_span_src_node_1_again.previous.0.spanRsSrcToNode.attributes.dn == "uni/fabric/srcgrp-span_src_group_1/src-span_src_1/rssrcToNode-[topology/pod-1/node-101]"
+    - nm_span_src_node_1_again.previous.0.spanRsSrcToNode.attributes.tDn == "topology/pod-1/node-101"
+    - nm_span_src_node_1_again.current.0.spanRsSrcToNode.attributes.dn == "uni/fabric/srcgrp-span_src_group_1/src-span_src_1/rssrcToNode-[topology/pod-1/node-101]"
+    - nm_span_src_node_1_again.current.0.spanRsSrcToNode.attributes.tDn == "topology/pod-1/node-101"
+
+- name: Add fabric span source node 2
+  cisco.aci.aci_fabric_span_src_group_src_node:
+    <<: *aci_info
+    source_group: span_src_group_1
+    source: span_src_1
+    pod: 1
+    node: 102
+    state: present
+
+# TEST QUERY SOURCE NODES
+
+- name: Query fabric span source node 1
+  cisco.aci.aci_fabric_span_src_group_src_node:
+    <<: *span_src_node_1
+    state: query
+  register: query_one
+
+- name: Query all fabric span source nodes
+  cisco.aci.aci_fabric_span_src_group_src_node:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Verify querying fabric span sources
+  ansible.builtin.assert:
+    that:
+    - query_one is not changed
+    - query_one.current | length == 1
+    - query_one.current.0.spanRsSrcToNode.attributes.dn == "uni/fabric/srcgrp-span_src_group_1/src-span_src_1/rssrcToNode-[topology/pod-1/node-101]"
+    - query_one.current.0.spanRsSrcToNode.attributes.tDn == "topology/pod-1/node-101"
+    - query_all is not changed
+    - query_all.current | length >= 2
+
+# TEST REMOVAL SOURCE NODES
+
+- name: Remove fabric span source node 1 ( checkmode )
+  cisco.aci.aci_fabric_span_src_group_src_node: &remove_span_src_node_1
+    <<: *span_src_node_1
+    state: absent
+  check_mode: true
+  register: cm_remove_span_src_node_1
+
+- name: Remove fabric span source node 1
+  cisco.aci.aci_fabric_span_src_group_src_node:
+    <<: *remove_span_src_node_1
+  register: nm_remove_span_src_node_1
+
+- name: Remove fabric span source node 1 again
+  cisco.aci.aci_fabric_span_src_group_src_node:
+    <<: *remove_span_src_node_1
+  register: nm_remove_span_src_node_1_again
+
+- name: Verify remove fabric span source node 1
+  ansible.builtin.assert:
+    that:
+    - cm_remove_span_src_node_1 is changed
+    - cm_remove_span_src_node_1.current | length == 1
+    - cm_remove_span_src_node_1.previous | length == 1
+    - cm_remove_span_src_node_1.proposed == {}
+    - nm_remove_span_src_node_1 is changed
+    - nm_remove_span_src_node_1.current == []
+    - nm_remove_span_src_node_1.previous | length == 1
+    - nm_remove_span_src_node_1_again is not changed
+    - nm_remove_span_src_node_1_again.current == []
+    - nm_remove_span_src_node_1_again.previous == []
+
+# TEST ERROR SOURCE NODES
+
+- name: Add fabric span source node 2 (error)
+  cisco.aci.aci_fabric_span_src_group_src_node:
+    <<: *aci_info
+    source_group: span_src_group_1
+    source: span_src_2
+    pod: 1
+    node: 101
+    state: present
+  ignore_errors: true
+  register: err_drop_packets_on_src
+
+- name: Verify errors span source node 2
+  ansible.builtin.assert:
+    that:
+    - err_drop_packets_on_src.msg == "APIC Error 105{{':'}} Node span is supported only with Span on drop configuration"
+
+# CLEAN TEST ENVIRONMENT AFTER TESTS
+
+- name: Query all fabric span source groups ( clean after )
+  cisco.aci.aci_fabric_span_src_group:
+    <<: *aci_info
+    state: query
+  register: query_for_clean
+
+- name: Clean fabric span source groups ( clean after )
+  cisco.aci.aci_fabric_span_src_group:
+    <<: *aci_info
+    source_group: "{{ item.spanSrcGrp.attributes.name }}"
+    state: absent
+  loop: "{{ query_for_clean.current }}"
+
+- name: Query all fabric span destination groups ( clean after )
+  cisco.aci.aci_fabric_span_dst_group:
+    <<: *aci_info
+    state: query
+  register: query_for_clean
+
+- name: Clean fabric span destination groups ( clean after )
+  cisco.aci.aci_fabric_span_dst_group:
+    <<: *aci_info
+    destination_group: "{{ item.spanDestGrp.attributes.name }}"
+    state: absent
+  loop: "{{ query_for_clean.current }}"

@@ -39,6 +39,184 @@
     filter: anstest
   register: filter_present
 
+- name: ensure anstest_2 filter exists for tests to kick off
+  cisco.aci.aci_filter: &anstest_fileter_2_present
+    <<: *aci_tenant_present
+    filter: anstest_fileter_2
+
+- name: Create a filter entry with the match_only_fragments - enabled and dst_port values - negative test
+  cisco.aci.aci_filter_entry:
+    <<: *anstest_fileter_2_present
+    entry: nt_match_only_fragments_with_dst_port
+    ether_type: ip
+    ip_protocol: tcp
+    dst_port_start: 80
+    dst_port_end: 88
+    match_only_fragments: true
+  register: nt_match_only_fragments_with_dst_port
+  ignore_errors: true
+
+- name: Create a filter entry with the match_only_fragments - enabled
+  cisco.aci.aci_filter_entry: &match_only_fragments_enabled
+    <<: *anstest_fileter_2_present
+    entry: match_only_fragments_enabled
+    ether_type: ip
+    ip_protocol: tcp
+    match_only_fragments: true
+  register: match_only_fragments_enabled
+
+- name: Disabled the match_only_fragments of an existing filter entry - "match_only_fragments_enabled"
+  cisco.aci.aci_filter_entry:
+    <<: *match_only_fragments_enabled
+    match_only_fragments: false
+  register: match_only_fragments_disabled
+
+- name: Create a filter entry with the source_port values - negative test
+  cisco.aci.aci_filter_entry:
+    <<: *anstest_fileter_2_present
+    entry: nt_source_port
+    ether_type: ip
+    ip_protocol: tcp
+    source_port: 20
+    source_port_start: 22
+    source_port_end: 22
+  register: nt_source_port
+  ignore_errors: true
+
+- name: Create a filter entry with the only dst_port_end  - negative test
+  cisco.aci.aci_filter_entry:
+    <<: *anstest_fileter_2_present
+    entry: nt_dst_port_end
+    ether_type: ip
+    ip_protocol: tcp
+    dst_port_end: 20
+  register: nt_dst_port_end
+  ignore_errors: true
+
+- name: Create a filter entry with the only source_port_end  - negative test
+  cisco.aci.aci_filter_entry:
+    <<: *anstest_fileter_2_present
+    entry: nt_source_port_end
+    ether_type: ip
+    ip_protocol: tcp
+    source_port_end: 20
+  register: nt_source_port_end
+  ignore_errors: true
+
+- name: Create a filter entry with the only source_port_start
+  cisco.aci.aci_filter_entry:
+    <<: *anstest_fileter_2_present
+    entry: source_port_start
+    ether_type: ip
+    ip_protocol: tcp
+    source_port_start: 20
+  register: source_port_start
+
+- name: Create a filter entry with only source_port_start, source_port_end and valid tcp_flags rules
+  cisco.aci.aci_filter_entry:
+    <<: *anstest_fileter_2_present
+    entry: source_port_values
+    ether_type: ip
+    ip_protocol: tcp
+    source_port_start: 20
+    source_port_end: 22
+    tcp_flags:
+      - acknowledgment
+      - finish
+  register: source_port_values
+
+- name: Updated source port and tcp_flags values of an existing filter entry - "source_port_values"
+  cisco.aci.aci_filter_entry:
+    <<: *anstest_fileter_2_present
+    entry: source_port_values
+    ether_type: ip
+    ip_protocol: tcp
+    source_port: 53
+    tcp_flags:
+      - acknowledgment
+  register: update_source_port_values
+
+- name: Create a filter entry with the tcp_flags - established and other tcp rules - negative test
+  cisco.aci.aci_filter_entry:
+    <<: *anstest_fileter_2_present
+    entry: nt_tcp_flags
+    ether_type: ip
+    ip_protocol: tcp
+    tcp_flags:
+      - acknowledgment
+      - established
+      - finish
+  register: nt_tcp_flags
+  ignore_errors: true
+
+- name: Create a filter entry with the tcp_flags - established
+  cisco.aci.aci_filter_entry:
+    <<: *anstest_fileter_2_present
+    entry: tcp_flags_est
+    ether_type: ip
+    ip_protocol: tcp
+    tcp_flags:
+      - established
+  register: tcp_flags_est
+
+- name: Assertion check for the filter entry - match_only_fragments, source_port and tcp_flags attributes
+  assert:
+    that:
+      - nt_match_only_fragments_with_dst_port is not changed
+      - nt_match_only_fragments_with_dst_port.msg == "Parameter 'match_only_fragments' cannot be used with 'Layer 4 Port' value"
+      - match_only_fragments_enabled is changed
+      - match_only_fragments_enabled.current.0.vzEntry.attributes.name == "match_only_fragments_enabled"
+      - match_only_fragments_enabled.current.0.vzEntry.attributes.tcpRules == match_only_fragments_enabled.current.0.vzEntry.attributes.tcpRules == ""
+      - match_only_fragments_enabled.current.0.vzEntry.attributes.applyToFrag == match_only_fragments_enabled.sent.vzEntry.attributes.applyToFrag == "yes"
+      - match_only_fragments_enabled.current.0.vzEntry.attributes.sFromPort == match_only_fragments_enabled.current.0.vzEntry.attributes.sToPort == "unspecified"
+      - match_only_fragments_enabled.current.0.vzEntry.attributes.dFromPort == match_only_fragments_enabled.current.0.vzEntry.attributes.dToPort == "unspecified"
+      - match_only_fragments_disabled is changed
+      - match_only_fragments_disabled.current.0.vzEntry.attributes.applyToFrag == match_only_fragments_disabled.sent.vzEntry.attributes.applyToFrag == "no"
+      - match_only_fragments_disabled.current.0.vzEntry.attributes.name == "match_only_fragments_enabled"
+      - match_only_fragments_disabled.current.0.vzEntry.attributes.tcpRules == ""
+      - match_only_fragments_disabled.current.0.vzEntry.attributes.sFromPort == match_only_fragments_disabled.current.0.vzEntry.attributes.sToPort == "unspecified"
+      - match_only_fragments_disabled.current.0.vzEntry.attributes.dFromPort == match_only_fragments_disabled.current.0.vzEntry.attributes.dToPort == "unspecified"
+      - nt_source_port is not changed
+      - nt_source_port.msg == "Parameter 'source_port' cannot be used with 'source_port_end' and 'source_port_start'"
+      - nt_dst_port_end is not changed
+      - nt_dst_port_end.msg == "Parameter 'dst_port_end' cannot be configured when the 'dst_port_start' is not defined"
+      - nt_source_port_end is not changed
+      - nt_source_port_end.msg == "Parameter 'source_port_end' cannot be configured when the 'source_port_start' is not defined"
+      - source_port_start is changed
+      - source_port_start.current.0.vzEntry.attributes.name == source_port_start.sent.vzEntry.attributes.name == "source_port_start"
+      - source_port_start.current.0.vzEntry.attributes.sFromPort == source_port_start.sent.vzEntry.attributes.sFromPort == "ftpData"
+      - source_port_start.current.0.vzEntry.attributes.sToPort == "ftpData"
+      - source_port_start.current.0.vzEntry.attributes.tcpRules == source_port_start.sent.vzEntry.attributes.tcpRules == ""
+      - source_port_start.current.0.vzEntry.attributes.applyToFrag == "no"
+      - source_port_start.current.0.vzEntry.attributes.arpOpc == "unspecified"
+      - source_port_start.current.0.vzEntry.attributes.etherT == "ip"
+      - source_port_start.current.0.vzEntry.attributes.prot == "tcp"
+      - source_port_values is changed
+      - source_port_values.current.0.vzEntry.attributes.name == source_port_values.sent.vzEntry.attributes.name == "source_port_values"
+      - source_port_values.current.0.vzEntry.attributes.sFromPort == source_port_values.sent.vzEntry.attributes.sFromPort == "ftpData"
+      - source_port_values.current.0.vzEntry.attributes.sToPort == source_port_values.sent.vzEntry.attributes.sToPort == "ssh"
+      - source_port_values.current.0.vzEntry.attributes.tcpRules == source_port_values.sent.vzEntry.attributes.tcpRules == "ack,fin"
+      - source_port_values.current.0.vzEntry.attributes.applyToFrag == "no"
+      - source_port_values.current.0.vzEntry.attributes.arpOpc == "unspecified"
+      - source_port_values.current.0.vzEntry.attributes.etherT == "ip"
+      - source_port_values.current.0.vzEntry.attributes.prot == "tcp"
+      - update_source_port_values is changed
+      - update_source_port_values.current.0.vzEntry.attributes.name == "source_port_values"
+      - update_source_port_values.current.0.vzEntry.attributes.applyToFrag == "no"
+      - update_source_port_values.current.0.vzEntry.attributes.arpOpc == "unspecified"
+      - update_source_port_values.current.0.vzEntry.attributes.etherT == "ip"
+      - update_source_port_values.current.0.vzEntry.attributes.prot == "tcp"
+      - update_source_port_values.current.0.vzEntry.attributes.sFromPort == update_source_port_values.sent.vzEntry.attributes.sFromPort == "dns"
+      - update_source_port_values.current.0.vzEntry.attributes.sToPort == update_source_port_values.sent.vzEntry.attributes.sToPort == "dns"
+      - update_source_port_values.current.0.vzEntry.attributes.tcpRules == update_source_port_values.sent.vzEntry.attributes.tcpRules == "ack"
+      - nt_tcp_flags is not changed
+      - nt_tcp_flags.msg == "TCP established cannot be combined with other tcp rules"
+      - tcp_flags_est is changed
+      - tcp_flags_est.current.0.vzEntry.attributes.applyToFrag == "no"
+      - tcp_flags_est.current.0.vzEntry.attributes.tcpRules == tcp_flags_est.sent.vzEntry.attributes.tcpRules == "est"
+      - tcp_flags_est.current.0.vzEntry.attributes.name == tcp_flags_est.sent.vzEntry.attributes.name == "tcp_flags_est"
+      - tcp_flags_est.current.0.vzEntry.attributes.etherT == tcp_flags_est.sent.vzEntry.attributes.etherT == "ip"
+
 - name: create filter entry - check mode works
   cisco.aci.aci_filter_entry: &aci_entry_present
     <<: *aci_filter_present
@@ -78,7 +256,7 @@
     entry: anstest2
     ether_type: arp
     arp_flag: arp_reply
-  register: entry_present_2 
+  register: entry_present_2
   when: query_cloud.current == []  # This condition will skip execution for cloud sites
 
 - name: create filter entry - test different types
