@@ -259,6 +259,7 @@ MATCH_TYPE_MAPPING = dict(
     none="None",
 )
 
+
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
