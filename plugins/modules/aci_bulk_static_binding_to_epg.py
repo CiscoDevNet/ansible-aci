@@ -503,7 +503,6 @@ def main():
     if state == "present" or state == "absent":
         for interface_config in interface_configs:
             pod_id = interface_config.get("pod_id")
-            leafs = interface_config.get("leafs")
             interface = interface_config.get("interface")
             extpaths = interface_config.get("extpaths")
 
@@ -517,24 +516,23 @@ def main():
             if interface_type in ["fex", "fex_vpc", "fex_port_channel"] and extpaths is None:
                 aci.fail_json(msg="extpaths is required when interface_type is: {0}".format(interface_type))
 
-            if leafs is not None:
-                # Process leafs, and support dash-delimited leafs
-                leafs = []
-                for leaf in interface_config.get("leafs"):
-                    # Users are likely to use integers for leaf IDs, which would raise an exception when using the join method
-                    leafs.extend(str(leaf).split("-"))
-                if len(leafs) == 1:
-                    if interface_type in ["vpc", "fex_vpc"]:
-                        aci.fail_json(msg='A interface_type of "vpc" requires 2 leafs')
-                    leafs = leafs[0]
-                elif len(leafs) == 2:
-                    if interface_type not in ["vpc", "fex_vpc"]:
-                        aci.fail_json(
-                            msg='The interface_types "switch_port", "port_channel", and "fex" do not support using multiple leafs for a single binding'
-                        )
-                    leafs = "-".join(leafs)
-                else:
-                    aci.fail_json(msg='The "leafs" parameter must not have more than 2 entries')
+            # Process leafs, and support dash-delimited leafs
+            leafs = []
+            for leaf in interface_config.get("leafs"):
+                # Users are likely to use integers for leaf IDs, which would raise an exception when using the join method
+                leafs.extend(str(leaf).split("-"))
+            if len(leafs) == 1:
+                if interface_type in ["vpc", "fex_vpc"]:
+                    aci.fail_json(msg='A interface_type of "vpc" requires 2 leafs')
+                leafs = leafs[0]
+            elif len(leafs) == 2:
+                if interface_type not in ["vpc", "fex_vpc"]:
+                    aci.fail_json(
+                        msg='The interface_types "switch_port", "port_channel", and "fex" do not support using multiple leafs for a single binding'
+                    )
+                leafs = "-".join(leafs)
+            else:
+                aci.fail_json(msg='The "leafs" parameter must not have more than 2 entries')
 
             if extpaths is not None:
                 # Process extpaths, and support dash-delimited extpaths
