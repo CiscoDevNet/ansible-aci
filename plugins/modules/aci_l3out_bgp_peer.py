@@ -540,22 +540,17 @@ def main():
                 )
             )
 
-    subclass_3 = None
-    subclass_4 = None
-    subclass_5 = None
-
-    bgp_peer_profile_dict = None
-
-    if peer_ip or state == "query":
-        bgp_peer_profile_dict = dict(
-            aci_class="bgpPeerP",
-            aci_rn="peerP-[{0}]".format(peer_ip),
-            module_object=peer_ip,
-            target_filter={"addr": peer_ip},
-        )
+    bgp_peer_profile_dict = dict(
+        aci_class="bgpPeerP",
+        aci_rn="peerP-[{0}]".format(peer_ip),
+        module_object=peer_ip,
+        target_filter={"addr": peer_ip},
+    )
 
     if interface_profile is None:
         subclass_3 = bgp_peer_profile_dict
+        subclass_4 = None
+        subclass_5 = None
     else:
         subclass_3 = dict(
             aci_class="l3extLIfP",
