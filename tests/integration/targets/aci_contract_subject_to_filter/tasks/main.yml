@@ -129,6 +129,13 @@
         state: query
       register: query_binding
 
+    - name: query binding with non_existing subject
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_subject_filter_present
+        state: query
+        subject: non_existing
+      register: query_binding_non_existing_subject
+
     - name: query assertions
       assert:
         that:
@@ -137,6 +144,7 @@
           - query_all.current.0.vzRsSubjFiltAtt is defined
           - query_binding is not changed
           - query_binding.current != []
+          - query_binding_non_existing_subject.current == [] 
 
     - name: delete subject filter binding - check mode works
       cisco.aci.aci_contract_subject_to_filter: &aci_subject_filter_absent
