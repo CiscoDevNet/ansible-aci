@@ -28,6 +28,7 @@ options:
     description:
     - Value of the property.
     type: str
+    default: ""
   tag_type:
     description:
     - Type of tag object.

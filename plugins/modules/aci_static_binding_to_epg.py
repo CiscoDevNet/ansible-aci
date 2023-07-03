@@ -48,7 +48,7 @@ options:
     description:
     - Determines the primary encapsulation ID associating the C(epg)
       with the interface path when using micro-segmentation.
-    - Accepted values are any valid encap ID for specified encap, currently ranges between C(1) and C(4096) and C(unknown.
+    - Accepted values are any valid encap ID for specified encap, currently ranges between C(1) and C(4096) and C(unknown).
     - C(unknown) is the default value and using C(unknown) disables the Micro-Segmentation.
     type: str
     aliases: [ primary_vlan, primary_vlan_id ]
