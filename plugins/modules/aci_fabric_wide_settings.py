@@ -57,10 +57,11 @@ options:
     - Whether to enable SSL Opflex transport for leaf switches.
     - The APIC defaults to C(true) when unset during creation.
     type: bool
-  ssl_opflex_version:
+  opflex_ssl_versions:
     description:
     - Which versions of TLS to enable for Opflex.
     - When setting any of the TLS versions, you must explicitly set the state for all of them.
+    type: dict
     suboptions:
       tls_10:
         description:
@@ -77,7 +78,6 @@ options:
         - Whether to enable TLSv1.2 for Opflex.
         type: bool
         required: true
-    type: dict
   reallocate_gipo:
     description:
     - Whether to reallocate some non-stretched BD gipos to make room for stretched BDs.
@@ -125,7 +125,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    ssl_opflex_versions:
+    opflex_ssl_versions:
       tls_10: false
       tls_11: false
       tls_12: true
@@ -252,13 +252,15 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
-def main():
-    tls_version_spec = dict(
+def tls_version_spec():
+    return dict(
         tls_10=dict(type="bool", required=True),
         tls_11=dict(type="bool", required=True),
         tls_12=dict(type="bool", required=True),
     )
 
+
+def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
@@ -271,7 +273,7 @@ def main():
         leaf_opflex_client_auth=dict(type="bool"),
         spine_ssl_opflex=dict(type="bool"),
         leaf_ssl_opflex=dict(type="bool"),
-        opflex_ssl_versions=dict(type="list", elements="dict", options=tls_version_spec),
+        opflex_ssl_versions=dict(type="dict", options=tls_version_spec()),
         reallocate_gipo=dict(type="bool"),
         restrict_infra_vlan_traffic=dict(type="bool"),
         state=dict(type="str", default="present", choices=["present", "query"]),
@@ -321,11 +323,11 @@ def main():
         )
         if opflex_ssl_versions is not None:
             opflex_tls = []
-            if opflex_ssl_versions.get("tls_10") == "yes":
+            if opflex_ssl_versions.get("tls_10"):
                 opflex_tls.append("TLSv1")
-            if opflex_ssl_versions.get("tls_11") == "yes":
+            if opflex_ssl_versions.get("tls_11"):
                 opflex_tls.append("TLSv1.1")
-            if opflex_ssl_versions.get("tls_12") == "yes":
+            if opflex_ssl_versions.get("tls_12"):
                 opflex_tls.append("TLSv1.2")
             class_config["opflexpSslProtocols"] = ",".join(opflex_tls)
 
