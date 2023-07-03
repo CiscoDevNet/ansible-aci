@@ -46,7 +46,6 @@
     facility: local1
     syslog_port: 5678
     description: ansible syslog remote destination
-    mgmt_epg: oob-default
     format: aci
     admin_state: enabled
     severity: warnings
@@ -66,11 +65,7 @@
     - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.adminState == "enabled"
     - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.severity == "warnings"
     - add_syslog_remote_dest.current.0.syslogRemoteDest.attributes.annotation == 'orchestrator:ansible'
-
-- name: Verify that ansible_syslog_remote_dest children have correct attributes
-  assert:
-    that:
-    - add_syslog_remote_dest.current.0.syslogRemoteDest.children.0.fileRsARemoteHostToEpg.attributes.tDn == "uni/tn-mgmt/mgmtp-default/oob-default"
+    - '"children" not in add_syslog_remote_dest.current.0.syslogRemoteDest'
 
 # ADD syslog remote dest again to check idempotency
 - name: Add syslog remote dest
@@ -82,7 +77,6 @@
     facility: local1
     syslog_port: 5678
     description: ansible syslog remote destination
-    mgmt_epg: oob-default
     format: aci
     admin_state: enabled
     severity: warnings
@@ -123,6 +117,11 @@
     - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.port == "5679"
     - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.adminState == "disabled"
     - update_syslog_remote_dest.current.0.syslogRemoteDest.attributes.severity == "information"
+
+- name: Verify that ansible_syslog_remote_dest children have correct attributes
+  assert:
+    that:
+    - update_syslog_remote_dest.current.0.syslogRemoteDest.children.0.fileRsARemoteHostToEpg.attributes.tDn == "uni/tn-mgmt/mgmtp-default/oob-default"
 
 # QUERY syslog source
 - name: Query the syslog source
