@@ -3,6 +3,22 @@
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
 - name: Verify Cloud and Non-Cloud Sites in use.
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
@@ -12,41 +28,36 @@
   # CLEAN ENVIRONMENT
   - name: Remove domain to VLAN pool binding
     cisco.aci.aci_domain_to_vlan_pool: &binding_absent
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      <<: *aci_info
       domain: phys_dom
       domain_type: phys
       pool: test_pool
       pool_allocation_mode: dynamic
       state: absent
 
-  - name: Remove physical domain
+  - name: Remove domains
     cisco.aci.aci_domain:
-      host: "{{ aci_hostname }}"
-      username: "{{ aci_username }}"
-      password: "{{ aci_password }}"
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
-      domain: phys_dom
-      domain_type: phys
+      <<: *aci_info
+      domain: "{{ item.domain }}"
+      domain_type: "{{ item.domain_type }}"
+      state: absent
+    loop:
+    - {domain: phys_dom, domain_type: phys}
+    - {domain: fc_dom, domain_type: fc}
+    - {domain: l2dom_dom, domain_type: l2dom}
+    - {domain: l3dom_dom, domain_type: l3dom}
+  
+  - name: Remove VMM domain
+    cisco.aci.aci_domain:
+      <<: *aci_info
+      domain: anstest
+      domain_type: vmm
+      vm_provider: vmware
       state: absent
 
   - name: Create VLAN pool
     cisco.aci.aci_vlan_pool:
-      host: "{{ aci_hostname }}"
-      username: "{{ aci_username }}"
-      password: "{{ aci_password }}"
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      <<: *aci_info
       pool: test_pool
       pool_allocation_mode: dynamic
       description: Test VLAN pool
@@ -56,13 +67,7 @@
   # ADD BINDING
   - name: Add domain to VLAN pool binding (check_mode)
     cisco.aci.aci_domain_to_vlan_pool: &binding_present
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      <<: *aci_info
       domain: phys_dom
       domain_type: phys
       pool: test_pool
@@ -105,17 +110,67 @@
       - cm_add_binding_again is not changed
       - nm_add_binding_again is not changed
 
+  - name: Add domain to VLAN pool binding with domain type not vmm and with vm provider (error)
+    cisco.aci.aci_domain_to_vlan_pool:
+      <<: *binding_present
+      domain: phys_dom
+      domain_type: phys
+      vm_provider: vmware
+    ignore_errors: true
+    register: err_not_vmm_with_vm_provider
+
+  - name: Add domain to VLAN pool binding with domain type fc
+    cisco.aci.aci_domain_to_vlan_pool:
+      <<: *binding_present
+      domain: fc_dom
+      domain_type: fc
+      pool_allocation_mode: static
+    register: nm_fc_type
+
+  - name: Add domain to VLAN pool binding with domain type l2dom
+    cisco.aci.aci_domain_to_vlan_pool:
+      <<: *binding_present
+      domain: l2dom_dom
+      domain_type: l2dom
+    register: nm_l2dom_type
+
+  - name: Add domain to VLAN pool binding with domain type l3dom
+    cisco.aci.aci_domain_to_vlan_pool:
+      <<: *binding_present
+      domain: l3dom_dom
+      domain_type: l3dom
+    register: nm_l3dom_type
+
+  - name: Add domain to VLAN pool binding with domain type vmm
+    cisco.aci.aci_domain_to_vlan_pool:
+      <<: *binding_present
+      domain: anstest
+      domain_type: vmm
+      vm_provider: vmware
+    register: nm_vmm_type
+
+  - name: Verify bindings with domain types
+    assert:
+      that:
+      - err_not_vmm_with_vm_provider is not changed
+      - err_not_vmm_with_vm_provider.msg == "Domain type 'phys' cannot have a 'vm_provider'"
+      - nm_fc_type is changed
+      - nm_fc_type.current.0.fcDomP.attributes.dn == "uni/fc-fc_dom"
+      - nm_fc_type.current.0.fcDomP.children.0.infraRsVlanNs.attributes.tDn == "uni/infra/vlanns-[test_pool]-static"
+      - nm_l2dom_type is changed
+      - nm_l2dom_type.current.0.l2extDomP.attributes.dn == "uni/l2dom-l2dom_dom"
+      - nm_l2dom_type.current.0.l2extDomP.children.0.infraRsVlanNs.attributes.tDn == "uni/infra/vlanns-[test_pool]-dynamic"
+      - nm_l3dom_type is changed
+      - nm_l3dom_type.current.0.l3extDomP.attributes.dn == "uni/l3dom-l3dom_dom"
+      - nm_l3dom_type.current.0.l3extDomP.children.0.infraRsVlanNs.attributes.tDn == "uni/infra/vlanns-[test_pool]-dynamic"
+      - nm_vmm_type is changed
+      - nm_vmm_type.current.0.vmmDomP.attributes.dn == "uni/vmmp-VMware/dom-anstest"
+      - nm_vmm_type.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == "uni/infra/vlanns-[test_pool]-dynamic"
 
   # QUERY ALL BINDINGS
   - name: Query all domain to VLAN pool bindings (check_mode)
     cisco.aci.aci_domain_to_vlan_pool: &binding_query
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      <<: *aci_info
       domain_type: phys
       pool_allocation_mode: dynamic
       state: query

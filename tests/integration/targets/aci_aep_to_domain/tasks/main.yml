@@ -147,7 +147,7 @@
       vm_provider: vmware
     register: nm_vmm_type
 
-  - name: Verify query_all_bindings
+  - name: Verify bindings with domain types
     assert:
       that:
       - err_not_vmm_with_vm_provider is not changed

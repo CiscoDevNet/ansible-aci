@@ -311,7 +311,7 @@ def main():
         domain_class = "physDomP"
         domain_mo = "uni/phys-{0}".format(domain)
         domain_rn = "phys-{0}".format(domain)
-    elif domain_type == "vmm":
+    else:
         domain_class = "vmmDomP"
         domain_mo = "uni/vmmp-{0}/dom-{1}".format(VM_PROVIDER_MAPPING[vm_provider], domain)
         domain_rn = "vmmp-{0}/dom-{1}".format(VM_PROVIDER_MAPPING[vm_provider], domain)
