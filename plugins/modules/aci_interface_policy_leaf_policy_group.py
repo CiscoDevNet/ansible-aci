@@ -407,7 +407,7 @@ def main():
         )
         # Reset for target_filter
         lag_type = None
-    elif lag_type in ("link", "node"):
+    else:
         aci_class_name = "infraAccBndlGrp"
         dn_name = "accbundle"
         class_config_dict = dict(
