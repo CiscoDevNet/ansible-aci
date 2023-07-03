@@ -34,16 +34,16 @@
   block:  # block specifies execution of tasks within, based on conditions
   - name: ensure tenant exists for tests to kick off
     cisco.aci.aci_tenant: &aci_tenant_present
-      host: "{{ aci_hostname }}"
-      username: "{{ aci_username }}"
-      password: "{{ aci_password }}"
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
-      state: present
+      <<: *aci_info
       tenant: ansible_test
     register: tenant_present
+
+  - name: Query system information
+    cisco.aci.aci_system:
+      <<: *aci_info
+      id: 1
+      state: query
+    register: version
 
   - name: ensure bd exists for tests to kick off
     cisco.aci.aci_bd: &aci_bd_present
@@ -250,6 +250,28 @@
         - get_subnets_gateway is not changed
         - '"query-target-filter=eq(fvSubnet.ip,\"10.100.100.1/24\")" in get_subnets_gateway.filter_string'
         - '"class/fvSubnet.json" in get_subnets_gateway.url'
+
+  - name: error handling for ipv4 subnet with wrong mask
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_present
+      gateway: 10.100.100.1
+      mask: 33
+    ignore_errors: true
+    register: error_mask_ipv4
+  
+  - name: error handling for ipv6 subnet with wrong mask
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_present
+      gateway: "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+      mask: 129
+    ignore_errors: true
+    register: error_mask_ipv6
+
+  - name: asserts for mask error handling
+    assert:
+      that:
+      - error_mask_ipv4.msg == "Valid Subnet Masks are 0 to 32 for IPv4 Addresses"
+      - error_mask_ipv6.msg == "Valid Subnet Masks are 0 to 128 for IPv6 Addresses"
 
   - name: delete subnet - check mode works
     cisco.aci.aci_bd_subnet:
