@@ -216,16 +216,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
-
-VM_PROVIDER_MAPPING = dict(
-    cloudfoundry="CloudFoundry",
-    kubernetes="Kubernetes",
-    microsoft="Microsoft",
-    openshift="OpenShift",
-    openstack="OpenStack",
-    redhat="Redhat",
-    vmware="VMware",
-)
+from ansible_collections.cisco.aci.plugins.module_utils.constants import VM_PROVIDER_MAPPING
 
 
 def main():
@@ -236,7 +227,7 @@ def main():
         domain=dict(type="str", aliases=["domain_name", "domain_profile"]),  # Not required for querying all objects
         domain_type=dict(type="str", choices=["fc", "l2dom", "l3dom", "phys", "vmm"], aliases=["type"]),  # Not required for querying all objects
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        vm_provider=dict(type="str", choices=["cloudfoundry", "kubernetes", "microsoft", "openshift", "openstack", "redhat", "vmware"]),
+        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING.keys())),
     )
 
     module = AnsibleModule(

@@ -237,16 +237,8 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+from ansible_collections.cisco.aci.plugins.module_utils.constants import VM_PROVIDER_MAPPING
 
-VM_PROVIDER_MAPPING = dict(
-    cloudfoundry="CloudFoundry",
-    kubernetes="Kubernetes",
-    microsoft="Microsoft",
-    openshift="OpenShift",
-    openstack="OpenStack",
-    redhat="Redhat",
-    vmware="VMware",
-)
 
 POOL_MAPPING = dict(
     vlan=dict(
@@ -274,7 +266,7 @@ def main():
         pool=dict(type="str", aliases=["pool_name"]),  # Not required for querying all objects
         pool_allocation_mode=dict(type="str", aliases=["allocation_mode", "mode"], choices=["dynamic", "static"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        vm_provider=dict(type="str", choices=["cloudfoundry", "kubernetes", "microsoft", "openshift", "openstack", "redhat", "vmware"]),
+        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING.keys())),
     )
 
     module = AnsibleModule(
