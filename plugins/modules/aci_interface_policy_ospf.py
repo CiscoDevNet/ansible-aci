@@ -40,7 +40,7 @@ options:
     - OSPF supports broadcast and point-to-point.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
-    choices: [ bcast, p2p ]
+    choices: [ bcast, p2p, unspecified ]
   cost:
     description:
     - The OSPF cost of the interface.
@@ -71,7 +71,7 @@ options:
       interface is announced as part of the routing network.
     type: list
     elements: str
-    choices: [ advert-subnet, bfd, mtu-ignore, passive ]
+    choices: [ advert-subnet, bfd, mtu-ignore, passive, unspecified ]
   dead_interval:
     description:
     - The interval between hello packets from a neighbor before the router
@@ -95,7 +95,8 @@ options:
     description:
     - Whether prefix suppressions is enabled or disabled.
     - The APIC defaults to C(inherit) when unset during creation.
-    type: bool
+    type: str
+    choices: [ inherit, enable, disable ]
   priority:
     description:
     - The priority for the OSPF interface profile.
@@ -302,12 +303,12 @@ def main():
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         ospf=dict(type="str", aliases=["ospf_interface", "name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
-        network_type=dict(type="str", choices=["bcast", "p2p"]),
+        network_type=dict(type="str", choices=["bcast", "p2p", "unspecified"]),
         cost=dict(type="int"),
-        controls=dict(type="list", elements="str", choices=["advert-subnet", "bfd", "mtu-ignore", "passive"]),
+        controls=dict(type="list", elements="str", choices=["advert-subnet", "bfd", "mtu-ignore", "passive", "unspecified"]),
         dead_interval=dict(type="int"),
         hello_interval=dict(type="int"),
-        prefix_suppression=dict(type="bool"),
+        prefix_suppression=dict(type="str", choices=["inherit", "enable", "disable"]),
         priority=dict(type="int"),
         retransmit_interval=dict(type="int"),
         transmit_delay=dict(type="int"),
@@ -330,11 +331,9 @@ def main():
     ospf = module.params.get("ospf")
     description = module.params.get("description")
     name_alias = module.params.get("name_alias")
-
-    if module.params.get("controls") is None:
-        controls = None
-    else:
-        controls = ",".join(module.params.get("controls"))
+    network_type = module.params.get("network_type")
+    prefix_suppression = module.params.get("prefix_suppression")
+    controls = ",".join(module.params.get("controls")) if module.params.get("controls") else None
 
     cost = module.params.get("cost")
     if cost is not None and cost not in range(1, 451):
@@ -348,8 +347,6 @@ def main():
     if hello_interval is not None and hello_interval not in range(1, 65536):
         module.fail_json(msg="Parameter 'hello_interval' is only valid in range between 1 and 65536.")
 
-    network_type = module.params.get("network_type")
-    prefix_suppression = aci.boolean(module.params.get("prefix_suppression"), "enabled", "disabled")
     priority = module.params.get("priority")
     if priority is not None and priority not in range(0, 256):
         module.fail_json(msg="Parameter 'priority' is only valid in range between 1 and 255.")
