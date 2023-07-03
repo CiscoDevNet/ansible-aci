@@ -25,6 +25,7 @@ options:
   include:
     description:
     - List of message types to include
+    - The APIC defaults to C(faults) when unset during creation.
     type: list
     elements: str
     choices: [ audit, events, faults, session ]
