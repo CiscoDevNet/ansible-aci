@@ -52,7 +52,6 @@ options:
     - OSPF authentication key.
     - When using C(ospf_auth_key) this module will always show as C(changed) as the module cannot know what the currently configured key is.
     type: str
-    default: ""
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.

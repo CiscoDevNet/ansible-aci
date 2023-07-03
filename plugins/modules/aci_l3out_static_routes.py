@@ -61,9 +61,9 @@ options:
   bfd:
     description:
     - Determines if bfd is required for route control.
-    - The APIC defaults to C(None) when unset during creation.
+    - The APIC defaults to C(unspecified) when unset during creation.
     type: str
-    choices: [ bfd, None ]
+    choices: [ bfd, unspecified ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -264,7 +264,7 @@ def main():
         prefix=dict(type="str", aliases=["route"]),
         track_policy=dict(type="str"),
         preference=dict(type="int"),
-        bfd=dict(type="str", choices=["bfd", None]),
+        bfd=dict(type="str", choices=["bfd", "unspecified"]),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -350,7 +350,7 @@ def main():
             tDn = "uni/tn-{0}/tracklist-{1}".format(tenant, track_policy)
             child_configs.append({"ipRsRouteTrack": {"attributes": {"tDn": tDn}}})
 
-        aci.payload(aci_class="ipRouteP", class_config=class_config, child_configs=child_configs),
+        aci.payload(aci_class="ipRouteP", class_config=class_config, child_configs=child_configs)
 
         aci.get_diff(aci_class="ipRouteP")
 

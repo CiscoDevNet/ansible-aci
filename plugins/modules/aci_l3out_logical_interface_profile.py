@@ -40,14 +40,17 @@ options:
     description:
     - Name of the neighbor discovery interface policy.
     type: str
+    default: ""
   egress_dpp_policy:
     description:
     - Name of the egress data plane policing policy.
     type: str
+    default: ""
   ingress_dpp_policy:
     description:
     - Name of the ingress data plane policing policy.
     type: str
+    default: ""
   description:
     description:
     - The description for the logical interface profile.
