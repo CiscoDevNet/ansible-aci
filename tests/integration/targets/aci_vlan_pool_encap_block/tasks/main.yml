@@ -215,6 +215,7 @@
     cisco.aci.aci_vlan_pool_encap_block: &aci_encap_block_query_filter
       <<: *aci_encap_block_query
       pool: "{{ fake_var | default(omit) }}"
+      pool_allocation_mode: "{{ fake_var | default(omit) }}"
     register: encap_block_query_from_to_name
 
   - name: Query assertions
@@ -313,6 +314,7 @@
       <<: *aci_pool_present
       state: query
       pool: "{{ fake_var | default(omit) }}"
+      pool_allocation_mode: "{{ fake_var | default(omit) }}"
     register: encap_block_query_all
 
   - name: Query assertions
