@@ -8,47 +8,33 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
 
 # CLEAN ENVIRONMENT
 - name: Ensure tenant exists for tests to kick off
   cisco.aci.aci_tenant: &aci_tenant_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
+    <<: *aci_info
     tenant: ansible_test
-    state: present
-  register: tenant_present
 
 - name: Remove OSPF interface policy
   cisco.aci.aci_interface_policy_ospf: &interface_policy_ospf_absent
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
-    tenant: ansible_test
+    <<: *aci_tenant_present
     ospf: ansible_ospf
     state: absent
-
 
 # ADD OSPF INTERFACE POLICY
 - name: Add ospf interface policy (check_mode)
   cisco.aci.aci_interface_policy_ospf: &interface_policy_ospf_present
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
-    tenant: ansible_test
-    ospf: ansible_ospf
+    <<: *interface_policy_ospf_absent
     state: present
   check_mode: true
   register: cm_add_ospf_interface_policy
@@ -70,47 +56,220 @@
   assert:
     that:
     - cm_add_ospf_interface_policy is changed
+    - cm_add_ospf_interface_policy.current == []
+    - cm_add_ospf_interface_policy.proposed.ospfIfPol.attributes.annotation == "orchestrator:ansible"
+    - cm_add_ospf_interface_policy.proposed.ospfIfPol.attributes.name == "ansible_ospf"
     - nm_add_ospf_interface_policy is changed
-    - nm_add_ospf_interface_policy.current.0.ospfIfPol.attributes.annotation == 'orchestrator:ansible'
+    - cm_add_ospf_interface_policy.previous == []
+    - nm_add_ospf_interface_policy.current.0.ospfIfPol.attributes.annotation == "orchestrator:ansible"
+    - nm_add_ospf_interface_policy.current.0.ospfIfPol.attributes.descr == ""
+    - nm_add_ospf_interface_policy.current.0.ospfIfPol.attributes.name == "ansible_ospf"
+    - nm_add_ospf_interface_policy.current.0.ospfIfPol.attributes.cost == "unspecified"
+    - nm_add_ospf_interface_policy.current.0.ospfIfPol.attributes.ctrl == ""
+    - nm_add_ospf_interface_policy.current.0.ospfIfPol.attributes.deadIntvl == "40"
+    - nm_add_ospf_interface_policy.current.0.ospfIfPol.attributes.helloIntvl == "10"
+    - nm_add_ospf_interface_policy.current.0.ospfIfPol.attributes.nwT == "unspecified"
+    - nm_add_ospf_interface_policy.current.0.ospfIfPol.attributes.pfxSuppress == "inherit"
+    - nm_add_ospf_interface_policy.current.0.ospfIfPol.attributes.prio == "1"
+    - nm_add_ospf_interface_policy.current.0.ospfIfPol.attributes.rexmitIntvl == "5"
+    - nm_add_ospf_interface_policy.current.0.ospfIfPol.attributes.xmitDelay == "1"
     - cm_add_ospf_interface_policy_again is not changed
     - nm_add_ospf_interface_policy_again is not changed
-
+    - nm_add_ospf_interface_policy_again.previous.0.ospfIfPol.attributes.annotation == "orchestrator:ansible"
+    - nm_add_ospf_interface_policy_again.previous.0.ospfIfPol.attributes.descr == ""
+    - nm_add_ospf_interface_policy_again.previous.0.ospfIfPol.attributes.name == "ansible_ospf"
+    - nm_add_ospf_interface_policy_again.previous.0.ospfIfPol.attributes.cost == "unspecified"
+    - nm_add_ospf_interface_policy_again.previous.0.ospfIfPol.attributes.ctrl == ""
+    - nm_add_ospf_interface_policy_again.previous.0.ospfIfPol.attributes.deadIntvl == "40"
+    - nm_add_ospf_interface_policy_again.previous.0.ospfIfPol.attributes.helloIntvl == "10"
+    - nm_add_ospf_interface_policy_again.previous.0.ospfIfPol.attributes.nwT == "unspecified"
+    - nm_add_ospf_interface_policy_again.previous.0.ospfIfPol.attributes.pfxSuppress == "inherit"
+    - nm_add_ospf_interface_policy_again.previous.0.ospfIfPol.attributes.prio == "1"
+    - nm_add_ospf_interface_policy_again.previous.0.ospfIfPol.attributes.rexmitIntvl == "5"
+    - nm_add_ospf_interface_policy_again.previous.0.ospfIfPol.attributes.xmitDelay == "1"
+    - nm_add_ospf_interface_policy_again.current.0.ospfIfPol.attributes.annotation == "orchestrator:ansible"
+    - nm_add_ospf_interface_policy_again.current.0.ospfIfPol.attributes.descr == ""
+    - nm_add_ospf_interface_policy_again.current.0.ospfIfPol.attributes.name == "ansible_ospf"
+    - nm_add_ospf_interface_policy_again.current.0.ospfIfPol.attributes.cost == "unspecified"
+    - nm_add_ospf_interface_policy_again.current.0.ospfIfPol.attributes.ctrl == ""
+    - nm_add_ospf_interface_policy_again.current.0.ospfIfPol.attributes.deadIntvl == "40"
+    - nm_add_ospf_interface_policy_again.current.0.ospfIfPol.attributes.helloIntvl == "10"
+    - nm_add_ospf_interface_policy_again.current.0.ospfIfPol.attributes.nwT == "unspecified"
+    - nm_add_ospf_interface_policy_again.current.0.ospfIfPol.attributes.pfxSuppress == "inherit"
+    - nm_add_ospf_interface_policy_again.current.0.ospfIfPol.attributes.prio == "1"
+    - nm_add_ospf_interface_policy_again.current.0.ospfIfPol.attributes.rexmitIntvl == "5"
+    - nm_add_ospf_interface_policy_again.current.0.ospfIfPol.attributes.xmitDelay == "1"
 
 # CHANGE OSPF INTERFACE POLICY
 - name: Change description of ospf interface policy (check_mode)
-  cisco.aci.aci_interface_policy_ospf:
+  cisco.aci.aci_interface_policy_ospf: &change_osp_interface_policy
     <<: *interface_policy_ospf_present
-    description: Ansible test ospf interface policy
+    description: Ansible test ospf interface policy changed
+    network_type: bcast
+    cost: 11
+    controls: mtu-ignore
+    dead_interval: 12
+    hello_interval: 13
+    prefix_suppression: disable
+    priority: 14
+    retransmit_interval: 15
+    transmit_delay: 16
   check_mode: true
   register: cm_add_ospf_descr
 
 - name: Change description of ospf interface policy (normal mode)
   cisco.aci.aci_interface_policy_ospf:
-    <<: *interface_policy_ospf_present
-    description: Ansible test ospf interface policy
+    <<: *change_osp_interface_policy
   register: nm_add_ospf_descr
 
 - name: Change description of ospf interface policy again (check_mode)
   cisco.aci.aci_interface_policy_ospf:
-    <<: *interface_policy_ospf_present
-    description: Ansible test ospf interface policy
+    <<: *change_osp_interface_policy
   check_mode: true
   register: cm_add_ospf_descr_again
 
 - name: Change description of ospf interface policy again (normal mode)
   cisco.aci.aci_interface_policy_ospf:
-    <<: *interface_policy_ospf_present
-    description: Ansible test ospf interface policy
+    <<: *change_osp_interface_policy
   register: nm_add_ospf_descr_again
 
 - name: Verify add_ospf_descr
   assert:
     that:
     - cm_add_ospf_descr is changed
+    - cm_add_ospf_descr.previous.0.ospfIfPol.attributes.annotation == "orchestrator:ansible"
+    - cm_add_ospf_descr.previous.0.ospfIfPol.attributes.descr == ""
+    - cm_add_ospf_descr.previous.0.ospfIfPol.attributes.name == "ansible_ospf"
+    - cm_add_ospf_descr.previous.0.ospfIfPol.attributes.cost == "unspecified"
+    - cm_add_ospf_descr.previous.0.ospfIfPol.attributes.ctrl == ""
+    - cm_add_ospf_descr.previous.0.ospfIfPol.attributes.deadIntvl == "40"
+    - cm_add_ospf_descr.previous.0.ospfIfPol.attributes.helloIntvl == "10"
+    - cm_add_ospf_descr.previous.0.ospfIfPol.attributes.nwT == "unspecified"
+    - cm_add_ospf_descr.previous.0.ospfIfPol.attributes.pfxSuppress == "inherit"
+    - cm_add_ospf_descr.previous.0.ospfIfPol.attributes.prio == "1"
+    - cm_add_ospf_descr.previous.0.ospfIfPol.attributes.rexmitIntvl == "5"
+    - cm_add_ospf_descr.previous.0.ospfIfPol.attributes.xmitDelay == "1"
+    - cm_add_ospf_descr.proposed.ospfIfPol.attributes.annotation == "orchestrator:ansible"
+    - cm_add_ospf_descr.proposed.ospfIfPol.attributes.descr == "Ansible test ospf interface policy changed"
+    - cm_add_ospf_descr.proposed.ospfIfPol.attributes.name == "ansible_ospf"
+    - cm_add_ospf_descr.proposed.ospfIfPol.attributes.cost == "11"
+    - cm_add_ospf_descr.proposed.ospfIfPol.attributes.ctrl == "mtu-ignore"
+    - cm_add_ospf_descr.proposed.ospfIfPol.attributes.deadIntvl == "12"
+    - cm_add_ospf_descr.proposed.ospfIfPol.attributes.helloIntvl == "13"
+    - cm_add_ospf_descr.proposed.ospfIfPol.attributes.nwT == "bcast"
+    - cm_add_ospf_descr.proposed.ospfIfPol.attributes.pfxSuppress == "disable"
+    - cm_add_ospf_descr.proposed.ospfIfPol.attributes.prio == "14"
+    - cm_add_ospf_descr.proposed.ospfIfPol.attributes.rexmitIntvl == "15"
+    - cm_add_ospf_descr.proposed.ospfIfPol.attributes.xmitDelay == "16"
     - nm_add_ospf_descr is changed
+    - nm_add_ospf_descr.previous.0.ospfIfPol.attributes.annotation == "orchestrator:ansible"
+    - nm_add_ospf_descr.previous.0.ospfIfPol.attributes.descr == ""
+    - nm_add_ospf_descr.previous.0.ospfIfPol.attributes.name == "ansible_ospf"
+    - nm_add_ospf_descr.previous.0.ospfIfPol.attributes.cost == "unspecified"
+    - nm_add_ospf_descr.previous.0.ospfIfPol.attributes.ctrl == ""
+    - nm_add_ospf_descr.previous.0.ospfIfPol.attributes.deadIntvl == "40"
+    - nm_add_ospf_descr.previous.0.ospfIfPol.attributes.helloIntvl == "10"
+    - nm_add_ospf_descr.previous.0.ospfIfPol.attributes.nwT == "unspecified"
+    - nm_add_ospf_descr.previous.0.ospfIfPol.attributes.pfxSuppress == "inherit"
+    - nm_add_ospf_descr.previous.0.ospfIfPol.attributes.prio == "1"
+    - nm_add_ospf_descr.previous.0.ospfIfPol.attributes.rexmitIntvl == "5"
+    - nm_add_ospf_descr.previous.0.ospfIfPol.attributes.xmitDelay == "1"
+    - nm_add_ospf_descr.current.0.ospfIfPol.attributes.annotation == "orchestrator:ansible"
+    - nm_add_ospf_descr.current.0.ospfIfPol.attributes.descr == "Ansible test ospf interface policy changed"
+    - nm_add_ospf_descr.current.0.ospfIfPol.attributes.name == "ansible_ospf"
+    - nm_add_ospf_descr.current.0.ospfIfPol.attributes.cost == "11"
+    - nm_add_ospf_descr.current.0.ospfIfPol.attributes.ctrl == "mtu-ignore"
+    - nm_add_ospf_descr.current.0.ospfIfPol.attributes.deadIntvl == "12"
+    - nm_add_ospf_descr.current.0.ospfIfPol.attributes.helloIntvl == "13"
+    - nm_add_ospf_descr.current.0.ospfIfPol.attributes.nwT == "bcast"
+    - nm_add_ospf_descr.current.0.ospfIfPol.attributes.pfxSuppress == "disable"
+    - nm_add_ospf_descr.current.0.ospfIfPol.attributes.prio == "14"
+    - nm_add_ospf_descr.current.0.ospfIfPol.attributes.rexmitIntvl == "15"
+    - nm_add_ospf_descr.current.0.ospfIfPol.attributes.xmitDelay == "16"
     - cm_add_ospf_descr_again is not changed
     - nm_add_ospf_descr_again is not changed
+    - nm_add_ospf_descr_again.previous.0.ospfIfPol.attributes.annotation == "orchestrator:ansible"
+    - nm_add_ospf_descr_again.previous.0.ospfIfPol.attributes.descr == "Ansible test ospf interface policy changed"
+    - nm_add_ospf_descr_again.previous.0.ospfIfPol.attributes.name == "ansible_ospf"
+    - nm_add_ospf_descr_again.previous.0.ospfIfPol.attributes.cost == "11"
+    - nm_add_ospf_descr_again.previous.0.ospfIfPol.attributes.ctrl == "mtu-ignore"
+    - nm_add_ospf_descr_again.previous.0.ospfIfPol.attributes.deadIntvl == "12"
+    - nm_add_ospf_descr_again.previous.0.ospfIfPol.attributes.helloIntvl == "13"
+    - nm_add_ospf_descr_again.previous.0.ospfIfPol.attributes.nwT == "bcast"
+    - nm_add_ospf_descr_again.previous.0.ospfIfPol.attributes.pfxSuppress == "disable"
+    - nm_add_ospf_descr_again.previous.0.ospfIfPol.attributes.prio == "14"
+    - nm_add_ospf_descr_again.previous.0.ospfIfPol.attributes.rexmitIntvl == "15"
+    - nm_add_ospf_descr_again.previous.0.ospfIfPol.attributes.xmitDelay == "16"
+    - nm_add_ospf_descr_again.current.0.ospfIfPol.attributes.annotation == "orchestrator:ansible"
+    - nm_add_ospf_descr_again.current.0.ospfIfPol.attributes.descr == "Ansible test ospf interface policy changed"
+    - nm_add_ospf_descr_again.current.0.ospfIfPol.attributes.name == "ansible_ospf"
+    - nm_add_ospf_descr_again.current.0.ospfIfPol.attributes.cost == "11"
+    - nm_add_ospf_descr_again.current.0.ospfIfPol.attributes.ctrl == "mtu-ignore"
+    - nm_add_ospf_descr_again.current.0.ospfIfPol.attributes.deadIntvl == "12"
+    - nm_add_ospf_descr_again.current.0.ospfIfPol.attributes.helloIntvl == "13"
+    - nm_add_ospf_descr_again.current.0.ospfIfPol.attributes.nwT == "bcast"
+    - nm_add_ospf_descr_again.current.0.ospfIfPol.attributes.pfxSuppress == "disable"
+    - nm_add_ospf_descr_again.current.0.ospfIfPol.attributes.prio == "14"
+    - nm_add_ospf_descr_again.current.0.ospfIfPol.attributes.rexmitIntvl == "15"
+    - nm_add_ospf_descr_again.current.0.ospfIfPol.attributes.xmitDelay == "16"
 
+- name: Change cost of ospf interface policy
+  cisco.aci.aci_interface_policy_ospf:
+    <<: *interface_policy_ospf_present
+    cost: 451
+  ignore_errors: true
+  register: err_change_ospf_cost
+
+- name: Change dead_interval of ospf interface policy
+  cisco.aci.aci_interface_policy_ospf:
+    <<: *interface_policy_ospf_present
+    dead_interval: 65539
+  ignore_errors: true
+  register: err_change_ospf_dead_interval
+
+- name: Change hello_interval of ospf interface policy
+  cisco.aci.aci_interface_policy_ospf:
+    <<: *interface_policy_ospf_present
+    hello_interval: 65538
+  ignore_errors: true
+  register: err_change_ospf_hello_interval
+
+- name: Change priority of ospf interface policy
+  cisco.aci.aci_interface_policy_ospf:
+    <<: *interface_policy_ospf_present
+    priority: 256
+  ignore_errors: true
+  register: err_change_ospf_priority
+
+- name: Change retransmit_interval of ospf interface policy
+  cisco.aci.aci_interface_policy_ospf:
+    <<: *interface_policy_ospf_present
+    retransmit_interval: 65537
+  ignore_errors: true
+  register: err_change_ospf_retransmit_interval
+
+- name: Change transmit_delay of ospf interface policy
+  cisco.aci.aci_interface_policy_ospf:
+    <<: *interface_policy_ospf_present
+    transmit_delay: 451
+  ignore_errors: true
+  register: err_change_ospf_transmit_delay
+
+- name: Verify cost change and error input values
+  assert:
+    that:
+    - err_change_ospf_cost is not changed
+    - err_change_ospf_cost.msg == "Parameter 'cost' is only valid in range between 1 and 450."
+    - err_change_ospf_dead_interval is not changed
+    - err_change_ospf_dead_interval.msg == "Parameter 'dead_interval' is only valid in range between 1 and 65536."
+    - err_change_ospf_hello_interval is not changed
+    - err_change_ospf_hello_interval.msg == "Parameter 'hello_interval' is only valid in range between 1 and 65536."
+    - err_change_ospf_priority is not changed
+    - err_change_ospf_priority.msg == "Parameter 'priority' is only valid in range between 1 and 255."
+    - err_change_ospf_retransmit_interval is not changed
+    - err_change_ospf_retransmit_interval.msg == "Parameter 'retransmit_interval' is only valid in range between 1 and 65536."
+    - err_change_ospf_transmit_delay is not changed
+    - err_change_ospf_transmit_delay.msg == "Parameter 'transmit_delay' is only valid in range between 1 and 450."
 
 # ADD OSPF INTERFACE POLICY AGAIN
 - name: Add ospf interface policy again with no description (check_mode)
