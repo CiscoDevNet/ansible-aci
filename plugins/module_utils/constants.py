@@ -31,3 +31,5 @@ SUBNET_CONTROL_MAPPING = {"nd_ra_prefix": "nd", "no_default_gateway": "no-defaul
 NODE_TYPE_MAPPING = {"tier_2": "tier-2-leaf", "remote": "remote-leaf-wan", "virtual": "virtual", "unspecified": "unspecified"}
 
 SPAN_DIRECTION_MAP = {"incoming": "in", "outgoing": "out", "both": "both"}
+
+FABRIC_POD_SELECTOR_TYPE_MAPPING = dict(all="ALL", range="range")

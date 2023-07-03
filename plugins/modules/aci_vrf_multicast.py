@@ -44,11 +44,11 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant) and C(vrf) must exist before using this module in your playbook.
+- The I(tenant) and I(vrf) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_vrf) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(fvTenant).
+  description: More information about the internal APIC class B(pim:CtxP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -95,7 +95,6 @@ EXAMPLES = r"""
     state: query
     delegate_to: localhost
     register: query_result
-
 """
 
 RETURN = r"""
@@ -246,11 +245,7 @@ def main():
             module_object=vrf,
             target_filter={"name": vrf},
         ),
-        subclass_2=dict(
-            aci_class="pimCtxP",
-            aci_rn="pimctxp",
-            target_filter={"name": ""}
-        ),
+        subclass_2=dict(aci_class="pimCtxP", aci_rn="pimctxp", target_filter={"name": ""}),
     )
 
     aci.get_existing()

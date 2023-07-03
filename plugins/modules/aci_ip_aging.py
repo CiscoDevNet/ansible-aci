@@ -18,7 +18,7 @@ description:
 options:
   admin_state:
     description:
-    - Enable IP Aging Controls on the fabric.
+    - Whether to enable IP Aging Controls on the fabric.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
     aliases: [ admin_enabled, enabled ]
@@ -36,7 +36,7 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(infra:SetPol).
+  description: More information about the internal APIC class B(ep:IpAgingP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -52,7 +52,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Enable IP Aging
+- name: Disable IP Aging
   cisco.aci.aci_ip_aging:
     host: apic
     username: admin

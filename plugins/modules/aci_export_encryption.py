@@ -24,7 +24,7 @@ options:
     type: str
   strong_encryption:
     description:
-    - Enable strong encryption.
+    - Whether to enable strong encryption.
     - The APIC defaults to C(false) when unset during creation.
     - Note that this will be set back to False when deleting an existing passphrase.
     type: bool

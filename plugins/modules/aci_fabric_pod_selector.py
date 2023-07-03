@@ -214,11 +214,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-
-SELECTOR_TYPE_MAPPING = dict(
-    all="ALL",
-    range="range",
-)
+from ansible_collections.cisco.aci.plugins.module_utils.constants import FABRIC_POD_SELECTOR_TYPE_MAPPING
 
 
 def main():
@@ -249,10 +245,7 @@ def main():
     name_alias = module.params.get("name_alias")
     pod_profile = module.params.get("pod_profile")
     name = module.params.get("name")
-    if module.params.get("selector_type") is not None:
-        selector_type = SELECTOR_TYPE_MAPPING[module.params.get("selector_type")]
-    else:
-        selector_type = None
+    selector_type = FABRIC_POD_SELECTOR_TYPE_MAPPING.get(module.params.get("selector_type"))
     policy_group = module.params.get("policy_group")
     description = module.params.get("description")
     state = module.params.get("state")

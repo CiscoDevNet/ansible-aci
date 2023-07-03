@@ -28,7 +28,7 @@ options:
     type: str
   enable_dom:
     description:
-    - Enable digital optical monitoring (DOM) for the fabric node control.
+    - Whether to enable digital optical monitoring (DOM) for the fabric node control.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
   feature_selection:
@@ -71,6 +71,15 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
+- name: Delete Fabric Node Control
+  cisco.aci.aci_fabric_node_control:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: ans_fab_node_control
+    state: absent
+  delegate_to: localhost
+
 - name: Query Fabric Node Control
   cisco.aci.aci_fabric_node_control:
     host: apic
@@ -86,15 +95,6 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     state: query
-  delegate_to: localhost
-
-- name: Delete Fabric Node Control
-  cisco.aci.aci_fabric_node_control:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    name: ans_fab_node_control
-    state: absent
   delegate_to: localhost
 """
 

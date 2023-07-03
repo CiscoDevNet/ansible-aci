@@ -18,69 +18,75 @@ description:
 options:
   disable_remote_ep_learning:
     description:
-    - Disable remote endpoint learning in VRFs containing external bridged/routed domains.
+    - Whether to disable remote endpoint learning in VRFs containing external bridged/routed domains.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
   enforce_subnet_check:
     description:
-    - Disable IP address learning on the outside of subnets configured in a VRF, for all VRFs.
+    - Whether to disable IP address learning on the outside of subnets configured in a VRF, for all VRFs.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
   enforce_epg_vlan_validation:
     description:
-    - Validation check that prevents overlapping VLAN pools from being associated to an EPG.
+    - Whether to perform a validation check that prevents overlapping VLAN pools from being associated to an EPG.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
   enforce_domain_validation:
     description:
-    - Validation check if a static path is added but no domain is associated to an EPG.
+    - Whether to perform a validation check if a static path is added but no domain is associated to an EPG.
     - Asking for domain validation is a one time operation. Once enabled, it cannot be disabled.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
   spine_opflex_client_auth:
     description:
-    - Enforce Opflex client certificate authentication on spine switches for GOLF and Linux.
+    - Whether to enforce Opflex client certificate authentication on spine switches for GOLF and Linux.
     - The APIC defaults to C(true) when unset during creation.
     type: bool
   leaf_opflex_client_auth:
     description:
-    - Enforce Opflex client certificate authentication on leaf switches for GOLF and Linux.
+    - Whether to enforce Opflex client certificate authentication on leaf switches for GOLF and Linux.
     - The APIC defaults to C(true) when unset during creation.
     type: bool
   spine_ssl_opflex:
     description:
-    - Enable SSL Opflex transport for spine switches.
+    - Whether to enable SSL Opflex transport for spine switches.
     - The APIC defaults to C(true) when unset during creation.
     type: bool
   leaf_ssl_opflex:
     description:
-    - Enable SSL Opflex transport for leaf switches.
+    - Whether to enable SSL Opflex transport for leaf switches.
     - The APIC defaults to C(true) when unset during creation.
     type: bool
-  ssl_opflex_tls_10:
+  ssl_opflex_version:
     description:
-    - Enable Opflex TLS1.0.
-    - The APIC defaults to C(false) when unset during creation.
-    type: bool
-  ssl_opflex_tls_11:
-    description:
-    - Enable Opflex TLS1.1.
-    - The APIC defaults to C(true) when unset during creation.
-    type: bool
-  ssl_opflex_tls_12:
-    description:
-    - Enable Opflex TLS1.2.
-    - The APIC defaults to C(true) when unset during creation.
-    type: bool
+    - Which versions of TLS to enable for Opflex.
+    - When setting any of the TLS versions, you must explicitly set the state for all of them.
+    suboptions:
+      tls_10:
+        description:
+        - Whether to enable TLSv1.0 for Opflex.
+        type: bool
+        required: true
+      tls_11:
+        description:
+        - Whether to enable TLSv1.1 for Opflex.
+        type: bool
+        required: true
+      tls_12:
+        description:
+        - Whether to enable TLSv1.2 for Opflex.
+        type: bool
+        required: true
+    type: dict
   reallocate_gipo:
     description:
-    - Reallocate some non-stretched BD gipos to make room for stretched BDs.
+    - Whether to reallocate some non-stretched BD gipos to make room for stretched BDs.
     - Asking for gipo reallocation is a one time operation. Once enabled, it cannot be disabled.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
   restrict_infra_vlan_traffic:
     description:
-    - Restrict infra VLAN traffic to only specified network paths. These enabled network paths are defined by infra security entry policies.
+    - Whether to restrict infra VLAN traffic to only specified network paths. These enabled network paths are defined by infra security entry policies.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
   state:
@@ -111,6 +117,18 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     disable_remote_ep_learning: true
     enforce_epg_vlan_validation: true
+    state: present
+  delegate_to: localhost
+
+- name: Update Opflex SSL versions
+  cisco.aci.aci_fabric_wide_settings:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    ssl_opflex_versions:
+      tls_10: false
+      tls_11: false
+      tls_12: true
     state: present
   delegate_to: localhost
 
@@ -235,6 +253,12 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 
 
 def main():
+    tls_version_spec = dict(
+        tls_10=dict(type="bool", required=True),
+        tls_11=dict(type="bool", required=True),
+        tls_12=dict(type="bool", required=True),
+    )
+
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
@@ -247,9 +271,7 @@ def main():
         leaf_opflex_client_auth=dict(type="bool"),
         spine_ssl_opflex=dict(type="bool"),
         leaf_ssl_opflex=dict(type="bool"),
-        ssl_opflex_tls_10=dict(type="bool"),
-        ssl_opflex_tls_11=dict(type="bool"),
-        ssl_opflex_tls_12=dict(type="bool"),
+        opflex_ssl_versions=dict(type="list", elements="dict", options=tls_version_spec),
         reallocate_gipo=dict(type="bool"),
         restrict_infra_vlan_traffic=dict(type="bool"),
         state=dict(type="str", default="present", choices=["present", "query"]),
@@ -258,7 +280,6 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_together=[["ssl_opflex_tls_10", "ssl_opflex_tls_11", "ssl_opflex_tls_12"]],
     )
 
     aci = ACIModule(module)
@@ -271,9 +292,7 @@ def main():
     leaf_opflex_client_auth = aci.boolean(module.params.get("leaf_opflex_client_auth"))
     spine_ssl_opflex = aci.boolean(module.params.get("spine_ssl_opflex"))
     leaf_ssl_opflex = aci.boolean(module.params.get("leaf_ssl_opflex"))
-    ssl_opflex_tls_10 = aci.boolean(module.params.get("ssl_opflex_tls_10"))
-    ssl_opflex_tls_11 = aci.boolean(module.params.get("ssl_opflex_tls_11"))
-    ssl_opflex_tls_12 = aci.boolean(module.params.get("ssl_opflex_tls_12"))
+    opflex_ssl_versions = module.params.get("opflex_ssl_versions")
     reallocate_gipo = aci.boolean(module.params.get("reallocate_gipo"))
     restrict_infra_vlan_traffic = aci.boolean(module.params.get("restrict_infra_vlan_traffic"))
     state = module.params.get("state")
@@ -300,13 +319,13 @@ def main():
             reallocateGipo=reallocate_gipo,
             restrictInfraVLANTraffic=restrict_infra_vlan_traffic,
         )
-        if not (ssl_opflex_tls_10 is None and ssl_opflex_tls_11 is None and ssl_opflex_tls_12 is None):
+        if opflex_ssl_versions is not None:
             opflex_tls = []
-            if ssl_opflex_tls_10 == "yes":
+            if opflex_ssl_versions.get("tls_10") == "yes":
                 opflex_tls.append("TLSv1")
-            if ssl_opflex_tls_11 == "yes":
+            if opflex_ssl_versions.get("tls_11") == "yes":
                 opflex_tls.append("TLSv1.1")
-            if ssl_opflex_tls_12 == "yes":
+            if opflex_ssl_versions.get("tls_12") == "yes":
                 opflex_tls.append("TLSv1.2")
             class_config["opflexpSslProtocols"] = ",".join(opflex_tls)
 

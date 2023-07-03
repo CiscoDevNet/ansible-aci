@@ -143,12 +143,9 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 - cisco.aci.owner
 
-notes:
-- The C(tenant) and C(vrf) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_vrf) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(fvTenant).
+  description: More information about the internal APIC class B(infra:AccNodePGrp).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -464,6 +461,9 @@ def main():
             child_configs.append({"infraRsNetflowNodePol": {"attributes": {"tnNetflowNodePolName": netflow_node_policy}}})
         if ptp_node_policy is not None and major_version >= 5 and minor_version >= 2:
             child_configs.append({"infraRsPtpInstPol": {"attributes": {"tnPtpInstPolName": ptp_node_policy}}})
+
+        if child_configs == []:
+            child_configs = None
 
         aci.payload(
             aci_class="infraAccNodePGrp",

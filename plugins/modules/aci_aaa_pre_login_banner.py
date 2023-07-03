@@ -44,13 +44,13 @@ options:
     type: str
   is_gui_message_text:
     description:
-    - Use text-based pre-login GUI banner message.
+    - Whether to use a text-based pre-login GUI banner message.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
   gui_message_proto:
     description:
     - The protocol used for the GUI message.
-    - This is only used when is_gui_message_text is C(false), and gui_message does not start with either http:// or https://
+    - This is only used when is_gui_message_text is C(false), and gui_message does not start with either I(http://) or I(https://).
     type: str
     choices: [ http, https ]
     default: https
@@ -252,7 +252,7 @@ def main():
     gui_message = module.params.get("gui_message")
     gui_message_text = module.params.get("gui_message_text")
     is_gui_message_text = aci.boolean(module.params.get("is_gui_message_text"))
-    gui_message_proto = module.params.get()
+    gui_message_proto = module.params.get("gui_message_proto")
     message = module.params.get("cli_message")
     show_banner_message = aci.boolean(module.params.get("show_banner_message"))
     switch_message = module.params.get("switch_message")

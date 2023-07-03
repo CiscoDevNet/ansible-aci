@@ -19,63 +19,69 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
 
-# STORE EXISTING IP AGING SETTINGS
-- name: Capture existing IP Aging setting
-  cisco.aci.aci_ip_aging:
-    <<: *aci_info
-    state: query
-  register: previous_settings
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Disable IP Aging
-  cisco.aci.aci_ip_aging:
-    <<: *aci_info
-    enabled: no
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
+  block:
 
-# ENABLE IP AGING
-- name: Update IP Aging (check_mode)
-  cisco.aci.aci_ip_aging:
-    <<: *aci_info
-    enabled: yes
-  check_mode: yes
-  register: cm_update_ip_aging
-
-- name: Update IP Aging
-  cisco.aci.aci_ip_aging:
-    <<: *aci_info
-    enabled: yes
-  register: nm_update_ip_aging
-
-- name: Update IP Aging Again
-  cisco.aci.aci_ip_aging:
-    <<: *aci_info
-    enabled: yes
-  register: nm_update_ip_aging_again
-
-- name: Verify Update of IP Aging
-  ansible.builtin.assert:
-    that:
-    - cm_update_ip_aging is changed
-    - nm_update_ip_aging is changed
-    - nm_update_ip_aging_again is not changed
-    - nm_update_ip_aging.current.0.epIpAgingP.attributes.adminSt == "enabled"
-    - nm_update_ip_aging_again.current.0.epIpAgingP.attributes.adminSt == "enabled"
-
-# QUERY IP AGING SETTINGS
-- name: Query IP aging Settings
-  cisco.aci.aci_ip_aging:
-    <<: *aci_info
-    state: query
-  register: query_ip_aging
-
-- name: Verify IP aging queries
-  ansible.builtin.assert:
-    that:
-    - query_ip_aging is not changed
-    - query_ip_aging.current.0.epIpAgingP.attributes.adminSt == "enabled"
-
-# RESTORE PREVIOUS IP AGING SETTINGS
-- name: Restore previous IP aging Settings
-  cisco.aci.aci_ip_aging:
-    <<: *aci_info
-    enabled: "{{ (previous_settings.current.0.epIpAgingP.attributes.adminSt == 'enabled') | ternary('yes', 'no') }}"
+  # STORE EXISTING IP AGING SETTINGS
+  - name: Capture existing IP Aging setting
+    cisco.aci.aci_ip_aging:
+      <<: *aci_info
+      state: query
+    register: previous_settings
   
+  - name: Disable IP Aging
+    cisco.aci.aci_ip_aging:
+      <<: *aci_info
+      enabled: no
+  
+  # ENABLE IP AGING
+  - name: Update IP Aging (check_mode)
+    cisco.aci.aci_ip_aging:
+      <<: *aci_info
+      enabled: yes
+    check_mode: yes
+    register: cm_update_ip_aging
+  
+  - name: Update IP Aging
+    cisco.aci.aci_ip_aging:
+      <<: *aci_info
+      enabled: yes
+    register: nm_update_ip_aging
+  
+  - name: Update IP Aging Again
+    cisco.aci.aci_ip_aging:
+      <<: *aci_info
+      enabled: yes
+    register: nm_update_ip_aging_again
+  
+  - name: Verify Update of IP Aging
+    ansible.builtin.assert:
+      that:
+      - cm_update_ip_aging is changed
+      - nm_update_ip_aging is changed
+      - nm_update_ip_aging_again is not changed
+      - nm_update_ip_aging.current.0.epIpAgingP.attributes.adminSt == "enabled"
+      - nm_update_ip_aging_again.current.0.epIpAgingP.attributes.adminSt == "enabled"
+  
+  # QUERY IP AGING SETTINGS
+  - name: Query IP aging Settings
+    cisco.aci.aci_ip_aging:
+      <<: *aci_info
+      state: query
+    register: query_ip_aging
+  
+  - name: Verify IP aging queries
+    ansible.builtin.assert:
+      that:
+      - query_ip_aging is not changed
+      - query_ip_aging.current.0.epIpAgingP.attributes.adminSt == "enabled"
+  
+  # RESTORE PREVIOUS IP AGING SETTINGS
+  - name: Restore previous IP aging Settings
+    cisco.aci.aci_ip_aging:
+      <<: *aci_info
+      enabled: "{{ (previous_settings.current.0.epIpAgingP.attributes.adminSt == 'enabled') | ternary('yes', 'no') }}"

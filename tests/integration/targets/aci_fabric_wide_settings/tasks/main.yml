@@ -74,7 +74,7 @@
       that:
       - cm_update_fab_settings_v5 is changed
       - nm_update_fab_settings_v5 is changed
-      - nm_update_fab_settings_v5_again is not changed
+      - nm_update_fab_settings_again_v5 is not changed
       - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
       - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
       - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
