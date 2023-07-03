@@ -40,10 +40,6 @@
   aci_syslog_source:
     <<: *aci_info
     name: ansible_syslog_src
-    include:
-      - audit
-      - events
-      - faults
     min_severity: errors
     destination_group: ansible_syslog_group
     state: present
@@ -54,7 +50,7 @@
     that:
     - add_syslog_src.current.0.syslogSrc.attributes.dn == "uni/fabric/moncommon/slsrc-ansible_syslog_src"
     - add_syslog_src.current.0.syslogSrc.attributes.name == "ansible_syslog_src"
-    - add_syslog_src.current.0.syslogSrc.attributes.incl == "audit,events,faults"
+    - add_syslog_src.current.0.syslogSrc.attributes.incl == "faults"
     - add_syslog_src.current.0.syslogSrc.attributes.minSev == "errors"
     - add_syslog_src.current.0.syslogSrc.attributes.annotation == 'orchestrator:ansible'
 
@@ -68,10 +64,6 @@
   aci_syslog_source:
     <<: *aci_info
     name: ansible_syslog_src
-    include:
-      - audit
-      - events
-      - faults
     min_severity: errors
     destination_group: ansible_syslog_group
     state: present
@@ -88,7 +80,9 @@
     <<: *aci_info
     name: ansible_syslog_src
     include:
-      - faults
+    - audit
+    - events
+    - faults
     min_severity: information
     destination_group: ansible_syslog_group
     state: present
@@ -99,7 +93,7 @@
     that:
     - update_syslog_src.current.0.syslogSrc.attributes.dn == "uni/fabric/moncommon/slsrc-ansible_syslog_src"
     - update_syslog_src.current.0.syslogSrc.attributes.name == "ansible_syslog_src"
-    - update_syslog_src.current.0.syslogSrc.attributes.incl == "faults"
+    - update_syslog_src.current.0.syslogSrc.attributes.incl == "audit,events,faults"
     - update_syslog_src.current.0.syslogSrc.attributes.minSev == "information"
 
 # QUERY syslog source
@@ -116,7 +110,7 @@
     - query_syslog_src is not changed
     - query_syslog_src.current.0.syslogSrc.attributes.dn == "uni/fabric/moncommon/slsrc-ansible_syslog_src"
     - query_syslog_src.current.0.syslogSrc.attributes.name == "ansible_syslog_src"
-    - query_syslog_src.current.0.syslogSrc.attributes.incl == "faults"
+    - query_syslog_src.current.0.syslogSrc.attributes.incl == "audit,events,faults"
     - query_syslog_src.current.0.syslogSrc.attributes.minSev == "information"
 
 - name: Query all syslog sources
