@@ -1,20 +1,97 @@
-- name: ensure vsan pool exists for tests to kick off
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: create vsan pool anstest
   cisco.aci.aci_encap_pool: &aci_pool_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     pool: anstest
     pool_type: vsan
-    allocation_mode: static
+    pool_allocation_mode: static
     description: Ansible Test
-    state: present
 
-- name: cleanup vsan pool
+- name: add range to vsan pool anstest (check mode)
+  cisco.aci.aci_encap_pool_range: &aci_vsan_range
+    <<: *aci_info
+    pool: anstest
+    pool_type: vsan
+    pool_allocation_mode: static
+    range_start: 20
+    range_end: 40
+    description: Ansible Test
+  check_mode: true
+  register: cm_vsan_present
+
+- name: add range to vsan pool anstest (error)
+  cisco.aci.aci_encap_pool_range:
+    <<: *aci_vsan_range
+    range_start: 4092
+    range_end: 4099
+  register: err_vsan_range
+  ignore_errors: true
+
+- name: add range to vsan pool anstest
+  cisco.aci.aci_encap_pool_range:
+    <<: *aci_vsan_range
+  register: nm_vsan_present
+
+- name: add range to vsan pool anstest again
+  cisco.aci.aci_encap_pool_range:
+    <<: *aci_vsan_range
+  register: nm_vsan_present_again
+
+- name: delete range from vsan pool anstest
+  cisco.aci.aci_encap_pool_range:
+    <<: *aci_vsan_range
+    state: absent
+  register: rm_vsan_present
+
+- name: present assertions
+  ansible.builtin.assert:
+    that:
+      - cm_vsan_present is changed
+      - cm_vsan_present.current == []
+      - cm_vsan_present.proposed.fvnsVsanEncapBlk.attributes.annotation == "orchestrator:ansible"
+      - cm_vsan_present.proposed.fvnsVsanEncapBlk.attributes.descr == "Ansible Test"
+      - cm_vsan_present.proposed.fvnsVsanEncapBlk.attributes.dn == "uni/infra/vsanns-[anstest]-static/vsanfrom-[vsan-20]-to-[vsan-40]"
+      - cm_vsan_present.proposed.fvnsVsanEncapBlk.attributes.from == "vsan-20"
+      - cm_vsan_present.proposed.fvnsVsanEncapBlk.attributes.to == "vsan-40"
+      - err_vsan_range is not changed
+      - err_vsan_range.msg == 'vsan pools must have "range_start" and "range_end" values between 1 and 4093'
+      - nm_vsan_present is changed
+      - nm_vsan_present.previous == []
+      - nm_vsan_present.current.0.fvnsVsanEncapBlk.attributes.annotation == "orchestrator:ansible"
+      - nm_vsan_present.current.0.fvnsVsanEncapBlk.attributes.descr == "Ansible Test"
+      - nm_vsan_present.current.0.fvnsVsanEncapBlk.attributes.dn == "uni/infra/vsanns-[anstest]-static/vsanfrom-[vsan-20]-to-[vsan-40]"
+      - nm_vsan_present.current.0.fvnsVsanEncapBlk.attributes.from == "vsan-20"
+      - nm_vsan_present.current.0.fvnsVsanEncapBlk.attributes.to == "vsan-40"
+      - nm_vsan_present_again is not changed
+      - nm_vsan_present_again.previous.0.fvnsVsanEncapBlk.attributes.annotation == "orchestrator:ansible"
+      - nm_vsan_present_again.previous.0.fvnsVsanEncapBlk.attributes.descr == "Ansible Test"
+      - nm_vsan_present_again.previous.0.fvnsVsanEncapBlk.attributes.dn == "uni/infra/vsanns-[anstest]-static/vsanfrom-[vsan-20]-to-[vsan-40]"
+      - nm_vsan_present_again.previous.0.fvnsVsanEncapBlk.attributes.from == "vsan-20"
+      - nm_vsan_present_again.previous.0.fvnsVsanEncapBlk.attributes.to == "vsan-40"
+      - nm_vsan_present_again.current.0.fvnsVsanEncapBlk.attributes.annotation == "orchestrator:ansible"
+      - nm_vsan_present_again.current.0.fvnsVsanEncapBlk.attributes.descr == "Ansible Test"
+      - nm_vsan_present_again.current.0.fvnsVsanEncapBlk.attributes.dn == "uni/infra/vsanns-[anstest]-static/vsanfrom-[vsan-20]-to-[vsan-40]"
+      - nm_vsan_present_again.current.0.fvnsVsanEncapBlk.attributes.from == "vsan-20"
+      - nm_vsan_present_again.current.0.fvnsVsanEncapBlk.attributes.to == "vsan-40"
+      - rm_vsan_present is changed
+      - rm_vsan_present.previous.0.fvnsVsanEncapBlk.attributes.annotation == "orchestrator:ansible"
+      - rm_vsan_present.previous.0.fvnsVsanEncapBlk.attributes.descr == "Ansible Test"
+      - rm_vsan_present.previous.0.fvnsVsanEncapBlk.attributes.dn == "uni/infra/vsanns-[anstest]-static/vsanfrom-[vsan-20]-to-[vsan-40]"
+      - rm_vsan_present.previous.0.fvnsVsanEncapBlk.attributes.from == "vsan-20"
+      - rm_vsan_present.previous.0.fvnsVsanEncapBlk.attributes.to == "vsan-40"
+      - rm_vsan_present.current == []
+
+- name: delete vsan pool anstest
   cisco.aci.aci_encap_pool:
     <<: *aci_pool_present
     state: absent
-  when: pool_present is changed

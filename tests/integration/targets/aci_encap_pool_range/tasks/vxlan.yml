@@ -1,19 +1,104 @@
-- name: ensure vxlan pool exists for tests to kick off
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: create vxlan pool anstest
   cisco.aci.aci_encap_pool: &aci_pool_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     pool: anstest
     pool_type: vxlan
     description: Ansible Test
-    state: present
 
-- name: cleanup vxlan pool
+- name: add range to vxlan pool anstest (check mode)
+  cisco.aci.aci_encap_pool_range: &aci_vxlan_range
+    <<: *aci_info
+    pool: anstest
+    pool_type: vxlan
+    range_start: 5000
+    range_end: 5010
+    description: Ansible Test
+  check_mode: true
+  register: cm_vxlan_present
+
+- name: add range to vxlan pool anstest with pool_allocation_mode (error)
+  cisco.aci.aci_encap_pool_range:
+    <<: *aci_vxlan_range
+    allocation_mode: static
+  register: err_vxlan_pool_alloc
+  ignore_errors: true
+
+- name: add range to vxlan pool anstest (error)
+  cisco.aci.aci_encap_pool_range:
+    <<: *aci_vxlan_range
+    range_start: 4092
+    range_end: 4099
+  register: err_vxlan_range
+  ignore_errors: true
+
+- name: add range to vxlan pool anstest
+  cisco.aci.aci_encap_pool_range:
+    <<: *aci_vxlan_range
+  register: nm_vxlan_present
+
+- name: add range to vxlan pool anstest again
+  cisco.aci.aci_encap_pool_range:
+    <<: *aci_vxlan_range
+  register: nm_vxlan_present_again
+
+- name: delete range from vxlan pool anstest
+  cisco.aci.aci_encap_pool_range:
+    <<: *aci_vxlan_range
+    state: absent
+  register: rm_vxlan_present
+
+- name: present assertions
+  ansible.builtin.assert:
+    that:
+      - cm_vxlan_present is changed
+      - cm_vxlan_present.current == []
+      - cm_vxlan_present.proposed.fvnsEncapBlk.attributes.annotation == "orchestrator:ansible"
+      - cm_vxlan_present.proposed.fvnsEncapBlk.attributes.descr == "Ansible Test"
+      - cm_vxlan_present.proposed.fvnsEncapBlk.attributes.dn == "uni/infra/vxlanns-anstest/from-[vxlan-5000]-to-[vxlan-5010]"
+      - cm_vxlan_present.proposed.fvnsEncapBlk.attributes.from == "vxlan-5000"
+      - cm_vxlan_present.proposed.fvnsEncapBlk.attributes.to == "vxlan-5010"
+      - err_vxlan_pool_alloc is not changed
+      - err_vxlan_pool_alloc.msg == 'vxlan pools do not support setting the "allocation_mode"; please omit this parameter for vxlan pools'
+      - err_vxlan_range is not changed
+      - err_vxlan_range.msg == 'vxlan pools must have "range_start" and "range_end" values between 5000 and 16777215'
+      - nm_vxlan_present is changed
+      - nm_vxlan_present.previous == []
+      - nm_vxlan_present.current.0.fvnsEncapBlk.attributes.annotation == "orchestrator:ansible"
+      - nm_vxlan_present.current.0.fvnsEncapBlk.attributes.descr == "Ansible Test"
+      - nm_vxlan_present.current.0.fvnsEncapBlk.attributes.dn == "uni/infra/vxlanns-anstest/from-[vxlan-5000]-to-[vxlan-5010]"
+      - nm_vxlan_present.current.0.fvnsEncapBlk.attributes.from == "vxlan-5000"
+      - nm_vxlan_present.current.0.fvnsEncapBlk.attributes.to == "vxlan-5010"
+      - nm_vxlan_present_again is not changed
+      - nm_vxlan_present_again.previous.0.fvnsEncapBlk.attributes.annotation == "orchestrator:ansible"
+      - nm_vxlan_present_again.previous.0.fvnsEncapBlk.attributes.descr == "Ansible Test"
+      - nm_vxlan_present_again.previous.0.fvnsEncapBlk.attributes.dn == "uni/infra/vxlanns-anstest/from-[vxlan-5000]-to-[vxlan-5010]"
+      - nm_vxlan_present_again.previous.0.fvnsEncapBlk.attributes.from == "vxlan-5000"
+      - nm_vxlan_present_again.previous.0.fvnsEncapBlk.attributes.to == "vxlan-5010"
+      - nm_vxlan_present_again.current.0.fvnsEncapBlk.attributes.annotation == "orchestrator:ansible"
+      - nm_vxlan_present_again.current.0.fvnsEncapBlk.attributes.descr == "Ansible Test"
+      - nm_vxlan_present_again.current.0.fvnsEncapBlk.attributes.dn == "uni/infra/vxlanns-anstest/from-[vxlan-5000]-to-[vxlan-5010]"
+      - nm_vxlan_present_again.current.0.fvnsEncapBlk.attributes.from == "vxlan-5000"
+      - nm_vxlan_present_again.current.0.fvnsEncapBlk.attributes.to == "vxlan-5010"
+      - rm_vxlan_present is changed
+      - rm_vxlan_present.previous.0.fvnsEncapBlk.attributes.annotation == "orchestrator:ansible"
+      - rm_vxlan_present.previous.0.fvnsEncapBlk.attributes.descr == "Ansible Test"
+      - rm_vxlan_present.previous.0.fvnsEncapBlk.attributes.dn == "uni/infra/vxlanns-anstest/from-[vxlan-5000]-to-[vxlan-5010]"
+      - rm_vxlan_present.previous.0.fvnsEncapBlk.attributes.from == "vxlan-5000"
+      - rm_vxlan_present.previous.0.fvnsEncapBlk.attributes.to == "vxlan-5010"
+      - rm_vxlan_present.current == []
+
+- name: delete vxlan pool anstest
   cisco.aci.aci_encap_pool:
     <<: *aci_pool_present
     state: absent
-  when: pool_present is changed

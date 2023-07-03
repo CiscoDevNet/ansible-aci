@@ -380,7 +380,7 @@ def main():
             elif pool_type == "vxlan":
                 if not 5000 <= encap_id <= 16777215:
                     module.fail_json(msg='vxlan pools must have "range_start" and "range_end" values between 5000 and 16777215')
-            elif pool_type == "vsan":
+            else:
                 if not 1 <= encap_id <= 4093:
                     module.fail_json(msg='vsan pools must have "range_start" and "range_end" values between 1 and 4093')
 
