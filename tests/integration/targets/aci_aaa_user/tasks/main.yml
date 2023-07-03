@@ -8,23 +8,14 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
-
-# CLEAN ENVIRONMENT
-- name: Remove any pre-existing user
-  cisco.aci.aci_aaa_user: &user_absent
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
-    aaa_user: ansible
+- name: Uninstall dateutil for error checking
+  ansible.builtin.pip: &dateutil
+    name: python-dateutil
     state: absent
-
+  ignore_errors: true # ignore errors to because of multiple executions for hosts at the same time
 
 # ADD USER
-- name: Add user (check_mode)
+- name: Add user without dateutil installed (error)
   cisco.aci.aci_aaa_user: &user_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
@@ -42,6 +33,36 @@
     first_name: Test
     last_name: User
     phone: 1-234-555-678
+  ignore_errors: true
+  register: err_no_python_dateutil
+
+- name: Verify add user
+  ansible.builtin.assert:
+    that:
+    - err_no_python_dateutil.msg == "dateutil required for this module"
+
+- name: Install dateutil
+  ansible.builtin.pip:
+    <<: *dateutil
+    state: present
+  ignore_errors: true # ignore errors to because of multiple executions for hosts at the same time
+
+# CLEAN ENVIRONMENT
+- name: Remove any pre-existing user
+  cisco.aci.aci_aaa_user: &user_absent
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    aaa_user: ansible
+    state: absent
+
+# ADD USER
+- name: Add user (check_mode)
+  cisco.aci.aci_aaa_user: *user_present
   check_mode: true
   register: cm_add_user
 
@@ -49,7 +70,8 @@
 - name: Add user (normal mode)
   cisco.aci.aci_aaa_user:
     <<: *user_present
-    aaa_password: 12!Ab:cD!34
+    # changed password because password strength check is triggered on the 6.0(2h) version, thus failing testcase
+    aaa_password: khsaubf@3ijsdn!!2#%nbsh
   register: nm_add_user
 
 - name: Add user again (check mode)
@@ -72,7 +94,6 @@
     - nm_add_user_again is not changed
     - nm_add_user_again.current.0.aaaUser.attributes.descr == 'Ansible test user'
 
-
 # MODIFY USER
 - name: Modify user (check_mode)
   cisco.aci.aci_aaa_user: &user_changed
@@ -92,6 +113,13 @@
   check_mode: true
   register: cm_modify_user
 
+- name: Error wrong expiration (error)
+  cisco.aci.aci_aaa_user:
+    <<: *user_changed
+    expiration: wrong_expiration
+  ignore_errors: true
+  register: err_modify_user_expiration
+
 - name: Modify user (normal mode)
   cisco.aci.aci_aaa_user: *user_changed
   register: nm_modify_user
@@ -109,6 +137,7 @@
   assert:
     that:
     - cm_modify_user is changed
+    - err_modify_user_expiration.msg == "Failed to parse date format 'wrong_expiration', Unknown string format{{":"}} wrong_expiration"
     - nm_modify_user is changed
     - nm_modify_user.current.0.aaaUser.attributes.descr == 'Ansible test user for integration tests'
     - cm_modify_user_again is not changed
