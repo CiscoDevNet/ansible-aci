@@ -8,6 +8,18 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug # required debug due to asserts done on url which are only present in debug mode
+
+
 - name: Verify Cloud and Non-Cloud Sites in use.
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
@@ -17,55 +29,43 @@
   # CLEAN ENVIRONMENT
   - name: Remove AEP to domain binding
     cisco.aci.aci_aep_to_domain: &binding_absent
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      <<: *aci_info
       aep: test_aep
       domain: phys_dom
       domain_type: phys
       state: absent
 
+  - name: Delete AEP
+    cisco.aci.aci_aep:
+      <<: *aci_info
+      aep: test_aep
+      description: Test AEP
+      state: absent
+
   - name: Create AEP
     cisco.aci.aci_aep:
-      host: "{{ aci_hostname }}"
-      username: "{{ aci_username }}"
-      password: "{{ aci_password }}"
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      <<: *aci_info
       aep: test_aep
       description: Test AEP
       state: present
 
   - name: Create physical domain
     cisco.aci.aci_domain:
-      host: "{{ aci_hostname }}"
-      username: "{{ aci_username }}"
-      password: "{{ aci_password }}"
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      <<: *aci_info
       domain: phys_dom
       domain_type: phys
       state: present
 
+  - name: Ensure vmm domain exist
+    cisco.aci.aci_rest:
+      <<: *aci_info
+      path: api/mo/uni/vmmp-VMware/dom-anstest.json
+      content: {"vmmDomP": {"attributes": {}}}
 
   # ADD BINDING
   - name: Add AEP to domain binding (check_mode)
     cisco.aci.aci_aep_to_domain: &binding_present
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      <<: *aci_info
       aep: test_aep
       domain: phys_dom
       domain_type: phys
@@ -104,17 +104,67 @@
       - cm_add_binding_again is not changed
       - nm_add_binding_again is not changed
 
+  - name: Add AEP to domain type not vmm with vm provider (error)
+    cisco.aci.aci_aep_to_domain:
+      <<: *aci_info
+      aep: test_aep
+      domain: phys_dom
+      domain_type: phys
+      vm_provider: vmware
+    ignore_errors: true
+    register: err_not_vmm_with_vm_provider
+
+  - name: Add AEP to domain with type fc
+    cisco.aci.aci_aep_to_domain:
+      <<: *aci_info
+      aep: test_aep
+      domain: fc_dom
+      domain_type: fc
+    register: nm_fc_type
+
+  - name: Add AEP to domain with type l2dom
+    cisco.aci.aci_aep_to_domain:
+      <<: *aci_info
+      aep: test_aep
+      domain: l2dom_dom
+      domain_type: l2dom
+    register: nm_l2dom_type
+
+  - name: Add AEP to domain with type l3dom
+    cisco.aci.aci_aep_to_domain:
+      <<: *aci_info
+      aep: test_aep
+      domain: l3dom_dom
+      domain_type: l3dom
+    register: nm_l3dom_type
+
+  - name: Add AEP to domain with type vmm
+    cisco.aci.aci_aep_to_domain:
+      <<: *aci_info
+      aep: test_aep
+      domain: anstest
+      domain_type: vmm
+      vm_provider: vmware
+    register: nm_vmm_type
+
+  - name: Verify query_all_bindings
+    assert:
+      that:
+      - err_not_vmm_with_vm_provider is not changed
+      - err_not_vmm_with_vm_provider.msg == "Domain type 'phys' cannot have a 'vm_provider'"
+      - nm_fc_type is changed
+      - nm_fc_type.current.0.infraRsDomP.attributes.tDn == "uni/fc-fc_dom"
+      - nm_l2dom_type is changed
+      - nm_l2dom_type.current.0.infraRsDomP.attributes.tDn == "uni/l2dom-l2dom_dom"
+      - nm_l3dom_type is changed
+      - nm_l3dom_type.current.0.infraRsDomP.attributes.tDn == "uni/l3dom-l3dom_dom"
+      - nm_vmm_type is changed
+      - nm_vmm_type.current.0.infraRsDomP.attributes.tDn == "uni/vmmp-VMware/dom-anstest"
 
   # QUERY ALL BINDINGS
   - name: Query all AEP to domain bindings (check_mode)
     cisco.aci.aci_aep_to_domain: &binding_query
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      <<: *aci_info
       state: query
     check_mode: true
     register: cm_query_all_bindings
