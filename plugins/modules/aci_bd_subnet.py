@@ -346,15 +346,10 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
 
+import re
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
-
-SUBNET_CONTROL_MAPPING = dict(
-    nd_ra="nd",
-    no_gw="no-default-gateway",
-    querier_ip="querier",
-    unspecified="",
-)
+from ansible_collections.cisco.aci.plugins.module_utils.constants import SUBNET_CONTROL_MAPPING_BD_SUBNET, IPV4_REGEX
 
 
 def main():
@@ -372,7 +367,7 @@ def main():
         route_profile=dict(type="str"),
         route_profile_l3_out=dict(type="str"),
         scope=dict(type="list", elements="str", choices=["private", "public", "shared"]),
-        subnet_control=dict(type="str", choices=["nd_ra", "no_gw", "querier_ip", "unspecified"]),
+        subnet_control=dict(type="str", choices=list(SUBNET_CONTROL_MAPPING_BD_SUBNET.keys())),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         name_alias=dict(type="str"),
@@ -397,9 +392,14 @@ def main():
     bd = module.params.get("bd")
     gateway = module.params.get("gateway")
     mask = module.params.get("mask")
-    if mask is not None and mask not in range(0, 129):
-        # TODO: split checks between IPv4 and IPv6 Addresses
-        module.fail_json(msg="Valid Subnet Masks are 0 to 32 for IPv4 Addresses and 0 to 128 for IPv6 addresses")
+
+    if mask:
+        # Assumption for simplicity of code that when a valid IPv4 address is not provided the intend is IPv6.
+        if re.search(IPV4_REGEX, gateway) and mask not in range(0, 33):
+            module.fail_json(msg="Valid Subnet Masks are 0 to 32 for IPv4 Addresses")
+        elif mask not in range(0, 129):
+            module.fail_json(msg="Valid Subnet Masks are 0 to 128 for IPv6 Addresses")
+
     if gateway is not None:
         gateway = "{0}/{1}".format(gateway, str(mask))
     subnet_name = module.params.get("subnet_name")
@@ -416,7 +416,7 @@ def main():
     state = module.params.get("state")
     subnet_control = module.params.get("subnet_control")
     if subnet_control:
-        subnet_control = SUBNET_CONTROL_MAPPING[subnet_control]
+        subnet_control = SUBNET_CONTROL_MAPPING_BD_SUBNET[subnet_control]
     name_alias = module.params.get("name_alias")
     ip_data_plane_learning = module.params.get("ip_data_plane_learning")
     aci.construct_url(
@@ -444,19 +444,23 @@ def main():
     aci.get_existing()
 
     if state == "present":
+        class_config = dict(
+            ctrl=subnet_control,
+            descr=description,
+            ip=gateway,
+            name=subnet_name,
+            preferred=preferred,
+            scope=scope,
+            virtual=enable_vip,
+            nameAlias=name_alias,
+        )
+
+        if ip_data_plane_learning:
+            class_config["ipDPLearning"] = ip_data_plane_learning
+
         aci.payload(
             aci_class="fvSubnet",
-            class_config=dict(
-                ctrl=subnet_control,
-                descr=description,
-                ip=gateway,
-                name=subnet_name,
-                preferred=preferred,
-                scope=scope,
-                virtual=enable_vip,
-                nameAlias=name_alias,
-                ipDPLearning=ip_data_plane_learning,
-            ),
+            class_config=class_config,
             child_configs=[
                 {"fvRsBDSubnetToProfile": {"attributes": {"tnL3extOutName": route_profile_l3_out, "tnRtctrlProfileName": route_profile}}},
                 {"fvRsNdPfxPol": {"attributes": {"tnNdPfxPolName": nd_prefix_policy}}},
