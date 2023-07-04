@@ -1,0 +1,161 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Akini Ross (akinross@cisco.com)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+    aci_tenant: ansible_test
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when:
+  - query_cloud.current == []
+  block:
+  
+  # CLEAN TEST ENVIRONMENT
+  
+  - name: Ensure clean tenant configuration
+    cisco.aci.aci_tenant:
+      <<: *aci_info
+      tenant: "{{ aci_tenant }}"
+      state: "{{ item }}"
+    loop:
+    - absent
+    - present
+
+  # TEST CREATE EPG MONITORING POLICY
+  
+  - name: Add epg monitoring policy 1 ( check mode )
+    cisco.aci.aci_epg_monitoring_policy: &add_epg_monitoring_policy_1
+      <<: *aci_info
+      tenant: "{{ aci_tenant }}"
+      monitoring_policy: monitoring_policy_1
+      state: present
+    check_mode: true
+    register: cm_add_epg_monitoring_policy_1
+
+  - name: Add epg monitoring policy 1
+    cisco.aci.aci_epg_monitoring_policy:
+      <<: *add_epg_monitoring_policy_1
+    register: nm_add_epg_monitoring_policy_1
+
+  - name: Add epg monitoring policy 1 again
+    cisco.aci.aci_epg_monitoring_policy:
+      <<: *add_epg_monitoring_policy_1
+    register: nm_add_epg_monitoring_policy_1_again
+
+  - name: Verify add epg monitoring policy 1
+    ansible.builtin.assert:
+      that:
+      - cm_add_epg_monitoring_policy_1 is changed
+      - cm_add_epg_monitoring_policy_1.current == []
+      - cm_add_epg_monitoring_policy_1.previous == []
+      - cm_add_epg_monitoring_policy_1.proposed.monEPGPol.attributes.name == "monitoring_policy_1"
+      - nm_add_epg_monitoring_policy_1 is changed
+      - nm_add_epg_monitoring_policy_1.previous == []
+      - nm_add_epg_monitoring_policy_1.current.0.monEPGPol.attributes.name == "monitoring_policy_1"
+      - nm_add_epg_monitoring_policy_1.current.0.monEPGPol.attributes.descr == ""
+      - nm_add_epg_monitoring_policy_1_again is not changed
+      - nm_add_epg_monitoring_policy_1_again.previous.0.monEPGPol.attributes.name == "monitoring_policy_1"
+      - nm_add_epg_monitoring_policy_1_again.previous.0.monEPGPol.attributes.descr == ""
+      - nm_add_epg_monitoring_policy_1_again.current.0.monEPGPol.attributes.name == "monitoring_policy_1"
+      - nm_add_epg_monitoring_policy_1_again.current.0.monEPGPol.attributes.descr == ""
+  
+  - name: Change epg monitoring policy 1
+    cisco.aci.aci_epg_monitoring_policy:
+      <<: *add_epg_monitoring_policy_1
+      description: "changed description"
+    register: nm_change_epg_monitoring_policy_1
+  
+  - name: Verify change epg monitoring policy 1
+    ansible.builtin.assert:
+      that:
+      - nm_change_epg_monitoring_policy_1 is changed
+      - nm_change_epg_monitoring_policy_1.previous.0.monEPGPol.attributes.name == "monitoring_policy_1"
+      - nm_change_epg_monitoring_policy_1.previous.0.monEPGPol.attributes.descr == ""
+      - nm_change_epg_monitoring_policy_1.current.0.monEPGPol.attributes.name == "monitoring_policy_1"
+      - nm_change_epg_monitoring_policy_1.current.0.monEPGPol.attributes.descr == "changed description"
+
+  - name: Add two more epg monitoring policies
+    cisco.aci.aci_epg_monitoring_policy:
+      <<: *aci_info
+      tenant: "{{ aci_tenant }}"
+      monitoring_policy: "{{ item }}"
+      state: present
+    loop:
+      - monitoring_policy_2
+      - monitoring_policy_3
+
+  # TEST QUERY EPG MONITORING POLICY
+
+  - name: Query epg monitoring policy 1
+    cisco.aci.aci_epg_monitoring_policy:
+      <<: *add_epg_monitoring_policy_1
+      state: query
+    register: query_one
+
+  - name: Query all epg monitoring policies ( class query )
+    cisco.aci.aci_epg_monitoring_policy:
+      <<: *aci_info
+      state: query
+    register: query_all
+
+  - name: Verify query epg monitoring policies
+    ansible.builtin.assert:
+      that:
+      - query_one is not changed
+      - query_one.current | length == 1
+      - query_one.current.0.monEPGPol.attributes.name == "monitoring_policy_1"
+      - query_all is not changed
+      - query_all.current | length >= 4
+      - query_all.current.0.monEPGPol.attributes.name == "default"
+      - query_all.current.1.monEPGPol.attributes.name == "monitoring_policy_1"
+      - query_all.current.2.monEPGPol.attributes.name == "monitoring_policy_2"
+      - query_all.current.3.monEPGPol.attributes.name == "monitoring_policy_3"
+  
+    # TEST REMOVAL EPG MONITORING POLICY
+
+  - name: Remove aepg monitoring policy 1 ( check mode )
+    cisco.aci.aci_epg_monitoring_policy: &remove_epg_monitoring_policy_1
+      <<: *add_epg_monitoring_policy_1
+      state: absent
+    check_mode: true
+    register: cm_remove_epg_monitoring_policy_1
+
+  - name: Remove epg monitoring policy 1
+    cisco.aci.aci_epg_monitoring_policy:
+      <<: *remove_epg_monitoring_policy_1
+    register: nm_remove_epg_monitoring_policy_1
+
+  - name: Remove epg monitoring policy 1 again
+    cisco.aci.aci_epg_monitoring_policy:
+      <<: *remove_epg_monitoring_policy_1
+    register: nm_remove_epg_monitoring_policy_1_again
+
+  - name: Verify removal epg monitoring policies
+    ansible.builtin.assert:
+      that:
+      - cm_remove_epg_monitoring_policy_1 is changed
+      - cm_remove_epg_monitoring_policy_1.proposed == {}
+      - nm_remove_epg_monitoring_policy_1 is changed
+      - nm_remove_epg_monitoring_policy_1.previous.0.monEPGPol.attributes.name == "monitoring_policy_1"
+      - nm_remove_epg_monitoring_policy_1.current == []
+      - nm_remove_epg_monitoring_policy_1_again is not changed
+      - nm_remove_epg_monitoring_policy_1_again.previous == []
+      - nm_remove_epg_monitoring_policy_1_again.current == []
