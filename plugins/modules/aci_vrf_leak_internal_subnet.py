@@ -118,9 +118,10 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     vrf: vrf_lab
     tenant: lab_tenant
+    state: absent
     leak_internal_subnet:
       - vrf: "test2"
-          tenant: "lab_tenant"
+        tenant: "lab_tenant"
     description: Ansible Test
     ip: 1.1.1.2
   delegate_to: localhost
