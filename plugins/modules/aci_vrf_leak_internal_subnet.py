@@ -121,6 +121,18 @@ EXAMPLES = r"""
     ip: 1.1.1.2
   delegate_to: localhost
 
+- name: Delete leak internal subnet
+  cisco.aci.aci_vrf_leak_internal_subnet:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    vrf: vrf_lab
+    tenant: lab_tenant
+    state: absent
+    description: Ansible Test
+    ip: 1.1.1.2
+  delegate_to: localhost
+  
 - name: Query all leak internal subnet
   cisco.aci.aci_vrf_leak_internal_subnet:
     host: apic
