@@ -132,7 +132,7 @@ EXAMPLES = r"""
     description: Ansible Test
     ip: 1.1.1.2
   delegate_to: localhost
-  
+
 - name: Query all leak internal subnet
   cisco.aci.aci_vrf_leak_internal_subnet:
     host: apic
