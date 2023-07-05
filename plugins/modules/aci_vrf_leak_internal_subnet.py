@@ -105,6 +105,8 @@ EXAMPLES = r"""
     leak_internal_subnet:
       - vrf: "test"
         tenant: "lab_tenant"
+      - vrf: "test2"
+        tenant: "lab_tenant"
     description: Ansible Test
     ip: 1.1.1.2
   delegate_to: localhost
@@ -116,7 +118,9 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     vrf: vrf_lab
     tenant: lab_tenant
-    leak_internal_subnet: "{{ fake_var | default(omit) }}"
+    leak_internal_subnet:
+      - vrf: "test2"
+          tenant: "lab_tenant"
     description: Ansible Test
     ip: 1.1.1.2
   delegate_to: localhost
