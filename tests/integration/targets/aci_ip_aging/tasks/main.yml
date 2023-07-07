@@ -36,26 +36,26 @@
   - name: Disable IP Aging
     cisco.aci.aci_ip_aging:
       <<: *aci_info
-      enabled: no
+      enabled: false
   
   # ENABLE IP AGING
   - name: Update IP Aging (check_mode)
     cisco.aci.aci_ip_aging:
       <<: *aci_info
-      enabled: yes
-    check_mode: yes
+      enabled: true
+    check_mode: true
     register: cm_update_ip_aging
   
   - name: Update IP Aging
     cisco.aci.aci_ip_aging:
       <<: *aci_info
-      enabled: yes
+      enabled: true
     register: nm_update_ip_aging
   
   - name: Update IP Aging Again
     cisco.aci.aci_ip_aging:
       <<: *aci_info
-      enabled: yes
+      enabled: true
     register: nm_update_ip_aging_again
   
   - name: Verify Update of IP Aging
@@ -84,4 +84,4 @@
   - name: Restore previous IP aging Settings
     cisco.aci.aci_ip_aging:
       <<: *aci_info
-      enabled: "{{ (previous_settings.current.0.epIpAgingP.attributes.adminSt == 'enabled') | ternary('yes', 'no') }}"
+      enabled: "{{ (previous_settings.current.0.epIpAgingP.attributes.adminSt == 'enabled') | ternary('true', 'false') }}"
