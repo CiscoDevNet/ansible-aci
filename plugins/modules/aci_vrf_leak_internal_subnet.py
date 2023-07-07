@@ -36,18 +36,13 @@ options:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
-  match_type:
-    description:
-    - Configures how matches are performed.
-    type: str
-    choices: [ all, at_least_one, at_most_one, none]
   scope:
     description:
     - Scope of the object.
     type: str
     choices: [ public, private, shared ]
     default: private
-  leak_to:
+  leak_internal_subnet:
     description:
     - The VRFs to leak the subnet routes into.
     type: list
@@ -269,13 +264,6 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
-# MATCH_TYPE_MAPPING = dict(
-#     all="All",
-#     at_least_one="AtleastOne",
-#     at_most_one="AtmostOne",
-#     none="None",
-# )
-
 
 def main():
     argument_spec = aci_argument_spec()
@@ -294,7 +282,6 @@ def main():
         ),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        #match_type=dict(type="str", choices=list(MATCH_TYPE_MAPPING.keys())),
         name_alias=dict(type="str"),
         scope=dict(type="str", default="private", choices=["public", "private", "shared"]),
         ip=dict(type="str"),
@@ -315,11 +302,9 @@ def main():
     vrf = module.params.get("vrf")
     leak_internal_subnet = module.params.get("leak_internal_subnet")
     name_alias = module.params.get("name_alias")
-    #match_type = module.params.get("match_type")
     scope = module.params.get("scope")
     ip = module.params.get("ip")
 
-    #match_type = MATCH_TYPE_MAPPING.get(match_type)
 
     aci = ACIModule(module)
     aci.construct_url(
