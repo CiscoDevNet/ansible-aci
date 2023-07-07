@@ -67,7 +67,7 @@
       tenant: ansible_test3
       vrf: test
       ip: 1.1.1.2
-      leak_internal_subnet: 
+      leak_to: 
         - vrf: "test2"
           tenant: "ansible_test3"
         - vrf: "test3"
@@ -88,7 +88,7 @@
       tenant: ansible_test3
       vrf: test
       ip: 1.1.1.2
-      leak_internal_subnet: 
+      leak_to: 
         - vrf: "test2"
           tenant: "ansible_test3"
         - vrf: "test3"
@@ -101,7 +101,7 @@
       <<: *aci_info
       tenant: ansible_test3
       vrf: test2
-      leak_internal_subnet: 
+      leak_to: 
         - vrf: "test"
           tenant: "ansible_test3"
       description: Ansible Test
@@ -148,7 +148,7 @@
       <<: *aci_info
       tenant: ansible_test3
       vrf: test2
-      leak_internal_subnet: 
+      leak_to: 
         - vrf: "test"
           tenant: "ansible_test3"
       description: Ansible Test
@@ -177,7 +177,7 @@
     cisco.aci.aci_vrf_leak_internal_subnet: 
       <<: *aci_vrf_present
       vrf: test
-      leak_internal_subnet: 
+      leak_to: 
         - vrf: "test3"
           tenant: "ansible_test3"
       ip: 1.1.1.2
@@ -187,7 +187,7 @@
     cisco.aci.aci_vrf_leak_internal_subnet: 
       <<: *aci_vrf_present
       vrf: test
-      leak_internal_subnet: 
+      leak_to: 
         - vrf: "test2"
           tenant: "ansible_test3"
       ip: 1.1.1.2

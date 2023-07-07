@@ -42,7 +42,7 @@ options:
     type: str
     choices: [ public, private, shared ]
     default: private
-  leak_internal_subnet:
+  leak_to:
     description:
     - The VRFs to leak the subnet routes into.
     type: list
@@ -97,7 +97,7 @@ EXAMPLES = r"""
     tenant: lab_tenant
     descr: Lab VRF
     state: present
-    leak_internal_subnet:
+    leak_to:
       - vrf: "test"
         tenant: "lab_tenant"
       - vrf: "test2"
@@ -114,7 +114,7 @@ EXAMPLES = r"""
     vrf: vrf_lab
     tenant: lab_tenant
     state: absent
-    leak_internal_subnet:
+    leak_to:
       - vrf: "test2"
         tenant: "lab_tenant"
     description: Ansible Test
@@ -272,7 +272,7 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         vrf=dict(type="str", aliases=["context", "name", "vrf_name"]),  # Not required for querying all objects
-        leak_internal_subnet=dict(
+        leak_to=dict(
             type="list",
             elements="dict",
             options=dict(
@@ -291,8 +291,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "vrf", "leak_internal_subnet"]],
-            ["state", "present", ["tenant", "vrf", "leak_internal_subnet"]],
+            ["state", "absent", ["tenant", "vrf", "leak_to"]],
+            ["state", "present", ["tenant", "vrf", "leak_to"]],
         ],
     )
 
@@ -300,7 +300,7 @@ def main():
     state = module.params.get("state")
     tenant = module.params.get("tenant")
     vrf = module.params.get("vrf")
-    leak_internal_subnet = module.params.get("leak_internal_subnet")
+    leak_to = module.params.get("leak_to")
     name_alias = module.params.get("name_alias")
     scope = module.params.get("scope")
     ip = module.params.get("ip")
@@ -339,7 +339,7 @@ def main():
         child_configs = []
 
         subnet_rn_list = []
-        for subnet in leak_internal_subnet:
+        for subnet in leak_to:
             subnet_rn_list.append("to-[{0}]-[{1}]".format(subnet.get("tenant"), subnet.get("vrf")))
             child_configs.append(
                 dict(
