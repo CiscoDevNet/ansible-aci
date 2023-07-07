@@ -13,13 +13,13 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_vrf_leak_internal_subnet
-short_description: Manage contexts or VRFs (fv:leakInternalSubnet)
+short_description: Manage VRF leaking of subnets (fv:leakInternalSubnet)
 description:
-- Manage leaking subnets under VRF.
+- Manage the leaking of internal subnets under the VRF.
 options:
   tenant:
     description:
-    - The name of the Tenant the VRF should belong to.
+    - The name of the Tenant the VRF belongs to.
     type: str
     aliases: [ tenant_name ]
   vrf:
@@ -29,23 +29,16 @@ options:
     aliases: [ context, name, vrf_name ]
   description:
     description:
-    - The description for the VRF.
+    - The description for the VRF Leak Internal Subnet.
     type: str
     aliases: [ descr ]
-  state:
-    description:
-    - Use C(present) or C(absent) for adding or removing.
-    - Use C(query) for listing an object or multiple objects.
-    type: str
-    choices: [ absent, present, query ]
-    default: present
   name_alias:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
   match_type:
     description:
-    - Configures match type for contracts under vzAny.
+    - Configures how matches are performed.
     type: str
     choices: [ all, at_least_one, at_most_one, none]
   scope:
@@ -54,9 +47,9 @@ options:
     type: str
     choices: [ public, private, shared ]
     default: private
-  leak_internal_subnet:
+  leak_to:
     description:
-    - The subnets being leaked to.
+    - The VRFs to leak the subnet routes into.
     type: list
     elements: dict
     suboptions:
@@ -72,8 +65,15 @@ options:
         aliases: [ vrf_name ]
   ip:
     description:
-    - The IP address.
+    - The IP address / subnet used to match routes to be leaked.
     type: str
+  state:
+    description:
+    - Use C(present) or C(absent) for adding or removing.
+    - Use C(query) for listing an object or multiple objects.
+    type: str
+    choices: [ absent, present, query ]
+    default: present
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -269,12 +269,12 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
-MATCH_TYPE_MAPPING = dict(
-    all="All",
-    at_least_one="AtleastOne",
-    at_most_one="AtmostOne",
-    none="None",
-)
+# MATCH_TYPE_MAPPING = dict(
+#     all="All",
+#     at_least_one="AtleastOne",
+#     at_most_one="AtmostOne",
+#     none="None",
+# )
 
 
 def main():
@@ -294,7 +294,7 @@ def main():
         ),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        match_type=dict(type="str", choices=list(MATCH_TYPE_MAPPING.keys())),
+        #match_type=dict(type="str", choices=list(MATCH_TYPE_MAPPING.keys())),
         name_alias=dict(type="str"),
         scope=dict(type="str", default="private", choices=["public", "private", "shared"]),
         ip=dict(type="str"),
@@ -315,11 +315,11 @@ def main():
     vrf = module.params.get("vrf")
     leak_internal_subnet = module.params.get("leak_internal_subnet")
     name_alias = module.params.get("name_alias")
-    match_type = module.params.get("match_type")
+    #match_type = module.params.get("match_type")
     scope = module.params.get("scope")
     ip = module.params.get("ip")
 
-    match_type = MATCH_TYPE_MAPPING.get(match_type)
+    #match_type = MATCH_TYPE_MAPPING.get(match_type)
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -372,7 +372,7 @@ def main():
         if isinstance(aci.existing, list) and len(aci.existing) > 0:
             for child in aci.existing[0].get("leakInternalSubnet", {}).get("children", {}):
                 child_attributes = child.get("leakTo", {}).get("attributes", {})
-                if child.get("leakTo") and "to-[{0}]-[{1}]".format(child_attributes.get("tenantName"), child_attributes.get("ctxName")) not in subnet_rn_list:
+                if child_attributes and "to-[{0}]-[{1}]".format(child_attributes.get("tenantName"), child_attributes.get("ctxName")) not in subnet_rn_list:
                     child_configs.append(
                         dict(
                             leakTo=dict(
