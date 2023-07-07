@@ -305,7 +305,6 @@ def main():
     scope = module.params.get("scope")
     ip = module.params.get("ip")
 
-
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
