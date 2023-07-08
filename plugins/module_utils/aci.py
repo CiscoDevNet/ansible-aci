@@ -1535,7 +1535,10 @@ class ACIModule(object):
             # Sign and encode request as to APIC's wishes
             url = self.url
             if parent_class is not None:
-                url = "{protocol}://{host}/{path}".format(path=self.parent_path, **self.module.params)
+                if self.params.get("port") is not None:
+                    url = "{protocol}://{host}:{port}/{path}".format(path=self.parent_path, **self.module.params)
+                else:
+                    url = "{protocol}://{host}/{path}".format(path=self.parent_path, **self.module.params)
                 self.config = {parent_class: {"attributes": {}, "children": [self.config]}}
             if self.params.get("private_key"):
                 self.cert_auth(method="POST", payload=json.dumps(self.config))

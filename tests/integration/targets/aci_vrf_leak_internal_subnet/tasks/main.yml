@@ -108,6 +108,10 @@
       ip: 1.1.1.2
     register: leak_sub_present_2
 
+  - name: Sort the list of leaked internal subnets for present
+    ansible.builtin.set_fact:
+      attributes_list_present: "{{ leak_sub_present.current.0.leakInternalSubnet.children | map(attribute='leakTo.attributes') | list | sort(attribute='ctxName') }}"
+      
   - name: present asserts
     assert:
       that:
@@ -119,10 +123,10 @@
         - leak_sub_check_mode.proposed.leakInternalSubnet.children.1.leakTo.attributes.ctxName == 'test3'
         - leak_sub_check_mode.proposed.leakInternalSubnet.children.1.leakTo.attributes.tenantName == 'ansible_test3'
         - leak_sub_present.current.0.leakInternalSubnet.attributes.ip == '1.1.1.2'
-        - leak_sub_present.current.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test3'
-        - leak_sub_present.current.0.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
-        - leak_sub_present.current.0.leakInternalSubnet.children.1.leakTo.attributes.ctxName == 'test2'
-        - leak_sub_present.current.0.leakInternalSubnet.children.1.leakTo.attributes.tenantName == 'ansible_test3'
+        - attributes_list_present.0.tenantName == 'ansible_test3'
+        - attributes_list_present.0.ctxName == 'test2'
+        - attributes_list_present.1.tenantName == 'ansible_test3'
+        - attributes_list_present.1.ctxName == 'test3'
         - leak_sub_idempotent is not changed
         - leak_sub_present_2.current.0.leakInternalSubnet.attributes.ip == '1.1.1.2'
         - leak_sub_present_2.current.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test'
@@ -156,23 +160,30 @@
       state: absent
     register: leak_sub_absent
 
+  - name: Sort the list of leaked internal subnets for query
+    ansible.builtin.set_fact:
+      attributes_list_query_all: "{{ query_all.current.0.leakInternalSubnet.children | map(attribute='leakTo.attributes') | list | sort(attribute='ctxName') }}"
+      attributes_list_query: "{{ query.current.0.leakInternalSubnet.children | map(attribute='leakTo.attributes') | list | sort(attribute='ctxName') }}"
+    
   - name: query asserts
     assert:
       that:
         - query_all is not changed
         - query is not changed
         - query_all.current.0.leakInternalSubnet.attributes.ip == '1.1.1.2'
-        - query_all.current.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test3'
-        - query_all.current.0.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
-        - query_all.current.0.leakInternalSubnet.children.1.leakTo.attributes.ctxName == 'test2'
-        - query_all.current.0.leakInternalSubnet.children.1.leakTo.attributes.tenantName == 'ansible_test3'
+        - attributes_list_query_all.0.ctxName == 'test2'
+        - attributes_list_query_all.0.tenantName == 'ansible_test3'
+        - attributes_list_query_all.1.ctxName == 'test3'
+        - attributes_list_query_all.1.tenantName == 'ansible_test3'
         - query_all.current.1.leakInternalSubnet.attributes.ip == '1.1.1.2'
         - query_all.current.1.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test'
         - query_all.current.1.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
-        - query.current.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test3'
-        - query.current.0.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
+        - attributes_list_query.0.ctxName == 'test2'
+        - attributes_list_query.0.tenantName == 'ansible_test3'
+        - attributes_list_query.1.ctxName == 'test3'
+        - attributes_list_query.1.tenantName == 'ansible_test3'
         - leak_sub_absent.proposed == {}
-
+          
   - name: delete leak internal subnet
     cisco.aci.aci_vrf_leak_internal_subnet: 
       <<: *aci_vrf_present
