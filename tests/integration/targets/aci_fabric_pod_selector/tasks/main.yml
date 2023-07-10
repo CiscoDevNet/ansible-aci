@@ -58,7 +58,10 @@
 # QUERY FABRIC POD SELECTOR
 - name: Query a Fabric Pod Selector
   cisco.aci.aci_fabric_pod_selector:
-    <<: *aci_pod_sel
+    <<: *aci_info
+    name: default
+    type: all
+    pod_profile: default
     state: query
   register: query_one
 
