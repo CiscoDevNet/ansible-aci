@@ -39,7 +39,7 @@
     switch_message: Test Switch Banner Message
     gui_message_text: Test GUI Banner Message
     is_gui_message_text: true
-    message: Test Message
+    cli_message: Test Message
     banner_message_severity: major
   check_mode: true
   register: cm_update_banner
@@ -99,5 +99,5 @@
     switch_message: "{{ stored_banner.current.0.aaaPreLoginBanner.attributes.switchMessage }}"
     gui_message_text: "{{ stored_banner.current.0.aaaPreLoginBanner.attributes.guiTextMessage }}"
     is_gui_message_text: "{{ stored_banner.current.0.aaaPreLoginBanner.attributes.isGuiMessageText }}"
-    message: "{{ stored_banner.current.0.aaaPreLoginBanner.attributes.message }}"
+    cli_message: "{{ stored_banner.current.0.aaaPreLoginBanner.attributes.message }}"
     banner_message_severity: "{{ stored_banner.current.0.aaaPreLoginBanner.attributes.bannerMessageSeverity }}"

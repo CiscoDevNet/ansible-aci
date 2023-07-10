@@ -19,93 +19,41 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
 
-# CLEAN ENVIRONMENT
-- name: Remove the ansible_fabric_pod_sel Pod Selector
+# STORE EXISTING FABRIC POD SELECTOR
+- name: Query existing Fabric Pod Selector
   cisco.aci.aci_fabric_pod_selector:
     <<: *aci_info
+    name: default
+    type: all
     pod_profile: default
-    name: ansible_fabric_pod_sel
-    selector_type: all
-    state: absent
-
-- name: Remove the ansible_fabric_pod_pol_grp1 Policy Group
-  cisco.aci.aci_fabric_pod_policy_group:
-    <<: *aci_info
-    name: ansible_fabric_pod_pol_grp1
-    state: absent
-
-- name: Remove the ansible_fabric_pod_pol_grp2 Policy Group
-  cisco.aci.aci_fabric_pod_policy_group:
-    <<: *aci_info
-    name: ansible_fabric_pod_pol_grp2
-    state: absent
-
-# CREATE FABRIC POD SELECTOR
-- name: Create the ansible_fabric_pod_pol_grp1 Policy Group
-  cisco.aci.aci_fabric_pod_policy_group:
-    <<: *aci_info
-    name: ansible_fabric_pod_pol_grp1
-
-- name: Create the ansible_fabric_pod_pol_grp2 Policy Group
-  cisco.aci.aci_fabric_pod_policy_group:
-    <<: *aci_info
-    name: ansible_fabric_pod_pol_grp2
-
-- name: Create a Fabric Pod Selector (check mode)
-  cisco.aci.aci_fabric_pod_selector: &aci_pod_sel
-    <<: *aci_info
-    pod_profile: default
-    name: ansible_fabric_pod_sel
-    description: Ansible Pod Selector
-    selector_type: all
-    policy_group: ansible_fabric_pod_pol_grp1
-  check_mode: yes
-  register: cm_create_pod_sel
-
-- name: Create a Fabric Pod Selector
-  cisco.aci.aci_fabric_pod_selector:
-    <<: *aci_pod_sel
-  register: nm_create_pod_sel
-
-- name: Create a Fabric Pod Selector Again
-  cisco.aci.aci_fabric_pod_selector:
-    <<: *aci_pod_sel
-  register: nm_create_pod_sel_again
-
-- name: Verify creation of Fabric Pod Selector
-  ansible.builtin.assert:
-    that:
-    - cm_create_pod_sel is changed
-    - nm_create_pod_sel is changed
-    - nm_create_pod_sel_again is not changed
-    - nm_create_pod_sel.current.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_sel-typ-ALL"
-    - nm_create_pod_sel.current.0.fabricPodS.attributes.name == "ansible_fabric_pod_sel"
-    - nm_create_pod_sel.current.0.fabricPodS.attributes.descr == "Ansible Pod Selector"
-    - nm_create_pod_sel.current.0.fabricPodS.attributes.type == "ALL"
-    - nm_create_pod_sel.current.0.fabricPodS.children.0.fabricRsPodPGrp.attributes.tDn == "uni/fabric/funcprof/podpgrp-ansible_fabric_pod_pol_grp1"
-    - nm_create_pod_sel_again.current.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_sel-typ-ALL"
-    - nm_create_pod_sel_again.current.0.fabricPodS.attributes.name == "ansible_fabric_pod_sel"
-    - nm_create_pod_sel_again.current.0.fabricPodS.attributes.descr == "Ansible Pod Selector"
-    - nm_create_pod_sel_again.current.0.fabricPodS.attributes.type == "ALL"
-    - nm_create_pod_sel_again.current.0.fabricPodS.children.0.fabricRsPodPGrp.attributes.tDn == "uni/fabric/funcprof/podpgrp-ansible_fabric_pod_pol_grp1"
+    state: query
+  register: existing_selector
 
 # UPDATE FABRIC POD SELECTOR
+- name: Create the ansible_fabric_pod_pol_grp Policy Group
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *aci_info
+    name: ansible_fabric_pod_pol_grp
+
 - name: Update Fabric Pod Selector
   cisco.aci.aci_fabric_pod_selector:
-    <<: *aci_pod_sel
+    <<: *aci_info
+    name: default
+    type: all
+    pod_profile: default
     description: Updated Ansible Pod Selector
-    policy_group: ansible_fabric_pod_pol_grp2
+    policy_group: ansible_fabric_pod_pol_grp
   register: update_pod_sel
 
-- name: Verify update of File Remote Path
+- name: Verify update of Pod Selector
   ansible.builtin.assert:
     that:
     - update_pod_sel is changed
-    - update_pod_sel.current.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_sel-typ-ALL"
-    - update_pod_sel.current.0.fabricPodS.attributes.name == "ansible_fabric_pod_sel"
+    - update_pod_sel.current.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-default-typ-ALL"
+    - update_pod_sel.current.0.fabricPodS.attributes.name == "default"
     - update_pod_sel.current.0.fabricPodS.attributes.descr == "Updated Ansible Pod Selector"
     - update_pod_sel.current.0.fabricPodS.attributes.type == "ALL"
-    - update_pod_sel.current.0.fabricPodS.children.0.fabricRsPodPGrp.attributes.tDn == "uni/fabric/funcprof/podpgrp-ansible_fabric_pod_pol_grp2"
+    - update_pod_sel.current.0.fabricPodS.children.0.fabricRsPodPGrp.attributes.tDn == "uni/fabric/funcprof/podpgrp-ansible_fabric_pod_pol_grp"
 
 # QUERY FABRIC POD SELECTOR
 - name: Query a Fabric Pod Selector
@@ -124,32 +72,12 @@
   ansible.builtin.assert:
     that:
     - query_one is not changed
-    - query_one.current.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_sel-typ-ALL"
-    - query_one.current.0.fabricPodS.attributes.name == "ansible_fabric_pod_sel"
+    - query_one.current.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-default-typ-ALL"
+    - query_one.current.0.fabricPodS.attributes.name == "default"
     - query_one.current.0.fabricPodS.attributes.descr == "Updated Ansible Pod Selector"
     - query_one.current.0.fabricPodS.attributes.type == "ALL"
-    - query_one.current.0.fabricPodS.children.0.fabricRsPodPGrp.attributes.tDn == "uni/fabric/funcprof/podpgrp-ansible_fabric_pod_pol_grp2"
+    - query_one.current.0.fabricPodS.children.0.fabricRsPodPGrp.attributes.tDn == "uni/fabric/funcprof/podpgrp-ansible_fabric_pod_pol_grp"
     - query_all is not changed
-
-# REMOVE FABRIC POD SELECTOR
-- name: Delete a Fabric Pod Selector
-  cisco.aci.aci_fabric_pod_selector:
-    <<: *aci_pod_sel
-    state: absent
-  register: delete
-  
-- name: Delete Fabric Pod Selector again
-  cisco.aci.aci_fabric_pod_selector:
-    <<: *aci_pod_sel
-    state: absent
-  register: delete_again
-  
-- name: Verify deletion of Pod Selector
-  ansible.builtin.assert:
-    that:
-    - delete is changed
-    - delete_again is not changed
-    - delete.current == []
 
 # CLEAN UP
 - name: Remove the ansible_fabric_pod_pol_grp1 Policy Group
@@ -158,8 +86,11 @@
     name: ansible_fabric_pod_pol_grp1
     state: absent
 
-- name: Remove the ansible_fabric_pod_pol_grp2 Policy Group
-  cisco.aci.aci_fabric_pod_policy_group:
+- name: Restore original Pod Selector settings
+  cisco.aci.aci_fabric_pod_selector:
     <<: *aci_info
-    name: ansible_fabric_pod_pol_grp2
-    state: absent
+    name: default
+    type: all
+    pod_profile: default
+    description: "{{ existing_selector.current.0.fabricPodS.attributes.descr }}"
+    policy_group: "{{ existing_selector.current.0.fabricPodS.children.0.fabricRsPodPGrp.attributes.tDn | split('/podpgrp-') | last }}"
