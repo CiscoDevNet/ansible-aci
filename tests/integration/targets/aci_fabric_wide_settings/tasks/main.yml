@@ -19,173 +19,179 @@
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
 
-# STORE EXISTING FABRIC WIDE SETTINGS
-- name: Capture existing Fabric Wide Settings
-  cisco.aci.aci_fabric_wide_settings:
-    <<: *aci_info
-    state: query
-  register: previous_settings
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Query system information
-  cisco.aci.aci_system:
-    <<: *aci_info
-    id: 1
-    state: query
-  register: version
-
-- name: Clear existing settings
-  cisco.aci.aci_fabric_wide_settings:
-    <<: *aci_info
-    disable_remote_ep_learning: no
-    enforce_subnet_check: no
-    enforce_epg_vlan_validation: no
-    spine_opflex_client_auth: no
-
-- name: Execute tests for ACI v5+
-  when: version.current.0.topSystem.attributes.version is version('5', '>=')
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
   block:
-  # UPDATE FABRIC WIDE SETTINGS
-  - name: Update Fabric Wide Settings (check_mode)
-    cisco.aci.aci_fabric_wide_settings: &aci_fab_settings_5
-      <<: *aci_info
-      disable_remote_ep_learning: yes
-      enforce_subnet_check: yes
-      enforce_epg_vlan_validation: yes
-      spine_opflex_client_auth: yes
-      leaf_opflex_client_auth: yes
-      spine_ssl_opflex: yes
-      leaf_ssl_opflex: yes
-      restrict_infra_vlan_traffic: yes
-    check_mode: yes
-    register: cm_update_fab_settings_v5
 
-  - name: Update Fabric Wide Settings
-    cisco.aci.aci_fabric_wide_settings:
-      <<: *aci_fab_settings_5
-    register: nm_update_fab_settings_v5
-
-  - name: Update Fabric Wide Settings Again
-    cisco.aci.aci_fabric_wide_settings:
-      <<: *aci_fab_settings_5
-    register: nm_update_fab_settings_again_v5
-
-  - name: Verify Fabric Wide Settings update
-    ansible.builtin.assert:
-      that:
-      - cm_update_fab_settings_v5 is changed
-      - nm_update_fab_settings_v5 is changed
-      - nm_update_fab_settings_again_v5 is not changed
-      - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
-      - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
-      - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
-      - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
-      - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.leafOpflexpAuthenticateClients == "yes"
-      - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.opflexpUseSsl == "yes"
-      - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.leafOpflexpUseSsl == "yes"
-      - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.restrictInfraVLANTraffic == "yes"
-      - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
-      - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
-      - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
-      - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
-      - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.leafOpflexpAuthenticateClients == "yes"
-      - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.opflexpUseSsl == "yes"
-      - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.leafOpflexpUseSsl == "yes"
-      - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.restrictInfraVLANTraffic == "yes"
-
-  # QUERY FABRIC WIDE SETTINGS
-  - name: Query Fabric Wide Settings
+  # STORE EXISTING FABRIC WIDE SETTINGS
+  - name: Capture existing Fabric Wide Settings
     cisco.aci.aci_fabric_wide_settings:
       <<: *aci_info
       state: query
-    register: query_fab_v5
-
-  - name: Verify Fabric Wide Settings queries
-    ansible.builtin.assert:
-      that:
-      - query_fab_v5 is not changed
-      - query_fab_v5.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
-      - query_fab_v5.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
-      - query_fab_v5.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
-      - query_fab_v5.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
-      - query_fab_v5.current.0.infraSetPol.attributes.leafOpflexpAuthenticateClients == "yes"
-      - query_fab_v5.current.0.infraSetPol.attributes.opflexpUseSsl == "yes"
-      - query_fab_v5.current.0.infraSetPol.attributes.leafOpflexpUseSsl == "yes"
-      - query_fab_v5.current.0.infraSetPol.attributes.restrictInfraVLANTraffic == "yes"
-
-  # RESTORE PREVIOUS FABRIC WIDE SETTINGS
-  - name: Restore previous Fabric Wide Settings
-    cisco.aci.aci_fabric_wide_settings:
-      <<: *aci_info
-      disable_remote_ep_learning: "{{ previous_settings.current.0.infraSetPol.attributes.unicastXrEpLearnDisable }}"
-      enforce_subnet_check: "{{ previous_settings.current.0.infraSetPol.attributes.enforceSubnetCheck }}"
-      enforce_epg_vlan_validation: "{{ previous_settings.current.0.infraSetPol.attributes.validateOverlappingVlans }}"
-      spine_opflex_client_auth: "{{ previous_settings.current.0.infraSetPol.attributes.opflexpAuthenticateClients }}"
-      leaf_opflex_client_auth: "{{ previous_settings.current.0.infraSetPol.attributes.leafOpflexpAuthenticateClients }}"
-      spine_ssl_opflex: "{{ previous_settings.current.0.infraSetPol.attributes.opflexpUseSsl }}"
-      leaf_ssl_opflex: "{{ previous_settings.current.0.infraSetPol.attributes.leafOpflexpUseSsl }}"
-      restrict_infra_vlan_traffic: "{{ previous_settings.current.0.infraSetPol.attributes.restrictInfraVLANTraffic }}"
-
-- name: Execute tests for ACI < v5
-  when: version.current.0.topSystem.attributes.version is version('5', '<')
-  block:
-  # UPDATE FABRIC WIDE SETTINGS
-  - name: Update Fabric Wide Settings (check_mode)
-    cisco.aci.aci_fabric_wide_settings: &aci_fab_settings
-      <<: *aci_info
-      disable_remote_ep_learning: yes
-      enforce_subnet_check: yes
-      enforce_epg_vlan_validation: yes
-      spine_opflex_client_auth: yes
-    check_mode: yes
-    register: cm_update_fab_settings
-
-  - name: Update Fabric Wide Settings
-    cisco.aci.aci_fabric_wide_settings:
-      <<: *aci_fab_settings
-    register: nm_update_fab_settings
-
-  - name: Update Fabric Wide Settings Again
-    cisco.aci.aci_fabric_wide_settings:
-      <<: *aci_fab_settings
-    register: nm_update_fab_settings_again
-
-  - name: Verify update of Fabric Wide Settings
-    ansible.builtin.assert:
-      that:
-      - cm_update_fab_settings is changed
-      - nm_update_fab_settings is changed
-      - nm_update_fab_settings_again is not changed
-      - nm_update_fab_settings.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
-      - nm_update_fab_settings.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
-      - nm_update_fab_settings.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
-      - nm_update_fab_settings.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
-      - nm_update_fab_settings_again.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
-      - nm_update_fab_settings_again.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
-      - nm_update_fab_settings_again.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
-      - nm_update_fab_settings_again.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
-
-  # QUERY FABRIC WIDE SETTINGS
-  - name: Query Fabric Wide Settings
-    cisco.aci.aci_fabric_wide_settings:
-      <<: *aci_info
-      state: query
-    register: query_fab
-
-  - name: Verify Fabric Wide Settings queries
-    ansible.builtin.assert:
-      that:
-      - query_fab is not changed
-      - query_fab.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
-      - query_fab.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
-      - query_fab.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
-      - query_fab.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
-
-  # RESTORE PREVIOUS FABRIC WIDE SETTINGS
-  - name: Restore previous Fabric Wide Settings
-    cisco.aci.aci_fabric_wide_settings:
-      <<: *aci_info
-      disable_remote_ep_learning: "{{ previous_settings.current.0.infraSetPol.attributes.unicastXrEpLearnDisable }}"
-      enforce_subnet_check: "{{ previous_settings.current.0.infraSetPol.attributes.enforceSubnetCheck }}"
-      enforce_epg_vlan_validation: "{{ previous_settings.current.0.infraSetPol.attributes.validateOverlappingVlans }}"
-      spine_opflex_client_auth: "{{ previous_settings.current.0.infraSetPol.attributes.opflexpAuthenticateClients }}"
+    register: previous_settings
   
+  - name: Query system information
+    cisco.aci.aci_system:
+      <<: *aci_info
+      id: 1
+      state: query
+    register: version
+  
+  - name: Clear existing settings
+    cisco.aci.aci_fabric_wide_settings:
+      <<: *aci_info
+      disable_remote_ep_learning: no
+      enforce_subnet_check: no
+      enforce_epg_vlan_validation: no
+      spine_opflex_client_auth: no
+  
+  - name: Execute tests for ACI v5+
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    block:
+    # UPDATE FABRIC WIDE SETTINGS
+    - name: Update Fabric Wide Settings (check_mode)
+      cisco.aci.aci_fabric_wide_settings: &aci_fab_settings_5
+        <<: *aci_info
+        disable_remote_ep_learning: yes
+        enforce_subnet_check: yes
+        enforce_epg_vlan_validation: yes
+        spine_opflex_client_auth: yes
+        leaf_opflex_client_auth: yes
+        spine_ssl_opflex: yes
+        leaf_ssl_opflex: yes
+        restrict_infra_vlan_traffic: yes
+      check_mode: yes
+      register: cm_update_fab_settings_v5
+  
+    - name: Update Fabric Wide Settings
+      cisco.aci.aci_fabric_wide_settings:
+        <<: *aci_fab_settings_5
+      register: nm_update_fab_settings_v5
+  
+    - name: Update Fabric Wide Settings Again
+      cisco.aci.aci_fabric_wide_settings:
+        <<: *aci_fab_settings_5
+      register: nm_update_fab_settings_again_v5
+  
+    - name: Verify Fabric Wide Settings update
+      ansible.builtin.assert:
+        that:
+        - cm_update_fab_settings_v5 is changed
+        - nm_update_fab_settings_v5 is changed
+        - nm_update_fab_settings_again_v5 is not changed
+        - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
+        - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
+        - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
+        - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
+        - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.leafOpflexpAuthenticateClients == "yes"
+        - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.opflexpUseSsl == "yes"
+        - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.leafOpflexpUseSsl == "yes"
+        - nm_update_fab_settings_v5.current.0.infraSetPol.attributes.restrictInfraVLANTraffic == "yes"
+        - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
+        - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
+        - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
+        - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
+        - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.leafOpflexpAuthenticateClients == "yes"
+        - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.opflexpUseSsl == "yes"
+        - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.leafOpflexpUseSsl == "yes"
+        - nm_update_fab_settings_again_v5.current.0.infraSetPol.attributes.restrictInfraVLANTraffic == "yes"
+  
+    # QUERY FABRIC WIDE SETTINGS
+    - name: Query Fabric Wide Settings
+      cisco.aci.aci_fabric_wide_settings:
+        <<: *aci_info
+        state: query
+      register: query_fab_v5
+  
+    - name: Verify Fabric Wide Settings queries
+      ansible.builtin.assert:
+        that:
+        - query_fab_v5 is not changed
+        - query_fab_v5.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
+        - query_fab_v5.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
+        - query_fab_v5.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
+        - query_fab_v5.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
+        - query_fab_v5.current.0.infraSetPol.attributes.leafOpflexpAuthenticateClients == "yes"
+        - query_fab_v5.current.0.infraSetPol.attributes.opflexpUseSsl == "yes"
+        - query_fab_v5.current.0.infraSetPol.attributes.leafOpflexpUseSsl == "yes"
+        - query_fab_v5.current.0.infraSetPol.attributes.restrictInfraVLANTraffic == "yes"
+  
+    # RESTORE PREVIOUS FABRIC WIDE SETTINGS
+    - name: Restore previous Fabric Wide Settings
+      cisco.aci.aci_fabric_wide_settings:
+        <<: *aci_info
+        disable_remote_ep_learning: "{{ previous_settings.current.0.infraSetPol.attributes.unicastXrEpLearnDisable }}"
+        enforce_subnet_check: "{{ previous_settings.current.0.infraSetPol.attributes.enforceSubnetCheck }}"
+        enforce_epg_vlan_validation: "{{ previous_settings.current.0.infraSetPol.attributes.validateOverlappingVlans }}"
+        spine_opflex_client_auth: "{{ previous_settings.current.0.infraSetPol.attributes.opflexpAuthenticateClients }}"
+        leaf_opflex_client_auth: "{{ previous_settings.current.0.infraSetPol.attributes.leafOpflexpAuthenticateClients }}"
+        spine_ssl_opflex: "{{ previous_settings.current.0.infraSetPol.attributes.opflexpUseSsl }}"
+        leaf_ssl_opflex: "{{ previous_settings.current.0.infraSetPol.attributes.leafOpflexpUseSsl }}"
+        restrict_infra_vlan_traffic: "{{ previous_settings.current.0.infraSetPol.attributes.restrictInfraVLANTraffic }}"
+  
+  - name: Execute tests for ACI < v5
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    block:
+    # UPDATE FABRIC WIDE SETTINGS
+    - name: Update Fabric Wide Settings (check_mode)
+      cisco.aci.aci_fabric_wide_settings: &aci_fab_settings
+        <<: *aci_info
+        disable_remote_ep_learning: yes
+        enforce_subnet_check: yes
+        enforce_epg_vlan_validation: yes
+        spine_opflex_client_auth: yes
+      check_mode: yes
+      register: cm_update_fab_settings
+  
+    - name: Update Fabric Wide Settings
+      cisco.aci.aci_fabric_wide_settings:
+        <<: *aci_fab_settings
+      register: nm_update_fab_settings
+  
+    - name: Update Fabric Wide Settings Again
+      cisco.aci.aci_fabric_wide_settings:
+        <<: *aci_fab_settings
+      register: nm_update_fab_settings_again
+  
+    - name: Verify update of Fabric Wide Settings
+      ansible.builtin.assert:
+        that:
+        - cm_update_fab_settings is changed
+        - nm_update_fab_settings is changed
+        - nm_update_fab_settings_again is not changed
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
+  
+    # QUERY FABRIC WIDE SETTINGS
+    - name: Query Fabric Wide Settings
+      cisco.aci.aci_fabric_wide_settings:
+        <<: *aci_info
+        state: query
+      register: query_fab
+  
+    - name: Verify Fabric Wide Settings queries
+      ansible.builtin.assert:
+        that:
+        - query_fab is not changed
+        - query_fab.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
+        - query_fab.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
+        - query_fab.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
+        - query_fab.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
+  
+    # RESTORE PREVIOUS FABRIC WIDE SETTINGS
+    - name: Restore previous Fabric Wide Settings
+      cisco.aci.aci_fabric_wide_settings:
+        <<: *aci_info
+        disable_remote_ep_learning: "{{ previous_settings.current.0.infraSetPol.attributes.unicastXrEpLearnDisable }}"
+        enforce_subnet_check: "{{ previous_settings.current.0.infraSetPol.attributes.enforceSubnetCheck }}"
+        enforce_epg_vlan_validation: "{{ previous_settings.current.0.infraSetPol.attributes.validateOverlappingVlans }}"
+        spine_opflex_client_auth: "{{ previous_settings.current.0.infraSetPol.attributes.opflexpAuthenticateClients }}"
