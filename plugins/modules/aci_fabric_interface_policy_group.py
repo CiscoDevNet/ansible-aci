@@ -254,8 +254,6 @@ def main():
         subclass_1=dict(
             aci_class="fabricFuncP",
             aci_rn="funcprof",
-            module_object=None,
-            target_filter=None,
         ),
         subclass_2=dict(
             aci_class=policy_group_class_name,
