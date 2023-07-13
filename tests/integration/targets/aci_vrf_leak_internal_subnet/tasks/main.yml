@@ -207,7 +207,6 @@
   - name: delete asserts
     assert:
       that:
-        # change to current 
         - leak_sub_delete is changed
         - leak_sub_delete.previous != []
         - leak_sub_delete.current.0.leakInternalSubnet.children | length == 1

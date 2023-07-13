@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2023, <> (@abmughal)
+# Copyright: (c) 2023, Abraham Mughal (@abmughal) abmughal@cisco.com
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -291,7 +291,7 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "vrf", "leak_to"]],
+            ["state", "absent", ["tenant", "vrf"]],
             ["state", "present", ["tenant", "vrf", "leak_to"]],
         ],
     )
