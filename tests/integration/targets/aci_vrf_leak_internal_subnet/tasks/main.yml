@@ -1,0 +1,233 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Abraham Mughal (@abmughal)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when:
+  - query_cloud.current == []  # This condition will execute only non-cloud sites
+  - version.current.0.topSystem.attributes.version is version('5', '>=')
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Set vars
+    set_fact:
+      aci_info: &aci_info
+        host: '{{ aci_hostname }}'
+        username: '{{ aci_username }}'
+        password: '{{ aci_password }}'
+        validate_certs: '{{ aci_validate_certs | default(false) }}'
+        use_ssl: '{{ aci_use_ssl | default(true) }}'
+        use_proxy: '{{ aci_use_proxy | default(true) }}'
+        output_level: '{{ aci_output_level | default("debug") }}'
+
+  - name: delete existing tenant
+    cisco.aci.aci_tenant: 
+      <<: *aci_info
+      state: absent
+      tenant: ansible_test3
+    register: tenant_present
+
+  - name: ensure tenant exists for tests to kick off
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      state: present
+      tenant: ansible_test3
+    register: tenant_present
+
+  - name: create vrf 
+    cisco.aci.aci_vrf: &aci_vrf_present
+      <<: *aci_tenant_present
+      vrf: test
+      description: Ansible Test
+    register: vrf_present
+
+  - name: create second vrf - creation works
+    cisco.aci.aci_vrf:
+      <<: *aci_vrf_present
+      vrf: test2
+    register: vrf_present
+
+  - name: create third vrf - creation works
+    cisco.aci.aci_vrf:
+      <<: *aci_vrf_present
+      vrf: test3
+    register: vrf_present
+
+  - name: create leak internal subnet - check_mode
+    cisco.aci.aci_vrf_leak_internal_subnet: &aci_leak_internal_subnet
+      <<: *aci_info
+      state: present
+      tenant: ansible_test3
+      vrf: test
+      ip: 1.1.1.2
+      leak_to: 
+        - vrf: "test2"
+          tenant: "ansible_test3"
+        - vrf: "test3"
+          tenant: "ansible_test3"
+      description: Ansible Test
+    check_mode: true
+    register: leak_sub_check_mode
+
+  - name: create leak internal subnet 
+    cisco.aci.aci_vrf_leak_internal_subnet:
+      <<: *aci_leak_internal_subnet
+    register: leak_sub_present
+
+  - name: create leak internal subnet - idempotency check
+    cisco.aci.aci_vrf_leak_internal_subnet: 
+      <<: *aci_info
+      state: present
+      tenant: ansible_test3
+      vrf: test
+      ip: 1.1.1.2
+      leak_to: 
+        - vrf: "test2"
+          tenant: "ansible_test3"
+        - vrf: "test3"
+          tenant: "ansible_test3"
+      description: Ansible Test
+    register: leak_sub_idempotent
+
+  - name: create second leak internal subnet
+    cisco.aci.aci_vrf_leak_internal_subnet: 
+      <<: *aci_info
+      tenant: ansible_test3
+      vrf: test2
+      leak_to: 
+        - vrf: "test"
+          tenant: "ansible_test3"
+      description: Ansible Test
+      ip: 1.1.1.2
+    register: leak_sub_present_2
+
+  - name: Sort the list of leaked internal subnets for present
+    ansible.builtin.set_fact:
+      attributes_list_present: "{{ leak_sub_present.current.0.leakInternalSubnet.children | map(attribute='leakTo.attributes') | list | sort(attribute='ctxName') }}"
+      
+  - name: present asserts
+    assert:
+      that:
+        - vrf_present is changed
+        - leak_sub_check_mode is changed
+        - leak_sub_check_mode.proposed.leakInternalSubnet.attributes.ip == '1.1.1.2'
+        - leak_sub_check_mode.proposed.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test2'
+        - leak_sub_check_mode.proposed.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
+        - leak_sub_check_mode.proposed.leakInternalSubnet.children.1.leakTo.attributes.ctxName == 'test3'
+        - leak_sub_check_mode.proposed.leakInternalSubnet.children.1.leakTo.attributes.tenantName == 'ansible_test3'
+        - leak_sub_present.current.0.leakInternalSubnet.attributes.ip == '1.1.1.2'
+        - attributes_list_present.0.tenantName == 'ansible_test3'
+        - attributes_list_present.0.ctxName == 'test2'
+        - attributes_list_present.1.tenantName == 'ansible_test3'
+        - attributes_list_present.1.ctxName == 'test3'
+        - leak_sub_idempotent is not changed
+        - leak_sub_present_2.current.0.leakInternalSubnet.attributes.ip == '1.1.1.2'
+        - leak_sub_present_2.current.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test'
+        - leak_sub_present_2.current.0.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
+
+  - name: query all
+    cisco.aci.aci_vrf_leak_internal_subnet: &aci_query
+      <<: *aci_info
+      state: query
+      ip: 1.1.1.2
+    register: query_all
+
+  - name: query one leak internal subnet
+    cisco.aci.aci_vrf_leak_internal_subnet: 
+      <<: *aci_tenant_present
+      state: query
+      vrf: test
+      ip: 1.1.1.2
+    register: query
+
+  - name: absent case
+    cisco.aci.aci_vrf_leak_internal_subnet: 
+      <<: *aci_info
+      tenant: ansible_test3
+      vrf: test2
+      leak_to: 
+        - vrf: "test"
+          tenant: "ansible_test3"
+      description: Ansible Test
+      ip: 1.1.1.2
+      state: absent
+    register: leak_sub_absent
+
+  - name: Sort the list of leaked internal subnets for query
+    ansible.builtin.set_fact:
+      attributes_list_query_all: "{{ query_all.current.0.leakInternalSubnet.children | map(attribute='leakTo.attributes') | list | sort(attribute='ctxName') }}"
+      attributes_list_query: "{{ query.current.0.leakInternalSubnet.children | map(attribute='leakTo.attributes') | list | sort(attribute='ctxName') }}"
+    
+  - name: query asserts
+    assert:
+      that:
+        - query_all is not changed
+        - query is not changed
+        - query_all.current.0.leakInternalSubnet.attributes.ip == '1.1.1.2'
+        - attributes_list_query_all.0.ctxName == 'test2'
+        - attributes_list_query_all.0.tenantName == 'ansible_test3'
+        - attributes_list_query_all.1.ctxName == 'test3'
+        - attributes_list_query_all.1.tenantName == 'ansible_test3'
+        - query_all.current.1.leakInternalSubnet.attributes.ip == '1.1.1.2'
+        - query_all.current.1.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test'
+        - query_all.current.1.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
+        - attributes_list_query.0.ctxName == 'test2'
+        - attributes_list_query.0.tenantName == 'ansible_test3'
+        - attributes_list_query.1.ctxName == 'test3'
+        - attributes_list_query.1.tenantName == 'ansible_test3'
+        - leak_sub_absent.proposed == {}
+
+  - name: delete leak internal subnet - check_mode
+    cisco.aci.aci_vrf_leak_internal_subnet: &aci_delete
+      <<: *aci_vrf_present
+      vrf: test
+      leak_to: 
+        - vrf: "test3"
+          tenant: "ansible_test3"
+      ip: 1.1.1.2
+    register: leak_sub_delete_check_mode
+        
+  - name: delete leak internal subnet
+    cisco.aci.aci_vrf_leak_internal_subnet: 
+      <<: *aci_delete
+    register: leak_sub_delete
+
+  - name: delete leak internal subnet again
+    cisco.aci.aci_vrf_leak_internal_subnet: &aci_delete_again
+      <<: *aci_vrf_present
+      vrf: test
+      leak_to: 
+        - vrf: "test2"
+          tenant: "ansible_test3"
+      ip: 1.1.1.2
+    register: leak_sub_delete_2
+
+  - name: delete leak internal subnet idempotency check
+    cisco.aci.aci_vrf_leak_internal_subnet:
+      <<: *aci_delete_again
+    register: leak_sub_delete_idempotency
+
+  - name: delete asserts
+    assert:
+      that:
+        - leak_sub_delete_check_mode is changed
+        - leak_sub_delete_check_mode.current.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test3'
+        - leak_sub_delete_check_mode.current.0.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
+        - leak_sub_delete.previous != []
+        - leak_sub_delete.current.0.leakInternalSubnet.children | length == 1
+        - leak_sub_delete.current.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test3'
+        - leak_sub_delete.current.0.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
+        - leak_sub_delete_2 is changed
+        - leak_sub_delete_2.current.0.leakInternalSubnet.children | length == 1
+        - leak_sub_delete_2.current.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test2'
+        - leak_sub_delete_2.current.0.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
+        - leak_sub_delete_idempotency is not changed
+        - leak_sub_delete_idempotency.current.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test2'
+        - leak_sub_delete_idempotency.current.0.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
