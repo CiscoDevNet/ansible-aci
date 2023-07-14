@@ -183,19 +183,24 @@
         - attributes_list_query.1.ctxName == 'test3'
         - attributes_list_query.1.tenantName == 'ansible_test3'
         - leak_sub_absent.proposed == {}
-          
-  - name: delete leak internal subnet
-    cisco.aci.aci_vrf_leak_internal_subnet: 
+
+  - name: delete leak internal subnet - check_mode
+    cisco.aci.aci_vrf_leak_internal_subnet: &aci_delete
       <<: *aci_vrf_present
       vrf: test
       leak_to: 
         - vrf: "test3"
           tenant: "ansible_test3"
       ip: 1.1.1.2
+    register: leak_sub_delete_check_mode
+        
+  - name: delete leak internal subnet
+    cisco.aci.aci_vrf_leak_internal_subnet: 
+      <<: *aci_delete
     register: leak_sub_delete
 
   - name: delete leak internal subnet again
-    cisco.aci.aci_vrf_leak_internal_subnet: 
+    cisco.aci.aci_vrf_leak_internal_subnet: &aci_delete_again
       <<: *aci_vrf_present
       vrf: test
       leak_to: 
@@ -204,10 +209,17 @@
       ip: 1.1.1.2
     register: leak_sub_delete_2
 
+  - name: delete leak internal subnet idempotency check
+    cisco.aci.aci_vrf_leak_internal_subnet:
+      <<: *aci_delete_again
+    register: leak_sub_delete_idempotency
+
   - name: delete asserts
     assert:
       that:
-        - leak_sub_delete is changed
+        - leak_sub_delete_check_mode is changed
+        - leak_sub_delete_check_mode.current.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test3'
+        - leak_sub_delete_check_mode.current.0.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
         - leak_sub_delete.previous != []
         - leak_sub_delete.current.0.leakInternalSubnet.children | length == 1
         - leak_sub_delete.current.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test3'
@@ -216,3 +228,6 @@
         - leak_sub_delete_2.current.0.leakInternalSubnet.children | length == 1
         - leak_sub_delete_2.current.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test2'
         - leak_sub_delete_2.current.0.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
+        - leak_sub_delete_idempotency is not changed
+        - leak_sub_delete_idempotency.current.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test2'
+        - leak_sub_delete_idempotency.current.0.leakInternalSubnet.children.0.leakTo.attributes.tenantName == 'ansible_test3'
