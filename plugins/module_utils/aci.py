@@ -14,10 +14,15 @@
 # Copyright: (c) 2020, Lionel Hercot (@lhercot) <lhercot@cisco.com>
 # Copyright: (c) 2020, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 =======
 # Copyright: (c) 2020, Shreyas Srish (@shrsr) <ssrish@cisco.com>
 >>>>>>> 02c53f6 (Check Sanity)
+=======
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+# Copyright: (c) 2023, Shreyas Srish (@shrsr) <ssrish@cisco.com>
+>>>>>>> d23cc89 ([ignore_change] Manual change to aci.py to incorporate recent changes in other PRs)
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without modification,
@@ -305,6 +310,20 @@ def destination_epg_spec():
         ),
     )
 
+<<<<<<< HEAD
+=======
+def ospf_spec():
+    return dict(
+        area_cost=dict(type="int"),
+        area_ctrl=dict(type="list", elements="str", choices=["redistribute", "summary", "suppress-fa", "unspecified"]),
+        area_id=dict(type="str"),
+        area_type=dict(type="str", choices=["nssa", "regular", "stub"]),
+        description=dict(type="str", aliases=["descr"]),
+        multipod_internal=dict(type="str", choices=["no", "yes"]),
+        name_alias=dict(type="str"),
+    )
+
+>>>>>>> d23cc89 ([ignore_change] Manual change to aci.py to incorporate recent changes in other PRs)
 
 class ACIModule(object):
     def __init__(self, module):
@@ -1393,6 +1412,9 @@ class ACIModule(object):
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> d23cc89 ([ignore_change] Manual change to aci.py to incorporate recent changes in other PRs)
             url = self.url
             if parent_class is not None:
                 if self.params.get("port") is not None:
@@ -1400,6 +1422,7 @@ class ACIModule(object):
                 else:
                     url = "{protocol}://{host}/{path}".format(path=self.parent_path, **self.module.params)
                 self.config = {parent_class: {"attributes": {}, "children": [self.config]}}
+<<<<<<< HEAD
             if self.params.get("private_key"):
                 self.cert_auth(method="POST", payload=json.dumps(self.config))
 
@@ -1450,6 +1473,9 @@ class ACIModule(object):
 =======
             self.api_call("POST", self.url, json.dumps(self.config), return_response=False)
 >>>>>>> a774f00 ([ignore_changes] Changes made to test files for intergration tests)
+=======
+            self.api_call("POST", url, json.dumps(self.config), return_response=False)
+>>>>>>> d23cc89 ([ignore_change] Manual change to aci.py to incorporate recent changes in other PRs)
         else:
             self.result["changed"] = True
             self.method = "POST"
@@ -1564,6 +1590,22 @@ class ACIModule(object):
                 with open(output_path, "a") as output_file:
                     if self.result.get("changed") is True:
                         json.dump([mo], output_file)
+                    
+    def delete_config_request(self, path):
+        self._config_request(path, "absent")
+        self.result["changed"] = True
+
+    def get_config_request(self, path):
+        self._config_request(path, "query")
+        return self.imdata
+
+    def _config_request(self, path, state):
+        reset_url = self.url
+        reset_state = self.params["state"]
+        self.params["state"] = state
+        self.request(path)
+        self.url = reset_url
+        self.params["state"] = reset_state
 
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1640,7 +1682,6 @@ def ospf_spec():
         if self.connection is not None:
             self.connection.set_params(self.params)
             info = self.connection.send_request(method, self.parsed_url_path(url), data)
-            self.url = info.get("url")
             self.error = info.get("error")
             self.httpapi_logs.extend(self.connection.pop_messages())
         else:
