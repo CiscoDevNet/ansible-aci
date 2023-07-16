@@ -13,16 +13,8 @@
 # Copyright: (c) 2019, Rob Huelga (@RobW3LGA)
 # Copyright: (c) 2020, Lionel Hercot (@lhercot) <lhercot@cisco.com>
 # Copyright: (c) 2020, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
-<<<<<<< HEAD
-<<<<<<< HEAD
-# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
-=======
-# Copyright: (c) 2020, Shreyas Srish (@shrsr) <ssrish@cisco.com>
->>>>>>> 02c53f6 (Check Sanity)
-=======
 # Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # Copyright: (c) 2023, Shreyas Srish (@shrsr) <ssrish@cisco.com>
->>>>>>> d23cc89 ([ignore_change] Manual change to aci.py to incorporate recent changes in other PRs)
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without modification,
@@ -310,8 +302,6 @@ def destination_epg_spec():
         ),
     )
 
-<<<<<<< HEAD
-=======
 def ospf_spec():
     return dict(
         area_cost=dict(type="int"),
@@ -323,7 +313,6 @@ def ospf_spec():
         name_alias=dict(type="str"),
     )
 
->>>>>>> d23cc89 ([ignore_change] Manual change to aci.py to incorporate recent changes in other PRs)
 
 class ACIModule(object):
     def __init__(self, module):
@@ -1406,15 +1395,6 @@ class ACIModule(object):
             return
         elif not self.module.check_mode:
             # Sign and encode request as to APIC's wishes
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> d23cc89 ([ignore_change] Manual change to aci.py to incorporate recent changes in other PRs)
             url = self.url
             if parent_class is not None:
                 if self.params.get("port") is not None:
@@ -1422,60 +1402,7 @@ class ACIModule(object):
                 else:
                     url = "{protocol}://{host}/{path}".format(path=self.parent_path, **self.module.params)
                 self.config = {parent_class: {"attributes": {}, "children": [self.config]}}
-<<<<<<< HEAD
-            if self.params.get("private_key"):
-                self.cert_auth(method="POST", payload=json.dumps(self.config))
-
-            resp, info = fetch_url(
-                self.module,
-                url,
-                data=json.dumps(self.config),
-                headers=self.headers,
-                method="POST",
-                timeout=self.params.get("timeout"),
-                use_proxy=self.params.get("use_proxy"),
-            )
-
-            self.response = info.get("msg")
-            self.status = info.get("status")
-            self.method = "POST"
-
-            # Handle APIC response
-            if info.get("status") == 200:
-                self.result["changed"] = True
-                self.response_json(resp.read())
-            else:
-                try:
-                    # APIC error
-                    self.response_json(info["body"])
-                    self.fail_json(msg="APIC Error %(code)s: %(text)s" % self.error)
-                except KeyError:
-                    # Connection error
-                    self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
-=======
-            self.call("POST")
->>>>>>> da2af7d (retry w/o conflict)
-=======
-            self.call("POST")
-=======
-            self.api_call('POST')
->>>>>>> eeef0dc ([ignore] Change location of persistent storage file)
->>>>>>> d17daa6 ([ignore] Change location of persistent storage file)
-=======
-            self.api_call("POST")
->>>>>>> a77aefa ([ignore] Addition of queue messages)
-=======
-            self.api_call("POST", self.path, self.url, json.dumps(self.config), output=False)
->>>>>>> 88b1ff5 ([minor_change] Removed different functions to make requests which can now be done by using just one function)
-=======
-            self.api_call("POST", self.url, json.dumps(self.config), output=False)
->>>>>>> f20fdfe ([ignore_changes] New test file created)
-=======
-            self.api_call("POST", self.url, json.dumps(self.config), return_response=False)
->>>>>>> a774f00 ([ignore_changes] Changes made to test files for intergration tests)
-=======
             self.api_call("POST", url, json.dumps(self.config), return_response=False)
->>>>>>> d23cc89 ([ignore_change] Manual change to aci.py to incorporate recent changes in other PRs)
         else:
             self.result["changed"] = True
             self.method = "POST"
@@ -1607,66 +1534,6 @@ class ACIModule(object):
         self.url = reset_url
         self.params["state"] = reset_state
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    def delete_config_request(self, path):
-        self._config_request(path, "absent")
-        self.result["changed"] = True
-
-    def get_config_request(self, path):
-        self._config_request(path, "query")
-        return self.imdata
-
-    def _config_request(self, path, state):
-        reset_url = self.url
-        reset_state = self.params["state"]
-        self.params["state"] = state
-        self.request(path)
-        self.url = reset_url
-        self.params["state"] = reset_state
-
-
-def ospf_spec():
-    return dict(
-        area_cost=dict(type="int"),
-        area_ctrl=dict(type="list", elements="str", choices=["redistribute", "summary", "suppress-fa", "unspecified"]),
-        area_id=dict(type="str"),
-        area_type=dict(type="str", choices=["nssa", "regular", "stub"]),
-        description=dict(type="str", aliases=["descr"]),
-        multipod_internal=dict(type="str", choices=["no", "yes"]),
-        name_alias=dict(type="str"),
-    )
-=======
-    def call(self, method):
-=======
-    def api_call(self, method):
-<<<<<<< HEAD
->>>>>>> d17daa6 ([ignore] Change location of persistent storage file)
-        if method == 'GET':
-=======
-        if method == "GET":
->>>>>>> 5d0ead5 ([minor_change] Fix comments and formatting)
-            call_path = self.path + self.filter_string
-            call_url = self.url + self.filter_string
-            data = None
-        elif method == "POST":
-            call_path = self.path
-            call_url = self.url
-            data = json.dumps(self.config)
-        elif method == "DELETE":
-            call_path = self.path
-            call_url = self.url
-            data = None
-=======
-    def api_call(self, method, path, url, data=None, output=False):
->>>>>>> 88b1ff5 ([minor_change] Removed different functions to make requests which can now be done by using just one function)
-=======
-    def api_call(self, method, url, data=None, output=False):
->>>>>>> f20fdfe ([ignore_changes] New test file created)
-=======
     def parsed_url_path(self, url):
         if not HAS_URLPARSE:
             self.fail_json(msg="urlparse is not installed")
@@ -1677,7 +1544,6 @@ def ospf_spec():
             return parse_result.path + "?" + parse_result.query
 
     def api_call(self, method, url, data=None, return_response=False):
->>>>>>> a774f00 ([ignore_changes] Changes made to test files for intergration tests)
         resp = None
         if self.connection is not None:
             self.connection.set_params(self.params)
@@ -1704,24 +1570,6 @@ def ospf_spec():
         if return_response:
             return resp, info
         else:
-<<<<<<< HEAD
-            try:
-                # APIC error
-                self.response_json(info["body"])
-                self.fail_json(msg="APIC Error %(code)s: %(text)s" % self.error)
-            except KeyError:
-                # Connection error
-<<<<<<< HEAD
-                self.fail_json(msg='Connection failed for %(url)s. %(msg)s' % info)
-<<<<<<< HEAD
-
->>>>>>> da2af7d (retry w/o conflict)
-=======
->>>>>>> 02c53f6 (Check Sanity)
-=======
-                self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
->>>>>>> 5d0ead5 ([minor_change] Fix comments and formatting)
-=======
             # Handle APIC response
             if info.get("status") == 200:
                 if method == "POST" or method == "DELETE":
@@ -1743,9 +1591,4 @@ def ospf_spec():
                     self.fail_json(msg="APIC Error {code}: {text}".format_map(self.error))
                 except KeyError:
                     # Connection error
-<<<<<<< HEAD
-                    self.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
->>>>>>> 88b1ff5 ([minor_change] Removed different functions to make requests which can now be done by using just one function)
-=======
                     self.fail_json(msg="Connection failed for {url}. {msg}".format_map(info))
->>>>>>> a10677f ([ignore_changes] Applied the black format to the code)
