@@ -385,10 +385,10 @@ def main():
             for child in aci.existing[0].get("spanSrc", {}).get("children", {}):
                 if child.get("spanRsSrcToCtx") and child.get("spanRsSrcToCtx").get("attributes").get("tDn") != vrf_dn:
                     # Appending to child_config list not possible because of APIC Error 103: child (Rn) of class spanRsSrcToCtx is already attached.
-                    aci.delete_config_request("{0}/rssrcToCtx.json".format(source_path))
+                    aci.api_call("DELETE", "{0}/rssrcToCtx.json".format(source_path))
                 elif child.get("spanRsSrcToBD") and child.get("spanRsSrcToBD").get("attributes").get("tDn") != bd_dn:
                     # Appending to child_config list not possible because of APIC Error 103: child (Rn) of class spanRsSrcToBD is already attached.
-                    aci.delete_config_request("{0}/rssrcToBD.json".format(source_path))
+                    aci.api_call("DELETE", "{0}/rssrcToBD.json".format(source_path))
 
         aci.payload(
             aci_class="spanSrc",

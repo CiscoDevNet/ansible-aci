@@ -3,12 +3,12 @@ cn-dmz-apic-m1-02-v42 ansible_host=173.36.219.68 aci_hostname=173.36.219.68
 cn-dmz-apic-m1-03-v52 ansible_host=173.36.219.69 aci_hostname=173.36.219.69
 cn-dmz-apic-m1-04-v60 ansible_host=173.36.219.70 aci_hostname=173.36.219.70
 cn-dmz-apic-m1-07-v32 ansible_host=173.36.219.73 aci_hostname=173.36.219.73
-aws_cloud ansible_host=52.52.20.121 aci_hostname=52.52.20.121 cloud_type=aws region=us-east-1 region_2=us-west-1 availability_zone=us-west-1a
-azure_cloud ansible_host=20.245.236.136 aci_hostname=20.245.236.136 cloud_type=azure region=westus region_2=westus2 vnet_gateway=true
+#aws_cloud ansible_host=52.52.20.121 aci_hostname=52.52.20.121 cloud_type=aws region=us-east-1 region_2=us-west-1 availability_zone=us-west-1a
+#azure_cloud ansible_host=20.245.236.136 aci_hostname=20.245.236.136 cloud_type=azure region=westus region_2=westus2 vnet_gateway=true
 
 [aci:vars]
 aci_username=ansible_github_ci
 aci_password="sJ94G92#8dq2hx*K4qh"
 ansible_network_os=cisco.aci.aci
-ansible_connection=ansible.netcommon.httpapi
+ansible_connection=local
 ansible_python_interpreter=/usr/bin/python3.9

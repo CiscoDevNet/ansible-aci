@@ -302,6 +302,7 @@ def destination_epg_spec():
         ),
     )
 
+
 def ospf_spec():
     return dict(
         area_cost=dict(type="int"),
@@ -405,13 +406,6 @@ class ACIModule(object):
 
         # Set protocol for further use
         self.params["protocol"] = "https" if self.params.get("use_ssl", True) else "http"
-
-    def define_method(self):
-        """Set method based on state parameter"""
-
-        # Set method for further use
-        state_map = dict(absent="delete", present="post", query="get")
-        self.params["method"] = state_map.get(self.params.get("state"))
 
     def set_connection(self):
         if self.connection is None and self.module._socket_path:
@@ -1517,22 +1511,6 @@ class ACIModule(object):
                 with open(output_path, "a") as output_file:
                     if self.result.get("changed") is True:
                         json.dump([mo], output_file)
-                    
-    def delete_config_request(self, path):
-        self._config_request(path, "absent")
-        self.result["changed"] = True
-
-    def get_config_request(self, path):
-        self._config_request(path, "query")
-        return self.imdata
-
-    def _config_request(self, path, state):
-        reset_url = self.url
-        reset_state = self.params["state"]
-        self.params["state"] = state
-        self.request(path)
-        self.url = reset_url
-        self.params["state"] = reset_state
 
     def parsed_url_path(self, url):
         if not HAS_URLPARSE:

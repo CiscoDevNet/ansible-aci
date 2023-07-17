@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Cisco and/or its affiliates.
+# Copyright (c) 2020 Cisco and/or its affiliates.
 # Copyright: (c) 2020, Shreyas Srish (@shrsr) <ssrish@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 #
@@ -26,7 +26,7 @@ author:
 - Shreyas Srish (@shrsr)
 short_description: Ansible ACI HTTPAPI Plugin.
 description:
-  - This ACI plugin provides the HTTPAPI transport methods needed to initiate
+  - This ACI plugin provides the HTTPAPI methods needed to initiate
     a connection to the APIC, send API requests and process the
     response from the controller.
 """
@@ -113,7 +113,7 @@ class HttpApi(HttpApiBase):
             msg = "Error on attempt to logout from APIC. {0}".format(exc_logout)
             raise ConnectionError(self._return_info("", method, path, msg))
         self.connection._auth = None
-        self._verify_response(response, method, path, response_data)
+        self._verify_response(response, method, response_data)
 
     def set_parameters(self):
         connection_parameters = {}
@@ -122,7 +122,7 @@ class HttpApi(HttpApiBase):
             if key == "username" and value is None:
                 value = "admin"
             self.connection.set_option(CONNECTION_MAP.get(key, key), value)
-            if key == "timeout" and self.params.get(key) is not None:
+            if key == "timeout" and self.connection.get_option("persistent_connect_timeout") <= value:
                 self.connection.set_option("persistent_connect_timeout", value + 30)
 
             connection_parameters[key] = value
@@ -220,7 +220,7 @@ class HttpApi(HttpApiBase):
             # recurse through function for retrying the request
             return self.send_request(method, path, data)
         # return statement executed upon each successful response from the request function
-        return self._verify_response(response, method, path, response_data)
+        return self._verify_response(response, method, response_data)
 
     # Built-in-function
     def handle_httperror(self, exc):
@@ -240,17 +240,16 @@ class HttpApi(HttpApiBase):
         else:
             return validated_url
 
-    def _verify_response(self, response, method, path, response_data):
+    def _verify_response(self, response, method, response_data):
         """Process the return code and response object from APIC"""
         response_value = self._get_response_value(response_data)
         response_code = response.getcode()
-        path = self.validate_url(response.url)
         # Response check to remain consistent with fetch_url's response
         if str(response) == "HTTP Error 400: Bad Request":
             msg = "{0}".format(response)
         else:
             msg = "{0} ({1} bytes)".format(response.msg, len(response_value))
-        return self._return_info(response_code, method, path, msg, respond_data=response_value)
+        return self._return_info(response_code, method, "", msg, respond_data=response_value)
 
     def _get_response_value(self, response_data):
         """Extract string data from response_data returned from APIC"""
