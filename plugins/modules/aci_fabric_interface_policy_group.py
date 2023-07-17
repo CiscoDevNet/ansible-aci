@@ -80,6 +80,7 @@ EXAMPLES = r"""
     type: leaf
     state: query
   delegate_to: localhost
+  register: query_result
 
 - name: Query all Fabric Leaf Policy Groups
   cisco.aci.aci_fabric_interface_policy_group:
@@ -89,6 +90,7 @@ EXAMPLES = r"""
     type: leaf
     state: query
   delegate_to: localhost
+  register: query_result
 
 - name: Remove a Fabric Leaf Policy Group
   cisco.aci.aci_fabric_interface_policy_group:
@@ -261,14 +263,6 @@ def main():
             module_object=name,
             target_filter={"name": name},
         ),
-        child_classes=[
-            "fabricRsDwdmFabIfPol",
-            "fabricRsFIfPol",
-            "fabricRsFLinkFlapPol",
-            "fabricRsL3IfPol",
-            "fabricRsMacsecFabIfPol",
-            "fabricRsMonIfFabricPol",
-        ],
     )
 
     aci.get_existing()
