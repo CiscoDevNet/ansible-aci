@@ -1,0 +1,143 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # Clean Environment
+  - name: Ensure first lldp interface policy does not exist
+    aci_interface_policy_lldp: &aci_interface_policy_lldp_absent
+      <<: *aci_info
+      name: anstest_policy
+      description: test for lldp interface policy
+      receive_state: false
+      transmit_state: false
+      state: absent
+
+  - name: Ensure second lldp interface policy does not exist
+    aci_interface_policy_lldp: &aci_interface_policy_lldp_2_absent
+      <<: *aci_info
+      name: anstest_policy_2
+      state: absent
+
+  - name: Create first lldp interface policy (check_mode)
+    aci_interface_policy_lldp: &aci_interface_policy_lldp_present
+      <<: *aci_interface_policy_lldp_absent
+      state: present
+    check_mode: true
+    register: cm_add_interface_policy_lldp_1
+
+  - name: Create first lldp interface policy (normal_mode)
+    aci_interface_policy_lldp:
+      <<: *aci_interface_policy_lldp_present
+    register: nm_add_interface_policy_lldp_1
+
+  - name: Create first lldp interface policy again - testing idempotency
+    aci_interface_policy_lldp:
+      <<: *aci_interface_policy_lldp_present
+    register: idempotency_add_interface_policy_lldp_1
+
+  - name: Create second lldp interface policy
+    aci_interface_policy_lldp: &aci_interface_policy_lldp_2_present
+      <<: *aci_interface_policy_lldp_2_absent
+      state: present
+    register: nm_add_interface_policy_lldp_2
+
+  - name: Asserts for creation tasks
+    assert:
+      that:
+        - cm_add_interface_policy_lldp_1 is changed
+        - cm_add_interface_policy_lldp_1.previous == []
+        - cm_add_interface_policy_lldp_1.current == []
+        - nm_add_interface_policy_lldp_1 is changed
+        - nm_add_interface_policy_lldp_1.current.0.lldpIfPol.attributes.name == "anstest_policy"
+        - nm_add_interface_policy_lldp_1.current.0.lldpIfPol.attributes.adminRxSt == "disabled"
+        - nm_add_interface_policy_lldp_1.current.0.lldpIfPol.attributes.adminTxSt == "disabled"
+        - idempotency_add_interface_policy_lldp_1 is not changed
+        - nm_add_interface_policy_lldp_2 is changed
+        - nm_add_interface_policy_lldp_2.current.0.lldpIfPol.attributes.name == "anstest_policy_2"
+        - nm_add_interface_policy_lldp_2.current.0.lldpIfPol.attributes.adminRxSt == "enabled"
+        - nm_add_interface_policy_lldp_2.current.0.lldpIfPol.attributes.adminTxSt == "enabled"
+
+  - name: Query all lldp interface policies
+    aci_interface_policy_lldp:
+      <<: *aci_info
+      state: query
+    register: query_all_interface_policy_lldp
+
+  - name: Query first lldp interface policy
+    aci_interface_policy_lldp:
+      <<: *aci_interface_policy_lldp_present
+      state: query
+    register: query_first_interface_policy_lldp
+
+  - name: Asserts for query tasks
+    assert:
+      that:
+        - query_all_interface_policy_lldp is not changed
+        - query_all_interface_policy_lldp.current | length >= 2
+        - '"class/lldpIfPol.json" in query_all_interface_policy_lldp.url'
+        - query_first_interface_policy_lldp is not changed
+        - query_first_interface_policy_lldp.current.0.lldpIfPol.attributes.name == "anstest_policy"
+        - query_first_interface_policy_lldp.current.0.lldpIfPol.attributes.adminRxSt == "disabled"
+        - query_first_interface_policy_lldp.current.0.lldpIfPol.attributes.adminTxSt == "disabled"
+
+  - name: Delete first lldp interface policy (check_mode)
+    aci_interface_policy_lldp:
+      <<: *aci_interface_policy_lldp_present
+      state: absent
+    check_mode: true
+    register: cm_delete_interface_policy_lldp_1
+
+  - name: Delete first lldp interface policy (normal_mode)
+    aci_interface_policy_lldp:
+      <<: *aci_interface_policy_lldp_present
+      state: absent
+    register: nm_delete_interface_policy_lldp_1
+
+  - name: Delete first lldp interface policy again - testing idempotency
+    aci_interface_policy_lldp:
+      <<: *aci_interface_policy_lldp_present
+      state: absent
+    register: idempotency_delete_interface_policy_lldp_1
+
+  - name: Delete second lldp interface policy (normal_mode)
+    aci_interface_policy_lldp:
+      <<: *aci_interface_policy_lldp_2_present
+      state: absent
+    register: nm_delete_interface_policy_lldp_2
+
+  - name: Asserts for deletion tasks
+    assert:
+      that:
+        - cm_delete_interface_policy_lldp_1 is changed
+        - cm_delete_interface_policy_lldp_1.proposed == {}
+        - nm_delete_interface_policy_lldp_1 is changed
+        - nm_delete_interface_policy_lldp_1.previous != []
+        - nm_delete_interface_policy_lldp_1.current == []
+        - idempotency_delete_interface_policy_lldp_1 is not changed
+        - idempotency_delete_interface_policy_lldp_1.previous == []
+        - nm_delete_interface_policy_lldp_2 is changed
+        - nm_delete_interface_policy_lldp_2.previous != []
+        - nm_delete_interface_policy_lldp_2.current == []

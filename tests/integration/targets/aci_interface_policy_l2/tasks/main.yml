@@ -83,7 +83,7 @@
         - nm_add_interface_policy_l2_2.current.0.l2IfPol.attributes.qinq == "disabled"
         - nm_add_interface_policy_l2_2.current.0.l2IfPol.attributes.vepa == "disabled"
 
-  - name: Query all maintenance policies
+  - name: Query all l2 interface policies
     aci_interface_policy_l2:
       <<: *aci_info
       state: query

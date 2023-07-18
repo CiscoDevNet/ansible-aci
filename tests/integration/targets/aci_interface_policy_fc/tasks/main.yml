@@ -77,7 +77,7 @@
         - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.name == "anstest_policy_2"
         - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.portMode == "f"
 
-  - name: Query all maintenance policies
+  - name: Query all fc interface policies
     aci_interface_policy_fc:
       <<: *aci_info
       state: query
