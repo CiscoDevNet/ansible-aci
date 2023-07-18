@@ -285,6 +285,11 @@ def main():
     description = module.params.get("description")
     name_alias = module.params.get("name_alias")
 
+    child_classes = [
+        "trigRecurrWindowP",
+        "trigAbsWindowP",
+    ]
+
     if recurring:
         child_configs = [
             dict(
@@ -324,6 +329,7 @@ def main():
             target_filter={"name": name},
             module_object=name,
         ),
+        child_classes=child_classes,
     )
 
     aci.get_existing()
