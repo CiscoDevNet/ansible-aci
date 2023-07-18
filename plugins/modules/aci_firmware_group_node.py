@@ -221,6 +221,9 @@ def main():
     group = module.params.get("group")
     node = module.params.get("node")
     name_alias = module.params.get("name_alias")
+    block_name = None
+    if node is not None:
+        block_name = "blk{0}-{0}".format(node)
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -233,7 +236,7 @@ def main():
         subclass_1=dict(
             aci_class="fabricNodeBlk",
             aci_rn="nodeblk-blk{0}-{0}".format(node),
-            target_filter={"name": node},
+            target_filter={"name": block_name},
             module_object=node,
         ),
     )

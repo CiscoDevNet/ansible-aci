@@ -90,8 +90,12 @@
         - cm_add_maintenance_group_node_1.previous == []
         - cm_add_maintenance_group_node_1.current == []
         - nm_add_maintenance_group_node_1 is changed
+        - nm_add_maintenance_group_node_1.current.0.fabricNodeBlk.attributes.from_ == "1001"
+        - nm_add_maintenance_group_node_1.current.0.fabricNodeBlk.attributes.to_ == "1001"
         - idempotency_add_maintenance_group_node_1 is not changed
         - nm_add_maintenance_group_node_2 is changed
+        - nm_add_maintenance_group_node_2.current.0.fabricNodeBlk.attributes.from_ == "1002"
+        - nm_add_maintenance_group_node_2.current.0.fabricNodeBlk.attributes.to_ == "1002"
 
 
   - name: Query all maintenance group nodes
@@ -110,7 +114,10 @@
     assert:
       that:
         - query_all_maintenance_group_node is not changed
+        - query_all_maintenance_group_node.current | length >= 2
         - query_first_maintenance_group_node is not changed
+        - query_first_maintenance_group_node.current.0.fabricNodeBlk.attributes.from_ == "1001"
+        - query_first_maintenance_group_node.current.0.fabricNodeBlk.attributes.to_ == "1001"
 
   - name: Delete first maintenance group (check_mode)
     aci_maintenance_group_node:
