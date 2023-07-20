@@ -244,7 +244,7 @@ def main():
         description=dict(type="str", aliases=["descr"]),
         port_mode=dict(type="str", choices=["f", "np"]),  # No default provided on purpose
         auto_max_speed=dict(type="str", choices=["2G", "4G", "8G", "16G", "32G"]),
-        fill_pattern=dict(type="str", choices= ["ARBFF", "IDLE"]),
+        fill_pattern=dict(type="str", choices=["ARBFF", "IDLE"]),
         buffer_credits=dict(type="int"),
         speed=dict(type="str", choices=["auto", "unknown", "2G", "4G", "8G", "16G", "32G"]),
         trunk_mode=dict(type="str", choices=["auto", "trunk-off", "trunk-on", "un-init"]),
@@ -291,7 +291,7 @@ def main():
                 name=fc_policy,
                 descr=description,
                 portMode=port_mode,
-                automaxspeed= auto_max_speed,
+                automaxspeed=auto_max_speed,
                 fillPattern=fill_pattern,
                 rxBBCredit=buffer_credits,
                 speed=speed,

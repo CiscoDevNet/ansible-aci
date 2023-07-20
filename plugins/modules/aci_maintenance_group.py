@@ -225,20 +225,20 @@ def main():
     argument_spec.update(
         group=dict(type="str"),  # Not required for querying all objects
         policy=dict(type="str"),  # Not required for querying all objects
-        firmware_nodes_type = dict(
+        firmware_nodes_type=dict(
             type="str",
             choices=[
-                "cApicPatch", 
-                "catalog", 
-                "config", 
-                "controller", 
-                "controllerPatch", 
-                "plugin", 
-                "pluginPackage", 
-                "switch", 
-                "switchPatch", 
+                "cApicPatch",
+                "catalog",
+                "config",
+                "controller",
+                "controllerPatch",
+                "plugin",
+                "pluginPackage",
+                "switch",
+                "switchPatch",
                 "vpod",
-            ]
+            ],
         ),
         type=dict(type="str", choices=["ALL", "ALL_IN_POD", "range"]),
         description=dict(type="str", aliases=["descr"]),
@@ -280,7 +280,7 @@ def main():
             aci_class="maintMaintGrp",
             class_config=dict(
                 name=group,
-                fwtype = firmware_nodes_type,
+                fwtype=firmware_nodes_type,
                 type=type,
                 descr=description,
                 nameAlias=name_alias,

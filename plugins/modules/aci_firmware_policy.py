@@ -16,7 +16,7 @@ DOCUMENTATION = r"""
 module: aci_firmware_policy
 short_description: Manage firmware policies (firmware:FwP)
 description:
-- This module creates a firmware policy for firmware groups. 
+- This module creates a firmware policy for firmware groups.
 - The firmware policy is create first and then referenced by the firmware group.
 - You will assign the firmware and specify if you want to ignore the compatibility check.
 options:
