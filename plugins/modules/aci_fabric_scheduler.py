@@ -28,44 +28,43 @@ options:
     aliases: [ descr ]
   recurring:
     description:
-    - If you want to make the Scheduler a recurring it would be a "True" and for a
-      oneTime execution it would be "False". For a shell just exclude this option from
-      the task
+    - If you want to make the Scheduler a recurring it would be a C(True) and for a oneTime execution it would be C(False).
+    - For a shell, just exclude this option from the task.
     type: bool
   windowname:
     description:
-       - This is the name for your what recurring or oneTime execution
+    - This is the name for your what recurring or oneTime execution
     type: str
   concurCap:
     description:
-       - This is the amount of devices that can be executed on at a time
+    - This is the amount of devices that can be executed on at a time
     type: int
   maxTime:
     description:
-       - This is the amount MAX amount of time a process can be executed
+    - This is the amount MAX amount of time a process can be executed
     type: str
   date:
     description:
-       - This is the date and time that the scheduler will execute
+    - This is the date and time that the scheduler will execute
     type: str
   hour:
     description:
-       - This set the hour of execution
+    - This set the hour of execution
     type: int
   minute:
     description:
-       - This sets the minute of execution, used in conjunction with hour
+    - This sets the minute of execution, used in conjunction with hour
     type: int
   day:
     description:
-       - This sets the day when execution will take place
+    - This sets the day when execution will take place
     type: str
-    default: "every-day"
-    choices: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday','Sunday', 'even-day', 'odd-day', 'every-day']
+    default: every-day
+    choices: [ Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, even-day, odd-day, every-day ]
   state:
     description:
-       - Use C(present) or C(absent) for adding or removing.
-       - Use C(query) for listing an object or multiple objects.
+    - Use C(present) or C(absent) for adding or removing.
+    - Use C(query) for listing an object or multiple objects.
     type: str
     default: present
     choices: [ absent, present, query ]
@@ -74,61 +73,61 @@ options:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
 extends_documentation_fragment:
-- module: cisco.aci.aci
-- module: cisco.aci.annotation
-- module: cisco.aci.owner
+- cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(trig:SchedP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-    - Steven Gerhart (@sgerhart)
+- Steven Gerhart (@sgerhart)
 """
 
 EXAMPLES = r"""
-   - name: Simple Scheduler (Empty)
-     cisco.aci.aci_fabric_scheduler:
-        host: "{{ inventory_hostname }}"
-        username: "{{ user }}"
-        password: "{{ pass }}"
-        validate_certs: false
-        name: simpleScheduler
-        state: present
-   - name: Remove Simple Scheduler
-     cisco.aci.aci_fabric_scheduler:
-        host: "{{ inventory_hostname }}"
-        username: "{{ user }}"
-        password: "{{ pass }}"
-        validate_certs: false
-        name: simpleScheduler
-        state: absent
-   - name: One Time Scheduler
-     cisco.aci.aci_fabric_scheduler:
-        host: "{{ inventory_hostname }}"
-        username: "{{ user }}"
-        password: "{{ pass }}"
-        validate_certs: false
-        name: OneTime
-        windowname: OneTime
-        recurring: False
-        concurCap: 20
-        date: "2018-11-20T24:00:00"
-        state: present
-   - name: Recurring Scheduler
-     cisco.aci.aci_fabric_scheduler:
-        host: "{{ inventory_hostname }}"
-        username: "{{ user }}"
-        password: "{{ pass }}"
-        validate_certs: false
-        name: Recurring
-        windowname: Recurring
-        recurring: True
-        concurCap: 20
-        hour: 13
-        minute: 30
-        day: Tuesday
-        state: present
+- name: Simple Scheduler (Empty)
+  cisco.aci.aci_fabric_scheduler:
+    host: "{{ inventory_hostname }}"
+    username: "{{ user }}"
+    password: "{{ pass }}"
+    validate_certs: false
+    name: simpleScheduler
+    state: present
+- name: Remove Simple Scheduler
+  cisco.aci.aci_fabric_scheduler:
+    host: "{{ inventory_hostname }}"
+    username: "{{ user }}"
+    password: "{{ pass }}"
+    validate_certs: false
+    name: simpleScheduler
+    state: absent
+- name: One Time Scheduler
+  cisco.aci.aci_fabric_scheduler:
+    host: "{{ inventory_hostname }}"
+    username: "{{ user }}"
+    password: "{{ pass }}"
+    validate_certs: false
+    name: OneTime
+    windowname: OneTime
+    recurring: False
+    concurCap: 20
+    date: "2018-11-20T24:00:00"
+    state: present
+- name: Recurring Scheduler
+  cisco.aci.aci_fabric_scheduler:
+    host: "{{ inventory_hostname }}"
+    username: "{{ user }}"
+    password: "{{ pass }}"
+    validate_certs: false
+    name: Recurring
+    windowname: Recurring
+    recurring: True
+    concurCap: 20
+    hour: 13
+    minute: 30
+    day: Tuesday
+    state: present
 """
 
 RETURN = r"""
