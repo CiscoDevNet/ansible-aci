@@ -19,12 +19,11 @@ description:
 options:
     group:
         description:
-        - This the name of the firmware group.
+        - The name of the firmware group.
         type: str
     policy:
         description:
-        - This is the name of the firmware policy, which was create by aci_firmware_policy.
-        - It is important that you use the same name as the policy created with aci_firmware_policy.
+        - The name of the firmware policy.
         type: str
     type:
         description:
@@ -49,12 +48,14 @@ options:
         - The alias for the current object. This relates to the nameAlias field in ACI.
         type: str
 extends_documentation_fragment:
-- cisco.aci.aci
-- cisco.aci.annotation
-- cisco.aci.owner
+- module: cisco.aci.aci
+- module: cisco.aci.annotation
+- module: cisco.aci.owner
 
+notes:
+- A firmware policy is required for this module, which could have been created using the M(cisco.aci.aci_firmware_policy) module or via the UI.
 seealso:
-- module: aci.aci_firmware_policy
+- module: cisco.aci.aci_firmware_policy
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(firmware:FwGrp).
   link: https://developer.cisco.com/docs/apic-mim-ref/

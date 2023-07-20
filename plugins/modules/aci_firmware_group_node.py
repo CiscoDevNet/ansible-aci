@@ -19,7 +19,7 @@ description:
 options:
     group:
         description:
-        - This is the name of the firmware group.
+        - The name of the firmware group.
         type: str
     node:
         description:
@@ -38,13 +38,16 @@ options:
         - The alias for the current object. This relates to the nameAlias field in ACI.
         type: str
 extends_documentation_fragment:
-- cisco.aci.aci
-- cisco.aci.annotation
+- module: cisco.aci.aci
+- module: cisco.aci.annotation
 
+notes:
+- A firmware group is required for this module, which could have been created using the M(cisco.aci.aci_firmware_group) module or via the UI.
 seealso:
+- module: cisco.aci.aci_firmware_policy
 - module: cisco.aci.aci_firmware_group
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(l3ext:Out).
+  description: More information about the internal APIC class B(fabric:NodeBlk).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
     - Steven Gerhart (@sgerhart)

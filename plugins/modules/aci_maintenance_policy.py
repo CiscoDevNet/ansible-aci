@@ -60,8 +60,8 @@ options:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
 extends_documentation_fragment:
-- cisco.aci.aci
-- cisco.aci.annotation
+- module: cisco.aci.aci
+- module: cisco.aci.annotation
 
 notes:
 - A scheduler is required for this module, which could have been created using the M(cisco.aci.aci_fabric_scheduler) module or via the UI.
