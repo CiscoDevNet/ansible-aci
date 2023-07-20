@@ -53,14 +53,13 @@ options:
         - The alias for the current object. This relates to the nameAlias field in ACI.
         type: str
 extends_documentation_fragment:
-- module: cisco.aci.aci
-- module: cisco.aci.annotation
-- module: cisco.aci.owner
+- cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 notes:
 - A maintenance policy M(cisco.aci.aci_maintenance_policy) must be created prior to creating an aci maintenance group.
 seealso:
-- module: cisco.aci.aci_fabric_scheduler
 - module: cisco.aci.aci_maintenance_policy
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(maint:MaintGrp).

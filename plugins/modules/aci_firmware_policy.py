@@ -22,7 +22,7 @@ description:
 options:
     name:
         description:
-        - The name of the firmware policy
+        - Name of the firmware policy
         type: str
     version:
         description:
@@ -47,9 +47,9 @@ options:
         - The alias for the current object. This relates to the nameAlias field in ACI.
         type: str
 extends_documentation_fragment:
-- module: cisco.aci.aci
-- module: cisco.aci.annotation
-- module: cisco.aci.owner
+- cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
 
 seealso:
 - name: APIC Management Information Model reference

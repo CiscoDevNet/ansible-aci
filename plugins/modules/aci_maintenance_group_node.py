@@ -38,14 +38,10 @@ options:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
 extends_documentation_fragment:
-- module: cisco.aci.aci
-- module: cisco.aci.annotation
+- cisco.aci.aci
+- cisco.aci.annotation
 
-notes:
-- A maintenance group is required for this module, which could have been created using the M(cisco.aci.aci_maintenance_group) module or via the UI.
 seealso:
-- module: cisco.aci.aci_fabric_scheduler
-- module: cisco.aci.aci_maintenance_policy
 - module: cisco.aci.aci_maintenance_group
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fabric:NodeBlk).
