@@ -20,7 +20,7 @@
       output_level: debug
 
 - name: Query system information
-  aci_system:
+  cisco.aci.aci_system:
     <<: *aci_info
     id: 1
     state: query
