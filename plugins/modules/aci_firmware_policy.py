@@ -1,6 +1,7 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
-
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -10,54 +11,55 @@ __metaclass__ = type
 
 ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = """
+DOCUMENTATION = r"""
 ---
 module: aci_firmware_policy
-
-short_description: This creates a firmware policy
-
-
+short_description: Manage firmware policies (firmware:FwP)
 description:
-    - This module creates a firmware policy for firmware groups. The firmware policy is create first and then
-    - referenced by the firmware group. You will assign the firmware and specify if you want to ignore the compatibility
-    - check
+- This module creates a firmware policy for firmware groups. 
+- The firmware policy is create first and then referenced by the firmware group.
+- You will assign the firmware and specify if you want to ignore the compatibility check.
 options:
     name:
         description:
-            - Name of the firmware policy
+        - Name of the firmware policy
         type: str
     version:
         description:
-            - The version of the firmware associated with this policy. This value is very import as well as constructing
-            - it correctly. The syntax for this field is n9000-xx.x. If you look at the firmware repository using the UI
-            - each version will have a "Full Version" column, this is the value you need to use. So, if the Full Version
-            - is 13.1(1i), the value for this field would be n9000-13.1(1i)
+        - The version of the firmware associated with this policy. This value is very import as well as constructing
+        - it correctly. The syntax for this field is n9000-xx.x. If you look at the firmware repository using the UI
+        - each version will have a "Full Version" column, this is the value you need to use. So, if the Full Version
+        - is 13.1(1i), the value for this field would be n9000-13.1(1i)
         type: str
     ignoreCompat:
         description:
-            - Check if compatibility checks should be ignored
+        - Check if compatibility checks should be ignored
         type: bool
     state:
         description:
-            - Use C(present) or C(absent) for adding or removing.
-            - Use C(query) for listing an object or multiple objects.
+        - Use C(present) or C(absent) for adding or removing.
+        - Use C(query) for listing an object or multiple objects.
         type: str
         choices: [absent, present, query]
         default: present
     name_alias:
         description:
-            - The alias for the current object. This relates to the nameAlias field in ACI.
+        - The alias for the current object. This relates to the nameAlias field in ACI.
         type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 - cisco.aci.owner
 
+seealso:
+- name: APIC Management Information Model reference
+  description: More information about the internal APIC class B(firmware:FwP).
+  link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
     - Steven Gerhart (@sgerhart)
+    - Gaspard Micol (@gmicol)
 """
 
-# FIXME: Add more, better examples
 EXAMPLES = r"""
    - name: firmware policy
      cisco.aci.aci_firmware_policy:
@@ -72,7 +74,7 @@ EXAMPLES = r"""
 
 """
 
-RETURN = """
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success

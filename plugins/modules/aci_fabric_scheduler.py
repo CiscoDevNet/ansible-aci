@@ -9,16 +9,12 @@ __metaclass__ = type
 
 ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = """
+DOCUMENTATION = r"""
 ---
 module: aci_fabric_scheduler
-
-short_description: This modules creates ACI schedulers.
-
-
+short_description: This modules creates ACI schedulers (trig:SchedP)
 description:
-    -   With the module you can create schedule policies that can be a shell, onetime execution or recurring
-
+- With the module you can create schedule policies that can be a shell, onetime execution or recurring.
 options:
   name:
     description:
@@ -78,10 +74,14 @@ options:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
 extends_documentation_fragment:
-- cisco.aci.aci
-- cisco.aci.annotation
-- cisco.aci.owner
+- module: cisco.aci.aci
+- module: cisco.aci.annotation
+- module: cisco.aci.owner
 
+seealso:
+- name: APIC Management Information Model reference
+  description: More information about the internal APIC class B(trig:SchedP).
+  link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
     - Steven Gerhart (@sgerhart)
 """
@@ -131,7 +131,7 @@ EXAMPLES = r"""
         state: present
 """
 
-RETURN = """
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success

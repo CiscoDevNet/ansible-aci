@@ -1,50 +1,54 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-
 ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = """
+DOCUMENTATION = r"""
 ---
 module: aci_firmware_group_node
-
-short_description: This modules adds and remove nodes from the firmware group
-
-
+short_description: Manage firmware group nodes (fabric:NodeBlk)
 description:
-    - This module addes/deletes a node to the firmware group. This modules assigns 1 node at a time.
-
+- This module addes/deletes a node to the firmware group. This modules assigns 1 node at a time.
 options:
     group:
         description:
-            - This is the name of the firmware group
+        - This is the name of the firmware group.
         type: str
     node:
         description:
-            - The node to be added to the firmware group - the value equals the NodeID
+        - The node to be added to the firmware group.
+        - the value equals the NodeID.
         type: str
     state:
         description:
-            - Use C(present) or C(absent) for adding or removing.
-            - Use C(query) for listing an object or multiple objects.
+        - Use C(present) or C(absent) for adding or removing.
+        - Use C(query) for listing an object or multiple objects.
         type: str
         default: present
         choices: [ absent, present, query ]
     name_alias:
         description:
-            - The alias for the current object. This relates to the nameAlias field in ACI.
+        - The alias for the current object. This relates to the nameAlias field in ACI.
         type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
+seealso:
+- module: cisco.aci.aci_firmware_group
+- name: APIC Management Information Model reference
+  description: More information about the internal APIC class B(l3ext:Out).
+  link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
     - Steven Gerhart (@sgerhart)
+    - Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
@@ -89,7 +93,7 @@ EXAMPLES = r"""
   register: query_result
 """
 
-RETURN = """
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success

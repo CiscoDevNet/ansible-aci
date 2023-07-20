@@ -44,6 +44,9 @@
       <<: *aci_info 
       group: anstest_group
       policy: anstest_policy
+      firmware_nodes_type: controller
+      type: ALL
+      description: test for maintenance group
       state: absent
 
   - name: Ensure second maintenance group does not exist
@@ -84,11 +87,15 @@
         - cm_add_maintenance_group_1.current == []
         - nm_add_maintenance_group_1 is changed
         - nm_add_maintenance_group_1.current.0.maintMaintGrp.attributes.name == "anstest_group"
+        - nm_add_maintenance_group_1.current.0.maintMaintGrp.attributes.fwtype == "controller"
+        - nm_add_maintenance_group_1.current.0.maintMaintGrp.attributes.type == "ALL"
         - nm_add_maintenance_group_1.current.0.maintMaintGrp.children.0.maintRsMgrpp.attributes.tnMaintMaintPName == "anstest_policy"
         - idempotency_add_maintenance_group_1 is not changed
         - nm_add_maintenance_group_2 is changed
         - nm_add_maintenance_group_2.current.0.maintMaintGrp.attributes.name == "anstest_group_2"
         - nm_add_maintenance_group_2.current.0.maintMaintGrp.children.0.maintRsMgrpp.attributes.tnMaintMaintPName == "anstest_policy_2"
+        - nm_add_maintenance_group_2.current.0.maintMaintGrp.attributes.fwtype == "switch"
+        - nm_add_maintenance_group_2.current.0.maintMaintGrp.attributes.type == "range"
 
 
   - name: Query all maintenance groups
@@ -115,6 +122,8 @@
         - query_first_maintenance_group is not changed
         - query_first_maintenance_group.current.0.maintMaintGrp.attributes.name == "anstest_group"
         - query_first_maintenance_group.current.0.maintMaintGrp.children.0.maintRsMgrpp.attributes.tnMaintMaintPName == "anstest_policy"
+        - query_first_maintenance_group.current.0.maintMaintGrp.attributes.fwtype == "controller"
+        - query_first_maintenance_group.current.0.maintMaintGrp.attributes.type == "ALL"
 
   - name: Delete first maintenance group (check_mode)
     aci_maintenance_group:

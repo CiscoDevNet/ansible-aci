@@ -37,14 +37,16 @@
     aci_firmware_group: &aci_firmware_group_absent
       <<: *aci_info 
       group: anstest_group
-      firmwarepol: anstest_policy
+      policy: anstest_policy
+      type: ALL
+      description: test firmware group
       state: absent
 
   - name: Ensure second firmware group does not exist
     aci_firmware_group: &aci_firmware_group_2_absent
       <<: *aci_info 
       group: anstest_group_2
-      firmwarepol: anstest_policy
+      policy: anstest_policy
       state: absent
 
   - name: Create first firmware group (check_mode)
@@ -78,6 +80,7 @@
         - cm_add_firmware_group_1.current == []
         - nm_add_firmware_group_1 is changed
         - nm_add_firmware_group_1.current.0.firmwareFwGrp.attributes.name == "anstest_group"
+        - nm_add_firmware_group_1.current.0.firmwareFwGrp.attributes.type == "ALL"
         - nm_add_firmware_group_1.current.0.firmwareFwGrp.children.0.firmwareRsFwgrpp.attributes.tnFirmwareFwPName == "anstest_policy"
         - idempotency_add_firmware_group_1 is not changed
         - nm_add_firmware_group_2 is changed
@@ -106,6 +109,7 @@
         - '"class/firmwareFwGrp.json" in query_all_firmware_group.url'
         - query_first_firmware_group is not changed
         - query_first_firmware_group.current.0.firmwareFwGrp.attributes.name == "anstest_group"
+        - query_first_firmware_group.current.0.firmwareFwGrp.attributes.type == "ALL"
         - query_first_firmware_group.current.0.firmwareFwGrp.children.0.firmwareRsFwgrpp.attributes.tnFirmwareFwPName == "anstest_policy"
 
   - name: Delete first firmware group (check_mode)

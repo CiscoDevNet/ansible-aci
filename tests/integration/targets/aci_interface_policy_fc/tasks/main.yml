@@ -32,6 +32,11 @@
       name: anstest_policy
       description: test for fc interface policy
       port_mode: np
+      auto_max_speed: 16G
+      fill_pattern: ARBFF
+      buffer_credits: 32
+      speed: 8G
+      trunk_mode: trunk-on
       state: absent
 
   - name: Ensure second fc interface policy does not exist
@@ -72,10 +77,21 @@
         - nm_add_interface_policy_fc_1 is changed
         - nm_add_interface_policy_fc_1.current.0.fcIfPol.attributes.name == "anstest_policy"
         - nm_add_interface_policy_fc_1.current.0.fcIfPol.attributes.portMode == "np"
+        - nm_add_interface_policy_fc_1.current.0.fcIfPol.attributes.automaxspeed == "16G"
+        - nm_add_interface_policy_fc_1.current.0.fcIfPol.attributes.fillPattern == "ARBFF"
+        - nm_add_interface_policy_fc_1.current.0.fcIfPol.attributes.rxBBCredit == "32"
+        - nm_add_interface_policy_fc_1.current.0.fcIfPol.attributes.speed == "8G"
+        - nm_add_interface_policy_fc_1.current.0.fcIfPol.attributes.trunkMode == "trunk-on"
         - idempotency_add_interface_policy_fc_1 is not changed
         - nm_add_interface_policy_fc_2 is changed
         - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.name == "anstest_policy_2"
         - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.portMode == "f"
+        - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.automaxspeed == "32G"
+        - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.fillPattern == "IDLE"
+        - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.rxBBCredit == "64"
+        - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.speed == "auto"
+        - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.trunkMode == "trunk-off"
+        - idempotency_add_interface_policy_fc_1 is not changed
 
   - name: Query all fc interface policies
     aci_interface_policy_fc:
@@ -98,6 +114,11 @@
         - query_first_interface_policy_fc is not changed
         - query_first_interface_policy_fc.current.0.fcIfPol.attributes.name == "anstest_policy"
         - query_first_interface_policy_fc.current.0.fcIfPol.attributes.portMode == "np"
+        - query_first_interface_policy_fc.current.0.fcIfPol.attributes.automaxspeed == "16G"
+        - query_first_interface_policy_fc.current.0.fcIfPol.attributes.fillPattern == "ARBFF"
+        - query_first_interface_policy_fc.current.0.fcIfPol.attributes.rxBBCredit == "32"
+        - query_first_interface_policy_fc.current.0.fcIfPol.attributes.speed == "8G"
+        - query_first_interface_policy_fc.current.0.fcIfPol.attributes.trunkMode == "trunk-on"
 
   - name: Delete first fc interface policy (check_mode)
     aci_interface_policy_fc:

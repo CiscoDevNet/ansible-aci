@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_maintenance_policy
-short_description: Manage firmware maintenance policies
+short_description: Manage firmware maintenance policies (maint:MaintP)
 description:
 - Manage maintenance policies that defines behavior during an ACI upgrade.
 options:
@@ -64,8 +65,14 @@ extends_documentation_fragment:
 
 notes:
 - A scheduler is required for this module, which could have been created using the M(cisco.aci.aci_fabric_scheduler) module or via the UI.
+seealso:
+- module: cisco.aci.aci_fabric_scheduler
+- name: APIC Management Information Model reference
+  description: More information about the internal APIC class B(maint:MaintP).
+  link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Steven Gerhart (@sgerhart)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""

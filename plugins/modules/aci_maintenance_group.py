@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -9,40 +10,63 @@ __metaclass__ = type
 
 ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = """
+DOCUMENTATION = r"""
 module: aci_maintenance_group
-short_description: This creates an ACI maintenance group
-notes:
-    - a maintenance policy (aci_maintenance_policy must be created prior to creating an aci maintenance group
+short_description: This creates an ACI maintenance group (maint:MaintGrp)
 description:
-    - This modules creates an ACI maintenance group
+    - This modules creates an ACI maintenance group.
 options:
     group:
         description:
-            - This is the name of the group
+        - The name of the maintenance group.
         type: str
     policy:
         description:
-            - This is the name of the policy that was created using aci_maintenance_policy
+        - The name of the maintenance policy.
         type: str
+    firmware_nodes_type:
+        description:
+        - The firmware type of nodes in the maintenance group.
+        - The APIC defaults to C(switch) when unset during creation.
+        type: str
+        choices: [ cApicPatch, catalog, config, controller, controllerPatch, plugin, pluginPackage, switch, switchPatch, vpod ]
+    type:
+        description:
+        - The type of the maintenance group.
+        - The APIC defaults to C(range) when unset during creation.
+        type: str
+        choices: [ ALL, ALL_IN_POD, range ]
+    description:
+        description:
+        - Description for the maintenance group.
+        type: str
+        aliases: [ descr ]
     state:
         description:
-            - Use C(present) or C(absent) for adding or removing.
-            - Use C(query) for listing an object or multiple objects.
+        - Use C(present) or C(absent) for adding or removing.
+        - Use C(query) for listing an object or multiple objects.
         type: str
         choices: [absent, present, query]
         default: present
     name_alias:
         description:
-            - The alias for the current object. This relates to the nameAlias field in ACI.
+        - The alias for the current object. This relates to the nameAlias field in ACI.
         type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 - cisco.aci.owner
 
+notes:
+- A maintenance policy M(cisco.aci.aci_maintenance_policy) must be created prior to creating an aci maintenance group.
+seealso:
+- module: cisco.aci.aci_maintenance_policy
+- name: APIC Management Information Model reference
+  description: More information about the internal APIC class B(maint:MaintGrp).
+  link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
     - Steven Gerhart (@sgerhart)
+    - Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
@@ -85,7 +109,7 @@ EXAMPLES = r"""
   register: query_result
 """
 
-RETURN = """
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -201,6 +225,23 @@ def main():
     argument_spec.update(
         group=dict(type="str"),  # Not required for querying all objects
         policy=dict(type="str"),  # Not required for querying all objects
+        firmware_nodes_type = dict(
+            type="str",
+            choices=[
+                "cApicPatch", 
+                "catalog", 
+                "config", 
+                "controller", 
+                "controllerPatch", 
+                "plugin", 
+                "pluginPackage", 
+                "switch", 
+                "switchPatch", 
+                "vpod",
+            ]
+        ),
+        type=dict(type="str", choices=["ALL", "ALL_IN_POD", "range"]),
+        description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
@@ -217,6 +258,9 @@ def main():
     state = module.params.get("state")
     group = module.params.get("group")
     policy = module.params.get("policy")
+    firmware_nodes_type = module.params.get("firmware_nodes_type")
+    type = module.params.get("type")
+    description = module.params.get("description")
     name_alias = module.params.get("name_alias")
     aci = ACIModule(module)
     aci.construct_url(
@@ -236,6 +280,9 @@ def main():
             aci_class="maintMaintGrp",
             class_config=dict(
                 name=group,
+                fwtype = firmware_nodes_type,
+                type=type,
+                descr=description,
                 nameAlias=name_alias,
             ),
             child_configs=[
