@@ -36,6 +36,34 @@ options:
     aliases: [ policy_group_type ]
     choices: [ leaf, spine ]
     required: true
+  dwdm_policy:
+    description:
+    - The name of the DWDM policy to bind to the Fabric Leaf or Spine Interface Policy Group.
+    type: str
+  link_level_policy:
+    description:
+    - The name of the Link Level policy to bind to the Fabric Leaf or Spine Interface Policy Group.
+    type: str
+  link_flap_policy:
+    description:
+    - The name of the Link Flap policy to bind to the Fabric Leaf or Spine Interface Policy Group.
+    type: str
+  l3_interface_policy:
+    description:
+    - The name of the L3 Interface policy to bind to the Fabric Leaf or Spine Interface Policy Group.
+    type: str
+  macsec_policy:
+    description:
+    - The name of the MACSec policy to bind to the Fabric Leaf or Spine Interface Policy Group.
+    type: str
+  monitoring_policy:
+    description:
+    - The name of the Monitoring policy to bind to the Fabric Leaf or Spine Interface Policy Group.
+    type: str
+  transceiver_policy_tdn:
+    description:
+    - The target Dn of the Transceiver policy to bind to the Fabric Leaf or Spine Interface Policy Group.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -221,6 +249,13 @@ def main():
         description=dict(type="str", aliases=["descr"]),
         name_alias=dict(type="str"),
         type=dict(type="str", aliases=["policy_group_type"], choices=["leaf", "spine"], required=True),
+        dwdm_policy=dict(type="str"),
+        link_level_policy=dict(type="str"),
+        link_flap_policy=dict(type="str"),
+        l3_interface_policy=dict(type="str"),
+        macsec_policy=dict(type="str"),
+        monitoring_policy=dict(type="str"),
+        transceiver_policy_tdn=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -240,6 +275,13 @@ def main():
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
     policy_group_type = module.params.get("type")
+    dwdm_policy = module.params.get("dwdm_policy")
+    link_level_policy = module.params.get("link_level_policy")
+    link_flap_policy = module.params.get("link_flap_policy")
+    l3_interface_policy = module.params.get("l3_interface_policy")
+    macsec_policy = module.params.get("macsec_policy")
+    monitoring_policy = module.params.get("monitoring_policy")
+    transceiver_policy_tdn = module.params.get("transceiver_policy_tdn")
 
     if policy_group_type == "leaf":
         policy_group_class_name = "fabricLePortPGrp"
@@ -263,11 +305,36 @@ def main():
             module_object=name,
             target_filter={"name": name},
         ),
+        child_classes=[
+            "fabricRsDwdmFabIfPol",
+            "fabricRsFIfPol",
+            "fabricRsFLinkFlapPol",
+            "fabricRsL3IfPol",
+            "fabricRsMacsecFabIfPol",
+            "fabricRsMonIfFabricPol",
+            "fabricRsOpticsFabIfPol",
+        ],
     )
 
     aci.get_existing()
 
     if state == "present":
+        child_configs = []
+        if dwdm_policy is not None:
+            child_configs.append(dict(fabricRsDwdmFabIfPol=dict(attributes=dict(tnDwdmFabIfPolName=dwdm_policy))))
+        if link_level_policy is not None:
+            child_configs.append(dict(fabricRsFIfPol=dict(attributes=dict(tnFabricFIfPolName=link_level_policy))))
+        if link_flap_policy is not None:
+            child_configs.append(dict(fabricRsFLinkFlapPol=dict(attributes=dict(tnFabricFLinkFlapPolName=link_flap_policy))))
+        if l3_interface_policy is not None:
+            child_configs.append(dict(fabricRsL3IfPol=dict(attributes=dict(tnL3IfPolName=l3_interface_policy))))
+        if macsec_policy is not None:
+            child_configs.append(dict(fabricRsMacsecFabIfPol=dict(attributes=dict(tnMacsecFabIfPolName=macsec_policy))))
+        if monitoring_policy is not None:
+            child_configs.append(dict(fabricRsMonIfFabricPol=dict(attributes=dict(tnMonFabricPolName=monitoring_policy))))
+        if transceiver_policy_tdn is not None:
+            child_configs.append(dict(fabricRsOpticsFabIfPol=dict(attributes=dict(tDn=transceiver_policy_tdn))))
+
         aci.payload(
             aci_class=policy_group_class_name,
             class_config=dict(
@@ -275,6 +342,7 @@ def main():
                 descr=description,
                 nameAlias=name_alias,
             ),
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class=policy_group_class_name)

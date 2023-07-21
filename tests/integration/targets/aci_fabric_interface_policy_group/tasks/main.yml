@@ -45,13 +45,20 @@
   register: cm_leaf_policy_group_present
 
 - name: Add a leaf fabric interface policy group with normal mode
-  aci_fabric_interface_policy_group:
+  aci_fabric_interface_policy_group: &nm_leaf_policy_group_present
     <<: *cm_leaf_policy_group_present
+    dwdm_policy: default
+    link_level_policy: default
+    link_flap_policy: default
+    l3_interface_policy: default
+    macsec_policy: default
+    monitoring_policy: default
+    transceiver_policy_tdn: "uni/fabric/zrfab-default"
   register: nm_leaf_policy_group_present
 
 - name: Add a leaf fabric interface policy group with normal mode again
   aci_fabric_interface_policy_group:
-    <<: *cm_leaf_policy_group_present
+    <<: *nm_leaf_policy_group_present
   register: nm_leaf_policy_group_present_again
 
 - name: Add a spine fabric interface policy group with check mode
@@ -60,6 +67,13 @@
     name: spine_policy_group
     type: spine
     descr: spine_policy_group created
+    dwdm_policy: default
+    link_level_policy: default
+    link_flap_policy: default
+    l3_interface_policy: default
+    macsec_policy: default
+    monitoring_policy: default
+    transceiver_policy_tdn: "uni/fabric/zrfab-default"
     state: present
   check_mode: true
   register: cm_spine_policy_group_present
@@ -110,6 +124,7 @@
       - nm_leaf_policy_group_present.current[0].fabricLePortPGrp.attributes.name == "leaf_policy_group"
       - nm_leaf_policy_group_present.current[0].fabricLePortPGrp.attributes.descr == "leaf_policy_group created"
       - nm_leaf_policy_group_present.current[0].fabricLePortPGrp.attributes.dn == "uni/fabric/funcprof/leportgrp-leaf_policy_group"
+      - nm_leaf_policy_group_present.current[0].fabricLePortPGrp.children | length == 7
       - nm_leaf_policy_group_present_again is not changed
       - nm_leaf_policy_group_present_again.current != []
       - nm_leaf_policy_group_present_again.previous != []
@@ -127,6 +142,7 @@
       - nm_spine_policy_group_present.current[0].fabricSpPortPGrp.attributes.name == "spine_policy_group"
       - nm_spine_policy_group_present.current[0].fabricSpPortPGrp.attributes.descr == "spine_policy_group created"
       - nm_spine_policy_group_present.current[0].fabricSpPortPGrp.attributes.dn == "uni/fabric/funcprof/spportgrp-spine_policy_group"
+      - nm_spine_policy_group_present.current[0].fabricSpPortPGrp.children | length == 7
       - nm_spine_policy_group_present_again is not changed
       - nm_spine_policy_group_present_again.current != []
       - nm_spine_policy_group_present_again.previous != []
