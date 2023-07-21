@@ -22,7 +22,24 @@ description:
 options:
     name:
         description:
-        - Name of the firmware policy
+        - The name of the firmware policy
+        type: str
+    effective_on_reboot:
+        description:
+        - A property that indicates if the selected firmware version will be active after reboot.
+        - The firmware must be effective on an unplanned reboot before the scheduled maintenance operation.
+        type: bool
+    ignore_compat:
+        description:
+        - Check if compatibility checks should be ignored
+        type: bool
+    sr_upgrade:
+        description:
+        - The SR firware upgrade.
+        type: bool
+    sr_version:
+        description:
+        -  The SR version of the firmware associated with this policy.
         type: str
     version:
         description:
@@ -31,10 +48,21 @@ options:
         - each version will have a "Full Version" column, this is the value you need to use. So, if the Full Version
         - is 13.1(1i), the value for this field would be n9000-13.1(1i)
         type: str
-    ignoreCompat:
+    version_check_override:
         description:
-        - Check if compatibility checks should be ignored
-        type: bool
+        - The version check override.
+        - This is a directive to ignore the version check for the next install.
+        - The version check, which occurs during a maintenance window, checks to see if the desired version matches the running version.
+        - If the versions do not match, the install is performed. If the versions do match, the install is not performed.
+        - The version check override is a one-time override that performs the install whether or not the versions match.
+        - The APIC defaults to C(untriggered) when unset during creation.
+        type: str
+        choices: [ trigger, trigger-immediate, triggered, untriggered ]
+    description:
+        description:
+        - Description for the firmware policy.
+        type: str
+        aliases: [ descr ]
     state:
         description:
         - Use C(present) or C(absent) for adding or removing.
@@ -61,17 +89,44 @@ author:
 """
 
 EXAMPLES = r"""
-   - name: firmware policy
-     cisco.aci.aci_firmware_policy:
-        host: "{{ inventory_hostname }}"
-        username: "{{ user }}"
-        password: "{{ pass }}"
-        validate_certs: false
-        name: test2FrmPol
-        version: n9000-13.2(1m)
-        ignoreCompat: False
-        state: present
+- name: Create a firmware policy
+  cisco.aci.aci_firmware_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: my_firmware_policy
+    version: n9000-13.2(1m)
+    ignore_compat: False
+    state: present
+  delegate_to: localhost
 
+- name: Delete a firmware policy
+  cisco.aci.aci_firmware_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: my_firmware_policy
+    state: absent
+  delegate_to: localhost
+
+- name: Query all maintenance policies
+  cisco.aci.aci_firmware_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific firmware policy
+  cisco.aci.aci_firmware_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: my_firmware_policy
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
@@ -190,8 +245,13 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         name=dict(type="str"),  # Not required for querying all objects
+        description=dict(type="str", aliases=["descr"]),
         version=dict(type="str"),
-        ignoreCompat=dict(type="bool"),
+        effective_on_reboot=dict(type="bool"),
+        ignore_compat=dict(type="bool"),
+        sr_upgrade=dict(type="bool"),
+        sr_version=dict(type="str"),
+        version_check_override=dict(type="str", choices=["trigger", "trigger-immediate", "triggered", "untriggered"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
@@ -204,18 +264,19 @@ def main():
             ["state", "present", ["name", "version"]],
         ],
     )
+    aci = ACIModule(module)
 
     state = module.params.get("state")
     name = module.params.get("name")
+    description = module.params.get("description")
     version = module.params.get("version")
+    effective_on_reboot = aci.boolean(module.params.get("effective_on_reboot"), "yes", "no")
+    ignore_compat = aci.boolean(module.params.get("ignore_compat"), "yes", "no")
+    sr_version = module.params.get("sr_version")
+    sr_upgrade = aci.boolean(module.params.get("sr_upgrade"), "yes", "no")
+    version_check_override = module.params.get("version_check_override")
     name_alias = module.params.get("name_alias")
 
-    if module.params.get("ignoreCompat"):
-        ignore = "yes"
-    else:
-        ignore = "no"
-
-    aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
             aci_class="firmwareFwP",
@@ -232,8 +293,13 @@ def main():
             aci_class="firmwareFwP",
             class_config=dict(
                 name=name,
+                descr=description,
                 version=version,
-                ignoreCompat=ignore,
+                effectiveOnReboot=effective_on_reboot,
+                ignoreCompat=ignore_compat,
+                srUpgrade=sr_upgrade,
+                srVersion=sr_version,
+                versionCheckOverride=version_check_override,
                 nameAlias=name_alias,
             ),
         )

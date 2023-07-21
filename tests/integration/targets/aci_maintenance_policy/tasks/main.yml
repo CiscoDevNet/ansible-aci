@@ -36,11 +36,16 @@
     aci_maintenance_policy: &aci_maintenance_policy_absent
       <<: *aci_info
       name: anstest_policy
-      runmode: pauseNever
+      description: test for maintenance policy
+      run_mode: pauseNever
       graceful: True
       scheduler: anstest_scheduler
-      ignoreCompat: true
-      adminst: untriggered
+      ignore_compat: true
+      admin_state: untriggered
+      download_state: untriggered
+      notif_condition: notifyAlwaysBetweenSets
+      smu_operation: smuInstall
+      smu_operation_flags: smuReloadSkip
       state: absent
 
   - name: Ensure second maintenance policy does not exist
@@ -81,6 +86,10 @@
         - cm_add_maintenance_policy_1.current == []
         - nm_add_maintenance_policy_1 is changed
         - nm_add_maintenance_policy_1.current.0.maintMaintP.attributes.adminSt == "untriggered"
+        - nm_add_maintenance_policy_1.current.0.maintMaintP.attributes.downloadSt == "untriggered"
+        - nm_add_maintenance_policy_1.current.0.maintMaintP.attributes.notifCond == "notifyAlwaysBetweenSets"
+        - nm_add_maintenance_policy_1.current.0.maintMaintP.attributes.smuOperation == "smuInstall"
+        - nm_add_maintenance_policy_1.current.0.maintMaintP.attributes.smuOperationFlags == "smuReloadSkip"
         - nm_add_maintenance_policy_1.current.0.maintMaintP.attributes.graceful == "yes"
         - nm_add_maintenance_policy_1.current.0.maintMaintP.attributes.ignoreCompat == "yes"
         - nm_add_maintenance_policy_1.current.0.maintMaintP.attributes.name == "anstest_policy"
@@ -91,6 +100,10 @@
         - nm_add_maintenance_policy_2.current.0.maintMaintP.attributes.adminSt == "untriggered"
         - nm_add_maintenance_policy_2.current.0.maintMaintP.attributes.graceful == "no"
         - nm_add_maintenance_policy_2.current.0.maintMaintP.attributes.ignoreCompat == "no"
+        - nm_add_maintenance_policy_2.current.0.maintMaintP.attributes.downloadSt == "untriggered"
+        - nm_add_maintenance_policy_2.current.0.maintMaintP.attributes.notifCond == "notifyOnlyOnFailures"
+        - nm_add_maintenance_policy_2.current.0.maintMaintP.attributes.smuOperation == "smuInstall"
+        - nm_add_maintenance_policy_2.current.0.maintMaintP.attributes.smuOperationFlags == "smuReloadImmediate"
         - nm_add_maintenance_policy_2.current.0.maintMaintP.attributes.name == "anstest_policy_2"
         - nm_add_maintenance_policy_2.current.0.maintMaintP.attributes.runMode == "pauseOnlyOnFailures"
         - nm_add_maintenance_policy_2.current.0.maintMaintP.children.0.maintRsPolScheduler.attributes.tnTrigSchedPName == "anstest_scheduler"
@@ -116,6 +129,10 @@
         - '"class/maintMaintP.json" in query_all_maintenance_policy.url'
         - query_first_maintenance_policy is not changed
         - query_first_maintenance_policy.current.0.maintMaintP.attributes.adminSt == "untriggered"
+        - query_first_maintenance_policy.current.0.maintMaintP.attributes.downloadSt == "untriggered"
+        - query_first_maintenance_policy.current.0.maintMaintP.attributes.notifCond == "notifyAlwaysBetweenSets"
+        - query_first_maintenance_policy.current.0.maintMaintP.attributes.smuOperation == "smuInstall"
+        - query_first_maintenance_policy.current.0.maintMaintP.attributes.smuOperationFlags == "smuReloadSkip"
         - query_first_maintenance_policy.current.0.maintMaintP.attributes.graceful == "yes"
         - query_first_maintenance_policy.current.0.maintMaintP.attributes.ignoreCompat == "yes"
         - query_first_maintenance_policy.current.0.maintMaintP.attributes.name == "anstest_policy"

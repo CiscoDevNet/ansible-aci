@@ -22,12 +22,12 @@ options:
     - The name for the maintenance policy.
     type: str
     aliases: [ maintenance_policy ]
-  runmode:
+  run_mode:
     description:
     - Whether the system pauses on error or just continues through it.
+    - The APIC defaults to C(pauseOnlyOnFailures) when unset during creation.
     type: str
-    choices: [ pauseOnlyOnFailures, pauseNever ]
-    default: pauseOnlyOnFailures
+    choices: [ pauseAlwaysBetweenSets, pauseOnlyOnFailures, pauseNever ]
   graceful:
     description:
     - Whether the system will bring down the nodes gracefully during an upgrade, which reduces traffic lost.
@@ -37,17 +37,69 @@ options:
     description:
     - The name of scheduler that is applied to the policy.
     type: str
-  adminst:
+  admin_state:
     description:
-    - Will trigger an immediate upgrade for nodes if adminst is set to triggered.
+    - The administrative state of the executable policies.
+    - Will trigger an immediate upgrade for nodes if C(admin_state) is set to triggered.
+    - The APIC defaults to C(untriggered) when unset during creation.
     type: str
     choices: [ triggered, untriggered ]
-    default: untriggered
-  ignoreCompat:
+  download_state:
+    description:
+    - The download state of the executable policies.
+    - The APIC defaults to C(untriggered) when unset during creation.
+    type: str
+    choices: [ triggered, untriggered ]
+  notif_condition:
+    description:
+    - Specifies under what pause condition will admin be notified via email/text as configured.
+    - This notification mechanism is independent of events/faults.
+    - The APIC defaults to C(notifyOnlyOnFailures) when unset during creation.
+    type: str
+    choices: [ notifyAlwaysBetweenSets, notifyNever, notifyOnlyOnFailures ]
+  smu_operation:
+    description:
+    - Specifies SMU operation.
+    type: str
+    choices: [ smuInstall, smuUninstall ]
+  smu_operation_flags:
+    description:
+    - Specifies SMU operation flags
+    - Indicates if node should be reloaded immediately or skip auto reload on SMU Install/Uninstall.
+    type: str
+    choices: [ smuReloadImmediate, smuReloadSkip ]
+  sr_upgrade:
+    description:
+    - The SR firware upgrade.
+    type: bool
+  sr_version:
+    description:
+    - The SR version of the compatibility catalog.
+    type: str
+  version:
+    description:
+    - The version of the compatibility catalog.
+    type: str
+  version_check_override:
+    description:
+    - The version check override.
+    - This is a directive to ignore the version check for the next install.
+    - The version check, which occurs during a maintenance window, checks to see if the desired version matches the running version.
+    - If the versions do not match, the install is performed. If the versions do match, the install is not performed.
+    - The version check override is a one-time override that performs the install whether or not the versions match.
+    - The APIC defaults to C(untriggered) when unset during creation.
+    type: str
+    choices: [ trigger, trigger-immediate, triggered, untriggered ]
+  ignore_compat:
     description:
     - To check whether compatibility checks should be ignored
     - The APIC defaults to C(false) when unset during creation.
     type: bool
+  description:
+    description:
+    - Description for the maintenance policy.
+    type: str
+    aliases: [ descr ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -230,11 +282,20 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         name=dict(type="str", aliases=["maintenance_policy"]),  # Not required for querying all objects
-        runmode=dict(type="str", default="pauseOnlyOnFailures", choices=["pauseOnlyOnFailures", "pauseNever"]),
+        run_mode=dict(type="str", choices=["pauseAlwaysBetweenSets", "pauseOnlyOnFailures", "pauseNever"]),
         graceful=dict(type="bool"),
         scheduler=dict(type="str"),
-        ignoreCompat=dict(type="bool"),
-        adminst=dict(type="str", default="untriggered", choices=["triggered", "untriggered"]),
+        ignore_compat=dict(type="bool"),
+        admin_state=dict(type="str", choices=["triggered", "untriggered"]),
+        download_state=dict(type="str", choices=["triggered", "untriggered"]),
+        notif_condition=dict(type="str", choices=["notifyAlwaysBetweenSets", "notifyNever", "notifyOnlyOnFailures"]),
+        smu_operation=dict(type="str", choices=["smuInstall", "smuUninstall"]),
+        smu_operation_flags=dict(type="str", choices=["smuReloadImmediate", "smuReloadSkip"]),
+        sr_upgrade=dict(type="bool"),
+        sr_version=dict(type="str"),
+        version=dict(type="str"),
+        version_check_override=dict(type="str", choices=["trigger", "trigger-immediate", "triggered", "untriggered"]),
+        description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
@@ -252,11 +313,20 @@ def main():
 
     state = module.params.get("state")
     name = module.params.get("name")
-    runmode = module.params.get("runmode")
+    run_mode = module.params.get("run_mode")
     scheduler = module.params.get("scheduler")
-    adminst = module.params.get("adminst")
+    admin_state = module.params.get("admin_state")
+    download_state = module.params.get("download_state")
+    notif_condition = module.params.get("notif_condition")
+    smu_operation = module.params.get("smu_operation")
+    smu_operation_flags = module.params.get("smu_operation_flags")
+    sr_upgrade = aci.boolean(module.params.get("sr_upgrade"))
+    sr_version = module.params.get("sr_version")
+    version = module.params.get("version")
+    version_check_override = module.params.get("version_check_override")
     graceful = aci.boolean(module.params.get("graceful"))
-    ignoreCompat = aci.boolean(module.params.get("ignoreCompat"))
+    ignore_compat = aci.boolean(module.params.get("ignore_compat"))
+    description = module.params.get("description")
     name_alias = module.params.get("name_alias")
 
     aci.construct_url(
@@ -276,10 +346,19 @@ def main():
             aci_class="maintMaintP",
             class_config=dict(
                 name=name,
-                runMode=runmode,
+                descr=description,
+                runMode=run_mode,
                 graceful=graceful,
-                adminSt=adminst,
-                ignoreCompat=ignoreCompat,
+                adminSt=admin_state,
+                downloadSt=download_state,
+                notifCond=notif_condition,
+                smuOperation=smu_operation,
+                smuOperationFlags=smu_operation_flags,
+                srUpgrade=sr_upgrade,
+                srVersion=sr_version,
+                version=version,
+                versionCheckOverride=version_check_override,
+                ignoreCompat=ignore_compat,
                 nameAlias=name_alias,
             ),
             child_configs=[

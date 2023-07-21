@@ -32,48 +32,48 @@
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
-  - name: ensure tenant exists for tests to kick off
+  - name: Create tenant for tests to kick off
     cisco.aci.aci_tenant: &aci_tenant_present
       <<: *aci_tenant_absent
       state: present
 
-  - name: ensure vrf exists for tests to kick off
+  - name: Create vrf for tests to kick off
     cisco.aci.aci_vrf: &aci_vrf_present
       <<: *aci_tenant_present
       vrf: anstest
 
-  - name: ensure first L3out exists for tests to kick off
+  - name: Create first L3out for tests to kick off
     cisco.aci.aci_l3out: &aci_l3_out_present
       <<: *aci_vrf_present
       l3out: ansible_l3out
       domain: ansible_dom
       state: present
 
-  - name: ensure second L3out exists for tests to kick off
+  - name: Create second L3out for tests to kick off
     cisco.aci.aci_l3out: &aci_l3_out_present_2
       <<: *aci_vrf_present
       l3out: ansible_l3out_2
       domain: ansible_dom
       state: present
 
-  - name: ensure first bd exists for tests to kick off
+  - name: Create first bd for tests to kick off
     cisco.aci.aci_bd: &aci_bd_present
       <<: *aci_tenant_present
       bd: anstest
 
-  - name: ensure second bd exists for tests to kick off
+  - name: Create second bd for tests to kick off
     cisco.aci.aci_bd: &aci_bd_present_2
       <<: *aci_tenant_present
       bd: anstest_2
 
-  - name: Remove first binding bd_to_l3out for tests to kick off
+  - name: Ensure first binding bd_to_l3out does not exist for tests to kick off
     cisco.aci.aci_bd_to_l3out: &aci_bd_to_l3out_absent
       <<: *aci_tenant_present
       bd: anstest
       l3out: ansible_l3out
       state: absent
 
-  - name: Remove second binding bd_to_l3out for tests to kick off
+  - name: Ensure second binding bd_to_l3out does not exist for tests to kick off
     cisco.aci.aci_bd_to_l3out: &aci_bd_to_l3out_absent_2
       <<: *aci_tenant_present
       bd: anstest_2

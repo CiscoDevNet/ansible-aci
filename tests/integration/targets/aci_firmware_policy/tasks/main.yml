@@ -31,7 +31,7 @@
       <<: *aci_info
       name: anstest_policy
       version: n9000-15.2(7)
-      ignoreCompat: True
+      ignore_compat: true
       state: absent
 
   - name: Ensure second firmware policy does not exist
