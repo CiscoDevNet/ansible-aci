@@ -27,7 +27,7 @@
   assert:
     that:
     - error_on_name_resolution is failed
-    - error_on_name_resolution.msg.startswith("Connection failed for https://foo.bar.cisco.com/api/aaaLogin.json. Request failed:")
+    - error_on_name_resolution.msg.startswith("Connection failed for https://foo.bar.cisco.com/api/aaaLogin.json.")
     - "'current' not in error_on_name_resolution"
     - "'previous' not in error_on_name_resolution"
     - "'sent' not in error_on_name_resolution"

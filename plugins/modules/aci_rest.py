@@ -55,6 +55,11 @@ options:
       together with the C(template) lookup plugin, or use C(template).
     type: path
     aliases: [ config_file ]
+  rsp_subtree_preserve:
+    description:
+    - Preserve the response for the provided path.
+    type: bool
+    default: false
 extends_documentation_fragment:
 - cisco.aci.aci
 
@@ -279,7 +284,6 @@ except Exception:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
-from ansible.module_utils.urls import fetch_url
 from ansible.module_utils._text import to_text
 
 
@@ -335,6 +339,7 @@ def main():
         method=dict(type="str", default="get", choices=["delete", "get", "post"], aliases=["action"]),
         src=dict(type="path", aliases=["config_file"]),
         content=dict(type="raw"),
+        rsp_subtree_preserve=dict(type="bool", default=False),
     )
 
     module = AnsibleModule(
@@ -345,6 +350,7 @@ def main():
     content = module.params.get("content")
     path = module.params.get("path")
     src = module.params.get("src")
+    rsp_subtree_preserve = module.params.get("rsp_subtree_preserve")
 
     # Report missing file
     file_exists = False
@@ -352,7 +358,7 @@ def main():
         if os.path.isfile(src):
             file_exists = True
         else:
-            module.fail_json(msg="Cannot find/access src '%s'" % src)
+            module.fail_json(msg="Cannot find/access src '{0}'".format(src))
 
     # Find request type
     if path.find(".xml") != -1:
@@ -386,7 +392,7 @@ def main():
                 # Validate YAML/JSON string
                 payload = json.dumps(yaml.safe_load(payload))
             except Exception as e:
-                module.fail_json(msg="Failed to parse provided JSON/YAML payload: %s" % to_text(e), exception=to_text(e), payload=payload)
+                module.fail_json(msg="Failed to parse provided JSON/YAML payload: {0}".format(to_text(e)), exception=to_text(e), payload=payload)
     elif rest_type == "xml" and HAS_LXML_ETREE:
         if content and isinstance(content, dict) and HAS_XMLJSON_COBRA:
             # Validate inline YAML/JSON
@@ -396,42 +402,35 @@ def main():
                 # Validate XML string
                 payload = etree.tostring(etree.fromstring(payload), encoding="unicode")
             except Exception as e:
-                module.fail_json(msg="Failed to parse provided XML payload: %s" % to_text(e), payload=payload)
+                module.fail_json(msg="Failed to parse provided XML payload: {0}".format(to_text(e)), payload=payload)
 
     # Perform actual request using auth cookie (Same as aci.request(), but also supports XML)
     if "port" in aci.params and aci.params.get("port") is not None:
-        aci.url = "%(protocol)s://%(host)s:%(port)s/" % aci.params + path.lstrip("/")
+        aci.url = "{protocol}://{host}:{port}/".format_map(aci.params) + path.lstrip("/")
     else:
-        aci.url = "%(protocol)s://%(host)s/" % aci.params + path.lstrip("/")
-    if aci.params.get("method") != "get":
-        path += "?rsp-subtree=modified"
+        aci.url = "{protocol}://{host}/".format_map(aci.params) + path.lstrip("/")
+    if aci.params.get("method") != "get" and not rsp_subtree_preserve:
         aci.url = update_qsl(aci.url, {"rsp-subtree": "modified"})
 
-    # Sign and encode request as to APIC's wishes
-    if aci.params.get("private_key") is not None:
-        aci.cert_auth(path=path, payload=payload)
-
-    aci.method = aci.params.get("method").upper()
+    method = aci.params.get("method").upper()
 
     # Perform request
-    resp, info = fetch_url(
-        module, aci.url, data=payload, headers=aci.headers, method=aci.method, timeout=aci.params.get("timeout"), use_proxy=aci.params.get("use_proxy")
-    )
-
-    aci.response = info.get("msg")
-    aci.status = info.get("status")
+    resp, info = aci.api_call(method, aci.url, data=payload, return_response=True)
 
     # Report failure
     if info.get("status") != 200:
         try:
             # APIC error
-            aci.response_type(info.get("body"), rest_type)
-            aci.fail_json(msg="APIC Error %(code)s: %(text)s" % aci.error)
+            aci.response_type(info["body"], rest_type)
+            aci.fail_json(msg="APIC Error {code}: {text}".format_map(aci.error))
         except KeyError:
             # Connection error
-            aci.fail_json(msg="Connection failed for %(url)s. %(msg)s" % info)
+            aci.fail_json(msg="Connection failed for {url}. {msg}".format_map(info))
 
-    aci.response_type(resp.read(), rest_type)
+    try:
+        aci.response_type(resp.read(), rest_type)
+    except AttributeError:
+        aci.response_type(info.get("body"), rest_type)
 
     aci.result["status"] = aci.status
     aci.result["imdata"] = aci.imdata

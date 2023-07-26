@@ -227,6 +227,8 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
 
+import json
+
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
@@ -302,13 +304,20 @@ def main():
         aci.post_config()
 
         # Query for job information and add to results
-        # Change state to query else aci.request() will not execute a GET request but POST
-        aci.params["state"] = "query"
-        aci.request(path="/api/node/mo/uni/backupst/jobs-[uni/fabric/configexp-{0}].json".format(export_policy))
+        path = "/api/node/mo/uni/backupst/jobs-[uni/fabric/configexp-{0}].json".format(export_policy)
+        if "port" in aci.params and aci.params.get("port") is not None:
+            port_url = "{protocol}://{host}:{port}/".format_map(aci.params) + path.lstrip("/")
+        else:
+            port_url = "{protocol}://{host}/".format_map(aci.params) + path.lstrip("/")
+        resp, info = aci.api_call("GET", port_url, data=None, return_response=True)
+        try:
+            aci.imdata = json.loads(resp.read())["imdata"]
+        except AttributeError:
+            aci.imdata = json.loads(info.get("body"))["imdata"]
+
         aci.result["job_details"] = aci.imdata[0].get("configJobCont", {})
         # Reset state and url to display correct in output and trigger get_existing() function with correct url
         aci.url = reset_url
-        aci.params["state"] = "present"
 
     else:
         # Prefix the proper url to export_policy

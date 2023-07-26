@@ -8,6 +8,24 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 - name: Verify Cloud and Non-Cloud Sites in use.
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
@@ -60,7 +78,7 @@
       <<: *aci_subnet_present
     register: create_subnet
 
-  - name: create new subnet - creation works
+  - name: create new subnet - creation works (with no ip_data_plane_learning - APIC version < 5.0)
     cisco.aci.aci_bd_subnet: &aci_subnet2_present
       <<: *aci_subnet2_absent
       state: present
@@ -68,8 +86,20 @@
       scope: [private, shared]
       route_profile: default
       route_profile_l3_out: default
-      ip_data_plane_learning: disabled
     register: create_subnet2
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+
+  - name: create new subnet - creation works (with ip_data_plane_learning - APIC version >= 5.0)
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_subnet2_present
+      state: present
+      descr: Ansible Test
+      scope: [private, shared]
+      route_profile: default
+      route_profile_l3_out: default
+      ip_data_plane_learning: disabled
+    register: create_subnet2_5
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: create subnet again - idempotency works
     cisco.aci.aci_bd_subnet:
@@ -97,7 +127,7 @@
     register: create_incomplete_data
     ignore_errors: true
 
-  - name: asserts for subnet creation tasks
+  - name: assert for subnet creation tasks
     assert:
       that:
         - create_check_mode is changed
@@ -106,14 +136,7 @@
         - create_check_mode.sent.fvSubnet.attributes.name == create_subnet.sent.fvSubnet.attributes.name == 'anstest'
         - create_subnet is changed
         - create_subnet.current.0.fvSubnet.attributes.annotation == 'orchestrator:ansible'
-        - create_subnet.current.0.fvSubnet.attributes.ipDPLearning == 'enabled'
         - create_subnet.previous == []
-        - create_subnet2 is changed
-        - create_subnet2.current.0.fvSubnet.attributes.ipDPLearning == 'disabled'
-        - create_subnet2.sent == create_subnet2.proposed
-        - create_subnet2.sent.fvSubnet.attributes.scope == "private,shared"
-        - create_subnet2.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes.tnL3extOutName == 'default'
-        - create_subnet2.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes.tnRtctrlProfileName == 'default'
         - create_idempotency is not changed
         - create_idempotency.previous != []
         - modify_subnet is changed
@@ -125,6 +148,28 @@
         - create_bad_scope.msg.startswith("Parameter 'scope' cannot be both 'private' and 'public'")
         - create_incomplete_data is failed
         - 'create_incomplete_data.msg == "state is present but all of the following are missing: bd"'
+
+  - name: assert for subnet for task with version < 5
+    assert:
+      that:
+        - create_subnet2 is changed
+        - create_subnet2.sent == create_subnet2.proposed
+        - create_subnet2.sent.fvSubnet.attributes.scope == "private,shared"
+        - create_subnet2.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes.tnL3extOutName == 'default'
+        - create_subnet2.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes.tnRtctrlProfileName == 'default'
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+
+  - name: assert for subnet ip_data_learning for task with version >=5
+    assert:
+      that:
+        - create_subnet.current.0.fvSubnet.attributes.ipDPLearning == 'enabled'
+        - create_subnet2_5 is changed
+        - create_subnet2_5.current.0.fvSubnet.attributes.ipDPLearning == 'disabled'
+        - create_subnet2_5.sent == create_subnet2_5.proposed
+        - create_subnet2_5.sent.fvSubnet.attributes.scope == "private,shared"
+        - create_subnet2_5.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes.tnL3extOutName == 'default'
+        - create_subnet2_5.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes.tnRtctrlProfileName == 'default'
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: get all subnets
     cisco.aci.aci_bd_subnet: &aci_query

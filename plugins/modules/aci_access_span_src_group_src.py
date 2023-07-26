@@ -388,7 +388,7 @@ def main():
             # Commented validate code to avoid making additional API request which is handled by APIC error
             # Keeping for informational purposes
             # Validate drop_packets are set on parent correctly
-            # if aci.get_config_request("{0}/rssrcGrpToFilterGrp.json".format(source_group_path)) != [] and drop_packets:
+            # if aci.api_call("GET", "{0}/rssrcGrpToFilterGrp.json".format(source_group_path)) != [] and drop_packets:
             #     module.fail_json(msg="It is not allowed to configure 'drop_packets: true' when a filter group is configured on the source group.")
 
             source_path = "/api/mo/uni/infra/srcgrp-{0}/src-{1}".format(source_group, source)
@@ -408,13 +408,13 @@ def main():
                     #         }
                     #     }
                     # )
-                    aci.delete_config_request("{0}/rssrcToFilterGrp.json".format(source_path))
+                    aci.api_call("DELETE", "{0}/rssrcToFilterGrp.json".format(source_path))
                 elif child.get("spanRsSrcToEpg") and child.get("spanRsSrcToEpg").get("attributes").get("tDn") != epg_dn:
                     # Appending to child_config list not possible because of APIC Error 103: child (Rn) of class spanRsSrcToEpg is already attached.
-                    aci.delete_config_request("{0}/rssrcToEpg.json".format(source_path))
+                    aci.api_call("DELETE", "{0}/rssrcToEpg.json".format(source_path))
                 elif child.get("spanRsSrcToL3extOut") and child.get("spanRsSrcToL3extOut").get("attributes").get("tDn") != l3ext_out_dn:
                     # Appending to child_config list not possible because of APIC Error 103: child (Rn) of class spanRsSrcToL3extOut is already attached.
-                    aci.delete_config_request("{0}/rssrcToL3extOut.json".format(source_path))
+                    aci.api_call("DELETE", "{0}/rssrcToL3extOut.json".format(source_path))
 
         aci.payload(
             aci_class="spanSrc",

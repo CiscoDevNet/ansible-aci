@@ -1,0 +1,653 @@
+## Tests HTTTP Connection when a list of host are provided
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
+      timeout: 5
+      output_level: debug
+
+- name: Set vars with the randomly generated list of hosts for the task level operations
+  ansible.builtin.set_fact:
+    last_host_active: "{{ aci_hostname | generate_random_ips(5,5) }}"
+    second_host_active: "{{aci_hostname|generate_random_ips(2,5)}}"
+    no_host_active: "{{aci_hostname|generate_random_ips(0,5)}}"
+
+- name: Set the actual connection type specified in the inventory (this var is used at the end of this test)
+  ansible.builtin.set_fact:
+    old_connection: "{{ ansible_connection }}"
+
+- name: Set the connection to httpapi and set session key used in the inventory
+  ansible.builtin.set_fact:
+    ansible_user: "{{ aci_username }}"
+    ansible_password: "{{ aci_password }}"
+    ansible_connection: ansible.netcommon.httpapi
+    ansible_httpapi_session_key: {'admin': "{{ lookup('file', 'pki/admin.key') }}"}
+    ansible_httpapi_validate_certs: "{{ aci_validate_certs | default(false) }}"
+    ansible_httpapi_use_ssl: "{{ aci_use_ssl | default(true) }}"
+    ansible_httpapi_use_proxy: "{{ aci_use_proxy | default(true) }}"
+    ansible_httpapi_port: 443
+    ansible_command_timeout: 5
+
+- name: Run aci_aaa_user_certificate through the plugin
+  include_tasks: ../../../../../../integration/targets/aci_aaa_user_certificate/tasks/main.yml
+
+- name: Add user certificate to be used later in the test
+  cisco.aci.aci_aaa_user_certificate:
+    <<: *aci_info
+    aaa_user: "{{ aci_username }}"
+    name: admin
+    certificate: "{{ lookup('file', 'pki/admin.crt') }}"
+    state: present
+
+# XML operation, APIC HTTP Error and Connection reset upon changed parameter tests
+- name: Add a tenant using an XML string (Check xml operations through plugin)
+  cisco.aci.aci_rest:
+    <<: *aci_info
+    path: api/mo/uni.xml
+    method: post
+    content: '<fvTenant name="Sales" descr="Sales departement"/>'
+  register: tenant_xml_plugin
+
+- name: Add an AP (with non existent tenant)
+  cisco.aci.aci_ap:
+    <<: *aci_info
+    tenant: ansible_test_non_existent
+    ap: ap
+    description: default ap
+    state: present
+  ignore_errors: true
+  register: ap_non_existent_tenant
+
+- name: Delete Tenant with the wrong username and password (Check that connection resets)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    username: wrong_username
+    password: wrong_password
+    tenant: ansible_test
+    state: absent
+  ignore_errors: true
+  register: wrong_credentials
+
+- name: Set the username to null
+  ansible.builtin.set_fact:
+    ansible_user:
+
+- name: Delete Tenant with no username in the task or inventory (Check that username is set to the default value)
+  cisco.aci.aci_tenant:
+    host: "{{ aci_hostname }}"
+    password: "{{ aci_password }}"
+    validate_certs: "{{ aci_validate_certs | default(false) }}"
+    use_ssl: "{{ aci_use_ssl | default(true) }}"
+    use_proxy: "{{ aci_use_proxy | default(true) }}"
+    timeout: 5
+    output_level: debug
+    tenant: ansible_test
+    state: absent
+  ignore_errors: true
+  register: no_username
+
+- name: Revert the username to its original value
+  ansible.builtin.set_fact:
+    ansible_user: "{{ aci_username }}"
+
+- name: Flatten the registered instances
+  ansible.builtin.set_fact:
+    ap_non_existent_tenant_flattened: "{{ ap_non_existent_tenant.httpapi_logs | flatten }}"
+    wrong_credentials_flattened: "{{ wrong_credentials.httpapi_logs | flatten }}"
+    no_username_flattened: "{{ no_username.httpapi_logs | flatten }}"
+
+- name: Verify XML operation and HTTP error returned by APIC
+  assert:
+    that:
+      - tenant_xml_plugin.status == 200
+      - '"Received response from {{ aci_hostname }} for POST operation with HTTP: 400" in ap_non_existent_tenant_flattened'
+      - '"Re-setting connection due to change in the username" in wrong_credentials_flattened'
+      - '"Re-setting connection due to change in the password" in wrong_credentials_flattened'
+      - '"Connection to {{ aci_hostname }} has failed: HTTP Error 401: Unauthorized" in wrong_credentials_flattened'
+      - '"Establishing login for admin to {{ aci_hostname }}" in no_username_flattened'
+
+# Simulate HTTP 403 error test
+- name: Delete Tenant with only password in the task (Check for 403)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    host: "{{ last_host_active }}"
+    tenant: ansible_test
+    state: absent
+  register: op17_task_pwd_delete_tenant
+
+- name: Add Tenant with only password in the task (Check for 403)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    host: "{{ last_host_active }}"
+    tenant: ansible_test
+    state: present
+  register: op17_task_pwd_add_tenant
+
+- name: logout to render the token invalid
+  cisco.aci.aci_rest:
+    <<: *aci_info
+    host: "{{ last_host_active }}"
+    path: /api/aaaLogout.json
+    method: post
+    rsp_subtree_preserve: true
+    content: |
+      {
+        "aaaUser": {
+           "attributes": {
+                "name": "{{ aci_username }}"
+          }
+        }
+      }
+
+- name: Add an AP with only password in the task (Ensure re-login on the same host)
+  cisco.aci.aci_ap:
+    <<: *aci_info
+    host: "{{ last_host_active }}"
+    tenant: ansible_test
+    ap: ap
+    description: default ap
+    state: present
+  register: op18_task_pwd_add_ap
+
+- name: Flatten the registered instances
+  ansible.builtin.set_fact:
+    op18_flattened_task_pwd_add_ap: "{{ op18_task_pwd_add_ap.httpapi_logs | flatten }}"
+
+- name: Verify forbidden error 403
+  assert:
+    that:
+      - op17_task_pwd_add_tenant is changed
+      - op18_task_pwd_add_ap is changed
+      - '"Failed to receive response from {{ aci_hostname }} with HTTP Error 403: Forbidden" in op18_flattened_task_pwd_add_ap'
+      - '"Establishing login for {{ aci_username }} to {{ aci_hostname }}" in op18_flattened_task_pwd_add_ap'
+      - '"Connection to {{ aci_hostname }} was successful" in op18_flattened_task_pwd_add_ap'
+
+- name: reset connection to test other scenarios
+  meta: reset_connection
+
+# Precedence test
+- name: Delete Tenant with password and private key in the task (private_key takes precedence)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
+    tenant: ansible_test
+    state: absent
+  register: op1_task_private_key_delete_tenant
+
+- name: Add Tenant with password and private key in the task (Check for execution on the provided aci_hostname with no attempts at re-connection)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
+    tenant: ansible_test
+    state: present
+  register: op1_task_private_key_add_tenant
+
+- name: Delete Tenant with only password in the task (password in the task takes precedence)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    tenant: ansible_test
+    state: absent
+  register: op2_task_pwd_delete_tenant
+
+- name: Add Tenant with only password in the task (Check for execution on the provided aci_hostname with no attempts at re-connection)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    tenant: ansible_test
+    state: present
+  register: op2_task_pwd_add_tenant
+
+- name: Delete Tenant with password and session key in the inventory (session_key takes precedence)
+  cisco.aci.aci_tenant:
+    output_level: debug
+    tenant: ansible_test
+    state: absent
+  register: op3_inventory_session_key_delete_tenant
+
+- name: Add Tenant with password and session key in the inventory (Check for execution on the provided aci_hostname with no attempts at re-connection)
+  cisco.aci.aci_tenant:
+    output_level: debug
+    tenant: ansible_test
+    state: present
+  register: op3_inventory_session_key_add_tenant
+
+- name: Remove session key used in the inventory
+  ansible.builtin.set_fact:
+    ansible_httpapi_session_key:
+
+- name: Delete Tenant with with only password in the inventory (check for authentication with the password in the inventory)
+  cisco.aci.aci_tenant:
+    output_level: debug
+    tenant: ansible_test
+    state: absent
+  register: op4_inventory_pwd_delete_tenant
+
+- name: Add Tenant with with only password in the inventory (Check for execution on the provided aci_hostname with no attempts at re-connection)
+  cisco.aci.aci_tenant:
+    output_level: debug
+    tenant: ansible_test
+    state: present
+  register: op4_inventory_pwd_add_tenant
+
+- name: Flatten the registered instances
+  ansible.builtin.set_fact:
+    op1_flattened_task_private_key_delete_tenant: "{{ op1_task_private_key_delete_tenant.httpapi_logs | flatten }}"
+    op1_flattened_task_private_key_add_tenant: "{{ op1_task_private_key_add_tenant.httpapi_logs | flatten }}"
+    op2_flattened_task_pwd_delete_tenant: "{{ op2_task_pwd_delete_tenant.httpapi_logs | flatten }}"
+    op2_flattened_task_pwd_add_tenant: "{{ op2_task_pwd_add_tenant.httpapi_logs | flatten }}"
+    op3_flattened_inventory_session_key_delete_tenant: "{{ op3_inventory_session_key_delete_tenant.httpapi_logs | flatten }}"
+    op3_flattened_inventory_session_key_add_tenant: "{{ op3_inventory_session_key_add_tenant.httpapi_logs | flatten }}"
+    op4_flattened_inventory_pwd_delete_tenant: "{{ op4_inventory_pwd_delete_tenant.httpapi_logs | flatten }}"
+    op4_flattened_inventory_pwd_add_tenant: "{{ op4_inventory_pwd_add_tenant.httpapi_logs | flatten }}"
+
+- name: Verify Precedence
+  assert:
+    that:
+      - '"Provided Hosts: [''{{ aci_hostname }}'']" in op1_flattened_task_private_key_delete_tenant'
+      - '"Initializing operation on {{ aci_hostname }}" in op1_flattened_task_private_key_delete_tenant'
+      - op1_task_private_key_add_tenant is changed
+      - '"Connection to {{ aci_hostname }} was successful" not in op1_flattened_task_private_key_add_tenant'
+      - op2_task_pwd_delete_tenant is changed
+      - '"Re-setting connection due to change from private/session key authentication to password authentication" in op2_flattened_task_pwd_delete_tenant'
+      - '"Establishing login for {{ aci_username }} to {{ aci_hostname }}" in op2_flattened_task_pwd_delete_tenant'
+      - '"Connection to {{ aci_hostname }} was successful" in op2_flattened_task_pwd_delete_tenant'
+      - op2_task_pwd_add_tenant is changed
+      - '"Connection to {{ aci_hostname }} was successful" not in op2_flattened_task_pwd_add_tenant'
+      - op3_inventory_session_key_delete_tenant is changed
+      - '"Connection to {{ aci_hostname }} was successful" not in op3_flattened_inventory_session_key_delete_tenant'
+      - op3_inventory_session_key_add_tenant is changed
+      - '"Connection to {{ aci_hostname }} was successful" not in op3_flattened_inventory_session_key_add_tenant'
+      - op4_inventory_pwd_delete_tenant is changed
+      - '"Re-setting connection due to change from private/session key authentication to password authentication" in op4_flattened_inventory_pwd_delete_tenant'
+      - '"Establishing login for {{ aci_username }} to {{ aci_hostname }}" in op4_flattened_inventory_pwd_delete_tenant'
+      - '"Connection to {{ aci_hostname }} was successful" in op4_flattened_inventory_pwd_delete_tenant'
+      - op4_inventory_pwd_add_tenant is changed
+      - '"Connection to {{ aci_hostname }} was successful" not in op4_flattened_inventory_pwd_add_tenant'
+
+- name: reset connection to test other scenarios
+  meta: reset_connection
+
+# Switching of hosts test with the password in the task
+- name: Delete Tenant with only password in the task (Check for successful operation on the last host)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    host: "{{ last_host_active }}"
+    tenant: ansible_test
+    state: absent
+  register: op5_task_pwd_delete_tenant
+
+- name: Add Tenant with only password in the task (Check for execution on the provided aci_hostname with no attempts at re-connection)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    host: "{{ last_host_active }}"
+    tenant: ansible_test
+    state: present
+  register: op5_task_pwd_add_tenant
+
+- name: Flatten the registered instances
+  ansible.builtin.set_fact:
+    op5_flattened_task_pwd_delete_tenant: "{{ op5_task_pwd_delete_tenant.httpapi_logs | flatten }}"
+    op5_flattened_task_pwd_add_tenant: "{{ op5_task_pwd_add_tenant.httpapi_logs | flatten }}"
+
+- name: Verify switching of hosts with the password in the task
+  assert:
+    that:
+      - op5_task_pwd_delete_tenant is changed
+      - op5_flattened_task_pwd_delete_tenant | regex_search('Switching host from [0-9]+(?:\.[0-9]+){3} to {{ aci_hostname }}') is not none
+      - '"Establishing login for {{ aci_username }} to {{ aci_hostname }}" in op5_flattened_task_pwd_delete_tenant'
+      - '"Connection to {{ aci_hostname }} was successful" in op5_flattened_task_pwd_delete_tenant'
+      - op5_task_pwd_add_tenant is changed
+      - '"Connection to {{ aci_hostname }} was successful" not in op5_flattened_task_pwd_add_tenant'
+
+# Continuing on the connected host test with the password in the task
+- name: Delete Tenant with only password in the task
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    host: "{{ second_host_active }}"
+    tenant: ansible_test
+    state: absent
+  register: op6_task_pwd_delete_tenant
+
+- name: Add Tenant with only password in the task (Check for execution on the provided aci_hostname with no attempts at re-connection)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    host: "{{ second_host_active }}"
+    tenant: ansible_test
+    state: present
+  register: op6_task_pwd_add_tenant
+
+- name: Flatten the registered instances
+  ansible.builtin.set_fact:
+    op6_flattened_task_pwd_delete_tenant: "{{ op6_task_pwd_delete_tenant.httpapi_logs | flatten }}"
+    op6_flattened_task_pwd_add_tenant: "{{ op6_task_pwd_add_tenant.httpapi_logs | flatten }}"
+
+- name: Verify continuation of the operations on the connected host with the password in the task
+  assert:
+    that:
+      - op6_task_pwd_delete_tenant is changed
+      - '"Connected host {{ aci_hostname }} found in the provided hosts. Continuing with it." in op6_flattened_task_pwd_delete_tenant'
+      - op6_task_pwd_add_tenant is changed
+      - '"Connection to {{ aci_hostname }} was successful" not in op6_flattened_task_pwd_add_tenant'
+
+# Change of hosts and no hosts active test with the password in the task
+- name: Delete Tenant with only password in the task (Check for failed operation)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    host: "{{ no_host_active }}"
+    tenant: ansible_test
+    state: absent
+  register: op7_task_pwd_delete_tenant
+  ignore_errors: True
+
+- name: Add Tenant with only password in the task (Check the reset of the provided list of hosts)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    host: "{{ second_host_active }}"
+    tenant: ansible_test
+    state: present
+  register: op7_task_pwd_add_tenant
+
+- name: Verify failure when no hosts are active
+  assert:
+    that:
+      - op7_task_pwd_delete_tenant.error.text | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
+      - op7_task_pwd_add_tenant is not changed
+
+# Switching of hosts test with the the inventory password
+- name: Set list of hosts in the inventory with the last host as active
+  ansible.builtin.set_fact:
+    ansible_host: "{{aci_hostname|generate_random_ips(5,5)}}"
+
+- name: Delete Tenant with only password in the inventory (Check for successful operation on the last host)
+  cisco.aci.aci_tenant:
+    output_level: debug
+    tenant: ansible_test
+    state: absent
+  register: op8_inventory_pwd_delete_tenant
+
+- name: Add Tenant with only password in the inventory (Check for execution on the provided aci_hostname with no attempts at re-connection)
+  cisco.aci.aci_tenant:
+    output_level: debug
+    tenant: ansible_test
+    state: present
+  register: op8_inventory_pwd_add_tenant
+
+- name: Flatten the registered instances
+  ansible.builtin.set_fact:
+    op8_flattened_inventory_pwd_delete_tenant: "{{ op8_inventory_pwd_delete_tenant.httpapi_logs | flatten }}"
+    op8_flattened_inventory_pwd_add_tenant: "{{ op8_inventory_pwd_add_tenant.httpapi_logs | flatten }}"
+
+- name: Verify switching of hosts with the password in the inventory
+  assert:
+    that:
+      - op8_inventory_pwd_delete_tenant is changed
+      - op8_flattened_inventory_pwd_delete_tenant | regex_search('Switching host from [0-9]+(?:\.[0-9]+){3} to {{ aci_hostname }}') is not none
+      - '"Establishing login for {{ aci_username }} to {{ aci_hostname }}" in op8_flattened_inventory_pwd_delete_tenant'
+      - '"Connection to {{ aci_hostname }} was successful" in op8_flattened_inventory_pwd_delete_tenant'
+      - op8_inventory_pwd_add_tenant is changed
+      - '"Connection to {{ aci_hostname }} was successful" not in op8_flattened_inventory_pwd_add_tenant'
+
+# Continuing on the connected host test with the inventory password
+- name: Set list of hosts in the inventory with the second host as active
+  ansible.builtin.set_fact:
+    ansible_host: "{{aci_hostname|generate_random_ips(2,5)}}"
+
+- name: Delete Tenant with only password in the inventory (Check for execution on the previously connected host)
+  cisco.aci.aci_tenant:
+    output_level: debug
+    tenant: ansible_test
+    state: absent
+  register: op9_inventory_pwd_delete_tenant
+
+- name: Add Tenant with only password in the inventory (Check for execution on the provided aci_hostname with no attempts at re-connection)
+  cisco.aci.aci_tenant:
+    output_level: debug
+    tenant: ansible_test
+    state: present
+  register: op9_inventory_pwd_add_tenant
+
+- name: Flatten the registered instances
+  ansible.builtin.set_fact:
+    op9_flattened_inventory_pwd_delete_tenant: "{{ op9_inventory_pwd_delete_tenant.httpapi_logs | flatten }}"
+    op9_flattened_inventory_pwd_add_tenant: "{{ op9_inventory_pwd_add_tenant.httpapi_logs | flatten }}"
+
+- name: Verify switching of hosts with the password in the inventory
+  assert:
+    that:
+      - op9_inventory_pwd_delete_tenant is changed
+      - op9_flattened_inventory_pwd_delete_tenant | regex_search('Switching host from [0-9]+(?:\.[0-9]+){3} to {{ aci_hostname }}') is not none
+      - '"Establishing login for {{ aci_username }} to {{ aci_hostname }}" in op9_flattened_inventory_pwd_delete_tenant'
+      - '"Connection to {{ aci_hostname }} was successful" in op9_flattened_inventory_pwd_delete_tenant'
+      - op9_inventory_pwd_add_tenant is changed
+      - '"Connection to {{ aci_hostname }} was successful" not in op9_flattened_inventory_pwd_add_tenant'
+
+# Change of hosts and no hosts active test with the inventory password
+- name: Set list of hosts in the inventory with no active hosts
+  ansible.builtin.set_fact:
+    ansible_host: "{{aci_hostname|generate_random_ips(0,5)}}"
+
+- name: Delete Tenant with only password in the inventory (Check for failed operation)
+  cisco.aci.aci_tenant:
+    output_level: debug
+    tenant: ansible_test
+    state: absent
+  register: op10_inventory_pwd_delete_tenant
+  ignore_errors: True
+
+- name: Verify failure when no hosts are active in the inventory
+  assert:
+    that:
+      - op10_inventory_pwd_delete_tenant.error.text | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
+
+# Switching of hosts test with the private key in the task
+- name: Delete Tenant with only private key in the task (Check for successful operation on the last host)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    host: "{{ last_host_active }}"
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
+    tenant: ansible_test
+    state: absent
+  register: op11_task_private_key_delete_tenant
+
+- name: Add Tenant with only private key in the task (Check for execution on the provided aci_hostname with no attempts at re-connection)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    host: "{{ last_host_active }}"
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
+    tenant: ansible_test
+    state: present
+  register: op11_task_private_key_add_tenant
+
+- name: Flatten the registered instances
+  ansible.builtin.set_fact:
+    op11_flattened_task_private_key_delete_tenant: "{{ op11_task_private_key_delete_tenant.httpapi_logs | flatten }}"
+    op11_flattened_task_private_key_add_tenant: "{{ op11_task_private_key_add_tenant.httpapi_logs | flatten }}"
+
+- name: Verify switching of hosts with the private key in the task
+  assert:
+    that:
+      - op11_task_private_key_delete_tenant is changed
+      - op11_flattened_task_private_key_delete_tenant | regex_search('Switching host from [0-9]+(?:\.[0-9]+){3} to {{ aci_hostname }}') is not none
+      - '"Establishing login for {{ aci_username }} to {{ aci_hostname }}" not in op11_flattened_task_private_key_delete_tenant'
+      - '"Connection to {{ aci_hostname }} was successful" not in op11_flattened_task_private_key_delete_tenant'
+      - op11_task_private_key_add_tenant is changed
+      - '"Connection to {{ aci_hostname }} was successful" not in op11_flattened_task_private_key_add_tenant'
+
+# Continuing on the connected host test with the private key in the task
+- name: Delete Tenant with only private key in the task (Check for execution on the previously connected host)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    host: "{{ second_host_active }}"
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
+    tenant: ansible_test
+    state: absent
+  register: op12_task_private_key_delete_tenant
+
+- name: Add Tenant with only private key in the task (Check for execution on the provided aci_hostname with no attempts at re-connection)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    host: "{{ second_host_active }}"
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
+    tenant: ansible_test
+    state: present
+  register: op12_task_private_key_add_tenant
+
+- name: Flatten the registered instances
+  ansible.builtin.set_fact:
+    op12_flattened_task_private_key_delete_tenant: "{{ op12_task_private_key_delete_tenant.httpapi_logs | flatten }}"
+    op12_flattened_task_private_key_add_tenant: "{{ op12_task_private_key_add_tenant.httpapi_logs | flatten }}"
+
+- name: Verify continuation of the operations on the connected host with the password in the task
+  assert:
+    that:
+      - op12_task_private_key_delete_tenant is changed
+      - '"Connected host {{ aci_hostname }} found in the provided hosts. Continuing with it." in op12_flattened_task_private_key_delete_tenant'
+      - op12_task_private_key_add_tenant is changed
+      - '"Connection to {{ aci_hostname }} was successful" not in op12_flattened_task_private_key_add_tenant'
+
+# Change of hosts and no hosts active test with the private key in the task
+- name: Delete Tenant with only private key in the task (Check for failed operation)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    host: "{{ no_host_active }}"
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
+    tenant: ansible_test
+    state: absent
+  register: op13_task_private_key_delete_tenant
+  ignore_errors: True
+
+- name: Add Tenant with only private key in the task (Check the reset of the provided list of hosts)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    host: "{{ second_host_active }}"
+    private_key: "{{ lookup('file', 'pki/admin.key') }}"
+    tenant: ansible_test
+    state: present
+  register: op13_task_private_key_add_tenant
+
+- name: Verify failure when no hosts are active in the task
+  assert:
+    that:
+      - op13_task_private_key_delete_tenant.error.text | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
+      - op13_task_private_key_add_tenant is not changed
+
+# Switching of hosts test with the the inventory session key
+- name: Set list of hosts in the inventory with the last host as active
+  ansible.builtin.set_fact:
+    ansible_host: "{{aci_hostname|generate_random_ips(5,5)}}"
+    ansible_httpapi_session_key: {'admin': "{{ lookup('file', 'pki/admin.key') }}"}
+
+- name: Delete Tenant with session key in the inventory (Check for successful operation on the last host)
+  cisco.aci.aci_tenant:
+    output_level: debug
+    tenant: ansible_test
+    state: absent
+  register: op14_inventory_session_key_delete_tenant
+
+- name: Add Tenant with session key in the inventory (Check for execution on the provided aci_hostname with no attempts at re-connection)
+  cisco.aci.aci_tenant:
+    output_level: debug
+    tenant: ansible_test
+    state: present
+  register: op14_inventory_session_key_add_tenant
+
+- name: Flatten the registered instances
+  ansible.builtin.set_fact:
+    op14_flattened_inventory_session_key_delete_tenant: "{{ op14_inventory_session_key_delete_tenant.httpapi_logs | flatten }}"
+    op14_flattened_inventory_session_key_add_tenant: "{{ op14_inventory_session_key_add_tenant.httpapi_logs | flatten }}"
+
+- name: Verify switching of hosts with the session key in the inventory
+  assert:
+    that:
+      - op14_inventory_session_key_delete_tenant is changed
+      - op14_flattened_inventory_session_key_delete_tenant | regex_search('Switching host from [0-9]+(?:\.[0-9]+){3} to {{ aci_hostname }}') is not none
+      - '"Establishing login for {{ aci_username }} to {{ aci_hostname }}" not in op14_flattened_inventory_session_key_delete_tenant'
+      - '"Connection to {{ aci_hostname }} was successful" not in op14_flattened_inventory_session_key_delete_tenant'
+      - op14_inventory_session_key_add_tenant is changed
+      - '"Connection to {{ aci_hostname }} was successful" not in op14_flattened_inventory_session_key_add_tenant'
+
+# Continuing on the connected host test with the inventory session key
+- name: Set list of hosts in the inventory with the second host as active
+  ansible.builtin.set_fact:
+    ansible_host: "{{aci_hostname|generate_random_ips(2,5)}}"
+
+- name: Delete Tenant with session key in the inventory (Check for execution on the previously connected host)
+  cisco.aci.aci_tenant:
+    output_level: debug
+    tenant: ansible_test
+    state: absent
+  register: op15_inventory_session_key_delete_tenant
+
+- name: Add Tenant with session key in the inventory (Check for execution on the provided aci_hostname with no attempts at re-connection)
+  cisco.aci.aci_tenant:
+    output_level: debug
+    tenant: ansible_test
+    state: present
+  register: op15_inventory_session_key_add_tenant
+
+- name: Flatten the registered instances
+  ansible.builtin.set_fact:
+    op15_flattened_inventory_session_key_delete_tenant: "{{ op15_inventory_session_key_delete_tenant.httpapi_logs | flatten }}"
+    op15_flattened_inventory_session_key_add_tenant: "{{ op15_inventory_session_key_add_tenant.httpapi_logs | flatten }}"
+
+- name: Verify switching of hosts with the session key in the inventory
+  assert:
+    that:
+      - op15_inventory_session_key_delete_tenant is changed
+      - op15_flattened_inventory_session_key_delete_tenant | regex_search('Switching host from [0-9]+(?:\.[0-9]+){3} to {{ aci_hostname }}') is not none
+      - '"Establishing login for {{ aci_username }} to {{ aci_hostname }}" not in op15_flattened_inventory_session_key_delete_tenant'
+      - '"Connection to {{ aci_hostname }} was successful" not in op15_flattened_inventory_session_key_delete_tenant'
+      - op15_inventory_session_key_add_tenant is changed
+      - '"Connection to {{ aci_hostname }} was successful" not in op15_flattened_inventory_session_key_add_tenant'
+
+# Change of hosts and no hosts active test with the inventory session key
+- name: Set list of hosts in the inventory with no active hosts
+  ansible.builtin.set_fact:
+    ansible_host: "{{aci_hostname|generate_random_ips(0,5)}}"
+
+- name: Delete Tenant with session key in the inventory (Check for failed operation)
+  cisco.aci.aci_tenant:
+    output_level: debug
+    tenant: ansible_test
+    state: absent
+  register: op16_inventory_session_key_delete_tenant
+  ignore_errors: True
+
+- name: Verify failure when no hosts are active in the inventory
+  assert:
+    that:
+      - op16_inventory_session_key_delete_tenant.error.text | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
+
+# Clean up Environment
+- name: Delete a tenant using an XML string
+  cisco.aci.aci_rest:
+    <<: *aci_info
+    path: api/mo/uni/tn-[Sales].xml
+    method: delete
+    content: '<fvTenant name="Sales" descr="Sales departement"/>'
+
+- name: Remove user certificate
+  cisco.aci.aci_aaa_user_certificate:
+    <<: *aci_info
+    aaa_user: "{{ aci_username }}"
+    name: admin
+    certificate: "{{ lookup('file', 'pki/admin.crt') }}"
+    state: absent
+
+- name: Delete Tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    port: 443
+    tenant: ansible_test
+    state: absent
+
+- name: Cleanup facts to continue operation using the inventory file
+  ansible.builtin.set_fact:
+    ansible_host: "{{ aci_hostname }}"
+    ansible_connection: "{{ old_connection }}"
+    ansible_httpapi_session_key:

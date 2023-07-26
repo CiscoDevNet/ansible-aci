@@ -78,8 +78,8 @@
     ether_type: ip
     ip_protocol: tcp
     source_port: 20
-    source_port_start: 22
-    source_port_end: 22
+    source_port_start: 80
+    source_port_end: 80
   register: nt_source_port
   ignore_errors: true
 
@@ -119,7 +119,7 @@
     ether_type: ip
     ip_protocol: tcp
     source_port_start: 20
-    source_port_end: 22
+    source_port_end: 80
     tcp_flags:
       - acknowledgment
       - finish
@@ -194,7 +194,7 @@
       - source_port_values is changed
       - source_port_values.current.0.vzEntry.attributes.name == source_port_values.sent.vzEntry.attributes.name == "source_port_values"
       - source_port_values.current.0.vzEntry.attributes.sFromPort == source_port_values.sent.vzEntry.attributes.sFromPort == "ftpData"
-      - source_port_values.current.0.vzEntry.attributes.sToPort == source_port_values.sent.vzEntry.attributes.sToPort == "ssh"
+      - source_port_values.current.0.vzEntry.attributes.sToPort == source_port_values.sent.vzEntry.attributes.sToPort == "http"
       - source_port_values.current.0.vzEntry.attributes.tcpRules == source_port_values.sent.vzEntry.attributes.tcpRules == "ack,fin"
       - source_port_values.current.0.vzEntry.attributes.applyToFrag == "no"
       - source_port_values.current.0.vzEntry.attributes.arpOpc == "unspecified"

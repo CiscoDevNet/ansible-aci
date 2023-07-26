@@ -306,7 +306,7 @@
         - 104
         - 105
     ignore_errors: true
-    register: fex_vpc_three extpaths
+    register: fex_vpc_three_extpaths
 
   - name: Bind static-binding to epg - fex_port_channel with multiple extpaths (check_mode)
     cisco.aci.aci_static_binding_to_epg:

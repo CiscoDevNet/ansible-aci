@@ -37,12 +37,10 @@
               }
           }
       }
-  delegate_to: localhost
   register: nm_add_tenant
 
 - name: Add tenant again (normal mode)
   cisco.aci.aci_rest: *tenant_present
-  delegate_to: localhost
   register: nm_add_tenant_again
 
 - name: Verify add_tenant
@@ -72,12 +70,10 @@
               }
           }
       }
-  delegate_to: localhost
   register: nm_add_tenant_descr
 
 - name: Change description of tenant again (normal mode)
   cisco.aci.aci_rest: *tenant_changed
-  delegate_to: localhost
   register: nm_add_tenant_descr_again
 
 - name: Verify add_tenant_descr
@@ -89,7 +85,6 @@
 # ADD TENANT AGAIN
 - name: Add tenant again with no description (normal mode)
   cisco.aci.aci_rest: *tenant_present
-  delegate_to: localhost
   register: nm_add_tenant_again_no_descr
 
 - name: Verify add_tenant_again_no_descr
@@ -109,7 +104,6 @@
     output_level: '{{ aci_output_level | default("info") }}'
     path: /api/mo/uni/tn-[ansible_test].json
     method: get
-  delegate_to: localhost
   register: nm_query_all_tenants
 
 - name: Verify query_all_tenants
@@ -129,7 +123,6 @@
     output_level: '{{ aci_output_level | default("info") }}'
     path: /api/mo/uni/tn-[ansible_test].json
     method: get
-  delegate_to: localhost
   register: nm_query_tenant
 
 - name: Verify query_tenant
@@ -140,12 +133,10 @@
 # REMOVE TENANT
 - name: Remove tenant (normal mode)
   cisco.aci.aci_rest: *tenant_absent
-  delegate_to: localhost
   register: nm_remove_tenant
 
 - name: Remove tenant again (normal mode)
   cisco.aci.aci_rest: *tenant_absent
-  delegate_to: localhost
   register: nm_remove_tenant_again
 
 - name: Verify remove_tenant
@@ -157,7 +148,6 @@
 # QUERY NON-EXISTING TENANT
 - name: Query non-existing tenant (normal mode)
   cisco.aci.aci_rest: *tenant_query
-  delegate_to: localhost
   register: nm_query_non_tenant
 
 - name: Verify query_non_tenant

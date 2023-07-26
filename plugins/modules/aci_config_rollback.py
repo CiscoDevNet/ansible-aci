@@ -197,7 +197,6 @@ url:
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_bytes
-from ansible.module_utils.urls import fetch_url
 
 # Optional, only used for rollback preview
 try:
@@ -284,11 +283,11 @@ def main():
         aci.post_config()
 
     elif state == "preview":
-        aci.url = "%(protocol)s://%(host)s/mqapi2/snapshots.diff.xml" % module.params
+        aci.url = "{protocol}://{host}/mqapi2/snapshots.diff.xml".format_map(module.params)
         aci.filter_string = (
-            "?s1dn=uni/backupst/snapshots-[uni/fabric/configexp-%(export_policy)s]/snapshot-%(snapshot)s&"
-            "s2dn=uni/backupst/snapshots-[uni/fabric/configexp-%(compare_export_policy)s]/snapshot-%(compare_snapshot)s"
-        ) % module.params
+            "?s1dn=uni/backupst/snapshots-[uni/fabric/configexp-{export_policy}]/snapshot-{snapshot}&"
+            "s2dn=uni/backupst/snapshots-[uni/fabric/configexp-{compare_export_policy}]/snapshot-{compare_snapshot}"
+        ).format_map(module.params)
 
         # Generate rollback comparison
         get_preview(aci)
@@ -301,19 +300,21 @@ def get_preview(aci):
     This function is used to generate a preview between two snapshots and add the parsed results to the aci module return data.
     """
     uri = aci.url + aci.filter_string
-    resp, info = fetch_url(
-        aci.module, uri, headers=aci.headers, method="GET", timeout=aci.module.params.get("timeout"), use_proxy=aci.module.params.get("use_proxy")
-    )
-    aci.method = "GET"
-    aci.response = info.get("msg")
-    aci.status = info.get("status")
+
+    resp, info = aci.api_call("GET", uri, data=None, return_response=True)
 
     # Handle APIC response
     if info.get("status") == 200:
-        xml_to_json(aci, resp.read())
+        try:
+            xml_to_json(aci, resp.read())
+        except AttributeError:
+            xml_to_json(aci, info.get("body"))
     else:
-        aci.result["raw"] = resp.read()
-        aci.fail_json(msg="Request failed: %(code)s %(text)s (see 'raw' output)" % aci.error)
+        try:
+            aci.result["raw"] = resp.read()
+        except AttributeError:
+            aci.result["raw"] = info.get("body")
+        aci.fail_json(msg="Request failed: {code} {text} (see 'raw' output)".format_map(aci.error))
 
 
 def xml_to_json(aci, response_data):
