@@ -63,7 +63,7 @@ options:
   transceiver_policy_tdn:
     description:
     - The target Dn of the Transceiver policy to bind to the Fabric Leaf or Spine Interface Policy Group.
-    - The Transceiver policy group is only compatible with ACI versions 6.0 and higher.
+    - The Transceiver policy group is only compatible with ACI versions 6.0(2h) and higher.
     type: str
   state:
     description:

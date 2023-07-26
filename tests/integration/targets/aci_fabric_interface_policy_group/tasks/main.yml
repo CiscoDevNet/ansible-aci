@@ -83,8 +83,8 @@
   check_mode: true
   register: cm_spine_policy_group_present
 
-- name: Execute tasks only for ACI v6+
-  when: version.current.0.topSystem.attributes.version is version('6', '>=')
+- name: Execute tasks only for ACI v6.0(2h)+
+  when: version.current.0.topSystem.attributes.version is version('6.0(2h)', '>=')
   block:
     - name: Add a spine fabric interface policy group with transceiver_policy_tdn
       aci_fabric_interface_policy_group: &tp_spine_policy_group_present
