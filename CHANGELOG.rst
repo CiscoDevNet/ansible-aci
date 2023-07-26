@@ -5,6 +5,39 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.7.0
+======
+
+Release Summary
+---------------
+
+Release v2.7.0 of the ``ansible-aci`` collection on 2023-07-26.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.6.0.
+
+
+Minor Changes
+-------------
+
+- Add ACI HTTPAPI plugin with multi host support (#114)
+- Add OSPF paramaters to aci_l3out module and create the associated test case.
+- Add aci_access_span_src_group module for access span source group support
+- Add aci_access_span_src_group_src module for access span source support
+- Add aci_access_span_src_group_src_path module for access span source path support
+- Add aci_epg_subnet module (#424)
+- Add aci_fabric_span_dst_group module for fabric span destination group support
+- Add aci_fabric_span_src_group module for fabric span source group support
+- Add aci_fabric_span_src_group_src module for fabric span source support
+- Add aci_fabric_span_src_group_src_node module for fabric span source node support
+- Add aci_fabric_span_src_group_src_path module for fabric span source path support
+- Add aci_file_remote_path module (#379)
+- Add aci_vrf_leak_internal_subnet module (#449)
+- Add description parameter for aci_l3out_logical_interface_profile
+- Add ip_data_plane_learning attribute to aci_bd_subnet and aci_vrf modules (#413)
+- Add local_as_number_config and local_as_number attributes to support bgpLocalAsnP child object in aci_l3out_bgp_peer module (#416)
+- Add node_type and remote_leaf_pool_id attributes to aci_fabric_node
+- Add source_port, source_port_start, source_port_end, tcp_flags and match_only_fragments attributes to aci_filter_entry module (#426)
+- Create methods for handling delete and get requests for other objects as the module is handling
+
 v2.6.0
 ======
 
