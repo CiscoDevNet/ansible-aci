@@ -63,6 +63,7 @@ options:
   transceiver_policy_tdn:
     description:
     - The target Dn of the Transceiver policy to bind to the Fabric Leaf or Spine Interface Policy Group.
+    - The Transceiver policy group is only compatible with ACI versions 6.0 and higher.
     type: str
   state:
     description:
@@ -290,6 +291,18 @@ def main():
         policy_group_class_name = "fabricSpPortPGrp"
         policy_group_class_rn = "spportgrp-{0}".format(name)
 
+    child_classes = [
+        "fabricRsDwdmFabIfPol",
+        "fabricRsFIfPol",
+        "fabricRsFLinkFlapPol",
+        "fabricRsL3IfPol",
+        "fabricRsMacsecFabIfPol",
+        "fabricRsMonIfFabricPol",
+    ]
+
+    if transceiver_policy_tdn is not None:
+        child_classes.append("fabricRsOpticsFabIfPol")
+
     aci.construct_url(
         root_class=dict(
             aci_class="fabric",
@@ -305,15 +318,7 @@ def main():
             module_object=name,
             target_filter={"name": name},
         ),
-        child_classes=[
-            "fabricRsDwdmFabIfPol",
-            "fabricRsFIfPol",
-            "fabricRsFLinkFlapPol",
-            "fabricRsL3IfPol",
-            "fabricRsMacsecFabIfPol",
-            "fabricRsMonIfFabricPol",
-            "fabricRsOpticsFabIfPol",
-        ],
+        child_classes=child_classes,
     )
 
     aci.get_existing()

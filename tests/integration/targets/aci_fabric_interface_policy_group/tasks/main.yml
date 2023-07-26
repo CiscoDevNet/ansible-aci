@@ -20,6 +20,13 @@
       use_proxy: "{{ aci_use_proxy | default(true) }}"
       output_level: '{{ aci_output_level | default("info") }}'
 
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 - name: Ensure leaf_policy_group does not exist
   aci_fabric_interface_policy_group:
     <<: *aci_info
@@ -53,7 +60,6 @@
     l3_interface_policy: default
     macsec_policy: default
     monitoring_policy: default
-    transceiver_policy_tdn: "uni/fabric/zrfab-default"
   register: nm_leaf_policy_group_present
 
 - name: Add a leaf fabric interface policy group with normal mode again
@@ -73,10 +79,40 @@
     l3_interface_policy: default
     macsec_policy: default
     monitoring_policy: default
-    transceiver_policy_tdn: "uni/fabric/zrfab-default"
     state: present
   check_mode: true
   register: cm_spine_policy_group_present
+
+- name: Execute tasks only for ACI v6+
+  when: version.current.0.topSystem.attributes.version is version('6', '>=')
+  block:
+    - name: Add a spine fabric interface policy group with transceiver_policy_tdn
+      aci_fabric_interface_policy_group: &tp_spine_policy_group_present
+        <<: *aci_info
+        name: spine_policy_group
+        type: spine
+        descr: spine_policy_group created
+        transceiver_policy_tdn: "uni/fabric/zrfab-default"
+        state: present
+      register: tp_spine_policy_group_present
+
+    - name: Remove the transceiver_policy from the spine fabric interface policy group
+      aci_fabric_interface_policy_group:
+        <<: *aci_info
+        name: spine_policy_group
+        type: spine
+        descr: spine_policy_group created
+        transceiver_policy_tdn: ""
+        state: present
+      register: tp_spine_policy_group_absent
+
+    - name: Assertions check for add fabric interface policy groups
+      assert:
+        that:
+          - tp_spine_policy_group_present is changed
+          - tp_spine_policy_group_absent is changed
+          - tp_spine_policy_group_present.current[0].fabricSpPortPGrp.children  | selectattr('fabricRsOpticsFabIfPol.attributes.tDn', 'defined') | selectattr('fabricRsOpticsFabIfPol.attributes.tDn', 'equalto', "uni/fabric/zrfab-default")
+          - tp_spine_policy_group_absent.current[0].fabricSpPortPGrp.children  | selectattr('fabricRsOpticsFabIfPol.attributes.tDn', 'defined') | selectattr('fabricRsOpticsFabIfPol.attributes.tDn', 'equalto', "")
 
 - name: Add a spine fabric interface policy group with normal mode
   aci_fabric_interface_policy_group:
@@ -124,7 +160,7 @@
       - nm_leaf_policy_group_present.current[0].fabricLePortPGrp.attributes.name == "leaf_policy_group"
       - nm_leaf_policy_group_present.current[0].fabricLePortPGrp.attributes.descr == "leaf_policy_group created"
       - nm_leaf_policy_group_present.current[0].fabricLePortPGrp.attributes.dn == "uni/fabric/funcprof/leportgrp-leaf_policy_group"
-      - nm_leaf_policy_group_present.current[0].fabricLePortPGrp.children | length == 7
+      - nm_leaf_policy_group_present.current[0].fabricLePortPGrp.children | length >= 6
       - nm_leaf_policy_group_present_again is not changed
       - nm_leaf_policy_group_present_again.current != []
       - nm_leaf_policy_group_present_again.previous != []
@@ -138,11 +174,10 @@
       - cm_spine_policy_group_present.mo.fabricSpPortPGrp.attributes.descr == "spine_policy_group created"
       - nm_spine_policy_group_present is changed
       - nm_spine_policy_group_present.current != []
-      - nm_spine_policy_group_present.previous == []
       - nm_spine_policy_group_present.current[0].fabricSpPortPGrp.attributes.name == "spine_policy_group"
       - nm_spine_policy_group_present.current[0].fabricSpPortPGrp.attributes.descr == "spine_policy_group created"
       - nm_spine_policy_group_present.current[0].fabricSpPortPGrp.attributes.dn == "uni/fabric/funcprof/spportgrp-spine_policy_group"
-      - nm_spine_policy_group_present.current[0].fabricSpPortPGrp.children | length == 7
+      - nm_spine_policy_group_present.current[0].fabricSpPortPGrp.children | length >= 6
       - nm_spine_policy_group_present_again is not changed
       - nm_spine_policy_group_present_again.current != []
       - nm_spine_policy_group_present_again.previous != []
