@@ -1,0 +1,130 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Anvitha Jain <anvjain@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+
+  # CLEAN ENVIRONMENT
+  - name: Making sure interface_policy_spine_policy_group doesn't exist at beginning of test (Spine Access Port)
+    cisco.aci.aci_interface_policy_spine_policy_group: &spine_absent
+      <<: *aci_info 
+      policy_group: spine_pg_test
+      state: absent
+
+  # ADD Spine Policy Group
+  - name: Adding a interface policy spine policy group - check mode works
+    cisco.aci.aci_interface_policy_spine_policy_group: &spine_present
+      <<: *aci_info 
+      policy_group: spine_pg_test
+      link_level_policy: link_level_policy_test
+      link_flap_policy: link_flap_policy_test
+      cdp_policy: cdp_policy_test
+      mac_sec_policy: mac_sec_policy_test
+      attached_entity_profile: policy_group_aep
+      state: present
+    check_mode: yes
+    register: intf_policy_spine_polgrp_check_mode_present
+
+  - name: Adding a interface policy spine policy group - creation works
+    cisco.aci.aci_interface_policy_spine_policy_group:
+      <<: *spine_present
+    register: intf_policy_spine_polgrp_present
+
+  - name: Adding a interface policy spine policy group  - idempotency works
+    cisco.aci.aci_interface_policy_spine_policy_group:
+      <<: *spine_present
+    register: intf_policy_spine_polgrp_idempotent
+
+  # UPDATE Spine Policy Group
+  - name: Adding a interface policy spine policy group description - update works
+    cisco.aci.aci_interface_policy_spine_policy_group:
+      <<: *spine_present
+      description: policygroup description
+    register: intf_policy_spine_polgrp_update
+
+  - name: Verify present assertions
+    assert:
+      that:
+      - intf_policy_spine_polgrp_check_mode_present is changed
+      - intf_policy_spine_polgrp_present is changed
+      - intf_policy_spine_polgrp_present.previous == []
+      - intf_policy_spine_polgrp_present.current[0].infraSpAccPortGrp.attributes.name == 'spine_pg_test'
+      - intf_policy_spine_polgrp_present.current[0].infraSpAccPortGrp.children.0.infraRsLinkFlapPol.attributes.tnFabricLinkFlapPolName == 'link_flap_policy_test'
+      - intf_policy_spine_polgrp_present.current[0].infraSpAccPortGrp.children.1.infraRsMacsecIfPol.attributes.tnMacsecIfPolName == 'mac_sec_policy_test'
+      - intf_policy_spine_polgrp_present.current[0].infraSpAccPortGrp.children.2.infraRsAttEntP.attributes.tDn == 'uni/infra/attentp-policy_group_aep'
+      - intf_policy_spine_polgrp_present.current[0].infraSpAccPortGrp.children.3.infraRsHIfPol.attributes.tnFabricHIfPolName == 'link_level_policy_test'
+      - intf_policy_spine_polgrp_present.current[0].infraSpAccPortGrp.children.4.infraRsCdpIfPol.attributes.tnCdpIfPolName == 'cdp_policy_test'
+      - intf_policy_spine_polgrp_present.current[0].infraSpAccPortGrp.attributes.annotation == 'orchestrator:ansible'
+      - intf_policy_spine_polgrp_idempotent is not changed
+      - intf_policy_spine_polgrp_idempotent.sent == {}
+      - intf_policy_spine_polgrp_update is changed
+      - intf_policy_spine_polgrp_update.current[0].infraSpAccPortGrp.attributes.descr == 'policygroup description'
+
+  # QUERY Spine Policy Group
+  - name: Query all interface policy spine policy groups
+    cisco.aci.aci_interface_policy_spine_policy_group:
+      <<: *aci_info 
+      state: query
+    register: query_all_spine_policy_groups
+
+  - name: Query interface policy spine policy group
+    cisco.aci.aci_interface_policy_spine_policy_group:
+      <<: *aci_info 
+      policy_group: spine_pg_test
+      state: query
+    register: query_spine_policy_group
+
+  - name: Verify query assertions
+    assert:
+      that:
+        - query_spine_policy_group is not changed
+        - query_spine_policy_group.current[0] | length >= 1
+        - query_all_spine_policy_groups is not changed 
+
+  - name: Remove interface policy spine policy group - check mode
+    cisco.aci.aci_interface_policy_spine_policy_group:
+      <<: *spine_absent
+    check_mode: yes
+    register: intf_policy_spine_polgrp_check_mode_absent
+
+  - name: Remove interface policy spine policy group - delete works
+    cisco.aci.aci_interface_policy_spine_policy_group:
+      <<: *spine_absent
+    register: intf_policy_spine_polgrp_absent
+
+  - name: Remove interface policy spine policy group - idempotency works
+    cisco.aci.aci_interface_policy_spine_policy_group:
+      <<: *spine_absent
+    register: intf_policy_spine_polgrp_absent_idempotent
+
+  - name: Verify absent assertions
+    assert:
+      that:
+        - intf_policy_spine_polgrp_check_mode_absent is changed
+        - intf_policy_spine_polgrp_check_mode_absent.previous != []
+        - intf_policy_spine_polgrp_absent is changed
+        - intf_policy_spine_polgrp_absent.previous == intf_policy_spine_polgrp_absent.previous
+        - intf_policy_spine_polgrp_absent_idempotent is not changed
+        - intf_policy_spine_polgrp_absent_idempotent.previous == []
