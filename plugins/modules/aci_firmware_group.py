@@ -55,8 +55,8 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-The C(policy) used must exist before using this module in your playbook.
-The M(cisco.aci.aci_firmware_policy) module can be used for this.
+- The C(policy) used must exist before using this module in your playbook.
+- The M(cisco.aci.aci_firmware_policy) module can be used for this.
 seealso:
 - module: cisco.aci.aci_firmware_policy
 - name: APIC Management Information Model reference
