@@ -228,3 +228,101 @@
     <<: *tenant
     content:
       <fvTenant name="test_tenant_cert_auth" status="deleted"/>
+
+# Test cases for import error handling
+
+- name: Uninstall lxml for error checking
+  ansible.builtin.pip: &lxml
+    name: lxml
+    state: absent
+  ignore_errors: true # ignore errors to because of multiple executions for hosts at the same time
+
+- name: Uninstall xmljson for error checking
+  ansible.builtin.pip: &xmljson
+    name: xmljson
+    state: absent
+  ignore_errors: true # ignore errors to because of multiple executions for hosts at the same time
+
+- name: Uninstall pyyaml for error checking
+  ansible.builtin.pip: &pyyaml
+    name: pyyaml
+    state: absent
+  ignore_errors: true # ignore errors to because of multiple executions for hosts at the same time
+
+- name: Create tenant with invalid src attribute
+  cisco.aci.aci_rest:
+    <<: *tenant
+  ignore_errors: true
+  register: err_missing_lxml
+
+- name: Install lxml
+  ansible.builtin.pip:
+    <<: *lxml
+    state: present
+  ignore_errors: true # ignore errors to because of multiple executions for hosts at the same time
+
+- name: Create tenant with invalid src attribute
+  cisco.aci.aci_rest:
+    <<: *tenant
+  ignore_errors: true
+  register: err_missing_xmljson
+
+- name: Install xmljson
+  ansible.builtin.pip:
+    <<: *xmljson
+    state: present
+  ignore_errors: true # ignore errors to because of multiple executions for hosts at the same time
+
+- name: Install pyyaml
+  ansible.builtin.pip:
+    <<: *pyyaml
+    state: present
+  ignore_errors: true # ignore errors to because of multiple executions for hosts at the same time
+
+# Test case for invalid src
+
+- name: Create tenant with invalid src attribute
+  cisco.aci.aci_rest:
+    <<: *tenant
+    src: "./targets/aci_rest/invalid_src.txt"
+    content: "{{ fakevar | default(omit) }}"
+  ignore_errors: true
+  register: err_src_attribute
+
+# Test case for invalid path extension
+
+- name: Create tenant with invalid path extension
+  cisco.aci.aci_rest:
+    <<: *tenant
+    path: /api/mo/uni.invalid
+  ignore_errors: true
+  register: err_extension
+
+# Parse failures
+
+- name: Create tenant with fail to parse xml
+  cisco.aci.aci_rest:
+    <<: *tenant
+    src: "./targets/aci_rest/tasks/xml_files/fail_parse.xml"
+    content: "{{ fakevar | default(omit) }}"
+  ignore_errors: true
+  register: err_fail_parse_xml
+
+- name: Create tenant with fail to parse json
+  cisco.aci.aci_rest:
+    <<: *tenant
+    path: /api/mo/uni.json
+    src: "./targets/aci_rest/tasks/xml_files/fail_parse.json"
+    content: "{{ fakevar | default(omit) }}"
+  ignore_errors: true
+  register: err_fail_parse_json
+
+- name: Assertions checks for import error handling, invalid src, invalid path extension and parse failures
+  assert:
+    that:
+      - err_missing_lxml.msg == "The lxml python library is missing, or lacks etree support."
+      - err_missing_xmljson.msg == "The xmljson python library is missing, or lacks cobra support."
+      - err_src_attribute.msg == "Cannot find/access src './targets/aci_rest/invalid_src.txt'"
+      - err_extension.msg == "Failed to find REST API payload type (neither .xml nor .json)."
+      - err_fail_parse_xml.msg.startswith("Failed to parse provided XML payload")
+      - err_fail_parse_json.msg.startswith("Failed to parse provided JSON/YAML payload")
