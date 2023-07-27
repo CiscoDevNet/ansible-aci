@@ -361,6 +361,11 @@ class ACIModule(object):
             self.module.warn("Enable debug output because ANSIBLE_DEBUG was set.")
             self.params["output_level"] = "debug"
 
+        if self.params.get("port") is not None:
+            self.base_url = "{protocol}://{host}:{port}".format_map(self.params)
+        else:
+            self.base_url = "{protocol}://{host}".format_map(self.params)
+
         if self.params.get("private_key"):
             # Perform signature-based authentication, no need to log on separately
             if not HAS_CRYPTOGRAPHY and not HAS_OPENSSL:
@@ -415,10 +420,7 @@ class ACIModule(object):
         """Log in to APIC"""
 
         # Perform login request
-        if self.params.get("port") is not None:
-            url = "{protocol}://{host}:{port}/api/aaaLogin.json".format_map(self.params)
-        else:
-            url = "{protocol}://{host}/api/aaaLogin.json".format_map(self.params)
+        url = "{0}/api/aaaLogin.json".format(self.base_url)
         payload = {
             "aaaUser": {
                 "attributes": {
