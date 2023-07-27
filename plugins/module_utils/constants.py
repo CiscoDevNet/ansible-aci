@@ -47,7 +47,7 @@ VM_PROVIDER_MAPPING = dict(
     vmware="VMware",
 )
 
-MATCH_TYPE_GROUP_MAPPING = {"all": "ALL", "all_in_pod":"ALL_IN_POD", "range": "range"}
+MATCH_TYPE_GROUP_MAPPING = {"all": "ALL", "all_in_pod": "ALL_IN_POD", "range": "range"}
 
 MATCH_FC_FILL_PATTERN_MAPPING = {"arbff": "ARBFF", "idle": "IDLE"}
 
