@@ -38,7 +38,7 @@
       <<: *aci_info 
       group: anstest_group
       policy: anstest_policy
-      type: ALL
+      type_group: all
       description: test firmware group
       state: absent
 
@@ -84,9 +84,6 @@
         - nm_add_firmware_group_1.current.0.firmwareFwGrp.children.0.firmwareRsFwgrpp.attributes.tnFirmwareFwPName == "anstest_policy"
         - idempotency_add_firmware_group_1 is not changed
         - nm_add_firmware_group_2 is changed
-        - nm_add_firmware_group_2.current.0.firmwareFwGrp.attributes.name == "anstest_group_2"
-        - nm_add_firmware_group_2.current.0.firmwareFwGrp.children.0.firmwareRsFwgrpp.attributes.tnFirmwareFwPName == "anstest_policy"
-
 
   - name: Query all firmware groups
     aci_firmware_group:

@@ -46,3 +46,20 @@ VM_PROVIDER_MAPPING = dict(
     redhat="Redhat",
     vmware="VMware",
 )
+
+MATCH_TYPE_GROUP_MAPPING = {"all": "ALL", "all_in_pod":"ALL_IN_POD", "range": "range"}
+
+MATCH_FC_FILL_PATTERN_MAPPING = {"arbff": "ARBFF", "idle": "IDLE"}
+
+MATCH_FIRMWARE_NODES_TYPE_MAPPING = {
+    "c_apic_patch": "cApicPatch",
+    "catalog": "catalog",
+    "config": "config",
+    "controller": "controller",
+    "controller_patch": "controllerPatch",
+    "plugin": "plugin",
+    "plugin_package": "pluginPackage",
+    "switch": "switch",
+    "switch_patch": "switchPatch",
+    "vpod": "vpod",
+}

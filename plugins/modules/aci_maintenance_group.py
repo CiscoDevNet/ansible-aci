@@ -24,21 +24,22 @@ options:
         description:
         - The name of the maintenance policy.
         type: str
+        aliases: [ maintenancepol ]
     firmware_nodes_type:
         description:
         - The firmware type of nodes in the maintenance group.
         - The APIC defaults to C(switch) when unset during creation.
         type: str
-        choices: [ cApicPatch, catalog, config, controller, controllerPatch, plugin, pluginPackage, switch, switchPatch, vpod ]
-    type:
+        choices: [ c_apic_patch, catalog, config, controller, controller_patch, plugin, plugin_package, switch, switch_patch, vpod ]
+    type_group:
         description:
         - The type of the maintenance group.
         - The APIC defaults to C(range) when unset during creation.
         type: str
-        choices: [ ALL, ALL_IN_POD, range ]
+        choices: [ all, all_in_pod, range ]
     description:
         description:
-        - Description for the maintenance group.
+        - Description of the maintenance group.
         type: str
         aliases: [ descr ]
     state:
@@ -58,7 +59,9 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- A maintenance policy M(cisco.aci.aci_maintenance_policy) must be created prior to creating an aci maintenance group.
+notes:
+The C(policy) used must exist before using this module in your playbook.
+The M(cisco.aci.aci_maintenance_policy) module can be used for this.
 seealso:
 - module: cisco.aci.aci_maintenance_policy
 - name: APIC Management Information Model reference
@@ -215,6 +218,7 @@ url:
 """
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_TYPE_GROUP_MAPPING, MATCH_FIRMWARE_NODES_TYPE_MAPPING
 from ansible.module_utils.basic import AnsibleModule
 
 
@@ -224,23 +228,9 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         group=dict(type="str"),  # Not required for querying all objects
-        policy=dict(type="str"),  # Not required for querying all objects
-        firmware_nodes_type=dict(
-            type="str",
-            choices=[
-                "cApicPatch",
-                "catalog",
-                "config",
-                "controller",
-                "controllerPatch",
-                "plugin",
-                "pluginPackage",
-                "switch",
-                "switchPatch",
-                "vpod",
-            ],
-        ),
-        type=dict(type="str", choices=["ALL", "ALL_IN_POD", "range"]),
+        policy=dict(type="str", aliases=["maintenancepol"]),  # Not required for querying all objects
+        firmware_nodes_type=dict(type="str", choices=list(MATCH_FIRMWARE_NODES_TYPE_MAPPING.keys())),
+        type_group=dict(type="str", choices=list(MATCH_TYPE_GROUP_MAPPING.keys())),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -258,8 +248,8 @@ def main():
     state = module.params.get("state")
     group = module.params.get("group")
     policy = module.params.get("policy")
-    firmware_nodes_type = module.params.get("firmware_nodes_type")
-    type = module.params.get("type")
+    firmware_nodes_type = MATCH_FIRMWARE_NODES_TYPE_MAPPING.get(module.params.get("firmware_nodes_type"))
+    type_group = MATCH_TYPE_GROUP_MAPPING.get(module.params.get("type"))
     description = module.params.get("description")
     name_alias = module.params.get("name_alias")
     aci = ACIModule(module)
@@ -281,7 +271,7 @@ def main():
             class_config=dict(
                 name=group,
                 fwtype=firmware_nodes_type,
-                type=type,
+                type=type_group,
                 descr=description,
                 nameAlias=name_alias,
             ),

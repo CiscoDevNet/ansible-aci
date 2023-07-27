@@ -45,7 +45,7 @@
       group: anstest_group
       policy: anstest_policy
       firmware_nodes_type: controller
-      type: ALL
+      type_group: all
       description: test for maintenance group
       state: absent
 

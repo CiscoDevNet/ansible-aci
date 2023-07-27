@@ -33,31 +33,32 @@ options:
     type: bool
   windowname:
     description:
-    - This is the name for your what recurring or oneTime execution
+    - The name of the schedule window.
+    - Mandatory for the child class object B(trig:AbsWinddowP)
     type: str
   concurCap:
     description:
-    - This is the amount of devices that can be executed on at a time
+    - The amount of devices that can be executed on at a time
     type: int
   maxTime:
     description:
-    - This is the amount MAX amount of time a process can be executed
+    - The amount MAX amount of time a process can be executed
     type: str
   date:
     description:
-    - This is the date and time that the scheduler will execute
+    - The date and time that the scheduler will execute
     type: str
   hour:
     description:
-    - This set the hour of execution
+    - The number of hours of execution
     type: int
   minute:
     description:
-    - This sets the minute of execution, used in conjunction with hour
+    - The number of minutes of execution, used in conjunction with hour
     type: int
   day:
     description:
-    - This sets the day when execution will take place
+    - The number of days when execution will take place
     type: str
     default: every-day
     choices: [ Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, even-day, odd-day, every-day ]
@@ -94,6 +95,7 @@ EXAMPLES = r"""
     validate_certs: false
     name: simpleScheduler
     state: present
+
 - name: Remove Simple Scheduler
   cisco.aci.aci_fabric_scheduler:
     host: "{{ inventory_hostname }}"
@@ -102,6 +104,7 @@ EXAMPLES = r"""
     validate_certs: false
     name: simpleScheduler
     state: absent
+
 - name: One Time Scheduler
   cisco.aci.aci_fabric_scheduler:
     host: "{{ inventory_hostname }}"
@@ -114,6 +117,7 @@ EXAMPLES = r"""
     concurCap: 20
     date: "2018-11-20T24:00:00"
     state: present
+
 - name: Recurring Scheduler
   cisco.aci.aci_fabric_scheduler:
     host: "{{ inventory_hostname }}"

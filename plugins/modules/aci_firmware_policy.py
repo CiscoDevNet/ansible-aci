@@ -17,7 +17,7 @@ module: aci_firmware_policy
 short_description: Manage firmware policies (firmware:FwP)
 description:
 - This module creates a firmware policy for firmware groups.
-- The firmware policy is create first and then referenced by the firmware group.
+- The firmware policy is created first and then referenced by the firmware group.
 - You will assign the firmware and specify if you want to ignore the compatibility check.
 options:
     name:
@@ -43,10 +43,9 @@ options:
         type: str
     version:
         description:
-        - The version of the firmware associated with this policy. This value is very import as well as constructing
-        - it correctly. The syntax for this field is n9000-xx.x. If you look at the firmware repository using the UI
-        - each version will have a "Full Version" column, this is the value you need to use. So, if the Full Version
-        - is 13.1(1i), the value for this field would be n9000-13.1(1i)
+        - The version of the firmware associated with this policy.
+        - The syntax for this field is n9000-xx.x.
+        - if the Full Version is 13.1(1i), the value for this field would be n9000-13.1(1i).
         type: str
     version_check_override:
         description:

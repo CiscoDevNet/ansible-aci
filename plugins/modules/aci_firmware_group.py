@@ -19,22 +19,23 @@ description:
 options:
     group:
         description:
-        - This the name of the firmware group.
+        - Name of the firmware group.
         type: str
     policy:
         description:
-        - This is the name of the firmware policy, which was create by aci_firmware_policy.
-        - It is important that you use the same name as the policy created with aci_firmware_policy.
+        - Name of the firmware policy
+        - It is important that you use the same name as the policy created with M(cisco.aci.aci_firmware_policy).
         type: str
-    type:
+        aliases: [ firmwarepol ]
+    type_group:
         description:
         - Type of the firmware group.
         - The APIC defaults to C(range) when unset during creation.
         type: str
-        choices: [ ALL, ALL_IN_POD, range ]
+        choices: [ all, all_in_pod, range ]
     description:
         description:
-        - Description for the firmware group.
+        - Description of the firmware group.
         type: str
         aliases: [ descr ]
     state:
@@ -53,8 +54,11 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 - cisco.aci.owner
 
+notes:
+The C(policy) used must exist before using this module in your playbook.
+The M(cisco.aci.aci_firmware_policy) module can be used for this.
 seealso:
-- module: aci.aci_firmware_policy
+- module: cisco.aci.aci_firmware_policy
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(firmware:FwGrp).
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -211,6 +215,7 @@ url:
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_TYPE_GROUP_MAPPING
 
 
 def main():
@@ -219,8 +224,8 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         group=dict(type="str"),  # Not required for querying all objects
-        policy=dict(type="str"),  # Not required for querying all objects
-        type=dict(type="str", choices=["ALL", "ALL_IN_POD", "range"]),
+        policy=dict(type="str", aliases=["firmwarepol"]),  # Not required for querying all objects
+        type_group=dict(type="str", choices=list(MATCH_TYPE_GROUP_MAPPING.keys())),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -238,7 +243,7 @@ def main():
     state = module.params.get("state")
     group = module.params.get("group")
     policy = module.params.get("policy")
-    type = module.params.get("type")
+    type_group = MATCH_TYPE_GROUP_MAPPING.get(module.params.get("type"))
     description = module.params.get("description")
     name_alias = module.params.get("name_alias")
 
@@ -261,7 +266,7 @@ def main():
             class_config=dict(
                 name=group,
                 descr=description,
-                type=type,
+                type=type_group,
                 nameAlias=name_alias,
             ),
             child_configs=[

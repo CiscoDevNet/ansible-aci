@@ -33,7 +33,7 @@
       description: test for fc interface policy
       port_mode: np
       auto_max_speed: 16G
-      fill_pattern: ARBFF
+      fill_pattern: arbff
       buffer_credits: 32
       speed: 8G
       trunk_mode: trunk-on

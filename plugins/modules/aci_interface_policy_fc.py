@@ -233,7 +233,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_FC_FILL_PATTERN_MAPPING
 
 def main():
     argument_spec = aci_argument_spec()
@@ -244,7 +244,7 @@ def main():
         description=dict(type="str", aliases=["descr"]),
         port_mode=dict(type="str", choices=["f", "np"]),  # No default provided on purpose
         auto_max_speed=dict(type="str", choices=["2G", "4G", "8G", "16G", "32G"]),
-        fill_pattern=dict(type="str", choices=["ARBFF", "IDLE"]),
+        fill_pattern=dict(type="str", choices=list(MATCH_FC_FILL_PATTERN_MAPPING.keys())),
         buffer_credits=dict(type="int"),
         speed=dict(type="str", choices=["auto", "unknown", "2G", "4G", "8G", "16G", "32G"]),
         trunk_mode=dict(type="str", choices=["auto", "trunk-off", "trunk-on", "un-init"]),
@@ -264,7 +264,7 @@ def main():
     fc_policy = module.params.get("fc_policy")
     port_mode = module.params.get("port_mode")
     auto_max_speed = module.params.get("auto_max_speed")
-    fill_pattern = module.params.get("fill_pattern")
+    fill_pattern = MATCH_FC_FILL_PATTERN_MAPPING.get(module.params.get("fill_pattern"))
     buffer_credits = module.params.get("buffer_credits")
     speed = module.params.get("speed")
     trunk_mode = module.params.get("trunk_mode")
