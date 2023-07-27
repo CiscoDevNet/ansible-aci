@@ -44,7 +44,7 @@ options:
     - Fill Pattern for native FC ports.
     - The APIC defaults to C(IDLE) when unset during creation.
     type: str
-    choices: [ ARBFF, IDLE ]
+    choices: [ arbff, idle ]
   buffer_credits:
     description:
     - Receive buffer credits for native FC ports.
