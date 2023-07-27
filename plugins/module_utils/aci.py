@@ -1491,7 +1491,7 @@ class ACIModule(object):
 
     def dump_json(self):
         if self.params.get("state") in ("absent", "present"):
-            dn_path = (self.url).split("/mo/")[-1]
+            dn_path = self.url.rsplit("/mo/", maxsplit=1)[-1]
             if dn_path[-5:] == ".json":
                 dn_path = dn_path[:-5]
             mo = {}
