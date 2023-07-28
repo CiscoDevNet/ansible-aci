@@ -26,20 +26,20 @@
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   # Clean Environment
-  - name: Ensure Scheduler exists
+  - name: Create Scheduler
     aci_fabric_scheduler: &aci_fabric_scheduler_present
       <<: *aci_info
       name: anstest_scheduler
       state: present
 
-  - name: Ensure maintenance policy exists
+  - name: Create maintenance policy
     aci_maintenance_policy: &aci_maintenance_policy_present
       <<: *aci_info
       name: anstest_policy
       scheduler: anstest_scheduler
       state: present
 
-  - name: Ensure first maintenance groupe exists
+  - name: Create maintenance groupe
     aci_maintenance_group: &aci_maintenance_group_present
       <<: *aci_info
       group: anstest_group

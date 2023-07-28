@@ -26,14 +26,14 @@
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   # Clean Environment
-  - name: Ensure firmware policy exists
+  - name: Create firmware policy exists
     aci_firmware_policy: &aci_firmware_policy_present
       <<: *aci_info
       name: anstest_policy
       version: n9000-15.2(7)
       state: present
 
-  - name: Ensure first firmware group does not exist
+  - name: Create first firmware group
     aci_firmware_group: &aci_firmware_group_present
       <<: *aci_info 
       group: anstest_group
