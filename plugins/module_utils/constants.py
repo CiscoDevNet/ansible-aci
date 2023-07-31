@@ -34,6 +34,7 @@ NODE_TYPE_MAPPING = {"tier_2": "tier-2-leaf", "remote": "remote-leaf-wan", "virt
 SPAN_DIRECTION_MAP = {"incoming": "in", "outgoing": "out", "both": "both"}
 
 MATCH_TYPE_MAPPING = {"all": "All", "at_least_one": "AtleastOne", "at_most_one": "AtmostOne", "none": "None"}
+
 IPV4_REGEX = r"^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$"
 
 VM_PROVIDER_MAPPING = dict(
