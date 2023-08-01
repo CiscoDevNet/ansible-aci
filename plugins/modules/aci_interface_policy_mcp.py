@@ -243,6 +243,7 @@ MATCH_MCP_MODE_MAPPING = {
     "strict": "on"
 }
 
+
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
@@ -251,7 +252,7 @@ def main():
         mcp=dict(type="str", aliases=["mcp_interface", "name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         admin_state=dict(type="bool"),
-        mcp_mode=dict(type="str", choices= list(MATCH_MCP_MODE_MAPPING.keys())),
+        mcp_mode=dict(type="str", choices=list(MATCH_MCP_MODE_MAPPING.keys())),
         grace_period=dict(type="int", aliases=["gracePeriod"]),
         grace_period_millisec=dict(type="int", aliases=["grace_period_msec", "gracePeriodMsec"]),
         init_delay_time=dict(type="int", aliases=["strict_init_delay_time", "strictInitDelayTime"]),
@@ -302,12 +303,12 @@ def main():
                 name=mcp,
                 descr=description,
                 adminSt=admin_state,
-                mcpMode = mcp_mode,
-                gracePeriod = grace_period,
-                gracePeriodMsec = grace_period_millisec,
-                strictInitDelayTime = init_delay_time,
-                strictTxFreq = tx_frequence,
-                strictTxFreqMsec = tx_frequence_millisec,
+                mcpMode=mcp_mode,
+                gracePeriod=grace_period,
+                gracePeriodMsec=grace_period_millisec,
+                strictInitDelayTime=init_delay_time,
+                strictTxFreq=tx_frequence,
+                strictTxFreqMsec=tx_frequence_millisec,
                 nameAlias=name_alias,
             ),
         )

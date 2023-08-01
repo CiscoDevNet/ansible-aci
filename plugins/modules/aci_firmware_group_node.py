@@ -24,7 +24,7 @@ options:
     node:
         description:
         - The node to be added to the firmware group.
-        - the value equals the NodeID.
+        - The value equals the NodeID.
         type: str
     state:
         description:
