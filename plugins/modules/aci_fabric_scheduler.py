@@ -12,9 +12,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_fabric_scheduler
-short_description: This modules creates ACI schedulers (trig:SchedP)
+short_description: This module creates ACI schedulers (trig:SchedP)
 description:
-- With the module you can create schedule policies that can be a shell, onetime execution or recurring.
+- With the module you can create schedule policies that can be a shell, one-time execution or recurring.
 options:
   name:
     description:
@@ -28,37 +28,37 @@ options:
     aliases: [ descr ]
   recurring:
     description:
-    - If you want to make the Scheduler a recurring it would be a C(True) and for a oneTime execution it would be C(False).
+    - If you want to make the scheduler a recurring operation, it should be set C(True) and for a one-time execution it should be C(False).
     - For a shell, just exclude this option from the task.
     type: bool
   windowname:
     description:
     - The name of the schedule window.
-    - Mandatory for the child class object B(trig:AbsWinddowP)
+    - This is mandatory for the child class object B(trig:AbsWinddowP)
     type: str
   concurCap:
     description:
-    - The amount of devices that can be executed on at a time
+    - The amount of devices that can be executed on at a time.
     type: int
   maxTime:
     description:
-    - The amount MAX amount of time a process can be executed
+    - The maximum amount of time a process can be executed.
     type: str
   date:
     description:
-    - The date and time that the scheduler will execute
+    - The date and time that the scheduler will execute.
     type: str
   hour:
     description:
-    - The number of hours of execution
+    - The number of hours of execution.
     type: int
   minute:
     description:
-    - The number of minutes of execution, used in conjunction with hour
+    - The number of minutes of execution, used in conjunction with hour.
     type: int
   day:
     description:
-    - The number of days when execution will take place
+    - The number of days when execution will take place.
     type: str
     default: every-day
     choices: [ Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, even-day, odd-day, every-day ]

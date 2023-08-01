@@ -23,7 +23,7 @@ options:
     aliases: [ name ]
   description:
     description:
-    - The description for the port channel.
+    - The description of the port channel.
     type: str
     aliases: [ descr ]
   max_links:

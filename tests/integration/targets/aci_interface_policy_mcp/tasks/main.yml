@@ -26,6 +26,21 @@
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   # Clean Environment
+  - name: Ensure first mcp interface policy does not exist - APIC version >= 5.0
+    aci_interface_policy_mcp: &aci_interface_policy_mcp_absent_5
+      <<: *aci_info
+      name: anstest_policy
+      description: test for mcp interface policy
+      mcp_mode: strict
+      grace_period: 4
+      grace_period_millisec: 500
+      init_delay_time: 5
+      tx_frequence: 2
+      tx_frequence_millisec: 500
+      admin_state: false
+      state: absent
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
   - name: Ensure first mcp interface policy does not exist
     aci_interface_policy_mcp: &aci_interface_policy_mcp_absent
       <<: *aci_info
@@ -33,6 +48,7 @@
       description: test for mcp interface policy
       admin_state: false
       state: absent
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
 
   - name: Ensure second mcp interface policy does not exist
     aci_interface_policy_mcp: &aci_interface_policy_mcp_2_absent
@@ -40,22 +56,45 @@
       name: anstest_policy_2
       state: absent
 
-  - name: Create first mcp interface policy (check_mode)
+  - name: Create first mcp interface policy (check_mode) - APIC version >= 5.0
+    aci_interface_policy_mcp: &aci_interface_policy_mcp_present_5
+      <<: *aci_interface_policy_mcp_absent_5
+      state: present
+    check_mode: true
+    register: cm_add_interface_policy_mcp_1_5
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+  - name: Create first mcp interface policy (normal_mode) - APIC version >= 5.0
+    aci_interface_policy_mcp:
+      <<: *aci_interface_policy_mcp_present_5
+    register: nm_add_interface_policy_mcp_1_5
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+  - name: Create first mcp interface policy again - testing idempotency - APIC version >= 5.0
+    aci_interface_policy_mcp:
+      <<: *aci_interface_policy_mcp_present_5
+    register: idempotency_add_interface_policy_mcp_1_5
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+  - name: Create first mcp interface policy (check_mode) - APIC version < 5.0
     aci_interface_policy_mcp: &aci_interface_policy_mcp_present
       <<: *aci_interface_policy_mcp_absent
       state: present
     check_mode: true
     register: cm_add_interface_policy_mcp_1
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
 
-  - name: Create first mcp interface policy (normal_mode)
+  - name: Create first mcp interface policy (normal_mode) - APIC version < 5.0
     aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present
     register: nm_add_interface_policy_mcp_1
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
 
-  - name: Create first mcp interface policy again - testing idempotency
+  - name: Create first mcp interface policy again - testing idempotency - APIC version < 5.0
     aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present
     register: idempotency_add_interface_policy_mcp_1
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
 
   - name: Create second mcp interface policy
     aci_interface_policy_mcp: &aci_interface_policy_mcp_2_present
@@ -63,7 +102,19 @@
       state: present
     register: nm_add_interface_policy_mcp_2
 
-  - name: Asserts for creation tasks
+  - name: Asserts for creation tasks for first mcp interface policy - APIC version >= 5.0
+    assert:
+      that:
+        - cm_add_interface_policy_mcp_1_5 is changed
+        - cm_add_interface_policy_mcp_1_5.previous == []
+        - cm_add_interface_policy_mcp_1_5.current == []
+        - nm_add_interface_policy_mcp_1_5 is changed
+        - nm_add_interface_policy_mcp_1_5.current.0.mcpIfPol.attributes.name == "anstest_policy"
+        - nm_add_interface_policy_mcp_1_5.current.0.mcpIfPol.attributes.adminSt == "disabled"
+        - idempotency_add_interface_policy_mcp_1_5 is not changed
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+  - name: Asserts for creation tasks for first mcp interface policy - APIC version < 5.0
     assert:
       that:
         - cm_add_interface_policy_mcp_1 is changed
@@ -73,6 +124,11 @@
         - nm_add_interface_policy_mcp_1.current.0.mcpIfPol.attributes.name == "anstest_policy"
         - nm_add_interface_policy_mcp_1.current.0.mcpIfPol.attributes.adminSt == "disabled"
         - idempotency_add_interface_policy_mcp_1 is not changed
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+
+  - name: Asserts for creation tasks for second mcp interface policy
+    assert:
+      that:
         - nm_add_interface_policy_mcp_2 is changed
         - nm_add_interface_policy_mcp_2.current.0.mcpIfPol.attributes.name == "anstest_policy_2"
         - nm_add_interface_policy_mcp_2.current.0.mcpIfPol.attributes.adminSt == "enabled"
@@ -85,9 +141,17 @@
 
   - name: Query first mcp interface policy
     aci_interface_policy_mcp:
+      <<: *aci_interface_policy_mcp_present_5
+      state: query
+    register: query_first_interface_policy_mcp_5
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+  - name: Query first mcp interface policy
+    aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present
       state: query
     register: query_first_interface_policy_mcp
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
 
   - name: Asserts for query tasks
     assert:
@@ -95,28 +159,64 @@
         - query_all_interface_policy_mcp is not changed
         - query_all_interface_policy_mcp.current | length >= 2
         - '"class/mcpIfPol.json" in query_all_interface_policy_mcp.url'
-        - query_first_interface_policy_mcp is not changed
+
+  - name: Asserts for individual query tasks - APIC version >= 5.0
+    assert:
+      that:
+        - query_first_interface_policy_mcp_5.current.0.mcpIfPol.attributes.name == "anstest_policy"
+        - query_first_interface_policy_mcp_5.current.0.mcpIfPol.attributes.adminSt == "disabled"
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    
+  - name: Asserts for individual query tasks - APIC version < 5.0
+    assert:
+      that:
         - query_first_interface_policy_mcp.current.0.mcpIfPol.attributes.name == "anstest_policy"
         - query_first_interface_policy_mcp.current.0.mcpIfPol.attributes.adminSt == "disabled"
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
 
-  - name: Delete first mcp interface policy (check_mode)
+  - name: Delete first mcp interface policy (check_mode) - APIC version >= 5.0
+    aci_interface_policy_mcp:
+      <<: *aci_interface_policy_mcp_present_5
+      state: absent
+    check_mode: true
+    register: cm_delete_interface_policy_mcp_1_5
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+  - name: Delete first mcp interface policy (normal_mode) - APIC version >= 5.0
+    aci_interface_policy_mcp:
+      <<: *aci_interface_policy_mcp_present_5
+      state: absent
+    register: nm_delete_interface_policy_mcp_1_5
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+  - name: Delete first mcp interface policy again - testing idempotency - APIC version >= 5.0
+    aci_interface_policy_mcp:
+      <<: *aci_interface_policy_mcp_present_5
+      state: absent
+    register: idempotency_delete_interface_policy_mcp_1_5
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+  - name: Delete first mcp interface policy (check_mode) - APIC version < 5.0
     aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present
       state: absent
     check_mode: true
     register: cm_delete_interface_policy_mcp_1
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
 
-  - name: Delete first mcp interface policy (normal_mode)
+  - name: Delete first mcp interface policy (normal_mode) - APIC version < 5.0
     aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present
       state: absent
     register: nm_delete_interface_policy_mcp_1
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
 
-  - name: Delete first mcp interface policy again - testing idempotency
+  - name: Delete first mcp interface policy again - testing idempotency - APIC version < 5.0
     aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present
       state: absent
     register: idempotency_delete_interface_policy_mcp_1
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
 
   - name: Delete second mcp interface policy (normal_mode)
     aci_interface_policy_mcp:
@@ -124,7 +224,19 @@
       state: absent
     register: nm_delete_interface_policy_mcp_2
 
-  - name: Asserts for deletion tasks
+  - name: Asserts for first mcp interface policy deletion tasks - APIC version >= 5.0
+    assert:
+      that:
+        - cm_delete_interface_policy_mcp_1_5 is changed
+        - cm_delete_interface_policy_mcp_1_5.proposed == {}
+        - nm_delete_interface_policy_mcp_1_5 is changed
+        - nm_delete_interface_policy_mcp_1_5.previous != []
+        - nm_delete_interface_policy_mcp_1_5.current == []
+        - idempotency_delete_interface_policy_mcp_1_5 is not changed
+        - idempotency_delete_interface_policy_mcp_1_5.previous == []
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+  - name: Asserts for first mcp interface policy deletion tasks - APIC version < 5.0
     assert:
       that:
         - cm_delete_interface_policy_mcp_1 is changed
@@ -134,6 +246,10 @@
         - nm_delete_interface_policy_mcp_1.current == []
         - idempotency_delete_interface_policy_mcp_1 is not changed
         - idempotency_delete_interface_policy_mcp_1.previous == []
-        - nm_delete_interface_policy_mcp_2 is changed
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+  
+  - name: Asserts for second mcp interface policy deletion tasks
+    assert:
+      that:
         - nm_delete_interface_policy_mcp_2.previous != []
         - nm_delete_interface_policy_mcp_2.current == []

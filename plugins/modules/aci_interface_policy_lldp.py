@@ -23,7 +23,7 @@ options:
     aliases: [ name ]
   description:
     description:
-    - The description for the LLDP interface policy name.
+    - The description of the LLDP interface policy name.
     type: str
     aliases: [ descr ]
   receive_state:

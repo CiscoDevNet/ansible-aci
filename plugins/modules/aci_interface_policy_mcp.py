@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -23,7 +24,7 @@ options:
     aliases: [ mcp_interface, name ]
   description:
     description:
-    - The description for the MCP interface.
+    - The description of the MCP interface.
     type: str
     aliases: [ descr ]
   admin_state:
@@ -31,6 +32,38 @@ options:
     - Enable or disable admin state.
     - The APIC defaults to C(true) when unset during creation.
     type: bool
+  mcp_mode:
+    description:
+    - Instance MCP mode
+    - The APIC defaults to C(non_strict) when unset during creation.
+    type: str
+    choices: [ non_strict, strict ]
+  grace_period:
+    description:
+    - For strict mode, grace period timeout in sec during which early loop detection takes place.
+    type: int
+    aliases: [ gracePeriod ]
+  grace_period_millisec:
+    description:
+    - For strict mode, grace period timeout in millisec during which early loop detection takes place
+    type: int
+    aliases: [ grace_period_msec, gracePeriodMsec ]
+  init_delay_time:
+    description:
+    - For strict mode, delay time in seconds for mcp to wait before sending BPDUs.
+    - This gives time for STP on the external network to converge.
+    type: int
+    aliases: [ strict_init_delay_time, strictInitDelayTime ]
+  tx_frequence:
+    description:
+    - For strict mode, transmission frequency of MCP packets until grace period on each L2 interface in seconds.
+    type: int
+    aliases: [ strict_tx_freq, strictTxFreq ]
+  tx_frequence_millisec:
+    description:
+    - For strict mode, transmission frequency of MCP packets until grace period on each L2 interface in milliseconds
+    type: int
+    aliases: [strict_tx_freq_msec, strictTxFreqMsec ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -53,6 +86,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
@@ -204,6 +238,11 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
+MATCH_MCP_MODE_MAPPING = {
+    "non_strict": "off",
+    "strict": "on"
+}
+
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
@@ -212,6 +251,12 @@ def main():
         mcp=dict(type="str", aliases=["mcp_interface", "name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         admin_state=dict(type="bool"),
+        mcp_mode=dict(type="str", choices= list(MATCH_MCP_MODE_MAPPING.keys())),
+        grace_period=dict(type="int", aliases=["gracePeriod"]),
+        grace_period_millisec=dict(type="int", aliases=["grace_period_msec", "gracePeriodMsec"]),
+        init_delay_time=dict(type="int", aliases=["strict_init_delay_time", "strictInitDelayTime"]),
+        tx_frequence=dict(type="int", aliases=["strict_tx_freq", "strictTxFreq"]),
+        tx_frequence_millisec=dict(type="int", aliases=["strict_tx_freq_msec", "strictTxFreqMsec"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
@@ -230,6 +275,12 @@ def main():
     mcp = module.params.get("mcp")
     description = module.params.get("description")
     admin_state = aci.boolean(module.params.get("admin_state"), "enabled", "disabled")
+    mcp_mode = MATCH_MCP_MODE_MAPPING.get(module.params.get("mcp_mode"))
+    grace_period = module.params.get("grace_period")
+    grace_period_millisec = module.params.get("grace_period_millisec")
+    init_delay_time = module.params.get("init_delay_time")
+    tx_frequence = module.params.get("tx_frequence")
+    tx_frequence_millisec = module.params.get("tx_frequence_millisec")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
@@ -251,6 +302,12 @@ def main():
                 name=mcp,
                 descr=description,
                 adminSt=admin_state,
+                mcpMode = mcp_mode,
+                gracePeriod = grace_period,
+                gracePeriodMsec = grace_period_millisec,
+                strictInitDelayTime = init_delay_time,
+                strictTxFreq = tx_frequence,
+                strictTxFreqMsec = tx_frequence_millisec,
                 nameAlias=name_alias,
             ),
         )
