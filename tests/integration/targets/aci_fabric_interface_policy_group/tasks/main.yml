@@ -111,8 +111,8 @@
         that:
           - tp_spine_policy_group_present is changed
           - tp_spine_policy_group_absent is changed
-          - tp_spine_policy_group_present.current[0].fabricSpPortPGrp.children  | selectattr('fabricRsOpticsFabIfPol.attributes.tDn', 'defined') | selectattr('fabricRsOpticsFabIfPol.attributes.tDn', 'equalto', "uni/fabric/zrfab-default")
-          - tp_spine_policy_group_absent.current[0].fabricSpPortPGrp.children  | selectattr('fabricRsOpticsFabIfPol.attributes.tDn', 'defined') | selectattr('fabricRsOpticsFabIfPol.attributes.tDn', 'equalto', "")
+          - tp_spine_policy_group_present.current.0.fabricSpPortPGrp.children | selectattr('fabricRsOpticsFabIfPol.attributes.tDn', 'defined') | selectattr('fabricRsOpticsFabIfPol.attributes.tDn', 'equalto', "uni/fabric/zrfab-default")
+          - tp_spine_policy_group_absent.current.0.fabricSpPortPGrp.children | selectattr('fabricRsOpticsFabIfPol.attributes.tDn', 'defined') | selectattr('fabricRsOpticsFabIfPol.attributes.tDn', 'equalto', "")
 
 - name: Add a spine fabric interface policy group with normal mode
   aci_fabric_interface_policy_group:
@@ -124,15 +124,16 @@
     <<: *cm_spine_policy_group_present
   register: nm_spine_policy_group_present_again
 
-- name: Add a spine fabric interface policy group with normal mode again
-  aci_fabric_interface_policy_group:
-    <<: *cm_spine_policy_group_present
-  register: nm_spine_policy_group_present_again
-
 - name: Update a spine fabric interface policy group with check mode
   aci_fabric_interface_policy_group: &cm_spine_policy_group_update
     <<: *cm_spine_policy_group_present
     descr: spine_policy_group updated
+    dwdm_policy: ""
+    link_level_policy: ""
+    link_flap_policy: ""
+    l3_interface_policy: ""
+    macsec_policy: ""
+    monitoring_policy: ""
   check_mode: true
   register: cm_spine_policy_group_update
 
@@ -157,16 +158,16 @@
       - nm_leaf_policy_group_present is changed
       - nm_leaf_policy_group_present.current != []
       - nm_leaf_policy_group_present.previous == []
-      - nm_leaf_policy_group_present.current[0].fabricLePortPGrp.attributes.name == "leaf_policy_group"
-      - nm_leaf_policy_group_present.current[0].fabricLePortPGrp.attributes.descr == "leaf_policy_group created"
-      - nm_leaf_policy_group_present.current[0].fabricLePortPGrp.attributes.dn == "uni/fabric/funcprof/leportgrp-leaf_policy_group"
-      - nm_leaf_policy_group_present.current[0].fabricLePortPGrp.children | length >= 6
+      - nm_leaf_policy_group_present.current.0.fabricLePortPGrp.attributes.name == "leaf_policy_group"
+      - nm_leaf_policy_group_present.current.0.fabricLePortPGrp.attributes.descr == "leaf_policy_group created"
+      - nm_leaf_policy_group_present.current.0.fabricLePortPGrp.attributes.dn == "uni/fabric/funcprof/leportgrp-leaf_policy_group"
+      - nm_leaf_policy_group_present.current.0.fabricLePortPGrp.children | length >= 6
       - nm_leaf_policy_group_present_again is not changed
       - nm_leaf_policy_group_present_again.current != []
       - nm_leaf_policy_group_present_again.previous != []
-      - nm_leaf_policy_group_present_again.current[0].fabricLePortPGrp.attributes.name == nm_leaf_policy_group_present_again.previous[0].fabricLePortPGrp.attributes.name == "leaf_policy_group"
-      - nm_leaf_policy_group_present_again.current[0].fabricLePortPGrp.attributes.descr == nm_leaf_policy_group_present_again.previous[0].fabricLePortPGrp.attributes.descr == "leaf_policy_group created"
-      - nm_leaf_policy_group_present_again.current[0].fabricLePortPGrp.attributes.dn == nm_leaf_policy_group_present_again.previous[0].fabricLePortPGrp.attributes.dn == "uni/fabric/funcprof/leportgrp-leaf_policy_group"
+      - nm_leaf_policy_group_present_again.current.0.fabricLePortPGrp.attributes.name == nm_leaf_policy_group_present_again.previous.0.fabricLePortPGrp.attributes.name == "leaf_policy_group"
+      - nm_leaf_policy_group_present_again.current.0.fabricLePortPGrp.attributes.descr == nm_leaf_policy_group_present_again.previous.0.fabricLePortPGrp.attributes.descr == "leaf_policy_group created"
+      - nm_leaf_policy_group_present_again.current.0.fabricLePortPGrp.attributes.dn == nm_leaf_policy_group_present_again.previous.0.fabricLePortPGrp.attributes.dn == "uni/fabric/funcprof/leportgrp-leaf_policy_group"
       - cm_spine_policy_group_present is changed
       - cm_spine_policy_group_present.current == []
       - cm_spine_policy_group_present.previous == []
@@ -174,22 +175,40 @@
       - cm_spine_policy_group_present.mo.fabricSpPortPGrp.attributes.descr == "spine_policy_group created"
       - nm_spine_policy_group_present is changed
       - nm_spine_policy_group_present.current != []
-      - nm_spine_policy_group_present.current[0].fabricSpPortPGrp.attributes.name == "spine_policy_group"
-      - nm_spine_policy_group_present.current[0].fabricSpPortPGrp.attributes.descr == "spine_policy_group created"
-      - nm_spine_policy_group_present.current[0].fabricSpPortPGrp.attributes.dn == "uni/fabric/funcprof/spportgrp-spine_policy_group"
-      - nm_spine_policy_group_present.current[0].fabricSpPortPGrp.children | length >= 6
+      - nm_spine_policy_group_present.current.0.fabricSpPortPGrp.attributes.name == "spine_policy_group"
+      - nm_spine_policy_group_present.current.0.fabricSpPortPGrp.attributes.descr == "spine_policy_group created"
+      - nm_spine_policy_group_present.current.0.fabricSpPortPGrp.attributes.dn == "uni/fabric/funcprof/spportgrp-spine_policy_group"
+      - nm_spine_policy_group_present.current.0.fabricSpPortPGrp.children | length >= 6
+      - nm_spine_policy_group_present.current.0.fabricSpPortPGrp.children  | selectattr('fabricRsDwdmFabIfPol.attributes.tnDwdmFabIfPolName', 'defined') | selectattr('fabricRsDwdmFabIfPol.attributes.tnDwdmFabIfPolName', 'equalto', "default")
+      - nm_spine_policy_group_present.current.0.fabricSpPortPGrp.children  | selectattr('fabricRsFIfPol.attributes.tnFabricFIfPolName', 'defined') | selectattr('fabricRsFIfPol.attributes.tnFabricFIfPolName', 'equalto', "default")
+      - nm_spine_policy_group_present.current.0.fabricSpPortPGrp.children  | selectattr('fabricRsFLinkFlapPol.attributes.tnFabricFLinkFlapPolName', 'defined') | selectattr('fabricRsFLinkFlapPol.attributes.tnFabricFLinkFlapPolName', 'equalto', "default")
+      - nm_spine_policy_group_present.current.0.fabricSpPortPGrp.children  | selectattr('fabricRsL3IfPol.attributes.tnL3IfPolName', 'defined') | selectattr('fabricRsL3IfPol.attributes.tnL3IfPolName', 'equalto', "default")
+      - nm_spine_policy_group_present.current.0.fabricSpPortPGrp.children  | selectattr('fabricRsMacsecFabIfPol.attributes.tnMacsecFabIfPolName', 'defined') | selectattr('fabricRsMacsecFabIfPol.attributes.tnMacsecFabIfPolName', 'equalto', "default")
+      - nm_spine_policy_group_present.current.0.fabricSpPortPGrp.children  | selectattr('fabricRsMonIfFabricPol.attributes.tnMonFabricPolName', 'defined') | selectattr('fabricRsMonIfFabricPol.attributes.tnMonFabricPolName', 'equalto', "default")
       - nm_spine_policy_group_present_again is not changed
       - nm_spine_policy_group_present_again.current != []
       - nm_spine_policy_group_present_again.previous != []
-      - nm_spine_policy_group_present_again.current[0].fabricSpPortPGrp.attributes.name == nm_spine_policy_group_present_again.previous[0].fabricSpPortPGrp.attributes.name == "spine_policy_group"
-      - nm_spine_policy_group_present_again.current[0].fabricSpPortPGrp.attributes.descr == nm_spine_policy_group_present_again.previous[0].fabricSpPortPGrp.attributes.descr == "spine_policy_group created"
-      - nm_spine_policy_group_present_again.current[0].fabricSpPortPGrp.attributes.dn == nm_spine_policy_group_present_again.previous[0].fabricSpPortPGrp.attributes.dn == "uni/fabric/funcprof/spportgrp-spine_policy_group"
+      - nm_spine_policy_group_present_again.current.0.fabricSpPortPGrp.attributes.name == nm_spine_policy_group_present_again.previous.0.fabricSpPortPGrp.attributes.name == "spine_policy_group"
+      - nm_spine_policy_group_present_again.current.0.fabricSpPortPGrp.attributes.descr == nm_spine_policy_group_present_again.previous.0.fabricSpPortPGrp.attributes.descr == "spine_policy_group created"
+      - nm_spine_policy_group_present_again.current.0.fabricSpPortPGrp.attributes.dn == nm_spine_policy_group_present_again.previous.0.fabricSpPortPGrp.attributes.dn == "uni/fabric/funcprof/spportgrp-spine_policy_group"
       - cm_spine_policy_group_update is changed
       - cm_spine_policy_group_update.previous.0.fabricSpPortPGrp.attributes.descr == "spine_policy_group created"
       - cm_spine_policy_group_update.current.0.fabricSpPortPGrp.attributes.descr == "spine_policy_group created"
       - nm_spine_policy_group_update is changed
       - nm_spine_policy_group_update.previous.0.fabricSpPortPGrp.attributes.descr == "spine_policy_group created"
       - nm_spine_policy_group_update.current.0.fabricSpPortPGrp.attributes.descr == "spine_policy_group updated"
+      - nm_spine_policy_group_update.previous.0.fabricSpPortPGrp.children  | selectattr('fabricRsDwdmFabIfPol.attributes.tnDwdmFabIfPolName', 'defined') | selectattr('fabricRsDwdmFabIfPol.attributes.tnDwdmFabIfPolName', 'equalto', "default")
+      - nm_spine_policy_group_update.previous.0.fabricSpPortPGrp.children  | selectattr('fabricRsFIfPol.attributes.tnFabricFIfPolName', 'defined') | selectattr('fabricRsFIfPol.attributes.tnFabricFIfPolName', 'equalto', "default")
+      - nm_spine_policy_group_update.previous.0.fabricSpPortPGrp.children  | selectattr('fabricRsFLinkFlapPol.attributes.tnFabricFLinkFlapPolName', 'defined') | selectattr('fabricRsFLinkFlapPol.attributes.tnFabricFLinkFlapPolName', 'equalto', "default")
+      - nm_spine_policy_group_update.previous.0.fabricSpPortPGrp.children  | selectattr('fabricRsL3IfPol.attributes.tnL3IfPolName', 'defined') | selectattr('fabricRsL3IfPol.attributes.tnL3IfPolName', 'equalto', "default")
+      - nm_spine_policy_group_update.previous.0.fabricSpPortPGrp.children  | selectattr('fabricRsMacsecFabIfPol.attributes.tnMacsecFabIfPolName', 'defined') | selectattr('fabricRsMacsecFabIfPol.attributes.tnMacsecFabIfPolName', 'equalto', "default")
+      - nm_spine_policy_group_update.previous.0.fabricSpPortPGrp.children  | selectattr('fabricRsMonIfFabricPol.attributes.tnMonFabricPolName', 'defined') | selectattr('fabricRsMonIfFabricPol.attributes.tnMonFabricPolName', 'equalto', "default")
+      - nm_spine_policy_group_update.current.0.fabricSpPortPGrp.children  | selectattr('fabricRsDwdmFabIfPol.attributes.tnDwdmFabIfPolName', 'defined') | selectattr('fabricRsDwdmFabIfPol.attributes.tnDwdmFabIfPolName', 'equalto', "")
+      - nm_spine_policy_group_update.current.0.fabricSpPortPGrp.children  | selectattr('fabricRsFIfPol.attributes.tnFabricFIfPolName', 'defined') | selectattr('fabricRsFIfPol.attributes.tnFabricFIfPolName', 'equalto', "")
+      - nm_spine_policy_group_update.current.0.fabricSpPortPGrp.children  | selectattr('fabricRsFLinkFlapPol.attributes.tnFabricFLinkFlapPolName', 'defined') | selectattr('fabricRsFLinkFlapPol.attributes.tnFabricFLinkFlapPolName', 'equalto', "")
+      - nm_spine_policy_group_update.current.0.fabricSpPortPGrp.children  | selectattr('fabricRsL3IfPol.attributes.tnL3IfPolName', 'defined') | selectattr('fabricRsL3IfPol.attributes.tnL3IfPolName', 'equalto', "")
+      - nm_spine_policy_group_update.current.0.fabricSpPortPGrp.children  | selectattr('fabricRsMacsecFabIfPol.attributes.tnMacsecFabIfPolName', 'defined') | selectattr('fabricRsMacsecFabIfPol.attributes.tnMacsecFabIfPolName', 'equalto', "")
+      - nm_spine_policy_group_update.current.0.fabricSpPortPGrp.children  | selectattr('fabricRsMonIfFabricPol.attributes.tnMonFabricPolName', 'defined') | selectattr('fabricRsMonIfFabricPol.attributes.tnMonFabricPolName', 'equalto', "")
       - nm_spine_policy_group_update_again is not changed
       - nm_spine_policy_group_update_again.previous.0.fabricSpPortPGrp.attributes.descr == "spine_policy_group updated"
       - nm_spine_policy_group_update_again.current.0.fabricSpPortPGrp.attributes.descr == "spine_policy_group updated"
@@ -255,17 +274,17 @@
     that:
       - query_leaf_policy_group is not changed
       - query_leaf_policy_group.current != []
-      - query_leaf_policy_group.current[0].fabricLePortPGrp.attributes.name == "leaf_policy_group"
-      - query_leaf_policy_group.current[0].fabricLePortPGrp.attributes.dn == "uni/fabric/funcprof/leportgrp-leaf_policy_group"
-      - query_leaf_policy_group.current[0].fabricLePortPGrp.attributes.descr == "leaf_policy_group created"
+      - query_leaf_policy_group.current.0.fabricLePortPGrp.attributes.name == "leaf_policy_group"
+      - query_leaf_policy_group.current.0.fabricLePortPGrp.attributes.dn == "uni/fabric/funcprof/leportgrp-leaf_policy_group"
+      - query_leaf_policy_group.current.0.fabricLePortPGrp.attributes.descr == "leaf_policy_group created"
       - query_all_leaf_policy_group is not changed
       - query_all_leaf_policy_group.current != []
       - query_all_leaf_policy_group.current | length >= 1
       - query_a_spine_policy_group is not changed
       - query_a_spine_policy_group.current != []
-      - query_a_spine_policy_group.current[0].fabricSpPortPGrp.attributes.name == "spine_policy_group"
-      - query_a_spine_policy_group.current[0].fabricSpPortPGrp.attributes.dn == "uni/fabric/funcprof/spportgrp-spine_policy_group"
-      - query_a_spine_policy_group.current[0].fabricSpPortPGrp.attributes.descr == "spine_policy_group updated"
+      - query_a_spine_policy_group.current.0.fabricSpPortPGrp.attributes.name == "spine_policy_group"
+      - query_a_spine_policy_group.current.0.fabricSpPortPGrp.attributes.dn == "uni/fabric/funcprof/spportgrp-spine_policy_group"
+      - query_a_spine_policy_group.current.0.fabricSpPortPGrp.attributes.descr == "spine_policy_group updated"
       - query_all_spine_policy_group is not changed
       - query_all_spine_policy_group.current != []
       - query_all_spine_policy_group.current | length >= 1
