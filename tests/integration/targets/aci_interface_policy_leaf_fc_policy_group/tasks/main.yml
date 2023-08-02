@@ -1,0 +1,232 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Anvitha Jain <anvjain@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+
+  # CLEAN ENVIRONMENT
+  - name: Making sure FC port policy  group doesn't exist at beginning of test
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group: &fc_absent
+      <<: *aci_info
+      lag_type: port
+      policy_group: fc_port_test
+      state: absent
+
+  - name: Making sure FC PC policy group doesn't exist at beginning of test
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group: &fc_pc_absent
+      <<: *aci_info
+      lag_type: port_channel
+      policy_group: fc_pc_test
+      state: absent
+
+  # ADD Leaf Access FC Port Policy Group
+  - name: Adding a interface policy Leaf Access FC Port policy group - check mode works
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group: &fc_present
+      <<: *aci_info 
+      policy_group: fc_port_test
+      lag_type: port
+      fibre_channel_interface_policy: fibre_channel_interface_policy_test
+      # port_channel_policy: port_channel_policy_test
+      attached_entity_profile: policy_group_aep
+      state: present
+    check_mode: yes
+    register: intf_policy_leaf_access_fc_port_polgrp_check_mode_present
+
+  - name: Adding a interface policy Leaf Access FC Port policy group - creation works
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *fc_present
+    register: intf_policy_leaf_access_fc_port_polgrp_present
+
+  - name: Adding a interface policy Leaf Access FC Port policy group  - idempotency works
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *fc_present
+    register: intf_policy_leaf_access_fc_port_polgrp_idempotent
+
+  # UPDATE Leaf Access FC Port Policy Group
+  - name: Adding a interface policy Leaf Access FC Port policy group description - update works
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *fc_present
+      description: policygroup description
+    register: intf_policy_leaf_access_fc_port_polgrp_update
+
+  - name: Verify present assertions for FC Port Policy Group
+    assert:
+      that:
+      - intf_policy_leaf_access_fc_port_polgrp_check_mode_present is changed
+      - intf_policy_leaf_access_fc_port_polgrp_present is changed
+      - intf_policy_leaf_access_fc_port_polgrp_present.previous == []
+      - intf_policy_leaf_access_fc_port_polgrp_present.current[0].infraFcAccPortGrp.attributes.name == 'fc_port_test'
+      - intf_policy_leaf_access_fc_port_polgrp_present.current[0].infraFcAccPortGrp.children.0.infraRsFcAttEntP.attributes.tDn == 'uni/infra/attentp-policy_group_aep'
+      - intf_policy_leaf_access_fc_port_polgrp_present.current[0].infraFcAccPortGrp.children.1.infraRsFcL2IfPol.attributes.tnFcIfPolName == 'fibre_channel_interface_policy_test'
+      - intf_policy_leaf_access_fc_port_polgrp_present.current[0].infraFcAccPortGrp.attributes.annotation == 'orchestrator:ansible'
+      - intf_policy_leaf_access_fc_port_polgrp_idempotent is not changed
+      - intf_policy_leaf_access_fc_port_polgrp_idempotent.sent == {}
+      - intf_policy_leaf_access_fc_port_polgrp_update is changed
+      - intf_policy_leaf_access_fc_port_polgrp_update.current[0].infraFcAccPortGrp.attributes.descr == 'policygroup description'
+
+  # ADD Leaf Access FC PC Policy Group
+  - name: Adding a interface policy Leaf Access FC PC policy group - check mode works
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group: &fc_pc_present
+      <<: *aci_info 
+      policy_group: fc_pc_test
+      lag_type: port_channel
+      fibre_channel_interface_policy: fibre_channel_interface_policy_test
+      port_channel_policy: port_channel_policy_test
+      attached_entity_profile: policy_group_aep
+      state: present
+    check_mode: yes
+    register: intf_policy_leaf_access_fc_pc_polgrp_check_mode_present
+
+  - name: Adding a interface policy Leaf Access FC PC policy group - creation works
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *fc_pc_present
+    register: intf_policy_leaf_access_fc_pc_polgrp_present
+
+  - name: Adding a interface policy Leaf Access FC PC policy group  - idempotency works
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *fc_pc_present
+    register: intf_policy_leaf_access_fc_pc_polgrp_idempotent
+
+  # UPDATE Leaf Access FC PC Policy Group
+  - name: Adding a interface policy Leaf Access FC PC policy group description - update works
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *fc_pc_present
+      description: policygroup description
+    register: intf_policy_leaf_access_fc_pc_polgrp_update
+
+  - name: Verify present assertions for FC PC Policy Group
+    assert:
+      that:
+      - intf_policy_leaf_access_fc_pc_polgrp_check_mode_present is changed
+      - intf_policy_leaf_access_fc_pc_polgrp_present is changed
+      - intf_policy_leaf_access_fc_pc_polgrp_present.previous == []
+      - intf_policy_leaf_access_fc_pc_polgrp_present.current[0].infraFcAccBndlGrp.attributes.name == 'fc_pc_test'
+      - intf_policy_leaf_access_fc_pc_polgrp_present.current[0].infraFcAccBndlGrp.children.0.infraRsFcLagPol.attributes.tnLacpLagPolName == 'port_channel_policy_test'
+      - intf_policy_leaf_access_fc_pc_polgrp_present.current[0].infraFcAccBndlGrp.children.1.infraRsFcAttEntP.attributes.tDn == 'uni/infra/attentp-policy_group_aep'
+      - intf_policy_leaf_access_fc_pc_polgrp_present.current[0].infraFcAccBndlGrp.children.2.infraRsFcL2IfPol.attributes.tnFcIfPolName == 'fibre_channel_interface_policy_test'
+      - intf_policy_leaf_access_fc_pc_polgrp_present.current[0].infraFcAccBndlGrp.attributes.annotation == 'orchestrator:ansible'
+      - intf_policy_leaf_access_fc_pc_polgrp_idempotent is not changed
+      - intf_policy_leaf_access_fc_pc_polgrp_idempotent.sent == {}
+      - intf_policy_leaf_access_fc_pc_polgrp_update is changed
+      - intf_policy_leaf_access_fc_pc_polgrp_update.current[0].infraFcAccBndlGrp.attributes.descr  == 'policygroup description'
+
+
+  # QUERY Leaf Access FC Port Policy Group
+  - name: Query all interface policy Leaf Access FC Port policy groups
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *aci_info 
+      lag_type: port
+      state: query
+    register: query_all_leaf_access_fc_port_policy_groups
+
+  - name: Query interface policy Leaf Access FC Port policy group
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *aci_info 
+      policy_group: fc_port_test
+      lag_type: port
+      state: query
+    register: query_leaf_access_fc_port_policy_group
+
+  - name: Verify query assertions
+    assert:
+      that:
+        - query_leaf_access_fc_port_policy_group is not changed
+        - query_leaf_access_fc_port_policy_group.current[0] | length >= 1
+        - query_all_leaf_access_fc_port_policy_groups is not changed 
+
+  # QUERY Leaf Access FC PC Policy Group
+  - name: Query all interface policy Leaf Access FC PC policy groups
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *aci_info 
+      lag_type: port_channel
+      state: query
+    register: query_all_leaf_access_fc_pc_policy_groups
+
+  - name: Query interface policy Leaf Access FC PC policy group
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *aci_info 
+      policy_group: fc_pc_test
+      lag_type: port_channel
+      state: query
+    register: query_leaf_access_fc_pc_policy_group
+
+  - name: Verify query assertions
+    assert:
+      that:
+        - query_leaf_access_fc_pc_policy_group is not changed
+        - query_leaf_access_fc_pc_policy_group.current[0] | length >= 1
+        - query_all_leaf_access_fc_pc_policy_groups is not changed 
+
+  # DELETE Leaf Access FC Port Policy Group
+  - name: Remove interface policy Leaf Access FC Port policy group - check mode
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *fc_absent
+    check_mode: yes
+    register: intf_policy_leaf_access_fc_port_polgrp_check_mode_absent
+
+  - name: Remove interface policy Leaf Access FC Port policy group - delete works
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *fc_absent
+    register: intf_policy_leaf_access_fc_port_polgrp_absent
+
+  - name: Remove interface policy Leaf Access FC Port policy group - idempotency works
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *fc_absent
+    register: intf_policy_leaf_access_fc_port_polgrp_absent_idempotent
+
+  - name: Verify absent assertions for FC Port Policy Group
+    assert:
+      that:
+        - intf_policy_leaf_access_fc_port_polgrp_check_mode_absent is changed
+        - intf_policy_leaf_access_fc_port_polgrp_check_mode_absent.previous != []
+        - intf_policy_leaf_access_fc_port_polgrp_absent is changed
+        - intf_policy_leaf_access_fc_port_polgrp_absent_idempotent is not changed
+        - intf_policy_leaf_access_fc_port_polgrp_absent_idempotent.previous == []
+
+  # DELETE Leaf Access FC PC Policy Group
+  - name: Remove interface policy Leaf Access FC PC policy group - check mode
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *fc_pc_absent
+    check_mode: yes
+    register: intf_policy_leaf_access_fc_pc_polgrp_check_mode_absent
+
+  - name: Remove interface policy Leaf Access FC PC policy group - delete works
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *fc_pc_absent
+    register: intf_policy_leaf_access_fc_pc_polgrp_absent
+
+  - name: Remove interface policy Leaf Access FC PC policy group - idempotency works
+    cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+      <<: *fc_pc_absent
+    register: intf_policy_leaf_access_fc_pc_polgrp_absent_idempotent
+
+  - name: Verify absent assertions for FC PC policy group
+    assert:
+      that:
+        - intf_policy_leaf_access_fc_pc_polgrp_check_mode_absent is changed
+        - intf_policy_leaf_access_fc_pc_polgrp_check_mode_absent.previous != []
+        - intf_policy_leaf_access_fc_pc_polgrp_absent is changed
+        - intf_policy_leaf_access_fc_pc_polgrp_absent_idempotent is not changed
+        - intf_policy_leaf_access_fc_pc_polgrp_absent_idempotent.previous == []

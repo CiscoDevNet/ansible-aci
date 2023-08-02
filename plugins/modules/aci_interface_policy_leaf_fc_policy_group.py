@@ -12,48 +12,43 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_interface_policy_spine_policy_group
-short_description: Manage fabric interface policy spine policy groups (infra:SpAccPortGrp)
+module: aci_interface_policy_leaf_fc_policy_group
+short_description: Manage fabric interface policy fiber policy groups (infra:AccBndlGrp, infra:AccPortGrp)
 description:
-- Manage fabric interface policy spine policy groups on Cisco ACI fabrics.
+- Manage fabric interface policy fiber policy groups on Cisco ACI fabrics.
 options:
   policy_group:
     description:
-    - Name of the spine policy group to be added/deleted.
+    - Name of the fiber policy group to be added/deleted.
     type: str
-    aliases: [ name, policy_group_name, spine_policy_group_name ]
+    aliases: [ name, policy_group_name ]
   description:
     description:
-    - Description for the spine policy group to be created.
+    - Description for the fiber policy group to be created.
     type: str
     aliases: [ descr ]
-  name_alias:
+  lag_type:
     description:
-    - The alias for the current object. This relates to the nameAlias field in ACI.
+    - Selector for the type of fiber policy group we want to create.
+    - C(port) for Fiber Channel (FC)
+    - C(port_channel) for Fiber Channel Port Channel (FC PC)
     type: str
-  link_level_policy:
+    required: true
+    choices: [ port, port_channel ]
+    aliases: [ lag_type_name ]
+  fibre_channel_interface_policy:
     description:
-    - Choice of link_level_policy to be used as part of the spine policy group to be created.
+    - Choice of fibre_channel_interface_policy to be used as part of the fiber policy group to be created.
     type: str
-    aliases: [ link_level_policy_name ]
-  link_flap_policy:
+    aliases: [ fibre_channel_interface_policy_name ]
+  port_channel_policy:
     description:
-    - Choice of link_flap_policy to be used as part of the spine policy group to be created.
+    - Choice of port_channel_policy to be used as part of the fiber policy group to be created.
     type: str
-    aliases: [ link_flap_policy_name ]
-  cdp_policy:
-    description:
-    - Choice of cdp_policy to be used as part of the spine policy group to be created.
-    type: str
-    aliases: [ cdp_policy_name ]
-  mac_sec_policy:
-    description:
-    - Choice of mac_sec_policy to be used as part of the spine policy group to be created.
-    type: str
-    aliases: [ mac_sec_policy_name ]
+    aliases: [ port_channel_policy_name ]
   attached_entity_profile:
     description:
-    - Choice of attached_entity_profile to be used as part of the spine policy group to be created.
+    - Choice of attached_entity_profile (attached_entity_profile) to be used as part of the fiber policy group to be created.
     type: str
     aliases: [ aep_name, aep ]
   state:
@@ -63,61 +58,80 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
+  name_alias:
+    description:
+    - The alias for the current object. This relates to the nameAlias field in ACI.
+    type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 - cisco.aci.owner
 
 notes:
+- When using the module please select the appropriate link_aggregation_type (lag_type).
+  C(port) for Fiber Channel(FC), C(port_channel) for Fiber Channel Port Channel(VPC).
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(infra:SpAccPortGrp).
+  description: More information about the internal APIC classes B(infra:FcAccPortGrp) and B(infra:FcAccBndlGrp).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Anvitha Jain (@anvjain)
 """
 
 EXAMPLES = r"""
-- name: Create a Spine Interface Policy Group
-  cisco.aci.aci_interface_policy_spine_policy_group:
+- name: Create a Fiber Channel (FC) Interface Policy Group
+  cisco.aci.aci_interface_policy_leaf_fc_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
-    name: spinepolicygroupname
+    lag_type: f
+    fibre_channel_interface_policy: whateverfcinterfacepolicy
     description: policygroupname description
-    link_level_policy: somelinklevelpolicy
-    link_flap_policy: somelinkflappolicy
-    cdp_policy: somecdppolicy
-    mac_sec_policy: somemacsecpolicy
-    attached_entity_profile: someattachedentityprofile
+    attached_entity_profile: whateveraep
     state: present
   delegate_to: localhost
 
-- name: Query all Spine Access Port Policy Groups of type link
-  cisco.aci.aci_interface_policy_spine_policy_group:
+- name: Create a Fiber Channel Port Channel (FC PC) Interface Policy Group
+  cisco.aci.aci_interface_policy_leaf_fc_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
+    lag_type: port_channel
+    fibre_channel_interface_policy: whateverfcinterfacepolicy
+    description: policygroupname description
+    attached_entity_profile: whateveraep
+    port_channel_policy: whateverlacppolicy
+    state: present
+  delegate_to: localhost
+
+- name: Query all Leaf Access Port Policy Groups of type link
+  cisco.aci.aci_interface_policy_leaf_fc_policy_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    lag_type: port_channel
     state: query
   delegate_to: localhost
   register: query_result
 
 - name: Query a specific Lead Access Port Policy Group
-  cisco.aci.aci_interface_policy_spine_policy_group:
+  cisco.aci.aci_interface_policy_leaf_fc_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
-    name: spinepolicygroupname
+    lag_type: port
+    policy_group: policygroupname
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Delete an Interface policy Spine Policy Group
-  cisco.aci.aci_interface_policy_spine_policy_group:
+- name: Delete an Interface policy Leaf Policy Group
+  cisco.aci.aci_interface_policy_leaf_fc_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
-    name: spinepolicygroupname
+    lag_type: port
+    policy_group: policygroupname
     state: absent
   delegate_to: localhost
 """
@@ -236,15 +250,16 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        policy_group=dict(type="str", aliases=["policy_group_name", "spine_policy_group_name", "name"]),  # Not required for querying all objects
+        # NOTE: Since this module needs to include both infra:FcAccPortGrp (for FC) and infra:FcAccBndlGrp (for FC PC):
+        # NOTE: I'll allow the user to make the choice here (port(FC), port_channel(FC PC)) 
+        lag_type=dict(type="str", required=True, aliases=["lag_type_name"], choices=["port", "port_channel"]),
+        policy_group=dict(type="str", aliases=["name", "policy_group_name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
-        name_alias=dict(type="str"),
-        link_level_policy=dict(type="str", aliases=["link_level_policy_name"]),
-        link_flap_policy=dict(type="str", aliases=["link_flap_policy_name"]),
-        cdp_policy=dict(type="str", aliases=["cdp_policy_name"]),
-        mac_sec_policy=dict(type="str", aliases=["mac_sec_policy_name"]),
+        fibre_channel_interface_policy=dict(type="str", aliases=["fibre_channel_interface_policy_name"]),
+        port_channel_policy=dict(type="str", aliases=["port_channel_policy_name"]),
         attached_entity_profile=dict(type="str", aliases=["aep_name", "aep"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
     )
 
     module = AnsibleModule(
@@ -258,53 +273,44 @@ def main():
 
     policy_group = module.params.get("policy_group")
     description = module.params.get("description")
-    name_alias = module.params.get("name_alias")
-    link_level_policy = module.params.get("link_level_policy")
-    link_flap_policy = module.params.get("link_flap_policy")
-    cdp_policy = module.params.get("cdp_policy")
-    mac_sec_policy = module.params.get("mac_sec_policy")
+    lag_type = module.params.get("lag_type")
+    fibre_channel_interface_policy = module.params.get("fibre_channel_interface_policy")
+    port_channel_policy = module.params.get("port_channel_policy")
     attached_entity_profile = module.params.get("attached_entity_profile")
     state = module.params.get("state")
+    name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
 
-    class_config = dict(
-        name=policy_group,
-        descr=description,
-        nameAlias=name_alias,
-    )
+    if lag_type == "port":
+        aci_class_name = "infraFcAccPortGrp"
+        dn_name = "fcaccportgrp"
+        class_config_dict = dict(
+            name=policy_group,
+            descr=description,
+            nameAlias=name_alias,
+        )
+        # Reset for target_filter
+        lag_type = None
+    elif lag_type == "port_channel":
+        aci_class_name = "infraFcAccBndlGrp"
+        dn_name = "fcaccbundle"
+        class_config_dict = dict(
+            name=policy_group,
+            descr=description,
+            nameAlias=name_alias,
+        )
 
     child_configs = [
         dict(
-            infraRsHIfPol=dict(
+            infraRsFcL2IfPol=dict(
                 attributes=dict(
-                    tnFabricHIfPolName=link_level_policy,
+                    tnFcIfPolName=fibre_channel_interface_policy,
                 ),
             ),
         ),
         dict(
-            infraRsLinkFlapPol=dict(
-                attributes=dict(
-                    tnFabricLinkFlapPolName=link_flap_policy,
-                ),
-            ),
-        ),
-        dict(
-            infraRsCdpIfPol=dict(
-                attributes=dict(
-                    tnCdpIfPolName=cdp_policy,
-                ),
-            ),
-        ),
-        dict(
-            infraRsMacsecIfPol=dict(
-                attributes=dict(
-                    tnMacsecIfPolName=mac_sec_policy,
-                ),
-            ),
-        ),
-        dict(
-            infraRsAttEntP=dict(
+            infraRsFcAttEntP=dict(
                 attributes=dict(
                     tDn="uni/infra/attentp-{0}".format(attached_entity_profile),
                 ),
@@ -312,19 +318,29 @@ def main():
         ),
     ]
 
+    # Add infraRsFcLagPol binding only when port_channel_policy was defined
+    if lag_type == "port_channel" and port_channel_policy is not None:
+        child_configs.append(
+            dict(
+                infraRsFcLagPol=dict(
+                    attributes=dict(
+                        tnLacpLagPolName=port_channel_policy,
+                    ),
+                ),
+            )
+        )
+
     aci.construct_url(
         root_class=dict(
-            aci_class="infraSpAccPortGrp",
-            aci_rn="infra/funcprof/spaccportgrp-{0}".format(policy_group),
+            aci_class=aci_class_name,
+            aci_rn="infra/funcprof/{0}-{1}".format(dn_name, policy_group),
             module_object=policy_group,
             target_filter={"name": policy_group},
         ),
         child_classes=[
-            "infraRsHIfPol",
-            "infraRsLinkFlapPol",
-            "infraRsCdpIfPol",
-            "infraRsMacsecIfPol",
-            "infraRsAttEntP",
+            "infraRsFcL2IfPol",
+            "infraRsFcLagPol",
+            "infraRsFcAttEntP",
         ],
     )
 
@@ -332,12 +348,12 @@ def main():
 
     if state == "present":
         aci.payload(
-            aci_class="infraSpAccPortGrp",
-            class_config=class_config,
+            aci_class=aci_class_name,
+            class_config=class_config_dict,
             child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class="infraSpAccPortGrp")
+        aci.get_diff(aci_class=aci_class_name)
 
         aci.post_config()
 
