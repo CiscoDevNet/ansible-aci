@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_firmware_group_node
 short_description: Manage firmware group nodes (fabric:NodeBlk)
 description:
-- This module addes/deletes a node to the firmware group. This modules assigns 1 node at a time.
+- This module adds/deletes a node to the firmware group.
 options:
     group:
         description:

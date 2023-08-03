@@ -37,15 +37,15 @@
       <<: *aci_info
       name: anstest_policy
       description: test for maintenance policy
-      run_mode: pauseNever
+      run_mode: pause_never
       graceful: True
       scheduler: anstest_scheduler
       ignore_compat: true
       admin_state: untriggered
       download_state: untriggered
-      notif_condition: notifyAlwaysBetweenSets
-      smu_operation: smuInstall
-      smu_operation_flags: smuReloadSkip
+      notify_condition: notify_always_between_sets
+      smu_operation: smu_install
+      smu_operation_flags: smu_reloadSkip
       state: absent
 
   - name: Ensure second maintenance policy does not exist

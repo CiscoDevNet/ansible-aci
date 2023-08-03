@@ -27,7 +27,7 @@ options:
     - Whether the system pauses on error or just continues through it.
     - The APIC defaults to C(pauseOnlyOnFailures) when unset during creation.
     type: str
-    choices: [ pauseAlwaysBetweenSets, pauseOnlyOnFailures, pauseNever ]
+    choices: [ pause_always_between_sets, pause_only_on_failures, pause_never ]
   graceful:
     description:
     - Whether the system will bring down the nodes gracefully during an upgrade, which reduces traffic lost.
@@ -50,24 +50,24 @@ options:
     - The APIC defaults to C(untriggered) when unset during creation.
     type: str
     choices: [ triggered, untriggered ]
-  notif_condition:
+  notify_condition:
     description:
     - Specifies under what pause condition will admin be notified via email/text as configured.
     - This notification mechanism is independent of events/faults.
     - The APIC defaults to C(notifyOnlyOnFailures) when unset during creation.
     type: str
-    choices: [ notifyAlwaysBetweenSets, notifyNever, notifyOnlyOnFailures ]
+    choices: [ notify_always_between_sets, notify_never, notify_only_on_failures ]
   smu_operation:
     description:
     - Specifies SMU operation.
     type: str
-    choices: [ smuInstall, smuUninstall ]
+    choices: [ smu_install, smu_uninstall ]
   smu_operation_flags:
     description:
     - Specifies SMU operation flags
     - Indicates if node should be reloaded immediately or skip auto reload on SMU Install/Uninstall.
     type: str
-    choices: [ smuReloadImmediate, smuReloadSkip ]
+    choices: [ smu_reload_immediate, smu_reload_skip ]
   sr_upgrade:
     description:
     - The SR firware upgrade.
@@ -277,20 +277,25 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 from ansible.module_utils.basic import AnsibleModule
 
 
+MATCH_RUN_MODE_MAPPING = dict(pause_always_between_sets="pauseAlwaysBetweenSets", pause_only_on_failures="pauseOnlyOnFailures", pause_never="pauseNever")
+MATCH_NOTIFY_CONDITION_MAPPING = dict(notify_always_between_sets="notifyAlwaysBetweenSets", notify_never="notifyNever", notify_only_on_failures="notifyOnlyOnFailures")
+MATCH_SMU_OPERATION_MAPPING = dict(smu_install="smuInstall", smu_uninstall="smuUninstall")
+MATCH_SMU_OPERATION_FLAGS_MAPPING = dict(smu_reload_immediate="smuReloadImmediate", smu_reload_skip="smuReloadSkip")
+
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         name=dict(type="str", aliases=["maintenance_policy"]),  # Not required for querying all objects
-        run_mode=dict(type="str", choices=["pauseAlwaysBetweenSets", "pauseOnlyOnFailures", "pauseNever"]),
+        run_mode=dict(type="str", choices=list(MATCH_RUN_MODE_MAPPING.keys())),
         graceful=dict(type="bool"),
         scheduler=dict(type="str"),
         ignore_compat=dict(type="bool"),
         admin_state=dict(type="str", choices=["triggered", "untriggered"]),
         download_state=dict(type="str", choices=["triggered", "untriggered"]),
-        notif_condition=dict(type="str", choices=["notifyAlwaysBetweenSets", "notifyNever", "notifyOnlyOnFailures"]),
-        smu_operation=dict(type="str", choices=["smuInstall", "smuUninstall"]),
-        smu_operation_flags=dict(type="str", choices=["smuReloadImmediate", "smuReloadSkip"]),
+        notify_condition=dict(type="str", choices=list(MATCH_NOTIFY_CONDITION_MAPPING.keys())),
+        smu_operation=dict(type="str", choices=list(MATCH_SMU_OPERATION_MAPPING.keys())),
+        smu_operation_flags=dict(type="str", choices=list(MATCH_SMU_OPERATION_FLAGS_MAPPING.keys())),
         sr_upgrade=dict(type="bool"),
         sr_version=dict(type="str"),
         version=dict(type="str"),
@@ -313,14 +318,13 @@ def main():
 
     state = module.params.get("state")
     name = module.params.get("name")
-    run_mode = module.params.get("run_mode")
+    run_mode = MATCH_RUN_MODE_MAPPING.get(module.params.get("run_mode"))
     scheduler = module.params.get("scheduler")
     admin_state = module.params.get("admin_state")
     download_state = module.params.get("download_state")
-    notif_condition = module.params.get("notif_condition")
-    smu_operation = module.params.get("smu_operation")
-    smu_operation_flags = module.params.get("smu_operation_flags")
-    sr_upgrade = aci.boolean(module.params.get("sr_upgrade"))
+    notify_condition = MATCH_NOTIFY_CONDITION_MAPPING.get(module.params.get("notify_condition"))
+    smu_operation = MATCH_SMU_OPERATION_MAPPING.get(module.params.get("smu_operation"))
+    smu_operation_flags = MATCH_SMU_OPERATION_FLAGS_MAPPING.get(module.params.get("smu_operation_flags"))
     sr_version = module.params.get("sr_version")
     version = module.params.get("version")
     version_check_override = module.params.get("version_check_override")
@@ -351,7 +355,7 @@ def main():
                 graceful=graceful,
                 adminSt=admin_state,
                 downloadSt=download_state,
-                notifCond=notif_condition,
+                notifCond=notify_condition,
                 smuOperation=smu_operation,
                 smuOperationFlags=smu_operation_flags,
                 srUpgrade=sr_upgrade,
