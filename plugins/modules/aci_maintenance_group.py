@@ -248,7 +248,7 @@ def main():
     group = module.params.get("group")
     policy = module.params.get("policy")
     firmware_nodes_type = MATCH_FIRMWARE_NODES_TYPE_MAPPING.get(module.params.get("firmware_nodes_type"))
-    type_group = MATCH_TYPE_GROUP_MAPPING.get(module.params.get("type"))
+    type_group = MATCH_TYPE_GROUP_MAPPING.get(module.params.get("type_group"))
     description = module.params.get("description")
     name_alias = module.params.get("name_alias")
     aci = ACIModule(module)
