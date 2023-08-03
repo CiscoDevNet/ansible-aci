@@ -278,9 +278,12 @@ from ansible.module_utils.basic import AnsibleModule
 
 
 MATCH_RUN_MODE_MAPPING = dict(pause_always_between_sets="pauseAlwaysBetweenSets", pause_only_on_failures="pauseOnlyOnFailures", pause_never="pauseNever")
-MATCH_NOTIFY_CONDITION_MAPPING = dict(notify_always_between_sets="notifyAlwaysBetweenSets", notify_never="notifyNever", notify_only_on_failures="notifyOnlyOnFailures")
+MATCH_NOTIFY_CONDITION_MAPPING = dict(
+    notify_always_between_sets="notifyAlwaysBetweenSets", notify_never="notifyNever", notify_only_on_failures="notifyOnlyOnFailures"
+)
 MATCH_SMU_OPERATION_MAPPING = dict(smu_install="smuInstall", smu_uninstall="smuUninstall")
 MATCH_SMU_OPERATION_FLAGS_MAPPING = dict(smu_reload_immediate="smuReloadImmediate", smu_reload_skip="smuReloadSkip")
+
 
 def main():
     argument_spec = aci_argument_spec()
@@ -326,6 +329,7 @@ def main():
     smu_operation = MATCH_SMU_OPERATION_MAPPING.get(module.params.get("smu_operation"))
     smu_operation_flags = MATCH_SMU_OPERATION_FLAGS_MAPPING.get(module.params.get("smu_operation_flags"))
     sr_version = module.params.get("sr_version")
+    sr_upgrade = module.params.get("sr_upgrade")
     version = module.params.get("version")
     version_check_override = module.params.get("version_check_override")
     graceful = aci.boolean(module.params.get("graceful"))

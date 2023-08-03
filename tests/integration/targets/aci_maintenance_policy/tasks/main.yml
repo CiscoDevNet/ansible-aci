@@ -45,7 +45,7 @@
       download_state: untriggered
       notify_condition: notify_always_between_sets
       smu_operation: smu_install
-      smu_operation_flags: smu_reloadSkip
+      smu_operation_flags: smu_reload_skip
       state: absent
 
   - name: Ensure second maintenance policy does not exist
