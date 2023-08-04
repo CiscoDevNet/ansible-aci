@@ -48,8 +48,7 @@
       policy_group: fc_port_test
       lag_type: port
       fibre_channel_interface_policy: fibre_channel_interface_policy_test
-      # port_channel_policy: port_channel_policy_test
-      attached_entity_profile: policy_group_aep
+      attached_entity_profile: test_aep
       state: present
     check_mode: yes
     register: intf_policy_leaf_access_fc_port_polgrp_check_mode_present
@@ -78,7 +77,7 @@
       - intf_policy_leaf_access_fc_port_polgrp_present is changed
       - intf_policy_leaf_access_fc_port_polgrp_present.previous == []
       - intf_policy_leaf_access_fc_port_polgrp_present.current[0].infraFcAccPortGrp.attributes.name == 'fc_port_test'
-      - intf_policy_leaf_access_fc_port_polgrp_present.current[0].infraFcAccPortGrp.children.0.infraRsFcAttEntP.attributes.tDn == 'uni/infra/attentp-policy_group_aep'
+      - intf_policy_leaf_access_fc_port_polgrp_present.current[0].infraFcAccPortGrp.children.0.infraRsFcAttEntP.attributes.tDn == 'uni/infra/attentp-test_aep'
       - intf_policy_leaf_access_fc_port_polgrp_present.current[0].infraFcAccPortGrp.children.1.infraRsFcL2IfPol.attributes.tnFcIfPolName == 'fibre_channel_interface_policy_test'
       - intf_policy_leaf_access_fc_port_polgrp_present.current[0].infraFcAccPortGrp.attributes.annotation == 'orchestrator:ansible'
       - intf_policy_leaf_access_fc_port_polgrp_idempotent is not changed
@@ -149,7 +148,7 @@
       state: query
     register: query_leaf_access_fc_port_policy_group
 
-  - name: Verify query assertions
+  - name: Verify query assertions for Leaf Access FC Port Policy Group
     assert:
       that:
         - query_leaf_access_fc_port_policy_group is not changed
@@ -172,7 +171,7 @@
       state: query
     register: query_leaf_access_fc_pc_policy_group
 
-  - name: Verify query assertions
+  - name: Verify query assertions for Leaf Access FC PC Policy Group
     assert:
       that:
         - query_leaf_access_fc_pc_policy_group is not changed

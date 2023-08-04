@@ -1,4 +1,5 @@
 # Test code for the ACI modules
+# Copyright: (c) 2023, Anvitha Jain <anvjain@cisco.com>
 # Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
@@ -8,6 +9,25 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
+      output_level: debug
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 - name: Verify Cloud and Non-Cloud Sites in use.
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
@@ -16,55 +36,30 @@
   block:  # block specifies execution of tasks within, based on conditions
   - name: Making sure interface_policy_leaf_policy_group doesn't exist at beginning of test (PC)
     cisco.aci.aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_link_absent
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      <<: *aci_info
       policy_group: policygroupname_link
       lag_type: link
       state: absent
 
   - name: Making sure interface_policy_leaf_policy_group doesn't exist at beginning of test (VPC)
     cisco.aci.aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_node_absent
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      <<: *aci_info
       policy_group: policygroupname_node
       lag_type: node
       state: absent
 
   - name: Making sure interface_policy_leaf_policy_group doesn't exist at beginning of test (Leaf Access Port)
     cisco.aci.aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_leaf_absent
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      <<: *aci_info
       policy_group: policygroupname_leaf
       lag_type: leaf
       state: absent
-
 
   # ==== TESTING Port Channel (PC), lag_type: link ====
 
   - name: Adding a interface policy leaf policy group (PC) - check mode works
     cisco.aci.aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_link_present
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      <<: *aci_info
       policy_group: policygroupname_link
       lag_type: link
       link_level_policy: linklevelpolicy
@@ -90,7 +85,7 @@
     register: intf_policy_leaf_polgrp_update
 
   # TODO: also test for errors
-  - name: present assertions
+  - name: present assertions for interface policy leaf policy group (PC)
     assert:
       that:
       - intf_policy_leaf_polgrp_check_mode_present is changed
@@ -108,19 +103,13 @@
 
   - name: Query interface policy leaf policy group (PC)
     cisco.aci.aci_interface_policy_leaf_policy_group:
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      <<: *aci_info
       policy_group: policygroupname_link
       lag_type: link
       state: query
     register: binding_query
 
-  - name: present assertions
+  - name: Query assertions for interface policy leaf policy group (PC)
     assert:
       that:
         - binding_query is not changed
@@ -145,20 +134,14 @@
 
   - name: Remove interface policy leaf policy group (PC) - check mode
     cisco.aci.aci_interface_policy_leaf_policy_group:
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      <<: *aci_info
       policy_group: policygroupname_link
       #lag_type: link
       state: absent
     ignore_errors: true
     register: intf_policy_leaf_polgrp_absent_missing_param
 
-  - name: absent assertions
+  - name: absent assertions for interface policy leaf policy group (PC)
     assert:
       that:
         - intf_policy_leaf_polgrp_check_mode_absent is changed
@@ -181,13 +164,7 @@
 
   - name: Adding a interface policy leaf policy group (VPC) - check mode works
     cisco.aci.aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_node_present
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      <<: *aci_info
       policy_group: policygroupname_node
       lag_type: node
       link_level_policy: linklevelpolicy
@@ -213,7 +190,7 @@
     register: intf_policy_leaf_polgrp_update
 
   # TODO: also test for errors
-  - name: present assertions
+  - name: present assertions for interface policy leaf policy group (VPC)
     assert:
       that:
       - intf_policy_leaf_polgrp_check_mode_present is changed
@@ -231,19 +208,13 @@
 
   - name: Query interface policy leaf policy group (VPC)
     cisco.aci.aci_interface_policy_leaf_policy_group:
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      <<: *aci_info
       policy_group: policygroupname_node
       lag_type: node
       state: query
     register: binding_query
 
-  - name: present assertions
+  - name: Query assertions for interface policy leaf policy group (VPC)
     assert:
       that:
         - binding_query is not changed
@@ -258,18 +229,12 @@
 
   - name: Query interface policy leaf policy group (VPC)
     cisco.aci.aci_interface_policy_leaf_policy_group:
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      <<: *aci_info
       lag_type: node
       state: query
     register: binding_query_node_all
 
-  - name: present assertions
+  - name: Query assertions for interface policy leaf policy group (VPC)
     assert:
       that:
         - binding_query_node_all is not changed
@@ -293,22 +258,15 @@
       <<: *aci_interface_policy_leaf_policy_group_node_absent
     register: intf_policy_leaf_polgrp_absent_idempotent
 
-  - name: Remove interface policy leaf policy group (VPC) - check mode
+  - name: Remove interface policy leaf policy group (VPC) - without lag_type
     cisco.aci.aci_interface_policy_leaf_policy_group:
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      <<: *aci_info
       policy_group: policygroupname_node
-      #lag_type: node
       state: absent
     ignore_errors: true
     register: intf_policy_leaf_polgrp_absent_missing_param
 
-  - name: absent assertions
+  - name: absent assertions for interface policy leaf policy group (VPC)
     assert:
       that:
         - intf_policy_leaf_polgrp_check_mode_absent is changed
@@ -319,6 +277,18 @@
         - intf_policy_leaf_polgrp_absent_idempotent.previous == []
         - intf_policy_leaf_polgrp_absent_missing_param is failed
         - 'intf_policy_leaf_polgrp_absent_missing_param.msg == "missing required arguments: lag_type"'
+
+  - name: Adding a interface policy leaf policy group (VPC) - port_channel_policy not supported error
+    cisco.aci.aci_interface_policy_leaf_policy_group:
+      <<: *aci_interface_policy_leaf_policy_group_link_present
+      port_authentication: "default"
+    ignore_errors: true
+    register: intf_policy_leaf_polgrp_pa_policy_error
+
+  - name: VPC error assertions (adding invalid parameters)
+    assert:
+      that:
+      - intf_policy_leaf_polgrp_pa_policy_error.msg == 'port_authentication is not a valid parameter for link/node (Port Channel, Virtual Port Channel), if used assign null to it (port_authentication{{":"}} null).'
 
   # ==== END TESTING Virtual Port Channel (VPC), lag_type: node ====
 
@@ -331,13 +301,7 @@
 
   - name: Adding a interface policy leaf policy group (Leaf Access Port) - check mode works
     cisco.aci.aci_interface_policy_leaf_policy_group: &aci_interface_policy_leaf_policy_group_leaf_present
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      <<: *aci_info
       policy_group: policygroupname_leaf
       lag_type: leaf
       link_level_policy: linklevelpolicy
@@ -378,7 +342,7 @@
     register: intf_policy_leaf_polgrp_pc_policy_error
 
   # TODO: also test for errors
-  - name: present assertions
+  - name: present assertions for interface policy leaf policy group (Leaf Access Port)
     assert:
       that:
       - intf_policy_leaf_polgrp_check_mode_present is changed
@@ -397,25 +361,19 @@
 
   - name: Query interface policy leaf policy group (Leaf Access Port)
     cisco.aci.aci_interface_policy_leaf_policy_group:
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      <<: *aci_info
       policy_group: policygroupname_leaf
       lag_type: leaf
       state: query
     register: binding_query
 
-  - name: present assertions
+  - name: Query assertions interface policy leaf policy group (Leaf Access Port)
     assert:
       that:
         - binding_query is not changed
         - binding_query.current | length >= 1
         - '"/api/mo/uni/infra/funcprof/accportgrp-policygroupname_leaf.json" in binding_query.url'
-        - binding_query.current.0.infraAccPortGrp.children.10.infraRsAttEntP.attributes.tDn == "uni/infra/attentp-test_aep"
+        - binding_query.current.0.infraAccPortGrp.children.14.infraRsAttEntP.attributes.tDn == "uni/infra/attentp-test_aep"
 
   - name: Remove interface policy leaf policy group (Leaf Access Port) - check mode
     cisco.aci.aci_interface_policy_leaf_policy_group:
@@ -433,22 +391,15 @@
       <<: *aci_interface_policy_leaf_policy_group_leaf_absent
     register: intf_policy_leaf_polgrp_absent_idempotent
 
-  - name: Remove interface policy leaf policy group (Leaf Access Port) - check mode
+  - name: Remove interface policy leaf policy group (Leaf Access Port) - without lag_type
     cisco.aci.aci_interface_policy_leaf_policy_group:
-      host: '{{ aci_hostname }}'
-      username: '{{ aci_username }}'
-      password: '{{ aci_password }}'
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      <<: *aci_info
       policy_group: policygroupname_leaf
-      #lag_type: leaf
       state: absent
     ignore_errors: true
     register: intf_policy_leaf_polgrp_absent_missing_param
 
-  - name: absent assertions
+  - name: absent assertions for interface policy leaf policy group (Leaf Access Port)
     assert:
       that:
         - intf_policy_leaf_polgrp_check_mode_absent is changed
@@ -461,3 +412,129 @@
         - 'intf_policy_leaf_polgrp_absent_missing_param.msg == "missing required arguments: lag_type"'
         
   # ==== END TESTING Virtual Port Channel (VPC), lag_type: leaf ====
+
+
+  # ==== START TESTING PortCHannel (PC - lag_type: link), Virtual Port Channel (VPC - node: leaf) and Leaf Interface (lag_type: leaf) ====
+  # ==== For parameters avaiable only for APIC versions > 5 ====
+
+  - name: Execute tasks only for the APIC version version > 5
+    when: version.current.0.topSystem.attributes.version is version('5', '>')
+    block:
+
+      # ==== TESTING Port Channel (PC) ====
+      - name: Adding a interface policy leaf policy group (PC) - APIC version > 5
+        cisco.aci.aci_interface_policy_leaf_policy_group:
+          <<: *aci_interface_policy_leaf_policy_group_link_present
+          sync_e_interface_policy: synceinterfacepolicy
+          state: present
+        register: intf_policy_leaf_policy_group_link_present_2
+
+      - name: present assertions (PC) for APIC version > 5
+        assert:
+          that:
+          - intf_policy_leaf_policy_group_link_present_2 is changed
+          - intf_policy_leaf_policy_group_link_present_2.previous != []
+          - intf_policy_leaf_policy_group_link_present_2.current[0].infraAccBndlGrp.attributes.name == 'policygroupname_link'
+          - intf_policy_leaf_policy_group_link_present_2.sent.infraAccBndlGrp.children.0.infraRsSynceEthIfPolBndlGrp.attributes.tnSynceEthIfPolName == 'synceinterfacepolicy'
+
+      # ==== TESTING Leaf Interface ====
+      - name: Adding a interface policy leaf policy group (Leaf Access Port) - APIC version > 5
+        cisco.aci.aci_interface_policy_leaf_policy_group:
+          <<: *aci_interface_policy_leaf_policy_group_leaf_present
+          sync_e_interface_policy: synceinterfacepolicy
+          state: present
+        register: intf_policy_leaf_polgrp_present_2
+
+      - name: present assertions (Leaf Access Port) for APIC version > 5
+        assert:
+          that:
+          - intf_policy_leaf_polgrp_present_2 is changed
+          - intf_policy_leaf_polgrp_present_2.previous == []
+          - intf_policy_leaf_polgrp_present_2.sent.infraAccPortGrp.attributes.name == 'policygroupname_leaf'
+          - intf_policy_leaf_polgrp_present_2.sent.infraAccPortGrp.children.0.infraRsFcIfPol.attributes.tnFcIfPolName == 'fiberchannelpolicy'
+          - intf_policy_leaf_polgrp_present_2.sent.infraAccPortGrp.children.1.infraRsHIfPol.attributes.tnFabricHIfPolName == 'linklevelpolicy'
+          - intf_policy_leaf_polgrp_present_2.sent.infraAccPortGrp.children.2.infraRsAttEntP.attributes.tDn == 'uni/infra/attentp-test_aep'
+          - intf_policy_leaf_polgrp_present_2.sent.infraAccPortGrp.children.3.infraRsSynceEthIfPol.attributes.tnSynceEthIfPolName == 'synceinterfacepolicy'
+
+  # ==== END TESTING for parameters avaiable only for APIC versions > 5 ====
+
+
+  # ==== START TESTING PortCHannel (PC - lag_type: link), Virtual Port Channel (VPC - node: leaf) and Leaf Interface (lag_type: leaf) ====
+  # ==== For parameters avaiable only for APIC versions >= 6 ====
+
+  - name: Execute tasks only for the APIC version version >= 6
+    when: version.current.0.topSystem.attributes.version is version('6', '>=')
+    block:
+      # ==== TESTING Virtual Port Channel (VPC) ====
+      - name: Adding a interface policy leaf policy group (VPC) - APIC version > 6
+        cisco.aci.aci_interface_policy_leaf_policy_group:
+          <<: *aci_interface_policy_leaf_policy_group_node_present
+          sync_e_interface_policy: synceinterfacepolicy
+          state: present
+        register: intf_policy_leaf_policy_group_node_present_2
+
+      - name: present assertions (VPC) for APIC version > 6
+        assert:
+          that:
+          - intf_policy_leaf_policy_group_node_present_2 is changed
+          - intf_policy_leaf_policy_group_node_present_2.previous == []
+          - intf_policy_leaf_policy_group_node_present_2.current[0].infraAccBndlGrp.attributes.name == 'policygroupname_node'
+          - intf_policy_leaf_policy_group_node_present_2.sent.infraAccBndlGrp.children.0.infraRsFcIfPol.attributes.tnFcIfPolName == 'fiberchannelpolicy'
+          - intf_policy_leaf_policy_group_node_present_2.sent.infraAccBndlGrp.children.1.infraRsHIfPol.attributes.tnFabricHIfPolName == 'linklevelpolicy'
+          - intf_policy_leaf_policy_group_node_present_2.sent.infraAccBndlGrp.children.2.infraRsSynceEthIfPolBndlGrp.attributes.tnSynceEthIfPolName == 'synceinterfacepolicy'
+
+  - name: Execute tasks only for the APIC version version >= 6.0.2
+    when: version.current.0.topSystem.attributes.version is version('6.0(2h)', '>=')
+    block:
+      # ==== TESTING Leaf Interface ====
+      - name: Adding a interface policy leaf policy group (Leaf Access Port) - APIC version >= 6.0.2
+        cisco.aci.aci_interface_policy_leaf_policy_group:
+          <<: *aci_interface_policy_leaf_policy_group_leaf_present
+          transceiver_policy: 
+            name: transceiverpolicy
+            type: zr
+          state: present
+        register: intf_policy_leaf_polgrp_present_3
+
+      - name: present assertions (Leaf Access Port) for APIC version >= 6.0.2
+        assert:
+          that:
+          - intf_policy_leaf_polgrp_present_3 is changed
+          - intf_policy_leaf_polgrp_present_3.previous != []
+          - intf_policy_leaf_polgrp_present_3.current[0].infraAccPortGrp.attributes.name == 'policygroupname_leaf'
+          - intf_policy_leaf_polgrp_present_3.sent.infraAccPortGrp.children.0.infraRsOpticsIfPol.attributes.tDn == 'uni/infra/zr-transceiverpolicy'
+
+      - name: Adding all the policies for leaf policy group (Leaf Access Port)
+        cisco.aci.aci_interface_policy_leaf_policy_group:
+          <<: *aci_interface_policy_leaf_policy_group_leaf_present
+          cdp_policy: cdppolicy
+          mcp_policy: mcppolicy
+          lldp_policy: lldppolicy
+          stp_interface_policy: stppolicy
+          egress_data_plane_policing_policy: egressdataplanepolicingpolicy
+          ingress_data_plane_policing_policy: ingressdataplanepolicingpolicy
+          priority_flow_control_policy: priorityflowcontrolpolicy
+          slow_drain_policy: slowdrainpolicy
+          monitoring_policy: monitoringpolicy
+          storm_control_interface_policy: stormcontrolinterfacepolicy
+          l2_interface_policy: l2interfacepolicy
+          port_security_policy: portsecuritypolicy
+          link_flap_policy: linkflappolicy
+          link_level_flow_control: linklevelflowcontrol
+          mac_sec_interface_policy: macsecinterfacepolicy
+          copp_policy: copppolicy
+          dwdm: dwdmpolicy
+          port_authentication: portauthenticationpolicy
+          poe_interface_policy: poeinterfacepolicy
+          state: present
+        register: intf_policy_leaf_polgrp_all_policy_present
+
+      - name: present assertions (Leaf Access Port) for all the policies.
+        assert:
+          that:
+          - intf_policy_leaf_polgrp_all_policy_present is changed
+          - intf_policy_leaf_polgrp_all_policy_present.previous != []
+          - intf_policy_leaf_polgrp_all_policy_present.current[0].infraAccPortGrp.attributes.name == 'policygroupname_leaf'
+          - intf_policy_leaf_polgrp_all_policy_present.sent.infraAccPortGrp.children.0.infraRsCdpIfPol.attributes.tnCdpIfPolName == 'cdppolicy'
+          - intf_policy_leaf_polgrp_all_policy_present.sent.infraAccPortGrp.children.1.infraRsL2IfPol.attributes.tnL2IfPolName == 'l2interfacepolicy'
+          - intf_policy_leaf_polgrp_all_policy_present.sent.infraAccPortGrp.children.2.infraRsL2PortSecurityPol.attributes.tnL2PortSecurityPolName == 'portsecuritypolicy'

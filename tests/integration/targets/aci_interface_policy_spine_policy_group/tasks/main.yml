@@ -64,7 +64,7 @@
       description: policygroup description
     register: intf_policy_spine_polgrp_update
 
-  - name: Verify present assertions
+  - name: Verify present assertions for Spine Policy Group
     assert:
       that:
       - intf_policy_spine_polgrp_check_mode_present is changed
@@ -96,7 +96,7 @@
       state: query
     register: query_spine_policy_group
 
-  - name: Verify query assertions
+  - name: Verify query assertions for Spine Policy Group
     assert:
       that:
         - query_spine_policy_group is not changed
@@ -119,7 +119,7 @@
       <<: *spine_absent
     register: intf_policy_spine_polgrp_absent_idempotent
 
-  - name: Verify absent assertions
+  - name: Verify absent assertions for Spine Policy Group
     assert:
       that:
         - intf_policy_spine_polgrp_check_mode_absent is changed
