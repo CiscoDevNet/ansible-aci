@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
+# Copyright: (c) 2023, Anvitha Jain <anvjain@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -19,17 +20,17 @@ description:
 options:
   policy_group:
     description:
-    - Name of the leaf policy group to be added/deleted.
+    - The name of the leaf interface policy group.
     type: str
     aliases: [ name, policy_group_name ]
   description:
     description:
-    - Description for the leaf policy group to be created.
+    - The description of the leaf interface policy group.
     type: str
     aliases: [ descr ]
   lag_type:
     description:
-    - Selector for the type of leaf policy group we want to create.
+    - Selector for the type of leaf interface policy group.
     - C(leaf) for Leaf Access Port Policy Group
     - C(link) for Port Channel (PC)
     - C(node) for Virtual Port Channel (VPC)
@@ -39,82 +40,142 @@ options:
     aliases: [ lag_type_name ]
   link_level_policy:
     description:
-    - Choice of link_level_policy to be used as part of the leaf policy group to be created.
+    - The name of the link level policy used by the leaf interface policy group.
     type: str
     aliases: [ link_level_policy_name ]
   cdp_policy:
     description:
-    - Choice of cdp_policy to be used as part of the leaf policy group to be created.
+    - The name of the cdp policy used by the leaf interface policy group.
     type: str
     aliases: [ cdp_policy_name ]
   mcp_policy:
     description:
-    - Choice of mcp_policy to be used as part of the leaf policy group to be created.
+    - The name of the mcp policy used by the leaf interface policy group.
     type: str
     aliases: [ mcp_policy_name ]
   lldp_policy:
     description:
-    - Choice of lldp_policy to be used as part of the leaf policy group to be created.
+    - The name of the lldp policy used by the leaf interface policy group.
     type: str
     aliases: [ lldp_policy_name ]
   stp_interface_policy:
     description:
-    - Choice of stp_interface_policy to be used as part of the leaf policy group to be created.
+    - The name of the stp interface policy used by the leaf interface policy group.
     type: str
     aliases: [ stp_interface_policy_name ]
   egress_data_plane_policing_policy:
     description:
-    - Choice of egress_data_plane_policing_policy to be used as part of the leaf policy group to be created.
+    - The name of the egress data plane policing policy used by the leaf interface policy group.
     type: str
     aliases: [ egress_data_plane_policing_policy_name ]
   ingress_data_plane_policing_policy:
     description:
-    - Choice of ingress_data_plane_policing_policy to be used as part of the leaf policy group to be created.
+    - The name of the ingress data plane policing policy used by the leaf interface policy group.
     type: str
     aliases: [ ingress_data_plane_policing_policy_name ]
   priority_flow_control_policy:
     description:
-    - Choice of priority_flow_control_policy to be used as part of the leaf policy group to be created.
+    - The name of the priority flow control policy used by the leaf interface policy group.
     type: str
     aliases: [ priority_flow_control_policy_name ]
   fibre_channel_interface_policy:
     description:
-    - Choice of fibre_channel_interface_policy to be used as part of the leaf policy group to be created.
+    - The name of the fibre channel interface policy used by the leaf interface policy group.
     type: str
     aliases: [ fibre_channel_interface_policy_name ]
   slow_drain_policy:
     description:
-    - Choice of slow_drain_policy to be used as part of the leaf policy group to be created.
+    - The name of the slow drain policy used by the leaf interface policy group.
     type: str
     aliases: [ slow_drain_policy_name ]
   port_channel_policy:
     description:
-    - Choice of port_channel_policy to be used as part of the leaf policy group to be created.
+    - The name of the port channel policy used by the leaf interface policy group.
     type: str
     aliases: [ port_channel_policy_name ]
   monitoring_policy:
     description:
-    - Choice of monitoring_policy to be used as part of the leaf policy group to be created.
+    - The name of the monitoring policy used by the leaf interface policy group.
     type: str
     aliases: [ monitoring_policy_name ]
   storm_control_interface_policy:
     description:
-    - Choice of storm_control_interface_policy to be used as part of the leaf policy group to be created.
+    - The name of the storm control interface policy used by the leaf interface policy group.
     type: str
     aliases: [ storm_control_interface_policy_name ]
   l2_interface_policy:
     description:
-    - Choice of l2_interface_policy to be used as part of the leaf policy group to be created.
+    - The name of the l2 interface policy used by the leaf interface policy group.
     type: str
     aliases: [ l2_interface_policy_name ]
   port_security_policy:
     description:
-    - Choice of port_security_policy to be used as part of the leaf policy group to be created.
+    - The name of the port security policy used by the leaf interface policy group.
     type: str
     aliases: [ port_security_policy_name ]
+  link_flap_policy:
+    description:
+    - The name of the link flap policy used by the leaf interface policy group.
+    type: str
+    aliases: [ link_flap_policy_name ]
+  link_level_flow_control:
+    description:
+    - The name of the link level flow control used by the leaf interface policy group.
+    type: str
+    aliases: [ link_level_flow_control_name ]
+  mac_sec_interface_policy:
+    description:
+    - The name of the mac sec interface policy used by the leaf interface policy group.
+    type: str
+    aliases: [ mac_sec_interface_policy_name ]
+  copp_policy:
+    description:
+    - The name of the copp policy used by the leaf interface policy group.
+    type: str
+    aliases: [ copp_policy_name ]
+  sync_e_interface_policy:
+    description:
+    - The name of the syncE interface policy used by the leaf interface policy group.
+    - Only availavle in APIC version 5.2 or later.
+    type: str
+    aliases: [ sync_e_interface_policy_name ]
+  port_authentication:
+    description:
+    - The name of the port authentication used by the leaf interface policy group.
+    type: str
+    aliases: [ port_authentication_name ]
+  dwdm:
+    description:
+    - The name of the dwdm used by the leaf interface policy group.
+    type: str
+    aliases: [ dwdm_name ]
+  poe_interface_policy:
+    description:
+    - The name of the poe interface policy used by the leaf interface policy group.
+    type: str
+    aliases: [ poe_interface_policy_name ]
+  transceiver_policy:
+    description:
+    - The name of the transceiver policy used by the leaf interface policy group.
+    - Only availavle in APIC version 6.0(2h) or later.
+    type: dict
+    suboptions:
+      type:
+        description:
+        - The type of the transceiver policy.
+        type: str
+        required: true
+        aliases: [ transceiver_policy_type ]
+        choices: [ zr, zrp]
+      name:
+        description:
+        - The name of the transceiver policy.
+        type: str
+        required: true
+        aliases: [ transceiver_policy_name ]
   aep:
     description:
-    - Choice of attached_entity_profile (AEP) to be used as part of the leaf policy group to be created.
+    - The name of the attached entity profile (AEP) used by the leaf interface policy group.
     type: str
     aliases: [ aep_name ]
   state:
@@ -135,7 +196,7 @@ extends_documentation_fragment:
 
 notes:
 - When using the module please select the appropriate link_aggregation_type (lag_type).
-  C(link) for Port Channel(PC), C(node) for Virtual Port Channel(VPC) and C(leaf) for Leaf Access Port Policy Group.
+- C(link) for Port Channel(PC), C(node) for Virtual Port Channel(VPC) and C(leaf) for Leaf Access Port Policy Group.
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes B(infra:AccBndlGrp) and B(infra:AccPortGrp).
@@ -153,10 +214,10 @@ EXAMPLES = r"""
     lag_type: link
     policy_group: policygroupname
     description: policygroupname description
-    link_level_policy: whateverlinklevelpolicy
-    cdp_policy: whatevercdppolicy
-    lldp_policy: whateverlldppolicy
-    port_channel_policy: whateverlacppolicy
+    link_level_policy: linklevelpolicy
+    cdp_policy: cdppolicy
+    lldp_policy: lldppolicy
+    port_channel_policy: lacppolicy
     state: present
   delegate_to: localhost
 
@@ -167,10 +228,10 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     lag_type: node
     policy_group: policygroupname
-    link_level_policy: whateverlinklevelpolicy
-    cdp_policy: whatevercdppolicy
-    lldp_policy: whateverlldppolicy
-    port_channel_policy: whateverlacppolicy
+    link_level_policy: linklevelpolicy
+    cdp_policy: cdppolicy
+    lldp_policy: lldppolicy
+    port_channel_policy: lacppolicy
     state: present
   delegate_to: localhost
 
@@ -181,9 +242,9 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     lag_type: leaf
     policy_group: policygroupname
-    link_level_policy: whateverlinklevelpolicy
-    cdp_policy: whatevercdppolicy
-    lldp_policy: whateverlldppolicy
+    link_level_policy: linklevelpolicy
+    cdp_policy: cdppolicy
+    lldp_policy: lldppolicy
     state: present
   delegate_to: localhost
 
@@ -334,7 +395,7 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         # NOTE: Since this module needs to include both infra:AccBndlGrp (for PC and VPC) and infra:AccPortGrp (for leaf access port policy group):
-        # NOTE: I'll allow the user to make the choice here (link(PC), node(VPC), leaf(leaf-access port policy group))
+        # NOTE: The user(s) can make the choice between (link(PC), node(VPC), leaf(leaf-access port policy group))
         lag_type=dict(type="str", required=True, aliases=["lag_type_name"], choices=["leaf", "link", "node"]),
         policy_group=dict(type="str", aliases=["name", "policy_group_name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
@@ -353,7 +414,22 @@ def main():
         storm_control_interface_policy=dict(type="str", aliases=["storm_control_interface_policy_name"]),
         l2_interface_policy=dict(type="str", aliases=["l2_interface_policy_name"]),
         port_security_policy=dict(type="str", aliases=["port_security_policy_name"]),
+        link_flap_policy=dict(type="str", aliases=["link_flap_policy_name"]),
+        link_level_flow_control=dict(type="str", aliases=["link_level_flow_control_name"]),
+        mac_sec_interface_policy=dict(type="str", aliases=["mac_sec_interface_policy_name"]),
+        copp_policy=dict(type="str", aliases=["copp_policy_name"]),
         aep=dict(type="str", aliases=["aep_name"]),
+        sync_e_interface_policy=dict(type="str", aliases=["sync_e_interface_policy_name"]),
+        transceiver_policy=dict(
+            type="dict",
+            options=dict(
+                name=dict(type="str", required=True, aliases=["transceiver_policy_name"]),
+                type=dict(type="str", required=True, choices=["zr", "zrp"], aliases=["transceiver_policy_type"]),
+            ),
+        ),
+        poe_interface_policy=dict(type="str", aliases=["poe_interface_policy_name"]),
+        port_authentication=dict(type="str", aliases=["port_authentication_name"]),
+        dwdm=dict(type="str", aliases=["dwdm_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
@@ -385,7 +461,17 @@ def main():
     storm_control_interface_policy = module.params.get("storm_control_interface_policy")
     l2_interface_policy = module.params.get("l2_interface_policy")
     port_security_policy = module.params.get("port_security_policy")
+    link_flap_policy = module.params.get("link_flap_policy")
+    link_level_flow_control = module.params.get("link_level_flow_control")
+    mac_sec_interface_policy = module.params.get("mac_sec_interface_policy")
+    copp_policy = module.params.get("copp_policy")
+    poe_interface_policy = module.params.get("poe_interface_policy")
+    port_authentication = module.params.get("port_authentication")
+    dwdm = module.params.get("dwdm")
     aep = module.params.get("aep")
+    transceiver_policy = module.params.get("transceiver_policy")
+    sync_e_interface_policy = module.params.get("sync_e_interface_policy")
+
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
@@ -396,6 +482,21 @@ def main():
  (leaf access port policy group), if used\
  assign null to it (port_channel_policy: null)."
         )
+    invalid_parameters = {
+        "transceiver_policy": "transceiver_policy is not a valid parameter for link/node (Port Channel, Virtual Port Channel),\
+ if used assign null to it (transceiver_policy: null).",
+        "port_authentication": "port_authentication is not a valid parameter for link/node (Port Channel, Virtual Port Channel),\
+ if used assign null to it (port_authentication: null).",
+        "dwdm": "dwdm is not a valid parameter for link/node (Port Channel, Virtual Port Channel),\
+ if used assign null to it (dwdm: null).",
+        "poe_interface_policy": "poe_interface_policy is not a valid parameter for link/node (Port Channel, Virtual Port Channel),\
+ if used assign null to it (poe_interface_policy: null).",
+    }
+
+    if lag_type in ["link", "node"]:
+        for param, message in invalid_parameters.items():
+            if locals().get(param) is not None:
+                aci.fail_json(message)
 
     if lag_type == "leaf":
         aci_class_name = "infraAccPortGrp"
@@ -523,9 +624,60 @@ def main():
                 ),
             ),
         ),
+        dict(
+            infraRsLinkFlapPol=dict(
+                attributes=dict(
+                    tnFabricLinkFlapPolName=link_flap_policy,
+                ),
+            ),
+        ),
+        dict(
+            infraRsQosLlfcIfPol=dict(
+                attributes=dict(
+                    tnQosLlfcIfPolName=link_level_flow_control,
+                ),
+            ),
+        ),
+        dict(
+            infraRsMacsecIfPol=dict(
+                attributes=dict(
+                    tnMacsecIfPolName=mac_sec_interface_policy,
+                ),
+            ),
+        ),
+        dict(
+            infraRsCoppIfPol=dict(
+                attributes=dict(
+                    tnCoppIfPolName=copp_policy,
+                ),
+            ),
+        ),
     ]
 
-    # Add infraRsattEntP binding only when aep was defined
+    child_classes = [
+        "infraRsAttEntP",
+        "infraRsCdpIfPol",
+        "infraRsFcIfPol",
+        "infraRsHIfPol",
+        "infraRsL2IfPol",
+        "infraRsL2PortSecurityPol",
+        "infraRsLacpPol",
+        "infraRsLldpIfPol",
+        "infraRsMcpIfPol",
+        "infraRsMonIfInfraPol",
+        "infraRsQosEgressDppIfPol",
+        "infraRsQosIngressDppIfPol",
+        "infraRsQosPfcIfPol",
+        "infraRsQosSdIfPol",
+        "infraRsStormctrlIfPol",
+        "infraRsStpIfPol",
+        "infraRsLinkFlapPol",
+        "infraRsQosLlfcIfPol",
+        "infraRsMacsecIfPol",
+        "infraRsCoppIfPol",
+    ]
+
+    # Add infraRsattEntP binding only when aep is defined
     if aep is not None:
         child_configs.append(
             dict(
@@ -537,6 +689,79 @@ def main():
             )
         )
 
+    # Add infraRsSynceEthIfPol/infraRsSynceEthIfPolBndlGrp binding only when sync_e_interface_policy is defined
+    if sync_e_interface_policy is not None:
+        if lag_type is None:
+            child_configs.append(
+                dict(
+                    infraRsSynceEthIfPol=dict(
+                        attributes=dict(
+                            tnSynceEthIfPolName=sync_e_interface_policy,
+                        ),
+                    ),
+                )
+            )
+            child_classes.append("infraRsSynceEthIfPol")
+        elif lag_type == "node" or lag_type == "link":
+            child_configs.append(
+                dict(
+                    infraRsSynceEthIfPolBndlGrp=dict(
+                        attributes=dict(
+                            tnSynceEthIfPolName=sync_e_interface_policy,
+                        ),
+                    ),
+                )
+            )
+            child_classes.append("infraRsSynceEthIfPolBndlGrp")
+
+    # Add the children only when lag_type == leaf (Leaf Interface specific policies).
+    if lag_type is None:
+        # Add infraRsOpticsIfPol binding only when transceiver_policy was defined
+        if transceiver_policy is not None:
+            child_configs.append(
+                dict(
+                    infraRsOpticsIfPol=dict(
+                        attributes=dict(
+                            tDn="uni/infra/{0}-{1}".format(transceiver_policy.get("type"), transceiver_policy.get("name")),
+                        ),
+                    ),
+                )
+            )
+            child_classes.append("infraRsOpticsIfPol")
+        if dwdm is not None:
+            child_configs.append(
+                dict(
+                    infraRsDwdmIfPol=dict(
+                        attributes=dict(
+                            tnDwdmIfPolName=dwdm,
+                        ),
+                    ),
+                )
+            )
+            child_classes.append("infraRsDwdmIfPol")
+        if port_authentication is not None:
+            child_configs.append(
+                dict(
+                    infraRsL2PortAuthPol=dict(
+                        attributes=dict(
+                            tnL2PortAuthPolName=port_authentication,
+                        ),
+                    ),
+                )
+            )
+            child_classes.append("infraRsL2PortAuthPol")
+        if poe_interface_policy is not None:
+            child_configs.append(
+                dict(
+                    infraRsPoeIfPol=dict(
+                        attributes=dict(
+                            tnPoeIfPolName=poe_interface_policy,
+                        ),
+                    ),
+                )
+            )
+            child_classes.append("infraRsPoeIfPol")
+
     aci.construct_url(
         root_class=dict(
             aci_class=aci_class_name,
@@ -544,24 +769,7 @@ def main():
             module_object=policy_group,
             target_filter={"name": policy_group, "lagT": lag_type},
         ),
-        child_classes=[
-            "infraRsAttEntP",
-            "infraRsCdpIfPol",
-            "infraRsFcIfPol",
-            "infraRsHIfPol",
-            "infraRsL2IfPol",
-            "infraRsL2PortSecurityPol",
-            "infraRsLacpPol",
-            "infraRsLldpIfPol",
-            "infraRsMcpIfPol",
-            "infraRsMonIfInfraPol",
-            "infraRsQosEgressDppIfPol",
-            "infraRsQosIngressDppIfPol",
-            "infraRsQosPfcIfPol",
-            "infraRsQosSdIfPol",
-            "infraRsStormctrlIfPol",
-            "infraRsStpIfPol",
-        ],
+        child_classes=child_classes,
     )
 
     aci.get_existing()

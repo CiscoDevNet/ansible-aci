@@ -13,23 +13,23 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_leaf_fc_policy_group
-short_description: Manage fabric interface policy fiber policy groups (infra:AccBndlGrp, infra:AccPortGrp)
+short_description: Manage Fibre Channel (FC) interface policy groups (infra:FcAccBndlGrp, infra:FcAccPortGrp)
 description:
-- Manage fabric interface policy fiber policy groups on Cisco ACI fabrics.
+- Manage Fibre Channel (FC) interface policy groups on Cisco ACI fabrics.
 options:
   policy_group:
     description:
-    - Name of the fiber policy group to be added/deleted.
+    - The name of the Fibre Channel (FC) interface policy groups.
     type: str
     aliases: [ name, policy_group_name ]
   description:
     description:
-    - Description for the fiber policy group to be created.
+    - The description of the Fibre Channel (FC) interface policy group.
     type: str
     aliases: [ descr ]
   lag_type:
     description:
-    - Selector for the type of fiber policy group we want to create.
+    - Selector for the type of Fibre Channel (FC) interface policy group.
     - C(port) for Fiber Channel (FC)
     - C(port_channel) for Fiber Channel Port Channel (FC PC)
     type: str
@@ -38,17 +38,17 @@ options:
     aliases: [ lag_type_name ]
   fibre_channel_interface_policy:
     description:
-    - Choice of fibre_channel_interface_policy to be used as part of the fiber policy group to be created.
+    - The name of the fibre channel interface policy used by the Fibre Channel (FC) interface policy group.
     type: str
     aliases: [ fibre_channel_interface_policy_name ]
   port_channel_policy:
     description:
-    - Choice of port_channel_policy to be used as part of the fiber policy group to be created.
+    - The name of the port channel policy used by the Fibre Channel (FC) interface policy group.
     type: str
     aliases: [ port_channel_policy_name ]
   attached_entity_profile:
     description:
-    - Choice of attached_entity_profile (attached_entity_profile) to be used as part of the fiber policy group to be created.
+    - The name of the attached entity profile (AEP) used by the Fibre Channel (FC) interface policy group.
     type: str
     aliases: [ aep_name, aep ]
   state:
@@ -69,7 +69,7 @@ extends_documentation_fragment:
 
 notes:
 - When using the module please select the appropriate link_aggregation_type (lag_type).
-  C(port) for Fiber Channel(FC), C(port_channel) for Fiber Channel Port Channel(VPC).
+- C(port) for Fiber Channel(FC), C(port_channel) for Fiber Channel Port Channel(VPC).
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes B(infra:FcAccPortGrp) and B(infra:FcAccBndlGrp).
@@ -84,10 +84,10 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    lag_type: f
-    fibre_channel_interface_policy: whateverfcinterfacepolicy
+    lag_type: port
+    fibre_channel_interface_policy: fcinterfacepolicy
     description: policygroupname description
-    attached_entity_profile: whateveraep
+    attached_entity_profile: aep
     state: present
   delegate_to: localhost
 
@@ -97,10 +97,10 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     lag_type: port_channel
-    fibre_channel_interface_policy: whateverfcinterfacepolicy
+    fibre_channel_interface_policy: fcinterfacepolicy
     description: policygroupname description
-    attached_entity_profile: whateveraep
-    port_channel_policy: whateverlacppolicy
+    attached_entity_profile: aep
+    port_channel_policy: lacppolicy
     state: present
   delegate_to: localhost
 
@@ -251,7 +251,7 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         # NOTE: Since this module needs to include both infra:FcAccPortGrp (for FC) and infra:FcAccBndlGrp (for FC PC):
-        # NOTE: I'll allow the user to make the choice here (port(FC), port_channel(FC PC)) 
+        # NOTE: The user(s) can make a choice between (port(FC), port_channel(FC PC))
         lag_type=dict(type="str", required=True, aliases=["lag_type_name"], choices=["port", "port_channel"]),
         policy_group=dict(type="str", aliases=["name", "policy_group_name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
@@ -285,40 +285,39 @@ def main():
     if lag_type == "port":
         aci_class_name = "infraFcAccPortGrp"
         dn_name = "fcaccportgrp"
-        class_config_dict = dict(
-            name=policy_group,
-            descr=description,
-            nameAlias=name_alias,
-        )
-        # Reset for target_filter
-        lag_type = None
     elif lag_type == "port_channel":
         aci_class_name = "infraFcAccBndlGrp"
         dn_name = "fcaccbundle"
-        class_config_dict = dict(
-            name=policy_group,
-            descr=description,
-            nameAlias=name_alias,
+
+    class_config_dict = dict(
+        name=policy_group,
+        descr=description,
+        nameAlias=name_alias,
+    )
+
+    child_configs = []
+    if fibre_channel_interface_policy is not None:
+        child_configs.append(
+            dict(
+                infraRsFcL2IfPol=dict(
+                    attributes=dict(
+                        tnFcIfPolName=fibre_channel_interface_policy,
+                    ),
+                ),
+            )
+        )
+    if attached_entity_profile is not None:
+        child_configs.append(
+            dict(
+                infraRsFcAttEntP=dict(
+                    attributes=dict(
+                        tDn="uni/infra/attentp-{0}".format(attached_entity_profile),
+                    ),
+                ),
+            )
         )
 
-    child_configs = [
-        dict(
-            infraRsFcL2IfPol=dict(
-                attributes=dict(
-                    tnFcIfPolName=fibre_channel_interface_policy,
-                ),
-            ),
-        ),
-        dict(
-            infraRsFcAttEntP=dict(
-                attributes=dict(
-                    tDn="uni/infra/attentp-{0}".format(attached_entity_profile),
-                ),
-            ),
-        ),
-    ]
-
-    # Add infraRsFcLagPol binding only when port_channel_policy was defined
+    # Add infraRsFcLagPol binding only when port_channel_policy is defined
     if lag_type == "port_channel" and port_channel_policy is not None:
         child_configs.append(
             dict(

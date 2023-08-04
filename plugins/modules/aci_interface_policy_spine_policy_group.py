@@ -13,47 +13,47 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_spine_policy_group
-short_description: Manage fabric interface policy spine policy groups (infra:SpAccPortGrp)
+short_description: Manage spine access interface policy groups (infra:SpAccPortGrp)
 description:
-- Manage fabric interface policy spine policy groups on Cisco ACI fabrics.
+- Manage spine access interface policy groups on Cisco ACI fabrics.
 options:
   policy_group:
     description:
-    - Name of the spine policy group to be added/deleted.
+    - The name of the spine access interface policy group.
     type: str
     aliases: [ name, policy_group_name, spine_policy_group_name ]
   description:
     description:
-    - Description for the spine policy group to be created.
+    - Description of the spine access interface
     type: str
     aliases: [ descr ]
   name_alias:
     description:
-    - The alias for the current object. This relates to the nameAlias field in ACI.
+    - The alias of the current object. This relates to the nameAlias field in ACI.
     type: str
   link_level_policy:
     description:
-    - Choice of link_level_policy to be used as part of the spine policy group to be created.
+    - The name of the link level policy used by the spine access interface
     type: str
     aliases: [ link_level_policy_name ]
   link_flap_policy:
     description:
-    - Choice of link_flap_policy to be used as part of the spine policy group to be created.
+    - The name of the link flap policy used by the spine access interface
     type: str
     aliases: [ link_flap_policy_name ]
   cdp_policy:
     description:
-    - Choice of cdp_policy to be used as part of the spine policy group to be created.
+    - The name of the cdp policy used by the spine access interface
     type: str
     aliases: [ cdp_policy_name ]
   mac_sec_policy:
     description:
-    - Choice of mac_sec_policy to be used as part of the spine policy group to be created.
+    - The name of the mac sec policy used by the spine access interface
     type: str
     aliases: [ mac_sec_policy_name ]
   attached_entity_profile:
     description:
-    - Choice of attached_entity_profile to be used as part of the spine policy group to be created.
+    - The name of the attached entity profile used by the spine access interface
     type: str
     aliases: [ aep_name, aep ]
   state:
@@ -303,14 +303,18 @@ def main():
                 ),
             ),
         ),
-        dict(
-            infraRsAttEntP=dict(
-                attributes=dict(
-                    tDn="uni/infra/attentp-{0}".format(attached_entity_profile),
-                ),
-            ),
-        ),
     ]
+
+    if attached_entity_profile is not None:
+        child_configs.append(
+            dict(
+                infraRsAttEntP=dict(
+                    attributes=dict(
+                        tDn="uni/infra/attentp-{0}".format(attached_entity_profile),
+                    ),
+                ),
+            )
+        )
 
     aci.construct_url(
         root_class=dict(
