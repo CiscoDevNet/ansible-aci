@@ -63,3 +63,28 @@ MATCH_FIRMWARE_NODES_TYPE_MAPPING = {
     "switch_patch": "switchPatch",
     "vpod": "vpod",
 }
+
+MATCH_TRIGGER_MAPPING = {
+    "trigger": "trigger",
+    "trigger_immediate": "trigger-immediate",
+    "triggered": "triggered",
+    "untriggered": "untriggered",
+}
+
+INTERFACE_POLICY_FC_SPEED_LIST = ["auto", "unknown", "2G", "4G", "8G", "16G", "32G"]
+
+MATCH_RUN_MODE_MAPPING = dict(
+    pause_always_between_sets="pauseAlwaysBetweenSets",
+    pause_only_on_failures="pauseOnlyOnFailures",
+    pause_never="pauseNever",
+)
+
+MATCH_NOTIFY_CONDITION_MAPPING = dict(
+    notify_always_between_sets="notifyAlwaysBetweenSets",
+    notify_never="notifyNever",
+    notify_only_on_failures="notifyOnlyOnFailures",
+)
+
+MATCH_SMU_OPERATION_MAPPING = dict(smu_install="smuInstall", smu_uninstall="smuUninstall")
+
+MATCH_SMU_OPERATION_FLAGS_MAPPING = dict(smu_reload_immediate="smuReloadImmediate", smu_reload_skip="smuReloadSkip")

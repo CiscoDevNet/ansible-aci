@@ -55,7 +55,7 @@ options:
         - The version check override is a one-time override that performs the install whether or not the versions match.
         - The APIC defaults to C(untriggered) when unset during creation.
         type: str
-        choices: [ trigger, trigger-immediate, triggered, untriggered ]
+        choices: [ trigger, trigger_immediate, triggered, untriggered ]
     description:
         description:
         - Description for the firmware policy.
@@ -235,6 +235,7 @@ url:
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_TRIGGER_MAPPING
 
 
 def main():
@@ -249,7 +250,7 @@ def main():
         ignore_compat=dict(type="bool"),
         sr_upgrade=dict(type="bool"),
         sr_version=dict(type="str"),
-        version_check_override=dict(type="str", choices=["trigger", "trigger-immediate", "triggered", "untriggered"]),
+        version_check_override=dict(type="str", choices=list(MATCH_TRIGGER_MAPPING.keys())),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
@@ -272,7 +273,7 @@ def main():
     ignore_compat = aci.boolean(module.params.get("ignore_compat"), "yes", "no")
     sr_version = module.params.get("sr_version")
     sr_upgrade = aci.boolean(module.params.get("sr_upgrade"), "yes", "no")
-    version_check_override = module.params.get("version_check_override")
+    version_check_override = MATCH_TRIGGER_MAPPING.get(module.params.get("version_check_override"))
     name_alias = module.params.get("name_alias")
 
     aci.construct_url(

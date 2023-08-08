@@ -233,7 +233,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_FC_FILL_PATTERN_MAPPING
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_FC_FILL_PATTERN_MAPPING, INTERFACE_POLICY_FC_SPEED_LIST
 
 
 def main():
@@ -244,10 +244,10 @@ def main():
         fc_policy=dict(type="str", aliases=["name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         port_mode=dict(type="str", choices=["f", "np"]),  # No default provided on purpose
-        auto_max_speed=dict(type="str", choices=["2G", "4G", "8G", "16G", "32G"]),
+        auto_max_speed=dict(type="str", choices=INTERFACE_POLICY_FC_SPEED_LIST[2:]),
         fill_pattern=dict(type="str", choices=list(MATCH_FC_FILL_PATTERN_MAPPING.keys())),
         buffer_credits=dict(type="int"),
-        speed=dict(type="str", choices=["auto", "unknown", "2G", "4G", "8G", "16G", "32G"]),
+        speed=dict(type="str", choices=INTERFACE_POLICY_FC_SPEED_LIST),
         trunk_mode=dict(type="str", choices=["auto", "trunk-off", "trunk-on", "un-init"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),

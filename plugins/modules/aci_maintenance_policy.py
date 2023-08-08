@@ -44,12 +44,14 @@ options:
     - The APIC defaults to C(untriggered) when unset during creation.
     type: str
     choices: [ triggered, untriggered ]
+    aliases: [ adminSt ]
   download_state:
     description:
     - The download state of the executable policies.
     - The APIC defaults to C(untriggered) when unset during creation.
     type: str
     choices: [ triggered, untriggered ]
+    aliases: [ downloadSt ]
   notify_condition:
     description:
     - Specifies under what pause condition will admin be notified via email/text as configured.
@@ -89,7 +91,7 @@ options:
     - The version check override is a one-time override that performs the install whether or not the versions match.
     - The APIC defaults to C(untriggered) when unset during creation.
     type: str
-    choices: [ trigger, trigger-immediate, triggered, untriggered ]
+    choices: [ trigger, trigger_immediate, triggered, untriggered ]
   ignore_compat:
     description:
     - To check whether compatibility checks should be ignored
@@ -275,14 +277,12 @@ url:
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 from ansible.module_utils.basic import AnsibleModule
-
-
-MATCH_RUN_MODE_MAPPING = dict(pause_always_between_sets="pauseAlwaysBetweenSets", pause_only_on_failures="pauseOnlyOnFailures", pause_never="pauseNever")
-MATCH_NOTIFY_CONDITION_MAPPING = dict(
-    notify_always_between_sets="notifyAlwaysBetweenSets", notify_never="notifyNever", notify_only_on_failures="notifyOnlyOnFailures"
+from ansible_collections.cisco.aci.plugins.module_utils.constants import (
+    MATCH_RUN_MODE_MAPPING, MATCH_NOTIFY_CONDITION_MAPPING,
+    MATCH_SMU_OPERATION_MAPPING,
+    MATCH_SMU_OPERATION_FLAGS_MAPPING,
+    MATCH_TRIGGER_MAPPING
 )
-MATCH_SMU_OPERATION_MAPPING = dict(smu_install="smuInstall", smu_uninstall="smuUninstall")
-MATCH_SMU_OPERATION_FLAGS_MAPPING = dict(smu_reload_immediate="smuReloadImmediate", smu_reload_skip="smuReloadSkip")
 
 
 def main():
@@ -294,15 +294,15 @@ def main():
         graceful=dict(type="bool"),
         scheduler=dict(type="str"),
         ignore_compat=dict(type="bool"),
-        admin_state=dict(type="str", choices=["triggered", "untriggered"]),
-        download_state=dict(type="str", choices=["triggered", "untriggered"]),
+        admin_state=dict(type="str", choices=list(MATCH_TRIGGER_MAPPING.keys())[2:], aliases=["adminSt"]),
+        download_state=dict(type="str", choices=list(MATCH_TRIGGER_MAPPING.keys())[2:], aliases=["downloadSt"]),
         notify_condition=dict(type="str", choices=list(MATCH_NOTIFY_CONDITION_MAPPING.keys())),
         smu_operation=dict(type="str", choices=list(MATCH_SMU_OPERATION_MAPPING.keys())),
         smu_operation_flags=dict(type="str", choices=list(MATCH_SMU_OPERATION_FLAGS_MAPPING.keys())),
         sr_upgrade=dict(type="bool"),
         sr_version=dict(type="str"),
         version=dict(type="str"),
-        version_check_override=dict(type="str", choices=["trigger", "trigger-immediate", "triggered", "untriggered"]),
+        version_check_override=dict(type="str", choices=list(MATCH_TRIGGER_MAPPING.keys())),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -322,6 +322,7 @@ def main():
     state = module.params.get("state")
     name = module.params.get("name")
     run_mode = MATCH_RUN_MODE_MAPPING.get(module.params.get("run_mode"))
+    graceful = aci.boolean(module.params.get("graceful"), "yes", "no")
     scheduler = module.params.get("scheduler")
     admin_state = module.params.get("admin_state")
     download_state = module.params.get("download_state")
@@ -331,8 +332,7 @@ def main():
     sr_version = module.params.get("sr_version")
     sr_upgrade = module.params.get("sr_upgrade")
     version = module.params.get("version")
-    version_check_override = module.params.get("version_check_override")
-    graceful = aci.boolean(module.params.get("graceful"))
+    version_check_override = MATCH_TRIGGER_MAPPING.get(module.params.get("version_check_override"))
     ignore_compat = aci.boolean(module.params.get("ignore_compat"))
     description = module.params.get("description")
     name_alias = module.params.get("name_alias")
