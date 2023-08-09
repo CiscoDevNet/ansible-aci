@@ -32,48 +32,48 @@
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
-  - name: Create tenant for tests to kick off
+  - name: Create tenant
     cisco.aci.aci_tenant: &aci_tenant_present
       <<: *aci_tenant_absent
       state: present
 
-  - name: Create vrf for tests to kick off
+  - name: Create vrf
     cisco.aci.aci_vrf: &aci_vrf_present
       <<: *aci_tenant_present
       vrf: anstest
 
-  - name: Create first L3out for tests to kick off
+  - name: Create first L3out
     cisco.aci.aci_l3out: &aci_l3_out_present
       <<: *aci_vrf_present
       l3out: ansible_l3out
       domain: ansible_dom
       state: present
 
-  - name: Create second L3out for tests to kick off
+  - name: Create second L3out
     cisco.aci.aci_l3out: &aci_l3_out_present_2
       <<: *aci_vrf_present
       l3out: ansible_l3out_2
       domain: ansible_dom
       state: present
 
-  - name: Create first bd for tests to kick off
+  - name: Create first bd
     cisco.aci.aci_bd: &aci_bd_present
       <<: *aci_tenant_present
       bd: anstest
 
-  - name: Create second bd for tests to kick off
+  - name: Create second bd
     cisco.aci.aci_bd: &aci_bd_present_2
       <<: *aci_tenant_present
       bd: anstest_2
 
-  - name: Ensure first binding bd_to_l3out does not exist for tests to kick off
+  - name: Ensure first binding bd_to_l3out does not exist
     cisco.aci.aci_bd_to_l3out: &aci_bd_to_l3out_absent
       <<: *aci_tenant_present
       bd: anstest
       l3out: ansible_l3out
       state: absent
 
-  - name: Ensure second binding bd_to_l3out does not exist for tests to kick off
+  - name: Ensure second binding bd_to_l3out does not exist
     cisco.aci.aci_bd_to_l3out: &aci_bd_to_l3out_absent_2
       <<: *aci_tenant_present
       bd: anstest_2

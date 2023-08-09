@@ -32,6 +32,7 @@ options:
         description:
         - Check if compatibility checks should be ignored
         type: bool
+        aliases: [ ignoreCompat ]
     sr_upgrade:
         description:
         - The SR firware upgrade.
@@ -247,7 +248,7 @@ def main():
         description=dict(type="str", aliases=["descr"]),
         version=dict(type="str"),
         effective_on_reboot=dict(type="bool"),
-        ignore_compat=dict(type="bool"),
+        ignore_compat=dict(type="bool", aliases=["ignoreCompat"]),
         sr_upgrade=dict(type="bool"),
         sr_version=dict(type="str"),
         version_check_override=dict(type="str", choices=list(MATCH_TRIGGER_MAPPING.keys())),

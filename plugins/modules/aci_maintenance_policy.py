@@ -97,6 +97,7 @@ options:
     - To check whether compatibility checks should be ignored
     - The APIC defaults to C(false) when unset during creation.
     type: bool
+    aliases: [ ignoreCompat ]
   description:
     description:
     - Description for the maintenance policy.
@@ -294,7 +295,7 @@ def main():
         run_mode=dict(type="str", choices=list(MATCH_RUN_MODE_MAPPING.keys())),
         graceful=dict(type="bool"),
         scheduler=dict(type="str"),
-        ignore_compat=dict(type="bool"),
+        ignore_compat=dict(type="bool", aliases=["ignoreCompat"]),
         admin_state=dict(type="str", choices=list(MATCH_TRIGGER_MAPPING.keys())[2:], aliases=["adminSt"]),
         download_state=dict(type="str", choices=list(MATCH_TRIGGER_MAPPING.keys())[2:], aliases=["downloadSt"]),
         notify_condition=dict(type="str", choices=list(MATCH_NOTIFY_CONDITION_MAPPING.keys())),
