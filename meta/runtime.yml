@@ -74,6 +74,7 @@ action_groups:
     - aci_esg_epg_selector
     - aci_esg_ip_subnet_selector
     - aci_esg_tag_selector
+    - aci_fabric_interface_policy_group
     - aci_fabric_leaf_profile
     - aci_fabric_leaf_switch_assoc
     - aci_fabric_node
