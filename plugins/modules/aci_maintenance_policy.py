@@ -27,7 +27,8 @@ options:
     - Whether the system pauses on error or just continues through it.
     - The APIC defaults to C(pauseOnlyOnFailures) when unset during creation.
     type: str
-    choices: [ pause_always_between_sets, pause_only_on_failures, pause_never ]
+    choices: [ pause_always_between_sets, pause_only_on_failures, pause_never, pauseOnlyOnFailures, pauseNever ]
+    aliases: [ runmode ]
   graceful:
     description:
     - Whether the system will bring down the nodes gracefully during an upgrade, which reduces traffic lost.
@@ -44,14 +45,13 @@ options:
     - The APIC defaults to C(untriggered) when unset during creation.
     type: str
     choices: [ triggered, untriggered ]
-    aliases: [ adminSt ]
+    aliases: [ adminst ]
   download_state:
     description:
     - The download state of the executable policies.
     - The APIC defaults to C(untriggered) when unset during creation.
     type: str
     choices: [ triggered, untriggered ]
-    aliases: [ downloadSt ]
   notify_condition:
     description:
     - Specifies under what pause condition will admin be notified via email/text as configured.
@@ -292,12 +292,12 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         name=dict(type="str", aliases=["maintenance_policy"]),  # Not required for querying all objects
-        run_mode=dict(type="str", choices=list(MATCH_RUN_MODE_MAPPING.keys())),
+        run_mode=dict(type="str", choices=list(MATCH_RUN_MODE_MAPPING.keys()).extend(["pauseOnlyOnFailures", "pauseNever"]), aliases=["runmode"]),
         graceful=dict(type="bool"),
         scheduler=dict(type="str"),
         ignore_compat=dict(type="bool", aliases=["ignoreCompat"]),
-        admin_state=dict(type="str", choices=list(MATCH_TRIGGER_MAPPING.keys())[2:], aliases=["adminSt"]),
-        download_state=dict(type="str", choices=list(MATCH_TRIGGER_MAPPING.keys())[2:], aliases=["downloadSt"]),
+        admin_state=dict(type="str", choices=list(MATCH_TRIGGER_MAPPING.keys())[2:], aliases=["adminst"]),
+        download_state=dict(type="str", choices=list(MATCH_TRIGGER_MAPPING.keys())[2:]),
         notify_condition=dict(type="str", choices=list(MATCH_NOTIFY_CONDITION_MAPPING.keys())),
         smu_operation=dict(type="str", choices=list(MATCH_SMU_OPERATION_MAPPING.keys())),
         smu_operation_flags=dict(type="str", choices=list(MATCH_SMU_OPERATION_FLAGS_MAPPING.keys())),
@@ -323,7 +323,7 @@ def main():
 
     state = module.params.get("state")
     name = module.params.get("name")
-    run_mode = MATCH_RUN_MODE_MAPPING.get(module.params.get("run_mode"))
+    run_mode = module.params.get("run_mode")
     graceful = aci.boolean(module.params.get("graceful"), "yes", "no")
     scheduler = module.params.get("scheduler")
     admin_state = module.params.get("admin_state")
@@ -338,6 +338,9 @@ def main():
     ignore_compat = aci.boolean(module.params.get("ignore_compat"))
     description = module.params.get("description")
     name_alias = module.params.get("name_alias")
+
+    if run_mode not in ["pauseOnlyOnFailures", "pauseNever"]:
+        run_mode = MATCH_RUN_MODE_MAPPING.get(run_mode)
 
     aci.construct_url(
         root_class=dict(
