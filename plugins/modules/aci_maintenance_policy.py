@@ -288,11 +288,13 @@ from ansible_collections.cisco.aci.plugins.module_utils.constants import (
 
 
 def main():
+    list_run_mode_choices = list(MATCH_RUN_MODE_MAPPING.keys())
+    list_run_mode_choices.extend(["pauseOnlyOnFailures", "pauseNever"])
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         name=dict(type="str", aliases=["maintenance_policy"]),  # Not required for querying all objects
-        run_mode=dict(type="str", choices=list(MATCH_RUN_MODE_MAPPING.keys()).extend(["pauseOnlyOnFailures", "pauseNever"]), aliases=["runmode"]),
+        run_mode=dict(type="str", choices=list_run_mode_choices, aliases=["runmode"]),
         graceful=dict(type="bool"),
         scheduler=dict(type="str"),
         ignore_compat=dict(type="bool", aliases=["ignoreCompat"]),
