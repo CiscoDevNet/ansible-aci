@@ -205,7 +205,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query all Global (infra) DHCP relay providers
+- name: Query all DHCP relay providers
   cisco.aci.aci_dhcp_relay_provider:
     host: apic
     username: admin
