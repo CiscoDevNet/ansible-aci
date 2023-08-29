@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2022, Tim Cragg (@timcragg)
+# Copyright: (c) 2023, Akini Ross (@akinross)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -20,6 +21,7 @@ options:
   tenant:
     description:
     - Name of an existing tenant.
+    - When tenant is not provided the module will be applied to the global (infra) policy.
     type: str
   name:
     description:
@@ -50,6 +52,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
+- Akini Ross (@akinross)
 """
 
 EXAMPLES = r"""
@@ -59,6 +62,16 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: Auto-Demo
+    name: my_dhcp_relay
+    description: via Ansible
+    state: present
+  delegate_to: localhost
+
+- name: Add a new global (infra) DHCP relay policy
+  cisco.aci.aci_dhcp_relay:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
     name: my_dhcp_relay
     description: via Ansible
     state: present
@@ -74,12 +87,31 @@ EXAMPLES = r"""
     state: absent
   delegate_to: localhost
 
+- name: Remove a global (infra) DHCP relay policy
+  cisco.aci.aci_dhcp_relay:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: my_dhcp_relay
+    state: absent
+  delegate_to: localhost
+
 - name: Query a DHCP relay policy
   cisco.aci.aci_dhcp_relay:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: Auto-Demo
+    name: my_dhcp_relay
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a global (infra) DHCP relay policy
+  cisco.aci.aci_dhcp_relay:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
     name: my_dhcp_relay
     state: query
   delegate_to: localhost
@@ -94,6 +126,16 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Query all global (infra) DHCP relay policies
+  cisco.aci.aci_dhcp_relay:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
 """
 
 RETURN = r"""
@@ -219,8 +261,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["name", "tenant"]],
-            ["state", "present", ["name", "tenant"]],
+            ["state", "absent", ["name"]],
+            ["state", "present", ["name"]],
         ],
     )
 
@@ -230,29 +272,40 @@ def main():
     tenant = module.params.get("tenant")
     child_classes = ["dhcpRsProv"]
 
-    aci = ACIModule(module)
-    aci.construct_url(
-        root_class=dict(
+    if tenant is None:
+        root_class = dict(
+            aci_class="dhcpRelayP",
+            aci_rn="infra/relayp-{0}".format(name),
+            module_object=name,
+            target_filter={"name": name},
+        )
+        subclass_1 = None
+        owner = "infra"
+    else:
+        root_class = dict(
             aci_class="fvTenant",
             aci_rn="tn-{0}".format(tenant),
             module_object=tenant,
             target_filter={"name": tenant},
-        ),
-        subclass_1=dict(
+        )
+        subclass_1 = dict(
             aci_class="dhcpRelayP",
             aci_rn="relayp-{0}".format(name),
             module_object=name,
             target_filter={"name": name},
-        ),
-        child_classes=child_classes,
-    )
+        )
+        owner = "tenant"
+
+    aci = ACIModule(module)
+
+    aci.construct_url(root_class=root_class, subclass_1=subclass_1, child_classes=child_classes)
 
     aci.get_existing()
 
     if state == "present":
         aci.payload(
             aci_class="dhcpRelayP",
-            class_config=dict(name=name, descr=description, owner="tenant"),
+            class_config=dict(name=name, descr=description, owner=owner),
         )
 
         aci.get_diff(aci_class="dhcpRelayP")
