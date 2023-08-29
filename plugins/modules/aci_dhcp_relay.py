@@ -127,7 +127,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query all global (infra) DHCP relay policies
+- name: Query all DHCP relay policies
   cisco.aci.aci_dhcp_relay:
     host: apic
     username: admin
