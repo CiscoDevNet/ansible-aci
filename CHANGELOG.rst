@@ -5,6 +5,22 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.8.0
+======
+
+Release Summary
+---------------
+
+Release v2.8.0 of the ``ansible-aci`` collection on 2023-08-29.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.7.0.
+
+
+Minor Changes
+-------------
+
+- Add missing test cases and missing attributes for some existing modules (#453)
+- Added Fabric Interface Policy Groups aci_fabric_interface_policy_group.py module
+
 v2.7.0
 ======
 
