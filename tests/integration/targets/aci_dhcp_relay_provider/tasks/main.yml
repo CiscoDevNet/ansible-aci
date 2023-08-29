@@ -1,5 +1,6 @@
 # Test code for the ACI modules
 # Copyright: (c) 2021, Tim Cragg(@timcragg)
+# Copyright: (c) 2023, Akini Ross (@akinross)
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -27,6 +28,12 @@
   aci_tenant:
     <<: *aci_info
     tenant: ansible_tenant
+    state: absent
+
+- name: Delete Global DHCP relay policy
+  cisco.aci.aci_dhcp_relay:
+    <<: *aci_info
+    name: ansible_global_dhcp_relay
     state: absent
 
 - name: Remove l2ext domain
@@ -152,6 +159,15 @@
       name: ansible_dhcp_relay
       description: Ansible DHCP Relay
       state: present
+
+  # CREATE GLOBAL DHCP RELAY
+  - name: Add a new Global DHCP relay policy
+    cisco.aci.aci_dhcp_relay:
+      <<: *aci_info
+      name: ansible_global_dhcp_relay
+      description: Ansible Global DHCP Relay
+      state: present
+    register: add_global_dhcp_relay
 
   # CREATE DHCP RELAY PROVIDERS
   - name: Add a new DHCP relay App EPG provider
@@ -361,7 +377,6 @@
       - update_dn_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.53"
       - update_dn_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
 
-
   # QUERY DHCP RELAY PROVIDERS
   - name: Query DHCP relay App EPG provider
     cisco.aci.aci_dhcp_relay_provider:
@@ -405,6 +420,13 @@
       dn: "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
       state: query
     register: query_dn_relay_provider
+  
+  - name: Query all DHCP relays in ansible_tenant
+    cisco.aci.aci_dhcp_relay_provider:
+      <<: *aci_info
+      tenant: ansible_tenant
+      state: query
+    register: query_all_relay_provider
 
   - name: Confirm DHCP relay provider query
     assert:
@@ -425,6 +447,161 @@
       - query_dn_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2]"
       - query_dn_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.53"
       - query_dn_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
+      - query_all_relay_provider is not changed
+      - query_all_relay_provider.current.0.fvTenant.children.0.dhcpRelayP.children | length >= 4 
+
+  # CREATE GLOBAL DHCP RELAY PROVIDERS
+  - name: Add a new Global DHCP relay App EPG provider without provider tenant (error)
+    cisco.aci.aci_dhcp_relay_provider:
+      <<: *aci_info
+      relay_policy: ansible_global_dhcp_relay
+      epg_type: epg
+      anp: ansible_ap
+      app_epg: ansible_epg
+      dhcp_server_addr: 10.20.30.40
+      state: present
+    ignore_errors: true
+    register: err_global_epg_relay_provider
+
+  - name: Add a new Global DHCP relay App EPG provider
+    cisco.aci.aci_dhcp_relay_provider:
+      <<: *aci_info
+      relay_policy: ansible_global_dhcp_relay
+      epg_type: epg
+      provider_tenant: ansible_tenant
+      anp: ansible_ap
+      app_epg: ansible_epg
+      dhcp_server_addr: 10.20.30.40
+      state: present
+    register: add_global_epg_relay_provider
+
+  - name: Add a new Global DHCP relay L2out provider
+    cisco.aci.aci_dhcp_relay_provider:
+      <<: *aci_info
+      relay_policy: ansible_global_dhcp_relay
+      epg_type: l2_external
+      provider_tenant: ansible_tenant
+      l2out_name: ansible_l2out
+      external_net: ansible_l2out_ext_net
+      dhcp_server_addr: 10.20.30.41
+      state: present
+    register: add_global_l2_relay_provider
+
+  - name: Add a new Global DHCP relay L3out provider
+    cisco.aci.aci_dhcp_relay_provider:
+      <<: *aci_info
+      relay_policy: ansible_global_dhcp_relay
+      epg_type: l3_external
+      provider_tenant: ansible_tenant
+      l3out_name: ansible_l3out
+      external_net: ansible_l3out_ext_net
+      dhcp_server_addr: 10.20.30.42
+      state: present
+    register: add_global_l3_relay_provider
+
+  - name: Add a new Global DHCP relay dn provider
+    cisco.aci.aci_dhcp_relay_provider:
+      <<: *aci_info
+      relay_policy: ansible_global_dhcp_relay
+      epg_type: dn
+      dn: "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
+      dhcp_server_addr: 10.20.30.43
+      state: present
+    register: add_global_dn_relay_provider
+
+  - name: Confirm Global DHCP relay provider creation
+    assert:
+      that:
+      - err_global_epg_relay_provider is failed
+      - err_global_epg_relay_provider.msg == "provider_tenant is required when epg_type is epg"
+      - add_global_epg_relay_provider is changed
+      - add_global_epg_relay_provider.current.0.dhcpRsProv.attributes.annotation == 'orchestrator:ansible'
+      - add_global_epg_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg]"
+      - add_global_epg_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.40"
+      - add_global_epg_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg"
+      - add_global_l2_relay_provider is changed
+      - add_global_l2_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay/rsprov-[uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_l2out_ext_net]"
+      - add_global_l2_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.41"
+      - add_global_l2_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_l2out_ext_net"
+      - add_global_l3_relay_provider is changed
+      - add_global_l3_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay/rsprov-[uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net]"
+      - add_global_l3_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.42"
+      - add_global_l3_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net"
+      - add_global_dn_relay_provider is changed
+      - add_global_dn_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2]"
+      - add_global_dn_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.43"
+      - add_global_dn_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
+
+  # QUERY GLOBAL DHCP RELAY PROVIDERS
+  - name: Query Global DHCP relay App EPG provider
+    cisco.aci.aci_dhcp_relay_provider:
+      <<: *aci_info
+      relay_policy: ansible_global_dhcp_relay
+      provider_tenant: ansible_tenant
+      epg_type: epg
+      anp: ansible_ap
+      app_epg: ansible_epg
+      state: query
+    register: query_global_epg_relay_provider
+
+  - name: Query Global DHCP relay L2out provider
+    cisco.aci.aci_dhcp_relay_provider:
+      <<: *aci_info
+      relay_policy: ansible_global_dhcp_relay
+      provider_tenant: ansible_tenant
+      epg_type: l2_external
+      l2out_name: ansible_l2out
+      external_net: ansible_l2out_ext_net
+      state: query
+    register: query_global_l2_relay_provider
+
+  - name: Query Global DHCP relay L3out provider
+    cisco.aci.aci_dhcp_relay_provider:
+      <<: *aci_info
+      relay_policy: ansible_global_dhcp_relay
+      provider_tenant: ansible_tenant
+      epg_type: l3_external
+      l3out_name: ansible_l3out
+      external_net: ansible_l3out_ext_net
+      state: query
+    register: query_global_l3_relay_provider
+
+  - name: Query Global DHCP relay dn provider
+    cisco.aci.aci_dhcp_relay_provider:
+      <<: *aci_info
+      relay_policy: ansible_global_dhcp_relay
+      epg_type: dn
+      dn: "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
+      state: query
+    register: query_global_dn_relay_provider
+
+  - name: Query all Global DHCP relay providers
+    cisco.aci.aci_dhcp_relay_provider:
+      <<: *aci_info
+      state: query
+    register: query_global_all_relay_provider
+
+  - name: Confirm DHCP relay provider query
+    assert:
+      that:
+      - query_global_epg_relay_provider is not changed
+      - query_global_epg_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg]"
+      - query_global_epg_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.40"
+      - query_global_epg_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg"
+      - query_global_l2_relay_provider is not changed
+      - query_global_l2_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay/rsprov-[uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_l2out_ext_net]"
+      - query_global_l2_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.41"
+      - query_global_l2_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_l2out_ext_net"
+      - query_global_l3_relay_provider is not changed
+      - query_global_l3_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay/rsprov-[uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net]"
+      - query_global_l3_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.42"
+      - query_global_l3_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net"
+      - query_global_dn_relay_provider is not changed
+      - query_global_dn_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2]"
+      - query_global_dn_relay_provider.current.0.dhcpRsProv.attributes.addr == "10.20.30.43"
+      - query_global_dn_relay_provider.current.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
+      - query_global_all_relay_provider is not changed
+      - query_global_all_relay_provider.current | length >= 8
 
   # DELETE DHCP RELAY PROVIDERS
   - name: Delete DHCP relay App EPG provider
@@ -470,7 +647,6 @@
       dn: "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
       state: absent
     register: delete_dn_relay_provider
-
 
   - name: Confirm DHCP relay provider removal
     assert:
@@ -548,11 +724,83 @@
       - delete_l3_relay_provider_again is not changed
       - delete_dn_relay_provider_again is not changed
 
+  # DELETE GLOBAL DHCP RELAY PROVIDERS
+  - name: Delete Global DHCP relay App EPG provider
+    cisco.aci.aci_dhcp_relay_provider:
+      <<: *aci_info
+      relay_policy: ansible_global_dhcp_relay
+      provider_tenant: ansible_tenant
+      epg_type: epg
+      anp: ansible_ap
+      app_epg: ansible_epg
+      state: absent
+    register: delete_global_epg_relay_provider
+
+  - name: Delete Global DHCP relay L2out provider
+    cisco.aci.aci_dhcp_relay_provider:
+      <<: *aci_info
+      relay_policy: ansible_global_dhcp_relay
+      provider_tenant: ansible_tenant
+      epg_type: l2_external
+      l2out_name: ansible_l2out
+      external_net: ansible_l2out_ext_net
+      state: absent
+    register: delete_global_l2_relay_provider
+
+  - name: Delete Global DHCP relay L3out provider
+    cisco.aci.aci_dhcp_relay_provider:
+      <<: *aci_info
+      relay_policy: ansible_global_dhcp_relay
+      provider_tenant: ansible_tenant
+      epg_type: l3_external
+      l3out_name: ansible_l3out
+      external_net: ansible_l3out_ext_net
+      state: absent
+    register: delete_global_l3_relay_provider
+
+  - name: Delete Global DHCP relay dn provider
+    cisco.aci.aci_dhcp_relay_provider:
+      <<: *aci_info
+      relay_policy: ansible_global_dhcp_relay
+      epg_type: dn
+      dn: "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
+      state: absent
+    register: delete_global_dn_relay_provider
+
+  - name: Confirm DHCP relay provider removal
+    assert:
+      that:
+      - delete_global_epg_relay_provider is changed
+      - delete_global_epg_relay_provider.current == []
+      - delete_global_epg_relay_provider.previous.0.dhcpRsProv.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg]"
+      - delete_global_epg_relay_provider.previous.0.dhcpRsProv.attributes.addr == "10.20.30.40"
+      - delete_global_epg_relay_provider.previous.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg"
+      - delete_global_l2_relay_provider is changed
+      - delete_global_l2_relay_provider.current == []
+      - delete_global_l2_relay_provider.previous.0.dhcpRsProv.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay/rsprov-[uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_l2out_ext_net]"
+      - delete_global_l2_relay_provider.previous.0.dhcpRsProv.attributes.addr == "10.20.30.41"
+      - delete_global_l2_relay_provider.previous.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_l2out_ext_net"
+      - delete_global_l3_relay_provider is changed
+      - delete_global_l3_relay_provider.current == []
+      - delete_global_l3_relay_provider.previous.0.dhcpRsProv.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay/rsprov-[uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net]"
+      - delete_global_l3_relay_provider.previous.0.dhcpRsProv.attributes.addr == "10.20.30.42"
+      - delete_global_l3_relay_provider.previous.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_l3out_ext_net"
+      - delete_global_dn_relay_provider is changed
+      - delete_global_dn_relay_provider.previous.0.dhcpRsProv.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2]"
+      - delete_global_dn_relay_provider.previous.0.dhcpRsProv.attributes.addr == "10.20.30.43"
+      - delete_global_dn_relay_provider.previous.0.dhcpRsProv.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg_2"
+
   # CLEAN ENVIRONMENT AGAIN
   - name: Remove the ansible_tenant
     aci_tenant:
       <<: *aci_info
       tenant: ansible_tenant
+      state: absent
+
+  - name: Delete Global DHCP relay policy
+    cisco.aci.aci_dhcp_relay:
+      <<: *aci_info
+      name: ansible_global_dhcp_relay
       state: absent
 
   - name: Remove l2ext domain
