@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -32,6 +33,35 @@ options:
     - The APIC defaults to C(f) when unset during creation.
     type: str
     choices: [ f, np ]
+  auto_max_speed:
+    description:
+    - The maximum automatic CPU or port speed.
+    - The APIC defaults to C(32G) when unset during creation.
+    type: str
+    choices: [ 2G, 4G, 8G, 16G, 32G ]
+  fill_pattern:
+    description:
+    - Fill Pattern for native FC ports.
+    - The APIC defaults to C(IDLE) when unset during creation.
+    type: str
+    choices: [ arbff, idle ]
+  buffer_credits:
+    description:
+    - Receive buffer credits for native FC ports.
+    - The APIC defaults to C(64) when unset during creation.
+    type: int
+  speed:
+    description:
+    - The CPU or port speed.
+    - The APIC defaults to C(auto) when unset during creation.
+    type: str
+    choices: [ auto, unknown, 2G, 4G, 8G, 16G, 32G ]
+  trunk_mode:
+    description:
+    - Trunking on/off for native FC ports.
+    - The APIC defaults to C(trunk-off) when unset during creation.
+    type: str
+    choices: [ auto, trunk-off, trunk-on, un-init ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -54,6 +84,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
@@ -202,6 +233,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_FC_FILL_PATTERN_MAPPING, INTERFACE_POLICY_FC_SPEED_LIST
 
 
 def main():
@@ -212,6 +244,11 @@ def main():
         fc_policy=dict(type="str", aliases=["name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         port_mode=dict(type="str", choices=["f", "np"]),  # No default provided on purpose
+        auto_max_speed=dict(type="str", choices=INTERFACE_POLICY_FC_SPEED_LIST[2:]),
+        fill_pattern=dict(type="str", choices=list(MATCH_FC_FILL_PATTERN_MAPPING.keys())),
+        buffer_credits=dict(type="int"),
+        speed=dict(type="str", choices=INTERFACE_POLICY_FC_SPEED_LIST),
+        trunk_mode=dict(type="str", choices=["auto", "trunk-off", "trunk-on", "un-init"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
@@ -227,6 +264,11 @@ def main():
 
     fc_policy = module.params.get("fc_policy")
     port_mode = module.params.get("port_mode")
+    auto_max_speed = module.params.get("auto_max_speed")
+    fill_pattern = MATCH_FC_FILL_PATTERN_MAPPING.get(module.params.get("fill_pattern"))
+    buffer_credits = module.params.get("buffer_credits")
+    speed = module.params.get("speed")
+    trunk_mode = module.params.get("trunk_mode")
     description = module.params.get("description")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
@@ -250,6 +292,11 @@ def main():
                 name=fc_policy,
                 descr=description,
                 portMode=port_mode,
+                automaxspeed=auto_max_speed,
+                fillPattern=fill_pattern,
+                rxBBCredit=buffer_credits,
+                speed=speed,
+                trunkMode=trunk_mode,
                 nameAlias=name_alias,
             ),
         )

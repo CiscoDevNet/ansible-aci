@@ -1,0 +1,160 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # Clean Environment
+  - name: Ensure first fc interface policy does not exist
+    aci_interface_policy_fc: &aci_interface_policy_fc_absent
+      <<: *aci_info
+      name: anstest_policy
+      description: test for fc interface policy
+      port_mode: np
+      auto_max_speed: 16G
+      fill_pattern: arbff
+      buffer_credits: 32
+      speed: 8G
+      trunk_mode: trunk-on
+      state: absent
+
+  - name: Ensure second fc interface policy does not exist
+    aci_interface_policy_fc: &aci_interface_policy_fc_2_absent
+      <<: *aci_info
+      name: anstest_policy_2
+      state: absent
+
+  - name: Create first fc interface policy (check_mode)
+    aci_interface_policy_fc: &aci_interface_policy_fc_present
+      <<: *aci_interface_policy_fc_absent
+      state: present
+    check_mode: true
+    register: cm_add_interface_policy_fc_1
+
+  - name: Create first fc interface policy (normal_mode)
+    aci_interface_policy_fc:
+      <<: *aci_interface_policy_fc_present
+    register: nm_add_interface_policy_fc_1
+
+  - name: Create first fc interface policy again - testing idempotency
+    aci_interface_policy_fc:
+      <<: *aci_interface_policy_fc_present
+    register: idempotency_add_interface_policy_fc_1
+
+  - name: Create second fc interface policy
+    aci_interface_policy_fc: &aci_interface_policy_fc_2_present
+      <<: *aci_interface_policy_fc_2_absent
+      state: present
+    register: nm_add_interface_policy_fc_2
+
+  - name: Asserts for creation tasks
+    assert:
+      that:
+        - cm_add_interface_policy_fc_1 is changed
+        - cm_add_interface_policy_fc_1.previous == []
+        - cm_add_interface_policy_fc_1.current == []
+        - nm_add_interface_policy_fc_1 is changed
+        - nm_add_interface_policy_fc_1.current.0.fcIfPol.attributes.name == "anstest_policy"
+        - nm_add_interface_policy_fc_1.current.0.fcIfPol.attributes.portMode == "np"
+        - nm_add_interface_policy_fc_1.current.0.fcIfPol.attributes.automaxspeed == "16G"
+        - nm_add_interface_policy_fc_1.current.0.fcIfPol.attributes.fillPattern == "ARBFF"
+        - nm_add_interface_policy_fc_1.current.0.fcIfPol.attributes.rxBBCredit == "32"
+        - nm_add_interface_policy_fc_1.current.0.fcIfPol.attributes.speed == "8G"
+        - nm_add_interface_policy_fc_1.current.0.fcIfPol.attributes.trunkMode == "trunk-on"
+        - idempotency_add_interface_policy_fc_1 is not changed
+        - nm_add_interface_policy_fc_2 is changed
+        - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.name == "anstest_policy_2"
+        - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.portMode == "f"
+        - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.automaxspeed == "32G"
+        - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.fillPattern == "IDLE"
+        - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.rxBBCredit == "64"
+        - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.speed == "auto"
+        - nm_add_interface_policy_fc_2.current.0.fcIfPol.attributes.trunkMode == "trunk-off"
+        - idempotency_add_interface_policy_fc_1 is not changed
+
+  - name: Query all fc interface policies
+    aci_interface_policy_fc:
+      <<: *aci_info
+      state: query
+    register: query_all_interface_policy_fc
+
+  - name: Query first fc interface policy
+    aci_interface_policy_fc:
+      <<: *aci_interface_policy_fc_present
+      state: query
+    register: query_first_interface_policy_fc
+
+  - name: Asserts for query tasks
+    assert:
+      that:
+        - query_all_interface_policy_fc is not changed
+        - query_all_interface_policy_fc.current | length >= 2
+        - '"class/fcIfPol.json" in query_all_interface_policy_fc.url'
+        - query_first_interface_policy_fc is not changed
+        - query_first_interface_policy_fc.current.0.fcIfPol.attributes.name == "anstest_policy"
+        - query_first_interface_policy_fc.current.0.fcIfPol.attributes.portMode == "np"
+        - query_first_interface_policy_fc.current.0.fcIfPol.attributes.automaxspeed == "16G"
+        - query_first_interface_policy_fc.current.0.fcIfPol.attributes.fillPattern == "ARBFF"
+        - query_first_interface_policy_fc.current.0.fcIfPol.attributes.rxBBCredit == "32"
+        - query_first_interface_policy_fc.current.0.fcIfPol.attributes.speed == "8G"
+        - query_first_interface_policy_fc.current.0.fcIfPol.attributes.trunkMode == "trunk-on"
+
+  - name: Delete first fc interface policy (check_mode)
+    aci_interface_policy_fc:
+      <<: *aci_interface_policy_fc_present
+      state: absent
+    check_mode: true
+    register: cm_delete_interface_policy_fc_1
+
+  - name: Delete first fc interface policy (normal_mode)
+    aci_interface_policy_fc:
+      <<: *aci_interface_policy_fc_present
+      state: absent
+    register: nm_delete_interface_policy_fc_1
+
+  - name: Delete first fc interface policy again - testing idempotency
+    aci_interface_policy_fc:
+      <<: *aci_interface_policy_fc_present
+      state: absent
+    register: idempotency_delete_interface_policy_fc_1
+
+  - name: Delete second fc interface policy (normal_mode)
+    aci_interface_policy_fc:
+      <<: *aci_interface_policy_fc_2_present
+      state: absent
+    register: nm_delete_interface_policy_fc_2
+
+  - name: Asserts for deletion tasks
+    assert:
+      that:
+        - cm_delete_interface_policy_fc_1 is changed
+        - cm_delete_interface_policy_fc_1.proposed == {}
+        - nm_delete_interface_policy_fc_1 is changed
+        - nm_delete_interface_policy_fc_1.previous != []
+        - nm_delete_interface_policy_fc_1.current == []
+        - idempotency_delete_interface_policy_fc_1 is not changed
+        - idempotency_delete_interface_policy_fc_1.previous == []
+        - nm_delete_interface_policy_fc_2 is changed
+        - nm_delete_interface_policy_fc_2.previous != []
+        - nm_delete_interface_policy_fc_2.current == []

@@ -253,7 +253,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, ac
 
 BOUNCE_TRIG_MAPPING = dict(
     coop="protocol",
-    rarp="rarp-flood",
+    flood="rarp-flood",
 )
 
 
@@ -308,7 +308,7 @@ def main():
     if move_frequency == 0:
         move_frequency = "none"
     remote_ep_interval = module.params.get("remote_ep_interval")
-    if remote_ep_interval is not None and remote_ep_interval not in range(120, 65536):
+    if remote_ep_interval is not None and remote_ep_interval != 0 and remote_ep_interval not in range(120, 65536):
         module.fail_json(msg="The remote_ep_interval must be a value of 0 or between 120 and 65535")
     if remote_ep_interval == 0:
         remote_ep_interval = "infinite"

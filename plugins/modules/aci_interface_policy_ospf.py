@@ -31,7 +31,7 @@ options:
     aliases: [ ospf_interface, name ]
   description:
     description:
-    - The description for the OSPF interface.
+    - The description of the OSPF interface.
     type: str
     aliases: [ descr ]
   network_type:

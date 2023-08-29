@@ -1,5 +1,7 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -8,43 +10,61 @@ __metaclass__ = type
 
 ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
-DOCUMENTATION = """
+DOCUMENTATION = r"""
 ---
 module: aci_firmware_group
-
-short_description: This module creates a firmware group
-
-
+short_description: Manage firmware groups (firmware:FwGrp)
 description:
-    - This module creates a firmware group, so that you can apply firmware policy to nodes.
+- This module creates a firmware group, so that you can apply firmware policy to nodes.
 options:
     group:
         description:
-            - This the name of the firmware group
+        - Name of the firmware group.
         type: str
-    firmwarepol:
+    policy:
         description:
-            - This is the name of the firmware policy, which was create by aci_firmware_policy. It is important that
-            - you use the same name as the policy created with aci_firmware_policy
+        - Name of the firmware policy
+        - It is important that you use the same name as the policy created with M(cisco.aci.aci_firmware_policy).
         type: str
+        aliases: [ firmwarepol ]
+    type_group:
+        description:
+        - Type of the firmware group.
+        - The APIC defaults to C(range) when unset during creation.
+        type: str
+        choices: [ all, all_in_pod, range ]
+    description:
+        description:
+        - Description of the firmware group.
+        type: str
+        aliases: [ descr ]
     state:
         description:
-            - Use C(present) or C(absent) for adding or removing.
-            - Use C(query) for listing an object or multiple objects.
+        - Use C(present) or C(absent) for adding or removing.
+        - Use C(query) for listing an object or multiple objects.
         type: str
         default: present
         choices: [ absent, present, query ]
     name_alias:
         description:
-            - The alias for the current object. This relates to the nameAlias field in ACI.
+        - The alias for the current object. This relates to the nameAlias field in ACI.
         type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 - cisco.aci.owner
 
+notes:
+- The C(policy) must exist before using this module in your playbook.
+- The M(cisco.aci.aci_firmware_policy) module can be used for this.
+seealso:
+- module: cisco.aci.aci_firmware_policy
+- name: APIC Management Information Model reference
+  description: More information about the internal APIC class B(firmware:FwGrp).
+  link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
     - Steven Gerhart (@sgerhart)
+    - Gaspard Micol (@gmicol)
 """
 
 
@@ -55,7 +75,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     group: fmgroup
-    firmwarepol: fmpolicy1
+    policy: fmpolicy1
     state: present
   delegate_to: localhost
 
@@ -88,7 +108,7 @@ EXAMPLES = r"""
   register: query_result
 """
 
-RETURN = """
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -195,6 +215,7 @@ url:
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_TYPE_GROUP_MAPPING
 
 
 def main():
@@ -203,7 +224,9 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         group=dict(type="str"),  # Not required for querying all objects
-        firmwarepol=dict(type="str"),  # Not required for querying all objects
+        policy=dict(type="str", aliases=["firmwarepol"]),  # Not required for querying all objects
+        type_group=dict(type="str", choices=list(MATCH_TYPE_GROUP_MAPPING.keys())),
+        description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
@@ -213,13 +236,15 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["group"]],
-            ["state", "present", ["group", "firmwarepol"]],
+            ["state", "present", ["group", "policy"]],
         ],
     )
 
     state = module.params.get("state")
     group = module.params.get("group")
-    firmwarepol = module.params.get("firmwarepol")
+    policy = module.params.get("policy")
+    type_group = MATCH_TYPE_GROUP_MAPPING.get(module.params.get("type_group"))
+    description = module.params.get("description")
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
@@ -240,13 +265,15 @@ def main():
             aci_class="firmwareFwGrp",
             class_config=dict(
                 name=group,
+                descr=description,
+                type=type_group,
                 nameAlias=name_alias,
             ),
             child_configs=[
                 dict(
                     firmwareRsFwgrpp=dict(
                         attributes=dict(
-                            tnFirmwareFwPName=firmwarepol,
+                            tnFirmwareFwPName=policy,
                         ),
                     ),
                 ),

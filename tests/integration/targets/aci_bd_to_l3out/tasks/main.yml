@@ -1,0 +1,202 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info
+    state: absent
+    tenant: ansible_test
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Create tenant
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_tenant_absent
+      state: present
+
+  - name: Create vrf
+    cisco.aci.aci_vrf: &aci_vrf_present
+      <<: *aci_tenant_present
+      vrf: anstest
+
+  - name: Create first L3out
+    cisco.aci.aci_l3out: &aci_l3_out_present
+      <<: *aci_vrf_present
+      l3out: ansible_l3out
+      domain: ansible_dom
+      state: present
+
+  - name: Create second L3out
+    cisco.aci.aci_l3out: &aci_l3_out_present_2
+      <<: *aci_vrf_present
+      l3out: ansible_l3out_2
+      domain: ansible_dom
+      state: present
+
+  - name: Create first bd
+    cisco.aci.aci_bd: &aci_bd_present
+      <<: *aci_tenant_present
+      bd: anstest
+
+  - name: Create second bd
+    cisco.aci.aci_bd: &aci_bd_present_2
+      <<: *aci_tenant_present
+      bd: anstest_2
+
+  - name: Ensure first binding bd_to_l3out does not exist
+    cisco.aci.aci_bd_to_l3out: &aci_bd_to_l3out_absent
+      <<: *aci_tenant_present
+      bd: anstest
+      l3out: ansible_l3out
+      state: absent
+
+  - name: Ensure second binding bd_to_l3out does not exist
+    cisco.aci.aci_bd_to_l3out: &aci_bd_to_l3out_absent_2
+      <<: *aci_tenant_present
+      bd: anstest_2
+      l3out: ansible_l3out_2
+      state: absent
+
+  - name: bind bd to L3out - first binding (check_mode)
+    cisco.aci.aci_bd_to_l3out: &aci_bd_to_l3out_present
+      <<: *aci_bd_to_l3out_absent
+      state: present
+    check_mode: true
+    register: cm_bd_to_l3out
+
+  - name: bind bd to L3out - first binding (normal_mode)
+    cisco.aci.aci_bd_to_l3out:
+      <<: *aci_bd_to_l3out_present
+    register: nm_bd_to_l3out
+
+  - name: bind bd to L3out again - testing idempotency
+    cisco.aci.aci_bd_to_l3out:
+      <<: *aci_bd_to_l3out_present
+    register: bd_to_l3out_idempotency
+
+  - name: bind bd to L3out - second binding
+    cisco.aci.aci_bd_to_l3out: &aci_bd_to_l3out_present_2
+      <<: *aci_bd_to_l3out_absent_2
+      state: present
+    register: nm_bd_to_l3out_2
+
+  - name: asserts for creation tasks
+    assert:
+      that:
+        - cm_bd_to_l3out is changed
+        - cm_bd_to_l3out.previous == []
+        - cm_bd_to_l3out.current == []
+        - nm_bd_to_l3out is changed
+        - nm_bd_to_l3out.current.0.fvRsBDToOut.attributes.dn == "uni/tn-ansible_test/BD-anstest/rsBDToOut-ansible_l3out"
+        - nm_bd_to_l3out.current.0.fvRsBDToOut.attributes.tnL3extOutName == "ansible_l3out"
+        - bd_to_l3out_idempotency is not changed
+        - nm_bd_to_l3out_2 is changed
+        - nm_bd_to_l3out_2.current.0.fvRsBDToOut.attributes.dn == "uni/tn-ansible_test/BD-anstest_2/rsBDToOut-ansible_l3out_2"
+        - nm_bd_to_l3out_2.current.0.fvRsBDToOut.attributes.tnL3extOutName == "ansible_l3out_2"
+
+  - name: Query all bds bound to l3outs
+    cisco.aci.aci_bd_to_l3out:
+      <<: *aci_tenant_present
+      state: query
+    register: query_all_bd_to_l3out
+
+  - name: Query first bd bound to first l3out
+    cisco.aci.aci_bd_to_l3out:
+      <<: *aci_bd_to_l3out_present
+      state: query
+    register: query_first_bd_to_l3out
+
+  - name: asserts query tasks
+    assert:
+      that:
+        - query_all_bd_to_l3out is not changed
+        - '"fvRsBDToOut" in query_all_bd_to_l3out.filter_string'
+        - query_all_bd_to_l3out.current.0.fvTenant.children | length >= 2
+        - query_all_bd_to_l3out.current.0.fvTenant.children.0.fvBD.attributes.name == "anstest_2"
+        - query_all_bd_to_l3out.current.0.fvTenant.children.0.fvBD.children.0.fvRsBDToOut.attributes.tRn == "out-ansible_l3out_2"
+        - query_all_bd_to_l3out.current.0.fvTenant.children.1.fvBD.attributes.name == "anstest"
+        - query_all_bd_to_l3out.current.0.fvTenant.children.1.fvBD.children.0.fvRsBDToOut.attributes.tRn == "out-ansible_l3out"
+        - query_first_bd_to_l3out is not changed
+        - '"tn-ansible_test/BD-anstest/rsBDToOut-ansible_l3out.json" in query_first_bd_to_l3out.url'
+
+  - name: unbind bd to l3out - first binding (check_mode)
+    cisco.aci.aci_bd_to_l3out:
+      <<: *aci_bd_to_l3out_present
+      state: absent
+    check_mode: true
+    register: cm_unbind_bd_to_l3out
+  
+  - name: unbind bd to l3out - first binding (normal_mode)
+    cisco.aci.aci_bd_to_l3out:
+      <<: *aci_bd_to_l3out_present
+      state: absent
+    register: nm_unbind_bd_to_l3out
+
+  - name: unbind bd to l3out again - testing idempotency
+    cisco.aci.aci_bd_to_l3out:
+      <<: *aci_bd_to_l3out_present
+      state: absent
+    register: unbind_bd_to_l3out_idempotency
+
+  - name: unbind bd to l3out - second binding
+    cisco.aci.aci_bd_to_l3out:
+      <<: *aci_bd_to_l3out_present_2
+      state: absent
+    register: nm_unbind_bd_to_l3out_2
+
+  - name: asserts for deletion tasks
+    assert:
+      that:
+        - cm_unbind_bd_to_l3out is changed
+        - cm_unbind_bd_to_l3out.proposed == {}
+        - nm_unbind_bd_to_l3out is changed
+        - nm_unbind_bd_to_l3out.previous != []
+        - nm_unbind_bd_to_l3out.method == "DELETE"
+        - unbind_bd_to_l3out_idempotency is not changed
+        - unbind_bd_to_l3out_idempotency.previous == []
+        - nm_unbind_bd_to_l3out_2 is changed
+        - nm_unbind_bd_to_l3out_2.previous != []
+        - nm_unbind_bd_to_l3out_2.method == "DELETE"
+
+  - name: delete bd - cleanup before ending tests
+    cisco.aci.aci_bd:
+      <<: *aci_bd_present
+      state: absent
+
+  - name: delete l3out - cleanup before ending tests
+    cisco.aci.aci_l3out:
+      <<: *aci_l3_out_present
+      state: absent
+
+  - name: delete vrf - cleanup before ending tests
+    cisco.aci.aci_vrf:
+      <<: *aci_vrf_present
+      state: absent
+
+  - name: delete tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent

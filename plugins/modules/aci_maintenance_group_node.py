@@ -1,5 +1,7 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_maintenance_group_node
-short_description: Manage maintenance group nodes
+short_description: Manage maintenance group nodes (fabric:NodeBlk)
 description:
 - Manage maintenance group nodes
 options:
@@ -22,7 +24,7 @@ options:
   node:
     description:
     - The node to be added to the maintenance group.
-    - The value equals the nodeid.
+    - The value equals the NodeID.
     type: str
   state:
     description:
@@ -39,8 +41,14 @@ extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
+seealso:
+- module: cisco.aci.aci_maintenance_group
+- name: APIC Management Information Model reference
+  description: More information about the internal APIC class B(fabric:NodeBlk).
+  link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Steven Gerhart (@sgerhart)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
@@ -218,6 +226,9 @@ def main():
     group = module.params.get("group")
     node = module.params.get("node")
     name_alias = module.params.get("name_alias")
+    block_name = None
+    if node is not None:
+        block_name = "blk{0}-{0}".format(node)
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -230,7 +241,7 @@ def main():
         subclass_1=dict(
             aci_class="fabricNodeBlk",
             aci_rn="nodeblk-blk{0}-{0}".format(node),
-            target_filter={"name": "blk{0}-{0}".format(node)},
+            target_filter={"name": block_name},
             module_object=node,
         ),
     )

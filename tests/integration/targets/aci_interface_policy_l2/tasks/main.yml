@@ -1,0 +1,147 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # Clean Environment
+  - name: Ensure first l2 interface policy does not exist
+    aci_interface_policy_l2: &aci_interface_policy_l2_absent
+      <<: *aci_info
+      name: anstest_policy
+      description: test for l2 interface policy
+      vlan_scope: portlocal
+      qinq: core
+      vepa: true
+      state: absent
+
+  - name: Ensure second l2 interface policy does not exist
+    aci_interface_policy_l2: &aci_interface_policy_l2_2_absent
+      <<: *aci_info
+      name: anstest_policy_2
+      state: absent
+
+  - name: Create first l2 interface policy (check_mode)
+    aci_interface_policy_l2: &aci_interface_policy_l2_present
+      <<: *aci_interface_policy_l2_absent
+      state: present
+    check_mode: true
+    register: cm_add_interface_policy_l2_1
+
+  - name: Create first l2 interface policy (normal_mode)
+    aci_interface_policy_l2:
+      <<: *aci_interface_policy_l2_present
+    register: nm_add_interface_policy_l2_1
+
+  - name: Create first l2 interface policy again - testing idempotency
+    aci_interface_policy_l2:
+      <<: *aci_interface_policy_l2_present
+    register: idempotency_add_interface_policy_l2_1
+
+  - name: Create second l2 interface policy
+    aci_interface_policy_l2: &aci_interface_policy_l2_2_present
+      <<: *aci_interface_policy_l2_2_absent
+      state: present
+    register: nm_add_interface_policy_l2_2
+
+  - name: Asserts for creation tasks
+    assert:
+      that:
+        - cm_add_interface_policy_l2_1 is changed
+        - cm_add_interface_policy_l2_1.previous == []
+        - cm_add_interface_policy_l2_1.current == []
+        - nm_add_interface_policy_l2_1 is changed
+        - nm_add_interface_policy_l2_1.current.0.l2IfPol.attributes.name == "anstest_policy"
+        - nm_add_interface_policy_l2_1.current.0.l2IfPol.attributes.vlanScope == "portlocal"
+        - nm_add_interface_policy_l2_1.current.0.l2IfPol.attributes.qinq == "corePort"
+        - nm_add_interface_policy_l2_1.current.0.l2IfPol.attributes.vepa == "enabled"
+        - idempotency_add_interface_policy_l2_1 is not changed
+        - nm_add_interface_policy_l2_2 is changed
+        - nm_add_interface_policy_l2_2.current.0.l2IfPol.attributes.name == "anstest_policy_2"
+        - nm_add_interface_policy_l2_2.current.0.l2IfPol.attributes.vlanScope == "global"
+        - nm_add_interface_policy_l2_2.current.0.l2IfPol.attributes.qinq == "disabled"
+        - nm_add_interface_policy_l2_2.current.0.l2IfPol.attributes.vepa == "disabled"
+
+  - name: Query all l2 interface policies
+    aci_interface_policy_l2:
+      <<: *aci_info
+      state: query
+    register: query_all_interface_policy_l2
+
+  - name: Query first l2 interface policy
+    aci_interface_policy_l2:
+      <<: *aci_interface_policy_l2_present
+      state: query
+    register: query_first_interface_policy_l2
+
+  - name: Asserts for query tasks
+    assert:
+      that:
+        - query_all_interface_policy_l2 is not changed
+        - query_all_interface_policy_l2.current | length >= 2
+        - '"class/l2IfPol.json" in query_all_interface_policy_l2.url'
+        - query_first_interface_policy_l2 is not changed
+        - query_first_interface_policy_l2.current.0.l2IfPol.attributes.name == "anstest_policy"
+        - query_first_interface_policy_l2.current.0.l2IfPol.attributes.vlanScope == "portlocal"
+        - query_first_interface_policy_l2.current.0.l2IfPol.attributes.qinq == "corePort"
+        - query_first_interface_policy_l2.current.0.l2IfPol.attributes.vepa == "enabled"
+
+  - name: Delete first l2 interface policy (check_mode)
+    aci_interface_policy_l2:
+      <<: *aci_interface_policy_l2_present
+      state: absent
+    check_mode: true
+    register: cm_delete_interface_policy_l2_1
+
+  - name: Delete first l2 interface policy (normal_mode)
+    aci_interface_policy_l2:
+      <<: *aci_interface_policy_l2_present
+      state: absent
+    register: nm_delete_interface_policy_l2_1
+
+  - name: Delete first l2 interface policy again - testing idempotency
+    aci_interface_policy_l2:
+      <<: *aci_interface_policy_l2_present
+      state: absent
+    register: idempotency_delete_interface_policy_l2_1
+
+  - name: Delete second l2 interface policy (normal_mode)
+    aci_interface_policy_l2:
+      <<: *aci_interface_policy_l2_2_present
+      state: absent
+    register: nm_delete_interface_policy_l2_2
+
+  - name: Asserts for deletion tasks
+    assert:
+      that:
+        - cm_delete_interface_policy_l2_1 is changed
+        - cm_delete_interface_policy_l2_1.proposed == {}
+        - nm_delete_interface_policy_l2_1 is changed
+        - nm_delete_interface_policy_l2_1.previous != []
+        - nm_delete_interface_policy_l2_1.current == []
+        - idempotency_delete_interface_policy_l2_1 is not changed
+        - idempotency_delete_interface_policy_l2_1.previous == []
+        - nm_delete_interface_policy_l2_2 is changed
+        - nm_delete_interface_policy_l2_2.previous != []
+        - nm_delete_interface_policy_l2_2.current == []

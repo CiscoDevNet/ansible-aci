@@ -1,0 +1,174 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # Clean Environment
+  - name: Create Scheduler
+    aci_fabric_scheduler: &aci_fabric_scheduler_present
+      <<: *aci_info
+      name: anstest_scheduler
+      state: present
+
+  - name: Create maintenance policy
+    aci_maintenance_policy: &aci_maintenance_policy_present
+      <<: *aci_info
+      name: anstest_policy
+      scheduler: anstest_scheduler
+      state: present
+
+  - name: Create maintenance groupe
+    aci_maintenance_group: &aci_maintenance_group_present
+      <<: *aci_info
+      group: anstest_group
+      policy: anstest_policy
+      state: present
+
+  - name: Ensure first maintenance group node does not exist
+    aci_maintenance_group_node: &aci_maintenance_group_node_absent
+      <<: *aci_info 
+      group: anstest_group
+      node: 1001
+      state: absent
+
+  - name: Ensure second maintenance group node does not exist
+    aci_maintenance_group_node: &aci_maintenance_group_node_2_absent
+      <<: *aci_info 
+      group: anstest_group
+      node: 1002
+      state: absent
+
+  - name: Create first maintenance group node (check_mode)
+    aci_maintenance_group_node: &aci_maintenance_group_node_present
+      <<: *aci_maintenance_group_node_absent
+      state: present
+    check_mode: true
+    register: cm_add_maintenance_group_node_1
+
+  - name: Create first maintenance group node (normal_mode)
+    aci_maintenance_group_node:
+      <<: *aci_maintenance_group_node_present
+    register: nm_add_maintenance_group_node_1
+
+  - name: Create first maintenance group node again - testing idempotency
+    aci_maintenance_group_node:
+      <<: *aci_maintenance_group_node_present
+    register: idempotency_add_maintenance_group_node_1
+
+  - name: Create second maintenance group node
+    aci_maintenance_group_node: &aci_maintenance_group_node_2_present
+      <<: *aci_maintenance_group_node_2_absent
+      state: present
+    register: nm_add_maintenance_group_node_2
+
+  - name: Asserts for creation tasks
+    assert:
+      that:
+        - cm_add_maintenance_group_node_1 is changed
+        - cm_add_maintenance_group_node_1.previous == []
+        - cm_add_maintenance_group_node_1.current == []
+        - nm_add_maintenance_group_node_1 is changed
+        - nm_add_maintenance_group_node_1.current.0.fabricNodeBlk.attributes.from_ == "1001"
+        - nm_add_maintenance_group_node_1.current.0.fabricNodeBlk.attributes.to_ == "1001"
+        - idempotency_add_maintenance_group_node_1 is not changed
+        - nm_add_maintenance_group_node_2 is changed
+        - nm_add_maintenance_group_node_2.current.0.fabricNodeBlk.attributes.from_ == "1002"
+        - nm_add_maintenance_group_node_2.current.0.fabricNodeBlk.attributes.to_ == "1002"
+
+
+  - name: Query all maintenance group nodes
+    aci_maintenance_group_node:
+      <<: *aci_info
+      state: query
+    register: query_all_maintenance_group_node
+
+  - name: Query first maintenance group nnode
+    aci_maintenance_group_node:
+      <<: *aci_maintenance_group_node_present
+      state: query
+    register: query_first_maintenance_group_node
+
+  - name: Asserts for query tasks
+    assert:
+      that:
+        - query_all_maintenance_group_node is not changed
+        - query_all_maintenance_group_node.current | length >= 2
+        - query_first_maintenance_group_node is not changed
+        - query_first_maintenance_group_node.current.0.fabricNodeBlk.attributes.from_ == "1001"
+        - query_first_maintenance_group_node.current.0.fabricNodeBlk.attributes.to_ == "1001"
+
+  - name: Delete first maintenance group (check_mode)
+    aci_maintenance_group_node:
+      <<: *aci_maintenance_group_node_present
+      state: absent
+    check_mode: true
+    register: cm_delete_maintenance_group_node_1
+
+  - name: Delete first maintenance group (normal_mode)
+    aci_maintenance_group_node:
+      <<: *aci_maintenance_group_node_present
+      state: absent
+    register: nm_delete_maintenance_group_node_1
+
+  - name: Delete first maintenance group again - testing idempotency
+    aci_maintenance_group_node:
+      <<: *aci_maintenance_group_node_present
+      state: absent
+    register: idempotency_delete_maintenance_group_1
+
+  - name: Delete second maintenance group (normal_mode)
+    aci_maintenance_group_node:
+      <<: *aci_maintenance_group_node_2_present
+      state: absent
+    register: nm_delete_maintenance_group_node_2
+
+  - name: Asserts for deletion tasks
+    assert:
+      that:
+        - cm_delete_maintenance_group_node_1 is changed
+        - cm_delete_maintenance_group_node_1.proposed == {}
+        - nm_delete_maintenance_group_node_1 is changed
+        - nm_delete_maintenance_group_node_1.previous != []
+        - nm_delete_maintenance_group_node_1.current == []
+        - idempotency_delete_maintenance_group_1 is not changed
+        - idempotency_delete_maintenance_group_1.previous == []
+        - nm_delete_maintenance_group_node_2 is changed
+        - nm_delete_maintenance_group_node_2.previous != []
+        - nm_delete_maintenance_group_node_2.current == []
+  
+  - name: Delete maintenance group - clean up the environment
+    aci_maintenance_group:
+      <<: *aci_maintenance_group_present
+      state: absent
+
+  - name: Delete maintenance policy - clean up the environment
+    aci_maintenance_policy:
+      <<: *aci_maintenance_policy_present
+      state: absent
+
+  - name: Delete scheduler - clean up the environment
+    aci_fabric_scheduler:
+      <<: *aci_fabric_scheduler_present
+      state: absent

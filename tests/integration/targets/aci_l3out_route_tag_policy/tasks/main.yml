@@ -1,0 +1,149 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: info
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Create tenant for tests
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      state: present
+      tenant: ansible_tenant
+  
+  - name: Create first l3out route tag policy (check_mode)
+    cisco.aci.aci_l3out_route_tag_policy: &aci_rtp_present
+      <<: *aci_tenant_present
+      rtp: anstest
+      description: rtp test
+      tag: 1000
+      state: present
+    check_mode: true
+    register: cm_add_rtp
+
+  - name: Create first l3out route tag policy (normal_mode)
+    cisco.aci.aci_l3out_route_tag_policy:
+      <<: *aci_rtp_present
+    register: nm_add_rtp
+
+  - name: Create first l3out route tag policy again - testing idempotency
+    cisco.aci.aci_l3out_route_tag_policy:
+      <<: *aci_rtp_present
+    register: add_rtp_idempotency
+
+  - name: Create second l3out route tag policy
+    cisco.aci.aci_l3out_route_tag_policy: &aci_rtp_present_2
+      <<: *aci_tenant_present
+      rtp: anstest_2
+      state: present
+    register: nm_add_rtp_2
+
+  - name: asserts for creation tasks
+    assert:
+      that:
+        - cm_add_rtp is changed
+        - cm_add_rtp.previous == []
+        - cm_add_rtp.current == []
+        - nm_add_rtp is changed
+        - nm_add_rtp.current.0.l3extRouteTagPol.attributes.name == "anstest"
+        - nm_add_rtp.current.0.l3extRouteTagPol.attributes.descr == "rtp test"
+        - nm_add_rtp.current.0.l3extRouteTagPol.attributes.tag == "1000"
+        - add_rtp_idempotency is not changed
+        - nm_add_rtp_2 is changed
+        - nm_add_rtp_2.current.0.l3extRouteTagPol.attributes.name == "anstest_2"
+        - nm_add_rtp_2.current.0.l3extRouteTagPol.attributes.tag == "4294967295"
+
+  - name: Query all l3out route tag policies
+    cisco.aci.aci_l3out_route_tag_policy:
+      <<: *aci_tenant_present
+      state: query
+    register: query_all_rtp
+
+  - name: Query first l3out route tag policy
+    cisco.aci.aci_l3out_route_tag_policy:
+      <<: *aci_rtp_present
+      state: query
+    register: query_first_rtp
+
+  - name: asserts query tasks
+    assert:
+      that:
+        - query_all_rtp is not changed
+        - query_all_rtp.current.0.fvTenant.children | length >= 2
+        - query_all_rtp.current.0.fvTenant.children.0.l3extRouteTagPol.attributes.name == "anstest_2"
+        - query_all_rtp.current.0.fvTenant.children.1.l3extRouteTagPol.attributes.name == "anstest"
+        - query_first_rtp is not changed
+        - query_first_rtp.current.0.l3extRouteTagPol.attributes.name == "anstest"
+        - query_first_rtp.current.0.l3extRouteTagPol.attributes.descr == "rtp test"
+        - query_first_rtp.current.0.l3extRouteTagPol.attributes.tag == "1000"
+
+  - name: Delete first l3out route tag policy (check_mode)
+    cisco.aci.aci_l3out_route_tag_policy:
+      <<: *aci_rtp_present
+      state: absent
+    check_mode: true
+    register: cm_delete_rtp
+  
+  - name: Delete first l3out route tag policy (normal_mode)
+    cisco.aci.aci_l3out_route_tag_policy:
+      <<: *aci_rtp_present
+      state: absent
+    register: nm_delete_rtp
+
+  - name: Delete first l3out route tag policy agaim - testing idempotency
+    cisco.aci.aci_l3out_route_tag_policy:
+      <<: *aci_rtp_present
+      state: absent
+    register: delete_rtp_idempotency
+
+  - name: Delete second l3out route tag policy
+    cisco.aci.aci_l3out_route_tag_policy:
+      <<: *aci_rtp_present_2
+      state: absent
+    register: nm_delete_rtp_2
+
+  - name: asserts for deletion tasks
+    assert:
+      that:
+        - cm_delete_rtp is changed
+        - cm_delete_rtp.proposed == {}
+        - nm_delete_rtp is changed
+        - nm_delete_rtp.previous != []
+        - nm_delete_rtp.current == []
+        - delete_rtp_idempotency is not changed
+        - delete_rtp_idempotency.previous == []
+        - nm_delete_rtp_2 is changed
+        - nm_delete_rtp_2.previous != []
+        - nm_delete_rtp_2.current == []
+
+  - name: Remove ansible_tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent

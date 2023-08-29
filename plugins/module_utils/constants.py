@@ -46,3 +46,45 @@ VM_PROVIDER_MAPPING = dict(
     redhat="Redhat",
     vmware="VMware",
 )
+
+MATCH_TYPE_GROUP_MAPPING = {"all": "ALL", "all_in_pod": "ALL_IN_POD", "range": "range"}
+
+MATCH_FC_FILL_PATTERN_MAPPING = {"arbff": "ARBFF", "idle": "IDLE"}
+
+MATCH_FIRMWARE_NODES_TYPE_MAPPING = {
+    "c_apic_patch": "cApicPatch",
+    "catalog": "catalog",
+    "config": "config",
+    "controller": "controller",
+    "controller_patch": "controllerPatch",
+    "plugin": "plugin",
+    "plugin_package": "pluginPackage",
+    "switch": "switch",
+    "switch_patch": "switchPatch",
+    "vpod": "vpod",
+}
+
+MATCH_TRIGGER_MAPPING = {
+    "trigger": "trigger",
+    "trigger_immediate": "trigger-immediate",
+    "triggered": "triggered",
+    "untriggered": "untriggered",
+}
+
+INTERFACE_POLICY_FC_SPEED_LIST = ["auto", "unknown", "2G", "4G", "8G", "16G", "32G"]
+
+MATCH_RUN_MODE_MAPPING = dict(
+    pause_always_between_sets="pauseAlwaysBetweenSets",
+    pause_only_on_failures="pauseOnlyOnFailures",
+    pause_never="pauseNever",
+)
+
+MATCH_NOTIFY_CONDITION_MAPPING = dict(
+    notify_always_between_sets="notifyAlwaysBetweenSets",
+    notify_never="notifyNever",
+    notify_only_on_failures="notifyOnlyOnFailures",
+)
+
+MATCH_SMU_OPERATION_MAPPING = dict(smu_install="smuInstall", smu_uninstall="smuUninstall")
+
+MATCH_SMU_OPERATION_FLAGS_MAPPING = dict(smu_reload_immediate="smuReloadImmediate", smu_reload_skip="smuReloadSkip")
