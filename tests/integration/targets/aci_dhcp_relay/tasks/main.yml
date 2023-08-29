@@ -1,5 +1,6 @@
 # Test code for the ACI modules
 # Copyright: (c) 2021, Tim Cragg(@timcragg)
+# Copyright: (c) 2023, Akini Ross(@akinross)
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -24,6 +25,12 @@
   aci_tenant:
     <<: *aci_info
     tenant: ansible_tenant
+    state: absent
+
+- name: Delete Global DHCP relay policy
+  cisco.aci.aci_dhcp_relay:
+    <<: *aci_info
+    name: ansible_global_dhcp_relay
     state: absent
 
 - name: Add a new tenant
@@ -91,6 +98,32 @@
     - update_dhcp_relay.current.0.dhcpRelayP.attributes.owner == "tenant"
     - update_dhcp_relay.current.0.dhcpRelayP.attributes.descr == "New Ansible DHCP Relay"
 
+- name: Add another DHCP relay policy for query all
+  cisco.aci.aci_dhcp_relay:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_dhcp_relay_2
+    state: present
+
+# CREATE GLOBAL DHCP RELAY
+- name: Add a new Global DHCP relay policy
+  cisco.aci.aci_dhcp_relay:
+    <<: *aci_info
+    name: ansible_global_dhcp_relay
+    description: Ansible Global DHCP Relay
+    state: present
+  register: add_global_dhcp_relay
+
+- name: Verify Global DHCP Relay creation
+  assert:
+    that:
+    - add_global_dhcp_relay is changed
+    - add_global_dhcp_relay.current.0.dhcpRelayP.attributes.annotation == 'orchestrator:ansible'
+    - add_global_dhcp_relay.current.0.dhcpRelayP.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay"
+    - add_global_dhcp_relay.current.0.dhcpRelayP.attributes.name == "ansible_global_dhcp_relay"
+    - add_global_dhcp_relay.current.0.dhcpRelayP.attributes.owner == "infra"
+    - add_global_dhcp_relay.current.0.dhcpRelayP.attributes.descr == "Ansible Global DHCP Relay"
+
 # QUERY DHCP RELAY
 - name: Query DHCP relay policy
   cisco.aci.aci_dhcp_relay:
@@ -120,6 +153,36 @@
   assert:
     that:
     - query_dhcp_relay_all is not changed
+    - query_dhcp_relay_all.current.0.fvTenant.children | length >= 2
+
+# QUERY GLOBAL DHCP RELAY
+- name: Query Global DHCP relay policy
+  cisco.aci.aci_dhcp_relay:
+    <<: *aci_info
+    name: ansible_global_dhcp_relay
+    state: query
+  register: query_global_dhcp_relay
+
+- name: Verify Global DHCP Relay query
+  assert:
+    that:
+    - query_global_dhcp_relay is not changed
+    - query_global_dhcp_relay.current.0.dhcpRelayP.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay"
+    - query_global_dhcp_relay.current.0.dhcpRelayP.attributes.name == "ansible_global_dhcp_relay"
+    - query_global_dhcp_relay.current.0.dhcpRelayP.attributes.owner == "infra"
+    - query_global_dhcp_relay.current.0.dhcpRelayP.attributes.descr == "Ansible Global DHCP Relay"
+
+- name: Query all DHCP relays
+  cisco.aci.aci_dhcp_relay:
+    <<: *aci_info
+    state: query
+  register: query_global_dhcp_relay_all
+
+- name: Verify query idempotence for Global DHCP Relay
+  assert:
+    that:
+    - query_global_dhcp_relay_all is not changed
+    - query_global_dhcp_relay_all.current | length >= 3
 
 # DELETE DHCP RELAY
 - name: Delete DHCP relay policy
@@ -152,6 +215,24 @@
   assert:
     that:
     - delete_dhcp_relay_again is not changed
+
+# DELETE GLOBAL DHCP RELAY
+- name: Delete Global DHCP relay policy
+  cisco.aci.aci_dhcp_relay:
+    <<: *aci_info
+    name: ansible_global_dhcp_relay
+    state: absent
+  register: delete_global_dhcp_relay
+
+- name: Verify Global DHCP Relay deletion
+  assert:
+    that:
+    - delete_global_dhcp_relay is changed
+    - delete_global_dhcp_relay.current == []
+    - delete_global_dhcp_relay.previous.0.dhcpRelayP.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay"
+    - delete_global_dhcp_relay.previous.0.dhcpRelayP.attributes.name == "ansible_global_dhcp_relay"
+    - delete_global_dhcp_relay.previous.0.dhcpRelayP.attributes.owner == "infra"
+    - delete_global_dhcp_relay.previous.0.dhcpRelayP.attributes.descr == "Ansible Global DHCP Relay"
 
 # CLEAN ENVIRONMENT AGAIN
 - name: Remove the ansible_tenant
