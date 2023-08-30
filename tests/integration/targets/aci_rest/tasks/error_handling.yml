@@ -31,7 +31,6 @@
     - "'current' not in error_on_name_resolution"
     - "'previous' not in error_on_name_resolution"
     - "'sent' not in error_on_name_resolution"
-    - "'proposed' not in error_on_name_resolution"
     - "'filter_string' not in error_on_name_resolution"
 
 - name: Error when required parameter is missing
@@ -59,7 +58,6 @@
     - "'current' not in error_on_missing_required_param"
     - "'previous' not in error_on_missing_required_param"
     - "'sent' not in error_on_missing_required_param"
-    - "'proposed' not in error_on_missing_required_param"
     - "'filter_string' not in error_on_missing_required_param"
 
 - name: Error when attributes are missing
@@ -90,7 +88,6 @@
     - "'current' not in error_on_missing_attributes"
     - "'previous' not in error_on_missing_attributes"
     - "'sent' not in error_on_missing_attributes"
-    - "'proposed' not in error_on_missing_attributes"
     - "'filter_string' not in error_on_missing_attributes"
 
 - name: Error when input does not validate
@@ -123,7 +120,6 @@
     - "'current' not in error_on_input_validation"
     - "'previous' not in error_on_input_validation"
     - "'sent' not in error_on_input_validation"
-    - "'proposed' not in error_on_input_validation"
     - "'filter_string' not in error_on_input_validation"
 
 - name: Error when invalid attributes are used
@@ -156,7 +152,6 @@
     - "'current' not in error_on_invalid_attributes"
     - "'previous' not in error_on_invalid_attributes"
     - "'sent' not in error_on_invalid_attributes"
-    - "'proposed' not in error_on_invalid_attributes"
     - "'filter_string' not in error_on_invalid_attributes"
 
 - name: Error on invalid object
@@ -188,7 +183,6 @@
     - "'current' not in error_on_invalid_object"
     - "'previous' not in error_on_invalid_object"
     - "'sent' not in error_on_invalid_object"
-    - "'proposed' not in error_on_invalid_object"
 
 # Test case for certificate based error issue: https://github.com/CiscoDevNet/ansible-aci/issues/339
 # Original error was with ospfCtxPol but same behaviour detected for tenant creation thus simplifying the test case
