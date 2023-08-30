@@ -32,10 +32,25 @@
   check_mode: true
   register: cm_add_tenant
 
+- name: Verify checkmode did not create tenant
+  cisco.aci.aci_tenant: 
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    name: ans_test_create
+    state: query
+  register: cm_verify_checkmode_tenant
+
 - name: Assertions check for add tenant using ans_test_create xml template file with check mode
   assert:
     that:
-      - cm_add_tenant is not changed
+      - cm_add_tenant is changed
+      - '"ans_test_create" in cm_add_tenant.proposed'
+      - cm_verify_checkmode_tenant.current == []
 
 - name: Add tenant using ans_test_create xml template file with normal mode
   cisco.aci.aci_rest:
@@ -95,7 +110,7 @@
 - name: Assertions check for update tenant description using ans_test_update xml template file with check mode
   assert:
     that:
-      - cm_update_tenant is not changed
+      - cm_update_tenant is changed
 
 - name: Update tenant description using ans_test_update xml template file with normal mode
   cisco.aci.aci_rest:
@@ -168,7 +183,7 @@
 - name: Assertions check for delete tenant using ans_test_delete xml template file with check mode
   assert:
     that:
-      - cm_delete_tenant is not changed
+      - cm_delete_tenant is changed
 
 - name: Delete tenant using ans_test_delete xml template file with normal mode
   cisco.aci.aci_rest:

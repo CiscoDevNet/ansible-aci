@@ -344,6 +344,7 @@ def main():
 
     module = AnsibleModule(
         argument_spec=argument_spec,
+        supports_check_mode=True,
         mutually_exclusive=[["content", "src"]],
     )
 
@@ -412,32 +413,39 @@ def main():
     method = aci.params.get("method").upper()
 
     # Perform request
-    resp, info = aci.api_call(method, aci.url, data=payload, return_response=True)
+    if not aci.module.check_mode:
+        resp, info = aci.api_call(method, aci.url, data=payload, return_response=True)
+        # Report failure
+        if info.get("status") != 200:
+            try:
+                # APIC error
+                aci.response_type(info["body"], rest_type)
+                aci.fail_json(msg="APIC Error {code}: {text}".format_map(aci.error))
+            except KeyError:
+                # Connection error
+                aci.fail_json(msg="Connection failed for {url}. {msg}".format_map(info))
 
-    # Report failure
-    if info.get("status") != 200:
         try:
-            # APIC error
-            aci.response_type(info["body"], rest_type)
-            aci.fail_json(msg="APIC Error {code}: {text}".format_map(aci.error))
-        except KeyError:
-            # Connection error
-            aci.fail_json(msg="Connection failed for {url}. {msg}".format_map(info))
+            aci.response_type(resp.read(), rest_type)
+        except AttributeError:
+            aci.response_type(info.get("body"), rest_type)
 
-    try:
-        aci.response_type(resp.read(), rest_type)
-    except AttributeError:
-        aci.response_type(info.get("body"), rest_type)
+        aci.result["status"] = aci.status
+        aci.result["imdata"] = aci.imdata
+        aci.result["totalCount"] = aci.totalCount
 
-    aci.result["status"] = aci.status
-    aci.result["imdata"] = aci.imdata
-    aci.result["totalCount"] = aci.totalCount
-
-    if aci.params.get("method") != "get":
-        output_path = aci.params.get("output_path")
-        if output_path is not None:
-            with open(output_path, "a") as output_file:
-                output_file.write(str(payload))
+        if aci.params.get("method") != "get":
+            output_path = aci.params.get("output_path")
+            if output_path is not None:
+                with open(output_path, "a") as output_file:
+                    output_file.write(str(payload))
+    else:
+        if rest_type == "json":
+            aci.proposed = json.loads(payload)
+        elif rest_type == "xml":
+            aci.proposed = payload
+        # Set changed to true so check_mode changed result is behaving similar to non aci_rest modules
+        aci.result["changed"] = True
 
     # Report success
     aci.exit_json(**aci.result)
