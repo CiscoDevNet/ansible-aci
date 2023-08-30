@@ -27,6 +27,13 @@
   when:
   - query_cloud.current == []
   block:
+
+  - name: Query system information
+    aci_system:
+      <<: *aci_info
+      id: 1
+      state: query
+    register: version
   
   # CLEAN TEST ENVIRONMENT
   
@@ -133,6 +140,60 @@
       - {l3out: l3out_1, extepg: extepg_2}
       - {l3out: l3out_2, extepg: extepg_3}
 
+  - name: Add l3out external epg with the new optional params
+    cisco.aci.aci_l3out_extepg:
+        <<: *aci_info
+        tenant: ansible_test
+        l3out: l3out_1
+        extepg: extepg_params
+        contract_exception_tag: contract_excepted
+        qos_class: level6
+        contract_masters:
+          - l3out: l3out_1
+            external_epg: extepg_2
+          - l3out: l3out_2
+            external_epg: extepg_3   
+        route_control_profile: 
+          - name: profile1
+            direction: export
+          - name: profile2
+            direction: import
+        state: present
+    register: nm_l3out_extepg_optional_params
+
+  - name: Add l3out external epg with the new optional params again
+    cisco.aci.aci_l3out_extepg:
+        <<: *aci_info
+        tenant: ansible_test
+        l3out: l3out_1
+        extepg: extepg_params
+        contract_exception_tag: contract_excepted
+        qos_class: level6
+        contract_masters:
+          - l3out: l3out_1
+            external_epg: extepg_2
+          - l3out: l3out_2
+            external_epg: extepg_3   
+        route_control_profile: 
+          - name: profile1
+            direction: export
+          - name: profile2
+            direction: import
+        state: present
+    register: nm_l3out_extepg_optional_params_again
+
+  - name: Add l3out external epg with intra_ext_epg_isolation
+    cisco.aci.aci_l3out_extepg:
+        <<: *aci_info
+        tenant: ansible_test
+        l3out: l3out_1
+        extepg: extepg_isolation
+        intra_ext_epg_isolation: enforced
+        state: present
+    register: nm_l3out_extepg_isolation
+    when:
+      - version.current.0.topSystem.attributes.version is version('5.0', '>=')
+
   # TEST QUERY L3OUT EXTERNAL EPG
 
   - name: Query l3out external epg 1
@@ -155,7 +216,71 @@
       - query_one.current.0.l3extInstP.attributes.name == "extepg_1"
       - query_all is not changed
       - query_all.current | length >= 3
-  
+
+  - name: Query l3out external epg with the new optional params
+    cisco.aci.aci_l3out_extepg:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: l3out_1
+      extepg: extepg_params
+      state: query
+    register: query_l3out_extepg_optional_params
+
+  - name: Query l3out external epg with intra_ext_epg_isolation
+    cisco.aci.aci_l3out_extepg:
+        <<: *aci_info
+        tenant: ansible_test
+        l3out: l3out_1
+        extepg: extepg_isolation
+        state: query
+    register: query_l3out_extepg_isolation
+    when:
+      - version.current.0.topSystem.attributes.version is version('5.0', '>=')
+
+  - name: Gather attribute search results using regex
+    ansible.builtin.set_fact:
+      extepg_2_contract: "{{ nm_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('uni/tn-ansible_test/out-l3out_1/instP-extepg_2') }}"
+      extepg_3_contract: "{{ nm_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('uni/tn-ansible_test/out-l3out_2/instP-extepg_3') }}"
+      profile1_name: "{{ nm_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('profile1') }}"
+      profile1_direction: "{{ nm_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('export') }}"
+      profile2_name: "{{ nm_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('profile2') }}"
+      profile2_direction: "{{ nm_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('import') }}"
+      query_extepg_2_contract: "{{ query_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('uni/tn-ansible_test/out-l3out_1/instP-extepg_2') }}"
+      query_extepg_3_contract: "{{ query_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('uni/tn-ansible_test/out-l3out_2/instP-extepg_3') }}"
+      query_profile1_name: "{{ query_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('profile1') }}"
+      query_profile1_direction: "{{ query_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('export') }}"
+      query_profile2_name: "{{ query_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('profile2') }}"
+      query_profile2_direction: "{{ query_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('import') }}"
+
+  - name: Verify l3out external epg with the new optional params
+    ansible.builtin.assert:
+      that:
+      - nm_l3out_extepg_optional_params is changed
+      - nm_l3out_extepg_optional_params_again is not changed
+      - query_l3out_extepg_optional_params is not changed
+      - nm_l3out_extepg_optional_params.current.0.l3extInstP.attributes.name == "extepg_params"
+      - nm_l3out_extepg_optional_params.current.0.l3extInstP.attributes.prio == "level6"
+      - extepg_2_contract == "uni/tn-ansible_test/out-l3out_1/instP-extepg_2"
+      - extepg_3_contract == "uni/tn-ansible_test/out-l3out_2/instP-extepg_3"
+      - profile1_name == "profile1"
+      - profile1_direction == "export"
+      - profile2_name == "profile2"
+      - profile2_direction == "import"
+      - query_extepg_2_contract == "uni/tn-ansible_test/out-l3out_1/instP-extepg_2"
+      - query_extepg_3_contract == "uni/tn-ansible_test/out-l3out_2/instP-extepg_3"
+      - query_profile1_name == "profile1"
+      - query_profile1_direction == "export"
+      - query_profile2_name == "profile2"
+      - query_profile2_direction == "import"
+
+  - name: Verify l3out external epg with intra_ext_epg_isolation
+    ansible.builtin.assert:
+      that:
+      - nm_l3out_extepg_isolation.current.0.l3extInstP.attributes.pcEnfPref == "enforced"
+      - query_l3out_extepg_isolation.current.0.l3extInstP.attributes.pcEnfPref == "enforced"
+    when:
+      - version.current.0.topSystem.attributes.version is version('5.0', '>=')
+      
     # TEST REMOVAL L3OUT EXTERNAL EPG
 
   - name: Remove l3out external epg 1 ( check mode )
@@ -175,6 +300,24 @@
       <<: *remove_l3out_extepg_1
     register: nm_remove_l3out_extepg_1_again
 
+  - name: Remove l3out external epg params
+    cisco.aci.aci_l3out_extepg:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: l3out_1
+      extepg: extepg_params
+      state: absent
+    register: remove_l3out_extepg_params
+
+  - name: Remove l3out external epg with intra_ext_epg_isolation
+    cisco.aci.aci_l3out_extepg:
+      <<: *aci_info
+      tenant: ansible_test
+      l3out: l3out_1
+      extepg: extepg_isolation
+      state: absent
+    register: remove_l3out_extepg_isolation
+
   - name: Verify removal epg monitoring policies
     ansible.builtin.assert:
       that:
@@ -186,3 +329,6 @@
       - nm_remove_l3out_extepg_1_again is not changed
       - nm_remove_l3out_extepg_1_again.previous == []
       - nm_remove_l3out_extepg_1_again.current == []
+      - remove_l3out_extepg_params is changed
+      - remove_l3out_extepg_params.current == []
+      - remove_l3out_extepg_isolation.current == []

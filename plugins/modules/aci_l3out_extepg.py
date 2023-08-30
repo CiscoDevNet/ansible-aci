@@ -49,6 +49,55 @@ options:
     type: str
     choices: [ AF11, AF12, AF13, AF21, AF22, AF23, AF31, AF32, AF33, AF41, AF42, AF43, CS0, CS1, CS2, CS3, CS4, CS5, CS6, CS7, EF, VA, unspecified ]
     aliases: [ target ]
+  contract_exception_tag:
+    description:
+    - The tag for contract exception.
+    type: str
+  qos_class:
+    description:
+    - The priority class identifier.
+    type: str
+    choices: [ level1, level2, level3, level4, level5, level6, unspecified ]
+    default: level3
+  intra_ext_epg_isolation:
+    description:
+    - The preferred policy control.
+    type: str
+    choices: [ enforced, unenforced ]
+  contract_masters:
+    description:
+    - The L3Out contract masters.
+    type: list
+    elements: dict
+    suboptions:
+      l3out:
+        description:
+        - The L3Out that contains the external epg.
+        type: str
+        required: true
+      external_epg:
+        description:
+        - The L3Out contract master.
+        type: str
+        required: true
+  route_control_profile:
+    description:
+    - The route control profiles.
+    type: list
+    elements: dict
+    suboptions:
+      name:
+        description:
+        - The name of the route control profile.
+        type: str
+        required: true
+      direction:
+        description:
+        - The value of direction for the policy.
+        type: str
+        choices: [ export, import ]
+        required: true
+    aliases: [ route_control_profiles ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -88,6 +137,14 @@ EXAMPLES = r"""
     l3out: prod_l3out
     name: prod_extepg
     description: ExtEpg for Production L3Out
+    contract_exception_tag: test
+    qos_class: level6
+    contract_masters:
+      - l3out: L3out1
+        external_epg: all_prefixes
+    route_control_profile:
+      - name: profile1
+        direction: export
     state: present
   delegate_to: localhost
 
@@ -262,6 +319,16 @@ def main():
             ],
             aliases=["target"],
         ),
+        contract_exception_tag=dict(type="str"),
+        qos_class=dict(type="str", default="level3", choices=["level1", "level2", "level3", "level4", "level5", "level6", "unspecified"]),
+        intra_ext_epg_isolation=dict(type="str", choices=["enforced", "unenforced"]),
+        contract_masters=dict(type="list", elements="dict", options=dict(l3out=dict(type="str", required=True), external_epg=dict(type="str", required=True))),
+        route_control_profile=dict(
+            type="list",
+            elements="dict",
+            aliases=["route_control_profiles"],
+            options=dict(name=dict(type="str", required=True), direction=dict(type="str", choices=["import", "export"], required=True)),
+        ),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
@@ -284,6 +351,11 @@ def main():
     preferred_group = aci.boolean(module.params.get("preferred_group"), "include", "exclude")
     dscp = module.params.get("dscp")
     state = module.params.get("state")
+    contract_exception_tag = module.params.get("contract_exception_tag")
+    qos_class = module.params.get("qos_class")
+    intra_ext_epg_isolation = module.params.get("intra_ext_epg_isolation")
+    contract_masters = module.params.get("contract_masters")
+    route_control_profile = module.params.get("route_control_profile")
     name_alias = module.params.get("name_alias")
 
     aci.construct_url(
@@ -305,21 +377,42 @@ def main():
             module_object=extepg,
             target_filter={"name": extepg},
         ),
+        child_classes=["fvRsSecInherited", "l3extRsInstPToProfile"],
     )
 
     aci.get_existing()
 
     if state == "present":
-        aci.payload(
-            aci_class="l3extInstP",
-            class_config=dict(
-                name=extepg,
-                descr=description,
-                prefGrMemb=preferred_group,
-                targetDscp=dscp,
-                nameAlias=name_alias,
-            ),
+        child_configs = []
+        if contract_masters:
+            for contract in contract_masters:
+                child_configs.append(
+                    dict(
+                        fvRsSecInherited=dict(
+                            attributes=dict(tDn="uni/tn-{0}/out-{1}/instP-{2}".format(tenant, contract.get("l3out"), contract.get("external_epg")))
+                        )
+                    )
+                )
+        if route_control_profile:
+            for profile in route_control_profile:
+                child_configs.append(
+                    dict(l3extRsInstPToProfile=dict(attributes=dict(direction=profile.get("direction"), tnRtctrlProfileName=profile.get("name"))))
+                )
+
+        class_config = dict(
+            name=extepg,
+            descr=description,
+            prefGrMemb=preferred_group,
+            targetDscp=dscp,
+            nameAlias=name_alias,
+            prio=qos_class,
+            exceptionTag=contract_exception_tag,
         )
+
+        if intra_ext_epg_isolation:
+            class_config.update(pcEnfPref=intra_ext_epg_isolation)
+
+        aci.payload(aci_class="l3extInstP", class_config=class_config, child_configs=child_configs)
 
         aci.get_diff(aci_class="l3extInstP")
 
