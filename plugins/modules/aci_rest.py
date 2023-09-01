@@ -411,7 +411,6 @@ def main():
         aci.url = update_qsl(aci.url, {"rsp-subtree": "modified"})
 
     method = aci.params.get("method").upper()
-
     # Perform request
     if not aci.module.check_mode:
         resp, info = aci.api_call(method, aci.url, data=payload, return_response=True)
@@ -440,6 +439,7 @@ def main():
                 with open(output_path, "a") as output_file:
                     output_file.write(str(payload))
     else:
+        aci.method = method
         if rest_type == "json":
             aci.proposed = json.loads(payload)
         elif rest_type == "xml":
@@ -448,6 +448,7 @@ def main():
         aci.result["changed"] = True
 
     # Report success
+
     aci.exit_json(**aci.result)
 
 

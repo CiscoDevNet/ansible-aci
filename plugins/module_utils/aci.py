@@ -1446,7 +1446,7 @@ class ACIModule(object):
                 self.result["sent"] = self.config
                 self.result["proposed"] = self.proposed
 
-        elif self.__class__.__name__ == "ACIRESTModule" and self.method in ["POST", "DELETE"]:
+        elif self.__class__.__name__ == "ACIRESTModule" and self.method != "GET":
             self.result["proposed"] = self.proposed
 
         self.dump_json()
@@ -1489,7 +1489,7 @@ class ACIModule(object):
                 self.result["sent"] = self.config
                 self.result["proposed"] = self.proposed
 
-        elif self.__class__.__name__ == "ACIRESTModule" and self.method in ["POST", "DELETE"]:
+        elif self.__class__.__name__ == "ACIRESTModule" and self.method != "GET":
             self.result["proposed"] = self.proposed
 
         self.result.update(**kwargs)
@@ -1520,7 +1520,7 @@ class ACIModule(object):
                     if self.result.get("changed") is True:
                         json.dump([mo], output_file)
 
-        elif self.__class__.__name__ == "ACIRESTModule" and self.method in ["POST", "DELETE"]:
+        elif self.__class__.__name__ == "ACIRESTModule" and self.method != "GET":
             output_path = self.params.get("output_path")
             if output_path is not None:
                 with open(output_path, "a") as output_file:
