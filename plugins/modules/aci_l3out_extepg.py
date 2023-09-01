@@ -64,40 +64,21 @@ options:
     - The preferred policy control.
     type: str
     choices: [ enforced, unenforced ]
-  contract_masters:
-    description:
-    - The L3Out contract masters.
-    type: list
-    elements: dict
-    suboptions:
-      l3out:
-        description:
-        - The L3Out that contains the external epg.
-        type: str
-        required: true
-      external_epg:
-        description:
-        - The L3Out contract master.
-        type: str
-        required: true
-  route_control_profile:
+  route_control_profiles:
     description:
     - The route control profiles.
-    type: list
-    elements: dict
+    type: dict
     suboptions:
-      name:
+      import_profile:
         description:
-        - The name of the route control profile.
+        - The route control profile whose direction is import.
+        - To remove a route import policy pass an empty string (see Examples).
         type: str
-        required: true
-      direction:
+      export_profile:
         description:
-        - The value of direction for the policy.
+         - The route control profile whose direction is export.
+         - To remove a route export policy pass an empty string (see Examples).
         type: str
-        choices: [ export, import ]
-        required: true
-    aliases: [ route_control_profiles ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -139,12 +120,9 @@ EXAMPLES = r"""
     description: ExtEpg for Production L3Out
     contract_exception_tag: test
     qos_class: level6
-    contract_masters:
-      - l3out: L3out1
-        external_epg: all_prefixes
     route_control_profile:
-      - name: profile1
-        direction: export
+      import_profile: test1
+      export_profile: test2
     state: present
   delegate_to: localhost
 
@@ -157,6 +135,20 @@ EXAMPLES = r"""
     l3out: prod_l3out
     name: prod_extepg
     state: absent
+  delegate_to: localhost
+
+- name: Delete the export route control profile in an ExtEpg
+  cisco.aci.aci_l3out_extepg:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: production
+    l3out: prod_l3out
+    name: prod_extepg
+    route_control_profile:
+      import_profile: test1
+      export_profile: ""
+    state: present
   delegate_to: localhost
 
 - name: Query ExtEpg information
@@ -322,12 +314,9 @@ def main():
         contract_exception_tag=dict(type="str"),
         qos_class=dict(type="str", default="level3", choices=["level1", "level2", "level3", "level4", "level5", "level6", "unspecified"]),
         intra_ext_epg_isolation=dict(type="str", choices=["enforced", "unenforced"]),
-        contract_masters=dict(type="list", elements="dict", options=dict(l3out=dict(type="str", required=True), external_epg=dict(type="str", required=True))),
-        route_control_profile=dict(
-            type="list",
-            elements="dict",
-            aliases=["route_control_profiles"],
-            options=dict(name=dict(type="str", required=True), direction=dict(type="str", choices=["import", "export"], required=True)),
+        route_control_profiles=dict(
+            type="dict",
+            options=dict(import_profile=dict(type="str"), export_profile=dict(type="str")),
         ),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -354,8 +343,7 @@ def main():
     contract_exception_tag = module.params.get("contract_exception_tag")
     qos_class = module.params.get("qos_class")
     intra_ext_epg_isolation = module.params.get("intra_ext_epg_isolation")
-    contract_masters = module.params.get("contract_masters")
-    route_control_profile = module.params.get("route_control_profile")
+    route_control_profiles = module.params.get("route_control_profiles")
     name_alias = module.params.get("name_alias")
 
     aci.construct_url(
@@ -384,20 +372,28 @@ def main():
 
     if state == "present":
         child_configs = []
-        if contract_masters:
-            for contract in contract_masters:
-                child_configs.append(
-                    dict(
-                        fvRsSecInherited=dict(
-                            attributes=dict(tDn="uni/tn-{0}/out-{1}/instP-{2}".format(tenant, contract.get("l3out"), contract.get("external_epg")))
-                        )
-                    )
-                )
-        if route_control_profile:
-            for profile in route_control_profile:
-                child_configs.append(
-                    dict(l3extRsInstPToProfile=dict(attributes=dict(direction=profile.get("direction"), tnRtctrlProfileName=profile.get("name"))))
-                )
+        if route_control_profiles:
+            profiles = [{key: value} for key, value in route_control_profiles.items()]
+            for profile in profiles:
+                direction = next(iter(profile)).split("_")[0]
+                name = next(iter(profile.values()))
+                if name == "":
+                    if isinstance(aci.existing, list) and len(aci.existing) > 0:
+                        for child in aci.existing[0].get("l3extInstP", {}).get("children", {}):
+                            if child.get("l3extRsInstPToProfile") and child.get("l3extRsInstPToProfile").get("attributes").get("direction") == direction:
+                                child_configs.append(
+                                    dict(
+                                        l3extRsInstPToProfile=dict(
+                                            attributes=dict(
+                                                status="deleted",
+                                                direction=direction,
+                                                tnRtctrlProfileName=child.get("l3extRsInstPToProfile").get("attributes").get("tnRtctrlProfileName"),
+                                            )
+                                        )
+                                    )
+                                )
+                elif name:
+                    child_configs.append(dict(l3extRsInstPToProfile=dict(attributes=dict(direction=direction, tnRtctrlProfileName=name))))
 
         class_config = dict(
             name=extepg,

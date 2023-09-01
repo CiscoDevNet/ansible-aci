@@ -78,6 +78,8 @@
   - name: Add l3out external epg 1
     cisco.aci.aci_l3out_extepg:
       <<: *add_l3out_extepg_1
+      route_control_profiles: 
+          import_profile: ""
     register: nm_add_l3out_extepg_1
 
   - name: Add l3out external epg 1 again
@@ -148,16 +150,9 @@
         extepg: extepg_params
         contract_exception_tag: contract_excepted
         qos_class: level6
-        contract_masters:
-          - l3out: l3out_1
-            external_epg: extepg_2
-          - l3out: l3out_2
-            external_epg: extepg_3   
-        route_control_profile: 
-          - name: profile1
-            direction: export
-          - name: profile2
-            direction: import
+        route_control_profiles: 
+          import_profile: profile1
+          export_profile: profile2
         state: present
     register: nm_l3out_extepg_optional_params
 
@@ -169,18 +164,52 @@
         extepg: extepg_params
         contract_exception_tag: contract_excepted
         qos_class: level6
-        contract_masters:
-          - l3out: l3out_1
-            external_epg: extepg_2
-          - l3out: l3out_2
-            external_epg: extepg_3   
-        route_control_profile: 
-          - name: profile1
-            direction: export
-          - name: profile2
-            direction: import
+        route_control_profiles: 
+          import_profile: profile1
+          export_profile: profile2
         state: present
     register: nm_l3out_extepg_optional_params_again
+
+  - name: Add l3out external epg with no export route control profile in the task
+    cisco.aci.aci_l3out_extepg:
+        <<: *aci_info
+        tenant: ansible_test
+        l3out: l3out_1
+        extepg: extepg_params
+        contract_exception_tag: contract_excepted
+        qos_class: level6
+        route_control_profiles:
+          import_profile: profile1
+        state: present
+    register: nm_l3out_extepg_non_existent_export_profile
+
+  - name: Add l3out external epg with export route control profile having ""
+    cisco.aci.aci_l3out_extepg:
+        <<: *aci_info
+        tenant: ansible_test
+        l3out: l3out_1
+        extepg: extepg_params
+        contract_exception_tag: contract_excepted
+        qos_class: level6
+        route_control_profiles: 
+          import_profile: profile1
+          export_profile: ""
+        state: present
+    register: nm_l3out_extepg_remove_export_profile
+
+  - name: Add l3out external epg with export route control profile again
+    cisco.aci.aci_l3out_extepg:
+        <<: *aci_info
+        tenant: ansible_test
+        l3out: l3out_1
+        extepg: extepg_params
+        contract_exception_tag: contract_excepted
+        qos_class: level6
+        route_control_profiles: 
+          import_profile: profile1
+          export_profile: profile2
+        state: present
+    register: nm_l3out_extepg_add_export_profile
 
   - name: Add l3out external epg with intra_ext_epg_isolation
     cisco.aci.aci_l3out_extepg:
@@ -239,39 +268,40 @@
 
   - name: Gather attribute search results using regex
     ansible.builtin.set_fact:
-      extepg_2_contract: "{{ nm_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('uni/tn-ansible_test/out-l3out_1/instP-extepg_2') }}"
-      extepg_3_contract: "{{ nm_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('uni/tn-ansible_test/out-l3out_2/instP-extepg_3') }}"
       profile1_name: "{{ nm_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('profile1') }}"
-      profile1_direction: "{{ nm_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('export') }}"
+      profile1_direction: "{{ nm_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('import') }}"
       profile2_name: "{{ nm_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('profile2') }}"
-      profile2_direction: "{{ nm_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('import') }}"
-      query_extepg_2_contract: "{{ query_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('uni/tn-ansible_test/out-l3out_1/instP-extepg_2') }}"
-      query_extepg_3_contract: "{{ query_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('uni/tn-ansible_test/out-l3out_2/instP-extepg_3') }}"
+      profile2_direction: "{{ nm_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('export') }}"
+      profile2_exists: "{{ nm_l3out_extepg_non_existent_export_profile.current.0.l3extInstP.children | regex_search('profile2') }}"
+      profile2_removed: "{{ nm_l3out_extepg_remove_export_profile.current.0.l3extInstP.children | regex_search('profile2') }}"
+      profile2_direction_removed: "{{ nm_l3out_extepg_remove_export_profile.current.0.l3extInstP.children | regex_search('export') }}"
       query_profile1_name: "{{ query_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('profile1') }}"
-      query_profile1_direction: "{{ query_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('export') }}"
+      query_profile1_direction: "{{ query_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('import') }}"
       query_profile2_name: "{{ query_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('profile2') }}"
-      query_profile2_direction: "{{ query_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('import') }}"
+      query_profile2_direction: "{{ query_l3out_extepg_optional_params.current.0.l3extInstP.children | regex_search('export') }}"
 
   - name: Verify l3out external epg with the new optional params
     ansible.builtin.assert:
       that:
       - nm_l3out_extepg_optional_params is changed
       - nm_l3out_extepg_optional_params_again is not changed
+      - nm_l3out_extepg_non_existent_export_profile is not changed
+      - nm_l3out_extepg_remove_export_profile is changed
+      - nm_l3out_extepg_add_export_profile is changed
       - query_l3out_extepg_optional_params is not changed
       - nm_l3out_extepg_optional_params.current.0.l3extInstP.attributes.name == "extepg_params"
       - nm_l3out_extepg_optional_params.current.0.l3extInstP.attributes.prio == "level6"
-      - extepg_2_contract == "uni/tn-ansible_test/out-l3out_1/instP-extepg_2"
-      - extepg_3_contract == "uni/tn-ansible_test/out-l3out_2/instP-extepg_3"
       - profile1_name == "profile1"
-      - profile1_direction == "export"
+      - profile1_direction == "import"
       - profile2_name == "profile2"
-      - profile2_direction == "import"
-      - query_extepg_2_contract == "uni/tn-ansible_test/out-l3out_1/instP-extepg_2"
-      - query_extepg_3_contract == "uni/tn-ansible_test/out-l3out_2/instP-extepg_3"
+      - profile2_direction == "export"
       - query_profile1_name == "profile1"
-      - query_profile1_direction == "export"
+      - query_profile1_direction == "import"
       - query_profile2_name == "profile2"
-      - query_profile2_direction == "import"
+      - query_profile2_direction == "export"
+      - profile2_exists == "profile2"
+      - profile2_removed == ""
+      - profile2_direction_removed == ""
 
   - name: Verify l3out external epg with intra_ext_epg_isolation
     ansible.builtin.assert:
