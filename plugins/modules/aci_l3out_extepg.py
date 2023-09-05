@@ -373,10 +373,10 @@ def main():
     if state == "present":
         child_configs = []
         if route_control_profiles:
-            profiles = [{key: value} for key, value in route_control_profiles.items()]
+            profiles = list(route_control_profiles.items())
             for profile in profiles:
-                direction = next(iter(profile)).split("_")[0]
-                name = next(iter(profile.values()))
+                direction = profile[0].rstrip("_profile")
+                name = profile[1]
                 if name == "":
                     if isinstance(aci.existing, list) and len(aci.existing) > 0:
                         for child in aci.existing[0].get("l3extInstP", {}).get("children", {}):
