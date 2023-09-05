@@ -373,25 +373,22 @@ def main():
     if state == "present":
         child_configs = []
         if route_control_profiles:
-            profiles = list(route_control_profiles.items())
-            for profile in profiles:
-                direction = profile[0].rstrip("_profile")
-                name = profile[1]
-                if name == "":
-                    if isinstance(aci.existing, list) and len(aci.existing) > 0:
-                        for child in aci.existing[0].get("l3extInstP", {}).get("children", {}):
-                            if child.get("l3extRsInstPToProfile") and child.get("l3extRsInstPToProfile").get("attributes").get("direction") == direction:
-                                child_configs.append(
-                                    dict(
-                                        l3extRsInstPToProfile=dict(
-                                            attributes=dict(
-                                                status="deleted",
-                                                direction=direction,
-                                                tnRtctrlProfileName=child.get("l3extRsInstPToProfile").get("attributes").get("tnRtctrlProfileName"),
-                                            )
+            for key, name in route_control_profiles.items():
+                direction = key.rstrip("_profile")
+                if name == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
+                    for child in aci.existing[0].get("l3extInstP", {}).get("children", {}):
+                        if child.get("l3extRsInstPToProfile") and child.get("l3extRsInstPToProfile").get("attributes").get("direction") == direction:
+                            child_configs.append(
+                                dict(
+                                    l3extRsInstPToProfile=dict(
+                                        attributes=dict(
+                                            status="deleted",
+                                            direction=direction,
+                                            tnRtctrlProfileName=child.get("l3extRsInstPToProfile").get("attributes").get("tnRtctrlProfileName"),
                                         )
                                     )
                                 )
+                            )
                 elif name:
                     child_configs.append(dict(l3extRsInstPToProfile=dict(attributes=dict(direction=direction, tnRtctrlProfileName=name))))
 
