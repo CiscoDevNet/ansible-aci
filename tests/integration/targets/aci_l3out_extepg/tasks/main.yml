@@ -207,7 +207,7 @@
         qos_class: level6
         route_control_profiles: 
           import_profile: profile1
-          export_profile: profile2
+          export: profile2
         state: present
     register: nm_l3out_extepg_add_export_profile
 
