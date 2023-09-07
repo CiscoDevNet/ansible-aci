@@ -5,6 +5,27 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.8.0
+======
+
+Release Summary
+---------------
+
+Release v2.8.0 of the ``ansible-aci`` collection on 2023-09-07.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.7.0.
+
+
+Minor Changes
+-------------
+
+- Add missing test cases and missing attributes for some existing modules (#453)
+- Add support for global infra dhcp relay policy configuration in aci_dhcp_relay
+- Add support for global infra dhcp relay policy configuration in aci_dhcp_relay_provider
+- Added FC policy group and FC PC policy group for Leaf policy groups.
+- Added Fabric Interface Policy Groups aci_fabric_interface_policy_group.py module
+- Added additional relationship parameters for leaf policy, PC and VPC. Certain policies are avaiable only in higher versions of APIC
+- Added policy groups for spine interface and missing policy groups on leaf interface.
+
 v2.7.0
 ======
 
