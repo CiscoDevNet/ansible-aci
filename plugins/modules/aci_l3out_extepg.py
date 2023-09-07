@@ -74,11 +74,13 @@ options:
         - The route control profile whose direction is import.
         - To remove a route import policy pass an empty string (see Examples).
         type: str
+        aliases: [ import ]
       export_profile:
         description:
          - The route control profile whose direction is export.
          - To remove a route export policy pass an empty string (see Examples).
         type: str
+        aliases: [ export ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -120,7 +122,7 @@ EXAMPLES = r"""
     description: ExtEpg for Production L3Out
     contract_exception_tag: test
     qos_class: level6
-    route_control_profile:
+    route_control_profiles:
       import_profile: test1
       export_profile: test2
     state: present
@@ -145,7 +147,7 @@ EXAMPLES = r"""
     tenant: production
     l3out: prod_l3out
     name: prod_extepg
-    route_control_profile:
+    route_control_profiles:
       import_profile: test1
       export_profile: ""
     state: present
@@ -316,7 +318,7 @@ def main():
         intra_ext_epg_isolation=dict(type="str", choices=["enforced", "unenforced"]),
         route_control_profiles=dict(
             type="dict",
-            options=dict(import_profile=dict(type="str"), export_profile=dict(type="str")),
+            options=dict(import_profile=dict(type="str", aliases=["import"]), export_profile=dict(type="str", aliases=["export"])),
         ),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -374,23 +376,24 @@ def main():
         child_configs = []
         if route_control_profiles:
             for key, name in route_control_profiles.items():
-                direction = key.rstrip("_profile")
-                if name == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
-                    for child in aci.existing[0].get("l3extInstP", {}).get("children", {}):
-                        if child.get("l3extRsInstPToProfile") and child.get("l3extRsInstPToProfile").get("attributes").get("direction") == direction:
-                            child_configs.append(
-                                dict(
-                                    l3extRsInstPToProfile=dict(
-                                        attributes=dict(
-                                            status="deleted",
-                                            direction=direction,
-                                            tnRtctrlProfileName=child.get("l3extRsInstPToProfile").get("attributes").get("tnRtctrlProfileName"),
+                if "_profile" in key:
+                    direction = key.rstrip("_profile")
+                    if name == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
+                        for child in aci.existing[0].get("l3extInstP", {}).get("children", {}):
+                            if child.get("l3extRsInstPToProfile") and child.get("l3extRsInstPToProfile").get("attributes").get("direction") == direction:
+                                child_configs.append(
+                                    dict(
+                                        l3extRsInstPToProfile=dict(
+                                            attributes=dict(
+                                                status="deleted",
+                                                direction=direction,
+                                                tnRtctrlProfileName=child.get("l3extRsInstPToProfile").get("attributes").get("tnRtctrlProfileName"),
+                                            )
                                         )
                                     )
                                 )
-                            )
-                elif name:
-                    child_configs.append(dict(l3extRsInstPToProfile=dict(attributes=dict(direction=direction, tnRtctrlProfileName=name))))
+                    elif name:
+                        child_configs.append(dict(l3extRsInstPToProfile=dict(attributes=dict(direction=direction, tnRtctrlProfileName=name))))
 
         class_config = dict(
             name=extepg,
