@@ -113,7 +113,7 @@ class HttpApi(HttpApiBase):
             msg = "Error on attempt to logout from APIC. {0}".format(exc_logout)
             raise ConnectionError(self._return_info("", method, path, msg))
         self.connection._auth = None
-        self._verify_response(response, method, response_data)
+        self._verify_response(response, method, path, response_data)
 
     def set_parameters(self):
         connection_parameters = {}
@@ -220,7 +220,7 @@ class HttpApi(HttpApiBase):
             # recurse through function for retrying the request
             return self.send_request(method, path, data)
         # return statement executed upon each successful response from the request function
-        return self._verify_response(response, method, response_data)
+        return self._verify_response(response, method, path, response_data)
 
     # Built-in-function
     def handle_httperror(self, exc):
@@ -240,16 +240,17 @@ class HttpApi(HttpApiBase):
         else:
             return validated_url
 
-    def _verify_response(self, response, method, response_data):
+    def _verify_response(self, response, method, path, response_data):
         """Process the return code and response object from APIC"""
         response_value = self._get_response_value(response_data)
         response_code = response.getcode()
+        path = self.validate_url(response.url)
         # Response check to remain consistent with fetch_url's response
         if str(response) == "HTTP Error 400: Bad Request":
             msg = "{0}".format(response)
         else:
             msg = "{0} ({1} bytes)".format(response.msg, len(response_value))
-        return self._return_info(response_code, method, "", msg, respond_data=response_value)
+        return self._return_info(response_code, method, path, msg, respond_data=response_value)
 
     def _get_response_value(self, response_data):
         """Extract string data from response_data returned from APIC"""

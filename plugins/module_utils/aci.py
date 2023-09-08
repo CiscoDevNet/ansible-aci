@@ -410,7 +410,7 @@ class ACIModule(object):
         """Set protocol based on use_ssl parameter"""
 
         # Set protocol for further use
-        self.params["protocol"] = "https" if self.params.get("use_ssl", True) else "http"
+        self.params["protocol"] = "https" if self.params.get("use_ssl") or self.params.get("use_ssl") is None else "http"
 
     def set_connection(self):
         if self.connection is None and self.module._socket_path:
@@ -424,7 +424,7 @@ class ACIModule(object):
         payload = {
             "aaaUser": {
                 "attributes": {
-                    "name": self.params.get("username", "admin"),
+                    "name": "admin" if self.params.get("username") is None else self.params.get("username"),
                     "pwd": self.params.get("password"),
                 }
             }
@@ -500,7 +500,7 @@ class ACIModule(object):
                 )
 
         if self.params.get("certificate_name") is None:
-            self.params["certificate_name"] = self.params.get("username", "admin")
+            self.params["certificate_name"] = "admin" if self.params.get("username") is None else self.params.get("username")
         # NOTE: ACI documentation incorrectly adds a space between method and path
         sig_request = method + path + payload
         if HAS_CRYPTOGRAPHY:
@@ -1523,11 +1523,16 @@ class ACIModule(object):
         else:
             return parse_result.path + "?" + parse_result.query
 
+    def synthesize_url(self, httpapi_url, local_path):
+        parse_url = urlparse(httpapi_url)
+        return {"protocol": parse_url.scheme, "host": parse_url.netloc, "path": local_path}
+
     def api_call(self, method, url, data=None, return_response=False):
         resp = None
         if self.connection is not None:
             self.connection.set_params(self.params)
             info = self.connection.send_request(method, self.parsed_url_path(url), data)
+            self.url = "{protocol}://{host}/{path}".format_map(self.synthesize_url(info.get("url"), self.path))
             self.error = info.get("error")
             self.httpapi_logs.extend(self.connection.pop_messages())
         else:
@@ -1539,8 +1544,8 @@ class ACIModule(object):
                 data=data,
                 headers=self.headers,
                 method=method,
-                timeout=self.params.get("timeout", 30),
-                use_proxy=self.params.get("use_proxy", True),
+                timeout=30 if self.params.get("timeout") is None else self.params.get("timeout"),
+                use_proxy=True if self.params.get("use_proxy") is None else self.params.get("use_proxy"),
             )
 
         self.response = info.get("msg")
