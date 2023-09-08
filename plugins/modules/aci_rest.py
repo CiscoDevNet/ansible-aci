@@ -443,7 +443,7 @@ def main():
             aci.proposed = json.loads(payload)
         elif rest_type == "xml":
             aci.proposed = payload
-    
+
     # Report success
     aci.exit_json(**aci.result)
 
