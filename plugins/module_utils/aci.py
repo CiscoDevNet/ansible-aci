@@ -1524,7 +1524,10 @@ class ACIModule(object):
             output_path = self.params.get("output_path")
             if output_path is not None:
                 with open(output_path, "a") as output_file:
-                    json.dump([self.proposed], output_file)
+                    if self.module.check_mode:
+                        json.dump([self.proposed], output_file)
+                    else:
+                        output_file.write(str(self.proposed))
 
     def parsed_url_path(self, url):
         if not HAS_URLPARSE:
