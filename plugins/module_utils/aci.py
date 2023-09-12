@@ -315,6 +315,11 @@ def ospf_spec():
     )
 
 
+def integrate_url(httpapi_url, local_path):
+    parse_url = urlparse(httpapi_url)
+    return {"protocol": parse_url.scheme, "host": parse_url.netloc, "path": local_path}
+
+
 class ACIModule(object):
     def __init__(self, module):
         self.module = module
@@ -1523,16 +1528,12 @@ class ACIModule(object):
         else:
             return parse_result.path + "?" + parse_result.query
 
-    def synthesize_url(self, httpapi_url, local_path):
-        parse_url = urlparse(httpapi_url)
-        return {"protocol": parse_url.scheme, "host": parse_url.netloc, "path": local_path}
-
     def api_call(self, method, url, data=None, return_response=False):
         resp = None
         if self.connection is not None:
             self.connection.set_params(self.params)
             info = self.connection.send_request(method, self.parsed_url_path(url), data)
-            self.url = "{protocol}://{host}/{path}".format_map(self.synthesize_url(info.get("url"), self.path))
+            self.url = "{protocol}://{host}/{path}".format_map(integrate_url(info.get("url"), self.path))
             self.error = info.get("error")
             self.httpapi_logs.extend(self.connection.pop_messages())
         else:

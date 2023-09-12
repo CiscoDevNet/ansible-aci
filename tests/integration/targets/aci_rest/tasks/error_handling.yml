@@ -242,6 +242,7 @@
     name: pyyaml
     state: absent
   ignore_errors: true # ignore errors to because of multiple executions for hosts at the same time
+  when: ansible_connection == "local"
 
 - name: Create tenant with invalid src attribute
   cisco.aci.aci_rest:
@@ -272,6 +273,7 @@
     <<: *pyyaml
     state: present
   ignore_errors: true # ignore errors to because of multiple executions for hosts at the same time
+  when: ansible_connection == "local"
 
 # Test case for invalid src
 
