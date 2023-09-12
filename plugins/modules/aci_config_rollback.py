@@ -283,7 +283,12 @@ def main():
         aci.post_config()
 
     elif state == "preview":
-        aci.url = "{protocol}://{host}/mqapi2/snapshots.diff.xml".format_map(module.params)
+        aci.path = "mqapi2/snapshots.diff.xml"
+        preview_params = {k: v for d in [{"path": aci.path}, module.params] for k, v in d.items()}
+        if aci.params.get("port") is not None:
+            aci.url = "{protocol}://{host}:{port}/{path}".format_map(preview_params)
+        else:
+            aci.url = "{protocol}://{host}/{path}".format_map(preview_params)
         aci.filter_string = (
             "?s1dn=uni/backupst/snapshots-[uni/fabric/configexp-{export_policy}]/snapshot-{snapshot}&"
             "s2dn=uni/backupst/snapshots-[uni/fabric/configexp-{compare_export_policy}]/snapshot-{compare_snapshot}"
@@ -310,11 +315,8 @@ def get_preview(aci):
         except AttributeError:
             xml_to_json(aci, info.get("body"))
     else:
-        try:
-            aci.result["raw"] = resp.read()
-        except AttributeError:
-            aci.result["raw"] = info.get("body")
-        aci.fail_json(msg="Request failed: {code} {text} (see 'raw' output)".format_map(aci.error))
+        aci.result["raw"] = info["body"]
+        aci.fail_json(msg="Request failed: see 'raw' output")
 
 
 def xml_to_json(aci, response_data):
