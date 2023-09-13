@@ -51,7 +51,8 @@ options:
     default: 'yes'
   loopback_address:
     description:
-    - loopback IP of the loopback interface profile.
+    - Loopback IP.
+    - to delete the existing loopback IP, pass an empty string.
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -246,7 +247,7 @@ def main():
         node_id=dict(type="int"),
         router_id=dict(type="str"),
         router_id_as_loopback=dict(type="str", default="yes", choices=["yes", "no"]),
-        loopback_address = dict(type="str"),
+        loopback_address=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -275,12 +276,15 @@ def main():
 
     aci = ACIModule(module)
 
+    child_classes = ["l3extLoopBackIfP"]
+
+    child_configs = []
+
     if loopback_address is not None:
-        child_classes = ["l3extLoopBackIfP"]
-        child_configs = [dict(l3extLoopBackIfP=dict(attributes=dict(name="", descr="", addr=loopback_address)))]
-    else:
-        child_classes = []
-        child_configs = []
+        if loopback_address == "":
+            child_configs.extend([dict(l3extLoopBackIfP=dict(attributes=dict(addr="", status="deleted")))])
+        else:
+            child_configs.extend([dict(l3extLoopBackIfP=dict(attributes=dict(addr=loopback_address)))])
 
     aci.construct_url(
         root_class=dict(
