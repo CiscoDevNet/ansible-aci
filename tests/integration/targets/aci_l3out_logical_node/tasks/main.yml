@@ -1,6 +1,11 @@
 # Author: Marcel Zehnder (@maercu)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
 # SET VARS
 - name: Set vars
   set_fact:
@@ -11,11 +16,11 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      output_level: debug
 
 # CLEAN ENVIRONMENT
 - name: Remove test tenant before we kickoff
-  cisco.aci.aci_tenant: &tenant_absent
+  aci_tenant: &tenant_absent
     <<: *aci_info
     tenant: ansible_test
     state: absent
@@ -28,38 +33,38 @@
   block:  # block specifies execution of tasks within, based on conditions
   # SETUP ENVIRONMENT
   - name: Create domain
-    cisco.aci.aci_domain: &domain_present
+    aci_domain: &domain_present
       <<: *aci_info
       domain: l3outtest
       domain_type: l3dom
       state: present
 
   - name: Create tenant
-    cisco.aci.aci_tenant: &tenant_present
+    aci_tenant: &tenant_present
       <<: *tenant_absent
       state: present
 
   - name: Configure VRF
-    cisco.aci.aci_vrf: &vrf_present
+    aci_vrf: &vrf_present
       <<: *tenant_present
       vrf: l3outtest
 
   - name: Create L3Out
-    cisco.aci.aci_l3out:
+    aci_l3out:
       <<: *vrf_present
       l3out: l3outtest
       domain: l3outtest
       route_control: export 
 
   - name: Crete node profile
-    cisco.aci.aci_l3out_logical_node_profile: &np_present
+    aci_l3out_logical_node_profile: &np_present
       <<: *tenant_present
       l3out: l3outtest
       node_profile: NODES
 
   # BEGIN WITH TESTS
   - name: Add node (check_mode)
-    cisco.aci.aci_l3out_logical_node: &node_present
+    aci_l3out_logical_node: &node_present
       <<: *np_present
       pod_id: 1
       node_id: 111
@@ -69,7 +74,7 @@
     register: cm_add_node
 
   - name: Add node (normal mode)
-    cisco.aci.aci_l3out_logical_node: 
+    aci_l3out_logical_node: 
       <<: *node_present
     register: nm_add_node
 
@@ -85,7 +90,7 @@
       - nm_add_node.current.0.l3extRsNodeL3OutAtt.attributes.annotation == 'orchestrator:ansible'
 
   - name: Add node  again, check if idempotency works
-    cisco.aci.aci_l3out_logical_node: 
+    aci_l3out_logical_node: 
       <<: *node_present
     register: add_node_again
 
@@ -96,10 +101,16 @@
 
   # UPDATE NODE
   - name: Change roouter id
-    cisco.aci.aci_l3out_logical_node: &node_update
+    aci_l3out_logical_node: &node_update
       <<: *node_present
       router_id: 11.11.11.11
     register: update_node
+
+  - name: Add loopback address
+    aci_l3out_logical_node: &node_add_loopback
+      <<: *node_update
+      loopback_address: 11.11.11.12
+    register: add_loopback_ip
 
   - name: Verify update_node
     assert:
@@ -107,17 +118,20 @@
       - update_node is changed
       - update_node.previous != []
       - update_node.sent.l3extRsNodeL3OutAtt.attributes.rtrId == '11.11.11.11'
+      - add_loopback_ip is changed
+      - add_loopback_ip.previous != []
+      - add_loopback_ip.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.attributes.addr == "11.11.11.12"
 
   # ADD ANOTHER NODE
   - name: Add another node
-    cisco.aci.aci_l3out_logical_node: 
+    aci_l3out_logical_node: 
       <<: *node_present
       node_id: 112
       router_id: 12.12.12.12
 
   # QUERY ALL NODES
   - name: Query all nodes
-    cisco.aci.aci_l3out_logical_node: 
+    aci_l3out_logical_node: 
       <<: *aci_info
       state: query
     register: query_all_nodes
@@ -130,8 +144,8 @@
 
   # QUERY A SPECIFIC NODE
   - name: Query a specific node
-    cisco.aci.aci_l3out_logical_node:
-      <<: *node_update
+    aci_l3out_logical_node:
+      <<: *node_add_loopback
       state: query
     register: query_spec_node
 
@@ -143,8 +157,8 @@
 
   # REMOVE NODE
   - name: Remove node
-    cisco.aci.aci_l3out_logical_node:
-      <<: *node_update
+    aci_l3out_logical_node:
+      <<: *node_add_loopback
       state: absent
     register: remove_node
 
@@ -153,3 +167,9 @@
       that:
       - remove_node is changed
       - remove_node.current == []
+  
+  - name: Remove test tenant - clean-up the environment 
+    aci_tenant:
+      <<: *aci_info
+      tenant: ansible_test
+      state: absent
