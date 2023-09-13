@@ -112,6 +112,12 @@
       loopback_address: 11.11.11.12
     register: add_loopback_ip
 
+  - name: Remove loopback address
+    aci_l3out_logical_node: &node_remove_loopback
+      <<: *node_add_loopback
+      loopback_address: ''
+    register: remove_loopback_ip
+
   - name: Verify update_node
     assert:
       that:
@@ -120,7 +126,9 @@
       - update_node.sent.l3extRsNodeL3OutAtt.attributes.rtrId == '11.11.11.11'
       - add_loopback_ip is changed
       - add_loopback_ip.previous != []
-      - add_loopback_ip.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.attributes.addr == "11.11.11.12"
+      - add_loopback_ip.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.attributes.addr == '11.11.11.12'
+      - remove_loopback_ip is changed
+      - remove_loopback_ip.previous != []
 
   # ADD ANOTHER NODE
   - name: Add another node
@@ -145,7 +153,7 @@
   # QUERY A SPECIFIC NODE
   - name: Query a specific node
     aci_l3out_logical_node:
-      <<: *node_add_loopback
+      <<: *node_remove_loopback
       state: query
     register: query_spec_node
 
@@ -158,7 +166,7 @@
   # REMOVE NODE
   - name: Remove node
     aci_l3out_logical_node:
-      <<: *node_add_loopback
+      <<: *node_remove_loopback
       state: absent
     register: remove_node
 
