@@ -49,6 +49,9 @@ options:
     type: str
     choices: [ 'yes', 'no' ]
     default: 'yes'
+  loopback_address:
+    description:
+    - loopback IP of the loopback interface profile.
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -243,6 +246,7 @@ def main():
         node_id=dict(type="int"),
         router_id=dict(type="str"),
         router_id_as_loopback=dict(type="str", default="yes", choices=["yes", "no"]),
+        loopback_address = dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -262,6 +266,7 @@ def main():
     node_id = module.params.get("node_id")
     router_id = module.params.get("router_id")
     router_id_as_loopback = module.params.get("router_id_as_loopback")
+    loopback_address = module.params.get("loopback_address")
     state = module.params.get("state")
 
     tdn = None
@@ -269,6 +274,13 @@ def main():
         tdn = "topology/pod-{0}/node-{1}".format(pod_id, node_id)
 
     aci = ACIModule(module)
+
+    if loopback_address is not None:
+      child_classes = ["l3extLoopBackIfP"]
+      child_configs = [dict(l3extLoopBackIfP=dict(attributes=dict(name="", descr="", addr=loopback_address)))]
+    else:
+        child_classes = []
+        child_configs = []
 
     aci.construct_url(
         root_class=dict(
@@ -295,12 +307,21 @@ def main():
             module_object=tdn,
             target_filter={"name": tdn},
         ),
+        child_classes=child_classes,
     )
 
     aci.get_existing()
 
     if state == "present":
-        aci.payload(aci_class="l3extRsNodeL3OutAtt", class_config=dict(rtrId=router_id, rtrIdLoopBack=router_id_as_loopback, tDn=tdn))
+        aci.payload(
+            aci_class="l3extRsNodeL3OutAtt",
+            class_config=dict(
+                rtrId=router_id,
+                rtrIdLoopBack=router_id_as_loopback,
+                tDn=tdn
+            ),
+            child_configs=child_configs,
+        )
 
         aci.get_diff(aci_class="l3extRsNodeL3OutAtt")
 
