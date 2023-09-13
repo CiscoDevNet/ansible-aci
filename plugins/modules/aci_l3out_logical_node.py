@@ -276,8 +276,8 @@ def main():
     aci = ACIModule(module)
 
     if loopback_address is not None:
-      child_classes = ["l3extLoopBackIfP"]
-      child_configs = [dict(l3extLoopBackIfP=dict(attributes=dict(name="", descr="", addr=loopback_address)))]
+        child_classes = ["l3extLoopBackIfP"]
+        child_configs = [dict(l3extLoopBackIfP=dict(attributes=dict(name="", descr="", addr=loopback_address)))]
     else:
         child_classes = []
         child_configs = []
@@ -315,11 +315,7 @@ def main():
     if state == "present":
         aci.payload(
             aci_class="l3extRsNodeL3OutAtt",
-            class_config=dict(
-                rtrId=router_id,
-                rtrIdLoopBack=router_id_as_loopback,
-                tDn=tdn
-            ),
+            class_config=dict(rtrId=router_id, rtrIdLoopBack=router_id_as_loopback, tDn=tdn),
             child_configs=child_configs,
         )
 
