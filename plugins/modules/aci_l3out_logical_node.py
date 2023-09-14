@@ -52,14 +52,8 @@ options:
   loopback_address:
     description:
     - Loopback IP.
+    - to delete an existing loopback address, pass an empty string.
     type: str
-  delete_loopback_address:
-    description:
-    - Option to delete the current loopback interface profile.
-    - the current loopback address needs to be provided in order to be deleted.
-    type: str
-    choices: [ 'yes', 'no' ]
-    default: 'no'
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -255,7 +249,6 @@ def main():
         router_id=dict(type="str"),
         router_id_as_loopback=dict(type="str", default="yes", choices=["yes", "no"]),
         loopback_address=dict(type="str"),
-        delete_loopback_address=dict(type="str", default="no", choices=["yes", "no"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -276,7 +269,6 @@ def main():
     router_id = module.params.get("router_id")
     router_id_as_loopback = module.params.get("router_id_as_loopback")
     loopback_address = module.params.get("loopback_address")
-    delete_loopback_address = module.params.get("delete_loopback_address")
     state = module.params.get("state")
 
     tdn = None
@@ -288,12 +280,6 @@ def main():
     child_classes = ["l3extLoopBackIfP"]
 
     child_configs = []
-
-    if loopback_address is not None:
-        if delete_loopback_address == "yes":
-            child_configs.extend([dict(l3extLoopBackIfP=dict(attributes=dict(addr=loopback_address, status="deleted")))])
-        else:
-            child_configs.extend([dict(l3extLoopBackIfP=dict(attributes=dict(addr=loopback_address)))])
 
     aci.construct_url(
         root_class=dict(
@@ -324,6 +310,15 @@ def main():
     )
 
     aci.get_existing()
+
+    if loopback_address is not None:
+        if loopback_address == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
+            for child in aci.existing[0].get("l3extRsNodeL3OutAtt", {}).get("children", {}):
+                if child.get("l3extLoopBackIfP"):
+                    previous_loopback_address = child.get("l3extLoopBackIfP").get("attributes").get("addr")
+                    child_configs.extend([dict(l3extLoopBackIfP=dict(attributes=dict(addr=previous_loopback_address,status="deleted")))])
+        elif loopback_address:
+            child_configs.extend([dict(l3extLoopBackIfP=dict(attributes=dict(addr=loopback_address)))])
 
     if state == "present":
         aci.payload(
