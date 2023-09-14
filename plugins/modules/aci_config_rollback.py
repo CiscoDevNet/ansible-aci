@@ -315,8 +315,13 @@ def get_preview(aci):
         except AttributeError:
             xml_to_json(aci, info.get("body"))
     else:
-        aci.result["raw"] = info["body"]
-        aci.fail_json(msg="Request failed: see 'raw' output")
+        try:
+            # APIC error
+            aci.response_xml(info["body"])
+            aci.fail_json(msg="APIC Error {code}: {text}".format_map(aci.error))
+        except KeyError:
+            # Connection error
+            aci.fail_json(msg="Connection failed for {url}. {msg}".format_map(info))
 
 
 def xml_to_json(aci, response_data):

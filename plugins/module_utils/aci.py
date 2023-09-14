@@ -556,7 +556,7 @@ class ACIModule(object):
         self.imdata = xmldata.get("imdata", {}).get("children")
         if self.imdata is None:
             self.imdata = dict()
-        self.totalCount = int(xmldata.get("imdata", {}).get("attributes", {}).get("totalCount"))
+        self.totalCount = int(xmldata.get("imdata", {}).get("attributes", {}).get("totalCount", -1))
 
         # Handle possible APIC error information
         self.response_error()
