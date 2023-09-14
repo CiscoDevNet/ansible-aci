@@ -52,7 +52,14 @@ options:
   loopback_address:
     description:
     - Loopback IP.
-    - to delete the existing loopback IP, pass an empty string.
+    type: str
+  delete_loopback_address:
+    description:
+    - Option to delete the current loopback interface profile.
+    - the current loopback address needs to be provided in order to be deleted.
+    type: str
+    choices: [ 'yes', 'no' ]
+    default: 'no'
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -248,6 +255,7 @@ def main():
         router_id=dict(type="str"),
         router_id_as_loopback=dict(type="str", default="yes", choices=["yes", "no"]),
         loopback_address=dict(type="str"),
+        delete_loopback_address=dict(type="str", default="no", choices=["yes", "no"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -268,6 +276,7 @@ def main():
     router_id = module.params.get("router_id")
     router_id_as_loopback = module.params.get("router_id_as_loopback")
     loopback_address = module.params.get("loopback_address")
+    delete_loopback_address = module.params.get("delete_loopback_address")
     state = module.params.get("state")
 
     tdn = None
@@ -281,8 +290,8 @@ def main():
     child_configs = []
 
     if loopback_address is not None:
-        if loopback_address == "":
-            child_configs.extend([dict(l3extLoopBackIfP=dict(attributes=dict(addr="", status="deleted")))])
+        if  delete_loopback_address == "yes":
+            child_configs.extend([dict(l3extLoopBackIfP=dict(attributes=dict(addr=loopback_address, status="deleted")))])
         else:
             child_configs.extend([dict(l3extLoopBackIfP=dict(attributes=dict(addr=loopback_address)))])
 
