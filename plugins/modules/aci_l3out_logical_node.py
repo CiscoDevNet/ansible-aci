@@ -290,7 +290,7 @@ def main():
     child_configs = []
 
     if loopback_address is not None:
-        if  delete_loopback_address == "yes":
+        if delete_loopback_address == "yes":
             child_configs.extend([dict(l3extLoopBackIfP=dict(attributes=dict(addr=loopback_address, status="deleted")))])
         else:
             child_configs.extend([dict(l3extLoopBackIfP=dict(attributes=dict(addr=loopback_address)))])
