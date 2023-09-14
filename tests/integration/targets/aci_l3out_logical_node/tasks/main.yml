@@ -115,7 +115,8 @@
   - name: Remove loopback address
     aci_l3out_logical_node: &node_remove_loopback
       <<: *node_add_loopback
-      loopback_address: ''
+      loopback_address: 11.11.11.12
+      delete_loopback_address: "yes"
     register: remove_loopback_ip
 
   - name: Verify update_node
