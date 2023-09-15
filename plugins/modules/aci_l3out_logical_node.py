@@ -313,9 +313,10 @@ def main():
 
     if loopback_address is not None:
         if loopback_address == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
-            for child in aci.existing[0].get("l3extRsNodeL3OutAtt", {}).get("children", {}):
-                if child.get("l3extLoopBackIfP"):
-                    previous_loopback_address = child.get("l3extLoopBackIfP").get("attributes").get("addr")
+            for child in aci.existing[0].get("l3extRsNodeL3OutAtt", {}).get("children", []):
+                existing_loopback_interface_profile = child.get("l3extLoopBackIfP")
+                if existing_loopback_interface_profile:
+                    previous_loopback_address = existing_loopback_interface_profile.get("attributes",{}).get("addr")
                     child_configs.extend([dict(l3extLoopBackIfP=dict(attributes=dict(addr=previous_loopback_address,status="deleted")))])
         elif loopback_address:
             child_configs.extend([dict(l3extLoopBackIfP=dict(attributes=dict(addr=loopback_address)))])
