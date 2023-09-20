@@ -16,7 +16,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove test tenant before we kickoff
@@ -84,9 +84,9 @@
       - cm_add_node is changed
       - nm_add_node is changed
       - cm_add_node.previous == nm_add_node.previous == []
-      - cm_add_node.sent.l3extRsNodeL3OutAtt.attributes.rtrId == nm_add_node.sent.l3extRsNodeL3OutAtt.attributes.rtrId == '111.111.111.111'
-      - cm_add_node.sent.l3extRsNodeL3OutAtt.attributes.rtrIdLoopBack == nm_add_node.sent.l3extRsNodeL3OutAtt.attributes.rtrIdLoopBack == 'no'
-      - cm_add_node.sent.l3extRsNodeL3OutAtt.attributes.tDn == nm_add_node.sent.l3extRsNodeL3OutAtt.attributes.tDn == 'topology/pod-1/node-111'
+      - cm_add_node.sent.l3extRsNodeL3OutAtt.attributes.rtrId == nm_add_node.current.0.l3extRsNodeL3OutAtt.attributes.rtrId == '111.111.111.111'
+      - cm_add_node.sent.l3extRsNodeL3OutAtt.attributes.rtrIdLoopBack == nm_add_node.current.0.l3extRsNodeL3OutAtt.attributes.rtrIdLoopBack == 'no'
+      - cm_add_node.sent.l3extRsNodeL3OutAtt.attributes.tDn == nm_add_node.current.0.l3extRsNodeL3OutAtt.attributes.tDn == 'topology/pod-1/node-111'
       - nm_add_node.current.0.l3extRsNodeL3OutAtt.attributes.annotation == 'orchestrator:ansible'
 
   - name: Add node  again, check if idempotency works
@@ -123,7 +123,7 @@
       that:
       - update_node is changed
       - update_node.previous != []
-      - update_node.sent.l3extRsNodeL3OutAtt.attributes.rtrId == '11.11.11.11'
+      - update_node.current.0.l3extRsNodeL3OutAtt.attributes.rtrId == '11.11.11.11'
       - add_loopback_ip is changed
       - add_loopback_ip.previous != []
       - add_loopback_ip.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.attributes.addr == '11.11.11.12'
@@ -132,10 +132,11 @@
 
   # ADD ANOTHER NODE
   - name: Add another node
-    aci_l3out_logical_node: 
+    aci_l3out_logical_node: &second_node_present
       <<: *node_present
       node_id: 112
       router_id: 12.12.12.12
+      loopback_address: 12.12.12.13
 
   # QUERY ALL NODES
   - name: Query all nodes
@@ -153,7 +154,7 @@
   # QUERY A SPECIFIC NODE
   - name: Query a specific node
     aci_l3out_logical_node:
-      <<: *node_remove_loopback
+      <<: *second_node_present
       state: query
     register: query_spec_node
 
@@ -162,6 +163,8 @@
       that:
       - query_spec_node is not changed
       - query_spec_node.current|length == 1
+      - query_spec_node.current.0.l3extRsNodeL3OutAtt.attributes.rtrId == '12.12.12.12'
+      - query_spec_node.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.attributes.addr == '12.12.12.13'
 
   # REMOVE NODE
   - name: Remove node
