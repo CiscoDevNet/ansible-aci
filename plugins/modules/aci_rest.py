@@ -438,11 +438,21 @@ def main():
         # Set changed to true so check_mode changed result is behaving similar to non aci_rest modules
         aci.result["changed"] = True
 
-    if payload:
+    # Only set proposed if we have a payload and thus also only allow output_path if we have a payload
+    # DELETE and GET do not have a payload
+    if payload and method == "POST":
         if rest_type == "json":
-            aci.proposed = json.loads(payload)
-        elif rest_type == "xml":
-            aci.proposed = payload
+            payload = json.loads(payload)
+
+        aci.result["proposed"] = payload
+
+        output_path = aci.params.get("output_path")
+        if output_path is not None:
+            with open(output_path, "a") as output_file:
+                if aci.module.check_mode:
+                    json.dump([payload], output_file)
+                else:
+                    output_file.write(str(payload))
 
     # Report success
     aci.exit_json(**aci.result)
