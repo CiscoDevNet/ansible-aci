@@ -211,41 +211,35 @@ def main():
 
     aci = ACIModule(module)
 
-    if l3out is not None:
-        aci.construct_url(
-            root_class=dict(
+    tenant_url_config = dict(
                 aci_class="fvTenant",
                 aci_rn="tn-{0}".format(tenant),
                 module_object=tenant,
                 target_filter={"name": tenant},
-            ),
+            )
+    
+    route_control_profile_url_config = dict(
+                aci_class="rtcrtlProfile",
+                aci_rn="prof-{0}".format(route_control_profile),
+                module_object=route_control_profile,
+                target_filter={"name": route_control_profile},
+            )
+    
+    if l3out is not None:
+        aci.construct_url(
+            root_class=tenant_url_config,
             subclass_1=dict(
                 aci_class="l3extOut",
                 aci_rn="out-{0}".format(l3out),
                 module_object=l3out,
                 target_filter={"name": l3out},
             ),
-            subclass_2=dict(
-                aci_class="rtcrtlProfile",
-                aci_rn="prof-{0}".format(route_control_profile),
-                module_object=route_control_profile,
-                target_filter={"name": route_control_profile},
-            ),
+            subclass_2=route_control_profile_url_config,
         )
     else:
         aci.construct_url(
-            root_class=dict(
-                aci_class="fvTenant",
-                aci_rn="tn-{0}".format(tenant),
-                module_object=tenant,
-                target_filter={"name": tenant},
-            ),
-            subclass_1=dict(
-                aci_class="rtcrtlProfile",
-                aci_rn="prof-{0}".format(route_control_profile),
-                module_object=route_control_profile,
-                target_filter={"name": route_control_profile},
-            ),
+            root_class=tenant_url_config,
+            subclass_1=route_control_profile_url_config,
         )
 
     aci.get_existing()
