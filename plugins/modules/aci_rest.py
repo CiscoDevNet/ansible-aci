@@ -449,7 +449,7 @@ def main():
         output_path = aci.params.get("output_path")
         if output_path is not None:
             with open(output_path, "a") as output_file:
-                if aci.module.check_mode:
+                if rest_type == "json":
                     json.dump([payload], output_file)
                 else:
                     output_file.write(str(payload))
