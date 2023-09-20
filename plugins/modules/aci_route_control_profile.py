@@ -189,6 +189,7 @@ def main():
         auto_continue=dict(type="str", default="no", choices=["no", "yes"]),
         policy_type=dict(type="str", default="combinable", choices=["combinable", "global"]),
         name_alias=dict(type="str"),
+        state=dict(type="str", default="present", choices=["present", "absent", "query"]),
     )
 
     module = AnsibleModule(
@@ -219,7 +220,7 @@ def main():
             )
     
     route_control_profile_url_config = dict(
-                aci_class="rtcrtlProfile",
+                aci_class="rtctrlProfile",
                 aci_rn="prof-{0}".format(route_control_profile),
                 module_object=route_control_profile,
                 target_filter={"name": route_control_profile},
