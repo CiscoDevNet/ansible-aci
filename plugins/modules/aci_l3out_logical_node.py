@@ -52,7 +52,7 @@ options:
   loopback_address:
     description:
     - The loopback IP address.
-    - An empty string removes a configured loopback address.
+    - A configured loopback address can be removed by passing an empty string (see Examples).
     type: str
     aliases: [ loopback ]
   state:
@@ -88,7 +88,21 @@ EXAMPLES = r"""
     pod_id: 1
     node_id: 111
     router_id: 111.111.111.111
+    loopback_address: 111.111.111.112
     state: present
+  delegate_to: localhost
+
+- name: Remove a loopback address from a node in node profile
+  cisco.aci.aci_l3out_logical_node:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    pod_id: 1
+    node_id: 111
+    loopback_address: ""
   delegate_to: localhost
 
 - name: Delete a node from a node profile
@@ -312,15 +326,15 @@ def main():
 
     aci.get_existing()
 
-    if loopback_address is not None:
-        if loopback_address == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
-            for child in aci.existing[0].get("l3extRsNodeL3OutAtt", {}).get("children", []):
-                previous_loopback_address = child.get("l3extLoopBackIfP", {}).get("attributes", {}).get("addr")
-                child_configs.append(dict(l3extLoopBackIfP=dict(attributes=dict(addr=previous_loopback_address, status="deleted"))))
-        elif loopback_address:
-            child_configs.append(dict(l3extLoopBackIfP=dict(attributes=dict(addr=loopback_address))))
-
     if state == "present":
+        if loopback_address is not None:
+            if loopback_address == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
+                for child in aci.existing[0].get("l3extRsNodeL3OutAtt", {}).get("children", []):
+                    previous_loopback_address = child.get("l3extLoopBackIfP", {}).get("attributes", {}).get("addr")
+                    child_configs.append(dict(l3extLoopBackIfP=dict(attributes=dict(addr=previous_loopback_address, status="deleted"))))
+            elif loopback_address:
+                child_configs.append(dict(l3extLoopBackIfP=dict(attributes=dict(addr=loopback_address))))
+
         aci.payload(
             aci_class="l3extRsNodeL3OutAtt",
             class_config=dict(rtrId=router_id, rtrIdLoopBack=router_id_as_loopback, tDn=tdn),
