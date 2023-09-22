@@ -12,29 +12,24 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_route_control_profile
-short_description: Manage Route Control Profile (rtcrtl:Profile)
+module: aci_subject_profile
+short_description: Manage Subject Profile (rtcrtl:SubjP)
 description:
-- Manage Route Control Profiles on Cisco ACI fabrics.
+- Manage Subject Profiles for the Context Policies on Cisco ACI fabrics.
 options:
   tenant:
     description:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  l3out:
+  subject_profile:
     description:
-    - Name of an existing L3Out.
+    - Name of the subject profile being created.
     type: str
-    aliases: [ l3out_name ]
-  route_control_profile:
-    description:
-    - Name of the route control profile being created.
-    type: str
-    aliases: [ name, rtctrl_profile_name ]
+    aliases: [ name, subject_name ]
   description:
     description:
-    - The description for the route control profile.
+    - The description for the Subject Profile.
     type: str
     aliases: [ descr ]
   state:
@@ -59,7 +54,7 @@ notes:
 seealso:
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(rtctrl:Profile).
+  description: More information about the internal APIC class B(rtctrl:SubjP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Gaspard Micol (@gmicol)
@@ -184,10 +179,8 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         l3out=dict(type="str", aliases=["l3out_name"]),  # Not required for querying all objects
-        route_control_profile = dict(type="str", aliases=["name", "rtctrl_profile_name"]), # Not required for querying all objects
+        subject_profile=dict(type="str", aliases=["name", "subject_name"]), # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
-        auto_continue=dict(type="str", default="no", choices=["no", "yes"]),
-        policy_type=dict(type="str", default="combinable", choices=["combinable", "global"]),
         name_alias=dict(type="str"),
         state=dict(type="str", default="present", choices=["present", "absent", "query"]),
     )
@@ -196,68 +189,47 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["route_control_profile", "tenant"]],
-            ["state", "present", ["route_control_profile", "tenant"]],
+            ["state", "absent", ["subject_profile", "tenant"]],
+            ["state", "present", ["subject_profile", "tenant"]],
         ],
     )
 
-    route_control_profile = module.params.get("route_control_profile")
+    subject_profile = module.params.get("subject_profile")
     description = module.params.get("description")
-    auto_continue = module.params.get("auto_continue")
-    policy_type = module.params.get("policy_type")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
-    l3out = module.params.get("l3out")
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
 
-    tenant_url_config = dict(
+    aci.construct_url(
+        root_class=dict(
                 aci_class="fvTenant",
                 aci_rn="tn-{0}".format(tenant),
                 module_object=tenant,
                 target_filter={"name": tenant},
-            )
-    
-    route_control_profile_url_config = dict(
-                aci_class="rtctrlProfile",
-                aci_rn="prof-{0}".format(route_control_profile),
-                module_object=route_control_profile,
-                target_filter={"name": route_control_profile},
-            )
-    
-    if l3out is not None:
-        aci.construct_url(
-            root_class=tenant_url_config,
-            subclass_1=dict(
-                aci_class="l3extOut",
-                aci_rn="out-{0}".format(l3out),
-                module_object=l3out,
-                target_filter={"name": l3out},
             ),
-            subclass_2=route_control_profile_url_config,
-        )
-    else:
-        aci.construct_url(
-            root_class=tenant_url_config,
-            subclass_1=route_control_profile_url_config,
-        )
+        subclass_1=dict(
+                aci_class="rtctrlSubjP",
+                aci_rn="subj-{0}".format(subject_profile),
+                module_object=subject_profile,
+                target_filter={"name": subject_profile},
+            ),
+    )
 
     aci.get_existing()
 
     if state == "present":
         aci.payload(
-            aci_class="rtctrlProfile",
+            aci_class="rtctrlSubjP",
             class_config=dict(
-                name=route_control_profile,
+                name=subject_profile,
                 descr=description,
-                autoContinue=auto_continue,
-                type=policy_type,
                 nameAlias=name_alias,
             ),
         )
 
-        aci.get_diff(aci_class="rtctrlProfile")
+        aci.get_diff(aci_class="rtctrlSubjP")
 
         aci.post_config()
 
