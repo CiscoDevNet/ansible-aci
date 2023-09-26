@@ -11,7 +11,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_l3out_interface_floating_svi
+module: aci_l3out_floating_svi
 short_description: Manage Layer 3 Outside (L3Out) interfaces (l3ext:RsPathL3OutAtt)
 description:
 - Manage L3Out interfaces on Cisco ACI fabrics.
@@ -310,7 +310,7 @@ def main():
         encap_scope=dict(type="str", choices=["vrf", "local"]),
         auto_state=dict(type="str", choices=["enabled", "disabled"]),
         description=dict(type="str", aliases=["descr"]),
-        #external_bridge_group_profile=dict(type="str"),
+        external_bridge_group_profile=dict(type="str"),
         dscp=dict(
             type="str",
             choices=[
@@ -345,7 +345,7 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "present", ["pod_id", "node_id", "encap"]], ["state", "absent", ["pod_id", "node_id"]]],
+        required_if=[["state", "present", ["pod_id", "node_id", "encap", "address"]], ["state", "absent", ["pod_id", "node_id", "encap"]]],
     )
 
     tenant = module.params.get("tenant")
@@ -360,26 +360,13 @@ def main():
     ipv6_dad = module.params.get("ipv6_dad")
     mode = module.params.get("mode")
     encap = module.params.get("encap")
-    encap_scope = "ctx" if module.params.get("encap") is "vrf" else module.params.get("encap")
+    encap_scope = "ctx" if module.params.get("encap_scope") == "vrf" else module.params.get("encap_scope")
     auto_state = module.params.get("auto_state")
-    #external_bridge_group_profile = module.params.get("xternal_bridge_group_profile")
+    external_bridge_group_profile = module.params.get("external_bridge_group_profile")
 
     aci = ACIModule(module)
-    
+
     node_dn = "topology/pod-{0}/node-{1}".format(pod_id, node_id)
-
-    # child_configs = []
-
-    # if external_bridge_group_profile is not None:
-    #     child_configs.append(
-    #         dict(
-    #             infraRsAttEntP=dict(
-    #                 attributes=dict(
-    #                     tDn="uni/tn-{0}/bdprofile-{1}".format(tenant, external_bridge_group_profile),
-    #                 ),
-    #             ),
-    #         )
-    #     )
 
     aci.construct_url(
         root_class=dict(
@@ -406,15 +393,63 @@ def main():
             module_object=interface_profile,
             target_filter={"name": interface_profile},
         ),
-        subclass_4=dict(aci_class="l3extVirtualLIfP", aci_rn="vlifp-[{0}]-[vlan-{1}]".format(node_dn, encap), module_object=node_dn, target_filter={"nodeDn": node_dn}),
+        subclass_4=dict(
+            aci_class="l3extVirtualLIfP", aci_rn="vlifp-[{0}]-[{1}]".format(node_dn, encap), module_object=node_dn, target_filter={"nodeDn": node_dn}
+        ),
+        child_classes=["l3extBdProfileCont"],
     )
 
     aci.get_existing()
 
     if state == "present":
+        child_configs = []
+        if external_bridge_group_profile is not None:
+            existing_external_bridge_group_profile = ""
+            if isinstance(aci.existing, list) and len(aci.existing) > 0:
+                for child in aci.existing[0].get("l3extVirtualLIfP", {}).get("children", {}):
+                    if child.get("l3extBdProfileCont"):
+                        existing_external_bridge_group_profile = (
+                            child.get("l3extBdProfileCont").get("children")[0].get("l3extRsBdProfile").get("attributes").get("tDn").split("bdprofile-")[1]
+                        )
+                        if external_bridge_group_profile == "":
+                            child_configs.append(
+                                dict(
+                                    l3extBdProfileCont=dict(
+                                        attributes=dict(status="deleted"),
+                                    ),
+                                )
+                            )
+
+            if external_bridge_group_profile != "":
+                status = ""
+                if existing_external_bridge_group_profile == "":
+                    status = "created"
+                elif external_bridge_group_profile != existing_external_bridge_group_profile and existing_external_bridge_group_profile != "":
+                    status = "modified"
+                if status != "":
+                    child_configs.append(
+                        dict(
+                            l3extBdProfileCont=dict(
+                                attributes=dict(status=status),
+                                children=[
+                                    dict(
+                                        l3extRsBdProfile=dict(
+                                            attributes=dict(
+                                                tDn="uni/tn-{0}/bdprofile-{1}".format(tenant, external_bridge_group_profile),
+                                            ),
+                                        )
+                                    )
+                                ],
+                            )
+                        )
+                    )
+
         aci.payload(
             aci_class="l3extVirtualLIfP",
-            class_config=dict(tDn=node_dn, addr=address, ipv6Dad=ipv6_dad, mtu=mtu, ifInstT="ext-svi", mode=mode, encap=encap, encapScope=encap_scope, autostate=auto_state),
+            class_config=dict(
+                addr=address, ipv6Dad=ipv6_dad, mtu=mtu, ifInstT="ext-svi", mode=mode, encap=encap, encapScope=encap_scope, autostate=auto_state
+            ),
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class="l3extVirtualLIfP")
