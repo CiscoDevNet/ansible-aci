@@ -11,7 +11,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_l3out_interface_floating_svi
+module: aci_l3out_floating_svi
 short_description: Manage Layer 3 Outside (L3Out) interfaces (l3ext:RsPathL3OutAtt)
 description:
 - Manage L3Out interfaces on Cisco ACI fabrics.
@@ -298,16 +298,19 @@ def main():
         node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"], required=True),
         interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"], required=True),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        pod_id=dict(type="str"),
-        node_id=dict(type="str"),
-        encap=dict(type="str"),
-        external_bridge_group_profile=dict(type="str"),
+        pod_id=dict(type="str", required=True),
+        node_id=dict(type="str", required=True),
+        encap=dict(type="str", required=True),
+        floating_ip=dict(type="str", aliases=["floating_address"], required=True),
+        domain_type=dict(type="str", choices=["physical", "vmware"], required=True),
+        domain=dict(type="str", required=True),
+        address=dict(type="str", aliases=["addr", "ip_address"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "present", ["pod_id", "node_id", "encap", "external_bridge_group_profile"]], ["state", "absent", ["pod_id", "node_id"]]],
+        required_if=[["state", "present", ["address"]], ["state", "absent", ["address"]]],
     )
 
     tenant = module.params.get("tenant")
@@ -318,11 +321,18 @@ def main():
     pod_id = module.params.get("pod_id")
     node_id = module.params.get("node_id")
     encap = module.params.get("encap")
-    external_bridge_group_profile = module.params.get("external_bridge_group_profile")
+    domain_type = module.params.get("domain_type")
+    domain = module.params.get("domain")
+    address = module.params.get("address")
 
     aci = ACIModule(module)
-    
+
     node_dn = "topology/pod-{0}/node-{1}".format(pod_id, node_id)
+
+    if domain_type == "physical":
+        tDn = "uni/phys-{0}".format(domain)
+    elif domain_type == "vmware":
+        tDn = "uni/vmmp-VMware/dom-{0}".format(domain)
 
     aci.construct_url(
         root_class=dict(
@@ -349,34 +359,29 @@ def main():
             module_object=interface_profile,
             target_filter={"name": interface_profile},
         ),
-        subclass_4=dict(aci_class="l3extVirtualLIfP", aci_rn="vlifp-[{0}]-[vlan-{1}]".format(node_dn, encap), module_object=node_dn, target_filter={"nodeDn": node_dn}),
-        subclass_5=dict(
-            aci_class="l3extBdProfileCont",
-            aci_rn="bdprofilecont",
-            #module_object=True,
+        subclass_4=dict(
+            aci_class="l3extVirtualLIfP", aci_rn="vlifp-[{0}]-[{1}]".format(node_dn, encap), module_object=node_dn, target_filter={"nodeDn": node_dn}
         ),
-        child_classes=["l3extRsBdProfile"],
+        subclass_5=dict(
+            aci_class="l3extRsDynPathAtt",
+            aci_rn="rsdynPathAtt-[{0}]".format(tDn),
+            module_object=tDn,
+            target_filter={"tDn": tDn},
+        ),
+        subclass_6=dict(
+            aci_class="l3extIp",
+            aci_rn="addr-[{0}]".format(address),
+            module_object=address,
+            target_filter={"addr": address},
+        ),
     )
 
     aci.get_existing()
 
     if state == "present":
-        child_configs = []
-        child_configs.append(
-            dict(
-                l3extRsBdProfile=dict(
-                    attributes=dict(
-                        tDn="uni/tn-{0}/bdprofile-{1}".format(tenant, external_bridge_group_profile),
-                    ),
-                ),
-            )
-        )
-        aci.payload(
-            aci_class="l3extBdProfileCont",
-            child_configs=child_configs,
-        )
+        aci.payload(aci_class="l3extIp", class_config=dict(addr=address, ipv6Dad="disabled"))
 
-        aci.get_diff(aci_class="l3extBdProfileCont")
+        aci.get_diff(aci_class="l3extIp")
 
         aci.post_config()
 

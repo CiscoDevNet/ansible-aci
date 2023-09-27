@@ -276,14 +276,14 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        tenant=dict(type="str", aliases=["tenant_name"]),
-        l3out=dict(type="str", aliases=["l3out_name"]),
-        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
-        interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
+        tenant=dict(type="str", aliases=["tenant_name"], required=True),
+        l3out=dict(type="str", aliases=["l3out_name"], required=True),
+        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"], required=True),
+        interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"], required=True),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        pod_id=dict(type="str"),
-        node_id=dict(type="str"),
-        encap=dict(type="str"),
+        pod_id=dict(type="str", required=True),
+        node_id=dict(type="str", required=True),
+        encap=dict(type="str", required=True),
         address=dict(type="str", aliases=["addr", "ip_address"]),
     )
 
@@ -295,24 +295,14 @@ def main():
                 "state",
                 "absent",
                 [
-                    "tenant",
-                    "l3out",
-                    "node_profile",
-                    "interface_profile",
-                    "pod_id",
-                    "node_id",
+                    "address",
                 ],
             ],
             [
                 "state",
                 "present",
                 [
-                    "tenant",
-                    "l3out",
-                    "node_profile",
-                    "interface_profile",
-                    "pod_id",
-                    "node_id",
+                    "address",
                 ],
             ],
         ],
@@ -324,7 +314,7 @@ def main():
     interface_profile = module.params.get("interface_profile")
     pod_id = module.params.get("pod_id")
     node_id = module.params.get("node_id")
-    encap = module.params.get("encap"),
+    encap = (module.params.get("encap"),)
     address = module.params.get("address")
     state = module.params.get("state")
 
@@ -357,7 +347,9 @@ def main():
             module_object=interface_profile,
             target_filter={"name": interface_profile},
         ),
-        subclass_4=dict(aci_class="l3extVirtualLIfP", aci_rn="vlifp-[{0}]-[vlan-{1}]".format(node_dn, encap), module_object=node_dn, target_filter={"nodeDn": node_dn}),
+        subclass_4=dict(
+            aci_class="l3extVirtualLIfP", aci_rn="vlifp-[{0}]-[{1}]".format(node_dn, encap), module_object=node_dn, target_filter={"nodeDn": node_dn}
+        ),
         subclass_5=dict(
             aci_class="l3extIp",
             aci_rn="addr-[{0}]".format(address),
@@ -370,7 +362,9 @@ def main():
 
     if state == "present":
         aci.payload(aci_class="l3extIp", class_config=dict(addr=address, ipv6Dad="enabled"))
+
         aci.get_diff(aci_class="l3extIp")
+
         aci.post_config()
 
     elif state == "absent":

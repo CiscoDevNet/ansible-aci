@@ -305,7 +305,7 @@ def main():
         forged_transmit=dict(type="str", choices=["enabled", "disabled"]),
         mac_change=dict(type="str", choices=["enabled", "disabled"]),
         promiscuous_mode=dict(type="str", choices=["enabled", "disabled"]),
-        domain_type=dict(type="str", choices=["physical", "virtual"], required=True),
+        domain_type=dict(type="str", choices=["physical", "vmware"], required=True),
         domain=dict(type="str", required=True),
         enhanced_lag_policy=dict(type="str"),
     )
@@ -331,14 +331,14 @@ def main():
     domain_type = module.params.get("domain_type")
     domain = module.params.get("domain")
     enhanced_lag_policy = module.params.get("enhanced_lag_policy")
-    
+
     aci = ACIModule(module)
 
     node_dn = "topology/pod-{0}/node-{1}".format(pod_id, node_id)
 
     if domain_type == "physical":
-        tDn = "uni/phys-{0}".format(domain)            
-    else:
+        tDn = "uni/phys-{0}".format(domain)
+    elif domain_type == "vmware":
         tDn = "uni/vmmp-VMware/dom-{0}".format(domain)
 
     aci.construct_url(
@@ -375,7 +375,7 @@ def main():
             module_object=tDn,
             target_filter={"tDn": tDn},
         ),
-        child_classes=["l3extVirtualLIfPLagPolAtt"]
+        child_classes=["l3extVirtualLIfPLagPolAtt"],
     )
 
     aci.get_existing()
@@ -388,7 +388,12 @@ def main():
                 for child in aci.existing[0].get("l3extRsDynPathAtt", {}).get("children", {}):
                     if child.get("l3extVirtualLIfPLagPolAtt"):
                         existing_enhanced_lag_policy = (
-                            child.get("l3extVirtualLIfPLagPolAtt").get("children")[0].get("l3extRsVSwitchEnhancedLagPol").get("attributes").get("tDn").split("enlacplagp-")[1]
+                            child.get("l3extVirtualLIfPLagPolAtt")
+                            .get("children")[0]
+                            .get("l3extRsVSwitchEnhancedLagPol")
+                            .get("attributes")
+                            .get("tDn")
+                            .split("enlacplagp-")[1]
                         )
                         if enhanced_lag_policy == "":
                             child_configs.append(
@@ -400,39 +405,30 @@ def main():
                             )
 
             if enhanced_lag_policy != "":
-                child=[
-                      dict(
-                          l3extRsVSwitchEnhancedLagPol=dict(
-                              attributes=dict(
-                                  tDn="{0}/vswitchpolcont/enlacplagp-{1}".format(tDn, enhanced_lag_policy)
-                              ),
-                          )
-                      ),
-                    ]
+                child = [
+                    dict(
+                        l3extRsVSwitchEnhancedLagPol=dict(
+                            attributes=dict(tDn="{0}/vswitchpolcont/enlacplagp-{1}".format(tDn, enhanced_lag_policy)),
+                        )
+                    ),
+                ]
                 if enhanced_lag_policy != existing_enhanced_lag_policy and existing_enhanced_lag_policy != "":
                     child.append(
-                            dict(
-                                l3extRsVSwitchEnhancedLagPol=dict(
-                                    attributes=dict(
-                                        status="deleted",
-                                        tDn="{0}/vswitchpolcont/enlacplagp-{1}".format(tDn, existing_enhanced_lag_policy)
-                                    ),
-                                )
+                        dict(
+                            l3extRsVSwitchEnhancedLagPol=dict(
+                                attributes=dict(status="deleted", tDn="{0}/vswitchpolcont/enlacplagp-{1}".format(tDn, existing_enhanced_lag_policy)),
                             )
-                    )
-                child_configs.append(
-                    dict(
-                        l3extVirtualLIfPLagPolAtt=dict(
-                            attributes=dict(),
-                            children=child
                         )
                     )
-                )
+                child_configs.append(dict(l3extVirtualLIfPLagPolAtt=dict(attributes=dict(), children=child)))
 
         aci.payload(
             aci_class="l3extRsDynPathAtt",
             class_config=dict(
-                floatingAddr=floating_ip, forgedTransmit=forged_transmit, macChange=mac_change, promMode=promiscuous_mode,
+                floatingAddr=floating_ip,
+                forgedTransmit=forged_transmit,
+                macChange=mac_change,
+                promMode=promiscuous_mode,
             ),
             child_configs=child_configs,
         )
