@@ -400,20 +400,16 @@ def main():
                             )
 
             if enhanced_lag_policy != "":
-                status = ""
                 child=[
-                        dict(
-                            l3extRsVSwitchEnhancedLagPol=dict(
-                                attributes=dict(
-                                    tDn="{0}/vswitchpolcont/enlacplagp-{1}".format(tDn, enhanced_lag_policy)
-                                ),
-                            )
-                        ),
+                      dict(
+                          l3extRsVSwitchEnhancedLagPol=dict(
+                              attributes=dict(
+                                  tDn="{0}/vswitchpolcont/enlacplagp-{1}".format(tDn, enhanced_lag_policy)
+                              ),
+                          )
+                      ),
                     ]
-                if existing_enhanced_lag_policy == "":
-                    status = "created"
-                elif enhanced_lag_policy != existing_enhanced_lag_policy and existing_enhanced_lag_policy != "":
-                    status = "modified"
+                if enhanced_lag_policy != existing_enhanced_lag_policy and existing_enhanced_lag_policy != "":
                     child.append(
                             dict(
                                 l3extRsVSwitchEnhancedLagPol=dict(
@@ -424,15 +420,14 @@ def main():
                                 )
                             )
                     )
-                if status != "":
-                    child_configs.append(
-                        dict(
-                            l3extVirtualLIfPLagPolAtt=dict(
-                                attributes=dict(status=status),
-                                children=child
-                            )
+                child_configs.append(
+                    dict(
+                        l3extVirtualLIfPLagPolAtt=dict(
+                            attributes=dict(),
+                            children=child
                         )
                     )
+                )
 
         aci.payload(
             aci_class="l3extRsDynPathAtt",

@@ -1380,6 +1380,8 @@ class ACIModule(object):
                         else:
                             child[root_key]["attributes"][final_keys] = str(values)
                             has_value = True
+                    if child_copy[root_key].get("children") is not None:
+                        has_value = True
                 if has_value:
                     children.append(child)
 

@@ -404,45 +404,33 @@ def main():
     if state == "present":
         child_configs = []
         if external_bridge_group_profile is not None:
-            existing_external_bridge_group_profile = ""
-            if isinstance(aci.existing, list) and len(aci.existing) > 0:
+            if external_bridge_group_profile == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
                 for child in aci.existing[0].get("l3extVirtualLIfP", {}).get("children", {}):
                     if child.get("l3extBdProfileCont"):
-                        existing_external_bridge_group_profile = (
-                            child.get("l3extBdProfileCont").get("children")[0].get("l3extRsBdProfile").get("attributes").get("tDn").split("bdprofile-")[1]
+                        child_configs.append(
+                            dict(
+                                l3extBdProfileCont=dict(
+                                    attributes=dict(status="deleted"),
+                                ),
+                            )
                         )
-                        if external_bridge_group_profile == "":
-                            child_configs.append(
+            elif external_bridge_group_profile != "":
+                child_configs.append(
+                    dict(
+                        l3extBdProfileCont=dict(
+                            attributes=dict(),
+                            children=[
                                 dict(
-                                    l3extBdProfileCont=dict(
-                                        attributes=dict(status="deleted"),
-                                    ),
-                                )
-                            )
-
-            if external_bridge_group_profile != "":
-                status = ""
-                if existing_external_bridge_group_profile == "":
-                    status = "created"
-                elif external_bridge_group_profile != existing_external_bridge_group_profile and existing_external_bridge_group_profile != "":
-                    status = "modified"
-                if status != "":
-                    child_configs.append(
-                        dict(
-                            l3extBdProfileCont=dict(
-                                attributes=dict(status=status),
-                                children=[
-                                    dict(
-                                        l3extRsBdProfile=dict(
-                                            attributes=dict(
-                                                tDn="uni/tn-{0}/bdprofile-{1}".format(tenant, external_bridge_group_profile),
-                                            ),
-                                        )
+                                    l3extRsBdProfile=dict(
+                                        attributes=dict(
+                                            tDn="uni/tn-{0}/bdprofile-{1}".format(tenant, external_bridge_group_profile),
+                                        ),
                                     )
-                                ],
-                            )
+                                )
+                            ],
                         )
                     )
+                )
 
         aci.payload(
             aci_class="l3extVirtualLIfP",
