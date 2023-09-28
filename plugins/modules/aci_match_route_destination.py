@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_subject_profile
+module: aci_match_route_destination
 short_description: Manage Match action rule based on the Route Destination. (rtctrl:MatchRtDest)
 description:
 - Match action rule based on the Route Destination for Subject Profiles on Cisco ACI fabrics.
@@ -35,16 +35,17 @@ options:
     description:
     - Option to enable/disable aggregated route.
     type: str
-    choices: [ yes, no ]
+    choices: [ "no", "yes" ]
   from_prefix_lenght:
     description:
     - Start of the prefix lenght.
     - It corresponds to the less equal Mask if the route is aggregated.
-    type: str
+    type: int
   to_prefix_lenght:
     description:
     - End of the prefix lenght.
     - It corresponds to greater equal Mask if the route is aggregated.
+    type: int
   description:
     description:
     - The description for the Match Action Rule.
@@ -196,7 +197,7 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        subject_profile=dict(type="str", aliases=["subject_name"]), # Not required for querying all objects
+        subject_profile=dict(type="str", aliases=["subject_name"]),  # Not required for querying all objects
         ip=dict(type="str"),
         aggregate=dict(type="str", choices=["no", "yes"]),
         from_prefix_lenght=dict(type="int"),
@@ -229,23 +230,23 @@ def main():
 
     aci.construct_url(
         root_class=dict(
-                aci_class="fvTenant",
-                aci_rn="tn-{0}".format(tenant),
-                module_object=tenant,
-                target_filter={"name": tenant},
-            ),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
+            module_object=tenant,
+            target_filter={"name": tenant},
+        ),
         subclass_1=dict(
-                aci_class="rtctrlSubjP",
-                aci_rn="subj-{0}".format(subject_profile),
-                module_object=subject_profile,
-                target_filter={"name": subject_profile},
-            ),
+            aci_class="rtctrlSubjP",
+            aci_rn="subj-{0}".format(subject_profile),
+            module_object=subject_profile,
+            target_filter={"name": subject_profile},
+        ),
         subclass_2=dict(
-                aci_class="rtctrlMatchRtDest",
-                aci_rn="dest-[{0}]".format(ip),
-                module_object=ip,
-                target_filter={"ip": ip},
-            ),
+            aci_class="rtctrlMatchRtDest",
+            aci_rn="dest-[{0}]".format(ip),
+            module_object=ip,
+            target_filter={"ip": ip},
+        ),
     )
 
     aci.get_existing()

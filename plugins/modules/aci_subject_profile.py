@@ -178,7 +178,7 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        subject_profile=dict(type="str", aliases=["name", "subject_name"]), # Not required for querying all objects
+        subject_profile=dict(type="str", aliases=["name", "subject_name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         name_alias=dict(type="str"),
         state=dict(type="str", default="present", choices=["present", "absent", "query"]),
@@ -203,17 +203,17 @@ def main():
 
     aci.construct_url(
         root_class=dict(
-                aci_class="fvTenant",
-                aci_rn="tn-{0}".format(tenant),
-                module_object=tenant,
-                target_filter={"name": tenant},
-            ),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
+            module_object=tenant,
+            target_filter={"name": tenant},
+        ),
         subclass_1=dict(
-                aci_class="rtctrlSubjP",
-                aci_rn="subj-{0}".format(subject_profile),
-                module_object=subject_profile,
-                target_filter={"name": subject_profile},
-            ),
+            aci_class="rtctrlSubjP",
+            aci_rn="subj-{0}".format(subject_profile),
+            module_object=subject_profile,
+            target_filter={"name": subject_profile},
+        ),
     )
 
     aci.get_existing()
