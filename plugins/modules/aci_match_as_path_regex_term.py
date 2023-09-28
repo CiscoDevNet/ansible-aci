@@ -58,8 +58,8 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) module can be used for this.
+- The C(tenant) and the C(subject_profile) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) and the M(cisco.aci.subject_profile) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
@@ -187,7 +187,6 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        l3out=dict(type="str", aliases=["l3out_name"]),  # Not required for querying all objects
         subject_profile=dict(type="str", aliases=["subject_name"]), # Not required for querying all objects
         match_as_path_regex_term=dict(type="str", aliases=["name", "match_rule_name"]),
         regex=dict(type="str"),

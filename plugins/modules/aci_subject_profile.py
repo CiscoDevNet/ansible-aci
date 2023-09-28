@@ -178,7 +178,6 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        l3out=dict(type="str", aliases=["l3out_name"]),  # Not required for querying all objects
         subject_profile=dict(type="str", aliases=["name", "subject_name"]), # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         name_alias=dict(type="str"),

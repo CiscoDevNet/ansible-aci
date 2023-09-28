@@ -69,8 +69,8 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) module can be used for this.
+- The C(tenant) and the C(route_control_profile) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) and the M(cisco.aci.aci_route_control_profile) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
@@ -201,6 +201,8 @@ def main():
         l3out=dict(type="str", aliases=["l3out_name"]),  # Not required for querying all objects
         route_control_profile=dict(type="str", aliases=["rtctrl_profile_name"]), # Not required for querying all objects
         context_policy=dict(type="str", aliases=["name", "context_name"]), # Not required for querying all objects
+        subject_profile=dict(type="str", aliases=["subject_name"]),
+        action_rule=dict(type="str", aliases=["action_rule_name"]),
         action = dict(type="str", choices=["deny", "permit"]),
         order=dict(type="int"),
         description=dict(type="str", aliases=["descr"]),
@@ -225,9 +227,13 @@ def main():
     tenant = module.params.get("tenant")
     l3out = module.params.get("l3out")
     route_control_profile = module.params.get("route_control_profile")
+    subject_profile = module.params.get("subject_profile")
+    action_rule = module.params.get("action_rule")
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
+
+    child_classes = ["rtctrlRsCtxPToSubjP", "rtctrlScope"]
 
     tenant_url_config = dict(
                 aci_class="fvTenant",
@@ -261,26 +267,40 @@ def main():
             ),
             subclass_2=route_control_profile_url_config,
             subclass_3=context_policy_url_config,
+            child_classes=child_classes,
         )
     else:
         aci.construct_url(
             root_class=tenant_url_config,
             subclass_1=route_control_profile_url_config,
             subclass_2=context_policy_url_config,
+            child_classes=child_classes,
         )
 
     aci.get_existing()
 
     if state == "present":
+        child_configs = []
+        if subject_profile is not None:
+            child_configs.append({"rtctrlRsCtxPToSubjP": {"attributes": {"tnRtctrlSubjPName": subject_profile}}})
+        if action_rule is not None:
+            child_configs.append(
+                {"rtctrlScope": {"attributes": {"descr": ""},
+                                "children": [{"rtctrlRsScopeToAttrP": {"attributes": {"tnRtctrlAttrPName": action_rule}}}],
+                                }
+                }
+            )
+
         aci.payload(
             aci_class="rtctrlCtxP",
             class_config=dict(
-                name=route_control_profile,
+                name=context_policy,
                 descr=description,
                 action=action,
                 order=order,
                 nameAlias=name_alias,
             ),
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class="rtctrlCtxP")
