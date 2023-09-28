@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_subject_profile
+module: aci_match_community_factor
 short_description: Manage Match Community Factor (rtctrl:MatchCommFactor)
 description:
 - Manage Match Community Factors for Match Rules Based on Community on Cisco ACI fabrics.
@@ -194,8 +194,8 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        subject_profile=dict(type="str", aliases=["subject_name"]), # Not required for querying all objects
-        match_community_term=dict(type="str", aliases=["match_rule_name"]), # Not required for querying all objects
+        subject_profile=dict(type="str", aliases=["subject_name"]),  # Not required for querying all objects
+        match_community_term=dict(type="str", aliases=["match_rule_name"]),  # Not required for querying all objects
         community=dict(type="str"),
         scope=dict(type="str", choices=["transitive", "non-transitive"]),
         description=dict(type="str", aliases=["descr"]),
@@ -225,29 +225,29 @@ def main():
 
     aci.construct_url(
         root_class=dict(
-                aci_class="fvTenant",
-                aci_rn="tn-{0}".format(tenant),
-                module_object=tenant,
-                target_filter={"name": tenant},
-            ),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
+            module_object=tenant,
+            target_filter={"name": tenant},
+        ),
         subclass_1=dict(
-                aci_class="rtctrlSubjP",
-                aci_rn="subj-{0}".format(subject_profile),
-                module_object=subject_profile,
-                target_filter={"name": subject_profile},
-            ),
+            aci_class="rtctrlSubjP",
+            aci_rn="subj-{0}".format(subject_profile),
+            module_object=subject_profile,
+            target_filter={"name": subject_profile},
+        ),
         subclass_2=dict(
-                aci_class="rtctrlMatchCommTerm",
-                aci_rn="commtrm-{0}".format(match_community_term),
-                module_object=match_community_term,
-                target_filter={"name": match_community_term},
-            ),
+            aci_class="rtctrlMatchCommTerm",
+            aci_rn="commtrm-{0}".format(match_community_term),
+            module_object=match_community_term,
+            target_filter={"name": match_community_term},
+        ),
         subclass_3=dict(
-                aci_class="rtctrlMatchCommFactor",
-                aci_rn="commfct-{0}".format(community),
-                module_object=community,
-                target_filter={"community": community},
-            ),
+            aci_class="rtctrlMatchCommFactor",
+            aci_rn="commfct-{0}".format(community),
+            module_object=community,
+            target_filter={"community": community},
+        ),
     )
 
     aci.get_existing()

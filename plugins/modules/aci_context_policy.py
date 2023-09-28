@@ -12,10 +12,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_route_control_profile
-short_description: Manage Context Policy (rtcrtl:CtxP)
+module: aci_context_policy
+short_description: Manage Route Context Policy (rtcrtl:CtxP)
 description:
-- Manage Context Policies for the Route Control Profiles on Cisco ACI fabrics.
+- Manage Route Context Policies for the Route Control Profiles on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -42,6 +42,20 @@ options:
     - The action required when the condition is met.
     type: str
     choices: [ deny, permit ]
+  action_rule:
+    description:
+    - Name of the action rule profile to be associated with this route context policy.
+    - Set the rules for a Route Map.
+    - See module M(cisco.aci.aci_tenant_action_rule_profile).
+    type: str
+    aliases: [ action_rule_name ]
+  subject_profile:
+    description:
+    - Name of the subject profile to be associated with this route context policy.
+    - Set the associated Matched rules.
+    - See module M(cisco.aci.aci_subject_profile).
+    type: str
+    aliases: [ subject_name ]
   order:
     description:
     - The order of the policy context.
@@ -199,11 +213,11 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         l3out=dict(type="str", aliases=["l3out_name"]),  # Not required for querying all objects
-        route_control_profile=dict(type="str", aliases=["rtctrl_profile_name"]), # Not required for querying all objects
-        context_policy=dict(type="str", aliases=["name", "context_name"]), # Not required for querying all objects
+        route_control_profile=dict(type="str", aliases=["rtctrl_profile_name"]),  # Not required for querying all objects
+        context_policy=dict(type="str", aliases=["name", "context_name"]),  # Not required for querying all objects
         subject_profile=dict(type="str", aliases=["subject_name"]),
         action_rule=dict(type="str", aliases=["action_rule_name"]),
-        action = dict(type="str", choices=["deny", "permit"]),
+        action=dict(type="str", choices=["deny", "permit"]),
         order=dict(type="int"),
         description=dict(type="str", aliases=["descr"]),
         name_alias=dict(type="str"),
@@ -236,26 +250,26 @@ def main():
     child_classes = ["rtctrlRsCtxPToSubjP", "rtctrlScope"]
 
     tenant_url_config = dict(
-                aci_class="fvTenant",
-                aci_rn="tn-{0}".format(tenant),
-                module_object=tenant,
-                target_filter={"name": tenant},
-            )
-    
+        aci_class="fvTenant",
+        aci_rn="tn-{0}".format(tenant),
+        module_object=tenant,
+        target_filter={"name": tenant},
+    )
+
     route_control_profile_url_config = dict(
-                aci_class="rtctrlProfile",
-                aci_rn="prof-{0}".format(route_control_profile),
-                module_object=route_control_profile,
-                target_filter={"name": route_control_profile},
-            )
-    
+        aci_class="rtctrlProfile",
+        aci_rn="prof-{0}".format(route_control_profile),
+        module_object=route_control_profile,
+        target_filter={"name": route_control_profile},
+    )
+
     context_policy_url_config = dict(
-                aci_class="rtctrlCtxP",
-                aci_rn="ctx-{0}".format(context_policy),
-                module_object=context_policy,
-                target_filter={"name": context_policy},
-            )
-    
+        aci_class="rtctrlCtxP",
+        aci_rn="ctx-{0}".format(context_policy),
+        module_object=context_policy,
+        target_filter={"name": context_policy},
+    )
+
     if l3out is not None:
         aci.construct_url(
             root_class=tenant_url_config,
@@ -285,9 +299,11 @@ def main():
             child_configs.append({"rtctrlRsCtxPToSubjP": {"attributes": {"tnRtctrlSubjPName": subject_profile}}})
         if action_rule is not None:
             child_configs.append(
-                {"rtctrlScope": {"attributes": {"descr": ""},
-                                "children": [{"rtctrlRsScopeToAttrP": {"attributes": {"tnRtctrlAttrPName": action_rule}}}],
-                                }
+                {
+                    "rtctrlScope": {
+                        "attributes": {"descr": ""},
+                        "children": [{"rtctrlRsScopeToAttrP": {"attributes": {"tnRtctrlAttrPName": action_rule}}}],
+                    }
                 }
             )
 

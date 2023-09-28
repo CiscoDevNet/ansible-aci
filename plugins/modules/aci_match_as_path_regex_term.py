@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_subject_profile
+module: aci_match_as_path_regex_term
 short_description: Manage Match Regular Expression AS-Path Term (rtctrl:MatchAsPathRegexTerm)
 description:
 - Manage Match Rule Based on Route Regular Expression AS-Path for Subject Profiles on Cisco ACI fabrics.
@@ -187,7 +187,7 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        subject_profile=dict(type="str", aliases=["subject_name"]), # Not required for querying all objects
+        subject_profile=dict(type="str", aliases=["subject_name"]),  # Not required for querying all objects
         match_as_path_regex_term=dict(type="str", aliases=["name", "match_rule_name"]),
         regex=dict(type="str"),
         description=dict(type="str", aliases=["descr"]),
@@ -216,23 +216,23 @@ def main():
 
     aci.construct_url(
         root_class=dict(
-                aci_class="fvTenant",
-                aci_rn="tn-{0}".format(tenant),
-                module_object=tenant,
-                target_filter={"name": tenant},
-            ),
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
+            module_object=tenant,
+            target_filter={"name": tenant},
+        ),
         subclass_1=dict(
-                aci_class="rtctrlSubjP",
-                aci_rn="subj-{0}".format(subject_profile),
-                module_object=subject_profile,
-                target_filter={"name": subject_profile},
-            ),
+            aci_class="rtctrlSubjP",
+            aci_rn="subj-{0}".format(subject_profile),
+            module_object=subject_profile,
+            target_filter={"name": subject_profile},
+        ),
         subclass_2=dict(
-                aci_class="rtctrlMatchAsPathRegexTerm",
-                aci_rn="aspathrxtrm-{0}".format(match_as_path_regex_term),
-                module_object=match_as_path_regex_term,
-                target_filter={"name": match_as_path_regex_term},
-            ),
+            aci_class="rtctrlMatchAsPathRegexTerm",
+            aci_rn="aspathrxtrm-{0}".format(match_as_path_regex_term),
+            module_object=match_as_path_regex_term,
+            target_filter={"name": match_as_path_regex_term},
+        ),
     )
 
     aci.get_existing()

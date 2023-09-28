@@ -32,6 +32,18 @@ options:
     - Name of the route control profile being created.
     type: str
     aliases: [ name, rtctrl_profile_name ]
+  auto_continue:
+    description:
+    - Option to enable/disable auto-continue.
+    type: str
+    choices: [ "no", "yes" ]
+    default: "no"
+  policy_type:
+    description:
+    - Set the policy type to combinable or global.
+    type: str
+    choices: [ combinable, global ]
+    default: combinable
   description:
     description:
     - The description for the route control profile.
@@ -184,7 +196,7 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         l3out=dict(type="str", aliases=["l3out_name"]),  # Not required for querying all objects
-        route_control_profile = dict(type="str", aliases=["name", "rtctrl_profile_name"]), # Not required for querying all objects
+        route_control_profile=dict(type="str", aliases=["name", "rtctrl_profile_name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         auto_continue=dict(type="str", default="no", choices=["no", "yes"]),
         policy_type=dict(type="str", default="combinable", choices=["combinable", "global"]),
@@ -213,19 +225,19 @@ def main():
     aci = ACIModule(module)
 
     tenant_url_config = dict(
-                aci_class="fvTenant",
-                aci_rn="tn-{0}".format(tenant),
-                module_object=tenant,
-                target_filter={"name": tenant},
-            )
-    
+        aci_class="fvTenant",
+        aci_rn="tn-{0}".format(tenant),
+        module_object=tenant,
+        target_filter={"name": tenant},
+    )
+
     route_control_profile_url_config = dict(
-                aci_class="rtctrlProfile",
-                aci_rn="prof-{0}".format(route_control_profile),
-                module_object=route_control_profile,
-                target_filter={"name": route_control_profile},
-            )
-    
+        aci_class="rtctrlProfile",
+        aci_rn="prof-{0}".format(route_control_profile),
+        module_object=route_control_profile,
+        target_filter={"name": route_control_profile},
+    )
+
     if l3out is not None:
         aci.construct_url(
             root_class=tenant_url_config,
