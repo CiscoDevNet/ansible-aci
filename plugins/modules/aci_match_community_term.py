@@ -54,8 +54,8 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) module can be used for this.
+- The C(tenant) and the C(subject_profile) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) and the M(cisco.aci.subject_profile) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
@@ -183,7 +183,6 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        l3out=dict(type="str", aliases=["l3out_name"]),  # Not required for querying all objects
         subject_profile=dict(type="str", aliases=["subject_name"]), # Not required for querying all objects
         match_community_term=dict(type="str", aliases=["name", "match_rule_name"]),
         description=dict(type="str", aliases=["descr"]),
@@ -195,8 +194,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["match_community_term", "tenant"]],
-            ["state", "present", ["match_community_term", "tenant"]],
+            ["state", "absent", ["match_community_term", "tenant", "subject_profile"]],
+            ["state", "present", ["match_community_term", "tenant", "subject_profile"]],
         ],
     )
 
@@ -224,7 +223,7 @@ def main():
             ),
         subclass_2=dict(
                 aci_class="rtctrlMatchCommTerm",
-                aci_rn="commrxtrm-{0}".format(match_community_term),
+                aci_rn="commtrm-{0}".format(match_community_term),
                 module_object=match_community_term,
                 target_filter={"name": match_community_term},
             ),

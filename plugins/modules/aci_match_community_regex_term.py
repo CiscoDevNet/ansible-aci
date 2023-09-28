@@ -63,8 +63,9 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) module can be used for this.
+- The C(tenant) and the C(subject_profile) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) and the M(cisco.aci.subject_profile) modules can be used for this.
+- Only two match community regex terms can exist at the same two, one of each C(community_type).
 seealso:
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
@@ -191,11 +192,10 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        l3out=dict(type="str", aliases=["l3out_name"]),  # Not required for querying all objects
+        tenant=dict(type="str", aliases=["tenant_name"]), # Not required for querying all objects
         subject_profile=dict(type="str", aliases=["subject_name"]), # Not required for querying all objects
         match_community_regex_term=dict(type="str", aliases=["name", "match_rule_name"]),
-        community_type=dict(type="str", choices=["extended", "regular"]),
+        community_type=dict(type="str", default="regular", choices=["extended", "regular"]),
         regex=dict(type="str"),
         description=dict(type="str", aliases=["descr"]),
         name_alias=dict(type="str"),
@@ -206,8 +206,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["match_community_regex_term", "tenant"]],
-            ["state", "present", ["match_community_regex_term", "tenant"]],
+            ["state", "absent", ["community_type", "tenant", "subject_profile"]],
+            ["state", "present", ["community_type", "tenant", "subject_profile"]],
         ],
     )
 
@@ -237,9 +237,9 @@ def main():
             ),
         subclass_2=dict(
                 aci_class="rtctrlMatchCommRegexTerm",
-                aci_rn="commrxtrm-{0}".format(match_community_regex_term),
-                module_object=match_community_regex_term,
-                target_filter={"name": match_community_regex_term},
+                aci_rn="commrxtrm-{0}".format(community_type),
+                module_object=community_type,
+                target_filter={"commType": community_type},
             ),
     )
 

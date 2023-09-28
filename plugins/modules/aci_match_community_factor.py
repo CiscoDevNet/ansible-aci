@@ -13,9 +13,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_subject_profile
-short_description: Manage Match action rule based on the Route Destination. (rtctrl:MatchRtDest)
+short_description: Manage Match Community Factor (rtctrl:MatchCommFactor)
 description:
-- Match action rule based on the Route Destination for Subject Profiles on Cisco ACI fabrics.
+- Manage Match Community Factors for Match Rules Based on Community on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -27,27 +27,25 @@ options:
     - Name of an exising subject profile.
     type: str
     aliases: [ subject_name ]
-  ip:
+  match_community_term:
     description:
-    - The IP address of the route destination.
+    - Name of an existing match community term.
     type: str
-  aggregate:
+    aliases: [ match_rule_name ]
+  community:
     description:
-    - Option to enable/disable aggregated route.
+    - The match community value.
     type: str
-    choices: [ yes, no ]
-  from_prefix_lenght:
+  scope:
     description:
-    - Start of the prefix lenght.
-    - It corresponds to the less equal Mask if the route is aggregated.
+    - The item scope.
+    - if the scope is transitive, this community may be passed between ASs.
+    - if the scope is Non transitive, this community should be carried only within the local AS.
     type: str
-  to_prefix_lenght:
-    description:
-    - End of the prefix lenght.
-    - It corresponds to greater equal Mask if the route is aggregated.
+    choices: [ transitive, non-transitive ]
   description:
     description:
-    - The description for the Match Action Rule.
+    - The description for the Match Community Term.
     type: str
     aliases: [ descr ]
   state:
@@ -67,12 +65,12 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant) and the C(subject_profile) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and the M(cisco.aci.subject_profile) modules can be used for this.
+- The C(tenant), the C(subject_profile) and the C(match_community_term) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant), the M(cisco.aci.subject_profile) and M(cisco.aci.match_community_term) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(rtctrl:MatchRtDest).
+  description: More information about the internal APIC class B(rtctrl:MatchCommFactor).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Gaspard Micol (@gmicol)
@@ -197,10 +195,9 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         subject_profile=dict(type="str", aliases=["subject_name"]), # Not required for querying all objects
-        ip=dict(type="str"),
-        aggregate=dict(type="str", choices=["no", "yes"]),
-        from_prefix_lenght=dict(type="int"),
-        to_prefix_lenght=dict(type="int"),
+        match_community_term=dict(type="str", aliases=["match_rule_name"]), # Not required for querying all objects
+        community=dict(type="str"),
+        scope=dict(type="str", choices=["transitive", "non-transitive"]),
         description=dict(type="str", aliases=["descr"]),
         name_alias=dict(type="str"),
         state=dict(type="str", default="present", choices=["present", "absent", "query"]),
@@ -210,19 +207,18 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["ip", "tenant", "subject_profile"]],
-            ["state", "present", ["ip", "tenant", "subject_profile"]],
+            ["state", "absent", ["community", "tenant", "subject_profile", "match_community_term"]],
+            ["state", "present", ["community", "tenant", "subject_profile", "match_community_term"]],
         ],
     )
 
-    ip = module.params.get("ip")
+    community = module.params.get("community")
+    scope = module.params.get("scope")
     description = module.params.get("description")
-    aggregate = module.params.get("aggregate")
-    from_prefix_lenght = module.params.get("from_prefix_lenght")
-    to_prefix_lenght = module.params.get("to_prefix_lenght")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
     subject_profile = module.params.get("subject_profile")
+    match_community_term = module.params.get("match_community_term")
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
@@ -241,10 +237,16 @@ def main():
                 target_filter={"name": subject_profile},
             ),
         subclass_2=dict(
-                aci_class="rtctrlMatchRtDest",
-                aci_rn="dest-[{0}]".format(ip),
-                module_object=ip,
-                target_filter={"ip": ip},
+                aci_class="rtctrlMatchCommTerm",
+                aci_rn="commtrm-{0}".format(match_community_term),
+                module_object=match_community_term,
+                target_filter={"name": match_community_term},
+            ),
+        subclass_3=dict(
+                aci_class="rtctrlMatchCommFactor",
+                aci_rn="commfct-{0}".format(community),
+                module_object=community,
+                target_filter={"community": community},
             ),
     )
 
@@ -252,18 +254,16 @@ def main():
 
     if state == "present":
         aci.payload(
-            aci_class="rtctrlMatchRtDest",
+            aci_class="rtctrlMatchCommFactor",
             class_config=dict(
-                ip=ip,
-                aggregate=aggregate,
-                fromPfxLen=from_prefix_lenght,
-                toPfxLen=to_prefix_lenght,
+                community=community,
+                scope=scope,
                 descr=description,
                 nameAlias=name_alias,
             ),
         )
 
-        aci.get_diff(aci_class="rtctrlMatchRtDest")
+        aci.get_diff(aci_class="rtctrlMatchCommFactor")
 
         aci.post_config()
 
