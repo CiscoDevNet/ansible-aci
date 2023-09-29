@@ -1,0 +1,140 @@
+# Author: Marcel Zehnder (@maercu)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove test tenant before we kickoff
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
+    tenant: ansible_test
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # SETUP ENVIRONMENT
+  - name: Create domain
+    cisco.aci.aci_domain: &domain_present
+      <<: *aci_info
+      domain: l3outintftest
+      domain_type: l3dom
+      state: present
+
+  - name: Create tenant
+    cisco.aci.aci_tenant: &tenant_present
+      <<: *tenant_absent
+      state: present
+
+  - name: Configure VRF
+    cisco.aci.aci_vrf: &vrf_present
+      <<: *tenant_present
+      vrf: l3outintftest
+
+  - name: Create L3Out
+    cisco.aci.aci_l3out:
+      <<: *vrf_present
+      l3out: l3outintftest
+      domain: l3outintftest
+      route_control: export
+
+  - name: Crete node profile
+    cisco.aci.aci_l3out_logical_node_profile: &np_present
+      <<: *tenant_present
+      l3out: l3outintftest
+      node_profile: NODES
+
+  - name: Add interface profile
+    cisco.aci.aci_l3out_logical_interface_profile: &intf_present
+      <<: *np_present
+      interface_profile: Floating
+
+  - name: Create a floating svi in check mode
+    cisco.aci.aci_l3out_floating_svi: &floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
+      address: 23.45.67.90/24
+      external_bridge_group_profile: bridge1
+      state: present
+    check_mode: true
+    register: add_floating_cm
+
+  - name: Create a floating svi in normal mode
+    cisco.aci.aci_l3out_floating_svi:
+      <<: *floating_svi
+      state: present
+    register: add_floating_nm
+
+  - name: Create a floating svi again
+    cisco.aci.aci_l3out_floating_svi:
+      <<: *floating_svi
+      state: present
+    register: add_floating_again
+
+  - name: Update floating svi
+    cisco.aci.aci_l3out_floating_svi:
+      <<: *floating_svi
+      external_bridge_group_profile: bridge2
+      state: present
+    register: update_floating
+
+  - name: Delete an external_bridge_group_profile
+    cisco.aci.aci_l3out_floating_svi:
+      <<: *floating_svi
+      external_bridge_group_profile: ""
+      state: present
+    register: remove_bridge
+
+  - name: Create another floating svi
+    cisco.aci.aci_l3out_floating_svi:
+      <<: *intf_present
+      pod_id: 1
+      node_id: 202
+      encap: vlan-1
+      address: 24.45.67.90/24
+      external_bridge_group_profile: bridge2
+      state: present
+    register: add_floating2
+
+  - name: Verify nm_add_intf
+    assert:
+      that:
+      - cm_add_intf is changed
+      - nm_add_intf is changed
+      - cm_add_intf.previous == nm_add_intf.previous == []
+      - cm_add_intf.sent.l3extLIfP.attributes.name == nm_add_intf.sent.l3extLIfP.attributes.name == 'INTFS'
+      - cm_add_intf.sent.l3extLIfP.attributes.descr == nm_add_intf.sent.l3extLIfP.attributes.descr == 'test'
+      - nm_add_intf.current.0.l3extLIfP.attributes.annotation == 'orchestrator:ansible'
+
+  - name: Query a floating svi
+    cisco.aci.aci_l3out_floating_svi:
+      <<: *floating_svi
+      state: query
+    register: query_floating
+
+  - name: Query all floating svis
+    cisco.aci.aci_l3out_floating_svi:
+      <<: *intf_present
+      state: query
+    register: query_all_floating
+
+  - name: Remove a floating svi
+    cisco.aci.aci_l3out_logical_interface_profile:
+      <<: *floating_svi
+      state: absent
+    register: remove_floating

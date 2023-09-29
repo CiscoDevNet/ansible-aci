@@ -47,23 +47,21 @@ options:
   node_id:
     description:
     - Node to build the interface on for Port-channels and single ports.
-    - Hyphen separated pair of nodes (e.g. "201-202") for vPCs.
-    type: str
-  path_ep:
-    description:
-    - Path to interface
-    - Interface Policy Group name for Port-channels and vPCs
-    - Port number for single ports (e.g. "eth1/12")
     type: str
   encap:
     description:
-    - encapsulation on the interface (e.g. "vlan-500")
+    - Encapsulation on the interface (e.g. "vlan-500")
+    type: str
+  encap_scope:
+    description:
+    - Encapsulation scope.
+    choices: [ vrf, local ]
     type: str
   address:
     description:
     - IP address.
     type: str
-    aliases: [ addr, ip_address]
+    aliases: [ addr, ip_address ]
   mtu:
     description:
     - Interface MTU.
@@ -73,16 +71,23 @@ options:
     - IPv6 DAD feature.
     type: str
     choices: [ enabled, disabled]
-  interface_type:
-    description:
-    - Type of interface to build.
-    type: str
-    choices: [ l3-port, sub-interface, ext-svi ]
   mode:
     description:
     - Interface mode, only used if instance_type is ext-svi
     type: str
     choices: [ regular, native, untagged ]
+  dscp:
+    description:
+    - The target Differentiated Service (DSCP) value.
+    - The APIC defaults to C(unspecified) when unset during creation.
+    type: str
+    choices: [ AF11, AF12, AF13, AF21, AF22, AF23, AF31, AF32, AF33, AF41, AF42, AF43, CS0, CS1, CS2, CS3, CS4, CS5, CS6, CS7, EF, VA, unspecified ]
+    aliases: [ target_dscp ]
+  external_bridge_group_profile:
+    description:
+    - The external bridge group profile.
+    - Pass "" as the value to remove an existing external bridge group profile (See Examples).
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -102,17 +107,17 @@ extends_documentation_fragment:
 seealso:
 - module: aci_l3out
 - module: aci_l3out_logical_node_profile
+- module: aci_l3out_logical_interface_profile
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(l3ext:RsPathL3OutAtt)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Tim Cragg (@timcragg)
-- Marcel Zehnder (@maercu)
+- Shreyas Srish (@shrsr)
 """
 
 EXAMPLES = r"""
-- name: Add a new routed interface
-  cisco.aci.aci_l3out_interface:
+- name: Create a Floating SVI
+  cisco.aci.aci_l3out_floating_svi:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -122,32 +127,14 @@ EXAMPLES = r"""
     interface_profile: my_interface_profile
     pod_id: 1
     node_id: 201
-    path_ep: eth1/12
-    interface_type: l3-port
-    address: 192.168.10.1/27
+    encap: vlan-1
+    address: 23.45.67.90/24
+    external_bridge_group_profile: bridge1
     state: present
   delegate_to: localhost
 
-- name: Add a new SVI vPC
-  cisco.aci.aci_l3out_interface:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: my_tenant
-    l3out: my_l3out
-    node_profile: my_node_profile
-    interface_profile: my_interface_profile
-    pod_id: 1
-    node_id: 201-202
-    path_ep: my_vpc_ipg
-    interface_type: ext-svi
-    encap: vlan-800
-    mode: regular
-    state: present
-  delegate_to: localhost
-
-- name: Delete an interface
-  cisco.aci.aci_l3out_interface:
+- name: Remove an external bridge group profile
+  cisco.aci.aci_l3out_floating_svi:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -157,11 +144,28 @@ EXAMPLES = r"""
     interface_profile: my_interface_profile
     pod_id: 1
     node_id: 201
-    path_ep: eth1/12
+    encap: vlan-1
+    address: 23.45.67.90/24
+    external_bridge_group_profile: ""
+    state: present
+  delegate_to: localhost
+
+- name: Remove a Floating SVI
+  cisco.aci.aci_l3out_floating_svi:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    pod_id: 1
+    node_id: 201
+    encap: vlan-1
     state: absent
   delegate_to: localhost
 
-- name: Query an interface
+- name: Query a a Floating SVI
   cisco.aci.aci_l3out_interface:
     host: apic
     username: admin
@@ -172,11 +176,23 @@ EXAMPLES = r"""
     interface_profile: my_interface_profile
     pod_id: 1
     node_id: 201
-    path_ep: eth1/12
+    encap: vlan-1
     state: query
   delegate_to: localhost
   register: query_result
 
+- name: Query all the Floating SVIs under an interface profile
+  cisco.aci.aci_l3out_interface:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    state: query
+  delegate_to: localhost
+  register: query_results
 """
 
 RETURN = r"""
@@ -424,6 +440,7 @@ def main():
                                     l3extRsBdProfile=dict(
                                         attributes=dict(
                                             tDn="uni/tn-{0}/bdprofile-{1}".format(tenant, external_bridge_group_profile),
+                                           
                                         ),
                                     )
                                 )

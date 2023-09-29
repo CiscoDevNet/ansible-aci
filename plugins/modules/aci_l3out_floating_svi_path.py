@@ -12,9 +12,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_floating_svi
-short_description: Manage Layer 3 Outside (L3Out) interfaces (l3ext:RsPathL3OutAtt)
+short_description: Manage Layer 3 Outside (L3Out) Floating SVI (l3ext:VirtualLIfP)
 description:
-- Manage L3Out interfaces on Cisco ACI fabrics.
+- Manage L3Out Floating SVI on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -47,37 +47,16 @@ options:
   node_id:
     description:
     - Node to build the interface on for Port-channels and single ports.
-    - Hyphen separated pair of nodes (e.g. "201-202") for vPCs.
-    type: str
-  path_ep:
-    description:
-    - Path to interface
-    - Interface Policy Group name for Port-channels and vPCs
-    - Port number for single ports (e.g. "eth1/12")
     type: str
   encap:
     description:
     - encapsulation on the interface (e.g. "vlan-500")
     type: str
-  address:
+  floating_ip:
     description:
     - IP address.
     type: str
-    aliases: [ addr, ip_address]
-  mtu:
-    description:
-    - Interface MTU.
-    type: str
-  ipv6_dad:
-    description:
-    - IPv6 DAD feature.
-    type: str
-    choices: [ enabled, disabled]
-  interface_type:
-    description:
-    - Type of interface to build.
-    type: str
-    choices: [ l3-port, sub-interface, ext-svi ]
+    aliases: [ floating_address ]
   mode:
     description:
     - Interface mode, only used if instance_type is ext-svi
