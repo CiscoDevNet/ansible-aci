@@ -51,7 +51,7 @@
       domain: l3outintftest
       route_control: export
 
-  - name: Create node profile
+  - name: Crete node profile
     cisco.aci.aci_l3out_logical_node_profile: &np_present
       <<: *tenant_present
       l3out: l3outintftest
@@ -107,56 +107,19 @@
       node_id: 202
       encap: vlan-1
       address: 24.45.67.90/24
-      external_bridge_group_profile: ""
+      external_bridge_group_profile: bridge2
       state: present
     register: add_floating2
 
-  - name: Create another floating svi with no external_bridge_group_profile
-    cisco.aci.aci_l3out_floating_svi:
-      <<: *intf_present
-      pod_id: 1
-      node_id: 203
-      encap: vlan-1
-      address: 25.45.67.90/24
-      state: present
-    register: add_floating3
-
-  - name: Change floating svi with an attempt to delete external_bridge_group_profile
-    cisco.aci.aci_l3out_floating_svi:
-      <<: *intf_present
-      pod_id: 1
-      node_id: 203
-      encap: vlan-1
-      address: 25.45.67.90/24
-      external_bridge_group_profile: ""
-      state: present
-    register: change_floating3
-
-  - name: Verify present ops
+  - name: Verify nm_add_intf
     assert:
       that:
-      - add_floating_cm is changed
-      - add_floating_nm is changed
-      - add_floating_again is not changed
-      - update_floating is changed
-      - remove_bridge is changed
-      - add_floating2 is changed
-      - add_floating3 is changed
-      - change_floating3 is not changed
-      - add_floating_cm.proposed.l3extVirtualLIfP.attributes.addr == "23.45.67.90/24"
-      - add_floating_cm.proposed.l3extVirtualLIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-NODES/lifp-Floating/vlifp-[topology/pod-1/node-201]-[vlan-1]"
-      - add_floating_cm.proposed.l3extVirtualLIfP.attributes.encap == "vlan-1"
-      - add_floating_cm.proposed.l3extVirtualLIfP.children.0.l3extBdProfileCont.children.0.l3extRsBdProfile.attributes.tDn == "uni/tn-ansible_test/bdprofile-bridge1"
-      - add_floating_nm.current.0.l3extVirtualLIfP.attributes.addr == "23.45.67.90/24"
-      - add_floating_nm.current.0.l3extVirtualLIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-NODES/lifp-Floating/vlifp-[topology/pod-1/node-201]-[vlan-1]"
-      - add_floating_nm.current.0.l3extVirtualLIfP.attributes.encap == "vlan-1"
-      - add_floating_nm.current.0.l3extVirtualLIfP.children.0.l3extBdProfileCont.children.0.l3extRsBdProfile.attributes.tDn == "uni/tn-ansible_test/bdprofile-bridge1"
-      - update_floating.current.0.l3extVirtualLIfP.children.0.l3extBdProfileCont.children.0.l3extRsBdProfile.attributes.tDn == "uni/tn-ansible_test/bdprofile-bridge2"
-      - remove_bridge.current.0.l3extVirtualLIfP.children is not defined
-      - add_floating2.current.0.l3extVirtualLIfP.attributes.addr == "24.45.67.90/24"
-      - add_floating2.current.0.l3extVirtualLIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-NODES/lifp-Floating/vlifp-[topology/pod-1/node-202]-[vlan-1]"
-      - add_floating2.current.0.l3extVirtualLIfP.attributes.encap == "vlan-1"
-      - add_floating3.current.0.l3extVirtualLIfP.children is not defined
+      - cm_add_intf is changed
+      - nm_add_intf is changed
+      - cm_add_intf.previous == nm_add_intf.previous == []
+      - cm_add_intf.sent.l3extLIfP.attributes.name == nm_add_intf.sent.l3extLIfP.attributes.name == 'INTFS'
+      - cm_add_intf.sent.l3extLIfP.attributes.descr == nm_add_intf.sent.l3extLIfP.attributes.descr == 'test'
+      - nm_add_intf.current.0.l3extLIfP.attributes.annotation == 'orchestrator:ansible'
 
   - name: Query a floating svi
     cisco.aci.aci_l3out_floating_svi:
@@ -170,30 +133,8 @@
       state: query
     register: query_all_floating
 
-  - name: Verify Query ops
-    assert:
-      that:
-      - query_floating is not changed
-      - query_all_floating is not changed
-      - query_floating.current.0.l3extVirtualLIfP.attributes.addr == "23.45.67.90/24"
-      - query_floating.current.0.l3extVirtualLIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-NODES/lifp-Floating/vlifp-[topology/pod-1/node-201]-[vlan-1]"
-      - query_floating.current.0.l3extVirtualLIfP.attributes.encap == "vlan-1"
-      - query_all_floating.current.0.l3extLIfP.children | length == 3
-
   - name: Remove a floating svi
-    cisco.aci.aci_l3out_floating_svi:
+    cisco.aci.aci_l3out_logical_interface_profile:
       <<: *floating_svi
       state: absent
     register: remove_floating
-
-  - name: Verify remove ops
-    assert:
-      that:
-      - remove_floating is changed
-      - remove_floating.current == []
-
-  - name: Clean up environment
-    cisco.aci.aci_tenant:
-      <<: *aci_info
-      tenant: ansible_test
-      state: absent

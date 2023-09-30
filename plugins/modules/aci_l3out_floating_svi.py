@@ -165,8 +165,8 @@ EXAMPLES = r"""
     state: absent
   delegate_to: localhost
 
-- name: Query a a Floating SVI
-  cisco.aci.aci_l3out_interface:
+- name: Query a Floating SVI
+  cisco.aci.aci_l3out_floating_svi:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -182,7 +182,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query all the Floating SVIs under an interface profile
-  cisco.aci.aci_l3out_interface:
+  cisco.aci.aci_l3out_floating_svi:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -382,7 +382,9 @@ def main():
 
     aci = ACIModule(module)
 
-    node_dn = "topology/pod-{0}/node-{1}".format(pod_id, node_id)
+    node_dn = None
+    if pod_id and node_id:
+        node_dn = "topology/pod-{0}/node-{1}".format(pod_id, node_id)
 
     aci.construct_url(
         root_class=dict(
@@ -421,15 +423,14 @@ def main():
         child_configs = []
         if external_bridge_group_profile is not None:
             if external_bridge_group_profile == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
-                for child in aci.existing[0].get("l3extVirtualLIfP", {}).get("children", {}):
-                    if child.get("l3extBdProfileCont"):
-                        child_configs.append(
-                            dict(
-                                l3extBdProfileCont=dict(
-                                    attributes=dict(status="deleted"),
-                                ),
-                            )
+                if aci.existing[0].get("l3extVirtualLIfP", {}).get("children") is not None:
+                    child_configs.append(
+                        dict(
+                            l3extBdProfileCont=dict(
+                                attributes=dict(status="deleted"),
+                            ),
                         )
+                    )
             elif external_bridge_group_profile != "":
                 child_configs.append(
                     dict(

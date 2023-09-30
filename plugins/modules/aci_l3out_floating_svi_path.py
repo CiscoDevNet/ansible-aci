@@ -11,10 +11,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_l3out_floating_svi
-short_description: Manage Layer 3 Outside (L3Out) Floating SVI (l3ext:VirtualLIfP)
+module: aci_l3out_floating_svi_path
+short_description: Manage Layer 3 Outside (L3Out) Floating SVI Path Attributes(l3ext:RsDynPathAtt)
 description:
-- Manage L3Out Floating SVI on Cisco ACI fabrics.
+- Manages L3Out Floating SVI path attributes on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -48,20 +48,45 @@ options:
     description:
     - Node to build the interface on for Port-channels and single ports.
     type: str
-  encap:
+  domain:
     description:
-    - encapsulation on the interface (e.g. "vlan-500")
+    - This option allows virtual machines to send frames with a mac address.
+    type: str
+    choices: [ enable, disable ]
+  domain_type:
+    description:
+    - The domain type of the path.
+    type: str
+    choices: [ physical, vmware ]
+  access_encap:
+    description:
+    - The port encapsulation.
     type: str
   floating_ip:
     description:
-    - IP address.
+    - The floating IP address.
     type: str
     aliases: [ floating_address ]
-  mode:
+  forged_transmit:
     description:
-    - Interface mode, only used if instance_type is ext-svi
+    - This option allows virtual machines to send frames with a mac address.
     type: str
-    choices: [ regular, native, untagged ]
+    choices: [ enable, disable ]
+  mac_change:
+    description:
+    - The status of the mac address change support for port groups in an external VMM controller.
+    type: str
+    choices: [ enable, disable ]
+  promiscuous_mode:
+    description:
+    - The status of promiscuous mode for port groups in an external VMM controller.
+    type: str
+    choices: [ enable, disable ]
+  enhanced_lag_policy:
+    description:
+    - The enhanced lag policy of the path.
+    - Pass "" as the value to remove an existing enhanced lag policy (See Examples).
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -69,29 +94,22 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
-  auto_state:
-    description:
-    - SVI auto state.
-    type: str
-    choices: [ enabled, disabled ]
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
 seealso:
-- module: aci_l3out
-- module: aci_l3out_logical_node_profile
+- module: aci_l3out_floating_svi
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(l3ext:RsPathL3OutAtt)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Tim Cragg (@timcragg)
-- Marcel Zehnder (@maercu)
+- Shreyas Srish (@shrsr)
 """
 
 EXAMPLES = r"""
-- name: Add a new routed interface
-  cisco.aci.aci_l3out_interface:
+- name: Create a Floating SVI path attribute
+  cisco.aci.aci_l3out_floating_svi_path:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -101,32 +119,16 @@ EXAMPLES = r"""
     interface_profile: my_interface_profile
     pod_id: 1
     node_id: 201
-    path_ep: eth1/12
-    interface_type: l3-port
-    address: 192.168.10.1/27
+    encap: vlan-1
+    floating_ip: 23.45.67.90/24
+    domain_type: virtual
+    domain: anstest
+    enhanced_lag_policy: enhanced
     state: present
   delegate_to: localhost
 
-- name: Add a new SVI vPC
-  cisco.aci.aci_l3out_interface:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: my_tenant
-    l3out: my_l3out
-    node_profile: my_node_profile
-    interface_profile: my_interface_profile
-    pod_id: 1
-    node_id: 201-202
-    path_ep: my_vpc_ipg
-    interface_type: ext-svi
-    encap: vlan-800
-    mode: regular
-    state: present
-  delegate_to: localhost
-
-- name: Delete an interface
-  cisco.aci.aci_l3out_interface:
+- name: Remove enhanced lag policy from the path
+  cisco.aci.aci_l3out_floating_svi_path:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -136,12 +138,33 @@ EXAMPLES = r"""
     interface_profile: my_interface_profile
     pod_id: 1
     node_id: 201
-    path_ep: eth1/12
+    encap: vlan-1
+    floating_ip: 23.45.67.90/24
+    domain_type: virtual
+    domain: anstest
+    enhanced_lag_policy: ""
+    state: present
+  delegate_to: localhost
+
+- name: Remove a Floating SVI path attribute
+  cisco.aci.aci_l3out_floating_svi_path:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    pod_id: 1
+    node_id: 201
+    encap: vlan-1
+    domain_type: virtual
+    domain: anstest
     state: absent
   delegate_to: localhost
 
-- name: Query an interface
-  cisco.aci.aci_l3out_interface:
+- name: Query a Floating SVI path attribute
+  cisco.aci.aci_l3out_floating_svi_path:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -151,11 +174,28 @@ EXAMPLES = r"""
     interface_profile: my_interface_profile
     pod_id: 1
     node_id: 201
-    path_ep: eth1/12
+    encap: vlan-1
+    domain_type: virtual
+    domain: anstest
     state: query
   delegate_to: localhost
   register: query_result
 
+- name: Query all the Floating SVI path attributes
+  cisco.aci.aci_l3out_floating_svi_path:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    pod_id: 1
+    node_id: 201
+    encap: vlan-1
+    state: query
+  delegate_to: localhost
+  register: query_results
 """
 
 RETURN = r"""

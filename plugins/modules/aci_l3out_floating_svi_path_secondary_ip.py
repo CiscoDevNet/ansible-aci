@@ -7,14 +7,18 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
 DOCUMENTATION = r"""
 ---
-module: aci_l3out_floating_svi
-short_description: Manage Layer 3 Outside (L3Out) interfaces (l3ext:RsPathL3OutAtt)
+module: aci_l3out_floating_svi_path_secondary_ip
+short_description: Manages Layer 3 Outside (L3Out) Floating SVI Path Attribute's Secondary IP addresses(l3ext:Ip)
 description:
-- Manage L3Out interfaces on Cisco ACI fabrics.
+- Manages L3Out Floating SVI path attribute's secondary IP addresses on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -47,42 +51,22 @@ options:
   node_id:
     description:
     - Node to build the interface on for Port-channels and single ports.
-    - Hyphen separated pair of nodes (e.g. "201-202") for vPCs.
     type: str
-  path_ep:
+  domain:
     description:
-    - Path to interface
-    - Interface Policy Group name for Port-channels and vPCs
-    - Port number for single ports (e.g. "eth1/12")
+    - This option allows virtual machines to send frames with a mac address.
     type: str
-  encap:
+    choices: [ enable, disable ]
+  domain_type:
     description:
-    - encapsulation on the interface (e.g. "vlan-500")
+    - The domain type of the path.
     type: str
-  address:
+    choices: [ physical, vmware ]
+  secondary_ip:
     description:
-    - IP address.
+    - The secondary floating IP address.
     type: str
-    aliases: [ addr, ip_address]
-  mtu:
-    description:
-    - Interface MTU.
-    type: str
-  ipv6_dad:
-    description:
-    - IPv6 DAD feature.
-    type: str
-    choices: [ enabled, disabled]
-  interface_type:
-    description:
-    - Type of interface to build.
-    type: str
-    choices: [ l3-port, sub-interface, ext-svi ]
-  mode:
-    description:
-    - Interface mode, only used if instance_type is ext-svi
-    type: str
-    choices: [ regular, native, untagged ]
+    aliases: [ secondary_floating_address ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -90,29 +74,27 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
-  auto_state:
-    description:
-    - SVI auto state.
-    type: str
-    choices: [ enabled, disabled ]
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
+notes:
+- This is a test
 seealso:
 - module: aci_l3out
 - module: aci_l3out_logical_node_profile
+- module: aci_l3out_logical_interface_profile
+- module: aci_l3out_logical_interface
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(l3ext:RsPathL3OutAtt)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Tim Cragg (@timcragg)
-- Marcel Zehnder (@maercu)
+- Shreyas Srish (@shrsr)
 """
 
 EXAMPLES = r"""
-- name: Add a new routed interface
-  cisco.aci.aci_l3out_interface:
+- name: Create a Floating SVI path attribute secondary IP
+  cisco.aci.aci_l3out_floating_svi_path:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -122,32 +104,15 @@ EXAMPLES = r"""
     interface_profile: my_interface_profile
     pod_id: 1
     node_id: 201
-    path_ep: eth1/12
-    interface_type: l3-port
-    address: 192.168.10.1/27
+    encap: vlan-1
+    secondary_ip: 23.45.67.90/24
+    domain_type: virtual
+    domain: anstest
     state: present
   delegate_to: localhost
 
-- name: Add a new SVI vPC
-  cisco.aci.aci_l3out_interface:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: my_tenant
-    l3out: my_l3out
-    node_profile: my_node_profile
-    interface_profile: my_interface_profile
-    pod_id: 1
-    node_id: 201-202
-    path_ep: my_vpc_ipg
-    interface_type: ext-svi
-    encap: vlan-800
-    mode: regular
-    state: present
-  delegate_to: localhost
-
-- name: Delete an interface
-  cisco.aci.aci_l3out_interface:
+- name: Remove a Floating SVI path attribute secondary IP
+  cisco.aci.aci_l3out_floating_svi_path:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -157,12 +122,15 @@ EXAMPLES = r"""
     interface_profile: my_interface_profile
     pod_id: 1
     node_id: 201
-    path_ep: eth1/12
+    encap: vlan-1
+    secondary_ip: 23.45.67.90/24
+    domain_type: virtual
+    domain: anstest
     state: absent
   delegate_to: localhost
 
-- name: Query an interface
-  cisco.aci.aci_l3out_interface:
+- name: Query a Floating SVI path attribute secondary IP
+  cisco.aci.aci_l3out_floating_svi_path:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -172,11 +140,31 @@ EXAMPLES = r"""
     interface_profile: my_interface_profile
     pod_id: 1
     node_id: 201
-    path_ep: eth1/12
+    encap: vlan-1
+    domain_type: virtual
+    domain: anstest
+    secondary_ip: 23.45.67.90/24
     state: query
   delegate_to: localhost
   register: query_result
 
+- name: Query all the secondary IPs under a Floating SVI path attribute
+  cisco.aci.aci_l3out_floating_svi_path:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    pod_id: 1
+    node_id: 201
+    encap: vlan-1
+    domain_type: virtual
+    domain: anstest
+    state: query
+  delegate_to: localhost
+  register: query_results
 """
 
 RETURN = r"""
@@ -284,9 +272,8 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
 
-
-from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+from ansible.module_utils.basic import AnsibleModule
 
 
 def main():
@@ -301,29 +288,43 @@ def main():
         pod_id=dict(type="str", required=True),
         node_id=dict(type="str", required=True),
         encap=dict(type="str", required=True),
-        floating_ip=dict(type="str", aliases=["floating_address"], required=True),
         domain_type=dict(type="str", choices=["physical", "vmware"], required=True),
         domain=dict(type="str", required=True),
-        address=dict(type="str", aliases=["addr", "ip_address"]),
+        secondary_ip=dict(type="str", aliases=["secondary_floating_address"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "present", ["address"]], ["state", "absent", ["address"]]],
+        required_if=[
+            [
+                "state",
+                "absent",
+                [
+                    "secondary_ip",
+                ],
+            ],
+            [
+                "state",
+                "present",
+                [
+                    "secondary_ip",
+                ],
+            ],
+        ],
     )
 
     tenant = module.params.get("tenant")
     l3out = module.params.get("l3out")
     node_profile = module.params.get("node_profile")
     interface_profile = module.params.get("interface_profile")
-    state = module.params.get("state")
     pod_id = module.params.get("pod_id")
     node_id = module.params.get("node_id")
-    encap = module.params.get("encap")
+    encap = (module.params.get("encap"),)
+    secondary_ip = module.params.get("secondary_ip")
     domain_type = module.params.get("domain_type")
     domain = module.params.get("domain")
-    address = module.params.get("address")
+    state = module.params.get("state")
 
     aci = ACIModule(module)
 
@@ -370,16 +371,16 @@ def main():
         ),
         subclass_6=dict(
             aci_class="l3extIp",
-            aci_rn="addr-[{0}]".format(address),
-            module_object=address,
-            target_filter={"addr": address},
+            aci_rn="addr-[{0}]".format(secondary_ip),
+            module_object=secondary_ip,
+            target_filter={"addr": secondary_ip},
         ),
     )
 
     aci.get_existing()
 
     if state == "present":
-        aci.payload(aci_class="l3extIp", class_config=dict(addr=address, ipv6Dad="disabled"))
+        aci.payload(aci_class="l3extIp", class_config=dict(addr=secondary_ip, ipv6Dad="disabled"))
 
         aci.get_diff(aci_class="l3extIp")
 
