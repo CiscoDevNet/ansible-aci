@@ -153,7 +153,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Associate an interface access port selector to an Interface Policy Leaf Profile (w/o policy group) (check if this works)
+- name: Associate an interface access port selector to an Interface Policy Leaf Profile (w/o policy group)
   cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
     host: apic
     username: admin
@@ -222,6 +222,38 @@ EXAMPLES = r"""
     to_port: 13
     port_blk: block2
     fex_id: 105
+    state: present
+  delegate_to: localhost
+
+- name: Create and Bind Access Port Selector with PC Policy Group
+  cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    interface_profile: leafintprfname
+    access_port_selector: accessportselectorname
+    policy_group: pcintprftest
+    access_port_selector_name: anstest_pc_accessportselector
+    interface_type: port_channel
+    port_blk: leafportblkname
+    from_port: 13
+    to_port: 13
+    state: present
+  delegate_to: localhost
+
+- name: Create and Bind Access Port Selector with VPC Policy Group
+  cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    interface_profile: leafintprfname
+    access_port_selector: accessportselectorname
+    policy_group: vpcintprftest
+    access_port_selector_name: anstest_vpc_accessportselector
+    interface_type: vpc
+    port_blk: leafportblkname
+    from_port: 13
+    to_port: 13
     state: present
   delegate_to: localhost
 """
