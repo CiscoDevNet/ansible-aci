@@ -779,6 +779,7 @@ class ACIModule(object):
         subclass_3=None,
         subclass_4=None,
         subclass_5=None,
+        subclass_6=None,
         child_classes=None,
         config_only=True,
     ):
@@ -796,6 +797,7 @@ class ACIModule(object):
         :type subclass_3: dict
         :type subclass_4: dict
         :type subclass_5: dict
+        :type subclass_6: dict
         :type child_classes: list
         :return: The path and filter_string needed to build the full URL.
         """
@@ -806,7 +808,9 @@ class ACIModule(object):
         else:
             self.child_classes = set(child_classes)
 
-        if subclass_5 is not None:
+        if subclass_6 is not None:
+            self._construct_url_7(root_class, subclass_1, subclass_2, subclass_3, subclass_4, subclass_5, subclass_6, config_only)
+        elif subclass_5 is not None:
             self._construct_url_6(root_class, subclass_1, subclass_2, subclass_3, subclass_4, subclass_5, config_only)
         elif subclass_4 is not None:
             self._construct_url_5(root_class, subclass_1, subclass_2, subclass_3, subclass_4, config_only)
@@ -1077,7 +1081,7 @@ class ACIModule(object):
 
     def _construct_url_6(self, root, quad, ter, sec, parent, obj, config_only=True):
         """
-        This method is used by construct_url when the object is the fourth-level class.
+        This method is used by construct_url when the object is the fifth-level class.
         """
         root_rn = root.get("aci_rn")
         root_obj = root.get("module_object")
@@ -1144,6 +1148,85 @@ class ACIModule(object):
         else:
             # Query for a specific object of the module's class
             self.path = "api/mo/uni/{0}/{1}/{2}/{3}/{4}/{5}.json".format(root_rn, quad_rn, ter_rn, sec_rn, parent_rn, obj_rn)
+
+    def _construct_url_7(self, root, quin, quad, ter, sec, parent, obj, config_only=True):
+        """
+        This method is used by construct_url when the object is the sixth-level class.
+        """
+        root_rn = root.get("aci_rn")
+        root_obj = root.get("module_object")
+        quin_rn = quin.get("aci_rn")
+        quin_obj = quin.get("module_object")
+        quad_rn = quad.get("aci_rn")
+        quad_obj = quad.get("module_object")
+        ter_rn = ter.get("aci_rn")
+        ter_obj = ter.get("module_object")
+        sec_rn = sec.get("aci_rn")
+        sec_obj = sec.get("module_object")
+        parent_rn = parent.get("aci_rn")
+        parent_obj = parent.get("module_object")
+        obj_class = obj.get("aci_class")
+        obj_rn = obj.get("aci_rn")
+        obj_filter = obj.get("target_filter")
+        mo = obj.get("module_object")
+
+        if self.child_classes is None:
+            self.child_classes = [obj_class]
+
+        if self.module.params.get("state") in ("absent", "present"):
+            # State is absent or present
+            self.path = "api/mo/uni/{0}/{1}/{2}/{3}/{4}/{5}/{6}.json".format(root_rn, quin_rn, quad_rn, ter_rn, sec_rn, parent_rn, obj_rn)
+            if config_only:
+                self.update_qs({"rsp-prop-include": "config-only"})
+            self.obj_filter = obj_filter
+        # TODO: Add all missing cases
+        elif root_obj is None:
+            self.child_classes.add(obj_class)
+            self.path = "api/class/{0}.json".format(obj_class)
+            self.update_qs({"query-target-filter": self.build_filter(obj_class, obj_filter)})
+        elif quin_obj is None:
+            self.child_classes.add(obj_class)
+            self.path = "api/mo/uni/{0}.json".format(root_rn)
+            # NOTE: No need to select by root_filter
+            # self.update_qs({'query-target-filter': self.build_filter(root_class, root_filter)})
+            # TODO: Filter by quin_filter, parent and obj_filter
+            self.update_qs({"rsp-subtree-filter": self.build_filter(obj_class, obj_filter)})
+        elif quad_obj is None:
+            self.child_classes.add(obj_class)
+            self.path = "api/mo/uni/{0}/{1}.json".format(root_rn, quin_rn)
+            # NOTE: No need to select by root_filter
+            # self.update_qs({'query-target-filter': self.build_filter(root_class, root_filter)})
+            # TODO: Filter by quin_filter, parent and obj_filter
+            self.update_qs({"rsp-subtree-filter": self.build_filter(obj_class, obj_filter)})
+        elif ter_obj is None:
+            self.child_classes.add(obj_class)
+            self.path = "api/mo/uni/{0}/{1}/{2}.json".format(root_rn, quin_rn, quad_rn)
+            # NOTE: No need to select by quad_filter
+            # self.update_qs({'query-target-filter': self.build_filter(quin_class, quin_filter)})
+            # TODO: Filter by ter_filter, parent and obj_filter
+            self.update_qs({"rsp-subtree-filter": self.build_filter(obj_class, obj_filter)})
+        elif sec_obj is None:
+            self.child_classes.add(obj_class)
+            self.path = "api/mo/uni/{0}/{1}/{2}/{3}.json".format(root_rn, quin_rn, quad_rn, ter_rn)
+            # NOTE: No need to select by ter_filter
+            # self.update_qs({'query-target-filter': self.build_filter(ter_class, ter_filter)})
+            # TODO: Filter by sec_filter, parent and obj_filter
+            self.update_qs({"rsp-subtree-filter": self.build_filter(obj_class, obj_filter)})
+        elif parent_obj is None:
+            self.child_classes.add(obj_class)
+            self.path = "api/mo/uni/{0}/{1}/{2}/{3}/{4}.json".format(root_rn, quin_rn, quad_rn, ter_rn, sec_rn)
+            # NOTE: No need to select by sec_filter
+            # self.update_qs({'query-target-filter': self.build_filter(sec_class, sec_filter)})
+            # TODO: Filter by parent_filter and obj_filter
+            self.update_qs({"rsp-subtree-filter": self.build_filter(obj_class, obj_filter)})
+        elif mo is None:
+            self.child_classes.add(obj_class)
+            self.path = "api/mo/uni/{0}/{1}/{2}/{3}/{4}/{5}.json".format(root_rn, quin_rn, quad_rn, ter_rn, sec_rn, parent_rn)
+            # NOTE: No need to select by parent_filter
+            # self.update_qs({'query-target-filter': self.build_filter(parent_class, parent_filter)})
+        else:
+            # Query for a specific object of the module's class
+            self.path = "api/mo/uni/{0}/{1}/{2}/{3}/{4}/{5}/{6}.json".format(root_rn, quin_rn, quad_rn, ter_rn, sec_rn, parent_rn, obj_rn)
 
     def delete_config(self):
         """

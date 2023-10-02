@@ -44,15 +44,26 @@ options:
     description:
     - Pod to build the interface on.
     type: str
+    required: true
   node_id:
     description:
     - Node to build the interface on for Port-channels and single ports.
     type: str
+    required: true
+  encap:
+    description:
+    - Encapsulation on the interface (e.g. "vlan-500")
+    type: str
+    required: true
+  address:
+    description:
+    - IP address of the floating SVI interface.
+    type: str
+    aliases: [ addr, ip_address ]
   domain:
     description:
     - This option allows virtual machines to send frames with a mac address.
     type: str
-    choices: [ enable, disable ]
   domain_type:
     description:
     - The domain type of the path.
@@ -60,7 +71,7 @@ options:
     choices: [ physical, vmware ]
   access_encap:
     description:
-    - The port encapsulation.
+    - The port encapsulation option.
     type: str
   floating_ip:
     description:
@@ -71,17 +82,20 @@ options:
     description:
     - This option allows virtual machines to send frames with a mac address.
     type: str
-    choices: [ enable, disable ]
+    choices: [ enabled, disabled ]
+    default: disabled
   mac_change:
     description:
     - The status of the mac address change support for port groups in an external VMM controller.
     type: str
-    choices: [ enable, disable ]
+    choices: [ enabled, disabled ]
+    default: disabled
   promiscuous_mode:
     description:
     - The status of promiscuous mode for port groups in an external VMM controller.
     type: str
-    choices: [ enable, disable ]
+    choices: [ enabled, disabled ]
+    default: disabled
   enhanced_lag_policy:
     description:
     - The enhanced lag policy of the path.
@@ -320,13 +334,15 @@ def main():
         pod_id=dict(type="str", required=True),
         node_id=dict(type="str", required=True),
         encap=dict(type="str", required=True),
-        floating_ip=dict(type="str", aliases=["floating_address"], required=True),
-        forged_transmit=dict(type="str", choices=["enabled", "disabled"]),
-        mac_change=dict(type="str", choices=["enabled", "disabled"]),
-        promiscuous_mode=dict(type="str", choices=["enabled", "disabled"]),
-        domain_type=dict(type="str", choices=["physical", "vmware"], required=True),
-        domain=dict(type="str", required=True),
+        address=dict(type="str", aliases=["addr", "ip_address"]),
+        floating_ip=dict(type="str", aliases=["floating_address"]),
+        forged_transmit=dict(type="str", choices=["enabled", "disabled"], default="disabled"),
+        mac_change=dict(type="str", choices=["enabled", "disabled"], default="disabled"),
+        promiscuous_mode=dict(type="str", choices=["enabled", "disabled"], default="disabled"),
+        domain_type=dict(type="str", choices=["physical", "vmware"]),
+        domain=dict(type="str"),
         enhanced_lag_policy=dict(type="str"),
+        access_encap=dict(type="str"),
     )
 
     module = AnsibleModule(
@@ -344,17 +360,19 @@ def main():
     node_id = module.params.get("node_id")
     floating_ip = module.params.get("floating_ip")
     encap = module.params.get("encap")
-    forged_transmit = module.params.get("forged_transmit")
-    mac_change = module.params.get("mac_change")
-    promiscuous_mode = module.params.get("promiscuous_mode")
+    forged_transmit = module.params.get("forged_transmit").capitalize()
+    mac_change = module.params.get("mac_change").capitalize()
+    promiscuous_mode = module.params.get("promiscuous_mode").capitalize()
     domain_type = module.params.get("domain_type")
     domain = module.params.get("domain")
     enhanced_lag_policy = module.params.get("enhanced_lag_policy")
+    access_encap = module.params.get("access_encap")
 
     aci = ACIModule(module)
 
     node_dn = "topology/pod-{0}/node-{1}".format(pod_id, node_id)
 
+    tDn = None
     if domain_type == "physical":
         tDn = "uni/phys-{0}".format(domain)
     elif domain_type == "vmware":
@@ -401,7 +419,7 @@ def main():
 
     if state == "present":
         child_configs = []
-        if enhanced_lag_policy is not None and domain_type == "virtual":
+        if enhanced_lag_policy is not None and domain_type == "vmware":
             existing_enhanced_lag_policy = ""
             if isinstance(aci.existing, list) and len(aci.existing) > 0:
                 for child in aci.existing[0].get("l3extRsDynPathAtt", {}).get("children", {}):
@@ -448,6 +466,7 @@ def main():
                 forgedTransmit=forged_transmit,
                 macChange=mac_change,
                 promMode=promiscuous_mode,
+                encap=access_encap,
             ),
             child_configs=child_configs,
         )

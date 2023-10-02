@@ -48,15 +48,31 @@ options:
     description:
     - Pod to build the interface on.
     type: str
+    required: true
   node_id:
     description:
     - Node to build the interface on for Port-channels and single ports.
     type: str
+    required: true
+  encap:
+    description:
+    - Encapsulation on the interface (e.g. "vlan-500")
+    type: str
+    required: true
   secondary_ip:
     description:
     - The secondary floating IP address.
     type: str
     aliases: [ secondary_floating_address ]
+  address:
+    description:
+    - The floating IP address.
+    type: str
+    aliases: [ addr, ip_address ]
+  external_bridge_group_profile:
+    description:
+    - The external bridge group profile.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -74,7 +90,7 @@ seealso:
 - module: aci_l3out
 - module: aci_l3out_logical_node_profile
 - module: aci_l3out_logical_interface_profile
-- module: aci_l3out_logical_interface
+- module: aci_l3out_floating_svi
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(l3ext:RsPathL3OutAtt)
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -270,7 +286,9 @@ def main():
         pod_id=dict(type="str", required=True),
         node_id=dict(type="str", required=True),
         encap=dict(type="str", required=True),
+        address=dict(type="str", aliases=["addr", "ip_address"]),
         secondary_ip=dict(type="str", aliases=["secondary_floating_address"]),
+        external_bridge_group_profile=dict(type="str"),
     )
 
     module = AnsibleModule(
@@ -300,7 +318,7 @@ def main():
     interface_profile = module.params.get("interface_profile")
     pod_id = module.params.get("pod_id")
     node_id = module.params.get("node_id")
-    encap = (module.params.get("encap"),)
+    encap = module.params.get("encap")
     secondary_ip = module.params.get("secondary_ip")
     state = module.params.get("state")
 

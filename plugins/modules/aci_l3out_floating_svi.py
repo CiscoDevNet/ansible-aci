@@ -62,6 +62,14 @@ options:
     - IP address.
     type: str
     aliases: [ addr, ip_address ]
+  mac_address:
+    description:
+    - The MAC address option of the interface.
+    type: str
+  link_local_address:
+    description:
+    - The link local address option of the interface.
+    type: str
   mtu:
     description:
     - Interface MTU.
@@ -325,7 +333,6 @@ def main():
         encap=dict(type="str"),
         encap_scope=dict(type="str", choices=["vrf", "local"]),
         auto_state=dict(type="str", choices=["enabled", "disabled"]),
-        description=dict(type="str", aliases=["descr"]),
         external_bridge_group_profile=dict(type="str"),
         dscp=dict(
             type="str",
@@ -374,6 +381,8 @@ def main():
     address = module.params.get("address")
     mtu = module.params.get("mtu")
     ipv6_dad = module.params.get("ipv6_dad")
+    link_local_address = module.params.get("link_local_address")
+    mac_address = module.params.get("mac_address")
     mode = module.params.get("mode")
     encap = module.params.get("encap")
     encap_scope = "ctx" if module.params.get("encap_scope") == "vrf" else module.params.get("encap_scope")
@@ -441,7 +450,6 @@ def main():
                                     l3extRsBdProfile=dict(
                                         attributes=dict(
                                             tDn="uni/tn-{0}/bdprofile-{1}".format(tenant, external_bridge_group_profile),
-                                           
                                         ),
                                     )
                                 )
@@ -453,7 +461,16 @@ def main():
         aci.payload(
             aci_class="l3extVirtualLIfP",
             class_config=dict(
-                addr=address, ipv6Dad=ipv6_dad, mtu=mtu, ifInstT="ext-svi", mode=mode, encap=encap, encapScope=encap_scope, autostate=auto_state
+                addr=address,
+                ipv6Dad=ipv6_dad,
+                mtu=mtu,
+                ifInstT="ext-svi",
+                mode=mode,
+                encap=encap,
+                encapScope=encap_scope,
+                autostate=auto_state,
+                llAddr=link_local_address,
+                mac=mac_address,
             ),
             child_configs=child_configs,
         )

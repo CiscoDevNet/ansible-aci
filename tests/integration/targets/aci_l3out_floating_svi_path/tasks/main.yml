@@ -51,7 +51,7 @@
       domain: l3outintftest
       route_control: export
 
-  - name: Crete node profile
+  - name: Create node profile
     cisco.aci.aci_l3out_logical_node_profile: &np_present
       <<: *tenant_present
       l3out: l3outintftest
@@ -62,79 +62,212 @@
       <<: *np_present
       interface_profile: Floating
 
-  - name: Create a floating svi in check mode
+  - name: Create a floating svi
     cisco.aci.aci_l3out_floating_svi: &floating_svi
       <<: *intf_present
       pod_id: 1
       node_id: 201
       encap: vlan-1
       address: 23.45.67.90/24
-      external_bridge_group_profile: bridge1
       state: present
-    check_mode: true
-    register: add_floating_cm
 
-  - name: Create a floating svi in normal mode
-    cisco.aci.aci_l3out_floating_svi:
-      <<: *floating_svi
-      state: present
-    register: add_floating_nm
-
-  - name: Create a floating svi again
-    cisco.aci.aci_l3out_floating_svi:
-      <<: *floating_svi
-      state: present
-    register: add_floating_again
-
-  - name: Update floating svi
-    cisco.aci.aci_l3out_floating_svi:
-      <<: *floating_svi
-      external_bridge_group_profile: bridge2
-      state: present
-    register: update_floating
-
-  - name: Delete an external_bridge_group_profile
-    cisco.aci.aci_l3out_floating_svi:
-      <<: *floating_svi
-      external_bridge_group_profile: ""
-      state: present
-    register: remove_bridge
-
-  - name: Create another floating svi
-    cisco.aci.aci_l3out_floating_svi:
+  - name: Create a floating svi
+    cisco.aci.aci_l3out_floating_svi: &floating_svi2
       <<: *intf_present
       pod_id: 1
       node_id: 202
       encap: vlan-1
-      address: 24.45.67.90/24
-      external_bridge_group_profile: bridge2
+      address: 26.45.67.90/24
       state: present
-    register: add_floating2
 
-  - name: Verify nm_add_intf
+  - name: Add VMM domain
+    cisco.aci.aci_domain:
+      <<: *aci_info
+      domain: vmm_dom
+      domain_type: vmm
+      vm_provider: vmware
+      state: present
+
+  - name: Add a vSwitch policy to vmware domain
+    cisco.aci.aci_vmm_vswitch_policy:
+      <<: *aci_info
+      domain: vmm_dom
+      vm_provider: vmware
+      enhanced_lag:
+      - name: enhanced
+      - name: enhanced2
+      state: present
+
+  - name: Create a floating svi path of type physical in check_mode
+    cisco.aci.aci_l3out_floating_svi_path:
+      <<: *floating_svi
+      domain_type: physical
+      domain: physical_dom
+      floating_ip: 25.45.67.90/24
+      access_encap: vlan-1
+      state: present
+    check_mode: true
+    register: add_floating_path_cm
+
+  - name: Create a floating svi path of type physical in normal mode
+    cisco.aci.aci_l3out_floating_svi_path:
+      <<: *floating_svi
+      domain_type: physical
+      domain: physical_dom
+      floating_ip: 25.45.67.90/24
+      access_encap: vlan-1
+      state: present
+    register: add_floating_path_nm
+
+  - name: Create a floating svi path of type physical in normal mode again
+    cisco.aci.aci_l3out_floating_svi_path:
+      <<: *floating_svi
+      domain_type: physical
+      domain: physical_dom
+      floating_ip: 25.45.67.90/24
+      access_encap: vlan-1
+      state: present
+    register: add_floating_path_again
+
+  - name: Update a floating svi path of type physical
+    cisco.aci.aci_l3out_floating_svi_path:
+      <<: *floating_svi
+      domain_type: physical
+      domain: physical_dom
+      floating_ip: 25.45.67.90/24
+      access_encap: vlan-2
+      state: present
+    register: update_floating_path
+
+  - name: Create another floating svi path of type physical
+    cisco.aci.aci_l3out_floating_svi_path:
+      <<: *floating_svi
+      domain_type: physical
+      domain: physical_dom2
+      floating_ip: 25.45.67.90/24
+      access_encap: vlan-1
+      state: present
+    register: add_another_floating_path
+
+  - name: Create a floating svi path of type virtual
+    cisco.aci.aci_l3out_floating_svi_path:
+      <<: *floating_svi2
+      domain_type: vmware
+      domain: vmm_dom
+      floating_ip: 27.45.67.90/24
+      forged_transmit: enabled
+      mac_change: enabled
+      promiscuous_mode: enabled
+      enhanced_lag_policy: enhanced
+      state: present
+    register: add_enhanced
+
+  - name: Create a floating svi path of type virtual (change enhanced_lag_policy)
+    cisco.aci.aci_l3out_floating_svi_path:
+      <<: *floating_svi2
+      domain_type: vmware
+      domain: vmm_dom
+      floating_ip: 27.45.67.90/24
+      forged_transmit: enabled
+      mac_change: enabled
+      promiscuous_mode: enabled
+      enhanced_lag_policy: enhanced2
+      state: present
+    register: change_enhanced
+
+  - name: Create a floating svi path of type virtual (delete enhanced_lag_policy)
+    cisco.aci.aci_l3out_floating_svi_path:
+      <<: *floating_svi2
+      domain_type: vmware
+      domain: vmm_dom
+      floating_ip: 27.45.67.90/24
+      forged_transmit: enabled
+      mac_change: enabled
+      promiscuous_mode: enabled
+      enhanced_lag_policy: ""
+      state: present
+    register: del_enhanced
+
+  - name: Verify present ops
     assert:
       that:
-      - cm_add_intf is changed
-      - nm_add_intf is changed
-      - cm_add_intf.previous == nm_add_intf.previous == []
-      - cm_add_intf.sent.l3extLIfP.attributes.name == nm_add_intf.sent.l3extLIfP.attributes.name == 'INTFS'
-      - cm_add_intf.sent.l3extLIfP.attributes.descr == nm_add_intf.sent.l3extLIfP.attributes.descr == 'test'
-      - nm_add_intf.current.0.l3extLIfP.attributes.annotation == 'orchestrator:ansible'
+      - add_floating_path_cm is changed
+      - add_floating_path_nm is changed
+      - add_floating_path_again is not changed
+      - update_floating_path is changed
+      - add_another_floating_path is changed
+      - add_enhanced is changed
+      - change_enhanced is changed
+      - del_enhanced is changed
+      - add_floating_path_nm.current.0.l3extRsDynPathAtt.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-NODES/lifp-Floating/vlifp-[topology/pod-1/node-201]-[vlan-1]/rsdynPathAtt-[uni/phys-physical_dom]"
+      - add_floating_path_nm.current.0.l3extRsDynPathAtt.attributes.encap == "vlan-1"
+      - add_floating_path_nm.current.0.l3extRsDynPathAtt.attributes.floatingAddr == "25.45.67.90/24"
+      - update_floating_path.current.0.l3extRsDynPathAtt.attributes.encap == "vlan-2"
+      - add_enhanced.current.0.l3extRsDynPathAtt.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-NODES/lifp-Floating/vlifp-[topology/pod-1/node-202]-[vlan-1]/rsdynPathAtt-[uni/vmmp-VMware/dom-vmm_dom]"
+      - add_enhanced.current.0.l3extRsDynPathAtt.attributes.floatingAddr == "27.45.67.90/24"
+      - add_enhanced.current.0.l3extRsDynPathAtt.attributes.forgedTransmit == "Enabled"
+      - add_enhanced.current.0.l3extRsDynPathAtt.attributes.macChange == "Enabled"
+      - add_enhanced.current.0.l3extRsDynPathAtt.attributes.promMode == "Enabled"
+      - add_enhanced.current.0.l3extRsDynPathAtt.children.0.l3extVirtualLIfPLagPolAtt.children.0.l3extRsVSwitchEnhancedLagPol.attributes.tDn == "uni/vmmp-VMware/dom-vmm_dom/vswitchpolcont/enlacplagp-enhanced"
+      - change_enhanced.current.0.l3extRsDynPathAtt.children.0.l3extVirtualLIfPLagPolAtt.children.0.l3extRsVSwitchEnhancedLagPol.attributes.tDn == "uni/vmmp-VMware/dom-vmm_dom/vswitchpolcont/enlacplagp-enhanced2"
+      - del_enhanced.current.0.l3extRsDynPathAtt.children is not defined
 
-  - name: Query a floating svi
-    cisco.aci.aci_l3out_floating_svi:
+  - name: Query a floating svi path
+    cisco.aci.aci_l3out_floating_svi_path:
       <<: *floating_svi
+      domain_type: physical
+      domain: physical_dom
       state: query
     register: query_floating
 
-  - name: Query all floating svis
-    cisco.aci.aci_l3out_floating_svi:
-      <<: *intf_present
+  - name: Query all floating svi paths
+    cisco.aci.aci_l3out_floating_svi_path:
+      <<: *floating_svi
       state: query
     register: query_all_floating
 
-  - name: Remove a floating svi
-    cisco.aci.aci_l3out_logical_interface_profile:
+  - name: Verify query ops
+    assert:
+      that:
+      - query_floating is not changed
+      - query_all_floating is not changed
+      - query_floating.current.0.l3extRsDynPathAtt.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-NODES/lifp-Floating/vlifp-[topology/pod-1/node-201]-[vlan-1]/rsdynPathAtt-[uni/phys-physical_dom]"
+      - query_floating.current.0.l3extRsDynPathAtt.attributes.floatingAddr == "25.45.67.90/24"
+      - query_floating.current.0.l3extRsDynPathAtt.attributes.encap == "vlan-2"
+      - query_all_floating.current.0.l3extVirtualLIfP.children | length == 2
+
+  - name: Remove a floating svi path
+    cisco.aci.aci_l3out_floating_svi_path:
       <<: *floating_svi
+      domain_type: physical
+      domain: physical_dom
       state: absent
-    register: remove_floating
+    register: remove_floating_path
+
+  - name: Verify absent ops
+    assert:
+      that:
+      - remove_floating_path is changed
+      - remove_floating_path.current == []
+
+  # Clean up Environment
+  - name: Remove vSwitch Policy
+    cisco.aci.aci_vmm_vswitch_policy:
+      <<: *aci_info
+      domain: vmm_dom
+      vm_provider: vmware
+      state: absent
+
+  - name: Remove VMM domain
+    cisco.aci.aci_domain:
+      <<: *aci_info
+      domain: vmm_dom
+      domain_type: vmm
+      vm_provider: vmware
+      state: absent
+
+  - name: Remove test tenant
+    cisco.aci.aci_tenant:
+      <<: *aci_info
+      tenant: ansible_test
+      state: absent

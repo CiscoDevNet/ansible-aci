@@ -48,25 +48,47 @@ options:
     description:
     - Pod to build the interface on.
     type: str
+    required: true
   node_id:
     description:
     - Node to build the interface on for Port-channels and single ports.
     type: str
+    required: true
+  encap:
+    description:
+    - Encapsulation on the interface (e.g. "vlan-500")
+    type: str
+    required: true
+  address:
+    description:
+    - The floating IP address.
+    type: str
+    aliases: [ addr, ip_address ]
   domain:
     description:
     - This option allows virtual machines to send frames with a mac address.
     type: str
-    choices: [ enable, disable ]
+    required: true
   domain_type:
     description:
     - The domain type of the path.
     type: str
     choices: [ physical, vmware ]
+    required: true
+  floating_ip:
+    description:
+    - The floating IP address.
+    type: str
+    aliases: [ floating_address ]
   secondary_ip:
     description:
     - The secondary floating IP address.
     type: str
     aliases: [ secondary_floating_address ]
+  access_encap:
+    description:
+    - Encapsulation of the floating path attribute.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -78,13 +100,9 @@ extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
-notes:
-- This is a test
 seealso:
-- module: aci_l3out
-- module: aci_l3out_logical_node_profile
-- module: aci_l3out_logical_interface_profile
-- module: aci_l3out_logical_interface
+- module: aci_l3out_floating_svi
+- module: aci_l3out_floating_svi_path
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(l3ext:RsPathL3OutAtt)
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -288,9 +306,12 @@ def main():
         pod_id=dict(type="str", required=True),
         node_id=dict(type="str", required=True),
         encap=dict(type="str", required=True),
+        address=dict(type="str", aliases=["addr", "ip_address"]),
+        floating_ip=dict(type="str", aliases=["floating_address"]),
         domain_type=dict(type="str", choices=["physical", "vmware"], required=True),
         domain=dict(type="str", required=True),
         secondary_ip=dict(type="str", aliases=["secondary_floating_address"]),
+        access_encap=dict(type="str"),
     )
 
     module = AnsibleModule(
@@ -320,7 +341,7 @@ def main():
     interface_profile = module.params.get("interface_profile")
     pod_id = module.params.get("pod_id")
     node_id = module.params.get("node_id")
-    encap = (module.params.get("encap"),)
+    encap = module.params.get("encap")
     secondary_ip = module.params.get("secondary_ip")
     domain_type = module.params.get("domain_type")
     domain = module.params.get("domain")
@@ -330,9 +351,10 @@ def main():
 
     node_dn = "topology/pod-{0}/node-{1}".format(pod_id, node_id)
 
+    tDn = None
     if domain_type == "physical":
         tDn = "uni/phys-{0}".format(domain)
-    elif domain_type == "vmware":
+    else:
         tDn = "uni/vmmp-VMware/dom-{0}".format(domain)
 
     aci.construct_url(
