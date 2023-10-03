@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_floating_svi
-short_description: Manage Layer 3 Outside (L3Out) interfaces (l3ext:RsPathL3OutAtt)
+short_description: Manage Layer 3 Outside (L3Out) interfaces (l3ext:VirtualLIfP)
 description:
 - Manage L3Out interfaces on Cisco ACI fabrics.
 options:
@@ -42,11 +42,11 @@ options:
     required: true
   pod_id:
     description:
-    - Pod to build the interface on.
+    - Pod ID to build the interface on.
     type: str
   node_id:
     description:
-    - Node to build the interface on for Port-channels and single ports.
+    - Node ID to build the interface on for Port-channels and single ports.
     type: str
   encap:
     description:
@@ -76,12 +76,12 @@ options:
     type: str
   ipv6_dad:
     description:
-    - IPv6 DAD feature.
+    - IPv6 Duplicate Address Detection (DAD) feature.
     type: str
     choices: [ enabled, disabled]
   mode:
     description:
-    - Interface mode, only used if instance_type is ext-svi
+    - The mode option for ext-svi interface.
     type: str
     choices: [ regular, native, untagged ]
   dscp:
@@ -112,12 +112,15 @@ extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
+notes:
+- The C(l3out), C(logical_node_profile) and C(logical_interface_profile) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile) and M(cisco.aci.aci_l3out_logical_interface_profile) modules can be used for this.
 seealso:
 - module: aci_l3out
 - module: aci_l3out_logical_node_profile
 - module: aci_l3out_logical_interface_profile
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(l3ext:RsPathL3OutAtt)
+  description: More information about the internal APIC class B(l3ext:VirtualLIfP)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Shreyas Srish (@shrsr)
@@ -310,7 +313,7 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_contract_dscp_spec
 
 
 def main():
@@ -334,41 +337,16 @@ def main():
         encap_scope=dict(type="str", choices=["vrf", "local"]),
         auto_state=dict(type="str", choices=["enabled", "disabled"]),
         external_bridge_group_profile=dict(type="str"),
-        dscp=dict(
-            type="str",
-            choices=[
-                "AF11",
-                "AF12",
-                "AF13",
-                "AF21",
-                "AF22",
-                "AF23",
-                "AF31",
-                "AF32",
-                "AF33",
-                "AF41",
-                "AF42",
-                "AF43",
-                "CS0",
-                "CS1",
-                "CS2",
-                "CS3",
-                "CS4",
-                "CS5",
-                "CS6",
-                "CS7",
-                "EF",
-                "VA",
-                "unspecified",
-            ],
-            aliases=["target_dscp"],
-        ),
+        dscp=aci_contract_dscp_spec(direction="dscp")
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "present", ["pod_id", "node_id", "encap", "address"]], ["state", "absent", ["pod_id", "node_id", "encap"]]],
+        required_if=[
+            ["state", "present", ["pod_id", "node_id", "encap", "address"]],
+            ["state", "absent", ["pod_id", "node_id", "encap"]],
+        ],
     )
 
     tenant = module.params.get("tenant")

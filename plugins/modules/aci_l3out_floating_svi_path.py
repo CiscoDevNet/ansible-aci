@@ -112,10 +112,13 @@ extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
+notes:
+- The C(floating_svi) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_l3out_floating_svi) module can be used for this.
 seealso:
 - module: aci_l3out_floating_svi
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(l3ext:RsPathL3OutAtt)
+  description: More information about the internal APIC class B(l3ext:RsDynPathAtt))
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Shreyas Srish (@shrsr)
@@ -348,7 +351,10 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "present", ["domain_type", "domain", "floating_ip"]], ["state", "absent", ["domain_type", "domain"]]],
+        required_if=[
+            ["state", "present", ["domain_type", "domain", "floating_ip"]],
+            ["state", "absent", ["domain_type", "domain"]],
+        ],
     )
 
     tenant = module.params.get("tenant")

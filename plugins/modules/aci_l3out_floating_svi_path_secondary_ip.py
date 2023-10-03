@@ -100,11 +100,14 @@ extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
+notes:
+- The C(floating_svi) and C(floating_svi_path) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_l3out_floating_svi) and M(cisco.aci.aci_l3out_floating_svi_path) modules can be used for this.
 seealso:
 - module: aci_l3out_floating_svi
 - module: aci_l3out_floating_svi_path
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(l3ext:RsPathL3OutAtt)
+  description: More information about the internal APIC class B(l3ext:Ip)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Shreyas Srish (@shrsr)
@@ -318,20 +321,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            [
-                "state",
-                "absent",
-                [
-                    "secondary_ip",
-                ],
-            ],
-            [
-                "state",
-                "present",
-                [
-                    "secondary_ip",
-                ],
-            ],
+            ["state", "absent", ["secondary_ip"]],
+            ["state", "present", ["secondary_ip"]],
         ],
     )
 
