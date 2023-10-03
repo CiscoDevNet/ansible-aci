@@ -406,8 +406,11 @@ def main():
                 module.fail_json(msg="Failed to parse provided XML payload: {0}".format(to_text(e)), payload=payload)
 
     # Perform actual request using auth cookie (Same as aci.request(), but also supports XML)
-    aci.url = "{0}/{1}".format(aci.base_url, path.lstrip("/"))
+    # NOTE By setting aci.path we ensure that Ansible displays accurate URL info when the plugin and the aci_rest module are used.
+    aci.path = path.lstrip("/")
+    aci.url = "{0}/{1}".format(aci.base_url, aci.path)
     if aci.params.get("method") != "get" and not rsp_subtree_preserve:
+        aci.path = "{0}?rsp-subtree=modified".format(aci.path)
         aci.url = update_qsl(aci.url, {"rsp-subtree": "modified"})
 
     method = aci.params.get("method").upper()
