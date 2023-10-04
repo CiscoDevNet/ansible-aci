@@ -85,7 +85,7 @@ except ImportError:
     HAS_XMLJSON_COBRA = False
 
 try:
-    from ansible.module_utils.six.moves.urllib.parse import urlparse, urlunparse
+    from ansible.module_utils.six.moves.urllib.parse import urlparse
 
     HAS_URLPARSE = True
 except Exception:
@@ -318,13 +318,6 @@ def ospf_spec():
 def integrate_url(httpapi_url, local_path):
     parse_url = urlparse(httpapi_url)
     return {"protocol": parse_url.scheme, "host": parse_url.netloc, "path": local_path}
-
-
-def replace_apic_host(url, actual_host):
-    parsed_url = urlparse(url)
-    modified_parsed_url = parsed_url._replace(netloc=actual_host)
-    actual_url = urlunparse(modified_parsed_url)
-    return actual_url
 
 
 class ACIModule(object):

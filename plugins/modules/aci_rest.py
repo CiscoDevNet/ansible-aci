@@ -284,7 +284,7 @@ except Exception:
     HAS_YAML = False
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, replace_apic_host
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
 from ansible.module_utils._text import to_text
 
 
@@ -440,7 +440,7 @@ def main():
     else:
         # NOTE A case when aci_rest is used with check mode and the apic host is used directly from the inventory
         if aci.connection is not None and aci.params.get("host") is None:
-            aci.url = replace_apic_host(aci.url, re.sub(r"[[\]]", "", aci.connection.get_option("host")).split(",")[0])
+            aci.url = urlunparse(urlparse(aci.url)._replace(netloc=re.sub(r"[[\]]", "", aci.connection.get_option("host")).split(",")[0]))
         aci.method = method
         # Set changed to true so check_mode changed result is behaving similar to non aci_rest modules
         aci.result["changed"] = True
