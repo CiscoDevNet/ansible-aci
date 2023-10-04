@@ -284,7 +284,9 @@ def main():
 
     elif state == "preview":
         aci.path = "mqapi2/snapshots.diff.xml"
-        preview_params = {k: v for d in [{"path": aci.path}, module.params] for k, v in d.items()}
+        preview_path = {"path": aci.path}
+        preview_params = dict(preview_path.items())
+        preview_params.update(module.params.items())
         if aci.params.get("port") is not None:
             aci.url = "{protocol}://{host}:{port}/{path}".format_map(preview_params)
         else:
