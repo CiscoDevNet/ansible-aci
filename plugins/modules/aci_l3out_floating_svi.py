@@ -113,12 +113,14 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(l3out), C(logical_node_profile) and C(logical_interface_profile) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile) and M(cisco.aci.aci_l3out_logical_interface_profile) modules can be used for this.
+- The C(tenant), C(l3out), C(logical_node_profile) and C(logical_interface_profile) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile), M(cisco.aci.aci_l3out_logical_interface_profile) \
+  modules can be used for this.
 seealso:
-- module: aci_l3out
-- module: aci_l3out_logical_node_profile
-- module: aci_l3out_logical_interface_profile
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_l3out
+- module: cisco.aci.aci_l3out_logical_node_profile
+- module: cisco.aci.aci_l3out_logical_interface_profile
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(l3ext:VirtualLIfP)
   link: https://developer.cisco.com/docs/apic-mim-ref/

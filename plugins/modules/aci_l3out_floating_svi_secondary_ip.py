@@ -64,15 +64,6 @@ options:
     - The secondary floating IP address.
     type: str
     aliases: [ secondary_floating_address ]
-  address:
-    description:
-    - The floating IP address.
-    type: str
-    aliases: [ addr, ip_address ]
-  external_bridge_group_profile:
-    description:
-    - The external bridge group profile.
-    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -85,10 +76,15 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(floating_svi) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_l3out_floating_svi) module can be used for this.
+- The C(tenant), C(l3out), C(logical_node_profile), C(logical_interface_profile) and C(floating_svi) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile), M(cisco.aci.aci_l3out_logical_interface_profile) and \
+  M(cisco.aci.aci_l3out_floating_svi) can be used for this.
 seealso:
-- module: aci_l3out_floating_svi
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_l3out
+- module: cisco.aci.aci_l3out_logical_node_profile
+- module: cisco.aci.aci_l3out_logical_interface_profile
+- module: cisco.aci.aci_l3out_floating_svi
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(l3ext:Ip)
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -284,9 +280,7 @@ def main():
         pod_id=dict(type="str", required=True),
         node_id=dict(type="str", required=True),
         encap=dict(type="str", required=True),
-        address=dict(type="str", aliases=["addr", "ip_address"]),
         secondary_ip=dict(type="str", aliases=["secondary_floating_address"]),
-        external_bridge_group_profile=dict(type="str"),
     )
 
     module = AnsibleModule(

@@ -75,7 +75,10 @@
 
   - name: Create a floating svi secondary_ip in check mode
     cisco.aci.aci_l3out_floating_svi_secondary_ip:
-      <<: *floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
       secondary_ip: 25.45.67.90/24
       state: present
     check_mode: true
@@ -83,21 +86,30 @@
 
   - name: Create a floating svi secondary_ip in normal mode
     cisco.aci.aci_l3out_floating_svi_secondary_ip:
-      <<: *floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
       secondary_ip: 25.45.67.90/24
       state: present
     register: add_ip_nm
 
   - name: Create a floating svi secondary_ip again
     cisco.aci.aci_l3out_floating_svi_secondary_ip:
-      <<: *floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
       secondary_ip: 25.45.67.90/24
       state: present
     register: add_ip_again
 
   - name: Create another floating svi secondary_ip 
     cisco.aci.aci_l3out_floating_svi_secondary_ip:
-      <<: *floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
       secondary_ip: 26.45.67.90/24
       state: present
     register: add_another_ip
@@ -114,14 +126,20 @@
   
   - name: Query a floating svi secondary_ip
     cisco.aci.aci_l3out_floating_svi_secondary_ip:
-      <<: *floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
       secondary_ip: 25.45.67.90/24
       state: query
     register: query_ip
 
   - name: Query all ips
     cisco.aci.aci_l3out_floating_svi_secondary_ip:
-      <<: *floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
       state: query
     register: query_all
 
@@ -135,7 +153,10 @@
 
   - name: Delete a floating svi secondary_ip
     cisco.aci.aci_l3out_floating_svi_secondary_ip:
-      <<: *floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
       secondary_ip: 25.45.67.90/24
       state: absent
     register: delete_ip

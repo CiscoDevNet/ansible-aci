@@ -63,7 +63,7 @@
       interface_profile: Floating
 
   - name: Create a floating svi
-    cisco.aci.aci_l3out_floating_svi: &floating_svi
+    cisco.aci.aci_l3out_floating_svi:
       <<: *intf_present
       pod_id: 1
       node_id: 201
@@ -72,7 +72,7 @@
       state: present
 
   - name: Create a floating svi
-    cisco.aci.aci_l3out_floating_svi: &floating_svi2
+    cisco.aci.aci_l3out_floating_svi:
       <<: *intf_present
       pod_id: 1
       node_id: 202
@@ -100,7 +100,10 @@
 
   - name: Create a floating svi path of type physical in check_mode
     cisco.aci.aci_l3out_floating_svi_path:
-      <<: *floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
       domain_type: physical
       domain: physical_dom
       floating_ip: 25.45.67.90/24
@@ -111,7 +114,10 @@
 
   - name: Create a floating svi path of type physical in normal mode
     cisco.aci.aci_l3out_floating_svi_path:
-      <<: *floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
       domain_type: physical
       domain: physical_dom
       floating_ip: 25.45.67.90/24
@@ -121,7 +127,10 @@
 
   - name: Create a floating svi path of type physical in normal mode again
     cisco.aci.aci_l3out_floating_svi_path:
-      <<: *floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
       domain_type: physical
       domain: physical_dom
       floating_ip: 25.45.67.90/24
@@ -131,7 +140,10 @@
 
   - name: Update a floating svi path of type physical
     cisco.aci.aci_l3out_floating_svi_path:
-      <<: *floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
       domain_type: physical
       domain: physical_dom
       floating_ip: 25.45.67.90/24
@@ -141,7 +153,10 @@
 
   - name: Create another floating svi path of type physical
     cisco.aci.aci_l3out_floating_svi_path:
-      <<: *floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
       domain_type: physical
       domain: physical_dom2
       floating_ip: 25.45.67.90/24
@@ -151,7 +166,10 @@
 
   - name: Create a floating svi path of type virtual
     cisco.aci.aci_l3out_floating_svi_path:
-      <<: *floating_svi2
+      <<: *intf_present
+      pod_id: 1
+      node_id: 202
+      encap: vlan-1
       domain_type: vmware
       domain: vmm_dom
       floating_ip: 27.45.67.90/24
@@ -164,7 +182,10 @@
 
   - name: Create a floating svi path of type virtual (change enhanced_lag_policy)
     cisco.aci.aci_l3out_floating_svi_path:
-      <<: *floating_svi2
+      <<: *intf_present
+      pod_id: 1
+      node_id: 202
+      encap: vlan-1
       domain_type: vmware
       domain: vmm_dom
       floating_ip: 27.45.67.90/24
@@ -177,7 +198,10 @@
 
   - name: Create a floating svi path of type virtual (delete enhanced_lag_policy)
     cisco.aci.aci_l3out_floating_svi_path:
-      <<: *floating_svi2
+      <<: *intf_present
+      pod_id: 1
+      node_id: 202
+      encap: vlan-1
       domain_type: vmware
       domain: vmm_dom
       floating_ip: 27.45.67.90/24
@@ -214,7 +238,10 @@
 
   - name: Query a floating svi path
     cisco.aci.aci_l3out_floating_svi_path:
-      <<: *floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
       domain_type: physical
       domain: physical_dom
       state: query
@@ -222,7 +249,10 @@
 
   - name: Query all floating svi paths
     cisco.aci.aci_l3out_floating_svi_path:
-      <<: *floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
       state: query
     register: query_all_floating
 
@@ -238,7 +268,10 @@
 
   - name: Remove a floating svi path
     cisco.aci.aci_l3out_floating_svi_path:
-      <<: *floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
       domain_type: physical
       domain: physical_dom
       state: absent

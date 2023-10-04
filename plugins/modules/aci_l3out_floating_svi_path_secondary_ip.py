@@ -59,11 +59,6 @@ options:
     - Encapsulation on the interface (e.g. "vlan-500")
     type: str
     required: true
-  address:
-    description:
-    - The floating IP address.
-    type: str
-    aliases: [ addr, ip_address ]
   domain:
     description:
     - This option allows virtual machines to send frames with a mac address.
@@ -75,20 +70,11 @@ options:
     type: str
     choices: [ physical, vmware ]
     required: true
-  floating_ip:
-    description:
-    - The floating IP address.
-    type: str
-    aliases: [ floating_address ]
   secondary_ip:
     description:
     - The secondary floating IP address.
     type: str
     aliases: [ secondary_floating_address ]
-  access_encap:
-    description:
-    - Encapsulation of the floating path attribute.
-    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -101,11 +87,16 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(floating_svi) and C(floating_svi_path) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_l3out_floating_svi) and M(cisco.aci.aci_l3out_floating_svi_path) modules can be used for this.
+- The C(tenant), C(l3out), C(logical_node_profile), C(logical_interface_profile) and C(floating_svi) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile), M(cisco.aci.aci_l3out_logical_interface_profile), \
+  M(cisco.aci.aci_l3out_floating_svi) and M(cisco.aci.aci_l3out_floating_svi_path) can be used for this.
 seealso:
-- module: aci_l3out_floating_svi
-- module: aci_l3out_floating_svi_path
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_l3out
+- module: cisco.aci.aci_l3out_logical_node_profile
+- module: cisco.aci.aci_l3out_logical_interface_profile
+- module: cisco.aci.aci_l3out_floating_svi
+- module: cisco.aci.aci_l3out_floating_svi_path
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(l3ext:Ip)
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -309,12 +300,9 @@ def main():
         pod_id=dict(type="str", required=True),
         node_id=dict(type="str", required=True),
         encap=dict(type="str", required=True),
-        address=dict(type="str", aliases=["addr", "ip_address"]),
-        floating_ip=dict(type="str", aliases=["floating_address"]),
         domain_type=dict(type="str", choices=["physical", "vmware"], required=True),
         domain=dict(type="str", required=True),
         secondary_ip=dict(type="str", aliases=["secondary_floating_address"]),
-        access_encap=dict(type="str"),
     )
 
     module = AnsibleModule(
