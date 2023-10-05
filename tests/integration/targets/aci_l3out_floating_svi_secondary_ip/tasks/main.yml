@@ -63,7 +63,7 @@
       interface_profile: Floating
 
   - name: Create a floating svi
-    cisco.aci.aci_l3out_floating_svi: &floating_svi
+    cisco.aci.aci_l3out_floating_svi:
       <<: *intf_present
       pod_id: 1
       node_id: 201
@@ -74,7 +74,7 @@
     register: add_floating_cm
 
   - name: Create a floating svi secondary_ip in check mode
-    cisco.aci.aci_l3out_floating_svi_secondary_ip:
+    cisco.aci.aci_l3out_floating_svi_secondary_ip: &floating_svi
       <<: *intf_present
       pod_id: 1
       node_id: 201
@@ -86,21 +86,13 @@
 
   - name: Create a floating svi secondary_ip in normal mode
     cisco.aci.aci_l3out_floating_svi_secondary_ip:
-      <<: *intf_present
-      pod_id: 1
-      node_id: 201
-      encap: vlan-1
-      secondary_ip: 25.45.67.90/24
+      <<: *floating_svi
       state: present
     register: add_ip_nm
 
   - name: Create a floating svi secondary_ip again
     cisco.aci.aci_l3out_floating_svi_secondary_ip:
-      <<: *intf_present
-      pod_id: 1
-      node_id: 201
-      encap: vlan-1
-      secondary_ip: 25.45.67.90/24
+      <<: *floating_svi
       state: present
     register: add_ip_again
 
@@ -126,11 +118,7 @@
   
   - name: Query a floating svi secondary_ip
     cisco.aci.aci_l3out_floating_svi_secondary_ip:
-      <<: *intf_present
-      pod_id: 1
-      node_id: 201
-      encap: vlan-1
-      secondary_ip: 25.45.67.90/24
+      <<: *floating_svi
       state: query
     register: query_ip
 
@@ -153,11 +141,7 @@
 
   - name: Delete a floating svi secondary_ip
     cisco.aci.aci_l3out_floating_svi_secondary_ip:
-      <<: *intf_present
-      pod_id: 1
-      node_id: 201
-      encap: vlan-1
-      secondary_ip: 25.45.67.90/24
+      <<: *floating_svi
       state: absent
     register: delete_ip
 
