@@ -250,6 +250,7 @@ url:
 
 import json
 import os
+import re
 
 try:
     from ansible.module_utils.six.moves.urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
@@ -406,8 +407,11 @@ def main():
                 module.fail_json(msg="Failed to parse provided XML payload: {0}".format(to_text(e)), payload=payload)
 
     # Perform actual request using auth cookie (Same as aci.request(), but also supports XML)
-    aci.url = "{0}/{1}".format(aci.base_url, path.lstrip("/"))
+    # NOTE By setting aci.path we ensure that Ansible displays accurate URL info when the plugin and the aci_rest module are used.
+    aci.path = path.lstrip("/")
+    aci.url = "{0}/{1}".format(aci.base_url, aci.path)
     if aci.params.get("method") != "get" and not rsp_subtree_preserve:
+        aci.path = "{0}?rsp-subtree=modified".format(aci.path)
         aci.url = update_qsl(aci.url, {"rsp-subtree": "modified"})
 
     method = aci.params.get("method").upper()
@@ -434,6 +438,9 @@ def main():
         aci.result["totalCount"] = aci.totalCount
 
     else:
+        # NOTE A case when aci_rest is used with check mode and the apic host is used directly from the inventory
+        if aci.connection is not None and aci.params.get("host") is None:
+            aci.url = urlunparse(urlparse(aci.url)._replace(netloc=re.sub(r"[[\]]", "", aci.connection.get_option("host")).split(",")[0]))
         aci.method = method
         # Set changed to true so check_mode changed result is behaving similar to non aci_rest modules
         aci.result["changed"] = True
