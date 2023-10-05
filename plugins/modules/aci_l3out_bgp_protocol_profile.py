@@ -7,42 +7,50 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
 DOCUMENTATION = r"""
 ---
-module: aci_l3out_logical_node_profile
-short_description: Manage Layer 3 Outside (L3Out) logical node profiles (l3ext:LNodeP)
+module: aci_l3out_route_tag_policy
+short_description: Manage BGP Protocol Profile (bgp:ProtP)
 description:
-- Manage Layer 3 Outside (L3Out) logical node profiles on Cisco ACI fabrics.
+- Manage BGP Protocol Profile for The Logical Node Profiles on Cisco ACI fabrics.
 options:
-  node_profile:
-    description:
-    - Name of the node profile.
-    type: str
-    aliases: [ node_profile_name, name, logical_node ]
-  description:
-    description:
-    - Description for the node profile.
-    type: str
-    aliases: [ descr ]
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   l3out:
     description:
-    - Name of an existing L3Out.
+    - The name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
-  dscp:
+  node_profile:
     description:
-    - The target Differentiated Service (DSCP) value.
-    - The APIC defaults to C(unspecified) when unset during creation.
+    - The name of an existing logical node profile.
     type: str
-    choices: [ AF11, AF12, AF13, AF21, AF22, AF23, AF31, AF32, AF33, AF41, AF42, AF43, CS0, CS1, CS2, CS3, CS4, CS5, CS6, CS7, EF, VA, unspecified ]
-    aliases: [ target_dscp ]
+    aliases: [ node_profile_name, logical_node ]
+  bgp_protocol_profile:
+    description:
+    - The name of the bgp protocol profile.
+    type: str
+    aliases: [ name, bgp_protocol_profile_name ]
+  bgp_timers_policy:
+    description:
+    - The name of an existing bgp timers policy.
+    type: str
+    aliases: [ bgp_timers_policy_name ]
+  bgp_best_path_policy:
+    description:
+    - The name of the bgp best path control policy.
+    type: str
+    aliases: [ bgp_best_path_policy_name ]
+  description:
+    description:
+    - Description for the bgp protocol profile.
+    type: str
+    aliases: [ descr ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -59,59 +67,56 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 - cisco.aci.owner
 
+notes:
+- The C(tenant) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) module can be used for this.
 seealso:
-- module: aci_l3out
+- module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(vmm:DomP)
+  description: More information about the internal APIC class B(bgp:ProtP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Jason Juenger (@jasonjuenger)
+- Dag Wieers (@dagwieers)
 """
 
 EXAMPLES = r"""
-- name: Add a new node profile
-  cisco.aci.aci_l3out_logical_node_profile:
+- name: Create a l3out route tag policy
+  cisco.aci.aci_l3out_route_tag_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    node_profile: my_node_profile
-    description: node profile for my_l3out
-    l3out: my_l3out
-    tenant: my_tenant
-    dscp: CS0
+    tag: 1000
+    bgp_protocol_profile: my_route_tag_policy
+    tenant: production
     state: present
   delegate_to: localhost
 
-- name: Delete a node profile
-  cisco.aci.aci_l3out_logical_node_profile:
+- name: Delete a l3out route tag policy
+  cisco.aci.aci_l3out_route_tag_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    node_profile: my_node_profile
-    l3out: my_l3out
-    tenant: my_tenant
+    bgp_protocol_profile: my_route_tag_policy
+    tenant: production
     state: absent
   delegate_to: localhost
 
-- name: Query a node profile
-  cisco.aci.aci_l3out_logical_node_profile:
+- name: Query all l3out route tag policies
+  cisco.aci.aci_l3out_route_tag_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    node_profile: my_node_profile
-    l3out: my_l3out
-    tenant: my_tenant
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Query all node profile for L3out
-  cisco.aci.aci_l3out_logical_node_profile:
+- name: Query a specific l3out route tag policy
+  cisco.aci.aci_l3out_route_tag_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    l3out: my_l3out
-    tenant: my_tenant
+    bgp_protocol_profile: my_route_tag_policy
+    tenant: production
     state: query
   delegate_to: localhost
   register: query_result
@@ -231,39 +236,13 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        node_profile=dict(type="str", aliases=["name", "node_profile_name", "logical_node"]),
-        tenant=dict(type="str", aliases=["tenant_name"]),
-        l3out=dict(type="str", aliases=["l3out_name"]),
+        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        l3out=dict(type="str", aliases=["l3out_name"]),  # Not required for querying all objects
+        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),  # Not required for querying all objects
+        bgp_protocol_profile=dict(type="str", aliases=["name", "bgp_protocol_profile_name"]),  # Not required for querying all objects
+        bgp_timers_policy=dict(type="str", aliases=["bgp_timers_policy_name"]),
+        bgp_best_path_policy=dict(type="str", aliases=["bgp_best_path_policy_name"]),
         description=dict(type="str", aliases=["descr"]),
-        dscp=dict(
-            type="str",
-            choices=[
-                "AF11",
-                "AF12",
-                "AF13",
-                "AF21",
-                "AF22",
-                "AF23",
-                "AF31",
-                "AF32",
-                "AF33",
-                "AF41",
-                "AF42",
-                "AF43",
-                "CS0",
-                "CS1",
-                "CS2",
-                "CS3",
-                "CS4",
-                "CS5",
-                "CS6",
-                "CS7",
-                "EF",
-                "VA",
-                "unspecified",
-            ],
-            aliases=["target_dscp"],
-        ),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
@@ -277,15 +256,19 @@ def main():
         ],
     )
 
-    node_profile = module.params.get("node_profile")
+    bgp_protocol_profile = module.params.get("bgp_protocol_profile")
+    bgp_timers_policy = module.params.get("bgp_timers_policy")
+    bgp_best_path_policy = module.params.get("bgp_best_path_policy")
+    description = module.params.get("description")
+    state = module.params.get("state")
     tenant = module.params.get("tenant")
     l3out = module.params.get("l3out")
-    description = module.params.get("description")
-    dscp = module.params.get("dscp")
-    state = module.params.get("state")
+    node_profile = module.params.get("node_profile")
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
+
+    child_classes = ["bgpRsBgpNodeCtxPol", "bgpRsBestPathCtrlPol"]
 
     aci.construct_url(
         root_class=dict(
@@ -306,22 +289,37 @@ def main():
             module_object=node_profile,
             target_filter={"name": node_profile},
         ),
+        subclass_3=dict(
+            aci_class="bgpProtP",
+            aci_rn="protp",
+            module_object="",
+            target_filter={"name": bgp_protocol_profile},
+        ),
+        child_classes=child_classes,
     )
 
     aci.get_existing()
 
     if state == "present":
+        child_configs=[]
+        if bgp_timers_policy is not None:
+            child_configs.append(dict(bgpRsBgpNodeCtxPol=dict(attributes=dict(tnBgpCtxPolName=bgp_timers_policy))))
+        if bgp_best_path_policy is not None:
+            child_configs.append(
+                dict(bgpRsBestPathCtrlPo=dict(attributes=dict(tnBgpBestPathCtrlPolName=bgp_timers_policy)))
+            )
+
         aci.payload(
-            aci_class="l3extLNodeP",
+            aci_class="bgpProtP",
             class_config=dict(
+                name=bgp_protocol_profile,
                 descr=description,
-                name=node_profile,
-                targetDscp=dscp,
                 nameAlias=name_alias,
             ),
+            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class="l3extLNodeP")
+        aci.get_diff(aci_class="bgpProtP")
 
         aci.post_config()
 
