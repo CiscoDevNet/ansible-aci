@@ -15,30 +15,30 @@ DOCUMENTATION = r"""
 module: aci_match_as_path_regex_term
 short_description: Manage Match Regular Expression AS-Path Term (rtctrl:MatchAsPathRegexTerm)
 description:
-- Manage Match Rule Based on Route Regular Expression AS-Path for Subject Profiles on Cisco ACI fabrics.
+- Manage Match Term Based on Route Regular Expression AS-Path for Match Rule Profiles on Cisco ACI fabrics.
 options:
   tenant:
     description:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  subject_profile:
+  match_rule:
     description:
-    - Name of an exising subject profile.
+    - The name of an exising match rule profile.
     type: str
-    aliases: [ subject_name ]
+    aliases: [ match_rule_name ]
   match_as_path_regex_term:
     description:
-    - Name of the Match Regular Expression AS-Path Term.
+    - The name of the match regex AS-Path term.
     type: str
-    aliases: [ name, match_rule_name ]
+    aliases: [ name, match_as_path_regex_term_name ]
   regex:
     description:
     - The Regular Expression.
     type: str
   description:
     description:
-    - The description for the Match Regular Expression AS-Path Term.
+    - The description for the match regex AS-Path term.
     type: str
     aliases: [ descr ]
   state:
@@ -58,10 +58,11 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant) and the C(subject_profile) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and the M(cisco.aci.subject_profile) modules can be used for this.
+- The C(tenant) and the C(match_rule) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) and the M(cisco.aci.aci_match_rule) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_match_rule
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(rtctrl:MatchAsPathRegexTerm).
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -70,6 +71,49 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Create a match match AS-path regex term
+  cisco.aci.match_as_path_regex_term:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    match_rule: prod_match_rule
+    match_as_path_regex_term: prod_match_as_path_regex_term
+    regex: .*
+    tenant: production
+    state: present
+  delegate_to: localhost
+
+- name: Delete a match match AS-path regex term
+  cisco.aci.match_as_path_regex_term:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    match_rule: prod_match_rule
+    tenant: production
+    match_as_path_regex_term: prod_match_as_path_regex_term
+    state: absent
+  delegate_to: localhost
+
+- name: Query all match AS-path regex terms
+  cisco.aci.match_as_path_regex_term:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific match match AS-path regex term
+  cisco.aci.match_as_path_regex_term:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    match_rule: prod_match_rule
+    tenant: production
+    match_as_path_regex_term: prod_match_as_path_regex_term
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
@@ -187,8 +231,8 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        subject_profile=dict(type="str", aliases=["subject_name"]),  # Not required for querying all objects
-        match_as_path_regex_term=dict(type="str", aliases=["name", "match_rule_name"]),
+        match_rule=dict(type="str", aliases=["match_rule_name"]),  # Not required for querying all objects
+        match_as_path_regex_term=dict(type="str", aliases=["name", "match_as_path_regex_term_name"]),
         regex=dict(type="str"),
         description=dict(type="str", aliases=["descr"]),
         name_alias=dict(type="str"),
@@ -209,7 +253,7 @@ def main():
     regex = module.params.get("regex")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
-    subject_profile = module.params.get("subject_profile")
+    match_rule = module.params.get("match_rule")
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
@@ -223,9 +267,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="rtctrlSubjP",
-            aci_rn="subj-{0}".format(subject_profile),
-            module_object=subject_profile,
-            target_filter={"name": subject_profile},
+            aci_rn="subj-{0}".format(match_rule),
+            module_object=match_rule,
+            target_filter={"name": match_rule},
         ),
         subclass_2=dict(
             aci_class="rtctrlMatchAsPathRegexTerm",

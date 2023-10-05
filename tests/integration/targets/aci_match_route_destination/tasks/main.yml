@@ -39,21 +39,21 @@
       description: Ansible tenant
       state: present
 
-  - name: Add a subject profile
-    aci_subject_profile:
+  - name: Add a match rule profile
+    aci_match_rule:
       <<: *aci_info
       tenant: ansible_tenant
-      subject_profile: ansible_subject_profile
+      match_rule: ansible_match_rule
       description: subject profile for ansible_tenant tenant
       state: present
-    register: cm_add_subject_profile
+    register: cm_add_match_rule
 
   - name: Add a match route destination rule (check_mode)
     aci_match_route_destination: &aci_match_route_destination_present
       <<: *aci_info
       tenant: ansible_tenant
-      subject_profile: ansible_subject_profile
-      description: match route destination rule 1 for ansible_subject_profile subject profile
+      match_rule: ansible_match_rule
+      description: match route destination rule 1 for ansible_match_rule match rule profile
       ip: 11.11.11.11/24
       aggregate: yes
       from_prefix_lenght: 0
@@ -76,8 +76,8 @@
     aci_match_route_destination:
       <<: *aci_info
       tenant: ansible_tenant
-      subject_profile: ansible_subject_profile
-      description: match route destination rule 2 for ansible_subject_profile subject profile
+      match_rule: ansible_match_rule
+      description: match route destination rule 2 for ansible_match_rule match rule profile
       ip: 11.11.11.12/24
       state: present
     register: nm_add_match_route_destination_2

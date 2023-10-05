@@ -15,23 +15,23 @@ DOCUMENTATION = r"""
 module: aci_match_community_factor
 short_description: Manage Match Community Factor (rtctrl:MatchCommFactor)
 description:
-- Manage Match Community Factors for Match Rules Based on Community on Cisco ACI fabrics.
+- Manage Match Community Factors for Match Terms Based on Community on Cisco ACI fabrics.
 options:
   tenant:
     description:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  subject_profile:
+  match_rule:
     description:
-    - Name of an exising subject profile.
-    type: str
-    aliases: [ subject_name ]
-  match_community_term:
-    description:
-    - Name of an existing match community term.
+    - The name of an exising match rule profile.
     type: str
     aliases: [ match_rule_name ]
+  match_community_term:
+    description:
+    - The name of an existing match community term.
+    type: str
+    aliases: [ match_community_term_name ]
   community:
     description:
     - The match community value.
@@ -39,13 +39,13 @@ options:
   scope:
     description:
     - The item scope.
-    - if the scope is transitive, this community may be passed between ASs.
-    - if the scope is Non transitive, this community should be carried only within the local AS.
+    - If the scope is transitive, this community may be passed between ASs.
+    - If the scope is Non transitive, this community should be carried only within the local AS.
     type: str
     choices: [ transitive, non-transitive ]
   description:
     description:
-    - The description for the Match Community Term.
+    - The description for the match community factor.
     type: str
     aliases: [ descr ]
   state:
@@ -65,10 +65,12 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant), the C(subject_profile) and the C(match_community_term) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant), the M(cisco.aci.subject_profile) and M(cisco.aci.match_community_term) modules can be used for this.
+- The C(tenant), the C(match_rule) and the C(match_community_term) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant), the M(cisco.aci.aci_match_rule) and M(cisco.aci.aci_match_community_term) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_match_rule
+- module: cisco.aci.aci_match_community_term
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(rtctrl:MatchCommFactor).
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -77,6 +79,52 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Create a match match AS-path regex term
+  cisco.aci.match_community_term:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    match_rule: prod_match_rule
+    match_community_term: prod_match_community_term
+    community: regular:as2-nn2:4:15
+    scope: transitive
+    tenant: production
+    state: present
+  delegate_to: localhost
+
+- name: Delete a match match AS-path regex term
+  cisco.aci.match_community_term:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    match_rule: prod_match_rule
+    tenant: production
+    match_community_term: prod_match_community_term
+    community: regular:as2-nn2:4:15
+    state: absent
+  delegate_to: localhost
+
+- name: Query all match AS-path regex terms
+  cisco.aci.match_community_term:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific match match AS-path regex term
+  cisco.aci.match_community_term:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    match_rule: prod_match_rule
+    tenant: production
+    match_community_term: prod_match_community_term
+    community: regular:as2-nn2:4:15
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
@@ -194,8 +242,8 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        subject_profile=dict(type="str", aliases=["subject_name"]),  # Not required for querying all objects
-        match_community_term=dict(type="str", aliases=["match_rule_name"]),  # Not required for querying all objects
+        match_rule=dict(type="str", aliases=["match_rule_name"]),  # Not required for querying all objects
+        match_community_term=dict(type="str", aliases=["match_community_term_name"]),  # Not required for querying all objects
         community=dict(type="str"),
         scope=dict(type="str", choices=["transitive", "non-transitive"]),
         description=dict(type="str", aliases=["descr"]),
@@ -207,8 +255,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["community", "tenant", "subject_profile", "match_community_term"]],
-            ["state", "present", ["community", "tenant", "subject_profile", "match_community_term"]],
+            ["state", "absent", ["community", "tenant", "match_rule", "match_community_term"]],
+            ["state", "present", ["community", "tenant", "match_rule", "match_community_term"]],
         ],
     )
 
@@ -217,7 +265,7 @@ def main():
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
-    subject_profile = module.params.get("subject_profile")
+    match_rule = module.params.get("match_rule")
     match_community_term = module.params.get("match_community_term")
     name_alias = module.params.get("name_alias")
 
@@ -232,9 +280,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="rtctrlSubjP",
-            aci_rn="subj-{0}".format(subject_profile),
-            module_object=subject_profile,
-            target_filter={"name": subject_profile},
+            aci_rn="subj-{0}".format(match_rule),
+            module_object=match_rule,
+            target_filter={"name": match_rule},
         ),
         subclass_2=dict(
             aci_class="rtctrlMatchCommTerm",

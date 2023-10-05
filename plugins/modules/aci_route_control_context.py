@@ -12,10 +12,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_route_control_profile
-short_description: Manage Route Control Profile (rtcrtl:Profile)
+module: aci_route_control_context
+short_description: Manage Route Control Context (rtcrtl:CtxP)
 description:
-- Manage Route Control Profiles on Cisco ACI fabrics.
+- Manage Route Control Context Policies for the Route Control Profiles on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -25,29 +25,44 @@ options:
   l3out:
     description:
     - The name of an existing L3Out.
-    - This will link the created route control profile to the existing L3Out.
+    - To use only if the route control profile is linked to an existing L3Out.
     type: str
     aliases: [ l3out_name ]
   route_control_profile:
     description:
-    - The name of the route control profile being created.
+    - The name of an existing route control profile.
     type: str
-    aliases: [ name, route_control_profile_name ]
-  auto_continue:
+    aliases: [ route_control_profile_name ]
+  route_control_context:
     description:
-    - The option to enable/disable auto-continue.
+    - The name of the route control context being created.
     type: str
-    choices: [ "no", "yes" ]
-    default: "no"
-  policy_type:
+    aliases: [ name, route_control_context_name, context ]
+  action:
     description:
-    - Set the policy type to combinable or global.
+    - The action required when the condition is met.
     type: str
-    choices: [ combinable, global ]
-    default: combinable
+    choices: [ deny, permit ]
+  action_rule:
+    description:
+    - The name of the action rule profile to be associated with this route control context.
+    - Set the rules for a Route Map.
+    type: str
+    aliases: [ action_rule_name ]
+  match_rule:
+    description:
+    - The name of the match rule profile to be associated with this route control context.
+    - Set the associated Matched rules.
+    type: str
+    aliases: [ match_rule_name ]
+  order:
+    description:
+    - The order of the route control context.
+    - The value range from 0 to 9.
+    type: int
   description:
     description:
-    - The description for the route control profile.
+    - The description for the route control context.
     type: str
     aliases: [ descr ]
   state:
@@ -67,47 +82,58 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) module can be used for this.
+- The C(tenant) and the C(route_control_profile) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) and the M(cisco.aci.aci_route_control_profile) modules can be used for this.
 - If C(l3out) is used, the C(l3out) used must exist before using this module in your playbook.
   The M(cisco.aci.aci_l3out) module can be used for this.
+- if C(action_rule) is used, the C(action_rule) used must exist before using this module in your plabook.
+  The module M(cisco.aci.aci_tenant_action_rule_profile) can be used for this.
+- if C(match_rule) is used, the C(match_rule) used must exist before using this module in your plabook.
+  The module M(cisco.aci.aci_match_rule) can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_route_control_profile
 - module: cisco.aci.aci_l3out
+- module: cisco.aci.aci_tenant_action_rule_profile
+- module: cisco.aci.aci_match_rule
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(rtctrl:Profile).
+  description: More information about the internal APIC class B(rtctrl:CtxP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: Create a route control profile
-  cisco.aci.aci_route_control_profile:
+- name: Create a route context policy
+  cisco.aci.aci_route_control_context:
     host: apic
     username: admin
     password: SomeSecretPassword
+    route_control_context: prod_route_control_context
     route_control_profile: prod_route_control_profile
     tenant: production
     l3out: prod_l3out
-    auto_continue: "no"
-    policy_type: combinable
+    action: permit
+    order: 0
+    action_rule: prod_action_rule_profile
+    match_rule: prod_match_rule
     state: present
   delegate_to: localhost
 
-- name: Delete a route control profile
-  cisco.aci.aci_route_control_profile:
+- name: Delete a route context policy
+  cisco.aci.aci_route_control_context:
     host: apic
     username: admin
     password: SomeSecretPassword
+    route_control_context: prod_route_control_context
     route_control_profile: prod_route_control_profile
     tenant: production
     l3out: prod_l3out
     state: absent
   delegate_to: localhost
 
-- name: Query all route control profiles
-  cisco.aci.aci_route_control_profile:
+- name: Query all route context policy
+  cisco.aci.aci_route_control_context:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -115,11 +141,12 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query a specific route control profile
+- name: Query a specific route context policy
   cisco.aci.aci_route_control_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
+    route_control_context: prod_route_control_context
     route_control_profile: prod_route_control_profile
     tenant: production
     l3out: prod_l3out
@@ -244,10 +271,13 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         l3out=dict(type="str", aliases=["l3out_name"]),  # Not required for querying all objects
-        route_control_profile=dict(type="str", aliases=["name", "route_control_profile_name"]),  # Not required for querying all objects
+        route_control_profile=dict(type="str", aliases=["route_control_profile_name"]),  # Not required for querying all objects
+        route_control_context=dict(type="str", aliases=["name", "route_control_context_name", "context"]),  # Not required for querying all objects
+        match_rule=dict(type="str", aliases=["match_rule_name"]),
+        action_rule=dict(type="str", aliases=["action_rule_name"]),
+        action=dict(type="str", choices=["deny", "permit"]),
+        order=dict(type="int"),
         description=dict(type="str", aliases=["descr"]),
-        auto_continue=dict(type="str", default="no", choices=["no", "yes"]),
-        policy_type=dict(type="str", default="combinable", choices=["combinable", "global"]),
         name_alias=dict(type="str"),
         state=dict(type="str", default="present", choices=["present", "absent", "query"]),
     )
@@ -256,21 +286,26 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["route_control_profile", "tenant"]],
-            ["state", "present", ["route_control_profile", "tenant"]],
+            ["state", "absent", ["route_control_context", "tenant"]],
+            ["state", "present", ["route_control_context", "tenant"]],
         ],
     )
 
-    route_control_profile = module.params.get("route_control_profile")
+    route_control_context = module.params.get("route_control_context")
     description = module.params.get("description")
-    auto_continue = module.params.get("auto_continue")
-    policy_type = module.params.get("policy_type")
+    action = module.params.get("action")
+    order = module.params.get("order")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
     l3out = module.params.get("l3out")
+    route_control_profile = module.params.get("route_control_profile")
+    match_rule = module.params.get("match_rule")
+    action_rule = module.params.get("action_rule")
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
+
+    child_classes = ["rtctrlRsCtxPToSubjP", "rtctrlScope"]
 
     tenant_url_config = dict(
         aci_class="fvTenant",
@@ -286,6 +321,13 @@ def main():
         target_filter={"name": route_control_profile},
     )
 
+    route_control_context_url_config = dict(
+        aci_class="rtctrlCtxP",
+        aci_rn="ctx-{0}".format(route_control_context),
+        module_object=route_control_context,
+        target_filter={"name": route_control_context},
+    )
+
     if l3out is not None:
         aci.construct_url(
             root_class=tenant_url_config,
@@ -296,28 +338,46 @@ def main():
                 target_filter={"name": l3out},
             ),
             subclass_2=route_control_profile_url_config,
+            subclass_3=route_control_context_url_config,
+            child_classes=child_classes,
         )
     else:
         aci.construct_url(
             root_class=tenant_url_config,
             subclass_1=route_control_profile_url_config,
+            subclass_2=route_control_context_url_config,
+            child_classes=child_classes,
         )
 
     aci.get_existing()
 
     if state == "present":
+        child_configs = []
+        if match_rule is not None:
+            child_configs.append({"rtctrlRsCtxPToSubjP": {"attributes": {"tnRtctrlSubjPName": match_rule}}})
+        if action_rule is not None:
+            child_configs.append(
+                {
+                    "rtctrlScope": {
+                        "attributes": {"descr": ""},
+                        "children": [{"rtctrlRsScopeToAttrP": {"attributes": {"tnRtctrlAttrPName": action_rule}}}],
+                    }
+                }
+            )
+
         aci.payload(
-            aci_class="rtctrlProfile",
+            aci_class="rtctrlCtxP",
             class_config=dict(
-                name=route_control_profile,
+                name=route_control_context,
                 descr=description,
-                autoContinue=auto_continue,
-                type=policy_type,
+                action=action,
+                order=order,
                 nameAlias=name_alias,
             ),
+            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class="rtctrlProfile")
+        aci.get_diff(aci_class="rtctrlCtxP")
 
         aci.post_config()
 

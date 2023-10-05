@@ -13,20 +13,20 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_match_route_destination
-short_description: Manage Match action rule based on the Route Destination. (rtctrl:MatchRtDest)
+short_description: Manage Match action rule term based on the Route Destination. (rtctrl:MatchRtDest)
 description:
-- Match action rule based on the Route Destination for Subject Profiles on Cisco ACI fabrics.
+- Match action rule terms based on the Route Destination for Subject Profiles on Cisco ACI fabrics.
 options:
   tenant:
     description:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  subject_profile:
+  match_rule:
     description:
-    - Name of an exising subject profile.
+    - The name of an exising match rule profile.
     type: str
-    aliases: [ subject_name ]
+    aliases: [ match_rule_name ]
   ip:
     description:
     - The IP address of the route destination.
@@ -36,19 +36,19 @@ options:
     - Option to enable/disable aggregated route.
     type: str
     choices: [ "no", "yes" ]
-  from_prefix_lenght:
+  from_prefix_length:
     description:
-    - Start of the prefix lenght.
-    - It corresponds to the less equal Mask if the route is aggregated.
+    - The start of the prefix length.
+    - It corresponds to the lesser Mask if the route is aggregated.
     type: int
-  to_prefix_lenght:
+  to_prefix_length:
     description:
-    - End of the prefix lenght.
-    - It corresponds to greater equal Mask if the route is aggregated.
+    - The end of the prefix length.
+    - It corresponds to greater Mask if the route is aggregated.
     type: int
   description:
     description:
-    - The description for the Match Action Rule.
+    - The description for the match action rule term.
     type: str
     aliases: [ descr ]
   state:
@@ -68,10 +68,11 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant) and the C(subject_profile) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and the M(cisco.aci.subject_profile) modules can be used for this.
+- The C(tenant) and the C(match_rule) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) and the M(cisco.aci.aci_match_rule) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_match_rule
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(rtctrl:MatchRtDest).
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -80,6 +81,50 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Create a match rule destination
+  cisco.aci.aci_match_rule_destination:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    match_rule: prod_match_rule
+    tenant: production
+    ip: 11.11.11.11/24
+    aggregate: "yes"
+    from_prefix_length: 0
+    to_prefix_length: 32
+    state: present
+  delegate_to: localhost
+
+- name: Delete a match rule destination
+  cisco.aci.aci_match_rule_destination:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    match_rule: prod_match_rule
+    tenant: production
+    state: absent
+  delegate_to: localhost
+
+- name: Query all match rules destination
+  cisco.aci.aci_match_rule_destination:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific match rule destination
+  cisco.aci.aci_match_rule_destination:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    match_rule: prod_match_rule
+    tenant: production
+    ip: 11.11.11.11/24
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
@@ -197,11 +242,11 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        subject_profile=dict(type="str", aliases=["subject_name"]),  # Not required for querying all objects
+        match_rule=dict(type="str", aliases=["match_rule_name"]),  # Not required for querying all objects
         ip=dict(type="str"),
         aggregate=dict(type="str", choices=["no", "yes"]),
-        from_prefix_lenght=dict(type="int"),
-        to_prefix_lenght=dict(type="int"),
+        from_prefix_length=dict(type="int"),
+        to_prefix_length=dict(type="int"),
         description=dict(type="str", aliases=["descr"]),
         name_alias=dict(type="str"),
         state=dict(type="str", default="present", choices=["present", "absent", "query"]),
@@ -211,19 +256,19 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["ip", "tenant", "subject_profile"]],
-            ["state", "present", ["ip", "tenant", "subject_profile"]],
+            ["state", "absent", ["ip", "tenant", "match_rule"]],
+            ["state", "present", ["ip", "tenant", "match_rule"]],
         ],
     )
 
     ip = module.params.get("ip")
     description = module.params.get("description")
     aggregate = module.params.get("aggregate")
-    from_prefix_lenght = module.params.get("from_prefix_lenght")
-    to_prefix_lenght = module.params.get("to_prefix_lenght")
+    from_prefix_length = module.params.get("from_prefix_length")
+    to_prefix_length = module.params.get("to_prefix_length")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
-    subject_profile = module.params.get("subject_profile")
+    match_rule = module.params.get("match_rule")
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
@@ -237,9 +282,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="rtctrlSubjP",
-            aci_rn="subj-{0}".format(subject_profile),
-            module_object=subject_profile,
-            target_filter={"name": subject_profile},
+            aci_rn="subj-{0}".format(match_rule),
+            module_object=match_rule,
+            target_filter={"name": match_rule},
         ),
         subclass_2=dict(
             aci_class="rtctrlMatchRtDest",
@@ -257,8 +302,8 @@ def main():
             class_config=dict(
                 ip=ip,
                 aggregate=aggregate,
-                fromPfxLen=from_prefix_lenght,
-                toPfxLen=to_prefix_lenght,
+                fromPfxLen=from_prefix_length,
+                toPfxLen=to_prefix_length,
                 descr=description,
                 nameAlias=name_alias,
             ),
