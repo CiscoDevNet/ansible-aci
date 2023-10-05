@@ -39,28 +39,28 @@
       description: Ansible tenant
       state: present
 
-  - name: Add a subject profile
-    aci_subject_profile:
+  - name: Add a match rule profile
+    aci_match_rule:
       <<: *aci_info
       tenant: ansible_tenant
-      subject_profile: ansible_subject_profile
-      description: subject profile for ansible_tenant tenant
+      match_rule: ansible_match_rule
+      description: match rule profile for ansible_tenant tenant
       state: present
 
   - name: Add a match community term
     aci_match_community_term:
       <<: *aci_info
       tenant: ansible_tenant
-      subject_profile: ansible_subject_profile
+      match_rule: ansible_match_rule
       match_community_term: ansible_match_community_term
-      description: match community term for ansible_subject_profile subject profile
+      description: match community term for ansible_match_rule match rule profile
       state: present
 
   - name: Add a match community factor (check_mode)
     aci_match_community_factor: &aci_match_community_factor_present
       <<: *aci_info
       tenant: ansible_tenant
-      subject_profile: ansible_subject_profile
+      match_rule: ansible_match_rule
       match_community_term: ansible_match_community_term
       community: regular:as2-nn2:4:15
       scope: non-transitive
@@ -83,7 +83,7 @@
     aci_match_community_factor:
       <<: *aci_info
       tenant: ansible_tenant
-      subject_profile: ansible_subject_profile
+      match_rule: ansible_match_rule
       match_community_term: ansible_match_community_term
       community: regular:as2-nn2:4:16
       description: match community factor 2 for ansible_match_community_term

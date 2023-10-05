@@ -15,23 +15,23 @@ DOCUMENTATION = r"""
 module: aci_match_community_term
 short_description: Manage Match Community Term (rtctrl:MatchCommTerm)
 description:
-- Manage Match Rule Based on Community for Subject Profiles on Cisco ACI fabrics.
+- Manage Match Term Based on Community for Match Rule Profiles on Cisco ACI fabrics.
 options:
   tenant:
     description:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  subject_profile:
+  match_rule:
     description:
-    - Name of an exising subject profile.
+    - the name of an exising match rule profile.
     type: str
-    aliases: [ subject_name ]
+    aliases: [ match_rule_name ]
   match_community_term:
     description:
-    - Name of the Match Community Term.
+    - the name of the Match Community Term.
     type: str
-    aliases: [ name, match_rule_name ]
+    aliases: [ name, match_community_term_name ]
   description:
     description:
     - The description for the Match Community Term.
@@ -54,10 +54,11 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant) and the C(subject_profile) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and the M(cisco.aci.subject_profile) modules can be used for this.
+- The C(tenant) and the C(match_rule) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) and the M(cisco.aci.aci_match_rule) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_match_rule
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(rtctrl:MatchCommTerm).
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -66,6 +67,48 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Create a match match AS-path regex term
+  cisco.aci.match_community_term:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    match_rule: prod_match_rule
+    match_community_term: prod_match_community_term
+    tenant: production
+    state: present
+  delegate_to: localhost
+
+- name: Delete a match match AS-path regex term
+  cisco.aci.match_community_term:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    match_rule: prod_match_rule
+    tenant: production
+    match_community_term: prod_match_community_term
+    state: absent
+  delegate_to: localhost
+
+- name: Query all match AS-path regex terms
+  cisco.aci.match_community_term:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query a specific match match AS-path regex term
+  cisco.aci.match_community_term:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    match_rule: prod_match_rule
+    tenant: production
+    match_community_term: prod_match_community_term
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
@@ -183,8 +226,8 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        subject_profile=dict(type="str", aliases=["subject_name"]),  # Not required for querying all objects
-        match_community_term=dict(type="str", aliases=["name", "match_rule_name"]),
+        match_rule=dict(type="str", aliases=["match_rule_name"]),  # Not required for querying all objects
+        match_community_term=dict(type="str", aliases=["name", "match_community_term_name"]),
         description=dict(type="str", aliases=["descr"]),
         name_alias=dict(type="str"),
         state=dict(type="str", default="present", choices=["present", "absent", "query"]),
@@ -194,8 +237,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["match_community_term", "tenant", "subject_profile"]],
-            ["state", "present", ["match_community_term", "tenant", "subject_profile"]],
+            ["state", "absent", ["match_community_term", "tenant", "match_rule"]],
+            ["state", "present", ["match_community_term", "tenant", "match_rule"]],
         ],
     )
 
@@ -203,7 +246,7 @@ def main():
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
-    subject_profile = module.params.get("subject_profile")
+    match_rule = module.params.get("match_rule")
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
@@ -217,9 +260,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="rtctrlSubjP",
-            aci_rn="subj-{0}".format(subject_profile),
-            module_object=subject_profile,
-            target_filter={"name": subject_profile},
+            aci_rn="subj-{0}".format(match_rule),
+            module_object=match_rule,
+            target_filter={"name": match_rule},
         ),
         subclass_2=dict(
             aci_class="rtctrlMatchCommTerm",
