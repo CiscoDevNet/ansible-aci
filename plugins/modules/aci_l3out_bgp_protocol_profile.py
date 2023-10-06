@@ -298,7 +298,6 @@ def main():
     aci.get_existing()
 
     if state == "present":
-
         child_configs = []
         if bgp_timers_policy is not None:
             child_configs.append(dict(bgpRsBgpNodeCtxPol=dict(attributes=dict(tnBgpCtxPolName=bgp_timers_policy))))
