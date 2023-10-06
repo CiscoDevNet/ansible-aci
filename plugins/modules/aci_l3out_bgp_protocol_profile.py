@@ -303,9 +303,7 @@ def main():
         if bgp_timers_policy is not None:
             child_configs.append(dict(bgpRsBgpNodeCtxPol=dict(attributes=dict(tnBgpCtxPolName=bgp_timers_policy))))
         if bgp_best_path_policy is not None:
-            child_configs.append(
-                dict(bgpRsBestPathCtrlPol=dict(attributes=dict(tnBgpBestPathCtrlPolName=bgp_best_path_policy)))
-            )
+            child_configs.append(dict(bgpRsBestPathCtrlPol=dict(attributes=dict(tnBgpBestPathCtrlPolName=bgp_best_path_policy))))
 
         aci.payload(
             aci_class="bgpProtP",
