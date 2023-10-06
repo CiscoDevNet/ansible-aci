@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_l3out_logical_node_profile
+module: aci_bgp_best_path_policy
 short_description: Manage BGP Best Path policy (bgp:BestPathCtrlPol)
 description:
 - Manage BGP Best Path policies for Tenants on Cisco ACI fabrics.
@@ -64,33 +64,33 @@ seealso:
   description: More information about the internal APIC class B(bgp:BestPathCtrlPol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Dag Wieers (@dagwieers)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: Create a l3out route tag policy
-  cisco.aci.aci_l3out_route_tag_policy:
+- name: Create a BGP best path policy
+  cisco.aci.aci_bgp_best_path_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    tag: 1000
-    bgp_protocol_profile: my_route_tag_policy
+    bgp_protocol_profile: my_bgp_best_path_policy
+    best_path_control: enable
     tenant: production
     state: present
   delegate_to: localhost
 
-- name: Delete a l3out route tag policy
-  cisco.aci.aci_l3out_route_tag_policy:
+- name: Delete a BGP best path policy
+  cisco.aci.aci_bgp_best_path_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_protocol_profile: my_route_tag_policy
+    bgp_protocol_profile: my_bgp_best_path_policy
     tenant: production
     state: absent
   delegate_to: localhost
 
-- name: Query all l3out route tag policies
-  cisco.aci.aci_l3out_route_tag_policy:
+- name: Query all BGP best path policies
+  cisco.aci.aci_bgp_best_path_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -98,12 +98,12 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query a specific l3out route tag policy
-  cisco.aci.aci_l3out_route_tag_policy:
+- name: Query a specific BGP best path policy
+  cisco.aci.aci_bgp_best_path_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_protocol_profile: my_route_tag_policy
+    bgp_protocol_profile: my_bgp_best_path_policy
     tenant: production
     state: query
   delegate_to: localhost
@@ -218,7 +218,7 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
-BEST_PATH_CONTROL_MAPPING = dict(enable="asPathMultipathRelax", disable="defaultValue")
+BEST_PATH_CONTROL_MAPPING = dict(enable="asPathMultipathRelax", disable="")
 
 
 def main():

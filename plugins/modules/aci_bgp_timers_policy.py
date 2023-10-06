@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_l3out_logical_node_profile
+module: aci_bgp_timers_policy
 short_description: Manage BGP timers policy (bgp:CtxPol)
 description:
 - Manage BGP timers policies for Tenants on Cisco ACI fabrics.
@@ -33,7 +33,7 @@ options:
     - The graceful restart helper option configures the local BGP router to support the graceful restart of a remote BGP peer.
     - The complete graceful restart option allows BGP graceful restart to be enabled or disable for an individual neighbor.
     type: str
-    choices: [ helper, complete ]  
+    choices: [ helper, complete ]
   hold_interval:
     description:
     - The time period to wait before declaring the neighbor device down.
@@ -49,7 +49,7 @@ options:
   stale_interval:
     description:
     - The maximum time that BGP keeps stale routes from the restarting BGP peer.
-    type: int 
+    type: int
   description:
     description:
     - Description for the bgp protocol profile.
@@ -80,33 +80,37 @@ seealso:
   description: More information about the internal APIC class B(bgp:CtxPol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Dag Wieers (@dagwieers)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: Create a l3out route tag policy
-  cisco.aci.aci_l3out_route_tag_policy:
+- name: Create a BGP timers policy
+  cisco.aci.aci_bgp_timers_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    tag: 1000
-    bgp_protocol_profile: my_route_tag_policy
+    bgp_protocol_profile: my_bgp_timers_policy
+    graceful_restart_controls: complete
+    hold_interval: 360
+    keepalive_interval: 120
+    max_as_limit: 1
+    stale_interval: 600
     tenant: production
     state: present
   delegate_to: localhost
 
-- name: Delete a l3out route tag policy
-  cisco.aci.aci_l3out_route_tag_policy:
+- name: Delete a BGP timers policy
+  cisco.aci.aci_bgp_timers_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_protocol_profile: my_route_tag_policy
+    bgp_protocol_profile: my_bgp_timers_policy
     tenant: production
     state: absent
   delegate_to: localhost
 
-- name: Query all l3out route tag policies
-  cisco.aci.aci_l3out_route_tag_policy:
+- name: Query all BGP timers policies
+  cisco.aci.aci_bgp_timers_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -114,12 +118,12 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query a specific l3out route tag policy
-  cisco.aci.aci_l3out_route_tag_policy:
+- name: Query a specific BGP timers policy
+  cisco.aci.aci_bgp_timers_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_protocol_profile: my_route_tag_policy
+    bgp_protocol_profile: my_bgp_timers_policy
     tenant: production
     state: query
   delegate_to: localhost
