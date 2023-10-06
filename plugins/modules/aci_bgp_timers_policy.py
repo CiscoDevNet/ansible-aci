@@ -13,40 +13,43 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_logical_node_profile
-short_description: Manage BGP Protocol Profile (bgp:ProtP)
+short_description: Manage BGP timers policy (bgp:CtxPol)
 description:
-- Manage BGP Protocol Profile for The Logical Node Profiles on Cisco ACI fabrics.
+- Manage BGP timers policies for Tenants on Cisco ACI fabrics.
 options:
   tenant:
     description:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  l3out:
-    description:
-    - The name of an existing L3Out.
-    type: str
-    aliases: [ l3out_name ]
-  node_profile:
-    description:
-    - The name of an existing logical node profile.
-    type: str
-    aliases: [ node_profile_name, logical_node ]
-  bgp_protocol_profile:
-    description:
-    - The name of the bgp protocol profile.
-    type: str
-    aliases: [ name, bgp_protocol_profile_name ]
   bgp_timers_policy:
     description:
-    - The name of an existing bgp timers policy.
+    - The name of the bgp timers policy.
     type: str
-    aliases: [ bgp_timers_policy_name ]
-  bgp_best_path_policy:
+    aliases: [ bgp_timers_policy_name, name ]
+  graceful_restart_controls:
     description:
-    - The name of the bgp best path control policy.
+    - The property to determine whether the entity functions only as a graceful restart helper or whether graceful restart is enabled completely.
+    - The graceful restart helper option configures the local BGP router to support the graceful restart of a remote BGP peer.
+    - The complete graceful restart option allows BGP graceful restart to be enabled or disable for an individual neighbor.
     type: str
-    aliases: [ bgp_best_path_policy_name ]
+    choices: [ helper, complete ]  
+  hold_interval:
+    description:
+    - The time period to wait before declaring the neighbor device down.
+    type: int
+  keepalive_interval:
+    description:
+    - The interval time between sending keepalive messages.
+    type: int
+  max_as_limit:
+    description:
+    - The maximum AS limit, to discard routes that have excessive AS numbers.
+    type: int
+  stale_interval:
+    description:
+    - The maximum time that BGP keeps stale routes from the restarting BGP peer.
+    type: int 
   description:
     description:
     - Description for the bgp protocol profile.
@@ -74,7 +77,7 @@ notes:
 seealso:
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bgp:ProtP).
+  description: More information about the internal APIC class B(bgp:CtxPol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
@@ -231,6 +234,8 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
+GRACEFUL_RESTART_CONTROLS_MAPPING = dict(helper="helper", complete="")
+
 
 def main():
     argument_spec = aci_argument_spec()
@@ -238,11 +243,12 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        l3out=dict(type="str", aliases=["l3out_name"]),  # Not required for querying all objects
-        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),  # Not required for querying all objects
-        bgp_protocol_profile=dict(type="str", aliases=["name", "bgp_protocol_profile_name"]),  # Not required for querying all objects
-        bgp_timers_policy=dict(type="str", aliases=["bgp_timers_policy_name"]),
-        bgp_best_path_policy=dict(type="str", aliases=["bgp_best_path_policy_name"]),
+        bgp_timers_policy=dict(type="str", aliases=["bgp_timers_policy_name", "name"]),  # Not required for querying all objects
+        graceful_restart_controls=dict(type="str", choices=["helper", "complete"]),
+        hold_interval=dict(type="int"),
+        keepalive_interval=dict(type="int"),
+        max_as_limit=dict(type="int"),
+        stale_interval=dict(type="int"),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -252,24 +258,23 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "l3out", "node_profile"]],
-            ["state", "present", ["tenant", "l3out", "node_profile"]],
+            ["state", "absent", ["bgp_timers_policy", "tenant"]],
+            ["state", "present", ["bgp_timers_policy", "tenant"]],
         ],
     )
 
-    bgp_protocol_profile = module.params.get("bgp_protocol_profile")
     bgp_timers_policy = module.params.get("bgp_timers_policy")
-    bgp_best_path_policy = module.params.get("bgp_best_path_policy")
+    graceful_restart_controls = GRACEFUL_RESTART_CONTROLS_MAPPING.get(module.params.get("graceful_restart_controls"))
+    hold_interval = module.params.get("hold_interval")
+    keepalive_interval = module.params.get("keepalive_interval")
+    max_as_limit = module.params.get("max_as_limit")
+    stale_interval = module.params.get("stale_interval")
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
-    l3out = module.params.get("l3out")
-    node_profile = module.params.get("node_profile")
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
-
-    child_classes = ["bgpRsBgpNodeCtxPol", "bgpRsBestPathCtrlPol"]
 
     aci.construct_url(
         root_class=dict(
@@ -279,49 +284,31 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="l3extOut",
-            aci_rn="out-{0}".format(l3out),
-            module_object=l3out,
-            target_filter={"name": l3out},
+            aci_class="bgpCtxPol",
+            aci_rn="bgpCtxP-{0}".format(bgp_timers_policy),
+            module_object=bgp_timers_policy,
+            target_filter={"name": bgp_timers_policy},
         ),
-        subclass_2=dict(
-            aci_class="l3extLNodeP",
-            aci_rn="lnodep-{0}".format(node_profile),
-            module_object=node_profile,
-            target_filter={"name": node_profile},
-        ),
-        subclass_3=dict(
-            aci_class="bgpProtP",
-            aci_rn="protp",
-            module_object="",
-            target_filter={"name": bgp_protocol_profile},
-        ),
-        child_classes=child_classes,
     )
 
     aci.get_existing()
 
     if state == "present":
-
-        child_configs=[]
-        if bgp_timers_policy is not None:
-            child_configs.append(dict(bgpRsBgpNodeCtxPol=dict(attributes=dict(tnBgpCtxPolName=bgp_timers_policy))))
-        if bgp_best_path_policy is not None:
-            child_configs.append(
-                dict(bgpRsBestPathCtrlPo=dict(attributes=dict(tnBgpBestPathCtrlPolName=bgp_timers_policy)))
-            )
-
         aci.payload(
-            aci_class="bgpProtP",
+            aci_class="bgpCtxPol",
             class_config=dict(
-                name=bgp_protocol_profile,
+                name=bgp_timers_policy,
+                grCtrl=graceful_restart_controls,
+                holdIntvl=hold_interval,
+                kaIntvl=keepalive_interval,
+                maxAsLimit=max_as_limit,
+                staleIntvl=stale_interval,
                 descr=description,
                 nameAlias=name_alias,
             ),
-            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class="bgpProtP")
+        aci.get_diff(aci_class="bgpCtxPol")
 
         aci.post_config()
 

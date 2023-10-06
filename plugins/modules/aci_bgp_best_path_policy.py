@@ -13,40 +13,27 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_logical_node_profile
-short_description: Manage BGP Protocol Profile (bgp:ProtP)
+short_description: Manage BGP Best Path policy (bgp:BestPathCtrlPol)
 description:
-- Manage BGP Protocol Profile for The Logical Node Profiles on Cisco ACI fabrics.
+- Manage BGP Best Path policies for Tenants on Cisco ACI fabrics.
 options:
   tenant:
     description:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  l3out:
-    description:
-    - The name of an existing L3Out.
-    type: str
-    aliases: [ l3out_name ]
-  node_profile:
-    description:
-    - The name of an existing logical node profile.
-    type: str
-    aliases: [ node_profile_name, logical_node ]
-  bgp_protocol_profile:
-    description:
-    - The name of the bgp protocol profile.
-    type: str
-    aliases: [ name, bgp_protocol_profile_name ]
-  bgp_timers_policy:
-    description:
-    - The name of an existing bgp timers policy.
-    type: str
-    aliases: [ bgp_timers_policy_name ]
   bgp_best_path_policy:
     description:
-    - The name of the bgp best path control policy.
+    - The name of the best path policy.
     type: str
-    aliases: [ bgp_best_path_policy_name ]
+    aliases: [ bgp_best_path_policy_name, name ]
+  best_path_control:
+    description:
+    - The option to enable/disable to relax AS-Path restriction when choosing multipaths.
+    - When enabled, allow load sharing across providers with different AS paths.
+    type: str
+    choices: [enable, disable]
+    aliases: [as_path_control]
   description:
     description:
     - Description for the bgp protocol profile.
@@ -74,7 +61,7 @@ notes:
 seealso:
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bgp:ProtP).
+  description: More information about the internal APIC class B(bgp:BestPathCtrlPol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
@@ -231,6 +218,8 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
+BEST_PATH_CONTROL_MAPPING = dict(enable="asPathMultipathRelax", disable="defaultValue")
+
 
 def main():
     argument_spec = aci_argument_spec()
@@ -238,11 +227,8 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        l3out=dict(type="str", aliases=["l3out_name"]),  # Not required for querying all objects
-        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),  # Not required for querying all objects
-        bgp_protocol_profile=dict(type="str", aliases=["name", "bgp_protocol_profile_name"]),  # Not required for querying all objects
-        bgp_timers_policy=dict(type="str", aliases=["bgp_timers_policy_name"]),
-        bgp_best_path_policy=dict(type="str", aliases=["bgp_best_path_policy_name"]),
+        bgp_best_path_policy=dict(type="str", aliases=["bgp_best_path_policy_name", "name"]),  # Not required for querying all objects
+        best_path_control=dict(type="str", choices=["enable", "disable"], aliases=["as_path_control"]),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -252,24 +238,19 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "l3out", "node_profile"]],
-            ["state", "present", ["tenant", "l3out", "node_profile"]],
+            ["state", "absent", ["bgp_best_path_policy", "tenant"]],
+            ["state", "present", ["bgp_best_path_policy", "tenant"]],
         ],
     )
 
-    bgp_protocol_profile = module.params.get("bgp_protocol_profile")
-    bgp_timers_policy = module.params.get("bgp_timers_policy")
     bgp_best_path_policy = module.params.get("bgp_best_path_policy")
+    best_path_control = BEST_PATH_CONTROL_MAPPING.get(module.params.get("best_path_control"))
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
-    l3out = module.params.get("l3out")
-    node_profile = module.params.get("node_profile")
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
-
-    child_classes = ["bgpRsBgpNodeCtxPol", "bgpRsBestPathCtrlPol"]
 
     aci.construct_url(
         root_class=dict(
@@ -279,49 +260,27 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="l3extOut",
-            aci_rn="out-{0}".format(l3out),
-            module_object=l3out,
-            target_filter={"name": l3out},
+            aci_class="bgpBestPathCtrlPol",
+            aci_rn="bestpath-{0}".format(bgp_best_path_policy),
+            module_object=bgp_best_path_policy,
+            target_filter={"name": bgp_best_path_policy},
         ),
-        subclass_2=dict(
-            aci_class="l3extLNodeP",
-            aci_rn="lnodep-{0}".format(node_profile),
-            module_object=node_profile,
-            target_filter={"name": node_profile},
-        ),
-        subclass_3=dict(
-            aci_class="bgpProtP",
-            aci_rn="protp",
-            module_object="",
-            target_filter={"name": bgp_protocol_profile},
-        ),
-        child_classes=child_classes,
     )
 
     aci.get_existing()
 
     if state == "present":
-
-        child_configs=[]
-        if bgp_timers_policy is not None:
-            child_configs.append(dict(bgpRsBgpNodeCtxPol=dict(attributes=dict(tnBgpCtxPolName=bgp_timers_policy))))
-        if bgp_best_path_policy is not None:
-            child_configs.append(
-                dict(bgpRsBestPathCtrlPo=dict(attributes=dict(tnBgpBestPathCtrlPolName=bgp_timers_policy)))
-            )
-
         aci.payload(
-            aci_class="bgpProtP",
+            aci_class="bgpBestPathCtrlPol",
             class_config=dict(
-                name=bgp_protocol_profile,
+                name=bgp_best_path_policy,
+                ctrl=best_path_control,
                 descr=description,
                 nameAlias=name_alias,
             ),
-            child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class="bgpProtP")
+        aci.get_diff(aci_class="bgpBestPathCtrlPol")
 
         aci.post_config()
 
