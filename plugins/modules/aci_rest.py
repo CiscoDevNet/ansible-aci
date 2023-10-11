@@ -406,8 +406,7 @@ def main():
                 module.fail_json(msg="Failed to parse provided XML payload: {0}".format(to_text(e)), payload=payload)
 
     # Perform actual request using auth cookie (Same as aci.request(), but also supports XML)
-    aci.path = path.lstrip("/")
-    aci.url = "{0}/{1}".format(aci.base_url, aci.path)
+    aci.url = "{0}/{1}".format(aci.base_url, path.lstrip("/"))
     if aci.params.get("method") != "get" and not rsp_subtree_preserve:
         aci.url = update_qsl(aci.url, {"rsp-subtree": "modified"})
 
