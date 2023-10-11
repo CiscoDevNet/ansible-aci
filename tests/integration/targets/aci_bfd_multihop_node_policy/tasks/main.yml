@@ -1,0 +1,181 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Anvitha Jain (@anvjain)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Execute tasks only for non-cloud sites
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')  # This condition will execute only when APIC version >= 5.2
+  block:  # block specifies execution of tasks within, based on conditions
+
+  # CLEAN ENVIRONMENT
+  - name: Remove the ansible_tenant
+    aci_tenant:
+      <<: *aci_info
+      tenant: ansible_tenant
+      state: absent
+
+  - name: Add a new tenant
+    aci_tenant:
+      <<: *aci_info
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
+
+  # CREATE BFD Multihop Node policy
+  - name: Add a new  BFD Multihop Node policy - check mode
+    cisco.aci.aci_bfd_multihop_node_policy: &add_bfd_multihop_node_pol
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd_multihop_node_policy
+      description: Ansible BFD Multihop Node Policy
+      state: present
+    check_mode: true
+    register: cm_add_bfd_multihop_node_pol
+
+  - name: Add a new  BFD Multihop Node policy - normal mode
+    cisco.aci.aci_bfd_multihop_node_policy:
+      <<: *add_bfd_multihop_node_pol
+      state: present
+    register: nm_add_bfd_multihop_node_pol
+
+  - name: Verify BFD Multihop Node Policy creation
+    assert:
+      that:
+      - cm_add_bfd_multihop_node_pol is changed
+      - nm_add_bfd_multihop_node_pol is changed
+      - cm_add_bfd_multihop_node_pol.previous == nm_add_bfd_multihop_node_pol.previous == []
+      - nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.dn == "uni/tn-ansible_tenant/bfdMhNodePol-ansible_bfd_multihop_node_policy"
+      - nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.name == "ansible_bfd_multihop_node_policy"
+      - nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.descr == "Ansible BFD Multihop Node Policy"
+      - nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.adminSt == "enabled"
+      - nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.detectMult == "3"
+      - nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.minRxIntvl == "250"
+      - nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.minTxIntvl == "250"
+
+  - name: Add a new  BFD Multihop Node policy again - idempotency
+    cisco.aci.aci_bfd_multihop_node_policy:
+      <<: *add_bfd_multihop_node_pol
+      state: present
+    register: add_bfd_multihop_node_pol_again
+
+  - name: Verify BFD Multihop Node Policy creation again - idempotency
+    assert:
+      that:
+      - add_bfd_multihop_node_pol_again is not changed
+      - add_bfd_multihop_node_pol_again.previous != []
+      - add_bfd_multihop_node_pol_again.current | length == 1
+      - add_bfd_multihop_node_pol_again.previous | length == 1
+
+  - name: Modify a BFD Multihop Node policy
+    cisco.aci.aci_bfd_multihop_node_policy:
+      <<: *add_bfd_multihop_node_pol
+      admin_state: disabled
+      detection_multiplier: 5
+      min_transmit_interval: 270
+      min_receive_interval: 500
+      state: present
+    register: update_bfd_multihop_node_pol
+
+  - name: Verify modifying BFD Multihop Node Policy
+    assert:
+      that:
+      - update_bfd_multihop_node_pol is changed
+      - update_bfd_multihop_node_pol.previous != update_bfd_multihop_node_pol.current
+      - update_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.dn == "uni/tn-ansible_tenant/bfdMhNodePol-ansible_bfd_multihop_node_policy"
+      - update_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.name == "ansible_bfd_multihop_node_policy"
+      - update_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.descr == "Ansible BFD Multihop Node Policy"
+      - update_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.adminSt == "disabled"
+      - update_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.detectMult == "5"
+      - update_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.minRxIntvl == "500"
+      - update_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.minTxIntvl == "270"
+
+  # Added another BFD Multihop Node policy
+  - name: Add a new  BFD Multihop Node policy - normal mode
+    cisco.aci.aci_bfd_multihop_node_policy:
+      <<: *add_bfd_multihop_node_pol
+      name: ansible_bfd_multihop_node_policy_2
+      state: present
+    register: add_bfd_multihop_node_pol_2
+
+  - name: Verify BFD Multihop Node Policy creation
+    assert:
+      that:
+      - add_bfd_multihop_node_pol_2 is changed
+      - add_bfd_multihop_node_pol_2.previous == []
+      - add_bfd_multihop_node_pol_2.current.0.bfdMhNodePol.attributes.dn == "uni/tn-ansible_tenant/bfdMhNodePol-ansible_bfd_multihop_node_policy_2"
+      - add_bfd_multihop_node_pol_2.current.0.bfdMhNodePol.attributes.name == "ansible_bfd_multihop_node_policy_2"
+      - add_bfd_multihop_node_pol_2.current.0.bfdMhNodePol.attributes.descr == "Ansible BFD Multihop Node Policy"
+      - add_bfd_multihop_node_pol_2.current.0.bfdMhNodePol.attributes.adminSt == "enabled"
+      - add_bfd_multihop_node_pol_2.current.0.bfdMhNodePol.attributes.detectMult == "3"
+      - add_bfd_multihop_node_pol_2.current.0.bfdMhNodePol.attributes.minRxIntvl == "250"
+      - add_bfd_multihop_node_pol_2.current.0.bfdMhNodePol.attributes.minTxIntvl == "250"
+
+  - name: Query all BFD Multihop Node policies in a specific tenant
+    cisco.aci.aci_bfd_multihop_node_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      state: query
+    register: query_all_result
+
+  - name: Verify querying all BFD Multihop Node Policies
+    assert:
+      that:
+      - query_all_result is not changed
+      - query_all_result.current.0.fvTenant.children | length == 2
+      - query_all_result.current.0.fvTenant.children[0].bfdMhNodePol.attributes.name == "ansible_bfd_multihop_node_policy_2"
+      - query_all_result.current.0.fvTenant.children[1].bfdMhNodePol.attributes.name == "ansible_bfd_multihop_node_policy"
+
+  - name: Query 'ansible_bfd_multihop_node_policy' BFD Multihop Node policies in a specific tenant
+    cisco.aci.aci_bfd_multihop_node_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd_multihop_node_policy
+      state: query
+    register: query_result
+
+  - name: Verify querying'ansible_bfd_multihop_node_policy BFD' Multihop Node Policy
+    assert:
+      that:
+      - query_result is not changed
+      - query_result.current.0.bfdMhNodePol.attributes.dn == "uni/tn-ansible_tenant/bfdMhNodePol-ansible_bfd_multihop_node_policy"
+      - query_result.current.0.bfdMhNodePol.attributes.name == "ansible_bfd_multihop_node_policy"
+
+  - name: Remove a BFD Multihop Node policy
+    cisco.aci.aci_bfd_multihop_node_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd_multihop_node_policy
+      state: absent
+    register: remove_bfd_multihop_node_pol
+
+  - name: Verify removing BFD Multihop Node Policies
+    assert:
+      that:
+      - remove_bfd_multihop_node_pol is changed
+      - remove_bfd_multihop_node_pol.previous != []
+      - remove_bfd_multihop_node_pol.current == []
+
+

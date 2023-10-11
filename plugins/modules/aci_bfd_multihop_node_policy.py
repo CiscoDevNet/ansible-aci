@@ -12,10 +12,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_bfd_multihop_interface_policy
-short_description: Manage BFD Multihop Interface policies.
+module: aci_bfd_multihop_node_policy
+short_description: Manage BFD Multihop Node policies.
 description:
-- Manage BFD Multihop Interface policy (bfdMhIfPol) configuration on Cisco ACI fabrics.
+- Manage BFD Multihop Node policy (bfdMhNodePol) configuration on Cisco ACI fabrics.
 - Only available in APIC version 5.2 or later.
 options:
   tenant:
@@ -24,33 +24,33 @@ options:
     type: str
   name:
     description:
-    - Name of the BFD Multihop Interface policy
+    - Name of the BFD Multihop Node policy
     type: str
-    aliases: [ bfd_multihop_interface_policy ]
+    aliases: [ bfd_multihop_node_policy ]
   description:
     description:
-    - Description of the BFD Multihop Interface policy
+    - Description of the BFD Multihop Node policy
     type: str
   admin_state:
     description:
-    - Admin state of the BFD Multihop Interface policy
+    - Admin state of the BFD Multihop Node policy
     type: str
     choices: [ enabled, disabled ]
     default: enabled
   detection_multiplier:
     description:
-    - Detection multiplier of the BFD Multihop Interface policy
+    - Detection multiplier of the BFD Multihop Node policy
     type: int
     default: 3
   min_transmit_interval:
     description:
-    - Minimum transmit (Tx) interval of the BFD Multihop Interface policy
+    - Minimum transmit (Tx) interval of the BFD Multihop Node policy
     - Allowed range is 250-999.
     type: int
     default: 250
   min_receive_interval:
     description:
-    - Minimum receive (Rx) interval of the BFD Multihop Interface policy
+    - Minimum receive (Rx) interval of the BFD Multihop Node policy
     - Allowed range is 250-999.
     type: int
     default: 250
@@ -70,37 +70,37 @@ notes:
   The M(cisco.aci.aci_tenant) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bfdMhIfPol).
+  description: More information about the internal APIC class B(bfdMhNodePol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Anvitha Jain (@anvjain)
 """
 
 EXAMPLES = r"""
-- name: Add a new  BFD Multihop Interface policy
-    cisco.aci.aci_bfd_multihop_interface_policy:
+- name: Add a new  BFD Multihop Node policy
+    cisco.aci.aci_bfd_multihop_node_policy:
       host: apic
       username: admin
       password: SomeSecretPassword
       tenant: ansible_tenant
-      name: ansible_bfd_multihop_interface_policy
-      description: Ansible BFD Multihop Interface Policy
+      name: ansible_bfd_multihop_node_policy
+      description: Ansible BFD Multihop Node Policy
       state: present
     state: present
   delegate_to: localhost
 
-- name: Remove a BFD Multihop Interface policy
-  cisco.aci.aci_bfd_multihop_interface_policy:
+- name: Remove a BFD Multihop Node policy
+  cisco.aci.aci_bfd_multihop_node_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: ansible_tenant
-    name: ansible_bfd_multihop_interface_policy
+    name: ansible_bfd_multihop_node_policy
     state: absent
   delegate_to: localhost
 
-- name: Query a BFD Multihop Interface policy
-  cisco.aci.aci_bfd_multihop_interface_policy:
+- name: Query a BFD Multihop Node policy
+  cisco.aci.aci_bfd_multihop_node_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -110,8 +110,8 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query all BFD Multihop Interface policies in a specific tenant
-  cisco.aci.aci_bfd_multihop_interface_policy:
+- name: Query all BFD Multihop Node policies in a specific tenant
+  cisco.aci.aci_bfd_multihop_node_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -234,7 +234,7 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        name=dict(type="str", aliases=["bfd_multihop_interface_policy"]),
+        name=dict(type="str", aliases=["bfd_multihop_node_policy"]),
         description=dict(type="str"),
         admin_state=dict(type="str", default="enabled", choices=["enabled", "disabled"]),
         detection_multiplier=dict(type="int", default=3),
@@ -277,8 +277,8 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="bfdMhIfPol",
-            aci_rn="bfdMhIfPol-{0}".format(name),
+            aci_class="bfdMhNodePol",
+            aci_rn="bfdMhNodePol-{0}".format(name),
             module_object=name,
             target_filter={"name": name},
         ),
@@ -288,7 +288,7 @@ def main():
 
     if state == "present":
         aci.payload(
-            aci_class="bfdMhIfPol",
+            aci_class="bfdMhNodePol",
             class_config=dict(
                 name=name,
                 descr=description,
@@ -298,7 +298,7 @@ def main():
                 minRxIntvl=min_receive_interval),
         )
 
-        aci.get_diff(aci_class="bfdMhIfPol")
+        aci.get_diff(aci_class="bfdMhNodePol")
 
         aci.post_config()
 

@@ -171,7 +171,7 @@
       state: absent
     register: remove_bfd_multihop_interface_pol
 
-  - name: Verifyremoving BFD Multihop Interface Policies
+  - name: Verify removing BFD Multihop Interface Policies
     assert:
       that:
       - remove_bfd_multihop_interface_pol is changed
