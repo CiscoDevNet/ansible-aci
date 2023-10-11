@@ -115,9 +115,6 @@ EXAMPLES = r"""
     device: my_device
     concrete_device: my_concrete_device
     name: my_concrete_interface
-    pod_id: 1
-    node_id: 201-202
-    path_ep: my_vpc_ipg
     state: absent
   delegate_to: localhost
 
