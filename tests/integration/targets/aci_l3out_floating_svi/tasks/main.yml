@@ -55,7 +55,7 @@
     cisco.aci.aci_l3out_logical_node_profile: &np_present
       <<: *tenant_present
       l3out: l3outintftest
-      node_profile: NODES
+      node_profile: nodes
 
   - name: Add interface profile
     cisco.aci.aci_l3out_logical_interface_profile: &intf_present
@@ -144,17 +144,17 @@
       - add_floating3 is changed
       - change_floating3 is not changed
       - add_floating_cm.proposed.l3extVirtualLIfP.attributes.addr == "23.45.67.90/24"
-      - add_floating_cm.proposed.l3extVirtualLIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-NODES/lifp-Floating/vlifp-[topology/pod-1/node-201]-[vlan-1]"
+      - add_floating_cm.proposed.l3extVirtualLIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-nodes/lifp-Floating/vlifp-[topology/pod-1/node-201]-[vlan-1]"
       - add_floating_cm.proposed.l3extVirtualLIfP.attributes.encap == "vlan-1"
       - add_floating_cm.proposed.l3extVirtualLIfP.children.0.l3extBdProfileCont.children.0.l3extRsBdProfile.attributes.tDn == "uni/tn-ansible_test/bdprofile-bridge1"
       - add_floating_nm.current.0.l3extVirtualLIfP.attributes.addr == "23.45.67.90/24"
-      - add_floating_nm.current.0.l3extVirtualLIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-NODES/lifp-Floating/vlifp-[topology/pod-1/node-201]-[vlan-1]"
+      - add_floating_nm.current.0.l3extVirtualLIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-nodes/lifp-Floating/vlifp-[topology/pod-1/node-201]-[vlan-1]"
       - add_floating_nm.current.0.l3extVirtualLIfP.attributes.encap == "vlan-1"
       - add_floating_nm.current.0.l3extVirtualLIfP.children.0.l3extBdProfileCont.children.0.l3extRsBdProfile.attributes.tDn == "uni/tn-ansible_test/bdprofile-bridge1"
       - update_floating.current.0.l3extVirtualLIfP.children.0.l3extBdProfileCont.children.0.l3extRsBdProfile.attributes.tDn == "uni/tn-ansible_test/bdprofile-bridge2"
       - remove_bridge.current.0.l3extVirtualLIfP.children is not defined
       - add_floating2.current.0.l3extVirtualLIfP.attributes.addr == "24.45.67.90/24"
-      - add_floating2.current.0.l3extVirtualLIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-NODES/lifp-Floating/vlifp-[topology/pod-1/node-202]-[vlan-1]"
+      - add_floating2.current.0.l3extVirtualLIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-nodes/lifp-Floating/vlifp-[topology/pod-1/node-202]-[vlan-1]"
       - add_floating2.current.0.l3extVirtualLIfP.attributes.encap == "vlan-1"
       - add_floating3.current.0.l3extVirtualLIfP.children is not defined
 
@@ -176,7 +176,7 @@
       - query_floating is not changed
       - query_all_floating is not changed
       - query_floating.current.0.l3extVirtualLIfP.attributes.addr == "23.45.67.90/24"
-      - query_floating.current.0.l3extVirtualLIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-NODES/lifp-Floating/vlifp-[topology/pod-1/node-201]-[vlan-1]"
+      - query_floating.current.0.l3extVirtualLIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-nodes/lifp-Floating/vlifp-[topology/pod-1/node-201]-[vlan-1]"
       - query_floating.current.0.l3extVirtualLIfP.attributes.encap == "vlan-1"
       - query_all_floating.current.0.l3extLIfP.children | length == 3
 
