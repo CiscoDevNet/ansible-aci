@@ -71,7 +71,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create a match match AS-path regex term
+- name: Create a match with AS-path regex term
   cisco.aci.match_as_path_regex_term:
     host: apic
     username: admin
@@ -83,7 +83,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete a match match AS-path regex term
+- name: Delete a match with AS-path regex term
   cisco.aci.match_as_path_regex_term:
     host: apic
     username: admin
@@ -94,7 +94,7 @@ EXAMPLES = r"""
     state: absent
   delegate_to: localhost
 
-- name: Query all match AS-path regex terms
+- name: Query all match with AS-path regex terms
   cisco.aci.match_as_path_regex_term:
     host: apic
     username: admin
@@ -103,7 +103,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query a specific match match AS-path regex term
+- name: Query a specific match with AS-path regex term
   cisco.aci.match_as_path_regex_term:
     host: apic
     username: admin

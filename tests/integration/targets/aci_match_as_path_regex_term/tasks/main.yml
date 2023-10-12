@@ -128,7 +128,7 @@
       <<: *match_as_path_regex_term_absent
     register: nm_remove_match_as_path_regex_term
 
-  - name: Remove match regex AS-Path term for l3out - testing idempotency
+  - name: Remove match regex AS-Path term for l3out again - testing previous Removal
     aci_match_as_path_regex_term:
       <<: *match_as_path_regex_term_absent
     register: nm_remove_match_as_path_regex_term_idempotency

@@ -135,7 +135,7 @@
       <<: *match_community_term_absent
     register: nm_remove_match_community_factor
 
-  - name: Remove match community factor - testing idempotency
+  - name: Remove match community factor again - testing previous Removal
     aci_match_community_factor:
       <<: *match_community_term_absent
     register: nm_remove_match_community_factor_idempotency

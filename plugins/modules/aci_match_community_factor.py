@@ -40,7 +40,7 @@ options:
     description:
     - The item scope.
     - If the scope is transitive, this community may be passed between ASs.
-    - If the scope is Non transitive, this community should be carried only within the local AS.
+    - If the scope is non-transitive, this community should be carried only within the local AS.
     type: str
     choices: [ transitive, non-transitive ]
   description:

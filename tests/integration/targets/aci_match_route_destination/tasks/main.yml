@@ -137,7 +137,7 @@
       <<: *match_route_destination_absent
     register: nm_remove_match_route_destination
 
-  - name: Remove match route destination rule - testing idempotency
+  - name: Remove match route destination rule again - testing previous Removal
     aci_match_route_destination:
       <<: *match_route_destination_absent
     register: nm_remove_match_route_destination_idempotency
