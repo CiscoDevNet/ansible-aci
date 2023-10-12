@@ -32,23 +32,28 @@ options:
     - The property to determine whether the entity functions only as a graceful restart helper or whether graceful restart is enabled completely.
     - The graceful restart helper option configures the local BGP router to support the graceful restart of a remote BGP peer.
     - The complete graceful restart option allows BGP graceful restart to be enabled or disable for an individual neighbor.
+    - The APIC defaults to C(helper) when unset during creation.
     type: str
     choices: [ helper, complete ]
   hold_interval:
     description:
     - The time period to wait before declaring the neighbor device down.
+    - The APIC defaults to C(180) when unset during creation.
     type: int
   keepalive_interval:
     description:
     - The interval time between sending keepalive messages.
+    - The APIC defaults to C(60) when unset during creation.
     type: int
   max_as_limit:
     description:
     - The maximum AS limit, to discard routes that have excessive AS numbers.
+    - The APIC defaults to C(0) when unset during creation.
     type: int
   stale_interval:
     description:
     - The maximum time that BGP keeps stale routes from the restarting BGP peer.
+    - The APIC defaults to C(default) which is equal to 300 sec when unset during creation.
     type: int
   description:
     description:
@@ -237,8 +242,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-
-GRACEFUL_RESTART_CONTROLS_MAPPING = dict(helper="helper", complete="")
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_GRACEFUL_RESTART_CONTROLS_MAPPING
 
 
 def main():
@@ -268,7 +272,7 @@ def main():
     )
 
     bgp_timers_policy = module.params.get("bgp_timers_policy")
-    graceful_restart_controls = GRACEFUL_RESTART_CONTROLS_MAPPING.get(module.params.get("graceful_restart_controls"))
+    graceful_restart_controls = MATCH_GRACEFUL_RESTART_CONTROLS_MAPPING.get(module.params.get("graceful_restart_controls"))
     hold_interval = module.params.get("hold_interval")
     keepalive_interval = module.params.get("keepalive_interval")
     max_as_limit = module.params.get("max_as_limit")

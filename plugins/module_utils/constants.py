@@ -88,3 +88,7 @@ MATCH_NOTIFY_CONDITION_MAPPING = dict(
 MATCH_SMU_OPERATION_MAPPING = dict(smu_install="smuInstall", smu_uninstall="smuUninstall")
 
 MATCH_SMU_OPERATION_FLAGS_MAPPING = dict(smu_reload_immediate="smuReloadImmediate", smu_reload_skip="smuReloadSkip")
+
+MATCH_BEST_PATH_CONTROL_MAPPING = dict(enable="asPathMultipathRelax", disable="")
+
+MATCH_GRACEFUL_RESTART_CONTROLS_MAPPING = dict(helper="helper", complete="")
