@@ -31,6 +31,7 @@ options:
     description:
     - The option to enable/disable to relax AS-Path restriction when choosing multipaths.
     - When enabled, allow load sharing across providers with different AS paths.
+    - The APIC defaults to C(enable) when unset during creation.
     type: str
     choices: [enable, disable]
     aliases: [as_path_control]
@@ -217,8 +218,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-
-BEST_PATH_CONTROL_MAPPING = dict(enable="asPathMultipathRelax", disable="")
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_BEST_PATH_CONTROL_MAPPING
 
 
 def main():
@@ -244,7 +244,7 @@ def main():
     )
 
     bgp_best_path_policy = module.params.get("bgp_best_path_policy")
-    best_path_control = BEST_PATH_CONTROL_MAPPING.get(module.params.get("best_path_control"))
+    best_path_control = MATCH_BEST_PATH_CONTROL_MAPPING.get(module.params.get("best_path_control"))
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
