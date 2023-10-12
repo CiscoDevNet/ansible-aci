@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2023, Tim Cragg (@timcragg) <tcragg@cisco.com>
-# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,9 +12,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_tenant_action_rule_profile
-short_description: Manage action rule profiles (rtctrl:AttrP)
+short_description: Manage Set Additional Communities (rtctrl:SetAddComm)
 description:
-- Manage action rule profiles on Cisco ACI fabrics.
+- Set additional communities for the action rule profiles on Cisco ACI fabrics.
 options:
   action_rule:
     description:
@@ -54,12 +52,10 @@ notes:
 seealso:
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(rtctrl:AttrP).
+  description: More information about the internal APIC class B(rtctrl:SetAddComm).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
-- Tim Cragg (@timcragg)
-- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
