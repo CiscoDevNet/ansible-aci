@@ -130,7 +130,7 @@
       <<: *match_community_regex_term_absent
     register: nm_remove_match_community_regex_term
 
-  - name: Remove match community regex term - testing idempotency
+  - name: Remove match community regex term again - testing previous Removal
     aci_match_community_regex_term:
       <<: *match_community_regex_term_absent
     register: nm_remove_match_community_regex_term_idempotency

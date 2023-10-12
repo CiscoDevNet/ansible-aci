@@ -114,7 +114,7 @@
       <<: *match_rule_absent
     register: nm_remove_match_rule
 
-  - name: Remove match rule profile for l3out - testing idempotency
+  - name: Remove match rule profile for l3out again - testing previous Removal
     aci_match_rule:
       <<: *match_rule_absent
     register: nm_remove_match_rule_idempotency
