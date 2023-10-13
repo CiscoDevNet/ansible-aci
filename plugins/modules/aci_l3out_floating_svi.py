@@ -340,7 +340,7 @@ def main():
         encap_scope=dict(type="str", choices=["vrf", "local"]),
         auto_state=dict(type="str", choices=["enabled", "disabled"]),
         external_bridge_group_profile=dict(type="str"),
-        dscp=aci_contract_dscp_spec(direction="dscp")
+        dscp=aci_contract_dscp_spec(direction="dscp"),
     )
 
     module = AnsibleModule(
