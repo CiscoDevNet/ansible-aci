@@ -18,21 +18,57 @@ short_description: Manage action rule profiles (rtctrl:AttrP)
 description:
 - Manage action rule profiles on Cisco ACI fabrics.
 options:
-  action_rule:
-    description:
-    - The name of the action rule profile.
-    type: str
-    aliases: [ action_rule_name, name ]
-  description:
-    description:
-    - The description for the action rule profile.
-    type: str
-    aliases: [ descr ]
   tenant:
     description:
     - The name of the tenant.
     type: str
     aliases: [ tenant_name ]
+  action_rule:
+    description:
+    - The name of the action rule profile.
+    type: str
+    aliases: [ action_rule_name, name ]
+  set_community:
+    description:
+    - The set action rule based on communities.
+    type: dict
+    suboptions:
+      community:
+        description:
+        - The community value.
+        type: str
+      criteria:
+        description:
+        - The community criteria.
+        - The option to append or replace the community value.
+        type: str
+        choices: [ append, replace, none ]
+  set_dampening:
+    description:
+    -The set action rule based on dampening.
+    type: dict
+    suboptions:
+      half_life:
+        description:
+        - the half life value (minutes).
+        type: int
+      max_suppress_time:
+        description:
+        - the maximum suppress time value (minutes).
+        type: int
+      reuse:
+        description:
+        - the reuse limit value.
+        type: int
+      suppress:
+        description:
+        - the suppress limit value.
+        type: int
+  description:
+    description:
+    - The description for the action rule profile.
+    type: str
+    aliases: [ descr ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.

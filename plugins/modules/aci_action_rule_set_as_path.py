@@ -13,9 +13,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_tenant_action_rule_profile
-short_description: Manage Action Rules based on Additional Communities (rtctrl:SetAddComm)
+short_description: Manage the AS Path action rules (rtctrl:SetASPath)
 description:
-- Set additional communities for the action rule profiles on Cisco ACI fabrics.
+- Set AS path action rule for the action rule profiles on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -27,16 +27,15 @@ options:
     - The name of the action rule profile.
     type: str
     aliases: [ action_rule_name ]
-  community:
+  last_as_number:
     description:
-    - The community value
-    type: str
-  set_criteria:
+    - The last AS number value.
+    type: int
+  criteria:
     description:
-    - The community criteria.
-    - The option to append or replace the community value.
+    - The option to append the specified AS number or to prepend the last AS numbers to the AS Path.
     type: str
-    choices: [ append, replace, none ]
+    choices: [ prepend, prepend-last-as ]
   description:
     description:
     - The description for the action rule profile.
@@ -64,7 +63,7 @@ seealso:
 - module: cisco.aci.aci_tenant
 - module: cisco.aci.aci_tenant_action_rule_profile
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(rtctrl:SetAddComm).
+  description: More information about the internal APIC class B(rtctrl:SetASPath).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
@@ -227,8 +226,8 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         action_rule=dict(type="str", aliases=["action_rule_name", "name"]),  # Not required for querying all objects
-        community=dict(type="str"),
-        set_criteria=dict(type="str", choices=["append", "replace", "none"]),
+        last_as_number=dict(type="int"),
+        criteria=dict(type="str", choices=["prepend", "prepend-last-as"]),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -238,13 +237,13 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["action_rule", "tenant", "community"]],
-            ["state", "present", ["action_rule", "tenant", "community"]],
+            ["state", "absent", ["action_rule", "tenant", "criteria"]],
+            ["state", "present", ["action_rule", "tenant", "criteria"]],
         ],
     )
 
-    community = module.params.get("community")
-    set_criteria = module.params.get("set_criteria")
+    last_as_number = module.params.get("last_as_number")
+    criteria = module.params.get("criteria")
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
@@ -266,10 +265,10 @@ def main():
             target_filter={"name": action_rule},
         ),
         subclass_2=dict(
-            aci_class="rtctrlSetAddComm",
-            aci_rn="saddcomm-{0}".format(community),
-            module_object=community,
-            target_filter={"community": community},
+            aci_class="rtctrlSetASPath",
+            aci_rn="saspath-{0}".format(criteria),
+            module_object=criteria,
+            target_filter={"criteria": criteria},
         ),
     )
 
@@ -277,16 +276,16 @@ def main():
 
     if state == "present":
         aci.payload(
-            aci_class="rtctrlSetAddComm",
+            aci_class="rtctrlSetASPath",
             class_config=dict(
-                community=community,
-                setCriteria=set_criteria,
+                lastnum=last_as_number,
+                criteria=criteria,
                 descr=description,
                 nameAlias=name_alias,
             ),
         )
 
-        aci.get_diff(aci_class="rtctrlSetAddComm")
+        aci.get_diff(aci_class="rtctrlSetASPath")
 
         aci.post_config()
 
