@@ -13,9 +13,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_tenant_action_rule_profile
-short_description: Manage Action Rules based on Additional Communities (rtctrl:SetAddComm)
+short_description: Manage the AS Path ASN (rtctrl:SetASPathASN)
 description:
-- Set additional communities for the action rule profiles on Cisco ACI fabrics.
+- Set the ASN for the AS Path action rules on Cisco ACI fabrics.
+- Only used if the AS Path action rule is set to C(prepend).
 options:
   tenant:
     description:
@@ -27,16 +28,14 @@ options:
     - The name of the action rule profile.
     type: str
     aliases: [ action_rule_name ]
-  community:
+  asn:
     description:
-    - The community value
-    type: str
-  set_criteria:
+    - The ASN number.
+    type: int
+  order:
     description:
-    - The community criteria.
-    - The option to append or replace the community value.
-    type: str
-    choices: [ append, replace, none ]
+    - The ASN order.
+    type: int  
   description:
     description:
     - The description for the action rule profile.
@@ -58,13 +57,14 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(tenant) and the C(action_rule) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_tenant_action_rule_profile) modules can be used for this.
+- The C(tenant), the C(action_rule) and AS Path action rule used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_tenant_action_rule_profile) and M(cisco.aci.aci_action_rule_set_as_path) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
 - module: cisco.aci.aci_tenant_action_rule_profile
+- module: cisco.aci.aci_action_rule_set_as_path
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(rtctrl:SetAddComm).
+  description: More information about the internal APIC class B(rtctrl:SetASPathASN).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dag Wieers (@dagwieers)
@@ -227,8 +227,8 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         action_rule=dict(type="str", aliases=["action_rule_name", "name"]),  # Not required for querying all objects
-        community=dict(type="str"),
-        set_criteria=dict(type="str", choices=["append", "replace", "none"]),
+        asn=dict(type="int"),
+        order=dict(type="int"),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -238,13 +238,13 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["action_rule", "tenant", "community"]],
-            ["state", "present", ["action_rule", "tenant", "community"]],
+            ["state", "absent", ["action_rule", "tenant", "order"]],
+            ["state", "present", ["action_rule", "tenant", "order"]],
         ],
     )
 
-    community = module.params.get("community")
-    set_criteria = module.params.get("set_criteria")
+    asn = module.params.get("asn")
+    order = module.params.get("order")
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
@@ -266,10 +266,16 @@ def main():
             target_filter={"name": action_rule},
         ),
         subclass_2=dict(
-            aci_class="rtctrlSetAddComm",
-            aci_rn="saddcomm-{0}".format(community),
-            module_object=community,
-            target_filter={"community": community},
+            aci_class="rtctrlSetASPath",
+            aci_rn="saspath-prepend",
+            module_object="prepend",
+            target_filter={"criteria": "prepend"},
+        ),
+        subclass_3=dict(
+            aci_class="rtctrlSetASPathASN",
+            aci_rn="asn-{0}".format(order),
+            module_object=order,
+            target_filter={"asn": order},
         ),
     )
 
@@ -277,16 +283,16 @@ def main():
 
     if state == "present":
         aci.payload(
-            aci_class="rtctrlSetAddComm",
+            aci_class="rtctrlSetASPathASN",
             class_config=dict(
-                community=community,
-                setCriteria=set_criteria,
+                asn=asn,
+                order=order,
                 descr=description,
                 nameAlias=name_alias,
             ),
         )
 
-        aci.get_diff(aci_class="rtctrlSetAddComm")
+        aci.get_diff(aci_class="rtctrlSetASPathASN")
 
         aci.post_config()
 
