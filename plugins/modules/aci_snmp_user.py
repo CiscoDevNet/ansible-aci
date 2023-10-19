@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+# Copyright: (c) 2023, Akini Ross (@akinross)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -21,7 +23,7 @@ options:
     description:
     - SNMP authentication method
     type: str
-    choices: [ hmac-md5-96, hmac-sha1-96]
+    choices: [ hmac-md5-96, hmac-sha1-96, hmac-sha2-224, hmac-sha2-256, hmac-sha2-384, hmac-sha2-512 ]
   auth_key:
     description:
     - SNMP authentication key
@@ -31,6 +33,11 @@ options:
     - Name of the SNMP user policy
     type: str
     aliases: [ snmp_user_policy ]
+  description:
+    description:
+    - Description of the SNMP user policy
+    type: str
+    aliases: [ descr ]
   policy:
     description:
     - Name of an existing SNMP policy
@@ -56,12 +63,17 @@ extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
+notes:
+- The C(policy) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_snmp_policy) module can be used for this.
 seealso:
+- module: cisco.aci.aci_snmp_policy
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(snmp:UserP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
+- Akini Ross (@akinross)
 """
 
 EXAMPLES = r"""
@@ -72,7 +84,7 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     policy: my_snmp_policy
     name: my_snmp_user
-    auth_type: hmac-sha1-96
+    auth_type: hmac-sha2-256
     auth_key: "{{ hmac_key }}"
     state: present
   delegate_to: localhost
@@ -238,7 +250,8 @@ def main():
     argument_spec.update(
         policy=dict(type="str", aliases=["snmp_policy", "snmp_policy_name"]),
         name=dict(type="str", aliases=["snmp_user_policy"]),
-        auth_type=dict(type="str", choices=["hmac-md5-96", "hmac-sha1-96"]),
+        description=dict(type="str", aliases=["descr"]),
+        auth_type=dict(type="str", choices=["hmac-md5-96", "hmac-sha1-96", "hmac-sha2-224", "hmac-sha2-256", "hmac-sha2-384", "hmac-sha2-512"]),
         auth_key=dict(type="str", no_log=True),
         privacy_type=dict(type="str", choices=["aes-128", "des", "none"]),
         privacy_key=dict(type="str", no_log=True),
@@ -258,6 +271,7 @@ def main():
 
     policy = module.params.get("policy")
     name = module.params.get("name")
+    description = module.params.get("description")
     auth_type = module.params.get("auth_type")
     auth_key = module.params.get("auth_key")
     privacy_type = module.params.get("privacy_type")
@@ -284,7 +298,7 @@ def main():
     if state == "present":
         aci.payload(
             aci_class="snmpUserP",
-            class_config=dict(privType=privacy_type, privKey=privacy_key, authType=auth_type, authKey=auth_key, name=name),
+            class_config=dict(privType=privacy_type, privKey=privacy_key, authType=auth_type, authKey=auth_key, name=name, descr=description),
         )
 
         aci.get_diff(aci_class="snmpUserP")
