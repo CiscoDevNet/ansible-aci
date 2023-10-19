@@ -3,6 +3,7 @@
 
 # Copyright: (c) 2017, Dag Wieers (@dagwieers) <dag@wieers.com>
 # Copyright: (c) 2020, Cindy Zhao (@cizhao) <cizhao@cisco.com>
+# Copyright: (c) 2023, Samita Bhattacharjee (@samitab) <samitab@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -62,6 +63,7 @@ options:
     default: false
 extends_documentation_fragment:
 - cisco.aci.aci
+- cisco.aci.annotation
 
 notes:
 - Certain payloads are known not to be idempotent, so be careful when constructing payloads,
@@ -73,6 +75,7 @@ notes:
 - XML payloads require the C(lxml) and C(xmljson) python libraries. For JSON payloads nothing special is needed.
 - If you do not have any attributes, it may be necessary to add the "attributes" key with an empty dictionnary "{}" for value
   as the APIC does expect the entry to precede any children.
+- Annotation set directly in c(src) or C(content) will take precedent over the C(annotation) parameter.
 seealso:
 - module: cisco.aci.aci_tenant
 - name: Cisco APIC REST API Configuration Guide
@@ -81,6 +84,7 @@ seealso:
 author:
 - Dag Wieers (@dagwieers)
 - Cindy Zhao (@cizhao)
+- Samita Bhattacharjee (@samitab)
 """
 
 EXAMPLES = r"""
@@ -284,7 +288,7 @@ except Exception:
     HAS_YAML = False
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 from ansible.module_utils._text import to_text
 
 
@@ -301,6 +305,24 @@ def update_qsl(url, params):
         return url + "&" + "&".join(["%s=%s" % (k, v) for k, v in params.items()])
     else:
         return url + "?" + "&".join(["%s=%s" % (k, v) for k, v in params.items()])
+
+
+def add_annotation(annotation, payload):
+    """Add annotation to payload only if it has not already been added"""
+    if annotation:
+        for val in payload.values():
+            att = val.get("attributes", {})
+            if "annotation" not in att.keys():
+                att["annotation"] = annotation
+
+
+def add_annotation_xml(annotation, tree):
+    """Add annotation to payload xml only if it has not already been added"""
+    if annotation:
+        for element in tree.iter():
+            ann = element.get("annotation")
+            if ann is None:
+                element.set("annotation", annotation)
 
 
 class ACIRESTModule(ACIModule):
@@ -335,6 +357,7 @@ class ACIRESTModule(ACIModule):
 
 def main():
     argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         path=dict(type="str", required=True, aliases=["uri"]),
         method=dict(type="str", default="get", choices=["delete", "get", "post"], aliases=["action"]),
@@ -353,6 +376,7 @@ def main():
     path = module.params.get("path")
     src = module.params.get("src")
     rsp_subtree_preserve = module.params.get("rsp_subtree_preserve")
+    annotation = module.params.get("annotation")
 
     # Report missing file
     file_exists = False
@@ -388,21 +412,27 @@ def main():
     if rest_type == "json":
         if content and isinstance(content, dict):
             # Validate inline YAML/JSON
+            add_annotation(annotation, payload)
             payload = json.dumps(payload)
         elif payload and isinstance(payload, str) and HAS_YAML:
             try:
                 # Validate YAML/JSON string
-                payload = json.dumps(yaml.safe_load(payload))
+                payload = yaml.safe_load(payload)
+                add_annotation(annotation, payload)
+                payload = json.dumps(payload)
             except Exception as e:
                 module.fail_json(msg="Failed to parse provided JSON/YAML payload: {0}".format(to_text(e)), exception=to_text(e), payload=payload)
     elif rest_type == "xml" and HAS_LXML_ETREE:
         if content and isinstance(content, dict) and HAS_XMLJSON_COBRA:
             # Validate inline YAML/JSON
+            add_annotation(annotation, payload)
             payload = etree.tostring(cobra.etree(payload)[0], encoding="unicode")
         elif payload and isinstance(payload, str):
             try:
                 # Validate XML string
-                payload = etree.tostring(etree.fromstring(payload), encoding="unicode")
+                payload = etree.fromstring(payload)
+                add_annotation_xml(annotation, payload)
+                payload = etree.tostring(payload, encoding="unicode")
             except Exception as e:
                 module.fail_json(msg="Failed to parse provided XML payload: {0}".format(to_text(e)), payload=payload)
 
