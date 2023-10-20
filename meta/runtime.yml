@@ -27,8 +27,10 @@ action_groups:
     - aci_bd_dhcp_label
     - aci_bd_subnet
     - aci_bd_to_l3out
+    - aci_bgp_best_path_policy
     - aci_bgp_rr_asn
     - aci_bgp_rr_node
+    - aci_bgp_timers_policy
     - aci_bulk_static_binding_to_epg
     - aci_cloud_ap
     - aci_cloud_aws_provider
@@ -74,6 +76,7 @@ action_groups:
     - aci_esg_epg_selector
     - aci_esg_ip_subnet_selector
     - aci_esg_tag_selector
+    - aci_fabric_interface_policy_group
     - aci_fabric_leaf_profile
     - aci_fabric_leaf_switch_assoc
     - aci_fabric_node
@@ -103,6 +106,7 @@ action_groups:
     - aci_interface_policy_fc
     - aci_interface_policy_l2
     - aci_interface_policy_leaf_breakout_port_group
+    - aci_interface_policy_leaf_fc_policy_group
     - aci_interface_policy_leaf_policy_group
     - aci_interface_policy_leaf_profile
     - aci_interface_policy_leaf_profile_fex_policy_group
@@ -113,6 +117,7 @@ action_groups:
     - aci_interface_policy_port_channel
     - aci_interface_policy_port_security
     - aci_interface_policy_spanning_tree
+    - aci_interface_policy_spine_policy_group
     - aci_interface_selector_to_switch_policy_leaf_profile
     - aci_l2out
     - aci_l2out_extepg
@@ -122,6 +127,7 @@ action_groups:
     - aci_l2out_logical_node_profile
     - aci_l3out
     - aci_l3out_bgp_peer
+    - aci_l3out_bgp_protocol_profile
     - aci_l3out_extepg
     - aci_l3out_extepg_to_contract
     - aci_l3out_extsubnet
