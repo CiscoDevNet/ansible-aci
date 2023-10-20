@@ -107,7 +107,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create a Floating SVI path attribute secondary IP
-  cisco.aci.aci_l3out_floating_svi_path:
+  cisco.aci.aci_l3out_floating_svi_path_secondary_ip:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -125,7 +125,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Remove a Floating SVI path attribute secondary IP
-  cisco.aci.aci_l3out_floating_svi_path:
+  cisco.aci.aci_l3out_floating_svi_path_secondary_ip:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -143,7 +143,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query a Floating SVI path attribute secondary IP
-  cisco.aci.aci_l3out_floating_svi_path:
+  cisco.aci.aci_l3out_floating_svi_path_secondary_ip:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -162,7 +162,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query all the secondary IPs under a Floating SVI path attribute
-  cisco.aci.aci_l3out_floating_svi_path:
+  cisco.aci.aci_l3out_floating_svi_path_secondary_ip:
     host: apic
     username: admin
     password: SomeSecretPassword
