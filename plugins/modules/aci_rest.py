@@ -291,6 +291,8 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 from ansible.module_utils._text import to_text
 
+ANNOTATION_UNSUPPORTED = ["tagTag"]
+
 
 def update_qsl(url, params):
     """Add or update a URL query string"""
@@ -310,7 +312,9 @@ def update_qsl(url, params):
 def add_annotation(annotation, payload):
     """Add annotation to payload only if it has not already been added"""
     if annotation:
-        for val in payload.values():
+        for key, val in payload.items():
+            if key in ANNOTATION_UNSUPPORTED:
+                return
             att = val.get("attributes", {})
             if "annotation" not in att.keys():
                 att["annotation"] = annotation
@@ -320,6 +324,8 @@ def add_annotation_xml(annotation, tree):
     """Add annotation to payload xml only if it has not already been added"""
     if annotation:
         for element in tree.iter():
+            if element.tag in ANNOTATION_UNSUPPORTED:
+                return
             ann = element.get("annotation")
             if ann is None:
                 element.set("annotation", annotation)
