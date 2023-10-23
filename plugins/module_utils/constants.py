@@ -96,3 +96,5 @@ MATCH_GRACEFUL_RESTART_CONTROLS_MAPPING = dict(helper="helper", complete="")
 EP_LOOP_PROTECTION_ACTION_MAPPING = {"bd": "bd-learn-disable", "port": "port-disable"}
 
 FABRIC_POD_SELECTOR_TYPE_MAPPING = dict(all="ALL", range="range")
+
+TLS_MAPPING = {"tls_v1.0": "TLSv1", "tls_v1.1": "TLSv1.1", "tls_v1.2": "TLSv1.2"}
