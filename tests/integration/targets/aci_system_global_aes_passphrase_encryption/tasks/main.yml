@@ -1,0 +1,84 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Tim Cragg (@timcragg) <tcragg@cisco.com>
+# Copyright: (c) 2023, Akini Ross (@akinross) <akinross@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
+  block:
+
+  - name: Clear existing passphrase
+    cisco.aci.aci_system_global_aes_passphrase_encryption:
+      <<: *aci_info
+      state: absent
+  
+  - name: Set passphrase
+    cisco.aci.aci_system_global_aes_passphrase_encryption:
+      <<: *aci_info
+      passphrase: ansible_passphrase
+      state: present
+  
+  - name: Query key configured
+    cisco.aci.aci_system_global_aes_passphrase_encryption:
+     <<: *aci_info
+     state: query
+    register: query_passphrase
+  
+  - name: Enable encryption
+    cisco.aci.aci_system_global_aes_passphrase_encryption:
+      <<: *aci_info
+      enable: yes
+      state: present
+  
+  - name: Query encryption enabled
+    cisco.aci.aci_system_global_aes_passphrase_encryption:
+     <<: *aci_info
+     state: query
+    register: query_encryption
+  
+  - name: Verify passphrase and encryption settings
+    ansible.builtin.assert:
+      that:
+      - query_passphrase.current.0.pkiExportEncryptionKey.attributes.keyConfigured == "yes"
+      - query_passphrase.current.0.pkiExportEncryptionKey.attributes.strongEncryptionEnabled == "no"
+      - query_encryption.current.0.pkiExportEncryptionKey.attributes.keyConfigured == "yes"
+      - query_encryption.current.0.pkiExportEncryptionKey.attributes.strongEncryptionEnabled == "yes"
+  
+  # CLEAR PASSPHRASE
+  - name: Clear encryption key
+    cisco.aci.aci_system_global_aes_passphrase_encryption:
+      <<: *aci_info
+      state: absent
+  
+  - name: Query cleared encryption key
+    cisco.aci.aci_system_global_aes_passphrase_encryption:
+      <<: *aci_info
+      state: query
+    register: query_deletion
+  
+  - name: Verify encryption key is deleted
+    ansible.builtin.assert:
+      that:
+      - query_deletion.current.0.pkiExportEncryptionKey.attributes.keyConfigured == "no"
+      - query_deletion.current.0.pkiExportEncryptionKey.attributes.strongEncryptionEnabled == "no"
