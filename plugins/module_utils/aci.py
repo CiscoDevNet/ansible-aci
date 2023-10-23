@@ -15,6 +15,7 @@
 # Copyright: (c) 2020, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
 # Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # Copyright: (c) 2023, Shreyas Srish (@shrsr) <ssrish@cisco.com>
+# Copyright: (c) 2023, Tim Cragg (@timcragg) <tcragg@cisco.com>
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without modification,
@@ -781,6 +782,7 @@ class ACIModule(object):
         subclass_5=None,
         child_classes=None,
         config_only=True,
+        rsp_subtree="full",
     ):
         """
         This method is used to retrieve the appropriate URL path and filter_string to make the request to the APIC.
@@ -828,10 +830,12 @@ class ACIModule(object):
             # Append child_classes to filter_string if filter string is empty
             self.update_qs(
                 {
-                    "rsp-subtree": "full",
+                    "rsp-subtree": rsp_subtree,
                     "rsp-subtree-class": ",".join(sorted(self.child_classes)),
                 }
             )
+        elif rsp_subtree == "children":
+            self.update_qs({"rsp-subtree": rsp_subtree})
 
     def _construct_url_1(self, obj, config_only=True):
         """
