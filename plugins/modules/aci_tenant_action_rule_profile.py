@@ -45,25 +45,63 @@ options:
         choices: [ append, replace, none ]
   set_dampening:
     description:
-    -The set action rule based on dampening.
+    - The set action rule based on dampening.
     type: dict
     suboptions:
       half_life:
         description:
-        - the half life value (minutes).
+        - The half life value (minutes).
         type: int
       max_suppress_time:
         description:
-        - the maximum suppress time value (minutes).
+        - The maximum suppress time value (minutes).
         type: int
       reuse:
         description:
-        - the reuse limit value.
+        - The reuse limit value.
         type: int
       suppress:
         description:
-        - the suppress limit value.
+        - The suppress limit value.
         type: int
+  set_next_hop:
+    description:
+    - The set action rule based on the next hop address.
+    type: str
+  next_hop_propagation:
+    description:
+    - The set action rule based on nexthop unchanged configuration.
+    - Can not be configured along with C(set_route_tag).
+    - The APIC defaults to C(false) when unset.
+    type: bool
+  multipath:
+    description:
+    - Set action rule based on set redistribute multipath configuration.
+    - Can not be configured along with C(set_route_tag).
+    - The APIC defaults to C(false) when unset.
+    type: bool
+  set_preference:
+    description:
+    - The set action rule based on preference.
+    type: int
+  set_metric:
+    description:
+    - The set action rule based on metric.
+    type: int
+  set_metric_type:
+    description:
+    - The set action rule based on a metric type.
+    type: str
+    choices: [ ospf_type_1, ospf_type_2 ]
+  set_route_tag:
+    description:
+    - The set action rule based on route tag.
+    - Can not be configured along with C(next_hop_propagation) and C(multipath).
+    type: int
+  set_weight:
+    description:
+    - The set action rule based on weight.
+    type: int
   description:
     description:
     - The description for the action rule profile.
@@ -255,6 +293,16 @@ def main():
     argument_spec.update(
         action_rule=dict(type="str", aliases=["action_rule_name", "name"]),  # Not required for querying all objects
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        set_community=dict(type="dict"),
+        set_dampening=dict(type="dict"),
+        set_next_hop=dict(type="str"),
+        next_hop_propagation=dict(type="bool"),
+        multipath=dict("bool"),
+        set_preference=dict(type="int"),
+        set_metric=dict(type="int"),
+        set_metric_type=dict(type="str", choices=["ospf_type_1", "ospf_type_2"]),
+        set_route_tag=dict(type="int"),
+        set_weight=dict(type="int"),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -270,12 +318,36 @@ def main():
     )
 
     action_rule = module.params.get("action_rule")
+    set_community = module.params.get("set_community")
+    set_dampening = module.params.get("set_dampening")
+    set_next_hop = module.params.get("set_next_hop")
+    next_hop_propagation = module.params.get("next_hop_propagation")
+    multipath = module.params.get("multipath")
+    set_preference = module.params.get("set_preference")
+    set_metric = module.params.get("set_metric")
+    set_metric_type = module.params.get("set_metric_type")
+    set_route_tag = module.params.get("set_route_tag")
+    set_weight = module.params.get("set_weight")
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
+
+    child_classes = dict(
+        rtctrlSetComm=[set_community],
+        rtctrlSetDamp=[set_dampening],
+        rtctrlSetNh=[set_next_hop, "addr"],
+        rtctrlSetNhUnchanged=[next_hop_propagation],
+        rtctrlSetPref=[set_preference, "localPref"],
+        rtctrlSetRedistMultipath=[multipath],
+        rtctrlSetRtMetric=[set_metric, "metric"],
+        rtctrlSetRtMetricType=[set_metric_type, "metricType"],
+        rtctrlSetTag=[set_route_tag, "tag"],
+        rtctrlSetWeight=[set_weight, "weight"],
+    )
+    
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -289,11 +361,36 @@ def main():
             module_object=action_rule,
             target_filter={"name": action_rule},
         ),
+        child_classes=list(child_classes.keys()),
     )
 
     aci.get_existing()
 
     if state == "present":
+        child_configs = []
+
+        for key, value in child_classes.items():
+            if value[0] is not None:
+                if value[0] == "" or value[0] == False or value[0] == {}:
+                    if isinstance(aci.existing, list) and len(aci.existing) > 0:
+                        for child in aci.existing[0].get("rtctrlAttrP", {}).get("children", {}):
+                            if child.get(key):
+                                child_configs.append(
+                                    dict(
+                                        key=dict(
+                                            attributes=dict(status="deleted"),
+                                        ),
+                                    )
+                                )
+                elif value[0] != "" or value[0] == True or value[0] != {}:
+                    child_configs.append(
+                        dict(
+                            key=dict(
+                                attributes={value[-1]:value[0]},
+                            )
+                        )
+                    )
+
         aci.payload(
             aci_class="rtctrlAttrP",
             class_config=dict(
