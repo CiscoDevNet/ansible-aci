@@ -79,7 +79,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create a match with comunity regex term
-  cisco.aci.match_community_regex_term:
+  cisco.aci.aci_match_community_regex_term:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -92,7 +92,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Delete a match with comunity regex term
-  cisco.aci.match_community_regex_term:
+  cisco.aci.aci_match_community_regex_term:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -103,7 +103,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query all match with commmuntiy regex terms
-  cisco.aci.match_community_regex_term:
+  cisco.aci.aci_match_community_regex_term:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -112,7 +112,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query a specific match with comunity regex term
-  cisco.aci.match_community_regex_term:
+  cisco.aci.aci_match_community_regex_term:
     host: apic
     username: admin
     password: SomeSecretPassword

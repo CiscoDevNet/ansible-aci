@@ -57,8 +57,8 @@
       description: match route destination rule 1 for ansible_match_rule match rule profile
       ip: 11.11.11.11/24
       aggregate: yes
-      from_prefix_lenght: 0
-      to_prefix_lenght: 32
+      from_prefix_length: 0
+      to_prefix_length: 32
       state: present
     check_mode: true
     register: cm_add_match_route_destination
