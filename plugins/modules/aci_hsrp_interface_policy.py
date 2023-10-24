@@ -22,6 +22,7 @@ options:
     - The name of the Tenant the hsrp interface policy should belong to.
     type: str
     aliases: [ tenant_name ]
+    required: true
   hsrp:
     description:
     - The HSRP interface policy name.
@@ -61,7 +62,11 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 - cisco.aci.owner
 
+notes:
+- The C(tenant) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) can be used for this.
 seealso:
+- module: aci_tenant
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(hsrp:IfPol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -226,7 +231,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
+        tenant=dict(type="str", aliases=["tenant_name"], required=True),  # Not required for querying all objects
         hsrp=dict(type="str", aliases=["hsrp_interface", "name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         controls=dict(type="list", elements="str", choices=["bfd", "bia"]),
@@ -239,8 +244,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["hsrp", "tenant"]],
-            ["state", "present", ["hsrp", "tenant"]],
+            ["state", "absent", ["hsrp"]],
+            ["state", "present", ["hsrp"]],
         ],
     )
 
@@ -281,7 +286,6 @@ def main():
                 ctrl=controls,
                 reloadDelay=reload_delay,
                 delay=delay,
-                
             ),
         )
 

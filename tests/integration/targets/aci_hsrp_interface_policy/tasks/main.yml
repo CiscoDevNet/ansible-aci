@@ -1,4 +1,4 @@
-# Author: Jason Juenger (@jasonjuenger)
+# Author: Shreyas Srish (@shrsr)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 # SET VARS
@@ -148,5 +148,7 @@
   - name: Verify remove hsrp
     assert:
       that:
-      - remove_hsrp1.current == []
+      - remove_hsrp is changed
+      - remove_hsrp2 is changed
+      - remove_hsrp.current == []
       - remove_hsrp2.current == []

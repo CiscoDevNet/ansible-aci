@@ -12,41 +12,46 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_l3out_logical_interface_profile_hsrp_policy
-short_description: Manage Layer 3 Outside (L3Out) logical interface profile (l3ext:LIfP) HSRP policy (hsrpIfP)
+module: aci_l3out_hsrp_secondary_vip
+short_description: Manage HSRP Secondary Virtual IP (hsrpSecVip) of a HSRP group (hsrpGroupP)
 description:
-- Manage L3Out interface profile HSRP policies on Cisco ACI fabrics.
+- Manage HSRP Secondary Virtual IP of a HSRP group on Cisco ACI fabrics.
 options:
   tenant:
     description:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
+    required: true
   l3out:
     description:
     - Name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
+    required: true
   node_profile:
     description:
     - Name of the node profile.
     type: str
     aliases: [ node_profile_name, logical_node ]
+    required: true
   interface_profile:
     description:
     - Name of an existing interface profile.
     type: str
     aliases: [ name, interface_profile_name, logical_interface ]
-  hsrp_policy:
+    required: true
+  hsrp_interface_group:
     description:
-    - Name of an existing hsrp interface policy.
+    - Name of an existing hsrp group.
     type: str
-    aliases: [ name, hsrp_policy_name ]
-  version:
+    aliases: [ name, hsrp_group ]
+    required: true
+  secondary_virtual_ip:
     description:
     - The version of the compatibility catalog.
     type: str
-    choices: [ v1, v2 ]
+    aliases: [ vip, secondary_vip ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -59,10 +64,18 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 - cisco.aci.owner
 
+notes:
+- The C(tenant), C(l3out), C(logical_node_profile), C(logical_interface_profile), C(hsrp_interface_profile) and C(hsrp_group) must exist before using \
+  this module in your playbook. The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile), \
+  M(cisco.aci.aci_l3out_logical_interface_profile), M(cisco.aci.aci_l3out_hsrp_interface_profile) and M(cisco.aci.aci_l3out_hsrp_group) can be used for \
+  this.
 seealso:
+- module: aci_tenant
 - module: aci_l3out
 - module: aci_l3out_logical_node_profile
 - module: aci_l3out_logical_interface_profile
+- module: aci_l3out_hsrp_interface_profile
+- module: aci_l3out_hsrp_group
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -71,8 +84,8 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a new interface profile hsrp policy
-  cisco.aci.aci_l3out_logical_interface_profile_hsrp_policy:
+- name: Add a hsrp secondary virtual ip
+  cisco.aci.aci_l3out_logical_interface_profile_hsrp_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -80,12 +93,13 @@ EXAMPLES = r"""
     l3out: my_l3out
     node_profile: my_node_profile
     interface_profile: my_interface_profile
-    hsrp_policy: my_hsrp_interface_policy
+    hsrp_group: my_hsrp_group
+    secondary_virtual_ip: 191.1.1.1
     state: present
   delegate_to: localhost
 
-- name: Delete an interface profile hsrp policy
-  cisco.aci.aci_l3out_logical_interface_profile_hsrp_policy:
+- name: Delete a hsrp secondary virtual ip
+  cisco.aci.aci_l3out_logical_interface_profile_hsrp_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -93,12 +107,13 @@ EXAMPLES = r"""
     l3out: my_l3out
     node_profile: my_node_profile
     interface_profile: my_interface_profile
-    hsrp_policy: my_hsrp_interface_policy
+    hsrp_group: my_hsrp_interface_group
+    secondary_virtual_ip: 191.1.1.1
     state: absent
   delegate_to: localhost
 
-- name: Query an interface profile hsrp policy
-  cisco.aci.aci_l3out_logical_interface_profile_hsrp_policy:
+- name: Query a hsrp secondary virtual ip
+  cisco.aci.aci_l3out_logical_interface_profile_hsrp_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -106,7 +121,22 @@ EXAMPLES = r"""
     l3out: my_l3out
     node_profile: my_node_profile
     interface_profile: my_interface_profile
-    hsrp_policy: my_hsrp_interface_policy
+    hsrp_group: my_hsrp_group
+    secondary_virtual_ip: 191.1.1.1
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query all hsrp secondary virtual ips
+  cisco.aci.aci_l3out_logical_interface_profile_hsrp_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    hsrp_group: my_hsrp_group
     state: query
   delegate_to: localhost
   register: query_result
@@ -227,12 +257,12 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        tenant=dict(type="str", aliases=["tenant_name"]),
-        l3out=dict(type="str", aliases=["l3out_name"]),
-        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
-        interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
-        hsrp_interface_group=dict(type="str", aliases=["name", "hsrp_group"]),
-        secondary_virtual_ip=dict(type="str", aliases=["ip", "secondary_ip"]),
+        tenant=dict(type="str", aliases=["tenant_name"], required=True),
+        l3out=dict(type="str", aliases=["l3out_name"], required=True),
+        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"], required=True),
+        interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"], required=True),
+        hsrp_interface_group=dict(type="str", aliases=["name", "hsrp_group"], required=True),
+        secondary_virtual_ip=dict(type="str", aliases=["vip", "secondary_vip"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -240,8 +270,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "l3out", "node_profile", "interface_profile", "secondary_virtual_ip"]],
-            ["state", "present", ["tenant", "l3out", "node_profile", "interface_profile", "secondary_virtual_ip"]],
+            ["state", "absent", ["secondary_virtual_ip"]],
+            ["state", "present", ["secondary_virtual_ip"]],
         ],
     )
 
@@ -295,15 +325,14 @@ def main():
         subclass_6=dict(
             aci_class="hsrpSecVip",
             aci_rn="hsrpSecVip-[{0}]".format(secondary_virtual_ip),
-            module_object=hsrp_interface_group,
-            target_filter={"name": hsrp_interface_group},
+            module_object=secondary_virtual_ip,
+            target_filter={"ip": secondary_virtual_ip},
         ),
     )
 
     aci.get_existing()
 
     if state == "present":
-
         aci.payload(aci_class="hsrpSecVip", class_config=dict(ip=secondary_virtual_ip))
 
         aci.get_diff(aci_class="hsrpSecVip")

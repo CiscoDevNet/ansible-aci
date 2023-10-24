@@ -12,41 +12,75 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_l3out_logical_interface_profile_hsrp_policy
-short_description: Manage Layer 3 Outside (L3Out) logical interface profile (l3ext:LIfP) HSRP policy (hsrpIfP)
+module: aci_l3out_hsrp_group
+short_description: Manage HSRP group (hsrpGroupP) of the HSRP interface profile (hsrpIfP)
 description:
-- Manage L3Out interface profile HSRP policies on Cisco ACI fabrics.
+- Manage HSRP group of the HSRP interface profile on Cisco ACI fabrics.
 options:
   tenant:
     description:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
+    required: true
   l3out:
     description:
     - Name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
+    required: true
   node_profile:
     description:
     - Name of the node profile.
     type: str
     aliases: [ node_profile_name, logical_node ]
+    required: true
   interface_profile:
     description:
     - Name of an existing interface profile.
     type: str
     aliases: [ name, interface_profile_name, logical_interface ]
-  hsrp_policy:
+    required: true
+  hsrp_interface_group:
     description:
-    - Name of an existing hsrp interface policy.
+    - Name of the HSRP interface group.
     type: str
-    aliases: [ name, hsrp_policy_name ]
-  version:
+    aliases: [ name, hsrp_group ]
+  group_id:
     description:
-    - The version of the compatibility catalog.
+    - The group id of the HSRP interface group.
+    type: int
+  ip:
+    description:
+    - The virtual IP address of the HSRP interface group.
     type: str
-    choices: [ v1, v2 ]
+  mac:
+    description:
+    - The MAC address of the HSRP interface group.
+    type: str
+  group_name:
+    description:
+    - The group name of the HSRP interface group.
+    type: str
+  description:
+    description:
+    - The description of the HSRP interface group.
+    type: str
+    aliases: [ descr ]
+  group_type:
+    description:
+    - The type of the HSRP interface group.
+    type: str
+    choices: [ ipv4, ipv6 ]
+  ip_obtain_mode:
+    description:
+    - The mode of method used to obtain the IP address.
+    type: str
+    choices: [ admin, auto, learn ]
+  group_policy:
+    description:
+    - The group policy of the HSRP interface group.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -59,11 +93,16 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 - cisco.aci.owner
 
+notes:
+- The C(tenant), C(l3out), C(logical_node_profile), C(logical_interface_profile) and C(hsrp_interface_profile) must exist before using this module in \
+  your playbook. The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile), \
+  M(cisco.aci.aci_l3out_logical_interface_profile) and M(cisco.aci.aci_l3out_hsrp_interface_profile) can be used for this.
 seealso:
 - module: aci_tenant
 - module: aci_l3out
 - module: aci_l3out_logical_node_profile
 - module: aci_l3out_logical_interface_profile
+- module: aci_l3out_hsrp_interface_profile
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -72,8 +111,8 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a new interface profile hsrp policy
-  cisco.aci.aci_l3out_logical_interface_profile_hsrp_policy:
+- name: Add a new hsrp group
+  cisco.aci.aci_l3out_hsrp_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -81,12 +120,16 @@ EXAMPLES = r"""
     l3out: my_l3out
     node_profile: my_node_profile
     interface_profile: my_interface_profile
-    hsrp_policy: my_hsrp_interface_policy
+    hsrp_interface_group: group1
+    ip: 12.34.56.32
+    group_type: ipv4
+    ip_obtain_mode: admin
+    group_policy: default
     state: present
   delegate_to: localhost
 
-- name: Delete an interface profile hsrp policy
-  cisco.aci.aci_l3out_logical_interface_profile_hsrp_policy:
+- name: Delete a hsrp group
+  cisco.aci.aci_l3out_hsrp_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -94,12 +137,16 @@ EXAMPLES = r"""
     l3out: my_l3out
     node_profile: my_node_profile
     interface_profile: my_interface_profile
-    hsrp_policy: my_hsrp_interface_policy
+    hsrp_interface_group: group1
+    ip: 12.34.56.32
+    group_type: ipv4
+    ip_obtain_mode: admin
+    group_policy: default
     state: absent
   delegate_to: localhost
 
-- name: Query an interface profile hsrp policy
-  cisco.aci.aci_l3out_logical_interface_profile_hsrp_policy:
+- name: Query a hsrp group
+  cisco.aci.aci_l3out_hsrp_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -107,7 +154,24 @@ EXAMPLES = r"""
     l3out: my_l3out
     node_profile: my_node_profile
     interface_profile: my_interface_profile
-    hsrp_policy: my_hsrp_interface_policy
+    hsrp_interface_group: group1
+    ip: 12.34.56.32
+    group_type: ipv4
+    ip_obtain_mode: admin
+    group_policy: default
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query all hsrp groups
+  cisco.aci.aci_l3out_hsrp_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
     state: query
   delegate_to: localhost
   register: query_result
@@ -228,10 +292,10 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        tenant=dict(type="str", aliases=["tenant_name"]),
-        l3out=dict(type="str", aliases=["l3out_name"]),
-        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
-        interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
+        tenant=dict(type="str", aliases=["tenant_name"], required=True),
+        l3out=dict(type="str", aliases=["l3out_name"], required=True),
+        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"], required=True),
+        interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"], required=True),
         hsrp_interface_group=dict(type="str", aliases=["name", "hsrp_group"]),
         group_id=dict(type="int"),
         ip=dict(type="str"),
@@ -240,13 +304,7 @@ def main():
         description=dict(type="str", aliases=["descr"]),
         group_type=dict(type="str", choices=["ipv4", "ipv6"]),
         ip_obtain_mode=dict(type="str", choices=["admin", "auto", "learn"]),
-        group_policy=dict(
-            type="dict",
-            options=dict(
-                tenant=dict(type="str", required=True),
-                policy=dict(type="str", required=True),
-            ),
-        ),
+        group_policy=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -254,8 +312,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "l3out", "node_profile", "interface_profile"]],
-            ["state", "present", ["tenant", "l3out", "node_profile", "interface_profile", "hsrp_policy"]],
+            ["state", "absent", ["hsrp_interface_group"]],
+            ["state", "present", ["hsrp_interface_group"]],
         ],
     )
 
@@ -319,8 +377,11 @@ def main():
     aci.get_existing()
 
     if state == "present":
-
-        aci.payload(aci_class="hsrpGroupP", class_config=dict(groupAf=group_type,groupId=group_id,groupName=group_name,ip=ip,ipObtainMode=ip_obtain_mode,mac=mac,descr=description), child_configs=[dict(hsrpRsGroupPol=dict(attributes=dict(tDn="uni/tn-{0}/hsrpGroupPol-{1}".format(group_policy["tenant"], group_policy["policy"]))))] if group_policy is not None else [])
+        aci.payload(
+            aci_class="hsrpGroupP",
+            class_config=dict(groupAf=group_type, groupId=group_id, groupName=group_name, ip=ip, ipObtainMode=ip_obtain_mode, mac=mac, descr=description),
+            child_configs=[dict(hsrpRsGroupPol=dict(attributes=dict(tnHsrpGroupPolName=group_policy)))] if group_policy is not None else [],
+        )
 
         aci.get_diff(aci_class="hsrpGroupP")
 
