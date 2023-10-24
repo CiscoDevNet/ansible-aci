@@ -80,7 +80,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create a match match AS-path regex term
-  cisco.aci.match_community_term:
+  cisco.aci.aci_match_community_factor:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -93,7 +93,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Delete a match match AS-path regex term
-  cisco.aci.match_community_term:
+  cisco.aci.aci_match_community_factor:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -105,7 +105,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query all match AS-path regex terms
-  cisco.aci.match_community_term:
+  cisco.aci.aci_match_community_factor:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -114,7 +114,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query a specific match match AS-path regex term
-  cisco.aci.match_community_term:
+  cisco.aci.aci_match_community_factor:
     host: apic
     username: admin
     password: SomeSecretPassword
