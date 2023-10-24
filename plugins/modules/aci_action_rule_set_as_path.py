@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_tenant_action_rule_profile
+module: aci_action_rule_set_as_path
 short_description: Manage the AS Path action rules (rtctrl:SetASPath)
 description:
 - Set AS path action rule for the action rule profiles on Cisco ACI fabrics.
@@ -225,7 +225,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        action_rule=dict(type="str", aliases=["action_rule_name", "name"]),  # Not required for querying all objects
+        action_rule=dict(type="str", aliases=["action_rule_name"]),  # Not required for querying all objects
         last_as_number=dict(type="int"),
         criteria=dict(type="str", choices=["prepend", "prepend-last-as"]),
         description=dict(type="str", aliases=["descr"]),

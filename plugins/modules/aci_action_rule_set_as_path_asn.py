@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_tenant_action_rule_profile
+module: aci_action_rule_set_as_path_asn
 short_description: Manage the AS Path ASN (rtctrl:SetASPathASN)
 description:
 - Set the ASN for the AS Path action rules on Cisco ACI fabrics.
@@ -35,7 +35,7 @@ options:
   order:
     description:
     - The ASN order.
-    type: int  
+    type: int
   description:
     description:
     - The description for the action rule profile.
@@ -226,7 +226,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        action_rule=dict(type="str", aliases=["action_rule_name", "name"]),  # Not required for querying all objects
+        action_rule=dict(type="str", aliases=["action_rule_name"]),  # Not required for querying all objects
         asn=dict(type="int"),
         order=dict(type="int"),
         description=dict(type="str", aliases=["descr"]),

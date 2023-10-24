@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_tenant_action_rule_profile
+module: aci_action_rule_additional_communities
 short_description: Manage Action Rules based on Additional Communities (rtctrl:SetAddComm)
 description:
 - Set additional communities for the action rule profiles on Cisco ACI fabrics.
@@ -226,7 +226,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        action_rule=dict(type="str", aliases=["action_rule_name", "name"]),  # Not required for querying all objects
+        action_rule=dict(type="str", aliases=["action_rule_name"]),  # Not required for querying all objects
         community=dict(type="str"),
         set_criteria=dict(type="str", choices=["append", "replace", "none"]),
         description=dict(type="str", aliases=["descr"]),
