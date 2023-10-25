@@ -110,7 +110,6 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    name: ans_remote_path
     state: query
   delegate_to: localhost
 """
