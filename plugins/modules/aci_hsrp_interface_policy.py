@@ -22,7 +22,6 @@ options:
     - The name of the Tenant the hsrp interface policy should belong to.
     type: str
     aliases: [ tenant_name ]
-    required: true
   hsrp:
     description:
     - The HSRP interface policy name.
@@ -36,9 +35,6 @@ options:
   controls:
     description:
     - The interface policy controls.
-    - 'This is a list of one or more of the following controls:'
-    - C(bia) -- Burnt-In-MAC Address of the interface.
-    - C(bfd) -- Bidirectional Forwarding Detection.
     type: list
     elements: str
     choices: [ bfd, bia ]
@@ -231,7 +227,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        tenant=dict(type="str", aliases=["tenant_name"], required=True),  # Not required for querying all objects
+        tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         hsrp=dict(type="str", aliases=["hsrp_interface", "name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         controls=dict(type="list", elements="str", choices=["bfd", "bia"]),
@@ -244,8 +240,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["hsrp"]],
-            ["state", "present", ["hsrp"]],
+            ["state", "absent", ["tenant", "hsrp"]],
+            ["state", "present", ["tenant", "hsrp"]],
         ],
     )
 
@@ -268,8 +264,14 @@ def main():
 
     aci.construct_url(
         root_class=dict(
+            aci_class="fvTenant",
+            aci_rn="tn-{0}".format(tenant),
+            module_object=tenant,
+            target_filter={"name": tenant},
+        ),
+        subclass_1=dict(
             aci_class="hsrpIfPol",
-            aci_rn="tn-{0}/hsrpIfPol-{1}".format(tenant, hsrp),
+            aci_rn="hsrpIfPol-{0}".format(hsrp),
             module_object=hsrp,
             target_filter={"name": hsrp},
         ),

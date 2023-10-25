@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_hsrp_interface_profile
-short_description: Manages Layer 3 Outside (L3Out) HSRP interface profile (hsrpIfP)
+short_description: Manages Layer 3 Outside (L3Out) HSRP interface profile (hsrp:IfP)
 description:
 - Manages L3Out HSRP interface profile on Cisco ACI fabrics.
 options:
@@ -22,25 +22,21 @@ options:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-    required: true
   l3out:
     description:
     - Name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
-    required: true
   node_profile:
     description:
     - Name of the node profile.
     type: str
     aliases: [ node_profile_name, logical_node ]
-    required: true
   interface_profile:
     description:
     - Name of an existing interface profile.
     type: str
     aliases: [ name, interface_profile_name, logical_interface ]
-    required: true
   hsrp_policy:
     description:
     - Name of an existing hsrp interface policy.
@@ -65,7 +61,7 @@ extends_documentation_fragment:
 
 notes:
 - The C(tenant), C(l3out), C(logical_node_profile) and C(logical_interface_profile) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile) and M(cisco.aci.aci_l3out_logical_interface_profile) \
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile) and M(cisco.aci.aci_l3out_logical_interface_profile)
   can be used for this.
 seealso:
 - module: aci_tenant
@@ -236,10 +232,10 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        tenant=dict(type="str", aliases=["tenant_name"], required=True),
-        l3out=dict(type="str", aliases=["l3out_name"], required=True),
-        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"], required=True),
-        interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"], required=True),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        l3out=dict(type="str", aliases=["l3out_name"]),
+        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
+        interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
         hsrp_policy=dict(type="str", aliases=["name", "hsrp_policy_name"]),
         version=dict(type="str", choices=["v1", "v2"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -248,6 +244,10 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
+        required_if=[
+            ["state", "absent", ["tenant", "l3out", "node_profile", "interface_profile"]],
+            ["state", "present", ["tenant", "l3out", "node_profile", "interface_profile"]],
+        ],
     )
 
     tenant = module.params.get("tenant")

@@ -131,7 +131,7 @@
       - query_hsrp.current.0.hsrpIfPol.attributes.reloadDelay == "2"
       - query_hsrp.current.0.hsrpIfPol.attributes.name == "hsrp1"
       - query_hsrp.current.0.hsrpIfPol.attributes.dn == "uni/tn-ansible_test/hsrpIfPol-hsrp1"
-      - query_all.current | length == 3
+      - query_all.current.0.fvTenant.children | length == 2
       
   - name: Remove hsrp interface policy 1
     cisco.aci.aci_hsrp_interface_policy:
