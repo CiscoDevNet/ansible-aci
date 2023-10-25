@@ -59,6 +59,7 @@
     that:
     - cm_add_tenant is changed
     - cm_add_tenant.proposed.fvTenant.attributes.name == "ansible_test"
+    - cm_add_tenant.proposed.fvTenant.attributes.annotation == "orchestrator:ansible"
     - cm_verify_checkmode_tenant.current == []
 
 - name: Add tenant (normal mode)
@@ -73,6 +74,7 @@
   ansible.builtin.assert:
     that:
     - nm_add_tenant is changed
+    - nm_add_tenant.imdata.0.fvTenant.attributes.annotation == "orchestrator:ansible"
     - nm_add_tenant_again is not changed
 
 # CHANGE TENANT
@@ -180,3 +182,104 @@
   ansible.builtin.assert:
     that:
     - nm_query_non_tenant is not changed
+
+# VERIFY ANNOTATION SUPPORT
+- name: Add tenant with annotation option
+  cisco.aci.aci_rest:
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    path: /api/mo/uni.json
+    method: post
+    annotation: test:inoption
+    content: |
+      {
+          "fvTenant": {
+              "attributes": {
+                  "descr": "Ansible test tenant",
+                  "name": "ansible_test"
+              }
+          }
+      }
+  register: nm_add_tenant_annotation_option
+
+- name: Add tenant with annotation in content
+  cisco.aci.aci_rest:
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    path: /api/mo/uni.json
+    method: post
+    content: |
+      {
+          "fvTenant": {
+              "attributes": {
+                  "descr": "Ansible test tenant",
+                  "name": "ansible_test",
+                  "annotation": "test:incontent"
+              }
+          }
+      }
+  register: nm_add_tenant_annotation_content
+
+- name: Add tenant with annotation in content and option
+  cisco.aci.aci_rest:
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    path: /api/mo/uni.json
+    method: post
+    annotation: test:inoption
+    content: |
+      {
+          "fvTenant": {
+              "attributes": {
+                  "descr": "Ansible test tenant",
+                  "name": "ansible_test",
+                  "annotation": "test:optionincontent"
+              }
+          }
+      }
+  register: nm_add_tenant_annotation_option_content
+
+- name: Add tag to tenant with annotation unsupported
+  cisco.aci.aci_rest:
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    path: /api/mo/uni/tn-ansible_test_annotation1/tagKey-foo.json
+    method: post
+    annotation: test:inoption
+    content: |
+      {
+          "tagTag": {
+              "attributes": {
+                  "value": "bar"
+              }
+          }
+      }
+  register: nm_add_tag_no_annotation
+
+- name: Verify annotation support
+  assert:
+    that:
+    - nm_add_tenant_annotation_option.imdata.0.fvTenant.attributes.annotation == "test:inoption"
+    - nm_add_tenant_annotation_content.imdata.0.fvTenant.attributes.annotation == "test:incontent"
+    - nm_add_tenant_annotation_option_content.imdata.0.fvTenant.attributes.annotation == "test:optionincontent"
+    - nm_add_tag_no_annotation.imdata.0.tagTag.attributes.annotation is undefined

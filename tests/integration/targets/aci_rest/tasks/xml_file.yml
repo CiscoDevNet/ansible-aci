@@ -50,6 +50,7 @@
     that:
       - cm_add_tenant is changed
       - '"ans_test_create" in cm_add_tenant.proposed'
+      - cm_add_tenant.proposed.fvTenant.attributes.annotation == "orchestrator:ansible"
       - cm_verify_checkmode_tenant.current == []
 
 - name: Add tenant using ans_test_create xml template file with normal mode
@@ -67,6 +68,7 @@
       - nm_add_tenant.imdata.0.fvTenant.attributes.name == "ans_test_create"
       - nm_add_tenant.imdata.0.fvTenant.attributes.descr == "ans_test_create tenant created successfully"
       - nm_add_tenant.imdata.0.fvTenant.attributes.dn == "uni/tn-ans_test_create"
+      - nm_add_tenant.imdata.0.fvTenant.attributes.annotation == "orchestrator:ansible"
       - nm_add_tenant.imdata.0.fvTenant.children != []
 
 - name: Add tenant using ans_test_create xml template file with normal mode - idempotency works
@@ -227,3 +229,71 @@
     that:
       - query_ans_test_delete is not changed
       - query_ans_test_delete.imdata == []
+
+# VERIFY ANNOTATION SUPPORT
+- name: Add tenant with annotation option
+  cisco.aci.aci_rest:
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    path: /api/mo/uni.xml
+    method: post
+    annotation: test:inoption
+    src: "./targets/aci_rest/tasks/xml_files/tn-ans_test_create.xml"
+  register: nm_add_tenant_annotation_option
+
+- name: Add tenant with annotation in content
+  cisco.aci.aci_rest:
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    path: /api/mo/uni.xml
+    method: post
+    src: "./targets/aci_rest/tasks/xml_files/tn-ans_test_annotation.xml"
+  register: nm_add_tenant_annotation_content
+
+- name: Add tenant with annotation in content and option
+  cisco.aci.aci_rest:
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    path: /api/mo/uni.xml
+    method: post
+    annotation: test:inoption
+    src: "./targets/aci_rest/tasks/xml_files/tn-ans_test_annotation.xml"
+  register: nm_add_tenant_annotation_option_content
+
+- name: Add tag to tenant with annotation unsupported
+  cisco.aci.aci_rest:
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    path: /api/mo/uni/tn-ans_test_create/tagKey-foo.xml
+    method: post
+    annotation: test:inoption
+    src: "./targets/aci_rest/tasks/xml_files/tag.xml"
+  register: nm_add_tag_no_annotation
+
+- name: Verify annotation support
+  assert:
+    that:
+    - nm_add_tenant_annotation_option.imdata.0.fvTenant.attributes.annotation == "test:inoption"
+    - nm_add_tenant_annotation_content.imdata.0.fvTenant.attributes.annotation == "test:incontent"
+    - nm_add_tenant_annotation_option_content.imdata.0.fvTenant.attributes.annotation == "test:optionincontent"
+    - nm_add_tag_no_annotation.imdata.0.tagTag.attributes.annotation is undefined
