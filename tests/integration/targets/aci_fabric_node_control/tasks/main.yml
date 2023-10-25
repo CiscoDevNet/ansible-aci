@@ -21,7 +21,7 @@
     output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT
-- name: Remove Fabric Node Control
+- name: Pre-Test Clean Environment of Fabric Node Controls
   cisco.aci.aci_fabric_node_control:
     <<: *aci_info
     name: "{{ item }}"
@@ -168,7 +168,7 @@
     - nm__remove_fabric_node_control_again.previous == []
 
 # CLEAN ENVIRONMENT
-- name: Remove Fabric Node Control
+- name: PPost-Test Clean Environment of Fabric Node Controls
   cisco.aci.aci_fabric_node_control:
     <<: *aci_info
     name: "{{ item }}"
