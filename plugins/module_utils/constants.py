@@ -92,3 +92,5 @@ MATCH_SMU_OPERATION_FLAGS_MAPPING = dict(smu_reload_immediate="smuReloadImmediat
 MATCH_BEST_PATH_CONTROL_MAPPING = dict(enable="asPathMultipathRelax", disable="")
 
 MATCH_GRACEFUL_RESTART_CONTROLS_MAPPING = dict(helper="helper", complete="")
+
+EP_LOOP_PROTECTION_ACTION_MAPPING = {"bd": "bd-learn-disable", "port": "port-disable"}
