@@ -79,7 +79,6 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     state: absent
   delegate_to: localhost
-
 """
 
 RETURN = r"""
@@ -221,26 +220,10 @@ def main():
 
     aci.get_existing()
 
-    if state == "present":
-        aci.payload(
-            aci_class="pkiExportEncryptionKey",
-            class_config=dict(
-                passphrase=passphrase,
-                strongEncryptionEnabled=enable,
-            ),
-        )
+    if state in ["present", "absent"]:
+        class_config = dict(passphrase=passphrase, strongEncryptionEnabled=enable) if state == "present" else dict(clearEncryptionKey="yes")
 
-        aci.get_diff(aci_class="pkiExportEncryptionKey")
-
-        aci.post_config()
-
-    elif state == "absent":
-        aci.payload(
-            aci_class="pkiExportEncryptionKey",
-            class_config=dict(
-                clearEncryptionKey="yes",
-            ),
-        )
+        aci.payload(aci_class="pkiExportEncryptionKey", class_config=class_config)
 
         aci.get_diff(aci_class="pkiExportEncryptionKey")
 
