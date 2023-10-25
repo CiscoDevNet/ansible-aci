@@ -39,8 +39,11 @@
   - name: Remove the ansible access switch policy group
     cisco.aci.aci_access_switch_policy_group:
       <<: *aci_info
-      name: ansible_access_switch_pol_grp
+      name: "{{ item }}"
       state: absent
+    loop:
+      - ansible_access_switch_pol_grp
+      - ansible_access_switch_pol_grp_2
 
   # CREATE ACCESS SWITCH POLICY GROUP
   - name: Create the ansible access switch policy group (check mode)
@@ -261,7 +264,7 @@
       - nm_create_policy_group_again.previous.0.infraAccNodePGrp.children.18.infraRsLeafPGrpToCdpIfPol.attributes.tnCdpIfPolName == ""
     when: version.current.0.topSystem.attributes.version == "6.0(2h)"
 
-  - name: Verify creation of access switch policy == 6.0(1g)
+  - name: Verify creation of access switch policy for 6.0(1g)
     ansible.builtin.assert:
       that:
       - cm_create_policy_group is changed
