@@ -182,7 +182,7 @@ EXAMPLES = r"""
     cdp_policy: example_cdp_policy
     lldp_policy: example_lldp_policy
     state: present
-    delegate_to: localhost
+  delegate_to: localhost
 
 - name: Delete Access Switch Policy Group
   cisco.aci.aci_access_switch_policy_group:
@@ -191,7 +191,7 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     name: ansible_pol_grp
     state: absent
-    delegate_to: localhost
+  delegate_to: localhost
 
 - name: Query Access Switch Policy Group
   cisco.aci.aci_access_switch_policy_group:
@@ -200,8 +200,8 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     name: ansible_pol_grp
     state: query
-    delegate_to: localhost
-    register: query_result
+  delegate_to: localhost
+  register: query_result
 
 - name: Query All Access Switch Policy Groups
   cisco.aci.aci_access_switch_policy_group:
@@ -209,8 +209,8 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     state: query
-    delegate_to: localhost
-    register: query_result
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
