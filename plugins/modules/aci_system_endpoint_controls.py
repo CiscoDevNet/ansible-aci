@@ -14,9 +14,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_system_endpoint_controls
-short_description: Manage System Enpoint Controls (ep:IpAgingP, ep:ControlP, and ep:LoopProtectP)
+short_description: Manage System Endpoint Controls (ep:IpAgingP, ep:ControlP, and ep:LoopProtectP)
 description:
-- Manage System Enpoint Controls on Cisco ACI fabrics.
+- Manage System Endpoint Controls on Cisco ACI fabrics.
 options:
   ip_aging:
     description: Configuration container for IP Aging.
@@ -82,7 +82,7 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(ep:IpAgingP), B(ep:ControlP) and B(ep:LoopProtectP).
+  description: More information about the internal APIC class B(ep:IpAgingP), B(ep:ControlP), and B(ep:LoopProtectP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
