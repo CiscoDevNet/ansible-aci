@@ -32,7 +32,7 @@ options:
     suboptions:
       admin_state:
         description:
-        - Whether to enable IP Aging Controls on the fabric.
+        - Whether to enable Rogue EP Control on the fabric.
         type: bool
       interval:
         description:
@@ -44,7 +44,7 @@ options:
         type: int
       hold_interval:
         description:
-        - The loop protection hold interval in seconds.
+        - The rogue endpoint hold interval in seconds.
         type: int
   ep_loop_protection:
     description: Configuration container for EP Loop Protection.
@@ -52,7 +52,7 @@ options:
     suboptions:
       admin_state:
         description:
-        - Whether to enable IP Aging Controls on the fabric.
+        - Whether to enable EP Loop Protection on the fabric.
         type: bool
       interval:
         description:
