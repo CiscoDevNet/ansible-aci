@@ -94,3 +94,5 @@ MATCH_BEST_PATH_CONTROL_MAPPING = dict(enable="asPathMultipathRelax", disable=""
 MATCH_GRACEFUL_RESTART_CONTROLS_MAPPING = dict(helper="helper", complete="")
 
 EP_LOOP_PROTECTION_ACTION_MAPPING = {"bd": "bd-learn-disable", "port": "port-disable"}
+
+FABRIC_POD_SELECTOR_TYPE_MAPPING = dict(all="ALL", range="range")
