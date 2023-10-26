@@ -321,6 +321,27 @@ def integrate_url(httpapi_url, local_path):
     return {"protocol": parse_url.scheme, "host": parse_url.netloc, "path": local_path}
 
 
+def action_rule_set_comm_spec():
+    return dict(
+        community=dict(type="str"),
+        criteria=dict(type="str", choices=["append", "none", "replace"]),
+    )
+
+
+def action_rule_set_dampening_spec():
+    return dict(
+        half_life=dict(type="int"),
+        max_suppress_time=dict(type="int"),
+        reuse=dict(type="int"),
+        suppress=dict(type="int"),
+    )
+
+def check_all_none_values_dict(x):
+    if isinstance(x,dict):
+        return not any(x.values())
+    else:
+        return False
+
 class ACIModule(object):
     def __init__(self, module):
         self.module = module

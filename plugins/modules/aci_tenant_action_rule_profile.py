@@ -284,8 +284,8 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
-
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, action_rule_set_comm_spec, action_rule_set_dampening_spec, check_all_none_values_dict 
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING
 
 def main():
     argument_spec = aci_argument_spec()
@@ -293,16 +293,16 @@ def main():
     argument_spec.update(
         action_rule=dict(type="str", aliases=["action_rule_name", "name"]),  # Not required for querying all objects
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        set_community=dict(type="dict"),
-        set_dampening=dict(type="dict"),
+        set_community=dict(type="dict", options=action_rule_set_comm_spec()),
+        set_dampening=dict(type="dict", options=action_rule_set_dampening_spec()),
         set_next_hop=dict(type="str"),
         next_hop_propagation=dict(type="bool"),
-        multipath=dict("bool"),
-        set_preference=dict(type="int"),
-        set_metric=dict(type="int"),
-        set_metric_type=dict(type="str", choices=["ospf_type_1", "ospf_type_2"]),
-        set_route_tag=dict(type="int"),
-        set_weight=dict(type="int"),
+        multipath=dict(type="bool"),
+        set_preference=dict(type="str"),
+        set_metric=dict(type="str"),
+        set_metric_type=dict(type="str", choices=["ospf_type_1", "ospf_type_2", ""]),
+        set_route_tag=dict(type="str"),
+        set_weight=dict(type="str"),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -325,7 +325,7 @@ def main():
     multipath = module.params.get("multipath")
     set_preference = module.params.get("set_preference")
     set_metric = module.params.get("set_metric")
-    set_metric_type = module.params.get("set_metric_type")
+    set_metric_type = MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING.get(module.params.get("set_metric_type"))
     set_route_tag = module.params.get("set_route_tag")
     set_weight = module.params.get("set_weight")
     description = module.params.get("description")
@@ -368,28 +368,48 @@ def main():
 
     if state == "present":
         child_configs = []
-
         for key, value in child_classes.items():
             if value[0] is not None:
-                if value[0] == "" or value[0] == False or value[0] == {}:
+                if value[0] == "" or value[0] == False or check_all_none_values_dict(value[0]):
                     if isinstance(aci.existing, list) and len(aci.existing) > 0:
                         for child in aci.existing[0].get("rtctrlAttrP", {}).get("children", {}):
                             if child.get(key):
                                 child_configs.append(
-                                    dict(
-                                        key=dict(
+                                    {
+                                        key:dict(
                                             attributes=dict(status="deleted"),
                                         ),
-                                    )
+                                    }
                                 )
                 elif value[0] != "" or value[0] == True or value[0] != {}:
-                    child_configs.append(
-                        dict(
-                            key=dict(
-                                attributes={value[-1]:value[0]},
-                            )
+                    if key == "rtctrlSetComm" and isinstance(value[0], dict):
+                        child_configs.append(
+                            {
+                                key:dict(
+                                    attributes=dict(
+                                        community=value[0].get("community"),
+                                        setCriteria=value[0].get("criteria"),
+                                    ),
+                                )
+                            }
                         )
-                    )
+                    elif key == "rtctrlSetDamp" and isinstance(value[0], dict):
+                        child_configs.append(
+                            {
+                                key:dict(
+                                    attributes=dict(
+                                        halfLife=value[0].get("half_life"),
+                                        maxSuppressTime=value[0].get("max_suppress_time"),
+                                        reuse=value[0].get("reuse"),
+                                        suppress=value[0].get("suppress"),
+                                    ),
+                                )
+                            }
+                        )
+                    elif key in ["rtctrlSetNhUnchanged", "rtctrlSetRedistMultipath"]:
+                        child_configs.append({key:dict(attributes=dict(descr=""))})
+                    else:
+                        child_configs.append({key:dict(attributes={value[-1]:value[0]})})
 
         aci.payload(
             aci_class="rtctrlAttrP",
@@ -398,6 +418,7 @@ def main():
                 descr=description,
                 nameAlias=name_alias,
             ),
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class="rtctrlAttrP")
