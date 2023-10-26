@@ -33,7 +33,7 @@ options:
     - Version of the VMware DVS.
     type: str
     aliases: []
-    choices: [ 'unmanaged', '5.1', '5.5', '6.0', '6.5', '6.6', '7.0' ]
+    choices: [ 'unmanaged', '5.1', '5.5', '6.0', '6.5', '6.6', '7.0', '8.0' ]
   stats_collection:
     description:
     - Whether stats collection is enabled.
@@ -274,7 +274,7 @@ def main():
     argument_spec.update(
         name=dict(type="str"),
         controller_hostname=dict(type="str"),
-        dvs_version=dict(type="str", choices=["unmanaged", "5.1", "5.5", "6.0", "6.5", "6.6", "7.0"]),
+        dvs_version=dict(type="str", choices=["unmanaged", "5.1", "5.5", "6.0", "6.5", "6.6", "7.0", "8.0"]),
         stats_collection=dict(type="str", default="disabled", choices=["enabled", "disabled"]),
         domain=dict(type="str", aliases=["domain_name", "domain_profile"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
