@@ -37,12 +37,29 @@
       <<: *aci_tenant_present
       name: anstest
       description: test for action rule profile
+      set_preference: 100
+      set_route_tag: 100
+      set_weight: 100
+      set_metric: 100
+      set_metric_type: ospf_type_1
+      set_next_hop: 1.1.1.1
+      set_community:
+        community: no-advertise
+        criteria: replace
+      set_dampening:
+        half_life: 10
+        reuse: 1
+        suppress: 10
+        max_suppress_time: 100
       state: absent
 
   - name: Ensure second action rule profile does not exist
     aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_2_absent
       <<: *aci_tenant_present
       name: anstest_2
+      set_next_hop: 1.1.1.2
+      next_hop_propagation: true
+      multipath: true
       state: absent
 
   - name: Create first action rule profile (check_mode)
@@ -76,9 +93,24 @@
         - cm_add_tenant_action_rule_profile_1.current == []
         - nm_add_tenant_action_rule_profile_1 is changed
         - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.attributes.name == "anstest"
+        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.0.rtctrlSetWeight.attributes.weight == "100"
+        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.halfLife == "10"
+        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.maxSuppressTime == "100"
+        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.reuse == "1"
+        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.suppress == "10"
+        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.2.rtctrlSetRtMetricType.attributes.metricType == "ospf-type1"
+        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.3.rtctrlSetNh.attributes.addr == "1.1.1.1"
+        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.4.rtctrlSetPref.attributes.localPref == "100"
+        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.5.rtctrlSetRtMetric.attributes.metric == "100"
+        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.6.rtctrlSetComm.attributes.community == "no-advertise"
+        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.6.rtctrlSetComm.attributes.setCriteria == "replace"
+        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.7.rtctrlSetTag.attributes.tag == "100"
         - idempotency_add_tenant_action_rule_profile_1 is not changed
         - nm_add_tenant_action_rule_profile_2 is changed
         - nm_add_tenant_action_rule_profile_2.current.0.rtctrlAttrP.attributes.name == "anstest_2"
+        - nm_add_tenant_action_rule_profile_2.current.0.rtctrlAttrP.children.0.rtctrlSetRedistMultipath.attributes.descr == ""
+        - nm_add_tenant_action_rule_profile_2.current.0.rtctrlAttrP.children.1.rtctrlSetNhUnchanged.attributes.descr == ""
+        - nm_add_tenant_action_rule_profile_2.current.0.rtctrlAttrP.children.2.rtctrlSetNh.attributes.addr == "1.1.1.2"
 
   - name: Query all action rule profiles
     aci_tenant_action_rule_profile:
@@ -100,6 +132,61 @@
         - '"class/rtctrlAttrP.json" in query_all_tenant_action_rule_profile.url'
         - query_first_tenant_action_rule_profile is not changed
         - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.attributes.name == "anstest"
+        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.0.rtctrlSetWeight.attributes.weight == "100"
+        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.halfLife == "10"
+        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.maxSuppressTime == "100"
+        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.reuse == "1"
+        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.suppress == "10"
+        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.2.rtctrlSetRtMetricType.attributes.metricType == "ospf-type1"
+        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.3.rtctrlSetNh.attributes.addr == "1.1.1.1"
+        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.4.rtctrlSetPref.attributes.localPref == "100"
+        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.5.rtctrlSetRtMetric.attributes.metric == "100"
+        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.6.rtctrlSetComm.attributes.community == "no-advertise"
+        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.6.rtctrlSetComm.attributes.setCriteria == "replace"
+        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.7.rtctrlSetTag.attributes.tag == "100"
+
+  - name: Delete children for first action rule profile (check_mode)
+    aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_children_deleted
+      <<: *aci_tenant_action_rule_profile_present
+      set_preference: ""
+      set_route_tag: ""
+      set_weight: ""
+      set_metric: ""
+      set_metric_type: ""
+      set_next_hop: ""
+      set_community: {}
+      set_dampening: {}
+    check_mode: true
+    register: cm_delete_children_tenant_action_rule_profile_1
+  
+  - name: Delete children for first action rule profile (normal_mode)
+    aci_tenant_action_rule_profile:
+      <<: *aci_tenant_action_rule_profile_children_deleted
+    register: nm_delete_children_tenant_action_rule_profile_1
+  
+  - name: Delete children for first action rule profile again - testing idempotency
+    aci_tenant_action_rule_profile:
+      <<: *aci_tenant_action_rule_profile_children_deleted
+    register: idempotency_delete_children_tenant_action_rule_profile_1
+
+  - name: Delete children for second action rule profile (normal_mode)
+    aci_tenant_action_rule_profile:
+      <<: *aci_tenant_action_rule_profile_2_present
+      set_next_hop: ""
+      next_hop_propagation: false
+      multipath: false
+    register: nm_delete_children_tenant_action_rule_profile_2
+
+  - name: Asserts for deletion tasks
+    assert:
+      that:
+        - cm_delete_children_tenant_action_rule_profile_1 is changed
+        - cm_delete_children_tenant_action_rule_profile_1.current == cm_delete_children_tenant_action_rule_profile_1.previous
+        - nm_delete_children_tenant_action_rule_profile_1 is changed
+        - nm_delete_children_tenant_action_rule_profile_1.current.0.rtctrlAttrP | length == 1
+        - idempotency_delete_children_tenant_action_rule_profile_1 is not changed
+        - nm_delete_children_tenant_action_rule_profile_2 is changed
+        - nm_delete_children_tenant_action_rule_profile_2.current.0.rtctrlAttrP | length == 1
 
   - name: Delete first action rule profile (check_mode)
     aci_tenant_action_rule_profile:

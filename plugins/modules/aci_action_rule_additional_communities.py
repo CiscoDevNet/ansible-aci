@@ -31,7 +31,7 @@ options:
     description:
     - The community value
     type: str
-  set_criteria:
+  criteria:
     description:
     - The community criteria.
     - The option to append or replace the community value.
@@ -228,7 +228,7 @@ def main():
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         action_rule=dict(type="str", aliases=["action_rule_name"]),  # Not required for querying all objects
         community=dict(type="str"),
-        set_criteria=dict(type="str", choices=["append", "replace", "none"]),
+        criteria=dict(type="str", choices=["append", "replace", "none"]),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -244,7 +244,7 @@ def main():
     )
 
     community = module.params.get("community")
-    set_criteria = module.params.get("set_criteria")
+    criteria = module.params.get("criteria")
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
@@ -280,7 +280,7 @@ def main():
             aci_class="rtctrlSetAddComm",
             class_config=dict(
                 community=community,
-                setCriteria=set_criteria,
+                setCriteria=criteria,
                 descr=description,
                 nameAlias=name_alias,
             ),
