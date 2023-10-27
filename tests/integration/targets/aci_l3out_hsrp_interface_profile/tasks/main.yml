@@ -1,4 +1,5 @@
-# Author: Shreyas Srish (@shrsr)
+# Test code for the ACI modules
+# Copyright: (c) 2023, Shreyas Srish (@shrsr)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 # SET VARS
@@ -11,7 +12,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove test tenant before we kickoff
@@ -65,7 +66,6 @@
   - name: Add a new hsrp interface profile (check mode)
     cisco.aci.aci_l3out_hsrp_interface_profile: &hsrp_present
       <<: *intf_present
-      hsrp_policy: default
       version: v1
       state: present
     check_mode: true
@@ -80,9 +80,9 @@
       that:
       - cm_add_hsrp is changed
       - nm_add_hsrp is changed
+      - cm_add_hsrp.proposed.hsrpIfP.attributes.version == "v1"
       - nm_add_hsrp.current.0.hsrpIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-node1/lifp-intf1/hsrpIfP"
       - nm_add_hsrp.current.0.hsrpIfP.attributes.version == "v1"
-      - nm_add_hsrp.current.0.hsrpIfP.children.0.hsrpRsIfPol.attributes.tnHsrpIfPolName == "default"
       
   - name: Add the hsrp interface profile again to check idempotency
     cisco.aci.aci_l3out_hsrp_interface_profile: *hsrp_present
@@ -96,6 +96,7 @@
   - name: Update the hsrp interface_profile
     cisco.aci.aci_l3out_hsrp_interface_profile: &hsrp_update
       <<: *hsrp_present
+      hsrp_policy: default
       version: v2
     register: nm_hsrp_update
 
@@ -125,10 +126,19 @@
     cisco.aci.aci_l3out_hsrp_interface_profile:
       <<: *hsrp_update
       state: absent
+    register: cm_remove_hsrp
+    check_mode: true
+
+  - name: Remove the hsrp interface profile
+    cisco.aci.aci_l3out_hsrp_interface_profile:
+      <<: *hsrp_update
+      state: absent
     register: remove_hsrp
 
   - name: Verify remove_hsrp
     assert:
       that:
+      - cm_remove_hsrp is changed
+      - cm_remove_hsrp.proposed == {}
       - remove_hsrp is changed
       - remove_hsrp.current == []

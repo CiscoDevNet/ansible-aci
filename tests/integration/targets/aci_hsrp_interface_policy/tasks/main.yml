@@ -1,4 +1,5 @@
-# Author: Shreyas Srish (@shrsr)
+# Test code for the ACI modules
+# Copyright: (c) 2023, Shreyas Srish (@shrsr)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 # SET VARS
@@ -11,7 +12,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove test tenant before we kickoff
@@ -52,6 +53,10 @@
       that:
       - cm_add_hsrp is changed
       - nm_add_hsrp is changed
+      - cm_add_hsrp.proposed.hsrpIfPol.attributes.ctrl == "bia"
+      - cm_add_hsrp.proposed.hsrpIfPol.attributes.delay == "2"
+      - cm_add_hsrp.proposed.hsrpIfPol.attributes.reloadDelay == "2"
+      - cm_add_hsrp.proposed.hsrpIfPol.attributes.name == "hsrp1"
       - nm_add_hsrp.current.0.hsrpIfPol.attributes.ctrl == "bia"
       - nm_add_hsrp.current.0.hsrpIfPol.attributes.delay == "2"
       - nm_add_hsrp.current.0.hsrpIfPol.attributes.reloadDelay == "2"
@@ -132,6 +137,13 @@
       - query_hsrp.current.0.hsrpIfPol.attributes.name == "hsrp1"
       - query_hsrp.current.0.hsrpIfPol.attributes.dn == "uni/tn-ansible_test/hsrpIfPol-hsrp1"
       - query_all.current.0.fvTenant.children | length == 2
+
+  - name: Remove hsrp interface policy 1 in check mode
+    cisco.aci.aci_hsrp_interface_policy:
+      <<: *hsrp_update
+      state: absent
+    check_mode: true
+    register: cm_remove_hsrp
       
   - name: Remove hsrp interface policy 1
     cisco.aci.aci_hsrp_interface_policy:
@@ -148,6 +160,8 @@
   - name: Verify remove hsrp
     assert:
       that:
+      - cm_remove_hsrp is changed
+      - cm_remove_hsrp.proposed == {}
       - remove_hsrp is changed
       - remove_hsrp2 is changed
       - remove_hsrp.current == []

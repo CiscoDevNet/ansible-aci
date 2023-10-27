@@ -1,4 +1,5 @@
-# Author: Shreyas Srish (@shrsr)
+# Test code for the ACI modules
+# Copyright: (c) 2023, Shreyas Srish (@shrsr)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 # SET VARS
@@ -11,7 +12,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove test tenant before we kickoff
@@ -115,6 +116,13 @@
       - cm_add_group is changed
       - nm_add_group is changed
       - add_group_again is not changed
+      - cm_add_group.proposed.hsrpGroupP.attributes.groupAf == "ipv4"
+      - cm_add_group.proposed.hsrpGroupP.attributes.groupId == "1"
+      - cm_add_group.proposed.hsrpGroupP.attributes.groupName == "one"
+      - cm_add_group.proposed.hsrpGroupP.attributes.ip == "12.34.56.32"
+      - cm_add_group.proposed.hsrpGroupP.attributes.ipObtainMode == "admin"
+      - cm_add_group.proposed.hsrpGroupP.attributes.mac == "00:00:00:00:00:FF"
+      - cm_add_group.proposed.hsrpGroupP.children.0.hsrpRsGroupPol.attributes.tnHsrpGroupPolName == "default"
       - nm_add_group.current.0.hsrpGroupP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-node1/lifp-intf1/hsrpIfP/hsrpGroupP-group1"
       - nm_add_group.current.0.hsrpGroupP.attributes.groupAf == "ipv4"
       - nm_add_group.current.0.hsrpGroupP.attributes.groupId == "1"
@@ -157,6 +165,13 @@
       - query_group.current.0.hsrpGroupP.children.0.hsrpRsGroupPol.attributes.tnHsrpGroupPolName == "default"
       - query_all.current.0.hsrpIfP.children | length == 2
 
+  - name: Remove a hsrp group in check mode
+    cisco.aci.aci_l3out_hsrp_group:
+      <<: *group_update
+      state: absent
+    check_mode: true
+    register: cm_absent_group
+
   - name: Remove a hsrp group
     cisco.aci.aci_l3out_hsrp_group:
       <<: *group_update
@@ -166,5 +181,7 @@
   - name: Verify remove
     assert:
       that:
+      - cm_absent_group is changed
+      - cm_absent_group.proposed == {}
       - absent_group is changed
       - absent_group.current == []

@@ -297,7 +297,9 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        child_configs = [dict(hsrpRsIfPol=dict(attributes=dict(tnHsrpIfPolName=hsrp_policy)))]
+        child_configs = []
+        if hsrp_policy is not None:
+            child_configs = [dict(hsrpRsIfPol=dict(attributes=dict(tnHsrpIfPolName=hsrp_policy)))]
 
         aci.payload(aci_class="hsrpIfP", class_config=dict(version=version), child_configs=child_configs)
 
