@@ -1,4 +1,6 @@
 # Test code for the ACI modules
+# Copyright: (c) 2023, Dag Wieers (@dagwieers)
+# Copyright: (c) 2023, Tim Cragg (@timcragg) <tcragg@cisco.com>
 # Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)

@@ -27,10 +27,11 @@ options:
     - The name of the action rule profile.
     type: str
     aliases: [ action_rule_name ]
-  last_as_number:
+  last_as:
     description:
     - The last AS number value.
     type: int
+    aliases: [ last_as_number ]
   criteria:
     description:
     - The option to append the specified AS number or to prepend the last AS numbers to the AS Path.
@@ -66,32 +67,35 @@ seealso:
   description: More information about the internal APIC class B(rtctrl:SetASPath).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Dag Wieers (@dagwieers)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: Create a action rule profile
-  cisco.aci.aci_tenant_action_rule_profile:
+- name: Create a Set AS path action rule
+  cisco.aci.aci_action_rule_set_as_path:
     host: apic
     username: admin
     password: SomeSecretPassword
     action_rule: my_action_rule
     tenant: prod
+    last_as: 0
+    criteria: prepend
     state: present
   delegate_to: localhost
 
-- name: Delete a action rule profile
-  cisco.aci.aci_tenant_action_rule_profile:
+- name: Delete a Set AS path action rule
+  cisco.aci.aci_action_rule_set_as_path:
     host: apic
     username: admin
     password: SomeSecretPassword
     action_rule: my_action_rule
     tenant: prod
+    criteria: prepend
     state: absent
   delegate_to: localhost
 
-- name: Query all action rule profiles
-  cisco.aci.aci_tenant_action_rule_profile:
+- name: Query all Set AS path action rules
+  cisco.aci.aci_action_rule_set_as_path:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -99,13 +103,14 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query a specific action rule profile
-  cisco.aci.aci_tenant_action_rule_profile:
+- name: Query a Set AS path action rule
+  cisco.aci.aci_action_rule_set_as_path:
     host: apic
     username: admin
     password: SomeSecretPassword
     action_rule: my_action_rule
     tenant: prod
+    criteria: prepend
     state: query
   delegate_to: localhost
   register: query_result
@@ -226,7 +231,7 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         action_rule=dict(type="str", aliases=["action_rule_name"]),  # Not required for querying all objects
-        last_as_number=dict(type="int"),
+        last_as=dict(type="int", aliases=["last_as_number"]),
         criteria=dict(type="str", choices=["prepend", "prepend-last-as"]),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -242,7 +247,7 @@ def main():
         ],
     )
 
-    last_as_number = module.params.get("last_as_number")
+    last_as = module.params.get("last_as_number")
     criteria = module.params.get("criteria")
     description = module.params.get("description")
     state = module.params.get("state")
@@ -278,7 +283,7 @@ def main():
         aci.payload(
             aci_class="rtctrlSetASPath",
             class_config=dict(
-                lastnum=last_as_number,
+                lastnum=last_as,
                 criteria=criteria,
                 descr=description,
                 nameAlias=name_alias,
