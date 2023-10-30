@@ -57,8 +57,10 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(tenant), the C(action_rule) and AS Path action rule used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_tenant_action_rule_profile) and M(cisco.aci.aci_action_rule_set_as_path) modules can be used for this.
+- The C(tenant) and the C(action_rule) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_tenant_action_rule_profile) modules can be used for this.
+- A Set AS Path action rule with criteria set to C(prepend) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_action_rule_set_as_path) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
 - module: cisco.aci.aci_tenant_action_rule_profile
@@ -67,32 +69,35 @@ seealso:
   description: More information about the internal APIC class B(rtctrl:SetASPathASN).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Dag Wieers (@dagwieers)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: Create a action rule profile
-  cisco.aci.aci_tenant_action_rule_profile:
+- name: Create a Set AS Path ASN action rule
+  cisco.aci.aci_action_rule_set_as_path_asn:
     host: apic
     username: admin
     password: SomeSecretPassword
     action_rule: my_action_rule
     tenant: prod
+    order: 1
+    asn: 1
     state: present
   delegate_to: localhost
 
-- name: Delete a action rule profile
-  cisco.aci.aci_tenant_action_rule_profile:
+- name: Delete a Set AS Path ASN action rule
+  cisco.aci.aci_action_rule_set_as_path_asn:
     host: apic
     username: admin
     password: SomeSecretPassword
     action_rule: my_action_rule
     tenant: prod
+    order: 1
     state: absent
   delegate_to: localhost
 
-- name: Query all action rule profiles
-  cisco.aci.aci_tenant_action_rule_profile:
+- name: Query all Set AS Path ASN action rules
+  cisco.aci.aci_action_rule_set_as_path_asn:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -100,13 +105,14 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query a specific action rule profile
-  cisco.aci.aci_tenant_action_rule_profile:
+- name: Query a Set AS Path ASN action rule
+  cisco.aci.aci_action_rule_set_as_path_asn:
     host: apic
     username: admin
     password: SomeSecretPassword
     action_rule: my_action_rule
     tenant: prod
+    order: 1
     state: query
   delegate_to: localhost
   register: query_result

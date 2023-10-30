@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2023, Dag Wieers (@dagwieers)
 # Copyright: (c) 2023, Tim Cragg (@timcragg) <tcragg@cisco.com>
 # Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
@@ -27,7 +28,7 @@ options:
     description:
     - The name of the action rule profile.
     type: str
-    aliases: [ action_rule_name, name ]
+    aliases: [action_rule_name, name ]
   set_community:
     description:
     - The set action rule based on communities.
@@ -144,6 +145,40 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     action_rule: my_action_rule
     tenant: prod
+    set_preference: 100
+    set_weight: 100
+    set_metric: 100
+    set_metric_type: ospf_type_1
+    set_next_hop: 1.1.1.1
+    next_hop_propagation: true
+    multipath: true
+    set_community:
+      community: no-advertise
+      criteria: replace
+    set_dampening:
+      half_life: 10
+      reuse: 1
+      suppress: 10
+      max_suppress_time: 100
+    state: present
+  delegate_to: localhost
+
+- name: Delete action rule profile's children
+  cisco.aci.aci_tenant_action_rule_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    action_rule: my_action_rule
+    tenant: prod
+    set_preference: ""
+    set_weight: ""
+    set_metric: ""
+    set_metric_type: ""
+    set_next_hop: ""
+    next_hop_propagation: false
+    multipath: false
+    set_community: {}
+    set_dampening: {}
     state: present
   delegate_to: localhost
 
@@ -336,16 +371,16 @@ def main():
     aci = ACIModule(module)
 
     child_classes = dict(
-        rtctrlSetComm=[set_community],
-        rtctrlSetDamp=[set_dampening],
-        rtctrlSetNh=[set_next_hop, "addr"],
-        rtctrlSetNhUnchanged=[next_hop_propagation],
-        rtctrlSetPref=[set_preference, "localPref"],
-        rtctrlSetRedistMultipath=[multipath],
-        rtctrlSetRtMetric=[set_metric, "metric"],
-        rtctrlSetRtMetricType=[set_metric_type, "metricType"],
-        rtctrlSetTag=[set_route_tag, "tag"],
-        rtctrlSetWeight=[set_weight, "weight"],
+        rtctrlSetComm=dict(attribute_input=set_community),
+        rtctrlSetDamp=dict(attribute_input=set_dampening),
+        rtctrlSetNh=dict(attribute_input=set_next_hop, attribute_name="addr"),
+        rtctrlSetNhUnchanged=dict(attribute_input=next_hop_propagation),
+        rtctrlSetPref=dict(attribute_input=set_preference, attribute_name="localPref"),
+        rtctrlSetRedistMultipath=dict(attribute_input=multipath),
+        rtctrlSetRtMetric=dict(attribute_input=set_metric, attribute_name="metric"),
+        rtctrlSetRtMetricType=dict(attribute_input=set_metric_type, attribute_name="metricType"),
+        rtctrlSetTag=dict(attribute_input=set_route_tag, attribute_name="tag"),
+        rtctrlSetWeight=dict(attribute_input=set_weight, attribute_name="weight"),
     )
     
     aci.construct_url(
@@ -368,48 +403,48 @@ def main():
 
     if state == "present":
         child_configs = []
-        for key, value in child_classes.items():
-            if value[0] is not None:
-                if value[0] == "" or value[0] == False or check_all_none_values_dict(value[0]):
+        for class_name, attribute in child_classes.items():
+            if attribute.get("attribute_input") is not None:
+                if attribute.get("attribute_input") == "" or attribute.get("attribute_input") == False or check_all_none_values_dict(attribute.get("attribute_input")):
                     if isinstance(aci.existing, list) and len(aci.existing) > 0:
                         for child in aci.existing[0].get("rtctrlAttrP", {}).get("children", {}):
-                            if child.get(key):
+                            if child.get(class_name):
                                 child_configs.append(
                                     {
-                                        key:dict(
+                                        class_name:dict(
                                             attributes=dict(status="deleted"),
                                         ),
                                     }
                                 )
-                elif value[0] != "" or value[0] == True or value[0] != {}:
-                    if key == "rtctrlSetComm" and isinstance(value[0], dict):
+                elif attribute.get("attribute_input") != "" or attribute.get("attribute_input") == True or attribute.get("attribute_input") != {}:
+                    if class_name == "rtctrlSetComm" and isinstance(attribute.get("attribute_input"), dict):
                         child_configs.append(
                             {
-                                key:dict(
+                                class_name:dict(
                                     attributes=dict(
-                                        community=value[0].get("community"),
-                                        setCriteria=value[0].get("criteria"),
+                                        community=attribute.get("attribute_input").get("community"),
+                                        setCriteria=attribute.get("attribute_input").get("criteria"),
                                     ),
                                 )
                             }
                         )
-                    elif key == "rtctrlSetDamp" and isinstance(value[0], dict):
+                    elif class_name == "rtctrlSetDamp" and isinstance(attribute.get("attribute_input"), dict):
                         child_configs.append(
                             {
-                                key:dict(
+                                class_name:dict(
                                     attributes=dict(
-                                        halfLife=value[0].get("half_life"),
-                                        maxSuppressTime=value[0].get("max_suppress_time"),
-                                        reuse=value[0].get("reuse"),
-                                        suppress=value[0].get("suppress"),
+                                        halfLife=attribute.get("attribute_input").get("half_life"),
+                                        maxSuppressTime=attribute.get("attribute_input").get("max_suppress_time"),
+                                        reuse=attribute.get("attribute_input").get("reuse"),
+                                        suppress=attribute.get("attribute_input").get("suppress"),
                                     ),
                                 )
                             }
                         )
-                    elif key in ["rtctrlSetNhUnchanged", "rtctrlSetRedistMultipath"]:
-                        child_configs.append({key:dict(attributes=dict(descr=""))})
+                    elif class_name in ["rtctrlSetNhUnchanged", "rtctrlSetRedistMultipath"]:
+                        child_configs.append({class_name:dict(attributes=dict(descr=""))})
                     else:
-                        child_configs.append({key:dict(attributes={value[-1]:value[0]})})
+                        child_configs.append({class_name:dict(attributes={attribute.get("attribute_name"):attribute.get("attribute_input")})})
 
         aci.payload(
             aci_class="rtctrlAttrP",

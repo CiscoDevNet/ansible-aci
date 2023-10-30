@@ -29,7 +29,7 @@ options:
     aliases: [ action_rule_name ]
   community:
     description:
-    - The community value
+    - The community value.
     type: str
   criteria:
     description:
@@ -67,32 +67,35 @@ seealso:
   description: More information about the internal APIC class B(rtctrl:SetAddComm).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Dag Wieers (@dagwieers)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: Create a action rule profile
-  cisco.aci.aci_tenant_action_rule_profile:
+- name: Create a additional communities action rule
+  cisco.aci.aci_action_rule_additional_communities:
     host: apic
     username: admin
     password: SomeSecretPassword
     action_rule: my_action_rule
     tenant: prod
+    community: no-advertise
+    criteria: replace
     state: present
   delegate_to: localhost
 
-- name: Delete a action rule profile
-  cisco.aci.aci_tenant_action_rule_profile:
+- name: Delete a additional communities action rule
+  cisco.aci.aci_action_rule_additional_communities:
     host: apic
     username: admin
     password: SomeSecretPassword
     action_rule: my_action_rule
     tenant: prod
+    community: no-advertise
     state: absent
   delegate_to: localhost
 
-- name: Query all action rule profiles
-  cisco.aci.aci_tenant_action_rule_profile:
+- name: Query all additional communities action rules
+  cisco.aci.aci_action_rule_additional_communities:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -100,13 +103,14 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query a specific action rule profile
-  cisco.aci.aci_tenant_action_rule_profile:
+- name: Query a additional communities action rule
+  cisco.aci.aci_action_rule_additional_communities:
     host: apic
     username: admin
     password: SomeSecretPassword
     action_rule: my_action_rule
     tenant: prod
+    community: no-advertise
     state: query
   delegate_to: localhost
   register: query_result
