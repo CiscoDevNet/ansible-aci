@@ -32,6 +32,7 @@ options:
   set_community:
     description:
     - The set action rule based on communities.
+    - To delete this attribute, pass an empty dictionary.
     type: dict
     suboptions:
       community:
@@ -47,6 +48,7 @@ options:
   set_dampening:
     description:
     - The set action rule based on dampening.
+    - To delete this attribute, pass an empty dictionary.
     type: dict
     suboptions:
       half_life:
@@ -68,6 +70,7 @@ options:
   set_next_hop:
     description:
     - The set action rule based on the next hop address.
+    - To delete this attribute, pass an empty string.
     type: str
   next_hop_propagation:
     description:
@@ -84,25 +87,30 @@ options:
   set_preference:
     description:
     - The set action rule based on preference.
-    type: int
+    - To delete this attribute, pass an empty string.
+    type: str
   set_metric:
     description:
     - The set action rule based on metric.
-    type: int
+    - To delete this attribute, pass an empty string.
+    type: str
   set_metric_type:
     description:
     - The set action rule based on a metric type.
+    - To delete this attribute, pass an empty string.
     type: str
-    choices: [ ospf_type_1, ospf_type_2 ]
+    choices: [ ospf_type_1, ospf_type_2, "" ]
   set_route_tag:
     description:
     - The set action rule based on route tag.
     - Can not be configured along with C(next_hop_propagation) and C(multipath).
-    type: int
+    - To delete this attribute, pass an empty string.
+    type: str
   set_weight:
     description:
     - The set action rule based on weight.
-    type: int
+    - To delete this attribute, pass an empty string.
+    type: str
   description:
     description:
     - The description for the action rule profile.
@@ -319,8 +327,16 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, action_rule_set_comm_spec, action_rule_set_dampening_spec, check_all_none_values_dict 
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+    aci_annotation_spec,
+    action_rule_set_comm_spec,
+    action_rule_set_dampening_spec,
+    check_all_none_values_dict
+)
 from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING
+
 
 def main():
     argument_spec = aci_argument_spec()
@@ -370,6 +386,7 @@ def main():
 
     aci = ACIModule(module)
 
+    # This dict contains the name of the child classes as well as the corresping attribute input (and attribute name if the input is a string)
     child_classes = dict(
         rtctrlSetComm=dict(attribute_input=set_community),
         rtctrlSetDamp=dict(attribute_input=set_dampening),
@@ -382,7 +399,7 @@ def main():
         rtctrlSetTag=dict(attribute_input=set_route_tag, attribute_name="tag"),
         rtctrlSetWeight=dict(attribute_input=set_weight, attribute_name="weight"),
     )
-    
+
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -404,23 +421,30 @@ def main():
     if state == "present":
         child_configs = []
         for class_name, attribute in child_classes.items():
+            # The following condition enables to user to keep its previous configurations if they are not passing anyting in the payload.
             if attribute.get("attribute_input") is not None:
-                if attribute.get("attribute_input") == "" or attribute.get("attribute_input") == False or check_all_none_values_dict(attribute.get("attribute_input")):
+                # This condition checks if the child object needs to be deleted depending on the type of the corresponding attribute input (bool, str, dict).
+                if (
+                    attribute.get("attribute_input") == ""
+                    or attribute.get("attribute_input") is False
+                    or check_all_none_values_dict(attribute.get("attribute_input"))
+                ):
                     if isinstance(aci.existing, list) and len(aci.existing) > 0:
                         for child in aci.existing[0].get("rtctrlAttrP", {}).get("children", {}):
                             if child.get(class_name):
                                 child_configs.append(
                                     {
-                                        class_name:dict(
+                                        class_name: dict(
                                             attributes=dict(status="deleted"),
                                         ),
                                     }
                                 )
-                elif attribute.get("attribute_input") != "" or attribute.get("attribute_input") == True or attribute.get("attribute_input") != {}:
+                # This condition checks if the child object needs to be modified or created depending on the type of the corresponding attribute input.
+                elif attribute.get("attribute_input") != "" or attribute.get("attribute_input") is True or attribute.get("attribute_input") != {}:
                     if class_name == "rtctrlSetComm" and isinstance(attribute.get("attribute_input"), dict):
                         child_configs.append(
                             {
-                                class_name:dict(
+                                class_name: dict(
                                     attributes=dict(
                                         community=attribute.get("attribute_input").get("community"),
                                         setCriteria=attribute.get("attribute_input").get("criteria"),
@@ -431,7 +455,7 @@ def main():
                     elif class_name == "rtctrlSetDamp" and isinstance(attribute.get("attribute_input"), dict):
                         child_configs.append(
                             {
-                                class_name:dict(
+                                class_name: dict(
                                     attributes=dict(
                                         halfLife=attribute.get("attribute_input").get("half_life"),
                                         maxSuppressTime=attribute.get("attribute_input").get("max_suppress_time"),
@@ -442,9 +466,9 @@ def main():
                             }
                         )
                     elif class_name in ["rtctrlSetNhUnchanged", "rtctrlSetRedistMultipath"]:
-                        child_configs.append({class_name:dict(attributes=dict(descr=""))})
+                        child_configs.append({class_name: dict(attributes=dict(descr=""))})
                     else:
-                        child_configs.append({class_name:dict(attributes={attribute.get("attribute_name"):attribute.get("attribute_input")})})
+                        child_configs.append({class_name: dict(attributes={attribute.get("attribute_name"): attribute.get("attribute_input")})})
 
         aci.payload(
             aci_class="rtctrlAttrP",

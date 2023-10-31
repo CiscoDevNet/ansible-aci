@@ -77,7 +77,7 @@
       state: present
     register: nm_add_action_rule_add_comm_2
 
-  - name: Asserts for route control profiles creation tasks
+  - name: Asserts for additional communities action rules creation tasks
     assert:
       that:
         - cm_add_action_rule_add_comm is changed
@@ -125,7 +125,7 @@
       <<: *aci_action_rule_additional_communities_absent
     register: nm_remove_remove_action_rule_add_comm
 
-  - name: Remove route control profile again - testing previous Removal
+  - name: Remove additional communities action rule again - testing previous Removal
     aci_action_rule_additional_communities:
       <<: *aci_action_rule_additional_communities_absent
     register: nm_remove_action_rule_add_comm_idempotency
