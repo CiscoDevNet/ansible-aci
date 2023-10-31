@@ -259,7 +259,7 @@
     method: post
     annotation: test:inoption
     content:
-      <fvTenant name="ansible_test" desc="Ansible test tenant"/>
+      <fvTenant name="ansible_test" descr="Ansible test tenant"/>
   register: nm_add_tenant_annotation_option
 
 - name: Add tenant with annotation in content
@@ -274,7 +274,7 @@
     path: /api/mo/uni.xml
     method: post
     content:
-      <fvTenant name="ansible_test" desc="Ansible test tenant" annotation="test:incontent"/>
+      <fvTenant name="ansible_test" descr="Ansible test tenant" annotation="test:incontent"/>
   register: nm_add_tenant_annotation_content
 
 - name: Add tenant with annotation in content and option
@@ -290,7 +290,7 @@
     method: post
     annotation: test:inoption
     content:
-      <fvTenant name="ansible_test" desc="Ansible test tenant" annotation="test:optionincontent"/>
+      <fvTenant name="ansible_test" descr="Ansible test tenant" annotation="test:optionincontent"/>
   register: nm_add_tenant_annotation_option_content
 
 - name: Add tag to tenant with annotation unsupported
@@ -302,12 +302,36 @@
     use_ssl: '{{ aci_use_ssl | default(true) }}'
     use_proxy: '{{ aci_use_proxy | default(true) }}'
     output_level: '{{ aci_output_level | default("info") }}'
-    path: /api/mo/uni/tn-ansible_test/tagKey-foo.json
+    path: /api/mo/uni/tn-ansible_test/tagKey-foo.xml
     method: post
     annotation: test:inoption
     content:
       <tagTag value="bar"/>
   register: nm_add_tag_no_annotation
+
+- name: Remove tenant
+  cisco.aci.aci_rest: *tenant_absent
+
+- name: Add tenant with children objects including annotation
+  cisco.aci.aci_rest:
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    path: /api/mo/uni.xml
+    method: post
+    annotation: test:inoption
+    content:
+      <fvTenant name="ansible_test" descr="Ansible test tenant">
+        <fvCtx name="VRF1"/>
+        <fvAp name="Application1">
+          <fvAEPg name="WebTier" annotation="test:inchild"/>
+        </fvAp>
+      </fvTenant>
+  register: nm_add_tenant_annotation_children
 
 - name: Verify annotation support
   assert:
@@ -316,3 +340,7 @@
     - nm_add_tenant_annotation_content.imdata.0.fvTenant.attributes.annotation == "test:incontent"
     - nm_add_tenant_annotation_option_content.imdata.0.fvTenant.attributes.annotation == "test:optionincontent"
     - nm_add_tag_no_annotation.imdata.0.tagTag.attributes.annotation is undefined
+    - nm_add_tenant_annotation_children.imdata.0.fvTenant.attributes.annotation == "test:inoption"
+    - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.0.fvAp.attributes.annotation == "test:inoption"
+    - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.annotation == "test:inchild"
+    - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.1.fvCtx.attributes.annotation == "test:inoption"
