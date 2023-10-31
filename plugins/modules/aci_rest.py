@@ -312,13 +312,18 @@ def update_qsl(url, params):
 
 def add_annotation(annotation, payload):
     """Add annotation to payload only if it has not already been added"""
-    if annotation:
+    if annotation and isinstance(payload, dict):
         for key, val in payload.items():
             if key in ANNOTATION_UNSUPPORTED:
-                return
+                continue
             att = val.get("attributes", {})
             if "annotation" not in att.keys():
                 att["annotation"] = annotation
+            # Recursively add annotation to children
+            children = val.get("children", None)
+            if children:
+                for child in children:
+                    add_annotation(annotation, child)
 
 
 def add_annotation_xml(annotation, tree):
@@ -326,7 +331,7 @@ def add_annotation_xml(annotation, tree):
     if annotation:
         for element in tree.iter():
             if element.tag in ANNOTATION_UNSUPPORTED:
-                return
+                continue
             ann = element.get("annotation")
             if ann is None:
                 element.set("annotation", annotation)

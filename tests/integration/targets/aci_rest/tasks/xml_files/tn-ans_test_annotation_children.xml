@@ -1,0 +1,6 @@
+<fvTenant name="ans_test_create" descr="Ansible test tenant xml">
+    <fvCtx name="VRF1"/>
+    <fvAp name="Application1">
+        <fvAEPg name="WebTier" annotation="test:inchild"/>
+    </fvAp>
+</fvTenant>
