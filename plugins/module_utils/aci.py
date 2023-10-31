@@ -336,11 +336,16 @@ def action_rule_set_dampening_spec():
         suppress=dict(type="int"),
     )
 
+
 def check_all_none_values_dict(x):
-    if isinstance(x,dict):
-        return not any(x.values())
+    if isinstance(x, dict):
+        for value in x.values():
+            if value is not None:
+                return False
+        return True
     else:
         return False
+
 
 class ACIModule(object):
     def __init__(self, module):

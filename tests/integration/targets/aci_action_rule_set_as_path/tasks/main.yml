@@ -78,7 +78,7 @@
       state: present
     register: nm_add_action_rule_set_as_path_2
 
-  - name: Asserts for route control profiles creation tasks
+  - name: Asserts for set AS path action rule creation tasks
     assert:
       that:
         - cm_add_action_rule_set_as_path is changed
@@ -126,7 +126,7 @@
       <<: *aci_action_rule_set_as_path_absent
     register: nm_remove_remove_action_rule_set_as_path
 
-  - name: Remove route control profile again - testing previous Removal
+  - name: Remove set AS path action rule again - testing previous Removal
     aci_action_rule_set_as_path:
       <<: *aci_action_rule_set_as_path_absent
     register: nm_remove_action_rule_set_as_path_idempotency

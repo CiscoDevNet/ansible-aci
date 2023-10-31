@@ -167,4 +167,4 @@ SUBJ_LABEL_MAPPING = dict(
     provider="vzProvSubjLbl",
 )
 
-MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING = {"ospf_type_1":"ospf-type1", "ospf_type_2":"ospf-type2", "":""}
+MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING = {"ospf_type_1": "ospf-type1", "ospf_type_2": "ospf-type2", "": ""}
