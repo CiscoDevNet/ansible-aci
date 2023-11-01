@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_access_switch_policy_group
-short_description: Manage Access Switch Policy Groups (infra:AccNodePGrp).
+short_description: Manage Access Switch Policy Groups (infra:AccNodePGrp and infra:SpineAccNodePGrp).
 description:
 - Manage Access Switch Policy Groups on Cisco ACI fabrics.
 options:
@@ -27,6 +27,12 @@ options:
     description:
     - The description of the access switch policy group.
     type: str
+  switch_type:
+    description:
+    - Whether this is a leaf or spine policy group
+    type: str
+    choices: [ leaf, spine ]
+    required: true
   spanning_tree_policy:
     description:
     - The spanning tree policy bound to the access switch policy group.
@@ -80,9 +86,9 @@ options:
     - The netflow node policy bound to the access switch policy group.
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
-  copp_leaf_policy:
+  copp_policy:
     description:
-    - The CoPP leaf policy bound to the access switch policy group.
+    - The CoPP policy bound to the access switch policy group.
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
   forward_scale_profile_policy:
@@ -152,7 +158,7 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(infra:AccNodePGrp).
+  description: More information about the internal APIC class B(infra:AccNodePGrp) and B(infra:SpineAccNodePGrp).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -160,12 +166,13 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create Access Switch Policy Group
+- name: Create Leaf Access Switch Policy Group
   cisco.aci.aci_access_switch_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
-    name: ansible_pol_grp
+    name: ansible_pol_grp_spine
+    switch_type: leaf
     spanning_tree_policy: example_spanning_tree_policy
     bfd_ipv4_policy: example_bfd_ipv4_policy
     bfd_ipv6_policy: example_bfd_ipv6_policy
@@ -173,7 +180,7 @@ EXAMPLES = r"""
     poe_node_policy: example_poe_node_policy
     fibre_channel_san_policy: example_fibre_channel_san_policy
     monitoring_policy: example_monitoring_policy
-    copp_leaf_policy: example_copp_leaf_policy
+    copp_policy: example_copp_policy
     forward_scale_profile_policy: example_forward_scale_profile_policy
     fast_link_failover_policy: example_fast_link_failover_policy
     node_802_1x_authentication_policy: example_node_802_1x_authentication_policy
@@ -184,30 +191,49 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete Access Switch Policy Group
+- name: Create Spine Access Switch Policy Group
   cisco.aci.aci_access_switch_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
-    name: ansible_pol_grp
+    name: ansible_pol_grp_leaf
+    switch_type: spine
+    bfd_ipv4_policy: example_bfd_ipv4_policy
+    bfd_ipv6_policy: example_bfd_ipv6_policy
+    copp_policy: example_copp_policy
+    copp_pre_filter_policy: example_copp_pre_filter_policy
+    cdp_policy: example_cdp_policy
+    lldp_policy: example_lldp_policy
+    state: present
+  delegate_to: localhost
+
+- name: Delete Leaf Access Switch Policy Group
+  cisco.aci.aci_access_switch_policy_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: ansible_pol_grp_leaf
+    switch_type: leaf
     state: absent
   delegate_to: localhost
 
-- name: Query Access Switch Policy Group
+- name: Query Leaf Access Switch Policy Group
   cisco.aci.aci_access_switch_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
-    name: ansible_pol_grp
+    name: ansible_pol_grp_leaf
+    switch_type: leaf
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Query All Access Switch Policy Groups
+- name: Query All Leaf Access Switch Policy Groups
   cisco.aci.aci_access_switch_policy_group:
     host: apic
     username: admin
     password: SomeSecretPassword
+    switch_type: leaf
     state: query
   delegate_to: localhost
   register: query_result
@@ -322,6 +348,32 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
+ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING = dict(
+    spine=dict(
+        class_name="infraSpineAccNodePGrp",
+        rn="infra/funcprof/spaccnodepgrp-{0}",
+        copp_pre_filter_policy=dict(class_name="infraRsIaclSpineProfile", tn_name="tnIaclSpineProfileName"),
+        bfd_ipv4_policy=dict(class_name="infraRsSpineBfdIpv4InstPol", tn_name="tnBfdIpv4InstPolName"),
+        bfd_ipv6_policy=dict(class_name="infraRsSpineBfdIpv6InstPol", tn_name="tnBfdIpv6InstPolName"),
+        copp_policy=dict(class_name="infraRsSpineCoppProfile", tn_name="tnCoppSpineProfileName"),
+        cdp_policy=dict(class_name="infraRsSpinePGrpToCdpIfPol", tn_name="tnCdpIfPolName"),
+        lldp_policy=dict(class_name="infraRsSpinePGrpToLldpIfPol", tn_name="tnLldpIfPolName"),
+        usb_configuration_policy=dict(class_name="infraRsSpineTopoctrlUsbConfigProfilePol", tn_name="tnTopoctrlUsbConfigProfilePolName"),
+    ),
+    leaf=dict(
+        class_name="infraAccNodePGrp",
+        rn="infra/funcprof/accnodepgrp-{0}",
+        copp_pre_filter_policy=dict(class_name="infraRsIaclLeafProfile", tn_name="tnIaclLeafProfileName"),
+        bfd_ipv4_policy=dict(class_name="infraRsBfdIpv4InstPol", tn_name="tnBfdIpv4InstPolName"),
+        bfd_ipv6_policy=dict(class_name="infraRsBfdIpv6InstPol", tn_name="tnBfdIpv6InstPolName"),
+        copp_policy=dict(class_name="infraRsLeafCoppProfile", tn_name="tnCoppLeafProfileName"),
+        cdp_policy=dict(class_name="infraRsLeafPGrpToCdpIfPol", tn_name="tnCdpIfPolName"),
+        lldp_policy=dict(class_name="infraRsLeafPGrpToLldpIfPol", tn_name="tnLldpIfPolName"),
+        usb_configuration_policy=dict(class_name="infraRsLeafTopoctrlUsbConfigProfilePol", tn_name="tnTopoctrlUsbConfigProfilePolName"),
+    ),
+)
+
+
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
@@ -329,6 +381,7 @@ def main():
     argument_spec.update(
         name=dict(type="str", aliases=["policy_group"]),
         description=dict(type="str"),
+        switch_type=dict(type="str", choices=["leaf", "spine"], required=True),
         spanning_tree_policy=dict(type="str"),
         bfd_ipv4_policy=dict(type="str"),
         bfd_ipv6_policy=dict(type="str"),
@@ -339,7 +392,7 @@ def main():
         fibre_channel_san_policy=dict(type="str"),
         monitoring_policy=dict(type="str"),
         netflow_node_policy=dict(type="str"),
-        copp_leaf_policy=dict(type="str"),
+        copp_policy=dict(type="str"),
         forward_scale_profile_policy=dict(type="str"),
         fast_link_failover_policy=dict(type="str"),
         node_802_1x_authentication_policy=dict(type="str"),
@@ -363,6 +416,7 @@ def main():
     )
     name = module.params.get("name")
     description = module.params.get("description")
+    switch_type = module.params.get("switch_type")
     spanning_tree_policy = module.params.get("spanning_tree_policy")
     bfd_ipv4_policy = module.params.get("bfd_ipv4_policy")
     bfd_ipv6_policy = module.params.get("bfd_ipv6_policy")
@@ -373,7 +427,7 @@ def main():
     fibre_channel_san_policy = module.params.get("fibre_channel_san_policy")
     monitoring_policy = module.params.get("monitoring_policy")
     netflow_node_policy = module.params.get("netflow_node_policy")
-    copp_leaf_policy = module.params.get("copp_leaf_policy")
+    copp_policy = module.params.get("copp_policy")
     forward_scale_profile_policy = module.params.get("forward_scale_profile_policy")
     fast_link_failover_policy = module.params.get("fast_link_failover_policy")
     node_802_1x_authentication_policy = module.params.get("node_802_1x_authentication_policy")
@@ -388,10 +442,12 @@ def main():
 
     aci = ACIModule(module)
 
+    class_name = ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type).get("class_name")
+
     aci.construct_url(
         root_class=dict(
-            aci_class="infraAccNodePGrp",
-            aci_rn="infra/funcprof/accnodepgrp-{0}".format(name),
+            aci_class=class_name,
+            aci_rn=ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type).get("rn").format(name),
             module_object=name,
             target_filter={"name": name},
         ),
@@ -405,15 +461,59 @@ def main():
         if forward_scale_profile_policy is not None:
             child_configs.append({"infraRsTopoctrlFwdScaleProfPol": {"attributes": {"tnTopoctrlFwdScaleProfilePolName": forward_scale_profile_policy}}})
         if usb_configuration_policy is not None:
-            child_configs.append({"infraRsLeafTopoctrlUsbConfigProfilePol": {"attributes": {"tnTopoctrlUsbConfigProfilePolName": usb_configuration_policy}}})
+            child_configs.append(
+                {
+                    ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type)
+                    .get("usb_configuration_policy")
+                    .get("class_name"): {
+                        "attributes": {
+                            ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type)
+                            .get("usb_configuration_policy")
+                            .get("tn_name"): usb_configuration_policy
+                        }
+                    }
+                }
+            )
         if lldp_policy is not None:
-            child_configs.append({"infraRsLeafPGrpToLldpIfPol": {"attributes": {"tnLldpIfPolName": lldp_policy}}})
+            child_configs.append(
+                {
+                    ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type)
+                    .get("lldp_policy")
+                    .get("class_name"): {
+                        "attributes": {ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type).get("lldp_policy").get("tn_name"): lldp_policy}
+                    }
+                }
+            )
         if cdp_policy is not None:
-            child_configs.append({"infraRsLeafPGrpToCdpIfPol": {"attributes": {"tnCdpIfPolName": cdp_policy}}})
+            child_configs.append(
+                {
+                    ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type)
+                    .get("cdp_policy")
+                    .get("class_name"): {
+                        "attributes": {ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type).get("cdp_policy").get("tn_name"): cdp_policy}
+                    }
+                }
+            )
         if bfd_ipv4_policy is not None:
-            child_configs.append({"infraRsBfdIpv4InstPol": {"attributes": {"tnBfdIpv4InstPolName": bfd_ipv4_policy}}})
+            child_configs.append(
+                {
+                    ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type)
+                    .get("bfd_ipv4_policy")
+                    .get("class_name"): {
+                        "attributes": {ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type).get("bfd_ipv4_policy").get("tn_name"): bfd_ipv4_policy}
+                    }
+                }
+            )
         if bfd_ipv6_policy is not None:
-            child_configs.append({"infraRsBfdIpv6InstPol": {"attributes": {"tnBfdIpv6InstPolName": bfd_ipv6_policy}}})
+            child_configs.append(
+                {
+                    ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type)
+                    .get("bfd_ipv6_policy")
+                    .get("class_name"): {
+                        "attributes": {ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type).get("bfd_ipv6_policy").get("tn_name"): bfd_ipv6_policy}
+                    }
+                }
+            )
         if sync_e_node_policy is not None:
             child_configs.append({"infraRsSynceInstPol": {"attributes": {"tnSynceInstPolName": sync_e_node_policy}}})
         if poe_node_policy is not None:
@@ -436,12 +536,30 @@ def main():
             child_configs.append({"infraRsMstInstPol": {"attributes": {"tnStpInstPolName": spanning_tree_policy}}})
         if fibre_channel_san_policy is not None:
             child_configs.append({"infraRsFcFabricPol": {"attributes": {"tnFcFabricPolName": fibre_channel_san_policy}}})
-        if copp_leaf_policy is not None:
-            child_configs.append({"infraRsLeafCoppProfile": {"attributes": {"tnCoppLeafProfileName": copp_leaf_policy}}})
+        if copp_policy is not None:
+            child_configs.append(
+                {
+                    ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type)
+                    .get("copp_policy")
+                    .get("class_name"): {
+                        "attributes": {ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type).get("copp_policy").get("tn_name"): copp_policy}
+                    }
+                }
+            )
         if node_802_1x_authentication_policy is not None:
             child_configs.append({"infraRsL2NodeAuthPol": {"attributes": {"tnL2NodeAuthPolName": node_802_1x_authentication_policy}}})
         if copp_pre_filter_policy is not None:
-            child_configs.append({"infraRsIaclLeafProfile": {"attributes": {"tnIaclLeafProfileName": copp_pre_filter_policy}}})
+            child_configs.append(
+                {
+                    ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type)
+                    .get("copp_pre_filter_policy")
+                    .get("class_name"): {
+                        "attributes": {
+                            ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type).get("copp_pre_filter_policy").get("tn_name"): copp_pre_filter_policy
+                        }
+                    }
+                }
+            )
         if netflow_node_policy is not None:
             child_configs.append({"infraRsNetflowNodePol": {"attributes": {"tnNetflowNodePolName": netflow_node_policy}}})
         if ptp_node_policy is not None:
@@ -451,14 +569,14 @@ def main():
             child_configs = None
 
         aci.payload(
-            aci_class="infraAccNodePGrp",
+            aci_class=class_name,
             class_config=dict(
                 descr=description,
             ),
             child_configs=child_configs,
         )
 
-        aci.get_diff(aci_class="infraAccNodePGrp")
+        aci.get_diff(aci_class=class_name)
 
         aci.post_config()
 
