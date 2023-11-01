@@ -12,29 +12,21 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_bgp_best_path_policy
-short_description: Manage BGP Best Path policy (bgp:BestPathCtrlPol)
+module: aci_bgp_address_family_context_policy
+short_description: Manage BGP address family context policy (bgp:CtxAfPol)
 description:
-- Manage BGP Best Path policies for Tenants on Cisco ACI fabrics.
+- Manage BGP address family context policies for Tenants on Cisco ACI fabrics.
 options:
   tenant:
     description:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  bgp_best_path_policy:
+  bgp_address_family_context_policy:
     description:
-    - The name of the best path policy.
+    - The name of the bgp address family context policy.
     type: str
-    aliases: [ bgp_best_path_policy_name, name ]
-  best_path_control:
-    description:
-    - The option to enable/disable to relax AS-Path restriction when choosing multipaths.
-    - When enabled, allow load sharing across providers with different AS paths.
-    - The APIC defaults to C(enable) when unset during creation.
-    type: str
-    choices: [enable, disable]
-    aliases: [as_path_control]
+    aliases: [ bgp_address_family_context_name, name ]
   description:
     description:
     - Description for the bgp protocol profile.
@@ -62,36 +54,35 @@ notes:
 seealso:
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bgp:BestPathCtrlPol).
+  description: More information about the internal APIC class B(bgp:CtxAfPol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: Create a BGP best path policy
-  cisco.aci.aci_bgp_best_path_policy:
+- name: Create a BGP address family context policy
+  cisco.aci.aci_bgp_address_family_context_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_best_path_policy: my_bgp_best_path_policy
-    best_path_control: enable
+    bgp_address_family_context_policy: my_bgp_address_family_context_policy
     tenant: production
     state: present
   delegate_to: localhost
 
-- name: Delete a BGP best path policy
-  cisco.aci.aci_bgp_best_path_policy:
+- name: Delete a BGP address family context policy
+  cisco.aci.aci_bgp_address_family_context_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_best_path_policy: my_bgp_best_path_policy
+    bgp_address_family_context_policy: my_bgp_address_family_context_policy
     tenant: production
     state: absent
   delegate_to: localhost
 
-- name: Query all BGP best path policies
-  cisco.aci.aci_bgp_best_path_policy:
+- name: Query all BGP address family context policies
+  cisco.aci.aci_bgp_address_family_context_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -99,12 +90,12 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query a specific BGP best path policy
-  cisco.aci.aci_bgp_best_path_policy:
+- name: Query a specific BGP address family context policy
+  cisco.aci.aci_bgp_address_family_context_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_best_path_policy: my_bgp_best_path_policy
+    bgp_address_family_context_policy: my_bgp_address_family_context_policy
     tenant: production
     state: query
   delegate_to: localhost
@@ -218,7 +209,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_BEST_PATH_CONTROL_MAPPING
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_GRACEFUL_RESTART_CONTROLS_MAPPING
 
 
 def main():
@@ -227,8 +218,15 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        bgp_best_path_policy=dict(type="str", aliases=["bgp_best_path_policy_name", "name"]),  # Not required for querying all objects
-        best_path_control=dict(type="str", choices=["enable", "disable"], aliases=["as_path_control"]),
+        bgp_address_family_context_policy=dict(type="str", aliases=["bgp_address_family_context_name", "name"]),  # Not required for querying all objects
+        host_route_leak=dict(type="bool"),
+        ebgp_distance=dict(type="int"),
+        ibgp_distance=dict(type="int"),
+        local_distance=dict(type="int"),
+        ebgp_max_ecmp=dict(type="int"),
+        ibgp_max_ecmp=dict(type="int"),
+        local_max_ecmp=dict(type="int"),
+        bgp_add_path_capability=dict(type="bool"),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -238,13 +236,20 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["bgp_best_path_policy", "tenant"]],
-            ["state", "present", ["bgp_best_path_policy", "tenant"]],
+            ["state", "absent", ["bgp_address_family_context_policy", "tenant"]],
+            ["state", "present", ["bgp_address_family_context_policy", "tenant"]],
         ],
     )
 
-    bgp_best_path_policy = module.params.get("bgp_best_path_policy")
-    best_path_control = MATCH_BEST_PATH_CONTROL_MAPPING.get(module.params.get("best_path_control"))
+    bgp_address_family_context_policy = module.params.get("bgp_address_family_context_policy")
+    host_route_leak=module.params.get("host_route_leak")
+    ebgp_distance=module.params.get("ebgp_distance")
+    ibgp_distance=module.params.get("ibgp_distance")
+    local_distance=module.params.get("local_distance")
+    ebgp_max_ecmp=module.params.get("ebgp_max_ecmp")
+    ibgp_max_ecmp=module.params.get("ibgp_max_ecmp")
+    local_max_ecmp=module.params.get("local_max_ecmp")
+    bgp_add_path_capability=module.params.get("bgp_add_path_capability")
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
@@ -260,10 +265,10 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="bgpBestPathCtrlPol",
-            aci_rn="bestpath-{0}".format(bgp_best_path_policy),
-            module_object=bgp_best_path_policy,
-            target_filter={"name": bgp_best_path_policy},
+            aci_class="bgpCtxAfPol",
+            aci_rn="bgpCtxAfP-{0}".format(bgp_address_family_context_policy),
+            module_object=bgp_address_family_context_policy,
+            target_filter={"name": bgp_address_family_context_policy},
         ),
     )
 
@@ -271,16 +276,22 @@ def main():
 
     if state == "present":
         aci.payload(
-            aci_class="bgpBestPathCtrlPol",
+            aci_class="bgpCtxAfPol",
             class_config=dict(
-                name=bgp_best_path_policy,
-                ctrl=best_path_control,
+                name=bgp_address_family_context_policy,
+                ctrl=host_route_leak,
+                eDist=ebgp_distance,
+                iDist=ibgp_distance,
+                localDist=local_distance,
+                maxEcmp=ebgp_max_ecmp,
+                maxEcmpIbgp=ibgp_max_ecmp,
+                maxLocalEcmp=local_max_ecmp,
                 descr=description,
                 nameAlias=name_alias,
             ),
         )
 
-        aci.get_diff(aci_class="bgpBestPathCtrlPol")
+        aci.get_diff(aci_class="bgpCtxAfPol")
 
         aci.post_config()
 

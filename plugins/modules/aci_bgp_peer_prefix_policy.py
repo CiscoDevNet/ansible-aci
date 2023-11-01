@@ -12,29 +12,46 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_bgp_best_path_policy
-short_description: Manage BGP Best Path policy (bgp:BestPathCtrlPol)
+module: aci_bgp_peer_prefix_policy
+short_description: Manage BGP peer prefix policy (bgp:PeerPfxPol)
 description:
-- Manage BGP Best Path policies for Tenants on Cisco ACI fabrics.
+- Manage BGP peer prefix policies for Tenants on Cisco ACI fabrics.
 options:
   tenant:
     description:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  bgp_best_path_policy:
+  bgp_peer_prefix_policy:
     description:
-    - The name of the best path policy.
+    - The name of the bgp peer prefix policy.
     type: str
-    aliases: [ bgp_best_path_policy_name, name ]
-  best_path_control:
+    aliases: [ bgp_peer_prefix_policy_name, name ]
+  action:
     description:
-    - The option to enable/disable to relax AS-Path restriction when choosing multipaths.
-    - When enabled, allow load sharing across providers with different AS paths.
-    - The APIC defaults to C(enable) when unset during creation.
+    - The action to be performed when the maximum prefix limit is reached.
+    - The APIC defaults to C(reject) when unset during creation.
     type: str
-    choices: [enable, disable]
-    aliases: [as_path_control]
+    choices: [ log, reject, restart, shut ]
+  maximum_number_prefix:
+    description:
+    - The maximum number of prefixes allowed from the peer.
+    --The APIC defaults to C(20000) when unset during creation.
+    type: int
+    aliases: [ max_prefix, max_num_prefix ]
+  restart_time:
+    description:
+    - The period of time in minutes before restarting the peer when the prefix limit is reached.
+    - Used only if C(action) is set to C(restart).
+    - The APIC defaults to C(infinite) when unset during creation.
+    type: str
+  threshold:
+    description:
+    - The threshold percentage of the maximum number of prefixes before a warning is issued.
+    - For example, if the maximum number of prefixes is 10 and the threshold is 70%, a warning is issued when the number of prefixes exceeds 7 (70%).
+    - The APIC defaults to C(75) when unset during creation.
+    type: int
+    aliases: [ thresh ]
   description:
     description:
     - Description for the bgp protocol profile.
@@ -62,36 +79,35 @@ notes:
 seealso:
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bgp:BestPathCtrlPol).
+  description: More information about the internal APIC class B(bgp:PeerPfxPol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: Create a BGP best path policy
-  cisco.aci.aci_bgp_best_path_policy:
+- name: Create a BGP peer prefix policy
+  cisco.aci.aci_bgp_peer_prefix_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_best_path_policy: my_bgp_best_path_policy
-    best_path_control: enable
+    bgp_peer_prefix_policy: my_bgp_peer_prefix_policy
     tenant: production
     state: present
   delegate_to: localhost
 
-- name: Delete a BGP best path policy
-  cisco.aci.aci_bgp_best_path_policy:
+- name: Delete a BGP peer prefix policy
+  cisco.aci.aci_bgp_peer_prefix_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_best_path_policy: my_bgp_best_path_policy
+    bgp_peer_prefix_policy: my_bgp_peer_prefix_policy
     tenant: production
     state: absent
   delegate_to: localhost
 
-- name: Query all BGP best path policies
-  cisco.aci.aci_bgp_best_path_policy:
+- name: Query all BGP peer prefix policies
+  cisco.aci.aci_bgp_peer_prefix_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -99,12 +115,12 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query a specific BGP best path policy
-  cisco.aci.aci_bgp_best_path_policy:
+- name: Query a specific BGP peer prefix policy
+  cisco.aci.aci_bgp_peer_prefix_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_best_path_policy: my_bgp_best_path_policy
+    bgp_peer_prefix_policy: my_bgp_peer_prefix_policy
     tenant: production
     state: query
   delegate_to: localhost
@@ -218,7 +234,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_BEST_PATH_CONTROL_MAPPING
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_GRACEFUL_RESTART_CONTROLS_MAPPING
 
 
 def main():
@@ -227,8 +243,11 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        bgp_best_path_policy=dict(type="str", aliases=["bgp_best_path_policy_name", "name"]),  # Not required for querying all objects
-        best_path_control=dict(type="str", choices=["enable", "disable"], aliases=["as_path_control"]),
+        bgp_peer_prefix_policy=dict(type="str", aliases=["bgp_peer_prefix_policy_name", "name"]),  # Not required for querying all objects
+        action=dict(type="str", choices=["log", "reject", "restart", "shut"]),
+        maximum_number_prefix=dict(type="int", aliases=["max_prefix", "max_num_prefix"]),
+        restart_time=dict(type="str"),
+        threshold=dict(type="int", alaises=["thresh"]),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -238,13 +257,16 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["bgp_best_path_policy", "tenant"]],
-            ["state", "present", ["bgp_best_path_policy", "tenant"]],
+            ["state", "absent", ["bgp_peer_prefix_policy", "tenant"]],
+            ["state", "present", ["bgp_peer_prefix_policy", "tenant"]],
         ],
     )
 
-    bgp_best_path_policy = module.params.get("bgp_best_path_policy")
-    best_path_control = MATCH_BEST_PATH_CONTROL_MAPPING.get(module.params.get("best_path_control"))
+    bgp_peer_prefix_policy = module.params.get("bgp_peer_prefix_policy")
+    action = module.params.get("action")
+    maximum_number_prefix = module.params.get("maximum_number_prefix")
+    restart_time = module.params.get("restart_time")
+    threshold = module.params.get("threshold")
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
@@ -260,10 +282,10 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="bgpBestPathCtrlPol",
-            aci_rn="bestpath-{0}".format(bgp_best_path_policy),
-            module_object=bgp_best_path_policy,
-            target_filter={"name": bgp_best_path_policy},
+            aci_class="bgpPeerPfxPol",
+            aci_rn="bgpPfxP-{0}".format(bgp_peer_prefix_policy),
+            module_object=bgp_peer_prefix_policy,
+            target_filter={"name": bgp_peer_prefix_policy},
         ),
     )
 
@@ -271,16 +293,19 @@ def main():
 
     if state == "present":
         aci.payload(
-            aci_class="bgpBestPathCtrlPol",
+            aci_class="bgpPeerPfxPol",
             class_config=dict(
-                name=bgp_best_path_policy,
-                ctrl=best_path_control,
+                name=bgp_peer_prefix_policy,
+                action=action,
+                maxPfx=maximum_number_prefix,
+                restartTime=restart_time,
+                thresh=threshold,
                 descr=description,
                 nameAlias=name_alias,
             ),
         )
 
-        aci.get_diff(aci_class="bgpBestPathCtrlPol")
+        aci.get_diff(aci_class="bgpPeerPfxPol")
 
         aci.post_config()
 

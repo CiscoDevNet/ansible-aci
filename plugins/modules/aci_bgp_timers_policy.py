@@ -94,7 +94,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_protocol_profile: my_bgp_timers_policy
+    bgp_timers_policy: my_bgp_timers_policy
     graceful_restart_controls: complete
     hold_interval: 360
     keepalive_interval: 120
@@ -109,7 +109,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_protocol_profile: my_bgp_timers_policy
+    bgp_timers_policy: my_bgp_timers_policy
     tenant: production
     state: absent
   delegate_to: localhost
@@ -128,7 +128,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_protocol_profile: my_bgp_timers_policy
+    bgp_timers_policy: my_bgp_timers_policy
     tenant: production
     state: query
   delegate_to: localhost
