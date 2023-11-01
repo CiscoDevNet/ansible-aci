@@ -12,29 +12,36 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_bgp_best_path_policy
-short_description: Manage BGP Best Path policy (bgp:BestPathCtrlPol)
+module: aci_route_summarization_policy
+short_description: Manage BGP route summarization policy (bgp:RtSummPol)
 description:
-- Manage BGP Best Path policies for Tenants on Cisco ACI fabrics.
+- Manage BGP route summarization policies for Tenants on Cisco ACI fabrics.
 options:
   tenant:
     description:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  bgp_best_path_policy:
+  route_summarization_policy:
     description:
-    - The name of the best path policy.
+    - The name of the bgp route summarization policy.
     type: str
-    aliases: [ bgp_best_path_policy_name, name ]
-  best_path_control:
+    aliases: [ route_summarization_policy_name, name ]
+  address_type_af_control:
     description:
-    - The option to enable/disable to relax AS-Path restriction when choosing multipaths.
-    - When enabled, allow load sharing across providers with different AS paths.
-    - The APIC defaults to C(enable) when unset during creation.
-    type: str
-    choices: [enable, disable]
-    aliases: [as_path_control]
+    - The Ucast/Mcast address type AF control.
+    - The APIC defaults to C(af-ucast) when unset during creation.
+    type: list
+    elements: str
+    choices: [ af-label-ucast, af-ucast, af-mcast ]
+    aliases: [ address_type_control ]
+  address_type_af_control:
+    description:
+    - The summary control.
+    type: list
+    elements: str
+    choices: [ as-set, summary-only ]
+    aliases: [ summary_control, control ]
   description:
     description:
     - Description for the bgp protocol profile.
@@ -62,36 +69,35 @@ notes:
 seealso:
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bgp:BestPathCtrlPol).
+  description: More information about the internal APIC class B(bgp:RtSummPol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: Create a BGP best path policy
-  cisco.aci.aci_bgp_best_path_policy:
+- name: Create a BGP route summarization policy
+  cisco.aci.aci_route_summarization_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_best_path_policy: my_bgp_best_path_policy
-    best_path_control: enable
+    route_summarization_policy: my_route_summarization_policy
     tenant: production
     state: present
   delegate_to: localhost
 
-- name: Delete a BGP best path policy
-  cisco.aci.aci_bgp_best_path_policy:
+- name: Delete a BGP route summarization policy
+  cisco.aci.aci_route_summarization_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_best_path_policy: my_bgp_best_path_policy
+    route_summarization_policy: my_route_summarization_policy
     tenant: production
     state: absent
   delegate_to: localhost
 
-- name: Query all BGP best path policies
-  cisco.aci.aci_bgp_best_path_policy:
+- name: Query all BGP route summarization policies
+  cisco.aci.aci_route_summarization_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -99,12 +105,12 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query a specific BGP best path policy
-  cisco.aci.aci_bgp_best_path_policy:
+- name: Query a specific BGP route summarization policy
+  cisco.aci.aci_route_summarization_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_best_path_policy: my_bgp_best_path_policy
+    route_summarization_policy: my_route_summarization_policy
     tenant: production
     state: query
   delegate_to: localhost
@@ -218,7 +224,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_BEST_PATH_CONTROL_MAPPING
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_GRACEFUL_RESTART_CONTROLS_MAPPING
 
 
 def main():
@@ -227,8 +233,9 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        bgp_best_path_policy=dict(type="str", aliases=["bgp_best_path_policy_name", "name"]),  # Not required for querying all objects
-        best_path_control=dict(type="str", choices=["enable", "disable"], aliases=["as_path_control"]),
+        route_summarization_policy=dict(type="str", aliases=["route_summarization_policy_name", "name"]),  # Not required for querying all objects
+        address_type_af_control=dict(type="list", elements="str", choices=["af-label-ucast", "af-ucast", "af-mcast"], aliases=["address_type_control"]),
+        control_state=dict(type="list", elements="str", choices=["as-set", "summary-only"], aliases=["summary_control", "control"]),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -238,13 +245,14 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["bgp_best_path_policy", "tenant"]],
-            ["state", "present", ["bgp_best_path_policy", "tenant"]],
+            ["state", "absent", ["route_summarization_policy", "tenant"]],
+            ["state", "present", ["route_summarization_policy", "tenant"]],
         ],
     )
 
-    bgp_best_path_policy = module.params.get("bgp_best_path_policy")
-    best_path_control = MATCH_BEST_PATH_CONTROL_MAPPING.get(module.params.get("best_path_control"))
+    route_summarization_policy = module.params.get("route_summarization_policy")
+    address_type_af_control = ",".join(module.params.get("address_type_af_control")) if module.params.get("address_type_af_control") else None
+    control_state = ",".join(module.params.get("control_state")) if module.params.get("control_state") else None
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
@@ -260,10 +268,10 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="bgpBestPathCtrlPol",
-            aci_rn="bestpath-{0}".format(bgp_best_path_policy),
-            module_object=bgp_best_path_policy,
-            target_filter={"name": bgp_best_path_policy},
+            aci_class="bgpRtSummPol",
+            aci_rn="bgprtsum-{0}".format(route_summarization_policy),
+            module_object=route_summarization_policy,
+            target_filter={"name": route_summarization_policy},
         ),
     )
 
@@ -271,16 +279,17 @@ def main():
 
     if state == "present":
         aci.payload(
-            aci_class="bgpBestPathCtrlPol",
+            aci_class="bgpRtSummPol",
             class_config=dict(
-                name=bgp_best_path_policy,
-                ctrl=best_path_control,
+                name=route_summarization_policy,
+                addrTCtrl=address_type_af_control,
+                ctrl=control_state,
                 descr=description,
                 nameAlias=name_alias,
             ),
         )
 
-        aci.get_diff(aci_class="bgpBestPathCtrlPol")
+        aci.get_diff(aci_class="bgpRtSummPol")
 
         aci.post_config()
 
