@@ -386,8 +386,7 @@ def main():
         rtctrlSetRedistMultipath=dict(attribute_input=module.params.get("multipath")),
         rtctrlSetRtMetric=dict(attribute_input=module.params.get("set_metric"), attribute_name="metric"),
         rtctrlSetRtMetricType=dict(
-            attribute_input=MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING.get(module.params.get("set_metric_type")),
-            attribute_name="metricType"
+            attribute_input=MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING.get(module.params.get("set_metric_type")), attribute_name="metricType"
         ),
         rtctrlSetTag=dict(attribute_input=module.params.get("set_route_tag"), attribute_name="tag"),
         rtctrlSetWeight=dict(attribute_input=module.params.get("set_weight"), attribute_name="weight"),
