@@ -333,7 +333,6 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import (
     aci_annotation_spec,
     action_rule_set_comm_spec,
     action_rule_set_dampening_spec,
-    check_all_none_values_dict
 )
 from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING
 
@@ -369,16 +368,6 @@ def main():
     )
 
     action_rule = module.params.get("action_rule")
-    set_community = module.params.get("set_community")
-    set_dampening = module.params.get("set_dampening")
-    set_next_hop = module.params.get("set_next_hop")
-    next_hop_propagation = module.params.get("next_hop_propagation")
-    multipath = module.params.get("multipath")
-    set_preference = module.params.get("set_preference")
-    set_metric = module.params.get("set_metric")
-    set_metric_type = MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING.get(module.params.get("set_metric_type"))
-    set_route_tag = module.params.get("set_route_tag")
-    set_weight = module.params.get("set_weight")
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
@@ -387,17 +376,21 @@ def main():
     aci = ACIModule(module)
 
     # This dict contains the name of the child classes as well as the corresping attribute input (and attribute name if the input is a string)
+    # this dict is deviating from normal child classes list structure in order to determine which child classes should be created, modified, deleted or ignored.
     child_classes = dict(
-        rtctrlSetComm=dict(attribute_input=set_community),
-        rtctrlSetDamp=dict(attribute_input=set_dampening),
-        rtctrlSetNh=dict(attribute_input=set_next_hop, attribute_name="addr"),
-        rtctrlSetNhUnchanged=dict(attribute_input=next_hop_propagation),
-        rtctrlSetPref=dict(attribute_input=set_preference, attribute_name="localPref"),
-        rtctrlSetRedistMultipath=dict(attribute_input=multipath),
-        rtctrlSetRtMetric=dict(attribute_input=set_metric, attribute_name="metric"),
-        rtctrlSetRtMetricType=dict(attribute_input=set_metric_type, attribute_name="metricType"),
-        rtctrlSetTag=dict(attribute_input=set_route_tag, attribute_name="tag"),
-        rtctrlSetWeight=dict(attribute_input=set_weight, attribute_name="weight"),
+        rtctrlSetComm=dict(attribute_input=module.params.get("set_community")),
+        rtctrlSetDamp=dict(attribute_input=module.params.get("set_dampening")),
+        rtctrlSetNh=dict(attribute_input=module.params.get("set_next_hop"), attribute_name="addr"),
+        rtctrlSetNhUnchanged=dict(attribute_input=module.params.get("next_hop_propagation")),
+        rtctrlSetPref=dict(attribute_input=module.params.get("set_preference"), attribute_name="localPref"),
+        rtctrlSetRedistMultipath=dict(attribute_input=module.params.get("multipath")),
+        rtctrlSetRtMetric=dict(attribute_input=module.params.get("set_metric"), attribute_name="metric"),
+        rtctrlSetRtMetricType=dict(
+            attribute_input=MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING.get(module.params.get("set_metric_type")),
+            attribute_name="metricType"
+        ),
+        rtctrlSetTag=dict(attribute_input=module.params.get("set_route_tag"), attribute_name="tag"),
+        rtctrlSetWeight=dict(attribute_input=module.params.get("set_weight"), attribute_name="weight"),
     )
 
     aci.construct_url(
@@ -421,14 +414,15 @@ def main():
     if state == "present":
         child_configs = []
         for class_name, attribute in child_classes.items():
-            # The following condition enables to user to keep its previous configurations if they are not passing anyting in the payload.
-            if attribute.get("attribute_input") is not None:
+            attribute_input = attribute.get("attribute_input")
+            # This condition enables to user to keep its previous configurations if they are not passing anyting in the payload.
+            if attribute_input is not None:
+                # This condition checks if the attribute input is a dict and checks if all of its values are None (stored as a boolean in only_none).
+                only_none = False
+                if isinstance(attribute_input, dict):
+                    only_none = all(value is None for value in attribute_input.values())
                 # This condition checks if the child object needs to be deleted depending on the type of the corresponding attribute input (bool, str, dict).
-                if (
-                    attribute.get("attribute_input") == ""
-                    or attribute.get("attribute_input") is False
-                    or check_all_none_values_dict(attribute.get("attribute_input"))
-                ):
+                if attribute_input == "" or attribute_input is False or only_none:
                     if isinstance(aci.existing, list) and len(aci.existing) > 0:
                         for child in aci.existing[0].get("rtctrlAttrP", {}).get("children", {}):
                             if child.get(class_name):
@@ -440,27 +434,27 @@ def main():
                                     }
                                 )
                 # This condition checks if the child object needs to be modified or created depending on the type of the corresponding attribute input.
-                elif attribute.get("attribute_input") != "" or attribute.get("attribute_input") is True or attribute.get("attribute_input") != {}:
-                    if class_name == "rtctrlSetComm" and isinstance(attribute.get("attribute_input"), dict):
+                elif attribute_input != "" or attribute_input is True or attribute_input != {}:
+                    if class_name == "rtctrlSetComm" and isinstance(attribute_input, dict):
                         child_configs.append(
                             {
                                 class_name: dict(
                                     attributes=dict(
-                                        community=attribute.get("attribute_input").get("community"),
-                                        setCriteria=attribute.get("attribute_input").get("criteria"),
+                                        community=attribute_input.get("community"),
+                                        setCriteria=attribute_input.get("criteria"),
                                     ),
                                 )
                             }
                         )
-                    elif class_name == "rtctrlSetDamp" and isinstance(attribute.get("attribute_input"), dict):
+                    elif class_name == "rtctrlSetDamp" and isinstance(attribute_input, dict):
                         child_configs.append(
                             {
                                 class_name: dict(
                                     attributes=dict(
-                                        halfLife=attribute.get("attribute_input").get("half_life"),
-                                        maxSuppressTime=attribute.get("attribute_input").get("max_suppress_time"),
-                                        reuse=attribute.get("attribute_input").get("reuse"),
-                                        suppress=attribute.get("attribute_input").get("suppress"),
+                                        halfLife=attribute_input.get("half_life"),
+                                        maxSuppressTime=attribute_input.get("max_suppress_time"),
+                                        reuse=attribute_input.get("reuse"),
+                                        suppress=attribute_input.get("suppress"),
                                     ),
                                 )
                             }
@@ -468,7 +462,7 @@ def main():
                     elif class_name in ["rtctrlSetNhUnchanged", "rtctrlSetRedistMultipath"]:
                         child_configs.append({class_name: dict(attributes=dict(descr=""))})
                     else:
-                        child_configs.append({class_name: dict(attributes={attribute.get("attribute_name"): attribute.get("attribute_input")})})
+                        child_configs.append({class_name: dict(attributes={attribute.get("attribute_name"): attribute_input})})
 
         aci.payload(
             aci_class="rtctrlAttrP",
