@@ -98,3 +98,28 @@ EP_LOOP_PROTECTION_ACTION_MAPPING = {"bd": "bd-learn-disable", "port": "port-dis
 FABRIC_POD_SELECTOR_TYPE_MAPPING = dict(all="ALL", range="range")
 
 TLS_MAPPING = {"tls_v1.0": "TLSv1", "tls_v1.1": "TLSv1.1", "tls_v1.2": "TLSv1.2"}
+
+ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING = dict(
+    spine=dict(
+        class_name="infraSpineAccNodePGrp",
+        rn="infra/funcprof/spaccnodepgrp-{0}",
+        copp_pre_filter_policy=dict(class_name="infraRsIaclSpineProfile", tn_name="tnIaclSpineProfileName"),
+        bfd_ipv4_policy=dict(class_name="infraRsSpineBfdIpv4InstPol", tn_name="tnBfdIpv4InstPolName"),
+        bfd_ipv6_policy=dict(class_name="infraRsSpineBfdIpv6InstPol", tn_name="tnBfdIpv6InstPolName"),
+        copp_policy=dict(class_name="infraRsSpineCoppProfile", tn_name="tnCoppSpineProfileName"),
+        cdp_policy=dict(class_name="infraRsSpinePGrpToCdpIfPol", tn_name="tnCdpIfPolName"),
+        lldp_policy=dict(class_name="infraRsSpinePGrpToLldpIfPol", tn_name="tnLldpIfPolName"),
+        usb_configuration_policy=dict(class_name="infraRsSpineTopoctrlUsbConfigProfilePol", tn_name="tnTopoctrlUsbConfigProfilePolName"),
+    ),
+    leaf=dict(
+        class_name="infraAccNodePGrp",
+        rn="infra/funcprof/accnodepgrp-{0}",
+        copp_pre_filter_policy=dict(class_name="infraRsIaclLeafProfile", tn_name="tnIaclLeafProfileName"),
+        bfd_ipv4_policy=dict(class_name="infraRsBfdIpv4InstPol", tn_name="tnBfdIpv4InstPolName"),
+        bfd_ipv6_policy=dict(class_name="infraRsBfdIpv6InstPol", tn_name="tnBfdIpv6InstPolName"),
+        copp_policy=dict(class_name="infraRsLeafCoppProfile", tn_name="tnCoppLeafProfileName"),
+        cdp_policy=dict(class_name="infraRsLeafPGrpToCdpIfPol", tn_name="tnCdpIfPolName"),
+        lldp_policy=dict(class_name="infraRsLeafPGrpToLldpIfPol", tn_name="tnLldpIfPolName"),
+        usb_configuration_policy=dict(class_name="infraRsLeafTopoctrlUsbConfigProfilePol", tn_name="tnTopoctrlUsbConfigProfilePolName"),
+    ),
+)

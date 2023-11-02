@@ -360,32 +360,7 @@ RETURN = r"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-
-
-ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING = dict(
-    spine=dict(
-        class_name="infraSpineAccNodePGrp",
-        rn="infra/funcprof/spaccnodepgrp-{0}",
-        copp_pre_filter_policy=dict(class_name="infraRsIaclSpineProfile", tn_name="tnIaclSpineProfileName"),
-        bfd_ipv4_policy=dict(class_name="infraRsSpineBfdIpv4InstPol", tn_name="tnBfdIpv4InstPolName"),
-        bfd_ipv6_policy=dict(class_name="infraRsSpineBfdIpv6InstPol", tn_name="tnBfdIpv6InstPolName"),
-        copp_policy=dict(class_name="infraRsSpineCoppProfile", tn_name="tnCoppSpineProfileName"),
-        cdp_policy=dict(class_name="infraRsSpinePGrpToCdpIfPol", tn_name="tnCdpIfPolName"),
-        lldp_policy=dict(class_name="infraRsSpinePGrpToLldpIfPol", tn_name="tnLldpIfPolName"),
-        usb_configuration_policy=dict(class_name="infraRsSpineTopoctrlUsbConfigProfilePol", tn_name="tnTopoctrlUsbConfigProfilePolName"),
-    ),
-    leaf=dict(
-        class_name="infraAccNodePGrp",
-        rn="infra/funcprof/accnodepgrp-{0}",
-        copp_pre_filter_policy=dict(class_name="infraRsIaclLeafProfile", tn_name="tnIaclLeafProfileName"),
-        bfd_ipv4_policy=dict(class_name="infraRsBfdIpv4InstPol", tn_name="tnBfdIpv4InstPolName"),
-        bfd_ipv6_policy=dict(class_name="infraRsBfdIpv6InstPol", tn_name="tnBfdIpv6InstPolName"),
-        copp_policy=dict(class_name="infraRsLeafCoppProfile", tn_name="tnCoppLeafProfileName"),
-        cdp_policy=dict(class_name="infraRsLeafPGrpToCdpIfPol", tn_name="tnCdpIfPolName"),
-        lldp_policy=dict(class_name="infraRsLeafPGrpToLldpIfPol", tn_name="tnLldpIfPolName"),
-        usb_configuration_policy=dict(class_name="infraRsLeafTopoctrlUsbConfigProfilePol", tn_name="tnTopoctrlUsbConfigProfilePolName"),
-    ),
-)
+from ansible_collections.cisco.aci.plugins.module_utils.constants import ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING
 
 
 def main():
