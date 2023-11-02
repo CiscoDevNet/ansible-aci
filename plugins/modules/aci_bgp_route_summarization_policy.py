@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_route_summarization_policy
+module: aci_bgp_route_summarization_policy
 short_description: Manage BGP route summarization policy (bgp:RtSummPol)
 description:
 - Manage BGP route summarization policies for Tenants on Cisco ACI fabrics.

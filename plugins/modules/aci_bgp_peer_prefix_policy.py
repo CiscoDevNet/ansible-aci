@@ -22,11 +22,11 @@ options:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  bgp_peer_prefix_policy:
+  peer_prefix_policy:
     description:
     - The name of the bgp peer prefix policy.
     type: str
-    aliases: [ bgp_peer_prefix_policy_name, name ]
+    aliases: [ peer_prefix_policy_name, name ]
   action:
     description:
     - The action to be performed when the maximum prefix limit is reached.
@@ -243,7 +243,7 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        bgp_peer_prefix_policy=dict(type="str", aliases=["bgp_peer_prefix_policy_name", "name"]),  # Not required for querying all objects
+        peer_prefix_policy=dict(type="str", aliases=["peer_prefix_policy_name", "name"]),  # Not required for querying all objects
         action=dict(type="str", choices=["log", "reject", "restart", "shut"]),
         maximum_number_prefix=dict(type="int", aliases=["max_prefix", "max_num_prefix"]),
         restart_time=dict(type="str"),
@@ -262,7 +262,7 @@ def main():
         ],
     )
 
-    bgp_peer_prefix_policy = module.params.get("bgp_peer_prefix_policy")
+    peer_prefix_policy = module.params.get("peer_prefix_policy")
     action = module.params.get("action")
     maximum_number_prefix = module.params.get("maximum_number_prefix")
     restart_time = module.params.get("restart_time")
@@ -283,9 +283,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="bgpPeerPfxPol",
-            aci_rn="bgpPfxP-{0}".format(bgp_peer_prefix_policy),
-            module_object=bgp_peer_prefix_policy,
-            target_filter={"name": bgp_peer_prefix_policy},
+            aci_rn="bgpPfxP-{0}".format(peer_prefix_policy),
+            module_object=peer_prefix_policy,
+            target_filter={"name": peer_prefix_policy},
         ),
     )
 
@@ -295,7 +295,7 @@ def main():
         aci.payload(
             aci_class="bgpPeerPfxPol",
             class_config=dict(
-                name=bgp_peer_prefix_policy,
+                name=peer_prefix_policy,
                 action=action,
                 maxPfx=maximum_number_prefix,
                 restartTime=restart_time,
