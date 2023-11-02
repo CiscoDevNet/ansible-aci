@@ -22,11 +22,11 @@ options:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  bgp_address_family_context_policy:
+  address_family_context_policy:
     description:
     - The name of the bgp address family context policy.
     type: str
-    aliases: [ bgp_address_family_context_name, name ]
+    aliases: [ address_family_context_name, name ]
   description:
     description:
     - Description for the bgp protocol profile.
@@ -218,7 +218,7 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        bgp_address_family_context_policy=dict(type="str", aliases=["bgp_address_family_context_name", "name"]),  # Not required for querying all objects
+        address_family_context_policy=dict(type="str", aliases=["address_family_context_name", "name"]),  # Not required for querying all objects
         host_route_leak=dict(type="bool"),
         ebgp_distance=dict(type="int"),
         ibgp_distance=dict(type="int"),
@@ -226,7 +226,7 @@ def main():
         ebgp_max_ecmp=dict(type="int"),
         ibgp_max_ecmp=dict(type="int"),
         local_max_ecmp=dict(type="int"),
-        bgp_add_path_capability=dict(type="bool"),
+        bgp_add_path_capability=dict(type="str", choices=["receive", "send", ""]),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -241,8 +241,8 @@ def main():
         ],
     )
 
-    bgp_address_family_context_policy = module.params.get("bgp_address_family_context_policy")
-    host_route_leak=module.params.get("host_route_leak")
+    address_family_context_policy = module.params.get("address_family_context_policy")
+    host_route_leak=aci.boolean(module.params.get("host_route_leak"), "host-rt-leak", "")
     ebgp_distance=module.params.get("ebgp_distance")
     ibgp_distance=module.params.get("ibgp_distance")
     local_distance=module.params.get("local_distance")
@@ -257,6 +257,8 @@ def main():
 
     aci = ACIModule(module)
 
+    child_classes=["bgpCtxAddlPathPol"]
+
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -266,19 +268,29 @@ def main():
         ),
         subclass_1=dict(
             aci_class="bgpCtxAfPol",
-            aci_rn="bgpCtxAfP-{0}".format(bgp_address_family_context_policy),
-            module_object=bgp_address_family_context_policy,
-            target_filter={"name": bgp_address_family_context_policy},
+            aci_rn="bgpCtxAfP-{0}".format(address_family_context_policy),
+            module_object=address_family_context_policy,
+            target_filter={"name": address_family_context_policy},
         ),
+        child_classes=child_classes,
     )
 
     aci.get_existing()
 
     if state == "present":
+        child_configs = []
+        if bgp_add_path_capability is not None:
+            if bgp_add_path_capability == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
+                for child in aci.existing[0].get("bgpCtxAfPol", {}).get("children", {}):
+                    if child.get("bgpCtxAddlPathPol"):
+                        child_configs.append(dict(bgpCtxAddlPathPol=dict(attributes=dict(status="deleted"))))
+            elif bgp_add_path_capability != "":
+                child_configs.append(dict(bgpCtxAddlPathPol=dict(attributes=dict(capability=bgp_add_path_capability))))
+  
         aci.payload(
             aci_class="bgpCtxAfPol",
             class_config=dict(
-                name=bgp_address_family_context_policy,
+                name=address_family_context_policy,
                 ctrl=host_route_leak,
                 eDist=ebgp_distance,
                 iDist=ibgp_distance,
@@ -289,6 +301,7 @@ def main():
                 descr=description,
                 nameAlias=name_alias,
             ),
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class="bgpCtxAfPol")
