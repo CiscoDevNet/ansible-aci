@@ -37,6 +37,7 @@ options:
     description:
     - The spanning tree policy bound to the access switch policy group.
     - Only available in APIC version 5.2 or later.
+    - Only available when I(switch_type=leaf).
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
   bfd_ipv4_policy:
@@ -53,37 +54,44 @@ options:
     description:
     - The BFD multihop IPv4 policy bound to the access switch policy group.
     - Only available in APIC version 5.x or later.
+    - Only available when I(switch_type=leaf).
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
   bfd_multihop_ipv6_policy:
     description:
     - The BFD multihop IPv6 policy bound to the access switch policy group.
     - Only available in APIC version 5.x or later.
+    - Only available when I(switch_type=leaf).
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
   fibre_channel_node_policy:
     description:
     - The fibre channel node policy bound to the access switch policy group.
+    - Only available when I(switch_type=leaf).
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
   poe_node_policy:
     description:
     - The PoE node policy bound to the access switch policy group.
+    - Only available when I(switch_type=leaf).
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
   fibre_channel_san_policy:
     description:
     - The fibre channel SAN policy bound to the access switch policy group.
+    - Only available when I(switch_type=leaf).
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
   monitoring_policy:
     description:
     - The monitoring policy bound to the access switch policy group.
+    - Only available when I(switch_type=leaf).
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
   netflow_node_policy:
     description:
     - The netflow node policy bound to the access switch policy group.
+    - Only available when I(switch_type=leaf).
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
   copp_policy:
@@ -94,16 +102,19 @@ options:
   forward_scale_profile_policy:
     description:
     - The forward scale profile policy bound to the access switch policy group.
+    - Only available when I(switch_type=leaf).
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
   fast_link_failover_policy:
     description:
     - The fast link failover policy bound to the access switch policy group.
+    - Only available when I(switch_type=leaf).
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
   node_802_1x_authentication_policy:
     description:
     - The 802.1x node authentication policy bound to the access switch policy group.
+    - Only available when I(switch_type=leaf).
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
   copp_pre_filter_policy:
@@ -114,6 +125,7 @@ options:
   equipment_flash_policy:
     description:
     - The equipment flash policy bound to the access switch policy group.
+    - Only available when I(switch_type=leaf).
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
   cdp_policy:
@@ -130,12 +142,14 @@ options:
     description:
     - The SyncE node policy bound to the access switch policy group.
     - Only available in APIC version 5.x or later.
+    - Only available when I(switch_type=leaf).
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
   ptp_node_policy:
     description:
     - The PTP node policy bound to the access switch policy group.
     - Only available in APIC version 5.2 or later.
+    - Only available when I(switch_type=leaf).
     - The APIC defaults to C("") which results in the target DN set to the default policy when unset during creation.
     type: str
   usb_configuration_policy:
@@ -441,6 +455,27 @@ def main():
     state = module.params.get("state")
 
     aci = ACIModule(module)
+
+    if switch_type == "spine" and not all(
+        v is None
+        for v in [
+            spanning_tree_policy,
+            bfd_multihop_ipv4_policy,
+            bfd_multihop_ipv6_policy,
+            fibre_channel_node_policy,
+            poe_node_policy,
+            fibre_channel_san_policy,
+            monitoring_policy,
+            netflow_node_policy,
+            forward_scale_profile_policy,
+            fast_link_failover_policy,
+            node_802_1x_authentication_policy,
+            equipment_flash_policy,
+            sync_e_node_policy,
+            ptp_node_policy,
+        ]
+    ):
+        aci.fail_json(msg="Unsupported policy provided for spine switch type.")
 
     class_name = ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING.get(switch_type).get("class_name")
 

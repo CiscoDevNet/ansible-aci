@@ -917,3 +917,206 @@
       - nm_remove_spine_policy_group_again is not changed
       - nm_remove_spine_policy_group_again.previous == []
       - nm_remove_spine_policy_group_again.current == []
+
+  # WRONG CONFIGURATION FOR SPINE SWITCH TYPE
+  - name: Create the ansible access switch spine policy group with spanning_tree_policy (error)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      switch_type: spine
+      name: ansible_access_switch_leaf_pol_grp
+      spanning_tree_policy: invalid_spanning_tree_policy
+      state: present
+    ignore_errors: true
+    register: err_create_spine_policy_group_with_spanning_tree_policy
+  
+  - name: Create the ansible access switch spine policy group with bfd_multihop_ipv4_policy (error)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      switch_type: spine
+      name: ansible_access_switch_leaf_pol_grp
+      bfd_multihop_ipv4_policy: invalid_bfd_multihop_ipv4_policy
+      state: present
+    ignore_errors: true
+    register: err_create_spine_policy_group_with_bfd_multihop_ipv4_policy
+
+  - name: Create the ansible access switch spine policy group with bfd_multihop_ipv6_policy (error)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      switch_type: spine
+      name: ansible_access_switch_leaf_pol_grp
+      bfd_multihop_ipv6_policy: invalid_bfd_multihop_ipv6_policy
+      state: present
+    ignore_errors: true
+    register: err_create_spine_policy_group_with_bfd_multihop_ipv6_policy
+
+  - name: Create the ansible access switch spine policy group with fibre_channel_node_policy (error)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      switch_type: spine
+      name: ansible_access_switch_leaf_pol_grp
+      fibre_channel_node_policy: invalid_fibre_channel_node_policy
+      state: present
+    ignore_errors: true
+    register: err_create_spine_policy_group_with_fibre_channel_node_policy
+
+  - name: Create the ansible access switch spine policy group with poe_node_policy (error)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      switch_type: spine
+      name: ansible_access_switch_leaf_pol_grp
+      poe_node_policy: invalid_poe_node_policy
+      state: present
+    ignore_errors: true
+    register: err_create_spine_policy_group_with_poe_node_policy
+
+  - name: Create the ansible access switch spine policy group with fibre_channel_san_policy (error)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      switch_type: spine
+      name: ansible_access_switch_leaf_pol_grp
+      fibre_channel_san_policy: invalid_fibre_channel_san_policy
+      state: present
+    ignore_errors: true
+    register: err_create_spine_policy_group_with_fibre_channel_san_policy
+
+  - name: Create the ansible access switch spine policy group with monitoring_policy (error)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      switch_type: spine
+      name: ansible_access_switch_leaf_pol_grp
+      monitoring_policy: invalid_monitoring_policy
+      state: present
+    ignore_errors: true
+    register: err_create_spine_policy_group_with_monitoring_policy
+
+  - name: Create the ansible access switch spine policy group with netflow_node_policy (error)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      switch_type: spine
+      name: ansible_access_switch_leaf_pol_grp
+      netflow_node_policy: invalid_netflow_node_policy
+      state: present
+    ignore_errors: true
+    register: err_create_spine_policy_group_with_netflow_node_policy
+
+  - name: Create the ansible access switch spine policy group with forward_scale_profile_policy (error)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      switch_type: spine
+      name: ansible_access_switch_leaf_pol_grp
+      forward_scale_profile_policy: invalid_forward_scale_profile_policy
+      state: present
+    ignore_errors: true
+    register: err_create_spine_policy_group_with_forward_scale_profile_policy
+
+  - name: Create the ansible access switch spine policy group with fast_link_failover_policy (error)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      switch_type: spine
+      name: ansible_access_switch_leaf_pol_grp
+      fast_link_failover_policy: invalid_fast_link_failover_policy
+      state: present
+    ignore_errors: true
+    register: err_create_spine_policy_group_with_fast_link_failover_policy
+
+  - name: Create the ansible access switch spine policy group with node_802_1x_authentication_policy (error)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      switch_type: spine
+      name: ansible_access_switch_leaf_pol_grp
+      node_802_1x_authentication_policy: invalid_node_802_1x_authentication_policy
+      state: present
+    ignore_errors: true
+    register: err_create_spine_policy_group_with_node_802_1x_authentication_policy
+
+  - name: Create the ansible access switch spine policy group with equipment_flash_policy (error)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      switch_type: spine
+      name: ansible_access_switch_leaf_pol_grp
+      equipment_flash_policy: invalid_equipment_flash_policy
+      state: present
+    ignore_errors: true
+    register: err_create_spine_policy_group_with_equipment_flash_policy
+
+  - name: Create the ansible access switch spine policy group with sync_e_node_policy (error)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      switch_type: spine
+      name: ansible_access_switch_leaf_pol_grp
+      sync_e_node_policy: invalid_sync_e_node_policy
+      state: present
+    ignore_errors: true
+    register: err_create_spine_policy_group_with_sync_e_node_policy
+
+  - name: Create the ansible access switch spine policy group with ptp_node_policy (error)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      switch_type: spine
+      name: ansible_access_switch_leaf_pol_grp
+      ptp_node_policy: invalid_ptp_node_policy
+      state: present
+    ignore_errors: true
+    register: err_create_spine_policy_group_with_ptp_node_policy
+
+  - name: Create the ansible access switch spine policy group with all (error)
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *aci_info
+      switch_type: spine
+      name: ansible_access_switch_leaf_pol_grp
+      bfd_ipv4_policy: valid_bfd_ipv4_policy
+      bfd_ipv6_policy: valid_bfd_ipv6_policy
+      copp_policy: valid_copp_policy
+      copp_pre_filter_policy: valid_copp_pre_filter_policy
+      cdp_policy: valid_cdp_policy
+      lldp_policy: valid_lldp_policy
+      usb_configuration_policy: valid_usb_configuration_policy
+      spanning_tree_policy: invalid_spanning_tree_policy
+      bfd_multihop_ipv4_policy: invalid_bfd_multihop_ipv4_policy
+      bfd_multihop_ipv6_policy: invalid_bfd_multihop_ipv6_policy
+      fibre_channel_node_policy: invalid_fibre_channel_node_policy
+      poe_node_policy: invalid_poe_node_policy
+      fibre_channel_san_policy: invalid_fibre_channel_san_policy
+      monitoring_policy: invalid_monitoring_policy
+      netflow_node_policy: invalid_netflow_node_policy
+      forward_scale_profile_policy: invalid_forward_scale_profile_policy
+      fast_link_failover_policy: invalid_fast_link_failover_policy
+      node_802_1x_authentication_policy: invalid_node_802_1x_authentication_policy
+      equipment_flash_policy: invalid_equipment_flash_policy
+      sync_e_node_policy: invalid_sync_e_node_policy
+      ptp_node_policy: invalid_ptp_node_policy
+      state: present
+    ignore_errors: true
+    register: err_create_spine_policy_group_with_all
+
+  - name: Verify errors of access switch spine policy group
+    ansible.builtin.assert:
+      that:
+      - err_create_spine_policy_group_with_spanning_tree_policy is failed
+      - err_create_spine_policy_group_with_spanning_tree_policy.msg == "Unsupported policy provided for spine switch type."
+      - err_create_spine_policy_group_with_bfd_multihop_ipv6_policy is failed
+      - err_create_spine_policy_group_with_bfd_multihop_ipv6_policy.msg == "Unsupported policy provided for spine switch type."
+      - err_create_spine_policy_group_with_fibre_channel_node_policy is failed
+      - err_create_spine_policy_group_with_fibre_channel_node_policy.msg == "Unsupported policy provided for spine switch type."
+      - err_create_spine_policy_group_with_poe_node_policy is failed
+      - err_create_spine_policy_group_with_poe_node_policy.msg == "Unsupported policy provided for spine switch type."
+      - err_create_spine_policy_group_with_fibre_channel_san_policy is failed
+      - err_create_spine_policy_group_with_fibre_channel_san_policy.msg == "Unsupported policy provided for spine switch type."
+      - err_create_spine_policy_group_with_monitoring_policy is failed
+      - err_create_spine_policy_group_with_monitoring_policy.msg == "Unsupported policy provided for spine switch type."
+      - err_create_spine_policy_group_with_netflow_node_policy is failed
+      - err_create_spine_policy_group_with_netflow_node_policy.msg == "Unsupported policy provided for spine switch type."
+      - err_create_spine_policy_group_with_forward_scale_profile_policy is failed
+      - err_create_spine_policy_group_with_forward_scale_profile_policy.msg == "Unsupported policy provided for spine switch type."
+      - err_create_spine_policy_group_with_fast_link_failover_policy is failed
+      - err_create_spine_policy_group_with_fast_link_failover_policy.msg == "Unsupported policy provided for spine switch type."
+      - err_create_spine_policy_group_with_node_802_1x_authentication_policy is failed
+      - err_create_spine_policy_group_with_node_802_1x_authentication_policy.msg == "Unsupported policy provided for spine switch type."
+      - err_create_spine_policy_group_with_equipment_flash_policy is failed
+      - err_create_spine_policy_group_with_equipment_flash_policy.msg == "Unsupported policy provided for spine switch type."
+      - err_create_spine_policy_group_with_sync_e_node_policy is failed
+      - err_create_spine_policy_group_with_sync_e_node_policy.msg == "Unsupported policy provided for spine switch type."
+      - err_create_spine_policy_group_with_ptp_node_policy is failed
+      - err_create_spine_policy_group_with_ptp_node_policy.msg == "Unsupported policy provided for spine switch type."
+      - err_create_spine_policy_group_with_all is failed
+      - err_create_spine_policy_group_with_all.msg == "Unsupported policy provided for spine switch type."
