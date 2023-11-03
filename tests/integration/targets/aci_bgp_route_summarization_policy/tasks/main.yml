@@ -45,7 +45,7 @@
       tenant: ansible_tenant
       route_summarization_policy: ansible_bgp_route_summarization_policy_1
       description: BGP route summarization policy 1 for ansible_tenant tenant
-      address_type_af_control: [af-ucast, af-mcast]
+      address_type_af_control: [af-mcast, af-ucast]
       control_state: [as-set, summary-only]
       state: present
     check_mode: true
@@ -78,13 +78,13 @@
         - cm_add_bgp_route_summarization_policy.current == []
         - nm_add_bgp_route_summarization_policy is changed
         - nm_add_bgp_route_summarization_policy.current.0.bgpRtSummPol.attributes.name == "ansible_bgp_route_summarization_policy_1"
-        - nm_add_bgp_route_summarization_policy.current.0.bgpRtSummPol.attributes.addTCtrl == "af-ucast,af-mcast"
+        - nm_add_bgp_route_summarization_policy.current.0.bgpRtSummPol.attributes.addrTCtrl == "af-mcast,af-ucast"
         - nm_add_bgp_route_summarization_policy.current.0.bgpRtSummPol.attributes.ctrl == "as-set,summary-only"
         - nm_add_bgp_route_summarization_policy_idempotency is not changed
         - nm_add_bgp_route_summarization_policy_2 is changed
         - nm_add_bgp_route_summarization_policy_2.previous == []
         - nm_add_bgp_route_summarization_policy_2.current.0.bgpRtSummPol.attributes.name == "ansible_bgp_route_summarization_policy_2"
-        - nm_add_bgp_route_summarization_policy_2.current.0.bgpRtSummPol.attributes.addTCtrl == "af-ucast"
+        - nm_add_bgp_route_summarization_policy_2.current.0.bgpRtSummPol.attributes.addrTCtrl == "af-ucast"
 
   - name: Query all BGP route summarization policies
     aci_bgp_route_summarization_policy:
@@ -105,7 +105,7 @@
         - query_all_bgp_route_summarization_policy.current|length >= 2
         - query_ansible_bgp_route_summarization_policy_1 is not changed
         - query_ansible_bgp_route_summarization_policy_1.current.0.bgpRtSummPol.attributes.name == "ansible_bgp_route_summarization_policy_1"
-        - query_ansible_bgp_route_summarization_policy_1.current.0.bgpRtSummPol.attributes.addTCtrl == "af-ucast,af-mcast"
+        - query_ansible_bgp_route_summarization_policy_1.current.0.bgpRtSummPol.attributes.addrTCtrl == "af-mcast,af-ucast"
         - query_ansible_bgp_route_summarization_policy_1.current.0.bgpRtSummPol.attributes.ctrl == "as-set,summary-only"
 
   - name: Remove BGP route summarization policy (check_mode)
