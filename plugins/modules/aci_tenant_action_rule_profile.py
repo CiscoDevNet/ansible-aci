@@ -392,6 +392,11 @@ def main():
         rtctrlSetWeight=dict(attribute_input=module.params.get("set_weight"), attribute_name="weight"),
     )
 
+    # This condition deal with child classes which do not exist in APIC version 4.2 and prior.
+    for class_name in ["rtctrlSetNhUnchanged", "rtctrlSetRedistMultipath"]:
+      if child_classes[class_name].get("attribute_input") is None:
+          child_classes.pop(class_name)
+
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -421,17 +426,16 @@ def main():
                 if isinstance(attribute_input, dict):
                     only_none = all(value is None for value in attribute_input.values())
                 # This condition checks if the child object needs to be deleted depending on the type of the corresponding attribute input (bool, str, dict).
-                if attribute_input == "" or attribute_input is False or only_none:
-                    if isinstance(aci.existing, list) and len(aci.existing) > 0:
-                        for child in aci.existing[0].get("rtctrlAttrP", {}).get("children", {}):
-                            if child.get(class_name):
-                                child_configs.append(
-                                    {
-                                        class_name: dict(
-                                            attributes=dict(status="deleted"),
-                                        ),
-                                    }
-                                )
+                if (attribute_input == "" or attribute_input is False or only_none) and isinstance(aci.existing, list) and len(aci.existing) > 0:
+                    for child in aci.existing[0].get("rtctrlAttrP", {}).get("children", {}):
+                        if child.get(class_name):
+                            child_configs.append(
+                                {
+                                    class_name: dict(
+                                        attributes=dict(status="deleted"),
+                                    ),
+                                }
+                            )
                 # This condition checks if the child object needs to be modified or created depending on the type of the corresponding attribute input.
                 elif attribute_input != "" or attribute_input is True or attribute_input != {}:
                     if class_name == "rtctrlSetComm" and isinstance(attribute_input, dict):
