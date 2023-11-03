@@ -55,13 +55,22 @@
         max_suppress_time: 100
       state: absent
 
-  - name: Ensure second action rule profile does not exist
-    aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_2_absent
+  - name: Ensure second action rule profile does not exist - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_2_5_absent
       <<: *aci_tenant_present
       name: anstest_2
       set_next_hop: 1.1.1.2
       next_hop_propagation: true
       multipath: true
+      state: absent
+    
+  - name: Ensure second action rule profile does not exist - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_2_absent
+      <<: *aci_tenant_present
+      name: anstest_2
+      set_next_hop: 1.1.1.2
       state: absent
 
   - name: Create first action rule profile (check_mode)
@@ -81,13 +90,21 @@
       <<: *aci_tenant_action_rule_profile_present
     register: idempotency_add_tenant_action_rule_profile_1
 
-  - name: Create second action rule profile
+  - name: Create second action rule profile - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_2_5_present
+      <<: *aci_tenant_action_rule_profile_2_5_absent
+      state: present
+    register: nm_add_tenant_action_rule_profile_2_5
+
+  - name: Create second action rule profile - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
     aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_2_present
       <<: *aci_tenant_action_rule_profile_2_absent
       state: present
     register: nm_add_tenant_action_rule_profile_2
 
-  - name: Asserts for creation tasks
+  - name: Asserts for creation tasks for action rule profile 1
     assert:
       that:
         - cm_add_tenant_action_rule_profile_1 is changed
@@ -108,11 +125,24 @@
         - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.6.rtctrlSetComm.attributes.setCriteria == "replace"
         - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.7.rtctrlSetTag.attributes.tag == "100"
         - idempotency_add_tenant_action_rule_profile_1 is not changed
+
+  - name: Asserts for creation tasks for action rule profile 2 - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    assert:
+      that:
+        - nm_add_tenant_action_rule_profile_2_5 is changed
+        - nm_add_tenant_action_rule_profile_2_5.current.0.rtctrlAttrP.attributes.name == "anstest_2"
+        - nm_add_tenant_action_rule_profile_2_5.current.0.rtctrlAttrP.children.0.rtctrlSetRedistMultipath.attributes.descr == ""
+        - nm_add_tenant_action_rule_profile_2_5.current.0.rtctrlAttrP.children.1.rtctrlSetNhUnchanged.attributes.descr == ""
+        - nm_add_tenant_action_rule_profile_2_5.current.0.rtctrlAttrP.children.2.rtctrlSetNh.attributes.addr == "1.1.1.2"
+
+  - name: Asserts for creation tasks for action rule profile 2 - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    assert:
+      that:
         - nm_add_tenant_action_rule_profile_2 is changed
         - nm_add_tenant_action_rule_profile_2.current.0.rtctrlAttrP.attributes.name == "anstest_2"
-        - nm_add_tenant_action_rule_profile_2.current.0.rtctrlAttrP.children.0.rtctrlSetRedistMultipath.attributes.descr == ""
-        - nm_add_tenant_action_rule_profile_2.current.0.rtctrlAttrP.children.1.rtctrlSetNhUnchanged.attributes.descr == ""
-        - nm_add_tenant_action_rule_profile_2.current.0.rtctrlAttrP.children.2.rtctrlSetNh.attributes.addr == "1.1.1.2"
+        - nm_add_tenant_action_rule_profile_2.current.0.rtctrlAttrP.children.0.rtctrlSetNh.attributes.addr == "1.1.1.2"
 
   - name: Query all action rule profiles
     aci_tenant_action_rule_profile:
@@ -171,15 +201,23 @@
       <<: *aci_tenant_action_rule_profile_children_deleted
     register: idempotency_delete_children_tenant_action_rule_profile_1
 
-  - name: Delete children for second action rule profile (normal_mode)
+  - name: Delete children for second action rule profile - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
     aci_tenant_action_rule_profile:
-      <<: *aci_tenant_action_rule_profile_2_present
+      <<: *aci_tenant_action_rule_profile_2_5_present
       set_next_hop: ""
       next_hop_propagation: false
       multipath: false
+    register: nm_delete_children_tenant_action_rule_profile_2_5
+
+  - name: Delete children for second action rule profile - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    aci_tenant_action_rule_profile:
+      <<: *aci_tenant_action_rule_profile_2_present
+      set_next_hop: ""
     register: nm_delete_children_tenant_action_rule_profile_2
 
-  - name: Asserts for deletion tasks
+  - name: Asserts for deletion tasks for action rule profile 1
     assert:
       that:
         - cm_delete_children_tenant_action_rule_profile_1 is changed
@@ -187,6 +225,18 @@
         - nm_delete_children_tenant_action_rule_profile_1 is changed
         - nm_delete_children_tenant_action_rule_profile_1.current.0.rtctrlAttrP | length == 1
         - idempotency_delete_children_tenant_action_rule_profile_1 is not changed
+
+  - name: Asserts for deletion tasks for action rule profile 2 - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    assert:
+      that:
+        - nm_delete_children_tenant_action_rule_profile_2_5 is changed
+        - nm_delete_children_tenant_action_rule_profile_2_5.current.0.rtctrlAttrP | length == 1
+
+  - name: Asserts for deletion tasks for action rule profile 2 - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    assert:
+      that:
         - nm_delete_children_tenant_action_rule_profile_2 is changed
         - nm_delete_children_tenant_action_rule_profile_2.current.0.rtctrlAttrP | length == 1
 
@@ -209,13 +259,21 @@
       state: absent
     register: idempotency_delete_tenant_action_rule_profile_1
 
-  - name: Delete second action rule profile (normal_mode)
+  - name: Delete second action rule profile - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    aci_tenant_action_rule_profile:
+      <<: *aci_tenant_action_rule_profile_2_5_present
+      state: absent
+    register: nm_delete_tenant_action_rule_profile_2_5
+
+  - name: Delete second action rule profile - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
     aci_tenant_action_rule_profile:
       <<: *aci_tenant_action_rule_profile_2_present
       state: absent
     register: nm_delete_tenant_action_rule_profile_2
 
-  - name: Asserts for deletion tasks
+  - name: Asserts for deletion tasks for action rule profile 1
     assert:
       that:
         - cm_delete_tenant_action_rule_profile_1 is changed
@@ -225,6 +283,19 @@
         - nm_delete_tenant_action_rule_profile_1.current == []
         - idempotency_delete_tenant_action_rule_profile_1 is not changed
         - idempotency_delete_tenant_action_rule_profile_1.previous == []
+
+  - name: Asserts for deletion tasks for action rule profile 2 - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    assert:
+      that:
+        - nm_delete_tenant_action_rule_profile_2_5 is changed
+        - nm_delete_tenant_action_rule_profile_2_5.previous != []
+        - nm_delete_tenant_action_rule_profile_2_5.current == []
+
+  - name: Asserts for deletion tasks for action rule profile 2 - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    assert:
+      that:
         - nm_delete_tenant_action_rule_profile_2 is changed
         - nm_delete_tenant_action_rule_profile_2.previous != []
         - nm_delete_tenant_action_rule_profile_2.current == []
