@@ -394,8 +394,8 @@ def main():
 
     # This condition deal with child classes which do not exist in APIC version 4.2 and prior.
     for class_name in ["rtctrlSetNhUnchanged", "rtctrlSetRedistMultipath"]:
-      if child_classes[class_name].get("attribute_input") is None:
-          child_classes.pop(class_name)
+        if child_classes[class_name].get("attribute_input") is None:
+            child_classes.pop(class_name)
 
     aci.construct_url(
         root_class=dict(
