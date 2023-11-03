@@ -79,19 +79,16 @@ options:
     - This option allows virtual machines to send frames with a mac address.
     type: str
     choices: [ enabled, disabled ]
-    default: disabled
   mac_change:
     description:
     - The status of the mac address change support for port groups in an external VMM controller.
     type: str
     choices: [ enabled, disabled ]
-    default: disabled
   promiscuous_mode:
     description:
     - The status of promiscuous mode for port groups in an external VMM controller.
     type: str
     choices: [ enabled, disabled ]
-    default: disabled
   enhanced_lag_policy:
     description:
     - The enhanced lag policy of the path.
@@ -109,8 +106,10 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
+- The domain of floating path of type physical is only supported in APIC v5.0 and above.
+- The attributes forged_transmit, mac_change and promiscuous_mode are only supported in APIC v5.0 and above.
 - The C(tenant), C(l3out), C(logical_node_profile), C(logical_interface_profile) and C(floating_svi) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile), M(cisco.aci.aci_l3out_logical_interface_profile) and \
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile), M(cisco.aci.aci_l3out_logical_interface_profile) and
   M(cisco.aci.aci_l3out_floating_svi) can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
@@ -339,9 +338,9 @@ def main():
         node_id=dict(type="str", required=True),
         encap=dict(type="str", required=True),
         floating_ip=dict(type="str", aliases=["floating_address"]),
-        forged_transmit=dict(type="str", choices=["enabled", "disabled"], default="disabled"),
-        mac_change=dict(type="str", choices=["enabled", "disabled"], default="disabled"),
-        promiscuous_mode=dict(type="str", choices=["enabled", "disabled"], default="disabled"),
+        forged_transmit=dict(type="str", choices=["enabled", "disabled"]),
+        mac_change=dict(type="str", choices=["enabled", "disabled"]),
+        promiscuous_mode=dict(type="str", choices=["enabled", "disabled"]),
         domain_type=dict(type="str", choices=["physical", "vmware"]),
         domain=dict(type="str"),
         enhanced_lag_policy=dict(type="str"),
@@ -366,9 +365,9 @@ def main():
     node_id = module.params.get("node_id")
     floating_ip = module.params.get("floating_ip")
     encap = module.params.get("encap")
-    forged_transmit = module.params.get("forged_transmit").capitalize()
-    mac_change = module.params.get("mac_change").capitalize()
-    promiscuous_mode = module.params.get("promiscuous_mode").capitalize()
+    forged_transmit = module.params.get("forged_transmit").capitalize() if module.params.get("forged_transmit") else None
+    mac_change = module.params.get("mac_change").capitalize() if module.params.get("mac_change") else None
+    promiscuous_mode = module.params.get("promiscuous_mode").capitalize() if module.params.get("promiscuous_mode") else None
     domain_type = module.params.get("domain_type")
     domain = module.params.get("domain")
     enhanced_lag_policy = module.params.get("enhanced_lag_policy")
@@ -430,14 +429,18 @@ def main():
             if isinstance(aci.existing, list) and len(aci.existing) > 0:
                 for child in aci.existing[0].get("l3extRsDynPathAtt", {}).get("children", {}):
                     if child.get("l3extVirtualLIfPLagPolAtt"):
-                        existing_enhanced_lag_policy = (
-                            child.get("l3extVirtualLIfPLagPolAtt")
-                            .get("children")[0]
-                            .get("l3extRsVSwitchEnhancedLagPol")
-                            .get("attributes")
-                            .get("tDn")
-                            .split("enlacplagp-")[1]
-                        )
+                        try:
+                            existing_enhanced_lag_policy = (
+                                child["l3extVirtualLIfPLagPolAtt"]
+                                ["children"][0]
+                                ["l3extRsVSwitchEnhancedLagPol"]
+                                ["attributes"]
+                                ["tDn"]
+                                .split("enlacplagp-")[1]
+                            )
+                        except (AttributeError, IndexError, KeyError):
+                            existing_enhanced_lag_policy = ""
+
                         if enhanced_lag_policy == "":
                             child_configs.append(
                                 dict(
@@ -465,15 +468,20 @@ def main():
                     )
                 child_configs.append(dict(l3extVirtualLIfPLagPolAtt=dict(attributes=dict(), children=child)))
 
+        class_config = dict(floatingAddr=floating_ip)
+
+        if forged_transmit:
+            class_config.update(forgedTransmit=forged_transmit)
+        if mac_change:
+            class_config.update(macChange=mac_change)
+        if promiscuous_mode:
+            class_config.update(promMode=promiscuous_mode)
+        if access_encap:
+            class_config.update(encap=access_encap)
+
         aci.payload(
             aci_class="l3extRsDynPathAtt",
-            class_config=dict(
-                floatingAddr=floating_ip,
-                forgedTransmit=forged_transmit,
-                macChange=mac_change,
-                promMode=promiscuous_mode,
-                encap=access_encap,
-            ),
+            class_config=class_config,
             child_configs=child_configs,
         )
 

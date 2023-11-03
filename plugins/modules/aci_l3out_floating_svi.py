@@ -114,6 +114,7 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
+- The attribute external_bridge_group_profile is only supported in APIC v5.0 and above.
 - The C(tenant), C(l3out), C(logical_node_profile) and C(logical_interface_profile) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile), M(cisco.aci.aci_l3out_logical_interface_profile) \
   modules can be used for this.
@@ -376,6 +377,10 @@ def main():
     if pod_id and node_id:
         node_dn = "topology/pod-{0}/node-{1}".format(pod_id, node_id)
 
+    child_classes = []
+    if external_bridge_group_profile is not None:
+        child_classes.append("l3extBdProfileCont")
+
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -404,7 +409,7 @@ def main():
         subclass_4=dict(
             aci_class="l3extVirtualLIfP", aci_rn="vlifp-[{0}]-[{1}]".format(node_dn, encap), module_object=node_dn, target_filter={"nodeDn": node_dn}
         ),
-        child_classes=["l3extBdProfileCont"],
+        child_classes=child_classes,
     )
 
     aci.get_existing()
