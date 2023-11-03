@@ -81,6 +81,7 @@
       - cm_add_hsrp is changed
       - nm_add_hsrp is changed
       - cm_add_hsrp.proposed.hsrpIfP.attributes.version == "v1"
+      - cm_add_hsrp.previous == nm_add_hsrp.previous == []
       - nm_add_hsrp.current.0.hsrpIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-node1/lifp-intf1/hsrpIfP"
       - nm_add_hsrp.current.0.hsrpIfP.attributes.version == "v1"
       
@@ -135,6 +136,12 @@
       state: absent
     register: remove_hsrp
 
+  - name: Remove the hsrp interface profile again
+    cisco.aci.aci_l3out_hsrp_interface_profile:
+      <<: *hsrp_update
+      state: absent
+    register: remove_hsrp_again
+
   - name: Verify remove_hsrp
     assert:
       that:
@@ -142,3 +149,4 @@
       - cm_remove_hsrp.proposed == {}
       - remove_hsrp is changed
       - remove_hsrp.current == []
+      - remove_hsrp_again is not changed

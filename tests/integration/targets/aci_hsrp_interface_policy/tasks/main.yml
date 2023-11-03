@@ -53,6 +53,7 @@
       that:
       - cm_add_hsrp is changed
       - nm_add_hsrp is changed
+      - cm_add_hsrp.previous == nm_add_hsrp.previous == []
       - cm_add_hsrp.proposed.hsrpIfPol.attributes.ctrl == "bia"
       - cm_add_hsrp.proposed.hsrpIfPol.attributes.delay == "2"
       - cm_add_hsrp.proposed.hsrpIfPol.attributes.reloadDelay == "2"
@@ -121,6 +122,12 @@
       state: query
     register: query_hsrp
 
+  - name: Query all hsrp interface policies under the tenant
+    cisco.aci.aci_hsrp_interface_policy:
+      <<: *tenant_present
+      state: query
+    register: query_all_tenant
+
   - name: Query all hsrp interface policies
     cisco.aci.aci_hsrp_interface_policy:
       <<: *tenant_present
@@ -131,12 +138,14 @@
     assert:
       that:
       - query_hsrp is not changed
+      - query_all_tenant is not changed
       - query_all is not changed
       - query_hsrp.current.0.hsrpIfPol.attributes.delay == "3"
       - query_hsrp.current.0.hsrpIfPol.attributes.reloadDelay == "2"
       - query_hsrp.current.0.hsrpIfPol.attributes.name == "hsrp1"
       - query_hsrp.current.0.hsrpIfPol.attributes.dn == "uni/tn-ansible_test/hsrpIfPol-hsrp1"
-      - query_all.current.0.fvTenant.children | length == 2
+      - query_all_tenant.current.0.fvTenant.children | length == 2
+      - query_all.current.0.fvTenant.children | length >= 2
 
   - name: Remove hsrp interface policy 1 in check mode
     cisco.aci.aci_hsrp_interface_policy:
@@ -157,6 +166,12 @@
       state: absent
     register: remove_hsrp2
 
+  - name: Remove hsrp interface policy again
+    cisco.aci.aci_hsrp_interface_policy:
+      <<: *hsrp2
+      state: absent
+    register: remove_hsrp2_again
+
   - name: Verify remove hsrp
     assert:
       that:
@@ -166,3 +181,4 @@
       - remove_hsrp2 is changed
       - remove_hsrp.current == []
       - remove_hsrp2.current == []
+      - remove_hsrp2_again is not changed

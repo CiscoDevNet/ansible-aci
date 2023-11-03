@@ -126,6 +126,7 @@
       - nm_add_group.current.0.hsrpGroupP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-node1/lifp-intf1/hsrpIfP/hsrpGroupP-group1"
       - nm_add_group.current.0.hsrpGroupP.attributes.groupAf == "ipv4"
       - nm_add_group.current.0.hsrpGroupP.attributes.groupId == "1"
+      - cm_add_group.previous == nm_add_group.previous == []
       - update_group.current.0.hsrpGroupP.attributes.groupId == "3"
       - nm_add_group.current.0.hsrpGroupP.attributes.name == "group1"
       - nm_add_group.current.0.hsrpGroupP.attributes.groupName == "one"
@@ -178,6 +179,12 @@
       state: absent
     register: absent_group
 
+  - name: Remove hsrp group again
+    cisco.aci.aci_l3out_hsrp_group:
+      <<: *group_update
+      state: absent
+    register: absent_group_again
+
   - name: Verify remove
     assert:
       that:
@@ -185,3 +192,4 @@
       - cm_absent_group.proposed == {}
       - absent_group is changed
       - absent_group.current == []
+      - absent_group_again is not changed

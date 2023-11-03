@@ -114,6 +114,7 @@
       - nm_vip is changed
       - add_vip_again is not changed
       - add_vip2 is changed
+      - cm_vip.previous == nm_vip.previous == []
       - cm_vip.proposed.hsrpSecVip.attributes.ip == "191.1.1.1"
       - nm_vip.current.0.hsrpSecVip.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-node1/lifp-intf1/hsrpIfP/hsrpGroupP-group1/hsrpSecVip-[191.1.1.1]"
       - nm_vip.current.0.hsrpSecVip.attributes.ip == "191.1.1.1"
@@ -156,6 +157,12 @@
       state: absent
     register: absent_vip
 
+  - name: Remove hsrp group again
+    cisco.aci.aci_l3out_hsrp_secondary_vip:
+      <<: *vip
+      state: absent
+    register: absent_vip_again
+
   - name: Verify remove
     assert:
       that:
@@ -163,3 +170,4 @@
       - cm_absent_vip.proposed == {}
       - absent_vip is changed
       - absent_vip.current == []
+      - absent_vip_again is not changed
