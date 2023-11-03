@@ -32,14 +32,14 @@
 
   # CLEAN ENVIRONMENT
   - name: Remove the ansible_tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       tenant: ansible_tenant
       state: absent
 
   # Add a tenant
   - name: Add a new tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       tenant: ansible_tenant
       description: Ansible tenant
@@ -47,7 +47,7 @@
 
   # Add VRF
   - name: Add a new VRF
-    aci_vrf:
+    cisco.aci.aci_vrf:
       <<: *aci_info
       tenant: ansible_tenant
       name: ansible_vrf
@@ -56,7 +56,7 @@
 
   # Add L3Out
   - name: Add a new L3 Outside
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_info
       tenant: ansible_tenant
       name: ansible_l3out
@@ -68,7 +68,7 @@
 
   # ADD l3out logical node profile
   - name: l3out logical node profile
-    aci_l3out_logical_node_profile:
+    cisco.aci.aci_l3out_logical_node_profile:
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -77,7 +77,7 @@
 
   # ADD l3out logical interface profile
   - name: l3out logical interface profile
-    aci_l3out_logical_interface_profile:
+    cisco.aci.aci_l3out_logical_interface_profile:
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -87,7 +87,7 @@
 
   # Add BFD Multihop Interface Profile
   - name: Add a new BFD Multihop Interface Profile - check mode
-    aci_bfd_multihop_interface_profile: &present_bfd_mh_int_profile
+    cisco.aci.aci_bfd_multihop_interface_profile: &present_bfd_mh_int_profile
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -98,7 +98,7 @@
     register: cm_add_bfd_mh_int_prof
 
   - name: Add a new BFD Multihop Interface Profile - normal mode
-    aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       state: present
     register: nm_add_bfd_mh_int_prof
@@ -114,7 +114,7 @@
       - cm_add_bfd_mh_int_prof.proposed.bfdMhIfP.attributes.type == nm_add_bfd_mh_int_prof.proposed.bfdMhIfP.attributes.type == "none"
 
   - name: Add BFD Multihop Interface Profile again- idempotency
-    aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       state: present
     register: add_bfd_mh_int_prof_again
@@ -132,11 +132,11 @@
       name: ansible_bfd_multihop_interface_policy
       description: Ansible BFD Multihop Interface Policy
       state: present
-    register: cm_add_bfd_multihop_interface_pol
+    register: add_bfd_multihop_interface_pol
 
   # Update BFD Multihop Interface Profile
   - name: Update BFD Multihop Interface Profile
-    aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       interface_profile_type: sha1
       key: "abc*123"
@@ -155,19 +155,19 @@
       - update_bfd_mh_int_prof.sent.bfdMhIfP.children.0.bfdRsMhIfPol.attributes.tnBfdMhIfPolName == "ansible_bfd_multihop_interface_policy"
 
   - name: Query BFD Multihop Interface Profile
-    aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       state: query
     register: query_bfd_mh_int_prof
 
   - name: Query all BFD Multihop Interface Profile
-    aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_bfd_multihop_interface_profile:
       <<: *aci_info
       state: query
     register: query_all_bfd_mh_int_prof
 
   - name: Delete BFD Multihop Interface Profile - check mode
-    aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       state: absent
     check_mode: true

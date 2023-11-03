@@ -12,10 +12,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_bfd_multihop_interface_policy
-short_description: Manage BFD Multihop Interface policies.
+module: aci_bfd_interface_policy
+short_description: Manage BFD Interface policies.
 description:
-- Manage BFD Multihop Interface policy (bfdMhIfPol) configuration on Cisco ACI fabrics.
+- Manage BFD Interface policy (bfdMhIfPol) configuration on Cisco ACI fabrics.
 - Only available in APIC version 5.2 or later.
 options:
   tenant:
@@ -24,34 +24,34 @@ options:
     type: str
   name:
     description:
-    - Name of the BFD Multihop Interface policy
+    - Name of the BFD Interface policy
     type: str
     aliases: [ bfd_multihop_interface_policy ]
   description:
     description:
-    - Description of the BFD Multihop Interface policy
+    - Description of the BFD Interface policy
     type: str
   admin_state:
     description:
-    - Admin state of the BFD Multihop Interface policy
+    - Admin state of the BFD Interface policy
     type: str
     choices: [ enabled, disabled ]
     default: enabled
   detection_multiplier:
     description:
-    - Detection multiplier of the BFD Multihop Interface policy
+    - Detection multiplier of the BFD Interface policy
     - Allowed range is 1-50.
     type: int
     default: 3
   min_transmit_interval:
     description:
-    - Minimum transmit (Tx) interval of the BFD Multihop Interface policy
+    - Minimum transmit (Tx) interval of the BFD Interface policy
     - Allowed range is 250-999.
     type: int
     default: 250
   min_receive_interval:
     description:
-    - Minimum receive (Rx) interval of the BFD Multihop Interface policy
+    - Minimum receive (Rx) interval of the BFD Interface policy
     - Allowed range is 250-999.
     type: int
     default: 250
@@ -78,41 +78,41 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a new  BFD Multihop Interface policy
-    cisco.aci.aci_bfd_multihop_interface_policy:
+- name: Add a new  BFD Interface policy
+    cisco.aci.aci_bfd_interface_policy:
       host: apic
       username: admin
       password: SomeSecretPassword
       tenant: ansible_tenant
-      name: ansible_bfd_multihop_interface_policy
-      description: Ansible BFD Multihop Interface Policy
+      name: ansible_bfd_interface_policy
+      description: Ansible BFD Interface Policy
       state: present
     state: present
   delegate_to: localhost
 
-- name: Remove a BFD Multihop Interface policy
-  cisco.aci.aci_bfd_multihop_interface_policy:
+- name: Remove a BFD Interface policy
+  cisco.aci.aci_bfd_interface_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: ansible_tenant
-    name: ansible_bfd_multihop_interface_policy
+    name: ansible_bfd_interface_policy
     state: absent
   delegate_to: localhost
 
-- name: Query a BFD Multihop Interface policy
-  cisco.aci.aci_bfd_multihop_interface_policy:
+- name: Query a BFD Interface policy
+  cisco.aci.aci_bfd_interface_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: ansible_tenant
-    name: ansible_bfd_multihop_interface_policy
+    name: ansible_bfd_interface_policy
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Query all BFD Multihop Interface policies in a specific tenant
-  cisco.aci.aci_bfd_multihop_interface_policy:
+- name: Query all BFD Interface policies in a specific tenant
+  cisco.aci.aci_bfd_interface_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -235,12 +235,12 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        name=dict(type="str", aliases=["bfd_multihop_interface_policy"]),
+        name=dict(type="str", aliases=["bfd_interface_policy"]),
         description=dict(type="str"),
         admin_state=dict(type="str", default="enabled", choices=["enabled", "disabled"]),
         detection_multiplier=dict(type="int", default=3),
-        min_transmit_interval=dict(type="int", default=250),
-        min_receive_interval=dict(type="int", default=250),
+        min_transmit_interval=dict(type="int", default=50),
+        min_receive_interval=dict(type="int", default=50),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         tenant=dict(type="str"),
     )
@@ -263,11 +263,11 @@ def main():
     if detection_multiplier is not None and detection_multiplier not in range(1, 50):
         module.fail_json(msg='The "detection_multiplier" must be a value between 1 and 50')
     min_transmit_interval = module.params.get("min_transmit_interval")
-    if min_transmit_interval is not None and min_transmit_interval not in range(250, 999):
-        module.fail_json(msg='The "min_transmit_interval" must be a value between 250 and 999')
+    if min_transmit_interval is not None and min_transmit_interval not in range(50, 999):
+        module.fail_json(msg='The "min_transmit_interval" must be a value between 50 and 999')
     min_receive_interval = module.params.get("min_receive_interval")
-    if min_receive_interval is not None and min_receive_interval not in range(250, 999):
-        module.fail_json(msg='The "min_receive_interval" must be a value between 250 and 999')
+    if min_receive_interval is not None and min_receive_interval not in range(50, 999):
+        module.fail_json(msg='The "min_receive_interval" must be a value between 50 and 999')
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -278,8 +278,8 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="bfdMhIfPol",
-            aci_rn="bfdMhIfPol-{0}".format(name),
+            aci_class="bfdIfPol",
+            aci_rn="bfdIfPol-{0}".format(name),
             module_object=name,
             target_filter={"name": name},
         ),
@@ -289,7 +289,7 @@ def main():
 
     if state == "present":
         aci.payload(
-            aci_class="bfdMhIfPol",
+            aci_class="bfdIfPol",
             class_config=dict(
                 name=name,
                 descr=description,
@@ -300,7 +300,7 @@ def main():
             ),
         )
 
-        aci.get_diff(aci_class="bfdMhIfPol")
+        aci.get_diff(aci_class="bfdIfPol")
 
         aci.post_config()
 

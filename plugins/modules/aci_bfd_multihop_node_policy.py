@@ -40,6 +40,7 @@ options:
   detection_multiplier:
     description:
     - Detection multiplier of the BFD Multihop Node policy
+    - Allowed range is 1-50.
     type: int
     default: 3
   min_transmit_interval:
@@ -295,7 +296,8 @@ def main():
                 adminSt=admin_state,
                 detectMult=detection_multiplier,
                 minTxIntvl=min_transmit_interval,
-                minRxIntvl=min_receive_interval),
+                minRxIntvl=min_receive_interval,
+            ),
         )
 
         aci.get_diff(aci_class="bfdMhNodePol")

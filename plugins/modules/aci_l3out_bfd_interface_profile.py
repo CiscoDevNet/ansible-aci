@@ -12,49 +12,64 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_bfd_multihop_interface_policy
-short_description: Manage BFD Multihop Interface policies.
+module: aci_l3out_bfd_interface_profile
+short_description: Manage L3Out BFD Interface profile.
 description:
-- Manage BFD Multihop Interface policy (bfdMhIfPol) configuration on Cisco ACI fabrics.
+- Manage L3Out BFD Interface profile (bfdIfP) configuration on Cisco ACI fabrics.
 - Only available in APIC version 5.2 or later.
 options:
   tenant:
     description:
     - Name of an existing tenant.
     type: str
+  l3out:
+    description:
+    - Name of an existing L3Out.
+    type: str
+  l3out_logical_node_profile:
+    description:
+    - Name of an existing L3Out Logical Node profile.
+    type: str
+    aliases: [ logical_node_profile, logical_node_profile_name ]
+  l3out_logical_interface_profile:
+    description:
+    - Name of an existing L3Out Logical Interface profile.
+    type: str
+    aliases: [ logical_interface_profile, logical_interface_profile_name ]
   name:
     description:
-    - Name of the BFD Multihop Interface policy
+    - Name of the L3Out BFD Interface profile object.
     type: str
-    aliases: [ bfd_multihop_interface_policy ]
+    aliases: [ bfd_multihop_interface_profile ]
+  name_alias:
+    description:
+    - Name Alias of the L3Out BFD Interface profile object.
+    type: str
   description:
     description:
-    - Description of the BFD Multihop Interface policy
+    - Description of the L3Out BFD Interface profile object.
     type: str
-  admin_state:
+  interface_profile_type:
     description:
-    - Admin state of the BFD Multihop Interface policy
+    - Authentication Type of the L3Out BFD Interface profile object.
     type: str
-    choices: [ enabled, disabled ]
-    default: enabled
-  detection_multiplier:
+    choices: [ none, sha1 ]
+    default: none
+  key:
     description:
-    - Detection multiplier of the BFD Multihop Interface policy
-    - Allowed range is 1-50.
+    - Authentication Key of the L3Out BFD Interface profile object.
+    type: str
+  key_id:
+    description:
+    - Authentication Key ID of the L3Out BFD Interface profile object.
+    - Allowed range is 1-255
     type: int
     default: 3
-  min_transmit_interval:
+  bfd_interface_policy:
     description:
-    - Minimum transmit (Tx) interval of the BFD Multihop Interface policy
-    - Allowed range is 250-999.
-    type: int
-    default: 250
-  min_receive_interval:
-    description:
-    - Minimum receive (Rx) interval of the BFD Multihop Interface policy
-    - Allowed range is 250-999.
-    type: int
-    default: 250
+    - The name of the Interface policy.
+    type: str
+    aliases: [ interface_policy, interface_policy_name ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -67,59 +82,56 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(tenant) must exist before using this module in your playbook.
+- The C(tenant), c(l3out), C(l3out_logical_node_profile) and C(l3out_logical_interface_profile) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bfdMhIfPol).
+  description: More information about the internal APIC class B(bfdIfP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Anvitha Jain (@anvjain)
 """
 
 EXAMPLES = r"""
-- name: Add a new  BFD Multihop Interface policy
-    cisco.aci.aci_bfd_multihop_interface_policy:
-      host: apic
-      username: admin
-      password: SomeSecretPassword
-      tenant: ansible_tenant
-      name: ansible_bfd_multihop_interface_policy
-      description: Ansible BFD Multihop Interface Policy
-      state: present
+- name: Add a new L3Out BFD Interface Profile
+  cisco.aci.aci_l3out_bfd_interface_profile:
+    username: admin
+    password: SomeSecretPassword
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    l3out_logical_node_profile: ansible_node_profile
+    l3out_logical_interface_profile: ansible_interface_profile
     state: present
   delegate_to: localhost
 
-- name: Remove a BFD Multihop Interface policy
-  cisco.aci.aci_bfd_multihop_interface_policy:
-    host: apic
+- name: Query a new L3Out BFD Interface Profile
+  cisco.aci.aci_l3out_bfd_interface_profile:
     username: admin
     password: SomeSecretPassword
     tenant: ansible_tenant
-    name: ansible_bfd_multihop_interface_policy
+    l3out: ansible_l3out
+    l3out_logical_node_profile: ansible_node_profile
+    l3out_logical_interface_profile: ansible_interface_profile
+    state: query
+  delegate_to: localhost
+
+- name: Query all L3Out BFD Interface Profile
+  cisco.aci.aci_l3out_bfd_interface_profile:
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+
+- name: Delete L3Out BFD Interface Profile
+  cisco.aci.aci_l3out_bfd_interface_profile:
+    username: admin
+    password: SomeSecretPassword
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    l3out_logical_node_profile: ansible_node_profile
+    l3out_logical_interface_profile: ansible_interface_profile
     state: absent
   delegate_to: localhost
-
-- name: Query a BFD Multihop Interface policy
-  cisco.aci.aci_bfd_multihop_interface_policy:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: ansible_tenant
-    name: ansible_bfd_multihop_interface_policy
-    state: query
-  delegate_to: localhost
-  register: query_result
-
-- name: Query all BFD Multihop Interface policies in a specific tenant
-  cisco.aci.aci_bfd_multihop_interface_policy:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: ansible_tenant
-    state: query
-  delegate_to: localhost
-  register: query_result
 """
 
 RETURN = r"""
@@ -235,39 +247,41 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        name=dict(type="str", aliases=["bfd_multihop_interface_policy"]),
-        description=dict(type="str"),
-        admin_state=dict(type="str", default="enabled", choices=["enabled", "disabled"]),
-        detection_multiplier=dict(type="int", default=3),
-        min_transmit_interval=dict(type="int", default=250),
-        min_receive_interval=dict(type="int", default=250),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        l3out=dict(type="str", aliases=["l3out_name"]),
+        l3out_logical_node_profile=dict(type="str", aliases=["logical_node_profile_name", "logical_node_profile"]),
+        l3out_logical_interface_profile=dict(type="str", aliases=["logical_interface_profile_name", "logical_interface_profile"]),
+        name=dict(type="str", aliases=["bfd_multihop_interface_profile"]),
+        name_alias=dict(type="str"),
+        description=dict(type="str", aliases=["descr"]),
+        interface_profile_type=dict(type="str", default="none", choices=["none", "sha1"]),
+        key=dict(type="str"),
+        key_id=dict(type="int", default=3),
+        bfd_interface_policy=dict(type="str", aliases=["interface_policy", "interface_policy_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        tenant=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["name", "tenant"]],
-            ["state", "present", ["name", "tenant"]],
+            ["state", "absent", ["tenant", "l3out", "l3out_logical_node_profile", "l3out_logical_interface_profile"]],
+            ["state", "present", ["tenant", "l3out", "l3out_logical_node_profile", "l3out_logical_interface_profile"]],
         ],
     )
 
-    name = module.params.get("name")
-    description = module.params.get("description")
-    state = module.params.get("state")
     tenant = module.params.get("tenant")
-    admin_state = module.params.get("admin_state")
-    detection_multiplier = module.params.get("detection_multiplier")
-    if detection_multiplier is not None and detection_multiplier not in range(1, 50):
-        module.fail_json(msg='The "detection_multiplier" must be a value between 1 and 50')
-    min_transmit_interval = module.params.get("min_transmit_interval")
-    if min_transmit_interval is not None and min_transmit_interval not in range(250, 999):
-        module.fail_json(msg='The "min_transmit_interval" must be a value between 250 and 999')
-    min_receive_interval = module.params.get("min_receive_interval")
-    if min_receive_interval is not None and min_receive_interval not in range(250, 999):
-        module.fail_json(msg='The "min_receive_interval" must be a value between 250 and 999')
+    l3out = module.params.get("l3out")
+    l3out_logical_node_profile = module.params.get("l3out_logical_node_profile")
+    l3out_logical_interface_profile = module.params.get("l3out_logical_interface_profile")
+    name = module.params.get("name")
+    name_alias = module.params.get("name_alias")
+    description = module.params.get("description")
+    interface_profile_type = module.params.get("interface_profile_type")
+    key = module.params.get("key")
+    key_id = module.params.get("key_id")
+    bfd_interface_policy = module.params.get("bfd_interface_policy")
+    state = module.params.get("state")
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -278,29 +292,49 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="bfdMhIfPol",
-            aci_rn="bfdMhIfPol-{0}".format(name),
-            module_object=name,
-            target_filter={"name": name},
+            aci_class="l3extOut",
+            aci_rn="out-{0}".format(l3out),
+            module_object=l3out,
+            target_filter={"name": l3out},
         ),
+        subclass_2=dict(
+            aci_class="l3extLNodeP",
+            aci_rn="lnodep-{0}".format(l3out_logical_node_profile),
+            module_object=l3out_logical_node_profile,
+            target_filter={"name": l3out_logical_node_profile},
+        ),
+        subclass_3=dict(
+            aci_class="l3extLIfP",
+            aci_rn="lifp-{0}".format(l3out_logical_interface_profile),
+            module_object=l3out_logical_interface_profile,
+            target_filter={"name": l3out_logical_interface_profile},
+        ),
+        subclass_4=dict(
+            aci_class="bfdIfP",
+            aci_rn="bfdIfP",
+            module_object="bfdIfP",
+            target_filter={"name": ""},
+        ),
+        child_classes=["bfdRsIfPol"],
     )
 
     aci.get_existing()
 
     if state == "present":
         aci.payload(
-            aci_class="bfdMhIfPol",
+            aci_class="bfdIfP",
             class_config=dict(
                 name=name,
+                nameAlias=name_alias,
                 descr=description,
-                adminSt=admin_state,
-                detectMult=detection_multiplier,
-                minTxIntvl=min_transmit_interval,
-                minRxIntvl=min_receive_interval,
+                type=interface_profile_type,
+                key=key,
+                keyId=key_id,
             ),
+            child_configs=[dict(bfdRsIfPol=dict(attributes=dict(tnBfdIfPolName=bfd_interface_policy)))],
         )
 
-        aci.get_diff(aci_class="bfdMhIfPol")
+        aci.get_diff(aci_class="bfdIfP")
 
         aci.post_config()
 

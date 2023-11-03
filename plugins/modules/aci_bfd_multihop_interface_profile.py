@@ -66,7 +66,7 @@ options:
     type: int
     default: 3
   bfd_multihop_interface_policy:
-    description: 
+    description:
     - The name of the BFD Multihop Interface policy.
     type: str
     aliases: [ multihop_interface_policy, multihop_interface_policy_name ]
@@ -93,7 +93,47 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Add a new L3Out BFD Multihop Interface Profile
+  cisco.aci.aci_bfd_multihop_interface_profile:
+    username: admin
+    password: SomeSecretPassword
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    l3out_logical_node_profile: ansible_node_profile
+    l3out_logical_interface_profile: ansible_interface_profile
+    state: present
+  delegate_to: localhost
+
+- name: Query a new L3Out BFD Multihop Interface Profile
+  cisco.aci.aci_bfd_multihop_interface_profile:
+    username: admin
+    password: SomeSecretPassword
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    l3out_logical_node_profile: ansible_node_profile
+    l3out_logical_interface_profile: ansible_interface_profile
+    state: query
+  delegate_to: localhost
+
+- name: Query all L3Out BFD Multihop Interface Profile
+  cisco.aci.aci_bfd_multihop_interface_profile:
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+
+- name: Delete L3Out BFD Multihop Interface Profile
+  cisco.aci.aci_bfd_multihop_interface_profile:
+    username: admin
+    password: SomeSecretPassword
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    l3out_logical_node_profile: ansible_node_profile
+    l3out_logical_interface_profile: ansible_interface_profile
+    state: absent
+  delegate_to: localhost
 """
+
 RETURN = r"""
    current:
      description: The existing configuration from the APIC after the module has finished
