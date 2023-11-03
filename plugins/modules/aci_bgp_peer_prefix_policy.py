@@ -36,7 +36,7 @@ options:
   maximum_number_prefix:
     description:
     - The maximum number of prefixes allowed from the peer.
-    --The APIC defaults to C(20000) when unset during creation.
+    - The APIC defaults to C(20000) when unset during creation.
     type: int
     aliases: [ max_prefix, max_num_prefix ]
   restart_time:
@@ -91,7 +91,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_peer_prefix_policy: my_bgp_peer_prefix_policy
+    peer_prefix_policy: my_bgp_peer_prefix_policy
     tenant: production
     state: present
   delegate_to: localhost
@@ -101,7 +101,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_peer_prefix_policy: my_bgp_peer_prefix_policy
+    peer_prefix_policy: my_bgp_peer_prefix_policy
     tenant: production
     state: absent
   delegate_to: localhost
@@ -120,7 +120,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    bgp_peer_prefix_policy: my_bgp_peer_prefix_policy
+    peer_prefix_policy: my_bgp_peer_prefix_policy
     tenant: production
     state: query
   delegate_to: localhost
@@ -247,7 +247,7 @@ def main():
         action=dict(type="str", choices=["log", "reject", "restart", "shut"]),
         maximum_number_prefix=dict(type="int", aliases=["max_prefix", "max_num_prefix"]),
         restart_time=dict(type="str"),
-        threshold=dict(type="int", alaises=["thresh"]),
+        threshold=dict(type="int", aliases=["thresh"]),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -257,8 +257,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["bgp_peer_prefix_policy", "tenant"]],
-            ["state", "present", ["bgp_peer_prefix_policy", "tenant"]],
+            ["state", "absent", ["peer_prefix_policy", "tenant"]],
+            ["state", "present", ["peer_prefix_policy", "tenant"]],
         ],
     )
 
