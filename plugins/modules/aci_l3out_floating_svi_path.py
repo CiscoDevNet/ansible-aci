@@ -63,6 +63,7 @@ options:
   domain_type:
     description:
     - The domain type of the path.
+    - The physical domain type is only supported in APIC v5.0 and above.
     type: str
     choices: [ physical, vmware ]
   access_encap:
@@ -77,16 +78,19 @@ options:
   forged_transmit:
     description:
     - This option allows virtual machines to send frames with a mac address.
+    - This is only supported in APIC v5.0 and above.
     type: str
     choices: [ enabled, disabled ]
   mac_change:
     description:
     - The status of the mac address change support for port groups in an external VMM controller.
+    - This is only supported in APIC v5.0 and above.
     type: str
     choices: [ enabled, disabled ]
   promiscuous_mode:
     description:
     - The status of promiscuous mode for port groups in an external VMM controller.
+    - This is only supported in APIC v5.0 and above.
     type: str
     choices: [ enabled, disabled ]
   enhanced_lag_policy:
@@ -106,8 +110,6 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The domain of floating path of type physical is only supported in APIC v5.0 and above.
-- The attributes forged_transmit, mac_change and promiscuous_mode are only supported in APIC v5.0 and above.
 - The C(tenant), C(l3out), C(logical_node_profile), C(logical_interface_profile) and C(floating_svi) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile), M(cisco.aci.aci_l3out_logical_interface_profile) and
   M(cisco.aci.aci_l3out_floating_svi) can be used for this.
@@ -468,20 +470,15 @@ def main():
                     )
                 child_configs.append(dict(l3extVirtualLIfPLagPolAtt=dict(attributes=dict(), children=child)))
 
-        class_config = dict(floatingAddr=floating_ip)
-
-        if forged_transmit:
-            class_config.update(forgedTransmit=forged_transmit)
-        if mac_change:
-            class_config.update(macChange=mac_change)
-        if promiscuous_mode:
-            class_config.update(promMode=promiscuous_mode)
-        if access_encap:
-            class_config.update(encap=access_encap)
-
         aci.payload(
             aci_class="l3extRsDynPathAtt",
-            class_config=class_config,
+            class_config=dict(
+                floatingAddr=floating_ip,
+                forgedTransmit=forged_transmit,
+                macChange=mac_change,
+                promMode=promiscuous_mode,
+                encap=access_encap,
+            ),
             child_configs=child_configs,
         )
 

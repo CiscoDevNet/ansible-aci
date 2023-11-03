@@ -96,6 +96,7 @@ options:
     description:
     - The external bridge group profile.
     - Pass "" as the value to remove an existing external bridge group profile (See Examples).
+    - This is only supported in APIC v5.0 and above.
     type: str
   state:
     description:
@@ -114,7 +115,6 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The attribute external_bridge_group_profile is only supported in APIC v5.0 and above.
 - The C(tenant), C(l3out), C(logical_node_profile) and C(logical_interface_profile) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile), M(cisco.aci.aci_l3out_logical_interface_profile) \
   modules can be used for this.
