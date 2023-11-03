@@ -45,8 +45,8 @@
       tenant: ansible_tenant
       route_summarization_policy: ansible_bgp_route_summarization_policy_1
       description: BGP route summarization policy 1 for ansible_tenant tenant
-      address_type_af_control: [af-ucast,af-mcast]
-      control_state: [as-set,summary-only]
+      address_type_af_control: [af-ucast, af-mcast]
+      control_state: [as-set, summary-only]
       state: present
     check_mode: true
     register: cm_add_bgp_route_summarization_policy

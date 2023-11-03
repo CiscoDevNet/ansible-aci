@@ -35,7 +35,7 @@ options:
     elements: str
     choices: [ af-label-ucast, af-ucast, af-mcast ]
     aliases: [ address_type_control ]
-  address_type_af_control:
+  control_state:
     description:
     - The summary control.
     type: list

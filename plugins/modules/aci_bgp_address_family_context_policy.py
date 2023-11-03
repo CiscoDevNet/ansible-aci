@@ -27,6 +27,41 @@ options:
     - The name of the bgp address family context policy.
     type: str
     aliases: [ address_family_context_name, name ]
+  host_route_leak:
+    description:
+    - The control state.
+    - The option to enable/disable host route leak.
+    type: bool
+  ebgp_distance:
+    description:
+    - The administrative distance of eBGP routes.
+    type: int
+  ibgp_distance:
+    description:
+    - The administrative distance of iBGP routes.
+    type: int
+  local_distance:
+    description:
+    - The administrative distance of local routes.
+    type: int
+  ebgp_max_ecmp:
+    description:
+    - The eBGP max-path.
+    type: int
+  ibgp_max_ecmp:
+    description:
+    - The iBGP max-path.
+    type: int
+  local_max_ecmp:
+    description:
+    - The maximum number of equal-cost local paths for redist.
+    type: int
+  bgp_add_path_capability:
+    description:
+    - The neighbor system capability.
+    - To delete this attribute, pass an empty string.
+    type: str
+    choices: [ receive, send, "" ]
   description:
     description:
     - Description for the bgp protocol profile.
@@ -236,28 +271,28 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["bgp_address_family_context_policy", "tenant"]],
-            ["state", "present", ["bgp_address_family_context_policy", "tenant"]],
+            ["state", "absent", ["address_family_context_policy", "tenant"]],
+            ["state", "present", ["address_family_context_policy", "tenant"]],
         ],
     )
 
+    aci = ACIModule(module)
+
     address_family_context_policy = module.params.get("address_family_context_policy")
-    host_route_leak=aci.boolean(module.params.get("host_route_leak"), "host-rt-leak", "")
-    ebgp_distance=module.params.get("ebgp_distance")
-    ibgp_distance=module.params.get("ibgp_distance")
-    local_distance=module.params.get("local_distance")
-    ebgp_max_ecmp=module.params.get("ebgp_max_ecmp")
-    ibgp_max_ecmp=module.params.get("ibgp_max_ecmp")
-    local_max_ecmp=module.params.get("local_max_ecmp")
-    bgp_add_path_capability=module.params.get("bgp_add_path_capability")
+    host_route_leak = aci.boolean(module.params.get("host_route_leak"), "host-rt-leak", "")
+    ebgp_distance = module.params.get("ebgp_distance")
+    ibgp_distance = module.params.get("ibgp_distance")
+    local_distance = module.params.get("local_distance")
+    ebgp_max_ecmp = module.params.get("ebgp_max_ecmp")
+    ibgp_max_ecmp = module.params.get("ibgp_max_ecmp")
+    local_max_ecmp = module.params.get("local_max_ecmp")
+    bgp_add_path_capability = module.params.get("bgp_add_path_capability")
     description = module.params.get("description")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
     name_alias = module.params.get("name_alias")
 
-    aci = ACIModule(module)
-
-    child_classes=["bgpCtxAddlPathPol"]
+    child_classes = ["bgpCtxAddlPathPol"]
 
     aci.construct_url(
         root_class=dict(
@@ -286,7 +321,7 @@ def main():
                         child_configs.append(dict(bgpCtxAddlPathPol=dict(attributes=dict(status="deleted"))))
             elif bgp_add_path_capability != "":
                 child_configs.append(dict(bgpCtxAddlPathPol=dict(attributes=dict(capability=bgp_add_path_capability))))
-  
+
         aci.payload(
             aci_class="bgpCtxAfPol",
             class_config=dict(
