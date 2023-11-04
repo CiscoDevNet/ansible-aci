@@ -19,19 +19,15 @@ Minor Changes
 -------------
 
 - Add 8.0 option for dvs_version attribute in aci_vmm_controller
-- Add Match Rules for aci_route_control_profile modules
-- Add aci_bgp_timers_policy and aci_bgp_best_path_policy modules
-- Add aci_fabric_interface_policy_group module
-- Add aci_interface_policy_leaf_fc_policy_group and aci_interface_policy_spine_policy_group module
-- Add aci_l3out_bgp_protocol_profile module
-- Add aci_match_community_factor module.
-- Add aci_route_control_context and aci_match_rule modules
-- Add aci_route_control_profile module
+- Add Match Rules for aci_route_control_profile as new Modules.
+- Add aci_bgp_timers_policy and aci_bgp_best_path_policy as new modules.
+- Add aci_context_policy and aci_subject_profile as new modules.
+- Add aci_l3out_bgp_protocol_profile as a new module.
+- Add aci_match_community_factor and all test cases for route control profile and Match rules related  modules.
 - Add hmac-sha2-224, hmac-sha2-256, hmac-sha2-384, hmac-sha2-512 authentication types and description to aci_snmp_user module
 - Add loopback interface profile as a child class for aci_l3out_logical_node.
-- Add missing attributes in aci_interface_policy_leaf_policy_group
-- Add missing attributes to aci_l3out_extepg module
-- Add missing test cases, fix found issues and add missing attributes for aci_fabric_scheduler, aci_firmware_group, aci_firmware_group_node, aci_firmware_policy, aci_interface_policy_fc, aci_interface_policy_lldp, aci_interface_policy_mcp, aci_interface_policy_ospf, aci_interface_policy_port_channel, aci_maintenance_group, aci_maintenance_group_node, aci_maintenance_policy and aci_tenant_ep_retention_policy modules (#453)
+- Add missing test cases and missing attributes for some existing modules (#453)
+- Add route control profile as a new module.
 - Add support for checkmode in aci_rest module
 - Add support for configuration of fabric node control with aci_fabric_node_control module
 - Add support for configuration of fabric pod selectors with aci_fabric_pod_selector module
@@ -41,11 +37,18 @@ Minor Changes
 - Add support for configuration of system global aes passphrase encryption with aci_system_global_aes_passphrase_encryption module
 - Add support for global infra dhcp relay policy configuration in aci_dhcp_relay
 - Add support for global infra dhcp relay policy configuration in aci_dhcp_relay_provider
+- Added FC policy group and FC PC policy group for Leaf policy groups.
+- Added Fabric Interface Policy Groups aci_fabric_interface_policy_group.py module
+- Added additional relationship parameters for leaf policy, PC and VPC. Certain policies are avaiable only in higher versions of APIC
+- Added policy groups for spine interface and missing policy groups on leaf interface.
+- Addition of optional attributes to the module  aci_l3out_extepg  that were previously missing
+- Fixed issue with default values for ssl, proxy, timeout in  aci.py  and the display of host in the url when the plugin  httpapi  is used
+- Rename module aci_context_policy and aci_subject_profile to aci_route_control_context and aci_match_rule. Applied changes to all Documentations and Modules.
+- Update aci_interface_config with the correct minimum version of 5.2(7)
 
 Bugfixes
 --------
 
-- Fixed issue with default values for ssl, proxy, timeout in aci.py and the display of host in the url when the plugin httpapi is used
 - Modified  aci_rest  and  aci_config_snapshot  modules to display the correct URL output string (#487)
 
 v2.7.0
