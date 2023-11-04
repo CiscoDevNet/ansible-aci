@@ -123,3 +123,5 @@ ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING = dict(
         usb_configuration_policy=dict(class_name="infraRsLeafTopoctrlUsbConfigProfilePol", tn_name="tnTopoctrlUsbConfigProfilePolName"),
     ),
 )
+
+PIM_SETTING_CONTROL_STATE_MAPPING = {"fast": "fast-conv", "strict": "strict-rfc-compliant"}
