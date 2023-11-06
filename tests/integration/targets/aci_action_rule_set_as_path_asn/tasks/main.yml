@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -27,7 +27,7 @@
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -87,7 +87,7 @@
     register: nm_add_action_rule_set_as_path_asn_2
 
   - name: Asserts for Set AS Path ASN action rule creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_action_rule_set_as_path_asn is changed
         - cm_add_action_rule_set_as_path_asn.previous == []
@@ -114,7 +114,7 @@
     register: query_action_rule_set_as_path_asn
 
   - name: Asserts query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_action_rule_set_as_path_asn is not changed
         - query_all_action_rule_set_as_path_asn.current|length >= 2
@@ -140,7 +140,7 @@
     register: nm_remove_action_rule_set_as_path_asn_idempotency
 
   - name: Asserts deletion tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_remove_action_rule_set_as_path_asn is changed
         - cm_remove_action_rule_set_as_path_asn.proposed == {}
