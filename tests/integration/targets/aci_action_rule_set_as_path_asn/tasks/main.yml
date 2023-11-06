@@ -21,7 +21,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant: &aci_tenant_absent
+  cisco.aci.aci_tenant: &aci_tenant_absent
     <<: *aci_info 
     tenant: ansible_tenant
     state: absent
@@ -33,14 +33,14 @@
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Add a new tenant
-    aci_tenant: &aci_tenant_present
+    cisco.aci.aci_tenant: &aci_tenant_present
       <<: *aci_info
       tenant: ansible_tenant
       description: Ansible tenant
       state: present
 
   - name: Add a new action rule profile
-    aci_tenant_action_rule_profile: &aci_action_rule_present
+    cisco.aci.aci_tenant_action_rule_profile: &aci_action_rule_present
       <<: *aci_info
       tenant: ansible_tenant
       action_rule: ansible_action_rule
@@ -48,7 +48,7 @@
       state: present
 
   - name: Add a set AS path action rule
-    aci_action_rule_set_as_path: &aci_action_rule_set_as_path_present
+    cisco.aci.aci_action_rule_set_as_path: &aci_action_rule_set_as_path_present
       <<: *aci_info
       tenant: ansible_tenant
       action_rule: ansible_action_rule
@@ -56,7 +56,7 @@
       state: present
 
   - name: Add a set AS path ASN action rule (check_mode)
-    aci_action_rule_set_as_path_asn: &aci_action_rule_set_as_path_asn_present
+    cisco.aci.aci_action_rule_set_as_path_asn: &aci_action_rule_set_as_path_asn_present
       <<: *aci_info
       tenant: ansible_tenant
       action_rule: ansible_action_rule
@@ -67,17 +67,17 @@
     register: cm_add_action_rule_set_as_path_asn
 
   - name: Add a set AS path ASN action rule again (normal_mode)
-    aci_action_rule_set_as_path_asn:
+    cisco.aci.aci_action_rule_set_as_path_asn:
       <<: *aci_action_rule_set_as_path_asn_present
     register: nm_add_action_rule_set_as_path_asn
 
   - name: Add a set AS path ASN action rule again - testing idempotency
-    aci_action_rule_set_as_path_asn:
+    cisco.aci.aci_action_rule_set_as_path_asn:
       <<: *aci_action_rule_set_as_path_asn_present
     register: nm_add_action_rule_set_as_path_asn_idempotency
 
   - name: Add a set AS path ASN action rule
-    aci_action_rule_set_as_path_asn:
+    cisco.aci.aci_action_rule_set_as_path_asn:
       <<: *aci_info
       tenant: ansible_tenant
       action_rule: ansible_action_rule
@@ -102,13 +102,13 @@
         - nm_add_action_rule_set_as_path_asn_2.current.0.rtctrlSetASPathASN.attributes.order == "2"
 
   - name: Query all set AS path ASN action rules
-    aci_action_rule_set_as_path_asn:
+    cisco.aci.aci_action_rule_set_as_path_asn:
       <<: *aci_info
       state: query
     register: query_all_action_rule_set_as_path_asn
 
   - name: Query ansible_action_rule_set_as_path_asn set AS path ASN action rule
-    aci_action_rule_set_as_path_asn:
+    cisco.aci.aci_action_rule_set_as_path_asn:
       <<: *aci_action_rule_set_as_path_asn_present
       state: query
     register: query_action_rule_set_as_path_asn
@@ -123,19 +123,19 @@
         - query_action_rule_set_as_path_asn.current.0.rtctrlSetASPathASN.attributes.order == "1"
 
   - name: Remove set AS path ASN action rule (check_mode)
-    aci_action_rule_set_as_path_asn: &aci_action_rule_set_as_path_asn_absent
+    cisco.aci.aci_action_rule_set_as_path_asn: &aci_action_rule_set_as_path_asn_absent
       <<: *aci_action_rule_set_as_path_asn_present
       state: absent
     check_mode: true
     register: cm_remove_action_rule_set_as_path_asn
 
   - name: Remove set AS path ASN action rule (normal_mode)
-    aci_action_rule_set_as_path_asn:
+    cisco.aci.aci_action_rule_set_as_path_asn:
       <<: *aci_action_rule_set_as_path_asn_absent
     register: nm_remove_remove_action_rule_set_as_path_asn
 
   - name: Remove set AS path ASN action rule again - testing previous Removal
-    aci_action_rule_set_as_path_asn:
+    cisco.aci.aci_action_rule_set_as_path_asn:
       <<: *aci_action_rule_set_as_path_asn_absent
     register: nm_remove_action_rule_set_as_path_asn_idempotency
 
@@ -151,6 +151,6 @@
         - nm_remove_action_rule_set_as_path_asn_idempotency.previous == []
 
   - name: Remove the ansible_tenant - cleanup before ending tests
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_tenant_present
       state: absent

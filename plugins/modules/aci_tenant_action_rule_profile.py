@@ -76,12 +76,14 @@ options:
     description:
     - The set action rule based on nexthop unchanged configuration.
     - Can not be configured along with C(set_route_tag).
+    - Can not be configured for APIC version 4.2 and prior.
     - The APIC defaults to C(false) when unset.
     type: bool
   multipath:
     description:
     - Set action rule based on set redistribute multipath configuration.
     - Can not be configured along with C(set_route_tag).
+    - Can not be configured for APIC version 4.2 and prior.
     - The APIC defaults to C(false) when unset.
     type: bool
   set_preference:
@@ -381,9 +383,7 @@ def main():
         rtctrlSetComm=dict(attribute_input=module.params.get("set_community")),
         rtctrlSetDamp=dict(attribute_input=module.params.get("set_dampening")),
         rtctrlSetNh=dict(attribute_input=module.params.get("set_next_hop"), attribute_name="addr"),
-        rtctrlSetNhUnchanged=dict(attribute_input=module.params.get("next_hop_propagation")),
         rtctrlSetPref=dict(attribute_input=module.params.get("set_preference"), attribute_name="localPref"),
-        rtctrlSetRedistMultipath=dict(attribute_input=module.params.get("multipath")),
         rtctrlSetRtMetric=dict(attribute_input=module.params.get("set_metric"), attribute_name="metric"),
         rtctrlSetRtMetricType=dict(
             attribute_input=MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING.get(module.params.get("set_metric_type")), attribute_name="metricType"
@@ -393,9 +393,13 @@ def main():
     )
 
     # This condition deal with child classes which do not exist in APIC version 4.2 and prior.
-    for class_name in ["rtctrlSetNhUnchanged", "rtctrlSetRedistMultipath"]:
-        if child_classes[class_name].get("attribute_input") is None:
-            child_classes.pop(class_name)
+    additional_child_classes = dict(
+        rtctrlSetNhUnchanged=dict(attribute_input=module.params.get("next_hop_propagation")),
+        rtctrlSetRedistMultipath=dict(attribute_input=module.params.get("multipath")),
+    )
+    for class_name, attribute in additional_child_classes.items():
+        if attribute.get("attribute_input") is not None:
+            child_classes[class_name] = attribute
 
     aci.construct_url(
         root_class=dict(
