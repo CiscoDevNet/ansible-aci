@@ -6,12 +6,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,13 +21,19 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: debug
 
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
-  # Clean Environment
   - name: create tenant
     cisco.aci.aci_tenant: &aci_tenant_present
       <<: *aci_info
@@ -105,7 +111,7 @@
     register: nm_add_tenant_action_rule_profile_2
 
   - name: Asserts for creation tasks for action rule profile 1
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_tenant_action_rule_profile_1 is changed
         - cm_add_tenant_action_rule_profile_1.previous == []
@@ -128,7 +134,7 @@
 
   - name: Asserts for creation tasks for action rule profile 2 - APIC version >= 5.0
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_add_tenant_action_rule_profile_2_5 is changed
         - nm_add_tenant_action_rule_profile_2_5.current.0.rtctrlAttrP.attributes.name == "anstest_2"
@@ -138,7 +144,7 @@
 
   - name: Asserts for creation tasks for action rule profile 2 - APIC version < 5.0
     when: version.current.0.topSystem.attributes.version is version('5', '<')
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_add_tenant_action_rule_profile_2 is changed
         - nm_add_tenant_action_rule_profile_2.current.0.rtctrlAttrP.attributes.name == "anstest_2"
@@ -157,7 +163,7 @@
     register: query_first_tenant_action_rule_profile
 
   - name: Asserts for query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_tenant_action_rule_profile is not changed
         - query_all_tenant_action_rule_profile.current | length >= 2
@@ -218,7 +224,7 @@
     register: nm_delete_children_tenant_action_rule_profile_2
 
   - name: Asserts for deletion tasks for action rule profile 1
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_delete_children_tenant_action_rule_profile_1 is changed
         - cm_delete_children_tenant_action_rule_profile_1.current == cm_delete_children_tenant_action_rule_profile_1.previous
@@ -228,14 +234,14 @@
 
   - name: Asserts for deletion tasks for action rule profile 2 - APIC version >= 5.0
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_delete_children_tenant_action_rule_profile_2_5 is changed
         - nm_delete_children_tenant_action_rule_profile_2_5.current.0.rtctrlAttrP | length == 1
 
   - name: Asserts for deletion tasks for action rule profile 2 - APIC version < 5.0
     when: version.current.0.topSystem.attributes.version is version('5', '<')
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_delete_children_tenant_action_rule_profile_2 is changed
         - nm_delete_children_tenant_action_rule_profile_2.current.0.rtctrlAttrP | length == 1
@@ -274,7 +280,7 @@
     register: nm_delete_tenant_action_rule_profile_2
 
   - name: Asserts for deletion tasks for action rule profile 1
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_delete_tenant_action_rule_profile_1 is changed
         - cm_delete_tenant_action_rule_profile_1.proposed == {}
@@ -286,7 +292,7 @@
 
   - name: Asserts for deletion tasks for action rule profile 2 - APIC version >= 5.0
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_delete_tenant_action_rule_profile_2_5 is changed
         - nm_delete_tenant_action_rule_profile_2_5.previous != []
@@ -294,13 +300,13 @@
 
   - name: Asserts for deletion tasks for action rule profile 2 - APIC version < 5.0
     when: version.current.0.topSystem.attributes.version is version('5', '<')
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_delete_tenant_action_rule_profile_2 is changed
         - nm_delete_tenant_action_rule_profile_2.previous != []
         - nm_delete_tenant_action_rule_profile_2.current == []
 
-  - name: Delete tenant - clean up the environment
+  - name: Delete tenant - cleanup before ending tests
     cisco.aci.aci_tenant:
       <<: *aci_tenant_present
       state: absent
