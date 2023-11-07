@@ -56,7 +56,7 @@ options:
     type: str
   group_name:
     description:
-    - The group name of the HSRP interface group.
+    - The group name is used to define and manage the specific HSRP interface group, facilitating high availability in the network.
     type: str
   description:
     description:
