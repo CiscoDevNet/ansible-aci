@@ -218,7 +218,7 @@
     <<: *aci_ansible_vrf_1
     resource_policy:
       reserved_multicast_entries: 20
-      reserved_route_map: uni/tn-ansible_test/rtmap-ansible_test
+      reserved_route_map: uni/tn-ansible_test/rtmap-ansible_test_changed
   register: nm_update_resource_policy_change_reserved_multicast_entries
 
 - name: Remove a routemap from resource policy on VRF 1
@@ -348,7 +348,7 @@
     - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
     - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
     - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "20"
-    - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.children.2.pimResPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.children.2.pimResPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test_changed"
     - nm_update_resource_policy_change_reserved_multicast_entries.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
     - nm_update_resource_policy_change_reserved_multicast_entries.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
     - nm_update_resource_policy_change_reserved_multicast_entries.previous.0.pimCtxP.attributes.mtu == "2000"
@@ -385,7 +385,7 @@
     - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
     - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
     - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "20"
-    - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.children.2.pimResPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.children.2.pimResPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test_changed"
     - nm_update_resource_policy_remove_route_map_again is not changed
 
 # UPDATE MULTICAST ASM
