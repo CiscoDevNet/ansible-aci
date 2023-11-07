@@ -189,7 +189,7 @@ EXAMPLES = r"""
     tenant: ansible_tenant
     vrf: ansible_vrf
     state: present
-    delegate_to: localhost
+  delegate_to: localhost
 
 - name: Change Multicast PIM Settings on a VRF
   cisco.aci.aci_vrf_multicast:
@@ -202,7 +202,7 @@ EXAMPLES = r"""
       mtu: 2000
       control_state: [ fast, strict ]
     state: present
-    delegate_to: localhost
+  delegate_to: localhost
 
 - name: Change Multicast Resource Policy on a VRF
   cisco.aci.aci_vrf_multicast:
@@ -216,7 +216,7 @@ EXAMPLES = r"""
       reserved_multicast_entries: 20
       reserved_route_map: uni/tn-ansible_test/rtmap-ansible_test
     state: present
-    delegate_to: localhost
+  delegate_to: localhost
 
 - name: Remove Route-Map from Multicast Resource Policy on a VRF
   cisco.aci.aci_vrf_multicast:
@@ -228,7 +228,7 @@ EXAMPLES = r"""
     resource_policy:
       reserved_route_map: ""
     state: present
-    delegate_to: localhost
+  delegate_to: localhost
 
 - name: Change Multicast Any Source Multicast (ASM) Settings on a VRF
   cisco.aci.aci_vrf_multicast:
@@ -244,7 +244,7 @@ EXAMPLES = r"""
       max_rate: 64000
       source_ip: 1.1.1.1
     state: present
-    delegate_to: localhost
+  delegate_to: localhost
 
 - name: Change Multicast Source Specific Multicast (SSM) Settings on a VRF
   cisco.aci.aci_vrf_multicast:
@@ -256,7 +256,7 @@ EXAMPLES = r"""
     source_specific_multicast:
       group_range_route_map: uni/tn-ansible_test/rtmap-ansible_test
     state: present
-    delegate_to: localhost
+  delegate_to: localhost
 
 - name: Change Multicast Bootstrap Router (BSR) Settings on a VRF
   cisco.aci.aci_vrf_multicast:
@@ -269,7 +269,7 @@ EXAMPLES = r"""
       bsr_filter: uni/tn-ansible_test/rtmap-ansible_test
       rp_updates: [ forward, listen ]
     state: present
-    delegate_to: localhost
+  delegate_to: localhost
 
 - name: Change Multicast Auto-Rendezvous Point (Auto-RP) Settings on a VRF
   cisco.aci.aci_vrf_multicast:
@@ -282,7 +282,7 @@ EXAMPLES = r"""
       ma_filter: uni/tn-ansible_test/rtmap-ansible_test
       rp_updates: [ forward, listen ]
     state: present
-    delegate_to: localhost
+  delegate_to: localhost
 
 - name: Disable Multicast on a VRF
   cisco.aci.aci_vrf_multicast:
@@ -292,7 +292,7 @@ EXAMPLES = r"""
     tenant: ansible_tenant
     vrf: ansible_vrf
     state: absent
-    delegate_to: localhost
+  delegate_to: localhost
 
 - name: Query Multicast Settings for a VRF
   cisco.aci.aci_vrf_multicast:
@@ -302,8 +302,8 @@ EXAMPLES = r"""
     tenant: ansible_tenant
     vrf: ansible_vrf
     state: query
-    delegate_to: localhost
-    register: query_result
+  delegate_to: localhost
+  register: query_result
 
 - name: Query Multicast Settings for all VRFs
   cisco.aci.aci_vrf_multicast:
@@ -311,8 +311,8 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretePassword
     state: query
-    delegate_to: localhost
-    register: query_result
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
