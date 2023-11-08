@@ -79,14 +79,13 @@ author:
 
 EXAMPLES = r"""
 - name: Add a new  BFD Multihop Interface policy
-    cisco.aci.aci_bfd_multihop_interface_policy:
-      host: apic
-      username: admin
-      password: SomeSecretPassword
-      tenant: ansible_tenant
-      name: ansible_bfd_multihop_interface_policy
-      description: Ansible BFD Multihop Interface Policy
-      state: present
+  cisco.aci.aci_bfd_multihop_interface_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: ansible_tenant
+    name: ansible_bfd_multihop_interface_policy
+    description: Ansible BFD Multihop Interface Policy
     state: present
   delegate_to: localhost
 
@@ -109,7 +108,6 @@ EXAMPLES = r"""
     name: ansible_bfd_multihop_interface_policy
     state: query
   delegate_to: localhost
-  register: query_result
 
 - name: Query all BFD Multihop Interface policies in a specific tenant
   cisco.aci.aci_bfd_multihop_interface_policy:
@@ -119,7 +117,6 @@ EXAMPLES = r"""
     tenant: ansible_tenant
     state: query
   delegate_to: localhost
-  register: query_result
 """
 
 RETURN = r"""

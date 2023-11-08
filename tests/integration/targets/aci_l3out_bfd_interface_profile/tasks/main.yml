@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -26,8 +26,12 @@
     state: query
   register: version
 
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
 - name: Execute tasks only for non-cloud sites
-  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')  # This condition will execute only when APIC version >= 5.2
+  # This condition will execute only when APIC version >= 5.2 and for non-cloud APICs
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=') and query_cloud.current == []
   block:  # block specifies execution of tasks within, based on conditions
 
   # CLEAN ENVIRONMENT
@@ -56,7 +60,7 @@
 
   # Add L3Out
   - name: Add a new L3 Outside
-    cisco.aci.cisco.aci.aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_info
       tenant: ansible_tenant
       name: ansible_l3out
@@ -68,7 +72,7 @@
 
   # ADD l3out logical node profile
   - name: l3out logical node profile
-    cisco.aci.cisco.aci.aci_l3out_logical_node_profile:
+    cisco.aci.aci_l3out_logical_node_profile:
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -152,7 +156,7 @@
       - update_l3out_bfd_int_prof.sent.bfdIfP.attributes.keyId == "15"
       - update_l3out_bfd_int_prof.sent.bfdIfP.attributes.key == "abc*123"
       - update_l3out_bfd_int_prof.sent.bfdIfP.attributes.type == "sha1"
-      - update_l3out_bfd_int_prof.sent.bfdIfP.children.0.bfdIfPol.attributes.tnBfdIfPolName == "ansible_bfd_interface_policy"
+      - update_l3out_bfd_int_prof.sent.bfdIfP.children.0.bfdRsIfPol.attributes.tnBfdIfPolName == "ansible_bfd_interface_policy"
 
   - name: Query L3Out BFD Interface Profile
     cisco.aci.aci_l3out_bfd_interface_profile:
@@ -166,9 +170,45 @@
       state: query
     register: query_all_l3out_bfd_int_prof
 
+  #  Validating out of range parameters.
+  - name: Add out of range key_id
+    cisco.aci.aci_l3out_bfd_interface_profile:
+      <<: *present_l3out_bfd_int_profile
+      key_id: 256
+      state: present
+    ignore_errors: true
+    register: out_of_range_key_id
+
+  - name: Verify out of range key_id
+    assert:
+      that:
+      - out_of_range_key_id is not changed
+      - out_of_range_key_id.msg == "The \"key_id\" must be a value between 1 and 255"
+
   - name: Delete L3Out BFD Interface Profile - check mode
     cisco.aci.aci_l3out_bfd_interface_profile:
       <<: *present_l3out_bfd_int_profile
       state: absent
     check_mode: true
     register: cm_remove_l3out_bfd_int_prof
+
+  - name: Delete L3Out BFD Interface Profile - normal mode
+    cisco.aci.aci_l3out_bfd_interface_profile:
+      <<: *present_l3out_bfd_int_profile
+      state: absent
+    register: nm_remove_l3out_bfd_int_prof
+
+  - name: Delete L3Out BFD Interface Profile again - idempotency
+    cisco.aci.aci_l3out_bfd_interface_profile:
+      <<: *present_l3out_bfd_int_profile
+      state: absent
+    register: remove_l3out_bfd_int_prof_again
+
+  - name: Verify removing L3Out BFD Interface Profile
+    assert:
+      that:
+      - cm_remove_l3out_bfd_int_prof is changed
+      - nm_remove_l3out_bfd_int_prof is changed
+      - cm_remove_l3out_bfd_int_prof.proposed == nm_remove_l3out_bfd_int_prof.proposed == {}
+      - remove_l3out_bfd_int_prof_again is not changed
+      - nm_add_l3out_bfd_int_prof.current == remove_l3out_bfd_int_prof_again.current == []

@@ -79,14 +79,13 @@ author:
 
 EXAMPLES = r"""
 - name: Add a new  BFD Multihop Node policy
-    cisco.aci.aci_bfd_multihop_node_policy:
-      host: apic
-      username: admin
-      password: SomeSecretPassword
-      tenant: ansible_tenant
-      name: ansible_bfd_multihop_node_policy
-      description: Ansible BFD Multihop Node Policy
-      state: present
+  cisco.aci.aci_bfd_multihop_node_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: ansible_tenant
+    name: ansible_bfd_multihop_node_policy
+    description: Ansible BFD Multihop Node Policy
     state: present
   delegate_to: localhost
 

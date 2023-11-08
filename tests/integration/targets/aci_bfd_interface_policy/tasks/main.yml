@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -32,13 +32,13 @@
 
   # CLEAN ENVIRONMENT
   - name: Remove the ansible_tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       tenant: ansible_tenant
       state: absent
 
   - name: Add a new tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       tenant: ansible_tenant
       description: Ansible tenant
@@ -67,13 +67,13 @@
       - cm_add_bfd_interface_pol is changed
       - nm_add_bfd_interface_pol is changed
       - cm_add_bfd_interface_pol.previous == nm_add_bfd_interface_pol.previous == []
-      - nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.dn == "uni/tn-ansible_tenant/bfdIfPol-ansible_bfd_interface_policy"
-      - nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.name == "ansible_bfd_interface_policy"
-      - nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.descr == "Ansible BFD Interface Policy"
-      - nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.adminSt == "enabled"
-      - nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.detectMult == "3"
-      - nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.minRxIntvl == "50"
-      - nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.minTxIntvl == "50"
+      - cm_add_bfd_interface_pol.proposed.bfdIfPol.attributes.dn == nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.dn == "uni/tn-ansible_tenant/bfdIfPol-ansible_bfd_interface_policy"
+      - cm_add_bfd_interface_pol.proposed.bfdIfPol.attributes.name == nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.name == "ansible_bfd_interface_policy"
+      - cm_add_bfd_interface_pol.proposed.bfdIfPol.attributes.descr == nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.descr == "Ansible BFD Interface Policy"
+      - cm_add_bfd_interface_pol.proposed.bfdIfPol.attributes.adminSt == nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.adminSt == "enabled"
+      - cm_add_bfd_interface_pol.proposed.bfdIfPol.attributes.detectMult == nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.detectMult == "3"
+      - cm_add_bfd_interface_pol.proposed.bfdIfPol.attributes.minRxIntvl == nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.minRxIntvl == "50"
+      - cm_add_bfd_interface_pol.proposed.bfdIfPol.attributes.minTxIntvl == nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.minTxIntvl == "50"
 
   - name: Add a new  BFD Interface policy again - idempotency
     cisco.aci.aci_bfd_interface_policy:
@@ -163,22 +163,42 @@
       - query_result.current.0.bfdIfPol.attributes.dn == "uni/tn-ansible_tenant/bfdIfPol-ansible_bfd_interface_policy"
       - query_result.current.0.bfdIfPol.attributes.name == "ansible_bfd_interface_policy"
 
-  - name: Remove a BFD Interface policy
+  - name: Remove a BFD Interface policy - check mode
     cisco.aci.aci_bfd_interface_policy:
       <<: *aci_info
       tenant: ansible_tenant
       name: ansible_bfd_interface_policy
       state: absent
-    register: remove_bfd_interface_pol
+    check_mode: true
+    register: cm_remove_bfd_interface_pol
+
+  - name: Remove a BFD Interface policy - normal mode
+    cisco.aci.aci_bfd_interface_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd_interface_policy
+      state: absent
+    register: nm_remove_bfd_interface_pol
+
+  - name: Remove a BFD Interface policy again
+    cisco.aci.aci_bfd_interface_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd_interface_policy
+      state: absent
+    register: remove_bfd_interface_pol_again
 
   - name: Verify removing BFD Interface Policies
     assert:
       that:
-      - remove_bfd_interface_pol is changed
-      - remove_bfd_interface_pol.previous != []
-      - remove_bfd_interface_pol.current == []
+      - nm_remove_bfd_interface_pol is changed
+      - cm_remove_bfd_interface_pol is changed
+      - cm_remove_bfd_interface_pol.proposed == {}
+      - nm_remove_bfd_interface_pol.previous != []
+      - remove_bfd_interface_pol_again is not changed
+      - nm_remove_bfd_interface_pol.current == remove_bfd_interface_pol_again.current == []
 
-#  Validating out of rage parameters.
+#  Validating out of range parameters.
 
 # Added BFD Interface policy with out of the range detection_multiplier
   - name: Add a new BFD Interface policy - out of the range detection_multiplier

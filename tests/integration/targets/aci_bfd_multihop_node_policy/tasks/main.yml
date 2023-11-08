@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -67,13 +67,13 @@
       - cm_add_bfd_multihop_node_pol is changed
       - nm_add_bfd_multihop_node_pol is changed
       - cm_add_bfd_multihop_node_pol.previous == nm_add_bfd_multihop_node_pol.previous == []
-      - nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.dn == "uni/tn-ansible_tenant/bfdMhNodePol-ansible_bfd_multihop_node_policy"
-      - nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.name == "ansible_bfd_multihop_node_policy"
-      - nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.descr == "Ansible BFD Multihop Node Policy"
-      - nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.adminSt == "enabled"
-      - nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.detectMult == "3"
-      - nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.minRxIntvl == "250"
-      - nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.minTxIntvl == "250"
+      - cm_add_bfd_multihop_node_pol.proposed.bfdMhNodePol.attributes.dn == nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.dn == "uni/tn-ansible_tenant/bfdMhNodePol-ansible_bfd_multihop_node_policy"
+      - cm_add_bfd_multihop_node_pol.proposed.bfdMhNodePol.attributes.name == nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.name == "ansible_bfd_multihop_node_policy"
+      - cm_add_bfd_multihop_node_pol.proposed.bfdMhNodePol.attributes.descr == nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.descr == "Ansible BFD Multihop Node Policy"
+      - cm_add_bfd_multihop_node_pol.proposed.bfdMhNodePol.attributes.adminSt == nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.adminSt == "enabled"
+      - cm_add_bfd_multihop_node_pol.proposed.bfdMhNodePol.attributes.detectMult == nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.detectMult == "3"
+      - cm_add_bfd_multihop_node_pol.proposed.bfdMhNodePol.attributes.minRxIntvl == nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.minRxIntvl == "250"
+      - cm_add_bfd_multihop_node_pol.proposed.bfdMhNodePol.attributes.minTxIntvl == nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.minTxIntvl == "250"
 
   - name: Add a new  BFD Multihop Node policy again - idempotency
     cisco.aci.aci_bfd_multihop_node_policy:
@@ -163,20 +163,40 @@
       - query_result.current.0.bfdMhNodePol.attributes.dn == "uni/tn-ansible_tenant/bfdMhNodePol-ansible_bfd_multihop_node_policy"
       - query_result.current.0.bfdMhNodePol.attributes.name == "ansible_bfd_multihop_node_policy"
 
-  - name: Remove a BFD Multihop Node policy
+  - name: Remove a BFD Multihop Node policy - check mode
     cisco.aci.aci_bfd_multihop_node_policy:
       <<: *aci_info
       tenant: ansible_tenant
       name: ansible_bfd_multihop_node_policy
       state: absent
-    register: remove_bfd_multihop_node_pol
+    check_mode: true
+    register: cm_remove_bfd_multihop_node_pol
+
+  - name: Remove a BFD Multihop Node policy - normal mode
+    cisco.aci.aci_bfd_multihop_node_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd_multihop_node_policy
+      state: absent
+    register: nm_remove_bfd_multihop_node_pol
+
+  - name: Remove a BFD Multihop Node policy again
+    cisco.aci.aci_bfd_multihop_node_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd_multihop_node_policy
+      state: absent
+    register: remove_bfd_multihop_node_pol_again
 
   - name: Verify removing BFD Multihop Node Policies
     assert:
       that:
-      - remove_bfd_multihop_node_pol is changed
-      - remove_bfd_multihop_node_pol.previous != []
-      - remove_bfd_multihop_node_pol.current == []
+      - nm_remove_bfd_multihop_node_pol is changed
+      - cm_remove_bfd_multihop_node_pol is changed
+      - cm_remove_bfd_multihop_node_pol.proposed == {}
+      - nm_remove_bfd_multihop_node_pol.previous != []
+      - remove_bfd_multihop_node_pol_again is not changed
+      - remove_bfd_multihop_node_pol_again.current == nm_remove_bfd_multihop_node_pol.current == []
 
 #  Validating out of rage parameters.
 

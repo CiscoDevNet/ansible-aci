@@ -16,16 +16,18 @@ module: aci_l3out_bfd_interface_profile
 short_description: Manage L3Out BFD Interface profile.
 description:
 - Manage L3Out BFD Interface profile (bfdIfP) configuration on Cisco ACI fabrics.
-- Only available in APIC version 5.2 or later.
+- Only available in APIC version 5.2 or later and for non-cloud APICs.
 options:
   tenant:
     description:
     - Name of an existing tenant.
     type: str
+    aliases: [ tenant_name ]
   l3out:
     description:
     - Name of an existing L3Out.
     type: str
+    aliases: [ l3out_name ]
   l3out_logical_node_profile:
     description:
     - Name of an existing L3Out Logical Node profile.
@@ -49,6 +51,7 @@ options:
     description:
     - Description of the L3Out BFD Interface profile object.
     type: str
+    aliases: [ descr ]
   interface_profile_type:
     description:
     - Authentication Type of the L3Out BFD Interface profile object.
@@ -255,7 +258,7 @@ def main():
         name_alias=dict(type="str"),
         description=dict(type="str", aliases=["descr"]),
         interface_profile_type=dict(type="str", default="none", choices=["none", "sha1"]),
-        key=dict(type="str"),
+        key=dict(type="str", no_log=True),
         key_id=dict(type="int", default=3),
         bfd_interface_policy=dict(type="str", aliases=["interface_policy", "interface_policy_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -280,6 +283,8 @@ def main():
     interface_profile_type = module.params.get("interface_profile_type")
     key = module.params.get("key")
     key_id = module.params.get("key_id")
+    if key_id is not None and key_id not in range(1, 255):
+        module.fail_json(msg='The "key_id" must be a value between 1 and 255')
     bfd_interface_policy = module.params.get("bfd_interface_policy")
     state = module.params.get("state")
 

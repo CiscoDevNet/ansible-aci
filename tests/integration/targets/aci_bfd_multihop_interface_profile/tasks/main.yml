@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -26,8 +26,12 @@
     state: query
   register: version
 
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
 - name: Execute tasks only for non-cloud sites
-  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')  # This condition will execute only when APIC version >= 5.2
+  # This condition will execute only when APIC version >= 5.2 and for non-cloud APICs
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=') and query_cloud.current == []
   block:  # block specifies execution of tasks within, based on conditions
 
   # CLEAN ENVIRONMENT
@@ -166,9 +170,45 @@
       state: query
     register: query_all_bfd_mh_int_prof
 
+  #  Validating out of range parameters.
+  - name: Add out of range key_id
+    cisco.aci.aci_bfd_multihop_interface_profile:
+      <<: *present_bfd_mh_int_profile
+      key_id: 256
+      state: present
+    ignore_errors: true
+    register: out_of_range_key_id
+
+  - name: Verify out of range key_id
+    assert:
+      that:
+      - out_of_range_key_id is not changed
+      - out_of_range_key_id.msg == "The \"key_id\" must be a value between 1 and 255"
+
   - name: Delete BFD Multihop Interface Profile - check mode
     cisco.aci.aci_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       state: absent
     check_mode: true
     register: cm_remove_bfd_mh_int_prof
+
+  - name: Delete BFD Multihop Interface Profile - normal mode
+    cisco.aci.aci_bfd_multihop_interface_profile:
+      <<: *present_bfd_mh_int_profile
+      state: absent
+    register: nm_remove_bfd_mh_int_prof
+
+  - name: Delete BFD Multihop Interface Profile again - idempotency
+    cisco.aci.aci_bfd_multihop_interface_profile:
+      <<: *present_bfd_mh_int_profile
+      state: absent
+    register: remove_bfd_mh_int_prof_again
+
+  - name: Verify removing BFD Multihop Interface Profile
+    assert:
+      that:
+      - cm_remove_bfd_mh_int_prof is changed
+      - nm_remove_bfd_mh_int_prof is changed
+      - cm_remove_bfd_mh_int_prof.proposed == nm_remove_bfd_mh_int_prof.proposed == {}
+      - remove_bfd_mh_int_prof_again is not changed
+      - nm_remove_bfd_mh_int_prof.current == remove_bfd_mh_int_prof_again.current == []

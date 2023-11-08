@@ -9,7 +9,7 @@
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -67,13 +67,13 @@
       - cm_add_bfd_multihop_interface_pol is changed
       - nm_add_bfd_multihop_interface_pol is changed
       - cm_add_bfd_multihop_interface_pol.previous == nm_add_bfd_multihop_interface_pol.previous == []
-      - nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.dn == "uni/tn-ansible_tenant/bfdMhIfPol-ansible_bfd_multihop_interface_policy"
-      - nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.name == "ansible_bfd_multihop_interface_policy"
-      - nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.descr == "Ansible BFD Multihop Interface Policy"
-      - nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.adminSt == "enabled"
-      - nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.detectMult == "3"
-      - nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.minRxIntvl == "250"
-      - nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.minTxIntvl == "250"
+      - cm_add_bfd_multihop_interface_pol.proposed.bfdMhIfPol.attributes.dn == nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.dn == "uni/tn-ansible_tenant/bfdMhIfPol-ansible_bfd_multihop_interface_policy"
+      - cm_add_bfd_multihop_interface_pol.proposed.bfdMhIfPol.attributes.name == nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.name == "ansible_bfd_multihop_interface_policy"
+      - cm_add_bfd_multihop_interface_pol.proposed.bfdMhIfPol.attributes.descr == nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.descr == "Ansible BFD Multihop Interface Policy"
+      - cm_add_bfd_multihop_interface_pol.proposed.bfdMhIfPol.attributes.adminSt == nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.adminSt == "enabled"
+      - cm_add_bfd_multihop_interface_pol.proposed.bfdMhIfPol.attributes.detectMult == nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.detectMult == "3"
+      - cm_add_bfd_multihop_interface_pol.proposed.bfdMhIfPol.attributes.minRxIntvl == nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.minRxIntvl == "250"
+      - cm_add_bfd_multihop_interface_pol.proposed.bfdMhIfPol.attributes.minTxIntvl == nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.minTxIntvl == "250"
 
   - name: Add a new  BFD Multihop Interface policy again - idempotency
     cisco.aci.aci_bfd_multihop_interface_policy:
@@ -163,20 +163,40 @@
       - query_result.current.0.bfdMhIfPol.attributes.dn == "uni/tn-ansible_tenant/bfdMhIfPol-ansible_bfd_multihop_interface_policy"
       - query_result.current.0.bfdMhIfPol.attributes.name == "ansible_bfd_multihop_interface_policy"
 
-  - name: Remove a BFD Multihop Interface policy
+  - name: Remove a BFD Multihop Interface policy - check mode
     cisco.aci.aci_bfd_multihop_interface_policy:
       <<: *aci_info
       tenant: ansible_tenant
       name: ansible_bfd_multihop_interface_policy
       state: absent
-    register: remove_bfd_multihop_interface_pol
+    check_mode: true
+    register: cm_remove_bfd_multihop_interface_pol
+
+  - name: Remove a BFD Multihop Interface policy - normal mode
+    cisco.aci.aci_bfd_multihop_interface_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd_multihop_interface_policy
+      state: absent
+    register: nm_remove_bfd_multihop_interface_pol
+
+  - name: Remove a BFD Multihop Interface policy again - idempotency
+    cisco.aci.aci_bfd_multihop_interface_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd_multihop_interface_policy
+      state: absent
+    register: remove_bfd_multihop_interface_pol_again
 
   - name: Verify removing BFD Multihop Interface Policies
     assert:
       that:
-      - remove_bfd_multihop_interface_pol is changed
-      - remove_bfd_multihop_interface_pol.previous != []
-      - remove_bfd_multihop_interface_pol.current == []
+      - nm_remove_bfd_multihop_interface_pol is changed
+      - cm_remove_bfd_multihop_interface_pol is changed
+      - cm_remove_bfd_multihop_interface_pol.proposed == nm_remove_bfd_multihop_interface_pol.proposed == {}
+      - nm_remove_bfd_multihop_interface_pol.previous != []
+      - remove_bfd_multihop_interface_pol_again is not changed
+      - nm_remove_bfd_multihop_interface_pol.current == remove_bfd_multihop_interface_pol_again.current == []
 
 #  Validating out of rage parameters.
 
