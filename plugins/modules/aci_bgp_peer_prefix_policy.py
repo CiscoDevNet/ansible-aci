@@ -92,6 +92,10 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     peer_prefix_policy: my_bgp_peer_prefix_policy
+    action: restart
+    restart_time: 10
+    max_prefix: 10000
+    threshold: 80
     tenant: production
     state: present
   delegate_to: localhost

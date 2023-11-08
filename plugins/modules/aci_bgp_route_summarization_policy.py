@@ -31,6 +31,7 @@ options:
     description:
     - The Ucast/Mcast address type AF control.
     - The APIC defaults to C(af-ucast) when unset during creation.
+    - Can not be configured for APIC version 4.2 or prior.
     type: list
     elements: str
     choices: [ af-label-ucast, af-ucast, af-mcast ]
@@ -82,6 +83,8 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     route_summarization_policy: my_route_summarization_policy
+    address_type_af_control: [af-mcast, af-ucast]
+    control_state: [as-set, summary-only]
     tenant: production
     state: present
   delegate_to: localhost
