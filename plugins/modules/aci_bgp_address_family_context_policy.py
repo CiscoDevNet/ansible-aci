@@ -31,35 +31,43 @@ options:
     description:
     - The control state.
     - The option to enable/disable host route leak.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   ebgp_distance:
     description:
     - The administrative distance of eBGP routes.
+    - The APIC defaults to C(20) when unset during creation.
     type: int
   ibgp_distance:
     description:
     - The administrative distance of iBGP routes.
+    - The APIC defaults to C(200) when unset during creation.
     type: int
   local_distance:
     description:
     - The administrative distance of local routes.
+    - The APIC defaults to C(220) when unset during creation.
     type: int
   ebgp_max_ecmp:
     description:
     - The eBGP max-path.
+    - The APIC defaults to C(16) when unset during creation.
     type: int
   ibgp_max_ecmp:
     description:
     - The iBGP max-path.
+    - The APIC defaults to C(16) when unset during creation.
     type: int
   local_max_ecmp:
     description:
     - The maximum number of equal-cost local paths for redist.
+    - The APIC defaults to C(0) when unset during creation.
     type: int
   bgp_add_path_capability:
     description:
     - The neighbor system capability.
     - To delete this attribute, pass an empty string.
+    - Can not be configured for APIC version 4.2 and prior.
     type: str
     choices: [ receive, send, "" ]
   description:
@@ -102,8 +110,27 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     bgp_address_family_context_policy: my_bgp_address_family_context_policy
+    host_route_leak: true
+    ebgp_distance: 40
+    ibgp_distance: 210
+    local_distance: 215
+    ebgp_max_ecmp: 32
+    ibgp_max_ecmp: 32
+    local_max_ecmp: 1
+    bgp_add_path_capability: receive
     tenant: production
     state: present
+  delegate_to: localhost
+
+- name: Delete BGP address family context policy's child
+  cisco.aci.aci_bgp_address_family_context_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    bgp_address_family_context_policy: my_bgp_address_family_context_policy
+    bgp_add_path_capability: ""
+    tenant: production
+    state: absent
   delegate_to: localhost
 
 - name: Delete a BGP address family context policy
@@ -292,7 +319,9 @@ def main():
     tenant = module.params.get("tenant")
     name_alias = module.params.get("name_alias")
 
-    child_classes = ["bgpCtxAddlPathPol"]
+    child_classes = []
+    if bgp_add_path_capability is not None:
+        child_classes.append("bgpCtxAddlPathPol")
 
     aci.construct_url(
         root_class=dict(
