@@ -36,7 +36,7 @@ options:
     description:
     - Name of an existing interface profile.
     type: str
-    aliases: [ name, interface_profile_name, logical_interface ]
+    aliases: [ interface_profile_name, logical_interface ]
   hsrp_policy:
     description:
     - Name of an existing hsrp interface policy.

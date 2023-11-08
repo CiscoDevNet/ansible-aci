@@ -80,7 +80,7 @@ author:
 
 EXAMPLES = r"""
 - name: Add a hsrp secondary virtual ip
-  cisco.aci.aci_l3out_logical_interface_profile_hsrp_group:
+  cisco.aci.aci_l3out_hsrp_secondary_vip:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -94,7 +94,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Delete a hsrp secondary virtual ip
-  cisco.aci.aci_l3out_logical_interface_profile_hsrp_group:
+  cisco.aci.aci_l3out_hsrp_secondary_vip:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -108,7 +108,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query a hsrp secondary virtual ip
-  cisco.aci.aci_l3out_logical_interface_profile_hsrp_group:
+  cisco.aci.aci_l3out_hsrp_secondary_vip:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -123,7 +123,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query all hsrp secondary virtual ips
-  cisco.aci.aci_l3out_logical_interface_profile_hsrp_group:
+  cisco.aci.aci_l3out_hsrp_secondary_vip:
     host: apic
     username: admin
     password: SomeSecretPassword
