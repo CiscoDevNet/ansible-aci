@@ -41,10 +41,12 @@ options:
   delay:
     description:
     - The administrative port delay of HSRP interface policy.
+    - This is only valid in range between 1 and 10000.
     type: int
   reload_delay:
     description:
     - The option for reload delay of HSRP interface policy.
+    - This is only valid in range between 1 and 10000.
     type: int
   state:
     description:
@@ -78,6 +80,9 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     tenant: production
     hsrp: hsrp1
+    controls: bfd
+    delay: 50
+    reload_delay: 100
     state: present
   delegate_to: localhost
 
