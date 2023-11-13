@@ -1,4 +1,5 @@
 # Copyright: (c) 2017, Ramses Smeyers <rsmeyers@cisco.com>
+# Copyright: (c) 2023, Shreyas Srish <ssrish@cisco.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -42,7 +43,9 @@ EXAMPLES = r"""
           subnet:
           - name: 10.10.10.1
             mask: 24
-            scope: private
+            scope:
+            - public
+            - shared
           vrf: vrf_test
         - name: bd_test2
           subnet:
@@ -115,12 +118,118 @@ EXAMPLES = r"""
   with_items: '{{ data|cisco.aci.aci_listify("tenant","app","epg") }}'
 """
 
+RETURN = r"""
+current:
+  description: The existing configuration from the APIC after the module has finished
+  returned: success
+  type: list
+  sample:
+    [
+        {
+            "fvTenant": {
+                "attributes": {
+                    "descr": "Production environment",
+                    "dn": "uni/tn-production",
+                    "name": "production",
+                    "nameAlias": "",
+                    "ownerKey": "",
+                    "ownerTag": ""
+                }
+            }
+        }
+    ]
+error:
+  description: The error information as returned from the APIC
+  returned: failure
+  type: dict
+  sample:
+    {
+        "code": "122",
+        "text": "unknown managed object class foo"
+    }
+raw:
+  description: The raw output returned by the APIC REST API (xml or json)
+  returned: parse error
+  type: str
+  sample: '<?xml version="1.0" encoding="UTF-8"?><imdata totalCount="1"><error code="122" text="unknown managed object class foo"/></imdata>'
+sent:
+  description: The actual/minimal configuration pushed to the APIC
+  returned: info
+  type: list
+  sample:
+    {
+        "fvTenant": {
+            "attributes": {
+                "descr": "Production environment"
+            }
+        }
+    }
+previous:
+  description: The original configuration from the APIC before the module has started
+  returned: info
+  type: list
+  sample:
+    [
+        {
+            "fvTenant": {
+                "attributes": {
+                    "descr": "Production",
+                    "dn": "uni/tn-production",
+                    "name": "production",
+                    "nameAlias": "",
+                    "ownerKey": "",
+                    "ownerTag": ""
+                }
+            }
+        }
+    ]
+proposed:
+  description: The assembled configuration from the user-provided parameters
+  returned: info
+  type: dict
+  sample:
+    {
+        "fvTenant": {
+            "attributes": {
+                "descr": "Production environment",
+                "name": "production"
+            }
+        }
+    }
+filter_string:
+  description: The filter string used for the request
+  returned: failure or debug
+  type: str
+  sample: ?rsp-prop-include=config-only
+method:
+  description: The HTTP method used for the request to the APIC
+  returned: failure or debug
+  type: str
+  sample: POST
+response:
+  description: The HTTP response from the APIC
+  returned: failure or debug
+  type: str
+  sample: OK (30 bytes)
+status:
+  description: The HTTP status from the APIC
+  returned: failure or debug
+  type: int
+  sample: 200
+url:
+  description: The HTTP url used for the request to the APIC
+  returned: failure or debug
+  type: str
+  sample: https://10.11.12.13/api/mo/uni/tn-production.json
+"""
+
 
 def listify(d, *keys):
-    return listify_worker(d, keys, 0, [], {}, "")
+    for result in listify_worker(d, keys, 0, {}, ""):
+        yield result
 
 
-def listify_worker(d, keys, depth, result, cache, prefix):
+def listify_worker(d, keys, depth, cache, prefix):
     prefix += keys[depth] + "_"
 
     if keys[depth] in d:
@@ -128,19 +237,22 @@ def listify_worker(d, keys, depth, result, cache, prefix):
             cache_work = cache.copy()
             if isinstance(item, dict):
                 for k, v in item.items():
-                    if not isinstance(v, dict) and not isinstance(v, list):
+                    if isinstance(v, list) and all(isinstance(x, str) for x in v):
+                        cache_key = prefix + k
+                        cache_value = ','.join(v)
+                        cache_work[cache_key] = cache_value
+                    elif not isinstance(v, (dict, list)):
                         cache_key = prefix + k
                         cache_value = v
                         cache_work[cache_key] = cache_value
 
                 if len(keys) - 1 == depth:
-                    result.append(cache_work)
+                    yield cache_work
                 else:
                     for k, v in item.items():
-                        if k == keys[depth + 1]:
-                            if isinstance(v, dict) or isinstance(v, list):
-                                result = listify_worker({k: v}, keys, depth + 1, result, cache_work, prefix)
-    return result
+                        if k == keys[depth + 1] and isinstance(v, (dict, list)):
+                            for result in listify_worker({k: v}, keys, depth + 1, cache_work, prefix):
+                                yield result
 
 
 class FilterModule(object):
