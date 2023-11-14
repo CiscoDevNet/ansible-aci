@@ -42,12 +42,19 @@
           subnet: 
           - name: 20.20.20.1
             mask: 24
-            scope: 
-            - public
-            - shared
+            scope: public,shared
           vrf: vrf_test
         vrf:
         - name: vrf_test
+      - name: ansible_test2
+        description: Created using listify
+        app:
+        - name: app_test2
+          epg:
+          - name: web2
+            bd: web_bd2
+          - name: app2
+            bd: app_bd2
 
 - name: Verify Cloud and Non-Cloud Sites in use.
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
@@ -119,7 +126,23 @@
         - bd_listify.results.0.current.0.fvBD.attributes.name == "bd_test"
         - bd_listify.results.1.current.0.fvBD.attributes.name == "bd_test2"
         - bd_subnets_listify.results.0.current.0.fvSubnet.attributes.ip == "10.10.10.1/24"
+        - bd_subnets_listify.results.0.current.0.fvSubnet.attributes.scope == "private,shared"
         - bd_subnets_listify.results.1.current.0.fvSubnet.attributes.ip == "20.20.20.1/24"
+        - bd_subnets_listify.results.1.current.0.fvSubnet.attributes.scope == "public,shared"
         - ap_listify.results.0.current.0.fvAp.attributes.name == "app_test"
         - epg_listify.results.0.current.0.fvAEPg.attributes.name == "web"
         - epg_listify.results.1.current.0.fvAEPg.attributes.name == "app"
+        - tenant_listify.results.1.current.0.fvTenant.attributes.name == "ansible_test2"
+        - ap_listify.results.1.current.0.fvAp.attributes.name == "app_test2"
+        - epg_listify.results.2.current.0.fvAEPg.attributes.name == "web2"
+        - epg_listify.results.3.current.0.fvAEPg.attributes.name == "app2"
+
+  # Clean Up Environment
+  - name: Delete tenants
+    cisco.aci.aci_tenant:
+      <<: *aci_info
+      tenant: "{{ item }}"
+      state: absent
+    loop:
+    - ansible_test
+    - ansible_test2
