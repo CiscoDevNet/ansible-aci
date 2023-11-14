@@ -228,8 +228,7 @@ url:
 
 
 def listify(d, *keys):
-    for result in listify_worker(d, keys, 0, {}, ""):
-        yield result
+    return list(listify_worker(d, keys, 0, {}, ""))
 
 
 def listify_worker(d, keys, depth, cache, prefix):
@@ -240,7 +239,7 @@ def listify_worker(d, keys, depth, cache, prefix):
             cache_work = cache.copy()
             if isinstance(item, dict):
                 for k, v in item.items():
-                    if isinstance(v, list) and all(isinstance(x, str) for x in v):
+                    if isinstance(v, list) and all(isinstance(x, (str, int, float, bool, bytes)) for x in v):
                         cache_key = prefix + k
                         cache_value = ",".join(v)
                         cache_work[cache_key] = cache_value
