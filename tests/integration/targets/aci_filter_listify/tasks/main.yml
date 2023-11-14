@@ -42,7 +42,7 @@
           subnet: 
           - name: 20.20.20.1
             mask: 24
-            scope: public,shared
+            scope: [public, shared]
           vrf: vrf_test
         vrf:
         - name: vrf_test
