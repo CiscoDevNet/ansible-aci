@@ -1,5 +1,6 @@
 # Test code for the ACI modules
 # Copyright: (c) 2021, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
+# Copyright: (c) 2023, Akini Ross (@akinross) <akinross@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -129,18 +130,73 @@
       - query_controller.current.0.vmmCtrlrP.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/ctrlr-vCenter1'
       - query_controller.current.0.vmmCtrlrP.attributes.name == 'vCenter1'
 
-  - name: Query all controllers
+  - name: Query controller ( only vm_provider set )
+    aci_vmm_controller:
+      <<: *aci_info
+      vm_provider: vmware
+      state: query
+    register: query_controller_vm_provider
+
+  - name: Query controller ( only domain set )
     aci_vmm_controller:
       <<: *aci_info
       domain: vmm_dom
-      vm_provider: vmware
       state: query
-    register: query_controller
+    register: query_controller_domain
+
+  - name: Query controller ( only name set )
+    aci_vmm_controller:
+      <<: *aci_info
+      name: vCenter2
+      state: query
+    register: query_controller_name
+
+  - name: Query controller ( only vm_provider and domain set )
+    aci_vmm_controller:
+      <<: *aci_info
+      vm_provider: vmware
+      domain: vmm_dom
+      state: query
+    register: query_controller_vm_provider_domain
+
+  - name: Query controller ( only vm_provider and name set )
+    aci_vmm_controller:
+      <<: *aci_info
+      vm_provider: vmware
+      name: vCenter2
+      state: query
+    register: query_controller_vm_provider_name
+
+  - name: Query controller ( only domain and name set )
+    aci_vmm_controller:
+      <<: *aci_info
+      domain: vmm_dom
+      name: vCenter2
+      state: query
+    register: query_controller_domain_name
+
+  - name: Query all controllers
+    aci_vmm_controller:
+      <<: *aci_info
+      state: query
+    register: query_controller_all
 
   - name: Verify VMM query_controller
     assert:
       that:
-      - query_controller is not changed
+      - query_controller_vm_provider is not changed
+      - query_controller_vm_provider.current.0.vmmProvP.attributes.dn == "uni/vmmp-VMware"
+      - query_controller_domain is not changed
+      - query_controller_domain.current.0.vmmDomP.attributes.dn == "uni/vmmp-VMware/dom-vmm_dom"
+      - query_controller_name is not changed
+      - query_controller_name.current.0.vmmCtrlrP.attributes.dn == "uni/vmmp-VMware/dom-vmm_dom/ctrlr-vCenter2"
+      - query_controller_vm_provider_domain is not changed
+      - query_controller_vm_provider_domain.current.0.vmmDomP.attributes.dn == "uni/vmmp-VMware/dom-vmm_dom"
+      - query_controller_vm_provider_name is not changed
+      - query_controller_vm_provider_name.current.0.vmmCtrlrP.attributes.dn == "uni/vmmp-VMware/dom-vmm_dom/ctrlr-vCenter2"
+      - query_controller_domain_name is not changed
+      - query_controller_domain_name.current.0.vmmDomP.attributes.dn == "uni/vmmp-VMware/dom-vmm_dom"
+      - query_controller_all is not changed
 
   - name: Delete controllers
     aci_vmm_controller:
