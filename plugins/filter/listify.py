@@ -242,7 +242,7 @@ def listify_worker(d, keys, depth, cache, prefix):
                 for k, v in item.items():
                     if isinstance(v, list) and all(isinstance(x, str) for x in v):
                         cache_key = prefix + k
-                        cache_value = ','.join(v)
+                        cache_value = ",".join(v)
                         cache_work[cache_key] = cache_value
                     elif not isinstance(v, (dict, list)):
                         cache_key = prefix + k
