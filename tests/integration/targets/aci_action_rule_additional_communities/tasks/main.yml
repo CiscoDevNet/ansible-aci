@@ -47,7 +47,7 @@
       description: Ansible action rule profile for ansible_tenant tenant
       state: present
 
-  - name: Add a additional communities action rule (check_mode)
+  - name: Add an additional communities action rule (check_mode)
     cisco.aci.aci_action_rule_additional_communities: &aci_action_rule_additional_communities_present
       <<: *aci_info
       tenant: ansible_tenant
@@ -58,17 +58,17 @@
     check_mode: true
     register: cm_add_action_rule_add_comm
 
-  - name: Add a additional communities action rule again (normal_mode)
+  - name: Add an additional communities action rule again (normal_mode)
     cisco.aci.aci_action_rule_additional_communities:
       <<: *aci_action_rule_additional_communities_present
     register: nm_add_action_rule_add_comm
 
-  - name: Add a additional communities action rule again - testing idempotency
+  - name: Add an additional communities action rule again - testing idempotency
     cisco.aci.aci_action_rule_additional_communities:
       <<: *aci_action_rule_additional_communities_present
     register: nm_add_action_rule_add_comm_idempotency
 
-  - name: Add a additional communities action rule
+  - name: Add an additional communities action rule
     cisco.aci.aci_action_rule_additional_communities:
       <<: *aci_info
       tenant: ansible_tenant
