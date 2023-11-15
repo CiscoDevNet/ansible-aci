@@ -71,7 +71,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create a additional communities action rule
+- name: Create an additional communities action rule
   cisco.aci.aci_action_rule_additional_communities:
     host: apic
     username: admin
@@ -83,7 +83,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete a additional communities action rule
+- name: Delete an additional communities action rule
   cisco.aci.aci_action_rule_additional_communities:
     host: apic
     username: admin
@@ -103,7 +103,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query a additional communities action rule
+- name: Query an additional communities action rule
   cisco.aci.aci_action_rule_additional_communities:
     host: apic
     username: admin
