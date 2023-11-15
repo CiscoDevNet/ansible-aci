@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2022, Jason Juenger (@jasonjuenger) <jasonjuenger@gmail.com>
 # Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -13,10 +12,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_l3out_logical_interface_profile_ospf_policy
-short_description: Manage Layer 3 Outside (L3Out) OSPF interface profile (ospfIfP)
+module: aci_l3out_eigrp_interface_profile
+short_description: Manage Layer 3 Outside (L3Out) EIGRP interface profile (eigrp:IfP)
 description:
-- Manage L3Out logical interface profile OSPF policies on Cisco ACI fabrics.
+- Manage L3Out logical interface profile EIGRP policies on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -38,21 +37,23 @@ options:
     - Name of an existing interface profile.
     type: str
     aliases: [ name, interface_profile_name, logical_interface ]
-  ospf_policy:
+  eigrp_policy:
     description:
-    - Name of an existing OSPF interface policy.
+    - Name of an existing eigrp interface policy.
     type: str
-    aliases: [ name, ospf_policy_name ]
-  ospf_auth_type:
+    aliases: [ name, eigrp_policy_name ]
+  eigrp_auth_type:
     description:
-    - OSPF authentication type. The value C(default) represents the "No Authentication" setting.
+    - eigrp authentication type. The value C(default) represents the "No Authentication" setting.
     type: str
     choices: [ default, simple, md5 ]
-  ospf_auth_key:
+    aliases: [ auth_type ]
+  eigrp_auth_key:
     description:
-    - OSPF authentication key.
-    - When using C(ospf_auth_key) this module will always show as C(changed) as the module cannot know what the currently configured key is.
+    - eigrp authentication key.
+    - When using C(eigrp_auth_key) this module will always show as C(changed) as the module cannot know what the currently configured key is.
     type: str
+    aliases: [ auth_key ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -66,26 +67,25 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant), C(l3out), C(node_profile), C(interface_profile) and C(ospf_policy) must exist before using this module in your playbook.
+- The C(tenant), C(l3out), C(node_profile), C(interface_profile) and C(eigrp_policy) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile), M(cisco.aci.aci_l3out_logical_interface_profile)
-  and (cisco.aci.aci_interface_policy_ospf) can be used for this.
+  and M(cisco.aci.aci_interface_policy_eigrp) can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
 - module: cisco.aci.aci_l3out
 - module: cisco.aci.aci_l3out_logical_node_profile
 - module: cisco.aci.aci_l3out_logical_interface_profile
-- module: cisco.aci.aci_interface_policy_ospf
+- module: cisco.aci.aci_interface_policy_eigrp
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Jason Juenger (@jasonjuenger)
 - Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: Add a new interface profile OSPF policy
-  cisco.aci.aci_l3out_logical_interface_profile_ospf_policy:
+- name: Add a new interface profile eigrp policy
+  cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -93,12 +93,12 @@ EXAMPLES = r"""
     l3out: my_l3out
     node_profile: my_node_profile
     interface_profile: my_interface_profile
-    ospf_policy: my_ospf_interface_policy
+    eigrp_policy: my_eigrp_interface_policy
     state: present
   delegate_to: localhost
 
-- name: Add a new interface profile OSPF policy with authentication
-  cisco.aci.aci_l3out_logical_interface_profile_ospf_policy:
+- name: Add a new interface profile eigrp policy with authentication
+  cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -106,14 +106,14 @@ EXAMPLES = r"""
     l3out: my_l3out
     node_profile: my_node_profile
     interface_profile: my_interface_profile
-    ospf_policy: my_ospf_interface_policy
-    ospf_auth_type: simple
-    ospf_auth_key: my_auth_key
+    eigrp_policy: my_eigrp_interface_policy
+    eigrp_auth_type: simple
+    eigrp_auth_key: my_auth_key
     state: present
   delegate_to: localhost
 
-- name: Delete an interface profile OSPF policy
-  cisco.aci.aci_l3out_logical_interface_profile_ospf_policy:
+- name: Delete an interface profile eigrp policy
+  cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -121,12 +121,12 @@ EXAMPLES = r"""
     l3out: my_l3out
     node_profile: my_node_profile
     interface_profile: my_interface_profile
-    ospf_policy: my_ospf_interface_policy
+    eigrp_policy: my_eigrp_interface_policy
     state: absent
   delegate_to: localhost
 
-- name: Query an interface profile OSPF policy
-  cisco.aci.aci_l3out_logical_interface_profile_ospf_policy:
+- name: Query an interface profile eigrp policy
+  cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -134,7 +134,7 @@ EXAMPLES = r"""
     l3out: my_l3out
     node_profile: my_node_profile
     interface_profile: my_interface_profile
-    ospf_policy: my_ospf_interface_policy
+    eigrp_policy: my_eigrp_interface_policy
     state: query
   delegate_to: localhost
   register: query_result
@@ -259,9 +259,9 @@ def main():
         l3out=dict(type="str", aliases=["l3out_name"]),
         node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
         interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
-        ospf_policy=dict(type="str", aliases=["name", "ospf_policy_name"]),
-        ospf_auth_type=dict(type="str", choices=["default", "simple", "md5"]),
-        ospf_auth_key=dict(type="str", no_log=True),
+        eigrp_policy=dict(type="str", aliases=["name", "eigrp_policy_name"]),
+        eigrp_auth_type=dict(type="str", choices=["default", "simple", "md5"]),
+        eigrp_auth_key=dict(type="str", no_log=True),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -270,7 +270,7 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["tenant", "l3out", "node_profile", "interface_profile"]],
-            ["state", "present", ["tenant", "l3out", "node_profile", "interface_profile", "ospf_policy"]],
+            ["state", "present", ["tenant", "l3out", "node_profile", "interface_profile", "eigrp_policy"]],
         ],
     )
 
@@ -278,9 +278,9 @@ def main():
     l3out = module.params.get("l3out")
     node_profile = module.params.get("node_profile")
     interface_profile = module.params.get("interface_profile")
-    ospf_policy = module.params.get("ospf_policy")
-    ospf_auth_type = module.params.get("ospf_auth_type")
-    ospf_auth_key = module.params.get("ospf_auth_key")
+    eigrp_policy = module.params.get("eigrp_policy")
+    eigrp_auth_type = module.params.get("eigrp_auth_type")
+    eigrp_auth_key = module.params.get("eigrp_auth_key")
     state = module.params.get("state")
 
     aci = ACIModule(module)
@@ -311,26 +311,26 @@ def main():
             target_filter={"name": interface_profile},
         ),
         subclass_4=dict(
-            aci_class="ospfIfP",
-            aci_rn="ospfIfP",
+            aci_class="eigrpIfP",
+            aci_rn="eigrpIfP",
             module_object=interface_profile,
             target_filter={"name": interface_profile},
         ),
-        child_classes=["ospfRsIfPol"],
+        child_classes=["eigrpRsIfPol"],
     )
 
     aci.get_existing()
 
     if state == "present":
-        child_configs = [dict(ospfRsIfPol=dict(attributes=dict(tnOspfIfPolName=ospf_policy)))]
+        child_configs = [dict(eigrpRsIfPol=dict(attributes=dict(tneigrpIfPolName=eigrp_policy)))]
 
-        config = dict(authType=ospf_auth_type)
-        if ospf_auth_key is not None:
-            config.update(authKey=ospf_auth_key)
+        config = dict(authType=eigrp_auth_type)
+        if eigrp_auth_key is not None:
+            config.update(authKey=eigrp_auth_key)
 
-        aci.payload(aci_class="ospfIfP", class_config=config, child_configs=child_configs)
+        aci.payload(aci_class="eigrpIfP", class_config=config, child_configs=child_configs)
 
-        aci.get_diff(aci_class="ospfIfP")
+        aci.get_diff(aci_class="eigrpIfP")
 
         aci.post_config()
 
