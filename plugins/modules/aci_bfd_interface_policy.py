@@ -40,21 +40,21 @@ options:
   detection_multiplier:
     description:
     - Detection multiplier of the BFD Interface policy
+    - APIC sets the default value to 3.
     - Allowed range is 1-50.
     type: int
-    default: 3
   min_transmit_interval:
     description:
     - Minimum transmit (Tx) interval of the BFD Interface policy
+    - APIC sets the default value to 50.
     - Allowed range is 250-999.
     type: int
-    default: 50
   min_receive_interval:
     description:
     - Minimum receive (Rx) interval of the BFD Interface policy
+    - APIC sets the default value to 50.
     - Allowed range is 250-999.
     type: int
-    default: 50
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -235,9 +235,9 @@ def main():
         name=dict(type="str", aliases=["bfd_interface_policy"]),
         description=dict(type="str"),
         admin_state=dict(type="str", default="enabled", choices=["enabled", "disabled"]),
-        detection_multiplier=dict(type="int", default=3),
-        min_transmit_interval=dict(type="int", default=50),
-        min_receive_interval=dict(type="int", default=50),
+        detection_multiplier=dict(type="int"),
+        min_transmit_interval=dict(type="int"),
+        min_receive_interval=dict(type="int"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         tenant=dict(type="str"),
     )
@@ -257,14 +257,8 @@ def main():
     tenant = module.params.get("tenant")
     admin_state = module.params.get("admin_state")
     detection_multiplier = module.params.get("detection_multiplier")
-    if detection_multiplier is not None and detection_multiplier not in range(1, 50):
-        module.fail_json(msg='The "detection_multiplier" must be a value between 1 and 50')
     min_transmit_interval = module.params.get("min_transmit_interval")
-    if min_transmit_interval is not None and min_transmit_interval not in range(50, 999):
-        module.fail_json(msg='The "min_transmit_interval" must be a value between 50 and 999')
     min_receive_interval = module.params.get("min_receive_interval")
-    if min_receive_interval is not None and min_receive_interval not in range(50, 999):
-        module.fail_json(msg='The "min_receive_interval" must be a value between 50 and 999')
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -285,16 +279,28 @@ def main():
     aci.get_existing()
 
     if state == "present":
+        class_config=dict(
+            name=name,
+            descr=description,
+            adminSt=admin_state,
+        )
+
+        if detection_multiplier and detection_multiplier not in range(1, 50):
+                module.fail_json(msg='The "detection_multiplier" must be a value between 1 and 50')
+        else:
+            class_config["detectMult"] = detection_multiplier
+        if min_transmit_interval and min_transmit_interval not in range(50, 999):
+                module.fail_json(msg='The "min_transmit_interval" must be a value between 50 and 999')
+        else:
+            class_config["minTxIntvl"] = min_transmit_interval
+        if min_receive_interval and min_receive_interval not in range(50, 999):
+                module.fail_json(msg='The "min_receive_interval" must be a value between 50 and 999')
+        else:
+            class_config["minRxIntvl"] = min_receive_interval
+
         aci.payload(
             aci_class="bfdIfPol",
-            class_config=dict(
-                name=name,
-                descr=description,
-                adminSt=admin_state,
-                detectMult=detection_multiplier,
-                minTxIntvl=min_transmit_interval,
-                minRxIntvl=min_receive_interval,
-            ),
+            class_config=class_config,
         )
 
         aci.get_diff(aci_class="bfdIfPol")

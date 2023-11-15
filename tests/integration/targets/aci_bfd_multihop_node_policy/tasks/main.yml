@@ -71,9 +71,6 @@
       - cm_add_bfd_multihop_node_pol.proposed.bfdMhNodePol.attributes.name == nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.name == "ansible_bfd_multihop_node_policy"
       - cm_add_bfd_multihop_node_pol.proposed.bfdMhNodePol.attributes.descr == nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.descr == "Ansible BFD Multihop Node Policy"
       - cm_add_bfd_multihop_node_pol.proposed.bfdMhNodePol.attributes.adminSt == nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.adminSt == "enabled"
-      - cm_add_bfd_multihop_node_pol.proposed.bfdMhNodePol.attributes.detectMult == nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.detectMult == "3"
-      - cm_add_bfd_multihop_node_pol.proposed.bfdMhNodePol.attributes.minRxIntvl == nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.minRxIntvl == "250"
-      - cm_add_bfd_multihop_node_pol.proposed.bfdMhNodePol.attributes.minTxIntvl == nm_add_bfd_multihop_node_pol.current.0.bfdMhNodePol.attributes.minTxIntvl == "250"
 
   - name: Add a new  BFD Multihop Node policy again - idempotency
     cisco.aci.aci_bfd_multihop_node_policy:

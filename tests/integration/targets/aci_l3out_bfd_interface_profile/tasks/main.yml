@@ -114,8 +114,6 @@
       - nm_add_l3out_bfd_int_prof is changed
       - cm_add_l3out_bfd_int_prof.previous == nm_add_l3out_bfd_int_prof.previous == []
       - cm_add_l3out_bfd_int_prof.proposed.bfdIfP.attributes.dn == nm_add_l3out_bfd_int_prof.proposed.bfdIfP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/bfdIfP"
-      - cm_add_l3out_bfd_int_prof.proposed.bfdIfP.attributes.keyId == nm_add_l3out_bfd_int_prof.proposed.bfdIfP.attributes.keyId == "3"
-      - cm_add_l3out_bfd_int_prof.proposed.bfdIfP.attributes.type == nm_add_l3out_bfd_int_prof.proposed.bfdIfP.attributes.type == "none"
 
   - name: Add L3Out BFD Interface Profile again- idempotency
     cisco.aci.aci_l3out_bfd_interface_profile:
@@ -154,7 +152,7 @@
       that:
       - update_l3out_bfd_int_prof is changed
       - update_l3out_bfd_int_prof.sent.bfdIfP.attributes.keyId == "15"
-      - update_l3out_bfd_int_prof.sent.bfdIfP.attributes.key == "abc*123"
+      - update_l3out_bfd_int_prof.sent.bfdIfP.attributes.key == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
       - update_l3out_bfd_int_prof.sent.bfdIfP.attributes.type == "sha1"
       - update_l3out_bfd_int_prof.sent.bfdIfP.children.0.bfdRsIfPol.attributes.tnBfdIfPolName == "ansible_bfd_interface_policy"
 
@@ -211,4 +209,4 @@
       - nm_remove_l3out_bfd_int_prof is changed
       - cm_remove_l3out_bfd_int_prof.proposed == nm_remove_l3out_bfd_int_prof.proposed == {}
       - remove_l3out_bfd_int_prof_again is not changed
-      - nm_add_l3out_bfd_int_prof.current == remove_l3out_bfd_int_prof_again.current == []
+      - nm_remove_l3out_bfd_int_prof.current == remove_l3out_bfd_int_prof_again.current == []

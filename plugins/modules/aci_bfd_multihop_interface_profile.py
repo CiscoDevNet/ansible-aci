@@ -55,9 +55,9 @@ options:
   interface_profile_type:
     description:
     - Authentication Type of the BFD Multihop Interface Profile object.
+    - APIC sets the default value to none.
     type: str
     choices: [ none, sha1 ]
-    default: none
   key:
     description:
     - Authentication Key of the BFD Multihop Interface Profile object.
@@ -65,9 +65,9 @@ options:
   key_id:
     description:
     - Authentication Key ID of the BFD Multihop Interface Profile object.
+    - APIC sets the default value to 3.
     - Allowed range is 1-255
     type: int
-    default: 3
   bfd_multihop_interface_policy:
     description:
     - The name of the BFD Multihop Interface policy.
@@ -257,9 +257,9 @@ def main():
         name=dict(type="str", aliases=["bfd_multihop_interface_profile"]),
         name_alias=dict(type="str"),
         description=dict(type="str", aliases=["descr"]),
-        interface_profile_type=dict(type="str", default="none", choices=["none", "sha1"]),
+        interface_profile_type=dict(type="str", choices=["none", "sha1"]),
         key=dict(type="str", no_log=True),
-        key_id=dict(type="int", default=3),
+        key_id=dict(type="int"),
         bfd_multihop_interface_policy=dict(type="str", aliases=["multihop_interface_policy", "multihop_interface_policy_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -283,8 +283,6 @@ def main():
     interface_profile_type = module.params.get("interface_profile_type")
     key = module.params.get("key")
     key_id = module.params.get("key_id")
-    if key_id is not None and key_id not in range(1, 255):
-        module.fail_json(msg='The "key_id" must be a value between 1 and 255')
     bfd_multihop_interface_policy = module.params.get("bfd_multihop_interface_policy")
     state = module.params.get("state")
 
@@ -326,16 +324,22 @@ def main():
     aci.get_existing()
 
     if state == "present":
+        class_config = dict(
+            name=name,
+            nameAlias=name_alias,
+            descr=description,
+            type=interface_profile_type,
+            key=key,
+        )
+
+        if key_id and key_id not in range(1, 255):
+            module.fail_json(msg='The "key_id" must be a value between 1 and 255')
+        else:
+            class_config["keyId"] = key_id
+
         aci.payload(
             aci_class="bfdMhIfP",
-            class_config=dict(
-                name=name,
-                nameAlias=name_alias,
-                descr=description,
-                type=interface_profile_type,
-                key=key,
-                keyId=key_id,
-            ),
+            class_config=class_config,
             child_configs=[dict(bfdRsMhIfPol=dict(attributes=dict(tnBfdMhIfPolName=bfd_multihop_interface_policy)))],
         )
 

@@ -71,9 +71,6 @@
       - cm_add_bfd_interface_pol.proposed.bfdIfPol.attributes.name == nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.name == "ansible_bfd_interface_policy"
       - cm_add_bfd_interface_pol.proposed.bfdIfPol.attributes.descr == nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.descr == "Ansible BFD Interface Policy"
       - cm_add_bfd_interface_pol.proposed.bfdIfPol.attributes.adminSt == nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.adminSt == "enabled"
-      - cm_add_bfd_interface_pol.proposed.bfdIfPol.attributes.detectMult == nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.detectMult == "3"
-      - cm_add_bfd_interface_pol.proposed.bfdIfPol.attributes.minRxIntvl == nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.minRxIntvl == "50"
-      - cm_add_bfd_interface_pol.proposed.bfdIfPol.attributes.minTxIntvl == nm_add_bfd_interface_pol.current.0.bfdIfPol.attributes.minTxIntvl == "50"
 
   - name: Add a new  BFD Interface policy again - idempotency
     cisco.aci.aci_bfd_interface_policy:

@@ -114,8 +114,6 @@
       - nm_add_bfd_mh_int_prof is changed
       - cm_add_bfd_mh_int_prof.previous == nm_add_bfd_mh_int_prof.previous == []
       - cm_add_bfd_mh_int_prof.proposed.bfdMhIfP.attributes.dn == nm_add_bfd_mh_int_prof.proposed.bfdMhIfP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/bfdMhIfP"
-      - cm_add_bfd_mh_int_prof.proposed.bfdMhIfP.attributes.keyId == nm_add_bfd_mh_int_prof.proposed.bfdMhIfP.attributes.keyId == "3"
-      - cm_add_bfd_mh_int_prof.proposed.bfdMhIfP.attributes.type == nm_add_bfd_mh_int_prof.proposed.bfdMhIfP.attributes.type == "none"
 
   - name: Add BFD Multihop Interface Profile again- idempotency
     cisco.aci.aci_bfd_multihop_interface_profile:
@@ -154,7 +152,7 @@
       that:
       - update_bfd_mh_int_prof is changed
       - update_bfd_mh_int_prof.sent.bfdMhIfP.attributes.keyId == "15"
-      - update_bfd_mh_int_prof.sent.bfdMhIfP.attributes.key == "abc*123"
+      - update_bfd_mh_int_prof.sent.bfdMhIfP.attributes.key == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
       - update_bfd_mh_int_prof.sent.bfdMhIfP.attributes.type == "sha1"
       - update_bfd_mh_int_prof.sent.bfdMhIfP.children.0.bfdRsMhIfPol.attributes.tnBfdMhIfPolName == "ansible_bfd_multihop_interface_policy"
 
