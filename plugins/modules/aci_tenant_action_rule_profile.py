@@ -423,7 +423,7 @@ def main():
         child_configs = []
         for class_name, attribute in child_classes.items():
             attribute_input = attribute.get("attribute_input")
-            # This condition enables to user to keep its previous configurations if they are not passing anyting in the payload.
+            # This condition enables to user to keep its previous configurations if they are not passing anything in the payload.
             if attribute_input is not None:
                 # This condition checks if the attribute input is a dict and checks if all of its values are None (stored as a boolean in only_none).
                 only_none = False
