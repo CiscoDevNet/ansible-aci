@@ -31,7 +31,7 @@ options:
     description:
     - The Ucast/Mcast address type AF control.
     - The APIC defaults to C(af-ucast) when unset during creation.
-    - Can not be configured for APIC version 4.2 or prior.
+    - Can not be configured for APIC version 4.2(7s) or prior.
     type: list
     elements: str
     choices: [ af-label-ucast, af-ucast, af-mcast ]
@@ -39,6 +39,7 @@ options:
   control_state:
     description:
     - The summary control.
+    - The C(summary_only) option can not be configured for APIC version 4.2(7s) or prior.
     type: list
     elements: str
     choices: [ as-set, summary-only ]
@@ -281,15 +282,19 @@ def main():
     aci.get_existing()
 
     if state == "present":
+        class_config = dict(
+            name=route_summarization_policy,
+            ctrl=control_state,
+            descr=description,
+            nameAlias=name_alias,
+        )
+
+        if address_type_af_control is not None:
+            class_config.update(dict(addrTCtrl=address_type_af_control))
+
         aci.payload(
             aci_class="bgpRtSummPol",
-            class_config=dict(
-                name=route_summarization_policy,
-                addrTCtrl=address_type_af_control,
-                ctrl=control_state,
-                descr=description,
-                nameAlias=name_alias,
-            ),
+            class_config=class_config,
         )
 
         aci.get_diff(aci_class="bgpRtSummPol")
