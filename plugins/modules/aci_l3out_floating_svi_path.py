@@ -432,14 +432,9 @@ def main():
                 for child in aci.existing[0].get("l3extRsDynPathAtt", {}).get("children", {}):
                     if child.get("l3extVirtualLIfPLagPolAtt"):
                         try:
-                            existing_enhanced_lag_policy = (
-                                child["l3extVirtualLIfPLagPolAtt"]
-                                ["children"][0]
-                                ["l3extRsVSwitchEnhancedLagPol"]
-                                ["attributes"]
-                                ["tDn"]
-                                .split("enlacplagp-")[1]
-                            )
+                            existing_enhanced_lag_policy = child["l3extVirtualLIfPLagPolAtt"]["children"][0]["l3extRsVSwitchEnhancedLagPol"]["attributes"][
+                                "tDn"
+                            ].split("enlacplagp-")[1]
                         except (AttributeError, IndexError, KeyError):
                             existing_enhanced_lag_policy = ""
 
