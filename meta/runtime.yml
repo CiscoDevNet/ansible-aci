@@ -19,6 +19,7 @@ action_groups:
     - aci_access_span_src_group_src
     - aci_access_span_src_group_src_path
     - aci_access_sub_port_block_to_access_port
+    - aci_access_switch_policy_group
     - aci_aep
     - aci_aep_to_domain
     - aci_aep_to_epg
@@ -194,4 +195,5 @@ action_groups:
     - aci_vmm_vswitch_policy
     - aci_vrf
     - aci_vrf_leak_internal_subnet
+    - aci_vrf_multicast
     - aci_vzany_to_contract

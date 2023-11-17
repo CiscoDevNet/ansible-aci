@@ -5,6 +5,22 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.9.0
+======
+
+Release Summary
+---------------
+
+Release v2.9.0 of the ``ansible-aci`` collection on 2023-11-17.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.8.0.
+
+
+Minor Changes
+-------------
+
+- Add support for configuration of access switch policy groups with aci_access_switch_policy_group module
+- Add support for configuration of vrf multicast with aci_vrf_multicast module
+
 v2.8.0
 ======
 
