@@ -42,18 +42,6 @@ options:
     - Name of an existing eigrp interface policy.
     type: str
     aliases: [ name, eigrp_policy_name ]
-  eigrp_auth_type:
-    description:
-    - eigrp authentication type. The value C(default) represents the "No Authentication" setting.
-    type: str
-    choices: [ default, simple, md5 ]
-    aliases: [ auth_type ]
-  eigrp_auth_key:
-    description:
-    - eigrp authentication key.
-    - When using C(eigrp_auth_key) this module will always show as C(changed) as the module cannot know what the currently configured key is.
-    type: str
-    aliases: [ auth_key ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -260,8 +248,6 @@ def main():
         node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
         interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
         eigrp_policy=dict(type="str", aliases=["name", "eigrp_policy_name"]),
-        eigrp_auth_type=dict(type="str", choices=["default", "simple", "md5"]),
-        eigrp_auth_key=dict(type="str", no_log=True),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -279,8 +265,6 @@ def main():
     node_profile = module.params.get("node_profile")
     interface_profile = module.params.get("interface_profile")
     eigrp_policy = module.params.get("eigrp_policy")
-    eigrp_auth_type = module.params.get("eigrp_auth_type")
-    eigrp_auth_key = module.params.get("eigrp_auth_key")
     state = module.params.get("state")
 
     aci = ACIModule(module)
@@ -324,9 +308,7 @@ def main():
     if state == "present":
         child_configs = [dict(eigrpRsIfPol=dict(attributes=dict(tneigrpIfPolName=eigrp_policy)))]
 
-        config = dict(authType=eigrp_auth_type)
-        if eigrp_auth_key is not None:
-            config.update(authKey=eigrp_auth_key)
+        config = dict(descr="")
 
         aci.payload(aci_class="eigrpIfP", class_config=config, child_configs=child_configs)
 
