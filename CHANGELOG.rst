@@ -5,6 +5,23 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.9.0
+======
+
+Release Summary
+---------------
+
+Release v2.9.0 of the ``ansible-aci`` collection on 2023-11-17.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.8.0.
+
+
+Minor Changes
+-------------
+
+- Add L3out Floating SVI modules (aci_l3out_floating_svi, aci_l3out_floating_svi_path, aci_l3out_floating_svi_path_secondary_ip and aci_l3out_floating_svi_secondary_ip) (#478)
+- Add support for configuration of access switch policy groups with aci_access_switch_policy_group module
+- Add support for configuration of vrf multicast with aci_vrf_multicast module
+
 v2.8.0
 ======
 
