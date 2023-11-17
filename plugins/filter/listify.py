@@ -227,11 +227,17 @@ url:
 """
 
 
+# This function takes a dictionary and a series of keys,
+# and returns a list of dictionaries using recursive helper function 'listify_worker'
 def listify(d, *keys):
     return list(listify_worker(d, keys, 0, {}, ""))
 
 
+# This function walks through a dictionary 'd', depth-first,
+# using the keys provided, and generates a new dictionary for each key:value pair encountered
 def listify_worker(d, keys, depth, cache, prefix):
+    # The prefix in the code is used to store the path of keys traversed in the nested dictionary,
+    # which helps to generate unique keys for each value when flattening the dictionary.
     prefix += keys[depth] + "_"
 
     if keys[depth] in d:
@@ -240,10 +246,12 @@ def listify_worker(d, keys, depth, cache, prefix):
             if isinstance(item, dict):
                 for k, v in item.items():
                     if isinstance(v, list) and all(isinstance(x, (str, int, float, bool, bytes)) for x in v) or not isinstance(v, (dict, list)):
+                        # The cache in this code is a temporary storage that holds key-value pairs as the function navigates through the nested dictionary.
+                        # It helps to generate the final output by remembering the traversed path in each recursive call.
                         cache_key = prefix + k
                         cache_value = v
                         cache_work[cache_key] = cache_value
-
+                # If we're at the deepest level of keys
                 if len(keys) - 1 == depth:
                     yield cache_work
                 else:
