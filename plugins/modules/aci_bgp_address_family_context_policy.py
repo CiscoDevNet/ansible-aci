@@ -62,12 +62,13 @@ options:
     description:
     - The maximum number of equal-cost local paths for redist.
     - The APIC defaults to C(0) when unset during creation.
+    - Can not be configured for APIC version 4.2(7s) and prior.
     type: int
   bgp_add_path_capability:
     description:
     - The neighbor system capability.
     - To delete this attribute, pass an empty string.
-    - Can not be configured for APIC version 4.2 and prior.
+    - Can not be configured for APIC version 6.0(2h) and prior.
     type: str
     choices: [ receive, send, "" ]
   description:
