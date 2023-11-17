@@ -39,7 +39,7 @@ options:
     aliases: [ interface_profile_name, logical_interface ]
   hsrp_policy:
     description:
-    - Name of an existing hsrp interface policy.
+    - Name of an existing HSRP interface policy.
     type: str
     aliases: [ name, hsrp_policy_name ]
   version:

@@ -19,7 +19,7 @@ description:
 options:
   tenant:
     description:
-    - The name of the Tenant the hsrp interface policy should belong to.
+    - The name of the Tenant the HSRP interface policy should belong to.
     type: str
     aliases: [ tenant_name ]
   hsrp:

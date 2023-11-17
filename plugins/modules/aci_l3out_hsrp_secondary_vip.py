@@ -39,7 +39,7 @@ options:
     aliases: [ name, interface_profile_name, logical_interface ]
   hsrp_interface_group:
     description:
-    - Name of an existing hsrp group.
+    - Name of an existing HSRP group.
     type: str
     aliases: [ name, hsrp_group ]
   secondary_virtual_ip:
