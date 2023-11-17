@@ -79,7 +79,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a hsrp secondary virtual ip
+- name: Add a HSRP secondary virtual ip
   cisco.aci.aci_l3out_hsrp_secondary_vip:
     host: apic
     username: admin
@@ -93,7 +93,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete a hsrp secondary virtual ip
+- name: Delete a HSRP secondary virtual ip
   cisco.aci.aci_l3out_hsrp_secondary_vip:
     host: apic
     username: admin
@@ -107,7 +107,7 @@ EXAMPLES = r"""
     state: absent
   delegate_to: localhost
 
-- name: Query a hsrp secondary virtual ip
+- name: Query a HSRP secondary virtual ip
   cisco.aci.aci_l3out_hsrp_secondary_vip:
     host: apic
     username: admin
@@ -122,7 +122,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query all hsrp secondary virtual ips
+- name: Query all HSRP secondary virtual ips
   cisco.aci.aci_l3out_hsrp_secondary_vip:
     host: apic
     username: admin

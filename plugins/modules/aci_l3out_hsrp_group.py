@@ -107,7 +107,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a new hsrp group
+- name: Add a new HSRP group
   cisco.aci.aci_l3out_hsrp_group:
     host: apic
     username: admin
@@ -124,7 +124,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete a hsrp group
+- name: Delete a HSRP group
   cisco.aci.aci_l3out_hsrp_group:
     host: apic
     username: admin
@@ -141,7 +141,7 @@ EXAMPLES = r"""
     state: absent
   delegate_to: localhost
 
-- name: Query a hsrp group
+- name: Query a HSRP group
   cisco.aci.aci_l3out_hsrp_group:
     host: apic
     username: admin
@@ -159,7 +159,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query all hsrp groups
+- name: Query all HSRP groups
   cisco.aci.aci_l3out_hsrp_group:
     host: apic
     username: admin

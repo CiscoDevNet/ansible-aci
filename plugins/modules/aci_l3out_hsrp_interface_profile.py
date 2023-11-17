@@ -76,7 +76,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a new hsrp interface profile
+- name: Add a new HSRP interface profile
   cisco.aci.aci_l3out_hsrp_interface_profile:
     host: apic
     username: admin
@@ -89,7 +89,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete a hsrp interface profile
+- name: Delete a HSRP interface profile
   cisco.aci.aci_l3out_hsrp_interface_profile:
     host: apic
     username: admin
@@ -102,7 +102,7 @@ EXAMPLES = r"""
     state: absent
   delegate_to: localhost
 
-- name: Query a hsrp interface profile
+- name: Query a HSRP interface profile
   cisco.aci.aci_l3out_hsrp_interface_profile:
     host: apic
     username: admin
