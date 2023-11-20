@@ -19,17 +19,17 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   keychain_policy:
     description:
-    - Name of the keychain policy.
+    - The name of the keychain policy.
     type: str
     aliases: [ keychain_policy_name, name ]
   description:
     description:
-    - Description for the keychain policy.
+    - The description for the keychain policy.
     type: str
     aliases: [ descr ]
   state:
@@ -205,7 +205,7 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
-        keychain_policy=dict(type="str", aliases=["keychain_policy_name", "name"]),
+        keychain_policy=dict(type="str", aliases=["keychain_policy_name", "name"], no_log=False),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -246,7 +246,7 @@ def main():
     if state == "present":
         aci.payload(
             aci_class="fvKeyChainPol",
-            class_config= dict(
+            class_config=dict(
                 name=keychain_policy,
                 descr=description,
             ),

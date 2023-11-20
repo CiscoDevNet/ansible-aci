@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_keychain_policy
+module: aci_key_policy
 short_description: Manage Key Policy (fv:KeyPol)
 description:
 - Manage Key Policies for KeyChain Policies on Cisco ACI fabrics.
@@ -35,16 +35,17 @@ options:
     description:
     - The start time.
     - The APIC defaults to C(now) when unset during creation.
-    type: string
+    type: str
   end_time:
     description:
     - The end time.
     - The APIC defaults to C(infinite) when unset during creation.
-    type: string
+    type: str
   pre_shared_key:
-    descritpion:
-    - The pre-shared key.
-    type: string
+    description:
+    - The pre-shared authentifcation key.
+    - When using C(pre_shared_key) this module will always show as C(changed) as the module cannot know what the currently configured key is.
+    type: str
   description:
     description:
     - The description for the keychain policy.
@@ -230,11 +231,11 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
-        keychain_policy=dict(type="str", aliases=["keychain_policy_name"]),
+        keychain_policy=dict(type="str", aliases=["keychain_policy_name"], no_log=False),
         id=dict(type="int"),
         start_time=dict(type="str"),
         end_time=dict(type="str"),
-        pre_shared_key=dict(type="str"),
+        pre_shared_key=dict(type="str", no_log=True),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -283,15 +284,18 @@ def main():
     aci.get_existing()
 
     if state == "present":
+        class_config = dict(
+            id=id,
+            startTime=start_time,
+            endTime=end_time,
+            descr=description,
+        )
+        if pre_shared_key is not None:
+            class_config.update(preSharedKey=pre_shared_key)
+
         aci.payload(
             aci_class="fvKeyPol",
-            class_config=dict(
-                id=id,
-                startTime=start_time,
-                endTime=end_time,
-                preSharedKey=pre_shared_key,
-                descr=description,
-            ),
+            class_config=class_config,
         )
 
         aci.get_diff(aci_class="fvKeyPol")
