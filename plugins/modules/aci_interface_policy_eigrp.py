@@ -65,7 +65,7 @@ options:
     type: int
   description:
     description:
-    - The description of the eigrp interface.
+    - The description of the eigrp interface policy.
     type: str
     aliases: [ descr ]
   state:

@@ -19,35 +19,40 @@ description:
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
   l3out:
     description:
-    - Name of an existing L3Out.
+    - The name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
   node_profile:
     description:
-    - Name of the node profile.
+    - The name of the node profile.
     type: str
     aliases: [ node_profile_name, logical_node ]
   interface_profile:
     description:
-    - Name of an existing interface profile.
+    - The name of an existing interface profile.
     type: str
     aliases: [ name, interface_profile_name, logical_interface ]
   eigrp_policy:
     description:
-    - Name of an existing eigrp interface policy.
+    - The n ame of an existing eigrp interface policy.
     type: str
     aliases: [ name, eigrp_policy_name ]
   eigrp_keychain_policy:
     description:
-    - Name of an existing eigrp keychain policy.
+    - The name of an existing eigrp keychain policy.
     - Pass an empty string to disable Authentification.
     type: str
     aliases: [ keychain_policy, keychain_policy_name  ]
+  description:
+    description:
+    - The description of the eigrp interface profile.
+    type: str
+    aliases: [ descr ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -270,7 +275,8 @@ def main():
         node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
         interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
         eigrp_policy=dict(type="str", aliases=["name", "eigrp_policy_name"]),
-        eigrp_keychain_policy=dict(type="str", aliases=["keychain_policy", "keychain_policy_name"]),
+        eigrp_keychain_policy=dict(type="str", aliases=["keychain_policy", "keychain_policy_name"], no_log=False),
+        description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -289,6 +295,7 @@ def main():
     interface_profile = module.params.get("interface_profile")
     eigrp_policy = module.params.get("eigrp_policy")
     eigrp_keychain_policy = module.params.get("eigrp_keychain_policy")
+    description = module.params.get("description")
     state = module.params.get("state")
 
     aci = ACIModule(module)
@@ -361,11 +368,15 @@ def main():
                             ],
                         )
                     )
-                ) 
+                )
 
-        class_config = dict(descr="")
-
-        aci.payload(aci_class="eigrpIfP", class_config=class_config, child_configs=child_configs)
+        aci.payload(
+            aci_class="eigrpIfP",
+            class_config=dict(
+                descr=description,
+            ),
+            child_configs=child_configs,
+        )
 
         aci.get_diff(aci_class="eigrpIfP")
 
