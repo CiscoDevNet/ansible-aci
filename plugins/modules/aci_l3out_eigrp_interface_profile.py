@@ -42,6 +42,12 @@ options:
     - Name of an existing eigrp interface policy.
     type: str
     aliases: [ name, eigrp_policy_name ]
+  eigrp_keychain_policy:
+    description:
+    - Name of an existing eigrp keychain policy.
+    - Pass an empty string to disable Authentification.
+    type: str
+    aliases: [ keychain_policy, keychain_policy_name  ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -58,12 +64,15 @@ notes:
 - The C(tenant), C(l3out), C(node_profile), C(interface_profile) and C(eigrp_policy) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile), M(cisco.aci.aci_l3out_logical_interface_profile)
   and M(cisco.aci.aci_interface_policy_eigrp) can be used for this.
+- if C(eigrp_keychain_policy) is used, it must exist before using this module in your playbook.
+  The M(cisco.aci.aci_keychain_policy) can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
 - module: cisco.aci.aci_l3out
 - module: cisco.aci.aci_l3out_logical_node_profile
 - module: cisco.aci.aci_l3out_logical_interface_profile
 - module: cisco.aci.aci_interface_policy_eigrp
+- module: cisco.aci.aci_keychain_policy
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -95,8 +104,21 @@ EXAMPLES = r"""
     node_profile: my_node_profile
     interface_profile: my_interface_profile
     eigrp_policy: my_eigrp_interface_policy
-    eigrp_auth_type: simple
-    eigrp_auth_key: my_auth_key
+    eigrp_keychain_policy: my_keychain_policy
+    state: present
+  delegate_to: localhost
+
+- name: disable authentification from an interface profile eigrp policy
+  cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    l3out: my_l3out
+    node_profile: my_node_profile
+    interface_profile: my_interface_profile
+    eigrp_policy: my_eigrp_interface_policy
+    eigrp_keychain_policy: ""
     state: present
   delegate_to: localhost
 
@@ -248,6 +270,7 @@ def main():
         node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
         interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
         eigrp_policy=dict(type="str", aliases=["name", "eigrp_policy_name"]),
+        eigrp_keychain_policy=dict(type="str", aliases=["keychain_policy", "keychain_policy_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -265,9 +288,12 @@ def main():
     node_profile = module.params.get("node_profile")
     interface_profile = module.params.get("interface_profile")
     eigrp_policy = module.params.get("eigrp_policy")
+    eigrp_keychain_policy = module.params.get("eigrp_keychain_policy")
     state = module.params.get("state")
 
     aci = ACIModule(module)
+
+    child_classes = ["eigrpRsIfPol", "eigrpAuthIfP"]
 
     aci.construct_url(
         root_class=dict(
@@ -300,7 +326,7 @@ def main():
             module_object=interface_profile,
             target_filter={"name": interface_profile},
         ),
-        child_classes=["eigrpRsIfPol"],
+        child_classes=child_classes,
     )
 
     aci.get_existing()
@@ -308,9 +334,38 @@ def main():
     if state == "present":
         child_configs = [dict(eigrpRsIfPol=dict(attributes=dict(tneigrpIfPolName=eigrp_policy)))]
 
-        config = dict(descr="")
+        if eigrp_keychain_policy is not None:
+            if eigrp_keychain_policy == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
+                for child in aci.existing[0].get("eigrpIfP", {}).get("children", {}):
+                    if child.get("eigrpAuthIfP"):
+                        child_configs.append(
+                            dict(
+                                eigrpAuthIfP=dict(
+                                    attributes=dict(status="deleted"),
+                                ),
+                            )
+                        )
+            elif eigrp_keychain_policy != "":
+                child_configs.append(
+                    dict(
+                        eigrpAuthIfP=dict(
+                            attributes=dict(),
+                            children=[
+                                dict(
+                                    eigrpRsKeyChainPol=dict(
+                                        attributes=dict(
+                                            tnFvKeyChainPolName=eigrp_keychain_policy,
+                                        ),
+                                    )
+                                )
+                            ],
+                        )
+                    )
+                ) 
 
-        aci.payload(aci_class="eigrpIfP", class_config=config, child_configs=child_configs)
+        class_config = dict(descr="")
+
+        aci.payload(aci_class="eigrpIfP", class_config=class_config, child_configs=child_configs)
 
         aci.get_diff(aci_class="eigrpIfP")
 
