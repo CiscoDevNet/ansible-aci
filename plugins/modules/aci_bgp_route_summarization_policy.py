@@ -79,7 +79,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create a BGP route summarization policy
-  cisco.aci.aci_route_summarization_policy:
+  cisco.aci.aci_bgp_route_summarization_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -91,7 +91,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Delete a BGP route summarization policy
-  cisco.aci.aci_route_summarization_policy:
+  cisco.aci.aci_bgp_route_summarization_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -101,7 +101,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query all BGP route summarization policies
-  cisco.aci.aci_route_summarization_policy:
+  cisco.aci.aci_bgp_route_summarization_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -110,7 +110,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query a specific BGP route summarization policy
-  cisco.aci.aci_route_summarization_policy:
+  cisco.aci.aci_bgp_route_summarization_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
