@@ -35,11 +35,13 @@ options:
     description:
     - The start time.
     - The APIC defaults to C(now) when unset during creation.
+    - The format is YYYY-MM-DD HH:MM:SS
     type: str
   end_time:
     description:
     - The end time.
     - The APIC defaults to C(infinite) when unset during creation.
+    - The format is YYYY-MM-DD HH:MM:SS
     type: str
   pre_shared_key:
     description:
