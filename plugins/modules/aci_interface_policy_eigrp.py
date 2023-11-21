@@ -13,24 +13,24 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_eigrp
-short_description: Manage eigrp interface policies (eigrp:IfPol)
+short_description: Manage EIGRP interface policies (eigrp:IfPol)
 description:
-- Manage eigrp interface policies on Cisco ACI fabrics.
+- Manage EIGRP interface policies for Tenants on Cisco ACI fabrics.
 options:
   tenant:
     description:
-    - The name of the Tenant the eigrp interface policy should belong to.
+    - The name of an existing Tenant.
     type: str
     aliases: [ tenant_name ]
   eigrp:
     description:
-    - The eigrp interface policy name.
+    - The EIGRP interface policy name.
     - Note that you cannot change this name after the object has been saved.
     type: str
     aliases: [ eigrp_interface, name ]
   bandwidth:
     description:
-    - The eigrp bandwidth in kbps, overrides the bandwidth configured on an interface.
+    - The EIGRP bandwidth in kbps, overrides the bandwidth configured on an interface.
     - This is used to influence path selection.
     - The APIC defaults to C(0) when unset during creation.
     type: int
@@ -43,13 +43,13 @@ options:
     choices: [ bfd, nh-self, passive, split-horizon ]
   delay:
     description:
-    - The eigrp throughput delay, overrides the delay configured on an interface.
+    - The EIGRP throughput delay, overrides the delay configured on an interface.
     - This is used to influence path selection.
     - The APIC defaults to C(0) when unset during creation.
     type: int
   delay_unit:
     description:
-    - The eigrp delay units, Wide metrics can use picosecond accuracy for delay.
+    - The EIGRP delay units, Wide metrics can use picosecond accuracy for delay.
     - The APIC defaults to C(tens_of_micro) when unset during creation.
     type: str
     choices: [ pico, tens_of_micro ]
@@ -65,7 +65,7 @@ options:
     type: int
   description:
     description:
-    - The description of the eigrp interface policy.
+    - The description of the EIGRP interface policy.
     type: str
     aliases: [ descr ]
   state:
@@ -97,7 +97,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create an eigrp interface policy
+- name: Create an EIGRP interface policy
   cisco.aci.aci_interface_policy_eigrp:
     host: apic
     username: admin
@@ -113,7 +113,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete eigrp interface policy
+- name: Delete EIGRRP interface policy
   cisco.aci.aci_interface_policy_eigrp:
     host: apic
     username: admin
@@ -123,7 +123,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Query an eigrp interface policy
+- name: Query an EIGRRP interface policy
   cisco.aci.aci_interface_policy_eigrp:
     host: apic
     username: admin
@@ -134,7 +134,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query all eigrp interface policies in tenant production
+- name: Query all EIGRP interface policies in tenant production
   cisco.aci.aci_interface_policy_eigrp:
     host: apic
     username: admin

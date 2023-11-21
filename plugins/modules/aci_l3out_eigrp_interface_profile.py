@@ -39,18 +39,18 @@ options:
     aliases: [ name, interface_profile_name, logical_interface ]
   eigrp_policy:
     description:
-    - The n ame of an existing eigrp interface policy.
+    - The name of an existing EIGRP interface policy.
     type: str
     aliases: [ name, eigrp_policy_name ]
   eigrp_keychain_policy:
     description:
-    - The name of an existing eigrp keychain policy.
+    - The name of an existing EIGRP keychain policy.
     - Pass an empty string to disable Authentification.
     type: str
     aliases: [ keychain_policy, keychain_policy_name  ]
   description:
     description:
-    - The description of the eigrp interface profile.
+    - The description of the EIGRP interface profile.
     type: str
     aliases: [ descr ]
   state:
@@ -86,7 +86,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a new interface profile eigrp policy
+- name: Add a new interface profile EIGRP policy
   cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
     host: apic
     username: admin
@@ -99,7 +99,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Add a new interface profile eigrp policy with authentication
+- name: Add a new interface profile EIGRP policy with authentication
   cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
     host: apic
     username: admin
@@ -113,7 +113,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: disable authentification from an interface profile eigrp policy
+- name: disable authentification from an interface profile EIGRP policy
   cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
     host: apic
     username: admin
@@ -127,7 +127,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete an interface profile eigrp policy
+- name: Delete an interface profile EIGRP policy
   cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
     host: apic
     username: admin
@@ -140,7 +140,7 @@ EXAMPLES = r"""
     state: absent
   delegate_to: localhost
 
-- name: Query an interface profile eigrp policy
+- name: Query an interface profile EIGRP policy
   cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
     host: apic
     username: admin
@@ -339,7 +339,7 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        child_configs = [dict(eigrpRsIfPol=dict(attributes=dict(tneigrpIfPolName=eigrp_policy)))]
+        child_configs = [dict(eigrpRsIfPol=dict(attributes=dict(tnEigrpIfPolName=eigrp_policy)))]
 
         if eigrp_keychain_policy is not None:
             if eigrp_keychain_policy == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
