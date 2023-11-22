@@ -38,6 +38,12 @@ options:
   control_state:
     description:
     - The interface policy control state.
+    - 'This is a list of one or more of the following controls:'
+    - C(bfd) -- Enable Bidirectional Forwarding Detection.
+    - C(nexthop_self) -- Nexthop Self.
+    - C(split_horizon) -- Split Horizon.
+    - C(passive) -- The interface does not participate in the EIGRP protocol and
+      will not establish adjacencies or send routing updates.
     - The APIC defaults to C([split_horizon, nexthop_self]) when unset during creation.
     type: list
     elements: str
@@ -50,18 +56,21 @@ options:
     type: int
   delay_unit:
     description:
-    - The EIGRP delay units, Wide metrics can use picosecond accuracy for delay.
+    - The EIGRP delay units, Wide metrics can use picoseconds accuracy for delay.
     - The APIC defaults to C(tens_of_microseconds) when unset during creation.
     type: str
     choices: [ picoseconds, tens_of_microseconds ]
   hello_interval:
     description:
-    - The hello interval.
+    - The time interval in seconds between hello packets that EIGRP sends on the interface.
+    - Note that the smaller the hello interval, the faster topological changes will be detected, but more routing traffic will ensue.
+    - Accepted values range between C(1) and C(65535).
     - The APIC defaults to C(5) when unset during creation.
     type: int
   hold_interval:
     description:
-    - The period of time before declaring that the neighbor is down.
+    - The time period of time in seconds before declaring that the neighbor is down.
+    - Accepted values range between C(1) and C(65535).
     - The APIC defaults to C(15) when unset during creation.
     type: int
   description:
