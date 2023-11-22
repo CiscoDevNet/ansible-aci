@@ -24,7 +24,7 @@ options:
     aliases: [ tenant_name ]
   bgp_timers_policy:
     description:
-    - The name of the bgp timers policy.
+    - The name of the BGP timers policy.
     type: str
     aliases: [ bgp_timers_policy_name, name ]
   graceful_restart_controls:
@@ -57,7 +57,7 @@ options:
     type: int
   description:
     description:
-    - Description for the bgp protocol profile.
+    - Description for the BGP timers policy.
     type: str
     aliases: [ descr ]
   state:

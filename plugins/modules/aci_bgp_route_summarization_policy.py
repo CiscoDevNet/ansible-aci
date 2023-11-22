@@ -24,7 +24,7 @@ options:
     aliases: [ tenant_name ]
   route_summarization_policy:
     description:
-    - The name of the bgp route summarization policy.
+    - The name of the BGP route summarization policy.
     type: str
     aliases: [ route_summarization_policy_name, name ]
   address_type_af_control:
@@ -46,7 +46,7 @@ options:
     aliases: [ summary_control, control ]
   description:
     description:
-    - Description for the bgp protocol profile.
+    - Description for the BGP route summarization policy.
     type: str
     aliases: [ descr ]
   state:
