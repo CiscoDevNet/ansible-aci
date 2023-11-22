@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2023, Anvitha Jain (@anvjain)
+# Copyright: (c) 2023, Anvitha Jain (@anvjain) <anvjain@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_bfd_multihop_interface_policy
 short_description: Manage BFD Multihop Interface policies.
 description:
-- Manage BFD Multihop Interface policy (bfdMhIfPol) configuration on Cisco ACI fabrics.
+- Manage BFD Multihop Interface policy (bfd:MhIfPol) configuration on Cisco ACI fabrics.
 - Only available in APIC version 5.2 or later.
 options:
   tenant:
@@ -34,9 +34,9 @@ options:
   admin_state:
     description:
     - Admin state of the BFD Multihop Interface policy
+    - APIC sets the default value to enabled.
     type: str
     choices: [ enabled, disabled ]
-    default: enabled
   detection_multiplier:
     description:
     - Detection multiplier of the BFD Multihop Interface policy
@@ -71,8 +71,9 @@ notes:
   The M(cisco.aci.aci_tenant) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bfdMhIfPol).
+  description: More information about the internal APIC class B(bfd:MhIfPol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
+- module: cisco.aci.aci_tenant
 author:
 - Anvitha Jain (@anvjain)
 """
@@ -234,10 +235,10 @@ def main():
     argument_spec.update(
         name=dict(type="str", aliases=["bfd_multihop_interface_policy"]),
         description=dict(type="str"),
-        admin_state=dict(type="str", default="enabled", choices=["enabled", "disabled"]),
-        detection_multiplier=dict(type="int", default=3),
-        min_transmit_interval=dict(type="int", default=250),
-        min_receive_interval=dict(type="int", default=250),
+        admin_state=dict(type="str", choices=["enabled", "disabled"]),
+        detection_multiplier=dict(type="int"),
+        min_transmit_interval=dict(type="int"),
+        min_receive_interval=dict(type="int"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         tenant=dict(type="str"),
     )
@@ -279,22 +280,22 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        class_config=dict(
+        class_config = dict(
             name=name,
             descr=description,
             adminSt=admin_state,
         )
 
         if detection_multiplier and detection_multiplier not in range(1, 50):
-                module.fail_json(msg='The "detection_multiplier" must be a value between 1 and 50')
+            module.fail_json(msg='The "detection_multiplier" must be a value between 1 and 50')
         else:
             class_config["detectMult"] = detection_multiplier
         if min_transmit_interval and min_transmit_interval not in range(250, 999):
-                module.fail_json(msg='The "min_transmit_interval" must be a value between 250 and 999')
+            module.fail_json(msg='The "min_transmit_interval" must be a value between 250 and 999')
         else:
             class_config["minTxIntvl"] = min_transmit_interval
         if min_receive_interval and min_receive_interval not in range(250, 999):
-                module.fail_json(msg='The "min_receive_interval" must be a value between 250 and 999')
+            module.fail_json(msg='The "min_receive_interval" must be a value between 250 and 999')
         else:
             class_config["minRxIntvl"] = min_receive_interval
 

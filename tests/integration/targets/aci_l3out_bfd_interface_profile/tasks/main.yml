@@ -89,6 +89,16 @@
       interface_profile: ansible_interface_profile
       state: present
 
+  # CREATE L3Out BFD Interface policy
+  - name: Add a new  L3Out BFD Interface policy
+    cisco.aci.aci_bfd_interface_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd__interface_policy
+      description: Ansible BFD Interface Policy
+      state: present
+    register: add_bfd_interface_pol
+
   # Add L3Out BFD Interface Profile
   - name: Add a new L3Out BFD Interface Profile - check mode
     cisco.aci.aci_l3out_bfd_interface_profile: &present_l3out_bfd_int_profile
@@ -97,6 +107,7 @@
       l3out: ansible_l3out
       l3out_logical_node_profile: ansible_node_profile
       l3out_logical_interface_profile: ansible_interface_profile
+      bfd_interface_policy: ansible_bfd_interface_policy
       state: present
     check_mode: true
     register: cm_add_l3out_bfd_int_prof
@@ -114,6 +125,7 @@
       - nm_add_l3out_bfd_int_prof is changed
       - cm_add_l3out_bfd_int_prof.previous == nm_add_l3out_bfd_int_prof.previous == []
       - cm_add_l3out_bfd_int_prof.proposed.bfdIfP.attributes.dn == nm_add_l3out_bfd_int_prof.proposed.bfdIfP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/bfdIfP"
+      - cm_add_l3out_bfd_int_prof.proposed.bfdIfP.children.0.bfdRsIfPol.attributes.tnBfdIfPolName == cm_add_l3out_bfd_int_prof.proposed.bfdIfP.children.0.bfdRsIfPol.attributes.tnBfdIfPolName == "ansible_bfd_interface_policy"
 
   - name: Add L3Out BFD Interface Profile again- idempotency
     cisco.aci.aci_l3out_bfd_interface_profile:
@@ -126,16 +138,6 @@
       that:
       - add_l3out_bfd_int_prof_again is not changed
 
-  # CREATE L3Out BFD Interface policy
-  - name: Add a new  L3Out BFD Interface policy
-    cisco.aci.aci_bfd_interface_policy:
-      <<: *aci_info
-      tenant: ansible_tenant
-      name: ansible_bfd__interface_policy
-      description: Ansible BFD Interface Policy
-      state: present
-    register: add_bfd_interface_pol
-
   # Update L3Out BFD Interface Profile
   - name: Update L3Out BFD Interface Profile
     cisco.aci.aci_l3out_bfd_interface_profile:
@@ -143,7 +145,6 @@
       interface_profile_type: sha1
       key: "abc*123"
       key_id: 15
-      bfd_interface_policy: ansible_bfd_interface_policy
       state: present
     register: update_l3out_bfd_int_prof
 
@@ -154,8 +155,21 @@
       - update_l3out_bfd_int_prof.sent.bfdIfP.attributes.keyId == "15"
       - update_l3out_bfd_int_prof.sent.bfdIfP.attributes.key == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
       - update_l3out_bfd_int_prof.sent.bfdIfP.attributes.type == "sha1"
-      - update_l3out_bfd_int_prof.sent.bfdIfP.children.0.bfdRsIfPol.attributes.tnBfdIfPolName == "ansible_bfd_interface_policy"
 
+  # Remove children from L3Out BFD Interface Profile
+  - name: Remove children from L3Out BFD Interface Profile
+    cisco.aci.aci_l3out_bfd_interface_profile:
+      <<: *present_l3out_bfd_int_profile
+      bfd_interface_policy: ""
+    register: remove_children_l3out_bfd_int_prof
+
+  - name: Asserts for children removal tasks for the from L3Out BFD Interface Profile
+    ansible.builtin.assert:
+      that:
+        - remove_children_l3out_bfd_int_prof is changed
+        - remove_children_l3out_bfd_int_prof.sent.bfdIfP.children.0.bfdRsIfPol.attributes.tnBfdIfPolName == ""
+
+  # Query L3Out BFD Interface Profile
   - name: Query L3Out BFD Interface Profile
     cisco.aci.aci_l3out_bfd_interface_profile:
       <<: *present_l3out_bfd_int_profile

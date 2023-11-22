@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2023, Anvitha Jain (@anvjain)
+# Copyright: (c) 2023, Anvitha Jain (@anvjain) <anvjain@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_l3out_bfd_interface_profile
 short_description: Manage L3Out BFD Interface profile.
 description:
-- Manage L3Out BFD Interface profile (bfdIfP) configuration on Cisco ACI fabrics.
+- Manage L3Out BFD Interface profile (bfd:IfP) configuration on Cisco ACI fabrics.
 - Only available in APIC version 5.2 or later and for non-cloud APICs.
 options:
   tenant:
@@ -89,8 +89,13 @@ notes:
   The M(cisco.aci.aci_tenant) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bfdIfP).
+  description: More information about the internal APIC class B(bfd:IfP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_l3out
+- module: cisco.aci.aci_l3out_logical_node_profile
+- module: cisco.aci.aci_l3out_logical_interface_profile
+- module: cisco.aci.aci_bfd_interface_policy
 author:
 - Anvitha Jain (@anvjain)
 """
@@ -269,7 +274,8 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["tenant", "l3out", "l3out_logical_node_profile", "l3out_logical_interface_profile"]],
-            ["state", "present", ["tenant", "l3out", "l3out_logical_node_profile", "l3out_logical_interface_profile"]],
+            ["state", "present", ["tenant", "l3out", "l3out_logical_node_profile", "l3out_logical_interface_profile", "bfd_interface_policy"]],
+            ["interface_profile_type", "sha1", ["key"]],
         ],
     )
 
@@ -316,7 +322,7 @@ def main():
             aci_class="bfdIfP",
             aci_rn="bfdIfP",
             module_object="bfdIfP",
-            target_filter={"name": ""},
+            target_filter={"name": name},
         ),
         child_classes=["bfdRsIfPol"],
     )
@@ -324,11 +330,13 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        class_config=dict(
+        child_configs = []
+        class_config = dict(
             name=name,
             nameAlias=name_alias,
             descr=description,
             key=key,
+            type=interface_profile_type,
         )
 
         if key_id and key_id not in range(1, 255):
@@ -336,13 +344,13 @@ def main():
         else:
             class_config["keyId"] = key_id
 
-        if interface_profile_type:
-            class_config["type"] = interface_profile_type
+        if bfd_interface_policy is not None:
+            child_configs.append(dict(bfdRsIfPol=dict(attributes=dict(tnBfdIfPolName=bfd_interface_policy))))
 
         aci.payload(
             aci_class="bfdIfP",
             class_config=class_config,
-            child_configs=[dict(bfdRsIfPol=dict(attributes=dict(tnBfdIfPolName=bfd_interface_policy)))],
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class="bfdIfP")

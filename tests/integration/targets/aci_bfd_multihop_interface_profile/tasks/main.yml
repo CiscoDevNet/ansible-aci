@@ -89,6 +89,16 @@
       interface_profile: ansible_interface_profile
       state: present
 
+  # CREATE BFD Multihop Interface policy
+  - name: Add a new  BFD Multihop Interface policy
+    cisco.aci.aci_bfd_multihop_interface_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd_multihop_interface_policy
+      description: Ansible BFD Multihop Interface Policy
+      state: present
+    register: add_bfd_multihop_interface_pol
+
   # Add BFD Multihop Interface Profile
   - name: Add a new BFD Multihop Interface Profile - check mode
     cisco.aci.aci_bfd_multihop_interface_profile: &present_bfd_mh_int_profile
@@ -97,6 +107,7 @@
       l3out: ansible_l3out
       l3out_logical_node_profile: ansible_node_profile
       l3out_logical_interface_profile: ansible_interface_profile
+      bfd_multihop_interface_policy: ansible_bfd_multihop_interface_policy
       state: present
     check_mode: true
     register: cm_add_bfd_mh_int_prof
@@ -114,6 +125,14 @@
       - nm_add_bfd_mh_int_prof is changed
       - cm_add_bfd_mh_int_prof.previous == nm_add_bfd_mh_int_prof.previous == []
       - cm_add_bfd_mh_int_prof.proposed.bfdMhIfP.attributes.dn == nm_add_bfd_mh_int_prof.proposed.bfdMhIfP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/bfdMhIfP"
+      - cm_add_bfd_mh_int_prof.proposed.bfdMhIfP.children.0.bfdRsMhIfPol.attributes.tnBfdMhIfPolName == nm_add_bfd_mh_int_prof.proposed.bfdMhIfP.children.0.bfdRsMhIfPol.attributes.tnBfdMhIfPolName == "ansible_bfd_multihop_interface_policy"
+
+  # Query BFD Multihop Interface Profile
+  - name: Query BFD Multihop Interface Profile
+    cisco.aci.aci_bfd_multihop_interface_profile:
+      <<: *present_bfd_mh_int_profile
+      state: query
+    register: query_bfd_mh_int_prof
 
   - name: Add BFD Multihop Interface Profile again- idempotency
     cisco.aci.aci_bfd_multihop_interface_profile:
@@ -126,16 +145,6 @@
       that:
       - add_bfd_mh_int_prof_again is not changed
 
-  # CREATE BFD Multihop Interface policy
-  - name: Add a new  BFD Multihop Interface policy
-    cisco.aci.aci_bfd_multihop_interface_policy:
-      <<: *aci_info
-      tenant: ansible_tenant
-      name: ansible_bfd_multihop_interface_policy
-      description: Ansible BFD Multihop Interface Policy
-      state: present
-    register: add_bfd_multihop_interface_pol
-
   # Update BFD Multihop Interface Profile
   - name: Update BFD Multihop Interface Profile
     cisco.aci.aci_bfd_multihop_interface_profile:
@@ -143,7 +152,6 @@
       interface_profile_type: sha1
       key: "abc*123"
       key_id: 15
-      bfd_multihop_interface_policy: ansible_bfd_multihop_interface_policy
       state: present
     register: update_bfd_mh_int_prof
 
@@ -154,8 +162,21 @@
       - update_bfd_mh_int_prof.sent.bfdMhIfP.attributes.keyId == "15"
       - update_bfd_mh_int_prof.sent.bfdMhIfP.attributes.key == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
       - update_bfd_mh_int_prof.sent.bfdMhIfP.attributes.type == "sha1"
-      - update_bfd_mh_int_prof.sent.bfdMhIfP.children.0.bfdRsMhIfPol.attributes.tnBfdMhIfPolName == "ansible_bfd_multihop_interface_policy"
 
+  # Remove children from L3Out BFD Interface Profile
+  - name: Remove children from BFD Multihop Interface Profile
+    cisco.aci.aci_bfd_multihop_interface_profile:
+      <<: *present_bfd_mh_int_profile
+      bfd_multihop_interface_policy: ""
+    register: remove_children_bfd_mh_int_prof
+
+  - name: Asserts for children removal tasks for the from BFD Multihop Interface Profile
+    ansible.builtin.assert:
+      that:
+        - remove_children_bfd_mh_int_prof is changed
+        - remove_children_bfd_mh_int_prof.sent.bfdMhIfP.children.0.bfdRsMhIfPol.attributes.tnBfdMhIfPolName == ""
+
+  # Query BFD Multihop Interface Profile
   - name: Query BFD Multihop Interface Profile
     cisco.aci.aci_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile

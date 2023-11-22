@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2023, Anvitha Jain (@anvjain)
+# Copyright: (c) 2023, Anvitha Jain (@anvjain) <anvjain@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_bfd_multihop_node_policy
 short_description: Manage BFD Multihop Node policies.
 description:
-- Manage BFD Multihop Node policy (bfdMhNodePol) configuration on Cisco ACI fabrics.
+- Manage BFD Multihop Node policy (bfd:MhNodePol) configuration on Cisco ACI fabrics.
 - Only available in APIC version 5.2 or later.
 options:
   tenant:
@@ -34,9 +34,9 @@ options:
   admin_state:
     description:
     - Admin state of the BFD Multihop Node policy
+    - APIC sets the default value to enabled.
     type: str
     choices: [ enabled, disabled ]
-    default: enabled
   detection_multiplier:
     description:
     - Detection multiplier of the BFD Multihop Node policy
@@ -71,8 +71,9 @@ notes:
   The M(cisco.aci.aci_tenant) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bfdMhNodePol).
+  description: More information about the internal APIC class B(bfd:MhNodePol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
+- module: cisco.aci.aci_tenant
 author:
 - Anvitha Jain (@anvjain)
 """
@@ -236,7 +237,7 @@ def main():
     argument_spec.update(
         name=dict(type="str", aliases=["bfd_multihop_node_policy"]),
         description=dict(type="str"),
-        admin_state=dict(type="str", default="enabled", choices=["enabled", "disabled"]),
+        admin_state=dict(type="str", choices=["enabled", "disabled"]),
         detection_multiplier=dict(type="int"),
         min_transmit_interval=dict(type="int"),
         min_receive_interval=dict(type="int"),

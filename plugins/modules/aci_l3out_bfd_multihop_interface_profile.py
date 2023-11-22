@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2023, Anvitha Jain (@anvjain)
+# Copyright: (c) 2023, Anvitha Jain (@anvjain) <anvjain@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,10 +12,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_bfd_multihop_interface_profile
+module: aci_l3out_bfd_multihop_interface_profile
 short_description: Manage BFD Multihop Interface profile.
 description:
-- Manage BFD Multihop Interface profile (bfdMhIfP) configuration on Cisco ACI fabrics.
+- Manage BFD Multihop Interface profile (bfd:MhIfP) configuration on Cisco ACI fabrics.
 - Only available in APIC version 5.2 or later and for non-cloud APICs.
 options:
   tenant:
@@ -89,15 +89,20 @@ notes:
   The M(cisco.aci.aci_tenant) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bfdMhIfP).
+  description: More information about the internal APIC class B(bfd:MhIfP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_l3out
+- module: cisco.aci.aci_l3out_logical_node_profile
+- module: cisco.aci.aci_l3out_logical_interface_profile
+- module: cisco.aci.aci_bfd_multihop_interface_policy
 author:
 - Anvitha Jain (@anvjain)
 """
 
 EXAMPLES = r"""
 - name: Add a new L3Out BFD Multihop Interface Profile
-  cisco.aci.aci_bfd_multihop_interface_profile:
+  cisco.aci.aci_l3out_bfd_multihop_interface_profile:
     username: admin
     password: SomeSecretPassword
     tenant: ansible_tenant
@@ -108,7 +113,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query a new L3Out BFD Multihop Interface Profile
-  cisco.aci.aci_bfd_multihop_interface_profile:
+  cisco.aci.aci_l3out_bfd_multihop_interface_profile:
     username: admin
     password: SomeSecretPassword
     tenant: ansible_tenant
@@ -119,14 +124,14 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query all L3Out BFD Multihop Interface Profile
-  cisco.aci.aci_bfd_multihop_interface_profile:
+  cisco.aci.aci_l3out_bfd_multihop_interface_profile:
     username: admin
     password: SomeSecretPassword
     state: query
   delegate_to: localhost
 
 - name: Delete L3Out BFD Multihop Interface Profile
-  cisco.aci.aci_bfd_multihop_interface_profile:
+  cisco.aci.aci_l3out_bfd_multihop_interface_profile:
     username: admin
     password: SomeSecretPassword
     tenant: ansible_tenant
@@ -269,7 +274,7 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["tenant", "l3out", "l3out_logical_node_profile", "l3out_logical_interface_profile"]],
-            ["state", "present", ["tenant", "l3out", "l3out_logical_node_profile", "l3out_logical_interface_profile"]],
+            ["state", "present", ["tenant", "l3out", "l3out_logical_node_profile", "l3out_logical_interface_profile", "bfd_multihop_interface_policy"]],
         ],
     )
 
@@ -316,14 +321,15 @@ def main():
             aci_class="bfdMhIfP",
             aci_rn="bfdMhIfP",
             module_object="bfdMhIfP",
-            target_filter={"name": ""},
+            target_filter={"name": name},
         ),
-        child_classes=["bfdMhIfPol"],
+        child_classes=["bfdRsMhIfPol"],
     )
 
     aci.get_existing()
-
+    aci.stdout = str(aci.get_existing())
     if state == "present":
+        child_configs = []
         class_config = dict(
             name=name,
             nameAlias=name_alias,
@@ -337,10 +343,13 @@ def main():
         else:
             class_config["keyId"] = key_id
 
+        if bfd_multihop_interface_policy is not None:
+            child_configs.append(dict(bfdRsMhIfPol=dict(attributes=dict(tnBfdMhIfPolName=bfd_multihop_interface_policy))))
+
         aci.payload(
             aci_class="bfdMhIfP",
             class_config=class_config,
-            child_configs=[dict(bfdRsMhIfPol=dict(attributes=dict(tnBfdMhIfPolName=bfd_multihop_interface_policy)))],
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class="bfdMhIfP")
