@@ -33,6 +33,7 @@ options:
     description:
     - The EIGRP bandwidth in kbps, overrides the bandwidth configured on an interface.
     - This is used to influence path selection.
+    - Accepted values range between C(0) and C(2560000000).
     - The APIC defaults to C(0) when unset during creation.
     type: int
   control_state:
