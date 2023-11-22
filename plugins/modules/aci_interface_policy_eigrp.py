@@ -34,13 +34,13 @@ options:
     - This is used to influence path selection.
     - The APIC defaults to C(0) when unset during creation.
     type: int
-  controls:
+  control_state:
     description:
-    - The interface policy controls.
-    - The APIC defaults to C(split-horizon,nh-self) when unset during creation.
+    - The interface policy control state.
+    - The APIC defaults to C([split_horizon, nexthop_self]) when unset during creation.
     type: list
     elements: str
-    choices: [ bfd, nh-self, passive, split-horizon ]
+    choices: [ bfd, nexthop_self, passive, split_horizon ]
   delay:
     description:
     - The EIGRP throughput delay, overrides the delay configured on an interface.
@@ -50,9 +50,9 @@ options:
   delay_unit:
     description:
     - The EIGRP delay units, Wide metrics can use picosecond accuracy for delay.
-    - The APIC defaults to C(tens_of_micro) when unset during creation.
+    - The APIC defaults to C(tens_of_microseconds) when unset during creation.
     type: str
-    choices: [ pico, tens_of_micro ]
+    choices: [ picoseconds, tens_of_microseconds ]
   hello_interval:
     description:
     - The hello interval.
@@ -105,7 +105,7 @@ EXAMPLES = r"""
     tenant: production
     eigrp: eigrp1
     bandwidth: 10000
-    controls: [split-horizon, nh-self]
+    control_state: [split-horizon, nh-self]
     delay: 10
     delay_unit: tens_of_micro
     hello_interval: 5
@@ -252,7 +252,10 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_EIGRP_INTERFACE_POLICY_DELAY_UNIT_MAPPING
+from ansible_collections.cisco.aci.plugins.module_utils.constants import (
+    MATCH_EIGRP_INTERFACE_POLICY_DELAY_UNIT_MAPPING,
+    MATCH_EIGRP_INTERFACE_POLICY_CONTROL_STATE_MAPPING,
+)
 
 
 def main():
@@ -264,9 +267,9 @@ def main():
         eigrp=dict(type="str", aliases=["eigrp_interface", "name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         bandwidth=dict(type="int"),
-        controls=dict(type="list", elements="str", choices=["bfd", "nh-self", "passive", "split-horizon"]),
+        control_state=dict(type="list", elements="str", choices=["bfd", "nexthop_self", "passive", "split_horizon"]),
         delay=dict(type="int"),
-        delay_unit=dict(type="str", choices=["pico", "tens_of_micro"]),
+        delay_unit=dict(type="str", choices=["picoseconds", "tens_of_microseconds"]),
         hello_interval=dict(type="int"),
         hold_interval=dict(type="int"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -288,7 +291,6 @@ def main():
     eigrp = module.params.get("eigrp")
     delay = module.params.get("delay")
     delay_unit = MATCH_EIGRP_INTERFACE_POLICY_DELAY_UNIT_MAPPING.get(module.params.get("delay_unit"))
-    controls = ",".join(module.params.get("controls")) if module.params.get("controls") else None
     description = module.params.get("description")
     name_alias = module.params.get("name_alias")
     state = module.params.get("state")
@@ -304,6 +306,11 @@ def main():
     hold_interval = module.params.get("hold_interval")
     if hold_interval is not None and hold_interval not in range(1, 65536):
         module.fail_json(msg="Parameter 'hold_interval' is only valid in range between 1 and 65535.")
+
+    if module.params.get("control_state"):
+        control_state = ",".join([MATCH_EIGRP_INTERFACE_POLICY_CONTROL_STATE_MAPPING.get(v) for v in module.params.get("control_state")])
+    else:
+        control_state = None
 
     aci.construct_url(
         root_class=dict(
@@ -329,7 +336,7 @@ def main():
                 name=eigrp,
                 descr=description,
                 bw=bandwidth,
-                ctrl=controls,
+                ctrl=control_state,
                 delay=delay,
                 delayUnit=delay_unit,
                 helloIntvl=hello_interval,
