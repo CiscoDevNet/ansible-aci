@@ -24,7 +24,7 @@ options:
     aliases: [ tenant_name ]
   bgp_best_path_policy:
     description:
-    - The name of the best path policy.
+    - The name of the BGP best path policy.
     type: str
     aliases: [ bgp_best_path_policy_name, name ]
   best_path_control:
@@ -37,7 +37,7 @@ options:
     aliases: [as_path_control]
   description:
     description:
-    - Description for the bgp protocol profile.
+    - Description for the BGP best path policy.
     type: str
     aliases: [ descr ]
   state:

@@ -24,7 +24,7 @@ options:
     aliases: [ tenant_name ]
   peer_prefix_policy:
     description:
-    - The name of the bgp peer prefix policy.
+    - The name of the BGP peer prefix policy.
     type: str
     aliases: [ peer_prefix_policy_name, name ]
   action:
@@ -54,7 +54,7 @@ options:
     aliases: [ thresh ]
   description:
     description:
-    - Description for the bgp protocol profile.
+    - Description for the BGP peer prefix policy.
     type: str
     aliases: [ descr ]
   state:

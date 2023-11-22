@@ -24,7 +24,7 @@ options:
     aliases: [ tenant_name ]
   address_family_context_policy:
     description:
-    - The name of the bgp address family context policy.
+    - The name of the BGP address family context policy.
     type: str
     aliases: [ address_family_context_name, name ]
   host_route_leak:
@@ -73,7 +73,7 @@ options:
     choices: [ receive, send, "" ]
   description:
     description:
-    - Description for the bgp protocol profile.
+    - Description for the BGP protocol profile.
     type: str
     aliases: [ descr ]
   state:
