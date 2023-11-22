@@ -169,4 +169,6 @@ SUBJ_LABEL_MAPPING = dict(
 
 MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING = {"ospf_type_1": "ospf-type1", "ospf_type_2": "ospf-type2", "": ""}
 
-MATCH_EIGRP_INTERFACE_POLICY_DELAY_UNIT_MAPPING = dict(pico="pico", tens_of_micro="tens-of-micro")
+MATCH_EIGRP_INTERFACE_POLICY_DELAY_UNIT_MAPPING = dict(picoseconds="pico", tens_of_microseconds="tens-of-micro")
+
+MATCH_EIGRP_INTERFACE_POLICY_CONTROL_STATE_MAPPING = dict(bfd="bfd", nexthop_self="nh-self", passive="passive", split_horizon="split-horizon")

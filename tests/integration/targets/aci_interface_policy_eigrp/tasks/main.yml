@@ -46,9 +46,9 @@
       eigrp_interface: ansible_eigrp_interface_1
       description: eigrp interface policy 1 for ansible_tenant tenant
       bandwidth: 100000
-      controls: [bfd, nh-self, passive, split-horizon]
+      control_state: [bfd, nexthop_self, passive, split_horizon]
       delay: 10
-      delay_unit: pico
+      delay_unit: picoseconds
       hello_interval: 10
       hold_interval: 30
       state: present
