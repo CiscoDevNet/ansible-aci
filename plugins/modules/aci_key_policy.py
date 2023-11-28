@@ -33,13 +33,13 @@ options:
     type: int
   start_time:
     description:
-    - The start time.
+    - The start time of the key policy.
     - The APIC defaults to C(now) when unset during creation.
     - The format is YYYY-MM-DD HH:MM:SS
     type: str
   end_time:
     description:
-    - The end time.
+    - The end time of the key policy.
     - The APIC defaults to C(infinite) when unset during creation.
     - The format is YYYY-MM-DD HH:MM:SS
     type: str

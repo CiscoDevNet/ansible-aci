@@ -26,7 +26,7 @@ options:
   eigrp:
     description:
     - The EIGRP interface policy name.
-    - Note that you cannot change this name after the object has been saved.
+    - Note that you cannot change this name after the object has been created.
     type: str
     aliases: [ eigrp_interface, name ]
   bandwidth:
@@ -64,7 +64,7 @@ options:
   hello_interval:
     description:
     - The time interval in seconds between hello packets that EIGRP sends on the interface.
-    - Note that the smaller the hello interval, the faster topological changes will be detected, but more routing traffic will ensue.
+    - The smaller the hello interval, the faster topological changes will be detected, but more routing traffic will ensue.
     - Accepted values range between C(1) and C(65535).
     - The APIC defaults to C(5) when unset during creation.
     type: int
