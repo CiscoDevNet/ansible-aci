@@ -188,3 +188,7 @@ MATCH_TARGET_COS_MAPPING = {
     "network_control": "7",
     "unspecified": "unspecified",
 }
+
+MATCH_PIM_INTERFACE_POLICY_CONTROL_STATE_MAPPING = dict(border="border", strict_rfc_compliant="strict-rfc-compliant", passive="passive")
+
+MATCH_PIM_INTERFACE_POLICY_AUTHENTICATION_TYPE_MAPPING = dict(none="none", ah_md5="ah-md5")
