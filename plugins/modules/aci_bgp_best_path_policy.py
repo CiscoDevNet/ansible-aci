@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_bgp_best_path_policy
 short_description: Manage BGP Best Path policy (bgp:BestPathCtrlPol)
 description:
-- Manage BGP Best Path policies for Tenants on Cisco ACI fabrics.
+- Manage BGP Best Path policies for the Tenants on Cisco ACI fabrics.
 options:
   tenant:
     description:

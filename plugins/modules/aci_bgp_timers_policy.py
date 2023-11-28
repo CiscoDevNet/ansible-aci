@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_bgp_timers_policy
 short_description: Manage BGP timers policy (bgp:CtxPol)
 description:
-- Manage BGP timers policies for Tenants on Cisco ACI fabrics.
+- Manage BGP timers policies for the Tenants on Cisco ACI fabrics.
 options:
   tenant:
     description:

@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_bgp_address_family_context_policy
 short_description: Manage BGP address family context policy (bgp:CtxAfPol)
 description:
-- Manage BGP address family context policies for Tenants on Cisco ACI fabrics.
+- Manage BGP address family context policies for the Tenants on Cisco ACI fabrics.
 options:
   tenant:
     description:
