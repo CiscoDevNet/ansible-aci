@@ -113,7 +113,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: disable authentification from an interface profile EIGRP policy
+- name: Disable authentification from an interface profile EIGRP policy
   cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
     host: apic
     username: admin
