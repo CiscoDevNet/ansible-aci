@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_bgp_peer_prefix_policy
 short_description: Manage BGP peer prefix policy (bgp:PeerPfxPol)
 description:
-- Manage BGP peer prefix policies for Tenants on Cisco ACI fabrics.
+- Manage BGP peer prefix policies for the Tenants on Cisco ACI fabrics.
 options:
   tenant:
     description:

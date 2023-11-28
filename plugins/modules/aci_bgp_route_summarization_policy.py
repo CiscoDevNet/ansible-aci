@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_bgp_route_summarization_policy
 short_description: Manage BGP route summarization policy (bgp:RtSummPol)
 description:
-- Manage BGP route summarization policies for Tenants on Cisco ACI fabrics.
+- Manage BGP route summarization policies for the Tenants on Cisco ACI fabrics.
 options:
   tenant:
     description:
