@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -20,14 +20,14 @@
       output_level: debug
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   # Clean Environment
   - name: Ensure first firmware policy does not exist
-    aci_firmware_policy: &aci_firmware_policy_absent
+    cisco.aci.aci_firmware_policy: &aci_firmware_policy_absent
       <<: *aci_info
       name: anstest_policy
       version: n9000-15.2(7)
@@ -35,37 +35,37 @@
       state: absent
 
   - name: Ensure second firmware policy does not exist
-    aci_firmware_policy: &aci_firmware_policy_2_absent
+    cisco.aci.aci_firmware_policy: &aci_firmware_policy_2_absent
       <<: *aci_info
       name: anstest_policy_2
       version: n9000-16.0(1)
       state: absent
 
   - name: Create first firmware policy (check_mode)
-    aci_firmware_policy: &aci_firmware_policy_present
+    cisco.aci.aci_firmware_policy: &aci_firmware_policy_present
       <<: *aci_firmware_policy_absent
       state: present
     check_mode: true
     register: cm_add_firmware_policy_1
 
   - name: Create first firmware policy (normal_mode)
-    aci_firmware_policy:
+    cisco.aci.aci_firmware_policy:
       <<: *aci_firmware_policy_present
     register: nm_add_firmware_policy_1
 
   - name: Create first firmware policy again - testing idempotency
-    aci_firmware_policy:
+    cisco.aci.aci_firmware_policy:
       <<: *aci_firmware_policy_present
     register: idempotency_add_firmware_policy_1
 
   - name: Create second firmware policy
-    aci_firmware_policy: &aci_firmware_policy_2_present
+    cisco.aci.aci_firmware_policy: &aci_firmware_policy_2_present
       <<: *aci_firmware_policy_2_absent
       state: present
     register: nm_add_firmware_policy_2
 
   - name: Asserts for creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_firmware_policy_1 is changed
         - cm_add_firmware_policy_1.previous == []
@@ -81,19 +81,19 @@
         - nm_add_firmware_policy_2.current.0.firmwareFwP.attributes.version == "n9000-16.0(1)"
 
   - name: Query all firmware policies
-    aci_firmware_policy:
+    cisco.aci.aci_firmware_policy:
       <<: *aci_info
       state: query
     register: query_all_firmware_policy
 
   - name: Query first firmware policy
-    aci_firmware_policy:
+    cisco.aci.aci_firmware_policy:
       <<: *aci_firmware_policy_present
       state: query
     register: query_first_firmware_policy
 
   - name: Asserts for query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_firmware_policy is not changed
         - query_all_firmware_policy.current | length >= 2
@@ -104,32 +104,32 @@
         - query_first_firmware_policy.current.0.firmwareFwP.attributes.version == "n9000-15.2(7)"
 
   - name: Delete first firmware policy (check_mode)
-    aci_firmware_policy:
+    cisco.aci.aci_firmware_policy:
       <<: *aci_firmware_policy_present
       state: absent
     check_mode: true
     register: cm_delete_firmware_policy_1
 
   - name: Delete first firmware policy (normal_mode)
-    aci_firmware_policy:
+    cisco.aci.aci_firmware_policy:
       <<: *aci_firmware_policy_present
       state: absent
     register: nm_delete_firmware_policy_1
 
   - name: Delete first firmware policy again - testing idempotency
-    aci_firmware_policy:
+    cisco.aci.aci_firmware_policy:
       <<: *aci_firmware_policy_present
       state: absent
     register: idempotency_delete_firmware_policy_1
 
   - name: Delete second firmware policy (normal_mode)
-    aci_firmware_policy:
+    cisco.aci.aci_firmware_policy:
       <<: *aci_firmware_policy_2_present
       state: absent
     register: nm_delete_firmware_policy_2
 
   - name: Asserts for deletion tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_delete_firmware_policy_1 is changed
         - cm_delete_firmware_policy_1.proposed == {}

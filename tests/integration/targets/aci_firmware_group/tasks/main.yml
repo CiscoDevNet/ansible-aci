@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -20,21 +20,21 @@
       output_level: debug
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   # Clean Environment
   - name: Create firmware policy
-    aci_firmware_policy: &aci_firmware_policy_present
+    cisco.aci.aci_firmware_policy: &aci_firmware_policy_present
       <<: *aci_info
       name: anstest_policy
       version: n9000-15.2(7)
       state: present
 
   - name: Ensure first firmware group does not exist
-    aci_firmware_group: &aci_firmware_group_absent
+    cisco.aci.aci_firmware_group: &aci_firmware_group_absent
       <<: *aci_info 
       group: anstest_group
       policy: anstest_policy
@@ -43,37 +43,37 @@
       state: absent
 
   - name: Ensure second firmware group does not exist
-    aci_firmware_group: &aci_firmware_group_2_absent
+    cisco.aci.aci_firmware_group: &aci_firmware_group_2_absent
       <<: *aci_info 
       group: anstest_group_2
       policy: anstest_policy
       state: absent
 
   - name: Create first firmware group (check_mode)
-    aci_firmware_group: &aci_firmware_group_present
+    cisco.aci.aci_firmware_group: &aci_firmware_group_present
       <<: *aci_firmware_group_absent
       state: present
     check_mode: true
     register: cm_add_firmware_group_1
 
   - name: Create first firmware group (normal_mode)
-    aci_firmware_group:
+    cisco.aci.aci_firmware_group:
       <<: *aci_firmware_group_present
     register: nm_add_firmware_group_1
 
   - name: Create first firmware group again - testing idempotency
-    aci_firmware_group:
+    cisco.aci.aci_firmware_group:
       <<: *aci_firmware_group_present
     register: idempotency_add_firmware_group_1
 
   - name: Create second firmware group
-    aci_firmware_group: &aci_firmware_group_2_present
+    cisco.aci.aci_firmware_group: &aci_firmware_group_2_present
       <<: *aci_firmware_group_2_absent
       state: present
     register: nm_add_firmware_group_2
 
   - name: Asserts for creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_firmware_group_1 is changed
         - cm_add_firmware_group_1.previous == []
@@ -86,19 +86,19 @@
         - nm_add_firmware_group_2 is changed
 
   - name: Query all firmware groups
-    aci_firmware_group:
+    cisco.aci.aci_firmware_group:
       <<: *aci_info
       state: query
     register: query_all_firmware_group
 
   - name: Query first firmware group
-    aci_firmware_group:
+    cisco.aci.aci_firmware_group:
       <<: *aci_firmware_group_present
       state: query
     register: query_first_firmware_group
 
   - name: Asserts for query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_firmware_group is not changed
         - query_all_firmware_group.current | length >= 2
@@ -110,32 +110,32 @@
         - query_first_firmware_group.current.0.firmwareFwGrp.children.0.firmwareRsFwgrpp.attributes.tnFirmwareFwPName == "anstest_policy"
 
   - name: Delete first firmware group (check_mode)
-    aci_firmware_group:
+    cisco.aci.aci_firmware_group:
       <<: *aci_firmware_group_present
       state: absent
     check_mode: true
     register: cm_delete_firmware_group_1
 
   - name: Delete first firmware group (normal_mode)
-    aci_firmware_group:
+    cisco.aci.aci_firmware_group:
       <<: *aci_firmware_group_present
       state: absent
     register: nm_delete_firmware_group_1
 
   - name: Delete first firmware group again - testing idempotency
-    aci_firmware_group:
+    cisco.aci.aci_firmware_group:
       <<: *aci_firmware_group_present
       state: absent
     register: idempotency_delete_firmware_group_1
 
   - name: Delete second firmware group (normal_mode)
-    aci_firmware_group:
+    cisco.aci.aci_firmware_group:
       <<: *aci_firmware_group_2_present
       state: absent
     register: nm_delete_firmware_group_2
 
   - name: Asserts for deletion tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_delete_firmware_group_1 is changed
         - cm_delete_firmware_group_1.proposed == {}
@@ -149,6 +149,6 @@
         - nm_delete_firmware_group_2.current == []
 
   - name: Delete firmware policy - clean up the environment
-    aci_firmware_policy:
+    cisco.aci.aci_firmware_policy:
       <<: *aci_firmware_policy_present
       state: absent

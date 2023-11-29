@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites

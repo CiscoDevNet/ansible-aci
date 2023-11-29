@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -20,7 +20,7 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Ensure ansible_test does not exist prior to testing
   cisco.aci.aci_tenant: &ansible_test_absent
@@ -95,7 +95,7 @@
     register: inter_tenant_contract_interface_present
 
   - name: Ensure inter_tenant_contract_interface binding with anstest1_epg
-    assert:
+    ansible.builtin.assert:
       that:
         - inter_tenant_contract_interface_present is changed
         - inter_tenant_contract_interface_present.current | length == 1
@@ -109,7 +109,7 @@
     register: idempotency_check
 
   - name: Verfication of idempotency_check
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_check is not changed
 
@@ -124,7 +124,7 @@
     register: single_object_query_result
 
   - name: Verification of single consumed contract interface
-    assert:
+    ansible.builtin.assert:
       that:
         - single_object_query_result is not changed
         - single_object_query_result.current.0.fvRsConsIf.attributes.tnVzCPIfName == 'inter_tenant_contract_interface'
@@ -139,7 +139,7 @@
     register: all_object_query_result
 
   - name: Verification of all consumed contract interface
-    assert:
+    ansible.builtin.assert:
       that:
         - all_object_query_result is not changed
         - inter_tenant_contract_interface_present.current | length >= 1

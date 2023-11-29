@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -20,14 +20,14 @@
       output_level: debug
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   # Clean Environment
   - name: Ensure first port channel interface policy does not exist
-    aci_interface_policy_port_channel: &aci_interface_policy_port_channel_absent
+    cisco.aci.aci_interface_policy_port_channel: &aci_interface_policy_port_channel_absent
       <<: *aci_info
       name: anstest_policy
       description: test for port channel interface policy
@@ -42,7 +42,7 @@
       state: absent
 
   - name: Ensure second port channel interface policy does not exist
-    aci_interface_policy_port_channel: &aci_interface_policy_port_channel_2_absent
+    cisco.aci.aci_interface_policy_port_channel: &aci_interface_policy_port_channel_2_absent
       <<: *aci_info
       name: anstest_policy_2
       fast_select: true
@@ -51,44 +51,44 @@
       state: absent
 
   - name: Create first port channel interface policy (check_mode)
-    aci_interface_policy_port_channel: &aci_interface_policy_port_channel_present
+    cisco.aci.aci_interface_policy_port_channel: &aci_interface_policy_port_channel_present
       <<: *aci_interface_policy_port_channel_absent
       state: present
     check_mode: true
     register: cm_add_interface_policy_port_channel_1
 
   - name: Create first port channel interface policy (normal_mode)
-    aci_interface_policy_port_channel:
+    cisco.aci.aci_interface_policy_port_channel:
       <<: *aci_interface_policy_port_channel_present
     register: nm_add_interface_policy_port_channel_1
 
   - name: Create first port channel interface policy again - testing idempotency
-    aci_interface_policy_port_channel:
+    cisco.aci.aci_interface_policy_port_channel:
       <<: *aci_interface_policy_port_channel_present
     register: idempotency_add_interface_policy_port_channel_1
 
   - name: Create second port channel interface policy
-    aci_interface_policy_port_channel: &aci_interface_policy_port_channel_2_present
+    cisco.aci.aci_interface_policy_port_channel: &aci_interface_policy_port_channel_2_present
       <<: *aci_interface_policy_port_channel_2_absent
       state: present
     register: nm_add_interface_policy_port_channel_2
 
   - name: Modify first port channel interface policy with max links above 16 - testing failure message
-    aci_interface_policy_port_channel:
+    cisco.aci.aci_interface_policy_port_channel:
       <<: *aci_interface_policy_port_channel_present
       max_links: 17
     ignore_errors: true
     register: nm_policy_port_channel_max_links_failure
 
   - name: Modify first port channel interface policy with min links bellow 1 - testing failure message
-    aci_interface_policy_port_channel:
+    cisco.aci.aci_interface_policy_port_channel:
       <<: *aci_interface_policy_port_channel_present
       min_links: 0
     ignore_errors: true
     register: nm_policy_port_channel_min_links_failure
 
   - name: Asserts for creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_interface_policy_port_channel_1 is changed
         - cm_add_interface_policy_port_channel_1.previous == []
@@ -110,19 +110,19 @@
         - nm_policy_port_channel_min_links_failure.msg == "The \"min_links\" must be a value between 1 and 16"
 
   - name: Query all port channel interface policies
-    aci_interface_policy_port_channel:
+    cisco.aci.aci_interface_policy_port_channel:
       <<: *aci_info
       state: query
     register: query_all_interface_policy_port_channel
 
   - name: Query first port channel interface policy
-    aci_interface_policy_port_channel:
+    cisco.aci.aci_interface_policy_port_channel:
       <<: *aci_interface_policy_port_channel_present
       state: query
     register: query_first_interface_policy_port_channel
 
   - name: Asserts for query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_interface_policy_port_channel is not changed
         - query_all_interface_policy_port_channel.current | length >= 2
@@ -135,32 +135,32 @@
         - query_first_interface_policy_port_channel.current.0.lacpLagPol.attributes.mode == "active"
 
   - name: Delete first port channel interface policy (check_mode)
-    aci_interface_policy_port_channel:
+    cisco.aci.aci_interface_policy_port_channel:
       <<: *aci_interface_policy_port_channel_present
       state: absent
     check_mode: true
     register: cm_delete_interface_policy_port_channel_1
 
   - name: Delete first port channel interface policy (normal_mode)
-    aci_interface_policy_port_channel:
+    cisco.aci.aci_interface_policy_port_channel:
       <<: *aci_interface_policy_port_channel_present
       state: absent
     register: nm_delete_interface_policy_port_channel_1
 
   - name: Delete first port channel interface policy again - testing idempotency
-    aci_interface_policy_port_channel:
+    cisco.aci.aci_interface_policy_port_channel:
       <<: *aci_interface_policy_port_channel_present
       state: absent
     register: idempotency_delete_interface_policy_port_channel_1
 
   - name: Delete second port channel interface policy (normal_mode)
-    aci_interface_policy_port_channel:
+    cisco.aci.aci_interface_policy_port_channel:
       <<: *aci_interface_policy_port_channel_2_present
       state: absent
     register: nm_delete_interface_policy_port_channel_2
 
   - name: Asserts for deletion tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_delete_interface_policy_port_channel_1 is changed
         - cm_delete_interface_policy_port_channel_1.proposed == {}

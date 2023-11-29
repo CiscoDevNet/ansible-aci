@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -28,7 +28,7 @@
   register: version
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for ACI v6+ and non-cloud sites
   when:
@@ -74,7 +74,7 @@
       ignore_errors: true
 
     - name: Assertions check for the invalid tasks
-      assert:
+      ansible.builtin.assert:
         that:
           - invalid_interface_absent.msg is match("state is absent but all of the following are missing{{':'}} node")
           - invalid_interface_details is not changed
@@ -128,7 +128,7 @@
       ignore_errors: true
 
     - name: Assertions check for invalid interface configuration tasks
-      assert:
+      ansible.builtin.assert:
         that:
           - invalid_node is not changed
           - invalid_node.msg is match("^Node ID{{':'}} .+? is invalid; it must be in the range of 101 to 4000.")
@@ -169,7 +169,7 @@
       register: nm_interface_501_present
 
     - name: Assertions check for an interface 501
-      assert:
+      ansible.builtin.assert:
         that:
           - interface_501_absent.current == []
           - cm_interface_501_present is changed
@@ -213,7 +213,7 @@
       register: nm_interface_502_present
 
     - name: Assertions check for an interface 502
-      assert:
+      ansible.builtin.assert:
         that:
           - interface_502_absent.current == []
           - cm_interface_502_present is changed
@@ -257,7 +257,7 @@
       register: nm_interface_505_present
 
     - name: Assertions check for an interface 505
-      assert:
+      ansible.builtin.assert:
         that:
           - interface_505_absent.current == []
           - cm_interface_505_present is changed
@@ -301,7 +301,7 @@
       register: nm_interface_506_present
 
     - name: Assertions check for an interface 506
-      assert:
+      ansible.builtin.assert:
         that:
           - interface_506_absent.current == []
           - cm_interface_506_present is changed
@@ -345,7 +345,7 @@
       register: nm_interface_507_present
 
     - name: Assertions check for an interface 507
-      assert:
+      ansible.builtin.assert:
         that:
           - interface_507_absent.current == []
           - cm_interface_507_present is changed
@@ -385,7 +385,7 @@
       register: nm_interface_508_present
 
     - name: Assertions check for an interface 508
-      assert:
+      ansible.builtin.assert:
         that:
           - interface_508_absent.current == []
           - cm_interface_508_present is changed
@@ -431,7 +431,7 @@
       register: idm_interface_509_present
 
     - name: Assertions check for an interface 509
-      assert:
+      ansible.builtin.assert:
         that:
           - interface_509_absent.current == []
           - cm_interface_509_present is changed
@@ -493,7 +493,7 @@
       register: idm_breakout_501_present
 
     - name: Assertions check for convert the interface 501 to breakout(100g-4x)
-      assert:
+      ansible.builtin.assert:
         that:
           - invalid_breakout_501_present is not changed
           - invalid_breakout_501_present.msg == "parameters are mutually exclusive{{':'}} policy_group|breakout"
@@ -524,7 +524,7 @@
       register: query_all_access_interfaces
 
     - name: Assertions check for query all access interfaces
-      assert:
+      ansible.builtin.assert:
         that:
           - query_all_access_interfaces is not changed
           - query_all_access_interfaces.current|length >= 5
@@ -537,7 +537,7 @@
       register: query_all_fabric_interfaces
 
     - name: Assertions check for query all fabric interfaces
-      assert:
+      ansible.builtin.assert:
         that:
           - query_all_fabric_interfaces is not changed
           - query_all_fabric_interfaces.current|length >= 2
@@ -551,7 +551,7 @@
       register: query_access_interface_502
 
     - name: Assertions check for query a access interface with node id 502
-      assert:
+      ansible.builtin.assert:
         that:
           - query_access_interface_502 is not changed
           - query_access_interface_502.current|length == 1
@@ -570,7 +570,7 @@
       register: query_access_fabric_509
 
     - name: Assertions check for query a fabric interface with node id 509
-      assert:
+      ansible.builtin.assert:
         that:
           - query_access_fabric_509 is not changed
           - query_access_fabric_509.current|length == 1
@@ -617,7 +617,7 @@
       register: rm_interface_508_present
 
     - name: Assertions check for remove Interfaces 501 to 508
-      assert:
+      ansible.builtin.assert:
         that:
           - rm_interface_501_present is changed
           - rm_interface_501_present.current == []
@@ -646,7 +646,7 @@
       register: nm_rm_interface_509_present
 
     - name: Assertions check for remove Interface 509
-      assert:
+      ansible.builtin.assert:
         that:
           - cm_rm_interface_509_present is changed
           - cm_rm_interface_509_present.current != []
@@ -660,7 +660,7 @@
       register: idm_rm_interface_509_present
 
     - name: Assertions check for remove Interface 509 with idempotency check
-      assert:
+      ansible.builtin.assert:
         that:
           - idm_rm_interface_509_present is not changed
           - idm_rm_interface_509_present.current == []
@@ -674,7 +674,7 @@
       register: query_interface_509
 
     - name: Assertions check for query an interface 509 after removed from the APIC
-      assert:
+      ansible.builtin.assert:
         that:
           - query_interface_509 is not changed
           - query_interface_509.current == []

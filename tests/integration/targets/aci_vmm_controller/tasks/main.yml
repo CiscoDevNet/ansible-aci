@@ -6,7 +6,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -32,7 +32,7 @@
     - openstack
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will skip execution for cloud sites
@@ -53,12 +53,12 @@
       - openstack
 
   - name: Verify VMM add_domain
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_add_domain is changed
 
   - name: Add controller to VMware VMM domain
-    aci_vmm_controller: &add_controller
+    cisco.aci.aci_vmm_controller: &add_controller
       <<: *aci_info
       domain: vmm_dom
       name: vCenter1
@@ -70,7 +70,7 @@
     register: nm_add_controller
 
   - name: Verify VMM add_controller
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_add_controller is changed
       - nm_add_controller.sent.vmmCtrlrP.attributes.name == 'vCenter1'
@@ -81,7 +81,7 @@
       - nm_add_controller.current.0.vmmCtrlrP.attributes.annotation == 'orchestrator:ansible'
 
   - name: Add another controller to all VMM domain
-    aci_vmm_controller:
+    cisco.aci.aci_vmm_controller:
       <<: *add_controller
       name: vCenter2
       credentials: vCenterCredentials1
@@ -97,12 +97,12 @@
       - openstack
 
   - name: Verify another VMM add_controller
-    assert:
+    ansible.builtin.assert:
       that:
       - add_controller is changed
 
   - name: Add controller to VMware VMM domain again
-    aci_vmm_controller:
+    cisco.aci.aci_vmm_controller:
       <<: *add_controller
       name: vCenter2
       controller_hostname: 10.10.1.1
@@ -110,12 +110,12 @@
     register: add_controller_again
 
   - name: Verify another VMM add_controller again
-    assert:
+    ansible.builtin.assert:
       that:
       - add_controller_again is not changed
 
   - name: Query controller
-    aci_vmm_controller:
+    cisco.aci.aci_vmm_controller:
       <<: *aci_info
       domain: vmm_dom
       name: vCenter1
@@ -124,35 +124,35 @@
     register: query_controller
 
   - name: Verify VMM query_controller
-    assert:
+    ansible.builtin.assert:
       that:
       - query_controller is not changed
       - query_controller.current.0.vmmCtrlrP.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/ctrlr-vCenter1'
       - query_controller.current.0.vmmCtrlrP.attributes.name == 'vCenter1'
 
   - name: Query controller ( only vm_provider set )
-    aci_vmm_controller:
+    cisco.aci.aci_vmm_controller:
       <<: *aci_info
       vm_provider: vmware
       state: query
     register: query_controller_vm_provider
 
   - name: Query controller ( only domain set )
-    aci_vmm_controller:
+    cisco.aci.aci_vmm_controller:
       <<: *aci_info
       domain: vmm_dom
       state: query
     register: query_controller_domain
 
   - name: Query controller ( only name set )
-    aci_vmm_controller:
+    cisco.aci.aci_vmm_controller:
       <<: *aci_info
       name: vCenter2
       state: query
     register: query_controller_name
 
   - name: Query controller ( only vm_provider and domain set )
-    aci_vmm_controller:
+    cisco.aci.aci_vmm_controller:
       <<: *aci_info
       vm_provider: vmware
       domain: vmm_dom
@@ -160,7 +160,7 @@
     register: query_controller_vm_provider_domain
 
   - name: Query controller ( only vm_provider and name set )
-    aci_vmm_controller:
+    cisco.aci.aci_vmm_controller:
       <<: *aci_info
       vm_provider: vmware
       name: vCenter2
@@ -168,7 +168,7 @@
     register: query_controller_vm_provider_name
 
   - name: Query controller ( only domain and name set )
-    aci_vmm_controller:
+    cisco.aci.aci_vmm_controller:
       <<: *aci_info
       domain: vmm_dom
       name: vCenter2
@@ -176,13 +176,13 @@
     register: query_controller_domain_name
 
   - name: Query all controllers
-    aci_vmm_controller:
+    cisco.aci.aci_vmm_controller:
       <<: *aci_info
       state: query
     register: query_controller_all
 
   - name: Verify VMM query_controller
-    assert:
+    ansible.builtin.assert:
       that:
       - query_controller_vm_provider is not changed
       - query_controller_vm_provider.current.0.vmmProvP.attributes.dn == "uni/vmmp-VMware"
@@ -199,21 +199,21 @@
       - query_controller_all is not changed
 
   - name: Delete controllers
-    aci_vmm_controller:
+    cisco.aci.aci_vmm_controller:
       <<: *add_controller
       name: vCenter1
       state: absent
     register: remove_controller
 
   - name: Delete controllers
-    aci_vmm_controller:
+    cisco.aci.aci_vmm_controller:
       <<: *add_controller
       name: vCenter2
       state: absent
     register: remove_controller_2
 
   - name: Verify VMM remove_controller
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_controller is changed
       - remove_controller_2 is changed

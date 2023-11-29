@@ -2,13 +2,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -26,7 +26,7 @@
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -79,7 +79,7 @@
     register: nm_add_node
 
   - name: Verify nm_add_node
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_node is changed
       - nm_add_node is changed
@@ -95,7 +95,7 @@
     register: add_node_again
 
   - name: Verify add_node_again
-    assert:
+    ansible.builtin.assert:
       that:
       - add_node_again is not changed
 
@@ -119,7 +119,7 @@
     register: remove_loopback_ip
 
   - name: Verify update_node
-    assert:
+    ansible.builtin.assert:
       that:
       - update_node is changed
       - update_node.previous != []
@@ -146,7 +146,7 @@
     register: query_all_nodes
 
   - name: Verify query_all_nodes
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all_nodes is not changed
       - query_all_nodes.current|length >= 1
@@ -159,7 +159,7 @@
     register: query_spec_node
 
   - name: Verify query_spec_node
-    assert:
+    ansible.builtin.assert:
       that:
       - query_spec_node is not changed
       - query_spec_node.current|length == 1
@@ -174,7 +174,7 @@
     register: remove_node
 
   - name: Verify remove_node
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_node is changed
       - remove_node.current == []

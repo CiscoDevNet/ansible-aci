@@ -5,7 +5,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -16,7 +16,7 @@
       output_level: '{{ aci_output_level | default("debug") }}'
 
 - name: Query system information
-  aci_system:
+  cisco.aci.aci_system:
     <<: *aci_info
     id: 1
     state: query
@@ -37,7 +37,7 @@
     - { domain: 'microsoft_dom', provider: 'microsoft' }
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will skip execution for cloud sites
@@ -57,12 +57,12 @@
       - { domain: 'microsoft_dom', provider: 'microsoft' }
 
   - name: Verify VMM add_domain
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_add_domain is changed
 
   - name: Add a vSwitch policy to vmware domain
-    aci_vmm_vswitch_policy: &add_vmware_policies
+    cisco.aci.aci_vmm_vswitch_policy: &add_vmware_policies
       <<: *aci_info
       domain: vmm_dom
       vm_provider: vmware
@@ -73,7 +73,7 @@
     register: add_vmware_policy
 
   - name: Verify VMM add_vmware_policy
-    assert:
+    ansible.builtin.assert:
       that:
       - add_vmware_policy is changed
       - add_vmware_policy.previous == []
@@ -84,7 +84,7 @@
       - add_vmware_policy.current.0.vmmVSwitchPolicyCont.attributes.annotation == 'orchestrator:ansible'
 
   - name: Add a vSwitch policy to vmware domain
-    aci_vmm_vswitch_policy:
+    cisco.aci.aci_vmm_vswitch_policy:
       <<: *add_vmware_policies
       netflow_exporter:
         name: Netflow_Exporter_policy
@@ -94,7 +94,7 @@
     register: add_vmware_policy_2
 
   - name: Verify VMM add_vmware_policy_2
-    assert:
+    ansible.builtin.assert:
       that:
       - add_vmware_policy_2 is changed
       - add_vmware_policy_2.current.0.vmmVSwitchPolicyCont.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/vswitchpolcont'
@@ -105,7 +105,7 @@
       - add_vmware_policy_2.current.0.vmmVSwitchPolicyCont.children.4.vmmRsVswitchOverrideLldpIfPol.attributes.tDn == 'uni/infra/lldpIfP-LLDP_policy'
 
   - name: Add MTU policy to vmware domain when version is >= 4.2
-    aci_vmm_vswitch_policy:
+    cisco.aci.aci_vmm_vswitch_policy:
       <<: *add_vmware_policies
       mtu_policy: MTU_policy
       state: present
@@ -113,7 +113,7 @@
     when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
   - name: Verify VMM add_vmware_mtu_policy
-    assert:
+    ansible.builtin.assert:
       that:
       - add_vmware_mtu_policy is changed
       - add_vmware_mtu_policy.current.0.vmmVSwitchPolicyCont.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/vswitchpolcont'
@@ -121,7 +121,7 @@
     when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
   - name: Add a vSwitch policy to microsoft domain
-    aci_vmm_vswitch_policy:
+    cisco.aci.aci_vmm_vswitch_policy:
       <<: *aci_info
       domain: vmm_dom
       vm_provider: microsoft
@@ -132,7 +132,7 @@
     register: add_microsoft_policy
 
   - name: Verify VMM add_microsoft_policy
-    assert:
+    ansible.builtin.assert:
       that:
       - add_microsoft_policy is changed
       - add_microsoft_policy.previous == []
@@ -142,7 +142,7 @@
       - add_microsoft_policy.current.0.vmmVSwitchPolicyCont.children.2.vmmRsVswitchOverrideLldpIfPol.attributes.tDn == 'uni/infra/lldpIfP-ms_LLDP_policy'
 
   - name: Add STP vSwitch policy to another microsoft domain
-    aci_vmm_vswitch_policy:
+    cisco.aci.aci_vmm_vswitch_policy:
       <<: *aci_info
       domain: microsoft_dom
       vm_provider: microsoft
@@ -151,7 +151,7 @@
     register: add_microsoft_stp_policy
 
   - name: Verify VMM add_microsoft_stp_policy
-    assert:
+    ansible.builtin.assert:
       that:
       - add_microsoft_stp_policy is changed
       - add_microsoft_stp_policy.previous == []
@@ -159,25 +159,25 @@
       - add_microsoft_stp_policy.current.0.vmmVSwitchPolicyCont.children.0.vmmRsVswitchOverrideStpPol.attributes.tDn == 'uni/infra/ifPol-ms_STP_policy'
 
   - name: Query all the vSwitch policy
-    aci_vmm_vswitch_policy:
+    cisco.aci.aci_vmm_vswitch_policy:
       <<: *aci_info
       state: query
     register: query_all_vmware
 
   - name: Query all the vSwitch policy of the VMWare domain
-    aci_vmm_vswitch_policy:
+    cisco.aci.aci_vmm_vswitch_policy:
       <<: *aci_info
       state: query
     register: query_all_microsoft
 
   - name: Verify Query all tasks for vmware and microsoft domain
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all_vmware is not changed
       - query_all_microsoft is not changed
 
   - name: Query vSwitch policies of VMWare domain
-    aci_vmm_vswitch_policy:
+    cisco.aci.aci_vmm_vswitch_policy:
       <<: *aci_info
       domain: vmm_dom
       vm_provider: vmware
@@ -185,13 +185,13 @@
     register: query_vmware
 
   - name: Verify Query vSwitch policy of the VMWare domain
-    assert:
+    ansible.builtin.assert:
       that:
       - query_vmware is not changed
       - query_vmware.current.0.vmmVSwitchPolicyCont.attributes.dn == 'uni/vmmp-VMware/dom-vmm_dom/vswitchpolcont'
 
   - name: Remove vSwitch Policy from VMware VMM domain
-    aci_vmm_vswitch_policy:
+    cisco.aci.aci_vmm_vswitch_policy:
       <<: *aci_info
       domain: vmm_dom
       vm_provider: vmware
@@ -199,7 +199,7 @@
     register: remove_vmware_vSwitch_policy
 
   - name: Verify remove_vmware_vSwitch_policy
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_vmware_vSwitch_policy is changed
       - remove_vmware_vSwitch_policy.current == []

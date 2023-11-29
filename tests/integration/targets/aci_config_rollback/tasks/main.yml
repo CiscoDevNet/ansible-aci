@@ -4,7 +4,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
@@ -21,7 +21,7 @@
     tenant: ansible_test
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: create a snapshot
   cisco.aci.aci_config_snapshot: &create_snapshot
@@ -43,7 +43,7 @@
   register: create_snapshot_annotation_check
 
 - name: waiting for snapshot to be finished before querying
-  pause:
+  ansible.builtin.pause:
     seconds: 10
 
 - name: get snapshots
@@ -142,7 +142,7 @@
     register: rollback_rollback
 
   - name: pause execution to let rollback take effect
-    pause:
+    ansible.builtin.pause:
       seconds: 15
 
   - name: ensure tenant doesn't exist after rollback
@@ -154,7 +154,7 @@
       msg: '{{ rollback_preview_json }}'
 
   - name: rollback assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - rollback_preview_xml is not changed
         - '"ansible_test" in rollback_preview_xml.preview'

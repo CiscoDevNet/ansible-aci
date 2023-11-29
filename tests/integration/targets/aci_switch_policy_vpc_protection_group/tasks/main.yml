@@ -4,7 +4,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
@@ -54,7 +54,7 @@
   register: nm_add_vpc_prot_grp_again
 
 - name: Verify add_vpc_prot_grp_again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_vpc_prot_grp is changed
     - nm_add_vpc_prot_grp is changed
@@ -91,7 +91,7 @@
   register: nm_add_vpc_prot_grp_pol_again
 
 - name: Verify add_vpc_prot_grp_pol
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_vpc_prot_grp_pol is changed
     - nm_add_vpc_prot_grp_pol is changed
@@ -110,7 +110,7 @@
   register: nm_add_vpc_prot_grp_again_no_pol
 
 - name: Verify add_vpc_prot_grp_again_no_pol
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_vpc_prot_grp_again_no_pol is not changed
     - nm_add_vpc_prot_grp_again_no_pol is not changed
@@ -135,7 +135,7 @@
   register: nm_query_all_vpc_prot_grps
 
 - name: Verify query_all_vpc_prot_grps
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_all_vpc_prot_grps is not changed
     - nm_query_all_vpc_prot_grps is not changed
@@ -157,7 +157,7 @@
   register: nm_query_vpc_prot_grp
 
 - name: Verify query_vpc_prot_grp
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_vpc_prot_grp is not changed
     - nm_query_vpc_prot_grp is not changed
@@ -184,7 +184,7 @@
   register: nm_remove_vpc_prot_grp_again
 
 - name: Verify remove_vpc_prot_grp
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_vpc_prot_grp is changed
     - nm_remove_vpc_prot_grp is changed
@@ -207,7 +207,7 @@
   register: nm_query_non_vpc_prot_grp
 
 - name: Verify query_non_vpc_prot_grp
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_non_vpc_prot_grp is not changed
     - nm_query_non_vpc_prot_grp is not changed

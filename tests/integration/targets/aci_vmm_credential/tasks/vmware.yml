@@ -5,7 +5,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -26,7 +26,7 @@
   register: nm_remove_domain
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will skip execution for cloud sites
@@ -42,7 +42,7 @@
     register: nm_add_domain
 
   - name: Verify add_domain
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_add_domain is changed
 
@@ -65,7 +65,7 @@
     register: nm_remove_credential
 
   - name: Verify remove_credential
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_credential is not changed
       - nm_remove_credential is not changed
@@ -96,7 +96,7 @@
     register: cm_add_credential_again
 
   - name: Verify add_credential
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_credential is changed
       - nm_add_credential is changed
@@ -132,7 +132,7 @@
     register: nm_mod_credential
 
   - name: Verify mod_credential
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_mod_credential is changed
       - nm_mod_credential is changed
@@ -182,7 +182,7 @@
     register: nm_query_all_credential
 
   - name: Verify query_credential
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_query_credential is not changed
       - nm_query_credential is not changed
@@ -209,7 +209,7 @@
     register: nm_remove_credential_final
 
   - name: Verify remove_credential
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_credential_again is changed
       - nm_remove_credential_again is changed

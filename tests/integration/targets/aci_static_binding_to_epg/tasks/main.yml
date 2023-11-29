@@ -5,12 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,7 +21,7 @@
       output_level: debug
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -163,7 +163,7 @@
     register: missing_required_present
 
   - name: Present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - provide_present_check_mode is changed
         - provide_present_check_mode.sent.fvRsPathAtt.attributes.encap == 'vlan-222'
@@ -198,7 +198,7 @@
     register: query_all
 
   - name: Query assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - query_static_binding is not changed
         - query_static_binding.current != []
@@ -234,7 +234,7 @@
     register: encap_id_range
 
   - name: primary_ecap_id assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - primary_ecap_id_unknown is changed
         - primary_ecap_id_unknown.sent.fvRsPathAtt.attributes.primaryEncap == 'unknown'
@@ -330,7 +330,7 @@
     register: nm_multiple_extpaths
 
   - name: Verify interface type and extpaths
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_fex_port_channel is changed
         - nm_fex_port_channel is changed
@@ -361,7 +361,7 @@
     register: missing_param_absent
 
   - name: Absent assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - provide_absent is changed
         - provide_absent.previous.0.fvRsPathAtt is defined

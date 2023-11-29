@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -28,7 +28,7 @@
   register: version
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Ensure tenant - ansible_test does not exists before testing
   cisco.aci.aci_tenant: &tenant_absent
@@ -79,7 +79,7 @@
     register: selector_0_nm_present
 
   - name: present assertions for Tag Selector - tag-selector-0
-    assert:
+    ansible.builtin.assert:
       that:
         - selector_0_cm_present is changed
         - selector_0_nm_present is changed
@@ -97,7 +97,7 @@
     register: query_result
 
   - name: Verification of query all Tag Selectors - query_result
-    assert:
+    ansible.builtin.assert:
       that:
         - query_result is not changed
         - query_result.current | length >= 1
@@ -111,7 +111,7 @@
     register: result_with_name_and_value
 
   - name: Verification of query - Tag Selectors with a name and value
-    assert:
+    ansible.builtin.assert:
       that:
         - result_with_name_and_value is not changed
         - result_with_name_and_value.current | length == 1
@@ -127,7 +127,7 @@
     register: result_with_name
 
   - name: Verification of query - Tag Selectors with only name
-    assert:
+    ansible.builtin.assert:
       that:
         - result_with_name is not changed
         - result_with_name.current | length == 1
@@ -151,7 +151,7 @@
     register: selector_0_nm_absent_with_name_and_value
 
   - name: Verification of selector_0_nm_absent_with_name - Tag Selectors under web_esg
-    assert:
+    ansible.builtin.assert:
       that:
         - selector_0_cm_absent_with_name_and_value is changed
         - selector_0_cm_absent_with_name_and_value.current | length == 1
@@ -166,7 +166,7 @@
     register: idempotency_selector_0_nm_absent_with_name_and_value
 
   - name: Verification of idempotency_selector_0_nm_absent_with_name_and_value - Tag Selectors under web_esg
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_selector_0_nm_absent_with_name_and_value is not changed
         - idempotency_selector_0_nm_absent_with_name_and_value.current | length == 0

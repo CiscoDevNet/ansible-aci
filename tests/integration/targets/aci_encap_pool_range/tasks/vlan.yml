@@ -43,7 +43,7 @@
   register: range_present_check_mode
 
 - name: present assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_present_check_mode is changed
       - range_present_check_mode.sent.fvnsEncapBlk.attributes.allocMode == 'inherit'
@@ -58,7 +58,7 @@
   register: range_present
 
 - name: present assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_present is changed
       - range_present.previous == []
@@ -72,7 +72,7 @@
   register: range_present_idempotent
 
 - name: present assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_present_idempotent is not changed
       - range_present_idempotent.previous.0.fvnsEncapBlk.attributes.name == "anstest"
@@ -85,7 +85,7 @@
   register: range_present_update
 
 - name: present assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_present_update is changed
       - range_present_update.previous != []
@@ -100,7 +100,7 @@
   register: range_present_2
 
 - name: present assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_present_2 is changed
       - range_present_2.previous == []
@@ -113,7 +113,7 @@
   register: range_start_low
 
 - name: present assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_start_low is failed
       - range_start_low.msg == 'vlan pools must have "range_start" and "range_end" values between 1 and 4094'
@@ -126,7 +126,7 @@
   register: range_start_high
 
 - name: present assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_start_high is failed
       - range_start_high.msg == 'vlan pools must have "range_start" and "range_end" values between 1 and 4094'
@@ -139,7 +139,7 @@
   register: range_end_low
 
 - name: present assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_end_low is failed
       - range_end_low.msg == 'vlan pools must have "range_start" and "range_end" values between 1 and 4094'
@@ -152,7 +152,7 @@
   register: range_end_high
 
 - name: present assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_end_high is failed
       - range_end_high.msg == 'vlan pools must have "range_start" and "range_end" values between 1 and 4094'
@@ -165,7 +165,7 @@
   register: range_start_end
 
 - name: present assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_start_end is failed
       - range_start_end.msg == 'The "range_start" must be less than or equal to the "range_end"'
@@ -178,7 +178,7 @@
   register: range_present_pool_type
 
 - name: present assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_present_pool_type is failed
       - "range_present_pool_type.msg == 'missing required arguments: pool_type'"
@@ -190,7 +190,7 @@
   register: range_present_missing_param
 
 - name: present assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_present_missing_param is failed
       - "range_present_missing_param.msg == 'state is present but all of the following are missing: range_end, range_start'"
@@ -203,7 +203,7 @@
   register: range_present_allocation
 
 - name: present assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_present_allocation is failed
       - range_present_allocation.msg == 'ACI requires the "pool_allocation_mode" for "pool_type" of "vlan" and "vsan" when the "pool" is provided'
@@ -215,7 +215,7 @@
   register: range_query
 
 - name: query assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_query is not changed
       - range_query.url.endswith("infra/vlanns-[anstest]-static/from-[vlan-20]-to-[vlan-40].json")
@@ -229,7 +229,7 @@
   register: range_query_from_to_name
 
 - name: query assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_query_from_to_name is not changed
       - range_query_from_to_name.url.endswith("class/fvnsEncapBlk.json")
@@ -247,7 +247,7 @@
   register: range_query_from_name
 
 - name: query assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_query_from_name is not changed
       - range_query_from_name.url.endswith("class/fvnsEncapBlk.json")
@@ -263,7 +263,7 @@
   register: range_query_to_name
 
 - name: query assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_query_to_name is not changed
       - range_query_to_name.url.endswith('class/fvnsEncapBlk.json')
@@ -280,7 +280,7 @@
   register: range_query_name
 
 - name: query assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_query_name is not changed
       - range_query_name.url.endswith("class/fvnsEncapBlk.json")
@@ -294,7 +294,7 @@
   register: range_query_from_to
 
 - name: query assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_query_from_to is not changed
       - range_query_from_to.url.endswith("class/fvnsEncapBlk.json")
@@ -311,7 +311,7 @@
   register: range_query_pool
 
 - name: query assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_query_pool.current | length == 1
       - range_query_pool.current.0.fvnsVlanInstP.attributes.name == "anstest"
@@ -326,7 +326,7 @@
   register: range_query_all
 
 - name: query assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - range_query_all is not changed
       - range_query_all.current | length > 1
@@ -340,7 +340,7 @@
   register: delete_range
 
 - name: absent assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - delete_range is changed
       - delete_range.proposed == {}
@@ -354,7 +354,7 @@
   register: delete_check_mode
 
 - name: absent assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - delete_check_mode is changed
       - delete_check_mode.previous != []
@@ -365,7 +365,7 @@
   register: delete_range_2
 
 - name: absent assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - delete_range_2 is changed
       - delete_range_2.previous == delete_check_mode.previous
@@ -376,7 +376,7 @@
   register: delete_idempotent
 
 - name: absent assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - delete_idempotent is not changed
       - delete_idempotent.previous == []

@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,26 +21,26 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info 
     tenant: ansible_tenant
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Add a new tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info 
       tenant: ansible_tenant
       description: Ansible tenant
       state: present
 
   - name: Add a new l3out
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_info
       tenant: ansible_tenant
       name: ansible_l3out
@@ -52,7 +52,7 @@
       state: present
 
   - name: Add a new ExtEpg
-    aci_l3out_extepg:
+    cisco.aci.aci_l3out_extepg:
       <<: *aci_info 
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -84,7 +84,7 @@
     register: nm_add_subnet
 
   - name: Verify cm_add_subnet and nm_add_subnet
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_subnet is changed
         - nm_add_subnet is changed
@@ -107,7 +107,7 @@
     register: nm_add_subnet_again
 
   - name: Verify nm_add_subnet_again
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_add_subnet_again is not changed
 
@@ -139,7 +139,7 @@
     register: nm_change_subnet
 
   - name: Verify cm_change_subnet and nm_change_subnet
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_change_subnet is changed
         - nm_change_subnet is changed
@@ -164,7 +164,7 @@
     register: nm_add_another_subnet
 
   - name: Verify nm_add_another_subnet
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_add_another_subnet is changed
         - nm_add_another_subnet.current.0.l3extSubnet.attributes.ip == "192.1.2.0/24"
@@ -189,7 +189,7 @@
     register: query_subnet
 
   - name: Verify query_all and query_subnet
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all is not changed
         - query_subnet is not changed
@@ -208,7 +208,7 @@
     register: rm_subnet
 
   - name: Verify rm_subnet
-    assert:
+    ansible.builtin.assert:
       that:
         - rm_subnet is changed
         - rm_subnet.current == []
@@ -230,7 +230,7 @@
     ignore_errors: true
 
   - name: asserts failed aggregate creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_aggregate_scope_none is failed
         - nm_aggregate_scope_none.msg.startswith("missing parameter(s) required by 'aggregate'")
@@ -251,7 +251,7 @@
     ignore_errors: true
 
   - name: asserts failed aggregate creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_aggregate_scope_mismatch is failed
         - nm_aggregate_scope_mismatch.msg == "All aggregate values ['export-rtctrl', 'import-rtctrl'] need to be defined in scope ['import-security']."
@@ -286,7 +286,7 @@
     register: nm_aggregate_scope_match
 
   - name: asserts success aggregate creation task
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_aggregate_scope_match is changed
         - cm_aggregate_scope_match.proposed.l3extSubnet.attributes.ip == "0.0.0.0/0"
@@ -313,6 +313,6 @@
     register: nm_aggregate_scope_match
 
   - name: asserts success aggregate creation task reversed input order
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_aggregate_scope_match is not changed

@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when:
@@ -17,7 +17,7 @@
   - version.current.0.topSystem.attributes.version is version('5', '>=')
   block:  # block specifies execution of tasks within, based on conditions
   - name: Set vars
-    set_fact:
+    ansible.builtin.set_fact:
       aci_info: &aci_info
         host: '{{ aci_hostname }}'
         username: '{{ aci_username }}'
@@ -113,7 +113,7 @@
       attributes_list_present: "{{ leak_sub_present.current.0.leakInternalSubnet.children | map(attribute='leakTo.attributes') | list | sort(attribute='ctxName') }}"
       
   - name: present asserts
-    assert:
+    ansible.builtin.assert:
       that:
         - vrf_present is changed
         - leak_sub_check_mode is changed
@@ -166,7 +166,7 @@
       attributes_list_query: "{{ query.current.0.leakInternalSubnet.children | map(attribute='leakTo.attributes') | list | sort(attribute='ctxName') }}"
     
   - name: query asserts
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all is not changed
         - query is not changed
@@ -215,7 +215,7 @@
     register: leak_sub_delete_idempotency
 
   - name: delete asserts
-    assert:
+    ansible.builtin.assert:
       that:
         - leak_sub_delete_check_mode is changed
         - leak_sub_delete_check_mode.current.0.leakInternalSubnet.children.0.leakTo.attributes.ctxName == 'test3'

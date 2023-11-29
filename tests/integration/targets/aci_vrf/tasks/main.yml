@@ -4,7 +4,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
@@ -73,7 +73,7 @@
   register: vrf_present_missing_param
 
 - name: present asserts
-  assert:
+  ansible.builtin.assert:
     that:
       - vrf_present_check_mode is changed
       - vrf_present_check_mode.sent.fvCtx.attributes.descr == 'Ansible Test'
@@ -126,7 +126,7 @@
   register: query_vrf
 
 - name: query asserts
-  assert:
+  ansible.builtin.assert:
     that:
       - query_all is not changed
       - query_all.current | length > 1
@@ -177,7 +177,7 @@
   register: vrf_absent_missing_param
 
 - name: asserts for deletion task
-  assert:
+  ansible.builtin.assert:
     that:
       - vrf_absent_check_mode is changed
       - vrf_absent_check_mode.previous != []

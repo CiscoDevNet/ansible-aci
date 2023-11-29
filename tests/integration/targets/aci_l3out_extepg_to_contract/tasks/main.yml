@@ -5,12 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password                         
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -22,7 +22,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
     tenant: ansible_test
     state: absent
@@ -35,20 +35,20 @@
   register: version
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Add a new tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info 
       tenant: ansible_test
       description: Ansible tenant
       state: present
 
   - name: Add a new l3out
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_info
       tenant: ansible_test
       name: ansible_l3out
@@ -60,7 +60,7 @@
       state: present
 
   - name: Add a new ExtEpg
-    aci_l3out_extepg:
+    cisco.aci.aci_l3out_extepg:
       <<: *aci_info 
       tenant: ansible_test
       l3out: ansible_l3out
@@ -69,7 +69,7 @@
       state: present
   
   - name: Bind External End Point Groups to Contracts (check-mode)
-    aci_l3out_extepg_to_contract: &aci_ext_epg_present
+    cisco.aci.aci_l3out_extepg_to_contract: &aci_ext_epg_present
       <<: *aci_info 
       tenant: ansible_test
       l3out: ansible_l3out
@@ -91,7 +91,7 @@
     register: nm_bind_extepg_provider_contract_again
 
   - name: Verify bind_extepg_provider_contract
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_bind_extepg_provider_contract is changed
       - cm_bind_extepg_provider_contract.previous == []
@@ -125,7 +125,7 @@
     register: bind_extepg_provider_contract_2
 
   - name: Verify bind_extepg_provider_contract_2
-    assert:
+    ansible.builtin.assert:
       that:
       - bind_extepg_provider_contract_2.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_test/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract2"
       - bind_extepg_provider_contract_2.current.0.fvRsProv.attributes.tnVzBrCPName == "ansible_contract2"
@@ -178,7 +178,7 @@
     register: err_subject_and_contract_label
   
   - name: Verify present assertions for taboo, interface and intra_epg contract types
-    assert:
+    ansible.builtin.assert:
       that:
         - taboo_present is changed
         - taboo_present.previous == []
@@ -194,7 +194,7 @@
         - err_subject_and_contract_label.msg == "the 'contract_label' and 'subject_label' are not configurable for intra_epg contracts"
 
   - name: Verify present assertions for taboo, interface and intra_epg contract types
-    assert:
+    ansible.builtin.assert:
       that:
         - intra_epg_present is changed
         - intra_epg_present.previous == []
@@ -202,20 +202,20 @@
     when: version.current.0.topSystem.attributes.version is version('5', '>=')  # This condition will execute only for APIC version 5.x and above
 
   - name: Query the External End Point Groups
-    aci_l3out_extepg_to_contract:
+    cisco.aci.aci_l3out_extepg_to_contract:
       <<: *aci_ext_epg_present
       state: query
     register: query_extepg
 
   - name: Query all the External End Point Groups
-    aci_l3out_extepg_to_contract:
+    cisco.aci.aci_l3out_extepg_to_contract:
       <<: *aci_info
       contract_type: provider
       state: query
     register: query_all
 
   - name: Verify query_extepg
-    assert:
+    ansible.builtin.assert:
       that:
       - query_extepg is not changed
       - query_extepg.current | length == 1
@@ -231,17 +231,17 @@
     check_mode: true
 
   - name: Remove existing contract to External End Point Groups
-    aci_l3out_extepg_to_contract:
+    cisco.aci.aci_l3out_extepg_to_contract:
       <<: *aci_ext_epg_absent 
     register: nm_remove_contract_extepg
 
   - name: Remove existing contract to External End Point Groups again
-    aci_l3out_extepg_to_contract:
+    cisco.aci.aci_l3out_extepg_to_contract:
       <<: *aci_ext_epg_absent 
     register: nm_remove_contract_extepg_again
 
   - name: Verify remove_contract_extepg
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_contract_extepg is changed
       - cm_remove_contract_extepg.previous.0.fvRsProv.attributes.dn == "uni/tn-ansible_test/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
@@ -253,7 +253,7 @@
       - nm_remove_contract_extepg_again.current == []
 
   - name: Bind External End Point Groups to Contracts
-    aci_l3out_extepg_to_contract:
+    cisco.aci.aci_l3out_extepg_to_contract:
       <<: *aci_info 
       tenant: ansible_test
       l3out: ansible_l3out
@@ -266,13 +266,13 @@
     register: bind_extepg_consumer_contract
 
   - name: Verify bind_extepg_consumer_contract
-    assert:
+    ansible.builtin.assert:
       that:
       - bind_extepg_consumer_contract.msg == "the 'provider_match' is only configurable for Provided Contracts"
 
   # CLEAN ENVIRONMENT
   - name: Remove the ansible_tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info 
       tenant: ansible_test
       state: absent

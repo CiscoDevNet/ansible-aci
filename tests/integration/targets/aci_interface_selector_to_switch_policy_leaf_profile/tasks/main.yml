@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -83,7 +83,7 @@
 
   # TODO: also test for errors
   - name: present assertions
-    assert:
+    ansible.builtin.assert:
       that:
       - intftoleaf_check_mode_present is changed
       - intftoleaf_present is changed
@@ -101,7 +101,7 @@
     register: binding_query1
 
   - name: query 1 assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - binding_query1 is not changed
         - binding_query1.current | length >= 1
@@ -121,7 +121,7 @@
     register: binding_query2
 
   - name: query 2 assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - binding_query2 is not changed
         - binding_query2.current | length >= 1
@@ -153,7 +153,7 @@
     register: intftoleaf_absent_missing_param
 
   - name: absent assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - intftoleaf_check_mode_absent is changed
         - intftoleaf_check_mode_absent.previous != []

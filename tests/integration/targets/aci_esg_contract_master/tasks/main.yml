@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -28,7 +28,7 @@
   register: version
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Ensure tenant - ansible_test does not exists before testing
   cisco.aci.aci_tenant: &tenant_absent
@@ -88,7 +88,7 @@
     register: cm_contract_esg_present
 
   - name: Assertions check for add an ESG contract master to web_esg with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_contract_esg_present is changed
         - cm_contract_esg_present.current == []
@@ -102,7 +102,7 @@
     register: nm_contract_esg_present
 
   - name: Assertions check for add an ESG contract master to web_esg with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_contract_esg_present is changed
         - nm_contract_esg_present.current | length == 1
@@ -115,7 +115,7 @@
     register: idempotency_contract_esg_present
 
   - name: Idempotency assertions check for add an ESG contract master to web_esg with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_contract_esg_present is not changed
         - idempotency_contract_esg_present.current | length == 1
@@ -133,7 +133,7 @@
     register: query_result_contract_master_esg
 
   - name: Assertions check for query an ESG contract master
-    assert:
+    ansible.builtin.assert:
       that:
         - query_result_contract_master_esg is not changed
         - query_result_contract_master_esg.current | length == 1
@@ -149,7 +149,7 @@
     register: query_all_contract_master
 
   - name: Assertions check for query_all_contract_master
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_contract_master is not changed
         - query_all_contract_master.current | length == 1
@@ -168,7 +168,7 @@
     register: cm_contract_esg_absent
 
   - name: Assertions check for remove an ESG contract master with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_contract_esg_absent is changed
         - cm_contract_esg_absent.current != []
@@ -182,7 +182,7 @@
     register: nm_contract_esg_absent
 
   - name: Assertions check for remove an ESG contract master with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_contract_esg_absent is changed
         - nm_contract_esg_absent.current == []
@@ -195,7 +195,7 @@
     register: idempotency_contract_esg_absent
 
   - name: Idempotency assertions check for remove an ESG contract master with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_contract_esg_absent is not changed
         - idempotency_contract_esg_absent.current == []

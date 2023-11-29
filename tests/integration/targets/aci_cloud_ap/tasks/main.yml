@@ -4,7 +4,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
@@ -22,7 +22,7 @@
   register: tenant_present
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for cloud sites
   when: query_cloud.current | length > 0  # This condition will execute only cloud sites
@@ -68,7 +68,7 @@
     register: update_cloud_ap
 
   - name: verify cloud ap creation
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_create_cloud_ap is changed
         - nm_create_cloud_ap is changed
@@ -119,7 +119,7 @@
     register: query_cloud_ap
 
   - name: verify query
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_tenant is not changed
         - query_all_tenant.current.0.fvTenant.children | length >= 2
@@ -148,7 +148,7 @@
     register: rm_cloud_ap_again
 
   - name: verify deletion
-    assert:
+    ansible.builtin.assert:
       that:
         - rm_cloud_ap is changed
         - rm_cloud_ap.previous.0.cloudApp.attributes.name == 'anstest'

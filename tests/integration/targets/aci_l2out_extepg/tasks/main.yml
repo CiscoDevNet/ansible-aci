@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,26 +21,26 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info 
     tenant: ansible_tenant
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Add a new tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info 
       tenant: ansible_tenant
       description: Ansible tenant
       state: present
 
   - name: Add New L2Out 
-    aci_l2out:
+    cisco.aci.aci_l2out:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -52,7 +52,7 @@
     register: add_l2out
 
   - name: Add another L2Out 
-    aci_l2out:
+    cisco.aci.aci_l2out:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out_2
@@ -64,7 +64,7 @@
     register: add_l2out_2
 
   - name: Add L2 external end point group 
-    aci_l2out_extepg:
+    cisco.aci.aci_l2out_extepg:
       <<: *aci_info 
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -75,13 +75,13 @@
     register: l2extepg
 
   - name: Verify l2extepg
-    assert:
+    ansible.builtin.assert:
       that:
       - l2extepg.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
       - l2extepg.current.0.l2extInstP.attributes.annotation == 'orchestrator:ansible'
 
   - name: Add L2 external end point group again
-    aci_l2out_extepg:
+    cisco.aci.aci_l2out_extepg:
       <<: *aci_info 
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -92,13 +92,13 @@
     register: l2extepg_again
 
   - name: Verify l2extepg_again
-    assert:
+    ansible.builtin.assert:
       that:
       - l2extepg_again is not changed
       - l2extepg.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
 
   - name: Add another L2 external end point group
-    aci_l2out_extepg:
+    cisco.aci.aci_l2out_extepg:
       <<: *aci_info 
       tenant: ansible_tenant
       l2out: ansible_l2out_2
@@ -110,12 +110,12 @@
     register: l2extepg_2
 
   - name: Verify l2extepg_2
-    assert:
+    ansible.builtin.assert:
       that:
       - l2extepg_2.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out_2/instP-ansible_extepg_2"
 
   - name: Query the L2 external end point group
-    aci_l2out_extepg:
+    cisco.aci.aci_l2out_extepg:
       <<: *aci_info 
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -124,30 +124,30 @@
     register: query_l2extepg
 
   - name: Query all L2 external epg in a tenant
-    aci_l2out_extepg:
+    cisco.aci.aci_l2out_extepg:
       <<: *aci_info 
       tenant: ansible_tenant
       state: query
     register: query_all_in_tenant
 
   - name: Verify query_all_in_tenant
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all_in_tenant is not changed
 
   - name: Query all L2 external epgs
-    aci_l2out_extepg:
+    cisco.aci.aci_l2out_extepg:
       <<: *aci_info
       state: query
     register: query_all
 
   - name: Verify query_all
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all is not changed
 
   - name: Remove L2 external end point group
-    aci_l2out_extepg:
+    cisco.aci.aci_l2out_extepg:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -157,7 +157,7 @@
     register: remove_l2extepg
 
   - name: Verify remove_l2extepg
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_l2extepg is changed
       - remove_l2extepg.previous.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"

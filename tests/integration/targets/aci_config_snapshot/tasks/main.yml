@@ -4,7 +4,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
@@ -46,7 +46,7 @@
   register: missing_param
 
 - name: present assertion tests
-  assert:
+  ansible.builtin.assert:
     that:
       - create is not failed
       - create is changed
@@ -72,7 +72,7 @@
   register: query_export
 
 - name: generate snapshot name
-  set_fact:
+  ansible.builtin.set_fact:
     test_snapshot: "{{ query_export.current.0.configSnapshotCont.children.0.configSnapshot.attributes.rn.strip('snapshot-') }}"
 
 - name: query with export_policy and snapshot
@@ -95,7 +95,7 @@
   register: query_all
 
 - name: query assertion tests
-  assert:
+  ansible.builtin.assert:
     that:
       - query_export is not failed
       - query_export is not changed
@@ -134,7 +134,7 @@
   register: delete_missing_param
 
 - name: absent assertion tests
-  assert:
+  ansible.builtin.assert:
     that:
       - delete_snapshot is not failed
       - delete_snapshot is changed
@@ -149,7 +149,7 @@
 
 # Create, query and delete snapshot with certificate authentication Ref# 427
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -178,7 +178,7 @@
   register: create_private_key
 
 - name: creation assertion tests with private key
-  assert:
+  ansible.builtin.assert:
     that:
       - create_private_key is not failed
       - create_private_key is changed
@@ -193,11 +193,11 @@
   register: query_private_key
 
 - name: generate snapshot name using query_private_key
-  set_fact:
+  ansible.builtin.set_fact:
     test_snapshot_private_key: "{{ query_private_key.current.0.configSnapshotCont.children.0.configSnapshot.attributes.rn.strip('snapshot-') }}"
 
 - name: query assertion tests with private key
-  assert:
+  ansible.builtin.assert:
     that:
       - query_private_key is not failed
       - query_private_key is not changed
@@ -213,7 +213,7 @@
   register: delete_snapshot_private_key
 
 - name: delete assertion tests with the private key
-  assert:
+  ansible.builtin.assert:
     that:
       - delete_snapshot_private_key is not failed
       - delete_snapshot_private_key is changed

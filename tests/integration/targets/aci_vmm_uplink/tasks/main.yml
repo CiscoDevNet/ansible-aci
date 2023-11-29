@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # GET Credentials from the inventory
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -22,14 +22,14 @@
 
 # PERFORM TESTS ONLY ON SUPPORTED APICS
 - name: Query system information
-  aci_system:
+  cisco.aci.aci_system:
     <<: *aci_info
     id: 1
     state: query
   register: version
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when:
@@ -38,7 +38,7 @@
   block:
   # CLEAN ENVIRONMENT
   - name: Remove ansible_domain if it already exists
-    aci_domain:
+    cisco.aci.aci_domain:
       <<: *aci_info
       domain: ansible_domain
       domain_type: vmm
@@ -47,7 +47,7 @@
 
   # CREATE VMWARE DOMAIN
   - name: Create ansible_domain
-    aci_domain:
+    cisco.aci.aci_domain:
       <<: *aci_info
       domain: ansible_domain
       domain_type: vmm
@@ -56,7 +56,7 @@
 
   # CREATE VMWARE UPLINK CONTAINER
   - name: Create VMWare Uplink Container
-    aci_vmm_uplink_container:
+    cisco.aci.aci_vmm_uplink_container:
       <<: *aci_info
       domain: ansible_domain
       num_of_uplinks: 1
@@ -73,7 +73,7 @@
     register: create_uplink
 
   - name: Verify Uplink Creation
-    assert:
+    ansible.builtin.assert:
       that:
       - create_uplink.current.0.vmmUplinkP.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont/uplinkp-1"
       - create_uplink.current.0.vmmUplinkP.attributes.uplinkId == "1"
@@ -91,7 +91,7 @@
     register: create_uplink_again
 
   - name: Verify Uplink Creation idempotence
-    assert:
+    ansible.builtin.assert:
       that:
       - create_uplink_again is not changed
       - create_uplink_again.current.0.vmmUplinkP.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont/uplinkp-1"
@@ -109,7 +109,7 @@
     register: update_uplink
 
   - name: Verify Uplink update
-    assert:
+    ansible.builtin.assert:
       that:
       - update_uplink is changed
       - update_uplink.current.0.vmmUplinkP.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont/uplinkp-1"
@@ -126,7 +126,7 @@
     register: query_uplink
 
   - name: Verify Uplink query
-    assert:
+    ansible.builtin.assert:
       that:
       - query_uplink is not changed
       - query_uplink.current.0.vmmUplinkP.attributes.dn == "uni/vmmp-VMware/dom-ansible_domain/uplinkpcont/uplinkp-1"
@@ -143,7 +143,7 @@
     register: remove_uplink
 
   - name: Verify VMWare Uplink deletion
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_uplink is changed
       - remove_uplink.current == []
@@ -161,13 +161,13 @@
     register: remove_uplink_again
 
   - name: Verify VMWare Uplink deletion idempotence
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_uplink_again is not changed
 
   # CLEAN UP
   - name: Remove ansible_domain
-    aci_domain:
+    cisco.aci.aci_domain:
       <<: *aci_info
       domain: ansible_domain
       domain_type: vmm

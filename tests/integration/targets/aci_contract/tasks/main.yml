@@ -4,7 +4,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
@@ -57,7 +57,7 @@
   register: present_missing_param
 
 - name: present assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - present_check_mode is changed
       - present_check_mode.previous == []
@@ -99,7 +99,7 @@
   register: query_all
 
 - name: query assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - query_contract is not changed
       - query_contract.current | length == 1
@@ -147,7 +147,7 @@
   register: absent_missing_param
 
 - name: absent assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - absent_check_mode is changed
       - absent_check_mode.previous != []

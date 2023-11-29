@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,27 +21,27 @@
       output_level: '{{ aci_output_level | default("info") }}'
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for cloud sites
   when: query_cloud.current | length > 0  # This condition will execute only cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Ensure tenant doesn't exist
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       state: absent
       tenant: ansible_test
     register: tenant_absent
 
   - name: Ensure tenant exists for tests to kick off
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       state: present
       tenant: ansible_test
     register: tenant_present
 
   - name: Ensure aci cloud context profile does not exists
-    aci_cloud_ctx_profile:
+    cisco.aci.aci_cloud_ctx_profile:
       <<: *aci_info
       tenant: ansible_test
       name: ctx_profile_1
@@ -49,7 +49,7 @@
     register: rm_ctx_profile_1
 
   - name: Create aci cloud context profile
-    aci_cloud_ctx_profile:
+    cisco.aci.aci_cloud_ctx_profile:
       <<: *aci_info
       tenant: ansible_test
       name: ctx_profile_1
@@ -61,7 +61,7 @@
     register: nm_add_aci_ctx_profile
 
   - name: Create non_primary CIDR (check_mode)
-    aci_cloud_cidr:
+    cisco.aci.aci_cloud_cidr:
       <<: *aci_info
       tenant: ansible_test
       address: 10.0.0.0/16
@@ -71,7 +71,7 @@
     register: cm_non_primary_cidr
 
   - name: Create non_primary CIDR (normal_mode)
-    aci_cloud_cidr:
+    cisco.aci.aci_cloud_cidr:
       <<: *aci_info
       tenant: ansible_test
       address: 10.0.0.0/16
@@ -80,7 +80,7 @@
     register: nm_non_primary_cidr
 
   - name: Verify cm_non_primary_cidr and nm_non_primary_cidr
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_non_primary_cidr is changed
       - nm_non_primary_cidr is changed
@@ -95,7 +95,7 @@
       - nm_non_primary_cidr.current.0.cloudCidr.attributes.primary == "no"
 
   - name: Create non_primary CIDR again
-    aci_cloud_cidr:
+    cisco.aci.aci_cloud_cidr:
       <<: *aci_info
       tenant: ansible_test
       address: 10.0.0.0/16
@@ -104,7 +104,7 @@
     register: nm_non_primary_cidr_again
 
   - name: Verify nm_non_primary_cidr_again
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_non_primary_cidr_again is not changed
       - nm_non_primary_cidr_again.previous.0.cloudCidr.attributes.addr == "10.0.0.0/16"
@@ -115,7 +115,7 @@
       - nm_non_primary_cidr_again.current.0.cloudCidr.attributes.primary == "no"
 
   - name: Change primary CIDR to non_primary (check_mode)
-    aci_cloud_cidr:
+    cisco.aci.aci_cloud_cidr:
       <<: *aci_info
       tenant: ansible_test
       address: 10.11.0.0/16
@@ -125,7 +125,7 @@
     register: cm_change_to_non_primary_cidr
 
   - name: Change primary CIDR to non_primary (normal_mode)
-    aci_cloud_cidr:
+    cisco.aci.aci_cloud_cidr:
       <<: *aci_info
       tenant: ansible_test
       address: 10.11.0.0/16
@@ -135,14 +135,14 @@
     register: nm_change_to_non_primary_cidr
 
   - name: Verify cm_primary_cidr and nm_change_to_non_primary_cidr
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_change_to_non_primary_cidr.msg == "APIC Error 1{{':'}} Invalid Configuration {{':'}} Exactly one Primary CIDR expected for{{':'}} uni/tn-ansible_test/ctxprofile-ctx_profile_1, but found{{':'}} 0"
       - cm_change_to_non_primary_cidr.proposed.cloudCidr.attributes.primary == "no"
       - cm_change_to_non_primary_cidr.previous.0.cloudCidr.attributes.primary == cm_change_to_non_primary_cidr.current.0.cloudCidr.attributes.primary == "yes"
 
   - name: Remove primary CIDR (check_mode)
-    aci_cloud_cidr:
+    cisco.aci.aci_cloud_cidr:
       <<: *aci_info
       tenant: ansible_test
       address: 10.11.0.0/16
@@ -152,7 +152,7 @@
     register: cm_remove_primary_cidr
 
   - name: Remove primary CIDR (normal_mode)
-    aci_cloud_cidr:
+    cisco.aci.aci_cloud_cidr:
       <<: *aci_info
       tenant: ansible_test
       address: 10.11.0.0/16
@@ -162,14 +162,14 @@
     register: nm_remove_primary_cidr
 
   - name: Verify cm_remove_primary_cidr and nm_remove_primary_cidr
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_remove_primary_cidr.msg == "APIC Error 1{{':'}} Invalid Configuration {{':'}} Exactly one Primary CIDR expected for{{':'}} uni/tn-ansible_test/ctxprofile-ctx_profile_1, but found{{':'}} 0"
       - cm_remove_primary_cidr.proposed == {}
       - cm_remove_primary_cidr.previous.0.cloudCidr.attributes.primary == cm_remove_primary_cidr.current.0.cloudCidr.attributes.primary == "yes"
 
   - name: Create second non_primary CIDR
-    aci_cloud_cidr:
+    cisco.aci.aci_cloud_cidr:
       <<: *aci_info
       tenant: ansible_test
       address: 10.18.0.0/16
@@ -178,7 +178,7 @@
     register: nm_add_second_non_primary_cidr
 
   - name: Verify nm_add_second_non_primary_cidr
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_add_second_non_primary_cidr is changed
       - nm_add_second_non_primary_cidr.previous == []
@@ -187,7 +187,7 @@
       - nm_add_second_non_primary_cidr.current.0.cloudCidr.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.18.0.0/16]"
 
   - name: Change setting of second non_primary CIDR
-    aci_cloud_cidr:
+    cisco.aci.aci_cloud_cidr:
       <<: *aci_info
       tenant: ansible_test
       cidr: 10.18.0.0/16
@@ -198,7 +198,7 @@
     register: change_non_primary_cidr
 
   - name: Verify change_non_primary_cidr
-    assert:
+    ansible.builtin.assert:
       that:
       - change_non_primary_cidr is changed
       - change_non_primary_cidr.current.0.cloudCidr.attributes.addr == "10.18.0.0/16"
@@ -207,7 +207,7 @@
       - change_non_primary_cidr.current.0.cloudCidr.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.18.0.0/16]"
 
   - name: Query all CIDRs
-    aci_cloud_cidr:
+    cisco.aci.aci_cloud_cidr:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -215,7 +215,7 @@
     register: query_all
 
   - name: Verify query_all
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all is not changed
       - query_all.current.0.cloudCtxProfile.attributes.name == "ctx_profile_1"
@@ -228,7 +228,7 @@
       - query_all.current.0.cloudCtxProfile.children.2.cloudCidr.attributes.primary == "yes"
 
   - name: Query primary CIDR
-    aci_cloud_cidr:
+    cisco.aci.aci_cloud_cidr:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -237,7 +237,7 @@
     register: query_primary
 
   - name: Verify query_primary
-    assert:
+    ansible.builtin.assert:
       that:
       - query_primary is not changed
       - query_primary.current.0.cloudCidr.attributes.addr == "10.11.0.0/16"
@@ -245,7 +245,7 @@
       - query_primary.current.0.cloudCidr.attributes.primary == "yes"
 
   - name: Query non_primary CIDR
-    aci_cloud_cidr:
+    cisco.aci.aci_cloud_cidr:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -254,7 +254,7 @@
     register: query_non_primary
 
   - name: Verify query_non_primary
-    assert:
+    ansible.builtin.assert:
       that:
       - query_non_primary is not changed
       - query_non_primary.current.0.cloudCidr.attributes.addr == "10.0.0.0/16"
@@ -262,7 +262,7 @@
       - query_non_primary.current.0.cloudCidr.attributes.primary == "no"
 
   - name: Query non_exsisting CIDR
-    aci_cloud_cidr:
+    cisco.aci.aci_cloud_cidr:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -272,12 +272,12 @@
     register: query_non_existing
 
   - name: Verify query_non_existing
-    assert:
+    ansible.builtin.assert:
       that:
       - query_non_existing.msg == "APIC Error 104{{':'}} Invalid RN cidr-[non_exsisting]"
 
   - name: Remove non_primary CIDR(check_mode)
-    aci_cloud_cidr:
+    cisco.aci.aci_cloud_cidr:
       <<: *aci_info
       tenant: ansible_test
       address: 10.0.0.0/16
@@ -287,7 +287,7 @@
     register: cm_remove_non_primary_cidr
 
   - name: Remove non_primary CIDR(normal_mode)
-    aci_cloud_cidr:
+    cisco.aci.aci_cloud_cidr:
       <<: *aci_info
       tenant: ansible_test
       address: 10.0.0.0/16
@@ -296,7 +296,7 @@
     register: nm_remove_non_primary_cidr
 
   - name: Verify cm_remove_non_primary_cidr and nm_remove_non_primary_cidr
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_non_primary_cidr is changed
       - nm_remove_non_primary_cidr is changed

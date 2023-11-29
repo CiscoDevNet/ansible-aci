@@ -3,7 +3,7 @@
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -21,7 +21,7 @@
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -221,7 +221,7 @@
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: Verify present ops
-    assert:
+    ansible.builtin.assert:
       that:
       - add_floating_path_cm is changed
       - add_floating_path_nm is changed
@@ -281,7 +281,7 @@
     register: check_enhanced
 
   - name: Verify special case
-    assert:
+    ansible.builtin.assert:
       that:
       - check_v_four is changed
       - check_enhanced is changed
@@ -311,7 +311,7 @@
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: Verify query ops
-    assert:
+    ansible.builtin.assert:
       that:
       - query_floating is not changed
       - query_all_floating is not changed
@@ -334,7 +334,7 @@
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: Verify absent ops
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_floating_path is changed
       - remove_floating_path.current == []

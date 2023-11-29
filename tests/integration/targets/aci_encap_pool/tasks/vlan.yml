@@ -27,7 +27,7 @@
   register: create_check_mode
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - create_check_mode is changed
       - create_check_mode.sent.fvnsVlanInstP.attributes.allocMode == 'static'
@@ -40,7 +40,7 @@
   register: create_static
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - create_static is changed
       - create_static.previous == []
@@ -54,7 +54,7 @@
   register: create_dynamic
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - create_dynamic is changed
       - create_dynamic.previous == []
@@ -69,7 +69,7 @@
   register: idempotent_static
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - idempotent_static is not changed
       - idempotent_static.previous.0.fvnsVlanInstP.attributes.allocMode == 'static'
@@ -84,7 +84,7 @@
   register: idempotent_dynamic
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - idempotent_dynamic is not changed
       - idempotent_dynamic.previous.0.fvnsVlanInstP.attributes.allocMode == 'dynamic'
@@ -100,7 +100,7 @@
   register: update_static
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - update_static is changed
       - update_static.sent.fvnsVlanInstP.attributes.descr == 'Ansible Test Change'
@@ -112,7 +112,7 @@
   register: update_dynamic
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - update_dynamic is changed
       - update_dynamic.sent.fvnsVlanInstP.attributes.descr == 'Ansible Test Change'
@@ -125,7 +125,7 @@
   register: vlan_alloc_fail
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - vlan_alloc_fail is failed
       - "vlan_alloc_fail.msg == 'ACI requires parameter \\'pool_allocation_mode\\' for \\'pool_type\\' of \\'vlan\\' and \\'vsan\\' when parameter \\'pool\\' is provided'"
@@ -138,7 +138,7 @@
   register: vlan_pool_fail
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - vlan_pool_fail is failed
       - 'vlan_pool_fail.msg == "state is present but all of the following are missing: pool"'
@@ -151,7 +151,7 @@
   register: vlan_pool_type_fail
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - vlan_pool_type_fail is failed
       - 'vlan_pool_type_fail.msg == "missing required arguments: pool_type"'
@@ -165,7 +165,7 @@
   register: get_all_pools
 
 - name: assertion test - query
-  assert:
+  ansible.builtin.assert:
     that:
       - get_all_pools is not changed
       - get_all_pools.method == "GET"
@@ -178,7 +178,7 @@
   register: get_static_pool
 
 - name: assertion test - query
-  assert:
+  ansible.builtin.assert:
     that:
       - get_static_pool is not changed
       - get_static_pool.method == "GET"
@@ -193,7 +193,7 @@
   register: get_dynamic_pool
 
 - name: assertion test - query
-  assert:
+  ansible.builtin.assert:
     that:
       - get_dynamic_pool is not changed
       - get_dynamic_pool.method == "GET"
@@ -210,7 +210,7 @@
   register: vlan_query_pool_type_fail
 
 - name: assertion test - query
-  assert:
+  ansible.builtin.assert:
     that:
       - vlan_query_pool_type_fail is failed
       - 'vlan_query_pool_type_fail.msg == "missing required arguments: pool_type"'
@@ -221,7 +221,7 @@
   register: delete_static
 
 - name: assertion test - absent
-  assert:
+  ansible.builtin.assert:
     that:
       - delete_static is changed
       - delete_static.method == "DELETE"
@@ -235,7 +235,7 @@
   register: delete_check_mode
 
 - name: assertion test - absent
-  assert:
+  ansible.builtin.assert:
     that:
       - delete_check_mode is changed
 
@@ -245,7 +245,7 @@
   register: delete_dynamic
 
 - name: assertion test - absent
-  assert:
+  ansible.builtin.assert:
     that:
       - delete_dynamic is changed
       - delete_dynamic.method == "DELETE"
@@ -258,7 +258,7 @@
   register: idempotent_delete_static
 
 - name: assertion test - absent
-  assert:
+  ansible.builtin.assert:
     that:
       - idempotent_delete_static is not changed
       - idempotent_delete_static.previous == []
@@ -269,7 +269,7 @@
   register: idempotent_delete_dynamic
 
 - name: assertion test - absent
-  assert:
+  ansible.builtin.assert:
     that:
       - idempotent_delete_dynamic is not changed
       - idempotent_delete_dynamic.previous == []

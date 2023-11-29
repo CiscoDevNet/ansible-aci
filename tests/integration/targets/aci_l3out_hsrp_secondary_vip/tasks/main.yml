@@ -4,7 +4,7 @@
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -22,7 +22,7 @@
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -108,7 +108,7 @@
     register: add_vip2
 
   - name: Verify add hsrp vips
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_vip is changed
       - nm_vip is changed
@@ -136,7 +136,7 @@
     register: query_all
 
   - name: Verify query
-    assert:
+    ansible.builtin.assert:
       that:
       - query_vip is not changed
       - query_all is not changed
@@ -164,7 +164,7 @@
     register: absent_vip_again
 
   - name: Verify remove
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_absent_vip is changed
       - cm_absent_vip.proposed == {}

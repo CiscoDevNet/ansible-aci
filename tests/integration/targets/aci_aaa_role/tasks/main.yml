@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -42,7 +42,7 @@
   register: cm_anstest_role_present
 
 - name: Assertions check for add an anstest_role aaa role with check mode
-  assert:
+  ansible.builtin.assert:
     that:
       - cm_anstest_role_present is changed
       - cm_anstest_role_present.current | length == 0
@@ -56,7 +56,7 @@
   register: nm_anstest_role_present
 
 - name: Assertions check for add an anstest_role aaa role with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - nm_anstest_role_present is changed
       - nm_anstest_role_present.current | length == 1
@@ -70,7 +70,7 @@
   register: idempotency_anstest_role_present
 
 - name: Idempotency assertions check for add an anstest_role aaa role with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - idempotency_anstest_role_present is not changed
       - idempotency_anstest_role_present.current | length == 1
@@ -87,7 +87,7 @@
   register: anstest_role_with_list_priv
 
 - name: Assertions check for update an anstest_role with list of privileges
-  assert:
+  ansible.builtin.assert:
     that:
       - anstest_role_with_list_priv is changed
       - anstest_role_with_list_priv.current | length == 1
@@ -97,13 +97,13 @@
       - anstest_role_with_list_priv.previous.0.aaaRole.attributes.priv == 'aaa'
 
 - name: Assertions check for anstest_role_with_list_priv on v4.2 or earlier
-  assert:
+  ansible.builtin.assert:
     that:
       - anstest_role_with_list_priv.current.0.aaaRole.attributes.priv == 'aaa,admin'
   when: version.current.0.topSystem.attributes.version is version('5', '<')
 
 - name: Assertions check for anstest_role_with_list_priv on v5+
-  assert:
+  ansible.builtin.assert:
     that:
       - anstest_role_with_list_priv.current.0.aaaRole.attributes.priv == 'aaa,admin,tenant-connectivity'
   when: version.current.0.topSystem.attributes.version is version('5', '>=')
@@ -116,7 +116,7 @@
   register: anstest_role_with_valid_priv
 
 - name: Assertions check for update an anstest_role with admin privilege
-  assert:
+  ansible.builtin.assert:
     that:
       - anstest_role_with_valid_priv is changed
       - anstest_role_with_valid_priv.current | length == 1
@@ -126,13 +126,13 @@
       - anstest_role_with_valid_priv.current.0.aaaRole.attributes.priv == 'admin'
 
 - name: Assertions check for anstest_role_with_valid_priv on v4.2 or earlier
-  assert:
+  ansible.builtin.assert:
     that:
       - anstest_role_with_valid_priv.previous.0.aaaRole.attributes.priv == 'aaa,admin'
   when: version.current.0.topSystem.attributes.version is version('5', '<')
 
 - name: Assertions check for anstest_role_with_valid_priv on v5+
-  assert:
+  ansible.builtin.assert:
     that:
       - anstest_role_with_valid_priv.previous.0.aaaRole.attributes.priv == 'aaa,admin,tenant-connectivity'
   when: version.current.0.topSystem.attributes.version is version('5', '>=')
@@ -152,7 +152,7 @@
   ignore_errors: true
 
 - name: Assertions check for query a aaa role with name
-  assert:
+  ansible.builtin.assert:
     that:
       - anstest_role_with_invalid_list_priv.msg.startswith("value of privileges must be one or more of")
       - anstest_role_with_invalid_priv.msg.startswith("value of privileges must be one or more of")
@@ -165,7 +165,7 @@
   register: anstest_role_query_result
 
 - name: Assertions check for query a aaa role with name
-  assert:
+  ansible.builtin.assert:
     that:
       - anstest_role_query_result is not changed
       - anstest_role_query_result.current | length == 1
@@ -179,7 +179,7 @@
   register: query_all_roles
 
 - name: Assertions check for query all aaa roles
-  assert:
+  ansible.builtin.assert:
     that:
       - query_all_roles is not changed
       - query_all_roles.current | length >= 1
@@ -192,7 +192,7 @@
   register: cm_anstest_role_absent
 
 - name: Assertions check for remove an anstest_role aaa role with check mode
-  assert:
+  ansible.builtin.assert:
     that:
       - cm_anstest_role_absent is changed
       - cm_anstest_role_absent.current | length == 1
@@ -208,7 +208,7 @@
   register: nm_anstest_role_absent
 
 - name: Assertions check for remove an anstest_role aaa role with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - nm_anstest_role_absent is changed
       - nm_anstest_role_absent.current | length == 0
@@ -222,7 +222,7 @@
   register: idempotency_anstest_role_absent
 
 - name: Idempotency assertions check for remove an anstest_role aaa role with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - idempotency_anstest_role_absent is not changed
       - idempotency_anstest_role_absent.current | length == 0

@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -20,14 +20,14 @@
       output_level: debug
 
 - name: Query system information
-  aci_system:
+  cisco.aci.aci_system:
     <<: *aci_info
     id: 1
     state: query
   register: version
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: ensure tenant does not exists
   cisco.aci.aci_tenant: &aci_tenant_absent
@@ -141,7 +141,7 @@
     register: bd_present_missing_param
 
   - name: present asserts (<v4.2)
-    assert:
+    ansible.builtin.assert:
       that:
         - bd_present_check_mode is changed
         - bd_present_check_mode.sent.fvBD.attributes.descr == 'Ansible Test'
@@ -173,7 +173,7 @@
     when: version.current.0.topSystem.attributes.version is version('4.2', '<')
 
   - name: present asserts (>v4.2)
-    assert:
+    ansible.builtin.assert:
       that:
         - bd_present_check_mode is changed
         - bd_present_check_mode.sent.fvBD.attributes.descr == 'Ansible Test'
@@ -230,7 +230,7 @@
     register: query_bd
 
   - name: query asserts
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all is not changed
         - query_all.current | length > 1
@@ -283,7 +283,7 @@
     register: bd_absent_missing_param
 
   - name: asserts for deletion task
-    assert:
+    ansible.builtin.assert:
       that:
         - bd_absent_check_mode is changed
         - bd_absent_check_mode.proposed == {}

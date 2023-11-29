@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,26 +21,26 @@
     
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info 
     tenant: ansible_tenant
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Add a new tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info 
       tenant: ansible_tenant
       description: Ansible tenant
       state: present
 
   - name: Add a new L3Out
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_info
       tenant: ansible_tenant
       name: ansible_l3out
@@ -71,7 +71,7 @@
     register: l3out_logical_node
 
   - name: Verify l3out_logical_node
-    assert:
+    ansible.builtin.assert:
       that:
       - l3out_logical_node is changed
       - l3out_logical_node.previous == []
@@ -80,7 +80,7 @@
       - l3out_logical_node.sent.l3extRsNodeL3OutAtt.attributes.tDn == 'topology/pod-1/node-101'
 
   - name: Add static routes (check_mode)
-    aci_l3out_static_routes: &route_present
+    cisco.aci.aci_l3out_static_routes: &route_present
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -93,12 +93,12 @@
     register: cm_add_route
 
   - name: Add static routes (normal_mode)
-    aci_l3out_static_routes:
+    cisco.aci.aci_l3out_static_routes:
       <<: *route_present
     register: nm_add_route
 
   - name: Verify cm_add_route and nm_add_route
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_route is changed
       - nm_add_route is changed
@@ -109,18 +109,18 @@
       - nm_add_route.current[0].ipRouteP.attributes.annotation == 'orchestrator:ansible'
 
   - name: Add static routes again (check_mode)
-    aci_l3out_static_routes:
+    cisco.aci.aci_l3out_static_routes:
       <<: *route_present
     check_mode: true
     register: cm_add_route_again
 
   - name: Add static routes again (normal_mode)
-    aci_l3out_static_routes:
+    cisco.aci.aci_l3out_static_routes:
       <<: *route_present
     register: nm_add_route_again
 
   - name: Verify cm_add_route_again and nm_add_route_again
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_route_again is not changed
       - nm_add_route_again is not changed
@@ -130,14 +130,14 @@
       - nm_add_route_again.current[0].ipRouteP.attributes.ip == "10.1.0.1/24"
 
   - name: Query system information
-    aci_system:
+    cisco.aci.aci_system:
       <<: *aci_info
       id: 1
       state: query
     register: version
 
   - name: Add static routes with bfd
-    aci_l3out_static_routes:
+    cisco.aci.aci_l3out_static_routes:
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -152,7 +152,7 @@
     register: nm_add_route_with_bfd
 
   - name: Verify nm_add_route_with_bfd
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_add_route_with_bfd is changed
       - nm_add_route_with_bfd.current[0].ipRouteP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-lNode/rsnodeL3OutAtt-[topology/pod-1/node-101]/rt-[10.1.0.1/24]"
@@ -162,7 +162,7 @@
     when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
   - name: Query for a specific MO under l3out
-    aci_l3out_static_routes:
+    cisco.aci.aci_l3out_static_routes:
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -174,14 +174,14 @@
     register: query_specific_mo
 
   - name: Verify query_specific_mo
-    assert:
+    ansible.builtin.assert:
       that:
       - query_specific_mo is not changed
       - query_specific_mo.current|length == 1
       - query_specific_mo.current[0].ipRouteP.attributes.ip == "10.1.0.1/24"
 
   - name: Query all relationships
-    aci_l3out_static_routes:
+    cisco.aci.aci_l3out_static_routes:
       <<: *aci_info
       tenant: ansible_tenant
       state: query
@@ -189,7 +189,7 @@
     register: query_all_relationships
 
   - name: Verify query_all_relationships
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all_relationships is not changed
       - query_all_relationships.current|length == 1
@@ -201,13 +201,13 @@
       - query_all_relationships.current[0].fvTenant.children[0].l3extOut.children[0].l3extLNodeP.children[0].l3extRsNodeL3OutAtt.attributes.tDn == "topology/pod-1/node-101"
 
   - name: Verify query_all_relationships for bfd
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all_relationships.current[0].fvTenant.children[0].l3extOut.children[0].l3extLNodeP.children[0].l3extRsNodeL3OutAtt.children[0].ipRouteP.attributes.rtCtrl == "bfd"
     when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
 
   - name: Remove static routes (check_mode)
-    aci_l3out_static_routes: &route_absent
+    cisco.aci.aci_l3out_static_routes: &route_absent
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -220,12 +220,12 @@
     register: cm_remove_static_routes
 
   - name: Remove static routes (normal_mode)
-    aci_l3out_static_routes:
+    cisco.aci.aci_l3out_static_routes:
       <<: *route_absent
     register: nm_remove_static_routes
 
   - name: Verify cm_remove_static_routes and nm_remove_static_routes
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_static_routes is changed
       - nm_remove_static_routes is changed
@@ -233,18 +233,18 @@
       - nm_remove_static_routes.current|length == 0
 
   - name: Remove static routes again (check_mode)
-    aci_l3out_static_routes:
+    cisco.aci.aci_l3out_static_routes:
       <<: *route_absent
     check_mode: true
     register: cm_remove_static_routes_again
 
   - name: Remove static routes again (normal_mode)
-    aci_l3out_static_routes:
+    cisco.aci.aci_l3out_static_routes:
       <<: *route_absent
     register: nm_remove_static_routes_again
 
   - name: Verify cm_remove_static_routes_again and nm_remove_static_routes_again
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_static_routes_again is not changed
       - nm_remove_static_routes_again is not changed
@@ -252,7 +252,7 @@
       - nm_remove_static_routes_again.current|length == 0
 
   - name: Remove the ansible_tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       tenant: ansible_tenant
       state: absent

@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,7 +21,7 @@
       output_level: '{{ aci_output_level | default("info") }}'
 
 - name: Query system information
-  aci_system:
+  cisco.aci.aci_system:
     <<: *aci_info
     id: 1
     state: query
@@ -29,25 +29,25 @@
 
 # QUERY OBJECTS
 - name: Query cloud provider object
-  aci_cloud_provider:
+  cisco.aci.aci_cloud_provider:
     <<: *aci_info
     state: query
   register: query_cloud
   when: version.current.0.topSystem.attributes.version is version('4.1', '>=')
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     query_cloud:
       current: []
   when: version.current.0.topSystem.attributes.version is version('4.1', '<')
 
 - name: Verify query_cloud for all sites
-  assert:
+  ansible.builtin.assert:
     that:
     - query_cloud is not changed
 
 - name: Verify query_cloud for Cloud Sites
-  assert:
+  ansible.builtin.assert:
     that:
     - query_cloud is not changed
     - query_cloud.current.0.cloudProvP.attributes.environment == "public-cloud"

@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -27,7 +27,7 @@
     tenant: ansible_test
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -104,7 +104,7 @@
     register: nm_bd_to_l3out_2
 
   - name: asserts for creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_bd_to_l3out is changed
         - cm_bd_to_l3out.previous == []
@@ -130,7 +130,7 @@
     register: query_first_bd_to_l3out
 
   - name: asserts query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_bd_to_l3out is not changed
         - '"fvRsBDToOut" in query_all_bd_to_l3out.filter_string'
@@ -168,7 +168,7 @@
     register: nm_unbind_bd_to_l3out_2
 
   - name: asserts for deletion tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_unbind_bd_to_l3out is changed
         - cm_unbind_bd_to_l3out.proposed == {}

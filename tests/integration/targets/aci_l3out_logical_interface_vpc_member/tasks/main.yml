@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,26 +21,26 @@
     
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info 
     tenant: ansible_tenant
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Add a new tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info 
       tenant: ansible_tenant
       description: Ansible tenant
       state: present
 
   - name: Add a new L3Out
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_info
       tenant: ansible_tenant
       name: ansible_l3out
@@ -69,7 +69,7 @@
       state: present
 
   - name: Add two vPC-interfaces
-    aci_l3out_interface:
+    cisco.aci.aci_l3out_interface:
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -85,7 +85,7 @@
       - policy_group_two
 
   - name: Add a VPC member based on path_dn
-    aci_l3out_logical_interface_vpc_member:
+    cisco.aci.aci_l3out_logical_interface_vpc_member:
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -97,13 +97,13 @@
     register: l3out_logical_interface_vpc_member_present
 
   - name: Assertions check for add a VPC member based on path_dn
-    assert:
+    ansible.builtin.assert:
       that:
       - l3out_logical_interface_vpc_member_present is changed
       - l3out_logical_interface_vpc_member_present.current.0.l3extMember.attributes.annotation == 'orchestrator:ansible'
 
   - name: Add a VPC member based on pod_id, node_id, path_ep
-    aci_l3out_logical_interface_vpc_member:
+    cisco.aci.aci_l3out_logical_interface_vpc_member:
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -118,7 +118,7 @@
       state: present
 
   - name: Query a specific VPC member under ansible_l3out
-    aci_l3out_logical_interface_vpc_member:
+    cisco.aci.aci_l3out_logical_interface_vpc_member:
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -130,7 +130,7 @@
     register: query_result
 
   - name: Query all relationships
-    aci_l3out_logical_interface_vpc_member:
+    cisco.aci.aci_l3out_logical_interface_vpc_member:
       <<: *aci_info
       tenant: ansible_tenant
       state: query
@@ -138,7 +138,7 @@
     register: query_result
 
   - name: Remove a VPC member
-    aci_l3out_logical_interface_vpc_member:
+    cisco.aci.aci_l3out_logical_interface_vpc_member:
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out

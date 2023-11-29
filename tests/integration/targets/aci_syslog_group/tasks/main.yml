@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # GET Credentials from the inventory
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -67,7 +67,7 @@
   when: version.current.0.topSystem.attributes.version is version('4', '<')
 
 - name: Verify that ansible_syslog_group has been created with correct attributes (version > 4)
-  assert:
+  ansible.builtin.assert:
     that:
     - add_syslog_group.current.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
     - add_syslog_group.current.0.syslogGroup.attributes.name == "ansible_syslog_group"
@@ -78,7 +78,7 @@
   when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
 - name: Verify that ansible_syslog_group has been created with correct attributes (version < 4)
-  assert:
+  ansible.builtin.assert:
     that:
     - add_syslog_group_32.current.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
     - add_syslog_group_32.current.0.syslogGroup.attributes.name == "ansible_syslog_group"
@@ -88,7 +88,7 @@
   when: version.current.0.topSystem.attributes.version is version('4', '<')
   
 - name: Verify that ansible_syslog_group children have correct attributes (version >= 4)
-  assert:
+  ansible.builtin.assert:
     that:
     - add_syslog_group.current.0.syslogGroup.children.0.syslogConsole.attributes.adminState == "enabled"
     - add_syslog_group.current.0.syslogGroup.children.0.syslogConsole.attributes.severity == "critical"
@@ -98,7 +98,7 @@
   when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
 - name: Verify that ansible_syslog_group children have correct attributes (version < 4)
-  assert:
+  ansible.builtin.assert:
     that:
     - add_syslog_group_32.current.0.syslogGroup.children.0.syslogConsole.attributes.adminState == "enabled"
     - add_syslog_group_32.current.0.syslogGroup.children.0.syslogConsole.attributes.severity == "critical"
@@ -121,13 +121,13 @@
   when: version.current.0.topSystem.attributes.version is version('4', '<')
 
 - name: Verify that ansible_syslog_group stays the same (version >= 4)
-  assert:
+  ansible.builtin.assert:
     that:
     - add_syslog_group_again is not changed
   when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
 - name: Verify that ansible_syslog_group stays the same (version < 4)
-  assert:
+  ansible.builtin.assert:
     that:
     - add_syslog_group_again_32 is not changed
   when: version.current.0.topSystem.attributes.version is version('4', '<')
@@ -165,7 +165,7 @@
   when: version.current.0.topSystem.attributes.version is version('4', '<')
 
 - name: Verify that ansible_syslog_group has been updated with correct attributes (version >= 4)
-  assert:
+  ansible.builtin.assert:
     that:
     - update_syslog_group.current.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
     - update_syslog_group.current.0.syslogGroup.attributes.name == "ansible_syslog_group"
@@ -175,7 +175,7 @@
   when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
 - name: Verify that ansible_syslog_group has been updated with correct attributes (version < 4)
-  assert:
+  ansible.builtin.assert:
     that:
     - update_syslog_group_32.current.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
     - update_syslog_group_32.current.0.syslogGroup.attributes.name == "ansible_syslog_group"
@@ -184,7 +184,7 @@
   when: version.current.0.topSystem.attributes.version is version('4', '<')
 
 - name: Verify that ansible_syslog_group children have correct attributes (version >= 4)
-  assert:
+  ansible.builtin.assert:
     that:
     - update_syslog_group.current.0.syslogGroup.children.0.syslogConsole.attributes.adminState == "disabled"
     - update_syslog_group.current.0.syslogGroup.children.0.syslogConsole.attributes.severity == "emergencies"
@@ -194,7 +194,7 @@
   when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
 - name: Verify that ansible_syslog_group children have correct attributes (version < 4)
-  assert:
+  ansible.builtin.assert:
     that:
     - update_syslog_group_32.current.0.syslogGroup.children.0.syslogConsole.attributes.adminState == "disabled"
     - update_syslog_group_32.current.0.syslogGroup.children.0.syslogConsole.attributes.severity == "emergencies"
@@ -212,7 +212,7 @@
   register: query_syslog_group
 
 - name: Verify the attributes under query_syslog_group
-  assert:
+  ansible.builtin.assert:
     that:
     - query_syslog_group is not changed
     - query_syslog_group.current.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
@@ -225,7 +225,7 @@
   register: query_syslog_group_all
 
 - name: Verify query_syslog_group_all
-  assert:
+  ansible.builtin.assert:
     that:
     - query_syslog_group_all is not changed
 
@@ -238,7 +238,7 @@
   register: remove_syslog_group
 
 - name: Verify remove_syslog_group
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_syslog_group is changed
     - remove_syslog_group.previous.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"

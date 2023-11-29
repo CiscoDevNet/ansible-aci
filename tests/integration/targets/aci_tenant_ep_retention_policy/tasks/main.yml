@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -20,20 +20,20 @@
       output_level: debug
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   # Clean Environment
   - name: create tenant
-    aci_tenant: &aci_tenant_present
+    cisco.aci.aci_tenant: &aci_tenant_present
       <<: *aci_info
       tenant: ansible_test
       state: present
 
   - name: Ensure first EP retention protocol policy does not exist
-    aci_tenant_ep_retention_policy: &aci_tenant_ep_retention_policy_absent
+    cisco.aci.aci_tenant_ep_retention_policy: &aci_tenant_ep_retention_policy_absent
       <<: *aci_tenant_present
       name: ep_policy_anstest
       description: test for EP retention protocol policy
@@ -46,7 +46,7 @@
       state: absent
 
   - name: Ensure second EP retention protocol policy does not exist
-    aci_tenant_ep_retention_policy: &aci_tenant_ep_retention_policy_2_absent
+    cisco.aci.aci_tenant_ep_retention_policy: &aci_tenant_ep_retention_policy_2_absent
       <<: *aci_tenant_present
       name: ep_policy_anstest_2
       bounce_age: 0
@@ -56,65 +56,65 @@
       state: absent
 
   - name: Create first EP retention protocol policy (check_mode)
-    aci_tenant_ep_retention_policy: &aci_tenant_ep_retention_policy_present
+    cisco.aci.aci_tenant_ep_retention_policy: &aci_tenant_ep_retention_policy_present
       <<: *aci_tenant_ep_retention_policy_absent
       state: present
     check_mode: true
     register: cm_add_tenant_ep_retention_policy_1
 
   - name: Create first EP retention protocol policy (normal_mode)
-    aci_tenant_ep_retention_policy:
+    cisco.aci.aci_tenant_ep_retention_policy:
       <<: *aci_tenant_ep_retention_policy_present
     register: nm_add_tenant_ep_retention_policy_1
 
   - name: Create first EP retention protocol policy again - testing idempotency
-    aci_tenant_ep_retention_policy:
+    cisco.aci.aci_tenant_ep_retention_policy:
       <<: *aci_tenant_ep_retention_policy_present
     register: idempotency_add_tenant_ep_retention_policy_1
 
   - name: Create second EP retention protocol policy
-    aci_tenant_ep_retention_policy: &aci_tenant_ep_retention_policy_2_present
+    cisco.aci.aci_tenant_ep_retention_policy: &aci_tenant_ep_retention_policy_2_present
       <<: *aci_tenant_ep_retention_policy_2_absent
       state: present
     register: nm_add_tenant_ep_retention_policy_2
 
   - name: Modify EP retention protocol policy bounce age - testing failure message
-    aci_tenant_ep_retention_policy:
+    cisco.aci.aci_tenant_ep_retention_policy:
       <<: *aci_tenant_ep_retention_policy_present
       bounce_age: 100
     ignore_errors: true
     register: Modify_tenant_ep_retention_policy_bounce_age
 
   - name: Modify EP retention protocol policy hold interval - testing failure message
-    aci_tenant_ep_retention_policy:
+    cisco.aci.aci_tenant_ep_retention_policy:
       <<: *aci_tenant_ep_retention_policy_present
       hold_interval: 4
     ignore_errors: true
     register: Modify_tenant_ep_retention_policy_hold_interval
   
   - name: Modify EP retention protocol policy move frequency - testing failure message
-    aci_tenant_ep_retention_policy:
+    cisco.aci.aci_tenant_ep_retention_policy:
       <<: *aci_tenant_ep_retention_policy_present
       move_frequency: 65540
     ignore_errors: true
     register: Modify_tenant_ep_retention_policy_move_frequency
 
   - name: Modify EP retention protocol policy local ep interval - testing failure message
-    aci_tenant_ep_retention_policy:
+    cisco.aci.aci_tenant_ep_retention_policy:
       <<: *aci_tenant_ep_retention_policy_present
       local_ep_interval: 119
     ignore_errors: true
     register: Modify_tenant_ep_retention_policy_local_ep_interval
 
   - name: Modify EP retention protocol policy remote ep interval - testing failure message
-    aci_tenant_ep_retention_policy:
+    cisco.aci.aci_tenant_ep_retention_policy:
       <<: *aci_tenant_ep_retention_policy_present
       remote_ep_interval: 119
     ignore_errors: true
     register: Modify_tenant_ep_retention_policy_remote_ep_interval
 
   - name: Asserts for creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_tenant_ep_retention_policy_1 is changed
         - cm_add_tenant_ep_retention_policy_1.previous == []
@@ -143,19 +143,19 @@
         - Modify_tenant_ep_retention_policy_remote_ep_interval.msg == "The remote_ep_interval must be a value of 0 or between 120 and 65535"
 
   - name: Query all EP retention protocol policies
-    aci_tenant_ep_retention_policy:
+    cisco.aci.aci_tenant_ep_retention_policy:
       <<: *aci_info
       state: query
     register: query_all_tenant_ep_retention_policy
 
   - name: Query first EP retention protocol policy
-    aci_tenant_ep_retention_policy:
+    cisco.aci.aci_tenant_ep_retention_policy:
       <<: *aci_tenant_ep_retention_policy_present
       state: query
     register: query_first_tenant_ep_retention_policy
 
   - name: Asserts for query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_tenant_ep_retention_policy is not changed
         - query_all_tenant_ep_retention_policy.current | length >= 2
@@ -170,32 +170,32 @@
         - query_first_tenant_ep_retention_policy.current.0.fvEpRetPol.attributes.remoteEpAgeIntvl == "600"
 
   - name: Delete first EP retention protocol policy (check_mode)
-    aci_tenant_ep_retention_policy:
+    cisco.aci.aci_tenant_ep_retention_policy:
       <<: *aci_tenant_ep_retention_policy_present
       state: absent
     check_mode: true
     register: cm_delete_tenant_ep_retention_policy_1
 
   - name: Delete first EP retention protocol policy (normal_mode)
-    aci_tenant_ep_retention_policy:
+    cisco.aci.aci_tenant_ep_retention_policy:
       <<: *aci_tenant_ep_retention_policy_present
       state: absent
     register: nm_delete_tenant_ep_retention_policy_1
 
   - name: Delete first EP retention protocol policy again - testing idempotency
-    aci_tenant_ep_retention_policy:
+    cisco.aci.aci_tenant_ep_retention_policy:
       <<: *aci_tenant_ep_retention_policy_present
       state: absent
     register: idempotency_delete_tenant_ep_retention_policy_1
 
   - name: Delete second EP retention protocol policy (normal_mode)
-    aci_tenant_ep_retention_policy:
+    cisco.aci.aci_tenant_ep_retention_policy:
       <<: *aci_tenant_ep_retention_policy_2_present
       state: absent
     register: nm_delete_tenant_ep_retention_policy_2
 
   - name: Asserts for deletion tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_delete_tenant_ep_retention_policy_1 is changed
         - cm_delete_tenant_ep_retention_policy_1.proposed == {}
@@ -209,6 +209,6 @@
         - nm_delete_tenant_ep_retention_policy_2.current == []
 
   - name: Delete tenant - clean up the environment
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_tenant_present
       state: absent

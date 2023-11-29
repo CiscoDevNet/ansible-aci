@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -47,7 +47,7 @@
     register: cm_cp_present
 
   - name: Assertions check for add a custom privilege with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_cp_present is changed
         - cm_cp_present.current | length == 0
@@ -63,7 +63,7 @@
     register: nm_cp_present
 
   - name: Assertions check for add a custom privilege with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_cp_present is changed
         - nm_cp_present.current | length == 1
@@ -79,7 +79,7 @@
     register: idempotency_cp_present
 
   - name: Idempotency assertions check for add a custom privilege with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_cp_present is not changed
         - idempotency_cp_present.current | length == 1
@@ -106,7 +106,7 @@
     register: cp_with_none_priv
 
   - name: Assertions check for add a custom privilege with none privileges
-    assert:
+    ansible.builtin.assert:
       that:
         - cp_with_none_priv is changed
         - cp_with_none_priv.current | length == 1
@@ -123,7 +123,7 @@
     register: update_cp_with_priv
 
   - name: Assertions check for update fv_tenant_present custom privilege with 'custom-privilege-2' privilege
-    assert:
+    ansible.builtin.assert:
       that:
         - update_cp_with_priv is changed
         - update_cp_with_priv.current | length == 1
@@ -141,7 +141,7 @@
     register: update_cp_w_priv_check
 
   - name: Assertions check for update fv_tenant_present - write_privilege to 'custom-privilege-3' privilege
-    assert:
+    ansible.builtin.assert:
       that:
         - update_cp_w_priv_check is changed
         - update_cp_w_priv_check.current | length == 1
@@ -161,7 +161,7 @@
     register: query_a_cp_with_name
 
   - name: Assertions check for query a custom privilege with name
-    assert:
+    ansible.builtin.assert:
       that:
         - query_a_cp_with_name is not changed
         - query_a_cp_with_name.current | length == 1
@@ -176,7 +176,7 @@
     register: query_all_cp
 
   - name: Assertions check for query all custom privileges
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_cp is not changed
         - query_all_cp.current | length >= 2
@@ -190,7 +190,7 @@
     register: cm_cp_absent
 
   - name: Assertions check for remove a custom privilege with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_cp_absent is changed
         - cm_cp_absent.current | length == 1
@@ -204,7 +204,7 @@
     register: nm_cp_absent
 
   - name: Assertions check for remove a custom privilege with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_cp_absent is changed
         - nm_cp_absent.current == []
@@ -217,7 +217,7 @@
     register: idempotency_cp_absent
 
   - name: Idempotency assertions check for remove a custom privilege with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_cp_absent is not changed
         - idempotency_cp_absent.current == []
@@ -231,7 +231,7 @@
     register: removed_cp_query_result
 
   - name: Assertions check for Removed custom privilege with name
-    assert:
+    ansible.builtin.assert:
       that:
         - removed_cp_query_result is not changed
         - removed_cp_query_result.current == []

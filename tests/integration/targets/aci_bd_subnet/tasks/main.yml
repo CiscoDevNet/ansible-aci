@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -27,7 +27,7 @@
   register: version
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -128,7 +128,7 @@
     ignore_errors: true
 
   - name: assert for subnet creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - create_check_mode is changed
         - create_check_mode.sent.fvSubnet.attributes.descr == create_subnet.sent.fvSubnet.attributes.descr == 'Ansible Test'
@@ -150,7 +150,7 @@
         - 'create_incomplete_data.msg == "state is present but all of the following are missing: bd"'
 
   - name: assert for subnet for task with version < 5
-    assert:
+    ansible.builtin.assert:
       that:
         - create_subnet2 is changed
         - create_subnet2.sent == create_subnet2.proposed
@@ -160,7 +160,7 @@
     when: version.current.0.topSystem.attributes.version is version('5', '<')
 
   - name: assert for subnet ip_data_learning for task with version >=5
-    assert:
+    ansible.builtin.assert:
       that:
         - create_subnet.current.0.fvSubnet.attributes.ipDPLearning == 'enabled'
         - create_subnet2_5 is changed
@@ -225,7 +225,7 @@
     register: get_subnets_gateway
 
   - name: asserts for query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - get_all is not changed
         - get_all.current | length > 1
@@ -268,7 +268,7 @@
     register: error_mask_ipv6
 
   - name: asserts for mask error handling
-    assert:
+    ansible.builtin.assert:
       that:
       - error_mask_ipv4.msg == "Valid Subnet Masks are 0 to 32 for IPv4 Addresses"
       - error_mask_ipv6.msg == "Valid Subnet Masks are 0 to 128 for IPv6 Addresses"
@@ -294,7 +294,7 @@
     register: delete_idempotency
 
   - name: asserts for deletion task
-    assert:
+    ansible.builtin.assert:
       that:
         - delete_check_mode is changed
         - delete_check_mode.proposed == {}

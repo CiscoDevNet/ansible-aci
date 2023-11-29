@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -27,7 +27,7 @@
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -79,7 +79,7 @@
     register: nm_add_second_node_profile
 
   - name: Verify add_node_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_node_profile is changed
       - nm_add_node_profile is changed
@@ -111,7 +111,7 @@
     register: nm_mod_node_profile
 
   - name: Verify mod_node_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_mod_node_profile is changed
       - nm_mod_node_profile is changed
@@ -153,7 +153,7 @@
     register: nm_query_all_node_profiles
 
   - name: Verify query_node_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_query_node_profile is not changed
       - nm_query_node_profile is not changed
@@ -198,7 +198,7 @@
     register: nm_remove_second_node_profile
 
   - name: Verify remove_node_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_node_profile is changed
       - cm_remove_second_node_profile is changed

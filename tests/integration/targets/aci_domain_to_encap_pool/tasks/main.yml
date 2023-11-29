@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -20,11 +20,11 @@
       output_level: debug
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 # Clean Environment
 - name: Remove domains
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info 
     domain: '{{ item.name }}'
     domain_type: '{{ item.type }}'
@@ -36,7 +36,7 @@
     - { name: l3_dom, type: l3dom }
 
 - name: Remove domains
-  aci_domain:
+  cisco.aci.aci_domain:
     <<: *aci_info 
     domain: vmm_dom
     domain_type: vmm
@@ -56,7 +56,7 @@
   block:  # block specifies execution of tasks within, based on conditions
   # Add
   - name: Add physical domain
-    aci_domain:
+    cisco.aci.aci_domain:
       <<: *aci_info 
       domain: phys_dom
       domain_type: phys
@@ -64,7 +64,7 @@
     register: phys_domain
 
   - name: Add l2 domain
-    aci_domain:
+    cisco.aci.aci_domain:
       <<: *aci_info 
       domain: l2_dom
       domain_type: l2dom
@@ -72,7 +72,7 @@
     register: l2_domain
 
   - name: Add l3 domain
-    aci_domain:
+    cisco.aci.aci_domain:
       <<: *aci_info 
       domain: l3_dom
       domain_type: l3dom
@@ -80,7 +80,7 @@
     register: l3_domain
 
   - name: Add FC domain
-    aci_domain:
+    cisco.aci.aci_domain:
       <<: *aci_info 
       domain: fc_dom
       domain_type: fc
@@ -88,7 +88,7 @@
     register: fc_domain
 
   - name: Add vmm domain
-    aci_domain:
+    cisco.aci.aci_domain:
       <<: *aci_info 
       domain: vmm_dom
       domain_type: vmm
@@ -97,7 +97,7 @@
     register: vmm_domain
 
   - name: Add domain to encap pool binding (phys, pool_type=vlan)
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: phys_dom
       domain_type: phys
@@ -108,7 +108,7 @@
     register: phys_vlan
 
   - name: Add domain to encap pool binding (fc, pool_type=vsan)
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: fc_dom
       domain_type: fc
@@ -119,7 +119,7 @@
     register: fc_vsan
 
   - name: Add domain to encap pool binding (domain_type=l2dom)
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: l2_dom
       domain_type: l2dom
@@ -130,7 +130,7 @@
     register: l2dom
 
   - name: Add domain to encap pool binding (domain_type=l3dom)
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: l3_dom
       domain_type: l3dom
@@ -141,7 +141,7 @@
     register: l3dom
 
   - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=cloudfoundry)
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: vmm_dom
       domain_type: vmm
@@ -153,7 +153,7 @@
     register: vmm_cloudfoundry
 
   - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=kubernetes)
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: vmm_dom
       domain_type: vmm
@@ -165,7 +165,7 @@
     register: vmm_kubernetes
 
   - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=microsoft)
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: vmm_dom
       domain_type: vmm
@@ -177,7 +177,7 @@
     register: vmm_microsoft
 
   - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=openshift)
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: vmm_dom
       domain_type: vmm
@@ -189,7 +189,7 @@
     register: vmm_openshift
 
   - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=openstack)
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: vmm_dom
       domain_type: vmm
@@ -201,7 +201,7 @@
     register: vmm_openstack
 
   - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=redhat)
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: vmm_dom
       domain_type: vmm
@@ -213,7 +213,7 @@
     register: vmm_redhat
 
   - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=vmware)
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: vmm_dom
       domain_type: vmm
@@ -225,7 +225,7 @@
     register: vmm_vmware
 
   - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=vmware) again
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: vmm_dom
       domain_type: vmm
@@ -237,7 +237,7 @@
     register: vmm_vmware_idemp
 
   - name: Add domain to encap pool binding (phys with vm_provider)
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: phys_dom
       domain_type: phys
@@ -250,7 +250,7 @@
     register: phys_vlan_with_vmm
 
   - name: Add domain to encap pool binding (phys, pool_type=vlan, no allocation mode)
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: phys_dom
       domain_type: phys
@@ -261,7 +261,7 @@
     register: phys_vlan_no_alloc
 
   - name: Add domain to encap pool binding (domain_type=vmm, vm_provider=vmware, pool_type=vxlan)
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: vmm_dom
       domain_type: vmm
@@ -274,7 +274,7 @@
     register: vmm_vmware_vxlan
 
   - name: Add domain to encap pool binding (phys, pool_type=vlan) missing domain_type
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: phys_dom
       pool: test_pool
@@ -285,7 +285,7 @@
     register: phys_missing_domain_type
 
   - name: Add domain to encap pool binding (phys, pool_type=vlan) missing pool_type
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: phys_dom
       domain_type: phys
@@ -296,7 +296,7 @@
     register: phys_missing_pool_type
 
   - name: Verify add operation for All Sites
-    assert:
+    ansible.builtin.assert:
       that:
       - phys_vlan is changed
       - fc_vsan is changed
@@ -316,7 +316,7 @@
       - phys_missing_domain_type.msg is match("missing required arguments{{':'}} domain_type")
 
   - name: Verify add operation for Non-Cloud Sites
-    assert:
+    ansible.builtin.assert:
       that:
       - vmm_cloudfoundry is changed
       - vmm_openshift is changed
@@ -333,7 +333,7 @@
 
   # QUERY
   - name: Query all
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info
       domain_type: phys
       pool_type: vlan
@@ -341,7 +341,7 @@
     register: query_all
 
   - name: Query phys
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info
       domain: phys_dom
       domain_type: phys
@@ -350,7 +350,7 @@
     register: query_phys
 
   - name: Query fc
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: fc_dom
       domain_type: fc
@@ -359,7 +359,7 @@
     register: query_fc
 
   - name: Query l2dom
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain: l2_dom
       domain_type: l2dom
@@ -368,7 +368,7 @@
     register: query_l2dom
 
   - name: Query l3dom
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info
       domain: l3_dom 
       domain_type: l3dom
@@ -377,7 +377,7 @@
     register: query_l3dom
 
   - name: Query vmm
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info
       domain: vmm_dom
       domain_type: vmm
@@ -387,7 +387,7 @@
     register: query_vmm_microsoft
 
   - name: Query vmm
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info
       domain: vmm_dom
       domain_type: vmm
@@ -397,7 +397,7 @@
     register: query_vmm_cloudfoundry
 
   - name: Query vmm
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info
       domain: vmm_dom
       domain_type: vmm
@@ -407,7 +407,7 @@
     register: query_vmm_kubernetes
 
   - name: Query vmm
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info
       domain: vmm_dom
       domain_type: vmm
@@ -417,7 +417,7 @@
     register: query_vmm_openshift
 
   - name: Query vmm
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info
       domain: vmm_dom
       domain_type: vmm
@@ -427,7 +427,7 @@
     register: query_vmm_openstack
 
   - name: Query vmm
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info
       domain: vmm_dom
       domain_type: vmm
@@ -437,7 +437,7 @@
     register: query_vmm_redhat
 
   - name: Query vmm
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info
       domain: vmm_dom
       domain_type: vmm
@@ -447,7 +447,7 @@
     register: query_vmm_vmware
 
   - name: Query vmm
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info
       domain: vmm_dom
       domain_type: vmm
@@ -457,7 +457,7 @@
     register: query_vmm_vmware
 
   - name: Verify Query for Non-Cloud sites
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all | length >=1
       - query_phys.current.0.physDomP.children.0.infraRsVlanNs.attributes.tDn =='uni/infra/vlanns-[test_pool]-dynamic'
@@ -468,7 +468,7 @@
 
 
   - name: Verify Query for Cloud sites
-    assert:
+    ansible.builtin.assert:
       that:
       - query_vmm_cloudfoundry.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
       - query_vmm_microsoft.current.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
@@ -479,7 +479,7 @@
 
   # REMOVE
   - name: Remove phys
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain_type: phys
       domain: phys_dom
@@ -490,7 +490,7 @@
     register: remove_phys
 
   - name: Remove fc
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain_type: fc
       domain: fc_dom
@@ -501,7 +501,7 @@
     register: remove_fc
 
   - name: Remove l2dom
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain_type: l2dom
       domain: l2_dom
@@ -512,7 +512,7 @@
     register: remove_l2dom
 
   - name: Remove l3dom
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain_type: l3dom
       domain: l3_dom
@@ -523,7 +523,7 @@
     register: remove_l3dom
 
   - name: Remove vmm cloudfoundry
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain_type: vmm
       domain: vmm_dom
@@ -535,7 +535,7 @@
     register: remove_vmm_cloudfoundry
 
   - name: Remove vmm redhat kubernetes
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain_type: vmm
       domain: vmm_dom
@@ -547,7 +547,7 @@
     register: remove_vmm_kubernetes
 
   - name: Remove vmm microsoft
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain_type: vmm
       domain: vmm_dom
@@ -559,7 +559,7 @@
     register: remove_vmm_microsoft
 
   - name: Remove vmm redhat
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain_type: vmm
       domain: vmm_dom
@@ -571,7 +571,7 @@
     register: remove_vmm_redhat
 
   - name: Remove vmm openstack
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain_type: vmm
       domain: vmm_dom
@@ -583,7 +583,7 @@
     register: remove_vmm_openstack
 
   - name: Remove vmm openshift
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain_type: vmm
       domain: vmm_dom
@@ -595,7 +595,7 @@
     register: remove_vmm_openshift
 
   - name: Remove vmm vmware
-    aci_domain_to_encap_pool:
+    cisco.aci.aci_domain_to_encap_pool:
       <<: *aci_info 
       domain_type: vmm
       domain: vmm_dom
@@ -607,7 +607,7 @@
     register: remove_vmm_vmware
 
   - name: Verify Remove for All Sites
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_phys.previous.0.physDomP.children.0.infraRsVlanNs.attributes.tDn =='uni/infra/vlanns-[test_pool]-dynamic'
       - remove_fc.previous.0.fcDomP.children.0.fcRsVsanNs.attributes.tDn == 'uni/infra/vsanns-[test_pool]-dynamic'
@@ -616,7 +616,7 @@
       - remove_vmm_kubernetes.previous.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
 
   - name: Verify Remove for Non-Cloud Sites
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_vmm_cloudfoundry.previous.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
       - remove_vmm_microsoft.previous.0.vmmDomP.children.0.infraRsVlanNs.attributes.tDn == 'uni/infra/vlanns-[test_pool]-dynamic'
@@ -627,7 +627,7 @@
 
   # Clean Environment Again
   - name: Remove domains
-    aci_domain:
+    cisco.aci.aci_domain:
       <<: *aci_info 
       domain: '{{ item.name }}'
       domain_type: '{{ item.type }}'
@@ -639,7 +639,7 @@
       - { name: l3_dom, type: l3dom }
 
   - name: Remove domains
-    aci_domain:
+    cisco.aci.aci_domain:
       <<: *aci_info 
       domain: vmm_dom
       domain_type: vmm

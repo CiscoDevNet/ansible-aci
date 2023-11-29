@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -20,7 +20,7 @@
       output_level: '{{ aci_output_level | default("info") }}'
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for cloud sites
   when: query_cloud.current | length > 0  # This condition will execute only cloud sites
@@ -92,7 +92,7 @@
     register: selector_present_again
 
   - name: Verify creation of cloud epg selector
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_selector_present is changed
         - nm_selector_present is changed
@@ -174,7 +174,7 @@
     register: equals_without_value
 
   - name: Verify creation of other selectors
-    assert:
+    ansible.builtin.assert:
       that:
         - sec_selector is changed
         - udpate_selector is changed
@@ -204,7 +204,7 @@
     register: query_all
 
   - name: Verify query
-    assert:
+    ansible.builtin.assert:
       that:
         - query_selector.current.0.cloudEPSelector.attributes.name == 'ansible_selector'
         - query_all.current.0.cloudEPg.children | length >= 2
@@ -225,7 +225,7 @@
     register: rm_selector_2_again
 
   - name: Verify rm_selector_2
-    assert:
+    ansible.builtin.assert:
       that:
         - rm_selector_2 is changed
         - rm_selector_2.current == []

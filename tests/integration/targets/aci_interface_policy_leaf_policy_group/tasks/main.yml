@@ -5,13 +5,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # GET Credentials from the inventory
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -29,7 +29,7 @@
   register: version
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -86,7 +86,7 @@
 
   # TODO: also test for errors
   - name: present assertions for interface policy leaf policy group (PC)
-    assert:
+    ansible.builtin.assert:
       that:
       - intf_policy_leaf_polgrp_check_mode_present is changed
       - intf_policy_leaf_polgrp_present is changed
@@ -110,7 +110,7 @@
     register: binding_query
 
   - name: Query assertions for interface policy leaf policy group (PC)
-    assert:
+    ansible.builtin.assert:
       that:
         - binding_query is not changed
         - binding_query.current | length >= 1
@@ -142,7 +142,7 @@
     register: intf_policy_leaf_polgrp_absent_missing_param
 
   - name: absent assertions for interface policy leaf policy group (PC)
-    assert:
+    ansible.builtin.assert:
       that:
         - intf_policy_leaf_polgrp_check_mode_absent is changed
         - intf_policy_leaf_polgrp_check_mode_absent.previous != []
@@ -191,7 +191,7 @@
 
   # TODO: also test for errors
   - name: present assertions for interface policy leaf policy group (VPC)
-    assert:
+    ansible.builtin.assert:
       that:
       - intf_policy_leaf_polgrp_check_mode_present is changed
       - intf_policy_leaf_polgrp_present is changed
@@ -215,7 +215,7 @@
     register: binding_query
 
   - name: Query assertions for interface policy leaf policy group (VPC)
-    assert:
+    ansible.builtin.assert:
       that:
         - binding_query is not changed
         - binding_query.current | length >= 1
@@ -235,7 +235,7 @@
     register: binding_query_node_all
 
   - name: Query assertions for interface policy leaf policy group (VPC)
-    assert:
+    ansible.builtin.assert:
       that:
         - binding_query_node_all is not changed
         - binding_query_node_all.current | length >= 1
@@ -267,7 +267,7 @@
     register: intf_policy_leaf_polgrp_absent_missing_param
 
   - name: absent assertions for interface policy leaf policy group (VPC)
-    assert:
+    ansible.builtin.assert:
       that:
         - intf_policy_leaf_polgrp_check_mode_absent is changed
         - intf_policy_leaf_polgrp_check_mode_absent.previous != []
@@ -286,7 +286,7 @@
     register: intf_policy_leaf_polgrp_pa_policy_error
 
   - name: VPC error assertions (adding invalid parameters)
-    assert:
+    ansible.builtin.assert:
       that:
       - intf_policy_leaf_polgrp_pa_policy_error.msg == 'port_authentication is not a valid parameter for link/node (Port Channel, Virtual Port Channel), if used assign null to it (port_authentication{{":"}} null).'
 
@@ -343,7 +343,7 @@
 
   # TODO: also test for errors
   - name: present assertions for interface policy leaf policy group (Leaf Access Port)
-    assert:
+    ansible.builtin.assert:
       that:
       - intf_policy_leaf_polgrp_check_mode_present is changed
       - intf_policy_leaf_polgrp_present is changed
@@ -368,7 +368,7 @@
     register: binding_query
 
   - name: Query assertions interface policy leaf policy group (Leaf Access Port)
-    assert:
+    ansible.builtin.assert:
       that:
         - binding_query is not changed
         - binding_query.current | length >= 1
@@ -400,7 +400,7 @@
     register: intf_policy_leaf_polgrp_absent_missing_param
 
   - name: absent assertions for interface policy leaf policy group (Leaf Access Port)
-    assert:
+    ansible.builtin.assert:
       that:
         - intf_policy_leaf_polgrp_check_mode_absent is changed
         - intf_policy_leaf_polgrp_check_mode_absent.previous != []
@@ -430,7 +430,7 @@
         register: intf_policy_leaf_policy_group_link_present_2
 
       - name: present assertions (PC) for APIC version > 5
-        assert:
+        ansible.builtin.assert:
           that:
           - intf_policy_leaf_policy_group_link_present_2 is changed
           - intf_policy_leaf_policy_group_link_present_2.previous != []
@@ -446,7 +446,7 @@
         register: intf_policy_leaf_polgrp_present_2
 
       - name: present assertions (Leaf Access Port) for APIC version > 5
-        assert:
+        ansible.builtin.assert:
           that:
           - intf_policy_leaf_polgrp_present_2 is changed
           - intf_policy_leaf_polgrp_present_2.previous == []
@@ -474,7 +474,7 @@
         register: intf_policy_leaf_policy_group_node_present_2
 
       - name: present assertions (VPC) for APIC version > 6
-        assert:
+        ansible.builtin.assert:
           that:
           - intf_policy_leaf_policy_group_node_present_2 is changed
           - intf_policy_leaf_policy_group_node_present_2.previous == []
@@ -497,7 +497,7 @@
         register: intf_policy_leaf_polgrp_present_3
 
       - name: present assertions (Leaf Access Port) for APIC version >= 6.0.2
-        assert:
+        ansible.builtin.assert:
           that:
           - intf_policy_leaf_polgrp_present_3 is changed
           - intf_policy_leaf_polgrp_present_3.previous != []
@@ -530,7 +530,7 @@
         register: intf_policy_leaf_polgrp_all_policy_present
 
       - name: present assertions (Leaf Access Port) for all the policies.
-        assert:
+        ansible.builtin.assert:
           that:
           - intf_policy_leaf_polgrp_all_policy_present is changed
           - intf_policy_leaf_polgrp_all_policy_present.previous != []

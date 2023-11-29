@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -20,7 +20,7 @@
       output_level: debug
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -70,7 +70,7 @@
     register: cm_interfaces_present
 
   - name: Assertions check for add list of interfaces with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_interfaces_present is changed
         - cm_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
@@ -83,7 +83,7 @@
     register: nm_interfaces_present
 
   - name: Assertions check for add list of interfaces with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_interfaces_present is changed
         - nm_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
@@ -97,7 +97,7 @@
     register: idempotency_interfaces_present
 
   - name: Idempotency assertions check for add list of interfaces with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_interfaces_present is not changed
         - idempotency_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
@@ -112,7 +112,7 @@
     register: cm_update_interfaces_present
 
   - name: Assertions check for update list of interfaces - description with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_update_interfaces_present is changed
         - cm_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
@@ -127,7 +127,7 @@
     register: nm_update_interfaces_present
 
   - name: Assertions check for update list of interfaces - description with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_update_interfaces_present is changed
         - nm_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
@@ -142,7 +142,7 @@
     register: idempotency_nm_update_interfaces_present
 
   - name: Idempotency assertions check for update list of interfaces - description with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_nm_update_interfaces_present is not changed
         - idempotency_nm_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
@@ -177,7 +177,7 @@
     register: cm_path_update_interfaces_present
 
   - name: Assertions check for update list of interfaces description using path level attributes with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_path_update_interfaces_present is changed
         - cm_path_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
@@ -193,7 +193,7 @@
     register: nm_path_update_interfaces_present
 
   - name: Assertions check for update list of interfaces description using path level attributes with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_path_update_interfaces_present is changed
         - nm_path_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
@@ -208,7 +208,7 @@
     register: idempotency_path_update_interfaces_present
 
   - name: Idempotency assertions check for update list of interfaces description using path level attributes with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_path_update_interfaces_present is not changed
         - idempotency_path_update_interfaces_present.current.0.fvAEPg.attributes.name == "anstest"
@@ -226,7 +226,7 @@
     register: query_result_of_anstest_epg
 
   - name: Assertions check for query all interfaces of an EPG
-    assert:
+    ansible.builtin.assert:
       that:
         - query_result_of_anstest_epg is not changed
         - query_result_of_anstest_epg.current.0.fvAEPg.children | length == 3
@@ -241,7 +241,7 @@
     register: query_all_interfaces
 
   - name: Assertions check for query all interfaces # Check covers only EPG level
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_interfaces is not changed
         - query_all_interfaces.current | length >= 1
@@ -254,7 +254,7 @@
     register: cm_interfaces_absent
 
   - name: Assertions check for remove list of interfaces with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_interfaces_absent is changed
         - cm_interfaces_absent.current.0.fvAEPg.children | length == 3
@@ -269,7 +269,7 @@
     register: nm_interfaces_absent
 
   - name: Assertions check for remove list of interfaces with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_interfaces_absent is changed
         - "'children' not in nm_interfaces_absent.current.0.fvAEPg"
@@ -285,7 +285,7 @@
     register: idempotency_interfaces_absent
 
   - name: Idempotency assertions check for remove list of interfaces with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_interfaces_absent is changed
         - "'children' not in idempotency_interfaces_absent.current.0.fvAEPg"
@@ -309,7 +309,7 @@
     register: fex_port_channel_present
 
   - name: Assertions check for add fex_port_channel interfaces to anstest epg
-    assert:
+    ansible.builtin.assert:
       that:
         - fex_port_channel_present is changed
         - fex_port_channel_present.current.0.fvAEPg.children | length == 1
@@ -325,7 +325,7 @@
     register: fex_port_channel_absent
 
   - name: Assertions check for remove fex_port_channel interfaces from anstest epg
-    assert:
+    ansible.builtin.assert:
       that:
         - fex_port_channel_absent is changed
         - fex_port_channel_absent.previous.0.fvAEPg.children | length == 1
@@ -354,7 +354,7 @@
     register: fex_vpc_present
 
   - name: Assertions check for add fex_vpc interfaces to anstest epg
-    assert:
+    ansible.builtin.assert:
       that:
         - fex_vpc_present is changed
         - fex_vpc_present.current.0.fvAEPg.children | length == 1
@@ -370,7 +370,7 @@
     register: fex_vpc_absent
 
   - name: Assertions check for remove fex_vpc interfaces from anstest epg
-    assert:
+    ansible.builtin.assert:
       that:
         - fex_vpc_absent is changed
         - fex_vpc_absent.previous.0.fvAEPg.children | length == 1
@@ -398,7 +398,7 @@
     register: vpc_present
 
   - name: Assertions check for add vpc interfaces to anstest epg
-    assert:
+    ansible.builtin.assert:
       that:
         - vpc_present is changed
         - vpc_present.current.0.fvAEPg.children | length == 1
@@ -414,7 +414,7 @@
     register: vpc_absent
 
   - name: Assertions check for remove vpc interfaces from anstest epg
-    assert:
+    ansible.builtin.assert:
       that:
         - vpc_absent is changed
         - vpc_absent.previous.0.fvAEPg.children | length == 1
@@ -433,7 +433,7 @@
     register: query_result
 
   - name: Assertions check for query all interfaces before start module and path level check
-    assert:
+    ansible.builtin.assert:
       that:
         - query_result is not changed
         - "'children' not in query_result.current.0.fvAEPg"
@@ -456,7 +456,7 @@
     register: module_level_check
 
   - name: Assertions check for add an interface with module level attributes
-    assert:
+    ansible.builtin.assert:
       that:
         - module_level_check is changed
         - module_level_check.current.0.fvAEPg.children | length == 1
@@ -474,7 +474,7 @@
     register: module_level_check_absent
 
   - name: Assertions check for remove an interface with module level attributes
-    assert:
+    ansible.builtin.assert:
       that:
         - module_level_check_absent is changed
         - "'children' not in module_level_check_absent.current.0.fvAEPg"
@@ -501,7 +501,7 @@
     register: path_level_check
 
   - name: Assertions check for add an interface with path level attributes
-    assert:
+    ansible.builtin.assert:
       that:
         - path_level_check is changed
         - path_level_check.current.0.fvAEPg.children | length == 1
@@ -515,7 +515,7 @@
     register: path_level_check_absent
 
   - name: Assertions check for remove an interface with path level attributes
-    assert:
+    ansible.builtin.assert:
       that:
         - path_level_check_absent is changed
         - "'children' not in path_level_check_absent.current.0.fvAEPg"
@@ -542,7 +542,7 @@
     register: path_and_module_encap_id_present
 
   - name: Assertions check for add an interface encap_id with path and module level attributes
-    assert:
+    ansible.builtin.assert:
       that:
         - path_and_module_encap_id_present is changed
         - path_and_module_encap_id_present.current.0.fvAEPg.children | length == 1
@@ -556,7 +556,7 @@
     register: path_and_module_encap_id_absent
 
   - name: Assertions check for remove an interface encap_id with path and module level attributes
-    assert:
+    ansible.builtin.assert:
       that:
         - path_and_module_encap_id_absent is changed
         - "'children' not in path_and_module_encap_id_absent.current.0.fvAEPg"
@@ -751,7 +751,7 @@
     register: switch_port_primary_encap_id_not_unknown
 
   - name: Negative assertions to check error messages
-    assert:
+    ansible.builtin.assert:
       that:
       - switch_port_no_leafs.msg == "missing required arguments{{':'}} leafs found in interface_configs"
       - fex_vpc_no_extpaths.msg == "extpaths is required when interface_type is{{':'}} fex_vpc"

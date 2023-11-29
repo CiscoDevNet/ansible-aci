@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,26 +21,26 @@
     
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant: &aci_tenant_absent
+  cisco.aci.aci_tenant: &aci_tenant_absent
     <<: *aci_info 
     tenant: ansible_tenant
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Add a new tenant
-    aci_tenant: &aci_tenant_present
+    cisco.aci.aci_tenant: &aci_tenant_present
       <<: *aci_info
       tenant: ansible_tenant
       description: Ansible tenant
       state: present
 
   - name: Add a match rule profile
-    aci_match_rule:
+    cisco.aci.aci_match_rule:
       <<: *aci_info
       tenant: ansible_tenant
       match_rule: ansible_match_rule
@@ -48,7 +48,7 @@
       state: present
 
   - name: Add a match community term
-    aci_match_community_term:
+    cisco.aci.aci_match_community_term:
       <<: *aci_info
       tenant: ansible_tenant
       match_rule: ansible_match_rule
@@ -57,7 +57,7 @@
       state: present
 
   - name: Add a match community factor (check_mode)
-    aci_match_community_factor: &aci_match_community_factor_present
+    cisco.aci.aci_match_community_factor: &aci_match_community_factor_present
       <<: *aci_info
       tenant: ansible_tenant
       match_rule: ansible_match_rule
@@ -70,17 +70,17 @@
     register: cm_add_match_community_factor
 
   - name: Add a match community factor (normal_mode)
-    aci_match_community_factor:
+    cisco.aci.aci_match_community_factor:
       <<: *aci_match_community_factor_present
     register: nm_add_match_community_factor
 
   - name: Add the first match community factor again - testing idempotency
-    aci_match_community_factor:
+    cisco.aci.aci_match_community_factor:
       <<: *aci_match_community_factor_present
     register: nm_add_match_community_factor_idempotency
 
   - name: Add a second match community factor (normal_mode)
-    aci_match_community_factor:
+    cisco.aci.aci_match_community_factor:
       <<: *aci_info
       tenant: ansible_tenant
       match_rule: ansible_match_rule
@@ -91,7 +91,7 @@
     register: nm_add_match_community_factor_2
 
   - name: Asserts for match community factors creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_match_community_factor is changed
         - cm_add_match_community_factor.previous == []
@@ -104,19 +104,19 @@
         - nm_add_match_community_factor_2.current.0.rtctrlMatchCommFactor.attributes.community == "regular:as2-nn2:4:16"
 
   - name: Query all match community factors
-    aci_match_community_factor:
+    cisco.aci.aci_match_community_factor:
       <<: *aci_info
       state: query
     register: query_all_match_community_factor
 
   - name: Query a specific match community factor
-    aci_match_community_factor:
+    cisco.aci.aci_match_community_factor:
       <<: *aci_match_community_factor_present
       state: query
     register: query_ansible_match_community_factor_1
 
   - name: Asserts query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_match_community_factor is not changed
         - query_all_match_community_factor.current|length >= 2
@@ -124,24 +124,24 @@
         - query_ansible_match_community_factor_1.current.0.rtctrlMatchCommFactor.attributes.community == "regular:as2-nn2:4:15"
 
   - name: Remove match community factor (check_mode)
-    aci_match_community_factor: &match_community_term_absent
+    cisco.aci.aci_match_community_factor: &match_community_term_absent
       <<: *aci_match_community_factor_present
       state: absent
     check_mode: true
     register: cm_remove_match_community_factor
 
   - name: Remove match community factor (normal_mode)
-    aci_match_community_factor:
+    cisco.aci.aci_match_community_factor:
       <<: *match_community_term_absent
     register: nm_remove_match_community_factor
 
   - name: Remove match community factor again - testing previous Removal
-    aci_match_community_factor:
+    cisco.aci.aci_match_community_factor:
       <<: *match_community_term_absent
     register: nm_remove_match_community_factor_idempotency
 
   - name: Asserts deletion tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_remove_match_community_factor is changed
         - cm_remove_match_community_factor.proposed == {}
@@ -152,6 +152,6 @@
         - nm_remove_match_community_factor_idempotency.previous == []
 
   - name: Remove the ansible_tenant - cleanup before ending tests
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_tenant_present
       state: absent

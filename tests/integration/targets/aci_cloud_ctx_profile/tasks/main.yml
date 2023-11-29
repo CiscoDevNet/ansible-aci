@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,27 +21,27 @@
       output_level: '{{ aci_output_level | default("info") }}'
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for cloud sites
   when: query_cloud.current | length > 0  # This condition will execute only cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Ensure tenant doesn't exist
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       state: absent
       tenant: ansible_test
     register: tenant_absent
 
   - name: Ensure tenant exists for tests to kick off
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       state: present
       tenant: ansible_test
     register: tenant_present
 
   - name: Ensure aci cloud context profile does not exists
-    aci_cloud_ctx_profile:
+    cisco.aci.aci_cloud_ctx_profile:
       <<: *aci_info
       tenant: ansible_test
       name: ctx_profile_1
@@ -49,12 +49,12 @@
     register: rm_ctx_profile_1
 
   - name: Verify rm_ctx_profile_1
-    assert:
+    ansible.builtin.assert:
       that:
       - rm_ctx_profile_1.current == []
 
   - name: Ensure aci cloud context profile 2 does not exists
-    aci_cloud_ctx_profile:
+    cisco.aci.aci_cloud_ctx_profile:
       <<: *aci_info
       tenant: ansible_test
       name: ctx_profile_2
@@ -62,12 +62,12 @@
     register: rm_ctx_profile_2
 
   - name: Verify rm_ctx_profile_2
-    assert:
+    ansible.builtin.assert:
       that:
       - rm_ctx_profile_2.current == []
 
   - name: Create aci cloud context profile (check mode)
-    aci_cloud_ctx_profile:
+    cisco.aci.aci_cloud_ctx_profile:
       <<: *aci_info
       tenant: ansible_test
       cloud: "{{ cloud_type }}"
@@ -80,7 +80,7 @@
     register: cm_add_aci_ctx_profile
 
   - name: Create aci cloud context profile (normal mode)
-    aci_cloud_ctx_profile:
+    cisco.aci.aci_cloud_ctx_profile:
       <<: *aci_info
       tenant: ansible_test
       cloud: "{{ cloud_type }}"
@@ -92,7 +92,7 @@
     register: nm_add_aci_ctx_profile
 
   - name: Verify cm_add_aci_ctx_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_aci_ctx_profile is changed
       - cm_add_aci_ctx_profile.previous == []
@@ -103,7 +103,7 @@
       - cm_add_aci_ctx_profile.proposed.cloudCtxProfile.children[2].cloudCidr.attributes.primary == "yes"
 
   - name: Verify nm_add_aci_ctx_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_add_aci_ctx_profile is changed
       - nm_add_aci_ctx_profile.previous == []
@@ -115,7 +115,7 @@
       - nm_add_aci_ctx_profile.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
 
   - name: Add aci cloud context profile again (check_mode)
-    aci_cloud_ctx_profile:
+    cisco.aci.aci_cloud_ctx_profile:
       <<: *aci_info
       tenant: ansible_test
       cloud: "{{ cloud_type }}"
@@ -128,7 +128,7 @@
     register: cm_add_aci_ctx_profile_again
 
   - name: Verify cm_add_aci_ctx_profile_again
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_aci_ctx_profile_again is not changed
       - cm_add_aci_ctx_profile_again.previous[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
@@ -139,7 +139,7 @@
 
 
   - name: Add aci cloud context profile again (normal_mode)
-    aci_cloud_ctx_profile:
+    cisco.aci.aci_cloud_ctx_profile:
       <<: *aci_info
       tenant: ansible_test
       cloud: "{{ cloud_type }}"
@@ -151,7 +151,7 @@
     register: nm_add_aci_ctx_profile_again
 
   - name: Verify nm_add_aci_ctx_profile_again
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_add_aci_ctx_profile_again is not changed
       - nm_add_aci_ctx_profile_again.current[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
@@ -161,7 +161,7 @@
       - nm_add_aci_ctx_profile_again.current[0].cloudCtxProfile.children[0].cloudCidr.attributes.primary == "yes"
 
   - name: Add another aci cloud context profile (check_mode)
-    aci_cloud_ctx_profile:
+    cisco.aci.aci_cloud_ctx_profile:
       <<: *aci_info
       tenant: ansible_test
       cloud: "{{ cloud_type }}"
@@ -175,7 +175,7 @@
     register: cm_add_another_aci_ctx_profile
 
   - name: Verify cm_add_another_aci_ctx_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_another_aci_ctx_profile is changed
       - cm_add_another_aci_ctx_profile.previous == []
@@ -187,7 +187,7 @@
       - cm_add_another_aci_ctx_profile.proposed.cloudCtxProfile.attributes.descr == "add ctx_profile_2"
 
   - name: Add another aci cloud context profile (normal_mode)
-    aci_cloud_ctx_profile:
+    cisco.aci.aci_cloud_ctx_profile:
       <<: *aci_info
       tenant: ansible_test
       cloud: "{{ cloud_type }}"
@@ -200,7 +200,7 @@
     register: nm_add_another_aci_ctx_profile
 
   - name: Verify nm_add_another_aci_ctx_profile
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_add_another_aci_ctx_profile is changed
         - nm_add_another_aci_ctx_profile.previous == []
@@ -212,7 +212,7 @@
         - nm_add_another_aci_ctx_profile.current[0].cloudCtxProfile.attributes.descr == "add ctx_profile_2"
 
   - name: Query aci cloud context profile ctx_profile_1
-    aci_cloud_ctx_profile:
+    cisco.aci.aci_cloud_ctx_profile:
       <<: *aci_info
       tenant: ansible_test
       name: ctx_profile_1
@@ -220,28 +220,28 @@
     register: query_aci_cloud_profile_1
 
   - name: Verify query_aci_cloud_profile_1
-    assert:
+    ansible.builtin.assert:
       that:
       - query_aci_cloud_profile_1 is not changed
       - query_aci_cloud_profile_1.current[0].cloudCtxProfile.attributes.name == "ctx_profile_1"
       - query_aci_cloud_profile_1.current[0].cloudCtxProfile.children | length == 3
 
   - name: Query all aci cloud context profiles
-    aci_cloud_ctx_profile:
+    cisco.aci.aci_cloud_ctx_profile:
       <<: *aci_info
       tenant: ansible_test
       state: query
     register: query_all
 
   - name: Verify query_all
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all is not changed
       - query_all.current | length == 1
       - query_all.current.0.fvTenant.children | length == 2
 
   - name: Remove aci cloud context profile
-    aci_cloud_ctx_profile:
+    cisco.aci.aci_cloud_ctx_profile:
       <<: *aci_info
       tenant: ansible_test
       name: ctx_profile_1
@@ -249,7 +249,7 @@
     register: rm_ctx_profile
 
   - name: Verify rm_ctx_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - rm_ctx_profile.current == []
       - rm_ctx_profile.previous.0.cloudCtxProfile.attributes.name == "ctx_profile_1"
