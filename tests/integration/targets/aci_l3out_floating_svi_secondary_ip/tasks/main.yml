@@ -3,7 +3,7 @@
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -21,7 +21,7 @@
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -107,7 +107,7 @@
     register: add_another_ip
 
   - name: Verify present ops
-    assert:
+    ansible.builtin.assert:
       that:
       - add_ip_cm is changed
       - add_ip_nm is changed
@@ -132,7 +132,7 @@
     register: query_all
 
   - name: Verify query ops
-    assert:
+    ansible.builtin.assert:
       that:
       - query_ip is not changed
       - query_all is not changed
@@ -146,7 +146,7 @@
     register: delete_ip
 
   - name: Verify delete ops
-    assert:
+    ansible.builtin.assert:
       that:
       - delete_ip is changed
       - delete_ip.current == []

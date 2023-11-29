@@ -4,7 +4,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
@@ -20,7 +20,7 @@
       output_level: '{{ aci_output_level | default("info") }}'
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -81,7 +81,7 @@
     register: nm_add_binding
 
   - name: Verify add_binding
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_binding is changed
       - nm_add_binding is changed
@@ -105,7 +105,7 @@
     register: nm_add_binding_again
 
   - name: Verify add_binding_again
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_binding_again is not changed
       - nm_add_binding_again is not changed
@@ -150,7 +150,7 @@
     register: nm_vmm_type
 
   - name: Verify bindings with domain types
-    assert:
+    ansible.builtin.assert:
       that:
       - err_not_vmm_with_vm_provider is not changed
       - err_not_vmm_with_vm_provider.msg == "Domain type 'phys' cannot have a 'vm_provider'"
@@ -182,7 +182,7 @@
     register: nm_query_all_bindings
 
   - name: Verify query_all_bindings
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_query_all_bindings is not changed
       - nm_query_all_bindings is not changed
@@ -209,7 +209,7 @@
     register: nm_query_binding
 
   - name: Verify query_binding
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_query_binding is not changed
       - nm_query_binding is not changed
@@ -231,7 +231,7 @@
     register: nm_remove_binding
 
   - name: Verify remove_binding
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_binding is changed
       - nm_remove_binding is changed
@@ -250,7 +250,7 @@
     register: nm_remove_binding_again
 
   - name: Verify remove_binding_again
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_binding_again is not changed
       - nm_remove_binding_again is not changed
@@ -275,7 +275,7 @@
     register: nm_query_non_binding
 
   - name: Verify query_non_binding
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_query_non_binding is not changed
       - nm_query_non_binding is not changed

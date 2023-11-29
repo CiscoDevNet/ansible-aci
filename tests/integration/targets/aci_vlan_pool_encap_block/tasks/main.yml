@@ -5,12 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an aci apic host, aci username and aci password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -58,7 +58,7 @@
     register: encap_block_present_check_mode
 
   - name: Present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_present_check_mode is changed
         - encap_block_present_check_mode.sent.fvnsEncapBlk.attributes.allocMode == 'inherit'
@@ -73,7 +73,7 @@
     register: encap_block_present
 
   - name: Present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_present is changed
         - encap_block_present.previous == []
@@ -87,7 +87,7 @@
     register: encap_block_present_idempotent
 
   - name: Present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_present_idempotent is not changed
         - encap_block_present_idempotent.previous.0.fvnsEncapBlk.attributes.name == "anstest"
@@ -100,7 +100,7 @@
     register: encap_block_present_update
 
   - name: Present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_present_update is changed
         - encap_block_present_update.previous != []
@@ -115,7 +115,7 @@
     register: encap_block_present_2
 
   - name: Present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_present_2 is changed
         - encap_block_present_2.previous == []
@@ -128,7 +128,7 @@
     register: encap_block_start_low
 
   - name: Present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_start_low is failed
         - encap_block_start_low.msg == "vlan pools must have 'block_start' and 'block_end' values between 1 and 4094"
@@ -141,7 +141,7 @@
     register: encap_block_start_high
 
   - name: Present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_start_high is failed
         - encap_block_start_high.msg == "vlan pools must have 'block_start' and 'block_end' values between 1 and 4094"
@@ -154,7 +154,7 @@
     register: encap_block_end_low
 
   - name: Present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_end_low is failed
         - encap_block_end_low.msg == "vlan pools must have 'block_start' and 'block_end' values between 1 and 4094"
@@ -167,7 +167,7 @@
     register: encap_block_end_high
 
   - name: Present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_end_high is failed
         - encap_block_end_high.msg == "vlan pools must have 'block_start' and 'block_end' values between 1 and 4094"
@@ -180,7 +180,7 @@
     register: encap_block_start_end
 
   - name: Present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_start_end is failed
         - encap_block_start_end.msg == "The 'block_start' must be less than or equal to the 'block_end'"
@@ -192,7 +192,7 @@
     register: encap_block_present_missing_param
 
   - name: Present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_present_missing_param is failed
         - 'encap_block_present_missing_param.msg == "state is present but all of the following are missing: block_end, block_start"'
@@ -204,7 +204,7 @@
     register: encap_block_query
 
   - name: Query assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_query is not changed
         - encap_block_query.url.endswith("infra/vlanns-[anstest]-static/from-[vlan-20]-to-[vlan-40].json")
@@ -219,7 +219,7 @@
     register: encap_block_query_from_to_name
 
   - name: Query assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_query_from_to_name is not changed
         - encap_block_query_from_to_name.url.endswith("class/fvnsEncapBlk.json")
@@ -237,7 +237,7 @@
     register: encap_block_query_from_name
 
   - name: Query assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_query_from_name is not changed
         - encap_block_query_from_name.url.endswith("class/fvnsEncapBlk.json")
@@ -253,7 +253,7 @@
     register: encap_block_query_to_name
 
   - name: Query assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_query_to_name is not changed
         - encap_block_query_to_name.url.endswith("class/fvnsEncapBlk.json")
@@ -270,7 +270,7 @@
     register: encap_block_query_name
 
   - name: Query assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_query_name is not changed
         - encap_block_query_name.url.endswith("class/fvnsEncapBlk.json")
@@ -284,7 +284,7 @@
     register: encap_block_query_from_to
 
   - name: Query assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_query_from_to is not changed
         - encap_block_query_from_to.url.endswith("class/fvnsEncapBlk.json")
@@ -301,7 +301,7 @@
     register: encap_block_query_pool
 
   - name: Query assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_query_pool is not changed
         - encap_block_query_pool.current | length == 1
@@ -318,7 +318,7 @@
     register: encap_block_query_all
 
   - name: Query assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - encap_block_query_all is not changed
         - encap_block_query_all.current | length > 1
@@ -332,7 +332,7 @@
     register: delete_range
 
   - name: Absent assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - delete_range is changed
         - delete_range.proposed == {}
@@ -346,7 +346,7 @@
     register: delete_check_mode
 
   - name: Absent assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - delete_check_mode is changed
         - delete_check_mode.previous != []
@@ -357,7 +357,7 @@
     register: delete_encap_block_2
 
   - name: Absent assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - delete_encap_block_2 is changed
         - delete_encap_block_2.previous == delete_check_mode.previous
@@ -368,7 +368,7 @@
     register: delete_idempotent
 
   - name: Absent assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - delete_idempotent is not changed
         - delete_idempotent.previous == []

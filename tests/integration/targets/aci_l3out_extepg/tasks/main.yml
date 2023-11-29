@@ -18,7 +18,7 @@
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
-    aci_tenant: ansible_test
+    cisco.aci.aci_tenant: ansible_test
 
 - name: Verify Cloud and Non-Cloud Sites in use.
   ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
@@ -29,7 +29,7 @@
   block:
 
   - name: Query system information
-    aci_system:
+    cisco.aci.aci_system:
       <<: *aci_info
       id: 1
       state: query

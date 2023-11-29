@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact: 
+  ansible.builtin.set_fact: 
    aci_info: &aci_info
     host: "{{ aci_hostname }}"
     username: "{{ aci_username }}"
@@ -20,14 +20,14 @@
     output_level: "{{ aci_output_level | default('info') }}"
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   # CLEAN ENVIRONMENT
   - name: Remove policy spanning tree
-    aci_interface_policy_spanning_tree:
+    cisco.aci.aci_interface_policy_spanning_tree:
       <<: *aci_info
       stp_policy: "{{ item }}"
       state: absent
@@ -38,7 +38,7 @@
 
   # ADD
   - name: Add a spanning tree interface policy BPDU Guard - check mode
-    aci_interface_policy_spanning_tree:
+    cisco.aci.aci_interface_policy_spanning_tree:
       <<: *aci_info
       stp_policy: stp_bpduguard
       description: BPDU Guard
@@ -48,7 +48,7 @@
     register: stp_bpduguard_cm
 
   - name: Add a spanning tree interface policy BPDU Guard - normal mode
-    aci_interface_policy_spanning_tree:
+    cisco.aci.aci_interface_policy_spanning_tree:
       <<: *aci_info
       stp_policy: stp_bpduguard
       description: BPDU Guard
@@ -57,7 +57,7 @@
     register: stp_bpduguard_nm
 
   - name: Add a spanning tree interface policy BPDU Guard - normal mode again
-    aci_interface_policy_spanning_tree:
+    cisco.aci.aci_interface_policy_spanning_tree:
       <<: *aci_info
       stp_policy: stp_bpduguard
       description: BPDU Guard
@@ -66,7 +66,7 @@
     register: stp_bpduguard_nm_again
 
   - name: Add a spanning tree interface policy BPDU Filter - check mode
-    aci_interface_policy_spanning_tree:
+    cisco.aci.aci_interface_policy_spanning_tree:
       <<: *aci_info
       stp_policy: stp_bpdufilter
       description: BPDU Filter
@@ -76,7 +76,7 @@
     register: stp_bpdufilter_cm
 
   - name: Add a spanning tree interface policy BPDU Filter - normal mode
-    aci_interface_policy_spanning_tree:
+    cisco.aci.aci_interface_policy_spanning_tree:
       <<: *aci_info
       stp_policy: stp_bpdufilter
       description: BPDU Filter
@@ -85,7 +85,7 @@
     register: stp_bpdufilter_nm
 
   - name: Add a spanning tree interface policy BPDU Filter - normal mode again
-    aci_interface_policy_spanning_tree:
+    cisco.aci.aci_interface_policy_spanning_tree:
       <<: *aci_info
       stp_policy: stp_bpdufilter
       description: BPDU Filter
@@ -94,7 +94,7 @@
     register: stp_bpdufilter_nm_again
 
   - name: Add a spanning tree interface policy Both - normal mode
-    aci_interface_policy_spanning_tree:
+    cisco.aci.aci_interface_policy_spanning_tree:
       <<: *aci_info
       stp_policy: stp_both
       description: Both controls
@@ -104,7 +104,7 @@
     register: stp_both_nm
 
   - name: Add a spanning tree interface policy Both - normal mode again
-    aci_interface_policy_spanning_tree:
+    cisco.aci.aci_interface_policy_spanning_tree:
       <<: *aci_info
       stp_policy: stp_both
       description: Both controls
@@ -114,7 +114,7 @@
     register: stp_both_nm_again
 
   - name: verify add tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - stp_bpduguard_cm is changed
         - stp_bpduguard_nm is changed
@@ -130,20 +130,20 @@
 
   # QUERY
   - name: Query a spanning tree interface policy
-    aci_interface_policy_spanning_tree:
+    cisco.aci.aci_interface_policy_spanning_tree:
       <<: *aci_info
       stp_policy: stp_both
       state: query
     register: stp_query_both
 
   - name: Query all spanning tree interface policies
-    aci_interface_policy_spanning_tree:
+    cisco.aci.aci_interface_policy_spanning_tree:
       <<: *aci_info
       state: query
     register: stp_query_all
 
   - name: verify query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - stp_query_both is not changed
         - stp_query_all is not changed
@@ -152,7 +152,7 @@
 
   # CLEAN ENVIRONMENT
   - name: Remove policy port security
-    aci_interface_policy_spanning_tree:
+    cisco.aci.aci_interface_policy_spanning_tree:
       <<: *aci_info
       stp_policy: "{{ item }}"
       state: absent

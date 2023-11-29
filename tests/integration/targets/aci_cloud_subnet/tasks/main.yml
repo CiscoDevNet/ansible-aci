@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,27 +21,27 @@
       output_level: '{{ aci_output_level | default("info") }}'
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for cloud sites
   when: query_cloud.current | length > 0  # This condition will execute only cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Ensure tenant doesn't exist
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       state: absent
       tenant: ansible_test
     register: tenant_absent
 
   - name: Ensure tenant exists for tests to kick off
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       state: present
       tenant: ansible_test
     register: tenant_present
 
   - name: Ensure aci cloud context profile does not exists
-    aci_cloud_ctx_profile:
+    cisco.aci.aci_cloud_ctx_profile:
       <<: *aci_info
       tenant: ansible_test
       name: ctx_profile_1
@@ -49,12 +49,12 @@
     register: rm_ctx_profile_1
 
   - name: Verify rm_ctx_profile_1
-    assert:
+    ansible.builtin.assert:
       that:
       - rm_ctx_profile_1.current == []
 
   - name: Create aci cloud context profile (normal mode)
-    aci_cloud_ctx_profile:
+    cisco.aci.aci_cloud_ctx_profile:
       <<: *aci_info
       tenant: ansible_test
       cloud: "{{ cloud_type }}"
@@ -66,7 +66,7 @@
     register: nm_add_aci_ctx_profile
 
   - name: Create aci cloud subnet (check_mode)
-    aci_cloud_subnet:
+    cisco.aci.aci_cloud_subnet:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -78,7 +78,7 @@
     register: cm_add_subnet
 
   - name: Create aci cloud subnet (normal_mode)
-    aci_cloud_subnet:
+    cisco.aci.aci_cloud_subnet:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -89,7 +89,7 @@
     register: nm_add_subnet
 
   - name: Verify cm_add_subnet
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_subnet is changed
       - cm_add_subnet.previous == []
@@ -98,7 +98,7 @@
       - cm_add_subnet.proposed.cloudSubnet.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.50.0.0/16]/subnet-[10.50.0.1]"
 
   - name: Create aci cloud subnet again (normal_mode)
-    aci_cloud_subnet:
+    cisco.aci.aci_cloud_subnet:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -109,12 +109,12 @@
     register: nm_add_subnet_again
 
   - name: Verify nm_add_subnet_again
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_add_subnet_again is not changed
 
   - name: Create another cloud subnet (normal_mode)
-    aci_cloud_subnet:
+    cisco.aci.aci_cloud_subnet:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -125,7 +125,7 @@
     register: nm_add_another_subnet
 
   - name: Verify nm_add_another_subnet
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_add_another_subnet is changed
       - nm_add_another_subnet.previous == []
@@ -134,7 +134,7 @@
       - nm_add_another_subnet.current.0.cloudSubnet.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.50.0.0/16]/subnet-[10.50.0.2]"
 
   - name: Create cloud subnet 3(normal_mode)
-    aci_cloud_subnet:
+    cisco.aci.aci_cloud_subnet:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -145,7 +145,7 @@
     register: nm_add_subnet_3
 
   - name: Specify subnet as VpnGateway enabled
-    aci_cloud_subnet:
+    cisco.aci.aci_cloud_subnet:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -160,7 +160,7 @@
 
   # Enable vpn_gateway router in cloud ctx profile
   - name: Enable VpnGateway
-    aci_cloud_vpn_gateway:
+    cisco.aci.aci_cloud_vpn_gateway:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -168,14 +168,14 @@
 
   # Try to disable vpn_gateway router again in cloud ctx profile
   - name: Disable VpnGateway
-    aci_cloud_vpn_gateway:
+    cisco.aci.aci_cloud_vpn_gateway:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
       state: absent
 
   - name: Query all subnets
-    aci_cloud_subnet:
+    cisco.aci.aci_cloud_subnet:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -184,14 +184,14 @@
     register: query_all
 
   - name: Verify query_all
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all is not changed
       - query_all.current.0.cloudCidr.attributes.addr == "10.50.0.0/16"
       - query_all.current.0.cloudCidr.children | length == 3
 
   - name: Query a specific subnet
-    aci_cloud_subnet:
+    cisco.aci.aci_cloud_subnet:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -201,7 +201,7 @@
     register: query_subnet_1
 
   - name: Verify query_subnet_1
-    assert:
+    ansible.builtin.assert:
       that:
       - query_subnet_1 is not changed
       - query_subnet_1.current.0.cloudSubnet.attributes.ip == "10.50.0.1"
@@ -209,7 +209,7 @@
       - query_subnet_1.current.0.cloudSubnet.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.50.0.0/16]/subnet-[10.50.0.1]"
 
   - name: Remove subnet 3 (check_mode)
-    aci_cloud_subnet:
+    cisco.aci.aci_cloud_subnet:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -220,14 +220,14 @@
     register: cm_remove_subnet_3
 
   - name: Verify cm_remove_subnet_3
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_subnet_3 is changed
       - cm_remove_subnet_3.proposed == {}
       - cm_remove_subnet_3.previous.0.cloudSubnet.attributes.ip == "10.50.0.3"
 
   - name: Remove subnet 3 (normal_mode)
-    aci_cloud_subnet:
+    cisco.aci.aci_cloud_subnet:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -237,14 +237,14 @@
     register: nm_remove_subnet_3
 
   - name: Verify nm_remove_subnet_3
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_remove_subnet_3 is changed
       - nm_remove_subnet_3.current == []
       - nm_remove_subnet_3.previous.0.cloudSubnet.attributes.ip == "10.50.0.3"
 
   - name: Remove subnet 3 again
-    aci_cloud_subnet:
+    cisco.aci.aci_cloud_subnet:
       <<: *aci_info
       tenant: ansible_test
       cloud_context_profile: ctx_profile_1
@@ -254,7 +254,7 @@
     register: nm_remove_subnet_3_again
 
   - name: Verify nm_remove_subnet_3_again
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_remove_subnet_3_again is not changed
       - nm_remove_subnet_3_again.previous == []

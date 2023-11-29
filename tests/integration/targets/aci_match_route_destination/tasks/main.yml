@@ -5,12 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -22,26 +22,26 @@
     
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant: &aci_tenant_absent
+  cisco.aci.aci_tenant: &aci_tenant_absent
     <<: *aci_info 
     tenant: ansible_tenant
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Add a new tenant
-    aci_tenant: &aci_tenant_present
+    cisco.aci.aci_tenant: &aci_tenant_present
       <<: *aci_info
       tenant: ansible_tenant
       description: Ansible tenant
       state: present
 
   - name: Add a match rule profile
-    aci_match_rule:
+    cisco.aci.aci_match_rule:
       <<: *aci_info
       tenant: ansible_tenant
       match_rule: ansible_match_rule
@@ -50,7 +50,7 @@
     register: cm_add_match_rule
 
   - name: Add a match route destination rule (check_mode)
-    aci_match_route_destination: &aci_match_route_destination_present
+    cisco.aci.aci_match_route_destination: &aci_match_route_destination_present
       <<: *aci_info
       tenant: ansible_tenant
       match_rule: ansible_match_rule
@@ -64,17 +64,17 @@
     register: cm_add_match_route_destination
 
   - name: Add a match route destination rule (normal_mode)
-    aci_match_route_destination:
+    cisco.aci.aci_match_route_destination:
       <<: *aci_match_route_destination_present
     register: nm_add_match_route_destination
 
   - name: Add the first match route destination rule again - testing idempotency
-    aci_match_route_destination:
+    cisco.aci.aci_match_route_destination:
       <<: *aci_match_route_destination_present
     register: nm_add_match_route_destination_idempotency
 
   - name: Add a second match route destination rule (normal_mode)
-    aci_match_route_destination:
+    cisco.aci.aci_match_route_destination:
       <<: *aci_info
       tenant: ansible_tenant
       match_rule: ansible_match_rule
@@ -84,7 +84,7 @@
     register: nm_add_match_route_destination_2
 
   - name: Asserts for match route destination rule creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_match_route_destination is changed
         - cm_add_match_route_destination.previous == []
@@ -103,19 +103,19 @@
         - nm_add_match_route_destination_2.current.0.rtctrlMatchRtDest.attributes.toPfxLen == "0"
 
   - name: Query all match regex AS-Path terms
-    aci_match_route_destination:
+    cisco.aci.aci_match_route_destination:
       <<: *aci_info
       state: query
     register: query_all_match_route_destination
 
   - name: Query ansible_match_route_destination_1
-    aci_match_route_destination:
+    cisco.aci.aci_match_route_destination:
       <<: *aci_match_route_destination_present
       state: query
     register: query_ansible_match_route_destination_1
 
   - name: Asserts query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_match_route_destination is not changed
         - query_all_match_route_destination.current|length >= 2
@@ -126,24 +126,24 @@
         - query_ansible_match_route_destination_1.current.0.rtctrlMatchRtDest.attributes.toPfxLen == "32"
 
   - name: Remove match route destination rule (check_mode)
-    aci_match_route_destination: &match_route_destination_absent
+    cisco.aci.aci_match_route_destination: &match_route_destination_absent
       <<: *aci_match_route_destination_present
       state: absent
     check_mode: true
     register: cm_remove_match_route_destination
 
   - name: Remove match route destination rule (normal_mode)
-    aci_match_route_destination:
+    cisco.aci.aci_match_route_destination:
       <<: *match_route_destination_absent
     register: nm_remove_match_route_destination
 
   - name: Remove match route destination rule again - testing previous Removal
-    aci_match_route_destination:
+    cisco.aci.aci_match_route_destination:
       <<: *match_route_destination_absent
     register: nm_remove_match_route_destination_idempotency
 
   - name: Asserts deletion tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_remove_match_route_destination is changed
         - cm_remove_match_route_destination.proposed == {}
@@ -154,6 +154,6 @@
         - nm_remove_match_route_destination_idempotency.previous == []
 
   - name: Remove the ansible_tenant - cleanup before ending tests
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_tenant_present
       state: absent

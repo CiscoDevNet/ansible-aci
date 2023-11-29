@@ -4,7 +4,7 @@
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -15,7 +15,7 @@
       output_level: '{{ aci_output_level | default("info") }}'
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -84,7 +84,7 @@
     register: nm_add_assoc
 
   - name: Verify add_assoc
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_assoc is changed
       - nm_add_assoc is changed
@@ -106,7 +106,7 @@
     register: nm_add_assoc_again
 
   - name: Verify add_assoc_again
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_assoc_again is not changed
       - nm_add_assoc_again is not changed
@@ -126,7 +126,7 @@
     register: nm_update_assoc
 
   - name: Verify update_assoc
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_update_assoc is changed
       - nm_update_assoc is changed
@@ -149,7 +149,7 @@
     register: query_all_assocs
 
   - name: Verify query_all_assocs
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all_assocs is not changed
       - query_all_assocs.current|length >= 1
@@ -162,7 +162,7 @@
     register: query_spec_assoc
 
   - name: Verify query_spec_assoc
-    assert:
+    ansible.builtin.assert:
       that:
       - query_spec_assoc is not changed
       - query_spec_assoc.current|length == 1
@@ -181,7 +181,7 @@
     register: nm_remove_spec_assoc
 
   - name: Verify remove_spec_assoc
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_spec_assoc is changed
       - nm_remove_spec_assoc is changed
@@ -193,7 +193,7 @@
     register: nm_remove_spec_assoc_again
 
   - name: Verify remove_spec_assoc_again
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_remove_spec_assoc_again is not changed
 
@@ -206,7 +206,7 @@
     register: query_existing_assoc
 
   - name: Verify query_existing_assoc
-    assert:
+    ansible.builtin.assert:
       that:
       - query_existing_assoc is not changed
       - query_existing_assoc.current|length == 1
@@ -219,7 +219,7 @@
     register: nm_query_non_exist
 
   - name: Verify nm_query_non_exist
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_query_non_exist is not changed
       - nm_query_non_exist.current == []

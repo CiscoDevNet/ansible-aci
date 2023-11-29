@@ -52,7 +52,7 @@
   register: nm_add_taboo_contract
 
 - name: Verify add_taboo_contract
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_taboo_contract is changed
     - nm_add_taboo_contract is changed
@@ -76,7 +76,7 @@
   register: nm_add_taboo_contract_again
 
 - name: Verify add_taboo_contract_again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_taboo_contract_again is not changed
     - nm_add_taboo_contract_again is not changed
@@ -98,7 +98,7 @@
   register: nm_add_taboo_contract_descr
 
 - name: Verify add_taboo_contract_descr
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_taboo_contract_descr is changed
     - nm_add_taboo_contract_descr is changed
@@ -124,7 +124,7 @@
   register: nm_add_taboo_contract_descr_again
 
 - name: Verify add_taboo_contract_descr_again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_taboo_contract_descr_again is not changed
     - nm_add_taboo_contract_descr_again is not changed
@@ -142,7 +142,7 @@
   register: nm_add_taboo_contract_again_no_descr
 
 - name: Verify add_taboo_contract_again_no_descr
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_taboo_contract_again_no_descr is not changed
     - nm_add_taboo_contract_again_no_descr is not changed
@@ -168,7 +168,7 @@
   register: nm_query_all_taboo_contracts
 
 - name: Verify query_all_taboo_contracts
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_all_taboo_contracts is not changed
     - nm_query_all_taboo_contracts is not changed
@@ -193,7 +193,7 @@
   register: nm_query_taboo_contract
 
 - name: Verify query_taboo_contract
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_taboo_contract is not changed
     - nm_query_taboo_contract is not changed
@@ -214,7 +214,7 @@
   register: nm_remove_taboo_contract
 
 - name: Verify remove_taboo_contract
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_taboo_contract is changed
     - nm_remove_taboo_contract is changed
@@ -233,7 +233,7 @@
   register: nm_remove_taboo_contract_again
 
 - name: Verify remove_taboo_contract_again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_taboo_contract_again is not changed
     - nm_remove_taboo_contract_again is not changed
@@ -261,7 +261,7 @@
 
 # TODO: Implement more tests
 - name: Verify query_non_taboo_contract
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_non_taboo_contract is not changed
     - nm_query_non_taboo_contract is not changed
@@ -284,7 +284,7 @@
   register: error_on_missing_required_param
 
 - name: Verify error_on_missing_required_param
-  assert:
+  ansible.builtin.assert:
     that:
     - error_on_missing_required_param is failed
     - 'error_on_missing_required_param.msg == "state is present but all of the following are missing: tenant, taboo_contract"'

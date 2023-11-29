@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # GET Credentials from the inventory
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -38,7 +38,7 @@
   register: add_bgp_rr_node
 
 - name: Verify that BGP route reflector node has been created with correct attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - add_bgp_rr_node is changed
     - add_bgp_rr_node.current.0.bgpRRNodePEp.attributes.annotation == 'orchestrator:ansible'
@@ -58,7 +58,7 @@
   register: add_bgp_rr_node_again
 
 - name: Verify that BGP route reflector node has been created with correct attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - add_bgp_rr_node_again is not changed
     - add_bgp_rr_node_again.current.0.bgpRRNodePEp.attributes.dn == "uni/fabric/bgpInstP-default/rr/node-101"
@@ -77,7 +77,7 @@
   register: update_bgp_rr_node
 
 - name: Verify that BGP route reflector node has been updated with correct attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - update_bgp_rr_node is changed
     - update_bgp_rr_node.current.0.bgpRRNodePEp.attributes.dn == "uni/fabric/bgpInstP-default/rr/node-101"
@@ -94,7 +94,7 @@
   register: query_bgp_rr_node
 
 - name: Verify that BGP route reflector node attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - query_bgp_rr_node is not changed
     - query_bgp_rr_node.current.0.bgpRRNodePEp.attributes.dn == "uni/fabric/bgpInstP-default/rr/node-101"
@@ -109,7 +109,7 @@
   register: query_bgp_rr_node_all
 
 - name: Verify query_bgp_rr_node_all
-  assert:
+  ansible.builtin.assert:
     that:
     - query_bgp_rr_node_all is not changed
 
@@ -122,7 +122,7 @@
   register: remove_bgp_rr_node
 
 - name: Verify BGP route reflector node removal
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_bgp_rr_node is changed
     - remove_bgp_rr_node.current == []

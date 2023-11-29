@@ -22,7 +22,7 @@
 
 # ADD SOURCE
 - name: Add source (check_mode)
-  aci_firmware_source: &source_present
+  cisco.aci.aci_firmware_source: &source_present
     host: '{{ aci_hostname }}'
     username: '{{ aci_username }}'
     password: '{{ aci_password }}'
@@ -38,12 +38,12 @@
   register: cm_add_source
 
 - name: Add source (normal mode)
-  aci_firmware_source:
+  cisco.aci.aci_firmware_source:
     <<: *source_present
   register: nm_add_source
 
 - name: Verify add_source
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_source is changed
     - nm_add_source is changed
@@ -60,22 +60,22 @@
     - nm_add_source.current.0.firmwareOSource.attributes.annotation == 'orchestrator:ansible'
 
 - name: Add source again (check_mode)
-  aci_firmware_source: *source_present
+  cisco.aci.aci_firmware_source: *source_present
   check_mode: true
   register: cm_add_source_again
 
 - name: Add source again (normal mode)
-  aci_firmware_source:
+  cisco.aci.aci_firmware_source:
     <<: *source_present
   register: nm_add_source_again
 
 - name: Verify add_source_again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_source_again is not changed
 
 - name: Add another source (normal mode)
-  aci_firmware_source:
+  cisco.aci.aci_firmware_source:
     <<: *source_present
     source: ansible_test_2
   register: nm_add_source
@@ -99,7 +99,7 @@
   register: nm_query_all_sources
 
 - name: Verify query_all_sources
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_all_sources is not changed
     - nm_query_all_sources is not changed
@@ -108,20 +108,20 @@
 
 # QUERY A SOURCE
 - name: Query our source (check_mode)
-  aci_firmware_source:
+  cisco.aci.aci_firmware_source:
     <<: *source_query
     source: ansible_test_1
   check_mode: true
   register: cm_query_source
 
 - name: Query our source (normal mode)
-  aci_firmware_source:
+  cisco.aci.aci_firmware_source:
     <<: *source_query
     source: ansible_test_1
   register: nm_query_source
 
 - name: Verify query_source
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_source is not changed
     - nm_query_source is not changed
@@ -131,7 +131,7 @@
 
 # REMOVE SOURCE
 - name: Remove source (check_mode)
-  aci_firmware_source: &source_remove
+  cisco.aci.aci_firmware_source: &source_remove
     <<: *source_query
     source: ansible_test_1
     state: absent
@@ -139,11 +139,11 @@
   register: cm_remove_source
 
 - name: Remove source (normal mode)
-  aci_firmware_source: *source_remove
+  cisco.aci.aci_firmware_source: *source_remove
   register: nm_remove_source
 
 - name: Verify remove_source
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_source is changed
     - nm_remove_source is changed
@@ -151,36 +151,36 @@
     - nm_remove_source.current == []
 
 - name: Remove source again (check_mode)
-  aci_firmware_source: *source_remove
+  cisco.aci.aci_firmware_source: *source_remove
   check_mode: true
   register: cm_remove_source_again
 
 - name: Remove source again (normal mode)
-  aci_firmware_source: *source_remove
+  cisco.aci.aci_firmware_source: *source_remove
   register: nm_remove_source_again
 
 - name: Verify remove_source_again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_source_again is not changed
     - nm_remove_source_again is not changed
 
 # QUERY NON-EXISTING SOURCE
 - name: Query non-existing source (check_mode)
-  aci_firmware_source:
+  cisco.aci.aci_firmware_source:
     <<: *source_query
     source: non_existing_source
   check_mode: true
   register: cm_query_non_source
 
 - name: Query non-existing source (normal mode)
-  aci_firmware_source:
+  cisco.aci.aci_firmware_source:
     <<: *source_query
     source: non_existing_source
   register: nm_query_non_source
 
 - name: Verify query_non_source
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_non_source is not changed
     - nm_query_non_source is not changed
@@ -202,7 +202,7 @@
   register: error_on_missing_required_param
 
 - name: Verify error_on_missing_required_param
-  assert:
+  ansible.builtin.assert:
     that:
     - error_on_missing_required_param is failed
     - 'error_on_missing_required_param.msg == "state is present but all of the following are missing: source, url"'

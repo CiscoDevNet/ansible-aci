@@ -19,7 +19,7 @@
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will skip execution for cloud sites
@@ -48,7 +48,7 @@
     register: nm_add_domain
 
   - name: Verify VMM add_domain
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_domain is changed
       - nm_add_domain is changed
@@ -69,7 +69,7 @@
     register: nm_add_domain_again
 
   - name: Verify VMM add_domain_again
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_domain_again is not changed
       - nm_add_domain_again is not changed
@@ -92,7 +92,7 @@
     when: version.current.0.topSystem.attributes.version is version('4.1', '>=')
 
   - name: Verify update_domain
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_update_domain is changed
       - nm_update_domain is changed
@@ -123,7 +123,7 @@
     register: nm_query_all_domains
 
   - name: Verify query_all_domains
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_query_all_domains is not changed
       - nm_query_all_domains is not changed
@@ -148,7 +148,7 @@
     register: nm_query_domain
 
   - name: Verify VMM query_domain
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_query_domain is not changed
       - nm_query_domain is not changed
@@ -167,7 +167,7 @@
     register: nm_remove_domain
 
   - name: Verify VMM remove_domain
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_domain is changed
       - nm_remove_domain is changed
@@ -186,7 +186,7 @@
     register: nm_remove_domain_again
 
   - name: Verify VMM remove_domain_again
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_domain_again is not changed
       - nm_remove_domain_again is not changed
@@ -209,7 +209,7 @@
     register: nm_query_non_domain
 
   - name: Verify VMM query_non_domain
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_query_non_domain is not changed
       - nm_query_non_domain is not changed

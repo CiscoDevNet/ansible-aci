@@ -5,12 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -22,26 +22,26 @@
     
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant: &aci_tenant_absent
+  cisco.aci.aci_tenant: &aci_tenant_absent
     <<: *aci_info 
     tenant: ansible_tenant
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Add a new tenant
-    aci_tenant: &aci_tenant_present
+    cisco.aci.aci_tenant: &aci_tenant_present
       <<: *aci_info
       tenant: ansible_tenant
       description: Ansible tenant
       state: present
 
   - name: Add a new L3Out
-    aci_l3out: 
+    cisco.aci.aci_l3out: 
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -51,7 +51,7 @@
       state: present
 
   - name: Add route control profile for l3out (check_mode)
-    aci_route_control_profile: &aci_route_control_profile_present
+    cisco.aci.aci_route_control_profile: &aci_route_control_profile_present
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -64,17 +64,17 @@
     register: cm_add_route_control_profile
 
   - name: Add route control profile for l3out (normal_mode)
-    aci_route_control_profile:
+    cisco.aci.aci_route_control_profile:
       <<: *aci_route_control_profile_present
     register: nm_add_route_control_profile
 
   - name: Add route control profile for l3out again - testing idempotency
-    aci_route_control_profile:
+    cisco.aci.aci_route_control_profile:
       <<: *aci_route_control_profile_present
     register: nm_add_route_control_profile_idempotency
 
   - name: Add route control profile for tenant (normal_mode)
-    aci_route_control_profile:
+    cisco.aci.aci_route_control_profile:
       <<: *aci_info
       tenant: ansible_tenant
       route_control_profile: ansible_rtctrl_profile_tenant
@@ -83,7 +83,7 @@
     register: nm_add_route_control_profile_2
 
   - name: Asserts for route control profiles creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_route_control_profile is changed
         - cm_add_route_control_profile.previous == []
@@ -94,42 +94,42 @@
         - nm_add_route_control_profile_2.previous == []
 
   - name: Query all route control profiles
-    aci_route_control_profile:
+    cisco.aci.aci_route_control_profile:
       <<: *aci_info
       state: query
     register: query_all_route_control_profile
 
   - name: Query ansible_rtctrl_profile_l3out
-    aci_route_control_profile:
+    cisco.aci.aci_route_control_profile:
       <<: *aci_route_control_profile_present
       state: query
     register: query_ansible_rtctrl_profile_l3out
 
   - name: Asserts query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_route_control_profile is not changed
         - query_all_route_control_profile.current|length >= 2
 
   - name: Remove route control profile for l3out (check_mode)
-    aci_route_control_profile: &route_control_profile_absent
+    cisco.aci.aci_route_control_profile: &route_control_profile_absent
       <<: *aci_route_control_profile_present
       state: absent
     check_mode: true
     register: cm_remove_route_control_profile
 
   - name: Remove route control profile for l3out (normal_mode)
-    aci_route_control_profile:
+    cisco.aci.aci_route_control_profile:
       <<: *route_control_profile_absent
     register: nm_remove_route_control_profile
 
   - name: Remove route control profile for l3out again - testing previous Removal
-    aci_route_control_profile:
+    cisco.aci.aci_route_control_profile:
       <<: *route_control_profile_absent
     register: nm_remove_route_control_profile_idempotency
 
   - name: Asserts deletion tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_remove_route_control_profile is changed
         - cm_remove_route_control_profile.proposed == {}
@@ -140,6 +140,6 @@
         - nm_remove_route_control_profile_idempotency.previous == []
 
   - name: Remove the ansible_tenant - cleanup before ending tests
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_tenant_present
       state: absent

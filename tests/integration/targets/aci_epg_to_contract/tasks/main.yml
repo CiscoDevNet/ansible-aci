@@ -5,12 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Ensure contract binding does not exist prior to testing
   cisco.aci.aci_epg_to_contract:
@@ -125,7 +125,7 @@
     register: incompatible_present
 
   - name: present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - provide_present_check_mode is changed
         - provide_present_check_mode.sent.fvRsProv.attributes.tnVzBrCPName == 'anstest_http'
@@ -235,7 +235,7 @@
     register: missing_required_query
 
   - name: query assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - query_provide_contract is not changed
         - query_provide_contract.current != []
@@ -292,7 +292,7 @@
     register: missing_required_absent
 
   - name: absent assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - consume_absent_check_mode is changed
         - consume_absent_check_mode.previous.0.fvRsCons is defined

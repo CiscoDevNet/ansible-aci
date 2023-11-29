@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,26 +21,26 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     tenant: ansible_tenant
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Add a new tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       tenant: ansible_tenant
       description: Ansible tenant
       state: present
 
   - name: Add New L2Out
-    aci_l2out:
+    cisco.aci.aci_l2out:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -52,7 +52,7 @@
     register: add_l2out
 
   - name: Add another L2Out
-    aci_l2out:
+    cisco.aci.aci_l2out:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out_2
@@ -64,7 +64,7 @@
     register: add_l2out_2
 
   - name: Add L2 external end point group
-    aci_l2out_extepg:
+    cisco.aci.aci_l2out_extepg:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -75,13 +75,13 @@
     register: l2extepg
 
   - name: Verify l2extepg
-    assert:
+    ansible.builtin.assert:
       that:
       - l2extepg is changed
       - l2extepg.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
 
   - name: Add L2 external end point group again
-    aci_l2out_extepg:
+    cisco.aci.aci_l2out_extepg:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -92,13 +92,13 @@
     register: l2extepg_again
 
   - name: Verify l2extepg_again
-    assert:
+    ansible.builtin.assert:
       that:
       - l2extepg_again is not changed
       - l2extepg.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg"
 
   - name: Add another L2 external end point group
-    aci_l2out_extepg:
+    cisco.aci.aci_l2out_extepg:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out_2
@@ -110,13 +110,13 @@
     register: l2extepg_2
 
   - name: Verify l2extepg_2
-    assert:
+    ansible.builtin.assert:
       that:
       - l2extepg_2 is changed
       - l2extepg_2.current.0.l2extInstP.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out_2/instP-ansible_extepg_2"
 
   - name: Bind External End Point Groups to Contracts
-    aci_l2out_extepg_to_contract:
+    cisco.aci.aci_l2out_extepg_to_contract:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -127,14 +127,14 @@
     register: bind_extepg_provider_contract
 
   - name: Verify bind_extepg_provider_contract
-    assert:
+    ansible.builtin.assert:
       that:
       - bind_extepg_provider_contract is changed
       - bind_extepg_provider_contract.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg/rsprov-ansible_contract"
       - bind_extepg_provider_contract.current.0.fvRsProv.attributes.annotation == 'orchestrator:ansible'
 
   - name: Bind second External End Point Groups to Contracts
-    aci_l2out_extepg_to_contract:
+    cisco.aci.aci_l2out_extepg_to_contract:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out_2
@@ -145,13 +145,13 @@
     register: bind_extepg_provider_contract
 
   - name: Verify bind_extepg_provider_contract
-    assert:
+    ansible.builtin.assert:
       that:
       - bind_extepg_provider_contract is changed
       - bind_extepg_provider_contract.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out_2/instP-ansible_extepg_2/rsprov-ansible_contract2"
 
   - name: Query the External End Point Groups
-    aci_l2out_extepg_to_contract:
+    cisco.aci.aci_l2out_extepg_to_contract:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -162,26 +162,26 @@
     register: query_extepg
 
   - name: Verify query_extepg
-    assert:
+    ansible.builtin.assert:
       that:
       - query_extepg is not changed
       - query_extepg.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg/rsprov-ansible_contract"
 
   - name: Query all the External End Point Groups
-    aci_l2out_extepg_to_contract:
+    cisco.aci.aci_l2out_extepg_to_contract:
       <<: *aci_info
       contract_type: provider
       state: query
     register: query_all
 
   - name: Verify query_extepg
-    assert:
+    ansible.builtin.assert:
       that:
       - query_extepg is not changed
       - query_extepg.current | length > 0
 
   - name: Remove existing contract to External End Point Groups
-    aci_l2out_extepg_to_contract:
+    cisco.aci.aci_l2out_extepg_to_contract:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -192,14 +192,14 @@
     register: remove_contract_extepg
 
   - name: Verify remove_contract_extepg
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_contract_extepg is changed
       - remove_contract_extepg.current == []
       - remove_contract_extepg.previous.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out/instP-ansible_extepg/rsprov-ansible_contract"
 
   - name: Bind External End Point Groups to Contracts
-    aci_l2out_extepg_to_contract:
+    cisco.aci.aci_l2out_extepg_to_contract:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -212,7 +212,7 @@
     register: bind_extepg_consumer_contract
 
   - name: Verify bind_extepg_consumer_contract
-    assert:
+    ansible.builtin.assert:
       that:
       - bind_extepg_consumer_contract is not changed
       - bind_extepg_consumer_contract.msg == "the 'provider_match' is only configurable for Provided Contracts"

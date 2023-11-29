@@ -4,7 +4,7 @@
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -22,7 +22,7 @@
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -111,7 +111,7 @@
     register: nm_add_group2
 
   - name: Verify add hsrp groups
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_group is changed
       - nm_add_group is changed
@@ -151,7 +151,7 @@
     register: query_all
 
   - name: Verify query
-    assert:
+    ansible.builtin.assert:
       that:
       - query_group is not changed
       - query_all is not changed
@@ -186,7 +186,7 @@
     register: absent_group_again
 
   - name: Verify remove
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_absent_group is changed
       - cm_absent_group.proposed == {}

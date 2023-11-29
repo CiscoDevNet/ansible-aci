@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,26 +21,26 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant: &aci_tenant_absent
+  cisco.aci.aci_tenant: &aci_tenant_absent
     <<: *aci_info 
     tenant: ansible_tenant
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Add a new tenant
-    aci_tenant: &aci_tenant_present
+    cisco.aci.aci_tenant: &aci_tenant_present
       <<: *aci_info
       tenant: ansible_tenant
       description: Ansible tenant
       state: present
 
   - name: Add a new l3out
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -50,7 +50,7 @@
       state: present
 
   - name: Add a new logical node profile
-    aci_l3out_logical_node_profile:
+    cisco.aci.aci_l3out_logical_node_profile:
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -59,7 +59,7 @@
       state: present
 
   - name: Add a second logical node profile
-    aci_l3out_logical_node_profile:
+    cisco.aci.aci_l3out_logical_node_profile:
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -68,7 +68,7 @@
       state: present
 
   - name: Add a new BGP timers policy
-    aci_bgp_timers_policy:
+    cisco.aci.aci_bgp_timers_policy:
       <<: *aci_info
       tenant: ansible_tenant
       bgp_timers_policy: ansible_bgp_timers_policy
@@ -76,7 +76,7 @@
       state: present
 
   - name: Add a new BGP protocol profile
-    aci_bgp_best_path_policy:
+    cisco.aci.aci_bgp_best_path_policy:
       <<: *aci_info
       tenant: ansible_tenant
       bgp_best_path_policy: ansible_bgp_best_path_policy
@@ -84,7 +84,7 @@
       state: present
 
   - name: Add a BGP protocol profile (check_mode)
-    aci_l3out_bgp_protocol_profile: &aci_l3out_bgp_protocol_profile_present
+    cisco.aci.aci_l3out_bgp_protocol_profile: &aci_l3out_bgp_protocol_profile_present
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -96,17 +96,17 @@
     register: cm_add_bgp_protocol_profile
 
   - name: Add a BGP protocol profile (normal_mode)
-    aci_l3out_bgp_protocol_profile:
+    cisco.aci.aci_l3out_bgp_protocol_profile:
       <<: *aci_l3out_bgp_protocol_profile_present
     register: nm_add_bgp_protocol_profile
 
   - name: Add the first BGP protocol profile again - testing idempotency
-    aci_l3out_bgp_protocol_profile:
+    cisco.aci.aci_l3out_bgp_protocol_profile:
       <<: *aci_l3out_bgp_protocol_profile_present
     register: nm_add_bgp_protocol_profile_idempotency
 
   - name: Add a second BGP protocol profile (normal_mode)
-    aci_l3out_bgp_protocol_profile:
+    cisco.aci.aci_l3out_bgp_protocol_profile:
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -115,7 +115,7 @@
     register: nm_add_bgp_protocol_profile_2
 
   - name: Asserts for BGP protocol profiles creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_bgp_protocol_profile is changed
         - cm_add_bgp_protocol_profile.previous == []
@@ -128,19 +128,19 @@
         - nm_add_bgp_protocol_profile_2.previous == []
 
   - name: Query all BGP best path policies
-    aci_l3out_bgp_protocol_profile:
+    cisco.aci.aci_l3out_bgp_protocol_profile:
       <<: *aci_info
       state: query
     register: query_all_bgp_protocol_profile
 
   - name: Query ansible_bgp_protocol_profile_1
-    aci_l3out_bgp_protocol_profile:
+    cisco.aci.aci_l3out_bgp_protocol_profile:
       <<: *aci_l3out_bgp_protocol_profile_present
       state: query
     register: query_ansible_bgp_protocol_profile_1
 
   - name: Asserts query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_bgp_protocol_profile is not changed
         - query_all_bgp_protocol_profile.current|length >= 2
@@ -151,24 +151,24 @@
         - query_ansible_bgp_protocol_profile_1.current.0.bgpProtP.children.1.bgpRsBgpNodeCtxPol.attributes.state == "formed"
 
   - name: Remove BGP protocol profile (check_mode)
-    aci_l3out_bgp_protocol_profile: &bgp_protocol_profile_absent
+    cisco.aci.aci_l3out_bgp_protocol_profile: &bgp_protocol_profile_absent
       <<: *aci_l3out_bgp_protocol_profile_present
       state: absent
     check_mode: true
     register: cm_remove_bgp_protocol_profile
 
   - name: Remove BGP protocol profile (normal_mode)
-    aci_l3out_bgp_protocol_profile:
+    cisco.aci.aci_l3out_bgp_protocol_profile:
       <<: *bgp_protocol_profile_absent
     register: nm_remove_bgp_protocol_profile
 
   - name: Remove BGP protocol profile - testing idempotency
-    aci_l3out_bgp_protocol_profile:
+    cisco.aci.aci_l3out_bgp_protocol_profile:
       <<: *bgp_protocol_profile_absent
     register: nm_remove_bgp_protocol_profile_idempotency
 
   - name: Asserts deletion tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_remove_bgp_protocol_profile is changed
         - cm_remove_bgp_protocol_profile.proposed == {}
@@ -179,6 +179,6 @@
         - nm_remove_bgp_protocol_profile_idempotency.previous == []
 
   - name: Remove the ansible_tenant - cleanup before ending tests
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_tenant_present
       state: absent

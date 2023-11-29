@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -20,7 +20,7 @@
       output_level: debug
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -71,7 +71,7 @@
     register: intf_policy_leaf_access_fc_port_polgrp_update
 
   - name: Verify present assertions for FC Port Policy Group
-    assert:
+    ansible.builtin.assert:
       that:
       - intf_policy_leaf_access_fc_port_polgrp_check_mode_present is changed
       - intf_policy_leaf_access_fc_port_polgrp_present is changed
@@ -116,7 +116,7 @@
     register: intf_policy_leaf_access_fc_pc_polgrp_update
 
   - name: Verify present assertions for FC PC Policy Group
-    assert:
+    ansible.builtin.assert:
       that:
       - intf_policy_leaf_access_fc_pc_polgrp_check_mode_present is changed
       - intf_policy_leaf_access_fc_pc_polgrp_present is changed
@@ -149,7 +149,7 @@
     register: query_leaf_access_fc_port_policy_group
 
   - name: Verify query assertions for Leaf Access FC Port Policy Group
-    assert:
+    ansible.builtin.assert:
       that:
         - query_leaf_access_fc_port_policy_group is not changed
         - query_leaf_access_fc_port_policy_group.current[0] | length >= 1
@@ -172,7 +172,7 @@
     register: query_leaf_access_fc_pc_policy_group
 
   - name: Verify query assertions for Leaf Access FC PC Policy Group
-    assert:
+    ansible.builtin.assert:
       that:
         - query_leaf_access_fc_pc_policy_group is not changed
         - query_leaf_access_fc_pc_policy_group.current[0] | length >= 1
@@ -196,7 +196,7 @@
     register: intf_policy_leaf_access_fc_port_polgrp_absent_idempotent
 
   - name: Verify absent assertions for FC Port Policy Group
-    assert:
+    ansible.builtin.assert:
       that:
         - intf_policy_leaf_access_fc_port_polgrp_check_mode_absent is changed
         - intf_policy_leaf_access_fc_port_polgrp_check_mode_absent.previous != []
@@ -222,7 +222,7 @@
     register: intf_policy_leaf_access_fc_pc_polgrp_absent_idempotent
 
   - name: Verify absent assertions for FC PC policy group
-    assert:
+    ansible.builtin.assert:
       that:
         - intf_policy_leaf_access_fc_pc_polgrp_check_mode_absent is changed
         - intf_policy_leaf_access_fc_pc_polgrp_check_mode_absent.previous != []

@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -66,7 +66,7 @@
     register: nm_add_aep3
 
   - name: Verify add_aep
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_aep is changed
       - nm_add_aep is changed
@@ -106,7 +106,7 @@
     register: nm_add_aep_again
 
   - name: Verify add_aep_again
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_aep_again is not changed
       - nm_add_aep_again is not changed
@@ -132,7 +132,7 @@
     register: nm_add_aep_descr
 
   - name: Verify add_aep_descr
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_aep_descr is changed
       - nm_add_aep_descr is changed
@@ -159,7 +159,7 @@
     register: nm_add_aep_descr_again
 
   - name: Verify add_aep_descr_again
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_aep_descr_again is not changed
       - nm_add_aep_descr_again is not changed
@@ -182,7 +182,7 @@
     register: nm_add_aep_again_no_descr
 
   - name: Verify add_aep_again_no_descr
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_aep_again_no_descr is not changed
       - nm_add_aep_again_no_descr is not changed
@@ -212,7 +212,7 @@
     register: nm_query_all_aeps
 
   - name: Verify query_all_aeps
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_query_all_aeps is not changed
       - nm_query_all_aeps is not changed
@@ -235,7 +235,7 @@
     register: nm_query_aep
 
   - name: Verify query_aep
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_query_aep is not changed
       - nm_query_aep is not changed
@@ -260,7 +260,7 @@
     register: nm_remove_aep
 
   - name: Verify remove_aep
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_aep is changed
       - nm_remove_aep is changed
@@ -285,7 +285,7 @@
     register: nm_remove_aep_again
 
   - name: Verify remove_aep_again
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_aep_again is not changed
       - nm_remove_aep_again is not changed
@@ -309,7 +309,7 @@
     register: nm_query_non_aep
 
   - name: Verify query_non_aep
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_query_non_aep is not changed
       - nm_query_non_aep is not changed
@@ -332,7 +332,7 @@
     register: error_on_missing_required_param
 
   - name: Verify error_on_missing_required_param
-    assert:
+    ansible.builtin.assert:
       that:
       - error_on_missing_required_param is failed
       - 'error_on_missing_required_param.msg == "state is present but all of the following are missing: aep"'

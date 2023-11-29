@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -82,7 +82,7 @@
   register: nm_add_cert_again
 
 - name: Verify add_cert
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_cert is changed
     - nm_add_cert is change
@@ -127,7 +127,7 @@
   register: nm_query_all_certs
 
 - name: Verify query_all_certs
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_all_certs is not changed
     - nm_query_all_certs is not changed
@@ -142,7 +142,7 @@
   register: nm_query_all_rsa
 
 - name: Verify nm_query_all_rsa
-  assert:
+  ansible.builtin.assert:
     that:
       - nm_query_all_rsa is not changed
       - nm_query_all_rsa.current.0.aaaUser.children | length >= 4
@@ -184,7 +184,7 @@
   register: nm_query_cert
 
 - name: Verify query_cert
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_cert is not changed
     - nm_query_cert is not changed
@@ -283,7 +283,7 @@
   register: nm_remove_cert_again
 
 - name: Verify remove_cert
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_cert is changed
     - nm_remove_cert is changed
@@ -292,7 +292,7 @@
 
 # Checking if changing certification_name to name throws an error. (#82)
 - name: Making sure current user has correct cert
-  aci_aaa_user_certificate:
+  cisco.aci.aci_aaa_user_certificate:
     <<: *aci_info
     aaa_user: '{{ aci_username }}'
     name: admin
@@ -377,7 +377,7 @@
   register: query_test_pk_content
 
 - name: Verify query_test
-  assert:
+  ansible.builtin.assert:
     that:
     - query_test is not changed
     - query_test_pk_file is not changed

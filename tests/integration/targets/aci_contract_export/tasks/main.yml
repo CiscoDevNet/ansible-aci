@@ -3,7 +3,7 @@
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -62,7 +62,7 @@
   register: nm_add_intf
 
 - name: Verify add_intf
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_intf is changed
     - nm_add_intf is changed
@@ -76,7 +76,7 @@
   register: add_intf_again
 
 - name: Verify add_intf_again
-  assert:
+  ansible.builtin.assert:
     that:
     - add_intf_again is not changed
 
@@ -88,7 +88,7 @@
   register: update_intf
 
 - name: Verify update_intf
-  assert:
+  ansible.builtin.assert:
     that:
     - update_intf is changed
     - update_intf.previous != []
@@ -108,7 +108,7 @@
   register: query_all_intfs
 
 - name: Verify query_all_intfs
-  assert:
+  ansible.builtin.assert:
     that:
     - query_all_intfs is not changed
     - query_all_intfs.current|length > 1
@@ -121,7 +121,7 @@
   register: query_spec_intf
 
 - name: Verify query_spec_intf
-  assert:
+  ansible.builtin.assert:
     that:
     - query_spec_intf is not changed
     - query_spec_intf.current|length == 1
@@ -134,7 +134,7 @@
   register: remove_intf
 
 - name: Verify remove_intf
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_intf is changed
     - remove_intf.current == []

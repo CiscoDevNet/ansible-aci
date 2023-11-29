@@ -5,12 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -22,26 +22,26 @@
     
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant: &aci_tenant_absent
+  cisco.aci.aci_tenant: &aci_tenant_absent
     <<: *aci_info 
     tenant: ansible_tenant
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Add a new tenant
-    aci_tenant: &aci_tenant_present
+    cisco.aci.aci_tenant: &aci_tenant_present
       <<: *aci_info
       tenant: ansible_tenant
       description: Ansible tenant
       state: present
 
   - name: Add a match rule profile (check_mode)
-    aci_match_rule: &aci_match_rule_present
+    cisco.aci.aci_match_rule: &aci_match_rule_present
       <<: *aci_info
       tenant: ansible_tenant
       match_rule: ansible_match_rule_1
@@ -51,17 +51,17 @@
     register: cm_add_match_rule
 
   - name: Add a match rule profile (normal_mode)
-    aci_match_rule:
+    cisco.aci.aci_match_rule:
       <<: *aci_match_rule_present
     register: nm_add_match_rule
 
   - name: Add the first match rule profile again - testing idempotency
-    aci_match_rule:
+    cisco.aci.aci_match_rule:
       <<: *aci_match_rule_present
     register: nm_add_match_rule_idempotency
 
   - name: Add a second match rule profile (normal_mode)
-    aci_match_rule:
+    cisco.aci.aci_match_rule:
       <<: *aci_info
       tenant: ansible_tenant
       match_rule: ansible_match_rule_2
@@ -70,7 +70,7 @@
     register: nm_add_match_rule_2
 
   - name: Asserts for match rule profiles creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_match_rule is changed
         - cm_add_match_rule.previous == []
@@ -83,19 +83,19 @@
         - nm_add_match_rule_2.current.0.rtctrlSubjP.attributes.name == "ansible_match_rule_2"
 
   - name: Query all match rule profiles
-    aci_match_rule:
+    cisco.aci.aci_match_rule:
       <<: *aci_info
       state: query
     register: query_all_match_rule
 
   - name: Query ansible_match_rule_1
-    aci_match_rule:
+    cisco.aci.aci_match_rule:
       <<: *aci_match_rule_present
       state: query
     register: query_ansible_match_rule_1
 
   - name: Asserts query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_match_rule is not changed
         - query_all_match_rule.current|length >= 2
@@ -103,24 +103,24 @@
         - query_ansible_match_rule_1.current.0.rtctrlSubjP.attributes.name == "ansible_match_rule_1"
 
   - name: Remove match rule profile for l3out (check_mode)
-    aci_match_rule: &match_rule_absent
+    cisco.aci.aci_match_rule: &match_rule_absent
       <<: *aci_match_rule_present
       state: absent
     check_mode: true
     register: cm_remove_match_rule
 
   - name: Remove match rule profile for l3out (normal_mode)
-    aci_match_rule:
+    cisco.aci.aci_match_rule:
       <<: *match_rule_absent
     register: nm_remove_match_rule
 
   - name: Remove match rule profile for l3out again - testing previous Removal
-    aci_match_rule:
+    cisco.aci.aci_match_rule:
       <<: *match_rule_absent
     register: nm_remove_match_rule_idempotency
 
   - name: Asserts deletion tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_remove_match_rule is changed
         - cm_remove_match_rule.proposed == {}
@@ -131,6 +131,6 @@
         - nm_remove_match_rule_idempotency.previous == []
 
   - name: Remove the ansible_tenant - cleanup before ending tests
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_tenant_present
       state: absent

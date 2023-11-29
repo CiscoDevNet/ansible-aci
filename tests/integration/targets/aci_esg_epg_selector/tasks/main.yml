@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -28,7 +28,7 @@
   register: version
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Ensure tenant - ansible_test does not exists before testing
   cisco.aci.aci_tenant: &tenant_absent
@@ -88,7 +88,7 @@
     register: cm_epg_selector_present
 
   - name: Assertions check for add an EPG selector with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_epg_selector_present is changed
         - cm_epg_selector_present.current | length == 0
@@ -101,7 +101,7 @@
     register: nm_epg_selector_present
 
   - name: Assertions check for add an EPG selector with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_epg_selector_present is changed
         - nm_epg_selector_present.current | length == 1
@@ -114,7 +114,7 @@
     register: cm_idempotency_epg_selector_present
 
   - name: Idempotency assertions check for add an EPG selector with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_idempotency_epg_selector_present is not changed
         - cm_idempotency_epg_selector_present.current | length == 1
@@ -125,7 +125,7 @@
     register: nm_idempotency_epg_selector_present
 
   - name: Idempotency assertions check for add an EPG selector with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_idempotency_epg_selector_present is not changed
         - nm_idempotency_epg_selector_present.current | length == 1
@@ -142,7 +142,7 @@
     register: query_single_epg_selector
 
   - name: Assertions check for query an EPG selector with esg and epg name
-    assert:
+    ansible.builtin.assert:
       that:
         - query_single_epg_selector is not changed
         - query_single_epg_selector.current | length == 1
@@ -158,7 +158,7 @@
     register: query_all_epg_selectors_under_ap
 
   - name: Assertions check for query all EPG selectors under an application profile
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_epg_selectors_under_ap is not changed
         - query_all_epg_selectors_under_ap.current | length == 1
@@ -173,7 +173,7 @@
     register: query_all_epg_selectors
 
   - name: Assertions check for query all EPG selectors
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_epg_selectors is not changed
         - query_all_epg_selectors.current | length >= 1
@@ -191,7 +191,7 @@
     register: cm_epg_selector_absent
 
   - name: Assertions check for remove an EPG selector with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_epg_selector_absent is changed
         - cm_epg_selector_absent.current != []
@@ -204,7 +204,7 @@
     register: nm_epg_selector_absent
 
   - name: Assertions check for remove an EPG selector with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_epg_selector_absent is changed
         - nm_epg_selector_absent.current == []
@@ -217,7 +217,7 @@
     register: cm_idempotency_epg_selector_absent
 
   - name: Idempotency assertions check for EPG selector with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_idempotency_epg_selector_absent is not changed
         - cm_idempotency_epg_selector_absent.current == []
@@ -228,7 +228,7 @@
     register: nm_idempotency_epg_selector_absent
 
   - name: Idempotency assertions check for EPG selector with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_idempotency_epg_selector_absent is not changed
         - nm_idempotency_epg_selector_absent.current == []

@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -26,7 +26,7 @@
   register: single_string_single_range
 
 - name: Valid input assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - single_string_single_range.results.0.item == "5/0"
       - single_string_single_range.results.1.item == "5/1"
@@ -39,7 +39,7 @@
   register: single_string_multiple_interface
 
 - name: Valid input assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - single_string_multiple_interface.results.0.item == "1/1"
       - single_string_multiple_interface.results.1.item == "1/2"
@@ -59,7 +59,7 @@
   register: single_string_single_interface_as_range
 
 - name: Valid input assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - single_string_single_interface_as_range.results.0.item == "1/1"
 
@@ -70,7 +70,7 @@
   register: single_string_mix_ranges
 
 - name: Valid input assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - single_string_mix_ranges.results.0.item == "1/1"
       - single_string_mix_ranges.results.1.item == "1/2"
@@ -101,7 +101,7 @@
   register: invalid_range_order
 
 - name: Invalid input assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - "'Invalid range inputs,' in invalid_pattern.msg"
       - "'Invalid range inputs,' in invalid_range_order.msg"
@@ -121,7 +121,7 @@
     msg: "{{ disable_leaf_int }}"
 
 - name: Valid disable interface assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - disable_leaf_int.results.0.current.0.fabricRsOosPath.attributes.lc == "blacklist"
       - disable_leaf_int.results.0.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/pathep-[eth1/30]"
@@ -141,7 +141,7 @@
   register: enable_leaf_int
 
 - name: Valid enable interface assertions
-  assert:
+  ansible.builtin.assert:
     that:
       - enable_leaf_int.results.0.current == []
       - enable_leaf_int.results.1.current == []

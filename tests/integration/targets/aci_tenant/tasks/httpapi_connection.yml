@@ -1,7 +1,7 @@
 ## Tests HTTTP Connection when a list of host are provided
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -35,7 +35,7 @@
     ansible_command_timeout: 5
 
 - name: Run aci_aaa_user_certificate through the plugin
-  include_tasks: ../../../../../../integration/targets/aci_aaa_user_certificate/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_aaa_user_certificate/tasks/main.yml
 
 - name: Add user certificate to be used later in the test
   cisco.aci.aci_aaa_user_certificate:
@@ -103,7 +103,7 @@
     no_username_flattened: "{{ no_username.httpapi_logs | flatten }}"
 
 - name: Verify XML operation and HTTP error returned by APIC
-  assert:
+  ansible.builtin.assert:
     that:
       - tenant_xml_plugin.status == 200
       - '"Received response from {{ aci_hostname }} for POST operation with HTTP: 400" in ap_non_existent_tenant_flattened'
@@ -160,7 +160,7 @@
     op18_flattened_task_pwd_add_ap: "{{ op18_task_pwd_add_ap.httpapi_logs | flatten }}"
 
 - name: Verify forbidden error 403
-  assert:
+  ansible.builtin.assert:
     that:
       - op17_task_pwd_add_tenant is changed
       - op18_task_pwd_add_ap is changed
@@ -169,7 +169,7 @@
       - '"Connection to {{ aci_hostname }} was successful" in op18_flattened_task_pwd_add_ap'
 
 - name: reset connection to test other scenarios
-  meta: reset_connection
+  ansible.builtin.meta: reset_connection
 
 # Precedence test
 - name: Delete Tenant with password and private key in the task (private_key takes precedence)
@@ -246,7 +246,7 @@
     op4_flattened_inventory_pwd_add_tenant: "{{ op4_inventory_pwd_add_tenant.httpapi_logs | flatten }}"
 
 - name: Verify Precedence
-  assert:
+  ansible.builtin.assert:
     that:
       - '"Provided Hosts: [''{{ aci_hostname }}'']" in op1_flattened_task_private_key_delete_tenant'
       - '"Initializing operation on {{ aci_hostname }}" in op1_flattened_task_private_key_delete_tenant'
@@ -270,7 +270,7 @@
       - '"Connection to {{ aci_hostname }} was successful" not in op4_flattened_inventory_pwd_add_tenant'
 
 - name: reset connection to test other scenarios
-  meta: reset_connection
+  ansible.builtin.meta: reset_connection
 
 # Switching of hosts test with the password in the task
 - name: Delete Tenant with only password in the task (Check for successful operation on the last host)
@@ -295,7 +295,7 @@
     op5_flattened_task_pwd_add_tenant: "{{ op5_task_pwd_add_tenant.httpapi_logs | flatten }}"
 
 - name: Verify switching of hosts with the password in the task
-  assert:
+  ansible.builtin.assert:
     that:
       - op5_task_pwd_delete_tenant is changed
       - op5_flattened_task_pwd_delete_tenant | regex_search('Switching host from [0-9]+(?:\.[0-9]+){3} to {{ aci_hostname }}') is not none
@@ -327,7 +327,7 @@
     op6_flattened_task_pwd_add_tenant: "{{ op6_task_pwd_add_tenant.httpapi_logs | flatten }}"
 
 - name: Verify continuation of the operations on the connected host with the password in the task
-  assert:
+  ansible.builtin.assert:
     that:
       - op6_task_pwd_delete_tenant is changed
       - '"Connected host {{ aci_hostname }} found in the provided hosts. Continuing with it." in op6_flattened_task_pwd_delete_tenant'
@@ -353,7 +353,7 @@
   register: op7_task_pwd_add_tenant
 
 - name: Verify failure when no hosts are active
-  assert:
+  ansible.builtin.assert:
     that:
       - op7_task_pwd_delete_tenant.error.text | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
       - op7_task_pwd_add_tenant is not changed
@@ -383,7 +383,7 @@
     op8_flattened_inventory_pwd_add_tenant: "{{ op8_inventory_pwd_add_tenant.httpapi_logs | flatten }}"
 
 - name: Verify switching of hosts with the password in the inventory
-  assert:
+  ansible.builtin.assert:
     that:
       - op8_inventory_pwd_delete_tenant is changed
       - op8_flattened_inventory_pwd_delete_tenant | regex_search('Switching host from [0-9]+(?:\.[0-9]+){3} to {{ aci_hostname }}') is not none
@@ -417,7 +417,7 @@
     op9_flattened_inventory_pwd_add_tenant: "{{ op9_inventory_pwd_add_tenant.httpapi_logs | flatten }}"
 
 - name: Verify switching of hosts with the password in the inventory
-  assert:
+  ansible.builtin.assert:
     that:
       - op9_inventory_pwd_delete_tenant is changed
       - op9_flattened_inventory_pwd_delete_tenant | regex_search('Switching host from [0-9]+(?:\.[0-9]+){3} to {{ aci_hostname }}') is not none
@@ -440,7 +440,7 @@
   ignore_errors: True
 
 - name: Verify failure when no hosts are active in the inventory
-  assert:
+  ansible.builtin.assert:
     that:
       - op10_inventory_pwd_delete_tenant.error.text | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
 
@@ -469,7 +469,7 @@
     op11_flattened_task_private_key_add_tenant: "{{ op11_task_private_key_add_tenant.httpapi_logs | flatten }}"
 
 - name: Verify switching of hosts with the private key in the task
-  assert:
+  ansible.builtin.assert:
     that:
       - op11_task_private_key_delete_tenant is changed
       - op11_flattened_task_private_key_delete_tenant | regex_search('Switching host from [0-9]+(?:\.[0-9]+){3} to {{ aci_hostname }}') is not none
@@ -503,7 +503,7 @@
     op12_flattened_task_private_key_add_tenant: "{{ op12_task_private_key_add_tenant.httpapi_logs | flatten }}"
 
 - name: Verify continuation of the operations on the connected host with the password in the task
-  assert:
+  ansible.builtin.assert:
     that:
       - op12_task_private_key_delete_tenant is changed
       - '"Connected host {{ aci_hostname }} found in the provided hosts. Continuing with it." in op12_flattened_task_private_key_delete_tenant'
@@ -531,7 +531,7 @@
   register: op13_task_private_key_add_tenant
 
 - name: Verify failure when no hosts are active in the task
-  assert:
+  ansible.builtin.assert:
     that:
       - op13_task_private_key_delete_tenant.error.text | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
       - op13_task_private_key_add_tenant is not changed
@@ -562,7 +562,7 @@
     op14_flattened_inventory_session_key_add_tenant: "{{ op14_inventory_session_key_add_tenant.httpapi_logs | flatten }}"
 
 - name: Verify switching of hosts with the session key in the inventory
-  assert:
+  ansible.builtin.assert:
     that:
       - op14_inventory_session_key_delete_tenant is changed
       - op14_flattened_inventory_session_key_delete_tenant | regex_search('Switching host from [0-9]+(?:\.[0-9]+){3} to {{ aci_hostname }}') is not none
@@ -596,7 +596,7 @@
     op15_flattened_inventory_session_key_add_tenant: "{{ op15_inventory_session_key_add_tenant.httpapi_logs | flatten }}"
 
 - name: Verify switching of hosts with the session key in the inventory
-  assert:
+  ansible.builtin.assert:
     that:
       - op15_inventory_session_key_delete_tenant is changed
       - op15_flattened_inventory_session_key_delete_tenant | regex_search('Switching host from [0-9]+(?:\.[0-9]+){3} to {{ aci_hostname }}') is not none
@@ -619,7 +619,7 @@
   ignore_errors: True
 
 - name: Verify failure when no hosts are active in the inventory
-  assert:
+  ansible.builtin.assert:
     that:
       - op16_inventory_session_key_delete_tenant.error.text | regex_search('No hosts left in the cluster to continue operation! Error on final host [0-9]+(?:\.[0-9]+){3}') is not none
 

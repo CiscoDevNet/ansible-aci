@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -21,10 +21,10 @@
       output_level: '{{ aci_output_level | default("info") }}'
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Ensure tenant doesn't exist
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     state: absent
     tenant: ansible_test
@@ -34,7 +34,7 @@
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Ensure tenant exists for tests to kick off
-    aci_tenant: &aci_tenant_present
+    cisco.aci.aci_tenant: &aci_tenant_present
       <<: *aci_info
       state: present
       tenant: ansible_test
@@ -113,7 +113,7 @@
       - {ap: 'anstest_2', epg: 'anstest_3'}
 
   - name: Verify add_contract_master
-    assert:
+    ansible.builtin.assert:
       that:
       - item is changed
       - item.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-ansible_test/ap-anstest/epg-anstest"
@@ -132,7 +132,7 @@
       - {ap: 'anstest', epg: 'anstest_2'}
       - {ap: 'anstest_2', epg: 'anstest_3'}
   - name: Verify add_another_contract_master
-    assert:
+    ansible.builtin.assert:
       that:
       - item is changed
       - item.current.0.fvRsSecInherited.attributes.tDn == "uni/tn-ansible_test/ap-anstest_2/epg-anstest_4"
@@ -159,7 +159,7 @@
     register: query_specific_contract_master
 
   - name: Verify query_specific_contract_master
-    assert:
+    ansible.builtin.assert:
       that:
       - query_specific_contract_master is not changed
       - query_specific_contract_master.current.0.fvRsSecInherited.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest_2/rssecInherited-[uni/tn-ansible_test/ap-anstest_2/epg-anstest_4]"
@@ -177,7 +177,7 @@
     register: query_another_specific_contract_master
 
   - name: Verify query_another_specific_contract_master
-    assert:
+    ansible.builtin.assert:
       that:
       - query_another_specific_contract_master is not changed
       - query_another_specific_contract_master.current.0.fvRsSecInherited.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest_2/rssecInherited-[uni/tn-ansible_test/ap-anstest/epg-anstest]"
@@ -195,14 +195,14 @@
     register: remove_contract_master
 
   - name: Verify remove_contract_master
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_contract_master is changed
       - remove_contract_master.current == []
 
   # Clean up environment
   - name: Ensure tenant doesn't exist
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       state: absent
       tenant: ansible_test

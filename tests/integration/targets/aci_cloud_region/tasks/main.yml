@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,20 +21,20 @@
       output_level: '{{ aci_output_level | default("info") }}'
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for cloud sites
   when: query_cloud.current | length > 0  # This condition will execute only cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Query all regions
-    aci_cloud_region:
+    cisco.aci.aci_cloud_region:
       <<: *aci_info
       cloud: "{{ cloud_type }}"
       state: query
     register: query_all
 
   - name: Verify query_all
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all is not changed
       - query_all.current.0.cloudProvP.attributes.dn == "uni/clouddomp/provp-{{cloud_type}}"
@@ -43,7 +43,7 @@
     when: query_all.current != []
 
   - name: Query a specific region
-    aci_cloud_region:
+    cisco.aci.aci_cloud_region:
       <<: *aci_info
       cloud: "{{ cloud_type }}"
       region: "{{ region_2 }}"
@@ -51,7 +51,7 @@
     register: query_region
 
   - name: Verify query_region
-    assert:
+    ansible.builtin.assert:
       that:
       - query_region is not changed
       - query_region.current.0.cloudRegion.attributes.adminSt == "managed"
@@ -60,7 +60,7 @@
     when: query_region.current != []
 
   - name: Query non_existing region
-    aci_cloud_region:
+    cisco.aci.aci_cloud_region:
       <<: *aci_info
       cloud: "{{ cloud_type }}"
       region: non_existing
@@ -68,7 +68,7 @@
     register: query_non_existing_region
 
   - name: Verify query_non_existing_region
-    assert:
+    ansible.builtin.assert:
       that:
       - query_non_existing_region is not changed
       - query_non_existing_region.current == []

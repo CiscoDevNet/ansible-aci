@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -20,7 +20,7 @@
       output_level: debug
 
 - name: Node types
-  set_fact:
+  ansible.builtin.set_fact:
     test_vars_leaf: &test_vars_leaf
       pod_id: 1
       node_id: 1101
@@ -41,7 +41,7 @@
       description: testing
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -72,7 +72,7 @@
     register: query_leaf_description
 
   - name: Leaf - Verify that no infraHPathS is present
-    assert:
+    ansible.builtin.assert:
       that:
       - query_leaf_description.current.0.infraInfra.children.0.infraHPathS.children is not defined
 
@@ -84,7 +84,7 @@
     register: set_leaf_description
 
   - name: Leaf - Verify that description is set on interface
-    assert:
+    ansible.builtin.assert:
       that:
       - set_leaf_description.current|length == 1
       - set_leaf_description.current.0.infraHPathS.children.0.infraRsHPathAtt.attributes.tDn == "topology/pod-1/paths-1101/pathep-[eth1/33]"
@@ -99,7 +99,7 @@
     register: query_leaf_interface_1101_eth1_33
 
   - name: Assertion check for query Leaf interface - 1101_eth1_33
-    assert:
+    ansible.builtin.assert:
       that:
       - query_leaf_interface_1101_eth1_33.current.0.infraHPathS.children | length == 1
       - query_leaf_interface_1101_eth1_33.current.0.infraHPathS.children.0.infraRsHPathAtt.attributes.rn == "rsHPathAtt-[topology/pod-1/paths-1101/pathep-[eth1/33]]"
@@ -115,7 +115,7 @@
     register: query_all_leaf_interfaces
 
   - name: Verify query all leaf interfaces
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all_leaf_interfaces.current | length > 1
       - query_all_leaf_interfaces.current.1.infraHPathS.children.0.infraRsHPathAtt.attributes.rn == "rsHPathAtt-[topology/pod-1/paths-1101/pathep-[eth1/33]]"
@@ -137,7 +137,7 @@
     register: query_leaf_description_again
 
   - name: Leaf - Verify that no infraHPathS is present
-    assert:
+    ansible.builtin.assert:
       that:
       - query_leaf_description_again.current.0.infraInfra.children.0.infraHPathS.children is not defined
 
@@ -155,7 +155,7 @@
     register: query_spine_description
 
   - name: Spine - Verify that no infraSHPathS is present
-    assert:
+    ansible.builtin.assert:
       that:
       - query_spine_description.current.0.infraInfra.children.0.infraSHPathS.children is not defined
 
@@ -167,7 +167,7 @@
     register: set_spine_description
 
   - name: Spine - Verify that description is set on interface
-    assert:
+    ansible.builtin.assert:
       that:
       - set_spine_description.current|length == 1
       - set_spine_description.current.0.infraSHPathS.children.0.infraRsSHPathAtt.attributes.tDn == "topology/pod-1/paths-1201/pathep-[eth1/33]"
@@ -181,7 +181,7 @@
     register: query_spine_interface_1201_eth1_33
 
   - name: Assertion check for query Spine interface - 1201_eth1_33
-    assert:
+    ansible.builtin.assert:
       that:
       - query_spine_interface_1201_eth1_33.current.0.infraSHPathS.children | length == 1
       - query_spine_interface_1201_eth1_33.current.0.infraSHPathS.children.0.infraRsSHPathAtt.attributes.rn == "rsSHPathAtt-[topology/pod-1/paths-1201/pathep-[eth1/33]]"
@@ -197,7 +197,7 @@
     register: query_all_spine_interfaces
 
   - name: Verify query all spine interfaces
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all_spine_interfaces.current | length >= 1
       - query_all_spine_interfaces.current.1.infraSHPathS.children.0.infraRsSHPathAtt.attributes.rn == "rsSHPathAtt-[topology/pod-1/paths-1201/pathep-[eth1/33]]"
@@ -219,7 +219,7 @@
     register: query_spine_description_again
 
   - name: Spine - Verify that no infraSHPathS is present
-    assert:
+    ansible.builtin.assert:
       that:
       - query_spine_description_again.current.0.infraInfra.children.0.infraSHPathS.children is not defined
 
@@ -237,7 +237,7 @@
     register: query_fex_description
 
   - name: Fex - Verify that no infraHPathS is present
-    assert:
+    ansible.builtin.assert:
       that:
       - query_fex_description.current.0.infraInfra.children.0.infraHPathS.children is not defined
 
@@ -249,7 +249,7 @@
     register: set_fex_description
 
   - name: Fex - Verify that description is set on interface
-    assert:
+    ansible.builtin.assert:
       that:
       - set_fex_description.current|length == 1
       - set_fex_description.current.0.infraHPathS.children.0.infraRsHPathAtt.attributes.tDn == "topology/pod-1/paths-1101/extpaths-123/pathep-[eth1/33]"
@@ -263,7 +263,7 @@
     register: query_fex_interface_1201_eth1_33
 
   - name: Assertion check for query Fex interface - 1101_eth123_1_33
-    assert:
+    ansible.builtin.assert:
       that:
       - query_fex_interface_1201_eth1_33.current.0.infraHPathS.children | length == 1
       - query_fex_interface_1201_eth1_33.current.0.infraHPathS.children.0.infraRsHPathAtt.attributes.rn == "rsHPathAtt-[topology/pod-1/paths-1101/extpaths-123/pathep-[eth1/33]]"
@@ -284,6 +284,6 @@
     register: query_fex_description_again
 
   - name: Fex - Verify that no infraHPathS is present
-    assert:
+    ansible.builtin.assert:
       that:
       - query_fex_description_again.current.0.infraInfra.children.0.infraHPathS.children is not defined

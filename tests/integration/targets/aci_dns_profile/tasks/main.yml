@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # GET Credentials from the inventory
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -29,7 +29,7 @@
   register: add_dns_profile
 
 - name: Verify that DNS profile has been created with correct attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - add_dns_profile is changed
     - add_dns_profile.current.0.dnsProfile.attributes.annotation == 'orchestrator:ansible'
@@ -45,7 +45,7 @@
   register: add_dns_profile_again
 
 - name: Verify that DNS profile creation idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - add_dns_profile_again is not changed
     - add_dns_profile_again.current.0.dnsProfile.attributes.dn == "uni/fabric/dnsp-ansible_dns_profile"
@@ -60,7 +60,7 @@
   register: query_dns_profile
 
 - name: Verify DNS profile
-  assert:
+  ansible.builtin.assert:
     that:
     - query_dns_profile is not changed
     - query_dns_profile.current.0.dnsProfile.attributes.dn == "uni/fabric/dnsp-ansible_dns_profile"
@@ -73,7 +73,7 @@
   register: query_dns_profile_all
 
 - name: Verify query idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - query_dns_profile_all is not changed
 
@@ -86,7 +86,7 @@
   register: remove_dns_profile
 
 - name: Verify DNS profile removal
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_dns_profile is changed
     - remove_dns_profile.current == []
@@ -102,6 +102,6 @@
   register: remove_dns_profile_again
 
 - name: Verify DNS profile removal idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - remove_dns_profile_again is not changed

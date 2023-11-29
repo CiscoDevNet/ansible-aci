@@ -6,13 +6,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -70,7 +70,7 @@
   register: cm_sec_domain_present
 
 - name: Assertions check for add user domain to aaa_user with check mode
-  assert:
+  ansible.builtin.assert:
     that:
       - cm_sec_domain_present is changed
       - cm_sec_domain_present.current | length == 0
@@ -83,7 +83,7 @@
   register: nm_sec_domain_present
 
 - name: Assertions check for add user domain to aaa_user with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - nm_sec_domain_present is changed
       - nm_sec_domain_present.current | length == 1
@@ -97,7 +97,7 @@
   register: cm_idempotency_sec_domain_present
 
 - name: Idempotency assertions check for add user domain to aaa_user with check mode
-  assert:
+  ansible.builtin.assert:
     that:
       - cm_idempotency_sec_domain_present is not changed
       - cm_idempotency_sec_domain_present.current | length == 1
@@ -111,7 +111,7 @@
   register: idempotency_sec_domain_present
 
 - name: Idempotency assertions check for add user domain to aaa_user with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - idempotency_sec_domain_present is not changed
       - idempotency_sec_domain_present.current | length == 1
@@ -139,7 +139,7 @@
   register: query_anstest_sec_domain
 
 - name: Assertions check for query a user domain from a aaa_user
-  assert:
+  ansible.builtin.assert:
     that:
       - query_anstest_sec_domain is not changed
       - query_anstest_sec_domain.current | length == 1
@@ -154,7 +154,7 @@
   register: query_aaa_user_domains
 
 - name: Assertions check for query all user domains from a aaa_user
-  assert:
+  ansible.builtin.assert:
     that:
       - query_aaa_user_domains is not changed
       - query_aaa_user_domains.current | length == 1
@@ -167,7 +167,7 @@
   register: query_all_aaa_user_domains
 
 - name: Assertions check for query all user domains
-  assert:
+  ansible.builtin.assert:
     that:
       - query_all_aaa_user_domains is not changed
       - query_all_aaa_user_domains.current | length >= 3
@@ -181,7 +181,7 @@
   register: cm_sec_domain_absent
 
 - name: Assertions check for removing user domain from a aaa_user with check mode
-  assert:
+  ansible.builtin.assert:
     that:
       - cm_sec_domain_absent is changed
       - cm_sec_domain_absent.current | length == 1
@@ -196,7 +196,7 @@
   register: nm_sec_domain_absent
 
 - name: Assertions check for removing user domain from a aaa_user with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - nm_sec_domain_absent is changed
       - nm_sec_domain_absent.current == []
@@ -211,7 +211,7 @@
   register: idempotency_sec_domain_absent
 
 - name: Idempotency assertions check for removing user domain
-  assert:
+  ansible.builtin.assert:
     that:
       - idempotency_sec_domain_absent is not changed
       - idempotency_sec_domain_absent.current == []

@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # GET Credentials from the inventory
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -45,7 +45,7 @@
   register: add_dns_provider
 
 - name: Verify DNS provider creation
-  assert:
+  ansible.builtin.assert:
     that:
     - add_dns_provider is changed
     - add_dns_provider.current.0.dnsProv.attributes.annotation == 'orchestrator:ansible'
@@ -64,7 +64,7 @@
   register: add_dns_provider_again
 
 - name: Verify DNS provider creation idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - add_dns_provider_again is not changed
     - add_dns_provider_again.current.0.dnsProv.attributes.dn == "uni/fabric/dnsp-ansible_dns_profile/prov-[10.20.30.40]"
@@ -82,7 +82,7 @@
   register: update_dns_provider
 
 - name: Verify DNS provider update
-  assert:
+  ansible.builtin.assert:
     that:
     - update_dns_provider is changed
     - update_dns_provider.current.0.dnsProv.attributes.dn == "uni/fabric/dnsp-ansible_dns_profile/prov-[10.20.30.40]"
@@ -99,7 +99,7 @@
   register: query_dns_provider
 
 - name: Verify DNS provider attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - query_dns_provider is not changed
     - query_dns_provider.current.0.dnsProv.attributes.dn == "uni/fabric/dnsp-ansible_dns_profile/prov-[10.20.30.40]"
@@ -115,7 +115,7 @@
   register: query_dns_provider_all
 
 - name: Verify DNS provider query idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - query_dns_provider_all is not changed
 
@@ -129,7 +129,7 @@
   register: delete_dns_provider
 
 - name: Verify DNS provider deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_dns_provider is changed
     - delete_dns_provider.current == []
@@ -147,7 +147,7 @@
   register: delete_dns_provider_again
 
 - name: Verify DNS provider deletion idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_dns_provider_again is not changed
 

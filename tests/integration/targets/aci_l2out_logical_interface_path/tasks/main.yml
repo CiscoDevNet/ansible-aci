@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -26,7 +26,7 @@
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -83,7 +83,7 @@
     register: nm_path_to_intfp
 
   - name: Verify path to interface profile
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_path_to_intfp is changed
         - nm_path_to_intfp is changed
@@ -111,7 +111,7 @@
     register: third_path
 
   - name: Verify path to interface profile
-    assert:
+    ansible.builtin.assert:
       that:
         - second_path is changed
         - third_path is changed
@@ -166,7 +166,7 @@
     register: query_path
 
   - name: Verify query
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all is not changed
         - query_all.current.0.l2extLIfP.children | length >= 3
@@ -192,7 +192,7 @@
     register: rm_non_existing
 
   - name: Verify remove path
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_rm_path is changed
         - nm_rm_path is changed

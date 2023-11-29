@@ -5,7 +5,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
@@ -13,7 +13,7 @@
   tags: httpapi_connection
 
 - name: Delete old log files to clean test directory
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   with_items:
@@ -63,7 +63,7 @@
   register: cm_add_tenant
 
 - name: Dump content of files
-  debug:
+  ansible.builtin.debug:
     msg: "{{ lookup('file', aci_hostname +'_cm_add_tenant.json')}}"
 
 - name: Add tenant (normal mode)
@@ -86,19 +86,19 @@
   register: nm_add_tenant_again
 
 - name: Dump content of files
-  debug:
+  ansible.builtin.debug:
     msg: "{{ lookup('file', aci_hostname + '_cm_add_tenant.json')}}"
 
 
 - name: Store file content on variables for create object
-  set_fact:
+  ansible.builtin.set_fact:
     fc_cm_add_tenant: "{{ lookup('file', aci_hostname + '_cm_add_tenant.json') | from_json }}"
     fc_nm_add_tenant: "{{ lookup('file', aci_hostname + '_nm_add_tenant.json') | from_json }}"
     fc_cm_add_tenant_again: "{{ lookup('file', aci_hostname + '_cm_add_tenant_again.json') }}"
     fc_nm_add_tenant_again: "{{ lookup('file', aci_hostname + '_nm_add_tenant_again.json') }}"
 
 - name: Log file content verification for create object
-  assert:
+  ansible.builtin.assert:
     that:
     - fc_cm_add_tenant.0.fvTenant.attributes.name == 'ansible_test'
     - fc_cm_add_tenant.0.fvTenant.attributes.dn == 'uni/tn-ansible_test'
@@ -108,7 +108,7 @@
     - fc_nm_add_tenant_again == ''
 
 - name: Verify add_tenant
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_tenant is changed
     - nm_add_tenant is changed
@@ -165,14 +165,14 @@
   register: nm_add_tenant_descr_again
 
 - name: Store file content on variables for update object
-  set_fact:
+  ansible.builtin.set_fact:
     fc_cm_add_tenant_descr: "{{ lookup('file', aci_hostname + '_cm_add_tenant_descr.json') | from_json }}"
     fc_nm_add_tenant_descr: "{{ lookup('file', aci_hostname + '_nm_add_tenant_descr.json') | from_json }}"
     fc_cm_add_tenant_descr_again: "{{ lookup('file', aci_hostname + '_cm_add_tenant_descr_again.json') }}"
     fc_nm_add_tenant_descr_again: "{{ lookup('file', aci_hostname + '_nm_add_tenant_descr_again.json') }}"
 
 - name: Log file content verification for update object
-  assert:
+  ansible.builtin.assert:
     that:
     - fc_cm_add_tenant_descr.0.fvTenant.attributes.descr == 'Ansible test tenant'
     - fc_nm_add_tenant_descr.0.fvTenant.attributes.descr == 'Ansible test tenant'
@@ -180,7 +180,7 @@
     - fc_nm_add_tenant_descr_again == ''
 
 - name: Verify add_tenant_descr
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_tenant_descr is changed
     - nm_add_tenant_descr is changed
@@ -219,7 +219,7 @@
   register: nm_add_tenant_again_no_descr
 
 - name: Verify add_tenant_again_no_descr
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_tenant_again_no_descr is not changed
     - nm_add_tenant_again_no_descr is not changed
@@ -244,7 +244,7 @@
   register: nm_query_all_tenants
 
 - name: Verify query_all_tenants
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_all_tenants is not changed
     - nm_query_all_tenants is not changed
@@ -267,7 +267,7 @@
   register: nm_query_tenant
 
 - name: Verify query_tenant
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_tenant is not changed
     - nm_query_tenant is not changed
@@ -287,7 +287,7 @@
   register: default_annotation
 
 - name: Assertion check for update tenant with default annotation
-  assert:
+  ansible.builtin.assert:
     that:
     - default_annotation is changed
     - default_annotation.current.0.fvTenant.attributes.annotation == 'orchestrator:ansible'
@@ -320,14 +320,14 @@
   register: nm_remove_tenant_again
 
 - name: Store file content on variables for delete object
-  set_fact:
+  ansible.builtin.set_fact:
     fc_cm_remove_tenant: "{{ lookup('file', aci_hostname + '_cm_remove_tenant.json') | from_json }}"
     fc_nm_remove_tenant: "{{ lookup('file', aci_hostname + '_nm_remove_tenant.json') | from_json }}"
     fc_cm_remove_tenant_again: "{{ lookup('file', aci_hostname + '_cm_remove_tenant_again.json') }}"
     fc_nm_remove_tenant_again: "{{ lookup('file', aci_hostname + '_nm_remove_tenant_again.json') }}"
 
 - name: Log file content verification for delete object
-  assert:
+  ansible.builtin.assert:
     that:
     - fc_cm_remove_tenant.0.fvTenant.attributes.status == 'deleted'
     - fc_cm_remove_tenant.0.fvTenant.attributes.dn == 'uni/tn-ansible_test'
@@ -336,7 +336,7 @@
     - fc_nm_remove_tenant_again == ''
 
 - name: Verify remove_tenant
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_tenant is changed
     - nm_remove_tenant is changed
@@ -360,7 +360,7 @@
 
 # TODO: Implement more tests
 - name: Verify query_non_tenant
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_non_tenant is not changed
     - nm_query_non_tenant is not changed

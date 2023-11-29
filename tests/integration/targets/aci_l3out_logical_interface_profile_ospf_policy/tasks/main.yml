@@ -3,7 +3,7 @@
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -21,7 +21,7 @@
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -75,7 +75,7 @@
     register: nm_add_ospfIfP
 
   - name: Verify add_ospfIfP
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_ospfIfP is changed
       - nm_add_ospfIfP is changed
@@ -88,7 +88,7 @@
     register: nm_add_ospfIfP_again
 
   - name: Verify add_ospfIfP_again
-    assert:
+    ansible.builtin.assert:
       that:
       - nm_add_ospfIfP_again is not changed
 
@@ -101,7 +101,7 @@
     register: update_ospfIfP
 
   - name: Verify update_ospfIfP
-    assert:
+    ansible.builtin.assert:
       that:
       - update_ospfIfP is changed
       - update_ospfIfP.previous != []
@@ -116,7 +116,7 @@
     register: query_ospfIfP_profile
 
   - name: Verify query_ospfIfP_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - query_ospfIfP_profile is not changed
       - query_ospfIfP_profile.current|length == 1
@@ -137,7 +137,7 @@
     register: remove_profile_again
 
   - name: Verify remove_profile and remove_profile_again
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_profile.previous|length == 1
       - remove_profile.previous[0].ospfIfP.children[0].ospfRsIfPol.attributes.tnOspfIfPolName == 'default'
@@ -154,7 +154,7 @@
     register: query_nonexist_policy
 
   - name: Verify query_nonexist_policy
-    assert:
+    ansible.builtin.assert:
       that:
       - query_nonexist_policy is not changed
       - query_nonexist_policy.current == []
@@ -166,7 +166,7 @@
     register: remove_nonexist_policy
 
   - name: Verify remove_nonexist_policy
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_nonexist_policy is not changed
       - remove_nonexist_policy.current == []

@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # GET Credentials from the inventory
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -35,7 +35,7 @@
   register: add_bgp_rr_asn
 
 - name: Verify that BGP route reflector ASN has been created with correct attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - add_bgp_rr_asn is changed
     - add_bgp_rr_asn.current.0.bgpAsP.attributes.annotation == 'orchestrator:ansible'
@@ -51,7 +51,7 @@
   register: add_bgp_rr_asn_again
 
 - name: Verify that BGP route reflector ASN idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - add_bgp_rr_asn_again is not changed
     - add_bgp_rr_asn_again.current.0.bgpAsP.attributes.dn == "uni/fabric/bgpInstP-default/as"
@@ -66,7 +66,7 @@
   register: update_bgp_rr_asn
 
 - name: Verify that BGP route reflector ASN has been updated with correct attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - update_bgp_rr_asn is changed
     - update_bgp_rr_asn.current.0.bgpAsP.attributes.dn == "uni/fabric/bgpInstP-default/as"
@@ -80,7 +80,7 @@
   register: query_bgp_rr_asn
 
 - name: Verify BGP route reflector ASN
-  assert:
+  ansible.builtin.assert:
     that:
     - query_bgp_rr_asn is not changed
     - query_bgp_rr_asn.current.0.bgpAsP.attributes.dn == "uni/fabric/bgpInstP-default/as"

@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -28,7 +28,7 @@
   register: version
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Ensure tenant - ansible_test does not exists before testing
   cisco.aci.aci_tenant: &tenant_absent
@@ -74,7 +74,7 @@
     register: cm_subnet_ip_present
 
   - name: Assertions check for add IP Subnet selector with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_subnet_ip_present is changed
         - cm_subnet_ip_present.current == []
@@ -87,7 +87,7 @@
     register: nm_subnet_ip_present
 
   - name: Assertions check for add IP Subnet selector with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_subnet_ip_present is changed
         - nm_subnet_ip_present.current | length == 1
@@ -103,7 +103,7 @@
     register: idempotency_nm_subnet_ip_present
 
   - name: Idempotency assertions check for add IP Subnet selectors with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_nm_subnet_ip_present is not changed
         - idempotency_nm_subnet_ip_present.current.0.fvEPSelector.attributes.matchExpression == "ip=='10.0.0.1'"
@@ -118,7 +118,7 @@
     register: query_result
 
   - name: Assertions check for query all IP Subnet selectors
-    assert:
+    ansible.builtin.assert:
       that:
         - query_result is not changed
         - query_result.current | length >= 1
@@ -131,7 +131,7 @@
     register: cm_subnet_ip_absent
 
   - name: Assertions check for remove IP Subnet selector with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_subnet_ip_absent is changed
         - cm_subnet_ip_absent.current != []
@@ -146,7 +146,7 @@
     register: nm_subnet_ip_absent
 
   - name: Assertions check for remove IP Subnet selector with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_subnet_ip_absent is changed
         - nm_subnet_ip_absent.current == []
@@ -159,7 +159,7 @@
     register: idempotency_nm_subnet_ip_absent
 
   - name: Idempotency assertions check for remove IP Subnet selector with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_nm_subnet_ip_absent is not changed
         - idempotency_nm_subnet_ip_absent.current == []
