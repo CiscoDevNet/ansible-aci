@@ -38,12 +38,6 @@ options:
     - the authentication type.
     type: str
     choices: [ none, ah_md5 ]
-  secure_authentication_key:
-    description:
-    - The secure authentication key.
-    - The APIC defaults to C(cisco) when unset during creation.
-    type: str
-    aliases: [ secure_key ]
   control_state:
     description:
     - The PIM interface policy control state.
@@ -287,7 +281,6 @@ def main():
         description=dict(type="str", aliases=["descr"]),
         authentication_key=dict(type="str", no_log=True),
         authentication_type=dict(type="str", choices=["none", "ah_md5"]),
-        secure_authentication_key=dict(type="str", aliases=["secure_key"], no_log=True),
         control_state=dict(type="list", elements="str", choices=["border", "strict_rfc_compliant", "passive"]),
         designed_router_delay=dict(type="int", aliases=["delay"]),
         designed_router_priority=dict(type="int", aliases=["prio"]),
@@ -312,7 +305,6 @@ def main():
     pim = module.params.get("pim")
     authentication_key = module.params.get("authentication_key")
     authentication_type = MATCH_PIM_INTERFACE_POLICY_AUTHENTICATION_TYPE_MAPPING.get(module.params.get("authentication_type"))
-    secure_authentication_key = module.params.get("secure_authentication_key")
     description = module.params.get("description")
     name_alias = module.params.get("name_alias")
     state = module.params.get("state")
@@ -363,7 +355,6 @@ def main():
                 descr=description,
                 authKey=authentication_key,
                 authT=authentication_type,
-                secureAuthKey=secure_authentication_key,
                 ctrl=control_state,
                 drDelay=designed_router_delay,
                 drPrio=designed_router_priority,
