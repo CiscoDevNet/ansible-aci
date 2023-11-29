@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2017, Jacob McGill (@jmcgill298)
+# Copyright: (c) 2023, Akini Ross (@akinross) <akinross@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_epg_to_contract
-short_description: Bind EPGs to Contracts (fv:RsCons, fv:RsProv)
+short_description: Bind EPGs to Contracts (fv:RsCons, fv:RsProv, fv:RsProtBy, fv:RsConsIf, fv:RsIntraEpg)
 description:
 - Bind EPGs to Contracts on Cisco ACI fabrics.
 notes:
@@ -26,15 +28,15 @@ options:
     aliases: [ app_profile, app_profile_name ]
   contract:
     description:
-    - The name of the contract.
+    - The name of the contract or contract interface.
     type: str
-    aliases: [ contract_name ]
+    aliases: [ contract_name, contract_interface ]
   contract_type:
     description:
-    - Determines if the EPG should Provide or Consume the Contract.
+    - Determines the type of the Contract.
     type: str
     required: true
-    choices: [ consumer, provider ]
+    choices: [ consumer, provider, taboo, interface, intra_epg ]
   epg:
     description:
     - The name of the end point group.
@@ -81,10 +83,11 @@ seealso:
 - module: cisco.aci.aci_epg
 - module: cisco.aci.aci_contract
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(fv:RsCons) and B(fv:RsProv).
+  description: More information about the internal APIC classes B(fv:RsCons), B(fv:RsProv), B(fv:RsProtBy, B(fv:RsConsIf, and B(fv:RsIntraEpg).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jacob McGill (@jmcgill298)
+- Akini Ross (@akinross)
 """
 
 EXAMPLES = r"""
@@ -248,44 +251,17 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
-
-ACI_CLASS_MAPPING = dict(
-    consumer={
-        "class": "fvRsCons",
-        "rn": "rscons-",
-    },
-    provider={
-        "class": "fvRsProv",
-        "rn": "rsprov-",
-    },
-)
-
-PROVIDER_MATCH_MAPPING = dict(
-    all="All",
-    at_least_one="AtleastOne",
-    at_most_one="AtmostOne",
-    none="None",
-)
-
-CONTRACT_LABEL_MAPPING = dict(
-    consumer="vzConsLbl",
-    provider="vzProvLbl",
-)
-
-SUBJ_LABEL_MAPPING = dict(
-    consumer="vzConsSubjLbl",
-    provider="vzProvSubjLbl",
-)
+from ansible_collections.cisco.aci.plugins.module_utils.constants import ACI_CLASS_MAPPING, CONTRACT_LABEL_MAPPING, PROVIDER_MATCH_MAPPING, SUBJ_LABEL_MAPPING
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        contract_type=dict(type="str", required=True, choices=["consumer", "provider"]),
+        contract_type=dict(type="str", required=True, choices=["consumer", "provider", "taboo", "interface", "intra_epg"]),
         ap=dict(type="str", aliases=["app_profile", "app_profile_name"]),  # Not required for querying all objects
         epg=dict(type="str", aliases=["epg_name"]),  # Not required for querying all objects
-        contract=dict(type="str", aliases=["contract_name"]),  # Not required for querying all objects
+        contract=dict(type="str", aliases=["contract_name", "contract_interface"]),  # Not required for querying all objects
         priority=dict(type="str", choices=["level1", "level2", "level3", "level4", "level5", "level6", "unspecified"]),
         provider_match=dict(type="str", choices=["all", "at_least_one", "at_most_one", "none"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -318,13 +294,19 @@ def main():
 
     aci_class = ACI_CLASS_MAPPING[contract_type]["class"]
     aci_rn = ACI_CLASS_MAPPING[contract_type]["rn"]
-    contract_label_class = CONTRACT_LABEL_MAPPING[contract_type]
-    subject_label_class = SUBJ_LABEL_MAPPING[contract_type]
+    aci_name = ACI_CLASS_MAPPING[contract_type]["name"]
+    child_classes = []
 
-    if contract_type == "consumer" and provider_match is not None:
+    if contract_type != "provider" and provider_match is not None:
         module.fail_json(msg="the 'provider_match' is only configurable for Provided Contracts")
 
-    child_classes = [subject_label_class, contract_label_class]
+    if contract_type in ["taboo", "interface", "intra_epg"] and (contract_label is not None or subject_label is not None):
+        module.fail_json(msg="the 'contract_label' and 'subject_label' are not configurable for {0} contracts".format(contract_type))
+
+    if contract_type not in ["taboo", "interface", "intra_epg"]:
+        contract_label_class = CONTRACT_LABEL_MAPPING.get(contract_type)
+        subject_label_class = SUBJ_LABEL_MAPPING.get(contract_type)
+        child_classes = [subject_label_class, contract_label_class]
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -350,7 +332,7 @@ def main():
             aci_class=aci_class,
             aci_rn="{0}{1}".format(aci_rn, contract),
             module_object=contract,
-            target_filter={"tnVzBrCPName": contract},
+            target_filter={aci_name: contract},
         ),
         child_classes=child_classes,
     )
@@ -359,17 +341,13 @@ def main():
 
     if state == "present":
         child_configs = []
-        if contract_label:
+        if contract_label is not None:
             child_configs.append({contract_label_class: {"attributes": {"name": contract_label}}})
-        if subject_label:
+        if subject_label is not None:
             child_configs.append({subject_label_class: {"attributes": {"name": subject_label}}})
         aci.payload(
             aci_class=aci_class,
-            class_config=dict(
-                matchT=provider_match,
-                prio=priority,
-                tnVzBrCPName=contract,
-            ),
+            class_config={"matchT": provider_match, "prio": priority, aci_name: contract},
             child_configs=child_configs,
         )
 
