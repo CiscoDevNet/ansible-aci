@@ -74,7 +74,7 @@ author:
 
 EXAMPLES = r"""
 - name: Add a HSRP interface policy
-  cisco.aci.aci_hsrp_interface_policy:
+  cisco.aci.aci_interface_policy_hsrp:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -87,7 +87,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Delete a HSRP interface policy
-  cisco.aci.aci_hsrp_interface_policy:
+  cisco.aci.aci_interface_policy_hsrp:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -97,7 +97,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query a HSRP interface policy
-  cisco.aci.aci_hsrp_interface_policy:
+  cisco.aci.aci_interface_policy_hsrp:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -108,7 +108,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query all HSRP interface policies in tenant production
-  cisco.aci.aci_hsrp_interface_policy:
+  cisco.aci.aci_interface_policy_hsrp:
     host: apic
     username: admin
     password: SomeSecretPassword
