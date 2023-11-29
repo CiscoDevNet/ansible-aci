@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_hsrp_interface_policy
+module: aci_interface_policy_hsrp
 short_description: Manage HSRP interface policies (hsrp:IfPol)
 description:
 - Manage HSRP interface policies on Cisco ACI fabrics.
