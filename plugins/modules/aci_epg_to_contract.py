@@ -83,7 +83,7 @@ seealso:
 - module: cisco.aci.aci_epg
 - module: cisco.aci.aci_contract
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(fv:RsCons), B(fv:RsProv), B(fv:RsProtBy, B(fv:RsConsIf, and B(fv:RsIntraEpg).
+  description: More information about the internal APIC classes B(fv:RsCons), B(fv:RsProv), B(fv:RsProtBy), B(fv:RsConsIf), and B(fv:RsIntraEpg).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jacob McGill (@jmcgill298)
