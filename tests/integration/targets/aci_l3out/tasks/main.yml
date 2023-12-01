@@ -1,5 +1,6 @@
 # Test code for the ACI modules
 # Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+# Copyright: (c) 2023, Akini Ross (@akinross) <akinross@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -18,7 +19,14 @@
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: debug
-    
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
   aci_tenant:
@@ -262,6 +270,104 @@
         - delete_l3out.method == "DELETE"
         - delete_idempotency is not changed
         - delete_idempotency.previous == []
+
+  - name: Execute tasks only for ACI v5+ because SR MPLS L3Out is not supported lower versions
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    block:
+  
+    - name: Add a sr mpls l3out
+      cisco.aci.aci_l3out: &aci_sr_mpls_l3out
+        <<: *aci_info
+        tenant: ansible_tenant
+        name: ansible_sr_mpls_l3out
+        domain: ansible_dom
+        vrf: ansible_vrf
+        mpls: "yes"
+        state: present
+      register: add_sr_mpls_l3out
+
+    - name: Add a sr mpls l3out again
+      cisco.aci.aci_l3out:
+        <<: *aci_sr_mpls_l3out
+      register: add_sr_mpls_l3out_again
+
+    - name: Delete a sr mpls l3out
+      cisco.aci.aci_l3out:
+        <<: *aci_sr_mpls_l3out
+        state: absent
+      register: delete_sr_mpls_l3out
+
+    - name: Ensure infra sr mpls l3out does not exist
+      cisco.aci.aci_l3out: &aci_infra_sr_mpls_l3out_absent
+        <<: *aci_info
+        tenant: infra
+        name: ansible_infra_sr_mpls_l3out
+        mpls: "yes"
+        state: absent
+
+    - name: Add a infra sr mpls l3out (error)
+      cisco.aci.aci_l3out: &aci_infra_sr_mpls_l3out
+        <<: *aci_info
+        tenant: infra
+        name: ansible_infra_sr_mpls_l3out
+        domain: ansible_dom
+        vrf: ansible_vrf
+        mpls: "yes"
+      ignore_errors: true
+      register: err_infra_sr_mpls_l3out_no_overlay_1_vrf
+
+    - name: Add a infra sr mpls l3out 
+      cisco.aci.aci_l3out:
+        <<: *aci_infra_sr_mpls_l3out
+        vrf: overlay-1
+      register: add_infra_sr_mpls_l3out
+
+    - name: Add a infra sr mpls l3out again
+      cisco.aci.aci_l3out:
+        <<: *aci_infra_sr_mpls_l3out
+        vrf: overlay-1
+      register: add_infra_sr_mpls_l3out_again
+
+    - name: Delete a infra sr mpls l3out 
+      cisco.aci.aci_l3out:
+        <<: *aci_infra_sr_mpls_l3out_absent
+      register: delete_infra_sr_mpls_l3out
+
+    - name: Asserts sr mpls l3out
+      ansible.builtin.assert:
+        that:
+          - add_sr_mpls_l3out is changed
+          - add_sr_mpls_l3out.previous == []
+          - add_sr_mpls_l3out.current.0.l3extOut.attributes.mplsEnabled == "yes"
+          - add_sr_mpls_l3out.current.0.l3extOut.attributes.name == "ansible_sr_mpls_l3out"
+          - add_sr_mpls_l3out.current.0.l3extOut.children.0.l3extRsL3DomAtt.attributes.tDn == "uni/l3dom-ansible_dom"
+          - add_sr_mpls_l3out.current.0.l3extOut.children.1.l3extRsEctx.attributes.tnFvCtxName == "ansible_vrf"
+          - add_sr_mpls_l3out_again is not changed
+          - delete_sr_mpls_l3out is changed
+          - delete_sr_mpls_l3out.previous.0.l3extOut.attributes.mplsEnabled == "yes"
+          - delete_sr_mpls_l3out.previous.0.l3extOut.attributes.name == "ansible_sr_mpls_l3out"
+          - delete_sr_mpls_l3out.previous.0.l3extOut.children.0.l3extRsL3DomAtt.attributes.tDn == "uni/l3dom-ansible_dom"
+          - delete_sr_mpls_l3out.previous.0.l3extOut.children.1.l3extRsEctx.attributes.tnFvCtxName == "ansible_vrf"
+          - delete_sr_mpls_l3out.current == []
+          - add_infra_sr_mpls_l3out is changed
+          - add_infra_sr_mpls_l3out.previous == []
+          - add_infra_sr_mpls_l3out.current.0.l3extOut.attributes.mplsEnabled == "yes"
+          - add_infra_sr_mpls_l3out.current.0.l3extOut.attributes.name == "ansible_infra_sr_mpls_l3out"
+          - add_infra_sr_mpls_l3out.current.0.l3extOut.children.0.mplsExtP.children.0.mplsRsLabelPol.attributes.tDn == "uni/tn-infra/mplslabelpol-default"
+          - add_infra_sr_mpls_l3out.current.0.l3extOut.children.1.l3extRsL3DomAtt.attributes.tDn == "uni/l3dom-ansible_dom"
+          - add_infra_sr_mpls_l3out.current.0.l3extOut.children.2.l3extProvLbl.attributes.name == "ansible_infra_sr_mpls_l3out"
+          - add_infra_sr_mpls_l3out.current.0.l3extOut.children.3.l3extRsEctx.attributes.tnFvCtxName == "overlay-1"
+          - add_infra_sr_mpls_l3out_again is not changed
+          - delete_infra_sr_mpls_l3out is changed
+          - delete_infra_sr_mpls_l3out.previous.0.l3extOut.attributes.mplsEnabled == "yes"
+          - delete_infra_sr_mpls_l3out.previous.0.l3extOut.attributes.name == "ansible_infra_sr_mpls_l3out"
+          - delete_infra_sr_mpls_l3out.previous.0.l3extOut.children.0.mplsExtP.children.0.mplsRsLabelPol.attributes.tDn == "uni/tn-infra/mplslabelpol-default"
+          - delete_infra_sr_mpls_l3out.previous.0.l3extOut.children.1.l3extRsL3DomAtt.attributes.tDn == "uni/l3dom-ansible_dom"
+          - delete_infra_sr_mpls_l3out.previous.0.l3extOut.children.2.l3extProvLbl.attributes.name == "ansible_infra_sr_mpls_l3out"
+          - delete_infra_sr_mpls_l3out.previous.0.l3extOut.children.3.l3extRsEctx.attributes.tnFvCtxName == "overlay-1"
+          - delete_infra_sr_mpls_l3out.current == []
+          - err_infra_sr_mpls_l3out_no_overlay_1_vrf.failed == true
+          - err_infra_sr_mpls_l3out_no_overlay_1_vrf.msg == "The vrf parameter must be 'overlay-1' when tenant is 'infra' and mpls is 'yes'"
 
   - name: Delete the ansible_tenant - cleanup before ending tests
     aci_tenant:
