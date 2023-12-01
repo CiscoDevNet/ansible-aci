@@ -291,9 +291,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="pimRouteMapEntry",
-            aci_rn="rtmapentry-{0}".format(pim_route_map_policy),
-            module_object=pim_route_map_policy,
-            target_filter={"order": pim_route_map_policy},
+            aci_rn="rtmapentry-{0}".format(order),
+            module_object=order,
+            target_filter={"order": order},
         ),
     )
 
