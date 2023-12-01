@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2022, Lukas Holub (@lukasholub)
 # Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -76,6 +75,30 @@ options:
     - The APIC defaults to C(60) when unset during creation.
     type: int
     aliases: [ jp_interval ]
+  inbound_join_prune_filter_policy:
+    description:
+    - The interface-level inbound join/prune filter policy.
+    - If used, pass the name of an existing PIM Route Map policy.
+      The M(cisco.aci.aci_pim_route_map_policy) can be used for this.
+    - To delete it, pass an empty string.
+    type: str
+    aliases: [ inbound_jp_filter ]
+  outbound_join_prune_filter_policy:
+    description:
+    - The interface-level outbound join/prune filter policy.
+    - If used, pass the name of an existing PIM Route Map policy.
+      The M(cisco.aci.aci_pim_route_map_policy) can be used for this.
+    - To delete it, pass an empty string.
+    type: str
+    aliases: [ outbound_jp_filter ]
+  neighbor_filter_policy:
+    description:
+    - The Interface-level neighbor filter policy.
+    - If used, pass the name of an existing PIM Route Map policy.
+      The M(cisco.aci.aci_pim_route_map_policy) can be used for this.
+    - To delete it, pass an empty string.
+    type: str
+    aliases: [ neighbor_filter ]
   description:
     description:
     - The description of the PIM interface policy.
@@ -99,15 +122,15 @@ extends_documentation_fragment:
 
 notes:
 - The C(tenant) used must exist before using this module in your playbook.
-- The M(cisco.aci.aci_tenant) module can be used for this.
+  The M(cisco.aci.aci_tenant) module can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_pim_route_map_policy
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(pim:IfPol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Gaspard Micol (@gmicol)
-- Lukas Holub (@lukasholub)
 """
 
 EXAMPLES = r"""
@@ -117,12 +140,15 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: production
-    pim: pim1
+    pim: my_pim_policy
     control_state: [split-horizon, nh-self]
     designed_router_delay: 10
     designed_router_priority: tens_of_micro
     hello_interval: 5
     join_prune_interval: 15
+    inbound_join_prune_filter_policy: my_pim_route_map_policy_1
+    outbound_join_prune_filter_policy: my_pim_route_map_policy_2
+    neighbor_filter_policy: my_pim_route_map_policy_3
     state: present
   delegate_to: localhost
 
@@ -132,17 +158,17 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: production
-    pim: pim1
+    pim: my_pim_policy
     state: present
   delegate_to: localhost
 
-- name: Query an PIM interface policy
+- name: Query a PIM interface policy
   cisco.aci.aci_interface_policy_pim:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
-    pim: pim1
+    pim: my_pim_policy
     state: query
   delegate_to: localhost
   register: query_result
@@ -286,6 +312,9 @@ def main():
         designed_router_priority=dict(type="int", aliases=["prio"]),
         hello_interval=dict(type="int"),
         join_prune_interval=dict(type="int", aliases=["jp_interval"]),
+        inbound_join_prune_filter_policy=dict(type="str", aliases=["inbound_jp_filter"]),
+        outbound_join_prune_filter_policy=dict(type="str", aliases=["outbound_jp_filter"]),
+        neighbor_filter_policy=dict(type="str", aliases=["neighbor_filter"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
@@ -330,6 +359,12 @@ def main():
     else:
         control_state = None
 
+    child_classes = dict(
+        pimJPInbFilterPol=module.params.get("inbound_join_prune_filter_policy"),
+        pimJPOutbFilterPol=module.params.get("outbound_join_prune_filter_policy"),
+        pimNbrFilterPol=module.params.get("neighbor_filter_policy"),
+    )
+
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -343,11 +378,43 @@ def main():
             module_object=pim,
             target_filter={"name": pim},
         ),
+        child_classes=list(child_classes.keys())
     )
 
     aci.get_existing()
 
     if state == "present":
+        child_configs = []
+        for class_name, class_input in child_classes.items():
+            if class_input is not None:
+                if class_input == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
+                    for child in aci.existing[0].get("pimIfPol", {}).get("children", {}):
+                        if child.get(class_name):
+                            child_configs.append(
+                                {
+                                    class_name:dict(
+                                        attributes=dict(status="deleted"),
+                                    ),
+                                }
+                            )
+                elif class_input != "":
+                    child_configs.append(
+                        {
+                            class_name:dict(
+                                attributes=dict(),
+                                children=[
+                                    dict(
+                                        rtdmcRsFilterToRtMapPol=dict(
+                                            attributes=dict(
+                                                tDn="uni/tn-{0}/rtmap-{1}".format(tenant, class_input),
+                                            ),
+                                        )
+                                    )
+                                ],
+                            )
+                        }
+                    )
+
         aci.payload(
             aci_class="pimIfPol",
             class_config=dict(
@@ -362,6 +429,7 @@ def main():
                 jpInterval=join_prune_interval,
                 nameAlias=name_alias,
             ),
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class="pimIfPol")
