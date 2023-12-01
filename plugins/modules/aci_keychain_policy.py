@@ -87,6 +87,16 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Query an keychain policy in my_tenant
+  cisco.aci.aci_keychain_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    state: query
+  delegate_to: localhost
+  register: query_result
 """
 
 RETURN = r"""
