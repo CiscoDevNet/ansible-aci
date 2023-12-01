@@ -36,7 +36,7 @@ options:
     description:
     - The name of an existing interface profile.
     type: str
-    aliases: [ name, interface_profile_name, logical_interface ]
+    aliases: [ interface_profile_name, logical_interface ]
   eigrp_policy:
     description:
     - The name of an existing EIGRP interface policy.
@@ -87,7 +87,7 @@ author:
 
 EXAMPLES = r"""
 - name: Add a new interface profile EIGRP policy
-  cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
+  cisco.aci.aci_l3out_eigrp_interface_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -100,7 +100,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Add a new interface profile EIGRP policy with authentication
-  cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
+  cisco.aci.aci_l3out_eigrp_interface_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -114,7 +114,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Disable authentification from an interface profile EIGRP policy
-  cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
+  cisco.aci.aci_l3out_eigrp_interface_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -128,7 +128,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Delete an interface profile EIGRP policy
-  cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
+  cisco.aci.aci_l3out_eigrp_interface_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -141,7 +141,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query an interface profile EIGRP policy
-  cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
+  cisco.aci.aci_l3out_eigrp_interface_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
