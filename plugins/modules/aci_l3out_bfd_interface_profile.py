@@ -89,7 +89,7 @@ notes:
   The M(cisco.aci.aci_tenant) modules can be used for this
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bfd:IfP).
+  description: More information about the internal APIC class B(bfd:IfP)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 - module: cisco.aci.aci_tenant
 - module: cisco.aci.aci_l3out

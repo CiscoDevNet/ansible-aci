@@ -67,11 +67,11 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(tenant) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) modules can be used for this.
+- The C(tenant) must exist before using this module in your playbook
+  The M(cisco.aci.aci_tenant) modules can be used for this
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bfd:MhIfPol).
+  description: More information about the internal APIC class B(bfd:MhIfPol)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 - module: cisco.aci.aci_tenant
 author:

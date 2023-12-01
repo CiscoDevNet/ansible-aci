@@ -57,8 +57,8 @@ options:
     type: int
   state:
     description:
-    - Use C(present) or C(absent) for adding or removing.
-    - Use C(query) for listing an object or multiple objects.
+    - Use C(present) or C(absent) for adding or removing
+    - Use C(query) for listing an object or multiple objects
     type: str
     choices: [ absent, present, query ]
     default: present
