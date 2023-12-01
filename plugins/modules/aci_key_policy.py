@@ -46,7 +46,7 @@ options:
   pre_shared_key:
     description:
     - The pre-shared authentifcation key.
-    - When using C(pre_shared_key) this module will always show as C(changed) as the module cannot know what the currently configured key is.
+    - When using I(pre_shared_key) this module will always show as C(changed) as the module cannot know what the currently configured key is.
     type: str
   description:
     description:
@@ -80,7 +80,7 @@ author:
 
 EXAMPLES = r"""
 - name: Add a new key policy
-  cisco.aci.aci_keychain_policy:
+  cisco.aci.aci_key_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -94,7 +94,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Delete an key policy
-  cisco.aci.aci_keychain_policy:
+  cisco.aci.aci_key_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -105,7 +105,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query an key policy
-  cisco.aci.aci_keychain_policy:
+  cisco.aci.aci_key_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
