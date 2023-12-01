@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+# Copyright: (c) 2023, Akini Ross (@akinross) <akinross@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -34,6 +35,7 @@ options:
   vrf:
     description:
     - Name of the VRF being associated with the L3Out.
+    - SR-MPLS Infra L3out requires the VRF to be 'overlay-1'.
     type: str
     aliases: [ vrf_name ]
   domain:
@@ -60,6 +62,8 @@ options:
     description:
     - Indicate whether MPLS (Multi-Protocol Label Switching) is enabled or not.
     - The APIC defaults to C(no) when unset during creation.
+    - SR-MPLS is only supported in APIC v5.0 and above.
+    - The child classes C(mplsExtP), C(mplsRsLabelPol) and C(l3extProvLbl) will be displayed in output only when C(yes).
     type: str
     choices: [ "no", "yes" ]
   l3protocol:
@@ -165,6 +169,7 @@ seealso:
 author:
 - Rostyslav Davydenko (@rost-d)
 - Gaspard Micol (@gmicol)
+- Akini Ross (@akinross)
 """
 
 EXAMPLES = r"""
@@ -477,6 +482,15 @@ def main():
             elif protocol == "pim":
                 l3protocol_child_configs["pim"] = dict(pimExtP=dict(attributes=dict(descr="")))
         child_configs.extend(list(l3protocol_child_configs.values()))
+
+    if tenant == "infra" and mpls == "yes":
+        if vrf != "overlay-1" and state == "present":
+            module.fail_json(msg="The vrf parameter must be 'overlay-1' when tenant is 'infra' and mpls is 'yes'")
+        child_classes += ["mplsExtP", "mplsRsLabelPol", "l3extProvLbl"]
+        child_configs.append(
+            dict(mplsExtP=dict(attributes=dict(), children=[dict(mplsRsLabelPol=dict(attributes=dict(tDn="uni/tn-infra/mplslabelpol-default")))]))
+        )
+        child_configs.append(dict(l3extProvLbl=dict(attributes=dict(name=l3out))))
 
     aci.construct_url(
         root_class=dict(
