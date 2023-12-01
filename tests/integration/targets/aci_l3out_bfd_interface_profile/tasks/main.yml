@@ -91,7 +91,7 @@
 
   # CREATE L3Out BFD Interface policy
   - name: Add a new  L3Out BFD Interface policy
-    cisco.aci.aci_bfd_interface_policy:
+    cisco.aci.aci_interface_policy_bfd:
       <<: *aci_info
       tenant: ansible_tenant
       name: ansible_bfd__interface_policy

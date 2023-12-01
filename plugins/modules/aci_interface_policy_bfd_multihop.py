@@ -12,53 +12,53 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_bfd_interface_policy
-short_description: Manage BFD Interface policies.
+module: aci_interface_policy_bfd_multihop
+short_description: Manage BFD Multihop Interface policies
 description:
-- Manage BFD Interface policy (bfd:IfPol) configuration on Cisco ACI fabrics.
-- Only available in APIC version 5.2 or later.
+- Manage BFD Multihop Interface policy (bfd:MhIfPol) configuration on Cisco ACI fabrics
+- Only available in APIC version 5.2 or later
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - Name of an existing tenant
     type: str
   name:
     description:
-    - Name of the BFD Interface policy
+    - Name of the BFD Multihop Interface policy
     type: str
-    aliases: [ bfd_interface_policy ]
+    aliases: [ bfd_multihop_interface_policy ]
   description:
     description:
-    - Description of the BFD Interface policy
+    - Description of the BFD Multihop Interface policy
     type: str
   admin_state:
     description:
-    - Admin state of the BFD Interface policy
+    - Admin state of the BFD Multihop Interface policy
     - APIC sets the default value to enabled.
     type: str
     choices: [ enabled, disabled ]
   detection_multiplier:
     description:
-    - Detection multiplier of the BFD Interface policy
+    - Detection multiplier of the BFD Multihop Interface policy
     - APIC sets the default value to 3.
     - Allowed range is 1-50.
     type: int
   min_transmit_interval:
     description:
-    - Minimum transmit (Tx) interval of the BFD Interface policy
-    - APIC sets the default value to 50.
-    - Allowed range is 250-999.
+    - Minimum transmit (Tx) interval of the BFD Multihop Interface policy
+    - APIC sets the default value to 250
+    - Allowed range is 250-999
     type: int
   min_receive_interval:
     description:
-    - Minimum receive (Rx) interval of the BFD Interface policy
-    - APIC sets the default value to 50.
-    - Allowed range is 250-999.
+    - Minimum receive (Rx) interval of the BFD Multihop Interface policy
+    - APIC sets the default value to 250
+    - Allowed range is 250-999
     type: int
   state:
     description:
-    - Use C(present) or C(absent) for adding or removing.
-    - Use C(query) for listing an object or multiple objects.
+    - Use C(present) or C(absent) for adding or removing
+    - Use C(query) for listing an object or multiple objects
     type: str
     choices: [ absent, present, query ]
     default: present
@@ -71,7 +71,7 @@ notes:
   The M(cisco.aci.aci_tenant) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bfd:IfPol).
+  description: More information about the internal APIC class B(bfd:MhIfPol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 - module: cisco.aci.aci_tenant
 author:
@@ -79,39 +79,39 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a new  BFD Interface policy
-  cisco.aci.aci_bfd_interface_policy:
+- name: Add a new  BFD Multihop Interface policy
+  cisco.aci.aci_interface_policy_bfd_multihop:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: ansible_tenant
-    name: ansible_bfd_interface_policy
-    description: Ansible BFD Interface Policy
+    name: ansible_bfd_multihop_interface_policy
+    description: Ansible BFD Multihop Interface Policy
     state: present
   delegate_to: localhost
 
-- name: Remove a BFD Interface policy
-  cisco.aci.aci_bfd_interface_policy:
+- name: Remove a BFD Multihop Interface policy
+  cisco.aci.aci_interface_policy_bfd_multihop:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: ansible_tenant
-    name: ansible_bfd_interface_policy
+    name: ansible_bfd_multihop_interface_policy
     state: absent
   delegate_to: localhost
 
-- name: Query a BFD Interface policy
-  cisco.aci.aci_bfd_interface_policy:
+- name: Query a BFD Multihop Interface policy
+  cisco.aci.aci_interface_policy_bfd_multihop:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: ansible_tenant
-    name: ansible_bfd_interface_policy
+    name: ansible_bfd_multihop_interface_policy
     state: query
   delegate_to: localhost
 
-- name: Query all BFD Interface policies in a specific tenant
-  cisco.aci.aci_bfd_interface_policy:
+- name: Query all BFD Multihop Interface policies in a specific tenant
+  cisco.aci.aci_interface_policy_bfd_multihop:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -233,7 +233,7 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        name=dict(type="str", aliases=["bfd_interface_policy"]),
+        name=dict(type="str", aliases=["bfd_multihop_interface_policy"]),
         description=dict(type="str"),
         admin_state=dict(type="str", choices=["enabled", "disabled"]),
         detection_multiplier=dict(type="int"),
@@ -270,8 +270,8 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="bfdIfPol",
-            aci_rn="bfdIfPol-{0}".format(name),
+            aci_class="bfdMhIfPol",
+            aci_rn="bfdMhIfPol-{0}".format(name),
             module_object=name,
             target_filter={"name": name},
         ),
@@ -290,21 +290,21 @@ def main():
             module.fail_json(msg='The "detection_multiplier" must be a value between 1 and 50')
         else:
             class_config["detectMult"] = detection_multiplier
-        if min_transmit_interval and min_transmit_interval not in range(50, 999):
-            module.fail_json(msg='The "min_transmit_interval" must be a value between 50 and 999')
+        if min_transmit_interval and min_transmit_interval not in range(250, 999):
+            module.fail_json(msg='The "min_transmit_interval" must be a value between 250 and 999')
         else:
             class_config["minTxIntvl"] = min_transmit_interval
-        if min_receive_interval and min_receive_interval not in range(50, 999):
-            module.fail_json(msg='The "min_receive_interval" must be a value between 50 and 999')
+        if min_receive_interval and min_receive_interval not in range(250, 999):
+            module.fail_json(msg='The "min_receive_interval" must be a value between 250 and 999')
         else:
             class_config["minRxIntvl"] = min_receive_interval
 
         aci.payload(
-            aci_class="bfdIfPol",
+            aci_class="bfdMhIfPol",
             class_config=class_config,
         )
 
-        aci.get_diff(aci_class="bfdIfPol")
+        aci.get_diff(aci_class="bfdMhIfPol")
 
         aci.post_config()
 

@@ -91,7 +91,7 @@
 
   # CREATE BFD Multihop Interface policy
   - name: Add a new  BFD Multihop Interface policy
-    cisco.aci.aci_bfd_multihop_interface_policy:
+    cisco.aci.aci_interface_policy_bfd_multihop:
       <<: *aci_info
       tenant: ansible_tenant
       name: ansible_bfd_multihop_interface_policy
@@ -101,7 +101,7 @@
 
   # Add BFD Multihop Interface Profile
   - name: Add a new BFD Multihop Interface Profile - check mode
-    cisco.aci.aci_bfd_multihop_interface_profile: &present_bfd_mh_int_profile
+    cisco.aci.aci_l3out_bfd_multihop_interface_profile: &present_bfd_mh_int_profile
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -113,7 +113,7 @@
     register: cm_add_bfd_mh_int_prof
 
   - name: Add a new BFD Multihop Interface Profile - normal mode
-    cisco.aci.aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_l3out_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       state: present
     register: nm_add_bfd_mh_int_prof
@@ -129,13 +129,13 @@
 
   # Query BFD Multihop Interface Profile
   - name: Query BFD Multihop Interface Profile
-    cisco.aci.aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_l3out_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       state: query
     register: query_bfd_mh_int_prof
 
   - name: Add BFD Multihop Interface Profile again- idempotency
-    cisco.aci.aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_l3out_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       state: present
     register: add_bfd_mh_int_prof_again
@@ -147,7 +147,7 @@
 
   # Update BFD Multihop Interface Profile
   - name: Update BFD Multihop Interface Profile
-    cisco.aci.aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_l3out_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       interface_profile_type: sha1
       key: "abc*123"
@@ -165,7 +165,7 @@
 
   # Remove children from L3Out BFD Interface Profile
   - name: Remove children from BFD Multihop Interface Profile
-    cisco.aci.aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_l3out_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       bfd_multihop_interface_policy: ""
     register: remove_children_bfd_mh_int_prof
@@ -178,20 +178,20 @@
 
   # Query BFD Multihop Interface Profile
   - name: Query BFD Multihop Interface Profile
-    cisco.aci.aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_l3out_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       state: query
     register: query_bfd_mh_int_prof
 
   - name: Query all BFD Multihop Interface Profile
-    cisco.aci.aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_l3out_bfd_multihop_interface_profile:
       <<: *aci_info
       state: query
     register: query_all_bfd_mh_int_prof
 
   #  Validating out of range parameters.
   - name: Add out of range key_id
-    cisco.aci.aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_l3out_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       key_id: 256
       state: present
@@ -205,20 +205,20 @@
       - out_of_range_key_id.msg == "The \"key_id\" must be a value between 1 and 255"
 
   - name: Delete BFD Multihop Interface Profile - check mode
-    cisco.aci.aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_l3out_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       state: absent
     check_mode: true
     register: cm_remove_bfd_mh_int_prof
 
   - name: Delete BFD Multihop Interface Profile - normal mode
-    cisco.aci.aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_l3out_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       state: absent
     register: nm_remove_bfd_mh_int_prof
 
   - name: Delete BFD Multihop Interface Profile again - idempotency
-    cisco.aci.aci_bfd_multihop_interface_profile:
+    cisco.aci.aci_l3out_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
       state: absent
     register: remove_bfd_mh_int_prof_again

@@ -13,14 +13,14 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_bfd_multihop_node_policy
-short_description: Manage BFD Multihop Node policies.
+short_description: Manage BFD Multihop Node policies
 description:
-- Manage BFD Multihop Node policy (bfd:MhNodePol) configuration on Cisco ACI fabrics.
-- Only available in APIC version 5.2 or later.
+- Manage BFD Multihop Node policy (bfd:MhNodePol) configuration on Cisco ACI fabrics
+- Only available in APIC version 5.2 or later
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - Name of an existing tenant
     type: str
   name:
     description:
@@ -34,31 +34,31 @@ options:
   admin_state:
     description:
     - Admin state of the BFD Multihop Node policy
-    - APIC sets the default value to enabled.
+    - APIC sets the default value to enabled
     type: str
     choices: [ enabled, disabled ]
   detection_multiplier:
     description:
     - Detection multiplier of the BFD Multihop Node policy
-    - APIC sets the default value to 3.
-    - Allowed range is 1-50.
+    - APIC sets the default value to 3
+    - Allowed range is 1-50
     type: int
   min_transmit_interval:
     description:
     - Minimum transmit (Tx) interval of the BFD Multihop Node policy
-    - APIC sets the default value to 250.
-    - Allowed range is 250-999.
+    - APIC sets the default value to 250
+    - Allowed range is 250-999
     type: int
   min_receive_interval:
     description:
     - Minimum receive (Rx) interval of the BFD Multihop Node policy
-    - APIC sets the default value to 250.
-    - Allowed range is 250-999.
+    - APIC sets the default value to 250
+    - Allowed range is 250-999
     type: int
   state:
     description:
-    - Use C(present) or C(absent) for adding or removing.
-    - Use C(query) for listing an object or multiple objects.
+    - Use C(present) or C(absent) for adding or removing
+    - Use C(query) for listing an object or multiple objects
     type: str
     choices: [ absent, present, query ]
     default: present
@@ -67,8 +67,8 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(tenant) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) modules can be used for this.
+- The C(tenant) must exist before using this module in your playbook
+  The M(cisco.aci.aci_tenant) modules can be used for this
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(bfd:MhNodePol).

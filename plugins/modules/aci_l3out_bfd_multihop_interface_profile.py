@@ -13,70 +13,70 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_bfd_multihop_interface_profile
-short_description: Manage BFD Multihop Interface profile.
+short_description: Manage BFD Multihop Interface profiles
 description:
-- Manage BFD Multihop Interface profile (bfd:MhIfP) configuration on Cisco ACI fabrics.
-- Only available in APIC version 5.2 or later and for non-cloud APICs.
+- Manage BFD Multihop Interface profile (bfd:MhIfP) configuration on Cisco ACI fabrics
+- Only available in APIC version 5.2 or later and for non-cloud APICs
 options:
   tenant:
     description:
-    - Name of an existing tenant.
+    - Name of an existing tenant
     type: str
     aliases: [ tenant_name ]
   l3out:
     description:
-    - Name of an existing L3Out.
+    - Name of an existing L3Out
     type: str
     aliases: [ l3out_name ]
   l3out_logical_node_profile:
     description:
-    - Name of an existing L3Out Logical Node profile.
+    - Name of an existing L3Out Logical Node profile
     type: str
     aliases: [ logical_node_profile, logical_node_profile_name ]
   l3out_logical_interface_profile:
     description:
-    - Name of an existing L3Out Logical Interface profile.
+    - Name of an existing L3Out Logical Interface profile
     type: str
     aliases: [ logical_interface_profile, logical_interface_profile_name ]
   name:
     description:
-    - Name of the BFD Multihop Interface Profile object.
+    - Name of the BFD Multihop Interface Profile object
     type: str
     aliases: [ bfd_multihop_interface_profile ]
   name_alias:
     description:
-    - Name Alias of the BFD Multihop Interface Profile object.
+    - Name Alias of the BFD Multihop Interface Profile object
     type: str
   description:
     description:
-    - Description of the BFD Multihop Interface Profile object.
+    - Description of the BFD Multihop Interface Profile object
     type: str
     aliases: [ descr ]
   interface_profile_type:
     description:
-    - Authentication Type of the BFD Multihop Interface Profile object.
+    - Authentication Type of the BFD Multihop Interface Profile object
     - APIC sets the default value to none.
     type: str
     choices: [ none, sha1 ]
   key:
     description:
-    - Authentication Key of the BFD Multihop Interface Profile object.
+    - Authentication Key of the BFD Multihop Interface Profile object
     type: str
   key_id:
     description:
-    - Authentication Key ID of the BFD Multihop Interface Profile object.
-    - APIC sets the default value to 3.
+    - Authentication Key ID of the BFD Multihop Interface Profile object
+    - APIC sets the default value to 3
     - Allowed range is 1-255
     type: int
   bfd_multihop_interface_policy:
     description:
-    - The name of the BFD Multihop Interface policy.
+    - The name of the BFD Multihop Interface policy
     type: str
     aliases: [ multihop_interface_policy, multihop_interface_policy_name ]
   state:
     description:
-    - Use C(present) or C(absent) for adding or removing.
-    - Use C(query) for listing an object or multiple objects.
+    - Use C(present) or C(absent) for adding or removing
+    - Use C(query) for listing an object or multiple objects
     type: str
     choices: [ absent, present, query ]
     default: present
@@ -85,17 +85,17 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(tenant), c(l3out), C(l3out_logical_node_profile) and C(l3out_logical_interface_profile) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) modules can be used for this.
+- The C(tenant), c(l3out), C(l3out_logical_node_profile) and C(l3out_logical_interface_profile) must exist before using this module in your playbook
+  The M(cisco.aci.aci_tenant) modules can be used for this
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bfd:MhIfP).
+  description: More information about the internal APIC class B(bfd:MhIfP)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 - module: cisco.aci.aci_tenant
 - module: cisco.aci.aci_l3out
 - module: cisco.aci.aci_l3out_logical_node_profile
 - module: cisco.aci.aci_l3out_logical_interface_profile
-- module: cisco.aci.aci_bfd_multihop_interface_policy
+- module: cisco.aci.aci_interface_policy_bfd_multihop
 author:
 - Anvitha Jain (@anvjain)
 """
