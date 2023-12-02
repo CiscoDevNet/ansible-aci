@@ -392,7 +392,7 @@ def main():
                         if child.get(class_name):
                             child_configs.append(
                                 {
-                                    class_name:dict(
+                                    class_name: dict(
                                         attributes=dict(status="deleted"),
                                     ),
                                 }
@@ -400,7 +400,7 @@ def main():
                 elif class_input != "":
                     child_configs.append(
                         {
-                            class_name:dict(
+                            class_name: dict(
                                 attributes=dict(),
                                 children=[
                                     dict(

@@ -289,7 +289,7 @@ def main():
             module_object=pim_route_map_policy,
             target_filter={"name": pim_route_map_policy},
         ),
-        subclass_1=dict(
+        subclass_2=dict(
             aci_class="pimRouteMapEntry",
             aci_rn="rtmapentry-{0}".format(order),
             module_object=order,
