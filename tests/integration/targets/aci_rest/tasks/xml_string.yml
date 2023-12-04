@@ -74,10 +74,10 @@
     that:
     - cm_add_tenant is changed
     - '"ansible_test" in cm_add_tenant.proposed'
-    - cm_add_tenant.proposed.fvTenant.attributes.annotation == "orchestrator:ansible"
+    - '"orchestrator:ansible" in cm_add_tenant.proposed'
     - cm_add_tenant_2 is changed
     - '"ansible_test" in cm_add_tenant_2.proposed'
-    - cm_add_tenant_2.proposed.fvTenant.attributes.annotation == "orchestrator:ansible"
+    - '"orchestrator:ansible" in cm_add_tenant_2.proposed'
     - cm_verify_checkmode_tenant.current == []
 
 - name: Add tenant (normal mode)
