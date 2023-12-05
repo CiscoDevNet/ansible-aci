@@ -50,7 +50,7 @@
     that:
       - cm_add_tenant is changed
       - '"ans_test_create" in cm_add_tenant.proposed'
-      - cm_add_tenant.proposed.fvTenant.attributes.annotation == "orchestrator:ansible"
+      - '"orchestrator:ansible" in cm_add_tenant.proposed'
       - cm_verify_checkmode_tenant.current == []
 
 - name: Add tenant using ans_test_create xml template file with normal mode
