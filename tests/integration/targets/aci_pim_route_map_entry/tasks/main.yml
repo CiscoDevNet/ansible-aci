@@ -1,0 +1,158 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
+
+  - name: Add a new PIM route map policy
+    cisco.aci.aci_pim_route_map_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      pim_route_map_policy: ansible_pim_route_map_policy
+      description: PIM route map policy 1 for ansible_tenant tenant
+      state: present
+
+  - name: Add a PIM route map entry (check_mode)
+    cisco.aci.aci_pim_route_map_entry: &aci_pim_route_map_entry_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      pim_route_map_policy: ansible_pim_route_map_policy
+      order: 1
+      description: PIM route map entry 1 for pim_route_map_policy
+      source_ip: 1.1.1.1/24
+      group_ip: 224.0.0.1/24
+      rp_ip: 1.1.1.2
+      action: deny
+      state: present
+    check_mode: true
+    register: cm_add_pim_route_map_entry
+
+  - name: Add a PIM route map entry (normal_mode)
+    cisco.aci.aci_pim_route_map_entry:
+      <<: *aci_pim_route_map_entry_present
+    register: nm_add_pim_route_map_entry
+
+  - name: Add the first PIM route map entry again - testing idempotency
+    cisco.aci.aci_pim_route_map_entry:
+      <<: *aci_pim_route_map_entry_present
+    register: nm_add_pim_route_map_entry_idempotency
+
+  - name: Add a second PIM route map entry (normal_mode)
+    cisco.aci.aci_pim_route_map_entry:
+      <<: *aci_info
+      tenant: ansible_tenant
+      pim_route_map_policy: ansible_pim_route_map_policy
+      order: 2
+      description: PIM route map entry 2 for pim_route_map_policy
+      state: present
+    register: nm_add_pim_route_map_entry_2
+
+  - name: Asserts for PIM route map entry creation tasks
+    ansible.builtin.assert:
+      that:
+        - cm_add_pim_route_map_entry is changed
+        - cm_add_pim_route_map_entry.previous == []
+        - cm_add_pim_route_map_entry.current == []
+        - nm_add_pim_route_map_entry is changed
+        - nm_add_pim_route_map_entry.current.0.pimRouteMapEntry.attributes.order == "1"
+        - nm_add_pim_route_map_entry.current.0.pimRouteMapEntry.attributes.action == "deny"
+        - nm_add_pim_route_map_entry.current.0.pimRouteMapEntry.attributes.grp == "224.0.0.1/24"
+        - nm_add_pim_route_map_entry.current.0.pimRouteMapEntry.attributes.rp == "1.1.1.2"
+        - nm_add_pim_route_map_entry.current.0.pimRouteMapEntry.attributes.src == "1.1.1.1/24"
+        - nm_add_pim_route_map_entry_idempotency is not changed
+        - nm_add_pim_route_map_entry_2 is changed
+        - nm_add_pim_route_map_entry_2.previous == []
+        - nm_add_pim_route_map_entry_2.current.0.pimRouteMapEntry.attributes.order == "2"
+        - nm_add_pim_route_map_entry_2.current.0.pimRouteMapEntry.attributes.action == "permit"
+
+  - name: Query all PIM route map entries
+    cisco.aci.aci_pim_route_map_entry:
+      <<: *aci_info
+      state: query
+    register: query_all_pim_route_map_entry
+
+  - name: Query ansible_pim_route_map_entry_1
+    cisco.aci.aci_pim_route_map_entry:
+      <<: *aci_pim_route_map_entry_present
+      state: query
+    register: query_ansible_pim_route_map_entry_1
+
+  - name: Asserts query tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_pim_route_map_entry is not changed
+        - query_all_pim_route_map_entry.current|length >= 2
+        - query_ansible_pim_route_map_entry_1 is not changed
+        - query_ansible_pim_route_map_entry_1.current.0.pimRouteMapEntry.attributes.order == "1"
+        - query_ansible_pim_route_map_entry_1.current.0.pimRouteMapEntry.attributes.action == "deny"
+        - query_ansible_pim_route_map_entry_1.current.0.pimRouteMapEntry.attributes.grp == "224.0.0.1/24"
+        - query_ansible_pim_route_map_entry_1.current.0.pimRouteMapEntry.attributes.rp == "1.1.1.2"
+        - query_ansible_pim_route_map_entry_1.current.0.pimRouteMapEntry.attributes.src == "1.1.1.1/24"
+
+  - name: Remove PIM route map entry (check_mode)
+    cisco.aci.aci_pim_route_map_entry: &pim_route_map_entry_absent
+      <<: *aci_pim_route_map_entry_present
+      state: absent
+    check_mode: true
+    register: cm_remove_pim_route_map_entry
+
+  - name: Remove PIM route map entry (normal_mode)
+    cisco.aci.aci_pim_route_map_entry:
+      <<: *pim_route_map_entry_absent
+    register: nm_remove_pim_route_map_entry
+
+  - name: Remove PIM route map entry - testing idempotency
+    cisco.aci.aci_pim_route_map_entry:
+      <<: *pim_route_map_entry_absent
+    register: nm_remove_pim_route_map_entry_idempotency
+
+  - name: Asserts deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_remove_pim_route_map_entry is changed
+        - cm_remove_pim_route_map_entry.proposed == {}
+        - nm_remove_pim_route_map_entry is changed
+        - nm_remove_pim_route_map_entry.previous != []
+        - nm_remove_pim_route_map_entry.method == "DELETE"
+        - nm_remove_pim_route_map_entry_idempotency is not changed
+        - nm_remove_pim_route_map_entry_idempotency.previous == []
+
+  - name: Remove the ansible_tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent

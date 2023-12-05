@@ -1,0 +1,239 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
+
+  - name: Add a new PIM route map policy
+    cisco.aci.aci_pim_route_map_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      pim_route_map_policy: ansible_pim_route_map_policy
+      description: PIM route map policy 1 for ansible_tenant tenant
+      state: present
+
+  - name: Add a pim interface policy (check_mode)
+    cisco.aci.aci_interface_policy_pim: &aci_interface_policy_pim_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      pim_interface: ansible_pim_interface_1
+      description: pim interface policy 1 for ansible_tenant tenant
+      authentication_key: my_password
+      authentication_type: ah_md5
+      control_state: [border, strict_rfc_compliant, passive]
+      designed_router_delay: 6
+      designed_router_priority: 2
+      hello_interval: 60000
+      join_prune_interval: 120
+      inbound_join_prune_filter_policy: ansible_pim_route_map_policy
+      outbound_join_prune_filter_policy: ansible_pim_route_map_policy
+      neighbor_filter_policy: ansible_pim_route_map_policy
+      state: present
+    check_mode: true
+    register: cm_add_pim_interface
+
+  - name: Add a pim interface policy (normal_mode)
+    cisco.aci.aci_interface_policy_pim:
+      <<: *aci_interface_policy_pim_present
+    register: nm_add_pim_interface
+
+  - name: Add a second pim interface policy (normal_mode)
+    cisco.aci.aci_interface_policy_pim:
+      <<: *aci_info
+      tenant: ansible_tenant
+      pim_interface: ansible_pim_interface_2
+      description: pim interface policy 2 for ansible_tenant tenant
+      state: present
+    register: nm_add_pim_interface_2
+
+  - name: Add a third pim interface policy - designed router delay out of bounds
+    cisco.aci.aci_interface_policy_pim:
+      <<: *aci_info
+      tenant: ansible_tenant
+      pim_interface: ansible_pim_interface_3
+      designed_router_delay: 65536
+      state: present
+    ignore_errors: true
+    register: error_dr_relay_out_of_bounds
+  
+  - name: Add a fourth pim interface policy - designed router priority out of bounds
+    cisco.aci.aci_interface_policy_pim:
+      <<: *aci_info
+      tenant: ansible_tenant
+      pim_interface: ansible_pim_interface_4
+      designed_router_priority: 4294967296
+      state: present
+    ignore_errors: true
+    register: error_dr_priority_out_of_bounds
+
+  - name: Add a fifth pim interface policy - hello interval out of bounds
+    cisco.aci.aci_interface_policy_pim:
+      <<: *aci_info
+      tenant: ansible_tenant
+      pim_interface: ansible_pim_interface_5
+      hello_interval: 18724287
+      state: present
+    ignore_errors: true
+    register: error_helloIntvl_out_of_bounds
+
+  - name: Add a sixth pim interface policy - join prune interval out of bounds
+    cisco.aci.aci_interface_policy_pim:
+      <<: *aci_info
+      tenant: ansible_tenant
+      pim_interface: ansible_pim_interface_6
+      join_prune_interval: 65521
+      state: present
+    ignore_errors: true
+    register: error_jpIntvl_out_of_bounds
+
+  - name: Asserts for pim interface policy creation tasks
+    ansible.builtin.assert:
+      that:
+        - cm_add_pim_interface is changed
+        - cm_add_pim_interface.previous == []
+        - cm_add_pim_interface.current == []
+        - nm_add_pim_interface is changed
+        - nm_add_pim_interface.current.0.pimIfPol.attributes.name == "ansible_pim_interface_1"
+        - nm_add_pim_interface.current.0.pimIfPol.attributes.authT == "ah-md5"
+        - nm_add_pim_interface.current.0.pimIfPol.attributes.ctrl == "border,passive,strict-rfc-compliant"
+        - nm_add_pim_interface.current.0.pimIfPol.attributes.drDelay == "6"
+        - nm_add_pim_interface.current.0.pimIfPol.attributes.drPrio == "2"
+        - nm_add_pim_interface.current.0.pimIfPol.attributes.helloItvl == "60000"
+        - nm_add_pim_interface.current.0.pimIfPol.attributes.jpInterval == "120"
+        - nm_add_pim_interface.sent.pimIfPol.attributes.authKey == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+        - nm_add_pim_interface_2 is changed
+        - nm_add_pim_interface_2.previous == []
+        - nm_add_pim_interface_2.current.0.pimIfPol.attributes.name == "ansible_pim_interface_2"
+        - nm_add_pim_interface_2.current.0.pimIfPol.attributes.authT == "none"
+        - nm_add_pim_interface_2.current.0.pimIfPol.attributes.ctrl == ""
+        - nm_add_pim_interface_2.current.0.pimIfPol.attributes.drDelay == "3"
+        - nm_add_pim_interface_2.current.0.pimIfPol.attributes.drPrio == "1"
+        - nm_add_pim_interface_2.current.0.pimIfPol.attributes.helloItvl == "30000"
+        - nm_add_pim_interface_2.current.0.pimIfPol.attributes.jpInterval == "60"
+        - error_dr_relay_out_of_bounds.msg == "Parameter 'designed_router_delay' is only valid in range between 1 and 65535."
+        - error_dr_priority_out_of_bounds.msg == "Parameter 'designed_router_priority' is only valid in range between 1 and 4294967295."
+        - error_helloIntvl_out_of_bounds.msg == "Parameter 'hello_interval' is only valid in range between 1 and 18724286."
+        - error_jpIntvl_out_of_bounds.msg == "Parameter 'join_prune_interval' is only valid in range between 60 and 65520."
+
+  - name: Query all pim interface policies
+    cisco.aci.aci_interface_policy_pim:
+      <<: *aci_info
+      state: query
+    register: query_all_pim_interface
+
+  - name: Query ansible_pim_interface_1
+    cisco.aci.aci_interface_policy_pim:
+      <<: *aci_interface_policy_pim_present
+      state: query
+    register: query_ansible_pim_interface_1
+
+  - name: Asserts query tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_pim_interface is not changed
+        - query_all_pim_interface.current|length >= 2
+        - query_ansible_pim_interface_1 is not changed
+        - query_ansible_pim_interface_1.current.0.pimIfPol.attributes.name == "ansible_pim_interface_1"
+        - query_ansible_pim_interface_1.current.0.pimIfPol.attributes.authT == "ah-md5"
+        - query_ansible_pim_interface_1.current.0.pimIfPol.attributes.ctrl == "border,passive,strict-rfc-compliant"
+        - query_ansible_pim_interface_1.current.0.pimIfPol.attributes.drDelay == "6"
+        - query_ansible_pim_interface_1.current.0.pimIfPol.attributes.drPrio == "2"
+        - query_ansible_pim_interface_1.current.0.pimIfPol.attributes.helloItvl == "60000"
+        - query_ansible_pim_interface_1.current.0.pimIfPol.attributes.jpInterval == "120"
+
+  - name: Remove inbound join prune filter from pim interface policy (check_mode)
+    cisco.aci.aci_interface_policy_pim: &pim_interface_inbound_jp_absent
+      <<: *aci_interface_policy_pim_present
+      inbound_join_prune_filter_policy: ""
+    check_mode: true
+    register: cm_remove_pim_interface_inbound_jp
+
+  - name: Remove inbound join prune filter from pim interface policy (normal_mode)
+    cisco.aci.aci_interface_policy_pim:
+      <<: *pim_interface_inbound_jp_absent
+    register: nm_remove_pim_interface_inbound_jp
+
+  - name: Remove outbound join prune filter and neighbor filter from pim interface policy (normal_mode)
+    cisco.aci.aci_interface_policy_pim:
+      <<: *pim_interface_inbound_jp_absent
+      outbound_join_prune_filter_policy: ""
+      neighbor_filter_policy: ""
+    register: cm_remove_pim_interface_all_child_classes
+  
+  - name: Asserts child classes deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_remove_pim_interface_inbound_jp is changed
+        - cm_remove_pim_interface_inbound_jp.current == cm_remove_pim_interface_inbound_jp.previous
+        - nm_remove_pim_interface_inbound_jp is changed
+        - nm_remove_pim_interface_inbound_jp.current.0.pimIfPol.children | length == 2
+        - cm_remove_pim_interface_all_child_classes is changed
+        - cm_remove_pim_interface_all_child_classes.current.0.pimIfPol.children is not defined
+
+  - name: Remove pim interface policy (check_mode)
+    cisco.aci.aci_interface_policy_pim: &pim_interface_absent
+      <<: *aci_interface_policy_pim_present
+      state: absent
+    check_mode: true
+    register: cm_remove_pim_interface
+
+  - name: Remove pim interface policy (normal_mode)
+    cisco.aci.aci_interface_policy_pim:
+      <<: *pim_interface_absent
+    register: nm_remove_pim_interface
+
+  - name: Remove pim interface policy - testing idempotency
+    cisco.aci.aci_interface_policy_pim:
+      <<: *pim_interface_absent
+    register: nm_remove_pim_interface_idempotency
+
+  - name: Asserts deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_remove_pim_interface is changed
+        - cm_remove_pim_interface.proposed == {}
+        - nm_remove_pim_interface is changed
+        - nm_remove_pim_interface.previous != []
+        - nm_remove_pim_interface.method == "DELETE"
+        - nm_remove_pim_interface_idempotency is not changed
+        - nm_remove_pim_interface_idempotency.previous == []
+
+  - name: Remove the ansible_tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent
