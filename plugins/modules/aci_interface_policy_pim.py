@@ -378,7 +378,7 @@ def main():
             module_object=pim,
             target_filter={"name": pim},
         ),
-        child_classes=list(child_classes.keys())
+        child_classes=list(child_classes.keys()),
     )
 
     aci.get_existing()
