@@ -125,3 +125,44 @@ ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING = dict(
 )
 
 PIM_SETTING_CONTROL_STATE_MAPPING = {"fast": "fast-conv", "strict": "strict-rfc-compliant"}
+
+ACI_CLASS_MAPPING = dict(
+    consumer={
+        "class": "fvRsCons",
+        "rn": "rscons-",
+        "name": "tnVzBrCPName",
+    },
+    provider={
+        "class": "fvRsProv",
+        "rn": "rsprov-",
+        "name": "tnVzBrCPName",
+    },
+    taboo={"class": "fvRsProtBy", "rn": "rsprotBy-", "name": "tnVzTabooName"},
+    interface={
+        "class": "fvRsConsIf",
+        "rn": "rsconsIf-",
+        "name": "tnVzCPIfName",
+    },
+    intra_epg={
+        "class": "fvRsIntraEpg",
+        "rn": "rsintraEpg-",
+        "name": "tnVzBrCPName",
+    },
+)
+
+PROVIDER_MATCH_MAPPING = dict(
+    all="All",
+    at_least_one="AtleastOne",
+    at_most_one="AtmostOne",
+    none="None",
+)
+
+CONTRACT_LABEL_MAPPING = dict(
+    consumer="vzConsLbl",
+    provider="vzProvLbl",
+)
+
+SUBJ_LABEL_MAPPING = dict(
+    consumer="vzConsSubjLbl",
+    provider="vzProvSubjLbl",
+)
