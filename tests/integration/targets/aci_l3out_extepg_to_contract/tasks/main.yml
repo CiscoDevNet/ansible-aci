@@ -1,9 +1,10 @@
 # Test code for the ACI modules
 # Copyright: (c) 2020, Shreyas Srish (@shrsr)
+# Copyright: (c) 2023, Akini Ross (@akinross)
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-- name: Test that we have an ACI APIC host, ACI username and ACI password
+- name: Test that we have an ACI APIC host, ACI username and ACI password                         
   fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
@@ -22,9 +23,16 @@
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
   aci_tenant:
-    <<: *aci_info 
-    tenant: ansible_tenant
+    <<: *aci_info                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+    tenant: ansible_test
     state: absent
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
 
 - name: Verify Cloud and Non-Cloud Sites in use.
   include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
@@ -35,14 +43,14 @@
   - name: Add a new tenant
     aci_tenant:
       <<: *aci_info 
-      tenant: ansible_tenant
+      tenant: ansible_test
       description: Ansible tenant
       state: present
 
   - name: Add a new l3out
     aci_l3out:
       <<: *aci_info
-      tenant: ansible_tenant
+      tenant: ansible_test
       name: ansible_l3out
       description: l3out for Ansible tenant
       domain: ansible_dom
@@ -54,61 +62,150 @@
   - name: Add a new ExtEpg
     aci_l3out_extepg:
       <<: *aci_info 
-      tenant: ansible_tenant
+      tenant: ansible_test
       l3out: ansible_l3out
       name: ansible_extEpg
       description: ExtEpg for Ansible l3out
       state: present
-    
-  - name: Bind External End Point Groups to Contracts
-    aci_l3out_extepg_to_contract:
+  
+  - name: Bind External End Point Groups to Contracts (check-mode)
+    aci_l3out_extepg_to_contract: &aci_ext_epg_present
       <<: *aci_info 
-      tenant: ansible_tenant
+      tenant: ansible_test
       l3out: ansible_l3out
       extepg: ansible_extEpg
       contract: ansible_contract
       contract_type: provider
       state: present
-    register: bind_extepg_provider_contract
+    register: cm_bind_extepg_provider_contract
+    check_mode: true
+
+  - name: Bind External End Point Groups to Contracts
+    aci_l3out_extepg_to_contract:
+      <<: *aci_ext_epg_present 
+    register: nm_bind_extepg_provider_contract
+
+  - name: Bind External End Point Groups to Contracts again
+    aci_l3out_extepg_to_contract:
+      <<: *aci_ext_epg_present 
+    register: nm_bind_extepg_provider_contract_again
 
   - name: Verify bind_extepg_provider_contract
     assert:
       that:
-      - bind_extepg_provider_contract.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
-      - bind_extepg_provider_contract.current.0.fvRsProv.attributes.annotation == 'orchestrator:ansible'
+      - cm_bind_extepg_provider_contract is changed
+      - cm_bind_extepg_provider_contract.previous == []
+      - cm_bind_extepg_provider_contract.proposed.fvRsProv.attributes.dn == "uni/tn-ansible_test/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
+      - cm_bind_extepg_provider_contract.proposed.fvRsProv.attributes.annotation == "orchestrator:ansible"
+      - cm_bind_extepg_provider_contract.proposed.fvRsProv.attributes.tnVzBrCPName == "ansible_contract"
+      - nm_bind_extepg_provider_contract is changed
+      - nm_bind_extepg_provider_contract.previous == []
+      - nm_bind_extepg_provider_contract.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_test/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
+      - nm_bind_extepg_provider_contract.current.0.fvRsProv.attributes.annotation == "orchestrator:ansible"
+      - nm_bind_extepg_provider_contract.current.0.fvRsProv.attributes.tnVzBrCPName == "ansible_contract"
+      - nm_bind_extepg_provider_contract_again is not changed
+      - nm_bind_extepg_provider_contract_again.previous.0.fvRsProv.attributes.dn == "uni/tn-ansible_test/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
+      - nm_bind_extepg_provider_contract_again.previous.0.fvRsProv.attributes.annotation == "orchestrator:ansible"
+      - nm_bind_extepg_provider_contract_again.previous.0.fvRsProv.attributes.tnVzBrCPName == "ansible_contract"
+      - nm_bind_extepg_provider_contract_again.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_test/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
+      - nm_bind_extepg_provider_contract_again.current.0.fvRsProv.attributes.annotation == "orchestrator:ansible"
+      - nm_bind_extepg_provider_contract_again.current.0.fvRsProv.attributes.tnVzBrCPName == "ansible_contract"
 
-  - name: Bind second External End Point Groups to Contracts
-    aci_l3out_extepg_to_contract:
+  - name: Bind second External End Point Groups to Contracts with contract label and subject label
+    cisco.aci.aci_l3out_extepg_to_contract:
       <<: *aci_info 
-      tenant: ansible_tenant
+      tenant: ansible_test
       l3out: ansible_l3out
       extepg: ansible_extEpg
       contract: ansible_contract2
       contract_type: provider
+      contract_label: anstest_contract_label
+      subject_label: anstest_subject_label
       state: present
     register: bind_extepg_provider_contract_2
 
   - name: Verify bind_extepg_provider_contract_2
     assert:
       that:
-      - bind_extepg_provider_contract_2.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract2"
+      - bind_extepg_provider_contract_2.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_test/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract2"
+      - bind_extepg_provider_contract_2.current.0.fvRsProv.attributes.tnVzBrCPName == "ansible_contract2"
+      - bind_extepg_provider_contract_2.current.0.fvRsProv.children.0.vzProvSubjLbl.attributes.name == "anstest_subject_label"
+      - bind_extepg_provider_contract_2.current.0.fvRsProv.children.1.vzProvLbl.attributes.name == "anstest_contract_label"
+      - bind_extepg_provider_contract_2.current.0.fvRsProv.children | length == 2
+
+  - name: Bind taboo contract to external epg
+    cisco.aci.aci_l3out_extepg_to_contract:
+      <<: *aci_ext_epg_present
+      contract: ansible_contract
+      contract_type: taboo
+    register: taboo_present
+
+  - name: Bind interface contract to external epg
+    cisco.aci.aci_l3out_extepg_to_contract:
+      <<: *aci_ext_epg_present
+      contract: ansible_contract
+      contract_type: interface
+    register: interface_present
+
+  - name: Bind intra epg contract to external epg
+    cisco.aci.aci_l3out_extepg_to_contract: &aci_ext_epg_intra_present
+      <<: *aci_ext_epg_present
+      contract: ansible_contract
+      contract_type: intra_epg
+    register: intra_epg_present
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')  # This condition will execute only for APIC version 5.x and above
+
+  - name: Bind intra epg contract to external epg (error contract label)
+    cisco.aci.aci_l3out_extepg_to_contract:
+      <<: *aci_ext_epg_intra_present
+      contract_label: anstest_contract_label
+    ignore_errors: true
+    register: err_contract_label
+
+  - name: Bind intra epg contract to external epg (error subject label)
+    cisco.aci.aci_l3out_extepg_to_contract:
+      <<: *aci_ext_epg_intra_present
+      subject_label: anstest_subject_label
+    ignore_errors: true
+    register: err_subject_label
+
+  - name: Bind intra epg contract to external epg (error subject and contract label)
+    cisco.aci.aci_l3out_extepg_to_contract:
+      <<: *aci_ext_epg_intra_present
+      contract_label: anstest_contract_label
+      subject_label: anstest_subject_label
+    ignore_errors: true
+    register: err_subject_and_contract_label
+  
+  - name: Verify present assertions for taboo, interface and intra_epg contract types
+    assert:
+      that:
+        - taboo_present is changed
+        - taboo_present.previous == []
+        - taboo_present.current.0.fvRsProtBy.attributes.tnVzTabooName == 'ansible_contract'
+        - interface_present is changed
+        - interface_present.previous == []
+        - interface_present.current.0.fvRsConsIf.attributes.tnVzCPIfName == 'ansible_contract'
+        - err_contract_label is failed
+        - err_contract_label.msg == "the 'contract_label' and 'subject_label' are not configurable for intra_epg contracts"
+        - err_subject_label is failed
+        - err_subject_label.msg == "the 'contract_label' and 'subject_label' are not configurable for intra_epg contracts"
+        - err_subject_and_contract_label is failed
+        - err_subject_and_contract_label.msg == "the 'contract_label' and 'subject_label' are not configurable for intra_epg contracts"
+
+  - name: Verify present assertions for taboo, interface and intra_epg contract types
+    assert:
+      that:
+        - intra_epg_present is changed
+        - intra_epg_present.previous == []
+        - intra_epg_present.current.0.fvRsIntraEpg.attributes.tnVzBrCPName == 'ansible_contract'
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')  # This condition will execute only for APIC version 5.x and above
 
   - name: Query the External End Point Groups
     aci_l3out_extepg_to_contract:
-      <<: *aci_info
-      tenant: ansible_tenant
-      l3out: ansible_l3out
-      extepg: ansible_extEpg
-      contract: ansible_contract
-      contract_type: provider
+      <<: *aci_ext_epg_present
       state: query
     register: query_extepg
-
-  - name: Verify query_extepg
-    assert:
-      that:
-      - query_extepg is not changed
-      - query_extepg.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
 
   - name: Query all the External End Point Groups
     aci_l3out_extepg_to_contract:
@@ -117,26 +214,48 @@
       state: query
     register: query_all
 
+  - name: Verify query_extepg
+    assert:
+      that:
+      - query_extepg is not changed
+      - query_extepg.current | length == 1
+      - query_extepg.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_test/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
+      - query_all is not changed
+      - query_all.current | length >= 1
+
+  - name: Remove existing contract to External End Point Groups (check-mode)
+    aci_l3out_extepg_to_contract: &aci_ext_epg_absent
+      <<: *aci_ext_epg_present 
+      state: absent
+    register: cm_remove_contract_extepg
+    check_mode: true
+
   - name: Remove existing contract to External End Point Groups
     aci_l3out_extepg_to_contract:
-      <<: *aci_info 
-      tenant: ansible_tenant
-      l3out: ansible_l3out
-      extepg: ansible_extEpg
-      contract: ansible_contract
-      contract_type: provider
-      state: absent
-    register: remove_contract_extepg
+      <<: *aci_ext_epg_absent 
+    register: nm_remove_contract_extepg
+
+  - name: Remove existing contract to External End Point Groups again
+    aci_l3out_extepg_to_contract:
+      <<: *aci_ext_epg_absent 
+    register: nm_remove_contract_extepg_again
 
   - name: Verify remove_contract_extepg
     assert:
       that:
-      - remove_contract_extepg.previous.0.fvRsProv.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
+      - cm_remove_contract_extepg is changed
+      - cm_remove_contract_extepg.previous.0.fvRsProv.attributes.dn == "uni/tn-ansible_test/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
+      - nm_remove_contract_extepg is changed
+      - nm_remove_contract_extepg.previous.0.fvRsProv.attributes.dn == "uni/tn-ansible_test/out-ansible_l3out/instP-ansible_extEpg/rsprov-ansible_contract"
+      - nm_remove_contract_extepg.current == []
+      - nm_remove_contract_extepg_again is not changed
+      - nm_remove_contract_extepg_again.previous == []
+      - nm_remove_contract_extepg_again.current == []
 
   - name: Bind External End Point Groups to Contracts
     aci_l3out_extepg_to_contract:
       <<: *aci_info 
-      tenant: ansible_tenant
+      tenant: ansible_test
       l3out: ansible_l3out
       extepg: ansible_extEpg
       contract: ansible_contract
@@ -150,3 +269,10 @@
     assert:
       that:
       - bind_extepg_consumer_contract.msg == "the 'provider_match' is only configurable for Provided Contracts"
+
+  # CLEAN ENVIRONMENT
+  - name: Remove the ansible_tenant
+    aci_tenant:
+      <<: *aci_info 
+      tenant: ansible_test
+      state: absent
