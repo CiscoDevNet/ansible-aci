@@ -1,5 +1,6 @@
 # Test code for the ACI modules
 # Copyright: (c) 2021, Jason Juenger (@jasonjuenger)
+# Copyright: (c) 2023, Akini Ross (@akinross) <akinross@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -18,6 +19,13 @@
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: info
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
@@ -119,6 +127,72 @@
       - cm_mod_node_profile.proposed.l3extLNodeP.attributes.descr == nm_mod_node_profile.proposed.l3extLNodeP.attributes.descr == 'my_updated_descr'
       - nm_mod_node_profile.current.0.l3extLNodeP.attributes.dn == 'uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile'
       - nm_mod_node_profile.current.0.l3extLNodeP.attributes.name == 'ansible_node_profile'
+
+  - name: Execute tasks only for APIC version 5.x and above
+    when:
+    - version.current.0.topSystem.attributes.version is version('5', '>=')  # This condition will execute only for APIC version 5.x and above
+    block: 
+
+    - name: Ensure infra sr mpls l3out does not exist
+      cisco.aci.aci_l3out: &aci_infra_sr_mpls_l3out_absent
+        <<: *aci_info
+        tenant: infra
+        name: ansible_infra_sr_mpls_l3out
+        domain: ansible_dom
+        vrf: overlay-1
+        mpls: "yes"
+        state: absent
+
+    - name: Add a infra sr mpls l3out 
+      cisco.aci.aci_l3out:
+        <<: *aci_infra_sr_mpls_l3out_absent
+        state: present
+
+    - name: Add a node profile with mpls custom qos policy 
+      cisco.aci.aci_l3out_logical_node_profile: &aci_infra_node_profile_qos
+        <<: *aci_info
+        tenant: infra
+        l3out: ansible_infra_sr_mpls_l3out
+        node_profile: ansible_infra_sr_mpls_l3out_node_profile
+        mpls_custom_qos_policy: ansible_test_mpls_custom_qos_policy
+      register: nm_add_node_profile_qos
+
+    - name: Modify mpls custom qos policy to node profile
+      cisco.aci.aci_l3out_logical_node_profile: &aci_infra_node_profile_qos_changed
+        <<: *aci_infra_node_profile_qos
+        mpls_custom_qos_policy: ansible_test_mpls_custom_qos_policy_changed
+      register: nm_mod_node_profile_qos_changed
+
+    - name: Modify mpls custom qos policy to node profile again
+      cisco.aci.aci_l3out_logical_node_profile: 
+        <<: *aci_infra_node_profile_qos_changed
+      register: nm_mod_node_profile_qos_again
+
+    - name: Remove mpls custom qos policy from node profile again
+      cisco.aci.aci_l3out_logical_node_profile: 
+        <<: *aci_infra_node_profile_qos_changed
+        mpls_custom_qos_policy: ""
+      register: nm_del_node_profile_qos
+
+    - name: Verify mpls custom qos policy configuration on node profile
+      assert:
+        that:
+        - nm_add_node_profile_qos is changed
+        - nm_add_node_profile_qos.previous == []
+        - nm_add_node_profile_qos.current.0.l3extLNodeP.children.0.l3extRsLNodePMplsCustQosPol.attributes.tDn == "uni/tn-infra/qosmplscustom-ansible_test_mpls_custom_qos_policy"
+        - nm_mod_node_profile_qos_changed is changed
+        - nm_mod_node_profile_qos_changed.previous.0.l3extLNodeP.children.0.l3extRsLNodePMplsCustQosPol.attributes.tDn == "uni/tn-infra/qosmplscustom-ansible_test_mpls_custom_qos_policy"
+        - nm_mod_node_profile_qos_changed.current.0.l3extLNodeP.children.0.l3extRsLNodePMplsCustQosPol.attributes.tDn == "uni/tn-infra/qosmplscustom-ansible_test_mpls_custom_qos_policy_changed"
+        - nm_mod_node_profile_qos_again is not changed
+        - nm_mod_node_profile_qos_again.previous.0.l3extLNodeP.children.0.l3extRsLNodePMplsCustQosPol.attributes.tDn == "uni/tn-infra/qosmplscustom-ansible_test_mpls_custom_qos_policy_changed"
+        - nm_mod_node_profile_qos_again.current.0.l3extLNodeP.children.0.l3extRsLNodePMplsCustQosPol.attributes.tDn == "uni/tn-infra/qosmplscustom-ansible_test_mpls_custom_qos_policy_changed"
+        - nm_del_node_profile_qos is changed
+        - nm_del_node_profile_qos.previous.0.l3extLNodeP.children.0.l3extRsLNodePMplsCustQosPol.attributes.tDn == "uni/tn-infra/qosmplscustom-ansible_test_mpls_custom_qos_policy_changed"
+        - nm_del_node_profile_qos.current.0.l3extLNodeP.children is undefined
+
+    - name: Remove a infra sr mpls l3out 
+      cisco.aci.aci_l3out:
+        <<: *aci_infra_sr_mpls_l3out_absent
 
   - name: Query existing node profile (check mode)
     cisco.aci.aci_l3out_logical_node_profile: &query_existing_node_profile
