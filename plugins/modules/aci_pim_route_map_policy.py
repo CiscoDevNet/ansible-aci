@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_pim_route_map_policy
-short_description: Manage PIM Route Map Policy (pim:RouteMapPol)
+short_description: Manage Protocol-Independent Multicast (PIM) Route Map Policy (pim:RouteMapPol)
 description:
 - Manage PIM Route Map Policies for tenants on Cisco ACI fabrics.
 options:

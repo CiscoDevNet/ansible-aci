@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_pim_route_map_entry
-short_description: Manage PIM Route Map Entry (pim:RouteMapEntry)
+short_description: Manage Protocol-Independent Multicast (PIM) Route Map Entry (pim:RouteMapEntry)
 description:
 - Manage PIM Route Map Entries for the PIM route Map Policies on Cisco ACI fabrics.
 options:
@@ -41,7 +41,7 @@ options:
     type: str
   rp_ip:
     description:
-    - The Multicast RP IP.
+    - The Multicast Rendezvous Point (RP) IP.
     type: str
   action:
     description:
@@ -67,10 +67,11 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) can be used for this.
+- The C(tenant) and the C(pim_route_map_policy) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_pim_route_map_policy) can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_pim_route_map_policy
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes
   link: https://developer.cisco.com/docs/apic-mim-ref/
