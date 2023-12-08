@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2021, Marcel Zehnder (@maercu)
+# Copyright: (c) 2023, Akini Ross (@akinross) <akinross@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -52,9 +54,20 @@ options:
   loopback_address:
     description:
     - The loopback IP address.
+    - The BGP-EVPN loopback IP address for Infra SR MPLS L3Outs.
     - A configured loopback address can be removed by passing an empty string (see Examples).
     type: str
     aliases: [ loopback ]
+  mpls_transport_loopback_address:
+    description:
+    - The MPLS transport loopback IP address for Infra SR MPLS L3Outs.
+    type: str
+    aliases: [ mpls_transport_loopback ]
+  sid:
+    description:
+    - The MPLS transport loopback IP address for Infra SR MPLS L3Outs.
+    type: str
+    aliases: [ segment_id ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -74,6 +87,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Marcel Zehnder (@maercu)
+- Akini Ross (@akinross)
 """
 
 EXAMPLES = r"""
@@ -90,6 +104,22 @@ EXAMPLES = r"""
     router_id: 111.111.111.111
     loopback_address: 111.111.111.112
     state: present
+  delegate_to: localhost
+
+- name: Add a node to a infra sr mpls l3out node profile
+  cisco.aci.aci_l3out_logical_node: &aci_infra_node_profile_node
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: infra
+    l3out: ansible_infra_sr_mpls_l3out
+    node_profile: ansible_infra_sr_mpls_l3out_node_profile
+    pod_id: 1
+    node_id: 113
+    router_id_as_loopback: no
+    loopback_address: 50.0.0.1
+    mpls_transport_loopback_address: 51.0.0.1
+    sid: 500
   delegate_to: localhost
 
 - name: Remove a loopback address from a node in node profile
@@ -264,6 +294,8 @@ def main():
         router_id=dict(type="str"),
         router_id_as_loopback=dict(type="str", default="yes", choices=["yes", "no"]),
         loopback_address=dict(type="str", aliases=["loopback"]),
+        mpls_transport_loopback_address=dict(type="str", aliases=["mpls_transport_loopback"]),
+        sid=dict(type="str", aliases=["segment_id"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -274,6 +306,8 @@ def main():
             ["state", "absent", ["tenant", "l3out", "node_profile", "pod_id", "node_id"]],
             ["state", "present", ["tenant", "l3out", "node_profile", "pod_id", "node_id"]],
         ],
+        required_by={"mpls_transport_loopback_address": "loopback_address"},
+        required_together=[("mpls_transport_loopback_address", "sid")],
     )
 
     tenant = module.params.get("tenant")
@@ -284,6 +318,8 @@ def main():
     router_id = module.params.get("router_id")
     router_id_as_loopback = module.params.get("router_id_as_loopback")
     loopback_address = module.params.get("loopback_address")
+    mpls_transport_loopback_address = module.params.get("mpls_transport_loopback_address")
+    sid = module.params.get("sid")
     state = module.params.get("state")
 
     tdn = None
@@ -293,6 +329,9 @@ def main():
     aci = ACIModule(module)
 
     child_classes = ["l3extLoopBackIfP"]
+
+    if mpls_transport_loopback_address is not None:
+        child_classes.append("mplsNodeSidP")
 
     child_configs = []
 
@@ -333,7 +372,12 @@ def main():
                     previous_loopback_address = child.get("l3extLoopBackIfP", {}).get("attributes", {}).get("addr")
                     child_configs.append(dict(l3extLoopBackIfP=dict(attributes=dict(addr=previous_loopback_address, status="deleted"))))
             elif loopback_address:
-                child_configs.append(dict(l3extLoopBackIfP=dict(attributes=dict(addr=loopback_address))))
+                loopback_address_config = dict(l3extLoopBackIfP=dict(attributes=dict(addr=loopback_address), children=[]))
+                if mpls_transport_loopback_address:
+                    loopback_address_config["l3extLoopBackIfP"]["children"].append(
+                        dict(mplsNodeSidP=dict(attributes=dict(loopbackAddr=mpls_transport_loopback_address, sidoffset=sid)))
+                    )
+                child_configs.append(loopback_address_config)
 
         aci.payload(
             aci_class="l3extRsNodeL3OutAtt",

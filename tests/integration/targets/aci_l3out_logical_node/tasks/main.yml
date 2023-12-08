@@ -1,4 +1,6 @@
-# Author: Marcel Zehnder (@maercu)
+# Test code for the ACI modules
+# Copyright: (c) 2021, Marcel Zehnder (@maercu)
+# Copyright: (c) 2023, Akini Ross (@akinross) <akinross@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
@@ -17,6 +19,13 @@
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
 
 # CLEAN ENVIRONMENT
 - name: Remove test tenant before we kickoff
@@ -137,6 +146,137 @@
       node_id: 112
       router_id: 12.12.12.12
       loopback_address: 12.12.12.13
+
+  - name: Execute tasks only for APIC version 5.x and above
+    when:
+    - version.current.0.topSystem.attributes.version is version('5', '>=')  # This condition will execute only for APIC version 5.x and above
+    block:
+
+    - name: Ensure infra sr mpls l3out does not exist
+      cisco.aci.aci_l3out: &aci_infra_sr_mpls_l3out_absent
+        <<: *aci_info
+        tenant: infra
+        name: ansible_infra_sr_mpls_l3out
+        domain: ansible_dom
+        vrf: overlay-1
+        mpls: "yes"
+        state: absent
+
+    - name: Add a infra sr mpls l3out
+      cisco.aci.aci_l3out:
+        <<: *aci_infra_sr_mpls_l3out_absent
+        state: present
+
+    - name: Add a node profile in the infra sr mpls l3out
+      cisco.aci.aci_l3out_logical_node_profile: &aci_infra_node_profile
+        <<: *aci_info
+        tenant: infra
+        l3out: ansible_infra_sr_mpls_l3out
+        node_profile: ansible_infra_sr_mpls_l3out_node_profile
+
+    - name: Add a node in the infra sr mpls l3out node profile (check_mode)
+      cisco.aci.aci_l3out_logical_node: &aci_infra_node_profile_node
+        <<: *aci_infra_node_profile
+        tenant: infra
+        l3out: ansible_infra_sr_mpls_l3out
+        node_profile: ansible_infra_sr_mpls_l3out_node_profile
+        pod_id: 1
+        node_id: 113
+        router_id_as_loopback: no
+        loopback_address: 50.0.0.1
+        mpls_transport_loopback_address: 51.0.0.1
+        sid: 500
+      check_mode: true
+      register: cm_add_infra_node_profile_node
+
+    - name: Add a node in the infra sr mpls l3out node profile without loopback (error)
+      cisco.aci.aci_l3out_logical_node:
+        <<: *aci_infra_node_profile_node
+        loopback_address: "{{ fake_var | default(omit) }}"
+      ignore_errors: true
+      register: err_add_infra_node_profile_node_without_loopback
+
+    - name: Add a node in the infra sr mpls l3out node profile without sid (error)
+      cisco.aci.aci_l3out_logical_node:
+        <<: *aci_infra_node_profile_node
+        sid: "{{ fake_var | default(omit) }}"
+      ignore_errors: true
+      register: err_add_infra_node_profile_node_without_sid
+
+    - name: Add a node in the infra sr mpls l3out node profile without mpls transport loopback addressid (error)
+      cisco.aci.aci_l3out_logical_node:
+        <<: *aci_infra_node_profile_node
+        mpls_transport_loopback_address: "{{ fake_var | default(omit) }}"
+      ignore_errors: true
+      register: err_add_infra_node_profile_node_without_mpls_transport_loopback_address
+
+    - name: Add a node in the infra sr mpls l3out node profile (normal mode)
+      cisco.aci.aci_l3out_logical_node:
+        <<: *aci_infra_node_profile_node
+      register: nm_add_infra_node_profile_node
+
+    - name: Add a node in the infra sr mpls l3out node profile again
+      cisco.aci.aci_l3out_logical_node:
+        <<: *aci_infra_node_profile_node
+      register: nm_add_infra_node_profile_node_again
+
+    - name: Change the node in the infra sr mpls l3out node profile
+      cisco.aci.aci_l3out_logical_node:
+        <<: *aci_infra_node_profile_node
+        loopback_address: 50.0.0.2
+        mpls_transport_loopback_address: 51.0.0.2
+        sid: 501
+      register: nm_change_infra_node_profile_node
+
+    - name: Verify mpls custom qos policy configuration on node profile
+      assert:
+        that:
+        - cm_add_infra_node_profile_node is changed
+        - cm_add_infra_node_profile_node.previous == []
+        - cm_add_infra_node_profile_node.proposed.l3extRsNodeL3OutAtt.attributes.rtrIdLoopBack == "no"
+        - cm_add_infra_node_profile_node.proposed.l3extRsNodeL3OutAtt.attributes.tDn == "topology/pod-1/node-113"
+        - cm_add_infra_node_profile_node.proposed.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.attributes.addr == "50.0.0.1"
+        - cm_add_infra_node_profile_node.proposed.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.children.0.mplsNodeSidP.attributes.loopbackAddr == "51.0.0.1"
+        - cm_add_infra_node_profile_node.proposed.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.children.0.mplsNodeSidP.attributes.sidoffset == "500"
+        - err_add_infra_node_profile_node_without_loopback is failed
+        - err_add_infra_node_profile_node_without_loopback.msg == "missing parameter(s) required by 'mpls_transport_loopback_address'{{":"}} loopback_address"
+        - err_add_infra_node_profile_node_without_sid is failed
+        - err_add_infra_node_profile_node_without_sid.msg == "parameters are required together{{":"}} mpls_transport_loopback_address, sid"
+        - err_add_infra_node_profile_node_without_mpls_transport_loopback_address is failed
+        - err_add_infra_node_profile_node_without_mpls_transport_loopback_address.msg == "parameters are required together{{":"}} mpls_transport_loopback_address, sid"
+        - nm_add_infra_node_profile_node is changed
+        - nm_add_infra_node_profile_node.previous == []
+        - nm_add_infra_node_profile_node.current.0.l3extRsNodeL3OutAtt.attributes.rtrIdLoopBack == "no"
+        - nm_add_infra_node_profile_node.current.0.l3extRsNodeL3OutAtt.attributes.tDn == "topology/pod-1/node-113"
+        - nm_add_infra_node_profile_node.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.attributes.addr == "50.0.0.1"
+        - nm_add_infra_node_profile_node.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.children.0.mplsNodeSidP.attributes.loopbackAddr == "51.0.0.1"
+        - nm_add_infra_node_profile_node.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.children.0.mplsNodeSidP.attributes.sidoffset == "500"
+        - nm_add_infra_node_profile_node_again is not changed
+        - nm_add_infra_node_profile_node_again.previous.0.l3extRsNodeL3OutAtt.attributes.rtrIdLoopBack == "no"
+        - nm_add_infra_node_profile_node_again.previous.0.l3extRsNodeL3OutAtt.attributes.tDn == "topology/pod-1/node-113"
+        - nm_add_infra_node_profile_node_again.previous.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.attributes.addr == "50.0.0.1"
+        - nm_add_infra_node_profile_node_again.previous.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.children.0.mplsNodeSidP.attributes.loopbackAddr == "51.0.0.1"
+        - nm_add_infra_node_profile_node_again.previous.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.children.0.mplsNodeSidP.attributes.sidoffset == "500"
+        - nm_add_infra_node_profile_node_again.current.0.l3extRsNodeL3OutAtt.attributes.rtrIdLoopBack == "no"
+        - nm_add_infra_node_profile_node_again.current.0.l3extRsNodeL3OutAtt.attributes.tDn == "topology/pod-1/node-113"
+        - nm_add_infra_node_profile_node_again.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.attributes.addr == "50.0.0.1"
+        - nm_add_infra_node_profile_node_again.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.children.0.mplsNodeSidP.attributes.loopbackAddr == "51.0.0.1"
+        - nm_add_infra_node_profile_node_again.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.children.0.mplsNodeSidP.attributes.sidoffset == "500"
+        - nm_change_infra_node_profile_node is changed
+        - nm_change_infra_node_profile_node.previous.0.l3extRsNodeL3OutAtt.attributes.rtrIdLoopBack == "no"
+        - nm_change_infra_node_profile_node.previous.0.l3extRsNodeL3OutAtt.attributes.tDn == "topology/pod-1/node-113"
+        - nm_change_infra_node_profile_node.previous.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.attributes.addr == "50.0.0.1"
+        - nm_change_infra_node_profile_node.previous.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.children.0.mplsNodeSidP.attributes.loopbackAddr == "51.0.0.1"
+        - nm_change_infra_node_profile_node.previous.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.children.0.mplsNodeSidP.attributes.sidoffset == "500"
+        - nm_change_infra_node_profile_node.current.0.l3extRsNodeL3OutAtt.attributes.rtrIdLoopBack == "no"
+        - nm_change_infra_node_profile_node.current.0.l3extRsNodeL3OutAtt.attributes.tDn == "topology/pod-1/node-113"
+        - nm_change_infra_node_profile_node.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.attributes.addr == "50.0.0.2"
+        - nm_change_infra_node_profile_node.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.children.0.mplsNodeSidP.attributes.loopbackAddr == "51.0.0.2"
+        - nm_change_infra_node_profile_node.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.children.0.mplsNodeSidP.attributes.sidoffset == "501"
+
+    - name: Remove a infra sr mpls l3out
+      cisco.aci.aci_l3out:
+        <<: *aci_infra_sr_mpls_l3out_absent
 
   # QUERY ALL NODES
   - name: Query all nodes
