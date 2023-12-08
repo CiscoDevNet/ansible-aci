@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_pim
-short_description: Manage PIM interface policies (pim:IfPol)
+short_description: Manage Protocol-Independent Multicast (PIM) interface policies (pim:IfPol)
 description:
 - Manage Protocol Independent Multicast interface policies for Tenants on Cisco ACI fabrics.
 options:
