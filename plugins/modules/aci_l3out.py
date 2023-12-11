@@ -74,6 +74,7 @@ options:
     - First example, to add BGP protocol to an l3out with OSPF protocol, the user must enter C([ bgp, ospf ]) even though "ospf" was provided before.
     - Second example, to change the protocol from OSPF to EIGRP, the user must simply enter C([ eigrp ]) and the previous OSPF protocol will be deleted.
     - To remove all existing protocols, the user must enter C([ static ]).
+    - SR-MPLS Infra L3out requires the l3protocol to be 'bgp'.
     type: list
     elements: str
     choices: [ bgp, eigrp, ospf, pim, static ]
@@ -449,41 +450,10 @@ def main():
         dict(l3extRsL3DomAtt=dict(attributes=dict(tDn="uni/l3dom-{0}".format(domain)))),
         dict(l3extRsEctx=dict(attributes=dict(tnFvCtxName=vrf))),
     ]
-    if l3protocol is not None:
-        l3protocol_child_configs = dict(
-            bgp=dict(bgpExtP=dict(attributes=dict(status="deleted"))),
-            eigrp=dict(eigrpExtP=dict(attributes=dict(status="deleted"))),
-            ospf=dict(ospfExtP=dict(attributes=dict(status="deleted"))),
-            pim=dict(pimExtP=dict(attributes=dict(status="deleted"))),
-        )
-        for protocol in l3protocol:
-            if protocol == "bgp":
-                l3protocol_child_configs["bgp"] = dict(bgpExtP=dict(attributes=dict(descr="")))
-            elif protocol == "eigrp":
-                l3protocol_child_configs["eigrp"] = dict(eigrpExtP=dict(attributes=dict(asn=asn)))
-            elif protocol == "ospf":
-                if isinstance(ospf, dict):
-                    ospf["area_ctrl"] = ",".join(ospf.get("area_ctrl"))
-                    l3protocol_child_configs["ospf"] = dict(
-                        ospfExtP=dict(
-                            attributes=dict(
-                                areaCost=ospf.get("area_cost"),
-                                areaCtrl=ospf.get("area_ctrl"),
-                                areaId=ospf.get("area_id"),
-                                areaType=ospf.get("area_type"),
-                                descr=ospf.get("description"),
-                                multipodInternal=ospf.get("multipod_internal"),
-                                nameAlias=ospf.get("name_alias"),
-                            )
-                        )
-                    )
-                else:
-                    l3protocol_child_configs["ospf"] = dict(ospfExtP=dict(attributes=dict(descr="")))
-            elif protocol == "pim":
-                l3protocol_child_configs["pim"] = dict(pimExtP=dict(attributes=dict(descr="")))
-        child_configs.extend(list(l3protocol_child_configs.values()))
 
     if tenant == "infra" and mpls == "yes":
+        if l3protocol != ["bgp"] and state == "present":
+            module.fail_json(msg="The l3protocol parameter must be 'bgp' when tenant is 'infra' and mpls is 'yes'")
         if vrf != "overlay-1" and state == "present":
             module.fail_json(msg="The vrf parameter must be 'overlay-1' when tenant is 'infra' and mpls is 'yes'")
         child_classes += ["mplsExtP", "mplsRsLabelPol", "l3extProvLbl"]
@@ -511,6 +481,46 @@ def main():
     aci.get_existing()
 
     if state == "present":
+        if l3protocol is not None:
+            if isinstance(aci.existing, list) and len(aci.existing) > 0:
+                for child in aci.existing[0].get("l3extOut", {}).get("children", {}):
+                    if child.get("bgpExtP") and "bgp" not in l3protocol:
+                        child_configs.append(dict(bgpExtP=dict(attributes=dict(status="deleted"))))
+                    if child.get("eigrpExtP") and "eigrp" not in l3protocol:
+                        child_configs.append(dict(eigrpExtP=dict(attributes=dict(status="deleted"))))
+                    if child.get("ospfExtP") and "ospf" not in l3protocol:
+                        child_configs.append(dict(ospfExtP=dict(attributes=dict(status="deleted"))))
+                    if child.get("pimExtP") and "pim" not in l3protocol:
+                        child_configs.append(dict(pimExtP=dict(attributes=dict(status="deleted"))))
+
+            for protocol in l3protocol:
+                if protocol == "bgp":
+                    child_configs.append(dict(bgpExtP=dict(attributes=dict(descr=""))))
+                elif protocol == "eigrp":
+                    child_configs.append(dict(eigrpExtP=dict(attributes=dict(asn=asn))))
+                elif protocol == "ospf":
+                    if isinstance(ospf, dict):
+                        ospf["area_ctrl"] = ",".join(ospf.get("area_ctrl"))
+                        child_configs.append(
+                            dict(
+                                ospfExtP=dict(
+                                    attributes=dict(
+                                        areaCost=ospf.get("area_cost"),
+                                        areaCtrl=ospf.get("area_ctrl"),
+                                        areaId=ospf.get("area_id"),
+                                        areaType=ospf.get("area_type"),
+                                        descr=ospf.get("description"),
+                                        multipodInternal=ospf.get("multipod_internal"),
+                                        nameAlias=ospf.get("name_alias"),
+                                    )
+                                )
+                            )
+                        )
+                    else:
+                        child_configs.append(dict(ospfExtP=dict(attributes=dict(descr=""))))
+                elif protocol == "pim":
+                    child_configs.append(dict(pimExtP=dict(attributes=dict(descr=""))))
+
         aci.payload(
             aci_class="l3extOut",
             class_config=dict(
