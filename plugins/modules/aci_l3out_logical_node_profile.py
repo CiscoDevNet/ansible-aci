@@ -46,8 +46,8 @@ options:
     aliases: [ target_dscp ]
   mpls_custom_qos_policy:
     description:
-    - The mpls custom QOS policy name for the node profile.
-    - This argument should only be used for Infra SR MPLS L3Outs.
+    - The MPLS custom QOS policy name for the node profile.
+    - This argument should only be used for Infra SR-MPLS L3Outs.
     aliases: [ mpls_custom_qos_policy_name ]
     type: string
   state:
@@ -90,7 +90,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Add a new node profile with mpls custom qos policy to sr mpls infra l3out
+- name: Add a new node profile with MPLS custom QOS policy to SR-MPLS infra l3out
   cisco.aci.aci_l3out_logical_node_profile:
     host: apic
     username: admin
