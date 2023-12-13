@@ -49,7 +49,7 @@ options:
     - The MPLS custom QOS policy name for the node profile.
     - This argument should only be used for Infra SR-MPLS L3Outs.
     aliases: [ mpls_custom_qos_policy_name ]
-    type: string
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
