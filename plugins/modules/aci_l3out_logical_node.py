@@ -54,18 +54,18 @@ options:
   loopback_address:
     description:
     - The loopback IP address.
-    - The BGP-EVPN loopback IP address for Infra SR MPLS L3Outs.
+    - The BGP-EVPN loopback IP address for Infra SR-MPLS L3Outs.
     - A configured loopback address can be removed by passing an empty string (see Examples).
     type: str
     aliases: [ loopback ]
   mpls_transport_loopback_address:
     description:
-    - The MPLS transport loopback IP address for Infra SR MPLS L3Outs.
+    - The MPLS transport loopback IP address for Infra SR-MPLS L3Outs.
     type: str
     aliases: [ mpls_transport_loopback ]
   sid:
     description:
-    - The MPLS transport loopback IP address for Infra SR MPLS L3Outs.
+    - The MPLS transport loopback IP address for Infra SR-MPLS L3Outs.
     type: str
     aliases: [ segment_id ]
   state:
@@ -106,7 +106,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Add a node to a infra sr mpls l3out node profile
+- name: Add a node to a infra SR-MPLS l3out node profile
   cisco.aci.aci_l3out_logical_node: &aci_infra_node_profile_node
     host: apic
     username: admin

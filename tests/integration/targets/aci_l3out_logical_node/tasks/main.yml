@@ -152,7 +152,7 @@
     - version.current.0.topSystem.attributes.version is version('5', '>=')  # This condition will execute only for APIC version 5.x and above
     block:
 
-    - name: Ensure infra sr mpls l3out does not exist
+    - name: Ensure infra SR-MPLS l3out does not exist
       cisco.aci.aci_l3out: &aci_infra_sr_mpls_l3out_absent
         <<: *aci_info
         tenant: infra
@@ -162,19 +162,19 @@
         mpls: "yes"
         state: absent
 
-    - name: Add a infra sr mpls l3out
+    - name: Add a infra SR-MPLS l3out
       cisco.aci.aci_l3out:
         <<: *aci_infra_sr_mpls_l3out_absent
         state: present
 
-    - name: Add a node profile in the infra sr mpls l3out
+    - name: Add a node profile in the infra SR-MPLS l3out
       cisco.aci.aci_l3out_logical_node_profile: &aci_infra_node_profile
         <<: *aci_info
         tenant: infra
         l3out: ansible_infra_sr_mpls_l3out
         node_profile: ansible_infra_sr_mpls_l3out_node_profile
 
-    - name: Add a node in the infra sr mpls l3out node profile (check_mode)
+    - name: Add a node in the infra SR-MPLS l3out node profile (check_mode)
       cisco.aci.aci_l3out_logical_node: &aci_infra_node_profile_node
         <<: *aci_infra_node_profile
         tenant: infra
@@ -189,38 +189,38 @@
       check_mode: true
       register: cm_add_infra_node_profile_node
 
-    - name: Add a node in the infra sr mpls l3out node profile without loopback (error)
+    - name: Add a node in the infra SR-MPLS l3out node profile without loopback (error)
       cisco.aci.aci_l3out_logical_node:
         <<: *aci_infra_node_profile_node
         loopback_address: "{{ fake_var | default(omit) }}"
       ignore_errors: true
       register: err_add_infra_node_profile_node_without_loopback
 
-    - name: Add a node in the infra sr mpls l3out node profile without sid (error)
+    - name: Add a node in the infra SR-MPLS l3out node profile without sid (error)
       cisco.aci.aci_l3out_logical_node:
         <<: *aci_infra_node_profile_node
         sid: "{{ fake_var | default(omit) }}"
       ignore_errors: true
       register: err_add_infra_node_profile_node_without_sid
 
-    - name: Add a node in the infra sr mpls l3out node profile without mpls transport loopback addressid (error)
+    - name: Add a node in the infra SR-MPLS l3out node profile without mpls transport loopback addressid (error)
       cisco.aci.aci_l3out_logical_node:
         <<: *aci_infra_node_profile_node
         mpls_transport_loopback_address: "{{ fake_var | default(omit) }}"
       ignore_errors: true
       register: err_add_infra_node_profile_node_without_mpls_transport_loopback_address
 
-    - name: Add a node in the infra sr mpls l3out node profile (normal mode)
+    - name: Add a node in the infra SR-MPLS l3out node profile (normal mode)
       cisco.aci.aci_l3out_logical_node:
         <<: *aci_infra_node_profile_node
       register: nm_add_infra_node_profile_node
 
-    - name: Add a node in the infra sr mpls l3out node profile again
+    - name: Add a node in the infra SR-MPLS l3out node profile again
       cisco.aci.aci_l3out_logical_node:
         <<: *aci_infra_node_profile_node
       register: nm_add_infra_node_profile_node_again
 
-    - name: Change the node in the infra sr mpls l3out node profile
+    - name: Change the node in the infra SR-MPLS l3out node profile
       cisco.aci.aci_l3out_logical_node:
         <<: *aci_infra_node_profile_node
         loopback_address: 50.0.0.2
@@ -274,7 +274,7 @@
         - nm_change_infra_node_profile_node.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.children.0.mplsNodeSidP.attributes.loopbackAddr == "51.0.0.2"
         - nm_change_infra_node_profile_node.current.0.l3extRsNodeL3OutAtt.children.0.l3extLoopBackIfP.children.0.mplsNodeSidP.attributes.sidoffset == "501"
 
-    - name: Remove a infra sr mpls l3out
+    - name: Remove a infra SR-MPLS l3out
       cisco.aci.aci_l3out:
         <<: *aci_infra_sr_mpls_l3out_absent
 
