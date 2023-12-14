@@ -25,28 +25,30 @@ options:
   pim:
     description:
     - The PIM interface policy name.
-    - Note that you cannot change this name after the object has been created.
+    - The name cannot be changed after the object has been created.
     type: str
-    aliases: [ pim_interface, name ]
+    aliases: [ pim_interface_policy, name ]
   authentication_key:
     description:
     - The authentication key.
     type: str
+    aliases: [ auth_key ]
   authentication_type:
     description:
-    - the authentication type.
+    - The authentication type.
     type: str
-    choices: [ none, ah_md5 ]
+    choices: [ none, md5_hmac ]
+    aliases: [ auth_type ]
   control_state:
     description:
     - The PIM interface policy control state.
     - 'This is a list of one or more of the following controls:'
-    - C(border) -- Boundary of Multicast domain.
+    - C(multicast_domain_boundary) -- Boundary of Multicast domain.
     - C(strict_rfc_compliant) -- Only listen to PIM protocol packets.
     - C(passive) -- Do not send/receive PIM protocol packets.
     type: list
     elements: str
-    choices: [ border, strict_rfc_compliant, passive ]
+    choices: [ multicast_domain_boundary, strict_rfc_compliant, passive ]
   designed_router_delay:
     description:
     - The PIM designed router delay.
@@ -70,7 +72,7 @@ options:
     type: int
   join_prune_interval:
     description:
-    - The Join Prune interval in seconds.
+    - The join prune interval in seconds.
     - Accepted values range between C(60) and C(65520).
     - The APIC defaults to C(60) when unset during creation.
     type: int
@@ -78,24 +80,21 @@ options:
   inbound_join_prune_filter_policy:
     description:
     - The interface-level inbound join/prune filter policy.
-    - If used, pass the name of an existing PIM Route Map policy.
-      The M(cisco.aci.aci_pim_route_map_policy) can be used for this.
+    - The M(cisco.aci.aci_pim_route_map_policy) can be used for this.
     - To delete it, pass an empty string.
     type: str
-    aliases: [ inbound_jp_filter ]
+    aliases: [ inbound_filter ]
   outbound_join_prune_filter_policy:
     description:
     - The interface-level outbound join/prune filter policy.
-    - If used, pass the name of an existing PIM Route Map policy.
-      The M(cisco.aci.aci_pim_route_map_policy) can be used for this.
+    - The M(cisco.aci.aci_pim_route_map_policy) can be used for this.
     - To delete it, pass an empty string.
     type: str
-    aliases: [ outbound_jp_filter ]
+    aliases: [ outbound_filter ]
   neighbor_filter_policy:
     description:
     - The Interface-level neighbor filter policy.
-    - If used, pass the name of an existing PIM Route Map policy.
-      The M(cisco.aci.aci_pim_route_map_policy) can be used for this.
+    - The M(cisco.aci.aci_pim_route_map_policy) can be used for this.
     - To delete it, pass an empty string.
     type: str
     aliases: [ neighbor_filter ]
@@ -303,17 +302,17 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        pim=dict(type="str", aliases=["pim_interface", "name"]),  # Not required for querying all objects
+        pim=dict(type="str", aliases=["pim_interface_policy", "name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
-        authentication_key=dict(type="str", no_log=True),
-        authentication_type=dict(type="str", choices=["none", "ah_md5"]),
-        control_state=dict(type="list", elements="str", choices=["border", "strict_rfc_compliant", "passive"]),
+        authentication_key=dict(type="str", aliases=["auth_key"], no_log=True),
+        authentication_type=dict(type="str", choices=["none", "md5_hmac"], aliases=["auth_type"]),
+        control_state=dict(type="list", elements="str", choices=["multicast_domain_boundary", "strict_rfc_compliant", "passive"]),
         designed_router_delay=dict(type="int", aliases=["delay"]),
         designed_router_priority=dict(type="int", aliases=["prio"]),
         hello_interval=dict(type="int"),
         join_prune_interval=dict(type="int", aliases=["jp_interval"]),
-        inbound_join_prune_filter_policy=dict(type="str", aliases=["inbound_jp_filter"]),
-        outbound_join_prune_filter_policy=dict(type="str", aliases=["outbound_jp_filter"]),
+        inbound_join_prune_filter_policy=dict(type="str", aliases=["inbound_filter"]),
+        outbound_join_prune_filter_policy=dict(type="str", aliases=["outbound_filter"]),
         neighbor_filter_policy=dict(type="str", aliases=["neighbor_filter"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),

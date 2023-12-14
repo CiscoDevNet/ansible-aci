@@ -189,6 +189,63 @@ MATCH_TARGET_COS_MAPPING = {
     "unspecified": "unspecified",
 }
 
-MATCH_PIM_INTERFACE_POLICY_CONTROL_STATE_MAPPING = dict(border="border", strict_rfc_compliant="strict-rfc-compliant", passive="passive")
+MATCH_TARGET_COS_MAPPING = {
+    "background": "0",
+    "best_effort": "1",
+    "excellent_effort": "2",
+    "critical_applications": "3",
+    "video": "4",
+    "voice": "5",
+    "internetwork_control": "6",
+    "network_control": "7",
+    "unspecified": "unspecified",
+}
 
-MATCH_PIM_INTERFACE_POLICY_AUTHENTICATION_TYPE_MAPPING = dict(none="none", ah_md5="ah-md5")
+ACI_CLASS_MAPPING = dict(
+    consumer={
+        "class": "fvRsCons",
+        "rn": "rscons-",
+        "name": "tnVzBrCPName",
+    },
+    provider={
+        "class": "fvRsProv",
+        "rn": "rsprov-",
+        "name": "tnVzBrCPName",
+    },
+    taboo={"class": "fvRsProtBy", "rn": "rsprotBy-", "name": "tnVzTabooName"},
+    interface={
+        "class": "fvRsConsIf",
+        "rn": "rsconsIf-",
+        "name": "tnVzCPIfName",
+    },
+    intra_epg={
+        "class": "fvRsIntraEpg",
+        "rn": "rsintraEpg-",
+        "name": "tnVzBrCPName",
+    },
+)
+
+PROVIDER_MATCH_MAPPING = dict(
+    all="All",
+    at_least_one="AtleastOne",
+    at_most_one="AtmostOne",
+    none="None",
+)
+
+CONTRACT_LABEL_MAPPING = dict(
+    consumer="vzConsLbl",
+    provider="vzProvLbl",
+)
+
+SUBJ_LABEL_MAPPING = dict(
+    consumer="vzConsSubjLbl",
+    provider="vzProvSubjLbl",
+)
+
+MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING = {"ospf_type_1": "ospf-type1", "ospf_type_2": "ospf-type2", "": ""}
+
+MATCH_EIGRP_INTERFACE_POLICY_DELAY_UNIT_MAPPING = dict(picoseconds="pico", tens_of_microseconds="tens-of-micro")
+
+MATCH_PIM_INTERFACE_POLICY_CONTROL_STATE_MAPPING = dict(multicast_domain_boundary="border", strict_rfc_compliant="strict-rfc-compliant", passive="passive")
+
+MATCH_PIM_INTERFACE_POLICY_AUTHENTICATION_TYPE_MAPPING = dict(none="none", md5_hmac="ah-md5")

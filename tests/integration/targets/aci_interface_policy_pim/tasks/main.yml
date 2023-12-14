@@ -55,7 +55,7 @@
       description: pim interface policy 1 for ansible_tenant tenant
       authentication_key: my_password
       authentication_type: ah_md5
-      control_state: [border, strict_rfc_compliant, passive]
+      control_state: [multicast_domain_boundary, strict_rfc_compliant, passive]
       designed_router_delay: 6
       designed_router_priority: 2
       hello_interval: 60000
