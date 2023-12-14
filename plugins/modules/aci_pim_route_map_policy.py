@@ -89,7 +89,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query all PIM Route Map policies in my_tenant
-  cisco.aci.aci_pim_route_policy:
+  cisco.aci.aci_pim_route_map_policy:
     host: apic
     username: admin
     password: SomeSecretPassword

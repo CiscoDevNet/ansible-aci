@@ -37,16 +37,17 @@ options:
     type: str
   group_ip:
     description:
-    - The Multicast group IP/prefix.
+    - The Multicast Group IP.
     type: str
   rp_ip:
     description:
     - The Multicast Rendezvous Point (RP) IP.
     type: str
+    aliases: [ rendezvous_point_ip ]
   action:
     description:
     - The route action.
-    - the APIC defaults to C(permit) when unset during creation.
+    - The APIC defaults to C(permit) when unset during creation.
     type: str
     choices: [ permit, deny ]
   description:
@@ -251,7 +252,7 @@ def main():
         order=dict(type="int"),
         source_ip=dict(type="str"),
         group_ip=dict(type="str"),
-        rp_ip=dict(type="str"),
+        rp_ip=dict(type="str", aliases=["rendezvous_point_ip"]),
         action=dict(type="str", choices=["permit", "deny"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
