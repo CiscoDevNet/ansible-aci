@@ -59,6 +59,11 @@ options:
     description:
     - encapsulation on the interface (e.g. "vlan-500")
     type: str
+  encap_scope:
+    description:
+    - The scope of the encapsulation on the interface.
+    type: str
+    choices: [ vrf, local ]
   address:
     description:
     - IP address.
@@ -307,6 +312,7 @@ def main():
         interface_type=dict(type="str", choices=["l3-port", "sub-interface", "ext-svi"]),
         mode=dict(type="str", choices=["regular", "native", "untagged"]),
         encap=dict(type="str"),
+        encap_scope=dict(type="str", choices=["vrf", "local"]),
         auto_state=dict(type="str", choices=["enabled", "disabled"]),
     )
 
@@ -330,6 +336,7 @@ def main():
     interface_type = module.params.get("interface_type")
     mode = module.params.get("mode")
     encap = module.params.get("encap")
+    encap_scope = module.params.get("encap_scope")
     auto_state = module.params.get("auto_state")
 
     aci = ACIModule(module)
@@ -375,7 +382,17 @@ def main():
     if state == "present":
         aci.payload(
             aci_class="l3extRsPathL3OutAtt",
-            class_config=dict(tDn=path_dn, addr=address, ipv6Dad=ipv6_dad, mtu=mtu, ifInstT=interface_type, mode=mode, encap=encap, autostate=auto_state),
+            class_config=dict(
+                tDn=path_dn,
+                addr=address,
+                ipv6Dad=ipv6_dad,
+                mtu=mtu,
+                ifInstT=interface_type,
+                mode=mode,
+                encap=encap,
+                encapScope="ctx" if encap_scope == "vrf" else encap_scope,
+                autostate=auto_state,
+            ),
         )
 
         aci.get_diff(aci_class="l3extRsPathL3OutAtt")
