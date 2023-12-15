@@ -100,6 +100,16 @@ options:
     - SVI auto state.
     type: str
     choices: [ enabled, disabled ]
+  description:
+    description:
+    - The description of the interface.
+    type: str
+    aliases: [ descr]
+  mac:
+    description:
+    - The MAC address of the interface.
+    type: str
+    aliases: [ mac_address ]
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -314,6 +324,8 @@ def main():
         encap=dict(type="str"),
         encap_scope=dict(type="str", choices=["vrf", "local"]),
         auto_state=dict(type="str", choices=["enabled", "disabled"]),
+        description=dict(type="str", aliases=["descr"]),
+        mac=dict(type="str", aliases=["mac_address"]),
     )
 
     module = AnsibleModule(
@@ -338,6 +350,8 @@ def main():
     encap = module.params.get("encap")
     encap_scope = module.params.get("encap_scope")
     auto_state = module.params.get("auto_state")
+    description = module.params.get("description")
+    mac = module.params.get("mac")
 
     aci = ACIModule(module)
     if node_id and "-" in node_id:
@@ -392,6 +406,8 @@ def main():
                 encap=encap,
                 encapScope="ctx" if encap_scope == "vrf" else encap_scope,
                 autostate=auto_state,
+                descr=description,
+                mac=mac,
             ),
         )
 

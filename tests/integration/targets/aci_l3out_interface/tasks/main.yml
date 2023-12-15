@@ -402,6 +402,8 @@
       mode: native
       addr: 192.168.90.1/27
       encap: vlan-913
+      mac: 	00:22:BD:F8:19:FE
+      description: "anisble test description"
       state: present
     register: add_l3out_vpc_interface
 
@@ -414,6 +416,8 @@
       - add_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.encap == "vlan-913"
       - add_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.encapScope == "local"
       - add_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "native"
+      - add_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.mac == "00:22:BD:F8:19:FE"
+      - add_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.descr == "anisble test description"
 
   - name: Add interface vPC again
     aci_l3out_interface:
