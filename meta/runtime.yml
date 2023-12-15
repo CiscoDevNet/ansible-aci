@@ -19,6 +19,7 @@ action_groups:
     - aci_access_span_src_group_src
     - aci_access_span_src_group_src_path
     - aci_access_sub_port_block_to_access_port
+    - aci_access_switch_policy_group
     - aci_aep
     - aci_aep_to_domain
     - aci_aep_to_epg
@@ -101,6 +102,7 @@ action_groups:
     - aci_firmware_group_node
     - aci_firmware_policy
     - aci_firmware_source
+    - aci_hsrp_interface_policy
     - aci_igmp_interface_policy
     - aci_interface_blacklist
     - aci_interface_config
@@ -134,6 +136,13 @@ action_groups:
     - aci_l3out_extepg
     - aci_l3out_extepg_to_contract
     - aci_l3out_extsubnet
+    - aci_l3out_floating_svi
+    - aci_l3out_floating_svi_path
+    - aci_l3out_floating_svi_path_secondary_ip
+    - aci_l3out_floating_svi_secondary_ip
+    - aci_l3out_hsrp_group
+    - aci_l3out_hsrp_interface_profile
+    - aci_l3out_hsrp_secondary_vip
     - aci_l3out_interface
     - aci_l3out_interface_secondary_ip
     - aci_l3out_logical_interface_profile
@@ -194,4 +203,5 @@ action_groups:
     - aci_vmm_vswitch_policy
     - aci_vrf
     - aci_vrf_leak_internal_subnet
+    - aci_vrf_multicast
     - aci_vzany_to_contract
