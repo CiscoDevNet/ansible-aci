@@ -1,5 +1,6 @@
 # Test code for the ACI modules
 # Copyright: (c) 2021, Tim Cragg (@timcragg)
+# Copyright: (c) 2023, Akini Ross (@akinross) <akinross@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -402,7 +403,7 @@
       mode: native
       addr: 192.168.90.1/27
       encap: vlan-913
-      mac: 	00:22:BD:F8:19:FE
+      mac: "00:22:BD:F8:19:FE"
       description: "anisble test description"
       state: present
     register: add_l3out_vpc_interface
@@ -507,6 +508,236 @@
     assert:
       that:
       - delete_l3out_vpc_interface.current == []
+
+  - name: Execute tasks only for APIC version 5.x and above
+    when:
+    - version.current.0.topSystem.attributes.version is version('5', '>=')  # This condition will execute only for APIC version 5.x and above
+    block:
+
+    - name: Ensure infra SR-MPLS l3out does not exist
+      cisco.aci.aci_l3out: &aci_infra_sr_mpls_l3out_absent
+        <<: *aci_info
+        tenant: infra
+        name: ansible_infra_sr_mpls_l3out
+        domain: ansible_dom
+        vrf: overlay-1
+        mpls: "yes"
+        state: absent
+
+    - name: Add a infra SR-MPLS l3out
+      cisco.aci.aci_l3out:
+        <<: *aci_infra_sr_mpls_l3out_absent
+        state: present
+
+    - name: Add a node profile in the infra SR-MPLS l3out
+      cisco.aci.aci_l3out_logical_node_profile: &aci_infra_node_profile
+        <<: *aci_info
+        tenant: infra
+        l3out: ansible_infra_sr_mpls_l3out
+        node_profile: ansible_infra_sr_mpls_l3out_node_profile
+
+    - name: Add interface profile in the infra SR-MPLS l3out node profile
+      cisco.aci.aci_l3out_logical_interface_profile: &aci_infra_interface_profile
+        <<: *aci_infra_node_profile
+        interface_profile: ansible_infra_sr_mpls_l3out_interface_profile
+    
+    - name: Add direct port channel interface in the infra SR-MPLS l3out interface profile (check_mode)
+      aci_l3out_interface: &aci_infra_pc_interface
+        <<: *aci_infra_interface_profile
+        pod_id: 1
+        node_id: 101
+        path_ep: pc_ansible_test
+        interface_type: l3-port
+        addr: 192.168.90.1/24
+        state: present
+      register: cm_add_infra_sr_mpls_l3out_port_channel_interface
+      check_mode: true
+
+    - name: Add direct port channel interface in the infra SR-MPLS l3out interface profile
+      aci_l3out_interface:
+        <<: *aci_infra_pc_interface
+      register: nm_add_infra_sr_mpls_l3out_port_channel_interface
+
+    - name: Add direct port channel interface in the infra SR-MPLS l3out interface profile again
+      aci_l3out_interface:
+        <<: *aci_infra_pc_interface
+      register: nm_add_infra_sr_mpls_l3out_port_channel_interface_again
+
+    - name: Add interface in the infra SR-MPLS l3out interface profile
+      aci_l3out_interface: &aci_infra_interface
+        <<: *aci_infra_interface_profile
+        pod_id: 1
+        node_id: 101
+        path_ep: eth1/17
+        interface_type: l3-port
+        addr: 192.168.91.1/24
+        state: present
+      register: nm_add_infra_sr_mpls_l3out_interface
+
+    - name: Add sub interface in the infra SR-MPLS l3out interface profile
+      aci_l3out_interface: &aci_infra_sub_interface
+        <<: *aci_infra_interface_profile
+        pod_id: 1
+        node_id: 101
+        path_ep: eth1/18
+        interface_type: sub-interface
+        addr: 192.168.92.1/24
+        state: present
+      register: nm_add_infra_sr_mpls_l3out_sub_interface
+
+    - name: Verify interfaces in the infra SR-MPLS l3out interface profile
+      assert:
+        that:
+        - cm_add_infra_sr_mpls_l3out_port_channel_interface is changed
+        - cm_add_infra_sr_mpls_l3out_port_channel_interface.previous == []
+        - cm_add_infra_sr_mpls_l3out_port_channel_interface.proposed.l3extRsPathL3OutAtt.attributes.annotation ==  "orchestrator:ansible"
+        - cm_add_infra_sr_mpls_l3out_port_channel_interface.proposed.l3extRsPathL3OutAtt.attributes.addr ==  "192.168.90.1/24"
+        - cm_add_infra_sr_mpls_l3out_port_channel_interface.proposed.l3extRsPathL3OutAtt.attributes.ifInstT ==  "l3-port"
+        - cm_add_infra_sr_mpls_l3out_port_channel_interface.proposed.l3extRsPathL3OutAtt.attributes.tDn ==   "topology/pod-1/paths-101/pathep-[pc_ansible_test]"
+        - nm_add_infra_sr_mpls_l3out_port_channel_interface is changed
+        - nm_add_infra_sr_mpls_l3out_port_channel_interface.previous == []
+        - nm_add_infra_sr_mpls_l3out_port_channel_interface.current.0.l3extRsPathL3OutAtt.attributes.annotation ==  "orchestrator:ansible"
+        - nm_add_infra_sr_mpls_l3out_port_channel_interface.current.0.l3extRsPathL3OutAtt.attributes.addr ==  "192.168.90.1/24"
+        - nm_add_infra_sr_mpls_l3out_port_channel_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT ==  "l3-port"
+        - nm_add_infra_sr_mpls_l3out_port_channel_interface.current.0.l3extRsPathL3OutAtt.attributes.tDn ==   "topology/pod-1/paths-101/pathep-[pc_ansible_test]"
+        - nm_add_infra_sr_mpls_l3out_port_channel_interface_again is not changed
+        - nm_add_infra_sr_mpls_l3out_port_channel_interface_again.previous.0.l3extRsPathL3OutAtt.attributes.annotation ==  "orchestrator:ansible"
+        - nm_add_infra_sr_mpls_l3out_port_channel_interface_again.previous.0.l3extRsPathL3OutAtt.attributes.addr ==  "192.168.90.1/24"
+        - nm_add_infra_sr_mpls_l3out_port_channel_interface_again.previous.0.l3extRsPathL3OutAtt.attributes.ifInstT ==  "l3-port"
+        - nm_add_infra_sr_mpls_l3out_port_channel_interface_again.previous.0.l3extRsPathL3OutAtt.attributes.tDn ==   "topology/pod-1/paths-101/pathep-[pc_ansible_test]"
+        - nm_add_infra_sr_mpls_l3out_port_channel_interface_again.current.0.l3extRsPathL3OutAtt.attributes.annotation ==  "orchestrator:ansible"
+        - nm_add_infra_sr_mpls_l3out_port_channel_interface_again.current.0.l3extRsPathL3OutAtt.attributes.addr ==  "192.168.90.1/24"
+        - nm_add_infra_sr_mpls_l3out_port_channel_interface_again.current.0.l3extRsPathL3OutAtt.attributes.ifInstT ==  "l3-port"
+        - nm_add_infra_sr_mpls_l3out_port_channel_interface_again.current.0.l3extRsPathL3OutAtt.attributes.tDn ==   "topology/pod-1/paths-101/pathep-[pc_ansible_test]"
+        - nm_add_infra_sr_mpls_l3out_interface is changed
+        - nm_add_infra_sr_mpls_l3out_interface.previous == []
+        - nm_add_infra_sr_mpls_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.annotation ==  "orchestrator:ansible"
+        - nm_add_infra_sr_mpls_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.addr ==  "192.168.91.1/24"
+        - nm_add_infra_sr_mpls_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT ==  "l3-port"
+        - nm_add_infra_sr_mpls_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.tDn ==   "topology/pod-1/paths-101/pathep-[eth1/17]"
+        - nm_add_infra_sr_mpls_l3out_sub_interface is changed
+        - nm_add_infra_sr_mpls_l3out_sub_interface.previous == []
+        - nm_add_infra_sr_mpls_l3out_sub_interface.current.0.l3extRsPathL3OutAtt.attributes.annotation ==  "orchestrator:ansible"
+        - nm_add_infra_sr_mpls_l3out_sub_interface.current.0.l3extRsPathL3OutAtt.attributes.addr ==  "192.168.92.1/24"
+        - nm_add_infra_sr_mpls_l3out_sub_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT ==  "sub-interface"
+        - nm_add_infra_sr_mpls_l3out_sub_interface.current.0.l3extRsPathL3OutAtt.attributes.tDn ==   "topology/pod-1/paths-101/pathep-[eth1/18]"
+
+    - name: Enable micro BFD on direct port channel interface in the infra SR-MPLS l3out interface profile without destination (error)
+      aci_l3out_interface:
+        <<: *aci_infra_pc_interface
+        micro_bfd: true
+      register: err_micro_bfd_not_provided_destination
+      ignore_errors: true
+
+    - name: Enable micro BFD on direct port channel interface in the infra SR-MPLS l3out interface profile timer without micro BFD (error)
+      aci_l3out_interface:
+        <<: *aci_infra_pc_interface
+        micro_bfd_timer: 75
+      register: err_micro_bfd_timer_not_provided_micro_bfd
+      ignore_errors: true
+
+    - name: Enable micro BFD on direct port channel interface in the infra SR-MPLS l3out interface profile destination without micro BFD (error)
+      aci_l3out_interface:
+        <<: *aci_infra_pc_interface
+        micro_bfd_destination: true
+      register: err_micro_bfd_destination_not_provided_micro_bfd
+      ignore_errors: true
+
+    - name: Verify micro BFD errors
+      assert:
+        that:
+        - err_micro_bfd_not_provided_destination is failed
+        - err_micro_bfd_not_provided_destination.msg == "micro_bfd is True but all of the following are missing{{":"}} micro_bfd_destination"
+        - err_micro_bfd_timer_not_provided_micro_bfd is failed
+        - err_micro_bfd_timer_not_provided_micro_bfd.msg == "missing parameter(s) required by 'micro_bfd_timer'{{":"}} micro_bfd"
+        - err_micro_bfd_destination_not_provided_micro_bfd is failed
+        - err_micro_bfd_destination_not_provided_micro_bfd.msg == "missing parameter(s) required by 'micro_bfd_destination'{{":"}} micro_bfd"
+
+    - name: Enable micro BFD on direct port channel interface in the infra SR-MPLS l3out interface (check_mode)
+      aci_l3out_interface: &enable_bfd
+        <<: *aci_infra_pc_interface
+        micro_bfd: true
+        micro_bfd_destination: 192.168.90.2
+      register: cm_enable_micro_bfd
+      check_mode: true
+  
+    - name: Enable micro BFD on direct port channel interface in the infra SR-MPLS l3out interface
+      aci_l3out_interface:
+        <<: *enable_bfd
+      register: nm_enable_micro_bfd
+    
+    - name: Change timer for micro on direct port channel interface in the infra SR-MPLS l3out interface
+      aci_l3out_interface:
+        <<: *enable_bfd
+        micro_bfd_timer: 75
+      register: nm_change_micro_bfd_timer
+
+    - name: Diable micro BFD on direct port channel interface in the infra SR-MPLS l3out interface
+      aci_l3out_interface:
+        <<: *enable_bfd
+        micro_bfd: false
+      register: nm_disable_micro_bfd
+
+    - name: Verify micro BFD configuration on direct port channel interface in the infra SR-MPLS l3out interface
+      assert:
+        that:
+        - cm_enable_micro_bfd is changed
+        - cm_enable_micro_bfd.previous.0.l3extRsPathL3OutAtt.children is undefined
+        - cm_enable_micro_bfd.proposed.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.adminState == "yes"
+        - cm_enable_micro_bfd.proposed.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.dst == "192.168.90.2"
+        - nm_enable_micro_bfd is changed
+        - nm_enable_micro_bfd.previous.0.l3extRsPathL3OutAtt.children is undefined
+        - nm_enable_micro_bfd.current.0.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.adminState == "yes"
+        - nm_enable_micro_bfd.current.0.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.dst == "192.168.90.2"
+        - nm_enable_micro_bfd.current.0.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.stTm == "0"
+        - nm_change_micro_bfd_timer is changed
+        - nm_change_micro_bfd_timer.previous.0.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.adminState == "yes"
+        - nm_change_micro_bfd_timer.previous.0.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.dst == "192.168.90.2"
+        - nm_change_micro_bfd_timer.previous.0.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.stTm == "0"
+        - nm_change_micro_bfd_timer.current.0.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.adminState == "yes"
+        - nm_change_micro_bfd_timer.current.0.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.dst == "192.168.90.2"
+        - nm_change_micro_bfd_timer.current.0.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.stTm == "75"
+        - nm_disable_micro_bfd is changed
+        - nm_disable_micro_bfd.previous.0.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.adminState == "yes"
+        - nm_disable_micro_bfd.previous.0.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.dst == "192.168.90.2"
+        - nm_disable_micro_bfd.previous.0.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.stTm == "75"
+        - nm_disable_micro_bfd.current.0.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.adminState == "no"
+        - nm_disable_micro_bfd.current.0.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.dst == "192.168.90.2"
+        - nm_disable_micro_bfd.current.0.l3extRsPathL3OutAtt.children.0.bfdMicroBfdP.attributes.stTm == "75"
+
+    - name: Delete direct port channel interface in the infra SR-MPLS l3out interface profile again (check_mode)
+      aci_l3out_interface: &aci_infra_pc_interface_absent
+        <<: *aci_infra_pc_interface
+        state: absent
+      register: cm_delete_infra_sr_mpls_l3out_port_channel_interface
+      check_mode: true
+    
+    - name: Delete direct port channel interface in the infra SR-MPLS l3out interface profile
+      aci_l3out_interface:
+        <<: *aci_infra_pc_interface_absent
+      register: nm_delete_infra_sr_mpls_l3out_port_channel_interface
+    
+    - name: Delete direct port channel interface in the infra SR-MPLS l3out interface profile again
+      aci_l3out_interface:
+        <<: *aci_infra_pc_interface_absent
+      register: nm_delete_infra_sr_mpls_l3out_port_channel_interface_again
+
+    - name: Verify deletion of port channel interfaces in the infra SR-MPLS l3out interface profile
+      assert:
+        that:
+        - cm_delete_infra_sr_mpls_l3out_port_channel_interface is changed
+        - cm_delete_infra_sr_mpls_l3out_port_channel_interface.previous != []
+        - cm_delete_infra_sr_mpls_l3out_port_channel_interface.proposed == {}
+        - nm_delete_infra_sr_mpls_l3out_port_channel_interface is changed
+        - nm_delete_infra_sr_mpls_l3out_port_channel_interface.previous != []
+        - nm_delete_infra_sr_mpls_l3out_port_channel_interface.current == []
+        - nm_delete_infra_sr_mpls_l3out_port_channel_interface_again is not changed
+        - nm_delete_infra_sr_mpls_l3out_port_channel_interface_again.previous == []
+        - nm_delete_infra_sr_mpls_l3out_port_channel_interface_again.current == []
+
+    - name: Remove a infra SR-MPLS l3out
+      cisco.aci.aci_l3out:
+        <<: *aci_infra_sr_mpls_l3out_absent
 
   # CLEAN UP
   - name: Remove ansible_tenant
