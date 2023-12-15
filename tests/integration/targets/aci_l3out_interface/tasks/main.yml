@@ -389,7 +389,7 @@
 
   # ADD l3out vPC
   - name: Add interface vPC
-    aci_l3out_interface:
+    aci_l3out_interface: &ext_svi_interface
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -412,29 +412,27 @@
       - add_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.addr == "192.168.90.1/27"
       - add_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.ifInstT == "ext-svi"
       - add_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.encap == "vlan-913"
+      - add_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.encapScope == "local"
       - add_l3out_vpc_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "native"
 
   - name: Add interface vPC again
     aci_l3out_interface:
-      <<: *aci_info
-      tenant: ansible_tenant
-      l3out: ansible_l3out
-      node_profile: ansible_node_profile
-      interface_profile: ansible_interface_profile
-      pod_id: 1
-      node_id: 201-202
-      path_ep: ansible_vpc_ipg
-      interface_type: ext-svi
-      mode: native
-      addr: 192.168.90.1/27
-      encap: vlan-913
-      state: present
+      <<: *ext_svi_interface
     register: add_l3out_vpc_interface_again
+
+  - name: Change encap_scope on interface vPC
+    aci_l3out_interface:
+      <<: *ext_svi_interface
+      encap_scope: vrf
+      state: present
+    register: change_l3out_vpc_interface_encap_scope
 
   - name: Verify vPC interface is not changed
     assert:
       that:
       - add_l3out_vpc_interface_again is not changed
+      - change_l3out_vpc_interface_encap_scope.previous.0.l3extRsPathL3OutAtt.attributes.encapScope == "local"
+      - change_l3out_vpc_interface_encap_scope.current.0.l3extRsPathL3OutAtt.attributes.encapScope == "ctx"
 
   # MODIFY vPC interface
   - name: Update interface vPC
