@@ -141,6 +141,7 @@
         domain: ansible_dom
         vrf: overlay-1
         mpls: "yes"
+        l3protocol: bgp
         state: absent
 
     - name: Add a infra SR-MPLS l3out 
@@ -148,7 +149,7 @@
         <<: *aci_infra_sr_mpls_l3out_absent
         state: present
 
-    - name: Add a node profile with MPLS custom QOS policy 
+    - name: Add a node profile with MPLS custom QoS policy 
       cisco.aci.aci_l3out_logical_node_profile: &aci_infra_node_profile_qos
         <<: *aci_info
         tenant: infra
@@ -157,24 +158,24 @@
         mpls_custom_qos_policy: ansible_test_mpls_custom_qos_policy
       register: nm_add_node_profile_qos
 
-    - name: Modify MPLS custom QOS policy to node profile
+    - name: Modify MPLS custom QoS policy to node profile
       cisco.aci.aci_l3out_logical_node_profile: &aci_infra_node_profile_qos_changed
         <<: *aci_infra_node_profile_qos
         mpls_custom_qos_policy: ansible_test_mpls_custom_qos_policy_changed
       register: nm_mod_node_profile_qos_changed
 
-    - name: Modify MPLS custom QOS policy to node profile again
+    - name: Modify MPLS custom QoS policy to node profile again
       cisco.aci.aci_l3out_logical_node_profile: 
         <<: *aci_infra_node_profile_qos_changed
       register: nm_mod_node_profile_qos_again
 
-    - name: Remove MPLS custom QOS policy from node profile again
+    - name: Remove MPLS custom QoS policy from node profile again
       cisco.aci.aci_l3out_logical_node_profile: 
         <<: *aci_infra_node_profile_qos_changed
         mpls_custom_qos_policy: ""
       register: nm_del_node_profile_qos
 
-    - name: Verify MPLS custom QOS policy configuration on node profile
+    - name: Verify MPLS custom QoS policy configuration on node profile
       assert:
         that:
         - nm_add_node_profile_qos is changed
