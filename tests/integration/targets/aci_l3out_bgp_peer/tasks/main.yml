@@ -1557,6 +1557,7 @@
         mpls: yes
         domain: ansible_domain
         route_control: export
+        l3protocol: bgp
         state: present
 
     - name: Create l3out logical node profile in infra tenant
