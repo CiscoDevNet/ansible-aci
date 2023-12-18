@@ -50,6 +50,7 @@
       domain: ansible_dom
       vrf: overlay-1
       mpls: "yes"
+      l3protocol: bgp
       state: absent
 
   - name: Add a new ansible_tenant
