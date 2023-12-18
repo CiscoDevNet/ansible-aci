@@ -46,7 +46,7 @@ options:
     aliases: [ target_dscp ]
   mpls_custom_qos_policy:
     description:
-    - The MPLS custom QOS policy name for the node profile.
+    - The MPLS custom QoS policy name for the node profile.
     - This argument should only be used for Infra SR-MPLS L3Outs.
     aliases: [ mpls_custom_qos_policy_name ]
     type: str
