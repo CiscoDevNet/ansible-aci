@@ -130,7 +130,7 @@
       state: present
     register: nm_add_l3out_dhcp_relay_label_2
 
-  - name: Asserts for eigrp interface policies creation tasks
+  - name: Asserts for DHCP relay labels creation tasks
     ansible.builtin.assert:
       that:
         - cm_add_l3out_dhcp_relay_label is changed
@@ -168,9 +168,44 @@
         - query_ansible_l3out_dhcp_relay_label_1.current.0.dhcpLbl.attributes.owner == "tenant"
         - query_ansible_l3out_dhcp_relay_label_1.current.0.dhcpLbl.children.0.dhcpRsDhcpOptionPol.attributes.tnDhcpOptionPolName == "ansible_dhcp_option_policy"
 
+  - name: Update first L3out DHCP relay label by deleting current DHCP options (check_mode)
+    cisco.aci.aci_l3out_dhcp_relay_label: &aci_l3out_dhcp_relay_label_update
+      <<: *aci_l3out_dhcp_relay_label_present
+      dhcp_option_policy: ""
+    check_mode: true
+    register: cm_update_l3out_dhcp_relay_label
+
+  - name: Update first L3out DHCP relay label by deleting current DHCP options (normal_mode)
+    cisco.aci.aci_l3out_dhcp_relay_label:
+      <<: *aci_l3out_dhcp_relay_label_update
+    register: nm_update_l3out_dhcp_relay_label
+  
+  - name: Update first L3out DHCP relay label by deleting current DHCP options again - testing idempotency
+    cisco.aci.aci_l3out_dhcp_relay_label:
+      <<: *aci_l3out_dhcp_relay_label_update
+    register: nm_update_l3out_dhcp_relay_label_idempotency
+
+  - name: Query updated first L3Out DHCP relay label
+    cisco.aci.aci_l3out_dhcp_relay_label:
+      <<: *aci_l3out_dhcp_relay_label_update
+      state: query
+    register: query_ansible_l3out_dhcp_relay_label_1_updated
+
+  - name: Asserts for DHCP relay labels update tasks
+    ansible.builtin.assert:
+      that:
+        - cm_update_l3out_dhcp_relay_label is changed
+        - cm_update_l3out_dhcp_relay_label.previous == cm_update_l3out_dhcp_relay_label.current
+        - nm_update_l3out_dhcp_relay_label is changed
+        - nm_update_l3out_dhcp_relay_label.current.0.dhcpLbl.children.0.dhcpRsDhcpOptionPol.attributes.tnDhcpOptionPolName == ""
+        - nm_update_l3out_dhcp_relay_label_idempotency is not changed
+        - query_ansible_l3out_dhcp_relay_label_1_updated is not changed
+        - query_ansible_l3out_dhcp_relay_label_1_updated.current.0.dhcpLbl.children.0.dhcpRsDhcpOptionPol.attributes.tDn == "uni/tn-common/dhcpoptpol-default"
+        - query_ansible_l3out_dhcp_relay_label_1_updated.current.0.dhcpLbl.children.0.dhcpRsDhcpOptionPol.attributes.tnDhcpOptionPolName == ""
+
   - name: Remove L3Out DHCP relay label from interface profile (check_mode)
     cisco.aci.aci_l3out_dhcp_relay_label: &l3out_dhcp_relay_label_absent
-      <<: *aci_l3out_dhcp_relay_label_present
+      <<: *aci_l3out_dhcp_relay_label_update
       state: absent
     check_mode: true
     register: cm_remove_l3out_dhcp_relay_label

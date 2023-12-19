@@ -267,7 +267,7 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="dhcpOption",
+            aci_class="dhcpOptionPol",
             aci_rn="dhcpoptpol-{0}".format(dhcp_option_policy),
             module_object=dhcp_option_policy,
             target_filter={"name": dhcp_option_policy},

@@ -121,10 +121,41 @@
         - query_ansible_dhcp_option_1.current.0.dhcpOption.attributes.id == "1"
         - query_ansible_dhcp_option_1.current.0.dhcpOption.attributes.data == "82"
 
+  #UPDATING DHCP OPTION
+  - name: Update first DHCP option (check_mode)
+    cisco.aci.aci_dhcp_option: &aci_dhcp_option_update
+      <<: *aci_dhcp_option_present
+      id: 3
+      data: 255
+      state: present
+    check_mode: true
+    register: cm_update_dhcp_option
+
+  - name: Update first DHCP option (normal_mode)
+    cisco.aci.aci_dhcp_option:
+      <<: *aci_dhcp_option_update
+    register: nm_update_dhcp_option
+
+  - name: Update first DHCP option again - testing idempotency
+    cisco.aci.aci_dhcp_option:
+      <<: *aci_dhcp_option_update
+    register: nm_update_dhcp_option_idempotency
+
+  - name: Asserts for DHCP option update tasks
+    ansible.builtin.assert:
+      that:
+        - cm_update_dhcp_option is changed
+        - cm_update_dhcp_option.previous == cm_update_dhcp_option.current
+        - nm_update_dhcp_option is changed
+        - nm_update_dhcp_option.current.0.dhcpOption.attributes.name == "ansible_dhcp_option_1"
+        - nm_update_dhcp_option.current.0.dhcpOption.attributes.id == "3"
+        - nm_update_dhcp_option.current.0.dhcpOption.attributes.data == "255"
+        - nm_update_dhcp_option_idempotency is not changed
+
   # DELETE DHCP OPTION
   - name: Remove DHCP option (check_mode)
     cisco.aci.aci_dhcp_option: &dhcp_option_absent
-      <<: *aci_dhcp_option_present
+      <<: *aci_dhcp_option_update
       state: absent
     check_mode: true
     register: cm_remove_dhcp_option
