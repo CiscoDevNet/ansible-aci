@@ -54,8 +54,11 @@ options:
   dhcp_option_policy:
     description:
     - The name of an existing DHCP Option Policy to be associated with the DCHP Relay Policy.
-    - the DHCP option policy supplies DHCP clients with configuration parameters
+    - The DHCP option policy supplies DHCP clients with configuration parameters
       such as domain, nameserver, and subnet router addresses.
+    - Passing an empty string will delete the current linked DHCP Option Policy.
+      However, this will associate the DHCP Relay Label to the default DHCP Option Policy
+      from the common Tenant.
     type: str
     aliases: [ dhcp_option_policy_name ]
   description:
