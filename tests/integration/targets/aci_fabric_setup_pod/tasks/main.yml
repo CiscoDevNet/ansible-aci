@@ -3,6 +3,8 @@
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+# Virtual pod setup has been skipped due to complex setup requirements assosiated with configuring a vPod.
+
 - name: Test that we have an ACI APIC host, ACI username and ACI password
   fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
@@ -34,19 +36,6 @@
   delegate_to: localhost
   when: cleaned is changed
 
-- name: Ensure Fabric Setup Pod 78 is absent before testing
-  aci_fabric_setup_pod:
-    <<: *aci_info
-    podId: 78
-    state: absent
-  register: cleaned
-
-- name: Sleep for 10 seconds and continue
-  ansible.builtin.wait_for:
-    timeout: 10
-  delegate_to: localhost
-  when: cleaned is changed
-
 # CREATE FABRIC SETUP POD
 - name: Create ansible_fabric_pod_setup
   aci_fabric_setup_pod:
@@ -56,21 +45,6 @@
     description: Ansible test pod setup
     state: present
   register: add_fabric_pod_setup
-
-- name: Sleep for 10 seconds and continue
-  ansible.builtin.wait_for:
-    timeout: 10
-  delegate_to: localhost
-
-- name: Create virtual ansible_fabric_pod_setup
-  aci_fabric_setup_pod:
-    <<: *aci_info
-    podId: 78
-    podType: virtual
-    pool: 10.78.1.0/24
-    description: Ansible test virtual pod setup
-    state: present
-  register: add_fabric_pod_setup_virtual
 
 - name: Sleep for 10 seconds and continue
   ansible.builtin.wait_for:
@@ -87,13 +61,6 @@
     - add_fabric_pod_setup.current.0.fabricSetupP.attributes.tepPool == "10.77.0.0/16"
     - add_fabric_pod_setup.current.0.fabricSetupP.attributes.descr == "Ansible test pod setup"
     - add_fabric_pod_setup.current.0.fabricSetupP.attributes.annotation == 'orchestrator:ansible'
-    - add_fabric_pod_setup_virtual is changed
-    - add_fabric_pod_setup_virtual.current.0.fabricSetupP.attributes.dn == "uni/controller/setuppol/setupp-78"
-    - add_fabric_pod_setup_virtual.current.0.fabricSetupP.attributes.podId == "78"
-    - add_fabric_pod_setup_virtual.current.0.fabricSetupP.attributes.podType == "virtual"
-    - add_fabric_pod_setup_virtual.current.0.fabricSetupP.attributes.tepPool == "10.78.1.0/24"
-    - add_fabric_pod_setup_virtual.current.0.fabricSetupP.attributes.descr == "Ansible test virtual pod setup"
-    - add_fabric_pod_setup_virtual.current.0.fabricSetupP.attributes.annotation == 'orchestrator:ansible'
 
 # CREATE FABRIC SETUP POD AGAIN TO TEST IDEMPOTENCE
 - name: Create ansible_fabric_pod_setup again
@@ -105,16 +72,6 @@
     state: present
   register: add_fabric_pod_setup_again
 
-- name: Create virtual ansible_fabric_pod_setup
-  aci_fabric_setup_pod:
-    <<: *aci_info
-    podId: 78
-    podType: virtual
-    pool: 10.78.1.0/24
-    description: Ansible test virtual pod setup
-    state: present
-  register: add_fabric_pod_setup_v_again
-
 - name: Verify profile creation idempotence
   assert:
     that:
@@ -124,13 +81,6 @@
     - add_fabric_pod_setup_again.current.0.fabricSetupP.attributes.podType == "physical"
     - add_fabric_pod_setup_again.current.0.fabricSetupP.attributes.tepPool == "10.77.0.0/16"
     - add_fabric_pod_setup_again.current.0.fabricSetupP.attributes.descr == "Ansible test pod setup"
-    - add_fabric_pod_setup_v_again is changed
-    - add_fabric_pod_setup_v_again.current.0.fabricSetupP.attributes.dn == "uni/controller/setuppol/setupp-78"
-    - add_fabric_pod_setup_v_again.current.0.fabricSetupP.attributes.podId == "78"
-    - add_fabric_pod_setup_v_again.current.0.fabricSetupP.attributes.podType == "virtual"
-    - add_fabric_pod_setup_v_again.current.0.fabricSetupP.attributes.tepPool == "10.78.1.0/24"
-    - add_fabric_pod_setup_v_again.current.0.fabricSetupP.attributes.descr == "Ansible test virtual pod setup"
-    - add_fabric_pod_profile_v_again.current.0.fabricSetupP.attributes.annotation == 'orchestrator:ansible'
 
 # QUERY FABRIC SETUP POD
 - name: query fabric setup pod
@@ -175,18 +125,6 @@
     timeout: 10
   delegate_to: localhost
 
-- name: Delete pod setup
-  aci_fabric_setup_pod:
-    <<: *aci_info
-    podId: 78
-    state: absent
-  register: delete_pod_setup_2
-
-- name: Sleep for 10 seconds and continue
-  ansible.builtin.wait_for:
-    timeout: 10
-  delegate_to: localhost
-
 - name: Verify pod setup deletion
   assert:
     that:
@@ -197,13 +135,6 @@
     - delete_pod_setup_1.previous.0.fabricSetupP.attributes.podType == "physical"
     - delete_pod_setup_1.previous.0.fabricSetupP.attributes.tepPool == "10.77.0.0/16"
     - delete_pod_setup_1.previous.0.fabricSetupP.attributes.descr == "Ansible test pod setup"
-    - delete_pod_setup_2 is changed
-    - delete_pod_setup_2.current == []
-    - delete_pod_setup_2.previous.0.fabricSetupP.attributes.dn == "uni/controller/setuppol/setupp-78"
-    - delete_pod_setup_2.previous.0.fabricSetupP.attributes.podId == "78"
-    - delete_pod_setup_2.previous.0.fabricSetupP.attributes.podType == "virtual"
-    - delete_pod_setup_2.previous.0.fabricSetupP.attributes.tepPool == "10.78.1.0/24"
-    - delete_pod_setup_2.previous.0.fabricSetupP.attributes.descr == "Ansible test virtual pod setup"
 
 # DELETE POD SETUP AGAIN TO TEST IDEMPOTENCE
 - name: Delete pod setup again
