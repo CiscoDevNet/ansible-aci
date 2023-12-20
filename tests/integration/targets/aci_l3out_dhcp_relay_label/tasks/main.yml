@@ -1,0 +1,242 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
+    
+  - name: Add new Domain
+    cisco.aci.aci_domain: &aci_domain_present
+      <<: *aci_info
+      domain: ansible_dom
+      domain_type: l3dom
+      state: present
+
+  - name: Addd a new VRF
+    cisco.aci.aci_vrf: &aci_vrf_present
+      <<: *aci_tenant_present
+      vrf: ansible_vrf
+      description: Ansible VRF
+
+  - name: Add a new L3Out
+    cisco.aci.aci_l3out: &aci_l3out_present
+      <<: *aci_vrf_present
+      l3out: ansible_l3out
+      domain: ansible_dom
+      route_control: export
+      l3protocol: eigrp
+      asn: 1
+      description: Ansible L3Out
+
+  - name: Add a new L3Out logical node profile
+    cisco.aci.aci_l3out_logical_node_profile: &aci_l3out_node_profile_present
+      <<: *aci_tenant_present
+      l3out: ansible_l3out
+      node_profile: ansible_l3out_node_profile
+      description: Ansible L3Out Logical Node Profile
+
+  - name: Add a new L3Out logical interface profile
+    cisco.aci.aci_l3out_logical_interface_profile: &aci_l3out_interface_profile_present
+      <<: *aci_l3out_node_profile_present
+      interface_profile: ansible_l3out_interface_profile
+      description: First Ansible L3Out Logical Interface Profile
+
+  - name: Add a new DHCP relay policy in infra
+    cisco.aci.aci_dhcp_relay:
+      <<: *aci_info
+      relay_policy: ansible_dhcp_relay_policy_infra
+      description: Ansible DHCP Relay Policy in infra
+      state: present
+
+  - name: Add a new DHCP relay policy in ansible tenant
+    cisco.aci.aci_dhcp_relay:
+      <<: *aci_tenant_present
+      relay_policy: ansible_dhcp_relay_policy_tenant
+      description: Ansible DHCP Relay Policy in tenant
+      state: present
+
+  - name: Add a new DHCP option policy
+    cisco.aci.aci_dhcp_option_policy:
+      <<: *aci_tenant_present
+      dhcp_option_policy: ansible_dhcp_option_policy
+      description: Ansible DHCP Option Policy
+      state: present
+  
+  - name: Add L3Out DHCP Relay Label to first interface profile (check mode)
+    cisco.aci.aci_l3out_dhcp_relay_label: &aci_l3out_dhcp_relay_label_present
+      <<: *aci_l3out_interface_profile_present
+      dhcp_relay_label: ansible_dhcp_relay_policy_tenant
+      scope: tenant
+      dhcp_option_policy: ansible_dhcp_option_policy
+      description: First Ansible DHCP Relay Label
+    check_mode: true
+    register: cm_add_l3out_dhcp_relay_label
+
+  - name: Add L3Out DHCP Relay Label to first interface profile (normal mode)
+    cisco.aci.aci_l3out_dhcp_relay_label:
+      <<: *aci_l3out_dhcp_relay_label_present
+    register: nm_add_l3out_dhcp_relay_label
+
+  - name: Add L3Out DHCP relay label to first interface profile again - testing idempotency
+    cisco.aci.aci_l3out_dhcp_relay_label:
+      <<: *aci_l3out_dhcp_relay_label_present
+    register: nm_add_l3out_dhcp_relay_label_idempotency
+
+  - name: Create a second L3Out logical interface profile
+    cisco.aci.aci_l3out_logical_interface_profile: &aci_l3out_interface_profile_present_2
+      <<: *aci_l3out_node_profile_present
+      interface_profile: ansible_l3out_interface_profile_2
+      description: Second Ansible L3Out Logical Interface Profile
+
+  - name: Add L3Out DHCP Relay Label to second interface profile (normal_mode)
+    cisco.aci.aci_l3out_dhcp_relay_label:
+      <<: *aci_l3out_interface_profile_present_2
+      dhcp_relay_label: ansible_dhcp_relay_policy_infra
+      description: Second Ansible DHCP Relay Label
+      state: present
+    register: nm_add_l3out_dhcp_relay_label_2
+
+  - name: Asserts for DHCP relay labels creation tasks
+    ansible.builtin.assert:
+      that:
+        - cm_add_l3out_dhcp_relay_label is changed
+        - cm_add_l3out_dhcp_relay_label.previous == []
+        - cm_add_l3out_dhcp_relay_label.current == []
+        - nm_add_l3out_dhcp_relay_label is changed
+        - nm_add_l3out_dhcp_relay_label.current.0.dhcpLbl.attributes.name == "ansible_dhcp_relay_policy_tenant"
+        - nm_add_l3out_dhcp_relay_label.current.0.dhcpLbl.attributes.owner == "tenant"
+        - nm_add_l3out_dhcp_relay_label.current.0.dhcpLbl.children.0.dhcpRsDhcpOptionPol.attributes.tnDhcpOptionPolName == "ansible_dhcp_option_policy"
+        - nm_add_l3out_dhcp_relay_label_idempotency is not changed
+        - nm_add_l3out_dhcp_relay_label_2 is changed
+        - nm_add_l3out_dhcp_relay_label_2.previous == []
+        - nm_add_l3out_dhcp_relay_label_2.current.0.dhcpLbl.attributes.name == "ansible_dhcp_relay_policy_infra"
+        - nm_add_l3out_dhcp_relay_label_2.current.0.dhcpLbl.attributes.owner == "infra"
+
+  - name: Query all l3Out DHCP relay labels
+    cisco.aci.aci_l3out_dhcp_relay_label:
+      <<: *aci_info
+      state: query
+    register: query_all_l3out_dhcp_relay_label
+
+  - name: Query first L3Out DHCP relay label
+    cisco.aci.aci_l3out_dhcp_relay_label:
+      <<: *aci_l3out_dhcp_relay_label_present
+      state: query
+    register: query_ansible_l3out_dhcp_relay_label_1
+
+  - name: Asserts query tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_l3out_dhcp_relay_label is not changed
+        - query_all_l3out_dhcp_relay_label.current|length >= 2
+        - query_ansible_l3out_dhcp_relay_label_1 is not changed
+        - query_ansible_l3out_dhcp_relay_label_1.current.0.dhcpLbl.attributes.name == "ansible_dhcp_relay_policy_tenant"
+        - query_ansible_l3out_dhcp_relay_label_1.current.0.dhcpLbl.attributes.owner == "tenant"
+        - query_ansible_l3out_dhcp_relay_label_1.current.0.dhcpLbl.children.0.dhcpRsDhcpOptionPol.attributes.tnDhcpOptionPolName == "ansible_dhcp_option_policy"
+
+  - name: Update first L3out DHCP relay label by deleting current DHCP options (check_mode)
+    cisco.aci.aci_l3out_dhcp_relay_label: &aci_l3out_dhcp_relay_label_update
+      <<: *aci_l3out_dhcp_relay_label_present
+      dhcp_option_policy: ""
+    check_mode: true
+    register: cm_update_l3out_dhcp_relay_label
+
+  - name: Update first L3out DHCP relay label by deleting current DHCP options (normal_mode)
+    cisco.aci.aci_l3out_dhcp_relay_label:
+      <<: *aci_l3out_dhcp_relay_label_update
+    register: nm_update_l3out_dhcp_relay_label
+  
+  - name: Update first L3out DHCP relay label by deleting current DHCP options again - testing idempotency
+    cisco.aci.aci_l3out_dhcp_relay_label:
+      <<: *aci_l3out_dhcp_relay_label_update
+    register: nm_update_l3out_dhcp_relay_label_idempotency
+
+  - name: Query updated first L3Out DHCP relay label
+    cisco.aci.aci_l3out_dhcp_relay_label:
+      <<: *aci_l3out_dhcp_relay_label_update
+      state: query
+    register: query_ansible_l3out_dhcp_relay_label_1_updated
+
+  - name: Asserts for DHCP relay labels update tasks
+    ansible.builtin.assert:
+      that:
+        - cm_update_l3out_dhcp_relay_label is changed
+        - cm_update_l3out_dhcp_relay_label.previous == cm_update_l3out_dhcp_relay_label.current
+        - nm_update_l3out_dhcp_relay_label is changed
+        - nm_update_l3out_dhcp_relay_label.current.0.dhcpLbl.children.0.dhcpRsDhcpOptionPol.attributes.tnDhcpOptionPolName == ""
+        - nm_update_l3out_dhcp_relay_label_idempotency is not changed
+        - query_ansible_l3out_dhcp_relay_label_1_updated is not changed
+        - query_ansible_l3out_dhcp_relay_label_1_updated.current.0.dhcpLbl.children.0.dhcpRsDhcpOptionPol.attributes.tDn == "uni/tn-common/dhcpoptpol-default"
+        - query_ansible_l3out_dhcp_relay_label_1_updated.current.0.dhcpLbl.children.0.dhcpRsDhcpOptionPol.attributes.tnDhcpOptionPolName == ""
+
+  - name: Remove L3Out DHCP relay label from interface profile (check_mode)
+    cisco.aci.aci_l3out_dhcp_relay_label: &l3out_dhcp_relay_label_absent
+      <<: *aci_l3out_dhcp_relay_label_update
+      state: absent
+    check_mode: true
+    register: cm_remove_l3out_dhcp_relay_label
+
+  - name: Remove L3Out DHCP relay label from interface profile (normal_mode)
+    cisco.aci.aci_l3out_dhcp_relay_label:
+      <<: *l3out_dhcp_relay_label_absent
+    register: nm_remove_l3out_dhcp_relay_label
+
+  - name: Remove L3Out DHCP relay label from interface profile - testing idempotency
+    cisco.aci.aci_l3out_dhcp_relay_label:
+      <<: *l3out_dhcp_relay_label_absent
+    register: nm_remove_l3out_dhcp_relay_label_idempotency
+
+  - name: Asserts deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_remove_l3out_dhcp_relay_label is changed
+        - cm_remove_l3out_dhcp_relay_label.proposed == {}
+        - nm_remove_l3out_dhcp_relay_label is changed
+        - nm_remove_l3out_dhcp_relay_label.previous != []
+        - nm_remove_l3out_dhcp_relay_label.method == "DELETE"
+        - nm_remove_l3out_dhcp_relay_label_idempotency is not changed
+        - nm_remove_l3out_dhcp_relay_label_idempotency.previous == []
+
+  - name: Remove the ansible_tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent
+
+  - name: Remove the ansible_dom - cleanup before ending tests
+    cisco.aci.aci_domain:
+      <<: *aci_domain_present
+      state: absent

@@ -5,12 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -91,7 +91,7 @@
   ignore_errors: true
 
 - name: Verify add_fabric_node
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_fabric_node_tier_2 is changed
     - nm_add_fabric_node is changed
@@ -137,7 +137,7 @@
   register: nm_add_fabric_node_descr_again
 
 - name: Verify add_fabric_node_descr
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_fabric_node_descr is changed
     - nm_add_fabric_node_descr is changed
@@ -157,7 +157,7 @@
   register: nm_add_fabric_node_again_no_descr
 
 - name: Verify add_fabric_node_again_no_descr
-  assert:
+  ansible.builtin.assert:
     that:
     # FIXME: Module is not idempotent
     - cm_add_fabric_node_again_no_descr is not changed
@@ -183,7 +183,7 @@
   register: nm_query_all_fabric_nodes
 
 - name: Verify query_all_fabric_nodes
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_all_fabric_nodes is not changed
     - nm_query_all_fabric_nodes is not changed
@@ -205,7 +205,7 @@
   register: nm_query_fabric_node
 
 - name: Verify query_fabric_node
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_fabric_node is not changed
     - nm_query_fabric_node is not changed
@@ -232,7 +232,7 @@
   register: nm_remove_fabric_node_again
 
 - name: Verify remove_fabric_node
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_fabric_node is changed
     - nm_remove_fabric_node is changed
@@ -255,7 +255,7 @@
   register: nm_query_non_fabric_node
 
 - name: Verify query_non_fabric_node
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_non_fabric_node is not changed
     - nm_query_non_fabric_node is not changed

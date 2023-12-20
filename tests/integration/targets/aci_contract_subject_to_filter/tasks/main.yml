@@ -3,15 +3,15 @@
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -98,7 +98,7 @@
       register: present_missing_param
 
     - name: present assertions
-      assert:
+      ansible.builtin.assert:
         that:
           - subject_filter_present_check_mode is changed
           - subject_filter_present_check_mode.previous == []
@@ -137,7 +137,7 @@
       register: query_binding_non_existing_subject
 
     - name: query assertions
-      assert:
+      ansible.builtin.assert:
         that:
           - query_all is not changed
           - query_all.current | length > 1
@@ -176,7 +176,7 @@
         state: absent
 
     - name: absent assertions
-      assert:
+      ansible.builtin.assert:
         that:
           - subject_filter_absent_check_mode is changed
           - subject_filter_absent_check_mode.proposed == {}
@@ -283,7 +283,7 @@
       ignore_errors: true
 
     - name: filter assertions
-      assert:
+      ansible.builtin.assert:
         that:
           - cm_filter1_present_default is changed
           - nm_filter1_present_default is changed
@@ -337,7 +337,7 @@
         register: filter_present_deny_non_cloud_c2p
 
       - name: filter subject with direction assertions
-        assert:
+        ansible.builtin.assert:
           that:
             - filter_present_deny_non_cloud_both is changed
             - filter_present_deny_non_cloud_both.current.0.vzRsSubjFiltAtt.attributes.action == "deny"
@@ -373,7 +373,7 @@
         ignore_errors: true
 
       - name: cloud assertions
-        assert:
+        ansible.builtin.assert:
           that:
             - filter_present_deny_cloud.msg.startswith("APIC Error 1: Invalid Configuration CLOUD_ONLY_PERMIT_ACTION_SUPPORTED")
             - filter_present_deny_cloud_p2c.msg.startswith("APIC Error 1: Invalid Configuration CLOUD_ONLY_PERMIT_ACTION_SUPPORTED")

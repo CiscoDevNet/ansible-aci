@@ -16,7 +16,7 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_bgp_peer
-short_description: Manage Layer 3 Outside (L3Out) BGP Peers (bgp:PeerP)
+short_description: Manage Layer 3 Outside (L3Out) BGP Peers (bgp:PeerP and bgp:InfraPeerP)
 description:
 - Manage L3Out BGP Peers on Cisco ACI fabrics.
 options:
@@ -68,7 +68,7 @@ options:
     - BGP Controls
     type: list
     elements: str
-    choices: [ send-com, send-ext-com, allow-self-as, as-override, dis-peer-as-check, nh-self ]
+    choices: [ send-com, send-ext-com, allow-self-as, as-override, dis-peer-as-check, nh-self, send-domain-path ]
   peer_controls:
     description:
     - Peer Controls
@@ -143,6 +143,36 @@ options:
     - The APIC defaults to 0 when unset during creation.
     type: int
     aliases: [ local_as_num ]
+  bgp_password:
+    description:
+    - Password for the BGP Peer.
+    type: str
+  description:
+    description:
+    - Description for the BGP Peer.
+    type: str
+    aliases: [ descr ]
+  transport_data_plane:
+    description:
+    - Transport Data Plane type.
+    type: str
+    choices: [ mpls, sr_mpls ]
+  bgp_peer_prefix_policy:
+    description:
+    - BGP Peer Prefix Policy.
+    - BGP Peer Prefix Policy is only allowed to be configured when I(bgp_infra_peer=true).
+    type: str
+    aliases: [ bgp_peer_prefix_policy_name ]
+  peer_type:
+    description:
+    - BGP Peer type.
+    type: str
+    choices: [ sr_mpls ]
+  bgp_infra_peer:
+    description:
+    - BGP Infra peer (bgp:InfraPeerP).
+    type: bool
+    aliases: [ infra ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -158,10 +188,11 @@ seealso:
 - module: aci_l3out
 - module: aci_l3out_logical_node_profile
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(bgp:peerP)
+  description: More information about the internal APIC classes B(bgp:peerP) and B(bgp:InfraPeerP)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
+- Akini Ross (@akinross)
 """
 
 EXAMPLES = r"""
@@ -212,6 +243,28 @@ EXAMPLES = r"""
     remote_asn: 65457
     ttl: 4
     weight: 50
+    state: present
+  delegate_to: localhost
+
+- name: Create Infra BGP Peer with password
+  aci_l3out_bgp_peer: &infra_bgp_peer
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: infra
+    l3out: ansible_infra_l3out
+    node_profile: ansible_infra_l3out_node_profile
+    ttl: 2
+    bgp_infra_peer: true
+    bgp_password: ansible_test_password
+    peer_ip: 192.168.50.2
+    remote_asn: 65450
+    local_as_number: 65460
+    peer_type: sr_mpls
+    bgp_controls:
+      - send-domain-path
+    transport_data_plane: sr_mpls
+    bgp_peer_prefix_policy: ansible_peer_prefix_profile
     state: present
   delegate_to: localhost
 
@@ -266,6 +319,7 @@ EXAMPLES = r"""
         direction: "export"
         l3out: "anstest_l3out"
     state: present
+  delegate_to: localhost
 
 - name: Query a BGP peer
   cisco.aci.aci_l3out_bgp_peer:
@@ -293,6 +347,15 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_all
 
+- name: Query all BGP infra peer
+  cisco.aci.aci_l3out_bgp_peer:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    bgp_infra_peer: true
+    state: query
+  delegate_to: localhost
+  register: query_all
 """
 
 RETURN = r"""
@@ -416,6 +479,7 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         l3out=dict(type="str", aliases=["l3out_name"]),
+        description=dict(type="str", aliases=["descr"]),
         node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
         interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -434,6 +498,7 @@ def main():
                 "as-override",
                 "dis-peer-as-check",
                 "nh-self",
+                "send-domain-path",
             ],
         ),
         peer_controls=dict(type="list", elements="str", choices=["bfd", "dis-conn-check"]),
@@ -454,6 +519,11 @@ def main():
         ),
         local_as_number_config=dict(type="str", choices=["dual-as", "no-prepend", "none", "replace-as"], aliases=["local_as_num_config"]),
         local_as_number=dict(type="int", aliases=["local_as_num"]),
+        bgp_password=dict(type="str", no_log=True),
+        transport_data_plane=dict(type="str", choices=["mpls", "sr_mpls"]),
+        bgp_peer_prefix_policy=dict(type="str", aliases=["bgp_peer_prefix_policy_name"]),
+        peer_type=dict(type="str", choices=["sr_mpls"]),
+        bgp_infra_peer=dict(type="bool", aliases=["infra"]),
     )
 
     module = AnsibleModule(
@@ -468,6 +538,7 @@ def main():
 
     tenant = module.params.get("tenant")
     l3out = module.params.get("l3out")
+    description = module.params.get("description")
     node_profile = module.params.get("node_profile")
     interface_profile = module.params.get("interface_profile")
     state = module.params.get("state")
@@ -487,6 +558,11 @@ def main():
     route_control_profiles = module.params.get("route_control_profiles")
     local_as_number_config = module.params.get("local_as_number_config")
     local_as_number = module.params.get("local_as_number")
+    bgp_password = module.params.get("bgp_password")
+    transport_data_plane = module.params.get("transport_data_plane")
+    peer_type = module.params.get("peer_type")
+    bgp_infra_peer = module.params.get("bgp_infra_peer")
+    bgp_peer_prefix_policy = module.params.get("bgp_peer_prefix_policy")
 
     aci = ACIModule(module)
     if node_id:
@@ -499,24 +575,23 @@ def main():
 
     child_configs = []
     child_classes = ["bgpRsPeerPfxPol", "bgpAsP", "bgpLocalAsnP"]
+    aci_class = "bgpInfraPeerP" if bgp_infra_peer else "bgpPeerP"
 
-    if remote_asn:
-        child_configs.append(
-            dict(
-                bgpAsP=dict(
-                    attributes=dict(asn=remote_asn),
-                ),
-            )
-        )
+    if remote_asn is not None:
+        bgp_as_p = dict(bgpAsP=dict(attributes=dict(asn=remote_asn)))
+        if remote_asn == 0:
+            bgp_as_p["bgpAsP"]["attributes"]["status"] = "deleted"
+        child_configs.append(bgp_as_p)
 
-    if local_as_number_config or local_as_number:
-        child_configs.append(
-            dict(
-                bgpLocalAsnP=dict(
-                    attributes=dict(asnPropagate=local_as_number_config, localAsn=local_as_number),
-                ),
-            )
-        )
+    if local_as_number_config is not None or local_as_number is not None:
+        bgp_local_asn_p = dict(bgpLocalAsnP=dict(attributes=dict(asnPropagate=local_as_number_config, localAsn=local_as_number)))
+        if local_as_number == 0:
+            bgp_local_asn_p["bgpLocalAsnP"]["attributes"]["status"] = "deleted"
+        child_configs.append(bgp_local_asn_p)
+
+    # BGP Peer Prefix Policy is ony configurable on Infra BGP Peer Profile
+    if bgp_peer_prefix_policy is not None:
+        child_configs.append(dict(bgpRsPeerPfxPol=dict(attributes=dict(tnBgpPeerPfxPolName=bgp_peer_prefix_policy))))
 
     if route_control_profiles:
         child_classes.append("bgpRsPeerToProfile")
@@ -541,8 +616,8 @@ def main():
             )
 
     bgp_peer_profile_dict = dict(
-        aci_class="bgpPeerP",
-        aci_rn="peerP-[{0}]".format(peer_ip),
+        aci_class=aci_class,
+        aci_rn="infraPeerP-[{0}]".format(peer_ip) if bgp_infra_peer else "peerP-{0}".format(peer_ip),
         module_object=peer_ip,
         target_filter={"addr": peer_ip},
     )
@@ -594,32 +669,46 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        ctrl, peerCtrl, addrTCtrl, privateASctrl = None, None, None, None
+        ctrl, ctrl_ext, peerCtrl, addrTCtrl, privateASctrl = None, None, None, None, None
         if bgp_controls:
+            if transport_data_plane == "mpls":
+                bgp_controls.append("segment-routing-disable")
+
+            if "send-domain-path" in bgp_controls:
+                ctrl_ext = "send-domain-path"
+                bgp_controls.remove("send-domain-path")
+
             ctrl = ",".join(bgp_controls)
+
         if peer_controls:
             peerCtrl = ",".join(peer_controls)
         if address_type_controls:
             addrTCtrl = ",".join(address_type_controls)
         if private_asn_controls:
             privateASctrl = ",".join(private_asn_controls)
-        aci.payload(
-            aci_class="bgpPeerP",
-            class_config=dict(
-                addr=peer_ip,
-                ctrl=ctrl,
-                peerCtrl=peerCtrl,
-                addrTCtrl=addrTCtrl,
-                privateASctrl=privateASctrl,
-                ttl=ttl,
-                weight=weight,
-                adminSt=admin_state,
-                allowedSelfAsCnt=allow_self_as_count,
-            ),
-            child_configs=child_configs,
+
+        class_config = dict(
+            descr=description,
+            addr=peer_ip,
+            ctrl=ctrl,
+            ctrlExt=ctrl_ext,
+            peerCtrl=peerCtrl,
+            addrTCtrl=addrTCtrl,
+            privateASctrl=privateASctrl,
+            ttl=ttl,
+            weight=weight,
+            adminSt=admin_state,
+            allowedSelfAsCnt=allow_self_as_count,
+            peerT=peer_type.replace("_", "-") if peer_type else None,
         )
 
-        aci.get_diff(aci_class="bgpPeerP")
+        # Only add bgp_password if it is set to handle changed status properly because password is not part of existing config
+        if bgp_password:
+            class_config["password"] = bgp_password
+
+        aci.payload(aci_class=aci_class, class_config=class_config, child_configs=child_configs)
+
+        aci.get_diff(aci_class=aci_class)
 
         aci.post_config()
 

@@ -1,0 +1,173 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Shreyas Srish (@shrsr)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove test tenant before we kickoff
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
+    tenant: ansible_test
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # SETUP ENVIRONMENT
+  - name: Create domain
+    cisco.aci.aci_domain:
+      <<: *aci_info
+      domain: l3outintftest
+      domain_type: l3dom
+      state: present
+
+  - name: Create tenant
+    cisco.aci.aci_tenant: &tenant_present
+      <<: *tenant_absent
+      state: present
+
+  - name: Configure VRF
+    cisco.aci.aci_vrf: &vrf_present
+      <<: *tenant_present
+      vrf: l3outintftest
+
+  - name: Create L3Out
+    cisco.aci.aci_l3out:
+      <<: *vrf_present
+      l3out: l3outintftest
+      domain: l3outintftest
+      route_control: export
+
+  - name: Create node profile
+    cisco.aci.aci_l3out_logical_node_profile: &np_present
+      <<: *tenant_present
+      l3out: l3outintftest
+      node_profile: node1
+
+  - name: Create interface profile
+    cisco.aci.aci_l3out_logical_interface_profile: &intf_present
+      <<: *np_present
+      interface_profile: intf1
+
+  - name: Add a hsrp interface profile
+    cisco.aci.aci_l3out_hsrp_interface_profile:
+      <<: *intf_present
+      hsrp_policy: default
+      version: v1
+      state: present
+
+  - name: Add a hsrp group
+    cisco.aci.aci_l3out_hsrp_group:
+      <<: *intf_present
+      hsrp_interface_group: group1
+      group_id: 1
+      ip: 12.34.56.32
+      mac: 00:00:00:00:00:FF
+      group_name: one
+      group_type: ipv4
+      ip_obtain_mode: admin
+      group_policy: default
+      state: present
+
+  - name: Add a hsrp group secondary vip (check mode)
+    cisco.aci.aci_l3out_hsrp_secondary_vip: &vip
+      <<: *intf_present
+      hsrp_interface_group: group1
+      secondary_virtual_ip: 191.1.1.1
+    check_mode: true
+    register: cm_vip
+
+  - name: Add a hsrp group secondary vip (normal mode)
+    cisco.aci.aci_l3out_hsrp_secondary_vip:
+      <<: *vip
+    register: nm_vip
+
+  - name: Add a hsrp group secondary vip again
+    cisco.aci.aci_l3out_hsrp_secondary_vip:
+      <<: *vip
+    register: add_vip_again
+
+  - name: Add another vip
+    cisco.aci.aci_l3out_hsrp_secondary_vip:
+      <<: *vip
+      secondary_virtual_ip: 191.1.1.2
+    register: add_vip2
+
+  - name: Verify add hsrp vips
+    ansible.builtin.assert:
+      that:
+      - cm_vip is changed
+      - nm_vip is changed
+      - add_vip_again is not changed
+      - add_vip2 is changed
+      - cm_vip.previous == nm_vip.previous == []
+      - cm_vip.proposed.hsrpSecVip.attributes.ip == "191.1.1.1"
+      - nm_vip.current.0.hsrpSecVip.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-node1/lifp-intf1/hsrpIfP/hsrpGroupP-group1/hsrpSecVip-[191.1.1.1]"
+      - nm_vip.current.0.hsrpSecVip.attributes.ip == "191.1.1.1"
+      - add_vip2.current.0.hsrpSecVip.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-node1/lifp-intf1/hsrpIfP/hsrpGroupP-group1/hsrpSecVip-[191.1.1.2]"
+      - add_vip2.current.0.hsrpSecVip.attributes.ip == "191.1.1.2"
+      
+
+  - name: Query a vip
+    cisco.aci.aci_l3out_hsrp_secondary_vip:
+      <<: *vip
+      state: query
+    register: query_vip
+
+  - name: Query all vips
+    cisco.aci.aci_l3out_hsrp_secondary_vip:
+      <<: *intf_present
+      hsrp_interface_group: group1
+      state: query
+    register: query_all
+
+  - name: Verify query
+    ansible.builtin.assert:
+      that:
+      - query_vip is not changed
+      - query_all is not changed
+      - query_vip.current.0.hsrpSecVip.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-node1/lifp-intf1/hsrpIfP/hsrpGroupP-group1/hsrpSecVip-[191.1.1.1]"
+      - query_vip.current.0.hsrpSecVip.attributes.ip == "191.1.1.1"
+      - query_all.current.0.hsrpGroupP.children | length == 2
+
+  - name: Remove a hsrp group vip in check mode
+    cisco.aci.aci_l3out_hsrp_secondary_vip:
+      <<: *vip
+      state: absent
+    check_mode: true
+    register: cm_absent_vip
+
+  - name: Remove a hsrp group vip
+    cisco.aci.aci_l3out_hsrp_secondary_vip:
+      <<: *vip
+      state: absent
+    register: absent_vip
+
+  - name: Remove hsrp group again
+    cisco.aci.aci_l3out_hsrp_secondary_vip:
+      <<: *vip
+      state: absent
+    register: absent_vip_again
+
+  - name: Verify remove
+    ansible.builtin.assert:
+      that:
+      - cm_absent_vip is changed
+      - cm_absent_vip.proposed == {}
+      - absent_vip is changed
+      - absent_vip.current == []
+      - absent_vip_again is not changed

@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -56,7 +56,7 @@
   register: nm_add_policy_again
 
 - name: Verify add policy
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_policy is changed
     - nm_add_policy is changed
@@ -105,7 +105,7 @@
   register: nm_modify_policy_again
 
 - name: Verify modify policy
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_modify_policy is changed
     - nm_modify_policy is changed
@@ -138,7 +138,7 @@
   register: nm_query_all_policies
 
 - name: Verify query_all_policies
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_all_policies is not changed
     - nm_query_all_policies is not changed
@@ -158,7 +158,7 @@
   register: nm_query_policy
 
 - name: Verify query_policy
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_policy is not changed
     - nm_query_policy is not changed
@@ -194,7 +194,7 @@
   register: nm_remove_policy_again
 
 - name: Verify remove_policy
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_policy is changed
     - nm_remove_policy is changed

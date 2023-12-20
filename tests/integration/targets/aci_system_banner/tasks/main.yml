@@ -1,0 +1,221 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Tim Cragg (@timcragg)
+# Copyright: (c) 2023, Akini Ross (@akinross)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEANUP ENVIRONMENT
+- name: Clear the current alias and banner configuration
+  cisco.aci.aci_system_banner: &aci_banner_clear
+    <<: *aci_info
+    annotation: ""
+    gui_alias: ""
+    controller_banner: ""
+    application_banner: ""
+    severity: info
+    switch_banner: ""
+    gui_banner: ""
+
+# UPDATE ALIAS AND BANNER CONFIGURATION
+- name: Update alias and banner configuration (check mode)
+  cisco.aci.aci_system_banner: &aci_banner
+    <<: *aci_info
+    gui_alias: "Ansible Test GUI Alias"
+    controller_banner: "Ansible Test Controller Banner"
+    application_banner: "Ansible Test Application Banner"
+    severity: critical
+    switch_banner: "Ansible Test Switch Banner"
+    gui_banner: "Ansible Test GUI Banner"
+  check_mode: true
+  register: cm_update_banner
+
+- name: Update alias and banner configuration
+  cisco.aci.aci_system_banner:
+    <<: *aci_banner
+  register: nm_update_banner
+
+- name: Update alias and banner configuration again
+  cisco.aci.aci_system_banner:
+    <<: *aci_banner
+  register: nm_update_banner_again
+
+- name: Verify alias and banner configuration
+  ansible.builtin.assert:
+    that:
+    - cm_update_banner is changed 
+    - cm_update_banner.proposed.aaaPreLoginBanner.attributes.annotation == "orchestrator:ansible"
+    - cm_update_banner.proposed.aaaPreLoginBanner.attributes.bannerMessage == "Ansible Test Application Banner"
+    - cm_update_banner.proposed.aaaPreLoginBanner.attributes.bannerMessageSeverity == "critical"
+    - cm_update_banner.proposed.aaaPreLoginBanner.attributes.dn == "uni/userext/preloginbanner"
+    - cm_update_banner.proposed.aaaPreLoginBanner.attributes.guiMessage == "Ansible Test GUI Banner"
+    - cm_update_banner.proposed.aaaPreLoginBanner.attributes.isGuiMessageText == "yes"
+    - cm_update_banner.proposed.aaaPreLoginBanner.attributes.guiTextMessage == "Ansible Test GUI Alias"
+    - cm_update_banner.proposed.aaaPreLoginBanner.attributes.message == "Ansible Test Controller Banner"
+    - cm_update_banner.proposed.aaaPreLoginBanner.attributes.showBannerMessage == "yes"
+    - cm_update_banner.proposed.aaaPreLoginBanner.attributes.switchMessage == "Ansible Test Switch Banner"
+    - cm_update_banner.current.0.aaaPreLoginBanner.attributes.annotation == ""
+    - cm_update_banner.current.0.aaaPreLoginBanner.attributes.bannerMessage == ""
+    - cm_update_banner.current.0.aaaPreLoginBanner.attributes.bannerMessageSeverity == "info"
+    - cm_update_banner.current.0.aaaPreLoginBanner.attributes.dn == "uni/userext/preloginbanner"
+    - cm_update_banner.current.0.aaaPreLoginBanner.attributes.guiMessage == ""
+    - cm_update_banner.current.0.aaaPreLoginBanner.attributes.isGuiMessageText == "yes"
+    - cm_update_banner.current.0.aaaPreLoginBanner.attributes.guiTextMessage == ""
+    - cm_update_banner.current.0.aaaPreLoginBanner.attributes.message == ""
+    - cm_update_banner.current.0.aaaPreLoginBanner.attributes.showBannerMessage == "no"
+    - cm_update_banner.current.0.aaaPreLoginBanner.attributes.switchMessage == "" 
+    - nm_update_banner is changed
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.annotation == "orchestrator:ansible"
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.bannerMessage == "Ansible Test Application Banner"
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.bannerMessageSeverity == "critical"
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.dn == "uni/userext/preloginbanner"
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.guiMessage == "Ansible Test GUI Banner"
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.isGuiMessageText == "yes"
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.guiTextMessage == "Ansible Test GUI Alias"
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.message == "Ansible Test Controller Banner"
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.showBannerMessage == "yes"
+    - nm_update_banner.current.0.aaaPreLoginBanner.attributes.switchMessage == "Ansible Test Switch Banner"
+    - nm_update_banner.previous.0.aaaPreLoginBanner.attributes.annotation == ""
+    - nm_update_banner.previous.0.aaaPreLoginBanner.attributes.bannerMessage == ""
+    - nm_update_banner.previous.0.aaaPreLoginBanner.attributes.bannerMessageSeverity == "info"
+    - nm_update_banner.previous.0.aaaPreLoginBanner.attributes.dn == "uni/userext/preloginbanner"
+    - nm_update_banner.previous.0.aaaPreLoginBanner.attributes.guiMessage == ""
+    - nm_update_banner.previous.0.aaaPreLoginBanner.attributes.isGuiMessageText == "yes"
+    - nm_update_banner.previous.0.aaaPreLoginBanner.attributes.guiTextMessage == ""
+    - nm_update_banner.previous.0.aaaPreLoginBanner.attributes.message == ""
+    - nm_update_banner.previous.0.aaaPreLoginBanner.attributes.showBannerMessage == "no"
+    - nm_update_banner.previous.0.aaaPreLoginBanner.attributes.switchMessage == ""
+    - nm_update_banner_again is not changed
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.annotation == "orchestrator:ansible"
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.bannerMessage == "Ansible Test Application Banner"
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.bannerMessageSeverity == "critical"
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.dn == "uni/userext/preloginbanner"
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.guiMessage == "Ansible Test GUI Banner"
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.isGuiMessageText == "yes"
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.guiTextMessage == "Ansible Test GUI Alias"
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.message == "Ansible Test Controller Banner"
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.showBannerMessage == "yes"
+    - nm_update_banner_again.current.0.aaaPreLoginBanner.attributes.switchMessage == "Ansible Test Switch Banner"
+    - nm_update_banner_again.previous.0.aaaPreLoginBanner.attributes.annotation == "orchestrator:ansible"
+    - nm_update_banner_again.previous.0.aaaPreLoginBanner.attributes.bannerMessage == "Ansible Test Application Banner"
+    - nm_update_banner_again.previous.0.aaaPreLoginBanner.attributes.bannerMessageSeverity == "critical"
+    - nm_update_banner_again.previous.0.aaaPreLoginBanner.attributes.dn == "uni/userext/preloginbanner"
+    - nm_update_banner_again.previous.0.aaaPreLoginBanner.attributes.guiMessage == "Ansible Test GUI Banner"
+    - nm_update_banner_again.previous.0.aaaPreLoginBanner.attributes.isGuiMessageText == "yes"
+    - nm_update_banner_again.previous.0.aaaPreLoginBanner.attributes.guiTextMessage == "Ansible Test GUI Alias"
+    - nm_update_banner_again.previous.0.aaaPreLoginBanner.attributes.message == "Ansible Test Controller Banner"
+    - nm_update_banner_again.previous.0.aaaPreLoginBanner.attributes.showBannerMessage == "yes"
+    - nm_update_banner_again.previous.0.aaaPreLoginBanner.attributes.switchMessage == "Ansible Test Switch Banner"
+
+- name: Update alias and banner configuration with http url
+  cisco.aci.aci_system_banner:
+    <<: *aci_banner
+    gui_banner: http://www.cisco.com
+  register: nm_update_banner_with_url_http
+
+- name: Update alias and banner configuration with https url
+  cisco.aci.aci_system_banner:
+    <<: *aci_banner
+    gui_banner: https://www.cisco.com
+  register: nm_update_banner_with_url_https
+
+- name: Verify alias and banner configuration with url
+  ansible.builtin.assert:
+    that:
+    - nm_update_banner_with_url_http is changed
+    - nm_update_banner_with_url_http.current.0.aaaPreLoginBanner.attributes.annotation == "orchestrator:ansible"
+    - nm_update_banner_with_url_http.current.0.aaaPreLoginBanner.attributes.bannerMessage == "Ansible Test Application Banner"
+    - nm_update_banner_with_url_http.current.0.aaaPreLoginBanner.attributes.bannerMessageSeverity == "critical"
+    - nm_update_banner_with_url_http.current.0.aaaPreLoginBanner.attributes.dn == "uni/userext/preloginbanner"
+    - nm_update_banner_with_url_http.current.0.aaaPreLoginBanner.attributes.guiMessage == "http://www.cisco.com"
+    - nm_update_banner_with_url_http.current.0.aaaPreLoginBanner.attributes.isGuiMessageText == "no"
+    - nm_update_banner_with_url_http.current.0.aaaPreLoginBanner.attributes.guiTextMessage == "Ansible Test GUI Alias"
+    - nm_update_banner_with_url_http.current.0.aaaPreLoginBanner.attributes.message == "Ansible Test Controller Banner"
+    - nm_update_banner_with_url_http.current.0.aaaPreLoginBanner.attributes.showBannerMessage == "yes"
+    - nm_update_banner_with_url_http.current.0.aaaPreLoginBanner.attributes.switchMessage == "Ansible Test Switch Banner"
+    - nm_update_banner_with_url_http.previous.0.aaaPreLoginBanner.attributes.annotation == "orchestrator:ansible"
+    - nm_update_banner_with_url_http.previous.0.aaaPreLoginBanner.attributes.bannerMessage == "Ansible Test Application Banner"
+    - nm_update_banner_with_url_http.previous.0.aaaPreLoginBanner.attributes.bannerMessageSeverity == "critical"
+    - nm_update_banner_with_url_http.previous.0.aaaPreLoginBanner.attributes.dn == "uni/userext/preloginbanner"
+    - nm_update_banner_with_url_http.previous.0.aaaPreLoginBanner.attributes.guiMessage == "Ansible Test GUI Banner"
+    - nm_update_banner_with_url_http.previous.0.aaaPreLoginBanner.attributes.isGuiMessageText == "yes"
+    - nm_update_banner_with_url_http.previous.0.aaaPreLoginBanner.attributes.guiTextMessage == "Ansible Test GUI Alias"
+    - nm_update_banner_with_url_http.previous.0.aaaPreLoginBanner.attributes.message == "Ansible Test Controller Banner"
+    - nm_update_banner_with_url_http.previous.0.aaaPreLoginBanner.attributes.showBannerMessage == "yes"
+    - nm_update_banner_with_url_http.previous.0.aaaPreLoginBanner.attributes.switchMessage == "Ansible Test Switch Banner"
+    - nm_update_banner_with_url_https is changed
+    - nm_update_banner_with_url_https.current.0.aaaPreLoginBanner.attributes.annotation == "orchestrator:ansible"
+    - nm_update_banner_with_url_https.current.0.aaaPreLoginBanner.attributes.bannerMessage == "Ansible Test Application Banner"
+    - nm_update_banner_with_url_https.current.0.aaaPreLoginBanner.attributes.bannerMessageSeverity == "critical"
+    - nm_update_banner_with_url_https.current.0.aaaPreLoginBanner.attributes.dn == "uni/userext/preloginbanner"
+    - nm_update_banner_with_url_https.current.0.aaaPreLoginBanner.attributes.guiMessage == "https://www.cisco.com"
+    - nm_update_banner_with_url_https.current.0.aaaPreLoginBanner.attributes.isGuiMessageText == "no"
+    - nm_update_banner_with_url_https.current.0.aaaPreLoginBanner.attributes.guiTextMessage == "Ansible Test GUI Alias"
+    - nm_update_banner_with_url_https.current.0.aaaPreLoginBanner.attributes.message == "Ansible Test Controller Banner"
+    - nm_update_banner_with_url_https.current.0.aaaPreLoginBanner.attributes.showBannerMessage == "yes"
+    - nm_update_banner_with_url_https.current.0.aaaPreLoginBanner.attributes.switchMessage == "Ansible Test Switch Banner"
+    - nm_update_banner_with_url_https.previous.0.aaaPreLoginBanner.attributes.annotation == "orchestrator:ansible"
+    - nm_update_banner_with_url_https.previous.0.aaaPreLoginBanner.attributes.bannerMessage == "Ansible Test Application Banner"
+    - nm_update_banner_with_url_https.previous.0.aaaPreLoginBanner.attributes.bannerMessageSeverity == "critical"
+    - nm_update_banner_with_url_https.previous.0.aaaPreLoginBanner.attributes.dn == "uni/userext/preloginbanner"
+    - nm_update_banner_with_url_https.previous.0.aaaPreLoginBanner.attributes.guiMessage == "http://www.cisco.com"
+    - nm_update_banner_with_url_https.previous.0.aaaPreLoginBanner.attributes.isGuiMessageText == "no"
+    - nm_update_banner_with_url_https.previous.0.aaaPreLoginBanner.attributes.guiTextMessage == "Ansible Test GUI Alias"
+    - nm_update_banner_with_url_https.previous.0.aaaPreLoginBanner.attributes.message == "Ansible Test Controller Banner"
+    - nm_update_banner_with_url_https.previous.0.aaaPreLoginBanner.attributes.showBannerMessage == "yes"
+    - nm_update_banner_with_url_https.previous.0.aaaPreLoginBanner.attributes.switchMessage == "Ansible Test Switch Banner"
+
+# QUERY ALIAS AND BANNER CONFIGURATION
+- name: Query alias and banner configuration
+  cisco.aci.aci_system_banner:
+    <<: *aci_banner
+    state: query
+  register: query
+
+- name: Verify alias and banner configuration query
+  ansible.builtin.assert:
+    that:
+    - query is not changed
+    - query.current.0.aaaPreLoginBanner.attributes.annotation == "orchestrator:ansible"
+    - query.current.0.aaaPreLoginBanner.attributes.bannerMessage == "Ansible Test Application Banner"
+    - query.current.0.aaaPreLoginBanner.attributes.bannerMessageSeverity == "critical"
+    - query.current.0.aaaPreLoginBanner.attributes.dn == "uni/userext/preloginbanner"
+    - query.current.0.aaaPreLoginBanner.attributes.guiMessage == "https://www.cisco.com"
+    - query.current.0.aaaPreLoginBanner.attributes.isGuiMessageText == "no"
+    - query.current.0.aaaPreLoginBanner.attributes.guiTextMessage == "Ansible Test GUI Alias"
+    - query.current.0.aaaPreLoginBanner.attributes.message == "Ansible Test Controller Banner"
+    - query.current.0.aaaPreLoginBanner.attributes.showBannerMessage == "yes"
+
+# ERROR ALIAS AND BANNER CONFIGURATION INPUT
+- name: Update alias and banner configuration (error)
+  cisco.aci.aci_system_banner: 
+    <<: *aci_info
+    severity: critical
+  ignore_errors: true
+  register: err_update_banner_severity
+
+- name: Verify alias and banner configuration error
+  ansible.builtin.assert:
+    that:
+    - err_update_banner_severity is failed
+    - err_update_banner_severity.msg == "missing parameter(s) required by 'severity'{{":"}} application_banner"
+
+# CLEANUP ENVIRONMENT
+- name: Clear the current alias and banner configuration
+  cisco.aci.aci_system_banner:
+    <<: *aci_banner_clear

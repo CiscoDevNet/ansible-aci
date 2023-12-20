@@ -1,0 +1,159 @@
+# Author: Shreyas Srish (@shrsr)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove test tenant before we kickoff
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
+    tenant: ansible_test
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # SETUP ENVIRONMENT
+  - name: Create domain
+    cisco.aci.aci_domain: &domain_present
+      <<: *aci_info
+      domain: l3outintftest
+      domain_type: l3dom
+      state: present
+
+  - name: Create tenant
+    cisco.aci.aci_tenant: &tenant_present
+      <<: *tenant_absent
+      state: present
+
+  - name: Configure VRF
+    cisco.aci.aci_vrf: &vrf_present
+      <<: *tenant_present
+      vrf: l3outintftest
+
+  - name: Create L3Out
+    cisco.aci.aci_l3out:
+      <<: *vrf_present
+      l3out: l3outintftest
+      domain: l3outintftest
+      route_control: export
+
+  - name: Create node profile
+    cisco.aci.aci_l3out_logical_node_profile: &np_present
+      <<: *tenant_present
+      l3out: l3outintftest
+      node_profile: NODES
+
+  - name: Add interface profile
+    cisco.aci.aci_l3out_logical_interface_profile: &intf_present
+      <<: *np_present
+      interface_profile: Floating
+
+  - name: Create a floating svi
+    cisco.aci.aci_l3out_floating_svi:
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
+      address: 23.45.67.90/24
+      external_bridge_group_profile: bridge1
+      state: present
+    register: add_floating_cm
+
+  - name: Create a floating svi secondary_ip in check mode
+    cisco.aci.aci_l3out_floating_svi_secondary_ip: &floating_svi
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
+      secondary_ip: 25.45.67.90/24
+      state: present
+    check_mode: true
+    register: add_ip_cm
+
+  - name: Create a floating svi secondary_ip in normal mode
+    cisco.aci.aci_l3out_floating_svi_secondary_ip:
+      <<: *floating_svi
+      state: present
+    register: add_ip_nm
+
+  - name: Create a floating svi secondary_ip again
+    cisco.aci.aci_l3out_floating_svi_secondary_ip:
+      <<: *floating_svi
+      state: present
+    register: add_ip_again
+
+  - name: Create another floating svi secondary_ip 
+    cisco.aci.aci_l3out_floating_svi_secondary_ip:
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
+      secondary_ip: 26.45.67.90/24
+      state: present
+    register: add_another_ip
+
+  - name: Verify present ops
+    ansible.builtin.assert:
+      that:
+      - add_ip_cm is changed
+      - add_ip_nm is changed
+      - add_ip_again is not changed
+      - add_another_ip is changed
+      - add_ip_nm.current.0.l3extIp.attributes.addr == "25.45.67.90/24"
+      - add_another_ip.current.0.l3extIp.attributes.addr == "26.45.67.90/24"
+  
+  - name: Query a floating svi secondary_ip
+    cisco.aci.aci_l3out_floating_svi_secondary_ip:
+      <<: *floating_svi
+      state: query
+    register: query_ip
+
+  - name: Query all ips
+    cisco.aci.aci_l3out_floating_svi_secondary_ip:
+      <<: *intf_present
+      pod_id: 1
+      node_id: 201
+      encap: vlan-1
+      state: query
+    register: query_all
+
+  - name: Verify query ops
+    ansible.builtin.assert:
+      that:
+      - query_ip is not changed
+      - query_all is not changed
+      - query_ip.current.0.l3extIp.attributes.addr == "25.45.67.90/24"
+      - query_all.current.0.l3extVirtualLIfP.children | length == 2
+
+  - name: Delete a floating svi secondary_ip
+    cisco.aci.aci_l3out_floating_svi_secondary_ip:
+      <<: *floating_svi
+      state: absent
+    register: delete_ip
+
+  - name: Verify delete ops
+    ansible.builtin.assert:
+      that:
+      - delete_ip is changed
+      - delete_ip.current == []
+
+# Clean up environment
+  - name: Remove test tenant
+    cisco.aci.aci_tenant:
+      <<: *aci_info
+      tenant: ansible_test
+      state: absent

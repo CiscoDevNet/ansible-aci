@@ -1,0 +1,147 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
+
+  - name: Add a new action rule profile
+    cisco.aci.aci_tenant_action_rule_profile: &aci_action_rule_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      action_rule: ansible_action_rule
+      description: Ansible action rule profile for ansible_tenant tenant
+      state: present
+
+  - name: Add an additional communities action rule (check_mode)
+    cisco.aci.aci_action_rule_additional_communities: &aci_action_rule_additional_communities_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      action_rule: ansible_action_rule
+      community: regular:as2-nn2:4:15
+      criteria: append
+      state: present
+    check_mode: true
+    register: cm_add_action_rule_add_comm
+
+  - name: Add an additional communities action rule again (normal_mode)
+    cisco.aci.aci_action_rule_additional_communities:
+      <<: *aci_action_rule_additional_communities_present
+    register: nm_add_action_rule_add_comm
+
+  - name: Add an additional communities action rule again - testing idempotency
+    cisco.aci.aci_action_rule_additional_communities:
+      <<: *aci_action_rule_additional_communities_present
+    register: nm_add_action_rule_add_comm_idempotency
+
+  - name: Add an additional communities action rule
+    cisco.aci.aci_action_rule_additional_communities:
+      <<: *aci_info
+      tenant: ansible_tenant
+      action_rule: ansible_action_rule
+      community: extended:as4-nn2:5:16
+      state: present
+    register: nm_add_action_rule_add_comm_2
+
+  - name: Asserts for additional communities action rules creation tasks
+    ansible.builtin.assert:
+      that:
+        - cm_add_action_rule_add_comm is changed
+        - cm_add_action_rule_add_comm.previous == []
+        - cm_add_action_rule_add_comm.current == []
+        - nm_add_action_rule_add_comm is changed
+        - nm_add_action_rule_add_comm.current.0.rtctrlSetAddComm.attributes.community == "regular:as2-nn2:4:15"
+        - nm_add_action_rule_add_comm.current.0.rtctrlSetAddComm.attributes.setCriteria == "append"
+        - nm_add_action_rule_add_comm_idempotency is not changed
+        - nm_add_action_rule_add_comm_2 is changed
+        - nm_add_action_rule_add_comm_2.previous == []
+        - nm_add_action_rule_add_comm_2.current.0.rtctrlSetAddComm.attributes.community == "extended:as4-nn2:5:16"
+        - nm_add_action_rule_add_comm_2.current.0.rtctrlSetAddComm.attributes.setCriteria == "append"
+
+  - name: Query all additional communities action rules
+    cisco.aci.aci_action_rule_additional_communities:
+      <<: *aci_info
+      state: query
+    register: query_all_action_rule_add_comm
+
+  - name: Query ansible_action_rule_add_comm additional communities action rule
+    cisco.aci.aci_action_rule_additional_communities:
+      <<: *aci_action_rule_additional_communities_present
+      state: query
+    register: query_action_rule_add_comm
+
+  - name: Asserts query tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_action_rule_add_comm is not changed
+        - query_all_action_rule_add_comm.current|length >= 2
+        - query_action_rule_add_comm is not changed
+        - query_action_rule_add_comm.current.0.rtctrlSetAddComm.attributes.community == "regular:as2-nn2:4:15"
+        - query_action_rule_add_comm.current.0.rtctrlSetAddComm.attributes.setCriteria == "append"
+
+  - name: Remove additional communities action rule (check_mode)
+    cisco.aci.aci_action_rule_additional_communities: &aci_action_rule_additional_communities_absent
+      <<: *aci_action_rule_additional_communities_present
+      state: absent
+    check_mode: true
+    register: cm_remove_action_rule_add_comm
+
+  - name: Remove additional communities action rule (normal_mode)
+    cisco.aci.aci_action_rule_additional_communities:
+      <<: *aci_action_rule_additional_communities_absent
+    register: nm_remove_remove_action_rule_add_comm
+
+  - name: Remove additional communities action rule again - testing previous Removal
+    cisco.aci.aci_action_rule_additional_communities:
+      <<: *aci_action_rule_additional_communities_absent
+    register: nm_remove_action_rule_add_comm_idempotency
+
+  - name: Asserts deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_remove_action_rule_add_comm is changed
+        - cm_remove_action_rule_add_comm.proposed == {}
+        - nm_remove_remove_action_rule_add_comm is changed
+        - nm_remove_remove_action_rule_add_comm.previous != []
+        - nm_remove_remove_action_rule_add_comm.method == "DELETE"
+        - nm_remove_action_rule_add_comm_idempotency is not changed
+        - nm_remove_action_rule_add_comm_idempotency.previous == []
+
+  - name: Remove the ansible_tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent

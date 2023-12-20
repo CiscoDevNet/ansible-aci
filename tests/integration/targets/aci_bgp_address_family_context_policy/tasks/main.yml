@@ -1,0 +1,244 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
+
+  - name: Add a BGP address family context policy (check_mode)
+    cisco.aci.aci_bgp_address_family_context_policy: &aci_bgp_address_family_context_policy_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      address_family_context_policy: ansible_bgp_address_family_context_policy_1
+      description: BGP address family context policy 1 for ansible_tenant tenant
+      host_route_leak: true
+      ebgp_distance: 40
+      ibgp_distance: 210
+      local_distance: 215
+      ebgp_max_ecmp: 32
+      ibgp_max_ecmp: 32
+      state: present
+    check_mode: true
+    register: cm_add_bgp_address_family_context_policy
+
+  - name: Add a BGP address family context policy (normal_mode)
+    cisco.aci.aci_bgp_address_family_context_policy:
+      <<: *aci_bgp_address_family_context_policy_present
+    register: nm_add_bgp_address_family_context_policy
+
+  - name: Add the first BGP address family context policy again - testing idempotency
+    cisco.aci.aci_bgp_address_family_context_policy:
+      <<: *aci_bgp_address_family_context_policy_present
+    register: nm_add_bgp_address_family_context_policy_idempotency
+
+  - name: Add Local max ECMP to BGP address family context policy - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5.0', '>=')
+    cisco.aci.aci_bgp_address_family_context_policy: &aci_bgp_address_family_context_policy_present_maxLocalEcmp
+      <<: *aci_bgp_address_family_context_policy_present
+      local_max_ecmp: 1
+    register: nm_add_maxLocalEcmp_bgp_address_family_context_policy
+
+  - name: Add Path Capability to BGP address family context policy - APIC version >= 6.0(2h)
+    when: version.current.0.topSystem.attributes.version is version('6.0(2h)', '>=')
+    cisco.aci.aci_bgp_address_family_context_policy: &aci_bgp_address_family_context_policy_present_bgpCtxAddlPathPol
+      <<: *aci_bgp_address_family_context_policy_present_maxLocalEcmp
+      bgp_add_path_capability: receive
+    register: nm_add_path_capability_bgp_address_family_context_policy
+
+  - name: Add a second BGP address family context policy (normal_mode)
+    cisco.aci.aci_bgp_address_family_context_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      address_family_context_policy: ansible_bgp_address_family_context_policy_2
+      description: BGP address family context policy 2 for ansible_tenant tenant
+      state: present
+    register: nm_add_bgp_address_family_context_policy_2
+
+  - name: Asserts for BGP address family context policys creation tasks
+    ansible.builtin.assert:
+      that:
+        - cm_add_bgp_address_family_context_policy is changed
+        - cm_add_bgp_address_family_context_policy.previous == []
+        - cm_add_bgp_address_family_context_policy.current == []
+        - nm_add_bgp_address_family_context_policy is changed
+        - nm_add_bgp_address_family_context_policy.current.0.bgpCtxAfPol.attributes.name == "ansible_bgp_address_family_context_policy_1"
+        - nm_add_bgp_address_family_context_policy.current.0.bgpCtxAfPol.attributes.eDist == "40"
+        - nm_add_bgp_address_family_context_policy.current.0.bgpCtxAfPol.attributes.iDist == "210"
+        - nm_add_bgp_address_family_context_policy.current.0.bgpCtxAfPol.attributes.localDist == "215"
+        - nm_add_bgp_address_family_context_policy.current.0.bgpCtxAfPol.attributes.maxEcmp == "32"
+        - nm_add_bgp_address_family_context_policy.current.0.bgpCtxAfPol.attributes.maxEcmpIbgp == "32"
+        - nm_add_bgp_address_family_context_policy.current.0.bgpCtxAfPol.attributes.ctrl == "host-rt-leak"
+        - nm_add_bgp_address_family_context_policy_idempotency is not changed
+        - nm_add_bgp_address_family_context_policy_2 is changed
+        - nm_add_bgp_address_family_context_policy_2.previous == []
+        - nm_add_bgp_address_family_context_policy_2.current.0.bgpCtxAfPol.attributes.name == "ansible_bgp_address_family_context_policy_2"
+        - nm_add_bgp_address_family_context_policy_2.current.0.bgpCtxAfPol.attributes.eDist == "20"
+        - nm_add_bgp_address_family_context_policy_2.current.0.bgpCtxAfPol.attributes.iDist == "200"
+        - nm_add_bgp_address_family_context_policy_2.current.0.bgpCtxAfPol.attributes.localDist == "220"
+        - nm_add_bgp_address_family_context_policy_2.current.0.bgpCtxAfPol.attributes.maxEcmp == "16"
+        - nm_add_bgp_address_family_context_policy_2.current.0.bgpCtxAfPol.attributes.maxEcmpIbgp == "16"
+        - nm_add_bgp_address_family_context_policy_2.current.0.bgpCtxAfPol.attributes.ctrl == ""
+
+  - name: Asserts adding Local max ECMP for BGP address family context policys creation tasks - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5.0', '>=')
+    ansible.builtin.assert:
+      that:
+        - nm_add_maxLocalEcmp_bgp_address_family_context_policy is changed
+        - nm_add_maxLocalEcmp_bgp_address_family_context_policy.current.0.bgpCtxAfPol.attributes.maxLocalEcmp == "1"
+        - nm_add_bgp_address_family_context_policy_2.current.0.bgpCtxAfPol.attributes.maxLocalEcmp == "0"
+
+  - name: Asserts adding path capability for BGP address family context policys creation tasks - APIC version >= 6.0(2h)
+    when: version.current.0.topSystem.attributes.version is version('6.0(2h)', '>=')
+    ansible.builtin.assert:
+      that:
+        - nm_add_path_capability_bgp_address_family_context_policy is changed
+        - nm_add_path_capability_bgp_address_family_context_policy.current.0.bgpCtxAfPol.children.0.bgpCtxAddlPathPol.attributes.capability == "receive"
+
+  - name: Query all BGP address family context policies
+    cisco.aci.aci_bgp_address_family_context_policy:
+      <<: *aci_info
+      state: query
+    register: query_all_bgp_address_family_context_policy
+
+  - name: Query ansible_bgp_address_family_context_policy_1
+    cisco.aci.aci_bgp_address_family_context_policy:
+      <<: *aci_bgp_address_family_context_policy_present
+      state: query
+    register: query_ansible_bgp_address_family_context_policy_1
+
+  - name: Asserts query tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_bgp_address_family_context_policy is not changed
+        - query_all_bgp_address_family_context_policy.current|length >= 2
+        - query_ansible_bgp_address_family_context_policy_1 is not changed
+        - query_ansible_bgp_address_family_context_policy_1.current.0.bgpCtxAfPol.attributes.name == "ansible_bgp_address_family_context_policy_1"
+        - query_ansible_bgp_address_family_context_policy_1.current.0.bgpCtxAfPol.attributes.eDist == "40"
+        - query_ansible_bgp_address_family_context_policy_1.current.0.bgpCtxAfPol.attributes.iDist == "210"
+        - query_ansible_bgp_address_family_context_policy_1.current.0.bgpCtxAfPol.attributes.localDist == "215"
+        - query_ansible_bgp_address_family_context_policy_1.current.0.bgpCtxAfPol.attributes.maxEcmp == "32"
+        - query_ansible_bgp_address_family_context_policy_1.current.0.bgpCtxAfPol.attributes.maxEcmpIbgp == "32"
+        - query_ansible_bgp_address_family_context_policy_1.current.0.bgpCtxAfPol.attributes.ctrl == "host-rt-leak"
+
+  - name: Query ansible_bgp_address_family_context_policy_1 with updated Local Max ECMP - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5.0', '>=')
+    cisco.aci.aci_bgp_address_family_context_policy:
+      <<: *aci_bgp_address_family_context_policy_present_maxLocalEcmp
+      state: query
+    register: query_ansible_bgp_address_family_context_policy_maxLocalEcmp
+
+  - name: Asserts path capability - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5.0', '>=')
+    ansible.builtin.assert:
+      that:
+        - query_ansible_bgp_address_family_context_policy_maxLocalEcmp.current.0.bgpCtxAfPol.attributes.maxLocalEcmp == "1"
+
+  - name: Query ansible_bgp_address_family_context_policy_1 with added path capability - APIC version >= 6.0(2h)
+    when: version.current.0.topSystem.attributes.version is version('6.0(2h)', '>=')
+    cisco.aci.aci_bgp_address_family_context_policy:
+      <<: *aci_bgp_address_family_context_policy_present_bgpCtxAddlPathPol
+      state: query
+    register: query_ansible_bgp_address_family_context_policy_bgpCtxAddlPathPol
+
+  - name: Asserts path capability - APIC version >= 6.0(2h)
+    when: version.current.0.topSystem.attributes.version is version('6.0(2h)', '>=')
+    ansible.builtin.assert:
+      that:
+        - query_ansible_bgp_address_family_context_policy_bgpCtxAddlPathPol.current.0.bgpCtxAfPol.children.0.bgpCtxAddlPathPol.attributes.capability == "receive"
+
+  - name: Remove children from BGP address family context policy (check_mode) - APIC version >= 6.0(2h)
+    when: version.current.0.topSystem.attributes.version is version('6.0(2h)', '>=')
+    cisco.aci.aci_bgp_address_family_context_policy: &bgp_address_family_context_policy_delet_children
+      <<: *aci_bgp_address_family_context_policy_present_bgpCtxAddlPathPol
+      bgp_add_path_capability: ""
+    check_mode: true
+    register: cm_remove_children_bgp_address_family_context_policy
+
+  - name: Remove children from BGP address family context policy (normal_mode) - APIC version >= 6.0(2h)
+    when: version.current.0.topSystem.attributes.version is version('6.0(2h)', '>=')
+    cisco.aci.aci_bgp_address_family_context_policy:
+      <<: *bgp_address_family_context_policy_delet_children
+    register: nm_remove_children_bgp_address_family_context_policy
+
+  - name: Remove children from BGP address family context policy (testing idempotency) - APIC version >= 6.0(2h)
+    when: version.current.0.topSystem.attributes.version is version('6.0(2h)', '>=')
+    cisco.aci.aci_bgp_address_family_context_policy:
+      <<: *bgp_address_family_context_policy_delet_children
+    register: nm_remove_children_bgp_address_family_context_policy_idempotency
+
+  - name: Asserts for children removal tasks for the first address family context policy - APIC version >= 6.0(2h)
+    when: version.current.0.topSystem.attributes.version is version('6.0(2h)', '>=')
+    ansible.builtin.assert:
+      that:
+        - cm_remove_children_bgp_address_family_context_policy is changed
+        - cm_remove_children_bgp_address_family_context_policy.current == cm_remove_children_bgp_address_family_context_policy.previous
+        - nm_remove_children_bgp_address_family_context_policy is changed
+        - nm_remove_children_bgp_address_family_context_policy.current.0.bgpCtxAfPol | length == 1
+        - nm_remove_children_bgp_address_family_context_policy_idempotency is not changed
+
+  - name: Remove BGP address family context policy (check_mode)
+    cisco.aci.aci_bgp_address_family_context_policy: &bgp_address_family_context_policy_absent
+      <<: *aci_bgp_address_family_context_policy_present
+      state: absent
+    check_mode: true
+    register: cm_remove_bgp_address_family_context_policy
+
+  - name: Remove BGP address family context policy (normal_mode)
+    cisco.aci.aci_bgp_address_family_context_policy:
+      <<: *bgp_address_family_context_policy_absent
+    register: nm_remove_bgp_address_family_context_policy
+
+  - name: Remove BGP address family context policy - testing idempotency
+    cisco.aci.aci_bgp_address_family_context_policy:
+      <<: *bgp_address_family_context_policy_absent
+    register: nm_remove_bgp_address_family_context_policy_idempotency
+
+  - name: Asserts deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_remove_bgp_address_family_context_policy is changed
+        - cm_remove_bgp_address_family_context_policy.proposed == {}
+        - nm_remove_bgp_address_family_context_policy is changed
+        - nm_remove_bgp_address_family_context_policy.previous != []
+        - nm_remove_bgp_address_family_context_policy.method == "DELETE"
+        - nm_remove_bgp_address_family_context_policy_idempotency is not changed
+        - nm_remove_bgp_address_family_context_policy_idempotency.previous == []
+
+  - name: Remove the ansible_tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent

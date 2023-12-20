@@ -3,7 +3,7 @@
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -77,7 +77,7 @@
   register: nm_vzany_prov
 
 - name: Verify vzany_prov
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_vzany_prov is changed
     - nm_vzany_prov is changed
@@ -91,7 +91,7 @@
   register: add_prov_again
 
 - name: Verify add_prov_again
-  assert:
+  ansible.builtin.assert:
     that:
     - add_prov_again is not changed
 
@@ -123,7 +123,7 @@
   register: query_all_provs
 
 - name: Verify query_all_provs
-  assert:
+  ansible.builtin.assert:
     that:
     - query_all_provs is not changed
     - query_all_provs.current|length >= 2
@@ -136,7 +136,7 @@
   register: query_spec_bind
 
 - name: Verify query_spec_bind
-  assert:
+  ansible.builtin.assert:
     that:
     - query_spec_bind is not changed
     - query_spec_bind.current|length == 1
@@ -161,7 +161,7 @@
   register: del_cif
 
 - name: Verify remove_intf
-  assert:
+  ansible.builtin.assert:
     that:
     - del_prov is changed
     - del_cons is changed

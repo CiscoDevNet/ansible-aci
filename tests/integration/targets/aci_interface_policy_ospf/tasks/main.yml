@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -53,7 +53,7 @@
   register: nm_add_ospf_interface_policy_again
 
 - name: Verify add_ospf_interface_policy
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_ospf_interface_policy is changed
     - cm_add_ospf_interface_policy.current == []
@@ -134,7 +134,7 @@
   register: nm_add_ospf_descr_again
 
 - name: Verify add_ospf_descr
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_ospf_descr is changed
     - cm_add_ospf_descr.previous.0.ospfIfPol.attributes.annotation == "orchestrator:ansible"
@@ -256,7 +256,7 @@
   register: err_change_ospf_transmit_delay
 
 - name: Verify cost change and error input values
-  assert:
+  ansible.builtin.assert:
     that:
     - err_change_ospf_cost is not changed
     - err_change_ospf_cost.msg == "Parameter 'cost' is only valid in range between 1 and 450."
@@ -282,7 +282,7 @@
   register: nm_add_ospf_again_no_descr
 
 - name: Verify add_ospf_again_no_descr
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_ospf_again_no_descr is not changed
     - nm_add_ospf_again_no_descr is not changed
@@ -308,7 +308,7 @@
   register: nm_query_all_ospfs
 
 - name: Verify query_all_ospfs
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_all_ospfs is not changed
     - nm_query_all_ospfs is not changed
@@ -333,7 +333,7 @@
   register: nm_query_ospf
 
 - name: Verify query_ospf
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_ospf is not changed
     - nm_query_ospf is not changed
@@ -360,7 +360,7 @@
   register: nm_remove_ospf_again
 
 - name: Verify remove_ospf
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_ospf is changed
     - nm_remove_ospf is changed
@@ -384,7 +384,7 @@
 
 # TODO: Implement more tests
 - name: Verify query_non_ospf
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_non_ospf is not changed
     - nm_query_non_ospf is not changed

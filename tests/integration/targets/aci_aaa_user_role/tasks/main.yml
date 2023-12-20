@@ -6,13 +6,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -87,7 +87,7 @@
   register: cm_user_role_present
 
 - name: Assertions check for add user role to "anstest-security-domain" with check mode
-  assert:
+  ansible.builtin.assert:
     that:
       - cm_user_role_present is changed
       - cm_user_role_present.current | length == 0
@@ -101,7 +101,7 @@
   register: nm_user_role_present
 
 - name: Assertions check for add user role to "anstest-security-domain" with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - nm_user_role_present is changed
       - nm_user_role_present.current | length == 1
@@ -116,7 +116,7 @@
   register: cm_idempotency_user_role_present
 
 - name: Idempotency assertions check for add user role to "anstest-security-domain" check mode
-  assert:
+  ansible.builtin.assert:
     that:
       - cm_idempotency_user_role_present is not changed
       - cm_idempotency_user_role_present.previous | length == 1
@@ -132,7 +132,7 @@
   register: idempotency_user_role_present
 
 - name: Idempotency assertions check for add user role to "anstest-security-domain"
-  assert:
+  ansible.builtin.assert:
     that:
       - idempotency_user_role_present is not changed
       - idempotency_user_role_present.previous | length == 1
@@ -152,7 +152,7 @@
   register: user_role_present_sec_domain1
 
 - name: Assertions check for add a user role to "anstest-security-domain-1"
-  assert:
+  ansible.builtin.assert:
     that:
       - user_role_present_sec_domain1 is changed
       - user_role_present_sec_domain1.current | length == 1
@@ -169,7 +169,7 @@
   register: cm_update_user_role_present
 
 - name: Assertions check for update user role to "anstest-security-domain" with check mode
-  assert:
+  ansible.builtin.assert:
     that:
       - cm_update_user_role_present is changed
       - cm_update_user_role_present.current | length == 1
@@ -183,7 +183,7 @@
   register: update_user_role_present
 
 - name: Assertions check for update user role to "anstest-security-domain" with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - update_user_role_present is changed
       - update_user_role_present.current | length == 1
@@ -217,7 +217,7 @@
   register: query_user_role_from_sec_domain
 
 - name: Assertions check for query a user role from "anstest-security-domain-1" user domain
-  assert:
+  ansible.builtin.assert:
     that:
       - query_user_role_from_sec_domain is not changed
       - query_user_role_from_sec_domain.current | length == 1
@@ -235,7 +235,7 @@
   register: query_all_user_roles_of_sec_domain
 
 - name: Assertions check for query all user roles from "anstest-security-domain" user domain
-  assert:
+  ansible.builtin.assert:
     that:
       - query_all_user_roles_of_sec_domain is not changed
       - query_all_user_roles_of_sec_domain.current | length == 1
@@ -250,7 +250,7 @@
   register: query_all_user_roles_from_a_user
 
 - name: Assertions check for query all user roles from a user
-  assert:
+  ansible.builtin.assert:
     that:
       - query_all_user_roles_from_a_user is not changed
       - query_all_user_roles_from_a_user.current | length == 1
@@ -264,7 +264,7 @@
   register: query_all_user_roles
 
 - name: Assertions check for query all user roles
-  assert:
+  ansible.builtin.assert:
     that:
       - query_all_user_roles is not changed
       - query_all_user_roles.current | length >= 6 # count of user roles including common sec domain user role
@@ -281,7 +281,7 @@
   register: cm_user_role_absent
 
 - name: Assertions check for removing a user role from "anstest-security-domain-1" with check mode
-  assert:
+  ansible.builtin.assert:
     that:
       - cm_user_role_absent is changed
       - cm_user_role_absent.current | length == 1
@@ -297,7 +297,7 @@
   register: nm_user_role_absent
 
 - name: Assertions check for removing a user role from "anstest-security-domain-1" with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - nm_user_role_absent is changed
       - nm_user_role_absent.current == []
@@ -311,7 +311,7 @@
   register: idempotency_user_role_absent
 
 - name: Idempotency assertions check for removing a user role from "anstest-security-domain-1"
-  assert:
+  ansible.builtin.assert:
     that:
       - idempotency_user_role_absent is not changed
       - idempotency_user_role_absent.current == []

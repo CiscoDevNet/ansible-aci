@@ -4,12 +4,12 @@
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -20,7 +20,7 @@
       output_level: debug
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Remove tenant to cleanup
   cisco.aci.aci_tenant:
@@ -36,7 +36,7 @@
   register: query_result
 
 - name: Get DN
-  set_fact:
+  ansible.builtin.set_fact:
     dn: "{{ query_result.current[0].fvTenant.attributes.dn }}"
 
 - name: Annotation Create tag (check_mode)
@@ -57,7 +57,7 @@
   register: nm_annotation_create
 
 - name: Annotation tag created
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_annotation_create is changed
     - cm_annotation_create.proposed.tagAnnotation.attributes.value == "bar"
@@ -79,7 +79,7 @@
   register: nm_annotation_create_again
 
 - name: Annotation tag create again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_annotation_create_again is not changed
     - cm_annotation_create_again.current.0.tagAnnotation.attributes.key == "foo"
@@ -95,7 +95,7 @@
   register: annotation_query_result
 
 - name: Annotation tag query verification
-  assert:
+  ansible.builtin.assert:
     that:
     - annotation_query_result is not changed
     - annotation_query_result.current.0.tagAnnotation.attributes.key == "foo"
@@ -110,12 +110,12 @@
   register: annotation_query_all
 
 - name: Annotation tag query verification
-  assert:
+  ansible.builtin.assert:
     that:
     - annotation_query_all is not changed
 
 - name: Annotation tag query verification (continued)
-  assert:
+  ansible.builtin.assert:
     that:
     - annotation_query_all.current.0.tagAnnotation.attributes.key == "foo"
     - annotation_query_all.current.0.tagAnnotation.attributes.value == "bar"
@@ -136,7 +136,7 @@
   register: nm_annotation_delete
 
 - name: Annotation tag deleted
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_annotation_delete is changed
     - nm_annotation_delete is changed
@@ -161,7 +161,7 @@
   register: nm_annotation_delete_again
 
 - name: Annotation tag deleted again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_annotation_delete_again is not changed
     - nm_annotation_delete_again is not changed
@@ -187,7 +187,7 @@
   register: nm_instance_create
 
 - name: Instance tag created
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_instance_create is changed
     - nm_instance_create is changed
@@ -207,7 +207,7 @@
   register: nm_instance_create_again
 
 - name: Instance tag create again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_instance_create_again is not changed
     - cm_instance_create_again.current.0.tagInst.attributes.name == "foo"
@@ -221,7 +221,7 @@
   register: instance_query_result
 
 - name: Instance tag query verification
-  assert:
+  ansible.builtin.assert:
     that:
     - instance_query_result is not changed
     - instance_query_result.current.0.tagInst.attributes.name == "foo"
@@ -235,12 +235,12 @@
   register: instance_query_all
 
 - name: Instance tag query verification
-  assert:
+  ansible.builtin.assert:
     that:
     - instance_query_all is not changed
 
 - name: Instance tag query verification (continued)
-  assert:
+  ansible.builtin.assert:
     that:
     - instance_query_all.current.0.tagInst.attributes.name == "foo"
   when: query_cloud.current == []  # This condition will skip execution for cloud sites
@@ -260,7 +260,7 @@
   register: nm_instance_delete
 
 - name: Instance tag deleted
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_instance_delete is changed
     - nm_instance_delete is changed
@@ -283,7 +283,7 @@
   register: nm_instance_delete_again
 
 - name: Instance tag deleted again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_instance_delete_again is not changed
     - nm_instance_delete_again is not changed
@@ -310,7 +310,7 @@
   register: nm_tag_create
 
 - name: Tag tag created
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_tag_create is changed
     - cm_tag_create.proposed.tagTag.attributes.value == "bar"
@@ -332,7 +332,7 @@
   register: nm_tag_create_again
 
 - name: Tag tag create again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_tag_create_again is not changed
     - cm_tag_create_again.current.0.tagTag.attributes.key == "foo"
@@ -348,7 +348,7 @@
   register: tag_query_result
 
 - name: Tag tag query verification
-  assert:
+  ansible.builtin.assert:
     that:
     - tag_query_result is not changed
     - tag_query_result.current.0.tagTag.attributes.key == "foo"
@@ -363,12 +363,12 @@
   register: tag_query_all
 
 - name: Tag tag query verification
-  assert:
+  ansible.builtin.assert:
     that:
     - tag_query_all is not changed
 
 - name: Tag tag query verification (continued)
-  assert:
+  ansible.builtin.assert:
     that:
     - tag_query_all.current.0.tagTag.attributes.key == "foo"
     - tag_query_all.current.0.tagTag.attributes.value == "bar"
@@ -389,7 +389,7 @@
   register: nm_tag_delete
 
 - name: Tag tag deleted
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_tag_delete is changed
     - nm_tag_delete is changed
@@ -414,7 +414,7 @@
   register: nm_tag_delete_again
 
 - name: Tag tag deleted again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_tag_delete_again is not changed
     - nm_tag_delete_again is not changed

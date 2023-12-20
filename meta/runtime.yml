@@ -27,8 +27,10 @@ action_groups:
     - aci_bd_dhcp_label
     - aci_bd_subnet
     - aci_bd_to_l3out
+    - aci_bgp_best_path_policy
     - aci_bgp_rr_asn
     - aci_bgp_rr_node
+    - aci_bgp_timers_policy
     - aci_bulk_static_binding_to_epg
     - aci_cloud_ap
     - aci_cloud_aws_provider
@@ -74,10 +76,13 @@ action_groups:
     - aci_esg_epg_selector
     - aci_esg_ip_subnet_selector
     - aci_esg_tag_selector
+    - aci_fabric_interface_policy_group
     - aci_fabric_leaf_profile
     - aci_fabric_leaf_switch_assoc
     - aci_fabric_node
+    - aci_fabric_node_control
     - aci_fabric_pod_policy_group
+    - aci_fabric_pod_selector
     - aci_fabric_scheduler
     - aci_fabric_span_dst_group
     - aci_fabric_span_src_group
@@ -88,6 +93,7 @@ action_groups:
     - aci_fabric_spine_switch_assoc
     - aci_fabric_switch_block
     - aci_fabric_switch_policy_group
+    - aci_fabric_wide_settings
     - aci_file_remote_path
     - aci_filter
     - aci_filter_entry
@@ -103,6 +109,7 @@ action_groups:
     - aci_interface_policy_fc
     - aci_interface_policy_l2
     - aci_interface_policy_leaf_breakout_port_group
+    - aci_interface_policy_leaf_fc_policy_group
     - aci_interface_policy_leaf_policy_group
     - aci_interface_policy_leaf_profile
     - aci_interface_policy_leaf_profile_fex_policy_group
@@ -113,6 +120,7 @@ action_groups:
     - aci_interface_policy_port_channel
     - aci_interface_policy_port_security
     - aci_interface_policy_spanning_tree
+    - aci_interface_policy_spine_policy_group
     - aci_interface_selector_to_switch_policy_leaf_profile
     - aci_l2out
     - aci_l2out_extepg
@@ -122,6 +130,7 @@ action_groups:
     - aci_l2out_logical_node_profile
     - aci_l3out
     - aci_l3out_bgp_peer
+    - aci_l3out_bgp_protocol_profile
     - aci_l3out_extepg
     - aci_l3out_extepg_to_contract
     - aci_l3out_extsubnet
@@ -138,10 +147,18 @@ action_groups:
     - aci_maintenance_group
     - aci_maintenance_group_node
     - aci_maintenance_policy
+    - aci_match_as_path_regex_term
+    - aci_match_community_factor
+    - aci_match_community_regex_term
+    - aci_match_community_term
+    - aci_match_route_destination
+    - aci_match_rule
     - aci_node_mgmt_epg
     - aci_ntp_policy
     - aci_ntp_server
     - aci_rest
+    - aci_route_control_context
+    - aci_route_control_profile
     - aci_snmp_client
     - aci_snmp_client_group
     - aci_snmp_community_policy
@@ -156,6 +173,9 @@ action_groups:
     - aci_syslog_remote_dest
     - aci_syslog_source
     - aci_system
+    - aci_system_banner
+    - aci_system_endpoint_controls
+    - aci_system_global_aes_passphrase_encryption
     - aci_taboo_contract
     - aci_tag
     - aci_tenant

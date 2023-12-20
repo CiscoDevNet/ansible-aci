@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: "Please define the following variables: aci_hostname, aci_username and aci_password."
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,7 +21,7 @@
       output_level: '{{ aci_output_level | default("info") }}'
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -50,7 +50,7 @@
     register: cm_fex_policy_group_present
 
   - name: Assertions check for add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_fex_policy_group_present is changed
         - cm_fex_policy_group_present.current | length == 0
@@ -65,7 +65,7 @@
     register: nm_fex_policy_group_present
 
   - name: Assertions check for add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_fex_policy_group_present is changed
         - nm_fex_policy_group_present.current | length == 1
@@ -80,7 +80,7 @@
     register: idempotency_fex_policy_group_present
 
   - name: Idempotency assertions check for add Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_fex_policy_group_present is not changed
         - idempotency_fex_policy_group_present.current | length == 1
@@ -104,7 +104,7 @@
     register: multiple_fex_policy_group_present
 
   - name: Assertions check for add multiple Fex Policy Group to anstest_fex_profile - Interface Policy Fex profile with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - multiple_fex_policy_group_present is changed
         - multiple_fex_policy_group_present.results.0 is changed
@@ -125,7 +125,7 @@
     register: temp_anstest_fex_profile_absent
 
   - name: Assertions check for remove temp_anstest_fex_profile - Interface Policy Fex profile
-    assert:
+    ansible.builtin.assert:
       that:
         - temp_anstest_fex_profile_absent.current | length == 0
 
@@ -136,7 +136,7 @@
     register: temp_anstest_fex_profile_present
 
   - name: Assertions check for add temp_anstest_fex_profile - Interface Policy Fex profile
-    assert:
+    ansible.builtin.assert:
       that:
         - temp_anstest_fex_profile_present is changed
         - temp_anstest_fex_profile_present.current | length == 1
@@ -151,7 +151,7 @@
     register: temp_anstest_fex_policy_group_present
 
   - name: Assertions check for add Fex Policy Group to temp_anstest_fex_profile - Interface Policy Fex profile
-    assert:
+    ansible.builtin.assert:
       that:
         - temp_anstest_fex_policy_group_present is changed
         - temp_anstest_fex_policy_group_present.current | length == 1
@@ -168,7 +168,7 @@
     register: query_res_fex_policy_group_with_profile
 
   - name: Assertions check for query anstest_fex_policy_group - fex policy group with fex_profile
-    assert:
+    ansible.builtin.assert:
       that:
         - query_res_fex_policy_group_with_profile is not changed
         - query_res_fex_policy_group_with_profile.current | length == 1
@@ -183,7 +183,7 @@
     register: query_all_policy_groups_under_fex_profile
 
   - name: Assertions check for query all fex policy group under anstest_fex_profile
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_policy_groups_under_fex_profile is not changed
         - query_all_policy_groups_under_fex_profile.current.0.infraFexP.children | length == 3
@@ -196,7 +196,7 @@
     register: query_res_anstest_fex_policy_group
 
   - name: Assertions check for query all anstest_fex_policy_group - fex policy groups
-    assert:
+    ansible.builtin.assert:
       that:
         - query_res_anstest_fex_policy_group is not changed
         - query_res_anstest_fex_policy_group.current | length >= 2
@@ -210,7 +210,7 @@
     register: all_fex_policy_groups
 
   - name: Assertions check for query all - fex policy groups
-    assert:
+    ansible.builtin.assert:
       that:
         - all_fex_policy_groups is not changed
         - all_fex_policy_groups.current | length >= 4
@@ -226,7 +226,7 @@
     register: cm_anstest_fex_policy_group_absent
 
   - name: Assertions check for remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_anstest_fex_policy_group_absent is changed
         - cm_anstest_fex_policy_group_absent.current | length == 1
@@ -243,7 +243,7 @@
     register: nm_anstest_fex_policy_group_absent
 
   - name: Assertions check for remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_anstest_fex_policy_group_absent is changed
         - nm_anstest_fex_policy_group_absent.current | length == 0
@@ -258,7 +258,7 @@
     register: idempotency_anstest_fex_policy_group_absent
 
   - name: Idempotency assertions check for remove anstest_fex_policy_group - Fex Policy Group from anstest_fex_profile with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_anstest_fex_policy_group_absent is not changed
         - idempotency_anstest_fex_policy_group_absent.current | length == 0
@@ -271,7 +271,7 @@
     register: temp_anstest_fex_profile_absent
 
   - name: Assertions check for remove temp_anstest_fex_profile Fex Profile
-    assert:
+    ansible.builtin.assert:
       that:
         - temp_anstest_fex_profile_absent is changed
         - temp_anstest_fex_profile_absent.current | length == 0
@@ -286,7 +286,7 @@
     register: fex_profile_present_absent
 
   - name: Assertions check for remove anstest_fex_profile Fex Profile
-    assert:
+    ansible.builtin.assert:
       that:
         - fex_profile_present_absent is changed
         - fex_profile_present_absent.current | length == 0

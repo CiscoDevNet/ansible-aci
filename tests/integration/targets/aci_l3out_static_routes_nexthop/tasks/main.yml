@@ -3,7 +3,7 @@
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -21,7 +21,7 @@
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -85,7 +85,7 @@
     register: nm_add_nh
 
   - name: Verify nm_add_nh
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_nh is changed
       - nm_add_nh is changed
@@ -99,7 +99,7 @@
     register: add_nh_again
 
   - name: Verify add_nh_again
-    assert:
+    ansible.builtin.assert:
       that:
       - add_nh_again is not changed
 
@@ -117,7 +117,7 @@
     register: query_all_nhs
 
   - name: Verify query_all_nhs
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all_nhs is not changed
       - query_all_nhs.current|length >= 1
@@ -130,7 +130,7 @@
     register: query_spec_nh
 
   - name: Verify query_spec_node
-    assert:
+    ansible.builtin.assert:
       that:
       - query_spec_nh is not changed
       - query_spec_nh.current|length == 1
@@ -143,7 +143,7 @@
     register: remove_nh
 
   - name: Verify remove_nh
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_nh is changed
       - remove_nh.current == []

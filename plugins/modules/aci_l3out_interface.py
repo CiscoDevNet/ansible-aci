@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+# Copyright: (c) 2023, Akini Ross (@akinross) <akinross@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -51,14 +53,19 @@ options:
     type: str
   path_ep:
     description:
-    - Path to interface
-    - Interface Policy Group name for Port-channels and vPCs
-    - Port number for single ports (e.g. "eth1/12")
+    - Path to interface.
+    - Interface Policy Group name for Port-channels and vPCs.
+    - Port number for single ports (e.g. "eth1/12").
     type: str
   encap:
     description:
-    - encapsulation on the interface (e.g. "vlan-500")
+    - The encapsulation on the interface (e.g. "vlan-500").
     type: str
+  encap_scope:
+    description:
+    - The scope of the encapsulation on the interface.
+    type: str
+    choices: [ vrf, local ]
   address:
     description:
     - IP address.
@@ -80,7 +87,7 @@ options:
     choices: [ l3-port, sub-interface, ext-svi ]
   mode:
     description:
-    - Interface mode, only used if instance_type is ext-svi
+    - Interface mode, only used if instance_type is ext-svi.
     type: str
     choices: [ regular, native, untagged ]
   state:
@@ -95,19 +102,51 @@ options:
     - SVI auto state.
     type: str
     choices: [ enabled, disabled ]
+  description:
+    description:
+    - The description of the interface.
+    type: str
+    aliases: [ descr]
+  mac:
+    description:
+    - The MAC address of the interface.
+    type: str
+    aliases: [ mac_address ]
+  micro_bfd:
+    description:
+    - Enable micro BFD on the interface.
+    - Micro BFD should only be configured on Infra SR-MPLS L3Outs Direct Port Channel Interfaces.
+    type: bool
+  micro_bfd_destination:
+    description:
+    - The micro BFD destination address of the interface.
+    type: str
+    aliases: [ micro_bfd_address, micro_bfd_destination_address ]
+  micro_bfd_timer:
+    description:
+    - The micro BFD start timer in seconds.
+    - The APIC defaults to C(0) when unset during creation.
+    type: int
+    aliases: [ micro_bfd_start_timer, micro_bfd_start ]
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
+notes:
+- The C(tenant), C(l3out), C(node_profile) and the C(interface_profile) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile) and
+  M(cisco.aci.aci_l3out_logical_interface_profile) can be used for this.
 seealso:
+- module: aci_tenant
 - module: aci_l3out
 - module: aci_l3out_logical_node_profile
+- module: aci_l3out_logical_interface_profile
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(l3ext:RsPathL3OutAtt)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
-- Marcel Zehnder (@maercu)
+- Akini Ross (@akinross)
 """
 
 EXAMPLES = r"""
@@ -143,6 +182,25 @@ EXAMPLES = r"""
     interface_type: ext-svi
     encap: vlan-800
     mode: regular
+    state: present
+  delegate_to: localhost
+
+- name: Add direct port channel interface in the infra SR-MPLS l3out interface profile with micro BFD enabled
+  aci_l3out_interface:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: infra
+    l3out: ansible_infra_sr_mpls_l3out
+    interface_profile: ansible_infra_sr_mpls_l3out_interface_profile
+    pod_id: 1
+    node_id: 101
+    path_ep: pc_ansible_test
+    interface_type: l3-port
+    addr: 192.168.90.1/24
+    micro_bfd: true
+    micro_bfd_destination: 192.168.90.2
+    micro_bfd_timer: 75
     state: present
   delegate_to: localhost
 
@@ -307,14 +365,27 @@ def main():
         interface_type=dict(type="str", choices=["l3-port", "sub-interface", "ext-svi"]),
         mode=dict(type="str", choices=["regular", "native", "untagged"]),
         encap=dict(type="str"),
+        encap_scope=dict(type="str", choices=["vrf", "local"]),
         auto_state=dict(type="str", choices=["enabled", "disabled"]),
+        description=dict(type="str", aliases=["descr"]),
+        mac=dict(type="str", aliases=["mac_address"]),
+        micro_bfd=dict(type="bool"),
+        micro_bfd_destination=dict(type="str", aliases=["micro_bfd_address", "micro_bfd_destination_address"]),
+        micro_bfd_timer=dict(type="int", aliases=["micro_bfd_start_timer", "micro_bfd_start"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "present", ["interface_type", "pod_id", "node_id", "path_ep"]], ["state", "absent", ["pod_id", "node_id", "path_ep"]]],
+        required_if=[
+            ["state", "present", ["interface_type", "pod_id", "node_id", "path_ep"]],
+            ["state", "absent", ["pod_id", "node_id", "path_ep"]],
+            ["micro_bfd", True, ["micro_bfd_destination"]],
+        ],
+        required_by={"micro_bfd_timer": "micro_bfd", "micro_bfd_destination": "micro_bfd"},
     )
+
+    aci = ACIModule(module)
 
     tenant = module.params.get("tenant")
     l3out = module.params.get("l3out")
@@ -330,9 +401,14 @@ def main():
     interface_type = module.params.get("interface_type")
     mode = module.params.get("mode")
     encap = module.params.get("encap")
+    encap_scope = module.params.get("encap_scope")
     auto_state = module.params.get("auto_state")
+    description = module.params.get("description")
+    mac = module.params.get("mac")
+    micro_bfd = aci.boolean(module.params.get("micro_bfd"))
+    micro_bfd_destination = module.params.get("micro_bfd_destination")
+    micro_bfd_timer = module.params.get("micro_bfd_timer")
 
-    aci = ACIModule(module)
     if node_id and "-" in node_id:
         path_type = "protpaths"
     else:
@@ -341,6 +417,12 @@ def main():
     path_dn = None
     if pod_id and node_id and path_ep:
         path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, path_type, node_id, path_ep)
+
+    child_classes = []
+    child_configs = []
+    if micro_bfd is not None:
+        child_classes.append("bfdMicroBfdP")
+        child_configs.append(dict(bfdMicroBfdP=dict(attributes=dict(adminState=micro_bfd, dst=micro_bfd_destination, stTm=micro_bfd_timer))))
 
     aci.construct_url(
         root_class=dict(
@@ -367,7 +449,13 @@ def main():
             module_object=interface_profile,
             target_filter={"name": interface_profile},
         ),
-        subclass_4=dict(aci_class="l3extRsPathL3OutAtt", aci_rn="rspathL3OutAtt-[{0}]".format(path_dn), module_object=path_dn, target_filter={"tDn": path_dn}),
+        subclass_4=dict(
+            aci_class="l3extRsPathL3OutAtt",
+            aci_rn="rspathL3OutAtt-[{0}]".format(path_dn),
+            module_object=path_dn,
+            target_filter={"tDn": path_dn},
+        ),
+        child_classes=child_classes,
     )
 
     aci.get_existing()
@@ -375,7 +463,20 @@ def main():
     if state == "present":
         aci.payload(
             aci_class="l3extRsPathL3OutAtt",
-            class_config=dict(tDn=path_dn, addr=address, ipv6Dad=ipv6_dad, mtu=mtu, ifInstT=interface_type, mode=mode, encap=encap, autostate=auto_state),
+            class_config=dict(
+                tDn=path_dn,
+                addr=address,
+                ipv6Dad=ipv6_dad,
+                mtu=mtu,
+                ifInstT=interface_type,
+                mode=mode,
+                encap=encap,
+                encapScope="ctx" if encap_scope == "vrf" else encap_scope,
+                autostate=auto_state,
+                descr=description,
+                mac=mac,
+            ),
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class="l3extRsPathL3OutAtt")

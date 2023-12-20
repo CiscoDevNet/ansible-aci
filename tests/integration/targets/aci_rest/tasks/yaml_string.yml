@@ -50,7 +50,7 @@
   register: cm_verify_checkmode_tenant
 
 - name: Verify checkmode POST operation
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_tenant is changed
     - cm_add_tenant.proposed.fvTenant.attributes.name == "ansible_test"
@@ -66,7 +66,7 @@
   register: nm_add_tenant_again
 
 - name: Verify add_tenant
-  assert:
+  ansible.builtin.assert:
     that:
     - nm_add_tenant is changed
     - nm_add_tenant.imdata.0.fvTenant.attributes.annotation == "orchestrator:ansible"
@@ -96,7 +96,7 @@
   register: nm_add_tenant_descr_again
 
 - name: Verify add_tenant_descr
-  assert:
+  ansible.builtin.assert:
     that:
     - nm_add_tenant_descr is changed
     - nm_add_tenant_descr_again is not changed
@@ -107,7 +107,7 @@
   register: nm_add_tenant_again_no_descr
 
 - name: Verify add_tenant_again_no_descr
-  assert:
+  ansible.builtin.assert:
     that:
     - nm_add_tenant_again_no_descr is not changed
 
@@ -126,7 +126,7 @@
   register: nm_query_all_tenants
 
 - name: Verify query_all_tenants
-  assert:
+  ansible.builtin.assert:
     that:
     - nm_query_all_tenants is not changed
 
@@ -145,7 +145,7 @@
   register: nm_query_tenant
 
 - name: Verify query_tenant
-  assert:
+  ansible.builtin.assert:
     that:
     - nm_query_tenant is not changed
 
@@ -159,7 +159,7 @@
   register: nm_remove_tenant_again
 
 - name: Verify remove_tenant
-  assert:
+  ansible.builtin.assert:
     that:
     - nm_remove_tenant is changed
     - nm_remove_tenant_again is not changed
@@ -170,7 +170,7 @@
   register: nm_query_non_tenant
 
 - name: Verify query_non_tenant
-  assert:
+  ansible.builtin.assert:
     that:
     - nm_query_non_tenant is not changed
 

@@ -4,7 +4,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
@@ -64,7 +64,7 @@
   register: nm_add_filter_again
 
 - name: Verify add_filter
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_filter is changed
     - cm_add_filter_again is changed
@@ -100,7 +100,7 @@
   register: nm_add_filter_descr_again
 
 - name: Verify add_filter_descr
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_filter_descr is changed
     - cm_add_filter_descr_again is changed
@@ -118,7 +118,7 @@
   register: nm_add_filter_again_no_descr
 
 - name: Verify add_filter_again_no_descr
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_filter_again_no_descr is not changed
     - nm_add_filter_again_no_descr is not changed
@@ -142,7 +142,7 @@
   register: nm_query_all_filters
 
 - name: Verify query_all_filters
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_all_filters is not changed
     - nm_query_all_filters is not changed
@@ -166,7 +166,7 @@
   register: nm_query_filter
 
 - name: Verify query_filter
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_filter is not changed
     - nm_query_filter is not changed
@@ -192,7 +192,7 @@
   register: nm_remove_filter_again
 
 - name: Verify remove_filter
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_filter is changed
     - cm_remove_filter_again is changed
@@ -217,7 +217,7 @@
   register: nm_query_non_filter
 
 - name: Verify query_non_filter
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_non_filter is not changed
     - nm_query_non_filter is not changed

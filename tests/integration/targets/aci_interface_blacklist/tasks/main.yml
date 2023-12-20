@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -33,14 +33,14 @@
       fex_id: 123
 
 - name: Query system information
-  aci_system:
+  cisco.aci.aci_system:
     <<: *aci_info
     id: 1
     state: query
   register: version
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -53,11 +53,11 @@
     register: enable_and_clear
 
   - name: set regex
-    set_fact: 
+    ansible.builtin.set_fact: 
       regexp: '(topology/pod-)(\d)(/paths-)(\d*)(/pathep-\[eth)(.*)(])'
 
   - name: Save Target DNs
-    set_fact: 
+    ansible.builtin.set_fact: 
       tdn: "{{ item.fabricRsOosPath.attributes.tDn }}"
     loop: "{{ enable_and_clear.current }}"
     register: enabled_tdn
@@ -105,7 +105,7 @@
     register: query_leaf_int_enabled
 
   - name: Leaf - Verify that outofsvc_interface_blacklist is not present
-    assert:
+    ansible.builtin.assert:
       that:
       - query_leaf_int_enabled.current.0.fabricOOServicePol.children is not defined
 
@@ -118,7 +118,7 @@
     register: disable_leaf_int_check
 
   - name: Leaf - Verify that outofsvc_interface_blacklist is not created after check mode
-    assert:
+    ansible.builtin.assert:
       that:
       - disable_leaf_int_check.current.0.fabricOOServicePol.children is not defined
 
@@ -130,7 +130,7 @@
     register: disable_leaf_int
 
   - name: Leaf - Verify that outofsvc_interface_blacklist is created
-    assert:
+    ansible.builtin.assert:
       that:
       - disable_leaf_int.current|length == 1
       - disable_leaf_int.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/pathep-[eth1/33]"
@@ -145,7 +145,7 @@
     register: disable_leaf_int_again
 
   - name: Leaf - Verify that outofsvc_interface_blacklist remains created after disabling again
-    assert:
+    ansible.builtin.assert:
       that:
       - disable_leaf_int_again is not changed
       - disable_leaf_int_again.current|length == 1
@@ -160,7 +160,7 @@
     register: query_leaf_int_disabled
 
   - name: Leaf - Verify that outofsvc_interface_blacklist remains created after query
-    assert:
+    ansible.builtin.assert:
       that:
       - query_leaf_int_disabled is not changed
       - query_leaf_int_disabled.current|length == 1
@@ -176,7 +176,7 @@
     register: enable_leaf_int_check
 
   - name: Leaf - Verify that outofsvc_interface_blacklist remains created after check mode
-    assert:
+    ansible.builtin.assert:
       that:
       - enable_leaf_int_check.current|length == 1
       - enable_leaf_int_check.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/pathep-[eth1/33]"
@@ -190,7 +190,7 @@
     register: enable_leaf_int
 
   - name: Leaf - Verify that outofsvc_interface_blacklist is deleted
-    assert:
+    ansible.builtin.assert:
       that:
       - enable_leaf_int.current.0.fabricOOServicePol.children is not defined
 
@@ -202,7 +202,7 @@
     register: enable_leaf_int_again
 
   - name: Leaf - Verify that outofsvc_interface_blacklist remains deleted after enabling again
-    assert:
+    ansible.builtin.assert:
       that:
       - enable_leaf_int_again is not changed
       - enable_leaf_int_again.current.0.fabricOOServicePol.children is not defined
@@ -221,7 +221,7 @@
     register: query_spine_int_enabled
 
   - name: Spine - Verify that outofsvc_interface_blacklist is not present
-    assert:
+    ansible.builtin.assert:
       that:
       - query_spine_int_enabled.current.0.fabricOOServicePol.children is not defined
 
@@ -234,7 +234,7 @@
     register: disable_spine_int_check
 
   - name: Spine - Verify that outofsvc_interface_blacklist is not created after check mode
-    assert:
+    ansible.builtin.assert:
       that:
       - disable_spine_int_check.current.0.fabricOOServicePol.children is not defined
 
@@ -246,7 +246,7 @@
     register: disable_spine_int
 
   - name: Spine - Verify that outofsvc_interface_blacklist is created
-    assert:
+    ansible.builtin.assert:
       that:
       - disable_spine_int.current|length == 1
       - disable_spine_int.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1201/pathep-[eth1/33]"
@@ -260,7 +260,7 @@
     register: disable_spine_int_again
 
   - name: Spine - Verify that outofsvc_interface_blacklist remains created after disabling again
-    assert:
+    ansible.builtin.assert:
       that:
       - disable_spine_int_again is not changed
       - disable_spine_int_again.current|length == 1
@@ -275,7 +275,7 @@
     register: query_spine_int_disabled
 
   - name: Spine - Verify that outofsvc_interface_blacklist remains created after query
-    assert:
+    ansible.builtin.assert:
       that:
       - query_spine_int_disabled is not changed
       - query_spine_int_disabled.current|length == 1
@@ -291,7 +291,7 @@
     register: enable_spine_int_check
 
   - name: Spine - Verify that outofsvc_interface_blacklist remains created after check mode
-    assert:
+    ansible.builtin.assert:
       that:
       - enable_spine_int_check.current|length == 1
       - enable_spine_int_check.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1201/pathep-[eth1/33]"
@@ -305,7 +305,7 @@
     register: enable_spine_int
 
   - name: Spine - Verify that outofsvc_interface_blacklist is deleted
-    assert:
+    ansible.builtin.assert:
       that:
       - enable_spine_int.current.0.fabricOOServicePol.children is not defined
 
@@ -317,7 +317,7 @@
     register: enable_spine_int_again
 
   - name: Spine - Verify that outofsvc_interface_blacklist remains deleted after enabling again
-    assert:
+    ansible.builtin.assert:
       that:
       - enable_spine_int_again is not changed
       - enable_spine_int_again.current.0.fabricOOServicePol.children is not defined
@@ -336,7 +336,7 @@
     register: query_fex_int_enabled
 
   - name: Fex - Verify that outofsvc_interface_blacklist is not present
-    assert:
+    ansible.builtin.assert:
       that:
       - query_fex_int_enabled.current.0.fabricOOServicePol.children is not defined
 
@@ -349,7 +349,7 @@
     register: disable_fex_int_check
 
   - name: Fex - Verify that outofsvc_interface_blacklist is not created after check mode
-    assert:
+    ansible.builtin.assert:
       that:
       - disable_fex_int_check.current.0.fabricOOServicePol.children is not defined
 
@@ -361,7 +361,7 @@
     register: disable_fex_int
 
   - name: Fex - Verify that outofsvc_interface_blacklist is created
-    assert:
+    ansible.builtin.assert:
       that:
       - disable_fex_int.current|length == 1
       - disable_fex_int.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/extpaths-123/pathep-[eth1/33]"
@@ -375,7 +375,7 @@
     register: disable_fex_int_again
 
   - name: Fex - Verify that outofsvc_interface_blacklist remains created after disabling again
-    assert:
+    ansible.builtin.assert:
       that:
       - disable_fex_int_again is not changed
       - disable_fex_int_again.current|length == 1
@@ -390,7 +390,7 @@
     register: query_fex_int_disabled
 
   - name: Fex - Verify that outofsvc_interface_blacklist remains created after query
-    assert:
+    ansible.builtin.assert:
       that:
       - query_fex_int_disabled is not changed
       - query_fex_int_disabled.current|length == 1
@@ -406,7 +406,7 @@
     register: enable_fex_int_check
 
   - name: Fex - Verify that outofsvc_interface_blacklist remains created after check mode
-    assert:
+    ansible.builtin.assert:
       that:
       - enable_fex_int_check.current|length == 1
       - enable_fex_int_check.current.0.fabricRsOosPath.attributes.tDn == "topology/pod-1/paths-1101/extpaths-123/pathep-[eth1/33]"
@@ -420,7 +420,7 @@
     register: enable_fex_int
 
   - name: Fex - Verify that outofsvc_interface_blacklist is deleted
-    assert:
+    ansible.builtin.assert:
       that:
       - enable_fex_int.current.0.fabricOOServicePol.children is not defined
 
@@ -432,7 +432,7 @@
     register: enable_fex_int_again
 
   - name: Fex - Verify that outofsvc_interface_blacklist remains deleted after enabling again
-    assert:
+    ansible.builtin.assert:
       that:
       - enable_fex_int_again is not changed
       - enable_fex_int_again.current.0.fabricOOServicePol.children is not defined
@@ -462,7 +462,7 @@
     register: query_all_disabled
 
   - name: All - Verify that multiple outofsvc_interface_blacklist exist
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all_disabled is not changed
       - query_all_disabled.current | length == 3
@@ -492,7 +492,7 @@
     register: query_all_enabled
     
   - name: All - Verify that no outofsvc_interface_blacklist exist
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all_enabled is not changed
       - query_all_enabled.current == []

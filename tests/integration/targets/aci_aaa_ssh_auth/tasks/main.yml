@@ -5,12 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -64,7 +64,7 @@
   register: nm_add_ssh_key_again
 
 - name: Verify add SSH key
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_ssh_key is changed
     - nm_add_ssh_key is changed
@@ -92,7 +92,7 @@
   register: nm_query_all_ssh_keys
 
 - name: Verify query_all_ssh_keys
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_all_ssh_keys is not changed
     - nm_query_all_ssh_keys is not changed
@@ -111,7 +111,7 @@
   register: nm_query_ssh_key
 
 - name: Verify query_ssh_key
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_ssh_key is not changed
     - nm_query_ssh_key is not changed
@@ -148,7 +148,7 @@
   register: nm_remove_ssh_key_again
 
 - name: Verify remove_user
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_ssh_key is changed
     - nm_remove_ssh_key is changed

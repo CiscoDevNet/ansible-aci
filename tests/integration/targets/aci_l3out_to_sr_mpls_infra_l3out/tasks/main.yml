@@ -1,0 +1,238 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Akini Ross (@akinross) <akinross@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when:
+  - query_cloud.current == []  # This condition will execute only non-cloud sites
+  - version.current.0.topSystem.attributes.version is version('5', '>=')  # This condition will execute only for APIC version 5.x and above
+  block:  # block specifies execution of tasks within, based on conditions
+  
+  # CLEAN ENVIRONMENT
+  - name: Remove the ansible_tenant
+    cisco.aci.aci_tenant: &aci_tenant_absent
+      <<: *aci_info 
+      tenant: ansible_test
+      state: absent
+  
+  - name: Ensure infra sr mpls l3out does not exist
+    cisco.aci.aci_l3out: &aci_infra_sr_mpls_l3out_absent
+      <<: *aci_info
+      tenant: infra
+      name: ansible_infra_sr_mpls_l3out
+      domain: ansible_dom
+      vrf: overlay-1
+      mpls: "yes"
+      l3protocol: bgp
+      state: absent
+
+  - name: Add a new ansible_tenant
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_absent 
+      state: present
+
+  - name: Add a infra sr mpls l3out 
+    cisco.aci.aci_l3out:
+      <<: *aci_infra_sr_mpls_l3out_absent
+      state: present
+
+  - name: Add a sr mpls l3out
+    cisco.aci.aci_l3out:
+      <<: *aci_tenant_absent
+      name: ansible_sr_mpls_l3out
+      domain: ansible_dom
+      vrf: ansible_vrf
+      mpls: "yes"
+      state: present
+
+  - name: Add a new l3out to sr-mpls infra l3out (check_mode)
+    cisco.aci.aci_l3out_to_sr_mpls_infra_l3out: &l3out_to_infra_present
+      <<: *aci_tenant_absent
+      l3out: ansible_sr_mpls_l3out
+      description: ansible_sr_mpls_l3out_description
+      infra_l3out: ansible_infra_sr_mpls_l3out
+      external_epg: uni/tn-ansible_test/out-ansible_sr_mpls_l3out/instP-ansible_external_epg
+      outbound_route_map: uni/tn-ansible_test/prof-outbound_route_map
+      state: present
+    check_mode: true
+    register: cm_add_l3out_to_infra
+
+  - name: Add a new l3out to sr-mpls infra l3out
+    cisco.aci.aci_l3out_to_sr_mpls_infra_l3out:
+      <<: *l3out_to_infra_present
+    register: nm_add_l3out_to_infra
+  
+  - name: Add a new l3out to sr-mpls infra l3out again
+    cisco.aci.aci_l3out_to_sr_mpls_infra_l3out:
+      <<: *l3out_to_infra_present
+    register: nm_add_l3out_to_infra_again
+
+  - name: Assert creation of l3out to sr-mpls infra l3outs
+    ansible.builtin.assert:
+      that:
+        - cm_add_l3out_to_infra is changed
+        - cm_add_l3out_to_infra.previous == []
+        - cm_add_l3out_to_infra.proposed.l3extConsLbl.attributes.name == "ansible_infra_sr_mpls_l3out"
+        - cm_add_l3out_to_infra.proposed.l3extConsLbl.attributes.descr == "ansible_sr_mpls_l3out_description"
+        - cm_add_l3out_to_infra.proposed.l3extConsLbl.children.0.l3extRsLblToProfile.attributes.direction == "export"
+        - cm_add_l3out_to_infra.proposed.l3extConsLbl.children.0.l3extRsLblToProfile.attributes.tDn == "uni/tn-ansible_test/prof-outbound_route_map"
+        - cm_add_l3out_to_infra.proposed.l3extConsLbl.children.1.l3extRsLblToInstP.attributes.tDn == "uni/tn-ansible_test/out-ansible_sr_mpls_l3out/instP-ansible_external_epg"
+        - nm_add_l3out_to_infra is changed
+        - nm_add_l3out_to_infra.previous == []
+        - nm_add_l3out_to_infra.current.0.l3extConsLbl.attributes.name == "ansible_infra_sr_mpls_l3out"
+        - nm_add_l3out_to_infra.current.0.l3extConsLbl.attributes.descr == "ansible_sr_mpls_l3out_description"
+        - nm_add_l3out_to_infra.current.0.l3extConsLbl.children.1.l3extRsLblToProfile.attributes.direction == "export"
+        - nm_add_l3out_to_infra.current.0.l3extConsLbl.children.1.l3extRsLblToProfile.attributes.tDn == "uni/tn-ansible_test/prof-outbound_route_map"
+        - nm_add_l3out_to_infra.current.0.l3extConsLbl.children.0.l3extRsLblToInstP.attributes.tDn == "uni/tn-ansible_test/out-ansible_sr_mpls_l3out/instP-ansible_external_epg"
+        - nm_add_l3out_to_infra_again is not changed
+        - nm_add_l3out_to_infra_again.previous.0.l3extConsLbl.attributes.name == "ansible_infra_sr_mpls_l3out"
+        - nm_add_l3out_to_infra_again.previous.0.l3extConsLbl.attributes.descr == "ansible_sr_mpls_l3out_description"
+        - nm_add_l3out_to_infra_again.previous.0.l3extConsLbl.children.1.l3extRsLblToProfile.attributes.direction == "export"
+        - nm_add_l3out_to_infra_again.previous.0.l3extConsLbl.children.1.l3extRsLblToProfile.attributes.tDn == "uni/tn-ansible_test/prof-outbound_route_map"
+        - nm_add_l3out_to_infra_again.previous.0.l3extConsLbl.children.0.l3extRsLblToInstP.attributes.tDn == "uni/tn-ansible_test/out-ansible_sr_mpls_l3out/instP-ansible_external_epg"
+        - nm_add_l3out_to_infra_again.current.0.l3extConsLbl.attributes.name == "ansible_infra_sr_mpls_l3out"
+        - nm_add_l3out_to_infra_again.current.0.l3extConsLbl.attributes.descr == "ansible_sr_mpls_l3out_description"
+        - nm_add_l3out_to_infra_again.current.0.l3extConsLbl.children.1.l3extRsLblToProfile.attributes.direction == "export"
+        - nm_add_l3out_to_infra_again.current.0.l3extConsLbl.children.1.l3extRsLblToProfile.attributes.tDn == "uni/tn-ansible_test/prof-outbound_route_map"
+        - nm_add_l3out_to_infra_again.current.0.l3extConsLbl.children.0.l3extRsLblToInstP.attributes.tDn == "uni/tn-ansible_test/out-ansible_sr_mpls_l3out/instP-ansible_external_epg"
+
+  - name: Update a l3out to sr-mpls infra l3out
+    cisco.aci.aci_l3out_to_sr_mpls_infra_l3out: &l3out_to_infra_present_updated
+      <<: *l3out_to_infra_present
+      description: ansible_sr_mpls_l3out_description_updated
+      external_epg: uni/tn-ansible_test/out-ansible_sr_mpls_l3out/instP-ansible_external_epg_updated
+      outbound_route_map: uni/tn-ansible_test/prof-outbound_route_map_updated
+      inbound_route_map: uni/tn-ansible_test/prof-inbound_route_map
+    register: nm_update_l3out_to_infra
+
+  - name: Update a l3out to sr-mpls infra l3out to remove inbound route map
+    cisco.aci.aci_l3out_to_sr_mpls_infra_l3out:
+      <<: *l3out_to_infra_present_updated
+      inbound_route_map: ""
+    register: nm_update_l3out_to_infra_remove_inbound_route_map
+
+  - name: Assert updates of l3out to sr-mpls infra l3outs
+    ansible.builtin.assert:
+      that:
+        - nm_update_l3out_to_infra is changed
+        - nm_update_l3out_to_infra.previous.0.l3extConsLbl.attributes.name == "ansible_infra_sr_mpls_l3out"
+        - nm_update_l3out_to_infra.previous.0.l3extConsLbl.attributes.descr == "ansible_sr_mpls_l3out_description"
+        - nm_update_l3out_to_infra.previous.0.l3extConsLbl.children.1.l3extRsLblToProfile.attributes.direction == "export"
+        - nm_update_l3out_to_infra.previous.0.l3extConsLbl.children.1.l3extRsLblToProfile.attributes.tDn == "uni/tn-ansible_test/prof-outbound_route_map"
+        - nm_update_l3out_to_infra.previous.0.l3extConsLbl.children.0.l3extRsLblToInstP.attributes.tDn == "uni/tn-ansible_test/out-ansible_sr_mpls_l3out/instP-ansible_external_epg"
+        - nm_update_l3out_to_infra.previous.0.l3extConsLbl.children | length == 2
+        - nm_update_l3out_to_infra.current.0.l3extConsLbl.attributes.name == "ansible_infra_sr_mpls_l3out"
+        - nm_update_l3out_to_infra.current.0.l3extConsLbl.attributes.descr == "ansible_sr_mpls_l3out_description_updated"
+        - nm_update_l3out_to_infra.current.0.l3extConsLbl.children.1.l3extRsLblToProfile.attributes.direction == "import"
+        - nm_update_l3out_to_infra.current.0.l3extConsLbl.children.1.l3extRsLblToProfile.attributes.tDn == "uni/tn-ansible_test/prof-inbound_route_map"
+        - nm_update_l3out_to_infra.current.0.l3extConsLbl.children.2.l3extRsLblToProfile.attributes.direction == "export"
+        - nm_update_l3out_to_infra.current.0.l3extConsLbl.children.2.l3extRsLblToProfile.attributes.tDn == "uni/tn-ansible_test/prof-outbound_route_map_updated"
+        - nm_update_l3out_to_infra.current.0.l3extConsLbl.children.0.l3extRsLblToInstP.attributes.tDn == "uni/tn-ansible_test/out-ansible_sr_mpls_l3out/instP-ansible_external_epg_updated"
+        - nm_update_l3out_to_infra.current.0.l3extConsLbl.children | length == 3
+        - nm_update_l3out_to_infra_remove_inbound_route_map is changed
+        - nm_update_l3out_to_infra_remove_inbound_route_map.previous.0.l3extConsLbl.attributes.name == "ansible_infra_sr_mpls_l3out"
+        - nm_update_l3out_to_infra_remove_inbound_route_map.previous.0.l3extConsLbl.attributes.descr == "ansible_sr_mpls_l3out_description_updated"
+        - nm_update_l3out_to_infra_remove_inbound_route_map.previous.0.l3extConsLbl.children.1.l3extRsLblToProfile.attributes.direction == "import"
+        - nm_update_l3out_to_infra_remove_inbound_route_map.previous.0.l3extConsLbl.children.1.l3extRsLblToProfile.attributes.tDn == "uni/tn-ansible_test/prof-inbound_route_map"
+        - nm_update_l3out_to_infra_remove_inbound_route_map.previous.0.l3extConsLbl.children.2.l3extRsLblToProfile.attributes.direction == "export"
+        - nm_update_l3out_to_infra_remove_inbound_route_map.previous.0.l3extConsLbl.children.2.l3extRsLblToProfile.attributes.tDn == "uni/tn-ansible_test/prof-outbound_route_map_updated"
+        - nm_update_l3out_to_infra_remove_inbound_route_map.previous.0.l3extConsLbl.children.0.l3extRsLblToInstP.attributes.tDn == "uni/tn-ansible_test/out-ansible_sr_mpls_l3out/instP-ansible_external_epg_updated"
+        - nm_update_l3out_to_infra_remove_inbound_route_map.previous.0.l3extConsLbl.children | length == 3
+        - nm_update_l3out_to_infra_remove_inbound_route_map.current.0.l3extConsLbl.attributes.name == "ansible_infra_sr_mpls_l3out"
+        - nm_update_l3out_to_infra_remove_inbound_route_map.current.0.l3extConsLbl.attributes.descr == "ansible_sr_mpls_l3out_description_updated"
+        - nm_update_l3out_to_infra_remove_inbound_route_map.current.0.l3extConsLbl.children.1.l3extRsLblToProfile.attributes.direction == "export"
+        - nm_update_l3out_to_infra_remove_inbound_route_map.current.0.l3extConsLbl.children.1.l3extRsLblToProfile.attributes.tDn == "uni/tn-ansible_test/prof-outbound_route_map_updated"
+        - nm_update_l3out_to_infra_remove_inbound_route_map.current.0.l3extConsLbl.children.0.l3extRsLblToInstP.attributes.tDn == "uni/tn-ansible_test/out-ansible_sr_mpls_l3out/instP-ansible_external_epg_updated"
+        - nm_update_l3out_to_infra_remove_inbound_route_map.current.0.l3extConsLbl.children | length == 2
+
+  - name: Query a l3out to sr-mpls infra l3out
+    cisco.aci.aci_l3out_to_sr_mpls_infra_l3out:
+      <<: *l3out_to_infra_present
+      state: query
+    register: query_one
+
+  - name: Query all l3out to sr-mpls infra l3outs
+    cisco.aci.aci_l3out_to_sr_mpls_infra_l3out:
+      <<: *aci_info
+      state: query
+    register: query_all
+
+  - name: Assert l3out to sr-mpls infra l3outs queries
+    ansible.builtin.assert:
+      that:
+        - query_one is not changed
+        - query_one.current | length == 1
+        - query_one.current.0.l3extConsLbl.attributes.name == "ansible_infra_sr_mpls_l3out"
+        - query_one.current.0.l3extConsLbl.children | length == 4
+        - query_one.current.0.l3extConsLbl.children.0.bgpDomainIdAllocator.attributes.rn == "bgpdomainid"
+        - query_one.current.0.l3extConsLbl.children.1.l3extRsProvLblDef.attributes.tDn == "resPolCont/tn-[uni/tn-infra]/provlbl-ansible_infra_sr_mpls_l3out"
+        - query_one.current.0.l3extConsLbl.children.2.l3extRsLblToInstP.attributes.tDn == "uni/tn-ansible_test/out-ansible_sr_mpls_l3out/instP-ansible_external_epg_updated"
+        - query_one.current.0.l3extConsLbl.children.3.l3extRsLblToProfile.attributes.tDn == "uni/tn-ansible_test/prof-outbound_route_map_updated"
+        - query_all is not changed
+        - query_all.current | length >= 1
+  
+  - name: Delete a l3out to sr-mpls infra l3out (check_mode)
+    cisco.aci.aci_l3out_to_sr_mpls_infra_l3out: &l3out_to_infra_absent
+      <<: *l3out_to_infra_present
+      state: absent
+    check_mode: true
+    register: cm_delete_l3out_to_infra
+
+  - name: Delete a l3out to sr-mpls infra l3out
+    cisco.aci.aci_l3out_to_sr_mpls_infra_l3out:
+      <<: *l3out_to_infra_absent
+    register: nm_delete_l3out_to_infra
+  
+  - name: Delete a l3out to sr-mpls infra l3out again
+    cisco.aci.aci_l3out_to_sr_mpls_infra_l3out:
+      <<: *l3out_to_infra_absent
+    register: nm_delete_l3out_to_infra_again
+
+  - name: Assert deletion of l3out to sr-mpls infra l3outs
+    ansible.builtin.assert:
+      that:
+        - cm_delete_l3out_to_infra is changed
+        - cm_delete_l3out_to_infra.previous.0.l3extConsLbl.attributes.name == "ansible_infra_sr_mpls_l3out"
+        - cm_delete_l3out_to_infra.proposed == {}
+        - nm_delete_l3out_to_infra is changed
+        - nm_delete_l3out_to_infra.previous.0.l3extConsLbl.attributes.name == "ansible_infra_sr_mpls_l3out"
+        - nm_delete_l3out_to_infra.current == []
+        - nm_delete_l3out_to_infra_again is not changed
+        - nm_delete_l3out_to_infra_again.previous == []
+        - nm_delete_l3out_to_infra_again.current == []
+
+  # CLEAN ENVIRONMENT END OF TESTS
+  - name: Delete the ansible_tenant at the end of tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_absent
+  
+  - name: Delete a infra sr mpls l3out at the end of tests
+    cisco.aci.aci_l3out:
+      <<: *aci_infra_sr_mpls_l3out_absent

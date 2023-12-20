@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -20,14 +20,14 @@
       output_level: debug
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   # CLEAN ENVIRONMENT
   - name: Remove policy port security
-    aci_interface_policy_port_security:
+    cisco.aci.aci_interface_policy_port_security:
       <<: *aci_info
       port_security: '{{ item }}'
       state: absent
@@ -38,7 +38,7 @@
 
   # ADD
   - name: Add a port security interface policy - check mode
-    aci_interface_policy_port_security:
+    cisco.aci.aci_interface_policy_port_security:
       <<: *aci_info
       port_security: security1
       description: security 1
@@ -49,7 +49,7 @@
     register: port_security1_cm
 
   - name: Add a port security interface policy - normal mode
-    aci_interface_policy_port_security:
+    cisco.aci.aci_interface_policy_port_security:
       <<: *aci_info
       port_security: security1
       description: security 1
@@ -59,7 +59,7 @@
     register: port_security1_nm
 
   - name: Add a port security interface policy again - normal mode
-    aci_interface_policy_port_security:
+    cisco.aci.aci_interface_policy_port_security:
       <<: *aci_info
       port_security: security1
       description: security 1
@@ -69,7 +69,7 @@
     register: port_security1_nm_again
 
   - name: Add a port security interface policy - normal mode
-    aci_interface_policy_port_security:
+    cisco.aci.aci_interface_policy_port_security:
       <<: *aci_info
       port_security: security2
       description: security 2
@@ -80,7 +80,7 @@
     register: port_security1_nm_error_timeout
 
   - name: Add a port security interface policy - normal mode
-    aci_interface_policy_port_security:
+    cisco.aci.aci_interface_policy_port_security:
       <<: *aci_info
       port_security: security3
       description: security 3
@@ -91,7 +91,7 @@
     register: port_security1_nm_error_max
 
   - name: Add a port security interface policy again for security 3- normal mode
-    aci_interface_policy_port_security:
+    cisco.aci.aci_interface_policy_port_security:
       <<: *aci_info
       port_security: security3
       description: security 3
@@ -102,7 +102,7 @@
     register: port_security1_nm_with_no_error
 
   - name: Verify present cases
-    assert:
+    ansible.builtin.assert:
       that:
       - port_security1_cm is changed
       - port_security1_nm is changed
@@ -123,20 +123,20 @@
 
   # QUERY
   - name: Query a port security interface policy - normal mode
-    aci_interface_policy_port_security:
+    cisco.aci.aci_interface_policy_port_security:
       <<: *aci_info
       port_security: security1
       state: query
     register: port_security1_query
 
   - name: Query all port security interface policies - normal mode
-    aci_interface_policy_port_security:
+    cisco.aci.aci_interface_policy_port_security:
       <<: *aci_info
       state: query
     register: port_all_query
 
   - name: Verify query cases
-    assert:
+    ansible.builtin.assert:
       that:
       - port_security1_query is not changed
       - port_all_query is not changed
@@ -149,14 +149,14 @@
 
   # REMOVE
   - name: Remove a port security interface policy - normal mode
-    aci_interface_policy_port_security:
+    cisco.aci.aci_interface_policy_port_security:
       <<: *aci_info
       port_security: security1
       state: absent
     register: port_security1_remove
 
   - name: Verify remove cases
-    assert:
+    ansible.builtin.assert:
       that:
       - port_security1_remove is changed
       - port_security1_remove.previous.0.l2PortSecurityPol.attributes.dn == "uni/infra/portsecurityP-security1"
@@ -167,7 +167,7 @@
 
   # CLEAN END
   - name: Remove all policy port securities
-    aci_interface_policy_port_security:
+    cisco.aci.aci_interface_policy_port_security:
       <<: *aci_info
       port_security: '{{ item }}'
       state: absent

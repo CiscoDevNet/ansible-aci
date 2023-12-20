@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # GET Credentials from the inventory
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -52,14 +52,14 @@
   register: add_fabric_leaf_policy_group
 
 - name: Verify that ansible_fabric_leaf_policy_group has been created with correct attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.attributes.dn == "uni/fabric/funcprof/lenodepgrp-ansible_fabric_leaf_policy_group"
     - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.attributes.name == "ansible_fabric_leaf_policy_group"
     - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.attributes.annotation == 'orchestrator:ansible'
 
 - name: Verify that ansible_fabric_leaf_policy_group children have correct attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.0.fabricRsNodeCfgSrv.attributes.tDn == "uni/fabric/analytics/cluster-ansible_test/cfgsrv-ansible_test"
     - add_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
@@ -78,14 +78,14 @@
   register: add_fabric_leaf_policy_group_again
 
 - name: Verify that ansible_fabric_leaf_policy_group has not been changed
-  assert:
+  ansible.builtin.assert:
     that:
     - add_fabric_leaf_policy_group_again is not changed
     - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.attributes.dn == "uni/fabric/funcprof/lenodepgrp-ansible_fabric_leaf_policy_group"
     - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.attributes.name == "ansible_fabric_leaf_policy_group"
 
 - name: Verify that ansible_fabric_leaf_policy_group children are still correct
-  assert:
+  ansible.builtin.assert:
     that:
     - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.0.fabricRsNodeCfgSrv.attributes.tDn == "uni/fabric/analytics/cluster-ansible_test/cfgsrv-ansible_test"
     - add_fabric_leaf_policy_group_again.current.0.fabricLeNodePGrp.children.1.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
@@ -112,13 +112,13 @@
   register: add_fabric_spine_policy_group
 
 - name: Verify that ansible_fabric_spine_policy_group has been created with correct attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - add_fabric_spine_policy_group.current.0.fabricSpNodePGrp.attributes.dn == "uni/fabric/funcprof/spnodepgrp-ansible_fabric_spine_policy_group"
     - add_fabric_spine_policy_group.current.0.fabricSpNodePGrp.attributes.name == "ansible_fabric_spine_policy_group"
 
 - name: Verify that ansible_fabric_spine_policy_group children have correct attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - add_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.0.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
     - add_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == ""
@@ -136,14 +136,14 @@
   register: add_fabric_spine_policy_group_again
 
 - name: Verify that ansible_fabric_spine_policy_group has not been changed
-  assert:
+  ansible.builtin.assert:
     that:
     - add_fabric_spine_policy_group_again is not changed
     - add_fabric_spine_policy_group_again.current.0.fabricSpNodePGrp.attributes.dn == "uni/fabric/funcprof/spnodepgrp-ansible_fabric_spine_policy_group"
     - add_fabric_spine_policy_group_again.current.0.fabricSpNodePGrp.attributes.name == "ansible_fabric_spine_policy_group"
 
 - name: Verify that ansible_fabric_spine_policy_group children are still correct
-  assert:
+  ansible.builtin.assert:
     that:
     - add_fabric_spine_policy_group_again.current.0.fabricSpNodePGrp.children.0.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
     - add_fabric_spine_policy_group_again.current.0.fabricSpNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == ""
@@ -166,14 +166,14 @@
   register: update_fabric_leaf_policy_group
 
 - name: Verify ansible_fabric_leaf_policy_group is changed
-  assert:
+  ansible.builtin.assert:
     that:
     - update_fabric_leaf_policy_group is changed
     - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.attributes.dn == "uni/fabric/funcprof/lenodepgrp-ansible_fabric_leaf_policy_group"
     - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.attributes.name == "ansible_fabric_leaf_policy_group"
 
 - name: Verify ansible_fabric_leaf_policy_group children are updated
-  assert:
+  ansible.builtin.assert:
     that:
     - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.0.fabricRsNodeCfgSrv.attributes.tDn == "uni/fabric/analytics/cluster-ansible_test/cfgsrv-ansible_test"
     - update_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
@@ -197,14 +197,14 @@
   register: update_fabric_spine_policy_group
 
 - name: Verify ansible_fabric_spine_policy_group is changed
-  assert:
+  ansible.builtin.assert:
     that:
     - update_fabric_spine_policy_group is changed
     - update_fabric_spine_policy_group.current.0.fabricSpNodePGrp.attributes.dn == "uni/fabric/funcprof/spnodepgrp-ansible_fabric_spine_policy_group"
     - update_fabric_spine_policy_group.current.0.fabricSpNodePGrp.attributes.name == "ansible_fabric_spine_policy_group"
 
 - name: Verify ansible_fabric_spine_policy_group children are updated
-  assert:
+  ansible.builtin.assert:
     that:
     - update_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.0.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
     - update_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
@@ -225,14 +225,14 @@
   register: query_fabric_leaf_policy_group
 
 - name: Verify attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - query_fabric_leaf_policy_group is not changed
     - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.attributes.dn == "uni/fabric/funcprof/lenodepgrp-ansible_fabric_leaf_policy_group"
     - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.attributes.name == "ansible_fabric_leaf_policy_group"
 
 - name: Verify children
-  assert:
+  ansible.builtin.assert:
     that:
     - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.0.fabricRsNodeCfgSrv.attributes.tDn == "uni/fabric/analytics/cluster-ansible_test/cfgsrv-ansible_test"
     - query_fabric_leaf_policy_group.current.0.fabricLeNodePGrp.children.1.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
@@ -252,7 +252,7 @@
   register: query_fabric_leaf_policy_group_all
 
 - name: Verify query all is idempotent
-  assert:
+  ansible.builtin.assert:
     that:
     - query_fabric_leaf_policy_group_all is not changed
 
@@ -266,14 +266,14 @@
   register: query_fabric_spine_policy_group
 
 - name: Verify attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - query_fabric_spine_policy_group is not changed
     - query_fabric_spine_policy_group.current.0.fabricSpNodePGrp.attributes.dn == "uni/fabric/funcprof/spnodepgrp-ansible_fabric_spine_policy_group"
     - query_fabric_spine_policy_group.current.0.fabricSpNodePGrp.attributes.name == "ansible_fabric_spine_policy_group"
 
 - name: Verify children
-  assert:
+  ansible.builtin.assert:
     that:
     - query_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.0.fabricRsCallhomeInvPol.attributes.tnCallhomeInvPName == "default"
     - query_fabric_spine_policy_group.current.0.fabricSpNodePGrp.children.1.fabricRsTwampResponderPol.attributes.tnTwampResponderPolName == "default"
@@ -292,7 +292,7 @@
   register: query_fabric_spine_policy_group_all
 
 - name: Verify query all is idempotent
-  assert:
+  ansible.builtin.assert:
     that:
     - query_fabric_spine_policy_group_all is not changed
 
@@ -306,7 +306,7 @@
   register: delete_fabric_leaf_policy_group
 
 - name: Verify Fabric Leaf Policy Group deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_fabric_leaf_policy_group is changed
     - delete_fabric_leaf_policy_group.current == []
@@ -330,7 +330,7 @@
   register: delete_fabric_spine_policy_group
 
 - name: Verify Fabric Spine Policy Group deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_fabric_spine_policy_group is changed
     - delete_fabric_spine_policy_group.current == []

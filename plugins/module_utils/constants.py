@@ -88,3 +88,87 @@ MATCH_NOTIFY_CONDITION_MAPPING = dict(
 MATCH_SMU_OPERATION_MAPPING = dict(smu_install="smuInstall", smu_uninstall="smuUninstall")
 
 MATCH_SMU_OPERATION_FLAGS_MAPPING = dict(smu_reload_immediate="smuReloadImmediate", smu_reload_skip="smuReloadSkip")
+
+MATCH_BEST_PATH_CONTROL_MAPPING = dict(enable="asPathMultipathRelax", disable="")
+
+MATCH_GRACEFUL_RESTART_CONTROLS_MAPPING = dict(helper="helper", complete="")
+
+EP_LOOP_PROTECTION_ACTION_MAPPING = {"bd": "bd-learn-disable", "port": "port-disable"}
+
+FABRIC_POD_SELECTOR_TYPE_MAPPING = dict(all="ALL", range="range")
+
+TLS_MAPPING = {"tls_v1.0": "TLSv1", "tls_v1.1": "TLSv1.1", "tls_v1.2": "TLSv1.2"}
+
+ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING = dict(
+    spine=dict(
+        class_name="infraSpineAccNodePGrp",
+        rn="infra/funcprof/spaccnodepgrp-{0}",
+        copp_pre_filter_policy=dict(class_name="infraRsIaclSpineProfile", tn_name="tnIaclSpineProfileName"),
+        bfd_ipv4_policy=dict(class_name="infraRsSpineBfdIpv4InstPol", tn_name="tnBfdIpv4InstPolName"),
+        bfd_ipv6_policy=dict(class_name="infraRsSpineBfdIpv6InstPol", tn_name="tnBfdIpv6InstPolName"),
+        copp_policy=dict(class_name="infraRsSpineCoppProfile", tn_name="tnCoppSpineProfileName"),
+        cdp_policy=dict(class_name="infraRsSpinePGrpToCdpIfPol", tn_name="tnCdpIfPolName"),
+        lldp_policy=dict(class_name="infraRsSpinePGrpToLldpIfPol", tn_name="tnLldpIfPolName"),
+        usb_configuration_policy=dict(class_name="infraRsSpineTopoctrlUsbConfigProfilePol", tn_name="tnTopoctrlUsbConfigProfilePolName"),
+    ),
+    leaf=dict(
+        class_name="infraAccNodePGrp",
+        rn="infra/funcprof/accnodepgrp-{0}",
+        copp_pre_filter_policy=dict(class_name="infraRsIaclLeafProfile", tn_name="tnIaclLeafProfileName"),
+        bfd_ipv4_policy=dict(class_name="infraRsBfdIpv4InstPol", tn_name="tnBfdIpv4InstPolName"),
+        bfd_ipv6_policy=dict(class_name="infraRsBfdIpv6InstPol", tn_name="tnBfdIpv6InstPolName"),
+        copp_policy=dict(class_name="infraRsLeafCoppProfile", tn_name="tnCoppLeafProfileName"),
+        cdp_policy=dict(class_name="infraRsLeafPGrpToCdpIfPol", tn_name="tnCdpIfPolName"),
+        lldp_policy=dict(class_name="infraRsLeafPGrpToLldpIfPol", tn_name="tnLldpIfPolName"),
+        usb_configuration_policy=dict(class_name="infraRsLeafTopoctrlUsbConfigProfilePol", tn_name="tnTopoctrlUsbConfigProfilePolName"),
+    ),
+)
+
+PIM_SETTING_CONTROL_STATE_MAPPING = {"fast": "fast-conv", "strict": "strict-rfc-compliant"}
+
+ACI_CLASS_MAPPING = dict(
+    consumer={
+        "class": "fvRsCons",
+        "rn": "rscons-",
+        "name": "tnVzBrCPName",
+    },
+    provider={
+        "class": "fvRsProv",
+        "rn": "rsprov-",
+        "name": "tnVzBrCPName",
+    },
+    taboo={"class": "fvRsProtBy", "rn": "rsprotBy-", "name": "tnVzTabooName"},
+    interface={
+        "class": "fvRsConsIf",
+        "rn": "rsconsIf-",
+        "name": "tnVzCPIfName",
+    },
+    intra_epg={
+        "class": "fvRsIntraEpg",
+        "rn": "rsintraEpg-",
+        "name": "tnVzBrCPName",
+    },
+)
+
+PROVIDER_MATCH_MAPPING = dict(
+    all="All",
+    at_least_one="AtleastOne",
+    at_most_one="AtmostOne",
+    none="None",
+)
+
+CONTRACT_LABEL_MAPPING = dict(
+    consumer="vzConsLbl",
+    provider="vzProvLbl",
+)
+
+SUBJ_LABEL_MAPPING = dict(
+    consumer="vzConsSubjLbl",
+    provider="vzProvSubjLbl",
+)
+
+MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING = {"ospf_type_1": "ospf-type1", "ospf_type_2": "ospf-type2", "": ""}
+
+MATCH_EIGRP_INTERFACE_POLICY_DELAY_UNIT_MAPPING = dict(picoseconds="pico", tens_of_microseconds="tens-of-micro")
+
+MATCH_EIGRP_INTERFACE_POLICY_CONTROL_STATE_MAPPING = dict(bfd="bfd", nexthop_self="nh-self", passive="passive", split_horizon="split-horizon")

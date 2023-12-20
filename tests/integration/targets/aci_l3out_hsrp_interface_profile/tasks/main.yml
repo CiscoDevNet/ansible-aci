@@ -1,0 +1,152 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Shreyas Srish (@shrsr)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove test tenant before we kickoff
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
+    tenant: ansible_test
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # SETUP ENVIRONMENT
+  - name: Create domain
+    cisco.aci.aci_domain:
+      <<: *aci_info
+      domain: l3outintftest
+      domain_type: l3dom
+      state: present
+
+  - name: Create tenant
+    cisco.aci.aci_tenant: &tenant_present
+      <<: *tenant_absent
+      state: present
+
+  - name: Configure VRF
+    cisco.aci.aci_vrf: &vrf_present
+      <<: *tenant_present
+      vrf: l3outintftest
+
+  - name: Create L3Out
+    cisco.aci.aci_l3out:
+      <<: *vrf_present
+      l3out: l3outintftest
+      domain: l3outintftest
+      route_control: export
+
+  - name: Create node profile
+    cisco.aci.aci_l3out_logical_node_profile: &np_present
+      <<: *tenant_present
+      l3out: l3outintftest
+      node_profile: node1
+
+  - name: Create interface profile
+    cisco.aci.aci_l3out_logical_interface_profile: &intf_present
+      <<: *np_present
+      interface_profile: intf1
+
+  - name: Add a new hsrp interface profile (check mode)
+    cisco.aci.aci_l3out_hsrp_interface_profile: &hsrp_present
+      <<: *intf_present
+      version: v1
+      state: present
+    check_mode: true
+    register: cm_add_hsrp
+
+  - name: Add a new hsrp interface profile (normal mode)
+    cisco.aci.aci_l3out_hsrp_interface_profile: *hsrp_present
+    register: nm_add_hsrp
+
+  - name: Verify add hsrp
+    ansible.builtin.assert:
+      that:
+      - cm_add_hsrp is changed
+      - nm_add_hsrp is changed
+      - cm_add_hsrp.proposed.hsrpIfP.attributes.version == "v1"
+      - cm_add_hsrp.previous == nm_add_hsrp.previous == []
+      - nm_add_hsrp.current.0.hsrpIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-node1/lifp-intf1/hsrpIfP"
+      - nm_add_hsrp.current.0.hsrpIfP.attributes.version == "v1"
+      
+  - name: Add the hsrp interface profile again to check idempotency
+    cisco.aci.aci_l3out_hsrp_interface_profile: *hsrp_present
+    register: nm_add_hsrp_again
+
+  - name: Verify idempotency
+    ansible.builtin.assert:
+      that:
+      - nm_add_hsrp_again is not changed
+
+  - name: Update the hsrp interface_profile
+    cisco.aci.aci_l3out_hsrp_interface_profile: &hsrp_update
+      <<: *hsrp_present
+      hsrp_policy: default
+      version: v2
+    register: nm_hsrp_update
+
+  - name: Verify update hsrp
+    ansible.builtin.assert:
+      that:
+      - nm_hsrp_update is changed
+      - nm_hsrp_update.current.0.hsrpIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-node1/lifp-intf1/hsrpIfP"
+      - nm_hsrp_update.current.0.hsrpIfP.attributes.version == "v2"
+      - nm_hsrp_update.current.0.hsrpIfP.children.0.hsrpRsIfPol.attributes.tnHsrpIfPolName == "default"
+
+  - name: Query the hsrp interface profile
+    cisco.aci.aci_l3out_hsrp_interface_profile:
+      <<: *hsrp_update
+      state: query
+    register: query_hsrp
+
+  - name: Verify query hsrp
+    ansible.builtin.assert:
+      that:
+      - query_hsrp is not changed
+      - query_hsrp.current.0.hsrpIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-node1/lifp-intf1/hsrpIfP"
+      - query_hsrp.current.0.hsrpIfP.attributes.version == "v2"
+      - query_hsrp.current.0.hsrpIfP.children.0.hsrpRsIfPol.attributes.tnHsrpIfPolName == "default"
+
+  - name: Remove the hsrp interface profile
+    cisco.aci.aci_l3out_hsrp_interface_profile:
+      <<: *hsrp_update
+      state: absent
+    register: cm_remove_hsrp
+    check_mode: true
+
+  - name: Remove the hsrp interface profile
+    cisco.aci.aci_l3out_hsrp_interface_profile:
+      <<: *hsrp_update
+      state: absent
+    register: remove_hsrp
+
+  - name: Remove the hsrp interface profile again
+    cisco.aci.aci_l3out_hsrp_interface_profile:
+      <<: *hsrp_update
+      state: absent
+    register: remove_hsrp_again
+
+  - name: Verify remove_hsrp
+    ansible.builtin.assert:
+      that:
+      - cm_remove_hsrp is changed
+      - cm_remove_hsrp.proposed == {}
+      - remove_hsrp is changed
+      - remove_hsrp.current == []
+      - remove_hsrp_again is not changed

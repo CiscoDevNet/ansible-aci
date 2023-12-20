@@ -1,0 +1,184 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Shreyas Srish (@shrsr)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove test tenant before we kickoff
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
+    tenant: ansible_test
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # SETUP ENVIRONMENT
+  - name: Create tenant
+    cisco.aci.aci_tenant: &tenant_present
+      <<: *tenant_absent
+      state: present
+
+  - name: Add a HSRP interface policy in check mode
+    cisco.aci.aci_interface_policy_hsrp: &hsrp_present
+      <<: *tenant_present
+      hsrp: hsrp1
+      controls: ["bia"]
+      reload_delay: 2
+      delay: 2
+      state: present
+    check_mode: true
+    register: cm_add_hsrp
+
+  - name: Add a HSRP interface policy in normal mode
+    cisco.aci.aci_interface_policy_hsrp: *hsrp_present
+    register: nm_add_hsrp
+
+  - name: Verify add hsrp
+    ansible.builtin.assert:
+      that:
+      - cm_add_hsrp is changed
+      - nm_add_hsrp is changed
+      - cm_add_hsrp.previous == nm_add_hsrp.previous == []
+      - cm_add_hsrp.proposed.hsrpIfPol.attributes.ctrl == "bia"
+      - cm_add_hsrp.proposed.hsrpIfPol.attributes.delay == "2"
+      - cm_add_hsrp.proposed.hsrpIfPol.attributes.reloadDelay == "2"
+      - cm_add_hsrp.proposed.hsrpIfPol.attributes.name == "hsrp1"
+      - nm_add_hsrp.current.0.hsrpIfPol.attributes.ctrl == "bia"
+      - nm_add_hsrp.current.0.hsrpIfPol.attributes.delay == "2"
+      - nm_add_hsrp.current.0.hsrpIfPol.attributes.reloadDelay == "2"
+      - nm_add_hsrp.current.0.hsrpIfPol.attributes.name == "hsrp1"
+      - nm_add_hsrp.current.0.hsrpIfPol.attributes.dn == "uni/tn-ansible_test/hsrpIfPol-hsrp1"
+
+  - name: Add the HSRP interface policy again to check idempotency
+    cisco.aci.aci_interface_policy_hsrp: *hsrp_present
+    register: nm_add_hsrp_again
+
+  - name: Verify add_hsrp again
+    ansible.builtin.assert:
+      that:
+      - nm_add_hsrp_again is not changed
+
+  - name: Update hsrp interface policy
+    cisco.aci.aci_interface_policy_hsrp: &hsrp_update
+      <<: *hsrp_present
+      delay: 3
+    register: nm_hsrp_update
+
+  - name: Verify update hsrp
+    ansible.builtin.assert:
+      that:
+      - nm_hsrp_update is changed
+      - nm_hsrp_update.current.0.hsrpIfPol.attributes.delay == "3"
+      - nm_hsrp_update.current.0.hsrpIfPol.attributes.reloadDelay == "2"
+      - nm_hsrp_update.current.0.hsrpIfPol.attributes.name == "hsrp1"
+      - nm_hsrp_update.current.0.hsrpIfPol.attributes.dn == "uni/tn-ansible_test/hsrpIfPol-hsrp1"
+
+  - name: Update hsrp interface policy to check for errors in delay
+    cisco.aci.aci_interface_policy_hsrp:
+      <<: *hsrp_update
+      delay: 10001
+    register: nm_hsrp_error1
+    ignore_errors: true
+
+  - name: Update hsrp interface policy to check for errors in reload delay
+    cisco.aci.aci_interface_policy_hsrp:
+      <<: *hsrp_update
+      reload_delay: 10001
+    register: nm_hsrp_error2
+    ignore_errors: true
+
+  - name: Verify errors
+    ansible.builtin.assert:
+      that:
+      - nm_hsrp_error1.msg == "Parameter 'delay' is only valid in range between 1 and 10000."
+      - nm_hsrp_error2.msg == "Parameter 'reload_delay' is only valid in range between 1 and 10000."
+
+  - name: Add another HSRP interface policy in check mode
+    cisco.aci.aci_interface_policy_hsrp: &hsrp2
+      <<: *tenant_present
+      hsrp: hsrp2
+      controls: ["bfd"]
+      state: present
+    register: add_hsrp2
+
+  - name: Query hsrp interface policy 1
+    cisco.aci.aci_interface_policy_hsrp:
+      <<: *hsrp_update
+      state: query
+    register: query_hsrp
+
+  - name: Query all hsrp interface policies under the tenant
+    cisco.aci.aci_interface_policy_hsrp:
+      <<: *tenant_present
+      state: query
+    register: query_all_tenant
+
+  - name: Query all hsrp interface policies
+    cisco.aci.aci_interface_policy_hsrp:
+      <<: *tenant_present
+      state: query
+    register: query_all
+
+  - name: Verify query hsrp
+    ansible.builtin.assert:
+      that:
+      - query_hsrp is not changed
+      - query_all_tenant is not changed
+      - query_all is not changed
+      - query_hsrp.current.0.hsrpIfPol.attributes.delay == "3"
+      - query_hsrp.current.0.hsrpIfPol.attributes.reloadDelay == "2"
+      - query_hsrp.current.0.hsrpIfPol.attributes.name == "hsrp1"
+      - query_hsrp.current.0.hsrpIfPol.attributes.dn == "uni/tn-ansible_test/hsrpIfPol-hsrp1"
+      - query_all_tenant.current.0.fvTenant.children | length == 2
+      - query_all.current.0.fvTenant.children | length >= 2
+
+  - name: Remove hsrp interface policy 1 in check mode
+    cisco.aci.aci_interface_policy_hsrp:
+      <<: *hsrp_update
+      state: absent
+    check_mode: true
+    register: cm_remove_hsrp
+      
+  - name: Remove hsrp interface policy 1
+    cisco.aci.aci_interface_policy_hsrp:
+      <<: *hsrp_update
+      state: absent
+    register: remove_hsrp
+
+  - name: Remove hsrp interface policy 2
+    cisco.aci.aci_interface_policy_hsrp:
+      <<: *hsrp2
+      state: absent
+    register: remove_hsrp2
+
+  - name: Remove hsrp interface policy again
+    cisco.aci.aci_interface_policy_hsrp:
+      <<: *hsrp2
+      state: absent
+    register: remove_hsrp2_again
+
+  - name: Verify remove hsrp
+    ansible.builtin.assert:
+      that:
+      - cm_remove_hsrp is changed
+      - cm_remove_hsrp.proposed == {}
+      - remove_hsrp is changed
+      - remove_hsrp2 is changed
+      - remove_hsrp.current == []
+      - remove_hsrp2.current == []
+      - remove_hsrp2_again is not changed

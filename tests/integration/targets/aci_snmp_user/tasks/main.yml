@@ -1,16 +1,16 @@
 # Test code for the ACI modules
 # Copyright: (c) 2021, Tim Cragg (@timcragg)
+# Copyright: (c) 2023, Akini Ross (@akinross)
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
-# GET Credentials from the inventory
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -18,26 +18,25 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_snmp_policy if it already exists
-  aci_snmp_policy:
+  cisco.aci.aci_snmp_policy:
     <<: *aci_info
     name: ansible_snmp_policy
     state: absent
 
-# ADD snmp policy
-- name: Add snmp policy
-  aci_snmp_policy:
+# CREATE SNMP USER
+- name: Create snmp policy
+  cisco.aci.aci_snmp_policy:
     <<: *aci_info
     name: ansible_snmp_policy
     admin_state: enabled
     state: present
 
-# ADD snmp user
-- name: Add snmp user
-  aci_snmp_user:
+- name: Create a snmp user (checkmode)
+  cisco.aci.aci_snmp_user: &snmp_user
     <<: *aci_info
     policy: ansible_snmp_policy
     name: ansible_snmp_user
@@ -46,66 +45,223 @@
     privacy_type: aes-128
     privacy_key: "priv-test-key"
     state: present
-  register: add_snmp_user
+  register: cm_create_snmp_user
+  check_mode: true
 
-- name: Verify that ansible_snmp_community has been created with correct attributes
-  assert:
+- name: Create a snmp user
+  cisco.aci.aci_snmp_user:
+    <<: *snmp_user
+  register: nm_create_snmp_user
+
+- name: Create a snmp user again without secrets
+  cisco.aci.aci_snmp_user:
+    <<: *snmp_user
+    auth_key: "{{ fake_var | default(omit) }}"
+    privacy_key: "{{ fake_var | default(omit) }}"
+  register: nm_create_snmp_user_again
+
+- name: Verify create of ansible_snmp_user
+  ansible.builtin.assert:
     that:
-    - add_snmp_user.current.0.snmpUserP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/user-ansible_snmp_user"
-    - add_snmp_user.current.0.snmpUserP.attributes.name == "ansible_snmp_user"
-    - add_snmp_user.current.0.snmpUserP.attributes.authType == "hmac-sha1-96"
-    - add_snmp_user.current.0.snmpUserP.attributes.privType == "aes-128"
-    - add_snmp_user.current.0.snmpUserP.attributes.annotation == 'orchestrator:ansible'
+    - cm_create_snmp_user is changed
+    - cm_create_snmp_user.proposed.snmpUserP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/user-ansible_snmp_user"
+    - cm_create_snmp_user.proposed.snmpUserP.attributes.name == "ansible_snmp_user"
+    - cm_create_snmp_user.proposed.snmpUserP.attributes.authType == "hmac-sha1-96"
+    - cm_create_snmp_user.proposed.snmpUserP.attributes.privType == "aes-128"
+    - cm_create_snmp_user.proposed.snmpUserP.attributes.annotation == 'orchestrator:ansible'
+    - cm_create_snmp_user.previous == []
+    - nm_create_snmp_user is changed
+    - nm_create_snmp_user.current.0.snmpUserP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/user-ansible_snmp_user"
+    - nm_create_snmp_user.current.0.snmpUserP.attributes.name == "ansible_snmp_user"
+    - nm_create_snmp_user.current.0.snmpUserP.attributes.authType == "hmac-sha1-96"
+    - nm_create_snmp_user.current.0.snmpUserP.attributes.privType == "aes-128"
+    - nm_create_snmp_user.current.0.snmpUserP.attributes.annotation == 'orchestrator:ansible'
+    - nm_create_snmp_user.current.0.snmpUserP.attributes.descr == ""
+    - nm_create_snmp_user.previous == []
+    - nm_create_snmp_user_again is not changed
+    - nm_create_snmp_user_again.previous.0.snmpUserP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/user-ansible_snmp_user"
+    - nm_create_snmp_user_again.previous.0.snmpUserP.attributes.name == "ansible_snmp_user"
+    - nm_create_snmp_user_again.previous.0.snmpUserP.attributes.authType == "hmac-sha1-96"
+    - nm_create_snmp_user_again.previous.0.snmpUserP.attributes.privType == "aes-128"
+    - nm_create_snmp_user_again.previous.0.snmpUserP.attributes.annotation == 'orchestrator:ansible'
+    - nm_create_snmp_user_again.previous.0.snmpUserP.attributes.descr == ""
+    - nm_create_snmp_user_again.current.0.snmpUserP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/user-ansible_snmp_user"
+    - nm_create_snmp_user_again.current.0.snmpUserP.attributes.name == "ansible_snmp_user"
+    - nm_create_snmp_user_again.current.0.snmpUserP.attributes.authType == "hmac-sha1-96"
+    - nm_create_snmp_user_again.current.0.snmpUserP.attributes.privType == "aes-128"
+    - nm_create_snmp_user_again.current.0.snmpUserP.attributes.annotation == 'orchestrator:ansible'
+    - nm_create_snmp_user_again.current.0.snmpUserP.attributes.descr == ""
 
-# QUERY snmp user
-- name: Query snmp user
-  aci_snmp_user:
+# CHANGE SNMP USER
+- name: Change a snmp user (checkmode)
+  cisco.aci.aci_snmp_user: &snmp_user_changed
+    <<: *snmp_user
+    descr: description_change
+  register: cm_change_snmp_user
+  check_mode: true
+
+- name: Change a snmp user
+  cisco.aci.aci_snmp_user:
+    <<: *snmp_user_changed
+  register: nm_change_snmp_user
+
+- name: Change a snmp user again without secrets
+  cisco.aci.aci_snmp_user:
+    <<: *snmp_user_changed
+    auth_key: "{{ fake_var | default(omit) }}"
+    privacy_key: "{{ fake_var | default(omit) }}"
+  register: nm_change_snmp_user_again
+
+- name: Verify change of ansible_snmp_user
+  ansible.builtin.assert:
+    that:
+    - cm_change_snmp_user is changed
+    - cm_change_snmp_user.previous.0.snmpUserP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/user-ansible_snmp_user"
+    - cm_change_snmp_user.previous.0.snmpUserP.attributes.name == "ansible_snmp_user"
+    - cm_change_snmp_user.previous.0.snmpUserP.attributes.authType == "hmac-sha1-96"
+    - cm_change_snmp_user.previous.0.snmpUserP.attributes.privType == "aes-128"
+    - cm_change_snmp_user.previous.0.snmpUserP.attributes.annotation == 'orchestrator:ansible'
+    - cm_change_snmp_user.previous.0.snmpUserP.attributes.descr == ""
+    - cm_change_snmp_user.proposed.snmpUserP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/user-ansible_snmp_user"
+    - cm_change_snmp_user.proposed.snmpUserP.attributes.name == "ansible_snmp_user"
+    - cm_change_snmp_user.proposed.snmpUserP.attributes.authType == "hmac-sha1-96"
+    - cm_change_snmp_user.proposed.snmpUserP.attributes.privType == "aes-128"
+    - cm_change_snmp_user.proposed.snmpUserP.attributes.annotation == 'orchestrator:ansible'
+    - cm_change_snmp_user.proposed.snmpUserP.attributes.descr == "description_change"
+    - nm_change_snmp_user is changed
+    - nm_change_snmp_user.previous.0.snmpUserP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/user-ansible_snmp_user"
+    - nm_change_snmp_user.previous.0.snmpUserP.attributes.name == "ansible_snmp_user"
+    - nm_change_snmp_user.previous.0.snmpUserP.attributes.authType == "hmac-sha1-96"
+    - nm_change_snmp_user.previous.0.snmpUserP.attributes.privType == "aes-128"
+    - nm_change_snmp_user.previous.0.snmpUserP.attributes.annotation == 'orchestrator:ansible'
+    - nm_change_snmp_user.previous.0.snmpUserP.attributes.descr == ""
+    - nm_change_snmp_user.current.0.snmpUserP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/user-ansible_snmp_user"
+    - nm_change_snmp_user.current.0.snmpUserP.attributes.name == "ansible_snmp_user"
+    - nm_change_snmp_user.current.0.snmpUserP.attributes.authType == "hmac-sha1-96"
+    - nm_change_snmp_user.current.0.snmpUserP.attributes.privType == "aes-128"
+    - nm_change_snmp_user.current.0.snmpUserP.attributes.annotation == 'orchestrator:ansible'
+    - nm_change_snmp_user.current.0.snmpUserP.attributes.descr == "description_change"
+    - nm_change_snmp_user_again is not changed
+    - nm_change_snmp_user_again.previous.0.snmpUserP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/user-ansible_snmp_user"
+    - nm_change_snmp_user_again.previous.0.snmpUserP.attributes.name == "ansible_snmp_user"
+    - nm_change_snmp_user_again.previous.0.snmpUserP.attributes.authType == "hmac-sha1-96"
+    - nm_change_snmp_user_again.previous.0.snmpUserP.attributes.privType == "aes-128"
+    - nm_change_snmp_user_again.previous.0.snmpUserP.attributes.annotation == 'orchestrator:ansible'
+    - nm_change_snmp_user_again.previous.0.snmpUserP.attributes.descr == "description_change"
+    - nm_change_snmp_user_again.current.0.snmpUserP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/user-ansible_snmp_user"
+    - nm_change_snmp_user_again.current.0.snmpUserP.attributes.name == "ansible_snmp_user"
+    - nm_change_snmp_user_again.current.0.snmpUserP.attributes.authType == "hmac-sha1-96"
+    - nm_change_snmp_user_again.current.0.snmpUserP.attributes.privType == "aes-128"
+    - nm_change_snmp_user_again.current.0.snmpUserP.attributes.annotation == 'orchestrator:ansible'
+    - nm_change_snmp_user_again.current.0.snmpUserP.attributes.descr == "description_change"
+
+# QUERY SNMP USER
+- name: Create another snmp user with auth_type hmac-sha2-224
+  cisco.aci.aci_snmp_user:
+    <<: *snmp_user
+    name: ansible_snmp_user_2
+    auth_type: hmac-sha2-224
+  register: nm_create_snmp_user_2
+
+- name: Create another snmp user with auth_type hmac-sha2-256
+  cisco.aci.aci_snmp_user:
+    <<: *snmp_user
+    name: ansible_snmp_user_3
+    auth_type: hmac-sha2-256
+  register: nm_create_snmp_user_3
+
+- name: Create another snmp user with auth_type hmac-sha2-384
+  cisco.aci.aci_snmp_user:
+    <<: *snmp_user
+    name: ansible_snmp_user_4
+    auth_type: hmac-sha2-384
+  register: nm_create_snmp_user_4
+
+- name: Create another snmp user with auth_type hmac-sha2-512
+  cisco.aci.aci_snmp_user:
+    <<: *snmp_user
+    name: ansible_snmp_user_5
+    auth_type: hmac-sha2-512
+  register: nm_create_snmp_user_5
+
+- name: Verify change of ansible_snmp_user
+  ansible.builtin.assert:
+    that:
+    - nm_create_snmp_user_2 is changed
+    - nm_create_snmp_user_2.current.0.snmpUserP.attributes.authType == "hmac-sha2-224"
+    - nm_create_snmp_user_3 is changed
+    - nm_create_snmp_user_3.current.0.snmpUserP.attributes.authType == "hmac-sha2-256"
+    - nm_create_snmp_user_4 is changed
+    - nm_create_snmp_user_4.current.0.snmpUserP.attributes.authType == "hmac-sha2-384"
+    - nm_create_snmp_user_5 is changed
+    - nm_create_snmp_user_5.current.0.snmpUserP.attributes.authType == "hmac-sha2-512"
+
+- name: Query ansible_snmp_user
+  cisco.aci.aci_snmp_user:
     <<: *aci_info
     policy: ansible_snmp_policy
     name: ansible_snmp_user
     state: query
   register: query_snmp_user
 
-- name: Verify the attributes under query_snmp_client_group
-  assert:
+- name: Verify query of ansible_snmp_user
+  ansible.builtin.assert:
     that:
     - query_snmp_user is not changed
+    - query_snmp_user.current | length == 1
     - query_snmp_user.current.0.snmpUserP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/user-ansible_snmp_user"
     - query_snmp_user.current.0.snmpUserP.attributes.name == "ansible_snmp_user"
     - query_snmp_user.current.0.snmpUserP.attributes.authType == "hmac-sha1-96"
     - query_snmp_user.current.0.snmpUserP.attributes.privType == "aes-128"
 
-- name: Query all snmp communities
-  aci_snmp_user:
+- name: Query all snmp users
+  cisco.aci.aci_snmp_user:
     <<: *aci_info
     state: query
   register: query_snmp_user_all
 
-- name: Verify query_snmp_user_all
-  assert:
+- name: Verify query of all snmp users
+  ansible.builtin.assert:
     that:
     - query_snmp_user_all is not changed
+    - query_snmp_user_all.current | length >= 5
 
-# DELETE snmp user
-- name: Remove the snmp user
-  aci_snmp_user:
+# REMOVE SNMP USER
+- name: Remove the snmp user (checkmode)
+  cisco.aci.aci_snmp_user: &snmp_user_remove
     <<: *aci_info
     policy: ansible_snmp_policy
     name: ansible_snmp_user
     state: absent
-  register: remove_snmp_user
+  register: cm_remove_snmp_user
+  check_mode: true
+
+- name: Remove the snmp user
+  cisco.aci.aci_snmp_user:
+    <<: *snmp_user_remove
+  register: nm_remove_snmp_user
+
+- name: Remove the snmp user again
+  cisco.aci.aci_snmp_user:
+    <<: *snmp_user_remove
+  register: nm_remove_snmp_user_again
 
 - name: Verify remove_snmp_user
-  assert:
+  ansible.builtin.assert:
     that:
-    - remove_snmp_user is changed
-    - remove_snmp_user.current == []
-    - remove_snmp_user.previous.0.snmpUserP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/user-ansible_snmp_user"
-    - remove_snmp_user.previous.0.snmpUserP.attributes.name == "ansible_snmp_user"
+    - cm_remove_snmp_user is changed
+    - cm_remove_snmp_user.previous.0.snmpUserP.attributes.name == "ansible_snmp_user"
+    - cm_remove_snmp_user.proposed == {}
+    - nm_remove_snmp_user is changed
+    - nm_remove_snmp_user.current == []
+    - nm_remove_snmp_user.previous.0.snmpUserP.attributes.name == "ansible_snmp_user"
+    - nm_remove_snmp_user_again is not changed
+    - nm_remove_snmp_user_again.current == []
+    - nm_remove_snmp_user_again.previous == []
 
-# DELETE snmp policy
+# CLEAN ENVIRONMENT
 - name: Remove the snmp policy
-  aci_snmp_policy:
+  cisco.aci.aci_snmp_policy:
     <<: *aci_info
     name: ansible_snmp_policy
     state: absent

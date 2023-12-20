@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -83,7 +83,7 @@
       register: present_missing_param
 
     - name: present assertions
-      assert:
+      ansible.builtin.assert:
         that:
           - subject_present_check_mode is changed
           - subject_present_check_mode.sent.vzSubj.attributes.descr == 'Ansible Test'
@@ -157,7 +157,7 @@
       register: query_all
 
     - name: query assertions
-      assert:
+      ansible.builtin.assert:
         that:
           - query_tenant_contract_subject is not changed
           - query_tenant_contract_subject.current | length == 1
@@ -234,7 +234,7 @@
       register: absent_missing_param
 
     - name: absent assertions
-      assert:
+      ansible.builtin.assert:
         that:
           - subject_absent_check_mode is changed
           - subject_absent_check_mode.previous != []
@@ -289,7 +289,7 @@
       register: nm_subject_present_one_way_again
 
     - name: subject assertions
-      assert:
+      ansible.builtin.assert:
         that:
           - cm_subject_present_both_default is changed
           - nm_subject_present_both_default is changed
@@ -315,7 +315,7 @@
       ignore_errors: true
 
     - name: subject assertions
-      assert:
+      ansible.builtin.assert:
         that:
           - nm_subject_reverse_to_one_way is not changed
           - nm_subject_reverse_to_one_way.msg == "Direction is not allowed, valid option is both."
@@ -365,7 +365,7 @@
       register: nm_subject_one_way_dscp_change
 
     - name: subject assertions
-      assert:
+      ansible.builtin.assert:
         that:
           - nm_subject_both_qos_dscp is changed
           - nm_subject_both_qos_dscp.current.0.vzSubj.attributes.prio == "level1"

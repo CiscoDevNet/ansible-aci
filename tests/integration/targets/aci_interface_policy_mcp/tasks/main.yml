@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -20,14 +20,14 @@
       output_level: debug
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   # Clean Environment
   - name: Ensure first mcp interface policy does not exist - APIC version >= 5.0
-    aci_interface_policy_mcp: &aci_interface_policy_mcp_absent_5
+    cisco.aci.aci_interface_policy_mcp: &aci_interface_policy_mcp_absent_5
       <<: *aci_info
       name: anstest_policy
       description: test for mcp interface policy
@@ -42,7 +42,7 @@
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: Ensure first mcp interface policy does not exist
-    aci_interface_policy_mcp: &aci_interface_policy_mcp_absent
+    cisco.aci.aci_interface_policy_mcp: &aci_interface_policy_mcp_absent
       <<: *aci_info
       name: anstest_policy
       description: test for mcp interface policy
@@ -51,13 +51,13 @@
     when: version.current.0.topSystem.attributes.version is version('5', '<')
 
   - name: Ensure second mcp interface policy does not exist
-    aci_interface_policy_mcp: &aci_interface_policy_mcp_2_absent
+    cisco.aci.aci_interface_policy_mcp: &aci_interface_policy_mcp_2_absent
       <<: *aci_info
       name: anstest_policy_2
       state: absent
 
   - name: Create first mcp interface policy (check_mode) - APIC version >= 5.0
-    aci_interface_policy_mcp: &aci_interface_policy_mcp_present_5
+    cisco.aci.aci_interface_policy_mcp: &aci_interface_policy_mcp_present_5
       <<: *aci_interface_policy_mcp_absent_5
       state: present
     check_mode: true
@@ -65,19 +65,19 @@
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: Create first mcp interface policy (normal_mode) - APIC version >= 5.0
-    aci_interface_policy_mcp:
+    cisco.aci.aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present_5
     register: nm_add_interface_policy_mcp_1_5
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: Create first mcp interface policy again - testing idempotency - APIC version >= 5.0
-    aci_interface_policy_mcp:
+    cisco.aci.aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present_5
     register: idempotency_add_interface_policy_mcp_1_5
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: Create first mcp interface policy (check_mode) - APIC version < 5.0
-    aci_interface_policy_mcp: &aci_interface_policy_mcp_present
+    cisco.aci.aci_interface_policy_mcp: &aci_interface_policy_mcp_present
       <<: *aci_interface_policy_mcp_absent
       state: present
     check_mode: true
@@ -85,25 +85,25 @@
     when: version.current.0.topSystem.attributes.version is version('5', '<')
 
   - name: Create first mcp interface policy (normal_mode) - APIC version < 5.0
-    aci_interface_policy_mcp:
+    cisco.aci.aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present
     register: nm_add_interface_policy_mcp_1
     when: version.current.0.topSystem.attributes.version is version('5', '<')
 
   - name: Create first mcp interface policy again - testing idempotency - APIC version < 5.0
-    aci_interface_policy_mcp:
+    cisco.aci.aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present
     register: idempotency_add_interface_policy_mcp_1
     when: version.current.0.topSystem.attributes.version is version('5', '<')
 
   - name: Create second mcp interface policy
-    aci_interface_policy_mcp: &aci_interface_policy_mcp_2_present
+    cisco.aci.aci_interface_policy_mcp: &aci_interface_policy_mcp_2_present
       <<: *aci_interface_policy_mcp_2_absent
       state: present
     register: nm_add_interface_policy_mcp_2
 
   - name: Asserts for creation tasks for first mcp interface policy - APIC version >= 5.0
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_interface_policy_mcp_1_5 is changed
         - cm_add_interface_policy_mcp_1_5.previous == []
@@ -115,7 +115,7 @@
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: Asserts for creation tasks for first mcp interface policy - APIC version < 5.0
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_interface_policy_mcp_1 is changed
         - cm_add_interface_policy_mcp_1.previous == []
@@ -127,55 +127,55 @@
     when: version.current.0.topSystem.attributes.version is version('5', '<')
 
   - name: Asserts for creation tasks for second mcp interface policy
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_add_interface_policy_mcp_2 is changed
         - nm_add_interface_policy_mcp_2.current.0.mcpIfPol.attributes.name == "anstest_policy_2"
         - nm_add_interface_policy_mcp_2.current.0.mcpIfPol.attributes.adminSt == "enabled"
 
   - name: Query all mcp interface policies
-    aci_interface_policy_mcp:
+    cisco.aci.aci_interface_policy_mcp:
       <<: *aci_info
       state: query
     register: query_all_interface_policy_mcp
 
   - name: Query first mcp interface policy
-    aci_interface_policy_mcp:
+    cisco.aci.aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present_5
       state: query
     register: query_first_interface_policy_mcp_5
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: Query first mcp interface policy
-    aci_interface_policy_mcp:
+    cisco.aci.aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present
       state: query
     register: query_first_interface_policy_mcp
     when: version.current.0.topSystem.attributes.version is version('5', '<')
 
   - name: Asserts for query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_interface_policy_mcp is not changed
         - query_all_interface_policy_mcp.current | length >= 2
         - '"class/mcpIfPol.json" in query_all_interface_policy_mcp.url'
 
   - name: Asserts for individual query tasks - APIC version >= 5.0
-    assert:
+    ansible.builtin.assert:
       that:
         - query_first_interface_policy_mcp_5.current.0.mcpIfPol.attributes.name == "anstest_policy"
         - query_first_interface_policy_mcp_5.current.0.mcpIfPol.attributes.adminSt == "disabled"
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
     
   - name: Asserts for individual query tasks - APIC version < 5.0
-    assert:
+    ansible.builtin.assert:
       that:
         - query_first_interface_policy_mcp.current.0.mcpIfPol.attributes.name == "anstest_policy"
         - query_first_interface_policy_mcp.current.0.mcpIfPol.attributes.adminSt == "disabled"
     when: version.current.0.topSystem.attributes.version is version('5', '<')
 
   - name: Delete first mcp interface policy (check_mode) - APIC version >= 5.0
-    aci_interface_policy_mcp:
+    cisco.aci.aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present_5
       state: absent
     check_mode: true
@@ -183,21 +183,21 @@
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: Delete first mcp interface policy (normal_mode) - APIC version >= 5.0
-    aci_interface_policy_mcp:
+    cisco.aci.aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present_5
       state: absent
     register: nm_delete_interface_policy_mcp_1_5
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: Delete first mcp interface policy again - testing idempotency - APIC version >= 5.0
-    aci_interface_policy_mcp:
+    cisco.aci.aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present_5
       state: absent
     register: idempotency_delete_interface_policy_mcp_1_5
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: Delete first mcp interface policy (check_mode) - APIC version < 5.0
-    aci_interface_policy_mcp:
+    cisco.aci.aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present
       state: absent
     check_mode: true
@@ -205,27 +205,27 @@
     when: version.current.0.topSystem.attributes.version is version('5', '<')
 
   - name: Delete first mcp interface policy (normal_mode) - APIC version < 5.0
-    aci_interface_policy_mcp:
+    cisco.aci.aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present
       state: absent
     register: nm_delete_interface_policy_mcp_1
     when: version.current.0.topSystem.attributes.version is version('5', '<')
 
   - name: Delete first mcp interface policy again - testing idempotency - APIC version < 5.0
-    aci_interface_policy_mcp:
+    cisco.aci.aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_present
       state: absent
     register: idempotency_delete_interface_policy_mcp_1
     when: version.current.0.topSystem.attributes.version is version('5', '<')
 
   - name: Delete second mcp interface policy (normal_mode)
-    aci_interface_policy_mcp:
+    cisco.aci.aci_interface_policy_mcp:
       <<: *aci_interface_policy_mcp_2_present
       state: absent
     register: nm_delete_interface_policy_mcp_2
 
   - name: Asserts for first mcp interface policy deletion tasks - APIC version >= 5.0
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_delete_interface_policy_mcp_1_5 is changed
         - cm_delete_interface_policy_mcp_1_5.proposed == {}
@@ -237,7 +237,7 @@
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: Asserts for first mcp interface policy deletion tasks - APIC version < 5.0
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_delete_interface_policy_mcp_1 is changed
         - cm_delete_interface_policy_mcp_1.proposed == {}
@@ -249,7 +249,7 @@
     when: version.current.0.topSystem.attributes.version is version('5', '<')
   
   - name: Asserts for second mcp interface policy deletion tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_delete_interface_policy_mcp_2.previous != []
         - nm_delete_interface_policy_mcp_2.current == []

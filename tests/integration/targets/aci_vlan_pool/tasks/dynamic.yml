@@ -39,7 +39,7 @@
   register: nm_add_dynamic_vlan_pool
 
 - name: Verify add_dynamic_vlan_pool
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_dynamic_vlan_pool is changed
     - nm_add_dynamic_vlan_pool is changed
@@ -66,7 +66,7 @@
   register: nm_add_dynamic_vlan_pool_again
 
 - name: Verify add_dynamic_vlan_pool_again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_dynamic_vlan_pool_again is not changed
     - nm_add_dynamic_vlan_pool_again is not changed
@@ -88,7 +88,7 @@
   register: nm_add_dynamic_vlan_pool_descr
 
 - name: Verify add_dynamic_vlan_pool_descr
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_dynamic_vlan_pool_descr is changed
     - nm_add_dynamic_vlan_pool_descr is changed
@@ -116,7 +116,7 @@
   register: nm_add_dynamic_vlan_pool_descr_again
 
 - name: Verify add_dynamic_vlan_pool_descr_again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_dynamic_vlan_pool_descr_again is not changed
     - nm_add_dynamic_vlan_pool_descr_again is not changed
@@ -134,7 +134,7 @@
   register: nm_add_dynamic_vlan_pool_again_no_descr
 
 - name: Verify add_dynamic_vlan_pool_again_no_descr
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_dynamic_vlan_pool_again_no_descr is not changed
     - nm_add_dynamic_vlan_pool_again_no_descr is not changed
@@ -160,7 +160,7 @@
   register: nm_query_all_dynamic_vlan_pools
 
 - name: Verify query_all_dynamic_vlan_pools
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_all_dynamic_vlan_pools is not changed
     - nm_query_all_dynamic_vlan_pools is not changed
@@ -185,7 +185,7 @@
   register: nm_query_dynamic_vlan_pool
 
 - name: Verify query_dynamic_vlan_pool
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_dynamic_vlan_pool is not changed
     - nm_query_dynamic_vlan_pool is not changed
@@ -207,7 +207,7 @@
   register: nm_remove_dynamic_vlan_pool
 
 - name: Verify remove_dynamic_vlan_pool
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_dynamic_vlan_pool is changed
     - nm_remove_dynamic_vlan_pool is changed
@@ -227,7 +227,7 @@
   register: nm_remove_dynamic_vlan_pool_again
 
 - name: Verify remove_dynamic_vlan_pool_again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_dynamic_vlan_pool_again is not changed
     - nm_remove_dynamic_vlan_pool_again is not changed
@@ -255,7 +255,7 @@
 
 # TODO: Implement more tests
 - name: Verify query_non_dynamic_vlan_pool
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_non_dynamic_vlan_pool is not changed
     - nm_query_non_dynamic_vlan_pool is not changed
@@ -278,7 +278,7 @@
   register: error_on_missing_required_param
 
 - name: Verify error_on_missing_required_param
-  assert:
+  ansible.builtin.assert:
     that:
     - error_on_missing_required_param is failed
     - 'error_on_missing_required_param.msg == "state is present but all of the following are missing: pool"'
@@ -298,7 +298,7 @@
   register: error_on_missing_together_param
 
 - name: Verify error_on_missing_together_param
-  assert:
+  ansible.builtin.assert:
     that:
     - error_on_missing_together_param is failed
     - error_on_missing_together_param.msg == "ACI requires the 'pool_allocation_mode' when 'pool' is provided"

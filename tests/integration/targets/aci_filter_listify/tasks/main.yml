@@ -1,0 +1,148 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Shreyas Srish (shrsr@cisco.com)
+#
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+    cisco.aci.aci_model_data:
+      tenant:
+      - name: ansible_test
+        description: Created using listify
+        app:
+        - name: app_test
+          epg:
+          - name: web
+            bd: web_bd
+          - name: app
+            bd: app_bd
+        bd:
+        - name: bd_test
+          subnet: 
+          - name: 10.10.10.1
+            mask: 24
+            scope: 
+            - private
+            - shared
+          vrf: vrf_test
+        - name: bd_test2
+          subnet: 
+          - name: 20.20.20.1
+            mask: 24
+            scope: [public, shared]
+          vrf: vrf_test
+        vrf:
+        - name: vrf_test
+      - name: ansible_test2
+        description: Created using listify
+        app:
+        - name: app_test2
+          epg:
+          - name: web2
+            bd: web_bd2
+          - name: app2
+            bd: app_bd2
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+
+  - name: Create tenants
+    cisco.aci.aci_tenant:
+      <<: *aci_info
+      tenant: '{{ item.tenant_name }}'
+      description: '{{ item.tenant_description }}'
+    with_items: '{{ aci_model_data|cisco.aci.aci_listify("tenant") }}'
+    register: tenant_listify
+
+  - name: Create VRFs
+    cisco.aci.aci_vrf:
+      <<: *aci_info
+      tenant: '{{ item.tenant_name }}'
+      vrf_name: '{{ item.tenant_vrf_name }}'
+    with_items: '{{ aci_model_data|cisco.aci.aci_listify("tenant","vrf") }}'
+    register: vrf_listify
+
+  - name: Create BDs
+    cisco.aci.aci_bd:
+      <<: *aci_info
+      tenant: '{{ item.tenant_name }}'
+      vrf: '{{ item.tenant_bd_vrf }}'
+      bd: '{{ item.tenant_bd_name }}'
+      enable_routing: yes
+    with_items: '{{ aci_model_data|cisco.aci.aci_listify("tenant","bd") }}'
+    register: bd_listify
+
+  - name: Create BD subnets
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_info
+      tenant: '{{ item.tenant_name }}'
+      bd: '{{ item.tenant_bd_name }}'
+      gateway: '{{ item.tenant_bd_subnet_name }}'
+      mask: '{{ item.tenant_bd_subnet_mask }}'
+      scope: '{{ item.tenant_bd_subnet_scope }}'
+    with_items: '{{ aci_model_data|cisco.aci.aci_listify("tenant","bd","subnet") }}'
+    register: bd_subnets_listify
+
+  - name: Create APs
+    cisco.aci.aci_ap:
+      <<: *aci_info
+      tenant: '{{ item.tenant_name }}'
+      app_profile: '{{ item.tenant_app_name }}'
+    with_items: '{{ aci_model_data|cisco.aci.aci_listify("tenant","app") }}'
+    register: ap_listify
+
+  - name: Create EPGs
+    cisco.aci.aci_epg:
+      <<: *aci_info
+      tenant: '{{ item.tenant_name }}'
+      app_profile: '{{ item.tenant_app_name }}'
+      epg: '{{ item.tenant_app_epg_name }}'
+      bd: '{{ item.tenant_app_epg_bd }}'
+    with_items: '{{ aci_model_data|cisco.aci.aci_listify("tenant","app","epg") }}'
+    register: epg_listify
+
+  - name: Validate listify
+    ansible.builtin.assert:
+      that:
+        - tenant_listify.results.0.current.0.fvTenant.attributes.name == "ansible_test"
+        - vrf_listify.results.0.current.0.fvCtx.attributes.name == "vrf_test"
+        - bd_listify.results.0.current.0.fvBD.attributes.name == "bd_test"
+        - bd_listify.results.1.current.0.fvBD.attributes.name == "bd_test2"
+        - bd_subnets_listify.results.0.current.0.fvSubnet.attributes.ip == "10.10.10.1/24"
+        - bd_subnets_listify.results.0.current.0.fvSubnet.attributes.scope == "private,shared"
+        - bd_subnets_listify.results.1.current.0.fvSubnet.attributes.ip == "20.20.20.1/24"
+        - bd_subnets_listify.results.1.current.0.fvSubnet.attributes.scope == "public,shared"
+        - ap_listify.results.0.current.0.fvAp.attributes.name == "app_test"
+        - epg_listify.results.0.current.0.fvAEPg.attributes.name == "web"
+        - epg_listify.results.1.current.0.fvAEPg.attributes.name == "app"
+        - tenant_listify.results.1.current.0.fvTenant.attributes.name == "ansible_test2"
+        - ap_listify.results.1.current.0.fvAp.attributes.name == "app_test2"
+        - epg_listify.results.2.current.0.fvAEPg.attributes.name == "web2"
+        - epg_listify.results.3.current.0.fvAEPg.attributes.name == "app2"
+
+  # Clean Up Environment
+  - name: Delete tenants
+    cisco.aci.aci_tenant:
+      <<: *aci_info
+      tenant: "{{ item }}"
+      state: absent
+    loop:
+    - ansible_test
+    - ansible_test2

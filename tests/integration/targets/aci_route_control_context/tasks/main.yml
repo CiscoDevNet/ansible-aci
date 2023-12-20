@@ -1,0 +1,197 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+# Copyright: (c) 2023, Tim Cragg (@timcragg) <tcragg@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+    
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
+
+  - name: Add a new action rule profile
+    cisco.aci.aci_tenant_action_rule_profile: &aci_action_rule_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      action_rule: ansible_action_rule
+      description: Ansible action rule profile for ansible_tenant tenant
+      state: present
+
+  - name: Add a new L3Out
+    cisco.aci.aci_l3out: 
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      description: Ansible l3Out for ansible_tenant tenant
+      domain: ansible_dom
+      vrf: ansible_vrf
+      state: present
+
+  - name: Add a route control profile for l3out
+    cisco.aci.aci_route_control_profile: 
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      route_control_profile: ansible_rtctrl_profile_l3out
+      description: Ansible Route Control Profile for ansible_l3out l3Out
+      state: present
+
+  - name: Add a subject profile
+    cisco.aci.aci_match_rule: &aci_match_rule_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      match_rule: ansible_match_rule
+      description: Ansible Subject Profile for ansible_tenant tenant
+      state: present
+
+  - name: Add a route control context policy for l3out (check_mode)
+    cisco.aci.aci_route_control_context: &aci_route_control_context_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      route_control_profile: ansible_rtctrl_profile_l3out
+      route_control_context: ansible_route_control_context_l3out
+      description: Ansible route control Context Policy for ansible_rtctrl_profile_l3out route control profile
+      match_rule: ansible_match_rule
+      action_rule: ansible_action_rule
+      action: deny
+      order: 5
+      state: present
+    check_mode: true
+    register: cm_add_route_control_context_l3out
+
+  - name: Add a route control context policy again (normal_mode)
+    cisco.aci.aci_route_control_context:
+      <<: *aci_route_control_context_present
+    register: nm_add_route_control_context_l3out
+
+  - name: Add a route control context policy again - testing idempotency
+    cisco.aci.aci_route_control_context:
+      <<: *aci_route_control_context_present
+    register: nm_add_route_control_context_l3out_idempotency
+
+  - name: Add a route control profile for tenant
+    cisco.aci.aci_route_control_profile:
+      <<: *aci_info
+      tenant: ansible_tenant
+      route_control_profile: ansible_rtctrl_profile_tenant
+      description: Route Control Profile for ansible_tenant tenant
+      state: present
+
+  - name: Add a route control context policy for tenant
+    cisco.aci.aci_route_control_context:
+      <<: *aci_info
+      tenant: ansible_tenant
+      route_control_profile: ansible_rtctrl_profile_tenant
+      route_control_context: ansible_route_control_context_tenant
+      description: Ansible route control Context Policy for ansible_rtctrl_profile_tenant route control profile
+      state: present
+    register: nm_add_route_control_context_tenant
+
+  - name: Asserts for route control profiles creation tasks
+    ansible.builtin.assert:
+      that:
+        - cm_add_route_control_context_l3out is changed
+        - cm_add_route_control_context_l3out.previous == []
+        - cm_add_route_control_context_l3out.current == []
+        - nm_add_route_control_context_l3out is changed
+        - nm_add_route_control_context_l3out.current.0.rtctrlCtxP.attributes.name == "ansible_route_control_context_l3out"
+        - nm_add_route_control_context_l3out.current.0.rtctrlCtxP.attributes.action == "deny"
+        - nm_add_route_control_context_l3out.current.0.rtctrlCtxP.attributes.order == "5"
+        - nm_add_route_control_context_l3out.current.0.rtctrlCtxP.children.0.rtctrlScope.children.0.rtctrlRsScopeToAttrP.attributes.tnRtctrlAttrPName == "ansible_action_rule"
+        - nm_add_route_control_context_l3out.current.0.rtctrlCtxP.children.1.rtctrlRsCtxPToSubjP.attributes.tnRtctrlSubjPName == "ansible_match_rule"
+        - nm_add_route_control_context_l3out_idempotency is not changed
+        - nm_add_route_control_context_tenant is changed
+        - nm_add_route_control_context_tenant.previous == []
+        - nm_add_route_control_context_tenant.current.0.rtctrlCtxP.attributes.name == "ansible_route_control_context_tenant"
+        - nm_add_route_control_context_tenant.current.0.rtctrlCtxP.attributes.action == "permit"
+        - nm_add_route_control_context_tenant.current.0.rtctrlCtxP.attributes.order == "0"
+
+  - name: Query all route control context policies
+    cisco.aci.aci_route_control_context:
+      <<: *aci_info
+      state: query
+    register: query_all_route_control_context
+
+  - name: Query ansible_route_control_context_l3out route control context policy
+    cisco.aci.aci_route_control_context:
+      <<: *aci_info
+      route_control_context: ansible_route_control_context_l3out
+      state: query
+    register: query_route_control_context_l3out
+
+  - name: Asserts query tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_route_control_context is not changed
+        - query_all_route_control_context.current|length >= 2
+        - query_route_control_context_l3out is not changed
+        - query_route_control_context_l3out.current.0.rtctrlCtxP.attributes.name == "ansible_route_control_context_l3out"
+        - query_route_control_context_l3out.current.0.rtctrlCtxP.attributes.action == "deny"
+        - query_route_control_context_l3out.current.0.rtctrlCtxP.attributes.order == "5"
+        - query_route_control_context_l3out.current.0.rtctrlCtxP.children.0.rtctrlScope.children.0.rtctrlRsScopeToAttrP.attributes.tDn == "uni/tn-ansible_tenant/attr-ansible_action_rule"
+        - query_route_control_context_l3out.current.0.rtctrlCtxP.children.1.rtctrlRsCtxPToSubjP.attributes.tDn == "uni/tn-ansible_tenant/subj-ansible_match_rule"
+
+  - name: Remove route control context policy for l3out (check_mode)
+    cisco.aci.aci_route_control_context: &aci_route_control_context_absent
+      <<: *aci_route_control_context_present
+      state: absent
+    check_mode: true
+    register: cm_remove_route_control_context
+
+  - name: Remove route control context policy for l3out (normal_mode)
+    cisco.aci.aci_route_control_context:
+      <<: *aci_route_control_context_absent
+    register: nm_remove_remove_route_control_context
+
+  - name: Remove route control profile for l3out again - testing previous Removal
+    cisco.aci.aci_route_control_context:
+      <<: *aci_route_control_context_absent
+    register: nm_remove_route_control_context_idempotency
+
+  - name: Asserts deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_remove_route_control_context is changed
+        - cm_remove_route_control_context.proposed == {}
+        - nm_remove_remove_route_control_context is changed
+        - nm_remove_remove_route_control_context.previous != []
+        - nm_remove_remove_route_control_context.method == "DELETE"
+        - nm_remove_route_control_context_idempotency is not changed
+        - nm_remove_route_control_context_idempotency.previous == []
+
+  - name: Remove the ansible_tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent

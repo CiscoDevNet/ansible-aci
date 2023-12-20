@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,7 +21,7 @@
       output_level: '{{ aci_output_level | default("debug") }}'
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 # TODO current module will fail on cloud sites because range is not supported
 # APIC Error 1: Invalid Configuration CLOUD_SOURCE_PORT_NOT_SUPPORTED: vz::EntryMo Dn = uni/tn-ansible_test/flt-anstest_fileter_2/e-source_port_start - Source port range is not allowed on CAPIC"
@@ -176,7 +176,7 @@
     register: icmp6_msg_type_est
 
   - name: Assertion check for the filter entry - match_only_fragments, source_port and tcp_flags attributes
-    assert:
+    ansible.builtin.assert:
       that:
         - nt_match_only_fragments_with_dst_port is not changed
         - nt_match_only_fragments_with_dst_port.msg == "Parameter 'match_only_fragments' cannot be used with 'Layer 4 Port' value"
@@ -266,7 +266,7 @@
     register: entry_present_update
 
   - name: Verify Cloud and Non-Cloud Sites in use.
-    include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+    ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
   - name: create filter entry - test different types
     cisco.aci.aci_filter_entry:
@@ -309,7 +309,7 @@
     register: present_incompatible_params
 
   - name: present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - entry_present_check_mode is changed
         - entry_present_check_mode.previous == []
@@ -346,7 +346,7 @@
         - present_incompatible_params.msg.startswith("Parameter")
 
   - name: present assertions for arp
-    assert:
+    ansible.builtin.assert:
       that:
         - entry_present_2 is changed
         - entry_present_2.sent.vzEntry.attributes.arpOpc == 'reply'
@@ -406,7 +406,7 @@
     register: query_all
 
   - name: query assertions for all
-    assert:
+    ansible.builtin.assert:
       that:
         - query_tenant_filter_entry is not changed
         - query_tenant_filter_entry.current | length == 1
@@ -450,7 +450,7 @@
 
 
   - name: query assertions for only Non-Cloud
-    assert:
+    ansible.builtin.assert:
       that:
         - query_tenant_filter.current.0.vzFilter.children | length == 4
     when: query_cloud.current == []  # This condition will skip execution for cloud sites
@@ -486,7 +486,7 @@
     with_items: ["anstest2", "anstest3", "anstest4"]
 
   - name: absent assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - entry_absent_check_mode is changed
         - entry_absent_check_mode.previous != []

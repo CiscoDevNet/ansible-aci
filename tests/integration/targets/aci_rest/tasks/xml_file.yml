@@ -5,7 +5,7 @@
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -46,7 +46,7 @@
   register: cm_verify_checkmode_tenant
 
 - name: Assertions check for add tenant using ans_test_create xml template file with check mode
-  assert:
+  ansible.builtin.assert:
     that:
       - cm_add_tenant is changed
       - '"ans_test_create" in cm_add_tenant.proposed'
@@ -62,7 +62,7 @@
   register: nm_add_tenant
 
 - name: Assertions check for add tenant using ans_test_create xml template file with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - nm_add_tenant is changed
       - nm_add_tenant.imdata.0.fvTenant.attributes.name == "ans_test_create"
@@ -80,7 +80,7 @@
   register: idempotency_nm_add_tenant
 
 - name: Idempotency assertions check for add tenant using ans_test_create xml template file with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - idempotency_nm_add_tenant is not changed
 
@@ -92,7 +92,7 @@
   register: query_ans_test_create
 
 - name: Assertions check for querying ans_test_create tenant using query string after the create
-  assert:
+  ansible.builtin.assert:
     that:
       - query_ans_test_create is not changed
       - query_ans_test_create.imdata != []
@@ -110,7 +110,7 @@
   register: cm_update_tenant
 
 - name: Assertions check for update tenant description using ans_test_update xml template file with check mode
-  assert:
+  ansible.builtin.assert:
     that:
       - cm_update_tenant is changed
 
@@ -123,7 +123,7 @@
   register: nm_update_tenant
 
 - name: Assertions check for update tenant description using ans_test_update xml template file with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - nm_update_tenant is changed
       - nm_update_tenant.imdata.0.fvTenant.attributes.name == "ans_test_create"
@@ -139,7 +139,7 @@
   register: idempotency_nm_update_tenant
 
 - name: Idempotency assertions check for update tenant description using ans_test_update xml template file with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - idempotency_nm_update_tenant is not changed
 
@@ -151,7 +151,7 @@
   register: query_ans_test_update
 
 - name: Assertions check for querying ans_test_create tenant using query string after the update
-  assert:
+  ansible.builtin.assert:
     that:
       - query_ans_test_update is not changed
       - query_ans_test_update.imdata != []
@@ -169,7 +169,7 @@
   ignore_errors: true
 
 - name: Assertions check for update tenant name using ans_test_negative_update_check xml template file with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - negative_update_tenant_check is failed
 
@@ -183,7 +183,7 @@
   register: cm_delete_tenant
 
 - name: Assertions check for delete tenant using ans_test_delete xml template file with check mode
-  assert:
+  ansible.builtin.assert:
     that:
       - cm_delete_tenant is changed
 
@@ -196,7 +196,7 @@
   register: nm_delete_tenant
 
 - name: Assertions check for delete tenant using ans_test_delete xml template file with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - nm_delete_tenant is changed
       - nm_delete_tenant.imdata.0.fvTenant.attributes.name == "ans_test_create"
@@ -212,7 +212,7 @@
   register: idempotency_nm_delete_tenant
 
 - name: Idempotency assertions check for delete tenant using ans_test_delete xml template file with normal mode
-  assert:
+  ansible.builtin.assert:
     that:
       - idempotency_nm_delete_tenant is not changed
       - idempotency_nm_delete_tenant.imdata == {}
@@ -225,7 +225,7 @@
   register: query_ans_test_delete
 
 - name: Assertions check for querying ans_test_create tenant using query string after the delete
-  assert:
+  ansible.builtin.assert:
     that:
       - query_ans_test_delete is not changed
       - query_ans_test_delete.imdata == []

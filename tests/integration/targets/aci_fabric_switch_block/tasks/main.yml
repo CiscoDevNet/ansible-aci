@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # GET Credentials from the inventory
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -22,13 +22,13 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_spine_switch_prf if it already exists
-  aci_fabric_spine_profile:
+  cisco.aci.aci_fabric_spine_profile:
     <<: *aci_info
     name: ansible_spine_switch_prf
     state: absent
 
 - name: Remove ansible_leaf_switch_prf if it already exists
-  aci_fabric_leaf_profile:
+  cisco.aci.aci_fabric_leaf_profile:
     <<: *aci_info
     name: ansible_leaf_switch_prf
     state: absent
@@ -37,21 +37,21 @@
 
 # CREATE SPINE SWITCH POLICY
 - name: Create ansible_spine_switch_prf
-  aci_fabric_spine_profile:
+  cisco.aci.aci_fabric_spine_profile:
     <<: *aci_info
     name: ansible_spine_switch_prf
     state: present
 
 # CREATE LEAF SWITCH POLICY
 - name: Create ansible_leaf_switch_prf
-  aci_fabric_leaf_profile:
+  cisco.aci.aci_fabric_leaf_profile:
     <<: *aci_info
     name: ansible_leaf_switch_prf
     state: present
 
 # CREATE SPINE SWITCH ASSOCIATION
 - name: Create a spine switch profile association
-  aci_fabric_spine_switch_assoc:
+  cisco.aci.aci_fabric_spine_switch_assoc:
     <<: *aci_info
     profile: ansible_spine_switch_prf
     name: ansible_spine_switch_assoc
@@ -60,7 +60,7 @@
 
 # CREATE LEAF SWITCH ASSOCIATION
 - name: Create a leaf switch profile association
-  aci_fabric_leaf_switch_assoc:
+  cisco.aci.aci_fabric_leaf_switch_assoc:
     <<: *aci_info
     profile: ansible_leaf_switch_prf
     name: ansible_leaf_switch_assoc
@@ -69,7 +69,7 @@
 
 # CREATE SPINE SWITCH BLOCK
 - name: Create a spine switch association block
-  aci_fabric_switch_block:
+  cisco.aci.aci_fabric_switch_block:
     <<: *aci_info
     switch_type: spine
     profile: ansible_spine_switch_prf
@@ -81,7 +81,7 @@
   register: add_switch_block
 
 - name: Verify spine block creation
-  assert:
+  ansible.builtin.assert:
     that:
     - add_switch_block.current.0.fabricNodeBlk.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range/nodeblk-ansible_spine_block"
     - add_switch_block.current.0.fabricNodeBlk.attributes.name == "ansible_spine_block"
@@ -89,7 +89,7 @@
 
 # ADD SPINE SWITCH BLOCK AGAIN TO TEST IDEMPOTENCE
 - name: Create a spine switch association block again
-  aci_fabric_switch_block:
+  cisco.aci.aci_fabric_switch_block:
     <<: *aci_info
     switch_type: spine
     profile: ansible_spine_switch_prf
@@ -101,7 +101,7 @@
   register: add_switch_block_again
 
 - name: Verify spine block creation idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - add_switch_block_again is not changed
     - add_switch_block_again.current.0.fabricNodeBlk.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range/nodeblk-ansible_spine_block"
@@ -109,7 +109,7 @@
 
 # CREATE LEAF SWITCH BLOCK
 - name: Create a leaf switch association block
-  aci_fabric_switch_block:
+  cisco.aci.aci_fabric_switch_block:
     <<: *aci_info
     switch_type: leaf
     profile: ansible_leaf_switch_prf
@@ -121,14 +121,14 @@
   register: add_leaf_switch_block
 
 - name: Verify leaf block creation
-  assert:
+  ansible.builtin.assert:
     that:
     - add_leaf_switch_block.current.0.fabricNodeBlk.attributes.dn == "uni/fabric/leprof-ansible_leaf_switch_prf/leaves-ansible_leaf_switch_assoc-typ-range/nodeblk-ansible_leaf_block"
     - add_leaf_switch_block.current.0.fabricNodeBlk.attributes.name == "ansible_leaf_block"
 
 # ADD LEAF SWITCH BLOCK AGAIN TO TEST IDEMPOTENCE
 - name: Create a leaf switch association block again
-  aci_fabric_switch_block:
+  cisco.aci.aci_fabric_switch_block:
     <<: *aci_info
     switch_type: leaf
     profile: ansible_leaf_switch_prf
@@ -140,7 +140,7 @@
   register: add_leaf_switch_block_again
 
 - name: Verify leaf block creation idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - add_leaf_switch_block_again is not changed
     - add_leaf_switch_block_again.current.0.fabricNodeBlk.attributes.dn == "uni/fabric/leprof-ansible_leaf_switch_prf/leaves-ansible_leaf_switch_assoc-typ-range/nodeblk-ansible_leaf_block"
@@ -148,7 +148,7 @@
 
 # QUERY SPINE SWITCH BLOCK
 - name: Query spine switch association block
-  aci_fabric_switch_block:
+  cisco.aci.aci_fabric_switch_block:
     <<: *aci_info
     switch_type: spine
     profile: ansible_spine_switch_prf
@@ -158,7 +158,7 @@
   register: query_switch_block
 
 - name: Verify block query
-  assert:
+  ansible.builtin.assert:
     that:
     - query_switch_block is not changed
     - query_switch_block.current.0.fabricNodeBlk.attributes.dn == "uni/fabric/spprof-ansible_spine_switch_prf/spines-ansible_spine_switch_assoc-typ-range/nodeblk-ansible_spine_block"
@@ -166,7 +166,7 @@
 
 # QUERY LEAF SWITCH BLOCK
 - name: Query leaf switch association block
-  aci_fabric_switch_block:
+  cisco.aci.aci_fabric_switch_block:
     <<: *aci_info
     switch_type: leaf
     profile: ansible_leaf_switch_prf
@@ -176,7 +176,7 @@
   register: query_leaf_switch_block
 
 - name: Verify leaf block query
-  assert:
+  ansible.builtin.assert:
     that:
     - query_leaf_switch_block is not changed
     - query_leaf_switch_block.current.0.fabricNodeBlk.attributes.dn == "uni/fabric/leprof-ansible_leaf_switch_prf/leaves-ansible_leaf_switch_assoc-typ-range/nodeblk-ansible_leaf_block"
@@ -184,7 +184,7 @@
 
 # REMOVE SPINE SWITCH BLOCK
 - name: Remove spine switch association block
-  aci_fabric_switch_block:
+  cisco.aci.aci_fabric_switch_block:
     <<: *aci_info
     switch_type: spine
     profile: ansible_spine_switch_prf
@@ -194,7 +194,7 @@
   register: delete_switch_block
 
 - name: Verify spine switch block removal
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_switch_block is changed
     - delete_switch_block.current == []
@@ -203,7 +203,7 @@
 
 # REMOVE SPINE SWITCH BLOCK AGAIN TO TEST IDEMPOTENCE
 - name: Remove spine switch association block
-  aci_fabric_switch_block:
+  cisco.aci.aci_fabric_switch_block:
     <<: *aci_info
     switch_type: spine
     profile: ansible_spine_switch_prf
@@ -213,14 +213,14 @@
   register: delete_switch_block
 
 - name: Verify spine switch block removal idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_switch_block is not changed
     - delete_switch_block.current == []
 
 # REMOVE LEAF SWITCH BLOCK
 - name: Remove leaf switch association block
-  aci_fabric_switch_block:
+  cisco.aci.aci_fabric_switch_block:
     <<: *aci_info
     switch_type: leaf
     profile: ansible_leaf_switch_prf
@@ -230,7 +230,7 @@
   register: delete_leaf_switch_block
 
 - name: Verify leaf switch block removal
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_leaf_switch_block is changed
     - delete_leaf_switch_block.current == []
@@ -239,7 +239,7 @@
 
 # REMOVE LEAF SWITCH BLOCK AGAIN TO TEST IDEMPOTENCE
 - name: Remove leaf switch association block
-  aci_fabric_switch_block:
+  cisco.aci.aci_fabric_switch_block:
     <<: *aci_info
     switch_type: leaf
     profile: ansible_leaf_switch_prf
@@ -249,20 +249,20 @@
   register: delete_leaf_switch_block
 
 - name: Verify leaf switch block removal idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_leaf_switch_block is not changed
     - delete_leaf_switch_block.current == []
 
 # CLEAN UP ENVIRONMENT
 - name: Remove ansible_spine_switch_prf
-  aci_fabric_spine_profile:
+  cisco.aci.aci_fabric_spine_profile:
     <<: *aci_info
     name: ansible_spine_switch_prf
     state: absent
 
 - name: Remove ansible_leaf_switch_prf
-  aci_fabric_leaf_profile:
+  cisco.aci.aci_fabric_leaf_profile:
     <<: *aci_info
     name: ansible_leaf_switch_prf
     state: absent

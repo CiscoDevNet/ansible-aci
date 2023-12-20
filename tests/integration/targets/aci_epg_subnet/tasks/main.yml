@@ -5,12 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,14 +21,14 @@
       output_level: debug
 
 - name: Query system information
-  aci_system:
+  cisco.aci.aci_system:
     <<: *aci_info
     id: 1
     state: query
   register: version
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: ensure tenant does not exists
   cisco.aci.aci_tenant: &aci_tenant_absent
@@ -138,7 +138,7 @@
     ignore_errors: true
 
   - name: asserts for subnet creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - create_check_mode is changed
         - create_check_mode.sent.fvSubnet.attributes.descr == create_subnet.sent.fvSubnet.attributes.descr == 'Ansible Test'
@@ -155,7 +155,7 @@
         - create_wrong_mask.msg == "Valid Subnet Masks are 0 to 32 for IPv4 Addresses and 0 to 128 for IPv6 addresses"
 
   - name: assert for subnet IpDPlearning tasks version >=5
-    assert:
+    ansible.builtin.assert:
       that:
         - create_subnet2_5 is changed
         - create_subnet2_5.current.0.fvSubnet.attributes.ctrl == 'no-default-gateway'
@@ -170,7 +170,7 @@
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: assert for subnet IpDPlearning tasks version < 5
-    assert:
+    ansible.builtin.assert:
       that:
         - create_subnet2 is changed
         - create_subnet2.current.0.fvSubnet.attributes.ctrl == 'no-default-gateway'
@@ -204,7 +204,7 @@
     register: get_subnets_gateway
 
   - name: asserts for query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - get_all_epg is not changed
         - '"rsp-subtree-class=fvRsBDSubnetToProfile,fvRsNdPfxPol,fvSubnet" in get_all_epg.filter_string'
@@ -241,7 +241,7 @@
     register: delete_idempotency
 
   - name: asserts for deletion task
-    assert:
+    ansible.builtin.assert:
       that:
         - delete_check_mode is changed
         - delete_check_mode.proposed == {}

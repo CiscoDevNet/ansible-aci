@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,14 +21,14 @@
       output_level: '{{ aci_output_level | default("debug") }}'
 
 - name: Query system information
-  aci_system:
+  cisco.aci.aci_system:
     <<: *aci_info
     id: 1
     state: query
   register: version
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -237,7 +237,7 @@
         register: vmm_uplink_change_active
 
       - name: vmm_uplink assertions
-        assert:
+        ansible.builtin.assert:
           that:
             - vmm_uplink is changed
             - vmm_uplink.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "1,2"
@@ -287,7 +287,7 @@
         register: vmm_uplink_empty_value_standby
 
       - name: vmm_uplink assertions
-        assert:
+        ansible.builtin.assert:
           that:
             - vmm_uplink_0_value is changed
             - vmm_uplink_0_value.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "0"
@@ -324,14 +324,14 @@
         register: vmm_uplink_33_value
 
       - name: vmm_uplink error assertions
-        assert:
+        ansible.builtin.assert:
           that:
             - 'vmm_uplink_change_active_same_as_standby.msg == "APIC Error 120: Invalid Configuration. Uplink Id entered more than once or delimiter was  misused."'
             - 'vmm_uplink_empty_value_active.msg == "APIC Error 801: property active of uni/tn-ansible_test/ap-anstest/epg-anstest/rsdomAtt-[uni/vmmp-VMware/dom-anstest]/uplinkorder failed validation for value ''''"'
             - 'vmm_uplink_string_value.msg == "APIC Error 801: property active of uni/tn-ansible_test/ap-anstest/epg-anstest/rsdomAtt-[uni/vmmp-VMware/dom-anstest]/uplinkorder failed validation for value ''testing''"'
 
       - name: vmm_uplink error assertions for non-cloud
-        assert:
+        ansible.builtin.assert:
           that:
             - 'vmm_uplink_33_value.msg == "APIC Error 120: Invalid Configuration. Uplink Id can not be higher than 32."'
 
@@ -344,7 +344,7 @@
         register: custom_epg_name
 
       - name: Verify custom epg name
-        assert:
+        ansible.builtin.assert:
           that:
             - custom_epg_name.current.0.fvRsDomAtt.attributes.customEpgName == "anstest_epg"
 
@@ -386,7 +386,7 @@
     loop: "{{ range(0, 7, 1)|list }}"
 
   - name: domains with delimiter assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - delimeter.results.0 is changed
         - delimeter.results.0.current.0.fvRsDomAtt.attributes.delimiter == "|"
@@ -441,7 +441,7 @@
     register: untagged_vlan_absent
 
   - name: domains with untagged vlan assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - untagged_vlan_true is changed
         - untagged_vlan_true.current.0.fvRsDomAtt.attributes.untagged == "yes"
@@ -489,7 +489,7 @@
         register: port_binding_absent
 
       - name: domains with port binding assertions
-        assert:
+        ansible.builtin.assert:
           that:
             - port_binding_dynamic is changed
             - port_binding_dynamic.current.0.fvRsDomAtt.attributes.bindingType == "dynamicBinding"
@@ -532,7 +532,7 @@
         register: port_allocation_absent
 
       - name: domains with port allocation assertions
-        assert:
+        ansible.builtin.assert:
           that:
             - port_allocation_elastic is changed
             - port_allocation_elastic.current.0.fvRsDomAtt.attributes.portAllocation == "elastic"
@@ -565,7 +565,7 @@
         register: number_of_ports_absent
 
       - name: domains with number of ports assertions
-        assert:
+        ansible.builtin.assert:
           that:
             - number_of_ports_2 is changed
             - number_of_ports_2.current.0.fvRsDomAtt.attributes.numPorts == "2"
@@ -598,7 +598,7 @@
     register: forged_transmits_and_mac_changes_absent
 
   - name: domains with forged transmits and mac changes assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - forged_transmits_and_mac_changes_accept is changed
         - forged_transmits_and_mac_changes_accept.current.0.fvRsDomAtt.children.0.vmmSecP.attributes.forgedTransmits == "accept"
@@ -610,7 +610,7 @@
         - forged_transmits_and_mac_changes_absent.current == []
 
   - name: present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - phys_check_mode_present is changed
         - phys_present is changed
@@ -649,7 +649,7 @@
     register: binding_query
 
   - name: query assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - binding_query is not changed
         - binding_query.current | length > 1
@@ -686,7 +686,7 @@
     register: absent_missing_param
 
   - name: absent assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - epg_domain_check_mode_absent is changed
         - epg_domain_check_mode_absent.previous != []

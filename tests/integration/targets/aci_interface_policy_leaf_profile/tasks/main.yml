@@ -5,12 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -70,7 +70,7 @@
     register: nm_add_leaf_interface_profile_fex
 
   - name: Verify add_leaf_interface_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_leaf_interface_profile is changed
       - nm_add_leaf_interface_profile is changed
@@ -115,7 +115,7 @@
     register: nm_add_leaf_interface_profile_descr_fex
 
   - name: Verify add_leaf_interface_profile_descr
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_leaf_interface_profile_descr is changed
       - nm_add_leaf_interface_profile_descr is changed
@@ -141,7 +141,7 @@
     register: nm_add_leaf_interface_profile_again_no_descr_fex
 
   - name: Verify add_leaf_interface_profile_again_no_descr
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_leaf_interface_profile_again_no_descr is not changed
       - nm_add_leaf_interface_profile_again_no_descr is not changed
@@ -171,7 +171,7 @@
       type: fex
   
   - name: Verify query_all_leaf_interface_profiles
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_query_all_leaf_interface_profiles is not changed
       - nm_query_all_leaf_interface_profiles is not changed
@@ -200,7 +200,7 @@
     register: nm_query_leaf_interface_profile_fex
 
   - name: Verify query_leaf_interface_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_query_leaf_interface_profile is not changed
       - nm_query_leaf_interface_profile is not changed
@@ -234,7 +234,7 @@
     register: nm_remove_leaf_interface_profile_again_fex
 
   - name: Verify remove_leaf_interface_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_remove_leaf_interface_profile is changed
       - nm_remove_leaf_interface_profile is changed
@@ -265,7 +265,7 @@
 
   # TODO: Implement more tests
   - name: Verify query_non_leaf_interface_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_query_non_leaf_interface_profile is not changed
       - nm_query_non_leaf_interface_profile is not changed

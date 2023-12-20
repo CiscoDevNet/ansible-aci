@@ -1,15 +1,16 @@
 # Test code for the ACI modules
 # Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+# Copyright: (c) 2023, Akini Ross (@akinross) <akinross@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -18,29 +19,36 @@
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: debug
-    
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info 
     tenant: ansible_tenant
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Add a new tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info 
       tenant: ansible_tenant
       description: Ansible tenant
       state: present
 
   - name: Remove the ansible_l3out
-    aci_l3out: &aci_l3out_absent
+    cisco.aci.aci_l3out: &aci_l3out_absent
       <<: *aci_info
       tenant: ansible_tenant
       name: ansible_l3out
@@ -50,7 +58,7 @@
       state: absent
 
   - name: Remove the second ansible_l3out
-    aci_l3out: &aci_l3out_2_absent
+    cisco.aci.aci_l3out: &aci_l3out_2_absent
       <<: *aci_info
       tenant: ansible_tenant
       name: ansible_l3out_2
@@ -61,30 +69,30 @@
       state: absent
   
   - name: Add a new L3Out (check_mode)
-    aci_l3out: &aci_l3out_present
+    cisco.aci.aci_l3out: &aci_l3out_present
       <<: *aci_l3out_absent
       state: present
     check_mode: true
     register: cm_add_l3out
 
   - name: Add a new L3Out (normal_mode)
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_l3out_present
     register: nm_add_l3out
   
   - name: create L3Out again - testing idempotency
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_l3out_present
     register: create_idempotency
 
   - name: Add the second ansible_l3out
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_l3out_2_absent
       state: present
     register: cm_add_l3out_2
 
   - name: asserts for l3out creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_l3out is changed
         - cm_add_l3out.previous == []
@@ -95,26 +103,26 @@
         - create_idempotency is not changed
 
   - name: Add export and import to route_control 
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_l3out_present
       route_control: [ import, export ]
     register: nm_add_l3out_import_export
 
   - name: Add export to route_control 
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_l3out_present
       route_control: export
     register: nm_add_l3out_export
 
   - name: Add just import to route_control - testing failure message
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_l3out_present
       route_control: import
     register: nm_add_l3out_import_error
     ignore_errors: true
 
   - name: asserts for l3out route control tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_add_l3out_import_export is changed
         - nm_add_l3out_import_export.current.0.l3extOut.attributes.enforceRtctrl == "export,import"
@@ -123,26 +131,44 @@
         - nm_add_l3out_import_error.msg == "The route_control parameter is invalid{{':'}} allowed options are export or import,export only"
 
   - name: Add BGP protocol
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_l3out_present
       l3protocol: bgp
     register: nm_add_l3out_bgp
 
   - name: Add BGP protocol again - testing L3protocol changes
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_l3out_present
       l3protocol: bgp
     register: nm_add_l3out_bgp_again
 
+  - name: Remove OSPF protocol - testing L3protocol changes
+    cisco.aci.aci_l3out: &aci_l3out_remove_ospf
+      <<: *aci_l3out_2_absent
+      l3protocol: [ eigrp, pim ]
+      asn: 1
+      state: present
+    register: nm_add_l3out_bgp_without_ospf
+  
+  - name: Remove OSPF protocol again - testing L3protocol changes
+    cisco.aci.aci_l3out:
+      <<: *aci_l3out_remove_ospf
+    register: nm_add_l3out_bgp_without_ospf_again
+
   - name: Add PIM protocol, ospf_spec and asn - testing warning message for asn
-    aci_l3out:
+    aci_l3out: &aci_l3out_add_pim
       <<: *aci_l3out_present
       l3protocol: pim
       asn: 1
     register: nm_add_l3out_pim
 
+  - name: Add PIM protocol, ospf_spec and asn again - testing warning message for asn
+    aci_l3out: 
+      <<: *aci_l3out_add_pim
+    register: nm_add_l3out_pim_again
+  
   - name: Add EIGRP protocol - testing warning message for OSPF spec
-    aci_l3out:
+    cisco.aci.aci_l3out: &aci_l3out_add_eigrp
       <<: *aci_l3out_present
       l3protocol: eigrp
       asn: 1
@@ -150,8 +176,13 @@
         description: OSPF warnings message works
     register: nm_add_l3out_eigrp
 
-  - name: remove asn - testing failure message
+  - name: Add EIGRP protocol again - testing warning message for OSPF spec
     aci_l3out:
+      <<: *aci_l3out_add_eigrp
+    register: nm_add_l3out_eigrp_again
+
+  - name: remove asn - testing failure message
+    cisco.aci.aci_l3out:
       <<: *aci_l3out_present
       l3protocol: eigrp
       asn: null
@@ -159,26 +190,30 @@
     ignore_errors: true
   
   - name: remove protocol - testing static protocol
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_l3out_present
       l3protocol: static
     register: nm_remove_l3protocol
 
   - name: asserts for l3out protocols tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_add_l3out_bgp is changed
-        - nm_add_l3out_bgp_again is changed
+        - nm_add_l3out_bgp_again is not changed
+        - nm_add_l3out_bgp_without_ospf is changed
+        - nm_add_l3out_bgp_without_ospf_again is not changed
         - nm_add_l3out_pim is changed
         - nm_add_l3out_pim.warnings.0 == "Parameter 'asn' is only applicable when l3protocol is 'eigrp'. The ASN will be ignored"
+        - nm_add_l3out_pim_again is not changed
         - nm_add_l3out_eigrp is changed
         - nm_add_l3out_eigrp.current.0.l3extOut.children.0.eigrpExtP.attributes.asn == "1"
         - nm_add_l3out_eigrp.warnings.0 == "Parameter 'ospf' is only applicable when l3protocol is 'ospf'. The OPSF specifications will be ignored"
+        - nm_add_l3out_eigrp_again is not changed
         - add_l3out_without_asn.msg == "Parameter 'asn' is required when l3protocol is 'eigrp'"
         - nm_remove_l3protocol is changed
 
   - name: Add OSPF protocol
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_l3out_present
       l3protocol: ospf
       ospf:
@@ -191,7 +226,7 @@
     register: nm_add_l3out_ospf
 
   - name: asserts for l3out OSPF protocol tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_add_l3out_ospf is changed
         - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.areaCost == "1"
@@ -202,58 +237,58 @@
         - nm_add_l3out_ospf.current.0.l3extOut.children.2.ospfExtP.attributes.multipodInternal == "no"
 
   - name: get ansible_l3out
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_l3out_present
       state: query
     register: get_l3out
 
   - name: get all l3outs in ansible_tenant
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_info
       tenant: ansible_tenant
       state: query
     register: get_all_l3out_ansible_tenant
 
   - name: get all l3outs
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_info
       state: query
     register: get_all_l3out
   
   - name: asserts query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - get_l3out is not changed
         - '"rsp-subtree=full&rsp-subtree-class=bgpExtP,eigrpExtP,l3extRsEctx,l3extRsL3DomAtt,ospfExtP,pimExtP" in get_l3out.filter_string'
         - '"tn-ansible_tenant/out-ansible_l3out.json" in get_l3out.url'
         - get_all_l3out_ansible_tenant is not changed
-        - '"ospfExtP" in get_all_l3out_ansible_tenant.current.0.fvTenant.children.0.l3extOut.children.2'
+        - '"pimExtP" in get_all_l3out_ansible_tenant.current.0.fvTenant.children.0.l3extOut.children.0'
+        - '"eigrpExtP" in get_all_l3out_ansible_tenant.current.0.fvTenant.children.0.l3extOut.children.1'
         - '"ospfExtP" in get_all_l3out_ansible_tenant.current.0.fvTenant.children.1.l3extOut.children.2'
-        - '"bgpExtP" in get_all_l3out_ansible_tenant.current.0.fvTenant.children.1.l3extOut.children.3'
         - get_all_l3out is not changed
         - get_all_l3out.current | length >= 2
 
   - name: delete l3out (check_mode)
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_l3out_present
       state: absent
     check_mode: true
     register: delete_cm
 
   - name: delete l3out (normal_mode)
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_l3out_present
       state: absent
     register: delete_l3out
 
   - name: delete l3out again - testing idempotency
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_l3out_present
       state: absent
     register: delete_idempotency
 
   - name: asserts for deletion tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - delete_cm is changed
         - delete_cm.proposed == {}
@@ -263,8 +298,120 @@
         - delete_idempotency is not changed
         - delete_idempotency.previous == []
 
+  - name: Execute tasks only for ACI v5+ because SR-MPLS L3Out is not supported lower versions
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    block:
+  
+    - name: Add a SR-MPLS l3out
+      cisco.aci.aci_l3out: &aci_sr_mpls_l3out
+        <<: *aci_info
+        tenant: ansible_tenant
+        name: ansible_sr_mpls_l3out
+        domain: ansible_dom
+        vrf: ansible_vrf
+        mpls: "yes"
+        state: present
+      register: add_sr_mpls_l3out
+
+    - name: Add a SR-MPLS l3out again
+      cisco.aci.aci_l3out:
+        <<: *aci_sr_mpls_l3out
+      register: add_sr_mpls_l3out_again
+
+    - name: Delete a SR-MPLS l3out
+      cisco.aci.aci_l3out:
+        <<: *aci_sr_mpls_l3out
+        state: absent
+      register: delete_sr_mpls_l3out
+
+    - name: Ensure infra SR-MPLS l3out does not exist
+      cisco.aci.aci_l3out: &aci_infra_sr_mpls_l3out_absent
+        <<: *aci_info
+        tenant: infra
+        name: ansible_infra_sr_mpls_l3out
+        mpls: "yes"
+        state: absent
+
+    - name: Add a infra SR-MPLS l3out (error)
+      cisco.aci.aci_l3out: &aci_infra_sr_mpls_l3out
+        <<: *aci_info
+        tenant: infra
+        name: ansible_infra_sr_mpls_l3out
+        domain: ansible_dom
+        vrf: ansible_vrf
+        l3protocol: ospf
+        mpls: "yes"
+      ignore_errors: true
+      register: err_infra_sr_mpls_l3out_no_bgp
+
+    - name: Add a infra SR-MPLS l3out (error)
+      cisco.aci.aci_l3out:
+        <<: *aci_infra_sr_mpls_l3out
+        l3protocol: bgp
+      ignore_errors: true
+      register: err_infra_sr_mpls_l3out_no_overlay_1_vrf
+
+    - name: Add a infra SR-MPLS l3out 
+      cisco.aci.aci_l3out:
+        <<: *aci_infra_sr_mpls_l3out
+        vrf: overlay-1
+        l3protocol: bgp
+      register: add_infra_sr_mpls_l3out
+
+    - name: Add a infra SR-MPLS l3out again
+      cisco.aci.aci_l3out:
+        <<: *aci_infra_sr_mpls_l3out
+        vrf: overlay-1
+        l3protocol: bgp
+      register: add_infra_sr_mpls_l3out_again
+
+    - name: Delete a infra SR-MPLS l3out 
+      cisco.aci.aci_l3out:
+        <<: *aci_infra_sr_mpls_l3out_absent
+      register: delete_infra_sr_mpls_l3out
+
+    - name: Asserts SR-MPLS l3out
+      ansible.builtin.assert:
+        that:
+          - add_sr_mpls_l3out is changed
+          - add_sr_mpls_l3out.previous == []
+          - add_sr_mpls_l3out.current.0.l3extOut.attributes.mplsEnabled == "yes"
+          - add_sr_mpls_l3out.current.0.l3extOut.attributes.name == "ansible_sr_mpls_l3out"
+          - add_sr_mpls_l3out.current.0.l3extOut.children.0.l3extRsL3DomAtt.attributes.tDn == "uni/l3dom-ansible_dom"
+          - add_sr_mpls_l3out.current.0.l3extOut.children.1.l3extRsEctx.attributes.tnFvCtxName == "ansible_vrf"
+          - add_sr_mpls_l3out_again is not changed
+          - delete_sr_mpls_l3out is changed
+          - delete_sr_mpls_l3out.previous.0.l3extOut.attributes.mplsEnabled == "yes"
+          - delete_sr_mpls_l3out.previous.0.l3extOut.attributes.name == "ansible_sr_mpls_l3out"
+          - delete_sr_mpls_l3out.previous.0.l3extOut.children.0.l3extRsL3DomAtt.attributes.tDn == "uni/l3dom-ansible_dom"
+          - delete_sr_mpls_l3out.previous.0.l3extOut.children.1.l3extRsEctx.attributes.tnFvCtxName == "ansible_vrf"
+          - delete_sr_mpls_l3out.current == []
+          - add_infra_sr_mpls_l3out is changed
+          - add_infra_sr_mpls_l3out.previous == []
+          - add_infra_sr_mpls_l3out.current.0.l3extOut.attributes.mplsEnabled == "yes"
+          - add_infra_sr_mpls_l3out.current.0.l3extOut.attributes.name == "ansible_infra_sr_mpls_l3out"
+          - add_infra_sr_mpls_l3out.current.0.l3extOut.children.0.mplsExtP.children.0.mplsRsLabelPol.attributes.tDn == "uni/tn-infra/mplslabelpol-default"
+          - add_infra_sr_mpls_l3out.current.0.l3extOut.children.1.l3extRsL3DomAtt.attributes.tDn == "uni/l3dom-ansible_dom"
+          - add_infra_sr_mpls_l3out.current.0.l3extOut.children.2.l3extProvLbl.attributes.name == "ansible_infra_sr_mpls_l3out"
+          - add_infra_sr_mpls_l3out.current.0.l3extOut.children.3.l3extRsEctx.attributes.tnFvCtxName == "overlay-1"
+          - add_infra_sr_mpls_l3out.current.0.l3extOut.children.4.bgpExtP.attributes.descr == ""
+          - add_infra_sr_mpls_l3out_again is not changed
+          - delete_infra_sr_mpls_l3out is changed
+          - delete_infra_sr_mpls_l3out.previous.0.l3extOut.attributes.mplsEnabled == "yes"
+          - delete_infra_sr_mpls_l3out.previous.0.l3extOut.attributes.name == "ansible_infra_sr_mpls_l3out"
+          - delete_infra_sr_mpls_l3out.previous.0.l3extOut.children.0.mplsExtP.children.0.mplsRsLabelPol.attributes.tDn == "uni/tn-infra/mplslabelpol-default"
+          - delete_infra_sr_mpls_l3out.previous.0.l3extOut.children.1.l3extRsL3DomAtt.attributes.tDn == "uni/l3dom-ansible_dom"
+          - delete_infra_sr_mpls_l3out.previous.0.l3extOut.children.2.l3extProvLbl.attributes.name == "ansible_infra_sr_mpls_l3out"
+          - delete_infra_sr_mpls_l3out.previous.0.l3extOut.children.3.l3extRsEctx.attributes.tnFvCtxName == "overlay-1"
+          - delete_infra_sr_mpls_l3out.previous.0.l3extOut.children.4.bgpExtP.attributes.descr == ""
+          - delete_infra_sr_mpls_l3out.current == []
+          - err_infra_sr_mpls_l3out_no_overlay_1_vrf.failed == true
+          - err_infra_sr_mpls_l3out_no_overlay_1_vrf.msg == "The vrf parameter must be 'overlay-1' when tenant is 'infra' and mpls is 'yes'"
+          - err_infra_sr_mpls_l3out_no_bgp.failed == true
+          - err_infra_sr_mpls_l3out_no_bgp.msg == "The l3protocol parameter must be 'bgp' when tenant is 'infra' and mpls is 'yes'"
+
   - name: Delete the ansible_tenant - cleanup before ending tests
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       tenant: ansible_tenant
       state: absent

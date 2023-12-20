@@ -1,0 +1,307 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
+  block:
+  
+  # CONFIGURE SYSTEM ENDPOINT CONTROLS SETTINGS TO DEFAULT
+  - name: Set system endpoint controls settings to default prior to test
+    cisco.aci.aci_system_endpoint_controls: 
+      <<: *aci_info
+      ip_aging:
+        admin_state: false
+      roque_ep_control:
+        admin_state: false
+        interval: 60
+        multiplication_factor: 4
+        hold_interval: 1800
+      ep_loop_protection:
+        admin_state: false
+        interval: 60
+        multiplication_factor: 4
+        action: [ port ]
+
+  # CONFIGURE SYSTEM ENDPOINT CONTROLS SETTINGS
+  - name: Set system endpoint controls settings (check_mode)
+    cisco.aci.aci_system_endpoint_controls: &endpoint_controls
+      <<: *aci_info
+      ip_aging:
+        admin_state: true
+      roque_ep_control:
+        admin_state: true
+        interval: 50
+        multiplication_factor: 10
+        hold_interval: 2000
+      ep_loop_protection:
+        admin_state: true
+        interval: 70
+        multiplication_factor: 15
+        action: [ bd, port ]
+    check_mode: true
+    register: cm_set_endpoint_controls
+  
+  - name: Set system endpoint controls settings
+    cisco.aci.aci_system_endpoint_controls:
+      <<: *endpoint_controls
+    register: nm_set_endpoint_controls
+  
+  - name: Set system endpoint controls settings again
+    cisco.aci.aci_system_endpoint_controls:
+      <<: *endpoint_controls
+    register: nm_set_endpoint_controls_again
+  
+  - name: Verify set system endpoint controls
+    ansible.builtin.assert:
+      that:
+      - cm_set_endpoint_controls is changed
+      - cm_set_endpoint_controls.proposed.infraInfra.children.0.epIpAgingP.attributes.adminSt == "enabled"
+      - cm_set_endpoint_controls.proposed.infraInfra.children.0.epIpAgingP.attributes.name == "default"
+      - cm_set_endpoint_controls.proposed.infraInfra.children.1.epControlP.attributes.adminSt == "enabled"
+      - cm_set_endpoint_controls.proposed.infraInfra.children.1.epControlP.attributes.name == "default"
+      - cm_set_endpoint_controls.proposed.infraInfra.children.1.epControlP.attributes.holdIntvl == "2000"
+      - cm_set_endpoint_controls.proposed.infraInfra.children.1.epControlP.attributes.rogueEpDetectIntvl == "50"
+      - cm_set_endpoint_controls.proposed.infraInfra.children.1.epControlP.attributes.rogueEpDetectMult == "10"
+      - cm_set_endpoint_controls.proposed.infraInfra.children.2.epLoopProtectP.attributes.adminSt == "enabled"
+      - cm_set_endpoint_controls.proposed.infraInfra.children.2.epLoopProtectP.attributes.name == "default"
+      - cm_set_endpoint_controls.proposed.infraInfra.children.2.epLoopProtectP.attributes.action == "bd-learn-disable,port-disable"
+      - cm_set_endpoint_controls.proposed.infraInfra.children.2.epLoopProtectP.attributes.loopDetectIntvl == "70"
+      - cm_set_endpoint_controls.proposed.infraInfra.children.2.epLoopProtectP.attributes.loopDetectMult == "15"
+      - nm_set_endpoint_controls is changed
+      - nm_set_endpoint_controls.current.0.infraInfra.children.0.epIpAgingP.attributes.adminSt == "enabled"
+      - nm_set_endpoint_controls.current.0.infraInfra.children.0.epIpAgingP.attributes.name == "default"
+      - nm_set_endpoint_controls.current.0.infraInfra.children.1.epControlP.attributes.adminSt == "enabled"
+      - nm_set_endpoint_controls.current.0.infraInfra.children.1.epControlP.attributes.name == "default"
+      - nm_set_endpoint_controls.current.0.infraInfra.children.1.epControlP.attributes.holdIntvl == "2000"
+      - nm_set_endpoint_controls.current.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectIntvl == "50"
+      - nm_set_endpoint_controls.current.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectMult == "10"
+      - nm_set_endpoint_controls.current.0.infraInfra.children.2.epLoopProtectP.attributes.adminSt == "enabled"
+      - nm_set_endpoint_controls.current.0.infraInfra.children.2.epLoopProtectP.attributes.name == "default"
+      - nm_set_endpoint_controls.current.0.infraInfra.children.2.epLoopProtectP.attributes.action == "bd-learn-disable,port-disable"
+      - nm_set_endpoint_controls.current.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectIntvl == "70"
+      - nm_set_endpoint_controls.current.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectMult == "15"
+      - nm_set_endpoint_controls_again is not changed
+      - nm_set_endpoint_controls_again.current.0.infraInfra.children.0.epIpAgingP.attributes.adminSt == "enabled"
+      - nm_set_endpoint_controls_again.current.0.infraInfra.children.0.epIpAgingP.attributes.name == "default"
+      - nm_set_endpoint_controls_again.current.0.infraInfra.children.1.epControlP.attributes.adminSt == "enabled"
+      - nm_set_endpoint_controls_again.current.0.infraInfra.children.1.epControlP.attributes.name == "default"
+      - nm_set_endpoint_controls_again.current.0.infraInfra.children.1.epControlP.attributes.holdIntvl == "2000"
+      - nm_set_endpoint_controls_again.current.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectIntvl == "50"
+      - nm_set_endpoint_controls_again.current.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectMult == "10"
+      - nm_set_endpoint_controls_again.current.0.infraInfra.children.2.epLoopProtectP.attributes.adminSt == "enabled"
+      - nm_set_endpoint_controls_again.current.0.infraInfra.children.2.epLoopProtectP.attributes.name == "default"
+      - nm_set_endpoint_controls_again.current.0.infraInfra.children.2.epLoopProtectP.attributes.action == "bd-learn-disable,port-disable"
+      - nm_set_endpoint_controls_again.current.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectIntvl == "70"
+      - nm_set_endpoint_controls_again.current.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectMult == "15"
+      - nm_set_endpoint_controls_again.previous.0.infraInfra.children.0.epIpAgingP.attributes.adminSt == "enabled"
+      - nm_set_endpoint_controls_again.previous.0.infraInfra.children.0.epIpAgingP.attributes.name == "default"
+      - nm_set_endpoint_controls_again.previous.0.infraInfra.children.1.epControlP.attributes.adminSt == "enabled"
+      - nm_set_endpoint_controls_again.previous.0.infraInfra.children.1.epControlP.attributes.name == "default"
+      - nm_set_endpoint_controls_again.previous.0.infraInfra.children.1.epControlP.attributes.holdIntvl == "2000"
+      - nm_set_endpoint_controls_again.previous.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectIntvl == "50"
+      - nm_set_endpoint_controls_again.previous.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectMult == "10"
+      - nm_set_endpoint_controls_again.previous.0.infraInfra.children.2.epLoopProtectP.attributes.adminSt == "enabled"
+      - nm_set_endpoint_controls_again.previous.0.infraInfra.children.2.epLoopProtectP.attributes.name == "default"
+      - nm_set_endpoint_controls_again.previous.0.infraInfra.children.2.epLoopProtectP.attributes.action == "bd-learn-disable,port-disable"
+      - nm_set_endpoint_controls_again.previous.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectIntvl == "70"
+      - nm_set_endpoint_controls_again.previous.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectMult == "15"
+  
+  - name: Set ip aging system endpoint controls settings to default
+    cisco.aci.aci_system_endpoint_controls:
+      <<: *aci_info
+      ip_aging:
+        admin_state: false
+    register: nm_ip_aging
+
+  - name: Set roque ep control system endpoint controls settings to default
+    cisco.aci.aci_system_endpoint_controls:
+      <<: *aci_info
+      roque_ep_control:
+        admin_state: false
+        interval: 60
+        multiplication_factor: 4
+        hold_interval: 1800
+    register: nm_roque_ep_control
+  
+  - name: Set ep loop protection system endpoint controls settings without action to default 
+    cisco.aci.aci_system_endpoint_controls:
+      <<: *aci_info
+      ep_loop_protection:
+        admin_state: false
+        interval: 60
+        multiplication_factor: 4
+    register: nm_ep_loop_protection_no_action
+
+  - name: Set ep loop protection system endpoint controls settings action to default
+    cisco.aci.aci_system_endpoint_controls:
+      <<: *aci_info
+      ep_loop_protection:
+        action: port
+    register: nm_ep_loop_protection_action
+
+  - name: Set system endpoint controls settings without config in config containers
+    cisco.aci.aci_system_endpoint_controls:
+      <<: *aci_info
+      ip_aging:
+      roque_ep_control:
+      ep_loop_protection:
+    register: nm_no_config_in_config_containers
+
+  - name: Set system endpoint controls settings without config (error)
+    cisco.aci.aci_system_endpoint_controls:
+      <<: *aci_info
+    register: err_no_config
+    ignore_errors: true
+  
+  - name: Verify individual set system endpoint controls and error
+    ansible.builtin.assert:
+      that:
+      - nm_ip_aging is changed
+      - nm_ip_aging.previous.0.infraInfra.children.0.epIpAgingP.attributes.adminSt == "enabled"
+      - nm_ip_aging.previous.0.infraInfra.children.0.epIpAgingP.attributes.name == "default"
+      - nm_ip_aging.previous.0.infraInfra.children.1.epControlP.attributes.adminSt == "enabled"
+      - nm_ip_aging.previous.0.infraInfra.children.1.epControlP.attributes.name == "default"
+      - nm_ip_aging.previous.0.infraInfra.children.1.epControlP.attributes.holdIntvl == "2000"
+      - nm_ip_aging.previous.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectIntvl == "50"
+      - nm_ip_aging.previous.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectMult == "10"
+      - nm_ip_aging.previous.0.infraInfra.children.2.epLoopProtectP.attributes.adminSt == "enabled"
+      - nm_ip_aging.previous.0.infraInfra.children.2.epLoopProtectP.attributes.name == "default"
+      - nm_ip_aging.previous.0.infraInfra.children.2.epLoopProtectP.attributes.action == "bd-learn-disable,port-disable"
+      - nm_ip_aging.previous.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectIntvl == "70"
+      - nm_ip_aging.previous.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectMult == "15"
+      - nm_ip_aging.current.0.infraInfra.children.0.epIpAgingP.attributes.adminSt == "disabled"
+      - nm_ip_aging.current.0.infraInfra.children.0.epIpAgingP.attributes.name == "default"
+      - nm_ip_aging.current.0.infraInfra.children.1.epControlP.attributes.adminSt == "enabled"
+      - nm_ip_aging.current.0.infraInfra.children.1.epControlP.attributes.name == "default"
+      - nm_ip_aging.current.0.infraInfra.children.1.epControlP.attributes.holdIntvl == "2000"
+      - nm_ip_aging.current.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectIntvl == "50"
+      - nm_ip_aging.current.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectMult == "10"
+      - nm_ip_aging.current.0.infraInfra.children.2.epLoopProtectP.attributes.adminSt == "enabled"
+      - nm_ip_aging.current.0.infraInfra.children.2.epLoopProtectP.attributes.name == "default"
+      - nm_ip_aging.current.0.infraInfra.children.2.epLoopProtectP.attributes.action == "bd-learn-disable,port-disable"
+      - nm_ip_aging.current.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectIntvl == "70"
+      - nm_ip_aging.current.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectMult == "15"
+      - nm_roque_ep_control is changed
+      - nm_roque_ep_control.previous.0.infraInfra.children.0.epIpAgingP.attributes.adminSt == "disabled"
+      - nm_roque_ep_control.previous.0.infraInfra.children.0.epIpAgingP.attributes.name == "default"
+      - nm_roque_ep_control.previous.0.infraInfra.children.1.epControlP.attributes.adminSt == "enabled"
+      - nm_roque_ep_control.previous.0.infraInfra.children.1.epControlP.attributes.name == "default"
+      - nm_roque_ep_control.previous.0.infraInfra.children.1.epControlP.attributes.holdIntvl == "2000"
+      - nm_roque_ep_control.previous.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectIntvl == "50"
+      - nm_roque_ep_control.previous.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectMult == "10"
+      - nm_roque_ep_control.previous.0.infraInfra.children.2.epLoopProtectP.attributes.adminSt == "enabled"
+      - nm_roque_ep_control.previous.0.infraInfra.children.2.epLoopProtectP.attributes.name == "default"
+      - nm_roque_ep_control.previous.0.infraInfra.children.2.epLoopProtectP.attributes.action == "bd-learn-disable,port-disable"
+      - nm_roque_ep_control.previous.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectIntvl == "70"
+      - nm_roque_ep_control.previous.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectMult == "15"
+      - nm_roque_ep_control.current.0.infraInfra.children.0.epIpAgingP.attributes.adminSt == "disabled"
+      - nm_roque_ep_control.current.0.infraInfra.children.0.epIpAgingP.attributes.name == "default"
+      - nm_roque_ep_control.current.0.infraInfra.children.1.epControlP.attributes.adminSt == "disabled"
+      - nm_roque_ep_control.current.0.infraInfra.children.1.epControlP.attributes.name == "default"
+      - nm_roque_ep_control.current.0.infraInfra.children.1.epControlP.attributes.holdIntvl == "1800"
+      - nm_roque_ep_control.current.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectIntvl == "60"
+      - nm_roque_ep_control.current.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectMult == "4"
+      - nm_roque_ep_control.current.0.infraInfra.children.2.epLoopProtectP.attributes.adminSt == "enabled"
+      - nm_roque_ep_control.current.0.infraInfra.children.2.epLoopProtectP.attributes.name == "default"
+      - nm_roque_ep_control.current.0.infraInfra.children.2.epLoopProtectP.attributes.action == "bd-learn-disable,port-disable"
+      - nm_roque_ep_control.current.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectIntvl == "70"
+      - nm_roque_ep_control.current.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectMult == "15"
+      - nm_ep_loop_protection_no_action is changed
+      - nm_ep_loop_protection_no_action.previous.0.infraInfra.children.0.epIpAgingP.attributes.adminSt == "disabled"
+      - nm_ep_loop_protection_no_action.previous.0.infraInfra.children.0.epIpAgingP.attributes.name == "default"
+      - nm_ep_loop_protection_no_action.previous.0.infraInfra.children.1.epControlP.attributes.adminSt == "disabled"
+      - nm_ep_loop_protection_no_action.previous.0.infraInfra.children.1.epControlP.attributes.name == "default"
+      - nm_ep_loop_protection_no_action.previous.0.infraInfra.children.1.epControlP.attributes.holdIntvl == "1800"
+      - nm_ep_loop_protection_no_action.previous.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectIntvl == "60"
+      - nm_ep_loop_protection_no_action.previous.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectMult == "4"
+      - nm_ep_loop_protection_no_action.previous.0.infraInfra.children.2.epLoopProtectP.attributes.adminSt == "enabled"
+      - nm_ep_loop_protection_no_action.previous.0.infraInfra.children.2.epLoopProtectP.attributes.name == "default"
+      - nm_ep_loop_protection_no_action.previous.0.infraInfra.children.2.epLoopProtectP.attributes.action == "bd-learn-disable,port-disable"
+      - nm_ep_loop_protection_no_action.previous.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectIntvl == "70"
+      - nm_ep_loop_protection_no_action.previous.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectMult == "15"
+      - nm_ep_loop_protection_no_action.current.0.infraInfra.children.0.epIpAgingP.attributes.adminSt == "disabled"
+      - nm_ep_loop_protection_no_action.current.0.infraInfra.children.0.epIpAgingP.attributes.name == "default"
+      - nm_ep_loop_protection_no_action.current.0.infraInfra.children.1.epControlP.attributes.adminSt == "disabled"
+      - nm_ep_loop_protection_no_action.current.0.infraInfra.children.1.epControlP.attributes.name == "default"
+      - nm_ep_loop_protection_no_action.current.0.infraInfra.children.1.epControlP.attributes.holdIntvl == "1800"
+      - nm_ep_loop_protection_no_action.current.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectIntvl == "60"
+      - nm_ep_loop_protection_no_action.current.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectMult == "4"
+      - nm_ep_loop_protection_no_action.current.0.infraInfra.children.2.epLoopProtectP.attributes.adminSt == "disabled"
+      - nm_ep_loop_protection_no_action.current.0.infraInfra.children.2.epLoopProtectP.attributes.name == "default"
+      - nm_ep_loop_protection_no_action.current.0.infraInfra.children.2.epLoopProtectP.attributes.action == "bd-learn-disable,port-disable"
+      - nm_ep_loop_protection_no_action.current.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectIntvl == "60"
+      - nm_ep_loop_protection_no_action.current.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectMult == "4"
+      - nm_ep_loop_protection_action is changed
+      - nm_ep_loop_protection_action.previous.0.infraInfra.children.0.epIpAgingP.attributes.adminSt == "disabled"
+      - nm_ep_loop_protection_action.previous.0.infraInfra.children.0.epIpAgingP.attributes.name == "default"
+      - nm_ep_loop_protection_action.previous.0.infraInfra.children.1.epControlP.attributes.adminSt == "disabled"
+      - nm_ep_loop_protection_action.previous.0.infraInfra.children.1.epControlP.attributes.name == "default"
+      - nm_ep_loop_protection_action.previous.0.infraInfra.children.1.epControlP.attributes.holdIntvl == "1800"
+      - nm_ep_loop_protection_action.previous.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectIntvl == "60"
+      - nm_ep_loop_protection_action.previous.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectMult == "4"
+      - nm_ep_loop_protection_action.previous.0.infraInfra.children.2.epLoopProtectP.attributes.adminSt == "disabled"
+      - nm_ep_loop_protection_action.previous.0.infraInfra.children.2.epLoopProtectP.attributes.name == "default"
+      - nm_ep_loop_protection_action.previous.0.infraInfra.children.2.epLoopProtectP.attributes.action == "bd-learn-disable,port-disable"
+      - nm_ep_loop_protection_action.previous.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectIntvl == "60"
+      - nm_ep_loop_protection_action.previous.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectMult == "4"
+      - nm_ep_loop_protection_action.current.0.infraInfra.children.0.epIpAgingP.attributes.adminSt == "disabled"
+      - nm_ep_loop_protection_action.current.0.infraInfra.children.0.epIpAgingP.attributes.name == "default"
+      - nm_ep_loop_protection_action.current.0.infraInfra.children.1.epControlP.attributes.adminSt == "disabled"
+      - nm_ep_loop_protection_action.current.0.infraInfra.children.1.epControlP.attributes.name == "default"
+      - nm_ep_loop_protection_action.current.0.infraInfra.children.1.epControlP.attributes.holdIntvl == "1800"
+      - nm_ep_loop_protection_action.current.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectIntvl == "60"
+      - nm_ep_loop_protection_action.current.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectMult == "4"
+      - nm_ep_loop_protection_action.current.0.infraInfra.children.2.epLoopProtectP.attributes.adminSt == "disabled"
+      - nm_ep_loop_protection_action.current.0.infraInfra.children.2.epLoopProtectP.attributes.name == "default"
+      - nm_ep_loop_protection_action.current.0.infraInfra.children.2.epLoopProtectP.attributes.action == "port-disable"
+      - nm_ep_loop_protection_action.current.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectIntvl == "60"
+      - nm_ep_loop_protection_action.current.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectMult == "4"
+      - nm_no_config_in_config_containers is not changed
+      - err_no_config is not changed
+      - err_no_config is failed
+      - err_no_config.msg == "state is present but any of the following are missing{{":"}} ip_aging, roque_ep_control, ep_loop_protection"
+
+  # QUERY SYSTEM ENDPOINT CONTROLS SETTINGS
+  - name: Query system endpoint controls settings
+    cisco.aci.aci_system_endpoint_controls:
+      <<: *aci_info
+      state: query
+    register: query_endpoint_controls
+  
+  - name: Verify system endpoint controls query
+    ansible.builtin.assert:
+      that:
+      - query_endpoint_controls is not changed
+      - query_endpoint_controls.current.0.infraInfra.children.0.epIpAgingP.attributes.adminSt == "disabled"
+      - query_endpoint_controls.current.0.infraInfra.children.0.epIpAgingP.attributes.name == "default"
+      - query_endpoint_controls.current.0.infraInfra.children.1.epControlP.attributes.adminSt == "disabled"
+      - query_endpoint_controls.current.0.infraInfra.children.1.epControlP.attributes.name == "default"
+      - query_endpoint_controls.current.0.infraInfra.children.1.epControlP.attributes.holdIntvl == "1800"
+      - query_endpoint_controls.current.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectIntvl == "60"
+      - query_endpoint_controls.current.0.infraInfra.children.1.epControlP.attributes.rogueEpDetectMult == "4"
+      - query_endpoint_controls.current.0.infraInfra.children.2.epLoopProtectP.attributes.adminSt == "disabled"
+      - query_endpoint_controls.current.0.infraInfra.children.2.epLoopProtectP.attributes.name == "default"
+      - query_endpoint_controls.current.0.infraInfra.children.2.epLoopProtectP.attributes.action == "port-disable"
+      - query_endpoint_controls.current.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectIntvl == "60"
+      - query_endpoint_controls.current.0.infraInfra.children.2.epLoopProtectP.attributes.loopDetectMult == "4"

@@ -31,7 +31,7 @@
   register: create_vxlan_check_mode
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - create_vxlan_check_mode is changed
       - create_vxlan_check_mode.sent.fvnsVxlanInstP.attributes.descr == 'Ansible Test'
@@ -43,7 +43,7 @@
   register: create_vxlan
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - create_vxlan is changed
       - create_vxlan.previous == []
@@ -56,7 +56,7 @@
   register: idempotent_vxlan
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - idempotent_vxlan is not changed
       - idempotent_vxlan.previous.0.fvnsVxlanInstP.attributes.name == 'anstest'
@@ -69,7 +69,7 @@
   register: update_vxlan
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - update_vxlan is changed
       - update_vxlan.sent.fvnsVxlanInstP.attributes.descr == 'Ansible Test Change'
@@ -81,7 +81,7 @@
   register: create_vxlan_2
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - create_vxlan_2 is changed
 
@@ -94,7 +94,7 @@
   register: create_vxlan_alloc_mode
 
 - name: assertion test - present
-  assert:
+  ansible.builtin.assert:
     that:
       - create_vxlan_alloc_mode is failed
       - "create_vxlan_alloc_mode.msg == 'vxlan pools do not support setting the \\'pool_allocation_mode\\'; please remove this parameter from the task'"
@@ -106,7 +106,7 @@
   register: query_vxlan
 
 - name: assertion test - query
-  assert:
+  ansible.builtin.assert:
     that:
       - query_vxlan is not changed
       - query_vxlan.current | length == 1
@@ -119,7 +119,7 @@
   register: query_vxlan_all
 
 - name: assertion test - query
-  assert:
+  ansible.builtin.assert:
     that:
       - query_vxlan_all is not changed
       - query_vxlan_all.current | length > 1
@@ -132,7 +132,7 @@
   register: delete_vxlan_check_mode
 
 - name: assertion test - absent
-  assert:
+  ansible.builtin.assert:
     that:
       - delete_vxlan_check_mode is changed
       - delete_vxlan_check_mode.previous != []
@@ -143,7 +143,7 @@
   register: delete_vxlan
 
 - name: assertion test - absent
-  assert:
+  ansible.builtin.assert:
     that:
       - delete_vxlan is changed
       - delete_vxlan.previous == delete_vxlan_check_mode.previous
@@ -162,7 +162,7 @@
   register: delete_vxlan_pool_fail
 
 - name: assertion test - absent
-  assert:
+  ansible.builtin.assert:
     that:
       - delete_vxlan_idempotent is not changed
       - delete_vxlan_idempotent.previous == []
@@ -173,7 +173,7 @@
     pool: anstest_2
 
 - name: assertion test - absent
-  assert:
+  ansible.builtin.assert:
     that:
       - delete_vxlan_pool_fail is failed
       - 'delete_vxlan_pool_fail.msg == "state is absent but all of the following are missing: pool"'

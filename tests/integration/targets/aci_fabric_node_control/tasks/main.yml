@@ -1,0 +1,179 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Tim Cragg (@timcragg)
+# Copyright: (c) 2023, Akini Ross (@akinross)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Pre-Test Clean Environment of Fabric Node Controls
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_info
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - ansible_fabric_node_control_1
+    - ansible_fabric_node_control_2
+    - ansible_fabric_node_control_3
+      
+# CREATE FABRIC NODE CONTROL
+- name: Create Fabric Node Control (check mode)
+  cisco.aci.aci_fabric_node_control: &aci_fabric_node_control
+    <<: *aci_info
+    name: ansible_fabric_node_control_1
+  check_mode: true
+  register: cm_create_fabric_node_control
+
+- name: Create Fabric Node Control (normal mode)
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_fabric_node_control
+  register: nm_create_fabric_node_control
+
+- name: Create Fabric Node Control again
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_fabric_node_control
+  register: nm_create_fabric_node_control_again
+
+- name: Verify Fabric Node Control creation
+  ansible.builtin.assert:
+    that:
+    - cm_create_fabric_node_control is changed
+    - cm_create_fabric_node_control.current == []
+    - cm_create_fabric_node_control.previous == []
+    - cm_create_fabric_node_control.proposed.fabricNodeControl.attributes.name == "ansible_fabric_node_control_1"
+    - nm_create_fabric_node_control is changed
+    - nm_create_fabric_node_control.previous == []
+    - nm_create_fabric_node_control.current.0.fabricNodeControl.attributes.control == ""
+    - nm_create_fabric_node_control.current.0.fabricNodeControl.attributes.descr == ""
+    - nm_create_fabric_node_control.current.0.fabricNodeControl.attributes.featureSel == "telemetry"
+    - nm_create_fabric_node_control.current.0.fabricNodeControl.attributes.name == "ansible_fabric_node_control_1"
+    - nm_create_fabric_node_control_again is not changed
+    - nm_create_fabric_node_control_again.current.0.fabricNodeControl.attributes.control == ""
+    - nm_create_fabric_node_control_again.current.0.fabricNodeControl.attributes.descr == ""
+    - nm_create_fabric_node_control_again.current.0.fabricNodeControl.attributes.featureSel == "telemetry"
+    - nm_create_fabric_node_control_again.current.0.fabricNodeControl.attributes.name == "ansible_fabric_node_control_1"
+    - nm_create_fabric_node_control_again.previous.0.fabricNodeControl.attributes.control == ""
+    - nm_create_fabric_node_control_again.previous.0.fabricNodeControl.attributes.descr == ""
+    - nm_create_fabric_node_control_again.previous.0.fabricNodeControl.attributes.featureSel == "telemetry"
+    - nm_create_fabric_node_control_again.previous.0.fabricNodeControl.attributes.name == "ansible_fabric_node_control_1"
+
+# UPDATE FABRIC NODE CONTROL
+- name: Update Fabric Node Control
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_fabric_node_control
+    description: Updated Ansible Test Fabric Node Control
+    enable_dom: true
+    feature_selection: analytics
+  register: update_fabric_node_control
+
+- name: Verify Fabric Node Control update
+  ansible.builtin.assert:
+    that:
+    - update_fabric_node_control is changed
+    - update_fabric_node_control.current.0.fabricNodeControl.attributes.control == "Dom"
+    - update_fabric_node_control.current.0.fabricNodeControl.attributes.descr == "Updated Ansible Test Fabric Node Control"
+    - update_fabric_node_control.current.0.fabricNodeControl.attributes.featureSel == "analytics"
+    - update_fabric_node_control.current.0.fabricNodeControl.attributes.name == "ansible_fabric_node_control_1"
+    - update_fabric_node_control.previous.0.fabricNodeControl.attributes.control == ""
+    - update_fabric_node_control.previous.0.fabricNodeControl.attributes.descr == ""
+    - update_fabric_node_control.previous.0.fabricNodeControl.attributes.featureSel == "telemetry"
+    - update_fabric_node_control.previous.0.fabricNodeControl.attributes.name == "ansible_fabric_node_control_1"
+
+# QUERY FABRIC NODE CONTROL
+- name: Create another Fabric Node Control
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_info
+    name: "{{ item }}"
+    feature_selection: netflow
+  loop:
+    - ansible_fabric_node_control_2
+    - ansible_fabric_node_control_3
+
+- name: Query a Fabric Node Control
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_fabric_node_control
+    state: query
+  register: query_one
+
+- name: Query all Fabric Node Controls
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Verify Fabric Node Control queries
+  ansible.builtin.assert:
+    that:
+    - query_one is not changed
+    - query_one.current | length == 1
+    - query_one.current.0.fabricNodeControl.attributes.control == "Dom"
+    - query_one.current.0.fabricNodeControl.attributes.descr == "Updated Ansible Test Fabric Node Control"
+    - query_one.current.0.fabricNodeControl.attributes.featureSel == "analytics"
+    - query_one.current.0.fabricNodeControl.attributes.name == "ansible_fabric_node_control_1"
+    - query_all is not changed
+    - query_all.current | length > 3
+
+# REMOVE FABRIC NODE CONTROL
+- name: Remove Fabric Node Control (check mode)
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_fabric_node_control
+    state: absent
+  register: cm_remove_fabric_node_control
+  check_mode: true
+
+- name: Remove Fabric Node Control
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_fabric_node_control
+    state: absent
+  register: nm_remove_fabric_node_control
+
+- name: Remove Fabric Node Control again
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_fabric_node_control
+    state: absent
+  register: nm__remove_fabric_node_control_again
+
+- name: Verify Fabric Node Control removal
+  ansible.builtin.assert:
+    that:
+    - cm_remove_fabric_node_control is changed
+    - cm_remove_fabric_node_control.proposed == {}
+    - cm_remove_fabric_node_control.previous.0.fabricNodeControl.attributes.control == "Dom"
+    - cm_remove_fabric_node_control.previous.0.fabricNodeControl.attributes.descr == "Updated Ansible Test Fabric Node Control"
+    - cm_remove_fabric_node_control.previous.0.fabricNodeControl.attributes.featureSel == "analytics"
+    - cm_remove_fabric_node_control.previous.0.fabricNodeControl.attributes.name == "ansible_fabric_node_control_1"
+    - nm_remove_fabric_node_control is changed
+    - nm_remove_fabric_node_control.current == []
+    - nm_remove_fabric_node_control.previous.0.fabricNodeControl.attributes.control == "Dom"
+    - nm_remove_fabric_node_control.previous.0.fabricNodeControl.attributes.descr == "Updated Ansible Test Fabric Node Control"
+    - nm_remove_fabric_node_control.previous.0.fabricNodeControl.attributes.featureSel == "analytics"
+    - nm_remove_fabric_node_control.previous.0.fabricNodeControl.attributes.name == "ansible_fabric_node_control_1"
+    - nm__remove_fabric_node_control_again is not changed
+    - nm__remove_fabric_node_control_again.current == []
+    - nm__remove_fabric_node_control_again.previous == []
+
+# CLEAN ENVIRONMENT
+- name: PPost-Test Clean Environment of Fabric Node Controls
+  cisco.aci.aci_fabric_node_control:
+    <<: *aci_info
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - ansible_fabric_node_control_1
+    - ansible_fabric_node_control_2
+    - ansible_fabric_node_control_3

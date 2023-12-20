@@ -5,12 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -92,7 +92,7 @@
       epg: anstest2
 
   - name: present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - epg_present_check_mode is changed
         - epg_present_check_mode.previous == []
@@ -124,7 +124,7 @@
     register: epg_query_all
 
   - name: query assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - epg_query is not changed
         - epg_query.current | length == 1
@@ -167,7 +167,7 @@
     register: delete_epg_missing_param
 
   - name: query assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - delete_epg_check_mode is changed
         - delete_epg_check_mode.previous != []
@@ -189,7 +189,7 @@
     register: cm_useg_epg_present
 
   - name: Assertions check for create microsegmented epg with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_useg_epg_present is changed
         - cm_useg_epg_present.current == []
@@ -204,7 +204,7 @@
     register: nm_useg_epg_present
 
   - name: Assertions check for create microsegmented epg with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_useg_epg_present is changed
         - nm_useg_epg_present.current | length == 1
@@ -222,7 +222,7 @@
     register: idempotency_nm_useg_epg_present
 
   - name: Idempotency assertions check for create microsegmented epg with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_nm_useg_epg_present is not changed
         - idempotency_nm_useg_epg_present.current | length == 1
@@ -241,7 +241,7 @@
     register: useg_epg_present
 
   - name: Assertions check for query microsegmented epg with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - useg_epg_present is not changed
         - useg_epg_present.current | length == 1
@@ -257,7 +257,7 @@
     register: cm_useg_epg_absent
 
   - name: Assertions check for delete microsegmented epg with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_useg_epg_absent is changed
         - cm_useg_epg_absent.current | length == 1
@@ -276,7 +276,7 @@
     register: nm_useg_epg_absent
 
   - name: Assertions check for delete microsegmented epg with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_useg_epg_absent is changed
         - nm_useg_epg_absent.current | length == 0
@@ -291,7 +291,7 @@
     register: idempotency_nm_useg_epg_absent
 
   - name: Idempotency assertions check for delete microsegmented epg with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_nm_useg_epg_absent is not changed
         - idempotency_nm_useg_epg_absent.current | length == 0

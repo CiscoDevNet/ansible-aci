@@ -1,0 +1,195 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Shreyas Srish (@shrsr)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove test tenant before we kickoff
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
+    tenant: ansible_test
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # SETUP ENVIRONMENT
+  - name: Create domain
+    cisco.aci.aci_domain:
+      <<: *aci_info
+      domain: l3outintftest
+      domain_type: l3dom
+      state: present
+
+  - name: Create tenant
+    cisco.aci.aci_tenant: &tenant_present
+      <<: *tenant_absent
+      state: present
+
+  - name: Configure VRF
+    cisco.aci.aci_vrf: &vrf_present
+      <<: *tenant_present
+      vrf: l3outintftest
+
+  - name: Create L3Out
+    cisco.aci.aci_l3out:
+      <<: *vrf_present
+      l3out: l3outintftest
+      domain: l3outintftest
+      route_control: export
+
+  - name: Create node profile
+    cisco.aci.aci_l3out_logical_node_profile: &np_present
+      <<: *tenant_present
+      l3out: l3outintftest
+      node_profile: node1
+
+  - name: Create interface profile
+    cisco.aci.aci_l3out_logical_interface_profile: &intf_present
+      <<: *np_present
+      interface_profile: intf1
+
+  - name: Add a hsrp interface profile
+    cisco.aci.aci_l3out_hsrp_interface_profile:
+      <<: *intf_present
+      hsrp_policy: default
+      version: v1
+      state: present
+
+  - name: Add a hsrp group (check mode)
+    cisco.aci.aci_l3out_hsrp_group: &group_present
+      <<: *intf_present
+      hsrp_interface_group: group1
+      group_id: 1
+      ip: 12.34.56.32
+      mac: 00:00:00:00:00:FF
+      group_name: one
+      group_type: ipv4
+      ip_obtain_mode: admin
+      group_policy: default
+      state: present
+    check_mode: true
+    register: cm_add_group
+
+  - name: Add a hsrp group (normal mode)
+    cisco.aci.aci_l3out_hsrp_group:
+      <<: *group_present
+    register: nm_add_group
+
+  - name: Add hsrp group again
+    cisco.aci.aci_l3out_hsrp_group:
+      <<: *group_present
+    register: add_group_again
+
+  - name: Change hsrp group
+    cisco.aci.aci_l3out_hsrp_group: &group_update
+      <<: *group_present
+      group_id: 3
+    register: update_group
+
+  - name: Add another hsrp group
+    cisco.aci.aci_l3out_hsrp_group:
+      <<: *intf_present
+      hsrp_interface_group: group2
+      group_name: two
+      ip_obtain_mode: learn
+      state: present
+    register: nm_add_group2
+
+  - name: Verify add hsrp groups
+    ansible.builtin.assert:
+      that:
+      - cm_add_group is changed
+      - nm_add_group is changed
+      - add_group_again is not changed
+      - cm_add_group.proposed.hsrpGroupP.attributes.groupAf == "ipv4"
+      - cm_add_group.proposed.hsrpGroupP.attributes.groupId == "1"
+      - cm_add_group.proposed.hsrpGroupP.attributes.groupName == "one"
+      - cm_add_group.proposed.hsrpGroupP.attributes.ip == "12.34.56.32"
+      - cm_add_group.proposed.hsrpGroupP.attributes.ipObtainMode == "admin"
+      - cm_add_group.proposed.hsrpGroupP.attributes.mac == "00:00:00:00:00:FF"
+      - cm_add_group.proposed.hsrpGroupP.children.0.hsrpRsGroupPol.attributes.tnHsrpGroupPolName == "default"
+      - nm_add_group.current.0.hsrpGroupP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-node1/lifp-intf1/hsrpIfP/hsrpGroupP-group1"
+      - nm_add_group.current.0.hsrpGroupP.attributes.groupAf == "ipv4"
+      - nm_add_group.current.0.hsrpGroupP.attributes.groupId == "1"
+      - cm_add_group.previous == nm_add_group.previous == []
+      - update_group.current.0.hsrpGroupP.attributes.groupId == "3"
+      - nm_add_group.current.0.hsrpGroupP.attributes.name == "group1"
+      - nm_add_group.current.0.hsrpGroupP.attributes.groupName == "one"
+      - nm_add_group.current.0.hsrpGroupP.attributes.ip == "12.34.56.32"
+      - nm_add_group.current.0.hsrpGroupP.attributes.ipObtainMode == "admin"
+      - nm_add_group.current.0.hsrpGroupP.attributes.mac == "00:00:00:00:00:FF"
+      - nm_add_group.current.0.hsrpGroupP.children.0.hsrpRsGroupPol.attributes.tnHsrpGroupPolName == "default"
+      - nm_add_group2.current.0.hsrpGroupP.attributes.name == "group2"
+      - nm_add_group2.current.0.hsrpGroupP.attributes.groupName == "two"
+      - nm_add_group2.current.0.hsrpGroupP.attributes.ipObtainMode == "learn"
+
+  - name: Query a hsrp group
+    cisco.aci.aci_l3out_hsrp_group:
+      <<: *group_update
+      state: query
+    register: query_group
+
+  - name: Query all hsrp groups
+    cisco.aci.aci_l3out_hsrp_group:
+      <<: *intf_present
+      state: query
+    register: query_all
+
+  - name: Verify query
+    ansible.builtin.assert:
+      that:
+      - query_group is not changed
+      - query_all is not changed
+      - query_group.current.0.hsrpGroupP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-node1/lifp-intf1/hsrpIfP/hsrpGroupP-group1"
+      - query_group.current.0.hsrpGroupP.attributes.groupAf == "ipv4"
+      - query_group.current.0.hsrpGroupP.attributes.groupId == "3"
+      - query_group.current.0.hsrpGroupP.attributes.name == "group1"
+      - query_group.current.0.hsrpGroupP.attributes.groupName == "one"
+      - query_group.current.0.hsrpGroupP.attributes.ip == "12.34.56.32"
+      - query_group.current.0.hsrpGroupP.attributes.ipObtainMode == "admin"
+      - query_group.current.0.hsrpGroupP.attributes.mac == "00:00:00:00:00:FF"
+      - query_group.current.0.hsrpGroupP.children.0.hsrpRsGroupPol.attributes.tnHsrpGroupPolName == "default"
+      - query_all.current.0.hsrpIfP.children | length == 2
+
+  - name: Remove a hsrp group in check mode
+    cisco.aci.aci_l3out_hsrp_group:
+      <<: *group_update
+      state: absent
+    check_mode: true
+    register: cm_absent_group
+
+  - name: Remove a hsrp group
+    cisco.aci.aci_l3out_hsrp_group:
+      <<: *group_update
+      state: absent
+    register: absent_group
+
+  - name: Remove hsrp group again
+    cisco.aci.aci_l3out_hsrp_group:
+      <<: *group_update
+      state: absent
+    register: absent_group_again
+
+  - name: Verify remove
+    ansible.builtin.assert:
+      that:
+      - cm_absent_group is changed
+      - cm_absent_group.proposed == {}
+      - absent_group is changed
+      - absent_group.current == []
+      - absent_group_again is not changed

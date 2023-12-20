@@ -408,3 +408,54 @@ releases:
 
         "
     release_date: "2023-08-04"
+  2.8.0:
+    changes:
+      bugfixes:
+        - Fixed issue with default values for ssl, proxy, timeout in aci.py and the
+          display of host in the url when the plugin httpapi is used
+        - Modified  aci_rest  and  aci_config_snapshot  modules to display the correct
+          URL output string (#487)
+      minor_changes:
+        - Add 8.0 option for dvs_version attribute in aci_vmm_controller
+        - Add Match Rules for aci_route_control_profile modules
+        - Add aci_bgp_timers_policy and aci_bgp_best_path_policy modules
+        - Add aci_fabric_interface_policy_group module
+        - Add aci_interface_policy_leaf_fc_policy_group and aci_interface_policy_spine_policy_group
+          module
+        - Add aci_l3out_bgp_protocol_profile module
+        - Add aci_match_community_factor module.
+        - Add aci_route_control_context and aci_match_rule modules
+        - Add aci_route_control_profile module
+        - Add hmac-sha2-224, hmac-sha2-256, hmac-sha2-384, hmac-sha2-512 authentication
+          types and description to aci_snmp_user module
+        - Add loopback interface profile as a child class for aci_l3out_logical_node.
+        - Add missing attributes in aci_interface_policy_leaf_policy_group
+        - Add missing attributes to aci_l3out_extepg module
+        - Add missing test cases, fix found issues and add missing attributes for aci_fabric_scheduler,
+          aci_firmware_group, aci_firmware_group_node, aci_firmware_policy, aci_interface_policy_fc,
+          aci_interface_policy_lldp, aci_interface_policy_mcp, aci_interface_policy_ospf,
+          aci_interface_policy_port_channel, aci_maintenance_group, aci_maintenance_group_node,
+          aci_maintenance_policy and aci_tenant_ep_retention_policy modules (#453)
+        - Add support for checkmode in aci_rest module
+        - Add support for configuration of fabric node control with aci_fabric_node_control
+          module
+        - Add support for configuration of fabric pod selectors with aci_fabric_pod_selector
+          module
+        - Add support for configuration of system banner and alias with aci_system_banner
+          module
+        - Add support for configuration of system endpoint controls, ip aging, ep loop
+          protection and roque endpoint control with aci_system_endpoint_controls module
+        - Add support for configuration of system fabric wide settings with aci_fabric_wide_settings
+          module
+        - Add support for configuration of system global aes passphrase encryption with
+          aci_system_global_aes_passphrase_encryption module
+        - Add support for global infra dhcp relay policy configuration in aci_dhcp_relay
+        - Add support for global infra dhcp relay policy configuration in aci_dhcp_relay_provider
+      release_summary:
+        "Release v2.8.0 of the ``ansible-aci`` collection on 2023-11-04.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.7.0.
+
+        "
+    release_date: "2023-11-04"

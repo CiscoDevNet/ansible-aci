@@ -1,0 +1,255 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
+
+  - name: Add a BGP route summarization policy (check_mode) - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    cisco.aci.aci_bgp_route_summarization_policy: &aci_bgp_route_summarization_policy_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      route_summarization_policy: ansible_bgp_route_summarization_policy_1
+      description: BGP route summarization policy 1 for ansible_tenant tenant
+      address_type_af_control: [af-mcast, af-ucast]
+      control_state: [as-set, summary-only]
+      state: present
+    check_mode: true
+    register: cm_add_bgp_route_summarization_policy
+
+  - name: Add a BGP route summarization policy (normal_mode)- APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    cisco.aci.aci_bgp_route_summarization_policy:
+      <<: *aci_bgp_route_summarization_policy_present
+    register: nm_add_bgp_route_summarization_policy
+
+  - name: Add the first BGP route summarization policy again (testing idempotency) - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    cisco.aci.aci_bgp_route_summarization_policy:
+      <<: *aci_bgp_route_summarization_policy_present
+    register: nm_add_bgp_route_summarization_policy_idempotency
+
+  - name: Add a second BGP route summarization policy (normal_mode) - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    cisco.aci.aci_bgp_route_summarization_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      route_summarization_policy: ansible_bgp_route_summarization_policy_2
+      description: BGP route summarization policy 2 for ansible_tenant tenant
+      state: present
+    register: nm_add_bgp_route_summarization_policy_2
+
+  - name: Asserts for BGP route summarization policys creation tasks - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    ansible.builtin.assert:
+      that:
+        - cm_add_bgp_route_summarization_policy is changed
+        - cm_add_bgp_route_summarization_policy.previous == []
+        - cm_add_bgp_route_summarization_policy.current == []
+        - nm_add_bgp_route_summarization_policy is changed
+        - nm_add_bgp_route_summarization_policy.current.0.bgpRtSummPol.attributes.name == "ansible_bgp_route_summarization_policy_1"
+        - nm_add_bgp_route_summarization_policy.current.0.bgpRtSummPol.attributes.addrTCtrl == "af-mcast,af-ucast"
+        - nm_add_bgp_route_summarization_policy.current.0.bgpRtSummPol.attributes.ctrl == "as-set,summary-only"
+        - nm_add_bgp_route_summarization_policy_idempotency is not changed
+        - nm_add_bgp_route_summarization_policy_2 is changed
+        - nm_add_bgp_route_summarization_policy_2.previous == []
+        - nm_add_bgp_route_summarization_policy_2.current.0.bgpRtSummPol.attributes.name == "ansible_bgp_route_summarization_policy_2"
+        - nm_add_bgp_route_summarization_policy_2.current.0.bgpRtSummPol.attributes.addrTCtrl == "af-ucast"
+        - nm_add_bgp_route_summarization_policy_2.current.0.bgpRtSummPol.attributes.ctrl == ""
+
+  - name: Add a BGP route summarization policy (check_mode) - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    cisco.aci.aci_bgp_route_summarization_policy: &aci_bgp_route_summarization_policy_present_prior
+      <<: *aci_info
+      tenant: ansible_tenant
+      route_summarization_policy: ansible_bgp_route_summarization_policy_1
+      description: BGP route summarization policy 1 for ansible_tenant tenant
+      control_state: as-set
+      state: present
+    check_mode: true
+    register: cm_add_bgp_route_summarization_policy_prior
+
+  - name: Add a BGP route summarization policy (normal_mode) - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    cisco.aci.aci_bgp_route_summarization_policy:
+      <<: *aci_bgp_route_summarization_policy_present_prior
+    register: nm_add_bgp_route_summarization_policy_prior
+
+  - name: Add the first BGP route summarization policy again (testing idempotency) - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    cisco.aci.aci_bgp_route_summarization_policy:
+      <<: *aci_bgp_route_summarization_policy_present_prior
+    register: nm_add_bgp_route_summarization_policy_idempotency_prior
+
+  - name: Add a second BGP route summarization policy (normal_mode) - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    cisco.aci.aci_bgp_route_summarization_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      route_summarization_policy: ansible_bgp_route_summarization_policy_2
+      description: BGP route summarization policy 2 for ansible_tenant tenant
+      state: present
+    register: nm_add_bgp_route_summarization_policy_2_prior
+
+  - name: Asserts for BGP route summarization policys creation tasks - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    ansible.builtin.assert:
+      that:
+        - cm_add_bgp_route_summarization_policy_prior is changed
+        - cm_add_bgp_route_summarization_policy_prior.previous == []
+        - cm_add_bgp_route_summarization_policy_prior.current == []
+        - nm_add_bgp_route_summarization_policy_prior is changed
+        - nm_add_bgp_route_summarization_policy_prior.current.0.bgpRtSummPol.attributes.name == "ansible_bgp_route_summarization_policy_1"
+        - nm_add_bgp_route_summarization_policy_prior.current.0.bgpRtSummPol.attributes.ctrl == "as-set"
+        - nm_add_bgp_route_summarization_policy_idempotency_prior is not changed
+        - nm_add_bgp_route_summarization_policy_2_prior is changed
+        - nm_add_bgp_route_summarization_policy_2_prior.previous == []
+        - nm_add_bgp_route_summarization_policy_2_prior.current.0.bgpRtSummPol.attributes.name == "ansible_bgp_route_summarization_policy_2"
+        - nm_add_bgp_route_summarization_policy_2_prior.current.0.bgpRtSummPol.attributes.ctrl == ""
+
+  - name: Query all BGP route summarization policies
+    cisco.aci.aci_bgp_route_summarization_policy:
+      <<: *aci_info
+      state: query
+    register: query_all_bgp_route_summarization_policy
+
+  - name: Asserts query all tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_bgp_route_summarization_policy is not changed
+        - query_all_bgp_route_summarization_policy.current|length >= 2
+
+  - name: Query ansible_bgp_route_summarization_policy_1 - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    cisco.aci.aci_bgp_route_summarization_policy:
+      <<: *aci_bgp_route_summarization_policy_present
+      state: query
+    register: query_ansible_bgp_route_summarization_policy_1
+
+  - name: Asserts individual query tasks - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    ansible.builtin.assert:
+      that:
+        - query_ansible_bgp_route_summarization_policy_1 is not changed
+        - query_ansible_bgp_route_summarization_policy_1.current.0.bgpRtSummPol.attributes.name == "ansible_bgp_route_summarization_policy_1"
+        - query_ansible_bgp_route_summarization_policy_1.current.0.bgpRtSummPol.attributes.addrTCtrl == "af-mcast,af-ucast"
+        - query_ansible_bgp_route_summarization_policy_1.current.0.bgpRtSummPol.attributes.ctrl == "as-set,summary-only"
+
+  - name: Query ansible_bgp_route_summarization_policy_1 - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    cisco.aci.aci_bgp_route_summarization_policy:
+      <<: *aci_bgp_route_summarization_policy_present_prior
+      state: query
+    register: query_ansible_bgp_route_summarization_policy_1_prior
+
+  - name: Asserts individual query tasks - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    ansible.builtin.assert:
+      that:
+        - query_ansible_bgp_route_summarization_policy_1_prior is not changed
+        - query_ansible_bgp_route_summarization_policy_1_prior.current.0.bgpRtSummPol.attributes.name == "ansible_bgp_route_summarization_policy_1"
+        - query_ansible_bgp_route_summarization_policy_1_prior.current.0.bgpRtSummPol.attributes.ctrl == "as-set"
+
+  - name: Remove BGP route summarization policy (check_mode) - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    cisco.aci.aci_bgp_route_summarization_policy: &bgp_route_summarization_policy_absent
+      <<: *aci_bgp_route_summarization_policy_present
+      state: absent
+    check_mode: true
+    register: cm_remove_bgp_route_summarization_policy
+
+  - name: Remove BGP route summarization policy (normal_mode) - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    cisco.aci.aci_bgp_route_summarization_policy:
+      <<: *bgp_route_summarization_policy_absent
+    register: nm_remove_bgp_route_summarization_policy
+
+  - name: Remove BGP route summarization policy (testing idempotency) - APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    cisco.aci.aci_bgp_route_summarization_policy:
+      <<: *bgp_route_summarization_policy_absent
+    register: nm_remove_bgp_route_summarization_policy_idempotency
+
+  - name: Asserts deletion tasks- APIC version >= 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    ansible.builtin.assert:
+      that:
+        - cm_remove_bgp_route_summarization_policy is changed
+        - cm_remove_bgp_route_summarization_policy.proposed == {}
+        - nm_remove_bgp_route_summarization_policy is changed
+        - nm_remove_bgp_route_summarization_policy.previous != []
+        - nm_remove_bgp_route_summarization_policy.method == "DELETE"
+        - nm_remove_bgp_route_summarization_policy_idempotency is not changed
+        - nm_remove_bgp_route_summarization_policy_idempotency.previous == []
+
+  - name: Remove BGP route summarization policy (check_mode) - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    cisco.aci.aci_bgp_route_summarization_policy: &bgp_route_summarization_policy_absent_prior
+      <<: *aci_bgp_route_summarization_policy_present_prior
+      state: absent
+    check_mode: true
+    register: cm_remove_bgp_route_summarization_policy_prior
+
+  - name: Remove BGP route summarization policy (normal_mode) - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    cisco.aci.aci_bgp_route_summarization_policy:
+      <<: *bgp_route_summarization_policy_absent_prior
+    register: nm_remove_bgp_route_summarization_policy_prior
+
+  - name: Remove BGP route summarization policy (testing idempotency) - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    cisco.aci.aci_bgp_route_summarization_policy:
+      <<: *bgp_route_summarization_policy_absent_prior
+    register: nm_remove_bgp_route_summarization_policy_idempotency_prior
+
+  - name: Asserts deletion tasks - APIC version < 5.0
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    ansible.builtin.assert:
+      that:
+        - cm_remove_bgp_route_summarization_policy_prior is changed
+        - cm_remove_bgp_route_summarization_policy_prior.proposed == {}
+        - nm_remove_bgp_route_summarization_policy_prior is changed
+        - nm_remove_bgp_route_summarization_policy_prior.previous != []
+        - nm_remove_bgp_route_summarization_policy_prior.method == "DELETE"
+        - nm_remove_bgp_route_summarization_policy_idempotency_prior is not changed
+        - nm_remove_bgp_route_summarization_policy_idempotency_prior.previous == []
+
+  - name: Remove the ansible_tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent

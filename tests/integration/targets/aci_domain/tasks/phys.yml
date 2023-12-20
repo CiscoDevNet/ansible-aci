@@ -40,7 +40,7 @@
   register: nm_add_domain
 
 - name: Verify physical add_domain
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_domain is changed
     - nm_add_domain is changed
@@ -61,7 +61,7 @@
   register: nm_add_domain_again
 
 - name: Verify physical add_domain_again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_domain_again is not changed
     - nm_add_domain_again is not changed
@@ -127,7 +127,7 @@
   register: nm_incorrect_vswitch
 
 - name: Verify incorrect parameter
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_incorrect_vm_provider.msg == "Domain type 'phys' cannot have parameter 'vm_provider'"
     - nm_incorrect_vm_provider.msg == "Domain type 'phys' cannot have parameter 'vm_provider'"
@@ -158,7 +158,7 @@
   register: nm_query_all_domains
 
 - name: Verify physical query_all_domains
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_all_domains is not changed
     - nm_query_all_domains is not changed
@@ -181,7 +181,7 @@
   register: nm_query_domain
 
 - name: Verify physical query_domain
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_domain is not changed
     - nm_query_domain is not changed
@@ -201,7 +201,7 @@
   register: nm_remove_domain
 
 - name: Verify physical remove_domain
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_domain is changed
     - nm_remove_domain is changed
@@ -219,7 +219,7 @@
   register: nm_remove_domain_again
 
 - name: Verify physical remove_domain_again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_domain_again is not changed
     - nm_remove_domain_again is not changed
@@ -240,7 +240,7 @@
   register: nm_query_non_domain
 
 - name: Verify physical query_non_domain
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_non_domain is not changed
     - nm_query_non_domain is not changed

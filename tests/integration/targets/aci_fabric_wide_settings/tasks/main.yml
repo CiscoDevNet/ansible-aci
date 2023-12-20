@@ -1,0 +1,229 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Tim Cragg (@timcragg)
+# Copyright: (c) 2023, Akini Ross (@akinross)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
+  block:
+
+  # STORE EXISTING FABRIC WIDE SETTINGS
+  - name: Query system information
+    cisco.aci.aci_system:
+      <<: *aci_info
+      id: 1
+      state: query
+    register: version
+
+  - name: Capture existing Fabric Wide Settings
+    cisco.aci.aci_fabric_wide_settings:
+      <<: *aci_info
+      state: query
+    register: previous_settings
+  
+  - name: Clear existing settings
+    cisco.aci.aci_fabric_wide_settings:
+      <<: *aci_info
+      disable_remote_ep_learning: false
+      enforce_subnet_check: false
+      enforce_epg_vlan_validation: false
+      spine_opflex_client_auth: false
+      spine_ssl_opflex: false
+
+  # SET FABRIC WIDE SETTINGS 
+  - name: Execute tests for ACI v5+
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    block:
+
+    - name: Clear existing settings for ACI v5+
+      cisco.aci.aci_fabric_wide_settings:
+        <<: *aci_info
+        leaf_opflex_client_auth: false
+        leaf_ssl_opflex: false
+        restrict_infra_vlan_traffic: false
+        opflex_ssl_versions: [ tls_v1.2 ]
+
+    - name: Update Fabric Wide Settings for ACI v5+ (check_mode) 
+      cisco.aci.aci_fabric_wide_settings: &aci_fab_settings_5
+          <<: *aci_info
+          disable_remote_ep_learning: true
+          enforce_subnet_check: true
+          enforce_epg_vlan_validation: true
+          spine_opflex_client_auth: true
+          leaf_opflex_client_auth: true
+          spine_ssl_opflex: true
+          leaf_ssl_opflex: true
+          restrict_infra_vlan_traffic: true
+          opflex_ssl_versions: [ tls_v1.1, tls_v1.2 ]
+      check_mode: true
+      register: cm_update_fab_settings
+
+    - name: Update Fabric Wide Settings for ACI v5+
+      cisco.aci.aci_fabric_wide_settings:
+        <<: *aci_fab_settings_5
+      register: nm_update_fab_settings
+
+    - name: Update Fabric Wide Settings Again for ACI v5+
+      cisco.aci.aci_fabric_wide_settings:
+        <<: *aci_fab_settings_5
+      register: nm_update_fab_settings_again
+
+    - name: Verify Fabric Wide Settings for ACI v5+
+      ansible.builtin.assert:
+        that:
+        - cm_update_fab_settings is changed
+        - nm_update_fab_settings is changed
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.domainValidation == previous_settings.current.0.infraSetPol.attributes.domainValidation
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.opflexpUseSsl == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.reallocateGipo == previous_settings.current.0.infraSetPol.attributes.reallocateGipo
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.leafOpflexpAuthenticateClients == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.leafOpflexpUseSsl == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.restrictInfraVLANTraffic == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.opflexpSslProtocols == "TLSv1.1,TLSv1.2"
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.unicastXrEpLearnDisable == "no"
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.enforceSubnetCheck == "no"
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.validateOverlappingVlans == "no"
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.domainValidation == previous_settings.current.0.infraSetPol.attributes.domainValidation
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.opflexpAuthenticateClients == "no"
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.opflexpUseSsl == "no"
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.reallocateGipo == previous_settings.current.0.infraSetPol.attributes.reallocateGipo
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.leafOpflexpAuthenticateClients == "no"
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.leafOpflexpUseSsl == "no"
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.restrictInfraVLANTraffic == "no"
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.opflexpSslProtocols == "TLSv1.2"
+        - nm_update_fab_settings_again is not changed
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.domainValidation == previous_settings.current.0.infraSetPol.attributes.domainValidation
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.opflexpUseSsl == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.reallocateGipo == previous_settings.current.0.infraSetPol.attributes.reallocateGipo
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.leafOpflexpAuthenticateClients == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.leafOpflexpUseSsl == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.restrictInfraVLANTraffic == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.opflexpSslProtocols == "TLSv1.1,TLSv1.2"
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.domainValidation == previous_settings.current.0.infraSetPol.attributes.domainValidation
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.opflexpUseSsl == "yes"
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.reallocateGipo == previous_settings.current.0.infraSetPol.attributes.reallocateGipo
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.leafOpflexpAuthenticateClients == "yes"
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.leafOpflexpUseSsl == "yes"
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.restrictInfraVLANTraffic == "yes"
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.opflexpSslProtocols == "TLSv1.1,TLSv1.2"
+
+  - name: Execute tests for ACI
+    when: version.current.0.topSystem.attributes.version is version('5', '<')
+    block:
+
+    - name: Update Fabric Wide Settings (check_mode)
+      cisco.aci.aci_fabric_wide_settings: &aci_fab_settings
+          <<: *aci_info
+          disable_remote_ep_learning: true
+          enforce_subnet_check: true
+          enforce_epg_vlan_validation: true
+          spine_opflex_client_auth: true
+          spine_ssl_opflex: true
+      check_mode: true
+      register: cm_update_fab_settings
+    
+    - name: Update Fabric Wide Settings
+      cisco.aci.aci_fabric_wide_settings:
+        <<: *aci_fab_settings
+      register: nm_update_fab_settings
+
+    - name: Update Fabric Wide Settings Again
+      cisco.aci.aci_fabric_wide_settings:
+        <<: *aci_fab_settings
+      register: nm_update_fab_settings_again
+
+    - name: Verify Fabric Wide Settings 
+      ansible.builtin.assert:
+        that:
+        - cm_update_fab_settings is changed
+        - nm_update_fab_settings is changed
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.domainValidation == previous_settings.current.0.infraSetPol.attributes.domainValidation
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.opflexpUseSsl == "yes"
+        - nm_update_fab_settings.current.0.infraSetPol.attributes.reallocateGipo == previous_settings.current.0.infraSetPol.attributes.reallocateGipo
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.unicastXrEpLearnDisable == "no"
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.enforceSubnetCheck == "no"
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.validateOverlappingVlans == "no"
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.domainValidation == previous_settings.current.0.infraSetPol.attributes.domainValidation
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.opflexpAuthenticateClients == "no"
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.opflexpUseSsl == "no"
+        - nm_update_fab_settings.previous.0.infraSetPol.attributes.reallocateGipo == previous_settings.current.0.infraSetPol.attributes.reallocateGipo
+        - nm_update_fab_settings_again is not changed
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.domainValidation == previous_settings.current.0.infraSetPol.attributes.domainValidation
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.opflexpUseSsl == "yes"
+        - nm_update_fab_settings_again.current.0.infraSetPol.attributes.reallocateGipo == previous_settings.current.0.infraSetPol.attributes.reallocateGipo
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.domainValidation == previous_settings.current.0.infraSetPol.attributes.domainValidation
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.opflexpUseSsl == "yes"
+        - nm_update_fab_settings_again.previous.0.infraSetPol.attributes.reallocateGipo == previous_settings.current.0.infraSetPol.attributes.reallocateGipo
+
+  # QUERY FABRIC WIDE SETTINGS
+  - name: Query Fabric Wide Settings
+    cisco.aci.aci_fabric_wide_settings:
+      <<: *aci_info
+      state: query
+    register: query_fab
+
+  - name: Verify Fabric Wide Settings queries
+    ansible.builtin.assert:
+      that:
+      - query_fab is not changed
+      - query_fab.current.0.infraSetPol.attributes.unicastXrEpLearnDisable == "yes"
+      - query_fab.current.0.infraSetPol.attributes.enforceSubnetCheck == "yes"
+      - query_fab.current.0.infraSetPol.attributes.validateOverlappingVlans == "yes"
+      - query_fab.current.0.infraSetPol.attributes.domainValidation == query_fab.current.0.infraSetPol.attributes.domainValidation
+      - query_fab.current.0.infraSetPol.attributes.opflexpAuthenticateClients == "yes"
+      - query_fab.current.0.infraSetPol.attributes.opflexpUseSsl == "yes"
+      - query_fab.current.0.infraSetPol.attributes.reallocateGipo == query_fab.current.0.infraSetPol.attributes.reallocateGipo
+  
+  - name: Verify Fabric Wide Settings queries
+    ansible.builtin.assert:
+      that:
+      - query_fab is not changed
+      - query_fab.current.0.infraSetPol.attributes.leafOpflexpAuthenticateClients == "yes"
+      - query_fab.current.0.infraSetPol.attributes.leafOpflexpUseSsl == "yes"
+      - query_fab.current.0.infraSetPol.attributes.restrictInfraVLANTraffic == "yes"
+      - query_fab.current.0.infraSetPol.attributes.opflexpSslProtocols == "TLSv1.1,TLSv1.2"
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')

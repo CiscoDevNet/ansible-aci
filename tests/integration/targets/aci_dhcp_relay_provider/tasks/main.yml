@@ -5,12 +5,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,11 +21,11 @@
       output_level: debug
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     tenant: ansible_tenant
     state: absent
@@ -54,7 +54,7 @@
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Add a new tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       tenant: ansible_tenant
       description: Ansible tenant
@@ -219,7 +219,7 @@
     register: add_dn_relay_provider
 
   - name: Confirm DHCP relay provider creation
-    assert:
+    ansible.builtin.assert:
       that:
       - add_epg_relay_provider is changed
       - add_epg_relay_provider.current.0.dhcpRsProv.attributes.annotation == 'orchestrator:ansible'
@@ -289,7 +289,7 @@
     register: add_dn_relay_provider_again
 
   - name: Confirm DHCP relay provider idempotence
-    assert:
+    ansible.builtin.assert:
       that:
       - add_epg_relay_provider_again is not changed
       - add_epg_relay_provider_again.current.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg]"
@@ -358,7 +358,7 @@
     register: update_dn_relay_provider
 
   - name: Confirm DHCP relay provider update
-    assert:
+    ansible.builtin.assert:
       that:
       - update_epg_relay_provider is changed
       - update_epg_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg]"
@@ -429,7 +429,7 @@
     register: query_all_relay_provider
 
   - name: Confirm DHCP relay provider query
-    assert:
+    ansible.builtin.assert:
       that:
       - query_epg_relay_provider is not changed
       - query_epg_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/tn-ansible_tenant/relayp-ansible_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg]"
@@ -510,7 +510,7 @@
     register: add_global_dn_relay_provider
 
   - name: Confirm Global DHCP relay provider creation
-    assert:
+    ansible.builtin.assert:
       that:
       - err_global_epg_relay_provider is failed
       - err_global_epg_relay_provider.msg == "provider_tenant is required when epg_type is epg"
@@ -582,7 +582,7 @@
     register: query_global_all_relay_provider
 
   - name: Confirm DHCP relay provider query
-    assert:
+    ansible.builtin.assert:
       that:
       - query_global_epg_relay_provider is not changed
       - query_global_epg_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg]"
@@ -649,7 +649,7 @@
     register: delete_dn_relay_provider
 
   - name: Confirm DHCP relay provider removal
-    assert:
+    ansible.builtin.assert:
       that:
       - delete_epg_relay_provider is changed
       - delete_epg_relay_provider.current == []
@@ -717,7 +717,7 @@
     register: delete_dn_relay_provider_again
 
   - name: Confirm DHCP relay provider removal
-    assert:
+    ansible.builtin.assert:
       that:
       - delete_epg_relay_provider_again is not changed
       - delete_l2_relay_provider_again is not changed
@@ -768,7 +768,7 @@
     register: delete_global_dn_relay_provider
 
   - name: Confirm DHCP relay provider removal
-    assert:
+    ansible.builtin.assert:
       that:
       - delete_global_epg_relay_provider is changed
       - delete_global_epg_relay_provider.current == []
@@ -792,7 +792,7 @@
 
   # CLEAN ENVIRONMENT AGAIN
   - name: Remove the ansible_tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       tenant: ansible_tenant
       state: absent

@@ -1,0 +1,305 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Tim Cragg (@timcragg)
+# Copyright: (c) 2023, Akini Ross (@akinross)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+   aci_info: &aci_info
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN EXISTING ENVIRONMENT
+- name: Ensure Fabric Pod Selectors are absent before testing
+  cisco.aci.aci_fabric_pod_selector:
+    <<: *aci_info
+    name: "{{ item.name }}"
+    pod_profile: default
+    type:  "{{ item.type }}"
+    state: absent
+  loop:
+    - {name: ansible_fabric_pod_pol_sel_1, type: all}
+    - {name: ansible_fabric_pod_pol_sel_2, type: range}
+    - {name: ansible_fabric_pod_pol_sel_3, type: range}
+    - {name: default, type: all}
+
+- name: Ensure a Pod Policy Group exists before testing
+  cisco.aci.aci_fabric_pod_policy_group:
+    <<: *aci_info
+    name: ansible_fabric_pod_pol_grp_1
+
+# CREATE FABRIC POD SELECTOR TYPE ALL
+- name: Create Fabric Pod Selector without blocks (check mode)
+  cisco.aci.aci_fabric_pod_selector: &fabric_pod_sel_without_blocks
+    <<: *aci_info
+    name: ansible_fabric_pod_pol_sel_1
+    type: all
+    pod_profile: default
+    description: Created Ansible Pod Selector
+  check_mode: true
+  register: cm_create_fabric_pod_sel_without_blocks
+
+- name: Create Fabric Pod Selector without blocks 
+  cisco.aci.aci_fabric_pod_selector:
+    <<: *fabric_pod_sel_without_blocks
+  register: nm_create_fabric_pod_sel_without_blocks
+
+- name: Create Fabric Pod Selector without blocks again
+  cisco.aci.aci_fabric_pod_selector:
+    <<: *fabric_pod_sel_without_blocks
+  register: nm_create_fabric_pod_sel_without_blocks_again
+
+- name: Verify create of Pod Selector
+  ansible.builtin.assert:
+    that:
+    - cm_create_fabric_pod_sel_without_blocks is changed
+    - cm_create_fabric_pod_sel_without_blocks.current == []
+    - cm_create_fabric_pod_sel_without_blocks.previous == []
+    - cm_create_fabric_pod_sel_without_blocks.proposed.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - cm_create_fabric_pod_sel_without_blocks.proposed.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - cm_create_fabric_pod_sel_without_blocks.proposed.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_1-typ-ALL"
+    - cm_create_fabric_pod_sel_without_blocks.proposed.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_1"
+    - cm_create_fabric_pod_sel_without_blocks.proposed.fabricPodS.attributes.type == "ALL"
+    - nm_create_fabric_pod_sel_without_blocks is changed
+    - nm_create_fabric_pod_sel_without_blocks.current.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - nm_create_fabric_pod_sel_without_blocks.current.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - nm_create_fabric_pod_sel_without_blocks.current.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_1-typ-ALL"
+    - nm_create_fabric_pod_sel_without_blocks.current.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_1"
+    - nm_create_fabric_pod_sel_without_blocks.current.0.fabricPodS.attributes.type == "ALL"
+    - nm_create_fabric_pod_sel_without_blocks.previous == []
+    - nm_create_fabric_pod_sel_without_blocks.proposed.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - nm_create_fabric_pod_sel_without_blocks.proposed.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - nm_create_fabric_pod_sel_without_blocks.proposed.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_1-typ-ALL"
+    - nm_create_fabric_pod_sel_without_blocks.proposed.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_1"
+    - nm_create_fabric_pod_sel_without_blocks.proposed.fabricPodS.attributes.type == "ALL"
+    - nm_create_fabric_pod_sel_without_blocks_again is not changed
+    - nm_create_fabric_pod_sel_without_blocks_again.current.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - nm_create_fabric_pod_sel_without_blocks_again.current.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - nm_create_fabric_pod_sel_without_blocks_again.current.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_1-typ-ALL"
+    - nm_create_fabric_pod_sel_without_blocks_again.current.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_1"
+    - nm_create_fabric_pod_sel_without_blocks_again.current.0.fabricPodS.attributes.type == "ALL"
+    - nm_create_fabric_pod_sel_without_blocks_again.previous.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - nm_create_fabric_pod_sel_without_blocks_again.previous.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - nm_create_fabric_pod_sel_without_blocks_again.previous.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_1-typ-ALL"
+    - nm_create_fabric_pod_sel_without_blocks_again.previous.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_1"
+    - nm_create_fabric_pod_sel_without_blocks_again.previous.0.fabricPodS.attributes.type == "ALL"
+
+# REMOVE FABRIC POD SELECTOR
+- name: Remove Fabric Pod Selector without blocks (check mode)
+  cisco.aci.aci_fabric_pod_selector:
+    <<: *fabric_pod_sel_without_blocks
+    state: absent
+  check_mode: true
+  register: cm_remove_fabric_pod_sel_without_blocks
+
+- name: Remove Fabric Pod Selector without blocks
+  cisco.aci.aci_fabric_pod_selector:
+    <<: *fabric_pod_sel_without_blocks
+    state: absent
+  register: nm_remove_fabric_pod_sel_without_blocks
+
+- name: Remove Fabric Pod Selector without blocks again
+  cisco.aci.aci_fabric_pod_selector:
+    <<: *fabric_pod_sel_without_blocks
+    state: absent
+  register: nm_remove_fabric_pod_sel_without_blocks_again
+
+- name: Verify removal of Pod Selector
+  ansible.builtin.assert:
+    that:
+    - cm_remove_fabric_pod_sel_without_blocks is changed
+    - cm_remove_fabric_pod_sel_without_blocks.proposed == {}
+    - cm_remove_fabric_pod_sel_without_blocks.current.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - cm_remove_fabric_pod_sel_without_blocks.current.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - cm_remove_fabric_pod_sel_without_blocks.current.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_1-typ-ALL"
+    - cm_remove_fabric_pod_sel_without_blocks.current.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_1"
+    - cm_remove_fabric_pod_sel_without_blocks.current.0.fabricPodS.attributes.type == "ALL"
+    - cm_remove_fabric_pod_sel_without_blocks.previous.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - cm_remove_fabric_pod_sel_without_blocks.previous.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - cm_remove_fabric_pod_sel_without_blocks.previous.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_1-typ-ALL"
+    - cm_remove_fabric_pod_sel_without_blocks.previous.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_1"
+    - cm_remove_fabric_pod_sel_without_blocks.previous.0.fabricPodS.attributes.type == "ALL"
+    - nm_remove_fabric_pod_sel_without_blocks is changed
+    - nm_remove_fabric_pod_sel_without_blocks.proposed == {}
+    - nm_remove_fabric_pod_sel_without_blocks.current == []
+    - nm_remove_fabric_pod_sel_without_blocks.previous.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - nm_remove_fabric_pod_sel_without_blocks.previous.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - nm_remove_fabric_pod_sel_without_blocks.previous.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_1-typ-ALL"
+    - nm_remove_fabric_pod_sel_without_blocks.previous.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_1"
+    - nm_remove_fabric_pod_sel_without_blocks.previous.0.fabricPodS.attributes.type == "ALL"
+    - nm_remove_fabric_pod_sel_without_blocks_again is not changed
+    - nm_remove_fabric_pod_sel_without_blocks_again.current == []
+    - nm_remove_fabric_pod_sel_without_blocks_again.previous == []
+
+# CREATE & UPDATE FABRIC POD SELECTOR TYPE RANGE
+- name: Create Fabric Pod Selector with blocks and policy
+  cisco.aci.aci_fabric_pod_selector: &fabric_pod_sel_blocks
+    <<: *fabric_pod_sel_without_blocks
+    name: ansible_fabric_pod_pol_sel_2
+    type: range
+    blocks: "2"
+    policy_group: ansible_fabric_pod_pol_grp
+  register: nm_update_fabric_pod_sel_with_blocks
+
+- name: Create Fabric Pod Selector with blocks and policy again
+  cisco.aci.aci_fabric_pod_selector:
+    <<: *fabric_pod_sel_blocks
+    blocks: "2"
+  register: nm_update_fabric_pod_sel_with_blocks_again
+
+- name: Update Fabric Pod Selector with blocks and policy again with different notation
+  cisco.aci.aci_fabric_pod_selector:
+    <<: *fabric_pod_sel_blocks
+    blocks: "2-2"
+  register: nm_update_fabric_pod_sel_with_blocks_again_different_notation
+
+- name: Update Fabric Pod Selector with changed blocks range
+  cisco.aci.aci_fabric_pod_selector: &fabric_pod_sel_blocks_range
+    <<: *fabric_pod_sel_blocks
+    blocks: "2-3,5,8-11"
+  register: nm_update_fabric_pod_sel_with_blocks_range
+
+- name: Update Fabric Pod Selector with removal of policy group
+  cisco.aci.aci_fabric_pod_selector:
+    <<: *fabric_pod_sel_blocks_range
+    policy_group: ""
+  register: nm_update_fabric_pod_sel_with_blocks_no_policy
+
+- name: Verify update of Pod Selector
+  ansible.builtin.assert:
+    that:
+    - nm_update_fabric_pod_sel_with_blocks is changed
+    - nm_update_fabric_pod_sel_with_blocks.current.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - nm_update_fabric_pod_sel_with_blocks.current.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - nm_update_fabric_pod_sel_with_blocks.current.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_2-typ-range"
+    - nm_update_fabric_pod_sel_with_blocks.current.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_2"
+    - nm_update_fabric_pod_sel_with_blocks.current.0.fabricPodS.attributes.type == "range"
+    - nm_update_fabric_pod_sel_with_blocks.current.0.fabricPodS.children.0.fabricRsPodPGrp.attributes.tDn == "uni/fabric/funcprof/podpgrp-ansible_fabric_pod_pol_grp"
+    - nm_update_fabric_pod_sel_with_blocks.current.0.fabricPodS.children.1.fabricPodBlk.attributes.from_ == "2"
+    - nm_update_fabric_pod_sel_with_blocks.current.0.fabricPodS.children.1.fabricPodBlk.attributes.to_ == "2"
+    - nm_update_fabric_pod_sel_with_blocks.previous == []
+    - nm_update_fabric_pod_sel_with_blocks_again is not changed
+    - nm_update_fabric_pod_sel_with_blocks_again.current.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - nm_update_fabric_pod_sel_with_blocks_again.current.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - nm_update_fabric_pod_sel_with_blocks_again.current.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_2-typ-range"
+    - nm_update_fabric_pod_sel_with_blocks_again.current.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_2"
+    - nm_update_fabric_pod_sel_with_blocks_again.current.0.fabricPodS.attributes.type == "range"
+    - nm_update_fabric_pod_sel_with_blocks_again.current.0.fabricPodS.children.0.fabricRsPodPGrp.attributes.tDn == "uni/fabric/funcprof/podpgrp-ansible_fabric_pod_pol_grp"
+    - nm_update_fabric_pod_sel_with_blocks_again.current.0.fabricPodS.children.1.fabricPodBlk.attributes.from_ == "2"
+    - nm_update_fabric_pod_sel_with_blocks_again.current.0.fabricPodS.children.1.fabricPodBlk.attributes.to_ == "2"
+    - nm_update_fabric_pod_sel_with_blocks_again.previous.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - nm_update_fabric_pod_sel_with_blocks_again.previous.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - nm_update_fabric_pod_sel_with_blocks_again.previous.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_2-typ-range"
+    - nm_update_fabric_pod_sel_with_blocks_again.previous.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_2"
+    - nm_update_fabric_pod_sel_with_blocks_again.previous.0.fabricPodS.attributes.type == "range"
+    - nm_update_fabric_pod_sel_with_blocks_again.previous.0.fabricPodS.children.0.fabricRsPodPGrp.attributes.tDn == "uni/fabric/funcprof/podpgrp-ansible_fabric_pod_pol_grp"
+    - nm_update_fabric_pod_sel_with_blocks_again.previous.0.fabricPodS.children.1.fabricPodBlk.attributes.from_ == "2"
+    - nm_update_fabric_pod_sel_with_blocks_again.previous.0.fabricPodS.children.1.fabricPodBlk.attributes.to_ == "2"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation is not changed
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.current.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.current.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.current.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_2-typ-range"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.current.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_2"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.current.0.fabricPodS.attributes.type == "range"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.current.0.fabricPodS.children.0.fabricRsPodPGrp.attributes.tDn == "uni/fabric/funcprof/podpgrp-ansible_fabric_pod_pol_grp"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.current.0.fabricPodS.children.1.fabricPodBlk.attributes.from_ == "2"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.current.0.fabricPodS.children.1.fabricPodBlk.attributes.to_ == "2"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.previous.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.previous.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.previous.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_2-typ-range"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.previous.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_2"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.previous.0.fabricPodS.attributes.type == "range"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.previous.0.fabricPodS.children.0.fabricRsPodPGrp.attributes.tDn == "uni/fabric/funcprof/podpgrp-ansible_fabric_pod_pol_grp"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.previous.0.fabricPodS.children.1.fabricPodBlk.attributes.from_ == "2"
+    - nm_update_fabric_pod_sel_with_blocks_again_different_notation.previous.0.fabricPodS.children.1.fabricPodBlk.attributes.to_ == "2"
+    - nm_update_fabric_pod_sel_with_blocks_range is changed
+    - nm_update_fabric_pod_sel_with_blocks_range.current.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - nm_update_fabric_pod_sel_with_blocks_range.current.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - nm_update_fabric_pod_sel_with_blocks_range.current.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_2-typ-range"
+    - nm_update_fabric_pod_sel_with_blocks_range.current.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_2"
+    - nm_update_fabric_pod_sel_with_blocks_range.current.0.fabricPodS.attributes.type == "range"
+    - nm_update_fabric_pod_sel_with_blocks_range.current.0.fabricPodS.children.0.fabricRsPodPGrp.attributes.tDn == "uni/fabric/funcprof/podpgrp-ansible_fabric_pod_pol_grp"
+    - nm_update_fabric_pod_sel_with_blocks_range.current.0.fabricPodS.children | length == 4
+    - nm_update_fabric_pod_sel_with_blocks_range.previous.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - nm_update_fabric_pod_sel_with_blocks_range.previous.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - nm_update_fabric_pod_sel_with_blocks_range.previous.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_2-typ-range"
+    - nm_update_fabric_pod_sel_with_blocks_range.previous.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_2"
+    - nm_update_fabric_pod_sel_with_blocks_range.previous.0.fabricPodS.attributes.type == "range"
+    - nm_update_fabric_pod_sel_with_blocks_range.previous.0.fabricPodS.children.0.fabricRsPodPGrp.attributes.tDn == "uni/fabric/funcprof/podpgrp-ansible_fabric_pod_pol_grp"
+    - nm_update_fabric_pod_sel_with_blocks_range.previous.0.fabricPodS.children.1.fabricPodBlk.attributes.from_ == "2"
+    - nm_update_fabric_pod_sel_with_blocks_range.previous.0.fabricPodS.children.1.fabricPodBlk.attributes.to_ == "2"
+    - nm_update_fabric_pod_sel_with_blocks_no_policy is changed
+    - nm_update_fabric_pod_sel_with_blocks_no_policy.current.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - nm_update_fabric_pod_sel_with_blocks_no_policy.current.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - nm_update_fabric_pod_sel_with_blocks_no_policy.current.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_2-typ-range"
+    - nm_update_fabric_pod_sel_with_blocks_no_policy.current.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_2"
+    - nm_update_fabric_pod_sel_with_blocks_no_policy.current.0.fabricPodS.attributes.type == "range"
+    - nm_update_fabric_pod_sel_with_blocks_no_policy.current.0.fabricPodS.children | length == 3
+    - nm_update_fabric_pod_sel_with_blocks_no_policy.previous.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - nm_update_fabric_pod_sel_with_blocks_no_policy.previous.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - nm_update_fabric_pod_sel_with_blocks_no_policy.previous.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_2-typ-range"
+    - nm_update_fabric_pod_sel_with_blocks_no_policy.previous.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_2"
+    - nm_update_fabric_pod_sel_with_blocks_no_policy.previous.0.fabricPodS.attributes.type == "range"
+    - nm_update_fabric_pod_sel_with_blocks_no_policy.previous.0.fabricPodS.children.0.fabricRsPodPGrp.attributes.tDn == "uni/fabric/funcprof/podpgrp-ansible_fabric_pod_pol_grp"
+    - nm_update_fabric_pod_sel_with_blocks_no_policy.previous.0.fabricPodS.children | length == 4
+
+# QUERY FABRIC POD SELECTOR
+- name: Create another Fabric Pod Selector
+  cisco.aci.aci_fabric_pod_selector:
+    <<: *fabric_pod_sel_blocks
+    name: ansible_fabric_pod_pol_sel_3
+    blocks: "6"
+
+- name: Query a Fabric Pod Selector
+  cisco.aci.aci_fabric_pod_selector:
+    <<: *fabric_pod_sel_blocks
+    state: query
+  register: query_one
+
+- name: Query all Fabric Pod Selectors
+  cisco.aci.aci_fabric_pod_selector:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Verify queries of Fabric Pod Selectors
+  ansible.builtin.assert:
+    that:
+    - query_one is not changed
+    - query_one.current | length == 1
+    - query_one.current.0.fabricPodS.attributes.annotation == "orchestrator:ansible"
+    - query_one.current.0.fabricPodS.attributes.descr == "Created Ansible Pod Selector"
+    - query_one.current.0.fabricPodS.attributes.dn == "uni/fabric/podprof-default/pods-ansible_fabric_pod_pol_sel_2-typ-range"
+    - query_one.current.0.fabricPodS.attributes.name == "ansible_fabric_pod_pol_sel_2"
+    - query_one.current.0.fabricPodS.attributes.type == "range"
+    - query_one.current.0.fabricPodS.children | length == 3
+    - query_all is not changed
+    - query_all.current | length >= 2
+
+# ERRORS
+- name: Create Fabric Pod Selector with type range and without blocks (error)
+  cisco.aci.aci_fabric_pod_selector:
+    <<: *aci_info
+    name: ansible_fabric_pod_pol_sel_2
+    type: range
+    pod_profile: default
+  register: err_range_without_blocks
+  ignore_errors: true
+
+- name: Verify errors of Fabric Pod Selectors
+  ansible.builtin.assert:
+    that:
+    - err_range_without_blocks is not changed
+    - err_range_without_blocks is failed
+    - err_range_without_blocks.msg == "The 'blocks' parameter is required when the 'type' parameter is set to 'range' and 'state' parameter is set to 'present'."

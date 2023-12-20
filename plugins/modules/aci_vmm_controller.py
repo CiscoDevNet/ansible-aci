@@ -3,6 +3,7 @@
 
 # Copyright: (c) 2021, Manuel Widmer <mawidmer@cisco.com>
 # Copyright: (c) 2021, Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
+# Copyright: (c) 2023, Akini Ross (@akinross) <akinross@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -33,7 +34,7 @@ options:
     - Version of the VMware DVS.
     type: str
     aliases: []
-    choices: [ 'unmanaged', '5.1', '5.5', '6.0', '6.5', '6.6', '7.0' ]
+    choices: [ 'unmanaged', '5.1', '5.5', '6.0', '6.5', '6.6', '7.0', '8.0' ]
   stats_collection:
     description:
     - Whether stats collection is enabled.
@@ -88,6 +89,8 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Manuel Widmer (@lumean)
+- Anvitha Jain (@anvitha-jain)
+- Akini Ross (@akinross)
 """
 
 EXAMPLES = r"""
@@ -132,7 +135,6 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    vm_provider: vmware
     state: query
   delegate_to: localhost
   register: query_result
@@ -274,7 +276,7 @@ def main():
     argument_spec.update(
         name=dict(type="str"),
         controller_hostname=dict(type="str"),
-        dvs_version=dict(type="str", choices=["unmanaged", "5.1", "5.5", "6.0", "6.5", "6.6", "7.0"]),
+        dvs_version=dict(type="str", choices=["unmanaged", "5.1", "5.5", "6.0", "6.5", "6.6", "7.0", "8.0"]),
         stats_collection=dict(type="str", default="disabled", choices=["enabled", "disabled"]),
         domain=dict(type="str", aliases=["domain_name", "domain_profile"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -310,6 +312,8 @@ def main():
 
     aci = ACIModule(module)
 
+    child_classes = ["vmmRsMgmtEPg", "vmmRsAcc"]
+
     aci.construct_url(
         root_class=dict(
             aci_class="vmmProvP",
@@ -327,10 +331,22 @@ def main():
             aci_class="vmmCtrlrP",
             aci_rn="ctrlr-{0}".format(name),
             module_object=name,
-            target_filter={"name": "name"},
+            target_filter={"name": name},
         ),
-        child_classes=["vmmRsMgmtEPg", "vmmRsAcc"],
+        child_classes=child_classes,
     )
+
+    # vmmProvP is not allowed to execute a query with rsp-subtree set in the filter_string
+    # due to complicated url construction logic which should be refactored creating a temporary fix inside module
+    # TODO refactor url construction logic if more occurences of rsp-subtree not supported problem appear
+    # check if the url is pointing towards the vmmProvP class and rsp-subtree is set in the filter_string
+    if aci.url.split("/")[-1].startswith("vmmp-") and "rsp-subtree" in aci.filter_string:
+        if name:
+            aci.url = "{0}/api/class/vmmCtrlrP.json".format(aci.base_url)
+            aci.filter_string = '?query-target-filter=eq(vmmCtrlrP.name,"{0}")&rsp-subtree=full&rsp-subtree-class={1}'.format(name, ",".join(child_classes))
+        else:
+            aci.url = "{0}/api/mo/uni/vmmp-{1}.json".format(aci.base_url, VM_PROVIDER_MAPPING.get(vm_provider))
+            aci.filter_string = ""
 
     aci.get_existing()
 

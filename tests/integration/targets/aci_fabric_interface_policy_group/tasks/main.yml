@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: "Please define the following variables: aci_hostname, aci_username and aci_password."
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -28,21 +28,21 @@
   register: version
 
 - name: Ensure leaf_policy_group does not exist
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *aci_info
     name: leaf_policy_group
     type: leaf
     state: absent
 
 - name: Ensure spine_policy_group does not exist
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *aci_info
     name: spine_policy_group
     type: spine
     state: absent
 
 - name: Add a leaf fabric interface policy group with check mode
-  aci_fabric_interface_policy_group: &cm_leaf_policy_group_present
+  cisco.aci.aci_fabric_interface_policy_group: &cm_leaf_policy_group_present
     <<: *aci_info
     name: leaf_policy_group
     type: leaf
@@ -52,7 +52,7 @@
   register: cm_leaf_policy_group_present
 
 - name: Add a leaf fabric interface policy group with normal mode
-  aci_fabric_interface_policy_group: &nm_leaf_policy_group_present
+  cisco.aci.aci_fabric_interface_policy_group: &nm_leaf_policy_group_present
     <<: *cm_leaf_policy_group_present
     dwdm_policy: default
     link_level_policy: default
@@ -63,12 +63,12 @@
   register: nm_leaf_policy_group_present
 
 - name: Add a leaf fabric interface policy group with normal mode again
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *nm_leaf_policy_group_present
   register: nm_leaf_policy_group_present_again
 
 - name: Add a spine fabric interface policy group with check mode
-  aci_fabric_interface_policy_group: &cm_spine_policy_group_present
+  cisco.aci.aci_fabric_interface_policy_group: &cm_spine_policy_group_present
     <<: *aci_info
     name: spine_policy_group
     type: spine
@@ -87,7 +87,7 @@
   when: version.current.0.topSystem.attributes.version is version('6.0(2h)', '>=')
   block:
     - name: Add a spine fabric interface policy group with transceiver_policy_tdn
-      aci_fabric_interface_policy_group: &tp_spine_policy_group_present
+      cisco.aci.aci_fabric_interface_policy_group: &tp_spine_policy_group_present
         <<: *aci_info
         name: spine_policy_group
         type: spine
@@ -97,7 +97,7 @@
       register: tp_spine_policy_group_present
 
     - name: Remove the transceiver_policy from the spine fabric interface policy group
-      aci_fabric_interface_policy_group:
+      cisco.aci.aci_fabric_interface_policy_group:
         <<: *aci_info
         name: spine_policy_group
         type: spine
@@ -107,7 +107,7 @@
       register: tp_spine_policy_group_absent
 
     - name: Assertions check for add fabric interface policy groups
-      assert:
+      ansible.builtin.assert:
         that:
           - tp_spine_policy_group_present is changed
           - tp_spine_policy_group_absent is changed
@@ -115,17 +115,17 @@
           - tp_spine_policy_group_absent.current.0.fabricSpPortPGrp.children | selectattr('fabricRsOpticsFabIfPol.attributes.tDn', 'defined') | selectattr('fabricRsOpticsFabIfPol.attributes.tDn', 'equalto', "")
 
 - name: Add a spine fabric interface policy group with normal mode
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *cm_spine_policy_group_present
   register: nm_spine_policy_group_present
 
 - name: Add a spine fabric interface policy group with normal mode again
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *cm_spine_policy_group_present
   register: nm_spine_policy_group_present_again
 
 - name: Update a spine fabric interface policy group with check mode
-  aci_fabric_interface_policy_group: &cm_spine_policy_group_update
+  cisco.aci.aci_fabric_interface_policy_group: &cm_spine_policy_group_update
     <<: *cm_spine_policy_group_present
     descr: spine_policy_group updated
     dwdm_policy: ""
@@ -138,17 +138,17 @@
   register: cm_spine_policy_group_update
 
 - name: Update a spine fabric interface policy group with normal mode
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *cm_spine_policy_group_update
   register: nm_spine_policy_group_update
 
 - name: Update a spine fabric interface policy group with normal mode again
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *cm_spine_policy_group_update
   register: nm_spine_policy_group_update_again
 
 - name: Assertions check for add fabric interface policy groups
-  assert:
+  ansible.builtin.assert:
     that:
       - cm_leaf_policy_group_present is changed
       - cm_leaf_policy_group_present.current == []
@@ -214,7 +214,7 @@
       - nm_spine_policy_group_update_again.current.0.fabricSpPortPGrp.attributes.descr == "spine_policy_group updated"
 
 - name: Invalid test - add a fabric interface policy group without type
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *aci_info
     name: nt_spine_policy_group
     descr: negative test nt_spine_policy_group
@@ -223,7 +223,7 @@
   ignore_errors: true
 
 - name: Invalid test - add a fabric interface policy group without name
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *aci_info
     type: spine
     descr: negative test spine_policy_group
@@ -232,7 +232,7 @@
   ignore_errors: true
 
 - name: Assertions check for invalid test - add fabric interface policy groups
-  assert:
+  ansible.builtin.assert:
     that:
       - nt_without_type is not changed
       - nt_without_type.msg == "missing required arguments{{':'}} type"
@@ -240,7 +240,7 @@
       - nt_without_name.msg == "state is present but all of the following are missing{{':'}} name"
 
 - name: Query a leaf fabric interface policy group with name
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *aci_info
     name: leaf_policy_group
     type: leaf
@@ -248,14 +248,14 @@
   register: query_leaf_policy_group
 
 - name: Query all leaf fabric interface policy groups
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *aci_info
     type: leaf
     state: query
   register: query_all_leaf_policy_group
 
 - name: Query a spine fabric interface policy group with name
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *aci_info
     name: spine_policy_group
     type: spine
@@ -263,14 +263,14 @@
   register: query_a_spine_policy_group
 
 - name: Query all spine fabric interface policy groups
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *aci_info
     type: spine
     state: query
   register: query_all_spine_policy_group
 
 - name: Assertions check for query a fabric interface policy groups
-  assert:
+  ansible.builtin.assert:
     that:
       - query_leaf_policy_group is not changed
       - query_leaf_policy_group.current != []
@@ -290,41 +290,41 @@
       - query_all_spine_policy_group.current | length >= 1
 
 - name: Remove a leaf fabric interface policy group with check mode
-  aci_fabric_interface_policy_group: &cm_leaf_policy_group_absent
+  cisco.aci.aci_fabric_interface_policy_group: &cm_leaf_policy_group_absent
     <<: *cm_leaf_policy_group_present
     state: absent
   check_mode: true
   register: cm_leaf_policy_group_absent
 
 - name: Remove a leaf fabric interface policy group with normal mode
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *cm_leaf_policy_group_absent
   register: nm_leaf_policy_group_absent
 
 - name: Remove a leaf fabric interface policy group with normal mode again
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *cm_leaf_policy_group_absent
   register: nm_leaf_policy_group_absent_again
 
 - name: Remove a spine fabric interface policy group with check mode
-  aci_fabric_interface_policy_group: &cm_spine_policy_group_absent
+  cisco.aci.aci_fabric_interface_policy_group: &cm_spine_policy_group_absent
     <<: *cm_spine_policy_group_present
     state: absent
   check_mode: true
   register: cm_spine_policy_group_absent
 
 - name: Remove a spine fabric interface policy group with normal mode
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *cm_spine_policy_group_absent
   register: nm_spine_policy_group_absent
 
 - name: Remove a spine fabric interface policy group with normal mode again
-  aci_fabric_interface_policy_group:
+  cisco.aci.aci_fabric_interface_policy_group:
     <<: *cm_spine_policy_group_absent
   register: nm_spine_policy_group_absent_again
 
 - name: Assertions check for remove a fabric interface policy groups
-  assert:
+  ansible.builtin.assert:
     that:
       - cm_leaf_policy_group_absent is changed
       - cm_leaf_policy_group_absent.current != []

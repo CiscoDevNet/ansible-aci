@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -28,7 +28,7 @@
   register: version
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Ensure tenant - ansible_test does not exists before testing
   cisco.aci.aci_tenant: &tenant_absent
@@ -71,7 +71,7 @@
     register: cm_web_esg_0_present
 
   - name: Assertions check for add web_esg_0 with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_web_esg_0_present is changed
         - cm_web_esg_0_present.current | length == 0
@@ -83,7 +83,7 @@
     register: nm_web_esg_0_present
 
   - name: Assertions check for add web_esg_0 with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_web_esg_0_present is changed
         - nm_web_esg_0_present.current | length == 1
@@ -96,7 +96,7 @@
         - nm_web_esg_0_present.current.0.fvESg.children[0].fvRsScope.attributes.tnFvCtxName == 'default'
 
   - name: Assertions check for add web_esg_0 with normal mode (v5.2+)
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_web_esg_0_present.current.0.fvESg.attributes.shutdown == 'no'
     when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
@@ -107,7 +107,7 @@
     register: idempotency_web_esg_0_present
 
   - name: Idempotency assertions check for add web_esg_0 with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_web_esg_0_present is not changed
         - idempotency_web_esg_0_present.current | length == 1
@@ -123,7 +123,7 @@
     register: ap_1_web_esg_0_present
 
   - name: Assertions check for add web_esg_0 under ap(anstest_ap_1_present)
-    assert:
+    ansible.builtin.assert:
       that:
         - ap_1_web_esg_0_present is changed
         - ap_1_web_esg_0_present.current | length == 1
@@ -142,7 +142,7 @@
     when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
 
   - name: Assertions check for add web_esg_1
-    assert:
+    ansible.builtin.assert:
       that:
         - web_esg_1_present is changed
         - web_esg_1_present.current | length == 1
@@ -164,7 +164,7 @@
     when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
 
   - name: Assertions check for add web_esg_2
-    assert:
+    ansible.builtin.assert:
       that:
         - web_esg_2_present is changed
         - web_esg_2_present.current | length == 1
@@ -183,7 +183,7 @@
     register: query_web_esg_0
 
   - name: Assertions check for query an ESG(web_esg_0) under ap(anstest_ap)
-    assert:
+    ansible.builtin.assert:
       that:
         - query_web_esg_0 is not changed
         - query_web_esg_0.current | length == 1
@@ -191,7 +191,7 @@
         - query_web_esg_0.current.0.fvESg.attributes.dn == "uni/tn-ansible_test/ap-anstest_ap/esg-web_esg_0"
 
   - name: Assertions check for query an ESG(web_esg_0) under ap(anstest_ap) (v5.2+)
-    assert:
+    ansible.builtin.assert:
       that:
         - query_web_esg_0.current.0.fvESg.attributes.shutdown == 'no'
     when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
@@ -203,14 +203,14 @@
     register: query_all_esg
 
   - name: Assertions check for query all ESGs
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_esg is not changed
         - query_all_esg.current | length >= 2 # Count of ESGs added in the above tasks
     when: version.current.0.topSystem.attributes.version is version('5.2', '<')
 
   - name: Assertions check for query all ESGs
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_esg is not changed
         - query_all_esg.current | length >= 4 # Count of ESGs added in the above tasks
@@ -224,7 +224,7 @@
     register: query_all_esg_with_name
 
   - name: Assertions check for query all ESGs with a Specific Name
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_esg_with_name is not changed
         - query_all_esg_with_name.current | length >= 2
@@ -237,7 +237,7 @@
     register: query_all_ap_esg
 
   - name: Assertions check for query all ESGs of an App Profile (<v5.2)
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_ap_esg is not changed
         - query_all_ap_esg.current.0.fvAp.attributes.name == 'anstest_ap'
@@ -245,7 +245,7 @@
     when: version.current.0.topSystem.attributes.version is version('5.2', '<')
 
   - name: Assertions check for query all ESGs of an App Profile (>=v5.2)
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_ap_esg is not changed
         - query_all_ap_esg.current.0.fvAp.attributes.name == 'anstest_ap'
@@ -261,7 +261,7 @@
     check_mode: true
 
   - name: Assertions check for remove an ESG with check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_web_esg_0_absent is changed
         - cm_web_esg_0_absent.current | length == 1
@@ -275,7 +275,7 @@
     register: nm_web_esg_0_absent
 
   - name: Assertions check for remove an ESG with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_web_esg_0_absent is changed
         - nm_web_esg_0_absent.current == []
@@ -288,7 +288,7 @@
     register: idempotency_web_esg_0_absent
 
   - name: Idempotency assertions check for remove an ESG with normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - idempotency_web_esg_0_absent is not changed
         - idempotency_web_esg_0_absent.current == []

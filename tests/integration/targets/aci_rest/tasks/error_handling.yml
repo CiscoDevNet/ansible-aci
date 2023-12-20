@@ -24,7 +24,7 @@
   register: error_on_name_resolution
 
 - name: Verify error_on_name_resolution
-  assert:
+  ansible.builtin.assert:
     that:
     - error_on_name_resolution is failed
     - error_on_name_resolution.msg.startswith("Connection failed for https://foo.bar.cisco.com/api/aaaLogin.json.")
@@ -51,7 +51,7 @@
   register: error_on_missing_required_param
 
 - name: Verify error_on_missing_required_param
-  assert:
+  ansible.builtin.assert:
     that:
     - error_on_missing_required_param is failed
     - 'error_on_missing_required_param.msg == "missing required arguments: path"'
@@ -78,7 +78,7 @@
   register: error_on_missing_attributes
 
 - name: Verify error_on_missing_attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - error_on_missing_attributes is failed
     - error_on_missing_attributes.method == 'POST'
@@ -110,7 +110,7 @@
   register: error_on_input_validation
 
 - name: Verify error_on_input_validation
-  assert:
+  ansible.builtin.assert:
     that:
     - error_on_input_validation is failed
     - error_on_input_validation.method == 'POST'
@@ -142,7 +142,7 @@
   register: error_on_invalid_attributes
 
 - name: Verify error_on_invalid_attributes
-  assert:
+  ansible.builtin.assert:
     that:
     - error_on_invalid_attributes is failed
     - error_on_invalid_attributes.method == 'POST'
@@ -173,7 +173,7 @@
   register: error_on_invalid_object
 
 - name: Verify error_on_invalid_object
-  assert:
+  ansible.builtin.assert:
     that:
     - error_on_invalid_object is failed
     - error_on_invalid_object.method == 'POST'
@@ -314,7 +314,7 @@
   register: err_fail_parse_json
 
 - name: Assertions checks for import error handling, invalid src, invalid path extension and parse failures
-  assert:
+  ansible.builtin.assert:
     that:
       - err_missing_lxml.msg == "The lxml python library is missing, or lacks etree support."
       - err_missing_xmljson.msg == "The xmljson python library is missing, or lacks cobra support."

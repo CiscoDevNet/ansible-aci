@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # GET Credentials from the inventory
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -22,26 +22,26 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove test tenant if it already exists
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info
     tenant: ansible_test
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Remove port-channel IPG
-    aci_interface_policy_leaf_policy_group:
+    cisco.aci.aci_interface_policy_leaf_policy_group:
       <<: *aci_info
       lag_type: link
       policy_group: ansible_port_channel_ipg
       state: absent
 
   - name: Remove vPC IPG
-    aci_interface_policy_leaf_policy_group:
+    cisco.aci.aci_interface_policy_leaf_policy_group:
       <<: *aci_info
       lag_type: node
       policy_group: ansible_vpc_ipg
@@ -49,7 +49,7 @@
 
   # ADD PC IPG
   - name: Add port-channel IPG
-    aci_interface_policy_leaf_policy_group:
+    cisco.aci.aci_interface_policy_leaf_policy_group:
       <<: *aci_info
       lag_type: link
       policy_group: ansible_port_channel_ipg
@@ -57,7 +57,7 @@
 
   # ADD vPC IPG
   - name: Add vPC IPG
-    aci_interface_policy_leaf_policy_group:
+    cisco.aci.aci_interface_policy_leaf_policy_group:
       <<: *aci_info
       lag_type: node
       policy_group: ansible_vpc_ipg
@@ -65,7 +65,7 @@
 
   # ADD domain
   - name: Add domain for l3out
-    aci_domain:
+    cisco.aci.aci_domain:
       <<: *aci_info
       domain: ansible_l3ext_domain
       domain_type: l3dom
@@ -73,7 +73,7 @@
 
   # ADD tenant
   - name: Add a new tenant required for l3out
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       tenant: ansible_test
       description: Ansible tenant
@@ -81,7 +81,7 @@
 
   # ADD VRF
   - name: Add VRF for l3out
-    aci_vrf:
+    cisco.aci.aci_vrf:
       <<: *aci_info
       tenant: ansible_test
       vrf: ansible_vrf
@@ -89,7 +89,7 @@
 
   # ADD l3out
   - name: Add l3out
-    aci_l3out:
+    cisco.aci.aci_l3out:
       <<: *aci_info
       tenant: ansible_test
       name: ansible_l3out
@@ -100,7 +100,7 @@
 
   # ADD l3out logical node profile
   - name: l3out logical node profile
-    aci_l3out_logical_node_profile:
+    cisco.aci.aci_l3out_logical_node_profile:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -109,7 +109,7 @@
 
   # ADD l3out logical interface profile
   - name: l3out logical interface profile
-    aci_l3out_logical_interface_profile:
+    cisco.aci.aci_l3out_logical_interface_profile:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -119,7 +119,7 @@
 
   # ADD l3out routed interface
   - name: Add routed interface
-    aci_l3out_interface:
+    cisco.aci.aci_l3out_interface:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -135,7 +135,7 @@
 
   # ADD l3out routed interface po
   - name: Add routed interface port-channel
-    aci_l3out_interface:
+    cisco.aci.aci_l3out_interface:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -151,7 +151,7 @@
 
   # ADD l3out routed interface vPC
   - name: Add routed interface vPC
-    aci_l3out_interface:
+    cisco.aci.aci_l3out_interface:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -167,7 +167,7 @@
 
   # ADD l3out routed interface vPC member
   - name: Add routed interface vPC member
-    aci_l3out_logical_interface_vpc_member:
+    cisco.aci.aci_l3out_logical_interface_vpc_member:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -182,7 +182,7 @@
 
   # ADD secondary IPs to the interfaces
   - name: Add secondary IP to routed interface
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -197,7 +197,7 @@
     register: secondary_intf
 
   - name: Add secondary to IP routed interface port-channel
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -212,7 +212,7 @@
     register: secondary_po
 
   - name: Add  secondary IP to routed interface vPC
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -228,7 +228,7 @@
     register: secondary_vpc
 
   - name: Verify secondaries have been created with the correct attributes
-    assert:
+    ansible.builtin.assert:
       that:
       - secondary_intf.current.0.l3extIp.attributes.dn == "uni/tn-ansible_test/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/addr-[192.168.50.2/27]"
       - secondary_intf.current.0.l3extIp.attributes.ipv6Dad == "disabled"
@@ -240,7 +240,7 @@
 
   # CHECK idempotency
   - name: Add secondary IP to routed interface with no changes
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -255,7 +255,7 @@
     register: secondary_intf_again
 
   - name: Add secondary to IP routed interface port-channel with no changes
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -270,7 +270,7 @@
     register: secondary_po_again
 
   - name: Add  secondary IP to routed interface vPC with no changes
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -286,7 +286,7 @@
     register: secondary_vpc_again
 
   - name: Verify MOs have not changed
-    assert:
+    ansible.builtin.assert:
       that:
       - secondary_intf_again is not changed
       - secondary_po_again is not changed
@@ -294,7 +294,7 @@
 
   # CHECK updates/modifications
   - name: Modify routed interface
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -309,7 +309,7 @@
     register: secondary_intf_update
 
   - name: Modify routed port-channel
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -324,7 +324,7 @@
     register: secondary_po_update
 
   - name: Modify routed vPC
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -340,7 +340,7 @@
     register: secondary_vpc_update
 
   - name: Verify updates have been applied
-    assert:
+    ansible.builtin.assert:
       that:
       - secondary_intf_update is changed
       - secondary_po_update is changed
@@ -351,7 +351,7 @@
 
   # QUERIES
   - name: Query secondary for interface
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -366,7 +366,7 @@
     register: secondary_intf_query
 
   - name: Query secondary for po
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -381,7 +381,7 @@
     register: secondary_po_query
 
   - name: Query secondary for vpc
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -397,13 +397,13 @@
     register: secondary_vpc_query
 
   - name: Query all secondary IPs
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       state: query
     register: secondary_all_query
 
   - name: Verify queries
-    assert:
+    ansible.builtin.assert:
       that:
       - secondary_intf_query is not changed
       - secondary_po_query is not changed
@@ -418,7 +418,7 @@
 
   # DELETE secondary IPs
   - name: Delete secondary for interface
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -433,7 +433,7 @@
     register: secondary_intf_remove
 
   - name: Delete secondary for po
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -448,7 +448,7 @@
     register: secondary_po_remove
 
   - name: Delete secondary for vpc
-    aci_l3out_interface_secondary_ip:
+    cisco.aci.aci_l3out_interface_secondary_ip:
       <<: *aci_info
       tenant: ansible_test
       l3out: ansible_l3out
@@ -464,7 +464,7 @@
     register: secondary_vpc_remove
 
   - name: Verify objects have been deleted
-    assert:
+    ansible.builtin.assert:
       that:
       - secondary_intf_remove.current == []
       - secondary_po_remove.current == []
@@ -475,27 +475,27 @@
   
   # CLEAN UP
   - name: Remove tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info
       tenant: ansible_test
       state: absent
 
   - name: Remove ext domain
-    aci_domain:
+    cisco.aci.aci_domain:
       <<: *aci_info
       domain: ansible_l3ext_domain
       domain_type: l3dom
       state: absent
 
   - name: Remove port-channel
-    aci_interface_policy_leaf_policy_group:
+    cisco.aci.aci_interface_policy_leaf_policy_group:
       <<: *aci_info
       lag_type: link
       policy_group: ansible_port_channel_ipg
       state: absent
 
   - name: Remove vpc
-    aci_interface_policy_leaf_policy_group:
+    cisco.aci.aci_interface_policy_leaf_policy_group:
       <<: *aci_info
       lag_type: node
       policy_group: ansible_vpc_ipg

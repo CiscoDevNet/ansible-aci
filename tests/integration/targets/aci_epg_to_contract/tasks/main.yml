@@ -1,15 +1,16 @@
 # Test code for the ACI modules
 # Copyright: (c) 2017, Jacob McGill (@jmcgill298)
+# Copyright: (c) 2023, Akini Ross (@akinross) <akinross@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Ensure contract binding does not exist prior to testing
   cisco.aci.aci_epg_to_contract:
@@ -30,8 +31,8 @@
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
-  - name: ensure tenant exists for tests to kick off
-    cisco.aci.aci_tenant: &aci_tenant_present
+  - name: remove tenant for tests to kick off
+    cisco.aci.aci_tenant: &aci_tenant_absent
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
       password: "{{ aci_password }}"
@@ -40,6 +41,12 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: debug
       tenant: ansible_test
+      state: absent
+    register: tenant_present
+
+  - name: ensure tenant exists for tests to kick off
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_tenant_absent
       state: present
     register: tenant_present
 
@@ -118,7 +125,7 @@
     register: incompatible_present
 
   - name: present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - provide_present_check_mode is changed
         - provide_present_check_mode.sent.fvRsProv.attributes.tnVzBrCPName == 'anstest_http'
@@ -137,6 +144,68 @@
         - 'missing_required_present.msg == "missing required arguments: contract_type"'
         - incompatible_present is failed
         - incompatible_present.msg == "the 'provider_match' is only configurable for Provided Contracts"
+
+  - name: bind taboo contract to epg
+    cisco.aci.aci_epg_to_contract:
+      <<: *aci_epg_present
+      contract: anstest_https
+      contract_type: taboo
+    register: taboo_present
+
+  - name: bind interface contract to epg
+    cisco.aci.aci_epg_to_contract:
+      <<: *aci_epg_present
+      contract: anstest_https
+      contract_type: interface
+    register: interface_present
+
+  - name: bind intra epg contract to epg
+    cisco.aci.aci_epg_to_contract: &aci_epg_intra_present
+      <<: *aci_epg_present
+      contract: anstest_https
+      contract_type: intra_epg
+    register: intra_epg_present
+
+  - name: bind intra epg contract to epg (error contract label)
+    cisco.aci.aci_epg_to_contract:
+      <<: *aci_epg_intra_present
+      contract_label: anstest_contract_label
+    ignore_errors: true
+    register: err_contract_label
+
+  - name: bind intra epg contract to epg (error subject label)
+    cisco.aci.aci_epg_to_contract:
+      <<: *aci_epg_intra_present
+      subject_label: anstest_subject_label
+    ignore_errors: true
+    register: err_subject_label
+
+  - name: bind intra epg contract to epg (error subject and contract label)
+    cisco.aci.aci_epg_to_contract:
+      <<: *aci_epg_intra_present
+      contract_label: anstest_contract_label
+      subject_label: anstest_subject_label
+    ignore_errors: true
+    register: err_subject_and_contract_label
+  
+  - name: present assertions for taboo, interface and intra_epg contract types
+    assert:
+      that:
+        - taboo_present is changed
+        - taboo_present.previous == []
+        - taboo_present.current.0.fvRsProtBy.attributes.tnVzTabooName == 'anstest_https'
+        - interface_present is changed
+        - interface_present.previous == []
+        - interface_present.current.0.fvRsConsIf.attributes.tnVzCPIfName == 'anstest_https'
+        - intra_epg_present is changed
+        - intra_epg_present.previous == []
+        - intra_epg_present.current.0.fvRsIntraEpg.attributes.tnVzBrCPName == 'anstest_https'
+        - err_contract_label is failed
+        - err_contract_label.msg == "the 'contract_label' and 'subject_label' are not configurable for intra_epg contracts"
+        - err_subject_label is failed
+        - err_subject_label.msg == "the 'contract_label' and 'subject_label' are not configurable for intra_epg contracts"
+        - err_subject_and_contract_label is failed
+        - err_subject_and_contract_label.msg == "the 'contract_label' and 'subject_label' are not configurable for intra_epg contracts"
 
   - name: get binding
     cisco.aci.aci_epg_to_contract:
@@ -166,7 +235,7 @@
     register: missing_required_query
 
   - name: query assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - query_provide_contract is not changed
         - query_provide_contract.current != []
@@ -223,7 +292,7 @@
     register: missing_required_absent
 
   - name: absent assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - consume_absent_check_mode is changed
         - consume_absent_check_mode.previous.0.fvRsCons is defined

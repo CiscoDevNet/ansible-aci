@@ -5,7 +5,7 @@
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -23,7 +23,7 @@
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -65,7 +65,7 @@
     register: nm_add_intf
 
   - name: Verify nm_add_intf
-    assert:
+    ansible.builtin.assert:
       that:
       - cm_add_intf is changed
       - nm_add_intf is changed
@@ -79,7 +79,7 @@
     register: add_intf_again
 
   - name: Verify add_intf_again
-    assert:
+    ansible.builtin.assert:
       that:
       - add_intf_again is not changed
 
@@ -100,7 +100,7 @@
     register: query_all_profiles
 
   - name: Verify query_all_profiles
-    assert:
+    ansible.builtin.assert:
       that:
       - query_all_profiles is not changed
       - query_all_profiles.current.0.l2extLNodeP.children | length > 1
@@ -113,7 +113,7 @@
     register: query_spec_profile
 
   - name: Verify query_spec_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - query_spec_profile is not changed
       - query_spec_profile.current|length == 1
@@ -129,7 +129,7 @@
     register: query_nonexist_profile
 
   - name: Verify query_nonexist_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - query_nonexist_profile is not changed
       - query_nonexist_profile.current == []
@@ -142,7 +142,7 @@
     register: remove_profile
 
   - name: Verify remove_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_profile is changed
       - remove_profile.current == []
@@ -154,7 +154,7 @@
     register: remove_nonexist_profile
 
   - name: Verify remove_nonexist_profile
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_nonexist_profile is not changed
       - remove_nonexist_profile.current == []

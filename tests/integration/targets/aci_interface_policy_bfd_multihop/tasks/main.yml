@@ -1,0 +1,245 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Anvitha Jain (@anvjain)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Execute tasks only for non-cloud sites
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')  # This condition will execute only when APIC version >= 5.2
+  block:  # block specifies execution of tasks within, based on conditions
+
+  # CLEAN ENVIRONMENT
+  - name: Remove the ansible_tenant
+    aci_tenant:
+      <<: *aci_info
+      tenant: ansible_tenant
+      state: absent
+
+  - name: Add a new tenant
+    aci_tenant:
+      <<: *aci_info
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
+
+  # CREATE BFD Multihop Interface policy
+  - name: Add a new  BFD Multihop Interface policy - check mode
+    cisco.aci.aci_interface_policy_bfd_multihop: &add_bfd_multihop_interface_pol
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd_multihop_interface_policy
+      description: Ansible BFD Multihop Interface Policy
+      state: present
+    check_mode: true
+    register: cm_add_bfd_multihop_interface_pol
+
+  - name: Add a new  BFD Multihop Interface policy - normal mode
+    cisco.aci.aci_interface_policy_bfd_multihop:
+      <<: *add_bfd_multihop_interface_pol
+      state: present
+    register: nm_add_bfd_multihop_interface_pol
+
+  - name: Verify BFD Multihop Interface Policy creation
+    assert:
+      that:
+      - cm_add_bfd_multihop_interface_pol is changed
+      - nm_add_bfd_multihop_interface_pol is changed
+      - cm_add_bfd_multihop_interface_pol.previous == nm_add_bfd_multihop_interface_pol.previous == []
+      - cm_add_bfd_multihop_interface_pol.proposed.bfdMhIfPol.attributes.dn == nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.dn == "uni/tn-ansible_tenant/bfdMhIfPol-ansible_bfd_multihop_interface_policy"
+      - cm_add_bfd_multihop_interface_pol.proposed.bfdMhIfPol.attributes.name == nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.name == "ansible_bfd_multihop_interface_policy"
+      - cm_add_bfd_multihop_interface_pol.proposed.bfdMhIfPol.attributes.descr == nm_add_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.descr == "Ansible BFD Multihop Interface Policy"
+
+  - name: Add a new  BFD Multihop Interface policy again - idempotency
+    cisco.aci.aci_interface_policy_bfd_multihop:
+      <<: *add_bfd_multihop_interface_pol
+      state: present
+    register: add_bfd_multihop_interface_pol_again
+
+  - name: Verify BFD Multihop Interface Policy creation again - idempotency
+    assert:
+      that:
+      - add_bfd_multihop_interface_pol_again is not changed
+      - add_bfd_multihop_interface_pol_again.previous != []
+      - add_bfd_multihop_interface_pol_again.current | length == 1
+      - add_bfd_multihop_interface_pol_again.previous | length == 1
+
+  - name: Modify a BFD Multihop Interface policy
+    cisco.aci.aci_interface_policy_bfd_multihop:
+      <<: *add_bfd_multihop_interface_pol
+      admin_state: disabled
+      detection_multiplier: 5
+      min_transmit_interval: 270
+      min_receive_interval: 500
+      state: present
+    register: update_bfd_multihop_interface_pol
+
+  - name: Verify modifying BFD Multihop Interface Policy
+    assert:
+      that:
+      - update_bfd_multihop_interface_pol is changed
+      - update_bfd_multihop_interface_pol.previous != update_bfd_multihop_interface_pol.current
+      - update_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.dn == "uni/tn-ansible_tenant/bfdMhIfPol-ansible_bfd_multihop_interface_policy"
+      - update_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.name == "ansible_bfd_multihop_interface_policy"
+      - update_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.descr == "Ansible BFD Multihop Interface Policy"
+      - update_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.adminSt == "disabled"
+      - update_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.detectMult == "5"
+      - update_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.minRxIntvl == "500"
+      - update_bfd_multihop_interface_pol.current.0.bfdMhIfPol.attributes.minTxIntvl == "270"
+
+  # Added another BFD Multihop Interface policy
+  - name: Add a new  BFD Multihop Interface policy - normal mode
+    cisco.aci.aci_interface_policy_bfd_multihop:
+      <<: *add_bfd_multihop_interface_pol
+      name: ansible_bfd_multihop_interface_policy_2
+      state: present
+    register: add_bfd_multihop_interface_pol_2
+
+  - name: Verify BFD Multihop Interface Policy creation
+    assert:
+      that:
+      - add_bfd_multihop_interface_pol_2 is changed
+      - add_bfd_multihop_interface_pol_2.previous == []
+      - add_bfd_multihop_interface_pol_2.current.0.bfdMhIfPol.attributes.dn == "uni/tn-ansible_tenant/bfdMhIfPol-ansible_bfd_multihop_interface_policy_2"
+      - add_bfd_multihop_interface_pol_2.current.0.bfdMhIfPol.attributes.name == "ansible_bfd_multihop_interface_policy_2"
+      - add_bfd_multihop_interface_pol_2.current.0.bfdMhIfPol.attributes.descr == "Ansible BFD Multihop Interface Policy"
+      - add_bfd_multihop_interface_pol_2.current.0.bfdMhIfPol.attributes.adminSt == "enabled"
+      - add_bfd_multihop_interface_pol_2.current.0.bfdMhIfPol.attributes.detectMult == "3"
+      - add_bfd_multihop_interface_pol_2.current.0.bfdMhIfPol.attributes.minRxIntvl == "250"
+      - add_bfd_multihop_interface_pol_2.current.0.bfdMhIfPol.attributes.minTxIntvl == "250"
+
+  - name: Query all BFD Multihop Interface policies in a specific tenant
+    cisco.aci.aci_interface_policy_bfd_multihop:
+      <<: *aci_info
+      tenant: ansible_tenant
+      state: query
+    register: query_all_result
+
+  - name: Verify querying all BFD Multihop Interface Policies
+    assert:
+      that:
+      - query_all_result is not changed
+      - query_all_result.current.0.fvTenant.children | length == 2
+      - query_all_result.current.0.fvTenant.children[0].bfdMhIfPol.attributes.name == "ansible_bfd_multihop_interface_policy_2"
+      - query_all_result.current.0.fvTenant.children[1].bfdMhIfPol.attributes.name == "ansible_bfd_multihop_interface_policy"
+
+  - name: Query 'ansible_bfd_multihop_interface_policy' BFD Multihop Interface policies in a specific tenant
+    cisco.aci.aci_interface_policy_bfd_multihop:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd_multihop_interface_policy
+      state: query
+    register: query_result
+
+  - name: Verify querying'ansible_bfd_multihop_interface_policy BFD' Multihop Interface Policy
+    assert:
+      that:
+      - query_result is not changed
+      - query_result.current.0.bfdMhIfPol.attributes.dn == "uni/tn-ansible_tenant/bfdMhIfPol-ansible_bfd_multihop_interface_policy"
+      - query_result.current.0.bfdMhIfPol.attributes.name == "ansible_bfd_multihop_interface_policy"
+
+  - name: Remove a BFD Multihop Interface policy - check mode
+    cisco.aci.aci_interface_policy_bfd_multihop:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd_multihop_interface_policy
+      state: absent
+    check_mode: true
+    register: cm_remove_bfd_multihop_interface_pol
+
+  - name: Remove a BFD Multihop Interface policy - normal mode
+    cisco.aci.aci_interface_policy_bfd_multihop:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd_multihop_interface_policy
+      state: absent
+    register: nm_remove_bfd_multihop_interface_pol
+
+  - name: Remove a BFD Multihop Interface policy again - idempotency
+    cisco.aci.aci_interface_policy_bfd_multihop:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd_multihop_interface_policy
+      state: absent
+    register: remove_bfd_multihop_interface_pol_again
+
+  - name: Verify removing BFD Multihop Interface Policies
+    assert:
+      that:
+      - nm_remove_bfd_multihop_interface_pol is changed
+      - cm_remove_bfd_multihop_interface_pol is changed
+      - cm_remove_bfd_multihop_interface_pol.proposed == nm_remove_bfd_multihop_interface_pol.proposed == {}
+      - nm_remove_bfd_multihop_interface_pol.previous != []
+      - remove_bfd_multihop_interface_pol_again is not changed
+      - nm_remove_bfd_multihop_interface_pol.current == remove_bfd_multihop_interface_pol_again.current == []
+
+#  Validating out of rage parameters.
+
+# Added BFD Multihop Interface policy with out of the range detection_multiplier
+  - name: Add a new BFD Multihop Interface policy - out of the range detection_multiplier
+    cisco.aci.aci_interface_policy_bfd_multihop:
+      <<: *add_bfd_multihop_interface_pol
+      name: ansible_bfd_multihop_interface_policy_3
+      detection_multiplier: 256
+      state: present
+    ignore_errors: true
+    register: add_bfd_multihop_interface_pol_3
+
+  - name: Verify BFD Multihop Interface Policy creation
+    assert:
+      that:
+      - add_bfd_multihop_interface_pol_3 is not changed
+      - add_bfd_multihop_interface_pol_3.msg == "The \"detection_multiplier\" must be a value between 1 and 50"
+
+# Added BFD Multihop Interface policy with out of the range min_transmit_interval
+  - name: Add a new BFD Multihop Interface policy - out of the range min_transmit_interval
+    cisco.aci.aci_interface_policy_bfd_multihop:
+      <<: *add_bfd_multihop_interface_pol
+      name: ansible_bfd_multihop_interface_policy_3
+      min_transmit_interval: 50
+      state: present
+    ignore_errors: true
+    register: add_bfd_multihop_interface_pol_3
+
+  - name: Verify BFD Multihop Interface Policy creation
+    assert:
+      that:
+      - add_bfd_multihop_interface_pol_3 is not changed
+      - add_bfd_multihop_interface_pol_3.msg == "The \"min_transmit_interval\" must be a value between 250 and 999"
+
+# Added BFD Multihop Interface policy with out of the range min_receive_interval
+  - name: Add a new BFD Multihop Interface policy - out of the range min_receive_interval
+    cisco.aci.aci_interface_policy_bfd_multihop:
+      <<: *add_bfd_multihop_interface_pol
+      name: ansible_bfd_multihop_interface_policy_3
+      min_receive_interval: 1000
+      state: present
+    ignore_errors: true
+    register: add_bfd_multihop_interface_pol_3
+
+  - name: Verify BFD Multihop Interface Policy creation
+    assert:
+      that:
+      - add_bfd_multihop_interface_pol_3 is not changed
+      - add_bfd_multihop_interface_pol_3.msg == "The \"min_receive_interval\" must be a value between 250 and 999"

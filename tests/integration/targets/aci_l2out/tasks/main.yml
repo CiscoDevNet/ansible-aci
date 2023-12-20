@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -21,26 +21,26 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
-  aci_tenant:
+  cisco.aci.aci_tenant:
     <<: *aci_info 
     tenant: ansible_tenant
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Add a new tenant
-    aci_tenant:
+    cisco.aci.aci_tenant:
       <<: *aci_info 
       tenant: ansible_tenant
       description: Ansible tenant
       state: present
 
   - name: Add a new L2Out
-    aci_l2out:
+    cisco.aci.aci_l2out:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -52,14 +52,14 @@
     register: add_l2out
 
   - name: Verify add_l2out
-    assert:
+    ansible.builtin.assert:
       that:
       - add_l2out.current.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out"
       - add_l2out.current.0.l2extOut.attributes.name == "ansible_l2out"
       - add_l2out.current.0.l2extOut.attributes.annotation == 'orchestrator:ansible'
 
   - name: Add the L2Out again
-    aci_l2out:
+    cisco.aci.aci_l2out:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -71,12 +71,12 @@
     register: add_l2out_again
 
   - name: Verify add_l2out_again
-    assert:
+    ansible.builtin.assert:
       that:
       - add_l2out_again is not changed
 
   - name: Add a new L2Out 
-    aci_l2out:
+    cisco.aci.aci_l2out:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out_2
@@ -88,13 +88,13 @@
     register: add_l2out_2
 
   - name: Verify add_l2out_2
-    assert:
+    ansible.builtin.assert:
       that:
       - add_l2out_2.current.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out_2"
       - add_l2out_2.current.0.l2extOut.attributes.name == "ansible_l2out_2"
 
   - name: Query the L2Out  
-    aci_l2out:
+    cisco.aci.aci_l2out:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -102,26 +102,26 @@
     register: query_l2out
 
   - name: Verify query_l2out
-    assert:
+    ansible.builtin.assert:
       that:
       - query_l2out is not changed
       - query_l2out.current.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out"
       - query_l2out.current.0.l2extOut.attributes.name == "ansible_l2out"
 
   - name: Query all l2outs under a specific tenant
-    aci_l2out:
+    cisco.aci.aci_l2out:
       <<: *aci_info
       tenant: ansible_tenant
       state: query
     register: query_l2out_all
 
   - name: Verify query_l2out_all
-    assert:
+    ansible.builtin.assert:
       that:
       - query_l2out_all is not changed
 
   - name: Remove the L2Out 
-    aci_l2out:
+    cisco.aci.aci_l2out:
       <<: *aci_info
       tenant: ansible_tenant
       l2out: ansible_l2out
@@ -129,7 +129,7 @@
     register: remove_l2out
 
   - name: Verify remove_l2out
-    assert:
+    ansible.builtin.assert:
       that:
       - remove_l2out is changed
       - remove_l2out.previous.0.l2extOut.attributes.dn == "uni/tn-ansible_tenant/l2out-ansible_l2out"

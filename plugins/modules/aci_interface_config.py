@@ -14,9 +14,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_interface_config
-short_description: Manage Interface Configuration of Access (infra:PortConfig) and Fabric (fabric:PortConfig) Ports is only supported for ACI 5.2(5)+
+short_description: Manage Interface Configuration of Access (infra:PortConfig) and Fabric (fabric:PortConfig) Ports is only supported for ACI 5.2(7)+
 description:
-- Manage Interface Configuration of Access (infra:PortConfig) and Fabric (fabric:PortConfig) Ports is only supported for ACI 5.2(5)+
+- Manage Interface Configuration of Access (infra:PortConfig) and Fabric (fabric:PortConfig) Ports is only supported for ACI 5.2(7)+
 options:
   policy_group:
     description:

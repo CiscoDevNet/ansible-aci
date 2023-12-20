@@ -1,0 +1,1133 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Tim Cragg (@timcragg)
+# Copyright: (c) 2023, Akini Ross (@akinross)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+
+- name: Remove ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info
+    tenant: ansible_tenant
+    state: absent
+
+- name: Create ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant
+    <<: *aci_tenant_absent
+    state: present
+
+- name: Create ansible_vrf
+  cisco.aci.aci_vrf: &aci_ansible_vrf_1
+    <<: *aci_tenant
+    vrf: ansible_vrf_1
+    state: present
+
+- name: Create ansible_second_vrf
+  cisco.aci.aci_vrf: &aci_ansible_vrf_2
+    <<: *aci_tenant
+    vrf: ansible_vrf_2
+    state: present
+
+# ENABLE MULTICAST
+
+- name: Enable multicast on VRF 1 (check mode)
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+  check_mode: yes
+  register: cm_enable_multicast
+
+- name: Enable multicast on VRF 1 (normal mode)
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+  register: nm_enable_multicast
+
+- name: Enable multicast on VRF 1 again
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+  register: nm_enable_multicast_again
+
+- name: Verify create multicast VRF 1
+  ansible.builtin.assert:
+    that:
+    - cm_enable_multicast is changed
+    - cm_enable_multicast.current == []
+    - cm_enable_multicast.previous == []
+    - cm_enable_multicast.proposed.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - cm_enable_multicast.proposed.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - cm_enable_multicast.proposed.pimCtxP.children.0.pimResPol.children == []
+    - cm_enable_multicast.proposed.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.children == []
+    - cm_enable_multicast.proposed.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.children == []
+    - cm_enable_multicast.proposed.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.children == []
+    - cm_enable_multicast.proposed.pimCtxP.children.2.pimSSMPatPol.children.0.pimSSMRangePol.children == []
+    - nm_enable_multicast is changed
+    - nm_enable_multicast.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_enable_multicast.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_enable_multicast.current.0.pimCtxP.attributes.mtu == "1500"
+    - nm_enable_multicast.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_enable_multicast.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_enable_multicast.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_enable_multicast.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_enable_multicast.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_enable_multicast.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_enable_multicast.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_enable_multicast.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_enable_multicast.previous == []
+    - nm_enable_multicast_again is not changed
+    - nm_enable_multicast_again.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_enable_multicast_again.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_enable_multicast_again.current.0.pimCtxP.attributes.mtu == "1500"
+    - nm_enable_multicast_again.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_enable_multicast_again.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_enable_multicast_again.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_enable_multicast_again.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_enable_multicast_again.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_enable_multicast_again.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_enable_multicast_again.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_enable_multicast_again.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_enable_multicast_again.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_enable_multicast_again.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_enable_multicast_again.previous.0.pimCtxP.attributes.mtu == "1500"
+    - nm_enable_multicast_again.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_enable_multicast_again.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_enable_multicast_again.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_enable_multicast_again.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_enable_multicast_again.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_enable_multicast_again.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_enable_multicast_again.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_enable_multicast_again.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+
+# UPDATE MULTICAST SETTINGS
+
+- name: Update pim setting on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    pim_setting:
+      mtu: 2000
+      control_state: [ fast, strict ]
+  register: nm_update_pim_setting
+
+- name: Remove control_state from pim setting on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    pim_setting:
+      control_state: []
+  register: nm_update_pim_setting_remove_control_state
+
+- name: Verify update pim setting on VRF 1
+  ansible.builtin.assert:
+    that:
+    - nm_update_pim_setting is changed
+    - nm_update_pim_setting.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_pim_setting.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_pim_setting.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_pim_setting.current.0.pimCtxP.attributes.ctrl == "fast-conv,strict-rfc-compliant"
+    - nm_update_pim_setting.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_pim_setting.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_pim_setting.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_pim_setting.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_pim_setting.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_pim_setting.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_pim_setting.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_pim_setting.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_pim_setting.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_pim_setting.previous.0.pimCtxP.attributes.mtu == "1500"
+    - nm_update_pim_setting.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_pim_setting.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_pim_setting.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_pim_setting.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_pim_setting.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_pim_setting.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_pim_setting.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_pim_setting.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_pim_setting_remove_control_state is changed
+    - nm_update_pim_setting_remove_control_state.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_pim_setting_remove_control_state.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_pim_setting_remove_control_state.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_pim_setting_remove_control_state.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_pim_setting_remove_control_state.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_pim_setting_remove_control_state.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_pim_setting_remove_control_state.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_pim_setting_remove_control_state.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_pim_setting_remove_control_state.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_pim_setting_remove_control_state.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_pim_setting_remove_control_state.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_pim_setting_remove_control_state.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_pim_setting_remove_control_state.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_pim_setting_remove_control_state.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_pim_setting_remove_control_state.previous.0.pimCtxP.attributes.ctrl == "fast-conv,strict-rfc-compliant"
+    - nm_update_pim_setting_remove_control_state.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_pim_setting_remove_control_state.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_pim_setting_remove_control_state.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_pim_setting_remove_control_state.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_pim_setting_remove_control_state.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_pim_setting_remove_control_state.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_pim_setting_remove_control_state.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+
+# UPDATE MULTICAST RESOURCE POLICY
+
+- name: Update resource policy on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    resource_policy:
+      maximum_limit: 100
+  register: nm_update_resource_policy
+
+- name: Add a routemap to resource policy on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    resource_policy:
+      reserved_multicast_entries: 10
+      reserved_route_map: uni/tn-ansible_test/rtmap-ansible_test
+  register: nm_update_resource_policy_add_route_map
+
+- name: Update maximum limit from resource policy with routemap on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    resource_policy:
+      maximum_limit: 50
+  register: nm_update_resource_policy_with_route_map
+
+- name: Remove maximum limit from resource policy on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    resource_policy:
+      maximum_limit: 0
+  register: nm_update_resource_policy_with_route_map_remove_maximum_limit
+
+- name: Update reserved multicast entries from resource policy on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    resource_policy:
+      reserved_multicast_entries: 20
+      reserved_route_map: uni/tn-ansible_test/rtmap-ansible_test_changed
+  register: nm_update_resource_policy_change_reserved_multicast_entries
+
+- name: Remove a routemap from resource policy on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    resource_policy:
+      reserved_route_map: ""
+  register: nm_update_resource_policy_remove_route_map
+
+- name: Remove a routemap from resource policy on VRF 1 again
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    resource_policy:
+      reserved_route_map: ""
+  register: nm_update_resource_policy_remove_route_map_again
+
+- name: Verify update resource policy on VRF 1
+  ansible.builtin.assert:
+    that:
+    - nm_update_resource_policy is changed
+    - nm_update_resource_policy.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_resource_policy.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_resource_policy.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_resource_policy.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_resource_policy.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_resource_policy.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_resource_policy.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_resource_policy.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_resource_policy.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_resource_policy.current.0.pimCtxP.children.2.pimResPol.attributes.max == "100"
+    - nm_update_resource_policy.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_resource_policy.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_resource_policy.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_resource_policy.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_resource_policy.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_resource_policy.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_resource_policy.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_resource_policy.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_resource_policy.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_resource_policy.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_resource_policy.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_resource_policy.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_resource_policy_add_route_map is changed
+    - nm_update_resource_policy_add_route_map.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_resource_policy_add_route_map.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_resource_policy_add_route_map.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_resource_policy_add_route_map.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_resource_policy_add_route_map.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_resource_policy_add_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_resource_policy_add_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_resource_policy_add_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_resource_policy_add_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_resource_policy_add_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.max == "100"
+    - nm_update_resource_policy_add_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "10"
+    - nm_update_resource_policy_add_route_map.current.0.pimCtxP.children.2.pimResPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_resource_policy_add_route_map.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_resource_policy_add_route_map.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_resource_policy_add_route_map.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_resource_policy_add_route_map.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_resource_policy_add_route_map.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_resource_policy_add_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_resource_policy_add_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_resource_policy_add_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_resource_policy_add_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_resource_policy_add_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "100"
+    - nm_update_resource_policy_add_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - "'children' not in nm_update_resource_policy_add_route_map.previous.0.pimCtxP.children.2.pimResPol"
+    - nm_update_resource_policy_with_route_map is changed
+    - nm_update_resource_policy_with_route_map.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_resource_policy_with_route_map.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_resource_policy_with_route_map.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_resource_policy_with_route_map.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_resource_policy_with_route_map.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_resource_policy_with_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_resource_policy_with_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_resource_policy_with_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_resource_policy_with_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_resource_policy_with_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.max == "50"
+    - nm_update_resource_policy_with_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "10"
+    - nm_update_resource_policy_with_route_map.current.0.pimCtxP.children.2.pimResPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_resource_policy_with_route_map.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_resource_policy_with_route_map.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_resource_policy_with_route_map.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_resource_policy_with_route_map.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_resource_policy_with_route_map.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_resource_policy_with_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_resource_policy_with_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_resource_policy_with_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_resource_policy_with_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_resource_policy_with_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "100"
+    - nm_update_resource_policy_with_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "10"
+    - nm_update_resource_policy_with_route_map.previous.0.pimCtxP.children.2.pimResPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit is changed
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "10"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.current.0.pimCtxP.children.2.pimResPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "50"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "10"
+    - nm_update_resource_policy_with_route_map_remove_maximum_limit.previous.0.pimCtxP.children.2.pimResPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_resource_policy_change_reserved_multicast_entries is changed
+    - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "20"
+    - nm_update_resource_policy_change_reserved_multicast_entries.current.0.pimCtxP.children.2.pimResPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test_changed"
+    - nm_update_resource_policy_change_reserved_multicast_entries.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_resource_policy_change_reserved_multicast_entries.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_resource_policy_change_reserved_multicast_entries.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_resource_policy_change_reserved_multicast_entries.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_resource_policy_change_reserved_multicast_entries.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_resource_policy_change_reserved_multicast_entries.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_resource_policy_change_reserved_multicast_entries.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_resource_policy_change_reserved_multicast_entries.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_resource_policy_change_reserved_multicast_entries.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_resource_policy_change_reserved_multicast_entries.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_resource_policy_change_reserved_multicast_entries.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "10"
+    - nm_update_resource_policy_change_reserved_multicast_entries.previous.0.pimCtxP.children.2.pimResPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_resource_policy_remove_route_map is changed
+    - nm_update_resource_policy_remove_route_map.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_resource_policy_remove_route_map.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_resource_policy_remove_route_map.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_resource_policy_remove_route_map.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_resource_policy_remove_route_map.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_resource_policy_remove_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_resource_policy_remove_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_resource_policy_remove_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_resource_policy_remove_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_resource_policy_remove_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_resource_policy_remove_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - "'children' not in nm_update_resource_policy_remove_route_map.current.0.pimCtxP.children.2.pimResPol"
+    - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "20"
+    - nm_update_resource_policy_remove_route_map.previous.0.pimCtxP.children.2.pimResPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test_changed"
+    - nm_update_resource_policy_remove_route_map_again is not changed
+
+# UPDATE MULTICAST ASM
+
+- name: Add a shared range routemap to any source multicast on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    any_source_multicast:
+      shared_range_route_map: uni/tn-ansible_test/rtmap-ansible_test
+  register: nm_update_any_source_multicast_add_shared_range_route_map
+
+- name: Remove a shared range routemap from any source multicast on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    any_source_multicast:
+      shared_range_route_map: ""
+  register: nm_update_any_source_multicast_remove_shared_range_route_map
+
+- name: Remove a shared range routemap from any source multicast on VRF 1 again
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    any_source_multicast:
+      shared_range_route_map: ""
+  register: nm_update_any_source_multicast_remove_shared_range_route_map_again
+
+- name: Update expiry seconds for any source multicast on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    any_source_multicast:
+      expiry: 500
+  register: nm_update_any_source_multicast_expiry_seconds
+
+- name: Remove expiry seconds for any source multicast on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    any_source_multicast:
+      expiry: 0
+  register: nm_update_any_source_multicast_remove_expiry_seconds
+
+- name: Add a source group expiry routemap to any source multicast on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    any_source_multicast:
+      source_group_expiry_route_map: uni/tn-ansible_test/rtmap-ansible_test
+  register: nm_update_any_source_multicast_add_source_group_expiry_route_map
+
+- name: Remove a source group expiry routemap from any source multicast on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    any_source_multicast:
+      source_group_expiry_route_map: ""
+  register: nm_update_any_source_multicast_remove_source_group_expiry_route_map
+
+- name: Remove a source group expiry routemap from any source multicast on VRF 1 again
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    any_source_multicast:
+      source_group_expiry_route_map: ""
+  register: nm_update_any_source_multicast_remove_source_group_expiry_route_map_again
+
+- name: Update max rate for any source multicast on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    any_source_multicast:
+      max_rate: 64000
+  register: nm_update_any_source_multicast_max_rate
+
+- name: Remove max rate for any source multicast on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    any_source_multicast:
+      source_ip: 1.1.1.1
+  register: nm_update_any_source_multicast_ip
+
+- name: Verify update any source multicast on VRF 1
+  ansible.builtin.assert:
+    that:
+    - nm_update_any_source_multicast_add_shared_range_route_map is changed
+    - nm_update_any_source_multicast_add_shared_range_route_map.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_add_shared_range_route_map.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_add_shared_range_route_map.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_add_shared_range_route_map.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_add_shared_range_route_map.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_add_shared_range_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_add_shared_range_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_any_source_multicast_add_shared_range_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_any_source_multicast_add_shared_range_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_any_source_multicast_add_shared_range_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_any_source_multicast_add_shared_range_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_add_shared_range_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_any_source_multicast_add_shared_range_route_map.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_add_shared_range_route_map.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_add_shared_range_route_map.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_add_shared_range_route_map.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_add_shared_range_route_map.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_add_shared_range_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - "'children' not in nm_update_any_source_multicast_remove_shared_range_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol"
+    - nm_update_any_source_multicast_add_shared_range_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_any_source_multicast_add_shared_range_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_any_source_multicast_add_shared_range_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_any_source_multicast_add_shared_range_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_add_shared_range_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_any_source_multicast_remove_shared_range_route_map is changed
+    - nm_update_any_source_multicast_remove_shared_range_route_map.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_remove_shared_range_route_map.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_remove_shared_range_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - "'children' not in nm_update_any_source_multicast_remove_shared_range_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_remove_shared_range_route_map.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_remove_shared_range_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_remove_shared_range_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_remove_shared_range_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_any_source_multicast_remove_shared_range_route_map_again is not changed
+    - nm_update_any_source_multicast_expiry_seconds is changed
+    - nm_update_any_source_multicast_expiry_seconds.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_expiry_seconds.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_expiry_seconds.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_expiry_seconds.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_expiry_seconds.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_expiry_seconds.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_expiry_seconds.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "500"
+    - nm_update_any_source_multicast_expiry_seconds.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_any_source_multicast_expiry_seconds.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_any_source_multicast_expiry_seconds.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_expiry_seconds.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_any_source_multicast_expiry_seconds.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_expiry_seconds.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_expiry_seconds.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_expiry_seconds.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_expiry_seconds.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_expiry_seconds.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_expiry_seconds.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_any_source_multicast_expiry_seconds.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_any_source_multicast_expiry_seconds.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_any_source_multicast_expiry_seconds.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_expiry_seconds.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_any_source_multicast_remove_expiry_seconds is changed
+    - nm_update_any_source_multicast_remove_expiry_seconds.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_remove_expiry_seconds.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_remove_expiry_seconds.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_remove_expiry_seconds.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_remove_expiry_seconds.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_remove_expiry_seconds.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_remove_expiry_seconds.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_any_source_multicast_remove_expiry_seconds.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_any_source_multicast_remove_expiry_seconds.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_any_source_multicast_remove_expiry_seconds.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_remove_expiry_seconds.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_any_source_multicast_remove_expiry_seconds.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_remove_expiry_seconds.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_remove_expiry_seconds.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_remove_expiry_seconds.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_remove_expiry_seconds.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_remove_expiry_seconds.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_remove_expiry_seconds.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "500"
+    - nm_update_any_source_multicast_remove_expiry_seconds.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_any_source_multicast_remove_expiry_seconds.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_any_source_multicast_remove_expiry_seconds.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_remove_expiry_seconds.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map is changed
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - "'children' not in nm_update_any_source_multicast_add_source_group_expiry_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_add_source_group_expiry_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map is changed
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - "'children' not in nm_update_any_source_multicast_remove_source_group_expiry_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_any_source_multicast_remove_source_group_expiry_route_map_again is not changed
+    - nm_update_any_source_multicast_max_rate is changed
+    - nm_update_any_source_multicast_max_rate.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_max_rate.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_max_rate.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_max_rate.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_max_rate.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_max_rate.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_max_rate.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_any_source_multicast_max_rate.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_any_source_multicast_max_rate.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_any_source_multicast_max_rate.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_max_rate.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_any_source_multicast_max_rate.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_max_rate.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_max_rate.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_max_rate.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_max_rate.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_max_rate.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_max_rate.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_any_source_multicast_max_rate.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "65535"
+    - nm_update_any_source_multicast_max_rate.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_any_source_multicast_max_rate.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_max_rate.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_any_source_multicast_ip is changed
+    - nm_update_any_source_multicast_ip.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_ip.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_ip.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_ip.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_ip.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_ip.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_ip.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_any_source_multicast_ip.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_any_source_multicast_ip.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_any_source_multicast_ip.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_ip.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_any_source_multicast_ip.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_any_source_multicast_ip.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_any_source_multicast_ip.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_any_source_multicast_ip.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_any_source_multicast_ip.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_ip.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_any_source_multicast_ip.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_any_source_multicast_ip.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_any_source_multicast_ip.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "0.0.0.0"
+    - nm_update_any_source_multicast_ip.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_any_source_multicast_ip.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+
+# UPDATE MULTICAST SSM
+
+- name: Add a routemap to source specific multicast on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    source_specific_multicast:
+      group_range_route_map: uni/tn-ansible_test/rtmap-ansible_test
+  register: nm_update_source_specific_multicast_add_route_map
+
+- name: Remove a routemap from source specific multicast on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    source_specific_multicast:
+      group_range_route_map: ""
+  register: nm_update_source_specific_multicast_remove_route_map
+
+- name: Remove a routemap from source specific multicast on VRF 1 again
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    source_specific_multicast:
+      group_range_route_map: ""
+  register: nm_update_source_specific_multicast_remove_route_map_again
+
+- name: Verify update source specific multicast on VRF 1
+  ansible.builtin.assert:
+    that:
+    - nm_update_source_specific_multicast_add_route_map is changed
+    - nm_update_source_specific_multicast_add_route_map.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_source_specific_multicast_add_route_map.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_source_specific_multicast_add_route_map.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_source_specific_multicast_add_route_map.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_source_specific_multicast_add_route_map.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_source_specific_multicast_add_route_map.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_source_specific_multicast_add_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_source_specific_multicast_add_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_source_specific_multicast_add_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_source_specific_multicast_add_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_source_specific_multicast_add_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_source_specific_multicast_add_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_source_specific_multicast_add_route_map.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_source_specific_multicast_add_route_map.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_source_specific_multicast_add_route_map.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_source_specific_multicast_add_route_map.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_source_specific_multicast_add_route_map.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - "'children' not in nm_update_source_specific_multicast_add_route_map.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol"
+    - nm_update_source_specific_multicast_add_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_source_specific_multicast_add_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_source_specific_multicast_add_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_source_specific_multicast_add_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_source_specific_multicast_add_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_source_specific_multicast_add_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_source_specific_multicast_remove_route_map is changed
+    - nm_update_source_specific_multicast_remove_route_map.current.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_source_specific_multicast_remove_route_map.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_source_specific_multicast_remove_route_map.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_source_specific_multicast_remove_route_map.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_source_specific_multicast_remove_route_map.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - "'children' not in nm_update_source_specific_multicast_remove_route_map.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol"
+    - nm_update_source_specific_multicast_remove_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_source_specific_multicast_remove_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_source_specific_multicast_remove_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_source_specific_multicast_remove_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_source_specific_multicast_remove_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_source_specific_multicast_remove_route_map.current.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_source_specific_multicast_remove_route_map.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_source_specific_multicast_remove_route_map.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_source_specific_multicast_remove_route_map.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_source_specific_multicast_remove_route_map.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_source_specific_multicast_remove_route_map.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_source_specific_multicast_remove_route_map.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_source_specific_multicast_remove_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_source_specific_multicast_remove_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_source_specific_multicast_remove_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_source_specific_multicast_remove_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_source_specific_multicast_remove_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_source_specific_multicast_remove_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_source_specific_multicast_remove_route_map_again is not changed
+
+# UPDATE MULTICAST BOOTSTRAP ROUTER (BSR)
+
+- name: Add a routemap to bootstrap router on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    bootstrap_router:
+      bsr_filter: uni/tn-ansible_test/rtmap-ansible_test
+  register: nm_update_bootstrap_router_add_route_map
+
+- name: Remove a routemap to bootstrap router on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    bootstrap_router:
+      bsr_filter: ""
+  register: nm_update_bootstrap_router_remove_route_map
+
+- name: Update bootstrap router on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    bootstrap_router:
+      rp_updates: [ forward, listen ]
+  register: nm_update_bootstrap_router
+
+- name: Remove rp_updates for bootstrap router on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    bootstrap_router:
+      rp_updates: []
+  register: nm_update_bootstrap_router_remove_rp_updates
+
+- name: Verify update bootstrap router on VRF 1
+  ansible.builtin.assert:
+    that:
+    - nm_update_bootstrap_router_add_route_map is changed
+    - nm_update_bootstrap_router_add_route_map.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_bootstrap_router_add_route_map.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_bootstrap_router_add_route_map.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_bootstrap_router_add_route_map.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_bootstrap_router_add_route_map.current.0.pimCtxP.children.1.pimResPol.attributes.max == "unlimited"
+    - nm_update_bootstrap_router_add_route_map.current.0.pimCtxP.children.1.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_bootstrap_router_add_route_map.current.0.pimCtxP.children.2.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_bootstrap_router_add_route_map.current.0.pimCtxP.children.2.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_bootstrap_router_add_route_map.current.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_bootstrap_router_add_route_map.current.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_bootstrap_router_add_route_map.current.0.pimCtxP.children.3.pimBSRPPol.children.0.pimBSRFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_bootstrap_router_add_route_map.current.0.pimCtxP.children.3.pimBSRPPol.attributes.ctrl == ""
+    - nm_update_bootstrap_router_add_route_map.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_bootstrap_router_add_route_map.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_bootstrap_router_add_route_map.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_bootstrap_router_add_route_map.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_bootstrap_router_add_route_map.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_bootstrap_router_add_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_bootstrap_router_add_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_bootstrap_router_add_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_bootstrap_router_add_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_bootstrap_router_add_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.max == "unlimited"
+    - nm_update_bootstrap_router_add_route_map.previous.0.pimCtxP.children.2.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_bootstrap_router_add_route_map.previous.0.pimCtxP.children | length == 3
+    - nm_update_bootstrap_router_remove_route_map is changed
+    - nm_update_bootstrap_router_remove_route_map.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_bootstrap_router_remove_route_map.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_bootstrap_router_remove_route_map.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_bootstrap_router_remove_route_map.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_bootstrap_router_remove_route_map.current.0.pimCtxP.children.1.pimResPol.attributes.max == "unlimited"
+    - nm_update_bootstrap_router_remove_route_map.current.0.pimCtxP.children.1.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_bootstrap_router_remove_route_map.current.0.pimCtxP.children.2.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_bootstrap_router_remove_route_map.current.0.pimCtxP.children.2.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_bootstrap_router_remove_route_map.current.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_bootstrap_router_remove_route_map.current.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - "'children' not in nm_update_bootstrap_router_remove_route_map.current.0.pimCtxP.children.3.pimBSRPPol.children.0.pimBSRFilterPol"
+    - nm_update_bootstrap_router_remove_route_map.current.0.pimCtxP.children.3.pimBSRPPol.attributes.ctrl == ""
+    - nm_update_bootstrap_router_remove_route_map.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_bootstrap_router_remove_route_map.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_bootstrap_router_remove_route_map.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_bootstrap_router_remove_route_map.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_bootstrap_router_remove_route_map.previous.0.pimCtxP.children.1.pimResPol.attributes.max == "unlimited"
+    - nm_update_bootstrap_router_remove_route_map.previous.0.pimCtxP.children.1.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_bootstrap_router_remove_route_map.previous.0.pimCtxP.children.2.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_bootstrap_router_remove_route_map.previous.0.pimCtxP.children.2.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_bootstrap_router_remove_route_map.previous.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_bootstrap_router_remove_route_map.previous.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_bootstrap_router_remove_route_map.previous.0.pimCtxP.children.3.pimBSRPPol.children.0.pimBSRFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_bootstrap_router_remove_route_map.previous.0.pimCtxP.children.3.pimBSRPPol.attributes.ctrl == ""
+    - nm_update_bootstrap_router is changed
+    - nm_update_bootstrap_router.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_bootstrap_router.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_bootstrap_router.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_bootstrap_router.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_bootstrap_router.current.0.pimCtxP.children.1.pimResPol.attributes.max == "unlimited"
+    - nm_update_bootstrap_router.current.0.pimCtxP.children.1.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_bootstrap_router.current.0.pimCtxP.children.2.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_bootstrap_router.current.0.pimCtxP.children.2.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_bootstrap_router.current.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_bootstrap_router.current.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_bootstrap_router.current.0.pimCtxP.children.3.pimBSRPPol.attributes.ctrl == "forward,listen"
+    - nm_update_bootstrap_router.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_bootstrap_router.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_bootstrap_router.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_bootstrap_router.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_bootstrap_router.previous.0.pimCtxP.children.1.pimResPol.attributes.max == "unlimited"
+    - nm_update_bootstrap_router.previous.0.pimCtxP.children.1.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_bootstrap_router.previous.0.pimCtxP.children.2.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_bootstrap_router.previous.0.pimCtxP.children.2.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_bootstrap_router.previous.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_bootstrap_router.previous.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_bootstrap_router.previous.0.pimCtxP.children.3.pimBSRPPol.attributes.ctrl == ""
+    - nm_update_bootstrap_router_remove_rp_updates is changed
+    - nm_update_bootstrap_router_remove_rp_updates.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_bootstrap_router_remove_rp_updates.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_bootstrap_router_remove_rp_updates.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_bootstrap_router_remove_rp_updates.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_bootstrap_router_remove_rp_updates.current.0.pimCtxP.children.1.pimResPol.attributes.max == "unlimited"
+    - nm_update_bootstrap_router_remove_rp_updates.current.0.pimCtxP.children.1.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_bootstrap_router_remove_rp_updates.current.0.pimCtxP.children.2.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_bootstrap_router_remove_rp_updates.current.0.pimCtxP.children.2.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_bootstrap_router_remove_rp_updates.current.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_bootstrap_router_remove_rp_updates.current.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_bootstrap_router_remove_rp_updates.current.0.pimCtxP.children.3.pimBSRPPol.attributes.ctrl == ""
+    - nm_update_bootstrap_router_remove_rp_updates.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_bootstrap_router_remove_rp_updates.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_bootstrap_router_remove_rp_updates.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_bootstrap_router_remove_rp_updates.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_bootstrap_router_remove_rp_updates.previous.0.pimCtxP.children.1.pimResPol.attributes.max == "unlimited"
+    - nm_update_bootstrap_router_remove_rp_updates.previous.0.pimCtxP.children.1.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_bootstrap_router_remove_rp_updates.previous.0.pimCtxP.children.2.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_bootstrap_router_remove_rp_updates.previous.0.pimCtxP.children.2.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_bootstrap_router_remove_rp_updates.previous.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_bootstrap_router_remove_rp_updates.previous.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_bootstrap_router_remove_rp_updates.previous.0.pimCtxP.children.3.pimBSRPPol.attributes.ctrl == "forward,listen"
+
+# UPDATE MULTICAST AUTO-RP
+
+- name: Add a routemap to auro-rp on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    auto_rp:
+      ma_filter: uni/tn-ansible_test/rtmap-ansible_test
+  register: nm_update_auto_rp_add_route_map
+
+- name: Remove a routemap to auro-rp on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    auto_rp:
+      ma_filter: ""
+  register: nm_update_auto_rp_remove_route_map
+
+- name: Update auro-rp on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    auto_rp:
+      rp_updates: [ forward, listen ]
+  register: nm_update_auto_rp
+
+- name: Remove rp_updates for auro-rp on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    auto_rp:
+      rp_updates: []
+  register: nm_update_auto_rp_remove_rp_updates
+
+- name: Verify update auro-rp on VRF 1
+  ansible.builtin.assert:
+    that:
+    - nm_update_auto_rp_add_route_map is changed
+    - nm_update_auto_rp_add_route_map.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_auto_rp_add_route_map.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_auto_rp_add_route_map.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_auto_rp_add_route_map.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_auto_rp_add_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_auto_rp_add_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_auto_rp_add_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_auto_rp_add_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_auto_rp_add_route_map.current.0.pimCtxP.children.2.pimBSRPPol.attributes.ctrl == ""
+    - nm_update_auto_rp_add_route_map.current.0.pimCtxP.children.3.pimResPol.attributes.max == "unlimited"
+    - nm_update_auto_rp_add_route_map.current.0.pimCtxP.children.3.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_auto_rp_add_route_map.current.0.pimCtxP.children.4.pimAutoRPPol.attributes.ctrl == ""
+    - nm_update_auto_rp_add_route_map.current.0.pimCtxP.children.4.pimAutoRPPol.children.0.pimMAFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_auto_rp_add_route_map.previous.0.pimCtxP.attributes.annotation == "orchestrator:ansible"
+    - nm_update_auto_rp_add_route_map.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_auto_rp_add_route_map.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_auto_rp_add_route_map.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_auto_rp_add_route_map.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_auto_rp_add_route_map.previous.0.pimCtxP.children.1.pimResPol.attributes.max == "unlimited"
+    - nm_update_auto_rp_add_route_map.previous.0.pimCtxP.children.1.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_auto_rp_add_route_map.previous.0.pimCtxP.children.2.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_auto_rp_add_route_map.previous.0.pimCtxP.children.2.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_auto_rp_add_route_map.previous.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_auto_rp_add_route_map.previous.0.pimCtxP.children.2.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_auto_rp_add_route_map.previous.0.pimCtxP.children.3.pimBSRPPol.attributes.ctrl == ""
+    - nm_update_auto_rp_add_route_map.previous.0.pimCtxP.children | length == 4
+    - nm_update_auto_rp_remove_route_map is changed
+    - nm_update_auto_rp_remove_route_map.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_auto_rp_remove_route_map.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_auto_rp_remove_route_map.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_auto_rp_remove_route_map.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_auto_rp_remove_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_auto_rp_remove_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_auto_rp_remove_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_auto_rp_remove_route_map.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_auto_rp_remove_route_map.current.0.pimCtxP.children.2.pimBSRPPol.attributes.ctrl == ""
+    - nm_update_auto_rp_remove_route_map.current.0.pimCtxP.children.3.pimResPol.attributes.max == "unlimited"
+    - nm_update_auto_rp_remove_route_map.current.0.pimCtxP.children.3.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_auto_rp_remove_route_map.current.0.pimCtxP.children.4.pimAutoRPPol.attributes.ctrl == ""
+    - "'children' not in nm_update_auto_rp_remove_route_map.current.0.pimCtxP.children.4.pimAutoRPPol.children.0.pimMAFilterPol"
+    - nm_update_auto_rp_remove_route_map.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_auto_rp_remove_route_map.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_auto_rp_remove_route_map.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_auto_rp_remove_route_map.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_auto_rp_remove_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_auto_rp_remove_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_auto_rp_remove_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_auto_rp_remove_route_map.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_auto_rp_remove_route_map.previous.0.pimCtxP.children.2.pimBSRPPol.attributes.ctrl == ""
+    - nm_update_auto_rp_remove_route_map.previous.0.pimCtxP.children.3.pimResPol.attributes.max == "unlimited"
+    - nm_update_auto_rp_remove_route_map.previous.0.pimCtxP.children.3.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_auto_rp_remove_route_map.previous.0.pimCtxP.children.4.pimAutoRPPol.attributes.ctrl == ""
+    - nm_update_auto_rp_remove_route_map.previous.0.pimCtxP.children.4.pimAutoRPPol.children.0.pimMAFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == "uni/tn-ansible_test/rtmap-ansible_test"
+    - nm_update_auto_rp is changed
+    - nm_update_auto_rp.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_auto_rp.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_auto_rp.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_auto_rp.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_auto_rp.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_auto_rp.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_auto_rp.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_auto_rp.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_auto_rp.current.0.pimCtxP.children.2.pimBSRPPol.attributes.ctrl == ""
+    - nm_update_auto_rp.current.0.pimCtxP.children.3.pimResPol.attributes.max == "unlimited"
+    - nm_update_auto_rp.current.0.pimCtxP.children.3.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_auto_rp.current.0.pimCtxP.children.4.pimAutoRPPol.attributes.ctrl == "forward,listen"
+    - nm_update_auto_rp.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_auto_rp.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_auto_rp.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_auto_rp.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_auto_rp.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_auto_rp.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_auto_rp.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_auto_rp.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_auto_rp.previous.0.pimCtxP.children.2.pimBSRPPol.attributes.ctrl == ""
+    - nm_update_auto_rp.previous.0.pimCtxP.children.3.pimResPol.attributes.max == "unlimited"
+    - nm_update_auto_rp.previous.0.pimCtxP.children.3.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_auto_rp.previous.0.pimCtxP.children.4.pimAutoRPPol.attributes.ctrl == ""
+    - nm_update_auto_rp_remove_rp_updates is changed
+    - nm_update_auto_rp_remove_rp_updates.current.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_auto_rp_remove_rp_updates.current.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_auto_rp_remove_rp_updates.current.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_auto_rp_remove_rp_updates.current.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_auto_rp_remove_rp_updates.current.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_auto_rp_remove_rp_updates.current.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_auto_rp_remove_rp_updates.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_auto_rp_remove_rp_updates.current.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_auto_rp_remove_rp_updates.current.0.pimCtxP.children.2.pimBSRPPol.attributes.ctrl == ""
+    - nm_update_auto_rp_remove_rp_updates.current.0.pimCtxP.children.3.pimResPol.attributes.max == "unlimited"
+    - nm_update_auto_rp_remove_rp_updates.current.0.pimCtxP.children.3.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_auto_rp_remove_rp_updates.current.0.pimCtxP.children.4.pimAutoRPPol.attributes.ctrl == ""
+    - nm_update_auto_rp_remove_rp_updates.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_update_auto_rp_remove_rp_updates.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_update_auto_rp_remove_rp_updates.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_update_auto_rp_remove_rp_updates.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_update_auto_rp_remove_rp_updates.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_update_auto_rp_remove_rp_updates.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_update_auto_rp_remove_rp_updates.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_update_auto_rp_remove_rp_updates.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_update_auto_rp_remove_rp_updates.previous.0.pimCtxP.children.2.pimBSRPPol.attributes.ctrl == ""
+    - nm_update_auto_rp_remove_rp_updates.previous.0.pimCtxP.children.3.pimResPol.attributes.max == "unlimited"
+    - nm_update_auto_rp_remove_rp_updates.previous.0.pimCtxP.children.3.pimResPol.attributes.rsvd == "undefined"
+    - nm_update_auto_rp_remove_rp_updates.previous.0.pimCtxP.children.4.pimAutoRPPol.attributes.ctrl == "forward,listen"
+
+# QUERY MULTICAST SETTINGS
+
+- name: Enable multicast on VRF 2
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_2
+  register: nm_update_resource_policy
+
+- name: Query multicast on VRF 1
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    state: query
+  register: query_one
+
+- name: Query multicast on all VRFs
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Verify multicast VRF queries
+  ansible.builtin.assert:
+    that:
+    - query_one is not changed
+    - query_one.current | length == 1
+    - query_one.current.0.fvCtx.children.0.pimCtxP.attributes.rn == "pimctxp"
+    - query_one.current.0.fvCtx.children.0.pimCtxP.attributes.mtu == "2000"
+    - query_one.current.0.fvCtx.children.0.pimCtxP.attributes.ctrl == ""
+    - query_one.current.0.fvCtx.children.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - query_one.current.0.fvCtx.children.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - query_one.current.0.fvCtx.children.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - query_one.current.0.fvCtx.children.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - query_one.current.0.fvCtx.children.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - query_one.current.0.fvCtx.children.0.pimCtxP.children.2.pimBSRPPol.attributes.ctrl == ""
+    - query_one.current.0.fvCtx.children.0.pimCtxP.children.3.pimResPol.attributes.max == "unlimited"
+    - query_one.current.0.fvCtx.children.0.pimCtxP.children.3.pimResPol.attributes.rsvd == "undefined"
+    - query_one.current.0.fvCtx.children.0.pimCtxP.children.4.pimAutoRPPol.attributes.ctrl == ""
+    - query_all is not changed
+    - query_all.current | length > 1
+
+# DISABLE MULTICAST
+
+- name: Disable multicast on VRF
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    state: absent
+  check_mode: true
+  register: cm_disable_multicast
+
+- name: Disable multicast on VRF
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    state: absent
+  register: nm_disable_multicast
+
+- name: Disable multicast on VRF again
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    state: absent
+  register: nm_disable_multicast_again
+
+- name: Verify disable multicast on VRF
+  ansible.builtin.assert:
+    that:
+    - cm_disable_multicast is changed
+    - cm_disable_multicast.proposed == {}
+    - cm_disable_multicast.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - cm_disable_multicast.previous.0.pimCtxP.attributes.mtu == "2000"
+    - cm_disable_multicast.previous.0.pimCtxP.attributes.ctrl == ""
+    - cm_disable_multicast.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - cm_disable_multicast.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - cm_disable_multicast.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - cm_disable_multicast.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - cm_disable_multicast.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - cm_disable_multicast.previous.0.pimCtxP.children.2.pimBSRPPol.attributes.ctrl == ""
+    - cm_disable_multicast.previous.0.pimCtxP.children.3.pimResPol.attributes.max == "unlimited"
+    - cm_disable_multicast.previous.0.pimCtxP.children.3.pimResPol.attributes.rsvd == "undefined"
+    - cm_disable_multicast.previous.0.pimCtxP.children.4.pimAutoRPPol.attributes.ctrl == ""
+    - nm_disable_multicast is changed
+    - nm_disable_multicast.current == []
+    - nm_disable_multicast.previous.0.pimCtxP.attributes.dn == "uni/tn-ansible_tenant/ctx-ansible_vrf_1/pimctxp"
+    - nm_disable_multicast.previous.0.pimCtxP.attributes.mtu == "2000"
+    - nm_disable_multicast.previous.0.pimCtxP.attributes.ctrl == ""
+    - nm_disable_multicast.previous.0.pimCtxP.children.0.pimSSMPatPol.children.0.pimSSMRangePol.attributes.name == ""
+    - nm_disable_multicast.previous.0.pimCtxP.children.1.pimASMPatPol.children.0.pimSharedRangePol.attributes.name == ""
+    - nm_disable_multicast.previous.0.pimCtxP.children.1.pimASMPatPol.children.1.pimSGRangeExpPol.attributes.sgExpItvl == "default-timeout"
+    - nm_disable_multicast.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.maxRate == "64000"
+    - nm_disable_multicast.previous.0.pimCtxP.children.1.pimASMPatPol.children.2.pimRegTrPol.attributes.srcIp == "1.1.1.1"
+    - nm_disable_multicast.previous.0.pimCtxP.children.2.pimBSRPPol.attributes.ctrl == ""
+    - nm_disable_multicast.previous.0.pimCtxP.children.3.pimResPol.attributes.max == "unlimited"
+    - nm_disable_multicast.previous.0.pimCtxP.children.3.pimResPol.attributes.rsvd == "undefined"
+    - nm_disable_multicast.previous.0.pimCtxP.children.4.pimAutoRPPol.attributes.ctrl == ""
+    - nm_disable_multicast_again is not changed
+    - nm_disable_multicast_again.current == []
+    - nm_disable_multicast_again.previous == []
+
+# ERRORS
+
+- name: Mutually exclusive parameters resource_policy (error)
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    resource_policy:
+      reserved_multicast_entries: 10
+  ignore_errors: true
+  register: err_mutually_exclusive_resource_policy
+
+- name: Entries is 0 when routemap provided (error)
+  cisco.aci.aci_vrf_multicast:
+    <<: *aci_ansible_vrf_1
+    resource_policy:
+      reserved_route_map: uni/tn-ansible_test/rtmap-ansible_test
+      reserved_multicast_entries: 0
+  ignore_errors: true
+  register: err_reserved_multicast_entries_is_0
+
+- name: Verify errors
+  ansible.builtin.assert:
+    that:
+    - err_mutually_exclusive_resource_policy is failed
+    - err_mutually_exclusive_resource_policy.msg == "parameters are mutually exclusive{{':'}} reserved_route_map|reserved_multicast_entries"
+    - err_reserved_multicast_entries_is_0 is failed
+    - err_reserved_multicast_entries_is_0.msg == "C(reserved_multicast_entries) must be provided and greater than 0 when C(reserved_route_map) is provided"
+
+# CLEAN ENVIRONMENT
+
+- name: Remove ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_tenant_absent

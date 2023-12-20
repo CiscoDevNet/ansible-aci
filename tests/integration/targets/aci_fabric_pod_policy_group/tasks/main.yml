@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -62,7 +62,7 @@
   register: nm_add_group_again
 
 - name: Verify add policy group
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_add_group is changed
     - nm_add_group is changed
@@ -95,7 +95,7 @@
   register: nm_add_empty_group
 
 - name: Verify add empty policy group
-  assert:
+  ansible.builtin.assert:
     that:
     - nm_add_empty_group is changed
     - nm_add_empty_group.current.0.fabricPodPGrp.attributes.dn == 'uni/fabric/funcprof/podpgrp-ansible_empty_pod_policy_group'
@@ -141,7 +141,7 @@
   register: nm_modify_group_again
 
 - name: Verify modify policy
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_modify_group is changed
     - nm_modify_group is changed
@@ -186,7 +186,7 @@
   register: nm_query_all_groups
 
 - name: Verify query_all_groups
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_all_groups is not changed
     - nm_query_all_groups is not changed
@@ -206,7 +206,7 @@
   register: nm_query_group
 
 - name: Verify query_group
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_query_group is not changed
     - nm_query_group is not changed
@@ -246,7 +246,7 @@
   register: nm_remove_group_again
 
 - name: Verify remove_group and remove_group_again
-  assert:
+  ansible.builtin.assert:
     that:
     - cm_remove_group is changed
     - nm_remove_group is changed

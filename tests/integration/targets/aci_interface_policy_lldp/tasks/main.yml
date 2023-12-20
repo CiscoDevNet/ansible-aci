@@ -4,12 +4,12 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -20,14 +20,14 @@
       output_level: debug
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   # Clean Environment
   - name: Ensure first lldp interface policy does not exist
-    aci_interface_policy_lldp: &aci_interface_policy_lldp_absent
+    cisco.aci.aci_interface_policy_lldp: &aci_interface_policy_lldp_absent
       <<: *aci_info
       name: anstest_policy
       description: test for lldp interface policy
@@ -36,36 +36,36 @@
       state: absent
 
   - name: Ensure second lldp interface policy does not exist
-    aci_interface_policy_lldp: &aci_interface_policy_lldp_2_absent
+    cisco.aci.aci_interface_policy_lldp: &aci_interface_policy_lldp_2_absent
       <<: *aci_info
       name: anstest_policy_2
       state: absent
 
   - name: Create first lldp interface policy (check_mode)
-    aci_interface_policy_lldp: &aci_interface_policy_lldp_present
+    cisco.aci.aci_interface_policy_lldp: &aci_interface_policy_lldp_present
       <<: *aci_interface_policy_lldp_absent
       state: present
     check_mode: true
     register: cm_add_interface_policy_lldp_1
 
   - name: Create first lldp interface policy (normal_mode)
-    aci_interface_policy_lldp:
+    cisco.aci.aci_interface_policy_lldp:
       <<: *aci_interface_policy_lldp_present
     register: nm_add_interface_policy_lldp_1
 
   - name: Create first lldp interface policy again - testing idempotency
-    aci_interface_policy_lldp:
+    cisco.aci.aci_interface_policy_lldp:
       <<: *aci_interface_policy_lldp_present
     register: idempotency_add_interface_policy_lldp_1
 
   - name: Create second lldp interface policy
-    aci_interface_policy_lldp: &aci_interface_policy_lldp_2_present
+    cisco.aci.aci_interface_policy_lldp: &aci_interface_policy_lldp_2_present
       <<: *aci_interface_policy_lldp_2_absent
       state: present
     register: nm_add_interface_policy_lldp_2
 
   - name: Asserts for creation tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_add_interface_policy_lldp_1 is changed
         - cm_add_interface_policy_lldp_1.previous == []
@@ -81,19 +81,19 @@
         - nm_add_interface_policy_lldp_2.current.0.lldpIfPol.attributes.adminTxSt == "enabled"
 
   - name: Query all lldp interface policies
-    aci_interface_policy_lldp:
+    cisco.aci.aci_interface_policy_lldp:
       <<: *aci_info
       state: query
     register: query_all_interface_policy_lldp
 
   - name: Query first lldp interface policy
-    aci_interface_policy_lldp:
+    cisco.aci.aci_interface_policy_lldp:
       <<: *aci_interface_policy_lldp_present
       state: query
     register: query_first_interface_policy_lldp
 
   - name: Asserts for query tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - query_all_interface_policy_lldp is not changed
         - query_all_interface_policy_lldp.current | length >= 2
@@ -104,32 +104,32 @@
         - query_first_interface_policy_lldp.current.0.lldpIfPol.attributes.adminTxSt == "disabled"
 
   - name: Delete first lldp interface policy (check_mode)
-    aci_interface_policy_lldp:
+    cisco.aci.aci_interface_policy_lldp:
       <<: *aci_interface_policy_lldp_present
       state: absent
     check_mode: true
     register: cm_delete_interface_policy_lldp_1
 
   - name: Delete first lldp interface policy (normal_mode)
-    aci_interface_policy_lldp:
+    cisco.aci.aci_interface_policy_lldp:
       <<: *aci_interface_policy_lldp_present
       state: absent
     register: nm_delete_interface_policy_lldp_1
 
   - name: Delete first lldp interface policy again - testing idempotency
-    aci_interface_policy_lldp:
+    cisco.aci.aci_interface_policy_lldp:
       <<: *aci_interface_policy_lldp_present
       state: absent
     register: idempotency_delete_interface_policy_lldp_1
 
   - name: Delete second lldp interface policy (normal_mode)
-    aci_interface_policy_lldp:
+    cisco.aci.aci_interface_policy_lldp:
       <<: *aci_interface_policy_lldp_2_present
       state: absent
     register: nm_delete_interface_policy_lldp_2
 
   - name: Asserts for deletion tasks
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_delete_interface_policy_lldp_1 is changed
         - cm_delete_interface_policy_lldp_1.proposed == {}

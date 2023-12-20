@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2022, Jason Juenger (@jasonjuenger) <jasonjuenger@gmail.com>
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -13,9 +14,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_logical_interface_profile_ospf_policy
-short_description: Manage Layer 3 Outside (L3Out) logical interface profile (l3ext:LIfP) OSPF policy (ospfIfP)
+short_description: Manage Layer 3 Outside (L3Out) OSPF interface profile (ospfIfP)
 description:
-- Manage L3Out interface profile OSPF policies on Cisco ACI fabrics.
+- Manage L3Out logical interface profile OSPF policies on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -64,14 +65,22 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 - cisco.aci.owner
 
+notes:
+- The C(tenant), C(l3out), C(node_profile), C(interface_profile) and C(ospf_policy) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l3out), M(cisco.aci.aci_l3out_logical_node_profile), M(cisco.aci.aci_l3out_logical_interface_profile)
+  and (cisco.aci.aci_interface_policy_ospf) can be used for this.
 seealso:
-- module: aci_l3out
-- module: aci_l3out_logical_node_profile
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_l3out
+- module: cisco.aci.aci_l3out_logical_node_profile
+- module: cisco.aci.aci_l3out_logical_interface_profile
+- module: cisco.aci.aci_interface_policy_ospf
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jason Juenger (@jasonjuenger)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""

@@ -5,13 +5,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: "Please define the following variables: aci_hostname, aci_username and aci_password."
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # SET VARS
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -22,7 +22,7 @@
       output_level: '{{ aci_output_level | default("info") }}'
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -80,7 +80,7 @@
     register: fexintprftest_policy_group_present
 
   - name: Assertions check for remove fex policy group from the fexintprftest fex profile
-    assert:
+    ansible.builtin.assert:
       that:
         - fexintprftest_policy_group_present is changed
         - fexintprftest_policy_group_present.current | length == 1
@@ -141,7 +141,7 @@
 
   # TODO: also test for errors
   - name: present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - accessport_to_intf_check_mode_present is changed
         - accessport_to_intf_present is changed
@@ -180,7 +180,7 @@
     register: binding_query_fex
 
   - name: present assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - binding_query is not changed
         - binding_query_fex is not changed
@@ -203,7 +203,7 @@
     register: bind_fexintprftest_policy_group
 
   - name: Assertions check for bind anstest_fex_accessportselector with fexintprftest - Fex Profile Policy Group
-    assert:
+    ansible.builtin.assert:
       that:
         - bind_fexintprftest_policy_group is changed
         - bind_fexintprftest_policy_group.previous | length == 0
@@ -226,7 +226,7 @@
     register: bind_fexintprftest_policy_group_2
 
   - name: Assertions check for bind anstest_fex_accessportselector with fexintprftest - Fex Profile Policy Group
-    assert:
+    ansible.builtin.assert:
       that:
         - bind_fexintprftest_policy_group_2 is changed
         - bind_fexintprftest_policy_group_2.previous | length == 0
@@ -241,7 +241,7 @@
     register: fexintprftest_policy_group_absent
 
   - name: Assertions check for remove fex policy group from the fexintprftest fex profile
-    assert:
+    ansible.builtin.assert:
       that:
         - fexintprftest_policy_group_absent is changed
         - fexintprftest_policy_group_absent.current | length == 0
@@ -275,7 +275,7 @@
     register: accessport_to_intf_absent_fex
 
   - name: absent assertions
-    assert:
+    ansible.builtin.assert:
       that:
         - accessport_to_intf_check_mode_absent is changed
         - accessport_to_intf_absent_fex is changed
@@ -318,7 +318,7 @@
     register: cm_fpc_present
 
   - name: Assertion check for bind anstest_fex_port_channel Access Port Selector with policygroupname_link_fpc Policy Group - check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_fpc_present.current | length == 0
         - cm_fpc_present.previous | length == 0
@@ -331,7 +331,7 @@
     register: nm_fpc_present
 
   - name: Assertion check for bind anstest_fex_port_channel Access Port Selector with policygroupname_link_fpc Policy Group - normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_fpc_present.current | length == 1
         - nm_fpc_present.previous | length == 0
@@ -347,7 +347,7 @@
     register: cm_fpc_absent
 
   - name: Assertion check for remove anstest_fex_port_channel Access Port Selector with policygroupname_link_fpc Policy Group - check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_fpc_absent.current | length == 1
         - cm_fpc_absent.previous | length == 1
@@ -364,7 +364,7 @@
     register: nm_fpc_absent
 
   - name: Assertion check for remove anstest_fex_port_channel Access Port Selector with policygroupname_link_fpc Policy Group - normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_fpc_absent.current | length == 0
         - nm_fpc_absent.previous | length == 1
@@ -380,7 +380,7 @@
     register: anstest_fex_vpc_present
 
   - name: Assertion check for add anstest_fex_vpc - Interface Policy Leaf Profile with type Fex
-    assert:
+    ansible.builtin.assert:
       that:
         - anstest_fex_vpc_present.current | length == 1
         - anstest_fex_vpc_present.current.0.infraFexP.attributes.name == "anstest_fex_vpc"
@@ -397,7 +397,7 @@
     register: policygroupname_node_fvpc_present
 
   - name: Assertion check for add policygroupname_node_fvpc - Policy Group with lag type node
-    assert:
+    ansible.builtin.assert:
       that:
         - policygroupname_node_fvpc_present.current | length == 1
         - policygroupname_node_fvpc_present.current.0.infraAccBndlGrp.attributes.name == "policygroupname_node_fvpc"
@@ -414,7 +414,7 @@
     register: cm_fex_vpc_present
 
   - name: Assertion check for bind anstest_fex_vpc Access Port Selector with policygroupname_node_fvpc Policy Group - check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_fex_vpc_present.current | length == 0
         - cm_fex_vpc_present.previous | length == 0
@@ -427,7 +427,7 @@
     register: nm_fex_vpc_present
 
   - name: Assertion check for bind anstest_fex_vpc Access Port Selector with policygroupname_node_fvpc Policy Group - normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_fex_vpc_present.current | length == 1
         - nm_fex_vpc_present.previous | length == 0
@@ -443,7 +443,7 @@
     register: cm_fex_vpc_absent
 
   - name: Assertion check for remove anstest_fex_vpc Access Port Selector with policygroupname_node_fvpc Policy Group - check mode
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_fex_vpc_absent.current | length == 1
         - cm_fex_vpc_absent.previous | length == 1
@@ -460,7 +460,7 @@
     register: nm_fex_vpc_absent
 
   - name: Assertion check for remove anstest_fex_vpc Access Port Selector with policygroupname_node_fvpc Policy Group - normal mode
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_fex_vpc_absent.current | length == 0
         - nm_fex_vpc_absent.previous | length == 1
@@ -476,7 +476,7 @@
     register: anstest_fex_vpc_absent
 
   - name: Assertion check for remove anstest_fex_vpc - Interface Policy Leaf Profile with type Fex
-    assert:
+    ansible.builtin.assert:
       that:
         - anstest_fex_vpc_absent.current | length == 0
         - anstest_fex_vpc_absent.previous | length == 1
@@ -489,7 +489,7 @@
     register: anstest_fex_port_channel_absent
 
   - name: Assertion check for remove anstest_fex_port_channel - Interface Policy Leaf Profile with type Fex
-    assert:
+    ansible.builtin.assert:
       that:
         - anstest_fex_port_channel_absent.current | length == 0
         - anstest_fex_port_channel_absent.previous | length == 1
@@ -504,7 +504,7 @@
     register: anstest_leaf_profile_absent
 
   - name: Assertion check for ensure anstest_leaf_profile interface does not exists
-    assert:
+    ansible.builtin.assert:
       that:
         - anstest_leaf_profile_absent.current | length == 0
 
@@ -517,7 +517,7 @@
     register: anstest_fex_profile_absent
 
   - name: Assertion check for ensure anstest_fex_profile interface does not exists
-    assert:
+    ansible.builtin.assert:
       that:
         - anstest_fex_profile_absent.current | length == 0
 
@@ -530,7 +530,7 @@
     register: temp_anstest_fex_profile_absent
 
   - name: Assertion check for ensure temp_anstest_fex_profile interface does not exists
-    assert:
+    ansible.builtin.assert:
       that:
         - temp_anstest_fex_profile_absent.current | length == 0
 
@@ -541,7 +541,7 @@
     register: anstest_leaf_profile_present
 
   - name: Assertion check for add a new anstest_leaf_profile with profile type leaf
-    assert:
+    ansible.builtin.assert:
       that:
         - anstest_leaf_profile_present is changed
         - anstest_leaf_profile_present.current | length == 1
@@ -556,7 +556,7 @@
     register: anstest_fex_profile_present
 
   - name: Assertion check for add a new anstest_fex_profile with profile type fex
-    assert:
+    ansible.builtin.assert:
       that:
         - anstest_fex_profile_present is changed
         - anstest_fex_profile_present.current | length == 1
@@ -571,7 +571,7 @@
     register: temp_anstest_fex_profile_present
 
   - name: Assertion check for add a new temp_anstest_fex_profile with profile type fex
-    assert:
+    ansible.builtin.assert:
       that:
         - temp_anstest_fex_profile_present is changed
         - temp_anstest_fex_profile_present.current | length == 1
@@ -589,7 +589,7 @@
     register: temp_anstest_fex_profile_policy_group_present
 
   - name: Assertion check for add a new policy_group with the same name of interface profile - temp_anstest_fex_profile
-    assert:
+    ansible.builtin.assert:
       that:
         - temp_anstest_fex_profile_policy_group_present is changed
         - temp_anstest_fex_profile_policy_group_present.current | length == 1
@@ -611,7 +611,7 @@
     ignore_errors: true
 
   - name: Assertion check for bind temp_anstest_fex_profile with anstest_fex_profile - Fex Profile Policy Group
-    assert:
+    ansible.builtin.assert:
       that:
         - temp_anstest_fex_profile_access_port_present.msg == "Invalid Configuration - interface_type fex_profile can not be configured with a profile of type fex"
 
@@ -621,7 +621,7 @@
     register: remove_anstest_fex_profile_absent
 
   - name: Assertion check for remove temp_anstest_fex_profile
-    assert:
+    ansible.builtin.assert:
       that:
         - remove_anstest_fex_profile_absent is changed
         - remove_anstest_fex_profile_absent.current | length == 0
@@ -637,7 +637,7 @@
     register: anstest_fex_profile_policy_group_present
 
   - name: Assertion check for add a new policy_group with the same name of interface profile - anstest_fex_profile
-    assert:
+    ansible.builtin.assert:
       that:
         - anstest_fex_profile_policy_group_present is changed
         - anstest_fex_profile_policy_group_present.current | length == 1
@@ -659,7 +659,7 @@
     register: anstest_leaf_profile_access_port_present
 
   - name: Assertion check for bind anstest_leaf_profile with anstest_fex_profile - Fex Profile Policy Group
-    assert:
+    ansible.builtin.assert:
       that:
         - anstest_leaf_profile_access_port_present is changed
         - anstest_leaf_profile_access_port_present.current | length == 1
@@ -682,7 +682,7 @@
     register: anstest_leaf_profile_access_port_wrong_fex_id
 
   - name: Assertion check for bind anstest_leaf_profile with wrong fex_id
-    assert:
+    ansible.builtin.assert:
       that:
         - anstest_leaf_profile_access_port_wrong_fex_id.msg == "A valid FEX ID is between 101 to 199"
 
@@ -699,7 +699,7 @@
     register: anstest_leaf_profile_access_port_no_fex_id
 
   - name: Assertion check for bind anstest_leaf_profile with no fex_id
-    assert:
+    ansible.builtin.assert:
       that:
         - anstest_leaf_profile_access_port_no_fex_id.msg == "The fex_id must not be None, when interface_type is fex_profile"
 
@@ -709,7 +709,7 @@
     register: anstest_leaf_profile_cleanup
 
   - name: Assertion check for remove anstest_leaf_profile
-    assert:
+    ansible.builtin.assert:
       that:
         - anstest_leaf_profile_cleanup is changed
         - anstest_leaf_profile_cleanup.previous | length == 1
@@ -721,7 +721,7 @@
     register: anstest_fex_profile_cleanup
 
   - name: Assertion check for remove anstest_fex_profile
-    assert:
+    ansible.builtin.assert:
       that:
         - anstest_fex_profile_cleanup is changed
         - anstest_fex_profile_cleanup.previous | length == 1

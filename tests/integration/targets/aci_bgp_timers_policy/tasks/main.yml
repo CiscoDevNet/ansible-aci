@@ -1,0 +1,155 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
+
+  - name: Add a BGP timers policy (check_mode)
+    cisco.aci.aci_bgp_timers_policy: &aci_bgp_timers_policy_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      bgp_timers_policy: ansible_bgp_timers_policy_1
+      graceful_restart_controls: complete
+      hold_interval: 360
+      keepalive_interval: 120
+      max_as_limit: 1
+      stale_interval: 600
+      description: BGP timers policy 1 for ansible_tenant tenant
+      state: present
+    check_mode: true
+    register: cm_add_bgp_timers_policy
+
+  - name: Add a BGP timers policy (normal_mode)
+    cisco.aci.aci_bgp_timers_policy:
+      <<: *aci_bgp_timers_policy_present
+    register: nm_add_bgp_timers_policy
+
+  - name: Add the first BGP timers policy again - testing idempotency
+    cisco.aci.aci_bgp_timers_policy:
+      <<: *aci_bgp_timers_policy_present
+    register: nm_add_bgp_timers_policy_idempotency
+
+  - name: Add a second BGP timers policy (normal_mode)
+    cisco.aci.aci_bgp_timers_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      bgp_timers_policy: ansible_bgp_timers_policy_2
+      description: BGP timers policy 2 for ansible_tenant tenant
+      state: present
+    register: nm_add_bgp_timers_policy_2
+
+  - name: Asserts for BGP timers policys creation tasks
+    ansible.builtin.assert:
+      that:
+        - cm_add_bgp_timers_policy is changed
+        - cm_add_bgp_timers_policy.previous == []
+        - cm_add_bgp_timers_policy.current == []
+        - nm_add_bgp_timers_policy is changed
+        - nm_add_bgp_timers_policy.current.0.bgpCtxPol.attributes.name == "ansible_bgp_timers_policy_1"
+        - nm_add_bgp_timers_policy.current.0.bgpCtxPol.attributes.grCtrl == ""
+        - nm_add_bgp_timers_policy.current.0.bgpCtxPol.attributes.holdIntvl == "360"
+        - nm_add_bgp_timers_policy.current.0.bgpCtxPol.attributes.kaIntvl == "120"
+        - nm_add_bgp_timers_policy.current.0.bgpCtxPol.attributes.maxAsLimit == "1"
+        - nm_add_bgp_timers_policy.current.0.bgpCtxPol.attributes.staleIntvl == "600"
+        - nm_add_bgp_timers_policy_idempotency is not changed
+        - nm_add_bgp_timers_policy_2 is changed
+        - nm_add_bgp_timers_policy_2.previous == []
+        - nm_add_bgp_timers_policy_2.current.0.bgpCtxPol.attributes.name == "ansible_bgp_timers_policy_2"
+        - nm_add_bgp_timers_policy_2.current.0.bgpCtxPol.attributes.grCtrl == "helper"
+        - nm_add_bgp_timers_policy_2.current.0.bgpCtxPol.attributes.holdIntvl == "180"
+        - nm_add_bgp_timers_policy_2.current.0.bgpCtxPol.attributes.kaIntvl == "60"
+        - nm_add_bgp_timers_policy_2.current.0.bgpCtxPol.attributes.maxAsLimit == "0"
+        - nm_add_bgp_timers_policy_2.current.0.bgpCtxPol.attributes.staleIntvl == "default"
+
+  - name: Query all BGP timers policies
+    cisco.aci.aci_bgp_timers_policy:
+      <<: *aci_info
+      state: query
+    register: query_all_bgp_timers_policy
+
+  - name: Query ansible_bgp_timers_policy_1
+    cisco.aci.aci_bgp_timers_policy:
+      <<: *aci_bgp_timers_policy_present
+      state: query
+    register: query_ansible_bgp_timers_policy_1
+
+  - name: Asserts query tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_bgp_timers_policy is not changed
+        - query_all_bgp_timers_policy.current|length >= 2
+        - query_ansible_bgp_timers_policy_1 is not changed
+        - query_ansible_bgp_timers_policy_1.current.0.bgpCtxPol.attributes.name == "ansible_bgp_timers_policy_1"
+        - query_ansible_bgp_timers_policy_1.current.0.bgpCtxPol.attributes.grCtrl == ""
+        - query_ansible_bgp_timers_policy_1.current.0.bgpCtxPol.attributes.holdIntvl == "360"
+        - query_ansible_bgp_timers_policy_1.current.0.bgpCtxPol.attributes.kaIntvl == "120"
+        - query_ansible_bgp_timers_policy_1.current.0.bgpCtxPol.attributes.maxAsLimit == "1"
+        - query_ansible_bgp_timers_policy_1.current.0.bgpCtxPol.attributes.staleIntvl == "600"
+
+  - name: Remove BGP timers policy (check_mode)
+    cisco.aci.aci_bgp_timers_policy: &bgp_timers_policy_absent
+      <<: *aci_bgp_timers_policy_present
+      state: absent
+    check_mode: true
+    register: cm_remove_bgp_timers_policy
+
+  - name: Remove BGP timers policy (normal_mode)
+    cisco.aci.aci_bgp_timers_policy:
+      <<: *bgp_timers_policy_absent
+    register: nm_remove_bgp_timers_policy
+
+  - name: Remove BGP timers policy - testing idempotency
+    cisco.aci.aci_bgp_timers_policy:
+      <<: *bgp_timers_policy_absent
+    register: nm_remove_bgp_timers_policy_idempotency
+
+  - name: Asserts deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_remove_bgp_timers_policy is changed
+        - cm_remove_bgp_timers_policy.proposed == {}
+        - nm_remove_bgp_timers_policy is changed
+        - nm_remove_bgp_timers_policy.previous != []
+        - nm_remove_bgp_timers_policy.method == "DELETE"
+        - nm_remove_bgp_timers_policy_idempotency is not changed
+        - nm_remove_bgp_timers_policy_idempotency.previous == []
+
+  - name: Remove the ansible_tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent

@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # CLEAN ENVIRONMENT
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: '{{ aci_hostname }}'
       username: '{{ aci_username }}'
@@ -21,7 +21,7 @@
       output_level: '{{ aci_output_level | default("info") }}'
 
 - name: Verify Cloud and Non-Cloud Sites in use.
-  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
@@ -55,7 +55,7 @@
     register: nm_create_brkout_port
 
   - name: Verify cm_create_brkout_port and nm_create_brkout_port
-    assert:
+    ansible.builtin.assert:
       that:
         - cm_create_brkout_port is changed
         - cm_create_brkout_port.previous == []
@@ -81,7 +81,7 @@
     register: nm_create_brkout_port_again
 
   - name: Verify nm_create_brkout_port_again
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_create_brkout_port_again is not changed
 
@@ -93,7 +93,7 @@
     register: nm_create_another_brkout_port
 
   - name: Verify nm_create_another_brkout_port
-    assert:
+    ansible.builtin.assert:
       that:
         - nm_create_another_brkout_port is changed
         - nm_create_another_brkout_port.previous == []
@@ -110,7 +110,7 @@
     register: query_all
 
   - name: Verify query_all
-    assert:
+    ansible.builtin.assert:
       that:
         query_all.current | length >= 2
 
@@ -122,7 +122,7 @@
     register: query_one
 
   - name: Verify query_one
-    assert:
+    ansible.builtin.assert:
       that:
         - query_one is not changed
         - query_one.current.0.infraBrkoutPortGrp.attributes.name == "ansible_breakout_port"
@@ -137,7 +137,7 @@
     register: change_ansible_breakout_port
 
   - name: Verify change_ansible_breakout_port
-    assert:
+    ansible.builtin.assert:
       that:
         - change_ansible_breakout_port is changed
         - change_ansible_breakout_port.current.0.infraBrkoutPortGrp.attributes.brkoutMap == "none"
@@ -151,7 +151,7 @@
     register: rm_breakout_port
 
   - name: Verify rm_breakout_port
-    assert:
+    ansible.builtin.assert:
       that:
         - rm_breakout_port is changed
         - rm_breakout_port.current == []
@@ -164,6 +164,6 @@
     register: query_removed_breakout_port
 
   - name: Verify query_removed_breakout_port
-    assert:
+    ansible.builtin.assert:
       that:
         - query_removed_breakout_port.current == []

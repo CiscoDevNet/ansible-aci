@@ -1,0 +1,226 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Anvitha Jain (@anvjain)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  # This condition will execute only when APIC version >= 5.2 and for non-cloud APICs
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=') and query_cloud.current == []
+  block:  # block specifies execution of tasks within, based on conditions
+
+  # CLEAN ENVIRONMENT
+  - name: Remove the ansible_tenant
+    cisco.aci.aci_tenant:
+      <<: *aci_info
+      tenant: ansible_tenant
+      state: absent
+
+  # Add a tenant
+  - name: Add a new tenant
+    cisco.aci.aci_tenant:
+      <<: *aci_info
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
+
+  # Add VRF
+  - name: Add a new VRF
+    cisco.aci.aci_vrf:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_vrf
+      description: Ansible VRF
+      state: present
+
+  # Add L3Out
+  - name: Add a new L3 Outside
+    cisco.aci.aci_l3out:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_l3out
+      description: Ansible L3 Outside
+      domain: ansible_dom
+      vrf: ansible_vrf
+      l3protocol: bgp
+      state: present
+
+  # ADD l3out logical node profile
+  - name: l3out logical node profile
+    cisco.aci.aci_l3out_logical_node_profile:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      state: present
+
+  # ADD l3out logical interface profile
+  - name: l3out logical interface profile
+    cisco.aci.aci_l3out_logical_interface_profile:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      state: present
+
+  # CREATE L3Out BFD Interface policy
+  - name: Add a new  L3Out BFD Interface policy
+    cisco.aci.aci_interface_policy_bfd:
+      <<: *aci_info
+      tenant: ansible_tenant
+      name: ansible_bfd__interface_policy
+      description: Ansible BFD Interface Policy
+      state: present
+    register: add_bfd_interface_pol
+
+  # Add L3Out BFD Interface Profile
+  - name: Add a new L3Out BFD Interface Profile - check mode
+    cisco.aci.aci_l3out_bfd_interface_profile: &present_l3out_bfd_int_profile
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      l3out_logical_node_profile: ansible_node_profile
+      l3out_logical_interface_profile: ansible_interface_profile
+      bfd_interface_policy: ansible_bfd_interface_policy
+      state: present
+    check_mode: true
+    register: cm_add_l3out_bfd_int_prof
+
+  - name: Add a new L3Out BFD Interface Profile - normal mode
+    cisco.aci.aci_l3out_bfd_interface_profile:
+      <<: *present_l3out_bfd_int_profile
+      state: present
+    register: nm_add_l3out_bfd_int_prof
+
+  - name: Verify adding L3Out BFD Interface Profile
+    assert:
+      that:
+      - cm_add_l3out_bfd_int_prof is changed
+      - nm_add_l3out_bfd_int_prof is changed
+      - cm_add_l3out_bfd_int_prof.previous == nm_add_l3out_bfd_int_prof.previous == []
+      - cm_add_l3out_bfd_int_prof.proposed.bfdIfP.attributes.dn == nm_add_l3out_bfd_int_prof.proposed.bfdIfP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/bfdIfP"
+      - cm_add_l3out_bfd_int_prof.proposed.bfdIfP.children.0.bfdRsIfPol.attributes.tnBfdIfPolName == cm_add_l3out_bfd_int_prof.proposed.bfdIfP.children.0.bfdRsIfPol.attributes.tnBfdIfPolName == "ansible_bfd_interface_policy"
+
+  - name: Add L3Out BFD Interface Profile again- idempotency
+    cisco.aci.aci_l3out_bfd_interface_profile:
+      <<: *present_l3out_bfd_int_profile
+      state: present
+    register: add_l3out_bfd_int_prof_again
+
+  - name: Verify adding L3Out BFD Interface Profile again - idempotency
+    assert:
+      that:
+      - add_l3out_bfd_int_prof_again is not changed
+
+  # Update L3Out BFD Interface Profile
+  - name: Update L3Out BFD Interface Profile
+    cisco.aci.aci_l3out_bfd_interface_profile:
+      <<: *present_l3out_bfd_int_profile
+      authentication_type: sha1
+      key: "abc*123"
+      key_id: 15
+      state: present
+    register: update_l3out_bfd_int_prof
+
+  - name: Verify updating L3Out BFD Interface Profile
+    assert:
+      that:
+      - update_l3out_bfd_int_prof is changed
+      - update_l3out_bfd_int_prof.sent.bfdIfP.attributes.keyId == "15"
+      - update_l3out_bfd_int_prof.sent.bfdIfP.attributes.key == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+      - update_l3out_bfd_int_prof.sent.bfdIfP.attributes.type == "sha1"
+
+  # Remove children from L3Out BFD Interface Profile
+  - name: Remove children from L3Out BFD Interface Profile
+    cisco.aci.aci_l3out_bfd_interface_profile:
+      <<: *present_l3out_bfd_int_profile
+      bfd_interface_policy: ""
+    register: remove_children_l3out_bfd_int_prof
+
+  - name: Asserts for children removal tasks for the from L3Out BFD Interface Profile
+    ansible.builtin.assert:
+      that:
+        - remove_children_l3out_bfd_int_prof is changed
+        - remove_children_l3out_bfd_int_prof.sent.bfdIfP.children.0.bfdRsIfPol.attributes.tnBfdIfPolName == ""
+
+  # Query L3Out BFD Interface Profile
+  - name: Query L3Out BFD Interface Profile
+    cisco.aci.aci_l3out_bfd_interface_profile:
+      <<: *present_l3out_bfd_int_profile
+      state: query
+    register: query_l3out_bfd_int_prof
+
+  - name: Query all L3Out BFD Interface Profile
+    cisco.aci.aci_l3out_bfd_interface_profile:
+      <<: *aci_info
+      state: query
+    register: query_all_l3out_bfd_int_prof
+
+  #  Validating out of range parameters.
+  - name: Add out of range key_id
+    cisco.aci.aci_l3out_bfd_interface_profile:
+      <<: *present_l3out_bfd_int_profile
+      key_id: 256
+      state: present
+    ignore_errors: true
+    register: out_of_range_key_id
+
+  - name: Verify out of range key_id
+    assert:
+      that:
+      - out_of_range_key_id is not changed
+      - out_of_range_key_id.msg == "The \"key_id\" must be a value between 1 and 255"
+
+  - name: Delete L3Out BFD Interface Profile - check mode
+    cisco.aci.aci_l3out_bfd_interface_profile:
+      <<: *present_l3out_bfd_int_profile
+      state: absent
+    check_mode: true
+    register: cm_remove_l3out_bfd_int_prof
+
+  - name: Delete L3Out BFD Interface Profile - normal mode
+    cisco.aci.aci_l3out_bfd_interface_profile:
+      <<: *present_l3out_bfd_int_profile
+      state: absent
+    register: nm_remove_l3out_bfd_int_prof
+
+  - name: Delete L3Out BFD Interface Profile again - idempotency
+    cisco.aci.aci_l3out_bfd_interface_profile:
+      <<: *present_l3out_bfd_int_profile
+      state: absent
+    register: remove_l3out_bfd_int_prof_again
+
+  - name: Verify removing L3Out BFD Interface Profile
+    assert:
+      that:
+      - cm_remove_l3out_bfd_int_prof is changed
+      - nm_remove_l3out_bfd_int_prof is changed
+      - cm_remove_l3out_bfd_int_prof.proposed == nm_remove_l3out_bfd_int_prof.proposed == {}
+      - remove_l3out_bfd_int_prof_again is not changed
+      - nm_remove_l3out_bfd_int_prof.current == remove_l3out_bfd_int_prof_again.current == []
