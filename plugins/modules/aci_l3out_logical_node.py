@@ -65,7 +65,7 @@ options:
     aliases: [ mpls_transport_loopback ]
   sid:
     description:
-    - The MPLS transport loopback IP address for Infra SR-MPLS L3Outs.
+    - The Segment ID (SID) Index for Infra SR-MPLS L3Outs.
     type: str
     aliases: [ segment_id ]
   state:
