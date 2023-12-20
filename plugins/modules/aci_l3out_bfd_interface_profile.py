@@ -52,7 +52,7 @@ options:
     - Description of the L3Out BFD Interface profile object
     type: str
     aliases: [ descr ]
-  interface_profile_type:
+  authentication_type:
     description:
     - Authentication Type of the L3Out BFD Interface profile object
     - APIC sets the default value to none
@@ -262,7 +262,7 @@ def main():
         name=dict(type="str", aliases=["bfd_multihop_interface_profile"]),
         name_alias=dict(type="str"),
         description=dict(type="str", aliases=["descr"]),
-        interface_profile_type=dict(type="str", choices=["none", "sha1"]),
+        authentication_type=dict(type="str", choices=["none", "sha1"]),
         key=dict(type="str", no_log=True),
         key_id=dict(type="int"),
         bfd_interface_policy=dict(type="str", aliases=["interface_policy", "interface_policy_name"]),
@@ -275,7 +275,7 @@ def main():
         required_if=[
             ["state", "absent", ["tenant", "l3out", "l3out_logical_node_profile", "l3out_logical_interface_profile"]],
             ["state", "present", ["tenant", "l3out", "l3out_logical_node_profile", "l3out_logical_interface_profile", "bfd_interface_policy"]],
-            ["interface_profile_type", "sha1", ["key"]],
+            ["authentication_type", "sha1", ["key"]],
         ],
     )
 
@@ -286,7 +286,7 @@ def main():
     name = module.params.get("name")
     name_alias = module.params.get("name_alias")
     description = module.params.get("description")
-    interface_profile_type = module.params.get("interface_profile_type")
+    authentication_type = module.params.get("authentication_type")
     key = module.params.get("key")
     key_id = module.params.get("key_id")
     bfd_interface_policy = module.params.get("bfd_interface_policy")
@@ -336,7 +336,7 @@ def main():
             nameAlias=name_alias,
             descr=description,
             key=key,
-            type=interface_profile_type,
+            type=authentication_type,
         )
 
         if key_id and key_id not in range(1, 255):

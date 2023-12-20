@@ -149,7 +149,7 @@
   - name: Update BFD Multihop Interface Profile
     cisco.aci.aci_l3out_bfd_multihop_interface_profile:
       <<: *present_bfd_mh_int_profile
-      interface_profile_type: sha1
+      authentication_type: sha1
       key: "abc*123"
       key_id: 15
       state: present

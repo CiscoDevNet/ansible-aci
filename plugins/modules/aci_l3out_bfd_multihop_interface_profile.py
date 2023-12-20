@@ -52,7 +52,7 @@ options:
     - Description of the BFD Multihop Interface Profile object
     type: str
     aliases: [ descr ]
-  interface_profile_type:
+  authentication_type:
     description:
     - Authentication Type of the BFD Multihop Interface Profile object
     - APIC sets the default value to none.
@@ -262,7 +262,7 @@ def main():
         name=dict(type="str", aliases=["bfd_multihop_interface_profile"]),
         name_alias=dict(type="str"),
         description=dict(type="str", aliases=["descr"]),
-        interface_profile_type=dict(type="str", choices=["none", "sha1"]),
+        authentication_type=dict(type="str", choices=["none", "sha1"]),
         key=dict(type="str", no_log=True),
         key_id=dict(type="int"),
         bfd_multihop_interface_policy=dict(type="str", aliases=["multihop_interface_policy", "multihop_interface_policy_name"]),
@@ -285,7 +285,7 @@ def main():
     name = module.params.get("name")
     name_alias = module.params.get("name_alias")
     description = module.params.get("description")
-    interface_profile_type = module.params.get("interface_profile_type")
+    authentication_type = module.params.get("authentication_type")
     key = module.params.get("key")
     key_id = module.params.get("key_id")
     bfd_multihop_interface_policy = module.params.get("bfd_multihop_interface_policy")
@@ -334,7 +334,7 @@ def main():
             name=name,
             nameAlias=name_alias,
             descr=description,
-            type=interface_profile_type,
+            type=authentication_type,
             key=key,
         )
 
