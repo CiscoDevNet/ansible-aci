@@ -119,12 +119,12 @@ options:
     type: bool
   micro_bfd_destination:
     description:
-    - The mirco BFD destination address of the interface.
+    - The micro BFD destination address of the interface.
     type: str
     aliases: [ micro_bfd_address, micro_bfd_destination_address ]
   micro_bfd_timer:
     description:
-    - The mirco BFD start timer in seconds.
+    - The micro BFD start timer in seconds.
     - The APIC defaults to C(0) when unset during creation.
     type: int
     aliases: [ micro_bfd_start_timer, micro_bfd_start ]
