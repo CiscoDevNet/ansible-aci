@@ -34,7 +34,7 @@
       state: present
 
   - name: Add a HSRP interface policy in check mode
-    cisco.aci.aci_hsrp_interface_policy: &hsrp_present
+    cisco.aci.aci_interface_policy_hsrp: &hsrp_present
       <<: *tenant_present
       hsrp: hsrp1
       controls: ["bia"]
@@ -45,7 +45,7 @@
     register: cm_add_hsrp
 
   - name: Add a HSRP interface policy in normal mode
-    cisco.aci.aci_hsrp_interface_policy: *hsrp_present
+    cisco.aci.aci_interface_policy_hsrp: *hsrp_present
     register: nm_add_hsrp
 
   - name: Verify add hsrp
@@ -65,7 +65,7 @@
       - nm_add_hsrp.current.0.hsrpIfPol.attributes.dn == "uni/tn-ansible_test/hsrpIfPol-hsrp1"
 
   - name: Add the HSRP interface policy again to check idempotency
-    cisco.aci.aci_hsrp_interface_policy: *hsrp_present
+    cisco.aci.aci_interface_policy_hsrp: *hsrp_present
     register: nm_add_hsrp_again
 
   - name: Verify add_hsrp again
@@ -74,7 +74,7 @@
       - nm_add_hsrp_again is not changed
 
   - name: Update hsrp interface policy
-    cisco.aci.aci_hsrp_interface_policy: &hsrp_update
+    cisco.aci.aci_interface_policy_hsrp: &hsrp_update
       <<: *hsrp_present
       delay: 3
     register: nm_hsrp_update
@@ -89,14 +89,14 @@
       - nm_hsrp_update.current.0.hsrpIfPol.attributes.dn == "uni/tn-ansible_test/hsrpIfPol-hsrp1"
 
   - name: Update hsrp interface policy to check for errors in delay
-    cisco.aci.aci_hsrp_interface_policy:
+    cisco.aci.aci_interface_policy_hsrp:
       <<: *hsrp_update
       delay: 10001
     register: nm_hsrp_error1
     ignore_errors: true
 
   - name: Update hsrp interface policy to check for errors in reload delay
-    cisco.aci.aci_hsrp_interface_policy:
+    cisco.aci.aci_interface_policy_hsrp:
       <<: *hsrp_update
       reload_delay: 10001
     register: nm_hsrp_error2
@@ -109,7 +109,7 @@
       - nm_hsrp_error2.msg == "Parameter 'reload_delay' is only valid in range between 1 and 10000."
 
   - name: Add another HSRP interface policy in check mode
-    cisco.aci.aci_hsrp_interface_policy: &hsrp2
+    cisco.aci.aci_interface_policy_hsrp: &hsrp2
       <<: *tenant_present
       hsrp: hsrp2
       controls: ["bfd"]
@@ -117,19 +117,19 @@
     register: add_hsrp2
 
   - name: Query hsrp interface policy 1
-    cisco.aci.aci_hsrp_interface_policy:
+    cisco.aci.aci_interface_policy_hsrp:
       <<: *hsrp_update
       state: query
     register: query_hsrp
 
   - name: Query all hsrp interface policies under the tenant
-    cisco.aci.aci_hsrp_interface_policy:
+    cisco.aci.aci_interface_policy_hsrp:
       <<: *tenant_present
       state: query
     register: query_all_tenant
 
   - name: Query all hsrp interface policies
-    cisco.aci.aci_hsrp_interface_policy:
+    cisco.aci.aci_interface_policy_hsrp:
       <<: *tenant_present
       state: query
     register: query_all
@@ -148,26 +148,26 @@
       - query_all.current.0.fvTenant.children | length >= 2
 
   - name: Remove hsrp interface policy 1 in check mode
-    cisco.aci.aci_hsrp_interface_policy:
+    cisco.aci.aci_interface_policy_hsrp:
       <<: *hsrp_update
       state: absent
     check_mode: true
     register: cm_remove_hsrp
       
   - name: Remove hsrp interface policy 1
-    cisco.aci.aci_hsrp_interface_policy:
+    cisco.aci.aci_interface_policy_hsrp:
       <<: *hsrp_update
       state: absent
     register: remove_hsrp
 
   - name: Remove hsrp interface policy 2
-    cisco.aci.aci_hsrp_interface_policy:
+    cisco.aci.aci_interface_policy_hsrp:
       <<: *hsrp2
       state: absent
     register: remove_hsrp2
 
   - name: Remove hsrp interface policy again
-    cisco.aci.aci_hsrp_interface_policy:
+    cisco.aci.aci_interface_policy_hsrp:
       <<: *hsrp2
       state: absent
     register: remove_hsrp2_again

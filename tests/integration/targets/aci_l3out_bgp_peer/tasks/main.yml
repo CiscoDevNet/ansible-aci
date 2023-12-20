@@ -1,5 +1,7 @@
 # Test code for the ACI modules
 # Copyright: (c) 2021, Tim Cragg (@timcragg)
+# Copyright: (c) 2023, Akini ROss (@akinross)
+
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -1497,6 +1499,139 @@
         - remove_vpc_bgp_peer.current == []
         - remove_vpc_bgp_peer.previous.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/peerP-[192.168.50.2]"
         - remove_vpc_bgp_peer.previous.0.bgpPeerP.attributes.addr == "192.168.50.2"
+
+  # Create BGP Peer with password
+  - name: Create BGP Peer with password
+    aci_l3out_bgp_peer: &bgp_peer_with_password
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201-202
+      path_ep: ansible_vpc_ipg
+      peer_ip: 192.168.50.2
+      description: ansible_test_description
+      bgp_password: ansible_test_password
+      remote_asn: 65450
+      local_as_number: 65460
+      bgp_controls:
+        - send-com
+      transport_data_plane: mpls
+      state: present
+    register: create_with_password
+
+  - name: Update BGP Peer to remove remote as and local as number
+    aci_l3out_bgp_peer: 
+      <<: *bgp_peer_with_password
+      remote_asn: 0
+      local_as_number: 0
+      state: present
+    register: update_remove_remote_local_as
+
+  - name: Asser that BGP Peer with password, remote as and local as
+    assert:
+      that:
+        - create_with_password is changed
+        - create_with_password.previous == []
+        - create_with_password.current.0.bgpPeerP.attributes.password is not defined
+        - create_with_password.current.0.bgpPeerP.children.0.bgpLocalAsnP.attributes.localAsn == "65460"
+        - create_with_password.current.0.bgpPeerP.children.2.bgpAsP.attributes.asn == "65450"
+        - update_remove_remote_local_as is changed
+        - update_remove_remote_local_as.previous != []
+        - update_remove_remote_local_as.current.0.bgpPeerP.children | length == 1
+        - update_remove_remote_local_as.current.0.bgpPeerP.children.0.bgpLocalAsnP is not defined
+        - update_remove_remote_local_as.current.0.bgpPeerP.children.0.bgpAsP is not defined 
+
+  - name: Execute tasks only for ACI v5+ because SR MPLS L3Out is not supported lower versions
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+    block:
+  
+    - name: Create l3out in infra tenant
+      aci_l3out: &aci_infra_l3out
+        <<: *aci_info
+        tenant: infra
+        name: ansible_infra_l3out
+        vrf: overlay-1
+        mpls: yes
+        domain: ansible_domain
+        route_control: export
+        state: present
+
+    - name: Create l3out logical node profile in infra tenant
+      aci_l3out_logical_node_profile:
+        <<: *aci_info
+        tenant: infra
+        l3out: ansible_infra_l3out
+        node_profile: ansible_infra_l3out_node_profile
+        state: present
+
+    - name: Create Infra BGP Peer with password
+      aci_l3out_bgp_peer: &infra_bgp_peer
+        <<: *aci_info
+        tenant: infra
+        l3out: ansible_infra_l3out
+        node_profile: ansible_infra_l3out_node_profile
+        ttl: 2
+        bgp_infra_peer: true
+        bgp_password: ansible_test_password
+        peer_ip: 192.168.50.2
+        remote_asn: 65450
+        local_as_number: 65460
+        peer_type: sr_mpls
+        bgp_controls:
+          - send-domain-path
+        transport_data_plane: sr_mpls
+        bgp_peer_prefix_policy: ansible_peer_prefix_profile
+        state: present
+      register: create_infra_bgp_peer
+
+    - name: Query Infra BGP Peer
+      aci_l3out_bgp_peer:
+        <<: *infra_bgp_peer
+        state: query
+      register: query_infra_bgp_peer
+
+    - name: Query all Infra BGP Peer
+      aci_l3out_bgp_peer:
+        <<: *infra_bgp_peer
+        bgp_infra_peer: true
+        state: query
+      register: query_all_infra_bgp_peer
+
+    - name: Remove Infra BGP Peer
+      aci_l3out_bgp_peer: 
+        <<: *infra_bgp_peer
+        state: absent
+      register: remove_infra_bgp_peer
+
+    # CLEAN UP INFRA L3OUT
+    - name: Remove ansible_infra_l3out
+      aci_l3out:
+        <<: *aci_infra_l3out
+        state: absent
+
+    - name: Asser that BGP Peer with password, remote as and local as
+      assert:
+        that:
+          - create_infra_bgp_peer is changed
+          - create_infra_bgp_peer.previous == []
+          - create_infra_bgp_peer.current.0.bgpInfraPeerP.attributes.dn == "uni/tn-infra/out-ansible_infra_l3out/lnodep-ansible_infra_l3out_node_profile/infraPeerP-[192.168.50.2]"
+          - create_infra_bgp_peer.current.0.bgpInfraPeerP.attributes.peerT == "sr-mpls"
+          - create_infra_bgp_peer.current.0.bgpInfraPeerP.attributes.ctrlExt == "send-domain-path"
+          - create_infra_bgp_peer.current.0.bgpInfraPeerP.children.1.bgpRsPeerPfxPol.attributes.tnBgpPeerPfxPolName == "ansible_peer_prefix_profile"
+          - query_infra_bgp_peer is not changed
+          - query_infra_bgp_peer.current | length == 1
+          - query_infra_bgp_peer.current.0.bgpInfraPeerP.attributes.dn == "uni/tn-infra/out-ansible_infra_l3out/lnodep-ansible_infra_l3out_node_profile/infraPeerP-[192.168.50.2]"
+          - query_all_infra_bgp_peer is not changed
+          - query_all_infra_bgp_peer.current | length >= 1
+          - remove_infra_bgp_peer is changed
+          - remove_infra_bgp_peer.previous.0.bgpInfraPeerP.attributes.dn == "uni/tn-infra/out-ansible_infra_l3out/lnodep-ansible_infra_l3out_node_profile/infraPeerP-[192.168.50.2]"
+          - remove_infra_bgp_peer.previous.0.bgpInfraPeerP.attributes.peerT == "sr-mpls"
+          - remove_infra_bgp_peer.previous.0.bgpInfraPeerP.attributes.ctrlExt == "send-domain-path"
+          - remove_infra_bgp_peer.previous.0.bgpInfraPeerP.children.1.bgpRsPeerPfxPol.attributes.tnBgpPeerPfxPolName == "ansible_peer_prefix_profile"
+          - remove_infra_bgp_peer.current == []
 
   # CLEAN UP
   - name: Remove ansible_tenant
