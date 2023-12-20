@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# Copyright: (c) 2023, Samita Bhattacharjee (@samitab) <samitab.cisco.com>
 
+# Copyright: (c) 2023, Samita Bhattacharjee (@samitab) <samitab@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -109,7 +109,13 @@ EXAMPLES = r"""
 RETURN = constants.RETURN_DOC
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+    aci_annotation_spec,
+    aci_owner_spec,
+)
+
 
 def main():
     argument_spec = aci_argument_spec()
@@ -120,8 +126,8 @@ def main():
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
         podId=dict(type="int", aliases=["pod", "id"]),
-        podType=dict(type="str", default="physical", choices=["physical", "virtual" ], aliases=["type"]),
-        tepPool=dict(type="str", aliases=["tep", "pool"])
+        podType=dict(type="str", default="physical", choices=["physical", "virtual"], aliases=["type"]),
+        tepPool=dict(type="str", aliases=["tep", "pool"]),
     )
 
     module = AnsibleModule(
@@ -143,7 +149,7 @@ def main():
     state = module.params.get("state")
 
     if podId is not None and int(podId) not in range(1, 254):
-            aci.fail_json(msg="Pod ID: {0} is invalid; it must be in the range of 1 to 254.".format(podId))
+        aci.fail_json(msg="Pod ID: {0} is invalid; it must be in the range of 1 to 254.".format(podId))
 
     aci.construct_url(
         root_class=dict(
@@ -152,7 +158,7 @@ def main():
             module_object=podId,
             target_filter={"podId": podId},
         ),
-        child_classes=["fabricExtRoutablePodSubnet","fabricExtSetupP"]
+        child_classes=["fabricExtRoutablePodSubnet", "fabricExtSetupP"],
     )
 
     aci.get_existing()
@@ -177,6 +183,7 @@ def main():
         aci.delete_config()
 
     aci.exit_json()
+
 
 if __name__ == "__main__":
     main()

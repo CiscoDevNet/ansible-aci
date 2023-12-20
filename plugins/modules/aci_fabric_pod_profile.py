@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# Copyright: (c) 2023, Samita Bhattacharjee (@samitab) <samitab.cisco.com>
 
+# Copyright: (c) 2023, Samita Bhattacharjee (@samitab) <samitab@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -94,7 +94,13 @@ EXAMPLES = r"""
 RETURN = constants.RETURN_DOC
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+    aci_annotation_spec,
+    aci_owner_spec,
+)
+
 
 def main():
     argument_spec = aci_argument_spec()
@@ -128,9 +134,9 @@ def main():
             aci_class="fabricPodP",
             aci_rn="fabric/podprof-{0}".format(name),
             module_object=name,
-            target_filter={"name": name}
+            target_filter={"name": name},
         ),
-        child_classes=["fabricPodS"]
+        child_classes=["fabricPodS"],
     )
 
     aci.get_existing()
@@ -153,6 +159,7 @@ def main():
         aci.delete_config()
 
     aci.exit_json()
+
 
 if __name__ == "__main__":
     main()

@@ -168,7 +168,11 @@ SUBJ_LABEL_MAPPING = dict(
 )
 
 # The Ansible metadata used in all modules
-ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "certified",
+}
 
 # The return documentation used in all modules
 RETURN_DOC = r"""
