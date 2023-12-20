@@ -172,3 +172,15 @@ MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING = {"ospf_type_1": "ospf-type1", "ospf_
 MATCH_EIGRP_INTERFACE_POLICY_DELAY_UNIT_MAPPING = dict(picoseconds="pico", tens_of_microseconds="tens-of-micro")
 
 MATCH_EIGRP_INTERFACE_POLICY_CONTROL_STATE_MAPPING = dict(bfd="bfd", nexthop_self="nh-self", passive="passive", split_horizon="split-horizon")
+
+MATCH_TARGET_COS_MAPPING = {
+    "background": "0",
+    "best_effort": "1",
+    "excellent_effort": "2",
+    "critical_applications": "3",
+    "video": "4",
+    "voice": "5",
+    "internetwork_control": "6",
+    "network_control": "7",
+    "unspecified": "unspecified",
+}
