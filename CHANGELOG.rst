@@ -5,6 +5,38 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.9.0
+======
+
+Release Summary
+---------------
+
+Release v2.9.0 of the ``ansible-aci`` collection on 2023-12-20.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.8.0.
+
+
+Minor Changes
+-------------
+
+- Add L3out Floating SVI modules (aci_l3out_floating_svi, aci_l3out_floating_svi_path, aci_l3out_floating_svi_path_secondary_ip and aci_l3out_floating_svi_secondary_ip) (#478)
+- Add aci_action_rule_additional_communities as a new module and Add action rules attributes to aci_tenant_action_rule_profile.
+- Add aci_action_rule_set_as_path and aci_action_rule_set_as_path_asn as new modules.
+- Add aci_bgp_peer_prefix_policy, aci_bgp_route_summarization_policy and aci_bgp_address_family_context_policy as new modules.
+- Add aci_hsrp_interface_policy, aci_l3out_hsrp_group, aci_l3out_hsrp_interface_profile and aci_l3out_hsrp_secondary_vip modules (#505)
+- Add additional missing action rules as children in aci_tenant_action_rule_profile.
+- Add support for configuration of access switch policy groups with aci_access_switch_policy_group module
+- Add support for configuration of vrf multicast with aci_vrf_multicast module
+- Add support for intra epg, taboo, and contract interface in aci_epg_to_contract
+- Add support for sr-mpls bgpInfraPeerP and bgp_password in aci_l3out_bgp_peer module (#543)
+- Add support for sr-mpls in aci_l3out module
+- Add support for taboo contract, contract interface and intra_epg contract in aci_l3out_extepg_to_contract
+- Addition of a filter plugin called aci_listify to the collection which flattens nested dictionaries
+
+Bugfixes
+--------
+
+- Fix idempotency for l3out configuration when l3protocol is used in aci_l3out
+
 v2.8.0
 ======
 

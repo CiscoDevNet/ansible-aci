@@ -19,6 +19,10 @@ action_groups:
     - aci_access_span_src_group_src
     - aci_access_span_src_group_src_path
     - aci_access_sub_port_block_to_access_port
+    - aci_access_switch_policy_group
+    - aci_action_rule_additional_communities
+    - aci_action_rule_set_as_path
+    - aci_action_rule_set_as_path_asn
     - aci_aep
     - aci_aep_to_domain
     - aci_aep_to_epg
@@ -27,7 +31,10 @@ action_groups:
     - aci_bd_dhcp_label
     - aci_bd_subnet
     - aci_bd_to_l3out
+    - aci_bgp_address_family_context_policy
     - aci_bgp_best_path_policy
+    - aci_bgp_peer_prefix_policy
+    - aci_bgp_route_summarization_policy
     - aci_bgp_rr_asn
     - aci_bgp_rr_node
     - aci_bgp_timers_policy
@@ -107,6 +114,7 @@ action_groups:
     - aci_interface_description
     - aci_interface_policy_cdp
     - aci_interface_policy_fc
+    - aci_interface_policy_hsrp
     - aci_interface_policy_l2
     - aci_interface_policy_leaf_breakout_port_group
     - aci_interface_policy_leaf_fc_policy_group
@@ -134,6 +142,13 @@ action_groups:
     - aci_l3out_extepg
     - aci_l3out_extepg_to_contract
     - aci_l3out_extsubnet
+    - aci_l3out_floating_svi
+    - aci_l3out_floating_svi_path
+    - aci_l3out_floating_svi_path_secondary_ip
+    - aci_l3out_floating_svi_secondary_ip
+    - aci_l3out_hsrp_group
+    - aci_l3out_hsrp_interface_profile
+    - aci_l3out_hsrp_secondary_vip
     - aci_l3out_interface
     - aci_l3out_interface_secondary_ip
     - aci_l3out_logical_interface_profile
@@ -194,4 +209,5 @@ action_groups:
     - aci_vmm_vswitch_policy
     - aci_vrf
     - aci_vrf_leak_internal_subnet
+    - aci_vrf_multicast
     - aci_vzany_to_contract
