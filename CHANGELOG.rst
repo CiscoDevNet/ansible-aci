@@ -5,6 +5,51 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.9.0
+======
+
+Release Summary
+---------------
+
+Release v2.9.0 of the ``ansible-aci`` collection on 2023-12-21.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.8.0.
+
+
+Minor Changes
+-------------
+
+- Add Authentification option for EIGRP interface profile and add aci_keychain_policy and aci_key_policy as new modules.
+- Add L3out Floating SVI modules (aci_l3out_floating_svi, aci_l3out_floating_svi_path, aci_l3out_floating_svi_path_secondary_ip and aci_l3out_floating_svi_secondary_ip) (#478)
+- Add aci_action_rule_additional_communities as a new module and Add action rules attributes to aci_tenant_action_rule_profile.
+- Add aci_action_rule_set_as_path and aci_action_rule_set_as_path_asn as new modules.
+- Add aci_bgp_peer_prefix_policy, aci_bgp_route_summarization_policy and aci_bgp_address_family_context_policy as new modules.
+- Add aci_hsrp_interface_policy, aci_l3out_hsrp_group, aci_l3out_hsrp_interface_profile and aci_l3out_hsrp_secondary_vip modules (#505)
+- Add aci_interface_policy_eigrp (class:eigrpIfPol) as a new module.
+- Add aci_l3out_bfd_multihop_interface_profile, aci_l3out_bfd_interface_profile, aci_interface_policy_bfd_multihop, aci_interface_policy_bfd and aci_bfd_multihop_node_policy modules (#492)
+- Add aci_l3out_dhcp_relay_label, aci_dhcp_option_policy and aci_dhcp_option as new modules.
+- Add aci_l3out_eigrp_interface_profile as a new module.  Modify aci_l3out_logical_interface_profile_opsf_policy.
+- Add additional missing action rules as children in aci_tenant_action_rule_profile.
+- Add support for annotation in aci_rest module (#437)
+- Add support for configuration of access switch policy groups with aci_access_switch_policy_group module
+- Add support for configuration of vrf multicast with aci_vrf_multicast module
+- Add support for encap scope in aci_l3out_interface
+- Add support for infra l3out nodes bgp-evpn loopback, mpls transport loopback and segment id in aci_l3out_logical_node
+- Add support for infra sr mpls micro bfd in aci_l3out_interface
+- Add support for intra epg, taboo, and contract interface in aci_epg_to_contract
+- Add support for mac and description in aci_l3out_interface
+- Add support for mpls custom qos policy for infra sr mpls l3outs node profiles in aci_l3out_logical_node_profile
+- Add support for sr-mpls bgpInfraPeerP and bgp_password in aci_l3out_bgp_peer module (#543)
+- Add support for sr-mpls in aci_l3out module
+- Add support for sr-mpls l3out to infra l3out in aci_l3out_to_sr_mpls_infra_l3out
+- Add support for taboo contract, contract interface and intra_epg contract in aci_l3out_extepg_to_contract
+- Addition of a filter plugin called aci_listify to the collection which flattens nested dictionaries
+
+Bugfixes
+--------
+
+- Fix idempotency for l3out configuration when l3protocol is used in aci_l3out
+- Fix query in aci_vmm_controller
+
 v2.8.0
 ======
 
