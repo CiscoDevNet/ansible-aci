@@ -4,13 +4,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
-  fail:
+  ansible.builtin.fail:
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 # GET Credentials from the inventory
 - name: Set vars
-  set_fact:
+  ansible.builtin.set_fact:
     aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
@@ -22,10 +22,10 @@
 
 # CLEAN ENVIRONMENT
 - name: Ensure Fabric Pod Remote Pool 66 is absent before testing
-  aci_fabric_pod_remote_pool:
+  cisco.aci.aci_fabric_pod_remote_pool:
     <<: *aci_info
-    podId: 1
-    remoteId: 66
+    pod_id: 1
+    remote_id: 66
     state: absent
   register: cleaned
 
@@ -38,14 +38,14 @@
 - name: Create a remote pool
   cisco.aci.aci_fabric_pod_remote_pool:
     <<: *aci_info
-    podId: 1
+    pod_id: 1
     pool: 10.66.22.0/24
-    remoteId: 66
+    remote_id: 66
     state: present
   register: add_remote_pool
 
 - name: Verify remote pool creation
-  assert:
+  ansible.builtin.assert:
     that:
     - add_remote_pool is changed
     - add_remote_pool.current.0.fabricExtSetupP.attributes.dn == "uni/controller/setuppol/setupp-1/extsetupp-66"
@@ -62,14 +62,14 @@
 - name: Create an remote pool again
   cisco.aci.aci_fabric_pod_remote_pool:
     <<: *aci_info
-    podId: 1
+    pod_id: 1
     pool: 10.66.22.0/24
-    remoteId: 66
+    remote_id: 66
     state: present
   register: add_remote_pool_again
 
 - name: Verify remote pool creation idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - add_remote_pool_again is not changed
     - add_remote_pool_again.current.0.fabricExtSetupP.attributes.dn == "uni/controller/setuppol/setupp-1/extsetupp-66"
@@ -78,16 +78,16 @@
     - add_remote_pool_again.current.0.fabricExtSetupP.attributes.annotation == "orchestrator:ansible"
 
 # QUERY FABRIC REMOTE POOL
-- name: query remote pool
-  aci_fabric_pod_remote_pool:
+- name: Query remote pool
+  cisco.aci.aci_fabric_pod_remote_pool:
     <<: *aci_info
-    podId: 1
-    remoteId: 66
+    pod_id: 1
+    remote_id: 66
     state: query
   register: query_remote_pool
 
 - name: Verify remote pool query
-  assert:
+  ansible.builtin.assert:
     that:
     - query_remote_pool is not changed
     - query_remote_pool.current.0.fabricExtSetupP.attributes.dn == "uni/controller/setuppol/setupp-1/extsetupp-66"
@@ -95,28 +95,28 @@
     - query_remote_pool.current.0.fabricExtSetupP.attributes.tepPool == "10.66.22.0/24"
 
 # QUERY ALL REMOTE POOLs
-- name: query all remote pools
-  aci_fabric_pod_remote_pool:
+- name: Query all remote pools
+  cisco.aci.aci_fabric_pod_remote_pool:
     <<: *aci_info
     state: query
   register: query_remote_pool_all
 
 - name: Verify query idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - query_remote_pool_all is not changed
 
 # DELETE REMOTE POOL
 - name: Delete remote pool
-  aci_fabric_pod_remote_pool:
+  cisco.aci.aci_fabric_pod_remote_pool:
     <<: *aci_info
-    podId: 1
-    remoteId: 66
+    pod_id: 1
+    remote_id: 66
     state: absent
   register: delete_remote_pool
 
 - name: Verify remote pool deletion
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_remote_pool is changed
     - delete_remote_pool.current == []
@@ -131,15 +131,15 @@
 
 # DELETE AGAIN TO TEST IDEMPOTENCE
 - name: Delete remote pool again
-  aci_fabric_pod_remote_pool:
+  cisco.aci.aci_fabric_pod_remote_pool:
     <<: *aci_info
-    podId: 1
-    remoteId: 66
+    pod_id: 1
+    remote_id: 66
     state: absent
   register: delete_remote_pool_again
 
 - name: Verify profile deletion idempotence
-  assert:
+  ansible.builtin.assert:
     that:
     - delete_remote_pool_again is not changed
     - delete_remote_pool_again.current == []

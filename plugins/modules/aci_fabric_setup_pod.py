@@ -15,25 +15,26 @@ DOCUMENTATION = r"""
 module: aci_fabric_setup_pod
 short_description: Manage Fabric Setup Pod (fabric:SetupP)
 description:
-- Manage Fabric Setup Policy of a Pod on Cisco ACI fabrics.
+- Manage Fabric Setup Policy for a Pod on Cisco ACI fabrics.
 options:
-  podId:
+  pod_id:
     description:
-    - The Pod identifier.
+    - The Pod ID for the Fabric Setup Pod.
     - Accepted value range between C(1) and C(254).
     type: int
     aliases: [ pod, id ]
-  podType:
+  pod_type:
     description:
-    - The Pod type
+    - The type of the Pod. Use C(physical) or C(virtual).
+    - The APIC defaults to C(physical) when unset during creation.
     type: str
     choices: [ physical, virtual ]
-    default: physical
     aliases: [ type ]
-  tepPool:
+  tep_pool:
     description:
-    - Infra TEP address pool
-    - Must be valid IPv4 or IPv6
+    - The TEP address pool for the Fabric Setup Pod.
+    - Must be valid IPv4 or IPv6 and include the subnet mask.
+    - Example: 192.168.1.0/24 or 2001:db8:abcd:0012::0/64
     type: str
     aliases: [ tep, pool ]
   description:
@@ -47,7 +48,6 @@ options:
     - Use C(query) for listing an object or multiple objects.
     type: str
     choices: [ absent, present, query ]
-    default: present
   name_alias:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
@@ -71,8 +71,8 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    podId: 1
-    tepPool: 10.0.0.0/16
+    pod_id: 1
+    tep_pool: 10.0.0.0/16
     state: present
   delegate_to: localhost
 
@@ -81,7 +81,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    podId: 1
+    pod_id: 1
     state: absent
   delegate_to: localhost
 
@@ -90,7 +90,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    podId: 1
+    pod_id: 1
     state: query
   delegate_to: localhost
   register: query_result
@@ -227,38 +227,38 @@ def main():
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
-        podId=dict(type="int", aliases=["pod", "id"]),
-        podType=dict(type="str", default="physical", choices=["physical", "virtual"], aliases=["type"]),
-        tepPool=dict(type="str", aliases=["tep", "pool"]),
+        pod_id=dict(type="int", aliases=["pod", "id"]),
+        pod_type=dict(type="str", choices=["physical", "virtual"], aliases=["type"]),
+        tep_pool=dict(type="str", aliases=["tep", "pool"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["podId"]],
-            ["state", "present", ["podId"]],
+            ["state", "absent", ["pod_id"]],
+            ["state", "present", ["pod_id"]],
         ],
     )
 
     aci = ACIModule(module)
 
     name_alias = module.params.get("name_alias")
-    podId = module.params.get("podId")
-    podType = module.params.get("podType")
-    tepPool = module.params.get("tepPool")
+    pod_id = module.params.get("pod_id")
+    pod_type = module.params.get("pod_type")
+    tep_pool = module.params.get("tep_pool")
     description = module.params.get("description")
     state = module.params.get("state")
 
-    if podId is not None and int(podId) not in range(1, 254):
-        aci.fail_json(msg="Pod ID: {0} is invalid; it must be in the range of 1 to 254.".format(podId))
+    if pod_id is not None and int(pod_id) not in range(1, 254):
+        aci.fail_json(msg="Pod ID: {0} is invalid; it must be in the range of 1 to 254.".format(pod_id))
 
     aci.construct_url(
         root_class=dict(
             aci_class="fabricSetupP",
-            aci_rn="controller/setuppol/setupp-{0}".format(podId),
-            module_object=podId,
-            target_filter={"podId": podId},
+            aci_rn="controller/setuppol/setupp-{0}".format(pod_id),
+            module_object=pod_id,
+            target_filter={"podId": pod_id},
         ),
         child_classes=["fabricExtRoutablePodSubnet", "fabricExtSetupP"],
     )
@@ -269,9 +269,9 @@ def main():
         aci.payload(
             aci_class="fabricSetupP",
             class_config=dict(
-                podId=podId,
-                podType=podType,
-                tepPool=tepPool,
+                podId=pod_id,
+                podType=pod_type,
+                tepPool=tep_pool,
                 descr=description,
                 nameAlias=name_alias,
             ),

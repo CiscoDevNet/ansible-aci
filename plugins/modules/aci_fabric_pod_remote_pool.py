@@ -17,28 +17,30 @@ short_description: Manage Fabric Pod Remote Pool (fabric:ExtSetupP)
 description:
 - Manage Remote Pools on Fabric Pod Subnets.
 options:
-  podId:
+  pod_id:
     description:
     - The Pod ID for the Remote Pool.
     type: int
     aliases: [ pod ]
   description:
     description:
-    - The description for the Remote Pool
+    - The description for the Remote Pool.
     type: str
     aliases: [desc]
-  remoteId:
+  remote_id:
     description:
-    - Remote Pool Identifier
+    - The Identifier for the Remote Pool.
     type: int
     aliases: [ id ]
-  nameAlias:
+  name_alias:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
-  remotePool:
+  remote_pool:
     description:
-    - The subnet IP address pool
+    - The subnet IP address pool for the Remote Pool.
+    - Must be valid IPv4 or IPv6 and include the subnet mask.
+    - Example: 192.168.1.0/24 or 2001:db8:abcd:0012::0/64
     type: str
     aliases: [ pool ]
   state:
@@ -67,7 +69,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    podId: 2
+    pod_id: 2
     id: 1
     pool: 10.6.2.0/24
     state: present
@@ -78,8 +80,8 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    podId: 2
-    remoteId: 1
+    pod_id: 2
+    remote_id: 1
     state: absent
   delegate_to: localhost
 
@@ -88,7 +90,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    podId: 2
+    pod_id: 2
     id: 1
     state: query
   delegate_to: localhost
@@ -218,11 +220,11 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        podId=dict(type=int, aliases=["pod"]),
-        description=dict(type=str, aliases=["desc"]),
-        remoteId=dict(type=int, aliases=["id"]),
-        nameAlias=dict(type=str),
-        remotePool=dict(type=str, aliases=["pool"]),
+        pod_id=dict(type="int", aliases=["pod"]),
+        description=dict(type="str", aliases=["desc"]),
+        remote_id=dict(type="int", aliases=["id"]),
+        name_alias=dict(type="str"),
+        remote_pool=dict(type="str", aliases=["pool"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -230,31 +232,33 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["podId", "remoteId"]],
-            ["state", "present", ["podId", "remoteId"]],
+            ["state", "absent", ["pod_id", "remote_id"]],
+            ["state", "present", ["pod_id", "remote_id"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    podId = module.params.get("podId")
+    pod_id = module.params.get("pod_id")
     description = module.params.get("description")
-    remoteId = module.params.get("remoteId")
-    nameAlias = module.params.get("nameAlias")
-    remotePool = module.params.get("remotePool")
+    remote_id = module.params.get("remote_id")
+    name_alias = module.params.get("name_alias")
+    remote_pool = module.params.get("remote_pool")
     state = module.params.get("state")
 
-    if podId is not None and int(podId) not in range(1, 254):
-        aci.fail_json(msg="Pod ID: {0} is invalid; it must be in the range of 1 to 254.".format(podId))
+    if pod_id is not None and int(pod_id) not in range(1, 254):
+        aci.fail_json(msg="Pod ID: {0} is invalid; it must be in the range of 1 to 254.".format(pod_id))
 
     aci.construct_url(
         root_class=dict(
             aci_class="fabricSetupP",
-            aci_rn="controller/setuppol/setupp-{0}".format(podId),
-            module_object=podId,
-            target_filter={"podId": podId},
+            aci_rn="controller/setuppol/setupp-{0}".format(pod_id),
+            module_object=pod_id,
+            target_filter={"podId": pod_id},
         ),
-        subclass_1=dict(aci_class="fabricExtSetupP", aci_rn="extsetupp-{0}".format(remoteId), module_object=remoteId, target_filter={"extPoolId": remoteId}),
+        subclass_1=dict(
+            aci_class="fabricExtSetupP", aci_rn="extsetupp-{0}".format(remote_id), module_object=remote_id, target_filter={"extPoolId": remote_id}
+        ),
     )
 
     aci.get_existing()
@@ -264,9 +268,9 @@ def main():
             aci_class="fabricExtSetupP",
             class_config=dict(
                 descr=description,
-                extPoolId=remoteId,
-                nameAlias=nameAlias,
-                tepPool=remotePool,
+                extPoolId=remote_id,
+                nameAlias=name_alias,
+                tepPool=remote_pool,
             ),
         )
 

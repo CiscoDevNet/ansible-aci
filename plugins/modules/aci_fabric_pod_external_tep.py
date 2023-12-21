@@ -17,7 +17,7 @@ short_description: Manage Fabric Pod External TEP (fabric:ExtRoutablePodSubnet)
 description:
 - Manage External TEP Fabric Pod Subnets.
 options:
-  podId:
+  pod_id:
     description:
     - The Pod ID for the External TEP.
     type: int
@@ -27,27 +27,28 @@ options:
     - The description for the External TEP.
     type: str
     aliases: [ descr ]
-  nameAlias:
+  name_alias:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
   pool:
     description:
-    - The subnet IP address pool
-    type: str
-    aliases: [ ip, ipAddress, tepPool ]
-  reserveAddressCount:
+    - The subnet IP address pool for the External TEP.
+    - Must be valid IPv4 or IPv6 and include the subnet mask.
+    - Example: 192.168.1.0/24 or 2001:db8:abcd:0012::0/64
+    aliases: [ ip, ip_address, tep_pool ]
+  reserve_address_count:
     description:
     - Indicates the number of IP addresses that are reserved from the start of the subnet.
     type: int
-    aliases: [ addressCount ]
+    aliases: [ address_count ]
   status:
     description:
     - State of the External TEP C(active) or C(inactive)
     - An External TEP can only be deleted when the state is inactive.
+    - The APIC defaults to C(active) when unset during creation.
     type: str
     choices: [ active, inactive ]
-    default: active
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -77,9 +78,9 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    podId: 2
+    pod_id: 2
     pool: 10.6.1.0/24
-    addressCount: 5
+    address_count: 5
     status: active
     state: present
   delegate_to: localhost
@@ -89,7 +90,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    podId: 2
+    pod_id: 2
     pool: 10.6.1.0/24
     status: inactive
     state: present
@@ -100,7 +101,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    podId: 2
+    pod_id: 2
     pool: 10.6.1.0/24
     state: absent
   delegate_to: localhost
@@ -110,7 +111,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    podId: 2
+    pod_id: 2
     pool: 10.6.1.0/24
     state: query
   delegate_to: localhost
@@ -245,12 +246,12 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        description=dict(type=str, aliases=["descr"]),
-        nameAlias=dict(type=str),
-        podId=dict(type=int, aliases=["pod"]),
-        pool=dict(type=str, aliases=["ip", "ipAddress", "tepPool"]),
-        reserveAddressCount=dict(type=int, aliases=["addressCount"]),
-        status=dict(type=str, default="active", choices=["active", "inactive"]),
+        description=dict(type="str", aliases=["descr"]),
+        name_alias=dict(type="str"),
+        pod_id=dict(type="int", aliases=["pod"]),
+        pool=dict(type="str", aliases=["ip", "ip_address", "tep_pool"]),
+        reserve_address_count=dict(type="int", aliases=["address_count"]),
+        status=dict(type="str", choices=["active", "inactive"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -258,30 +259,30 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["podId", "pool"]],
-            ["state", "present", ["podId", "pool"]],
+            ["state", "absent", ["pod_id", "pool"]],
+            ["state", "present", ["pod_id", "pool"]],
         ],
     )
 
     aci = ACIModule(module)
 
-    podId = module.params.get("podId")
+    pod_id = module.params.get("pod_id")
     descr = module.params.get("descr")
-    nameAlias = module.params.get("nameAlias")
+    name_alias = module.params.get("name_alias")
     pool = module.params.get("pool")
-    reserveAddressCount = module.params.get("reserveAddressCount")
+    reserve_address_count = module.params.get("reserve_address_count")
     status = module.params.get("status")
     state = module.params.get("state")
 
-    if podId is not None and int(podId) not in range(1, 254):
-        aci.fail_json(msg="Pod ID: {0} is invalid; it must be in the range of 1 to 254.".format(podId))
+    if pod_id is not None and int(pod_id) not in range(1, 254):
+        aci.fail_json(msg="Pod ID: {0} is invalid; it must be in the range of 1 to 254.".format(pod_id))
 
     aci.construct_url(
         root_class=dict(
             aci_class="fabricSetupP",
-            aci_rn="controller/setuppol/setupp-{0}".format(podId),
-            module_object=podId,
-            target_filter={"podId": podId},
+            aci_rn="controller/setuppol/setupp-{0}".format(pod_id),
+            module_object=pod_id,
+            target_filter={"podId": pod_id},
         ),
         subclass_1=dict(
             aci_class="fabricExtRoutablePodSubnet",
@@ -298,9 +299,9 @@ def main():
             aci_class="fabricExtRoutablePodSubnet",
             class_config=dict(
                 descr=descr,
-                nameAlias=nameAlias,
+                nameAlias=name_alias,
                 pool=pool,
-                reserveAddressCount=reserveAddressCount,
+                reserveAddressCount=reserve_address_count,
                 state=status,
             ),
         )
