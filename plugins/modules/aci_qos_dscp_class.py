@@ -71,13 +71,13 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(tenant) and C(qos_custom_policy) must exist before using this module in your playbook.
+- The I(tenant) and I(qos_custom_policy) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) and the M(cisco.aci.aci_qos_custom_policy) can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
 - module: cisco.aci.aci_qos_custom_policy
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes
+  description: More information about the internal APIC class B(qos:DscpClass).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Gaspard Micol (@gmicol)
@@ -99,18 +99,6 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete a QoS DSCP Class
-  cisco.aci.aci_qos_dscp_class:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: my_tenant
-    qos_custom_policy: my_qos_custom_policy
-    dscp_from: AF11
-    dscp_to: AF21
-    state: absent
-  delegate_to: localhost
-
 - name: Query a QoS DSCP Class
   cisco.aci.aci_qos_dscp_class:
     host: apic
@@ -122,7 +110,6 @@ EXAMPLES = r"""
     dscp_to: AF21
     state: query
   delegate_to: localhost
-  register: query_result
 
 - name: Query all QoS DSCP Classes in my_qos_custom_policy
   cisco.aci.aci_qos_dscp_class:
@@ -133,7 +120,18 @@ EXAMPLES = r"""
     qos_custom_policy: my_qos_custom_policy
     state: query
   delegate_to: localhost
-  register: query_result
+
+- name: Delete a QoS DSCP Class
+  cisco.aci.aci_qos_dscp_class:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    qos_custom_policy: my_qos_custom_policy
+    dscp_from: AF11
+    dscp_to: AF21
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
@@ -243,11 +241,18 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+    aci_annotation_spec,
+    aci_owner_spec,
+    aci_contract_dscp_spec,
+)
 from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_TARGET_COS_MAPPING
 
 
 def main():
+    new_dscp_spec = dict((k, aci_contract_dscp_spec()[k]) for k in aci_contract_dscp_spec() if k != 'aliases')
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
@@ -267,105 +272,10 @@ def main():
             ],
             aliases=["prio"],
         ),
-        dscp_from=dict(
-            type="str",
-            choices=[
-                "AF11",
-                "AF12",
-                "AF13",
-                "AF21",
-                "AF22",
-                "AF23",
-                "AF31",
-                "AF32",
-                "AF33",
-                "AF41",
-                "AF42",
-                "AF43",
-                "CS0",
-                "CS1",
-                "CS2",
-                "CS3",
-                "CS4",
-                "CS5",
-                "CS6",
-                "CS7",
-                "EF",
-                "VA",
-                "unspecified",
-            ],
-        ),
-        dscp_to=dict(
-            type="str",
-            choices=[
-                "AF11",
-                "AF12",
-                "AF13",
-                "AF21",
-                "AF22",
-                "AF23",
-                "AF31",
-                "AF32",
-                "AF33",
-                "AF41",
-                "AF42",
-                "AF43",
-                "CS0",
-                "CS1",
-                "CS2",
-                "CS3",
-                "CS4",
-                "CS5",
-                "CS6",
-                "CS7",
-                "EF",
-                "VA",
-                "unspecified",
-            ],
-        ),
-        dscp_target=dict(
-            type="str",
-            choices=[
-                "AF11",
-                "AF12",
-                "AF13",
-                "AF21",
-                "AF22",
-                "AF23",
-                "AF31",
-                "AF32",
-                "AF33",
-                "AF41",
-                "AF42",
-                "AF43",
-                "CS0",
-                "CS1",
-                "CS2",
-                "CS3",
-                "CS4",
-                "CS5",
-                "CS6",
-                "CS7",
-                "EF",
-                "VA",
-                "unspecified",
-            ],
-            aliases=["target"],
-        ),
-        target_cos=dict(
-            type="str",
-            choices=[
-                "background",
-                "best_effort",
-                "excellent_effort",
-                "critical_applications",
-                "video",
-                "voice",
-                "internetwork_control",
-                "network_control",
-                "unspecified",
-            ],
-        ),
+        dscp_from=new_dscp_spec,
+        dscp_to=new_dscp_spec,
+        dscp_target=aci_contract_dscp_spec(),
+        target_cos=dict(type="str", choices=list(MATCH_TARGET_COS_MAPPING.keys())),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
