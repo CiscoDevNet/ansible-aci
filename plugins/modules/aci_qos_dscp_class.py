@@ -252,7 +252,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_T
 
 
 def main():
-    new_dscp_spec = dict((k, aci_contract_dscp_spec()[k]) for k in aci_contract_dscp_spec() if k != 'aliases')
+    new_dscp_spec = dict((k, aci_contract_dscp_spec()[k]) for k in aci_contract_dscp_spec() if k != "aliases")
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
