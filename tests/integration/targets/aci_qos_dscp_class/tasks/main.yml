@@ -17,7 +17,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT BEFORE TESTS
 - name: Remove the ansible_tenant
@@ -156,7 +156,7 @@
         - cm_remove_qos_dscp_class.proposed == {}
         - nm_remove_qos_dscp_class is changed
         - nm_remove_qos_dscp_class.previous != []
-        - nm_remove_qos_dscp_class.method == "DELETE"
+        - nm_remove_qos_dscp_class.current == []
         - nm_remove_qos_dscp_class_idempotency is not changed
         - nm_remove_qos_dscp_class_idempotency.previous == []
 

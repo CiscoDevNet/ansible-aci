@@ -17,7 +17,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT BEFORE TESTS
 - name: Remove the ansible_tenant
@@ -128,7 +128,7 @@
         - cm_remove_qos_custom_policy.proposed == {}
         - nm_remove_qos_custom_policy is changed
         - nm_remove_qos_custom_policy.previous != []
-        - nm_remove_qos_custom_policy.method == "DELETE"
+        - nm_remove_qos_custom_policy.current == []
         - nm_remove_qos_custom_policy_idempotency is not changed
         - nm_remove_qos_custom_policy_idempotency.previous == []
 

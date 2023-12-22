@@ -12,12 +12,11 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_qos_custom_policy
-short_description: Manage QoS Custom Policy (qos:CustomPol)
+module: aci_qos_dot1p_class
+short_description: Manage QoS Dot1P Class (qos:Dot1PClass)
 description:
-- Manage QoS Custom Policies for tenants on Cisco ACI fabrics.
-- The custom QoS policy enables different levels of service to be assigned to network traffic,
-  including specifications for the Differentiated Services Code Point (DSCP) value(s), and the 802.1p Dot1p priority.
+- Manage Dot1P Class levels for QoS Custom Policies on Cisco ACI fabrics.
+- The class level for Dot1P to prioritize the map.
 options:
   tenant:
     description:
@@ -28,12 +27,37 @@ options:
     description:
     - The name of the QoS Custom Policy.
     type: str
-    aliases: [ qos_custom_policy_name, name ]
-  description:
+    aliases: [ qos_custom_policy_name ]
+  priority:
     description:
-    - The description for the QoS Custom Policy.
+    - The desired QoS class level to be used.
+    - The APIC defaults to C(unspecified) when unset during creation.
     type: str
-    aliases: [ descr ]
+    choices: [ level1, level2, level3, level4, level5, level6, unspecified ]
+    aliases: [ prio ]
+  dot1p_from:
+    description:
+    - The Dot1P range starting value.
+    type: str
+    choices: [ background, best_effort, excellent_effort, critical_applications, video, voice, internetwork_control, network_control, unspecified ]
+  dot1p_to:
+    description:
+    - The Dot1P range ending value.
+    type: str
+    choices: [ background, best_effort, excellent_effort, critical_applications, video, voice, internetwork_control, network_control, unspecified ]
+  dot1p_target:
+    description:
+    - The Dot1P target value.
+    - The APIC defaults to C(unspecified) when unset during creation.
+    type: str
+    choices: [ AF11, AF12, AF13, AF21, AF22, AF23, AF31, AF32, AF33, AF41, AF42, AF43, CS0, CS1, CS2, CS3, CS4, CS5, CS6, CS7, EF, VA, unspecified ]
+    aliases: [ target ]
+  target_cos:
+    description:
+    - The target COS to be driven based on the range of input values of Dot1P coming into the fabric.
+    - The APIC defaults to C(unspecified) when unset during creation.
+    type: str
+    choices: [ background, best_effort, excellent_effort, critical_applications, video, voice, internetwork_control, network_control, unspecified ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -47,30 +71,48 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The I(tenant) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) can be used for this.
+- The I(tenant) and I(qos_custom_policy) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) and the M(cisco.aci.aci_qos_custom_policy) can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_qos_custom_policy
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(qos:CustomPol).
+  description: More information about the internal APIC class B(qos:Dot1PClass).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: Add a new QoS Custom Policy
-  cisco.aci.aci_qos_custom_policy:
+- name: Add a new QoS dot1P Class
+  cisco.aci.aci_qos_dot1p_class:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
     qos_custom_policy: my_qos_custom_policy
+    priority: level3
+    dot1p_from: best_effort
+    dot1p_to: excellent_effort
+    dot1p_target: unspecified
+    target_cos: unspecified
     state: present
   delegate_to: localhost
 
-- name: Query a QoS Custom Policy
-  cisco.aci.aci_qos_custom_policy:
+- name: Query a QoS dot1P Class
+  cisco.aci.aci_qos_dot1p_class:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    qos_custom_policy: my_qos_custom_policy
+    dot1p_from: best_effort
+    dot1p_to: excellent_effort
+    state: query
+  delegate_to: localhost
+
+- name: Query all QoS dot1P Classes in my_qos_custom_policy
+  cisco.aci.aci_qos_dot1p_class:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -79,22 +121,15 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
 
-- name: Query all QoS Custom Policies in my_tenant
-  cisco.aci.aci_qos_custom_policy:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: my_tenant
-    state: query
-  delegate_to: localhost
-
-- name: Delete a QoS Custom Policy
-  cisco.aci.aci_qos_custom_policy:
+- name: Delete a QoS dot1P Class
+  cisco.aci.aci_qos_dot1p_class:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
     qos_custom_policy: my_qos_custom_policy
+    dot1p_from: best_effort
+    dot1p_to: excellent_effort
     state: absent
   delegate_to: localhost
 """
@@ -206,7 +241,14 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+    aci_annotation_spec,
+    aci_owner_spec,
+    aci_contract_dscp_spec,
+)
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_TARGET_COS_MAPPING
 
 
 def main():
@@ -215,8 +257,24 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
-        qos_custom_policy=dict(type="str", aliases=["qos_custom_policy_name", "name"]),
-        description=dict(type="str", aliases=["descr"]),
+        qos_custom_policy=dict(type="str", aliases=["qos_custom_policy_name"]),
+        priority=dict(
+            type="str",
+            choices=[
+                "level1",
+                "level2",
+                "level3",
+                "level4",
+                "level5",
+                "level6",
+                "unspecified",
+            ],
+            aliases=["prio"],
+        ),
+        dot1p_from=dict(type="str", choices=list(MATCH_TARGET_COS_MAPPING.keys())),
+        dot1p_to=dict(type="str", choices=list(MATCH_TARGET_COS_MAPPING.keys())),
+        dot1p_target=aci_contract_dscp_spec(),
+        target_cos=dict(type="str", choices=list(MATCH_TARGET_COS_MAPPING.keys())),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -224,14 +282,18 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "qos_custom_policy"]],
-            ["state", "present", ["tenant", "qos_custom_policy"]],
+            ["state", "absent", ["tenant", "qos_custom_policy", "dot1p_from", "dot1p_to"]],
+            ["state", "present", ["tenant", "qos_custom_policy", "dot1p_from", "dot1p_to"]],
         ],
     )
 
     tenant = module.params.get("tenant")
-    description = module.params.get("description")
     qos_custom_policy = module.params.get("qos_custom_policy")
+    priority = module.params.get("priority")
+    dot1p_from = MATCH_TARGET_COS_MAPPING.get(module.params.get("dot1p_from"))
+    dot1p_to = MATCH_TARGET_COS_MAPPING.get(module.params.get("dot1p_to"))
+    dot1p_target = module.params.get("dot1p_target")
+    target_cos = MATCH_TARGET_COS_MAPPING.get(module.params.get("target_cos"))
     state = module.params.get("state")
 
     aci = ACIModule(module)
@@ -249,20 +311,29 @@ def main():
             module_object=qos_custom_policy,
             target_filter={"name": qos_custom_policy},
         ),
+        subclass_2=dict(
+            aci_class="qosDot1PClass",
+            aci_rn="dot1P-{0}-{1}".format(dot1p_from, dot1p_to),
+            module_object=qos_custom_policy,
+            target_filter={"from": dot1p_from, "to": dot1p_to},
+        ),
     )
 
     aci.get_existing()
 
     if state == "present":
         aci.payload(
-            aci_class="qosCustomPol",
-            class_config=dict(
-                name=qos_custom_policy,
-                descr=description,
-            ),
+            aci_class="qosDot1PClass",
+            class_config={
+                "prio": priority,
+                "from": dot1p_from,
+                "to": dot1p_to,
+                "target": dot1p_target,
+                "targetCos": target_cos,
+            },
         )
 
-        aci.get_diff(aci_class="qosCustomPol")
+        aci.get_diff(aci_class="qosDot1PClass")
 
         aci.post_config()
 
