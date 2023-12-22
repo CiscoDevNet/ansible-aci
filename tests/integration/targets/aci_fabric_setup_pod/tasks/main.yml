@@ -37,11 +37,23 @@
   when: cleaned is changed
 
 # CREATE FABRIC SETUP POD
+- name: Create ansible_fabric_pod_setup with check mode
+  cisco.aci.aci_fabric_setup_pod:
+    <<: *aci_info
+    pod_id: 77
+    pool: 10.77.0.0/16
+    type: physical
+    description: Ansible test pod setup
+    state: present
+  check_mode: true
+  register: add_fabric_pod_setup_cm
+
 - name: Create ansible_fabric_pod_setup
   cisco.aci.aci_fabric_setup_pod:
     <<: *aci_info
     pod_id: 77
     pool: 10.77.0.0/16
+    type: physical
     description: Ansible test pod setup
     state: present
   register: add_fabric_pod_setup
@@ -61,6 +73,15 @@
     - add_fabric_pod_setup.current.0.fabricSetupP.attributes.tepPool == "10.77.0.0/16"
     - add_fabric_pod_setup.current.0.fabricSetupP.attributes.descr == "Ansible test pod setup"
     - add_fabric_pod_setup.current.0.fabricSetupP.attributes.annotation == 'orchestrator:ansible'
+    - add_fabric_pod_setup_cm is changed
+    - add_fabric_pod_setup_cm.previous == []
+    - add_fabric_pod_setup_cm.current == []
+    - add_fabric_pod_setup_cm.proposed.fabricSetupP.attributes.dn == "uni/controller/setuppol/setupp-77"
+    - add_fabric_pod_setup_cm.proposed.fabricSetupP.attributes.podId == "77"
+    - add_fabric_pod_setup_cm.proposed.fabricSetupP.attributes.podType == "physical"
+    - add_fabric_pod_setup_cm.proposed.fabricSetupP.attributes.tepPool == "10.77.0.0/16"
+    - add_fabric_pod_setup_cm.proposed.fabricSetupP.attributes.descr == "Ansible test pod setup"
+    - add_fabric_pod_setup_cm.proposed.fabricSetupP.attributes.annotation == 'orchestrator:ansible'
 
 # CREATE FABRIC SETUP POD AGAIN TO TEST IDEMPOTENCE
 - name: Create ansible_fabric_pod_setup again
@@ -68,6 +89,7 @@
     <<: *aci_info
     pod_id: 77
     pool: 10.77.0.0/16
+    type: physical
     description: Ansible test pod setup
     state: present
   register: add_fabric_pod_setup_again
@@ -113,12 +135,20 @@
     - query_pod_profile_all is not changed
 
 # DELETE POD SETUP
+- name: Delete pod setup with check mode
+  cisco.aci.aci_fabric_setup_pod:
+    <<: *aci_info
+    pod_id: 77
+    state: absent
+  check_mode: true
+  register: delete_pod_setup_cm
+
 - name: Delete pod setup
   cisco.aci.aci_fabric_setup_pod:
     <<: *aci_info
     pod_id: 77
     state: absent
-  register: delete_pod_setup_1
+  register: delete_pod_setup
 
 - name: Sleep for 15 seconds and continue
   ansible.builtin.wait_for:
@@ -128,13 +158,21 @@
 - name: Verify pod setup deletion
   ansible.builtin.assert:
     that:
-    - delete_pod_setup_1 is changed
-    - delete_pod_setup_1.current == []
-    - delete_pod_setup_1.previous.0.fabricSetupP.attributes.dn == "uni/controller/setuppol/setupp-77"
-    - delete_pod_setup_1.previous.0.fabricSetupP.attributes.podId == "77"
-    - delete_pod_setup_1.previous.0.fabricSetupP.attributes.podType == "physical"
-    - delete_pod_setup_1.previous.0.fabricSetupP.attributes.tepPool == "10.77.0.0/16"
-    - delete_pod_setup_1.previous.0.fabricSetupP.attributes.descr == "Ansible test pod setup"
+    - delete_pod_setup is changed
+    - delete_pod_setup.current == []
+    - delete_pod_setup.previous.0.fabricSetupP.attributes.dn == "uni/controller/setuppol/setupp-77"
+    - delete_pod_setup.previous.0.fabricSetupP.attributes.podId == "77"
+    - delete_pod_setup.previous.0.fabricSetupP.attributes.podType == "physical"
+    - delete_pod_setup.previous.0.fabricSetupP.attributes.tepPool == "10.77.0.0/16"
+    - delete_pod_setup.previous.0.fabricSetupP.attributes.descr == "Ansible test pod setup"
+    - delete_pod_setup_cm  is changed
+    - delete_pod_setup_cm.current != []
+    - delete_pod_setup_cm.previous.0.fabricSetupP.attributes.dn == "uni/controller/setuppol/setupp-77"
+    - delete_pod_setup_cm.previous.0.fabricSetupP.attributes.podId == "77"
+    - delete_pod_setup_cm.previous.0.fabricSetupP.attributes.podType == "physical"
+    - delete_pod_setup_cm.previous.0.fabricSetupP.attributes.tepPool == "10.77.0.0/16"
+    - delete_pod_setup_cm.previous.0.fabricSetupP.attributes.descr == "Ansible test pod setup"
+    - delete_pod_setup_cm.proposed == {}
 
 # DELETE POD SETUP AGAIN TO TEST IDEMPOTENCE
 - name: Delete pod setup again

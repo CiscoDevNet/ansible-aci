@@ -39,6 +39,17 @@
     state: absent
 
 # CREATE EXTERNAL TEP
+- name: Create an external tep with check mode
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    address_count: 5
+    status: active
+    state: present
+  check_mode: true
+  register: add_external_tep_cm
+
 - name: Create an external tep
   cisco.aci.aci_fabric_pod_external_tep:
     <<: *aci_info
@@ -58,6 +69,14 @@
     - add_external_tep.current.0.fabricExtRoutablePodSubnet.attributes.reserveAddressCount == "5"
     - add_external_tep.current.0.fabricExtRoutablePodSubnet.attributes.state == "active"
     - add_external_tep.current.0.fabricExtRoutablePodSubnet.attributes.annotation == "orchestrator:ansible"
+    - add_external_tep_cm is changed
+    - add_external_tep_cm.previous == []
+    - add_external_tep_cm.current == []
+    - add_external_tep_cm.proposed.fabricExtRoutablePodSubnet.attributes.dn == "uni/controller/setuppol/setupp-1/extrtpodsubnet-[10.66.22.0/24]"
+    - add_external_tep_cm.proposed.fabricExtRoutablePodSubnet.attributes.pool == "10.66.22.0/24"
+    - add_external_tep_cm.proposed.fabricExtRoutablePodSubnet.attributes.reserveAddressCount == "5"
+    - add_external_tep_cm.proposed.fabricExtRoutablePodSubnet.attributes.state == "active"
+    - add_external_tep_cm.proposed.fabricExtRoutablePodSubnet.attributes.annotation == "orchestrator:ansible"
 
 # CREATE FABRIC POD PROFILE AGAIN TO TEST IDEMPOTENCE
 - name: Create an external tep again
@@ -139,6 +158,15 @@
   register: external_tep_inactive
 
 # DELETE EXTERNAL TEP
+- name: Delete inactive external tep with check mode
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    state: absent
+  check_mode: true
+  register: delete_external_tep_cm
+
 - name: Delete inactive external tep
   cisco.aci.aci_fabric_pod_external_tep:
     <<: *aci_info
@@ -158,6 +186,13 @@
     - delete_external_tep.previous.0.fabricExtRoutablePodSubnet.attributes.pool == "10.66.22.0/24"
     - delete_external_tep.previous.0.fabricExtRoutablePodSubnet.attributes.reserveAddressCount == "5"
     - delete_external_tep.previous.0.fabricExtRoutablePodSubnet.attributes.state == "inactive"
+    - delete_external_tep_cm is changed
+    - delete_external_tep_cm.current != []
+    - delete_external_tep_cm.previous.0.fabricExtRoutablePodSubnet.attributes.dn == "uni/controller/setuppol/setupp-1/extrtpodsubnet-[10.66.22.0/24]"
+    - delete_external_tep_cm.previous.0.fabricExtRoutablePodSubnet.attributes.pool == "10.66.22.0/24"
+    - delete_external_tep_cm.previous.0.fabricExtRoutablePodSubnet.attributes.reserveAddressCount == "5"
+    - delete_external_tep_cm.previous.0.fabricExtRoutablePodSubnet.attributes.state == "inactive"
+    - delete_external_tep_cm.proposed == {}
 
 # DELETE AGAIN TO TEST IDEMPOTENCE
 - name: Delete inactive external tep again

@@ -28,6 +28,15 @@
     state: absent
 
 # CREATE FABRIC POD PROFILE
+- name: Create ansible_fabric_pod_profile with check mode
+  cisco.aci.aci_fabric_pod_profile:
+    <<: *aci_info
+    name: ansible_fabric_pod_profile
+    description: Ansible test pod profile
+    state: present
+  check_mode: true
+  register: add_fabric_pod_profile_cm
+
 - name: Create ansible_fabric_pod_profile
   cisco.aci.aci_fabric_pod_profile:
     <<: *aci_info
@@ -40,10 +49,18 @@
   ansible.builtin.assert:
     that:
     - add_fabric_pod_profile is changed
+    - add_fabric_pod_profile.previous == []
     - add_fabric_pod_profile.current.0.fabricPodP.attributes.dn == "uni/fabric/podprof-ansible_fabric_pod_profile"
     - add_fabric_pod_profile.current.0.fabricPodP.attributes.name == "ansible_fabric_pod_profile"
     - add_fabric_pod_profile.current.0.fabricPodP.attributes.descr == "Ansible test pod profile"
     - add_fabric_pod_profile.current.0.fabricPodP.attributes.annotation == 'orchestrator:ansible'
+    - add_fabric_pod_profile_cm is changed
+    - add_fabric_pod_profile_cm.previous == []
+    - add_fabric_pod_profile_cm.current == []
+    - add_fabric_pod_profile_cm.proposed.fabricPodP.attributes.dn == "uni/fabric/podprof-ansible_fabric_pod_profile"
+    - add_fabric_pod_profile_cm.proposed.fabricPodP.attributes.name == "ansible_fabric_pod_profile"
+    - add_fabric_pod_profile_cm.proposed.fabricPodP.attributes.descr == "Ansible test pod profile"
+    - add_fabric_pod_profile_cm.proposed.fabricPodP.attributes.annotation == 'orchestrator:ansible'
 
 # CREATE FABRIC POD PROFILE AGAIN TO TEST IDEMPOTENCE
 - name: Create ansible_fabric_pod_profile again
@@ -91,6 +108,14 @@
     - query_pod_profile_all is not changed
 
 # DELETE POD PROFILE
+- name: Delete ansible_fabric_pod_profile with check mode
+  cisco.aci.aci_fabric_pod_profile:
+    <<: *aci_info
+    name: ansible_fabric_pod_profile
+    state: absent
+  check_mode: true
+  register: delete_pod_profile_cm
+
 - name: Delete ansible_fabric_pod_profile
   cisco.aci.aci_fabric_pod_profile:
     <<: *aci_info
@@ -106,6 +131,12 @@
     - delete_pod_profile.previous.0.fabricPodP.attributes.dn == "uni/fabric/podprof-ansible_fabric_pod_profile"
     - delete_pod_profile.previous.0.fabricPodP.attributes.name == "ansible_fabric_pod_profile"
     - delete_pod_profile.previous.0.fabricPodP.attributes.descr == "Ansible test pod profile"
+    - delete_pod_profile_cm is changed
+    - delete_pod_profile_cm.current != []
+    - delete_pod_profile_cm.previous.0.fabricPodP.attributes.dn == "uni/fabric/podprof-ansible_fabric_pod_profile"
+    - delete_pod_profile_cm.previous.0.fabricPodP.attributes.name == "ansible_fabric_pod_profile"
+    - delete_pod_profile_cm.previous.0.fabricPodP.attributes.descr == "Ansible test pod profile"
+    - delete_pod_profile_cm.proposed == {}
 
 # DELETE POD PROFILE AGAIN TO TEST IDEMPOTENCE
 - name: Delete ansible_fabric_pod_profile again

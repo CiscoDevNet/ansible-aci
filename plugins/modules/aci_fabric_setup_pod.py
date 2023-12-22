@@ -34,7 +34,7 @@ options:
     description:
     - The TEP address pool for the Fabric Setup Pod.
     - Must be valid IPv4 or IPv6 and include the subnet mask.
-    - Example: 192.168.1.0/24 or 2001:db8:abcd:0012::0/64
+    - Example 192.168.1.0/24 or 2001:db8:abcd:0012::0/64
     type: str
     aliases: [ tep, pool ]
   description:
@@ -48,6 +48,7 @@ options:
     - Use C(query) for listing an object or multiple objects.
     type: str
     choices: [ absent, present, query ]
+    default: present
   name_alias:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.

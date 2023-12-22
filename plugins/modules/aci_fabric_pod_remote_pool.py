@@ -40,7 +40,7 @@ options:
     description:
     - The subnet IP address pool for the Remote Pool.
     - Must be valid IPv4 or IPv6 and include the subnet mask.
-    - Example: 192.168.1.0/24 or 2001:db8:abcd:0012::0/64
+    - Example 192.168.1.0/24 or 2001:db8:abcd:0012::0/64
     type: str
     aliases: [ pool ]
   state:

@@ -35,7 +35,8 @@ options:
     description:
     - The subnet IP address pool for the External TEP.
     - Must be valid IPv4 or IPv6 and include the subnet mask.
-    - Example: 192.168.1.0/24 or 2001:db8:abcd:0012::0/64
+    - Example 192.168.1.0/24 or 2001:db8:abcd:0012::0/64
+    type: str
     aliases: [ ip, ip_address, tep_pool ]
   reserve_address_count:
     description:
@@ -44,7 +45,7 @@ options:
     aliases: [ address_count ]
   status:
     description:
-    - State of the External TEP C(active) or C(inactive)
+    - State of the External TEP C(active) or C(inactive).
     - An External TEP can only be deleted when the state is inactive.
     - The APIC defaults to C(active) when unset during creation.
     type: str
