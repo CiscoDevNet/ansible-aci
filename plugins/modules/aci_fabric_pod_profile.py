@@ -61,15 +61,6 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Remove a pod profile
-  cisco.aci.aci_fabric_pod_profile:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    name: ans_pod_profile
-    state: absent
-  delegate_to: localhost
-
 - name: Query a pod profile
   cisco.aci.aci_fabric_pod_profile:
     host: apic
@@ -88,6 +79,15 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Remove a pod profile
+  cisco.aci.aci_fabric_pod_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: ans_pod_profile
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""

@@ -77,15 +77,6 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Remove a fabric setup policy for a pod
-  cisco.aci.aci_fabric_setup_pod:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    pod_id: 1
-    state: absent
-  delegate_to: localhost
-
 - name: Query the fabric setup policy for a pod
   cisco.aci.aci_fabric_setup_pod:
     host: apic
@@ -104,6 +95,15 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Remove a fabric setup policy for a pod
+  cisco.aci.aci_fabric_setup_pod:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    pod_id: 1
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""

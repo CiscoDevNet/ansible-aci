@@ -75,16 +75,6 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete a Remote Pool from a pod fabic setup policy
-  cisco.aci.aci_fabric_pod_external_tep:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    pod_id: 2
-    remote_id: 1
-    state: absent
-  delegate_to: localhost
-
 - name: Query the Remote Pool on a pod fabic setup policy
   cisco.aci.aci_fabric_pod_remote_pool:
     host: apic
@@ -104,6 +94,16 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Delete a Remote Pool from a pod fabic setup policy
+  cisco.aci.aci_fabric_pod_external_tep:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    pod_id: 2
+    remote_id: 1
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
@@ -257,7 +257,10 @@ def main():
             target_filter={"podId": pod_id},
         ),
         subclass_1=dict(
-            aci_class="fabricExtSetupP", aci_rn="extsetupp-{0}".format(remote_id), module_object=remote_id, target_filter={"extPoolId": remote_id}
+            aci_class="fabricExtSetupP",
+            aci_rn="extsetupp-{0}".format(remote_id),
+            module_object=remote_id,
+            target_filter={"extPoolId": remote_id},
         ),
     )
 

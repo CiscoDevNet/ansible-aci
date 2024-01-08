@@ -97,16 +97,6 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete an External TEP on a pod fabic setup policy
-  cisco.aci.aci_fabric_pod_external_tep:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    pod_id: 2
-    pool: 10.6.1.0/24
-    state: absent
-  delegate_to: localhost
-
 - name: Query the External TEP on a pod fabic setup policy
   cisco.aci.aci_fabric_pod_external_tep:
     host: apic
@@ -126,6 +116,16 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Delete an External TEP on a pod fabic setup policy
+  cisco.aci.aci_fabric_pod_external_tep:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    pod_id: 2
+    pool: 10.6.1.0/24
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
