@@ -389,26 +389,28 @@ def main():
                 if class_input == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
                     for child in aci.existing[0].get("pimIfPol", {}).get("children", {}):
                         if child.get(class_name):
-                            child_configs.append(
-                                dict([(class_name, dict(attributes=dict(status="deleted")))])
-                            )
+                            child_configs.append(dict([(class_name, dict(attributes=dict(status="deleted")))]))
                 elif class_input != "":
                     child_configs.append(
-                        dict([(
-                            class_name,
-                            dict(
-                                attributes=dict(),
-                                children=[
+                        dict(
+                            [
+                                (
+                                    class_name,
                                     dict(
-                                        rtdmcRsFilterToRtMapPol=dict(
-                                            attributes=dict(
-                                                tDn="uni/tn-{0}/rtmap-{1}".format(tenant, class_input),
-                                            ),
-                                        )
-                                    )
-                                ],
-                            )
-                        )])
+                                        attributes=dict(),
+                                        children=[
+                                            dict(
+                                                rtdmcRsFilterToRtMapPol=dict(
+                                                    attributes=dict(
+                                                        tDn="uni/tn-{0}/rtmap-{1}".format(tenant, class_input),
+                                                    ),
+                                                )
+                                            )
+                                        ],
+                                    ),
+                                )
+                            ]
+                        )
                     )
 
         aci.payload(
