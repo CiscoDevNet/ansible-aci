@@ -67,16 +67,6 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete an PIM Route Map policy
-  cisco.aci.aci_pim_route_map_policy:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: my_tenant
-    pim_route_map_policy: my_pim_route_map_policy
-    state: absent
-  delegate_to: localhost
-
 - name: Query a PIM Route Map policy
   cisco.aci.aci_pim_route_map_policy:
     host: apic
@@ -97,6 +87,16 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Delete a PIM Route Map policy
+  cisco.aci.aci_pim_route_map_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    pim_route_map_policy: my_pim_route_map_policy
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""

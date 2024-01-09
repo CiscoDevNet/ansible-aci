@@ -17,7 +17,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
@@ -125,7 +125,7 @@
         - cm_remove_pim_route_map_policy.proposed == {}
         - nm_remove_pim_route_map_policy is changed
         - nm_remove_pim_route_map_policy.previous != []
-        - nm_remove_pim_route_map_policy.method == "DELETE"
+        - nm_remove_pim_route_map_policy.current == []
         - nm_remove_pim_route_map_policy_idempotency is not changed
         - nm_remove_pim_route_map_policy_idempotency.previous == []
 
