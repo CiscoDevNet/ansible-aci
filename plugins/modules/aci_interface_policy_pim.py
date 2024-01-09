@@ -133,7 +133,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create an PIM interface policy
+- name: Create a PIM interface policy
   cisco.aci.aci_interface_policy_pim:
     host: apic
     username: admin
@@ -148,16 +148,6 @@ EXAMPLES = r"""
     inbound_join_prune_filter_policy: my_pim_route_map_policy_1
     outbound_join_prune_filter_policy: my_pim_route_map_policy_2
     neighbor_filter_policy: my_pim_route_map_policy_3
-    state: present
-  delegate_to: localhost
-
-- name: Delete PIM interface policy
-  cisco.aci.aci_interface_policy_pim:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: production
-    pim: my_pim_policy
     state: present
   delegate_to: localhost
 
@@ -181,6 +171,16 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Delete a PIM interface policy
+  cisco.aci.aci_interface_policy_pim:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: production
+    pim: my_pim_policy
+    state: present
+  delegate_to: localhost
 """
 
 RETURN = r"""
@@ -390,16 +390,13 @@ def main():
                     for child in aci.existing[0].get("pimIfPol", {}).get("children", {}):
                         if child.get(class_name):
                             child_configs.append(
-                                {
-                                    class_name: dict(
-                                        attributes=dict(status="deleted"),
-                                    ),
-                                }
+                                dict([(class_name, dict(attributes=dict(status="deleted")))])
                             )
                 elif class_input != "":
                     child_configs.append(
-                        {
-                            class_name: dict(
+                        dict([(
+                            class_name,
+                            dict(
                                 attributes=dict(),
                                 children=[
                                     dict(
@@ -411,7 +408,7 @@ def main():
                                     )
                                 ],
                             )
-                        }
+                        )])
                     )
 
         aci.payload(

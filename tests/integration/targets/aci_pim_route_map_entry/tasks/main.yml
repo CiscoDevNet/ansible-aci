@@ -17,7 +17,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
@@ -47,6 +47,7 @@
       description: PIM route map policy 1 for ansible_tenant tenant
       state: present
 
+  # CREATION TASKS
   - name: Add a PIM route map entry (check_mode)
     cisco.aci.aci_pim_route_map_entry: &aci_pim_route_map_entry_present
       <<: *aci_info
@@ -100,6 +101,7 @@
         - nm_add_pim_route_map_entry_2.current.0.pimRouteMapEntry.attributes.order == "2"
         - nm_add_pim_route_map_entry_2.current.0.pimRouteMapEntry.attributes.action == "permit"
 
+  # QUERY TASKS
   - name: Query all PIM route map entries
     cisco.aci.aci_pim_route_map_entry:
       <<: *aci_info
@@ -124,9 +126,45 @@
         - query_ansible_pim_route_map_entry_1.current.0.pimRouteMapEntry.attributes.rp == "1.1.1.2"
         - query_ansible_pim_route_map_entry_1.current.0.pimRouteMapEntry.attributes.src == "1.1.1.1/24"
 
+  # UPDATE TASKS
+  - name: Update first PIM route map entry (check_mode)
+    cisco.aci.aci_pim_route_map_entry: &aci_pim_route_map_entry_update
+      <<: *aci_pim_route_map_entry_present
+      order: 3
+      source_ip: 1.1.1.3/24
+      group_ip: 224.0.0.3/24
+      rp_ip: 1.1.1.3
+      action: permit
+    check_mode: true
+    register: cm_update_pim_route_map_entry
+
+  - name: Update first PIM route map entry (normal_mode)
+    cisco.aci.aci_pim_route_map_entry:
+      <<: *aci_pim_route_map_entry_update
+    register: nm_update_pim_route_map_entry
+
+  - name: Update first PIM route map entry again - testing idempotency
+    cisco.aci.aci_pim_route_map_entry:
+      <<: *aci_pim_route_map_entry_update
+    register: nm_update_pim_route_map_entry_idempotency
+
+  - name: Asserts for PIM route map entry update tasks
+    ansible.builtin.assert:
+      that:
+        - cm_update_pim_route_map_entry is changed
+        - cm_update_pim_route_map_entry.previous == cm_update_pim_route_map_entry.current
+        - nm_update_pim_route_map_entry is changed
+        - nm_update_pim_route_map_entry.current.0.pimRouteMapEntry.attributes.order == "3"
+        - nm_update_pim_route_map_entry.current.0.pimRouteMapEntry.attributes.action == "permit"
+        - nm_update_pim_route_map_entry.current.0.pimRouteMapEntry.attributes.grp == "224.0.0.3/24"
+        - nm_update_pim_route_map_entry.current.0.pimRouteMapEntry.attributes.rp == "1.1.1.3"
+        - nm_update_pim_route_map_entry.current.0.pimRouteMapEntry.attributes.src == "1.1.1.3/24"
+        - nm_update_pim_route_map_entry_idempotency is not changed
+
+  # DELETION TASKS
   - name: Remove PIM route map entry (check_mode)
     cisco.aci.aci_pim_route_map_entry: &pim_route_map_entry_absent
-      <<: *aci_pim_route_map_entry_present
+      <<: *aci_pim_route_map_entry_update
       state: absent
     check_mode: true
     register: cm_remove_pim_route_map_entry
@@ -148,7 +186,7 @@
         - cm_remove_pim_route_map_entry.proposed == {}
         - nm_remove_pim_route_map_entry is changed
         - nm_remove_pim_route_map_entry.previous != []
-        - nm_remove_pim_route_map_entry.method == "DELETE"
+        - nm_remove_pim_route_map_entry.current == []
         - nm_remove_pim_route_map_entry_idempotency is not changed
         - nm_remove_pim_route_map_entry_idempotency.previous == []
 
