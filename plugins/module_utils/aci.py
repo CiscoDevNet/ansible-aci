@@ -1482,16 +1482,16 @@ class ACIModule(object):
         for child in child_configs:
             child_copy = deepcopy(child)
             has_value = False
-            for root_key in child_copy.keys():
-                for final_keys, values in child_copy[root_key]["attributes"].items():
+            for class_name in child_copy.keys():
+                for attribute, values in child_copy[class_name]["attributes"].items():
                     if values is None:
-                        child[root_key]["attributes"].pop(final_keys)
+                        child[class_name]["attributes"].pop(attribute)
                     else:
-                        child[root_key]["attributes"][final_keys] = str(values)
+                        child[class_name]["attributes"][attribute] = str(values)
                         has_value = True
-                if child_copy[root_key].get("children") is not None:
+                if child_copy[class_name].get("children") is not None:
                     has_value = True
-                    child[root_key]["children"] = self.handle_child_configs(child_copy[root_key]["children"])
+                    child[class_name]["children"] = self.handle_child_configs(child_copy[class_name]["children"])
             if has_value:
                 children.append(child)
         return children
