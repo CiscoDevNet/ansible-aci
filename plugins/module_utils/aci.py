@@ -1483,11 +1483,11 @@ class ACIModule(object):
             child_copy = deepcopy(child)
             has_value = False
             for class_name in child_copy.keys():
-                for attribute, values in child_copy[class_name]["attributes"].items():
-                    if values is None:
+                for attribute, value in child_copy[class_name]["attributes"].items():
+                    if value is None:
                         child[class_name]["attributes"].pop(attribute)
                     else:
-                        child[class_name]["attributes"][attribute] = str(values)
+                        child[class_name]["attributes"][attribute] = str(value)
                         has_value = True
                 if child_copy[class_name].get("children") is not None:
                     has_value = True
