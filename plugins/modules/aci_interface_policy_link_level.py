@@ -38,7 +38,7 @@ options:
     - Determines the interface policy administrative port speed.
     - The APIC defaults to C(inherit) when unset during creation.
     type: str
-    choices: [ 100M, 1G, 10G, 25G, 40G, 50G, 100G, 200G, 400G, inherit ]
+    choices: [ 100M, 1G, 10G, 25G, 40G, 50G, 100G, 200G, 400G, auto, inherit ]
     default: inherit
   link_debounce_interval:
     description:
