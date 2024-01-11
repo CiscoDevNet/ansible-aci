@@ -242,6 +242,8 @@
       - add_enhanced.current.0.l3extRsDynPathAtt.attributes.promMode == "Enabled"
       - add_enhanced.current.0.l3extRsDynPathAtt.children.0.l3extVirtualLIfPLagPolAtt.children.0.l3extRsVSwitchEnhancedLagPol.attributes.tDn == "uni/vmmp-VMware/dom-vmm_dom/vswitchpolcont/enlacplagp-enhanced"
       - change_enhanced.current.0.l3extRsDynPathAtt.children.0.l3extVirtualLIfPLagPolAtt.children.0.l3extRsVSwitchEnhancedLagPol.attributes.tDn == "uni/vmmp-VMware/dom-vmm_dom/vswitchpolcont/enlacplagp-enhanced2"
+      - add_enhanced.sent.l3extRsDynPathAtt.children.0.l3extVirtualLIfPLagPolAtt.children.0.l3extRsVSwitchEnhancedLagPol.attributes.tDn == "uni/vmmp-VMware/dom-vmm_dom/vswitchpolcont/enlacplagp-enhanced"
+      - change_enhanced.sent.l3extRsDynPathAtt.children.0.l3extVirtualLIfPLagPolAtt.children.0.l3extRsVSwitchEnhancedLagPol.attributes.tDn == "uni/vmmp-VMware/dom-vmm_dom/vswitchpolcont/enlacplagp-enhanced2"
       - del_enhanced.current.0.l3extRsDynPathAtt.children is not defined
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
