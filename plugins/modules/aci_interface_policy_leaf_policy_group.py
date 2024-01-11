@@ -624,34 +624,6 @@ def main():
                 ),
             ),
         ),
-        dict(
-            infraRsLinkFlapPol=dict(
-                attributes=dict(
-                    tnFabricLinkFlapPolName=link_flap_policy,
-                ),
-            ),
-        ),
-        dict(
-            infraRsQosLlfcIfPol=dict(
-                attributes=dict(
-                    tnQosLlfcIfPolName=link_level_flow_control,
-                ),
-            ),
-        ),
-        dict(
-            infraRsMacsecIfPol=dict(
-                attributes=dict(
-                    tnMacsecIfPolName=mac_sec_interface_policy,
-                ),
-            ),
-        ),
-        dict(
-            infraRsCoppIfPol=dict(
-                attributes=dict(
-                    tnCoppIfPolName=copp_policy,
-                ),
-            ),
-        ),
     ]
 
     child_classes = [
@@ -671,10 +643,6 @@ def main():
         "infraRsQosSdIfPol",
         "infraRsStormctrlIfPol",
         "infraRsStpIfPol",
-        "infraRsLinkFlapPol",
-        "infraRsQosLlfcIfPol",
-        "infraRsMacsecIfPol",
-        "infraRsCoppIfPol",
     ]
 
     # Add infraRsattEntP binding only when aep is defined
@@ -728,6 +696,7 @@ def main():
                 )
             )
             child_classes.append("infraRsOpticsIfPol")
+
         if dwdm is not None:
             child_configs.append(
                 dict(
@@ -739,6 +708,7 @@ def main():
                 )
             )
             child_classes.append("infraRsDwdmIfPol")
+
         if port_authentication is not None:
             child_configs.append(
                 dict(
@@ -750,6 +720,7 @@ def main():
                 )
             )
             child_classes.append("infraRsL2PortAuthPol")
+
         if poe_interface_policy is not None:
             child_configs.append(
                 dict(
@@ -761,6 +732,54 @@ def main():
                 )
             )
             child_classes.append("infraRsPoeIfPol")
+
+    if link_flap_policy is not None:
+        child_configs.append(
+            dict(
+                infraRsLinkFlapPol=dict(
+                    attributes=dict(
+                        tnFabricLinkFlapPolName=link_flap_policy,
+                    ),
+                ),
+            ),
+        )
+        child_classes.append("infraRsLinkFlapPol")
+
+    if link_level_flow_control is not None:
+        child_configs.append(
+            dict(
+                infraRsQosLlfcIfPol=dict(
+                    attributes=dict(
+                        tnQosLlfcIfPolName=link_level_flow_control,
+                    ),
+                ),
+            ),
+        )
+        child_classes.append("infraRsQosLlfcIfPol")
+
+    if mac_sec_interface_policy is not None:
+        child_configs.append(
+            dict(
+                infraRsMacsecIfPol=dict(
+                    attributes=dict(
+                        tnMacsecIfPolName=mac_sec_interface_policy,
+                    ),
+                ),
+            ),
+        )
+        child_classes.append("infraRsMacsecIfPol")
+
+    if copp_policy is not None:
+        child_configs.append(
+            dict(
+                infraRsCoppIfPol=dict(
+                    attributes=dict(
+                        tnCoppIfPolName=copp_policy,
+                    ),
+                ),
+            ),
+        )
+        child_classes.append("infraRsCoppIfPol")
 
     aci.construct_url(
         root_class=dict(
