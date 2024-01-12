@@ -88,6 +88,14 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
 
+- name: Query all QoS Custom Policies
+  cisco.aci.aci_qos_custom_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+
 - name: Delete a QoS Custom Policy
   cisco.aci.aci_qos_custom_policy:
     host: apic

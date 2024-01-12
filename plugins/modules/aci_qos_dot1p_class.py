@@ -121,6 +121,14 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
 
+- name: Query all QoS dot1P Classes
+  cisco.aci.aci_qos_dot1p_class:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+
 - name: Delete a QoS dot1P Class
   cisco.aci.aci_qos_dot1p_class:
     host: apic
