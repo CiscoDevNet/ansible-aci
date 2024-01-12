@@ -147,7 +147,7 @@
           <<: *interface_policy_link_level_present
           speed: "{{ item }}"
         check_mode: true
-        loop: ["100M", "1G", "10G", "25G", "40G", "50G", "100G", "200G", "400G", "auto", "inherit"]
+        loop: ["100M", "1G", "10G", "25G", "40G", "50G", "100G", "200G", "400G", "auto"]
         register: cm_add_policy_speed
         loop_control:
           label: "speed-{{ item }}"
@@ -161,7 +161,7 @@
         loop_control:
           label: "speed-{{ item }}"
     
-      - name: Verify each speed setting
+      - name: Verify each speed setting (normal mode)
         ansible.builtin.assert:
           that:
             - "item.1.current.0.fabricHIfPol.attributes.speed == item.0"
@@ -169,6 +169,14 @@
         loop: "{{ ['100M', '1G', '10G', '25G', '40G', '50G', '100G', '200G', '400G', 'auto', 'inherit'] | zip(nm_add_policy_speed.results) }}"
         loop_control:
           label: "speed-{{ item.0 }}"
+
+      - name: Verify each speed setting (check mode)
+        ansible.builtin.assert:
+          that:
+            - item is changed
+        loop: "{{ cm_add_policy_speed.results }}"
+        loop_control:
+          label: "speed-{{ item }}"
 
   # QUERY ALL LINK LEVEL POLICIES
   - name: Query all Link Level Policies (check mode)
