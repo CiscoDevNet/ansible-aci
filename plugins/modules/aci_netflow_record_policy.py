@@ -39,7 +39,8 @@ options:
     - The match parameters for the flow record.
     type: list
     elements: str
-    choices: [ destination_ipv4_v6, destination_ipv4, destination_ipv6, destination_mac, destination_port, ethertype, ip_protocol, source_ipv4_v6, source_ipv4, source_ipv6, source_mac, source_port, ip_tos, unspecified, vlan ]
+    choices: [ destination_ipv4_v6, destination_ipv4, destination_ipv6, destination_mac, destination_port, ethertype, ip_protocol, source_ipv4_v6,
+    source_ipv4, source_ipv6, source_mac, source_port, ip_tos, unspecified, vlan ]
   description:
     description:
     - The description for the Netflow Record Policy.
@@ -77,6 +78,8 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     tenant: my_tenant
     netflow_record_policy: my_netflow_record_policy
+    collect: [pkts_counter, pkt_disposition]
+    match: [destination_ipv4, source_ipv4]
     state: present
   delegate_to: localhost
 
@@ -255,8 +258,16 @@ def main():
     description = module.params.get("description")
     netflow_record_policy = module.params.get("netflow_record_policy")
     state = module.params.get("state")
-    collect = ",".join(sorted(MATCH_COLLECT_NETFLOW_RECORD_MAPPING.get(v) for v in module.params.get("collect"))) if module.params.get("collect") is not None else None
-    match = ",".join(sorted(MATCH_MATCH_NETFLOW_RECORD_MAPPING.get(v) for v in module.params.get("match"))) if module.params.get("match") is not None else None
+
+    if module.params.get("collect") is not None:
+        collect = ",".join(sorted(MATCH_COLLECT_NETFLOW_RECORD_MAPPING.get(v) for v in module.params.get("collect")))
+    else:
+        collect = None
+
+    if module.params.get("match") is not None:
+        match = ",".join(sorted(MATCH_MATCH_NETFLOW_RECORD_MAPPING.get(v) for v in module.params.get("match")))
+    else:
+        match = None
 
     aci = ACIModule(module)
 

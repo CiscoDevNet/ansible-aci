@@ -69,6 +69,7 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     tenant: my_tenant
     netflow_monitor_policy: my_netflow_monitor_policy
+    netflow_record_policy: my_netflow_record_policy
     state: present
   delegate_to: localhost
 
