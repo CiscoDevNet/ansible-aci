@@ -245,12 +245,7 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import (
-    ACIModule, aci_argument_spec,
-    aci_annotation_spec,
-    aci_owner_spec,
-    aci_contract_dscp_spec
-)
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec, aci_contract_dscp_spec
 from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING
 
 
