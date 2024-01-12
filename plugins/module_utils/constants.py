@@ -221,3 +221,10 @@ MATCH_MATCH_NETFLOW_RECORD_MAPPING = dict(
     unspecified="unspecified",
     vlan="vlan",
 )
+
+MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING = dict(
+    custom_source_ip="custom-src-ip",
+    inband_management_ip="inband-mgmt-ip",
+    out_of_band_management_ip="oob-mgmt-ip",
+    ptep="ptep",
+)
