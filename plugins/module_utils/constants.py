@@ -216,7 +216,7 @@ ACI_CLASS_MAPPING = dict(
         "class": "fvRsProtBy",
         "rn": "rsprotBy-",
         "name": "tnVzTabooName",
-        },
+    },
     interface={
         "class": "fvRsConsIf",
         "rn": "rsconsIf-",
