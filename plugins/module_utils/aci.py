@@ -1472,25 +1472,29 @@ class ACIModule(object):
 
         # add child objects to proposed
         if child_configs:
-            children = []
-            for child in child_configs:
-                child_copy = deepcopy(child)
-                has_value = False
-                for root_key in child_copy.keys():
-                    for final_keys, values in child_copy[root_key]["attributes"].items():
-                        if values is None:
-                            child[root_key]["attributes"].pop(final_keys)
-                        else:
-                            child[root_key]["attributes"][final_keys] = str(values)
-                            has_value = True
-                    # TODO: This needs to be recursive in order to handle attributes and the children of the subsequent children of the child
-                    if child_copy[root_key].get("children") is not None:
-                        has_value = True
-                if has_value:
-                    children.append(child)
+            children = self.handle_child_configs(child_configs)
 
             if children:
                 self.proposed[aci_class].update(dict(children=children))
+
+    def handle_child_configs(self, child_configs):
+        children = []
+        for child in child_configs:
+            child_copy = deepcopy(child)
+            has_value = False
+            for class_name in child_copy.keys():
+                for attribute, value in child_copy[class_name]["attributes"].items():
+                    if value is None:
+                        child[class_name]["attributes"].pop(attribute)
+                    else:
+                        child[class_name]["attributes"][attribute] = str(value)
+                        has_value = True
+                if child_copy[class_name].get("children") is not None:
+                    has_value = True
+                    child[class_name]["children"] = self.handle_child_configs(child_copy[class_name]["children"])
+            if has_value:
+                children.append(child)
+        return children
 
     def post_config(self, parent_class=None):
         """
