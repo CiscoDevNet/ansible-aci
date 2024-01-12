@@ -373,7 +373,7 @@
         - binding_query is not changed
         - binding_query.current | length >= 1
         - '"/api/mo/uni/infra/funcprof/accportgrp-policygroupname_leaf.json" in binding_query.url'
-        - binding_query.current.0.infraAccPortGrp.children.14.infraRsAttEntP.attributes.tDn == "uni/infra/attentp-test_aep"
+        - binding_query.current.0.infraAccPortGrp.children.10.infraRsAttEntP.attributes.tDn == "uni/infra/attentp-test_aep"
 
   - name: Remove interface policy leaf policy group (Leaf Access Port) - check mode
     cisco.aci.aci_interface_policy_leaf_policy_group:
