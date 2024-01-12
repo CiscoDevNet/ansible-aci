@@ -168,7 +168,7 @@
           quiet: true
         loop: "{{ ['100M', '1G', '10G', '25G', '40G', '50G', '100G', '200G', '400G', 'auto', 'inherit'] | zip(nm_add_policy_speed.results) }}"
         loop_control:
-          label: "speed-{{ item }}"
+          label: "speed-{{ item.0 }}"
 
   # QUERY ALL LINK LEVEL POLICIES
   - name: Query all Link Level Policies (check mode)
