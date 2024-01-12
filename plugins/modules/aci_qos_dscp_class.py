@@ -121,6 +121,14 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
 
+- name: Query all QoS DSCP Classes
+  cisco.aci.aci_qos_dscp_class:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+
 - name: Delete a QoS DSCP Class
   cisco.aci.aci_qos_dscp_class:
     host: apic
