@@ -192,3 +192,32 @@ MATCH_TARGET_COS_MAPPING = {
 MATCH_PIM_INTERFACE_POLICY_CONTROL_STATE_MAPPING = dict(multicast_domain_boundary="border", strict_rfc_compliant="strict-rfc-compliant", passive="passive")
 
 MATCH_PIM_INTERFACE_POLICY_AUTHENTICATION_TYPE_MAPPING = dict(none="none", md5_hmac="ah-md5")
+
+MATCH_COLLECT_NETFLOW_RECORD_MAPPING = dict(
+    bytes_counter="count-bytes",
+    pkts_counter="count-pkts",
+    pkt_disposition="pkt-disp",
+    sampler_id="sampler-id",
+    source_interface="src-intf",
+    tcp_flags="tcp-flags",
+    first_pkt_timestamp="ts-first",
+    recent_pkt_timestamp="ts-recent",
+)
+
+MATCH_MATCH_NETFLOW_RECORD_MAPPING = dict(
+    destination_ipv4_v6="dst-ip",
+    destination_ipv4="dst-ipv4",
+    destination_ipv6="dst-ipv6",
+    destination_mac="dst-mac",
+    destination_port="dst-port",
+    ethertype="ethertype",
+    ip_protocol="proto",
+    source_ipv4_v6="src-ip",
+    source_ipv4="src-ipv4",
+    source_ipv6="src-ipv6",
+    source_mac="src-mac",
+    source_port="src-port",
+    ip_tos="tos",
+    unspecified="unspecified",
+    vlan="vlan",
+)
