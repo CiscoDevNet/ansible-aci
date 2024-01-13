@@ -12,14 +12,14 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_fabric_setup_pod
-short_description: Manage Fabric Setup Pod (fabric:SetupP)
+module: aci_fabric_pod
+short_description: Manage Fabric Pod Setup Policy (fabric:SetupP)
 description:
-- Manage Fabric Setup Policy for a Pod on Cisco ACI fabrics.
+- Manage Fabric Pod Setup Policy on Cisco ACI fabrics.
 options:
   pod_id:
     description:
-    - The Pod ID for the Fabric Setup Pod.
+    - The Pod ID for the Fabric Pod Setup Policy.
     - Accepted value range between C(1) and C(254).
     type: int
     aliases: [ pod, id ]
@@ -32,14 +32,14 @@ options:
     aliases: [ type ]
   tep_pool:
     description:
-    - The TEP address pool for the Fabric Setup Pod.
-    - Must be valid IPv4 or IPv6 and include the subnet mask.
-    - Example 192.168.1.0/24 or 2001:db8:abcd:0012::0/64
+    - The TEP address pool for the Fabric Pod Setup Policy.
+    - Must be valid IPv4 and include the subnet mask.
+    - Example 192.168.1.0/24
     type: str
     aliases: [ tep, pool ]
   description:
     description:
-    - The description for the Fabric Setup Pod.
+    - The description for the Fabric Pod Setup Policy.
     type: str
     aliases: [ descr ]
   state:
@@ -67,8 +67,8 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a fabric setup policy for a pod
-  cisco.aci.aci_fabric_setup_pod:
+- name: Add a fabric pod setup policy
+  cisco.aci.aci_fabric_pod:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -77,8 +77,8 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Query the fabric setup policy for a pod
-  cisco.aci.aci_fabric_setup_pod:
+- name: Query the fabric pod setup policy
+  cisco.aci.aci_fabric_pod:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -87,8 +87,8 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query fabric setup policy for all pods
-  cisco.aci.aci_fabric_setup_pod:
+- name: Query all fabric pod setup policies
+  cisco.aci.aci_fabric_pod:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -96,8 +96,8 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Remove a fabric setup policy for a pod
-  cisco.aci.aci_fabric_setup_pod:
+- name: Remove a fabric pod setup policy
+  cisco.aci.aci_fabric_pod:
     host: apic
     username: admin
     password: SomeSecretPassword

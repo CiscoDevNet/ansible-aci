@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_fabric_pod_external_tep
 short_description: Manage Fabric Pod External TEP (fabric:ExtRoutablePodSubnet)
 description:
-- Manage External TEP Fabric Pod Subnets.
+- Manage Fabric Pod External TEP Subnets.
 options:
   pod_id:
     description:
@@ -31,13 +31,13 @@ options:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
-  pool:
+  external_tep_pool:
     description:
     - The subnet IP address pool for the External TEP.
-    - Must be valid IPv4 or IPv6 and include the subnet mask.
-    - Example 192.168.1.0/24 or 2001:db8:abcd:0012::0/64
+    - Must be valid IPv4 and include the subnet mask.
+    - Example 192.168.1.0/24
     type: str
-    aliases: [ ip, ip_address, tep_pool ]
+    aliases: [ ip, ip_address, tep_pool, pool ]
   reserve_address_count:
     description:
     - Indicates the number of IP addresses that are reserved from the start of the subnet.
@@ -63,8 +63,8 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The C(Fabric Setup Pod Policy) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_fabric_setup_pod) can be used for this.
+- The C(Fabric Pod Setup Policy) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_fabric_pod) module can be used for this.
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fabric:ExtRoutablePodSubnet).
@@ -74,41 +74,41 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add an External TEP to a pod fabic setup policy
+- name: Add an External TEP to a fabric pod setup policy
   cisco.aci.aci_fabric_pod_external_tep:
     host: apic
     username: admin
     password: SomeSecretPassword
     pod_id: 2
-    pool: 10.6.1.0/24
-    address_count: 5
+    external_tep_pool: 10.6.1.0/24
+    reserve_address_count: 5
     status: active
     state: present
   delegate_to: localhost
 
-- name: Change an External TEP state on a pod fabic setup policy to inactive
+- name: Change an External TEP state on a fabric pod setup policy to inactive
   cisco.aci.aci_fabric_pod_external_tep:
     host: apic
     username: admin
     password: SomeSecretPassword
     pod_id: 2
-    pool: 10.6.1.0/24
+    external_tep_pool: 10.6.1.0/24
     status: inactive
     state: present
   delegate_to: localhost
 
-- name: Query the External TEP on a pod fabic setup policy
+- name: Query the External TEP on a fabric pod setup policy
   cisco.aci.aci_fabric_pod_external_tep:
     host: apic
     username: admin
     password: SomeSecretPassword
     pod_id: 2
-    pool: 10.6.1.0/24
+    external_tep_pool: 10.6.1.0/24
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Query External TEPs on all pod fabic setup policies
+- name: Query External TEPs on all fabric pod setup policies
   cisco.aci.aci_fabric_pod_external_tep:
     host: apic
     username: admin
@@ -117,13 +117,13 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Delete an External TEP on a pod fabic setup policy
+- name: Delete an External TEP on a fabric pod setup policy
   cisco.aci.aci_fabric_pod_external_tep:
     host: apic
     username: admin
     password: SomeSecretPassword
     pod_id: 2
-    pool: 10.6.1.0/24
+    external_tep_pool: 10.6.1.0/24
     state: absent
   delegate_to: localhost
 """
@@ -250,7 +250,7 @@ def main():
         description=dict(type="str", aliases=["descr"]),
         name_alias=dict(type="str"),
         pod_id=dict(type="int", aliases=["pod"]),
-        pool=dict(type="str", aliases=["ip", "ip_address", "tep_pool"]),
+        external_tep_pool=dict(type="str", aliases=["ip", "ip_address", "tep_pool", "pool"]),
         reserve_address_count=dict(type="int", aliases=["address_count"]),
         status=dict(type="str", choices=["active", "inactive"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -260,8 +260,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["pod_id", "pool"]],
-            ["state", "present", ["pod_id", "pool"]],
+            ["state", "absent", ["pod_id", "external_tep_pool"]],
+            ["state", "present", ["pod_id", "external_tep_pool"]],
         ],
     )
 
@@ -270,7 +270,7 @@ def main():
     pod_id = module.params.get("pod_id")
     descr = module.params.get("descr")
     name_alias = module.params.get("name_alias")
-    pool = module.params.get("pool")
+    external_tep_pool = module.params.get("external_tep_pool")
     reserve_address_count = module.params.get("reserve_address_count")
     status = module.params.get("status")
     state = module.params.get("state")
@@ -287,9 +287,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="fabricExtRoutablePodSubnet",
-            aci_rn="extrtpodsubnet-[{0}]".format(pool),
-            module_object=pool,
-            target_filter={"pool": pool},
+            aci_rn="extrtpodsubnet-[{0}]".format(external_tep_pool),
+            module_object=external_tep_pool,
+            target_filter={"pool": external_tep_pool},
         ),
     )
 
@@ -301,7 +301,7 @@ def main():
             class_config=dict(
                 descr=descr,
                 nameAlias=name_alias,
-                pool=pool,
+                pool=external_tep_pool,
                 reserveAddressCount=reserve_address_count,
                 state=status,
             ),

@@ -29,157 +29,241 @@
     state: absent
   register: cleaned
 
-- name: Sleep for 10 seconds and continue
+- name: Sleep for 15 seconds and continue
   ansible.builtin.wait_for:
-    timeout: 10
+    timeout: 15
   delegate_to: localhost
   when: cleaned is changed
 
-# Adding this condition for now until APIC configuration is fixed for other APIC hosts.
-- name: Execute tasks only for cn-dmz-apic-m1-02-v42
-  when: "'cn-dmz-apic-m1-02-v42' in inventory_hostname"  # This condition will execute only for this host.
-  block:  # block specifies execution of tasks within, based on conditions
-  
-    # CREATE FABRIC REMOTE POOL
-    - name: Create a remote pool with check mode
-      cisco.aci.aci_fabric_pod_remote_pool:
-        <<: *aci_info
-        pod_id: 1
-        pool: 10.66.22.0/24
-        remote_id: 66
-        state: present
-      check_mode: true
-      register: add_remote_pool_cm
+- name: Change external tep to inactive
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    address_count: 5
+    status: inactive
+    state: present
+  ignore_errors: true
 
-    - name: Create a remote pool
-      cisco.aci.aci_fabric_pod_remote_pool:
-        <<: *aci_info
-        pod_id: 1
-        pool: 10.66.22.0/24
-        remote_id: 66
-        state: present
-      register: add_remote_pool
+- name: Ensure existing external tep is absent
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    state: absent
 
-    - name: Verify remote pool creation
-      ansible.builtin.assert:
-        that:
-        - add_remote_pool is changed
-        - add_remote_pool.current.0.fabricExtSetupP.attributes.dn == "uni/controller/setuppol/setupp-1/extsetupp-66"
-        - add_remote_pool.current.0.fabricExtSetupP.attributes.extPoolId == "66"
-        - add_remote_pool.current.0.fabricExtSetupP.attributes.tepPool == "10.66.22.0/24"
-        - add_remote_pool.current.0.fabricExtSetupP.attributes.annotation == "orchestrator:ansible"
-        - add_remote_pool_cm is changed
-        - add_remote_pool_cm.previous == []
-        - add_remote_pool_cm.current == []
-        - add_remote_pool_cm.proposed.fabricExtSetupP.attributes.dn == "uni/controller/setuppol/setupp-1/extsetupp-66"
-        - add_remote_pool_cm.proposed.fabricExtSetupP.attributes.extPoolId == "66"
-        - add_remote_pool_cm.proposed.fabricExtSetupP.attributes.tepPool == "10.66.22.0/24"
-        - add_remote_pool_cm.proposed.fabricExtSetupP.attributes.annotation == "orchestrator:ansible"
+- name: Ensure Fabric External Policy is absent before testing
+  cisco.aci.aci_rest: 
+    <<: *aci_info
+    path: /api/mo/uni/tn-infra/fabricExtConnP-1.json
+    method: delete
 
+- name: Create Fabric External Policy
+  cisco.aci.aci_rest: 
+    <<: *aci_info
+    path: /api/mo/uni/tn-infra/fabricExtConnP-1.json
+    method: post
+    content:
+      {
+        "fvFabricExtConnP": {
+          "attributes": {
+            "rt": "extended:as2-nn4:5:16",
+            "siteId": "1"
+          },
+          "children": [
+            {
+              "fvPodConnP": {
+                "attributes": {
+                  "id": "1"
+                },
+                "children": [
+                  {
+                    "fvExtRoutableUcastConnP": {
+                      "attributes": {
+                        "addr": "10.1.1.1/32"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
 
-    - name: Sleep for 10 seconds and continue
-      ansible.builtin.wait_for:
-        timeout: 10
-      delegate_to: localhost
+- name: Create an external tep
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    address_count: 5
+    status: active
+    state: present
 
-    # CREATE FABRIC REMOTE POOL AGAIN TO TEST IDEMPOTENCE
-    - name: Create a remote pool again
-      cisco.aci.aci_fabric_pod_remote_pool:
-        <<: *aci_info
-        pod_id: 1
-        pool: 10.66.22.0/24
-        remote_id: 66
-        state: present
-      register: add_remote_pool_again
+# CREATE FABRIC REMOTE POOL
+- name: Create a remote pool with check mode
+  cisco.aci.aci_fabric_pod_remote_pool:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    remote_id: 66
+    state: present
+  check_mode: true
+  register: add_remote_pool_cm
 
-    - name: Verify remote pool creation idempotence
-      ansible.builtin.assert:
-        that:
-        - add_remote_pool_again is not changed
-        - add_remote_pool_again.current.0.fabricExtSetupP.attributes.dn == "uni/controller/setuppol/setupp-1/extsetupp-66"
-        - add_remote_pool_again.current.0.fabricExtSetupP.attributes.extPoolId == "66"
-        - add_remote_pool_again.current.0.fabricExtSetupP.attributes.tepPool == "10.66.22.0/24"
-        - add_remote_pool_again.current.0.fabricExtSetupP.attributes.annotation == "orchestrator:ansible"
+- name: Create a remote pool
+  cisco.aci.aci_fabric_pod_remote_pool:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    remote_id: 66
+    state: present
+  register: add_remote_pool
 
-    # QUERY FABRIC REMOTE POOL
-    - name: Query remote pool
-      cisco.aci.aci_fabric_pod_remote_pool:
-        <<: *aci_info
-        pod_id: 1
-        remote_id: 66
-        state: query
-      register: query_remote_pool
-
-    - name: Verify remote pool query
-      ansible.builtin.assert:
-        that:
-        - query_remote_pool is not changed
-        - query_remote_pool.current.0.fabricExtSetupP.attributes.dn == "uni/controller/setuppol/setupp-1/extsetupp-66"
-        - query_remote_pool.current.0.fabricExtSetupP.attributes.extPoolId == "66"
-        - query_remote_pool.current.0.fabricExtSetupP.attributes.tepPool == "10.66.22.0/24"
-
-    # QUERY ALL REMOTE POOLs
-    - name: Query all remote pools
-      cisco.aci.aci_fabric_pod_remote_pool:
-        <<: *aci_info
-        state: query
-      register: query_remote_pool_all
-
-    - name: Verify query idempotence
-      ansible.builtin.assert:
-        that:
-        - query_remote_pool_all is not changed
-
-    # DELETE REMOTE POOL
-    - name: Delete remote pool with check mode
-      cisco.aci.aci_fabric_pod_remote_pool:
-        <<: *aci_info
-        pod_id: 1
-        remote_id: 66
-        state: absent
-      check_mode: true
-      register: delete_remote_pool_cm
-
-    - name: Delete remote pool
-      cisco.aci.aci_fabric_pod_remote_pool:
-        <<: *aci_info
-        pod_id: 1
-        remote_id: 66
-        state: absent
-      register: delete_remote_pool
-
-    - name: Verify remote pool deletion
-      ansible.builtin.assert:
-        that:
-        - delete_remote_pool is changed
-        - delete_remote_pool.current == []
-        - delete_remote_pool.previous.0.fabricExtSetupP.attributes.dn == "uni/controller/setuppol/setupp-1/extsetupp-66"
-        - delete_remote_pool.previous.0.fabricExtSetupP.attributes.extPoolId == "66"
-        - delete_remote_pool.previous.0.fabricExtSetupP.attributes.tepPool == "10.66.22.0/24"
-        - delete_remote_pool_cm is changed
-        - delete_remote_pool_cm.current != []
-        - delete_remote_pool_cm.previous.0.fabricExtSetupP.attributes.dn == "uni/controller/setuppol/setupp-1/extsetupp-66"
-        - delete_remote_pool_cm.previous.0.fabricExtSetupP.attributes.extPoolId == "66"
-        - delete_remote_pool_cm.previous.0.fabricExtSetupP.attributes.tepPool == "10.66.22.0/24"
-        - delete_remote_pool_cm.proposed == {}
+- name: Verify remote pool creation
+  ansible.builtin.assert:
+    that:
+    - add_remote_pool is changed
+    - add_remote_pool.current.0.fabricExtSetupP.attributes.dn == "uni/controller/setuppol/setupp-1/extsetupp-66"
+    - add_remote_pool.current.0.fabricExtSetupP.attributes.extPoolId == "66"
+    - add_remote_pool.current.0.fabricExtSetupP.attributes.tepPool == "10.66.22.0/24"
+    - add_remote_pool.current.0.fabricExtSetupP.attributes.annotation == "orchestrator:ansible"
+    - add_remote_pool_cm is changed
+    - add_remote_pool_cm.previous == []
+    - add_remote_pool_cm.current == []
+    - add_remote_pool_cm.proposed.fabricExtSetupP.attributes.dn == "uni/controller/setuppol/setupp-1/extsetupp-66"
+    - add_remote_pool_cm.proposed.fabricExtSetupP.attributes.extPoolId == "66"
+    - add_remote_pool_cm.proposed.fabricExtSetupP.attributes.tepPool == "10.66.22.0/24"
+    - add_remote_pool_cm.proposed.fabricExtSetupP.attributes.annotation == "orchestrator:ansible"
 
 
-    - name: Sleep for 10 seconds and continue
-      ansible.builtin.wait_for:
-        timeout: 10
-      delegate_to: localhost
+- name: Sleep for 15 seconds and continue
+  ansible.builtin.wait_for:
+    timeout: 15
+  delegate_to: localhost
 
-    # DELETE AGAIN TO TEST IDEMPOTENCE
-    - name: Delete remote pool again
-      cisco.aci.aci_fabric_pod_remote_pool:
-        <<: *aci_info
-        pod_id: 1
-        remote_id: 66
-        state: absent
-      register: delete_remote_pool_again
+# CREATE FABRIC REMOTE POOL AGAIN TO TEST IDEMPOTENCE
+- name: Create a remote pool again
+  cisco.aci.aci_fabric_pod_remote_pool:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    remote_id: 66
+    state: present
+  register: add_remote_pool_again
 
-    - name: Verify profile deletion idempotence
-      ansible.builtin.assert:
-        that:
-        - delete_remote_pool_again is not changed
-        - delete_remote_pool_again.current == []
+- name: Verify remote pool creation idempotence
+  ansible.builtin.assert:
+    that:
+    - add_remote_pool_again is not changed
+    - add_remote_pool_again.current.0.fabricExtSetupP.attributes.dn == "uni/controller/setuppol/setupp-1/extsetupp-66"
+    - add_remote_pool_again.current.0.fabricExtSetupP.attributes.extPoolId == "66"
+    - add_remote_pool_again.current.0.fabricExtSetupP.attributes.tepPool == "10.66.22.0/24"
+    - add_remote_pool_again.current.0.fabricExtSetupP.attributes.annotation == "orchestrator:ansible"
+
+# QUERY FABRIC REMOTE POOL
+- name: Query remote pool
+  cisco.aci.aci_fabric_pod_remote_pool:
+    <<: *aci_info
+    pod_id: 1
+    remote_id: 66
+    state: query
+  register: query_remote_pool
+
+- name: Verify remote pool query
+  ansible.builtin.assert:
+    that:
+    - query_remote_pool is not changed
+    - query_remote_pool.current.0.fabricExtSetupP.attributes.dn == "uni/controller/setuppol/setupp-1/extsetupp-66"
+    - query_remote_pool.current.0.fabricExtSetupP.attributes.extPoolId == "66"
+    - query_remote_pool.current.0.fabricExtSetupP.attributes.tepPool == "10.66.22.0/24"
+
+# QUERY ALL REMOTE POOLs
+- name: Query all remote pools
+  cisco.aci.aci_fabric_pod_remote_pool:
+    <<: *aci_info
+    state: query
+  register: query_remote_pool_all
+
+- name: Verify query idempotence
+  ansible.builtin.assert:
+    that:
+    - query_remote_pool_all is not changed
+
+# DELETE REMOTE POOL
+- name: Delete remote pool with check mode
+  cisco.aci.aci_fabric_pod_remote_pool:
+    <<: *aci_info
+    pod_id: 1
+    remote_id: 66
+    state: absent
+  check_mode: true
+  register: delete_remote_pool_cm
+
+- name: Delete remote pool
+  cisco.aci.aci_fabric_pod_remote_pool:
+    <<: *aci_info
+    pod_id: 1
+    remote_id: 66
+    state: absent
+  register: delete_remote_pool
+
+- name: Verify remote pool deletion
+  ansible.builtin.assert:
+    that:
+    - delete_remote_pool is changed
+    - delete_remote_pool.current == []
+    - delete_remote_pool.previous.0.fabricExtSetupP.attributes.dn == "uni/controller/setuppol/setupp-1/extsetupp-66"
+    - delete_remote_pool.previous.0.fabricExtSetupP.attributes.extPoolId == "66"
+    - delete_remote_pool.previous.0.fabricExtSetupP.attributes.tepPool == "10.66.22.0/24"
+    - delete_remote_pool_cm is changed
+    - delete_remote_pool_cm.current != []
+    - delete_remote_pool_cm.previous.0.fabricExtSetupP.attributes.dn == "uni/controller/setuppol/setupp-1/extsetupp-66"
+    - delete_remote_pool_cm.previous.0.fabricExtSetupP.attributes.extPoolId == "66"
+    - delete_remote_pool_cm.previous.0.fabricExtSetupP.attributes.tepPool == "10.66.22.0/24"
+    - delete_remote_pool_cm.proposed == {}
+
+
+- name: Sleep for 15 seconds and continue
+  ansible.builtin.wait_for:
+    timeout: 15
+  delegate_to: localhost
+
+# DELETE AGAIN TO TEST IDEMPOTENCE
+- name: Delete remote pool again
+  cisco.aci.aci_fabric_pod_remote_pool:
+    <<: *aci_info
+    pod_id: 1
+    remote_id: 66
+    state: absent
+  register: delete_remote_pool_again
+
+- name: Verify profile deletion idempotence
+  ansible.builtin.assert:
+    that:
+    - delete_remote_pool_again is not changed
+    - delete_remote_pool_again.current == []
+
+# CLEAN ENVIRONMENT
+- name: Change external tep to inactive
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    address_count: 5
+    status: inactive
+    state: present
+  ignore_errors: true
+
+- name: Ensure existing external tep is absent
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    state: absent
+
+- name: Ensure Fabric External Policy is absent
+  cisco.aci.aci_rest: 
+    <<: *aci_info
+    path: /api/mo/uni/tn-infra/fabricExtConnP-1.json
+    method: delete

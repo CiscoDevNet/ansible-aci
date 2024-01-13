@@ -39,8 +39,8 @@ options:
   remote_pool:
     description:
     - The subnet IP address pool for the Remote Pool.
-    - Must be valid IPv4 or IPv6 and include the subnet mask.
-    - Example 192.168.1.0/24 or 2001:db8:abcd:0012::0/64
+    - Must be valid IPv4 and include the subnet mask.
+    - Example 192.168.1.0/24
     type: str
     aliases: [ pool ]
   state:
@@ -55,6 +55,9 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 - cisco.aci.owner
 
+notes:
+- The C(Fabric Pod Setup Policy) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_fabric_pod) module can be used for this.
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fabric:ExtSetupP).
@@ -64,29 +67,29 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a Remote Pool to a pod fabic setup policy
+- name: Add a Remote Pool to a fabric pod setup policy
   cisco.aci.aci_fabric_pod_remote_pool:
     host: apic
     username: admin
     password: SomeSecretPassword
     pod_id: 2
-    id: 1
-    pool: 10.6.2.0/24
+    remote_id: 1
+    remote_pool: 10.6.2.0/24
     state: present
   delegate_to: localhost
 
-- name: Query the Remote Pool on a pod fabic setup policy
+- name: Query the Remote Pool on a fabric pod setup policy
   cisco.aci.aci_fabric_pod_remote_pool:
     host: apic
     username: admin
     password: SomeSecretPassword
     pod_id: 2
-    id: 1
+    remote_id: 1
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Query Remote Pools on all pod fabic setup policies
+- name: Query Remote Pools on all fabric pod setup policies
   cisco.aci.aci_fabric_pod_remote_pool:
     host: apic
     username: admin
@@ -95,7 +98,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Delete a Remote Pool from a pod fabic setup policy
+- name: Delete a Remote Pool from a fabric pod setup policy
   cisco.aci.aci_fabric_pod_external_tep:
     host: apic
     username: admin

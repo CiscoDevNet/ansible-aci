@@ -66,7 +66,8 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The M(cisco.aci.aci_fabric_pod_profile) must exist before using this module in your playbook.
+- The C(pod_profile) must exist before using this module in your playbook.
+- The M(cisco.aci.aci_fabric_pod_profile) module can be used to create the C(pod_profile).
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fabric:PodS).

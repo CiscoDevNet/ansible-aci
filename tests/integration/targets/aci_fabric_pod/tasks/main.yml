@@ -24,7 +24,7 @@
 
 # CLEAN ENVIRONMENT
 - name: Ensure Fabric Setup Pod 77 is absent before testing
-  cisco.aci.aci_fabric_setup_pod:
+  cisco.aci.aci_fabric_pod:
     <<: *aci_info
     pod_id: 77
     state: absent
@@ -38,7 +38,7 @@
 
 # CREATE FABRIC SETUP POD
 - name: Create ansible_fabric_pod_setup with check mode
-  cisco.aci.aci_fabric_setup_pod:
+  cisco.aci.aci_fabric_pod:
     <<: *aci_info
     pod_id: 77
     pool: 10.77.0.0/16
@@ -49,7 +49,7 @@
   register: add_fabric_pod_setup_cm
 
 - name: Create ansible_fabric_pod_setup
-  cisco.aci.aci_fabric_setup_pod:
+  cisco.aci.aci_fabric_pod:
     <<: *aci_info
     pod_id: 77
     pool: 10.77.0.0/16
@@ -85,7 +85,7 @@
 
 # CREATE FABRIC SETUP POD AGAIN TO TEST IDEMPOTENCE
 - name: Create ansible_fabric_pod_setup again
-  cisco.aci.aci_fabric_setup_pod:
+  cisco.aci.aci_fabric_pod:
     <<: *aci_info
     pod_id: 77
     pool: 10.77.0.0/16
@@ -106,7 +106,7 @@
 
 # QUERY FABRIC SETUP POD
 - name: Query fabric setup pod
-  cisco.aci.aci_fabric_setup_pod:
+  cisco.aci.aci_fabric_pod:
     <<: *aci_info
     pod_id: 77
     state: query
@@ -124,7 +124,7 @@
 
 # QUERY ALL POD SETUPS
 - name: Query all fabric pod setups
-  cisco.aci.aci_fabric_setup_pod:
+  cisco.aci.aci_fabric_pod:
     <<: *aci_info
     state: query
   register: query_pod_profile_all
@@ -136,7 +136,7 @@
 
 # DELETE POD SETUP
 - name: Delete pod setup with check mode
-  cisco.aci.aci_fabric_setup_pod:
+  cisco.aci.aci_fabric_pod:
     <<: *aci_info
     pod_id: 77
     state: absent
@@ -144,7 +144,7 @@
   register: delete_pod_setup_cm
 
 - name: Delete pod setup
-  cisco.aci.aci_fabric_setup_pod:
+  cisco.aci.aci_fabric_pod:
     <<: *aci_info
     pod_id: 77
     state: absent
@@ -176,7 +176,7 @@
 
 # DELETE POD SETUP AGAIN TO TEST IDEMPOTENCE
 - name: Delete pod setup again
-  cisco.aci.aci_fabric_setup_pod:
+  cisco.aci.aci_fabric_pod:
     <<: *aci_info
     pod_id: 77
     state: absent
@@ -190,7 +190,7 @@
 
 # ERROR HANDLING
 - name: Create pod setup with out of range pod_id
-  cisco.aci.aci_fabric_setup_pod:
+  cisco.aci.aci_fabric_pod:
     <<: *aci_info
     pod_id: 300
     pool: 10.123.0.0/24
