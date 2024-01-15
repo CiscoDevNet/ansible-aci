@@ -1,0 +1,138 @@
+# Test code for the ACI modules
+# Copyright: (c) 2024, Akini Ross (@akinross)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: "Please define the following variables: aci_hostname, aci_username and aci_password."
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
+      output_level: "{{ aci_output_level | default('info') }}"
+
+# CLEAN ENVIRONMENT
+- name: Clean environment
+  cisco.aci.aci_fabric_management_access: &aci_fabric_management_access_1_absent
+    <<: *aci_info
+    name: fabric_management_access_policy_1
+    state: absent
+
+# CREATE
+- name: Create a new fabric management access policy (check_mode)
+  cisco.aci.aci_fabric_management_access: &aci_fabric_management_access_1_present
+    <<: *aci_fabric_management_access_1_absent
+    description: "This is a example Fabric Management Access policy."
+    state: present
+  check_mode: true
+  register: cm_create_fabric_management_access_policy_1
+
+- name: Create a new fabric management access policy
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_present
+  register: nm_create_fabric_management_access_policy_1
+
+- name: Create a new fabric management access policy again
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_present
+  register: nm_create_fabric_management_access_policy_1_again
+
+- name: Assertions for creating a fabric management access policy
+  ansible.builtin.assert:
+    that:
+      - cm_create_fabric_management_access_policy_1 is changed
+      - cm_create_fabric_management_access_policy_1.previous == []
+      - cm_create_fabric_management_access_policy_1.current == []
+      - cm_create_fabric_management_access_policy_1.proposed.commPol.attributes.name == "fabric_management_access_policy_1"
+      - cm_create_fabric_management_access_policy_1.proposed.commPol.attributes.descr == "This is a example Fabric Management Access policy."
+      - nm_create_fabric_management_access_policy_1 is changed
+      - nm_create_fabric_management_access_policy_1.previous == []
+      - nm_create_fabric_management_access_policy_1.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_create_fabric_management_access_policy_1.current.0.commPol.attributes.descr == "This is a example Fabric Management Access policy."
+      - nm_create_fabric_management_access_policy_1_again is not changed
+      - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.attributes.descr == "This is a example Fabric Management Access policy."
+      - nm_create_fabric_management_access_policy_1_again.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_create_fabric_management_access_policy_1_again.current.0.commPol.attributes.descr == "This is a example Fabric Management Access policy."
+
+# UPDATE
+- name: Update an existing fabric management access policy
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_present
+    description: "This is a changed description."
+  register: nm_update_fabric_management_access_policy_1_change_description
+
+- name: Assertions for updating a fabric management access policy
+  ansible.builtin.assert:
+    that:
+      - nm_update_fabric_management_access_policy_1_change_description is changed
+      - nm_update_fabric_management_access_policy_1_change_description.previous.0.commPol.attributes.descr == "This is a example Fabric Management Access policy."
+      - nm_update_fabric_management_access_policy_1_change_description.previous.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_update_fabric_management_access_policy_1_change_description.current.0.commPol.attributes.descr == "This is a changed description."
+      - nm_update_fabric_management_access_policy_1_change_description.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
+
+# QUERY
+- name: Query an fabric management access policy
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_present
+    state: query
+  register: query_fabric_management_access_policy_1
+
+- name: Query all fabric management access policies
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Assertions for the querying of fabric management access policies
+  ansible.builtin.assert:
+    that:
+      - query_fabric_management_access_policy_1 is not changed
+      - query_fabric_management_access_policy_1.current.0.commPol.attributes.descr == "This is a changed description."
+      - query_fabric_management_access_policy_1.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - query_fabric_management_access_policy_1.current | length == 1
+      - query_all is not changed
+      - query_all.current | length >= 2
+
+# DELETE
+- name: Delete an existing fabric management access policy (check_mode)
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_absent
+  check_mode: true
+  register: cm_delete_fabric_management_access_policy_1
+
+- name: Delete an existing fabric management access policy
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_absent
+  register: nm_delete_fabric_management_access_policy_1
+
+- name: Delete an existing fabric management access policy again
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_absent
+  register: nm_delete_fabric_management_access_policy_1_again
+
+- name: Assertions for deleting a fabric management access policy
+  ansible.builtin.assert:
+    that:
+      - cm_delete_fabric_management_access_policy_1 is changed
+      - cm_delete_fabric_management_access_policy_1.previous.0.commPol.attributes.descr == "This is a changed description."
+      - cm_delete_fabric_management_access_policy_1.previous.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - cm_delete_fabric_management_access_policy_1.current.0.commPol.attributes.descr == "This is a changed description."
+      - cm_delete_fabric_management_access_policy_1.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - cm_delete_fabric_management_access_policy_1.proposed == {}
+      - nm_delete_fabric_management_access_policy_1 is changed
+      - nm_delete_fabric_management_access_policy_1.previous.0.commPol.attributes.descr == "This is a changed description."
+      - nm_delete_fabric_management_access_policy_1.previous.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_delete_fabric_management_access_policy_1.current == []
+      - nm_delete_fabric_management_access_policy_1_again is not changed
+      - nm_delete_fabric_management_access_policy_1_again.previous == []
+      - nm_delete_fabric_management_access_policy_1_again.current == []
