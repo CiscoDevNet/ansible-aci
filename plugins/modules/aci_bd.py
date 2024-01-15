@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2017, Jacob McGill (@jmcgill298)
+# Copyright: (c) 2024, Samita Bhattacharjee (@samitab) <samitab@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -147,6 +149,58 @@ options:
     description:
     - The L3 Out that contains the associated Route Profile.
     type: str
+  host_based_routing:
+    description:
+    - Enables advertising host routes (/32 prefixes) out of the L3OUT(s) that are associated to this BD.
+    - The APIC defaults to C(false) when unset during creation.
+    type: bool
+    aliases: [ advertise_host_routes ]
+  enable_rogue_except_mac:
+    description:
+    - Rogue exception MAC wildcard support for Bridge Domains.
+    - Only available in APIC version 6.0 or later.
+    - The APIC defaults to C(false) when unset during creation.
+    type: bool
+  allow_intersite_bum_traffic:
+    description:
+    - Control whether BUM traffic is allowed between sites.
+    - The APIC defaults to C(false) when unset during creation.
+    type: bool
+    aliases: [allow_bum_traffic]
+  allow_intersite_l2_stretch:
+    description:
+    - Allow L2 Stretch between sites.
+    - The APIC defaults to C(false) when unset during creation.
+    type: bool
+    aliases: [allow_l2_stretch]
+  allow_ipv6_mcast:
+    description:
+    - Flag to indicate if ipv6 multicast is enabled.
+    - The APIC defaults to C(false) when unset during creation.
+    type: bool
+  ll_addr:
+    description:
+    - The override of the system generated IPv6 link-local address.
+    type: str
+    aliases: [ll_addr_ipv6]
+  mcast_arp_drop:
+    description:
+    - Enable BD rogue multicast ARP packet drop.
+    - Only available in APIC version 6.0 or later.
+    - The APIC defaults to C(true) when unset during creation.
+    type: bool
+  ipv6_unk_mcast_act:
+    description:
+    - Unknown IPv6 Multicast Destination Action.
+    - The APIC defaults to C(flood) when unset during creation.
+    type: str
+    choices: [ flood, opt-flood ]
+    aliases: [v6unk_mcast_act]
+  vmac:
+    description:
+    - Virtual MAC address of the BD/SVI. This is used when the BD is extended to multiple sites using L2 Outside.
+    type: str
+
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -162,6 +216,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jacob McGill (@jmcgill298)
+- Samita Bhattacharjee (@samitab)
 """
 
 EXAMPLES = r"""
@@ -378,6 +433,15 @@ def main():
         route_profile=dict(type="str"),
         route_profile_l3out=dict(type="str"),
         name_alias=dict(type="str"),
+        host_based_routing=dict(type="bool", aliases=["advertise_host_routes"]),
+        enable_rogue_except_mac=dict(type="bool"),
+        allow_intersite_bum_traffic=dict(type="bool", aliases=["allow_bum_traffic"]),
+        allow_intersite_l2_stretch=dict(type="bool", aliases=["allow_l2_stretch"]),
+        allow_ipv6_mcast=dict(type="bool"),
+        ll_addr=dict(type="str", aliases=["ll_addr_ipv6"]),
+        mcast_arp_drop=dict(type="bool"),
+        ipv6_unk_mcast_act=dict(type="str", choices=["flood", "opt-flood"], aliases=["v6unk_mcast_act"]),
+        vmac=dict(type="str"),
     )
 
     module = AnsibleModule(
@@ -422,6 +486,15 @@ def main():
     route_profile = module.params.get("route_profile")
     route_profile_l3out = module.params.get("route_profile_l3out")
     name_alias = module.params.get("name_alias")
+    host_based_routing = aci.boolean(module.params.get("host_based_routing"))
+    enable_rogue_except_mac = aci.boolean(module.params.get("enable_rogue_except_mac"))
+    allow_intersite_bum_traffic = aci.boolean(module.params.get("allow_intersite_bum_traffic"))
+    allow_intersite_l2_stretch = aci.boolean(module.params.get("allow_intersite_l2_stretch"))
+    allow_ipv6_mcast = aci.boolean(module.params.get("allow_ipv6_mcast"))
+    ll_addr = module.params.get("ll_addr")
+    mcast_arp_drop = aci.boolean(module.params.get("mcast_arp_drop"))
+    ipv6_unk_mcast_act = module.params.get("ipv6_unk_mcast_act")
+    vmac = module.params.get("vmac")
 
     aci.construct_url(
         root_class=dict(
@@ -458,6 +531,15 @@ def main():
             unkMacUcastAct=l2_unknown_unicast,
             unkMcastAct=l3_unknown_multicast,
             nameAlias=name_alias,
+            enableRogueExceptMac=enable_rogue_except_mac,
+            hostBasedRouting=host_based_routing,
+            intersiteBumTrafficAllow=allow_intersite_bum_traffic,
+            intersiteL2Stretch=allow_intersite_l2_stretch,
+            ipv6McastAllow=allow_ipv6_mcast,
+            llAddr=ll_addr,
+            mcastARPDrop=mcast_arp_drop,
+            v6unkMcastAct=ipv6_unk_mcast_act,
+            vmac=vmac,
         )
 
         if ipv6_l3_unknown_multicast is not None:

@@ -1,5 +1,6 @@
 # Test code for the ACI modules
 # Copyright: (c) 2017, Jacob McGill (@jmcgill298)
+# Copyright: (c) 2023, Samita Bhattacharjee (@samitab)
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -115,7 +116,7 @@
     register: bd_present_2
     when: version.current.0.topSystem.attributes.version is version('4.2', '<')
 
-  - name: create another bd - check more params (>v4.2)
+  - name: create another bd - check more params (>=v4.2 & <6.0)
     cisco.aci.aci_bd:
       <<: *aci_bd_present
       bd: anstest2
@@ -130,8 +131,43 @@
       arp_flooding: "yes"
       route_profile_l3out: ansible_l3out
       route_profile: ansible_l3out_route
+      host_based_routing: true
+      allow_intersite_bum_traffic: true
+      allow_intersite_l2_stretch: true
+      allow_ipv6_mcast: true
+      ll_addr: "fe80::1322:33ff:fe44:5566"
+      ipv6_unk_mcast_act: "opt-flood"
+      vmac: "00:AA:BB:CC:DD:03"
     register: bd_present_2b
-    when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+    when: version.current.0.topSystem.attributes.version is version('4.2', '>=') and
+          version.current.0.topSystem.attributes.version is version('6.0', '<')
+
+  - name: create another bd - check more params (>=v6.0)
+    cisco.aci.aci_bd:
+      <<: *aci_bd_present
+      bd: anstest2
+      bd_type: ethernet
+      endpoint_move_detect: default
+      ip_learning: "no"
+      l2_unknown_unicast: flood
+      l3_unknown_multicast: opt-flood
+      ipv6_l3_unknown_multicast: opt-flood
+      multi_dest: drop
+      enable_routing: "no"
+      arp_flooding: "yes"
+      route_profile_l3out: ansible_l3out
+      route_profile: ansible_l3out_route
+      host_based_routing: true
+      enable_rogue_except_mac: true
+      allow_intersite_bum_traffic: true
+      allow_intersite_l2_stretch: true
+      allow_ipv6_mcast: true
+      ll_addr: "fe80::1322:33ff:fe44:5566"
+      mcast_arp_drop: true
+      ipv6_unk_mcast_act: "opt-flood"
+      vmac: "00:AA:BB:CC:DD:03"
+    register: bd_present_2c
+    when: version.current.0.topSystem.attributes.version is version('6.0', '>=')
 
   - name: create bd without all necessary params - failure message works
     cisco.aci.aci_bd:
@@ -172,7 +208,7 @@
         - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
     when: version.current.0.topSystem.attributes.version is version('4.2', '<')
 
-  - name: present asserts (>v4.2)
+  - name: present asserts (>=v4.2 & <v6.0)
     ansible.builtin.assert:
       that:
         - bd_present_check_mode is changed
@@ -198,11 +234,60 @@
         - bd_present_2b.sent.fvBD.attributes.unkMcastAct == 'opt-flood'
         - bd_present_2b.sent.fvBD.attributes.v6unkMcastAct == 'opt-flood'
         - bd_present_2b.sent.fvBD.attributes.type == 'regular'
+        - bd_present_2b.sent.fvBD.attributes.hostBasedRouting == 'yes'
+        - bd_present_2b.sent.fvBD.attributes.intersiteBumTrafficAllow == 'yes'
+        - bd_present_2b.sent.fvBD.attributes.intersiteL2Stretch == 'yes'
+        - bd_present_2b.sent.fvBD.attributes.ipv6McastAllow == 'yes'
+        - bd_present_2b.sent.fvBD.attributes.llAddr == 'fe80::1322:33ff:fe44:5566'
+        - bd_present_2b.sent.fvBD.attributes.v6unkMcastAct == 'opt-flood'
+        - bd_present_2b.sent.fvBD.attributes.vmac == '00:AA:BB:CC:DD:03'
         - bd_present_2b.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
         - bd_present_2b.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
         - bd_present_missing_param is failed
         - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
-    when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+    when: version.current.0.topSystem.attributes.version is version('4.2', '>=') and
+          version.current.0.topSystem.attributes.version is version('6.0', '<')
+
+  - name: present asserts (>=v6.0)
+    ansible.builtin.assert:
+      that:
+        - bd_present_check_mode is changed
+        - bd_present_check_mode.sent.fvBD.attributes.descr == 'Ansible Test'
+        - bd_present_check_mode.sent.fvBD.attributes.name == 'anstest'
+        - bd_present is changed
+        - bd_present.sent == bd_present_check_mode.sent
+        - bd_present.previous == []
+        - bd_present_idempotent is not changed
+        - bd_present_idempotent.previous != []
+        - bd_update is changed
+        - bd_update.previous != []
+        - bd_update.sent != bd_update.proposed
+        - bd_update.sent.fvBD.attributes.descr == 'Ansible Test Update'
+        - bd_update.sent.fvBD.children.0.fvRsCtx.attributes.tnFvCtxName == 'anstest' 
+        - bd_present_2c.sent.fvBD.attributes.arpFlood == 'yes'
+        - bd_present_2c.sent.fvBD.attributes.descr == 'Ansible Test'
+        - bd_present_2c.sent.fvBD.attributes.ipLearning == 'no'
+        - bd_present_2c.sent.fvBD.attributes.multiDstPktAct == 'drop'
+        - bd_present_2c.sent.fvBD.attributes.name == 'anstest2'
+        - bd_present_2c.sent.fvBD.attributes.unicastRoute == 'no'
+        - bd_present_2c.sent.fvBD.attributes.unkMacUcastAct == 'flood'
+        - bd_present_2c.sent.fvBD.attributes.unkMcastAct == 'opt-flood'
+        - bd_present_2c.sent.fvBD.attributes.v6unkMcastAct == 'opt-flood'
+        - bd_present_2c.sent.fvBD.attributes.type == 'regular'
+        - bd_present_2c.sent.fvBD.attributes.hostBasedRouting == 'yes'
+        - bd_present_2c.sent.fvBD.attributes.intersiteBumTrafficAllow == 'yes'
+        - bd_present_2c.sent.fvBD.attributes.intersiteL2Stretch == 'yes'
+        - bd_present_2c.sent.fvBD.attributes.ipv6McastAllow == 'yes'
+        - bd_present_2c.sent.fvBD.attributes.llAddr == 'fe80::1322:33ff:fe44:5566'
+        - bd_present_2c.sent.fvBD.attributes.mcastARPDrop == 'yes'
+        - bd_present_2c.sent.fvBD.attributes.enableRogueExceptMac == 'yes'
+        - bd_present_2c.sent.fvBD.attributes.v6unkMcastAct == 'opt-flood'
+        - bd_present_2c.sent.fvBD.attributes.vmac == '00:AA:BB:CC:DD:03'
+        - bd_present_2c.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
+        - bd_present_2c.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
+        - bd_present_missing_param is failed
+        - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
+    when: version.current.0.topSystem.attributes.version is version('6.0', '>=')
 
   - name: get all bd
     cisco.aci.aci_bd: &aci_query
