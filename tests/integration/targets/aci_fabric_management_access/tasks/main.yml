@@ -68,20 +68,23 @@
       - nm_create_fabric_management_access_policy_1.current.0.commPol.children.0.commShellinabox.attributes.adminSt == "disabled"
       - nm_create_fabric_management_access_policy_1.current.0.commPol.children.1.commSsh.attributes.adminSt == "enabled"
       - nm_create_fabric_management_access_policy_1.current.0.commPol.children.2.commTelnet.attributes.adminSt == "disabled"
-      - nm_create_fabric_management_access_policy_1.current.0.commPol.children.3.commHttp.attributes.adminSt == "disabled"
+      - nm_create_fabric_management_access_policy_1.current.0.commPol.children.3.commHttps.attributes.adminSt == "enabled"
+      - nm_create_fabric_management_access_policy_1.current.0.commPol.children.4.commHttp.attributes.adminSt == "disabled"
       - nm_create_fabric_management_access_policy_1_again is not changed
       - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.attributes.name == "fabric_management_access_policy_1"
       - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.attributes.descr == "This is a example Fabric Management Access policy."
       - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.children.0.commShellinabox.attributes.adminSt == "disabled"
       - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.children.1.commSsh.attributes.adminSt == "enabled"
       - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.children.2.commTelnet.attributes.adminSt == "disabled"
-      - nm_create_fabric_management_access_policy_1_again.current.0.commPol.children.3.commHttp.attributes.adminSt == "disabled"
+      - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.children.3.commHttps.attributes.adminSt == "enabled"
+      - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.children.4.commHttp.attributes.adminSt == "disabled"
       - nm_create_fabric_management_access_policy_1_again.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
       - nm_create_fabric_management_access_policy_1_again.current.0.commPol.attributes.descr == "This is a example Fabric Management Access policy."
       - nm_create_fabric_management_access_policy_1_again.current.0.commPol.children.0.commShellinabox.attributes.adminSt == "disabled"
       - nm_create_fabric_management_access_policy_1_again.current.0.commPol.children.1.commSsh.attributes.adminSt == "enabled"
       - nm_create_fabric_management_access_policy_1_again.current.0.commPol.children.2.commTelnet.attributes.adminSt == "disabled"
-      - nm_create_fabric_management_access_policy_1_again.current.0.commPol.children.3.commHttp.attributes.adminSt == "disabled"
+      - nm_create_fabric_management_access_policy_1_again.current.0.commPol.children.3.commHttps.attributes.adminSt == "enabled"
+      - nm_create_fabric_management_access_policy_1_again.current.0.commPol.children.4.commHttp.attributes.adminSt == "disabled"
       
 
 # UPDATE
@@ -100,7 +103,7 @@
       - nm_update_fabric_management_access_policy_1_change_description.current.0.commPol.attributes.descr == "This is a changed description."
       - nm_update_fabric_management_access_policy_1_change_description.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
 
-- name: Update an existing fabric management access policy telnet, ssh_web, http configuration
+- name: Update an existing fabric management access policy telnet, ssh, ssh_web, http, and https configuration
   cisco.aci.aci_fabric_management_access:
     <<: *aci_fabric_management_access_1_present
     telnet:
@@ -130,36 +133,89 @@
       throttle: enabled
       throttle_rate: 7500
       throttle_unit: requests_per_minute
-  register: nm_update_fabric_management_access_policy_1_change_telnet_web_configuration
+    https:
+      admin_state: enabled
+      port: 445
+      allow_origins: http://127.0.0.1:8000
+      allow_credentials: enabled
+      ssl: 
+        - tls_v1.2
+      dh_param: 4096
+      throttle: enabled
+      throttle_rate: 7500
+      throttle_unit: requests_per_minute
+      admin_key_ring: default
+      # TODO when ansible-aci supports client certificate authentication
+      # client_certificate_trustpoint: ansible_trustpoint
+      # client_certificate_authentication_state: enabled
+  register: nm_update_fabric_management_access_policy_1_change_child_configuration
+
+- name: Update an existing fabric management access policy https without admin_key_ring
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_present
+    https:
+      admin_state: enabled
+      port: 443
+  register: nm_update_fabric_management_access_policy_1_change_https_no_keyring
 
 - name: Assertions for updating a fabric management access policy telnet, ssh_web, http configuration
   ansible.builtin.assert:
     that:
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration is changed
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.previous.0.commPol.attributes.name == "fabric_management_access_policy_1"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.previous.0.commPol.children.0.commShellinabox.attributes.adminSt == "disabled"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.previous.0.commPol.children.1.commSsh.attributes.adminSt == "enabled"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.previous.0.commPol.children.2.commTelnet.attributes.adminSt == "disabled"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.previous.0.commPol.children.2.commTelnet.attributes.port == "23"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.previous.0.commPol.children.3.commHttp.attributes.adminSt == "disabled"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.previous.0.commPol.children.3.commHttp.attributes.port == "80"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.0.commShellinabox.attributes.adminSt == "enabled"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.1.commSsh.attributes.adminSt == "enabled"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.1.commSsh.attributes.passwordAuth == "enabled"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.1.commSsh.attributes.port == "20"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.1.commSsh.attributes.sshCiphers == "aes128-ctr,aes192-ctr,aes256-ctr"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.1.commSsh.attributes.kexAlgos == "diffie-hellman-group14-sha1,ecdh-sha2-nistp521"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.1.commSsh.attributes.sshMacs == "hmac-sha2-256,hmac-sha2-512"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.2.commTelnet.attributes.adminSt == "enabled"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.2.commTelnet.attributes.port == "25"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.3.commHttp.attributes.adminSt == "enabled"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.3.commHttp.attributes.port == "85"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.3.commHttp.attributes.accessControlAllowOrigins == "http://127.0.0.1:8000"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.3.commHttp.attributes.accessControlAllowCredential == "enabled"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.3.commHttp.attributes.globalThrottleSt == "enabled"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.3.commHttp.attributes.globalThrottleRate == "7500"
-      - nm_update_fabric_management_access_policy_1_change_telnet_web_configuration.current.0.commPol.children.3.commHttp.attributes.globalThrottleUnit == "r/m"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration is changed
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.0.commShellinabox.attributes.adminSt == "disabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.1.commSsh.attributes.adminSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.2.commTelnet.attributes.adminSt == "disabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.2.commTelnet.attributes.port == "23"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.adminSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.port == "443"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.accessControlAllowCredential == "disabled"
+      # - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.accessControlAllowOrigins == "" Commented because the default value is different between versions.
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.clientCertAuthState == "disabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.dhParam == "none"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.sslProtocols == "TLSv1.1,TLSv1.2"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.globalThrottleRate == "10000"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.globalThrottleSt == "disabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.globalThrottleUnit == "r/s"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.children.0.commRsKeyRing.attributes.tnPkiKeyRingName == "default"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.4.commHttp.attributes.adminSt == "disabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.4.commHttp.attributes.port == "80"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.0.commShellinabox.attributes.adminSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.1.commSsh.attributes.adminSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.1.commSsh.attributes.passwordAuth == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.1.commSsh.attributes.port == "20"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.1.commSsh.attributes.sshCiphers == "aes128-ctr,aes192-ctr,aes256-ctr"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.1.commSsh.attributes.kexAlgos == "diffie-hellman-group14-sha1,ecdh-sha2-nistp521"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.1.commSsh.attributes.sshMacs == "hmac-sha2-256,hmac-sha2-512"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.2.commTelnet.attributes.adminSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.2.commTelnet.attributes.port == "25"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.adminSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.port == "445"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.accessControlAllowCredential == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.accessControlAllowOrigins == "http://127.0.0.1:8000"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.clientCertAuthState == "disabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.dhParam == "4096"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.sslProtocols == "TLSv1.2"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.globalThrottleRate == "7500"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.globalThrottleSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.globalThrottleUnit == "r/m"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.children.0.commRsKeyRing.attributes.tnPkiKeyRingName == "default"
+      # - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.children.1.commRsClientCertCA.attributes.tDn == "uni/userext/pkiext/tp-ansible_trustpoint"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.adminSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.port == "85"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.accessControlAllowOrigins == "http://127.0.0.1:8000"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.accessControlAllowCredential == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.globalThrottleSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.globalThrottleRate == "7500"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.globalThrottleUnit == "r/m"
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring is changed
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.previous.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.previous.0.commPol.children.3.commHttps.attributes.port == "445"
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.previous.0.commPol.children.3.commHttps.children.0.commRsKeyRing.attributes.tnPkiKeyRingName == "default"
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.current.0.commPol.children.3.commHttps.attributes.port == "443"
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.current.0.commPol.children.3.commHttps.children.0.commRsKeyRing.attributes.tnPkiKeyRingName == "default"
 
 # VERSION SPECIFIC TESTS
 - name: Test fabric management access policy http redirect
@@ -176,7 +232,7 @@
       ansible.builtin.assert:
         that:
           - nm_update_fabric_management_access_policy_1_http_redirect is changed
-          - nm_update_fabric_management_access_policy_1_http_redirect.current.0.commPol.children.3.commHttp.attributes.redirectSt == "tested"
+          - nm_update_fabric_management_access_policy_1_http_redirect.current.0.commPol.children.4.commHttp.attributes.redirectSt == "tested"
 
 # QUERY
 - name: Query an fabric management access policy
@@ -200,8 +256,9 @@
       - query_fabric_management_access_policy_1.current.0.commPol.children.0.commShellinabox.attributes.adminSt == "enabled"
       - query_fabric_management_access_policy_1.current.0.commPol.children.1.commSsh.attributes.adminSt == "enabled"
       - query_fabric_management_access_policy_1.current.0.commPol.children.2.commTelnet.attributes.adminSt == "enabled"
-      - query_fabric_management_access_policy_1.current.0.commPol.children.3.commHttp.attributes.adminSt == "enabled"
-      - query_fabric_management_access_policy_1.current.0.commPol.children | length == 4
+      - query_fabric_management_access_policy_1.current.0.commPol.children.3.commHttps.attributes.adminSt == "enabled"
+      - query_fabric_management_access_policy_1.current.0.commPol.children.4.commHttp.attributes.adminSt == "enabled"
+      - query_fabric_management_access_policy_1.current.0.commPol.children | length == 5
       - query_fabric_management_access_policy_1.current | length == 1
       - query_all is not changed
       - query_all.current | length >= 2
