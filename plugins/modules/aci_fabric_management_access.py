@@ -32,6 +32,126 @@ options:
     - The name alias of the Fabric Management Access policy.
     - This relates to the nameAlias property in ACI.
     type: str
+  http:
+    description:
+    - Parameters for HTTP configuration.
+    type: dict
+    suboptions:
+      admin_state:
+        description:
+        - The admin state of the telnet connection.
+        - The APIC defaults to C(disabled) when unset during creation.
+        type: str
+        choices: [ enabled, disabled ]
+      port:
+        description:
+        - The port for the HTTP connection.
+        - The APIC defaults to C(80) when unset during creation.
+        type: int
+      redirect:
+        description:
+        - The state of the HTTPS communication service.
+        - The APIC defaults to C(disabled) when unset during creation.
+        type: str
+        choices: [ enabled, disabled, tested ]
+      allow_origins:
+        description:
+        - The allowed origins for the HTTP connection.
+        - 'Example format: http://127.0.0.1:8000'
+        type: str
+      allow_credentials:
+        description:
+        - The state of the allow credential for the HTTP connection.
+        - The APIC defaults to C(disabled) when unset during creation.
+        type: str
+        choices: [ enabled, disabled ]
+      throttle:
+        description:
+        - The state of the request throttle for the HTTP connection.
+        - The APIC defaults to C(disabled) when unset during creation.
+        type: str
+        choices: [ enabled, disabled ]
+      throttle_rate:
+        description:
+        - The rate of the request throttle.
+        - The APIC defaults to C(10000) when unset during creation.
+        type: int
+      throttle_unit:
+        description:
+        - The unit of the request throttle rate.
+        - The APIC defaults to C(requests_per_second) when unset during creation.
+        type: str
+        choices: [ requests_per_second, requests_per_minute ]
+  telnet:
+    description:
+    - Parameters for telnet configuration.
+    type: dict
+    suboptions:
+      admin_state:
+        description:
+        - The admin state of the telnet connection.
+        - The APIC defaults to C(disabled) when unset during creation.
+        type: str
+        choices: [ enabled, disabled ]
+      port:
+        description:
+        - The port for the telnet connection.
+        - The APIC defaults to C(23) when unset during creation.
+        type: int
+  ssh:
+    description:
+    - Parameters for SSH configuration.
+    type: dict
+    suboptions:
+      admin_state:
+        description:
+        - The admin state of the SSH connection.
+        - The APIC defaults to C(enabled) when unset during creation.
+        type: str
+        choices: [ enabled, disabled ]
+      password_auth_state:
+        description:
+        - The password authentication state of the SSH connection.
+        - The APIC defaults to C(enabled) when unset during creation.
+        type: str
+        choices: [ enabled, disabled ]
+      port:
+        description:
+        - The port for the SSH connection.
+        - The APIC defaults to C(22) when unset during creation.
+        type: int
+      ciphers:
+        description:
+        - The ciphers of the SSH connection.
+        - The APIC defaults to all options set when unset during creation.
+        type: list
+        elements: str
+        choices: [ aes128_ctr, aes192_ctr, aes256_ctr, aes128_gcm, aes256_gcm, chacha20 ]
+      kex:
+        description:
+        - The KEX algorithms of the SSH connection.
+        - The APIC defaults to all options set when unset during creation.
+        type: list
+        elements: str
+        choices: [ dh_sha1, dh_sha256, dh_sha512, curve_sha256, curve_sha256_libssh, ecdh_256, ecdh_384, ecdh_521 ]
+      macs:
+        description:
+        - The MACs of the SSH connection.
+        - The APIC defaults to all options set  when unset during creation.
+        type: list
+        elements: str
+        choices: [ sha1, sha2_256, sha2_512, sha2_256_etm, sha2_512_etm ]
+  ssh_web:
+    description:
+    - Parameters for SSH access via WEB configuration.
+    type: dict
+    suboptions:
+      admin_state:
+        description:
+        - The admin state of the SSH access via WEB connection.
+        - The APIC defaults to C(disabled) when unset during creation.
+        type: str
+        choices: [ enabled, disabled ]
   state:
     description:
     - Use C(present) for updating configuration.
@@ -60,6 +180,62 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     name: fabric_management_access_policy_1
     description: "This is a example Fabric Management Access policy."
+    state: present
+  delegate_to: localhost
+
+- name: Create a Fabric Management Access policy with telnet enabled
+  cisco.aci.aci_fabric_management_access:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: fabric_management_access_policy_1
+    description: "This is a example Fabric Management Access policy."
+    telnet:
+      admin_state: enabled
+    state: present
+  delegate_to: localhost
+
+- name: Create a Fabric Management Access policy with SSH access via WEB enabled
+  cisco.aci.aci_fabric_management_access:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: fabric_management_access_policy_1
+    description: "This is a example Fabric Management Access policy."
+    ssh_web:
+      admin_state: enabled
+    state: present
+  delegate_to: localhost
+
+- name: Create a Fabric Management Access policy with SSH enabled and ciphers set
+  cisco.aci.aci_fabric_management_access:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: fabric_management_access_policy_1
+    description: "This is a example Fabric Management Access policy."
+    ssh:
+      admin_state: enabled
+      ciphers:
+        - aes128_ctr
+        - aes192_ctr
+        - aes256_ctr
+    state: present
+  delegate_to: localhost
+
+- name: Create a Fabric Management Access policy with HTTP enabled
+  cisco.aci.aci_fabric_management_access:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: fabric_management_access_policy_1
+    description: "This is a example Fabric Management Access policy."
+    http:
+      admin_state: enabled
+      allow_origins: http://127.0.0.1:8000
+      throttle: enabled
+      throttle_rate: 7500
+      throttle_unit: requests_per_minute
     state: present
   delegate_to: localhost
 
@@ -199,6 +375,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.constants import THROTTLE_UNIT, SSH_CIPHERS, KEX_ALGORITHMS, SSH_MACS
 
 
 def main():
@@ -209,6 +386,43 @@ def main():
         name=dict(type="str", aliases=["fabric_management_access_policy_name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         name_alias=dict(type="str"),
+        http=dict(
+            type="dict",
+            options=dict(
+                admin_state=dict(type="str", choices=["enabled", "disabled"]),
+                port=dict(type="int"),
+                redirect=dict(type="str", choices=["enabled", "disabled", "tested"]),
+                allow_origins=dict(type="str"),
+                allow_credentials=dict(type="str", choices=["enabled", "disabled"]),
+                throttle=dict(type="str", choices=["enabled", "disabled"]),
+                throttle_rate=dict(type="int"),
+                throttle_unit=dict(type="str", choices=["requests_per_second", "requests_per_minute"]),
+            ),
+        ),
+        telnet=dict(
+            type="dict",
+            options=dict(
+                admin_state=dict(type="str", choices=["enabled", "disabled"]),
+                port=dict(type="int"),
+            ),
+        ),
+        ssh=dict(
+            type="dict",
+            options=dict(
+                admin_state=dict(type="str", choices=["enabled", "disabled"]),
+                password_auth_state=dict(type="str", choices=["enabled", "disabled"]),
+                port=dict(type="int"),
+                ciphers=dict(type="list", elements="str", choices=list(SSH_CIPHERS.keys())),
+                kex=dict(type="list", elements="str", choices=list(KEX_ALGORITHMS.keys())),
+                macs=dict(type="list", elements="str", choices=list(SSH_MACS.keys())),
+            ),
+        ),
+        ssh_web=dict(
+            type="dict",
+            options=dict(
+                admin_state=dict(type="str", choices=["enabled", "disabled"]),
+            ),
+        ),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -223,10 +437,15 @@ def main():
 
     aci = ACIModule(module)
     aci_class = "commPol"
+    aci_child_classes = ["commSsh", "commHttp", "commTelnet", "commShellinabox"]
 
     name = module.params.get("name")
     description = module.params.get("description")
     name_alias = module.params.get("name_alias")
+    http = module.params.get("http")
+    telnet = module.params.get("telnet")
+    ssh = module.params.get("ssh")
+    ssh_web = module.params.get("ssh_web")
     state = module.params.get("state")
 
     aci.construct_url(
@@ -236,11 +455,71 @@ def main():
             module_object=name,
             target_filter={"name": name},
         ),
+        child_classes=aci_child_classes,
     )
 
     aci.get_existing()
 
     if state == "present":
+        child_configs = []
+
+        if ssh:
+            child_configs.append(
+                dict(
+                    commSsh=dict(
+                        attributes=dict(
+                            adminSt=ssh.get("admin_state"),
+                            passwordAuth=ssh.get("password_auth_state"),
+                            port=ssh.get("port"),
+                            sshCiphers=",".join(sorted(SSH_CIPHERS.get(v) for v in set(ssh.get("ciphers")))) if ssh.get("ciphers") else None,
+                            kexAlgos=",".join(sorted(KEX_ALGORITHMS.get(v) for v in set(ssh.get("kex")))) if ssh.get("kex") else None,
+                            sshMacs=",".join(sorted(SSH_MACS.get(v) for v in set(ssh.get("macs")))) if ssh.get("macs") else None,
+                        )
+                    )
+                )
+            )
+
+        if http:
+            child_configs.append(
+                dict(
+                    commHttp=dict(
+                        attributes=dict(
+                            adminSt=http.get("admin_state"),
+                            port=http.get("port"),
+                            redirectSt=http.get("redirect"),
+                            accessControlAllowOrigins=http.get("allow_origins"),
+                            accessControlAllowCredential=http.get("allow_credentials"),
+                            globalThrottleSt=http.get("throttle"),
+                            globalThrottleRate=http.get("throttle_rate"),
+                            globalThrottleUnit=THROTTLE_UNIT.get(http.get("throttle_unit")),
+                        )
+                    )
+                )
+            )
+
+        if telnet:
+            child_configs.append(
+                dict(
+                    commTelnet=dict(
+                        attributes=dict(
+                            adminSt=telnet.get("admin_state"),
+                            port=telnet.get("port"),
+                        )
+                    )
+                )
+            )
+
+        if ssh_web:
+            child_configs.append(
+                dict(
+                    commShellinabox=dict(
+                        attributes=dict(
+                            adminSt=ssh_web.get("admin_state"),
+                        )
+                    )
+                )
+            )
+
         aci.payload(
             aci_class=aci_class,
             class_config=dict(
@@ -248,6 +527,7 @@ def main():
                 descr=description,
                 nameAlias=name_alias,
             ),
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class=aci_class)

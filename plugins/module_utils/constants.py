@@ -230,3 +230,32 @@ MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING = dict(
 )
 
 ECC_CURVE = {"P256": "prime256v1", "P384": "secp384r1", "P521": "secp521r1", "none": "none"}
+THROTTLE_UNIT = dict(requests_per_second="r/s", requests_per_minute="r/m")
+
+SSH_CIPHERS = dict(
+    aes128_ctr="aes128-ctr",
+    aes192_ctr="aes192-ctr",
+    aes256_ctr="aes256-ctr",
+    aes128_gcm="aes128-gcm@openssh.com",
+    aes256_gcm="aes256-gcm@openssh.com",
+    chacha20="chacha20-poly1305@openssh.com",
+)
+
+SSH_MACS = dict(
+    sha1="hmac-sha1",
+    sha2_256="hmac-sha2-256",
+    sha2_512="hmac-sha2-512",
+    sha2_256_etm="hmac-sha2-256-etm@openssh.com",
+    sha2_512_etm="hmac-sha2-512-etm@openssh.com",
+)
+
+KEX_ALGORITHMS = dict(
+    dh_sha1="diffie-hellman-group14-sha1",
+    dh_sha256="diffie-hellman-group14-sha256",
+    dh_sha512="diffie-hellman-group16-sha512",
+    curve_sha256="curve25519-sha256",
+    curve_sha256_libssh="curve25519-sha256@libssh.org",
+    ecdh_256="ecdh-sha2-nistp256",
+    ecdh_384="ecdh-sha2-nistp384",
+    ecdh_521="ecdh-sha2-nistp521",
+)
