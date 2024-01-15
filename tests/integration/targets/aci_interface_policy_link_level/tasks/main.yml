@@ -213,7 +213,6 @@
         loop: "{{ supported_speed | zip(cm_add_policy_speed.results) }}"
         loop_control:
           label: "speed-{{ item.0 }}"
-    ignore_errors: true
 
   # QUERY ALL LINK LEVEL POLICIES
   - name: Query all Link Level Policies (check mode)
