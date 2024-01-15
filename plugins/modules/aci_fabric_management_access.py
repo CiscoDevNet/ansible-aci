@@ -34,12 +34,12 @@ options:
     type: str
   http:
     description:
-    - Parameters for HTTP configuration.
+    - Parameters for HTTP configuration (comm:Http).
     type: dict
     suboptions:
       admin_state:
         description:
-        - The admin state of the telnet connection.
+        - The admin state of the HTTP connection.
         - The APIC defaults to C(disabled) when unset during creation.
         type: str
         choices: [ enabled, disabled ]
@@ -82,9 +82,85 @@ options:
         - The APIC defaults to C(requests_per_second) when unset during creation.
         type: str
         choices: [ requests_per_second, requests_per_minute ]
+  https:
+    description:
+    - Parameters for HTTPS configuration (comm:Https).
+    type: dict
+    suboptions:
+      admin_state:
+        description:
+        - The admin state of the HTTPS connection.
+        - The APIC defaults to C(enabled) when unset during creation.
+        type: str
+        choices: [ enabled, disabled ]
+      port:
+        description:
+        - The port for the HTTPS connection.
+        - The APIC defaults to C(443) when unset during creation.
+        type: int
+      allow_origins:
+        description:
+        - The allowed origins for the HTTPS connection.
+        - 'Example format: http://127.0.0.1:8000'
+        type: str
+      allow_credentials:
+        description:
+        - The state of the allow credential for the HTTPS connection.
+        - The APIC defaults to C(disabled) when unset during creation.
+        type: str
+        choices: [ enabled, disabled ]
+      ssl:
+        description:
+        - The SSL protocol(s) for the HTTPS connection.
+        - The APIC defaults to C(tls_v1.1) and C(tls_v1.2) set when unset during creation.
+        type: list
+        elements: str
+        choices: [ tls_v1.0, tls_v1.1, tls_v1.2, tls_v1.3 ]
+        aliases: [ ssl_protocols ]
+      dh_param:
+        description:
+        - The Diffie-Hellman parameter for the HTTPS connection.
+        - The APIC defaults to C(none) when unset during creation.
+        type: str
+        choices: [ '1024', '2048', '4096', none ]
+      throttle:
+        description:
+        - The state of the request throttle for the HTTPS connection.
+        - The APIC defaults to C(disabled) when unset during creation.
+        type: str
+        choices: [ enabled, disabled ]
+      throttle_rate:
+        description:
+        - The rate of the request throttle.
+        - The APIC defaults to C(10000) when unset during creation.
+        type: int
+      throttle_unit:
+        description:
+        - The unit of the request throttle rate.
+        - The APIC defaults to C(requests_per_second) when unset during creation.
+        type: str
+        choices: [ requests_per_second, requests_per_minute ]
+      admin_key_ring:
+        description:
+        - The admin key ring for the HTTPS connection.
+        - The APIC defaults to C(default) when unset during creation.
+        type: str
+      client_certificate_trustpoint:
+        description:
+        - The client certificate trustpoint for the HTTPS connection.
+        type: str
+        aliases: [ trustpoint ]
+      client_certificate_authentication_state:
+        description:
+        - The client certificate authentication state for the HTTPS connection.
+        - The APIC defaults to C(disabled) when unset during creation.
+        - The C(enabled) state requires a C(client_certificate_trustpoint) to be set.
+        type: str
+        choices: [ enabled, disabled ]
+        aliases: [ client_certificate_auth_state, auth_state, authentication_state ]
   telnet:
     description:
-    - Parameters for telnet configuration.
+    - Parameters for telnet configuration (comm:Telnet).
     type: dict
     suboptions:
       admin_state:
@@ -100,7 +176,7 @@ options:
         type: int
   ssh:
     description:
-    - Parameters for SSH configuration.
+    - Parameters for SSH configuration (comm:Ssh).
     type: dict
     suboptions:
       admin_state:
@@ -143,7 +219,7 @@ options:
         choices: [ sha1, sha2_256, sha2_512, sha2_256_etm, sha2_512_etm ]
   ssh_web:
     description:
-    - Parameters for SSH access via WEB configuration.
+    - Parameters for SSH access via WEB configuration (comm:Shellinabox).
     type: dict
     suboptions:
       admin_state:
@@ -236,6 +312,30 @@ EXAMPLES = r"""
       throttle: enabled
       throttle_rate: 7500
       throttle_unit: requests_per_minute
+    state: present
+  delegate_to: localhost
+
+- name: Create a Fabric Management Access policy with HTTPS enabled
+  cisco.aci.aci_fabric_management_access:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: fabric_management_access_policy_1
+    description: "This is a example Fabric Management Access policy."
+    https:
+      admin_state: enabled
+      port: 445
+      allow_origins: http://127.0.0.1:8000
+      allow_credentials: enabled
+      ssl:
+        - tls_v1.2
+      dh_param: 4096
+      throttle: enabled
+      throttle_rate: 7500
+      throttle_unit: requests_per_minute
+      admin_key_ring: default
+      client_certificate_trustpoint: ansible_trustpoint
+      client_certificate_authentication_state: enabled
     state: present
   delegate_to: localhost
 
@@ -375,7 +475,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-from ansible_collections.cisco.aci.plugins.module_utils.constants import THROTTLE_UNIT, SSH_CIPHERS, KEX_ALGORITHMS, SSH_MACS
+from ansible_collections.cisco.aci.plugins.module_utils.constants import THROTTLE_UNIT, SSH_CIPHERS, KEX_ALGORITHMS, SSH_MACS, TLS_MAPPING_NEW
 
 
 def main():
@@ -397,6 +497,32 @@ def main():
                 throttle=dict(type="str", choices=["enabled", "disabled"]),
                 throttle_rate=dict(type="int"),
                 throttle_unit=dict(type="str", choices=["requests_per_second", "requests_per_minute"]),
+            ),
+        ),
+        https=dict(
+            type="dict",
+            options=dict(
+                admin_state=dict(type="str", choices=["enabled", "disabled"]),
+                port=dict(type="int"),
+                allow_origins=dict(type="str"),
+                allow_credentials=dict(type="str", choices=["enabled", "disabled"]),
+                ssl=dict(
+                    type="list",
+                    elements="str",
+                    choices=list(TLS_MAPPING_NEW.keys()),
+                    aliases=["ssl_protocols"],
+                ),
+                dh_param=dict(type="str", choices=["1024", "2048", "4096", "none"]),
+                throttle=dict(type="str", choices=["enabled", "disabled"]),
+                throttle_rate=dict(type="int"),
+                throttle_unit=dict(type="str", choices=["requests_per_second", "requests_per_minute"]),
+                admin_key_ring=dict(type="str", no_log=False),
+                client_certificate_trustpoint=dict(type="str", aliases=["trustpoint"]),
+                client_certificate_authentication_state=dict(
+                    type="str",
+                    choices=["enabled", "disabled"],
+                    aliases=["client_certificate_auth_state", "auth_state", "authentication_state"],
+                ),
             ),
         ),
         telnet=dict(
@@ -437,12 +563,13 @@ def main():
 
     aci = ACIModule(module)
     aci_class = "commPol"
-    aci_child_classes = ["commSsh", "commHttp", "commTelnet", "commShellinabox"]
+    aci_child_classes = ["commSsh", "commHttp", "commHttps", "commTelnet", "commShellinabox"]
 
     name = module.params.get("name")
     description = module.params.get("description")
     name_alias = module.params.get("name_alias")
     http = module.params.get("http")
+    https = module.params.get("https")
     telnet = module.params.get("telnet")
     ssh = module.params.get("ssh")
     ssh_web = module.params.get("ssh_web")
@@ -496,6 +623,35 @@ def main():
                     )
                 )
             )
+
+        if https:
+            https_config = dict(
+                commHttps=dict(
+                    attributes=dict(
+                        adminSt=https.get("admin_state"),
+                        port=https.get("port"),
+                        accessControlAllowOrigins=https.get("allow_origins"),
+                        accessControlAllowCredential=https.get("allow_credentials"),
+                        sslProtocols=",".join(sorted(TLS_MAPPING_NEW.get(v) for v in set(https.get("ssl")))) if https.get("ssl") else None,
+                        dhParam=https.get("dh_param"),
+                        globalThrottleSt=https.get("throttle"),
+                        globalThrottleRate=https.get("throttle_rate"),
+                        globalThrottleUnit=THROTTLE_UNIT.get(https.get("throttle_unit")),
+                        clientCertAuthState=https.get("client_certificate_authentication_state"),
+                    ),
+                    children=[],
+                )
+            )
+
+            if https.get("admin_key_ring"):
+                https_config["commHttps"]["children"].append(dict(commRsKeyRing=dict(attributes=dict(tnPkiKeyRingName=https.get("admin_key_ring")))))
+
+            if https.get("client_certificate_trustpoint"):
+                https_config["commHttps"]["children"].append(
+                    dict(commRsClientCertCA=dict(attributes=dict(tDn="uni/userext/pkiext/tp-{0}".format(https.get("client_certificate_trustpoint")))))
+                )
+
+            child_configs.append(https_config)
 
         if telnet:
             child_configs.append(

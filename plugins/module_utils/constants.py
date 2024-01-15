@@ -99,6 +99,8 @@ FABRIC_POD_SELECTOR_TYPE_MAPPING = dict(all="ALL", range="range")
 
 TLS_MAPPING = {"tls_v1.0": "TLSv1", "tls_v1.1": "TLSv1.1", "tls_v1.2": "TLSv1.2"}
 
+TLS_MAPPING_NEW = {"tls_v1.0": "TLSv1", "tls_v1.1": "TLSv1.1", "tls_v1.2": "TLSv1.2", "tls_v1.3": "TLSv1.3"}
+
 ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING = dict(
     spine=dict(
         class_name="infraSpineAccNodePGrp",
