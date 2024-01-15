@@ -37,7 +37,7 @@ options:
     - Use C(present) for updating configuration.
     - Use C(query) for showing current configuration.
     type: str
-    choices: [ present, query ]
+    choices: [ absent, present, query ]
     default: present
 extends_documentation_fragment:
 - cisco.aci.aci
