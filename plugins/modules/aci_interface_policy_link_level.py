@@ -35,7 +35,8 @@ options:
     default: true
   speed:
     description:
-    - Determines the interface policy administrative port speed. (note: "auto" is only supported from APIC versions >= 5.2)
+    - Determines the interface policy administrative port speed. 
+    - The C(auto) option is only supported in APIC version 5.2 or later.
     - The APIC defaults to C(inherit) when unset during creation.
     type: str
     choices: [ 100M, 1G, 10G, 25G, 40G, 50G, 100G, 200G, 400G, auto, inherit ]
