@@ -228,3 +228,5 @@ MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING = dict(
     out_of_band_management_ip="oob-mgmt-ip",
     ptep="ptep",
 )
+
+ECC_CURVE = {"P256": "prime256v1", "P384": "secp384r1", "P521": "secp521r1", "none": "none"}
