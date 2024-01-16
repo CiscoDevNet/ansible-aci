@@ -1,0 +1,196 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT BEFORE TESTS
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
+
+  # CREATE NETFLOW EXPORTER POLICY
+  - name: Add a Netflow Exporter policy (check_mode)
+    cisco.aci.aci_netflow_exporter_policy: &aci_netflow_exporter_policy_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      netflow_exporter_policy: ansible_netflow_exporter_policy_1
+      description: Netflow Exporter policy 1 for ansible_tenant tenant
+      dscp: AF12
+      destination_address: 11.11.11.1
+      destination_port: smtp
+      source_ip_type: inband_management_ip
+      state: present
+    check_mode: true
+    register: cm_add_netflow_exporter_policy
+
+  - name: Add a Netflow Exporter policy (normal_mode)
+    cisco.aci.aci_netflow_exporter_policy:
+      <<: *aci_netflow_exporter_policy_present
+    register: nm_add_netflow_exporter_policy
+
+  - name: Add the first Netflow Exporter policy again - testing idempotency
+    cisco.aci.aci_netflow_exporter_policy:
+      <<: *aci_netflow_exporter_policy_present
+    register: nm_add_netflow_exporter_policy_idempotency
+
+  - name: Add a second Netflow Exporter policy (normal_mode)
+    cisco.aci.aci_netflow_exporter_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      netflow_exporter_policy: ansible_netflow_exporter_policy_2
+      description: Netflow Exporter policy 2 for ansible_tenant tenant
+      dscp: CS2
+      destination_address: 11.11.11.2
+      destination_port: https
+      custom_source_address: 12.12.12.2/12
+      state: present
+    register: nm_add_netflow_exporter_policy_2
+
+  - name: Asserts for Netflow Exporter policy creation tasks
+    ansible.builtin.assert:
+      that:
+        - cm_add_netflow_exporter_policy is changed
+        - cm_add_netflow_exporter_policy.previous == []
+        - cm_add_netflow_exporter_policy.current == []
+        - nm_add_netflow_exporter_policy is changed
+        - nm_add_netflow_exporter_policy.current.0.netflowExporterPol.attributes.name == "ansible_netflow_exporter_policy_1"
+        - nm_add_netflow_exporter_policy.current.0.netflowExporterPol.attributes.dscp == "AF12"
+        - nm_add_netflow_exporter_policy.current.0.netflowExporterPol.attributes.dstAddr == "11.11.11.1"
+        - nm_add_netflow_exporter_policy.current.0.netflowExporterPol.attributes.dstPort == "smtp"
+        - nm_add_netflow_exporter_policy.current.0.netflowExporterPol.attributes.sourceIpType == "inband-mgmt-ip"
+        - nm_add_netflow_exporter_policy.current.0.netflowExporterPol.attributes.srcAddr == "0.0.0.0"
+        - nm_add_netflow_exporter_policy_idempotency is not changed
+        - nm_add_netflow_exporter_policy_2 is changed
+        - nm_add_netflow_exporter_policy_2.previous == []
+        - nm_add_netflow_exporter_policy_2.current.0.netflowExporterPol.attributes.name == "ansible_netflow_exporter_policy_2"
+        - nm_add_netflow_exporter_policy_2.current.0.netflowExporterPol.attributes.dscp == "CS2"
+        - nm_add_netflow_exporter_policy_2.current.0.netflowExporterPol.attributes.dstAddr == "11.11.11.2"
+        - nm_add_netflow_exporter_policy_2.current.0.netflowExporterPol.attributes.dstPort == "https"
+        - nm_add_netflow_exporter_policy_2.current.0.netflowExporterPol.attributes.sourceIpType == "custom-src-ip"
+        - nm_add_netflow_exporter_policy_2.current.0.netflowExporterPol.attributes.srcAddr == "12.12.12.2/12"
+
+  # QUERY NETFLOW Exporter POLICY
+  - name: Query all Netflow Exporter policies
+    cisco.aci.aci_netflow_exporter_policy:
+      <<: *aci_info
+      state: query
+    register: query_all_netflow_exporter_policy
+
+  - name: Query ansible_netflow_exporter_policy_1
+    cisco.aci.aci_netflow_exporter_policy:
+      <<: *aci_netflow_exporter_policy_present
+      state: query
+    register: query_ansible_netflow_exporter_policy_1
+
+  - name: Asserts query tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_netflow_exporter_policy is not changed
+        - query_all_netflow_exporter_policy.current|length >= 2
+        - query_ansible_netflow_exporter_policy_1 is not changed
+        - query_ansible_netflow_exporter_policy_1.current.0.netflowExporterPol.attributes.name == "ansible_netflow_exporter_policy_1"
+        - query_ansible_netflow_exporter_policy_1.current.0.netflowExporterPol.attributes.dscp == "AF12"
+        - query_ansible_netflow_exporter_policy_1.current.0.netflowExporterPol.attributes.dstAddr == "11.11.11.1"
+        - query_ansible_netflow_exporter_policy_1.current.0.netflowExporterPol.attributes.dstPort == "smtp"
+        - query_ansible_netflow_exporter_policy_1.current.0.netflowExporterPol.attributes.sourceIpType == "inband-mgmt-ip"
+        - query_ansible_netflow_exporter_policy_1.current.0.netflowExporterPol.attributes.srcAddr == "0.0.0.0"
+
+  #UPDATE NETFLOW EXPORTER POLICY
+  - name: Update first Netflow Exporter policy (check_mode)
+    cisco.aci.aci_netflow_exporter_policy: &aci_netflow_exporter_policy_update
+      <<: *aci_netflow_exporter_policy_present
+      dscp: AF13
+      destination_address: 11.11.11.3
+      destination_port: http
+      source_ip_type: out_of_band_management_ip
+    check_mode: true
+    register: cm_update_netflow_exporter_policy
+
+  - name: Update first Netflow Exporter policy (normal_mode)
+    cisco.aci.aci_netflow_exporter_policy:
+      <<: *aci_netflow_exporter_policy_update
+    register: nm_update_netflow_exporter_policy
+
+  - name: Update first Netflow Exporter policy again - testing idempotency
+    cisco.aci.aci_netflow_exporter_policy:
+      <<: *aci_netflow_exporter_policy_update
+    register: nm_udpate_netflow_exporter_policy_idempotency
+
+  - name: Asserts for Netflow Exporter policy update tasks
+    ansible.builtin.assert:
+      that:
+        - cm_update_netflow_exporter_policy is changed
+        - cm_update_netflow_exporter_policy.previous == cm_update_netflow_exporter_policy.current
+        - nm_update_netflow_exporter_policy is changed
+        - nm_update_netflow_exporter_policy.current.0.netflowExporterPol.attributes.dscp == "AF13"
+        - nm_update_netflow_exporter_policy.current.0.netflowExporterPol.attributes.dstAddr == "11.11.11.3"
+        - nm_update_netflow_exporter_policy.current.0.netflowExporterPol.attributes.dstPort == "http"
+        - nm_update_netflow_exporter_policy.current.0.netflowExporterPol.attributes.sourceIpType == "oob-mgmt-ip"
+        - nm_update_netflow_exporter_policy.current.0.netflowExporterPol.attributes.srcAddr == "0.0.0.0"
+        - nm_udpate_netflow_exporter_policy_idempotency is not changed
+
+  # DELETE NETFLOW EXPORTER POLICY
+  - name: Remove Netflow Exporter policy (check_mode)
+    cisco.aci.aci_netflow_exporter_policy: &netflow_exporter_policy_absent
+      <<: *aci_netflow_exporter_policy_update
+      state: absent
+    check_mode: true
+    register: cm_remove_netflow_exporter_policy
+
+  - name: Remove Netflow Exporter policy (normal_mode)
+    cisco.aci.aci_netflow_exporter_policy:
+      <<: *netflow_exporter_policy_absent
+    register: nm_remove_netflow_exporter_policy
+
+  - name: Remove Netflow Exporter policy - testing idempotency
+    cisco.aci.aci_netflow_exporter_policy:
+      <<: *netflow_exporter_policy_absent
+    register: nm_remove_netflow_exporter_policy_idempotency
+
+  - name: Asserts deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_remove_netflow_exporter_policy is changed
+        - cm_remove_netflow_exporter_policy.proposed == {}
+        - nm_remove_netflow_exporter_policy is changed
+        - nm_remove_netflow_exporter_policy.previous != []
+        - nm_remove_netflow_exporter_policy.current == []
+        - nm_remove_netflow_exporter_policy_idempotency is not changed
+        - nm_remove_netflow_exporter_policy_idempotency.previous == []
+
+  # CLEAN ENVIRONMENT BEFORE ENDING TESTS
+  - name: Remove the ansible_tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent

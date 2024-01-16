@@ -12,54 +12,26 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_netflow_exporter_policy
-short_description: Manage Netflow Exporter Policy (netflow:ExporterPol)
+module: aci_netflow_monitor_to_exporter
+short_description: Manage Netflow Monitor to Exporter (netflow:RsMonitorToExporter)
 description:
-- Manage Netflow Exporter Policies for tenants on Cisco ACI fabrics.
-- Exporter information for bootstrapping the netflow Collection agent.
+- Link Netflow Exporter policies to Netflow Monitor policies for tenants on Cisco ACI fabrics.
 options:
   tenant:
     description:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
+  netflow_monitor_policy:
+    description:
+    - The name of the Netflow Monitor Policy.
+    type: str
+    aliases: [ netflow_monitor, netflow_monitor_name, name ]
   netflow_exporter_policy:
     description:
     - The name of the Netflow Exporter Policy.
     type: str
-    aliases: [ netflow_exporter, netflow_exporter_name, name ]
-  dscp:
-    description:
-    - The IP DSCP value.
-    - The APIC defaults to C(CS2) when unset during creation.
-      It defaults to C(VA) for APIC versions 4.2 or prior.
-    type: str
-    choices: [ AF11, AF12, AF13, AF21, AF22, AF23, AF31, AF32, AF33, AF41, AF42, AF43, CS0, CS1, CS2, CS3, CS4, CS5, CS6, CS7, EF, VA, unspecified ]
-  destination_address:
-    description:
-    - The remote node destination IP address.
-    type: str
-  destination_port:
-    description:
-    - The remote node destination port.
-    - The APIC defaults to C(unspecified) when unset during creation.
-    type: str
-  source_ip_type:
-    description:
-    - The type of Exporter source IP Address.
-    - It Can be one of the available management IP Address for a given leaf or a custom IP Address.
-    type: str
-    choices: [ custom_source_ip, inband_management_ip, out_of_band_management_ip, ptep ]
-  custom_source_address:
-    description:
-    - The cutsom source IP address.
-    - It can only be used if I(source_ip_type) is C(custom_source_ip).
-    type: str
-  description:
-    description:
-    - The description for the Netflow Exporter Policy.
-    type: str
-    aliases: [ descr ]
+    aliases: [ netflow_exporter, netflow_exporter_name ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -73,45 +45,44 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The I(tenant) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) can be used for this.
+- The I(tenant), I(netflow_monitor_policy) and I(netflow_exporter_policy) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_netflow_monitor_policy), M(cisco.aci.aci_netflow_exporter_policy) can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_netflow_monitor_policy
+- module: cisco.aci.aci_netflow_exporter_policy
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(netflow:ExporterPol).
+  description: More information about the internal APIC class B(netflow:RsMonitorToExporter).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: Add a new Netflow Exporter Policy
-  cisco.aci.aci_netflow_exporter_policy:
+- name: Add a new Netflow Monitor Policy
+  cisco.aci.aci_netflow_monitor_to_exporter:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
+    netflow_monitor_policy: my_netflow_monitor_policy
     netflow_exporter_policy: my_netflow_exporter_policy
-    dscp: CS2
-    destination_address: 11.11.11.1
-    destination_port: 25
-    source_ip_type: custom_source_ip
-    custom_source_address: 11.11.11.2
     state: present
   delegate_to: localhost
 
-- name: Query a Netflow Exporter Policy
-  cisco.aci.aci_netflow_exporter_policy:
+- name: Query a Netflow Monitor Policy
+  cisco.aci.aci_netflow_monitor_to_exporter:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
+    netflow_monitor_policy: my_netflow_monitor_policy
     netflow_exporter_policy: my_netflow_exporter_policy
     state: query
   delegate_to: localhost
 
-- name: Query all Netflow Exporter Policies in my_tenant
-  cisco.aci.aci_netflow_exporter_policy:
+- name: Query all Netflow Monitor Policies in my_tenant
+  cisco.aci.aci_netflow_monitor_to_exporter:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -119,20 +90,21 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
 
-- name: Query all Netflow Exporter Policies
-  cisco.aci.aci_netflow_exporter_policy:
+- name: Query all Netflow Monitor Policies
+  cisco.aci.aci_netflow_monitor_to_exporter:
     host: apic
     username: admin
     password: SomeSecretPassword
     state: query
   delegate_to: localhost
 
-- name: Delete a Netflow Exporter Policy
-  cisco.aci.aci_netflow_exporter_policy:
+- name: Delete a Netflow Monitor Policy
+  cisco.aci.aci_netflow_monitor_policy:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
+    netflow_monitor_policy: my_netflow_monitor_policy
     netflow_exporter_policy: my_netflow_exporter_policy
     state: absent
   delegate_to: localhost
@@ -245,24 +217,17 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec, aci_contract_dscp_spec
-from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 
 def main():
-    new_dscp_spec = dict((k, aci_contract_dscp_spec()[k]) for k in aci_contract_dscp_spec() if k != "aliases")
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
-        netflow_exporter_policy=dict(type="str", aliases=["netflow_exporter", "netflow_exporter_name", "name"]),
-        dscp=new_dscp_spec,
-        destination_address=dict(type="str"),
-        destination_port=dict(type="str"),
-        source_ip_type=dict(type="str", choices=list(MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING.keys())),
-        custom_source_address=dict(type="str"),
-        description=dict(type="str", aliases=["descr"]),
+        netflow_monitor_policy=dict(type="str", aliases=["netflow_monitor", "netflow_monitor_name", "name"]),
+        netflow_exporter_policy=dict(type="str", aliases=["netflow_exporter", "netflow_exporter_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -270,19 +235,14 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "netflow_exporter_policy"]],
-            ["state", "present", ["tenant", "netflow_exporter_policy", "destination_address", "destination_port"]],
+            ["state", "absent", ["tenant", "netflow_monitor_policy", "netflow_exporter_policy"]],
+            ["state", "present", ["tenant", "netflow_monitor_policy", "netflow_exporter_policy"]],
         ],
     )
 
     tenant = module.params.get("tenant")
-    description = module.params.get("description")
+    netflow_monitor_policy = module.params.get("netflow_monitor_policy")
     netflow_exporter_policy = module.params.get("netflow_exporter_policy")
-    dscp = module.params.get("dscp")
-    destination_address = module.params.get("destination_address")
-    destination_port = module.params.get("destination_port")
-    source_ip_type = MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING.get(module.params.get("source_ip_type"))
-    custom_source_address = module.params.get("custom_source_address")
     state = module.params.get("state")
 
     aci = ACIModule(module)
@@ -295,10 +255,16 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="netflowExporterPol",
-            aci_rn="exporterpol-{0}".format(netflow_exporter_policy),
+            aci_class="netflowMonitorPol",
+            aci_rn="monitorpol-{0}".format(netflow_monitor_policy),
+            module_object=netflow_monitor_policy,
+            target_filter={"name": netflow_monitor_policy},
+        ),
+        subclass_2=dict(
+            aci_class="netflowRsMonitorToExporter",
+            aci_rn="rsmonitorToExporter-{0}".format(netflow_exporter_policy),
             module_object=netflow_exporter_policy,
-            target_filter={"name": netflow_exporter_policy},
+            target_filter={"tnNetflowExporterPolName": netflow_exporter_policy},
         ),
     )
 
@@ -306,19 +272,11 @@ def main():
 
     if state == "present":
         aci.payload(
-            aci_class="netflowExporterPol",
-            class_config=dict(
-                name=netflow_exporter_policy,
-                descr=description,
-                dscp=dscp,
-                dstAddr=destination_address,
-                dstPort=destination_port,
-                sourceIpType=source_ip_type,
-                srcAddr=custom_source_address,
-            ),
+            aci_class="netflowRsMonitorToExporter",
+            class_config=dict(tnNetflowExporterPolName=netflow_exporter_policy),
         )
 
-        aci.get_diff(aci_class="netflowExporterPol")
+        aci.get_diff(aci_class="netflowRsMonitorToExporter")
 
         aci.post_config()
 
