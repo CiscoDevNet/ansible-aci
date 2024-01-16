@@ -34,6 +34,26 @@
     name: fabric_management_access_policy_1
     state: absent
 
+- name: Ensure certificate_authority_1 exists
+  cisco.aci.aci_aaa_certificate_authority: &certificate_authority_1
+    <<: *aci_info
+    name: certificate_authority_1
+    certificate_chain: "{{ lookup('file', 'pki/admin.crt') }}"
+    state: present
+
+- name: Ensure key_ring_1 exists
+  cisco.aci.aci_aaa_key_ring: &key_ring_1
+    <<: *aci_info
+    name: key_ring_1
+    certificate: "{{ lookup('file', 'pki/admin.crt') }}"
+    certificate_authority: certificate_authority_1
+    key: "{{ lookup('file', 'pki/admin.key') }}"
+    state: present
+  register: create_key_ring_1
+  until: create_key_ring_1 is not failed
+  delay: 2
+  retries: 4
+
 # CREATE
 - name: Create a new fabric management access policy (check_mode)
   cisco.aci.aci_fabric_management_access: &aci_fabric_management_access_1_present
@@ -85,7 +105,6 @@
       - nm_create_fabric_management_access_policy_1_again.current.0.commPol.children.2.commTelnet.attributes.adminSt == "disabled"
       - nm_create_fabric_management_access_policy_1_again.current.0.commPol.children.3.commHttps.attributes.adminSt == "enabled"
       - nm_create_fabric_management_access_policy_1_again.current.0.commPol.children.4.commHttp.attributes.adminSt == "disabled"
-      
 
 # UPDATE
 - name: Update an existing fabric management access policy description
@@ -144,10 +163,9 @@
       throttle: enabled
       throttle_rate: 7500
       throttle_unit: requests_per_minute
-      admin_key_ring: default
-      # TODO when ansible-aci supports client certificate authentication
-      # client_certificate_trustpoint: ansible_trustpoint
-      # client_certificate_authentication_state: enabled
+      admin_key_ring: key_ring_1
+      client_certificate_trustpoint: certificate_authority_1
+      client_certificate_authentication_state: enabled
   register: nm_update_fabric_management_access_policy_1_change_child_configuration
 
 - name: Update an existing fabric management access policy https without admin_key_ring
@@ -194,14 +212,14 @@
       - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.port == "445"
       - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.accessControlAllowCredential == "enabled"
       - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.accessControlAllowOrigins == "http://127.0.0.1:8000"
-      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.clientCertAuthState == "disabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.clientCertAuthState == "enabled"
       - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.dhParam == "4096"
       - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.sslProtocols == "TLSv1.2"
       - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.globalThrottleRate == "7500"
       - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.globalThrottleSt == "enabled"
       - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.globalThrottleUnit == "r/m"
-      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.children.0.commRsKeyRing.attributes.tnPkiKeyRingName == "default"
-      # - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.children.1.commRsClientCertCA.attributes.tDn == "uni/userext/pkiext/tp-ansible_trustpoint"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.children.0.commRsKeyRing.attributes.tnPkiKeyRingName == "key_ring_1"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.children.1.commRsClientCertCA.attributes.tDn == "uni/userext/pkiext/tp-certificate_authority_1"
       - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.adminSt == "enabled"
       - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.port == "85"
       - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.accessControlAllowOrigins == "http://127.0.0.1:8000"
@@ -212,10 +230,10 @@
       - nm_update_fabric_management_access_policy_1_change_https_no_keyring is changed
       - nm_update_fabric_management_access_policy_1_change_https_no_keyring.previous.0.commPol.attributes.name == "fabric_management_access_policy_1"
       - nm_update_fabric_management_access_policy_1_change_https_no_keyring.previous.0.commPol.children.3.commHttps.attributes.port == "445"
-      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.previous.0.commPol.children.3.commHttps.children.0.commRsKeyRing.attributes.tnPkiKeyRingName == "default"
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.previous.0.commPol.children.3.commHttps.children.0.commRsKeyRing.attributes.tnPkiKeyRingName == "key_ring_1"
       - nm_update_fabric_management_access_policy_1_change_https_no_keyring.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
       - nm_update_fabric_management_access_policy_1_change_https_no_keyring.current.0.commPol.children.3.commHttps.attributes.port == "443"
-      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.current.0.commPol.children.3.commHttps.children.0.commRsKeyRing.attributes.tnPkiKeyRingName == "default"
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.current.0.commPol.children.3.commHttps.children.0.commRsKeyRing.attributes.tnPkiKeyRingName == "key_ring_1"
 
 # VERSION SPECIFIC TESTS
 - name: Test fabric management access policy http redirect
@@ -296,3 +314,15 @@
       - nm_delete_fabric_management_access_policy_1_again is not changed
       - nm_delete_fabric_management_access_policy_1_again.previous == []
       - nm_delete_fabric_management_access_policy_1_again.current == []
+
+# CLEAN ENVIRONMENT
+- name: Delete key_ring_1
+  cisco.aci.aci_aaa_key_ring:
+    <<: *key_ring_1
+    state: absent
+  register: delete_key_ring_1
+
+- name: Delete certificate_authority_1
+  cisco.aci.aci_aaa_certificate_authority:
+    <<: *certificate_authority_1
+    state: absent
