@@ -64,7 +64,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     name: example_authority
-    certificate_data: '{{ lookup("file", "pki/example_authority.crt") }}'
+    certificate_chain: '{{ lookup("file", "pki/example_authority.crt") }}'
     state: present
   delegate_to: localhost
 
