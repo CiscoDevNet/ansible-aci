@@ -1,0 +1,233 @@
+# Test code for the ACI modules
+# Copyright: (c) 2024, Akini Ross (@akinross)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: "Please define the following variables: aci_hostname, aci_username and aci_password."
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
+      output_level: "{{ aci_output_level | default('info') }}"
+
+- name: Query system information to fetch version
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Define cipher in version < 6.0
+  set_fact:
+    supported_cipher: "DHE-RSA-AES128-SHA"
+    supported_cipher_2: "DHE-RSA-AES256-SHA"
+  when: version.current.0.topSystem.attributes.version is version('6.0', '<')
+
+- name: Define speed settings in version >= 6.0
+  set_fact:
+    supported_cipher: "DHE-RSA-AES128-SHA256"
+    supported_cipher_2: "ECDHE-ECDSA-AES128-CCM"
+  when: version.current.0.topSystem.attributes.version is version('6.0', '>=')
+
+# CLEAN ENVIRONMENT
+- name: Clean environment
+  cisco.aci.aci_fabric_management_access: &aci_fabric_management_access_1_absent
+    <<: *aci_info
+    name: fabric_management_access_policy_1
+    state: absent
+
+- name: Ensure certificate_authority_1 exists
+  cisco.aci.aci_aaa_certificate_authority: &certificate_authority_1
+    <<: *aci_info
+    name: certificate_authority_1
+    certificate_chain: "{{ lookup('file', 'pki/admin.crt') }}"
+    state: present
+
+- name: Ensure key_ring_1 exists
+  cisco.aci.aci_aaa_key_ring: &key_ring_1
+    <<: *aci_info
+    name: key_ring_1
+    certificate: "{{ lookup('file', 'pki/admin.crt') }}"
+    certificate_authority: certificate_authority_1
+    key: "{{ lookup('file', 'pki/admin.key') }}"
+    state: present
+  register: create_key_ring_1
+  until: create_key_ring_1 is not failed
+  delay: 2
+  retries: 4
+
+- name: Ensure fabric_management_access_policy_1 exists
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_absent
+    https:
+      admin_state: enabled
+      port: 445
+      admin_key_ring: key_ring_1
+      client_certificate_trustpoint: certificate_authority_1
+      client_certificate_authentication_state: enabled
+    state: present
+
+# CREATE CIPHER
+- name: Create a https ssl cipher (check_mode)
+  cisco.aci.aci_fabric_management_access_https_cipher: &https_ssl_cipher_disabled
+    <<: *aci_info
+    fabric_management_access_policy_name: fabric_management_access_policy_1
+    id: "{{ supported_cipher }}"
+    cipher_state: disabled
+    state: present
+  check_mode: true
+  register: cm_create_https_ssl_cipher
+
+- name: Create a https ssl cipher
+  cisco.aci.aci_fabric_management_access_https_cipher:
+    <<: *https_ssl_cipher_disabled
+  register: nm_create_https_ssl_cipher
+
+- name: Create a https ssl cipher again
+  cisco.aci.aci_fabric_management_access_https_cipher:
+    <<: *https_ssl_cipher_disabled
+  register: nm_create_https_ssl_cipher_again
+
+- name: Assertions for disabling a https ssl cipher
+  ansible.builtin.assert:
+    that:
+      - cm_create_https_ssl_cipher is changed
+      - cm_create_https_ssl_cipher.previous == []
+      - cm_create_https_ssl_cipher.current == []
+      - cm_create_https_ssl_cipher.proposed.commCipher.attributes.id == "{{ supported_cipher }}"
+      - cm_create_https_ssl_cipher.proposed.commCipher.attributes.state == "disabled"
+      - nm_create_https_ssl_cipher is changed
+      - nm_create_https_ssl_cipher.previous == []
+      - nm_create_https_ssl_cipher.current.0.commCipher.attributes.id == "{{ supported_cipher }}"
+      - nm_create_https_ssl_cipher.current.0.commCipher.attributes.state == "disabled"
+      - nm_create_https_ssl_cipher_again is not changed
+      - nm_create_https_ssl_cipher_again.previous.0.commCipher.attributes.id == "{{ supported_cipher }}"
+      - nm_create_https_ssl_cipher_again.previous.0.commCipher.attributes.state == "disabled"
+      - nm_create_https_ssl_cipher_again.current.0.commCipher.attributes.id == "{{ supported_cipher }}"
+      - nm_create_https_ssl_cipher_again.current.0.commCipher.attributes.state == "disabled"
+
+# UPDATE CIPHER
+- name: Update https ssl cipher (check_mode)
+  cisco.aci.aci_fabric_management_access_https_cipher: &https_ssl_cipher_enabled
+    <<: *https_ssl_cipher_disabled
+    cipher_state: enabled
+  check_mode: true
+  register: cm_update_https_ssl_cipher
+
+- name: Update https ssl cipher
+  cisco.aci.aci_fabric_management_access_https_cipher:
+    <<: *https_ssl_cipher_enabled
+  register: nm_update_https_ssl_cipher
+
+- name: Update https ssl cipher again
+  cisco.aci.aci_fabric_management_access_https_cipher:
+    <<: *https_ssl_cipher_enabled
+  register: nm_update_https_ssl_cipher_again
+
+- name: Assertions for enabling a https ssl cipher
+  ansible.builtin.assert:
+    that:
+      - cm_update_https_ssl_cipher is changed
+      - cm_update_https_ssl_cipher.previous.0.commCipher.attributes.id == "{{ supported_cipher }}"
+      - cm_update_https_ssl_cipher.previous.0.commCipher.attributes.state == "disabled"
+      - cm_update_https_ssl_cipher.current.0.commCipher.attributes.id == "{{ supported_cipher }}"
+      - cm_update_https_ssl_cipher.current.0.commCipher.attributes.state == "disabled"
+      - cm_update_https_ssl_cipher.proposed.commCipher.attributes.id == "{{ supported_cipher }}"
+      - cm_update_https_ssl_cipher.proposed.commCipher.attributes.state == "enabled"
+      - nm_update_https_ssl_cipher is changed
+      - nm_update_https_ssl_cipher.previous.0.commCipher.attributes.id == "{{ supported_cipher }}"
+      - nm_update_https_ssl_cipher.previous.0.commCipher.attributes.state == "disabled"
+      - nm_update_https_ssl_cipher.current.0.commCipher.attributes.id == "{{ supported_cipher }}"
+      - nm_update_https_ssl_cipher.current.0.commCipher.attributes.state == "enabled"
+      - nm_update_https_ssl_cipher_again is not changed
+      - nm_update_https_ssl_cipher_again.previous.0.commCipher.attributes.id == "{{ supported_cipher }}"
+      - nm_update_https_ssl_cipher_again.previous.0.commCipher.attributes.state == "enabled"
+      - nm_update_https_ssl_cipher_again.current.0.commCipher.attributes.id == "{{ supported_cipher }}"
+      - nm_update_https_ssl_cipher_again.current.0.commCipher.attributes.state == "enabled"
+
+# QUERY
+- name: Create another https ssl cipher
+  cisco.aci.aci_fabric_management_access_https_cipher:
+    <<: *https_ssl_cipher_disabled
+    id: "{{ supported_cipher_2 }}"
+
+- name: Query an fabric management access policy
+  cisco.aci.aci_fabric_management_access_https_cipher:
+    <<: *https_ssl_cipher_enabled
+    state: query
+  register: query_fabric_management_access_policy_1
+
+- name: Query all fabric management access policies
+  cisco.aci.aci_fabric_management_access_https_cipher:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Assertions for querying fabric management access policies
+  ansible.builtin.assert:
+    that:
+      - query_fabric_management_access_policy_1 is not changed
+      - query_fabric_management_access_policy_1.current | length == 1
+      - query_all is not changed
+      - query_all.current | length >= 2
+
+# DELETE
+- name: Delete https ssl cipher (check_mode)
+  cisco.aci.aci_fabric_management_access_https_cipher: &https_ssl_cipher_deleted
+    <<: *https_ssl_cipher_enabled
+    state: absent
+  check_mode: true
+  register: cm_delete_https_ssl_cipher
+
+- name: Delete https ssl cipher
+  cisco.aci.aci_fabric_management_access_https_cipher:
+    <<: *https_ssl_cipher_deleted
+  register: nm_delete_https_ssl_cipher
+
+- name: Delete https ssl cipher again
+  cisco.aci.aci_fabric_management_access_https_cipher:
+    <<: *https_ssl_cipher_deleted
+  register: nm_delete_https_ssl_cipher_again
+
+- name: Assertions for deleting a https ssl cipher
+  ansible.builtin.assert:
+    that:
+      - cm_delete_https_ssl_cipher is changed
+      - cm_delete_https_ssl_cipher.previous.0.commCipher.attributes.id == "{{ supported_cipher }}"
+      - cm_delete_https_ssl_cipher.previous.0.commCipher.attributes.state == "enabled"
+      - cm_delete_https_ssl_cipher.current.0.commCipher.attributes.id == "{{ supported_cipher }}"
+      - cm_delete_https_ssl_cipher.current.0.commCipher.attributes.state == "enabled"
+      - cm_delete_https_ssl_cipher.proposed == {}
+      - nm_delete_https_ssl_cipher is changed
+      - nm_delete_https_ssl_cipher.previous.0.commCipher.attributes.id == "{{ supported_cipher }}"
+      - nm_delete_https_ssl_cipher.previous.0.commCipher.attributes.state == "enabled"
+      - nm_delete_https_ssl_cipher.current == []
+      - nm_delete_https_ssl_cipher_again is not changed
+      - nm_delete_https_ssl_cipher_again.previous == []
+      - nm_delete_https_ssl_cipher_again.current == []
+
+# CLEAN ENVIRONMENT
+- name: Delete fabric_management_access_policy_1
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_absent
+
+- name: Delete key_ring_1
+  cisco.aci.aci_aaa_key_ring:
+    <<: *key_ring_1
+    state: absent
+  register: delete_key_ring_1
+
+- name: Delete certificate_authority_1
+  cisco.aci.aci_aaa_certificate_authority:
+    <<: *certificate_authority_1
+    state: absent
