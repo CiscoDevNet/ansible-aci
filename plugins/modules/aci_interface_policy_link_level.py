@@ -36,9 +36,10 @@ options:
   speed:
     description:
     - Determines the interface policy administrative port speed.
+    - The C(auto) option is only supported in APIC version 5.2 or later.
     - The APIC defaults to C(inherit) when unset during creation.
     type: str
-    choices: [ 100M, 1G, 10G, 25G, 40G, 50G, 100G, 200G, 400G, inherit ]
+    choices: [ 100M, 1G, 10G, 25G, 40G, 50G, 100G, 200G, 400G, auto, inherit ]
     default: inherit
   link_debounce_interval:
     description:
@@ -231,7 +232,7 @@ def main():
         link_level_policy=dict(type="str", aliases=["name"]),
         description=dict(type="str", aliases=["descr"]),
         auto_negotiation=dict(type="bool", default="true"),
-        speed=dict(type="str", default="inherit", choices=["100M", "1G", "10G", "25G", "40G", "50G", "100G", "200G", "400G", "inherit"]),
+        speed=dict(type="str", default="inherit", choices=["100M", "1G", "10G", "25G", "40G", "50G", "100G", "200G", "400G", "auto", "inherit"]),
         link_debounce_interval=dict(type="int", default="100"),
         forwarding_error_correction=dict(
             type="str", default="inherit", choices=["inherit", "kp-fec", "cl91-rs-fec", "cl74-fc-fec", "disable-fec", "ieee-rs-fec", "cons16-rs-fec"]

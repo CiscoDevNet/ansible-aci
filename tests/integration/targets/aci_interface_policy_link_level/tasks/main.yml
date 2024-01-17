@@ -15,6 +15,19 @@
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
+  # SET ACI_INFO VARS FOR SYSTEM LOGIN WITHIN TASKS
+  - name: Set vars for system login 
+    ansible.builtin.set_fact:
+     aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      port: "{{ aci_port | default(omit) }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
   # CLEAN ENVIRONMENT
   - name: Remove Link Level Policy
     cisco.aci.aci_interface_policy_link_level: &interface_policy_link_level_absent
@@ -138,6 +151,68 @@
       - cm_add_policy_again_no_descr.proposed.fabricHIfPol.attributes.name == nm_add_policy_again_no_descr.proposed.fabricHIfPol.attributes.name == 'ansible_test'
       - cm_add_policy_again_no_descr.sent == nm_add_policy_again_no_descr.sent == {}
       - cm_add_policy_again_no_descr.previous.0.fabricHIfPol.attributes.dn== nm_add_policy_again_no_descr.previous.0.fabricHIfPol.attributes.dn == cm_add_policy_again_no_descr.current.0.fabricHIfPol.attributes.dn == nm_add_policy_again_no_descr.current.0.fabricHIfPol.attributes.dn == 'uni/infra/hintfpol-ansible_test'
+  
+  # CHANGE SPEED ON LINK LEVEL POLICY
+  - name: Test each speed setting for Link Level Policy
+    block:
+      - name: Query system information to fetch version
+        cisco.aci.aci_system:
+          <<: *aci_info
+          id: 1
+          state: query
+        register: version
+
+      - name: Define speed settings in version < 5.2
+        set_fact:
+          supported_speed: ["100M", "1G", "10G", "25G", "40G", "50G", "100G", "200G", "400G", "inherit"]
+        when: version.current.0.topSystem.attributes.version is version('5.2', '<')
+
+      - name: Define speed settings in version >= 5.2
+        set_fact:
+          supported_speed: ["100M", "1G", "10G", "25G", "40G", "50G", "100G", "200G", "400G", "auto", "inherit"]
+        when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+
+      - name: Add Link Level Policy with various speeds (check mode)
+        cisco.aci.aci_interface_policy_link_level:
+          <<: *interface_policy_link_level_present
+          speed: "{{ item }}"
+        check_mode: true
+        loop: "{{ supported_speed }}"
+        register: cm_add_policy_speed
+        loop_control:
+          label: "speed-{{ item }}"
+
+      - name: Add Link Level Policy with various speeds (normal mode)
+        cisco.aci.aci_interface_policy_link_level:
+          <<: *interface_policy_link_level_present
+          speed: "{{ item }}"
+        loop: "{{ supported_speed }}"
+        register: nm_add_policy_speed
+        loop_control:
+          label: "speed-{{ item }}"
+    
+      - name: Verify each speed setting (normal mode)
+        ansible.builtin.assert:
+          that:
+            - "item.1.current.0.fabricHIfPol.attributes.name == 'ansible_test'"
+            - "item.1.current.0.fabricHIfPol.attributes.dn ==  'uni/infra/hintfpol-ansible_test'"
+            - "item.1.current.0.fabricHIfPol.attributes.speed == item.0"
+          quiet: true
+        loop: "{{ supported_speed | zip(nm_add_policy_speed.results) }}"
+        loop_control:
+          label: "speed-{{ item.0 }}"
+
+      - name: Verify each speed setting (check mode)
+        ansible.builtin.assert:
+          that:
+            - "item.1.current.0.fabricHIfPol.attributes.name == 'ansible_test'"
+            - "item.1.current.0.fabricHIfPol.attributes.dn ==  'uni/infra/hintfpol-ansible_test'"
+            - "item.1.current.0.fabricHIfPol.attributes.speed == 'inherit'"
+            - "item.1.proposed.fabricHIfPol.attributes.speed == item.0"
+          quiet: true
+        loop: "{{ supported_speed | zip(cm_add_policy_speed.results) }}"
+        loop_control:
+          label: "speed-{{ item.0 }}"
 
   # QUERY ALL LINK LEVEL POLICIES
   - name: Query all Link Level Policies (check mode)
