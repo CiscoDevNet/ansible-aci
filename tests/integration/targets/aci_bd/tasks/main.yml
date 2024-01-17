@@ -136,7 +136,6 @@
       allow_intersite_l2_stretch: true
       allow_ipv6_mcast: true
       ll_addr: "fe80::1322:33ff:fe44:5566"
-      ipv6_unk_mcast_act: "opt-flood"
       vmac: "00:AA:BB:CC:DD:03"
     register: bd_present_2b
     when: version.current.0.topSystem.attributes.version is version('4.2', '>=') and
@@ -164,7 +163,6 @@
       allow_ipv6_mcast: true
       ll_addr: "fe80::1322:33ff:fe44:5566"
       mcast_arp_drop: true
-      ipv6_unk_mcast_act: "opt-flood"
       vmac: "00:AA:BB:CC:DD:03"
     register: bd_present_2c
     when: version.current.0.topSystem.attributes.version is version('6.0', '>=')
@@ -239,7 +237,6 @@
         - bd_present_2b.sent.fvBD.attributes.intersiteL2Stretch == 'yes'
         - bd_present_2b.sent.fvBD.attributes.ipv6McastAllow == 'yes'
         - bd_present_2b.sent.fvBD.attributes.llAddr == 'fe80::1322:33ff:fe44:5566'
-        - bd_present_2b.sent.fvBD.attributes.v6unkMcastAct == 'opt-flood'
         - bd_present_2b.sent.fvBD.attributes.vmac == '00:AA:BB:CC:DD:03'
         - bd_present_2b.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
         - bd_present_2b.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
@@ -281,7 +278,6 @@
         - bd_present_2c.sent.fvBD.attributes.llAddr == 'fe80::1322:33ff:fe44:5566'
         - bd_present_2c.sent.fvBD.attributes.mcastARPDrop == 'yes'
         - bd_present_2c.sent.fvBD.attributes.enableRogueExceptMac == 'yes'
-        - bd_present_2c.sent.fvBD.attributes.v6unkMcastAct == 'opt-flood'
         - bd_present_2c.sent.fvBD.attributes.vmac == '00:AA:BB:CC:DD:03'
         - bd_present_2c.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
         - bd_present_2c.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
