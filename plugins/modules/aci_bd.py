@@ -173,29 +173,24 @@ options:
     - The APIC defaults to C(false) when unset during creation.
     type: bool
     aliases: [allow_l2_stretch]
-  allow_ipv6_mcast:
+  allow_ipv6_multicast:
     description:
     - Flag to indicate if ipv6 multicast is enabled.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
-  ll_addr:
+    aliases: [ ipv6_multicast, ipv6_mcast, allow_ipv6_mcast]
+  link_local_address:
     description:
     - The override of the system generated IPv6 link-local address.
     type: str
-    aliases: [ll_addr_ipv6]
-  mcast_arp_drop:
+    aliases: [ ll_addr_ipv6, ll_addr, link_local]
+  multicast_arp_drop:
     description:
     - Enable BD rogue multicast ARP packet drop.
     - Only available in APIC version 6.0 or later.
     - The APIC defaults to C(true) when unset during creation.
     type: bool
-  ipv6_unk_mcast_act:
-    description:
-    - Unknown IPv6 Multicast Destination Action.
-    - The APIC defaults to C(flood) when unset during creation.
-    type: str
-    choices: [ flood, opt-flood ]
-    aliases: [v6unk_mcast_act]
+    aliases: [ mcast_arp_drop ]  
   vmac:
     description:
     - Virtual MAC address of the BD/SVI. This is used when the BD is extended to multiple sites using L2 Outside.
@@ -437,10 +432,9 @@ def main():
         enable_rogue_except_mac=dict(type="bool"),
         allow_intersite_bum_traffic=dict(type="bool", aliases=["allow_bum_traffic"]),
         allow_intersite_l2_stretch=dict(type="bool", aliases=["allow_l2_stretch"]),
-        allow_ipv6_mcast=dict(type="bool"),
-        ll_addr=dict(type="str", aliases=["ll_addr_ipv6"]),
-        mcast_arp_drop=dict(type="bool"),
-        ipv6_unk_mcast_act=dict(type="str", choices=["flood", "opt-flood"], aliases=["v6unk_mcast_act"]),
+        allow_ipv6_multicast=dict(type="bool", aliases=["ipv6_multicast", "ipv6_mcast", "allow_ipv6_mcast"]),
+        link_local_address=dict(type="str", aliases=["ll_addr_ipv6", "ll_addr", "link_local"]),
+        multicast_arp_drop=dict(type="bool", aliases=["mcast_arp_drop"]),
         vmac=dict(type="str"),
     )
 
@@ -490,10 +484,9 @@ def main():
     enable_rogue_except_mac = aci.boolean(module.params.get("enable_rogue_except_mac"))
     allow_intersite_bum_traffic = aci.boolean(module.params.get("allow_intersite_bum_traffic"))
     allow_intersite_l2_stretch = aci.boolean(module.params.get("allow_intersite_l2_stretch"))
-    allow_ipv6_mcast = aci.boolean(module.params.get("allow_ipv6_mcast"))
-    ll_addr = module.params.get("ll_addr")
-    mcast_arp_drop = aci.boolean(module.params.get("mcast_arp_drop"))
-    ipv6_unk_mcast_act = module.params.get("ipv6_unk_mcast_act")
+    allow_ipv6_multicast = aci.boolean(module.params.get("allow_ipv6_multicast"))
+    link_local_address = module.params.get("link_local_address")
+    multicast_arp_drop = aci.boolean(module.params.get("multicast_arp_drop"))
     vmac = module.params.get("vmac")
 
     aci.construct_url(
@@ -535,10 +528,9 @@ def main():
             hostBasedRouting=host_based_routing,
             intersiteBumTrafficAllow=allow_intersite_bum_traffic,
             intersiteL2Stretch=allow_intersite_l2_stretch,
-            ipv6McastAllow=allow_ipv6_mcast,
-            llAddr=ll_addr,
-            mcastARPDrop=mcast_arp_drop,
-            v6unkMcastAct=ipv6_unk_mcast_act,
+            ipv6McastAllow=allow_ipv6_multicast,
+            llAddr=link_local_address,
+            mcastARPDrop=multicast_arp_drop,
             vmac=vmac,
         )
 
