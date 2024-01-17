@@ -42,6 +42,7 @@ options:
   destination_port:
     description:
     - The remote node destination port.
+    - Accepted values are any valid TCP/UDP port range.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
   source_ip_type:
@@ -55,6 +56,42 @@ options:
     - The cutsom source IP address.
     - It can only be used if I(source_ip_type) is C(custom_source_ip).
     type: str
+  associated_epg:
+   description:
+   - The associated EPG.
+   type: dict
+   suboptions:
+      tenant:
+        description:
+        - The name of the tenant to which the associated AP/EPG and VRF belong.
+        type: str
+      vrf:
+        description:
+        - The name of the associated VRF.
+      ap:
+        description:
+        - The name of the associated Application Profile to which the associated EPG belongs.
+      epg:
+        description:
+        - The name of the associated EPG.
+  associated_extepg:
+    description:
+    - The name of the associated external EPG.
+    type: dict
+    suboptions:
+      tenant:
+        description:
+        - The name of the tenant to which the associated L3Out/external EPG and VRF belong.
+        type: str
+      vrf:
+        description:
+        - The name of the associated VRF.
+      l3out:
+        description:
+        - The name of the L3Out to which the associated external EPG belongs.
+      extepg:
+        description:
+        - The name of the associated EPG.
   description:
     description:
     - The description for the Netflow Exporter Policy.
@@ -245,7 +282,15 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec, aci_contract_dscp_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+    aci_annotation_spec,
+    aci_owner_spec,
+    aci_contract_dscp_spec,
+    associated_netflow_exporter_epg_spec,
+    associated_netflow_exporter_extepg_spec,
+)
 from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING
 
 
@@ -262,6 +307,8 @@ def main():
         destination_port=dict(type="str"),
         source_ip_type=dict(type="str", choices=list(MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING.keys())),
         custom_source_address=dict(type="str"),
+        associated_epg=dict(type="dict", options=associated_netflow_exporter_epg_spec()),
+        associated_extepg=dict(type="dict", options=associated_netflow_exporter_extepg_spec()),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -273,6 +320,9 @@ def main():
             ["state", "absent", ["tenant", "netflow_exporter_policy"]],
             ["state", "present", ["tenant", "netflow_exporter_policy", "destination_address", "destination_port"]],
         ],
+        mutually_exclusive=[
+            ("associated_epg", "associated_extepg")
+        ]
     )
 
     tenant = module.params.get("tenant")
@@ -283,9 +333,13 @@ def main():
     destination_port = module.params.get("destination_port")
     source_ip_type = MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING.get(module.params.get("source_ip_type"))
     custom_source_address = module.params.get("custom_source_address")
+    associated_epg = module.params.get("associated_epg")
+    associated_extepg = module.params.get("associated_extepg")
     state = module.params.get("state")
 
     aci = ACIModule(module)
+
+    child_classes = ["netflowRsExporterToCtx", "netflowRsExporterToEPg"]
 
     aci.construct_url(
         root_class=dict(
@@ -300,11 +354,41 @@ def main():
             module_object=netflow_exporter_policy,
             target_filter={"name": netflow_exporter_policy},
         ),
+        child_classes=child_classes,
     )
 
     aci.get_existing()
 
     if state == "present":
+        if associated_epg is not None:
+            if all(value is None for value in associated_epg.values()) and isinstance(aci.existing, list) and len(aci.existing) > 0:
+                for child in aci.existing[0].get("netflowExporterPol", {}).get("children", {}):
+                    if child.get("netflowRsExporterToCtx") and child.get("netflowRsExporterToEPg"):
+                        child_configs = [
+                            dict(netflowRsExporterToCtx=dict(attributes=dict(status="deleted"))),
+                            dict(netflowRsExporterToEPg=dict(attributes=dict(status="deleted"))),
+                        ]
+            elif all(value is not None for value in associated_epg.values()):
+                associated_tenant = associated_epg.get("tenant")
+                child_configs = [
+                    dict(netflowRsExporterToCtx=dict(attributes=dict(tDn="uni/tn-{0}/ctx-{1}".format(associated_tenant, associated_epg.get("vrf"))))),
+                    dict(netflowRsExporterToEPg=dict(attributes=dict(tDn="uni/tn-{0}/ap-{1}/epg-{2}".format(associated_tenant, associated_epg.get("ap"), associated_epg.get("epg"))))),
+                ]
+        elif  associated_extepg is not None:
+            if all(value is None for value in associated_extepg.values()) and isinstance(aci.existing, list) and len(aci.existing) > 0:
+                for child in aci.existing[0].get("netflowExporterPol", {}).get("children", {}):
+                    if child.get("netflowRsExporterToCtx") and child.get("netflowRsExporterToEPg"):
+                        child_configs = [
+                            dict(netflowRsExporterToCtx=dict(attributes=dict(status="deleted"))),
+                            dict(netflowRsExporterToEPg=dict(attributes=dict(status="deleted"))),
+                        ]
+            elif all(value is not None for value in associated_extepg.values()):
+                associated_tenant = associated_extepg.get("tenant")
+                child_configs = [
+                    dict(netflowRsExporterToCtx=dict(attributes=dict(tDn="uni/tn-{0}/ctx-{1}".format(associated_tenant, associated_extepg.get("vrf"))))),
+                    dict(netflowRsExporterToEPg=dict(attributes=dict(tDn="uni/tn-{0}/out-{1}/instP-{2}".format(associated_tenant, associated_extepg.get("l3out"), associated_extepg.get("extepg"))))),
+                ]
+
         aci.payload(
             aci_class="netflowExporterPol",
             class_config=dict(
@@ -316,6 +400,7 @@ def main():
                 sourceIpType=source_ip_type,
                 srcAddr=custom_source_address,
             ),
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class="netflowExporterPol")
