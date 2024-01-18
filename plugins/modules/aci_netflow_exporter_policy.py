@@ -336,9 +336,7 @@ def main():
             ["state", "absent", ["tenant", "netflow_exporter_policy"]],
             ["state", "present", ["tenant", "netflow_exporter_policy", "destination_address", "destination_port"]],
         ],
-        mutually_exclusive=[
-            ["associated_epg", "associated_extepg"]
-        ]
+        mutually_exclusive=[["associated_epg", "associated_extepg"]]
     )
 
     tenant = module.params.get("tenant")
@@ -388,9 +386,13 @@ def main():
                 associated_tenant = associated_epg.get("tenant")
                 child_configs = [
                     dict(netflowRsExporterToCtx=dict(attributes=dict(tDn="uni/tn-{0}/ctx-{1}".format(associated_tenant, associated_epg.get("vrf"))))),
-                    dict(netflowRsExporterToEPg=dict(attributes=dict(tDn="uni/tn-{0}/ap-{1}/epg-{2}".format(associated_tenant, associated_epg.get("ap"), associated_epg.get("epg"))))),
+                    dict(
+                        netflowRsExporterToEPg=dict(
+                            attributes=dict(tDn="uni/tn-{0}/ap-{1}/epg-{2}".format(associated_tenant, associated_epg.get("ap"), associated_epg.get("epg")))
+                        )
+                    ),
                 ]
-        elif  associated_extepg is not None:
+        elif associated_extepg is not None:
             if all(value is None for value in associated_extepg.values()) and isinstance(aci.existing, list) and len(aci.existing) > 0:
                 for child in aci.existing[0].get("netflowExporterPol", {}).get("children", {}):
                     if child.get("netflowRsExporterToCtx"):
@@ -401,7 +403,13 @@ def main():
                 associated_tenant = associated_extepg.get("tenant")
                 child_configs = [
                     dict(netflowRsExporterToCtx=dict(attributes=dict(tDn="uni/tn-{0}/ctx-{1}".format(associated_tenant, associated_extepg.get("vrf"))))),
-                    dict(netflowRsExporterToEPg=dict(attributes=dict(tDn="uni/tn-{0}/out-{1}/instP-{2}".format(associated_tenant, associated_extepg.get("l3out"), associated_extepg.get("extepg"))))),
+                    dict(
+                        netflowRsExporterToEPg=dict(
+                            attributes=dict(
+                                tDn="uni/tn-{0}/out-{1}/instP-{2}".format(associated_tenant, associated_extepg.get("l3out"), associated_extepg.get("extepg"))
+                            )
+                        )
+                    ),
                 ]
 
         aci.payload(
