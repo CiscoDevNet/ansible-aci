@@ -57,8 +57,8 @@
       authentication_key: my_password
       authentication_type: md5_hmac
       control_state: [multicast_domain_boundary, strict_rfc_compliant, passive]
-      designed_router_delay: 6
-      designed_router_priority: 2
+      designated_router_delay: 6
+      designated_router_priority: 2
       hello_interval: 60000
       join_prune_interval: 120
       inbound_join_prune_filter_policy: ansible_pim_route_map_policy
@@ -87,7 +87,7 @@
       <<: *aci_info
       tenant: ansible_tenant
       pim: ansible_pim_interface_3
-      designed_router_delay: 65536
+      designated_router_delay: 65536
       state: present
     ignore_errors: true
     register: error_dr_relay_out_of_bounds
@@ -97,7 +97,7 @@
       <<: *aci_info
       tenant: ansible_tenant
       pim: ansible_pim_interface_4
-      designed_router_priority: 4294967296
+      designated_router_priority: 4294967296
       state: present
     ignore_errors: true
     register: error_dr_priority_out_of_bounds
@@ -146,8 +146,8 @@
         - nm_add_pim_interface_2.current.0.pimIfPol.attributes.drPrio == "1"
         - nm_add_pim_interface_2.current.0.pimIfPol.attributes.helloItvl == "30000"
         - nm_add_pim_interface_2.current.0.pimIfPol.attributes.jpInterval == "60"
-        - error_dr_relay_out_of_bounds.msg == "Parameter 'designed_router_delay' is only valid in range between 1 and 65535."
-        - error_dr_priority_out_of_bounds.msg == "Parameter 'designed_router_priority' is only valid in range between 1 and 4294967295."
+        - error_dr_relay_out_of_bounds.msg == "Parameter 'designated_router_delay' is only valid in range between 1 and 65535."
+        - error_dr_priority_out_of_bounds.msg == "Parameter 'designated_router_priority' is only valid in range between 1 and 4294967295."
         - error_helloIntvl_out_of_bounds.msg == "Parameter 'hello_interval' is only valid in range between 1 and 18724286."
         - error_jpIntvl_out_of_bounds.msg == "Parameter 'join_prune_interval' is only valid in range between 60 and 65520."
 
@@ -183,8 +183,8 @@
     cisco.aci.aci_interface_policy_pim: &aci_interface_policy_pim_update
       <<: *aci_interface_policy_pim_present
       control_state: passive
-      designed_router_delay: 4
-      designed_router_priority: 1
+      designated_router_delay: 4
+      designated_router_priority: 1
       hello_interval: 30000
       join_prune_interval: 60
     check_mode: true

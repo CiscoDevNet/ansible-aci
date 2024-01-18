@@ -49,16 +49,16 @@ options:
     type: list
     elements: str
     choices: [ multicast_domain_boundary, strict_rfc_compliant, passive ]
-  designed_router_delay:
+  designated_router_delay:
     description:
-    - The PIM designed router delay.
+    - The PIM designated router delay.
     - Accepted values range between C(1) and C(65535).
     - The APIC defaults to C(3) when unset during creation.
     type: int
     aliases: [ delay ]
-  designed_router_priority:
+  designated_router_priority:
     description:
-    - The PIM designed router priority.
+    - The PIM designated router priority.
     - Accepted values range between C(1) and C(4294967295).
     - The APIC defaults to C(1) when unset during creation.
     type: int
@@ -141,8 +141,8 @@ EXAMPLES = r"""
     tenant: production
     pim: my_pim_policy
     control_state: [split-horizon, nh-self]
-    designed_router_delay: 10
-    designed_router_priority: tens_of_micro
+    designated_router_delay: 10
+    designated_router_priority: tens_of_micro
     hello_interval: 5
     join_prune_interval: 15
     inbound_join_prune_filter_policy: my_pim_route_map_policy_1
@@ -307,8 +307,8 @@ def main():
         authentication_key=dict(type="str", aliases=["auth_key"], no_log=True),
         authentication_type=dict(type="str", choices=["none", "md5_hmac"], aliases=["auth_type"]),
         control_state=dict(type="list", elements="str", choices=["multicast_domain_boundary", "strict_rfc_compliant", "passive"]),
-        designed_router_delay=dict(type="int", aliases=["delay"]),
-        designed_router_priority=dict(type="int", aliases=["prio"]),
+        designated_router_delay=dict(type="int", aliases=["delay"]),
+        designated_router_priority=dict(type="int", aliases=["prio"]),
         hello_interval=dict(type="int"),
         join_prune_interval=dict(type="int", aliases=["jp_interval"]),
         inbound_join_prune_filter_policy=dict(type="str", aliases=["inbound_filter"]),
@@ -337,13 +337,13 @@ def main():
     name_alias = module.params.get("name_alias")
     state = module.params.get("state")
 
-    designed_router_delay = module.params.get("designed_router_delay")
-    if designed_router_delay is not None and designed_router_delay not in range(1, 65536):
-        module.fail_json(msg="Parameter 'designed_router_delay' is only valid in range between 1 and 65535.")
+    designated_router_delay = module.params.get("designated_router_delay")
+    if designated_router_delay is not None and designated_router_delay not in range(1, 65536):
+        module.fail_json(msg="Parameter 'designated_router_delay' is only valid in range between 1 and 65535.")
 
-    designed_router_priority = module.params.get("designed_router_priority")
-    if designed_router_priority is not None and designed_router_priority not in range(1, 4294967296):
-        module.fail_json(msg="Parameter 'designed_router_priority' is only valid in range between 1 and 4294967295.")
+    designated_router_priority = module.params.get("designated_router_priority")
+    if designated_router_priority is not None and designated_router_priority not in range(1, 4294967296):
+        module.fail_json(msg="Parameter 'designated_router_priority' is only valid in range between 1 and 4294967295.")
 
     hello_interval = module.params.get("hello_interval")
     if hello_interval is not None and hello_interval not in range(1, 18724287):
@@ -421,8 +421,8 @@ def main():
                 authKey=authentication_key,
                 authT=authentication_type,
                 ctrl=control_state,
-                drDelay=designed_router_delay,
-                drPrio=designed_router_priority,
+                drDelay=designated_router_delay,
+                drPrio=designated_router_priority,
                 helloItvl=hello_interval,
                 jpInterval=join_prune_interval,
                 nameAlias=name_alias,
