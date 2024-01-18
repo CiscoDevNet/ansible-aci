@@ -59,6 +59,7 @@ options:
   associated_epg:
    description:
    - The associated EPG.
+   - To Remove the current associated EPG, pass an empty dictionary.
    type: dict
    suboptions:
       tenant:
@@ -76,7 +77,8 @@ options:
         - The name of the associated EPG.
   associated_extepg:
     description:
-    - The name of the associated external EPG.
+    - The associated external EPG.
+    - To Remove the current associated external EPG, pass an empty dictionary.
     type: dict
     suboptions:
       tenant:
@@ -134,7 +136,22 @@ EXAMPLES = r"""
     destination_port: 25
     source_ip_type: custom_source_ip
     custom_source_address: 11.11.11.2
+    associated_epg:
+      tenant: my_tenant
+      vrf: my_vrf
+      ap: my_ap
+      epg: my_epg
     state: present
+  delegate_to: localhost
+
+- name: Remove associated EPG from the new Netflow Exporter Policy
+  cisco.aci.aci_netflow_exporter_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    netflow_exporter_policy: my_netflow_exporter_policy
+    associated_epg: {}
   delegate_to: localhost
 
 - name: Query a Netflow Exporter Policy
@@ -295,14 +312,13 @@ from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_S
 
 
 def main():
-    new_dscp_spec = dict((k, aci_contract_dscp_spec()[k]) for k in aci_contract_dscp_spec() if k != "aliases")
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         netflow_exporter_policy=dict(type="str", aliases=["netflow_exporter", "netflow_exporter_name", "name"]),
-        dscp=new_dscp_spec,
+        dscp=dict((k, aci_contract_dscp_spec()[k]) for k in aci_contract_dscp_spec() if k != "aliases"),
         destination_address=dict(type="str"),
         destination_port=dict(type="str"),
         source_ip_type=dict(type="str", choices=list(MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING.keys())),
@@ -321,7 +337,7 @@ def main():
             ["state", "present", ["tenant", "netflow_exporter_policy", "destination_address", "destination_port"]],
         ],
         mutually_exclusive=[
-            ("associated_epg", "associated_extepg")
+            ["associated_epg", "associated_extepg"]
         ]
     )
 
@@ -360,14 +376,14 @@ def main():
     aci.get_existing()
 
     if state == "present":
+        child_configs = []
         if associated_epg is not None:
             if all(value is None for value in associated_epg.values()) and isinstance(aci.existing, list) and len(aci.existing) > 0:
                 for child in aci.existing[0].get("netflowExporterPol", {}).get("children", {}):
-                    if child.get("netflowRsExporterToCtx") and child.get("netflowRsExporterToEPg"):
-                        child_configs = [
-                            dict(netflowRsExporterToCtx=dict(attributes=dict(status="deleted"))),
-                            dict(netflowRsExporterToEPg=dict(attributes=dict(status="deleted"))),
-                        ]
+                    if child.get("netflowRsExporterToCtx"):
+                        child_configs.extend([dict(netflowRsExporterToCtx=dict(attributes=dict(status="deleted")))])
+                    elif child.get("netflowRsExporterToEPg"):
+                        child_configs.extend([dict(netflowRsExporterToEPg=dict(attributes=dict(status="deleted")))])
             elif all(value is not None for value in associated_epg.values()):
                 associated_tenant = associated_epg.get("tenant")
                 child_configs = [
@@ -377,11 +393,10 @@ def main():
         elif  associated_extepg is not None:
             if all(value is None for value in associated_extepg.values()) and isinstance(aci.existing, list) and len(aci.existing) > 0:
                 for child in aci.existing[0].get("netflowExporterPol", {}).get("children", {}):
-                    if child.get("netflowRsExporterToCtx") and child.get("netflowRsExporterToEPg"):
-                        child_configs = [
-                            dict(netflowRsExporterToCtx=dict(attributes=dict(status="deleted"))),
-                            dict(netflowRsExporterToEPg=dict(attributes=dict(status="deleted"))),
-                        ]
+                    if child.get("netflowRsExporterToCtx"):
+                        child_configs.extend([dict(netflowRsExporterToCtx=dict(attributes=dict(status="deleted")))])
+                    elif child.get("netflowRsExporterToEPg"):
+                        child_configs.extend([dict(netflowRsExporterToEPg=dict(attributes=dict(status="deleted")))])
             elif all(value is not None for value in associated_extepg.values()):
                 associated_tenant = associated_extepg.get("tenant")
                 child_configs = [
