@@ -336,6 +336,7 @@ def action_rule_set_dampening_spec():
         suppress=dict(type="int"),
     )
 
+
 def associated_netflow_exporter_epg_spec():
     return dict(
         tenant=dict(type="str"),
@@ -344,6 +345,7 @@ def associated_netflow_exporter_epg_spec():
         epg=dict(type="str"),
     )
 
+
 def associated_netflow_exporter_extepg_spec():
     return dict(
         tenant=dict(type="str"),
@@ -351,6 +353,7 @@ def associated_netflow_exporter_extepg_spec():
         l3out=dict(type="str"),
         extepg=dict(type="str"),
     )
+
 
 class ACIModule(object):
     def __init__(self, module):
