@@ -1,0 +1,210 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Samita Bhattacharjee (@samitab)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Change external tep to inactive
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    address_count: 5
+    status: inactive
+    state: present
+  ignore_errors: true
+
+- name: Ensure existing external tep is absent
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    state: absent
+
+# CREATE EXTERNAL TEP
+- name: Create an external tep with check mode
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    address_count: 5
+    status: active
+    state: present
+  check_mode: true
+  register: add_external_tep_cm
+
+- name: Create an external tep
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    address_count: 5
+    status: active
+    state: present
+  register: add_external_tep
+
+- name: Verify external tep creation
+  ansible.builtin.assert:
+    that:
+    - add_external_tep is changed
+    - add_external_tep.current.0.fabricExtRoutablePodSubnet.attributes.dn == "uni/controller/setuppol/setupp-1/extrtpodsubnet-[10.66.22.0/24]"
+    - add_external_tep.current.0.fabricExtRoutablePodSubnet.attributes.pool == "10.66.22.0/24"
+    - add_external_tep.current.0.fabricExtRoutablePodSubnet.attributes.reserveAddressCount == "5"
+    - add_external_tep.current.0.fabricExtRoutablePodSubnet.attributes.state == "active"
+    - add_external_tep.current.0.fabricExtRoutablePodSubnet.attributes.annotation == "orchestrator:ansible"
+    - add_external_tep_cm is changed
+    - add_external_tep_cm.previous == []
+    - add_external_tep_cm.current == []
+    - add_external_tep_cm.proposed.fabricExtRoutablePodSubnet.attributes.dn == "uni/controller/setuppol/setupp-1/extrtpodsubnet-[10.66.22.0/24]"
+    - add_external_tep_cm.proposed.fabricExtRoutablePodSubnet.attributes.pool == "10.66.22.0/24"
+    - add_external_tep_cm.proposed.fabricExtRoutablePodSubnet.attributes.reserveAddressCount == "5"
+    - add_external_tep_cm.proposed.fabricExtRoutablePodSubnet.attributes.state == "active"
+    - add_external_tep_cm.proposed.fabricExtRoutablePodSubnet.attributes.annotation == "orchestrator:ansible"
+
+# CREATE FABRIC POD PROFILE AGAIN TO TEST IDEMPOTENCE
+- name: Create an external tep again
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    address_count: 5
+    status: active
+    state: present
+  register: add_external_tep_again
+
+- name: Verify external tep creation idempotence
+  ansible.builtin.assert:
+    that:
+    - add_external_tep_again is not changed
+    - add_external_tep_again.current.0.fabricExtRoutablePodSubnet.attributes.dn == "uni/controller/setuppol/setupp-1/extrtpodsubnet-[10.66.22.0/24]"
+    - add_external_tep_again.current.0.fabricExtRoutablePodSubnet.attributes.pool == "10.66.22.0/24"
+    - add_external_tep_again.current.0.fabricExtRoutablePodSubnet.attributes.reserveAddressCount == "5"
+    - add_external_tep_again.current.0.fabricExtRoutablePodSubnet.attributes.state == "active"
+    - add_external_tep_again.current.0.fabricExtRoutablePodSubnet.attributes.annotation == "orchestrator:ansible"
+
+# QUERY FABRIC EXTERNAL TEP
+- name: Query external tep
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    state: query
+  register: query_external_tep
+
+- name: Verify external tep query
+  ansible.builtin.assert:
+    that:
+    - query_external_tep is not changed
+    - query_external_tep.current.0.fabricExtRoutablePodSubnet.attributes.dn == "uni/controller/setuppol/setupp-1/extrtpodsubnet-[10.66.22.0/24]"
+    - query_external_tep.current.0.fabricExtRoutablePodSubnet.attributes.pool == "10.66.22.0/24"
+    - query_external_tep.current.0.fabricExtRoutablePodSubnet.attributes.reserveAddressCount == "5"
+    - query_external_tep.current.0.fabricExtRoutablePodSubnet.attributes.state == "active"
+
+# QUERY ALL EXTERNAL TEPs
+- name: Query all external teps
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    state: query
+  register: query_external_tep_all
+
+- name: Verify query idempotence
+  ansible.builtin.assert:
+    that:
+    - query_external_tep_all is not changed
+
+# VERIFY UNABLE TO DELETE ACTIVE EXTERNAL TEP
+- name: Try to delete active external tep
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    state: absent
+  register: active_tep_error
+  ignore_errors: true
+
+- name: Verify unable to delete active external tep
+  ansible.builtin.assert:
+    that:
+    - active_tep_error is not changed
+    - active_tep_error is failed
+    - active_tep_error.msg == "APIC Error 105{{":"}} Unable to delete Routable TEP Pool.Please set the state = inactive."
+
+# CHANGE EXTERNAL TEP TO INACTIVE
+- name: Change external tep to inactive
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    address_count: 5
+    status: inactive
+    state: present
+  register: external_tep_inactive
+
+# DELETE EXTERNAL TEP
+- name: Delete inactive external tep with check mode
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    state: absent
+  check_mode: true
+  register: delete_external_tep_cm
+
+- name: Delete inactive external tep
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    state: absent
+  register: delete_external_tep
+
+- name: Verify external tep deletion
+  ansible.builtin.assert:
+    that:
+    - external_tep_inactive is changed
+    - external_tep_inactive.current.0.fabricExtRoutablePodSubnet.attributes.state == "inactive"
+    - delete_external_tep is changed
+    - delete_external_tep.current == []
+    - delete_external_tep.previous.0.fabricExtRoutablePodSubnet.attributes.dn == "uni/controller/setuppol/setupp-1/extrtpodsubnet-[10.66.22.0/24]"
+    - delete_external_tep.previous.0.fabricExtRoutablePodSubnet.attributes.pool == "10.66.22.0/24"
+    - delete_external_tep.previous.0.fabricExtRoutablePodSubnet.attributes.reserveAddressCount == "5"
+    - delete_external_tep.previous.0.fabricExtRoutablePodSubnet.attributes.state == "inactive"
+    - delete_external_tep_cm is changed
+    - delete_external_tep_cm.current != []
+    - delete_external_tep_cm.previous.0.fabricExtRoutablePodSubnet.attributes.dn == "uni/controller/setuppol/setupp-1/extrtpodsubnet-[10.66.22.0/24]"
+    - delete_external_tep_cm.previous.0.fabricExtRoutablePodSubnet.attributes.pool == "10.66.22.0/24"
+    - delete_external_tep_cm.previous.0.fabricExtRoutablePodSubnet.attributes.reserveAddressCount == "5"
+    - delete_external_tep_cm.previous.0.fabricExtRoutablePodSubnet.attributes.state == "inactive"
+    - delete_external_tep_cm.proposed == {}
+
+# DELETE AGAIN TO TEST IDEMPOTENCE
+- name: Delete inactive external tep again
+  cisco.aci.aci_fabric_pod_external_tep:
+    <<: *aci_info
+    pod_id: 1
+    pool: 10.66.22.0/24
+    state: absent
+  register: delete_external_tep_again
+
+- name: Verify profile deletion idempotence
+  ansible.builtin.assert:
+    that:
+    - delete_external_tep_again is not changed
+    - delete_external_tep_again.current == []

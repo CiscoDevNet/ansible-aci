@@ -67,6 +67,7 @@ extends_documentation_fragment:
 
 notes:
 - The C(pod_profile) must exist before using this module in your playbook.
+- The M(cisco.aci.aci_fabric_pod_profile) module can be used to create the C(pod_profile).
 seealso:
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fabric:PodS).
@@ -75,9 +76,6 @@ author:
 - Tim Cragg (@timcragg)
 - Akini Ross (@akinross)
 """
-
-# TODO add to notes section when cisco.aci.aci_pod_profile is implemented:
-# The M(cisco.aci.aci_pod_profile) module can be used for this.
 
 EXAMPLES = r"""
 - name: Add a new pod selector with type all

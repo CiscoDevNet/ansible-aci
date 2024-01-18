@@ -1,0 +1,206 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Samita Bhattacharjee (@samitab)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# Virtual pod setup has been skipped due to complex setup requirements assosiated with configuring a vPod.
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Ensure Fabric Setup Pod 77 is absent before testing
+  cisco.aci.aci_fabric_pod:
+    <<: *aci_info
+    pod_id: 77
+    state: absent
+  register: cleaned
+
+- name: Sleep for 15 seconds and continue
+  ansible.builtin.wait_for:
+    timeout: 15
+  delegate_to: localhost
+  when: cleaned is changed
+
+# CREATE FABRIC SETUP POD
+- name: Create ansible_fabric_pod_setup with check mode
+  cisco.aci.aci_fabric_pod:
+    <<: *aci_info
+    pod_id: 77
+    pool: 10.77.0.0/16
+    type: physical
+    description: Ansible test pod setup
+    state: present
+  check_mode: true
+  register: add_fabric_pod_setup_cm
+
+- name: Create ansible_fabric_pod_setup
+  cisco.aci.aci_fabric_pod:
+    <<: *aci_info
+    pod_id: 77
+    pool: 10.77.0.0/16
+    type: physical
+    description: Ansible test pod setup
+    state: present
+  register: add_fabric_pod_setup
+
+- name: Sleep for 15 seconds and continue
+  ansible.builtin.wait_for:
+    timeout: 15
+  delegate_to: localhost
+
+- name: Verify profile creation
+  ansible.builtin.assert:
+    that:
+    - add_fabric_pod_setup is changed
+    - add_fabric_pod_setup.current.0.fabricSetupP.attributes.dn == "uni/controller/setuppol/setupp-77"
+    - add_fabric_pod_setup.current.0.fabricSetupP.attributes.podId == "77"
+    - add_fabric_pod_setup.current.0.fabricSetupP.attributes.podType == "physical"
+    - add_fabric_pod_setup.current.0.fabricSetupP.attributes.tepPool == "10.77.0.0/16"
+    - add_fabric_pod_setup.current.0.fabricSetupP.attributes.descr == "Ansible test pod setup"
+    - add_fabric_pod_setup.current.0.fabricSetupP.attributes.annotation == 'orchestrator:ansible'
+    - add_fabric_pod_setup_cm is changed
+    - add_fabric_pod_setup_cm.previous == []
+    - add_fabric_pod_setup_cm.current == []
+    - add_fabric_pod_setup_cm.proposed.fabricSetupP.attributes.dn == "uni/controller/setuppol/setupp-77"
+    - add_fabric_pod_setup_cm.proposed.fabricSetupP.attributes.podId == "77"
+    - add_fabric_pod_setup_cm.proposed.fabricSetupP.attributes.podType == "physical"
+    - add_fabric_pod_setup_cm.proposed.fabricSetupP.attributes.tepPool == "10.77.0.0/16"
+    - add_fabric_pod_setup_cm.proposed.fabricSetupP.attributes.descr == "Ansible test pod setup"
+    - add_fabric_pod_setup_cm.proposed.fabricSetupP.attributes.annotation == 'orchestrator:ansible'
+
+# CREATE FABRIC SETUP POD AGAIN TO TEST IDEMPOTENCE
+- name: Create ansible_fabric_pod_setup again
+  cisco.aci.aci_fabric_pod:
+    <<: *aci_info
+    pod_id: 77
+    pool: 10.77.0.0/16
+    type: physical
+    description: Ansible test pod setup
+    state: present
+  register: add_fabric_pod_setup_again
+
+- name: Verify profile creation idempotence
+  ansible.builtin.assert:
+    that:
+    - add_fabric_pod_setup_again is not changed
+    - add_fabric_pod_setup_again.current.0.fabricSetupP.attributes.dn == "uni/controller/setuppol/setupp-77"
+    - add_fabric_pod_setup_again.current.0.fabricSetupP.attributes.podId == "77"
+    - add_fabric_pod_setup_again.current.0.fabricSetupP.attributes.podType == "physical"
+    - add_fabric_pod_setup_again.current.0.fabricSetupP.attributes.tepPool == "10.77.0.0/16"
+    - add_fabric_pod_setup_again.current.0.fabricSetupP.attributes.descr == "Ansible test pod setup"
+
+# QUERY FABRIC SETUP POD
+- name: Query fabric setup pod
+  cisco.aci.aci_fabric_pod:
+    <<: *aci_info
+    pod_id: 77
+    state: query
+  register: query_pod_profile
+
+- name: Verify profile query
+  ansible.builtin.assert:
+    that:
+    - query_pod_profile is not changed
+    - query_pod_profile.current.0.fabricSetupP.attributes.dn == "uni/controller/setuppol/setupp-77"
+    - query_pod_profile.current.0.fabricSetupP.attributes.podId == "77"
+    - query_pod_profile.current.0.fabricSetupP.attributes.podType == "physical"
+    - query_pod_profile.current.0.fabricSetupP.attributes.tepPool == "10.77.0.0/16"
+    - query_pod_profile.current.0.fabricSetupP.attributes.descr == "Ansible test pod setup"
+
+# QUERY ALL POD SETUPS
+- name: Query all fabric pod setups
+  cisco.aci.aci_fabric_pod:
+    <<: *aci_info
+    state: query
+  register: query_pod_profile_all
+
+- name: Verify profile query idempotence
+  ansible.builtin.assert:
+    that:
+    - query_pod_profile_all is not changed
+
+# DELETE POD SETUP
+- name: Delete pod setup with check mode
+  cisco.aci.aci_fabric_pod:
+    <<: *aci_info
+    pod_id: 77
+    state: absent
+  check_mode: true
+  register: delete_pod_setup_cm
+
+- name: Delete pod setup
+  cisco.aci.aci_fabric_pod:
+    <<: *aci_info
+    pod_id: 77
+    state: absent
+  register: delete_pod_setup
+
+- name: Sleep for 15 seconds and continue
+  ansible.builtin.wait_for:
+    timeout: 15
+  delegate_to: localhost
+
+- name: Verify pod setup deletion
+  ansible.builtin.assert:
+    that:
+    - delete_pod_setup is changed
+    - delete_pod_setup.current == []
+    - delete_pod_setup.previous.0.fabricSetupP.attributes.dn == "uni/controller/setuppol/setupp-77"
+    - delete_pod_setup.previous.0.fabricSetupP.attributes.podId == "77"
+    - delete_pod_setup.previous.0.fabricSetupP.attributes.podType == "physical"
+    - delete_pod_setup.previous.0.fabricSetupP.attributes.tepPool == "10.77.0.0/16"
+    - delete_pod_setup.previous.0.fabricSetupP.attributes.descr == "Ansible test pod setup"
+    - delete_pod_setup_cm  is changed
+    - delete_pod_setup_cm.current != []
+    - delete_pod_setup_cm.previous.0.fabricSetupP.attributes.dn == "uni/controller/setuppol/setupp-77"
+    - delete_pod_setup_cm.previous.0.fabricSetupP.attributes.podId == "77"
+    - delete_pod_setup_cm.previous.0.fabricSetupP.attributes.podType == "physical"
+    - delete_pod_setup_cm.previous.0.fabricSetupP.attributes.tepPool == "10.77.0.0/16"
+    - delete_pod_setup_cm.previous.0.fabricSetupP.attributes.descr == "Ansible test pod setup"
+    - delete_pod_setup_cm.proposed == {}
+
+# DELETE POD SETUP AGAIN TO TEST IDEMPOTENCE
+- name: Delete pod setup again
+  cisco.aci.aci_fabric_pod:
+    <<: *aci_info
+    pod_id: 77
+    state: absent
+  register: delete_pod_setup_again
+
+- name: Verify profile deletion idempotence
+  ansible.builtin.assert:
+    that:
+    - delete_pod_setup_again is not changed
+    - delete_pod_setup_again.current == []
+
+# ERROR HANDLING
+- name: Create pod setup with out of range pod_id
+  cisco.aci.aci_fabric_pod:
+    <<: *aci_info
+    pod_id: 300
+    pool: 10.123.0.0/24
+    state: present
+  register: pod_setup_id_error
+  ignore_errors: true
+
+- name: Verify errors of Fabric Setup Pod
+  ansible.builtin.assert:
+    that:
+    - pod_setup_id_error is not changed
+    - pod_setup_id_error is failed
+    - pod_setup_id_error.msg == "Pod ID{{":"}} 300 is invalid; it must be in the range of 1 to 254."

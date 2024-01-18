@@ -1,0 +1,153 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Samita Bhattacharjee (@samitab)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+
+# CLEAN ENVIRONMENT
+- name: Ensure Fabric Pod Profile is absent before testing
+  cisco.aci.aci_fabric_pod_profile:
+    <<: *aci_info
+    name: ansible_fabric_pod_profile
+    state: absent
+
+# CREATE FABRIC POD PROFILE
+- name: Create ansible_fabric_pod_profile with check mode
+  cisco.aci.aci_fabric_pod_profile:
+    <<: *aci_info
+    name: ansible_fabric_pod_profile
+    description: Ansible test pod profile
+    state: present
+  check_mode: true
+  register: add_fabric_pod_profile_cm
+
+- name: Create ansible_fabric_pod_profile
+  cisco.aci.aci_fabric_pod_profile:
+    <<: *aci_info
+    name: ansible_fabric_pod_profile
+    description: Ansible test pod profile
+    state: present
+  register: add_fabric_pod_profile
+
+- name: Verify profile creation
+  ansible.builtin.assert:
+    that:
+    - add_fabric_pod_profile is changed
+    - add_fabric_pod_profile.previous == []
+    - add_fabric_pod_profile.current.0.fabricPodP.attributes.dn == "uni/fabric/podprof-ansible_fabric_pod_profile"
+    - add_fabric_pod_profile.current.0.fabricPodP.attributes.name == "ansible_fabric_pod_profile"
+    - add_fabric_pod_profile.current.0.fabricPodP.attributes.descr == "Ansible test pod profile"
+    - add_fabric_pod_profile.current.0.fabricPodP.attributes.annotation == 'orchestrator:ansible'
+    - add_fabric_pod_profile_cm is changed
+    - add_fabric_pod_profile_cm.previous == []
+    - add_fabric_pod_profile_cm.current == []
+    - add_fabric_pod_profile_cm.proposed.fabricPodP.attributes.dn == "uni/fabric/podprof-ansible_fabric_pod_profile"
+    - add_fabric_pod_profile_cm.proposed.fabricPodP.attributes.name == "ansible_fabric_pod_profile"
+    - add_fabric_pod_profile_cm.proposed.fabricPodP.attributes.descr == "Ansible test pod profile"
+    - add_fabric_pod_profile_cm.proposed.fabricPodP.attributes.annotation == 'orchestrator:ansible'
+
+# CREATE FABRIC POD PROFILE AGAIN TO TEST IDEMPOTENCE
+- name: Create ansible_fabric_pod_profile again
+  cisco.aci.aci_fabric_pod_profile:
+    <<: *aci_info
+    name: ansible_fabric_pod_profile
+    description: Ansible test pod profile
+    state: present
+  register: add_fabric_pod_profile_again
+
+- name: Verify profile creation idempotence
+  ansible.builtin.assert:
+    that:
+    - add_fabric_pod_profile_again is not changed
+    - add_fabric_pod_profile_again.current.0.fabricPodP.attributes.dn == "uni/fabric/podprof-ansible_fabric_pod_profile"
+    - add_fabric_pod_profile_again.current.0.fabricPodP.attributes.name == "ansible_fabric_pod_profile"
+    - add_fabric_pod_profile_again.current.0.fabricPodP.attributes.descr  == "Ansible test pod profile"
+
+# QUERY FABRIC POD PROFILE
+- name: Query fabric pod profile
+  cisco.aci.aci_fabric_pod_profile:
+    <<: *aci_info
+    name: ansible_fabric_pod_profile
+    state: query
+  register: query_pod_profile
+
+- name: Verify profile query
+  ansible.builtin.assert:
+    that:
+    - query_pod_profile is not changed
+    - query_pod_profile.current.0.fabricPodP.attributes.dn == "uni/fabric/podprof-ansible_fabric_pod_profile"
+    - query_pod_profile.current.0.fabricPodP.attributes.name == "ansible_fabric_pod_profile"
+    - query_pod_profile.current.0.fabricPodP.attributes.descr == "Ansible test pod profile"
+
+# QUERY ALL POD PROFILES
+- name: Query all fabric pod profiles
+  cisco.aci.aci_fabric_pod_profile:
+    <<: *aci_info
+    state: query
+  register: query_pod_profile_all
+
+- name: Verify profile query idempotence
+  ansible.builtin.assert:
+    that:
+    - query_pod_profile_all is not changed
+
+# DELETE POD PROFILE
+- name: Delete ansible_fabric_pod_profile with check mode
+  cisco.aci.aci_fabric_pod_profile:
+    <<: *aci_info
+    name: ansible_fabric_pod_profile
+    state: absent
+  check_mode: true
+  register: delete_pod_profile_cm
+
+- name: Delete ansible_fabric_pod_profile
+  cisco.aci.aci_fabric_pod_profile:
+    <<: *aci_info
+    name: ansible_fabric_pod_profile
+    state: absent
+  register: delete_pod_profile
+
+- name: Verify profile deletion
+  ansible.builtin.assert:
+    that:
+    - delete_pod_profile is changed
+    - delete_pod_profile.current == []
+    - delete_pod_profile.previous.0.fabricPodP.attributes.dn == "uni/fabric/podprof-ansible_fabric_pod_profile"
+    - delete_pod_profile.previous.0.fabricPodP.attributes.name == "ansible_fabric_pod_profile"
+    - delete_pod_profile.previous.0.fabricPodP.attributes.descr == "Ansible test pod profile"
+    - delete_pod_profile_cm is changed
+    - delete_pod_profile_cm.current != []
+    - delete_pod_profile_cm.previous.0.fabricPodP.attributes.dn == "uni/fabric/podprof-ansible_fabric_pod_profile"
+    - delete_pod_profile_cm.previous.0.fabricPodP.attributes.name == "ansible_fabric_pod_profile"
+    - delete_pod_profile_cm.previous.0.fabricPodP.attributes.descr == "Ansible test pod profile"
+    - delete_pod_profile_cm.proposed == {}
+
+# DELETE POD PROFILE AGAIN TO TEST IDEMPOTENCE
+- name: Delete ansible_fabric_pod_profile again
+  cisco.aci.aci_fabric_pod_profile:
+    <<: *aci_info
+    name: ansible_fabric_pod_profile
+    state: absent
+  register: delete_pod_profile_again
+
+- name: Verify profile deletion idempotence
+  ansible.builtin.assert:
+    that:
+    - delete_pod_profile_again is not changed
+    - delete_pod_profile_again.current == []
