@@ -30,6 +30,7 @@ options:
   netflow_record_policy:
     description:
     - The name of the Netflow Record Policy.
+    - To remove the current Netflow Record Policy, pass an empty string.
     type: str
     aliases: [ netflow_record, netflow_record_name ]
   description:
