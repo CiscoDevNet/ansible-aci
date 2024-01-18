@@ -40,8 +40,6 @@ aci = AltACIModule()
 try:
     from lxml import etree
 
-    if sys.version_info >= (2, 7):
-        from xmljson import cobra
 except ImportError:
     pytestmark = pytest.mark.skip("ACI Ansible modules require the lxml and xmljson Python libraries")
 
