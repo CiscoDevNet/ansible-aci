@@ -114,10 +114,40 @@
         - query_ansible_netflow_monitor_policy_1.current.0.netflowMonitorPol.attributes.name == "ansible_netflow_monitor_policy_1"
         - query_ansible_netflow_monitor_policy_1.current.0.netflowMonitorPol.children.0.netflowRsMonitorToRecord.attributes.tDn == "uni/tn-ansible_tenant/recordpol-ansible_netflow_record_policy"
 
+  # UPDATE NETFLOW MONITOR POLICY
+  - name: Add a Netflow Monitor policy (check_mode)
+    cisco.aci.aci_netflow_monitor_policy: &aci_netflow_monitor_policy_update
+      <<: *aci_netflow_monitor_policy_present
+      netflow_record_policy: ""
+      description: Updated Netflow Monitor policy 1 for ansible_tenant tenant
+      state: present
+    check_mode: true
+    register: cm_update_netflow_monitor_policy
+
+  - name: Add a Netflow Monitor policy (normal_mode)
+    cisco.aci.aci_netflow_monitor_policy:
+      <<: *aci_netflow_monitor_policy_update
+    register: nm_update_netflow_monitor_policy
+
+  - name: Add the first Netflow Monitor policy again - testing idempotency
+    cisco.aci.aci_netflow_monitor_policy:
+      <<: *aci_netflow_monitor_policy_update
+    register: nm_update_netflow_monitor_policy_idempotency
+
+  - name: Asserts for Netflow Monitor policy update tasks
+    ansible.builtin.assert:
+      that:
+        - cm_update_netflow_monitor_policy is changed
+        - cm_update_netflow_monitor_policy.previous == cm_update_netflow_monitor_policy.current
+        - nm_update_netflow_monitor_policy is changed
+        - nm_update_netflow_monitor_policy.current.0.netflowMonitorPol.attributes.descr == "Updated Netflow Monitor policy 1 for ansible_tenant tenant"
+        - nm_update_netflow_monitor_policy.current.0.netflowMonitorPol.children.0.netflowRsMonitorToRecord.attributes.tnNetflowRecordPolName == ""
+        - nm_update_netflow_monitor_policy_idempotency is not changed
+
   # DELETE NETFLOW MONITOR POLICY
   - name: Remove Netflow Monitor policy (check_mode)
     cisco.aci.aci_netflow_monitor_policy: &netflow_monitor_policy_absent
-      <<: *aci_netflow_monitor_policy_present
+      <<: *aci_netflow_monitor_policy_update
       state: absent
     check_mode: true
     register: cm_remove_netflow_monitor_policy
@@ -139,6 +169,7 @@
         - cm_remove_netflow_monitor_policy.proposed == {}
         - nm_remove_netflow_monitor_policy is changed
         - nm_remove_netflow_monitor_policy.previous != []
+        - nm_remove_netflow_monitor_policy.proposed == {}
         - nm_remove_netflow_monitor_policy.current == []
         - nm_remove_netflow_monitor_policy_idempotency is not changed
         - nm_remove_netflow_monitor_policy_idempotency.previous == []
