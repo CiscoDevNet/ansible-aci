@@ -69,12 +69,15 @@ options:
       vrf:
         description:
         - The name of the associated VRF.
+        type: str
       ap:
         description:
         - The name of the associated Application Profile to which the associated EPG belongs.
+        type: str
       epg:
         description:
         - The name of the associated EPG.
+        type: str
   associated_extepg:
     description:
     - The associated external EPG.
@@ -88,12 +91,15 @@ options:
       vrf:
         description:
         - The name of the associated VRF.
+        type: str
       l3out:
         description:
         - The name of the L3Out to which the associated external EPG belongs.
+        type: str
       extepg:
         description:
         - The name of the associated EPG.
+        type: str
   description:
     description:
     - The description for the Netflow Exporter Policy.
@@ -336,7 +342,7 @@ def main():
             ["state", "absent", ["tenant", "netflow_exporter_policy"]],
             ["state", "present", ["tenant", "netflow_exporter_policy", "destination_address", "destination_port"]],
         ],
-        mutually_exclusive=[["associated_epg", "associated_extepg"]]
+        mutually_exclusive=[["associated_epg", "associated_extepg"]],
     )
 
     tenant = module.params.get("tenant")
