@@ -7,7 +7,7 @@ on:
   # * is a special character in YAML so you have to quote this string
   - cron:  '0 8 * * *'
 env:
-  python_version: 3.9
+  python_version: '3.10'
 jobs:
   build:
     name: Build collection
@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [v2.9.27, v2.10.17, v2.11.12, v2.12.10, stable-2.13, stable-2.14]
+        ansible: [v2.14.13, v2.15.8, v2.16.2, stable-2.16]
     steps:
     - name: Check out code
       uses: actions/checkout@v3
@@ -65,8 +65,8 @@ jobs:
       with:
         python-version: ${{ env.python_version }}
 
-    - name: Install ansible-base (stable-2.14)
-      run: pip install https://github.com/ansible/ansible/archive/stable-2.14.tar.gz --disable-pip-version-check
+    - name: Install ansible-base (v2.15.8)
+      run: pip install https://github.com/ansible/ansible/archive/v2.15.8.tar.gz --disable-pip-version-check
 
     - name: Download migrated collection artifacts
       uses: actions/download-artifact@v3
@@ -107,7 +107,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [v2.9.27, v2.10.17, v2.11.12, v2.12.10, stable-2.13, stable-2.14]
+        ansible: [v2.14.13, v2.15.8, v2.16.2, stable-2.16]
     steps:
     - name: Set up Python ${{ env.python_version }}
       uses: actions/setup-python@v4
@@ -149,11 +149,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [v2.10.17, v2.11.12, v2.12.10, stable-2.13, stable-2.14]
-        python-version: [3.9]
-        include:
-          - ansible: v2.9.27
-            python-version: 3.8
+        ansible: [v2.14.13, v2.15.8, v2.16.2, stable-2.16]
+        python-version: ['3.10']
     steps:
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
@@ -198,8 +195,8 @@ jobs:
       with:
         python-version: ${{ env.python_version }}
 
-    - name: Install ansible-base (stable-2.13)
-      run: pip install https://github.com/ansible/ansible/archive/stable-2.13.tar.gz --disable-pip-version-check
+    - name: Install ansible-base (v2.15.8)
+      run: pip install https://github.com/ansible/ansible/archive/v2.15.8.tar.gz --disable-pip-version-check
 
     - name: Install coverage (v4.5.4)
       run: pip install coverage==4.5.4
