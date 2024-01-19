@@ -78,6 +78,7 @@ options:
   igmp_interface_policy:
     description:
     - The name of the IGMP interface policy.
+    type: str
     aliases: [ igmp ]
   description:
     description:
@@ -389,7 +390,7 @@ def main():
                 prio=qos_priority,
                 descr=description,
             ),
-            child_configs=child_configs
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class="l3extLIfP")
