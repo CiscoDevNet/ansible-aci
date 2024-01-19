@@ -22,6 +22,12 @@ options:
     - The name of the Key Ring.
     type: str
     aliases: [ key_ring, key_ring_name ]
+  cloud_tenant:
+    description:
+    - The name of the cloud tenant.
+    - This attribute is only applicable for Cloud APIC.
+    type: str
+    aliases: [ tenant, tenant_name ]
   description:
     description:
     - The description of the Key Ring.
@@ -245,6 +251,7 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         name=dict(type="str", aliases=["key_ring", "key_ring_name"]),  # Not required for querying all objects
+        cloud_tenant=dict(type="str", aliases=["tenant_name", "tenant"]),
         description=dict(type="str", aliases=["descr"]),
         certificate=dict(type="str", aliases=["cert_data", "certificate_data", "cert"]),
         modulus=dict(type="int", choices=[512, 1024, 1536, 2048]),
@@ -266,6 +273,7 @@ def main():
     )
 
     name = module.params.get("name")
+    cloud_tenant = module.params.get("cloud_tenant")
     description = module.params.get("description")
     certificate = module.params.get("certificate")
     modulus = "mod{0}".format(module.params.get("modulus")) if module.params.get("modulus") else None
@@ -278,11 +286,17 @@ def main():
 
     aci = ACIModule(module)
     aci_class = "pkiKeyRing"
+    parent_class = "cloudCertStore" if cloud_tenant else "pkiEp"
+    parent_rn = "tn-{0}/certstore".format(cloud_tenant) if cloud_tenant else "userext/pkiext"
 
     aci.construct_url(
         root_class=dict(
+            aci_class=parent_class,
+            aci_rn=parent_rn,
+        ),
+        subclass_1=dict(
             aci_class=aci_class,
-            aci_rn="userext/pkiext/keyring-{0}".format(name),
+            aci_rn="keyring-{0}".format(name),
             module_object=name,
             target_filter={"name": name},
         ),
@@ -308,9 +322,10 @@ def main():
 
         aci.payload(aci_class=aci_class, class_config=class_config)
 
-        aci.get_diff(aci_class=aci_class)
+        aci.get_diff(aci_class=aci_class, include_name=name if cloud_tenant else None)
 
-        aci.post_config()
+        # Only wrap the payload in parent class if cloud_tenant is set to avoid apic error
+        aci.post_config(parent_class=parent_class if cloud_tenant else None)
 
     elif state == "absent":
         aci.delete_config()
