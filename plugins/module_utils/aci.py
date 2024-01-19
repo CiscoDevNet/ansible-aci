@@ -1287,7 +1287,7 @@ class ACIModule(object):
             self.result["changed"] = True
             self.method = "DELETE"
 
-    def get_diff(self, aci_class):
+    def get_diff(self, aci_class, include_name=None):
         """
         This method is used to get the difference between the proposed and existing configurations. Each module
         should call the get_existing method before this method, and add the proposed config to the module results
@@ -1309,6 +1309,8 @@ class ACIModule(object):
             # add name back to config only if the configs do not match
             if config:
                 # TODO: If URLs are built with the object's name, then we should be able to leave off adding the name back
+                if include_name:
+                    config["name"] = include_name
                 config = {aci_class: {"attributes": config}}
 
             # check for updates to child configs and update new config dictionary

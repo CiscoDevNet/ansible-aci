@@ -8,6 +8,9 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
 - name: Set vars
   ansible.builtin.set_fact:
     aci_info: &aci_info
@@ -113,7 +116,7 @@
 
 # VERSION SPECIFIC TESTS
 - name: Test updating a key ring with key_type
-  when: version.current.0.topSystem.attributes.version is version('6.0', '>=')
+  when: version.current.0.topSystem.attributes.version is version('6.0', '>=') and query_cloud.current == []
   block:
     - name: Update an existing key ring with key type >= 6.0
       cisco.aci.aci_aaa_key_ring: &key_ring_2_present
@@ -136,6 +139,158 @@
       cisco.aci.aci_aaa_key_ring:
         <<: *key_ring_2_present
         state: absent
+
+# CLOUD SPECIFIC TESTS
+- name: Execute tasks only for cloud sites
+  when: query_cloud.current != []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+    
+    - name: Delete a key ring in cloud with tenant (check_mode)
+      cisco.aci.aci_aaa_key_ring: &key_ring_cloud_tenant_absent
+        <<: *aci_info
+        name: key_ring_cloud_tenant
+        cloud_tenant: cloud_tenant
+        certificate_authority: certificate_authority_cloud
+        state: absent
+
+    - name: Delete certificate authority for cloud site tenant
+      cisco.aci.aci_aaa_certificate_authority: &certificate_authority_cloud_absent
+        <<: *aci_info
+        cloud_tenant: cloud_tenant
+        name: certificate_authority_cloud
+        certificate_chain: "{{ lookup('file', 'pki/admin.crt') }}"
+        state: absent
+
+    - name: Delete tenant for key ring
+      cisco.aci.aci_tenant: &cloud_tenant_absent
+        <<: *aci_info
+        name: cloud_tenant
+        state: absent
+      register: cloud_tenant
+      until: cloud_tenant is not failed
+      delay: 2
+      retries: 4
+
+    - name: Create tenant for key ring
+      cisco.aci.aci_tenant:
+        <<: *cloud_tenant_absent
+        state: present
+
+    - name: Create certificate authority for cloud site tenant
+      cisco.aci.aci_aaa_certificate_authority:
+        <<: *certificate_authority_cloud_absent
+        state: present
+    
+    - name: Create a key ring in cloud with tenant (check_mode)
+      cisco.aci.aci_aaa_key_ring: &key_ring_cloud_tenant_present
+        <<: *key_ring_cloud_tenant_absent
+        state: present
+      check_mode: true
+      register: cm_create_key_ring_cloud_tenant
+      until: cm_create_key_ring_cloud_tenant is not failed
+      delay: 2
+      retries: 4
+
+    - name: Create a key ring in cloud with tenant
+      cisco.aci.aci_aaa_key_ring:
+        <<: *key_ring_cloud_tenant_present
+      register: nm_create_key_ring_cloud_tenant
+
+    - name: Create a key ring in cloud with tenant again
+      cisco.aci.aci_aaa_key_ring:
+        <<: *key_ring_cloud_tenant_present
+      register: nm_create_key_ring_cloud_tenant_again
+    
+    - name: Assertions for creating a key ring in cloud with tenant
+      ansible.builtin.assert:
+        that:
+          - cm_create_key_ring_cloud_tenant is changed
+          - cm_create_key_ring_cloud_tenant.previous == []
+          - cm_create_key_ring_cloud_tenant.current == []
+          - cm_create_key_ring_cloud_tenant.proposed.pkiKeyRing.attributes.name == "key_ring_cloud_tenant"
+          - cm_create_key_ring_cloud_tenant.proposed.pkiKeyRing.attributes.tp == "certificate_authority_cloud"
+          - nm_create_key_ring_cloud_tenant is changed
+          - nm_create_key_ring_cloud_tenant.previous == []
+          - nm_create_key_ring_cloud_tenant.current != []
+          - nm_create_key_ring_cloud_tenant.current.0.pkiKeyRing.attributes.name == "key_ring_cloud_tenant"
+          - nm_create_key_ring_cloud_tenant.current.0.pkiKeyRing.attributes.tp == "certificate_authority_cloud"
+          - nm_create_key_ring_cloud_tenant.current.0.pkiKeyRing.attributes.descr == ""
+          - nm_create_key_ring_cloud_tenant_again is not changed
+          - nm_create_key_ring_cloud_tenant_again.previous.0.pkiKeyRing.attributes.name == "key_ring_cloud_tenant"
+          - nm_create_key_ring_cloud_tenant_again.previous.0.pkiKeyRing.attributes.tp == "certificate_authority_cloud"
+          - nm_create_key_ring_cloud_tenant_again.previous.0.pkiKeyRing.attributes.descr == ""
+          - nm_create_key_ring_cloud_tenant_again.current.0.pkiKeyRing.attributes.name == "key_ring_cloud_tenant"
+          - nm_create_key_ring_cloud_tenant_again.current.0.pkiKeyRing.attributes.tp == "certificate_authority_cloud"
+          - nm_create_key_ring_cloud_tenant_again.current.0.pkiKeyRing.attributes.descr == ""
+
+    
+    - name: Update an existing key ring in cloud with tenant
+      cisco.aci.aci_aaa_key_ring:
+        <<: *key_ring_cloud_tenant_present
+        description: "This is a changed description."
+        certificate: "{{ lookup('file', 'pki/admin.crt') }}"
+        certificate_authority: certificate_authority_cloud
+        key: "{{ lookup('file', 'pki/admin.key') }}"
+      register: nm_update_key_ring_cloud_tenant
+    
+    - name: Assertions for updating a key ring in cloud with tenant
+      ansible.builtin.assert:
+        that:
+          - nm_update_key_ring_cloud_tenant is changed
+          - nm_update_key_ring_cloud_tenant.previous.0.pkiKeyRing.attributes.name == "key_ring_cloud_tenant"
+          - nm_update_key_ring_cloud_tenant.previous.0.pkiKeyRing.attributes.descr == ""
+          - nm_update_key_ring_cloud_tenant.previous.0.pkiKeyRing.attributes.tp == "certificate_authority_cloud"
+          - nm_update_key_ring_cloud_tenant.current.0.pkiKeyRing.attributes.name == "key_ring_cloud_tenant"
+          - nm_update_key_ring_cloud_tenant.current.0.pkiKeyRing.attributes.descr == "This is a changed description."
+          - nm_update_key_ring_cloud_tenant.current.0.pkiKeyRing.attributes.tp == "certificate_authority_cloud"
+
+    - name: Delete a key ring in cloud with tenant (check_mode)
+      cisco.aci.aci_aaa_key_ring:
+        <<: *key_ring_cloud_tenant_absent
+      check_mode: true
+      register: cm_delete_key_ring_cloud_tenant
+
+    - name: Delete a key ring in cloud with tenant
+      cisco.aci.aci_aaa_key_ring:
+        <<: *key_ring_cloud_tenant_absent
+      register: nm_delete_key_ring_cloud_tenant
+
+    - name: Delete a key ring in cloud with tenant again
+      cisco.aci.aci_aaa_key_ring:
+        <<: *key_ring_cloud_tenant_absent
+      register: nm_delete_key_ring_cloud_tenant_again
+
+    - name: Assertions for deleting a key ring in cloud with tenant
+      ansible.builtin.assert:
+        that:
+          - cm_delete_key_ring_cloud_tenant is changed
+          - cm_delete_key_ring_cloud_tenant.previous.0.pkiKeyRing.attributes.name == "key_ring_cloud_tenant"
+          - cm_delete_key_ring_cloud_tenant.previous.0.pkiKeyRing.attributes.descr == "This is a changed description."
+          - cm_delete_key_ring_cloud_tenant.previous.0.pkiKeyRing.attributes.tp == "certificate_authority_cloud"
+          - cm_delete_key_ring_cloud_tenant.current.0.pkiKeyRing.attributes.name == "key_ring_cloud_tenant"
+          - cm_delete_key_ring_cloud_tenant.current.0.pkiKeyRing.attributes.descr == "This is a changed description."
+          - cm_delete_key_ring_cloud_tenant.current.0.pkiKeyRing.attributes.tp == "certificate_authority_cloud"
+          - cm_delete_key_ring_cloud_tenant.proposed == {}
+          - nm_delete_key_ring_cloud_tenant is changed
+          - nm_delete_key_ring_cloud_tenant.previous.0.pkiKeyRing.attributes.name == "key_ring_cloud_tenant"
+          - nm_delete_key_ring_cloud_tenant.previous.0.pkiKeyRing.attributes.descr == "This is a changed description."
+          - nm_delete_key_ring_cloud_tenant.previous.0.pkiKeyRing.attributes.tp == "certificate_authority_cloud"
+          - nm_delete_key_ring_cloud_tenant.current == []
+          - nm_delete_key_ring_cloud_tenant_again is not changed
+          - nm_delete_key_ring_cloud_tenant_again.previous == []
+          - nm_delete_key_ring_cloud_tenant_again.current == []
+
+    - name: Delete certificate authority for cloud site tenant
+      cisco.aci.aci_aaa_certificate_authority:
+        <<: *certificate_authority_cloud_absent
+    
+    - name: Delete tenant for key ring
+      cisco.aci.aci_tenant:
+        <<: *cloud_tenant_absent
+      register: cloud_tenant
+      until: cloud_tenant is not failed
+      delay: 2
+      retries: 4
 
 # QUERY
 - name: Query a key ring
