@@ -281,7 +281,7 @@ def main():
         nd_policy=dict(type="str", default=""),
         egress_dpp_policy=dict(type="str", default=""),
         ingress_dpp_policy=dict(type="str", default=""),
-        qos_priority=dict(type="str", choices=["level1", "level2", "level3", "level4", "level5", "level6", "unspecified"], aliases=[ "priority", "prio"]),
+        qos_priority=dict(type="str", choices=["level1", "level2", "level3", "level4", "level5", "level6", "unspecified"], aliases=["priority", "prio"]),
         qos_custom_policy=dict(type="str", default="", aliases=["qos_custom_policy_name"]),
         pim_v4_interface_policy=dict(type="str", aliases=["pim_v4", "pim", "pim_interface_policy"]),
         pim_v6_interface_policy=dict(type="str", aliases=["pim_v6"]),
@@ -315,7 +315,7 @@ def main():
 
     extra_child_classes = dict(
         pimIPV6IfP=dict(rs_class="pimRsV6IfPol", attribute_input=module.params.get("pim_v6_interface_policy")),
-        pimIPV6IfP=dict(rs_class="pimRsIfPol", attribute_input=module.params.get("pim_v4_interface_policy")),
+        pimIfP=dict(rs_class="pimRsIfPol", attribute_input=module.params.get("pim_v4_interface_policy")),
         igmpIfP=dict(rs_class="igmpRsIfPol", attribute_input=module.params.get("igmp_interface_policy")),
     )
 
@@ -360,21 +360,21 @@ def main():
             attribute_input = attribute.get("attribute_input")
             if attribute_input is not None:
                 rs_class = attribute.get("rs_class")
-                if attribute_input == ""  and isinstance(aci.existing, list) and len(aci.existing) > 0:
-                        for child in aci.existing[0].get("rtctrlAttrP", {}).get("children", {}):
-                            if child.get(class_name):
-                                child_configs.append(
-                                    {
-                                        class_name: dict(
-                                            attributes=dict(status="deleted"),
-                                        ),
-                                    }
-                                )
+                if attribute_input == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
+                    for child in aci.existing[0].get("l3extLIfP", {}).get("children", {}):
+                        if child.get(class_name):
+                            child_configs.append(
+                                {
+                                    class_name: dict(
+                                        attributes=dict(status="deleted"),
+                                    ),
+                                }
+                            )
                 elif attribute_input != "":
                     child_configs.append(
                         {
                             class_name: dict(
-                                attributes = {},
+                                attributes={},
                                 children=[
                                     {rs_class: dict(attributes=dict(tDn=attribute_input))},
                                 ],
@@ -389,7 +389,8 @@ def main():
                 prio=qos_priority,
                 descr=description,
             ),
-            child_configs=child_configs)
+            child_configs=child_configs
+        )
 
         aci.get_diff(aci_class="l3extLIfP")
 
