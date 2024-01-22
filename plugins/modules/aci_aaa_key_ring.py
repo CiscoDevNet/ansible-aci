@@ -322,7 +322,7 @@ def main():
 
         aci.payload(aci_class=aci_class, class_config=class_config)
 
-        aci.get_diff(aci_class=aci_class, include_name=name if cloud_tenant else None)
+        aci.get_diff(aci_class=aci_class, required_properties=dict(name=name) if cloud_tenant else None)
 
         # Only wrap the payload in parent class if cloud_tenant is set to avoid apic error
         aci.post_config(parent_class=parent_class if cloud_tenant else None)
