@@ -1,4 +1,7 @@
+# Test code for the ACI modules
 # Author: Marcel Zehnder (@maercu)
+# Copyright: (c) 2024, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 # SET VARS
@@ -17,7 +20,7 @@
 - name: Remove test tenant before we kickoff
   cisco.aci.aci_tenant: &tenant_absent
     <<: *aci_info
-    tenant: ansible_test
+    tenant: ansible_tenant
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
@@ -30,7 +33,7 @@
   - name: Create domain
     cisco.aci.aci_domain: &domain_present
       <<: *aci_info
-      domain: l3outintftest
+      domain: ansible_dom
       domain_type: l3dom
       state: present
 
@@ -42,27 +45,34 @@
   - name: Configure VRF
     cisco.aci.aci_vrf: &vrf_present
       <<: *tenant_present
-      vrf: l3outintftest
+      vrf: ansible_vrf
 
   - name: Create L3Out
     cisco.aci.aci_l3out:
       <<: *vrf_present
-      l3out: l3outintftest
-      domain: l3outintftest
+      l3out: ansible_vrf
+      domain: ansible_dom
       route_control: export
 
   - name: Crete node profile
     cisco.aci.aci_l3out_logical_node_profile: &np_present
       <<: *tenant_present
-      l3out: l3outintftest
-      node_profile: NODES
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
 
   # BEGIN WITH TESTS (ADD PROFILE)
   - name: Add interface profile (check_mode)
     cisco.aci.aci_l3out_logical_interface_profile: &intf_present
       <<: *np_present
-      interface_profile: INTFS
-      description: test
+      interface_profile: ansible_interface_profile
+      description: Test Ansible L3Out Logical Interface Profile
+      egress_dpp_policy: default
+      ingress_dpp_policy: default
+      qos_priority: level2
+      qos_custom_policy: default
+      pim_v4_interface_policy: default
+      pim_v6_interface_policy: default
+      igmp_interface_policy: default
     check_mode: true
     register: cm_add_intf
 
@@ -77,9 +87,9 @@
       - cm_add_intf is changed
       - nm_add_intf is changed
       - cm_add_intf.previous == nm_add_intf.previous == []
-      - cm_add_intf.sent.l3extLIfP.attributes.name == nm_add_intf.sent.l3extLIfP.attributes.name == 'INTFS'
-      - cm_add_intf.sent.l3extLIfP.attributes.descr == nm_add_intf.sent.l3extLIfP.attributes.descr == 'test'
-      - nm_add_intf.current.0.l3extLIfP.attributes.annotation == 'orchestrator:ansible'
+      - cm_add_intf.sent.l3extLIfP.attributes.name == nm_add_intf.sent.l3extLIfP.attributes.name == "ansible_interface_profile"
+      - cm_add_intf.sent.l3extLIfP.attributes.descr == nm_add_intf.sent.l3extLIfP.attributes.descr == "Test Ansible L3Out Logical Interface Profile"
+      - nm_add_intf.current.0.l3extLIfP.attributes.annotation == "orchestrator:ansible"
 
   - name: Add profile  again, check if idempotency works
     cisco.aci.aci_l3out_logical_interface_profile:
@@ -95,14 +105,14 @@
   - name: Update profile
     cisco.aci.aci_l3out_logical_interface_profile: &intf_update
       <<: *intf_present
-      nd_policy: NDTEST
-      description: new test
+      nd_policy: default
+      description: New test Ansible L3Out Logical Interface Profile
     register: update_intf
 
   - name: Verify update_intf
     ansible.builtin.assert:
       that:
-      - update_intf.sent.l3extLIfP.attributes.descr == 'new test'
+      - update_intf.sent.l3extLIfP.attributes.descr == "New test Ansible L3Out Logical Interface Profile"
       - update_intf is changed
       - update_intf.previous != []
 
@@ -110,7 +120,7 @@
   - name: Add another profile
     cisco.aci.aci_l3out_logical_interface_profile:
       <<: *intf_present
-      interface_profile: INTF2
+      interface_profile: ansible_interface_profile_2
 
   # QUERY ALL PROFILES
   - name: Query all profiles
@@ -176,3 +186,9 @@
       that:
       - remove_nonexist_profile is not changed
       - remove_nonexist_profile.current == []
+
+  - name: Delete the ansible_tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_info
+      tenant: ansible_tenant
+      state: absent
