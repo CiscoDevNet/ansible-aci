@@ -84,7 +84,10 @@
         - cm_add_netflow_monitor_policy is changed
         - cm_add_netflow_monitor_policy.previous == []
         - cm_add_netflow_monitor_policy.current == []
+        - cm_add_netflow_monitor_policy.proposed.netflowMonitorPol.attributes.name == "ansible_netflow_monitor_policy_1"
+        - cm_add_netflow_monitor_policy.proposed.netflowMonitorPol.children.0.netflowRsMonitorToRecord.attributes.tnNetflowRecordPolName == "ansible_netflow_record_policy"
         - nm_add_netflow_monitor_policy is changed
+        - nm_add_netflow_monitor_policy.previous == []
         - nm_add_netflow_monitor_policy.current.0.netflowMonitorPol.attributes.name == "ansible_netflow_monitor_policy_1"
         - nm_add_netflow_monitor_policy.current.0.netflowMonitorPol.children.0.netflowRsMonitorToRecord.attributes.tnNetflowRecordPolName == "ansible_netflow_record_policy"
         - nm_add_netflow_monitor_policy_idempotency is not changed
@@ -111,6 +114,7 @@
         - query_all_netflow_monitor_policy is not changed
         - query_all_netflow_monitor_policy.current|length >= 2
         - query_ansible_netflow_monitor_policy_1 is not changed
+        - query_ansible_netflow_monitor_policy_1.current|length == 1
         - query_ansible_netflow_monitor_policy_1.current.0.netflowMonitorPol.attributes.name == "ansible_netflow_monitor_policy_1"
         - query_ansible_netflow_monitor_policy_1.current.0.netflowMonitorPol.children.0.netflowRsMonitorToRecord.attributes.tDn == "uni/tn-ansible_tenant/recordpol-ansible_netflow_record_policy"
 
@@ -139,6 +143,8 @@
       that:
         - cm_update_netflow_monitor_policy is changed
         - cm_update_netflow_monitor_policy.previous == cm_update_netflow_monitor_policy.current
+        - cm_update_netflow_monitor_policy.proposed.netflowMonitorPol.attributes.descr == "Updated Netflow Monitor policy 1 for ansible_tenant tenant"
+        - cm_update_netflow_monitor_policy.proposed.netflowMonitorPol.children.0.netflowRsMonitorToRecord.attributes.tnNetflowRecordPolName == ""
         - nm_update_netflow_monitor_policy is changed
         - nm_update_netflow_monitor_policy.current.0.netflowMonitorPol.attributes.descr == "Updated Netflow Monitor policy 1 for ansible_tenant tenant"
         - nm_update_netflow_monitor_policy.current.0.netflowMonitorPol.children.0.netflowRsMonitorToRecord.attributes.tnNetflowRecordPolName == ""
@@ -166,6 +172,7 @@
     ansible.builtin.assert:
       that:
         - cm_remove_netflow_monitor_policy is changed
+        - cm_remove_netflow_monitor_policy.current == cm_remove_netflow_monitor_policy.previous
         - cm_remove_netflow_monitor_policy.proposed == {}
         - nm_remove_netflow_monitor_policy is changed
         - nm_remove_netflow_monitor_policy.previous != []

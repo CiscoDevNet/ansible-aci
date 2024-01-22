@@ -103,7 +103,9 @@
         - cm_add_netflow_monitor_to_exporter is changed
         - cm_add_netflow_monitor_to_exporter.previous == []
         - cm_add_netflow_monitor_to_exporter.current == []
+        - cm_add_netflow_monitor_to_exporter.proposed.netflowRsMonitorToExporter.attributes.tnNetflowExporterPolName == "ansible_netflow_exporter_policy_1"
         - nm_add_netflow_monitor_to_exporter is changed
+        - nm_add_netflow_monitor_to_exporter.previous == []
         - nm_add_netflow_monitor_to_exporter.current.0.netflowRsMonitorToExporter.attributes.tnNetflowExporterPolName == "ansible_netflow_exporter_policy_1"
         - nm_add_netflow_monitor_to_exporter_idempotency is not changed
         - nm_add_netflow_monitor_to_exporter_2 is changed
@@ -129,6 +131,7 @@
         - query_all_netflow_monitor_to_exporter is not changed
         - query_all_netflow_monitor_to_exporter.current|length >= 2
         - query_ansible_netflow_monitor_policy_to_exporter is not changed
+        - query_ansible_netflow_monitor_policy_to_exporter.current|length == 1
         - query_ansible_netflow_monitor_policy_to_exporter.current.0.netflowRsMonitorToExporter.attributes.tnNetflowExporterPolName == "ansible_netflow_exporter_policy_1"
 
   # DELETE NETFLOW MONITOR TO EXPORTER
@@ -153,6 +156,7 @@
     ansible.builtin.assert:
       that:
         - cm_remove_netflow_monitor_to_exporter is changed
+        - cm_remove_netflow_monitor_to_exporter.current == cm_remove_netflow_monitor_to_exporter.previous
         - cm_remove_netflow_monitor_to_exporter.proposed == {}
         - nm_remove_netflow_monitor_to_exporter is changed
         - nm_remove_netflow_monitor_to_exporter.previous != []

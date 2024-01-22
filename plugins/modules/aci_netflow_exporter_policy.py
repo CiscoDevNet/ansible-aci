@@ -48,19 +48,20 @@ options:
   source_ip_type:
     description:
     - The type of Exporter source IP Address.
-    - It Can be one of the available management IP Address for a given leaf or a custom IP Address.
+    - It can be one of the available management IP Address for a given leaf or a custom IP Address.
     type: str
     choices: [ custom_source_ip, inband_management_ip, out_of_band_management_ip, ptep ]
   custom_source_address:
     description:
-    - The cutsom source IP address.
-    - It can only be used if I(source_ip_type) is C(custom_source_ip).
+    - The custom source IP address.
+    - It can only be used if O(source_ip_type=custom_source_ip).
     type: str
   associated_epg:
    description:
    - The associated EPG.
-   - To Remove the current associated EPG, pass an empty dictionary.
+   - To remove the current associated EPG, pass an empty dictionary.
    type: dict
+   aliases: [ epg ]
    suboptions:
       tenant:
         description:
@@ -81,8 +82,9 @@ options:
   associated_extepg:
     description:
     - The associated external EPG.
-    - To Remove the current associated external EPG, pass an empty dictionary.
+    - To remove the current associated external EPG, pass an empty dictionary.
     type: dict
+    aliases: [ external_epg, associated_external_epg ]
     suboptions:
       tenant:
         description:
@@ -329,8 +331,8 @@ def main():
         destination_port=dict(type="str"),
         source_ip_type=dict(type="str", choices=list(MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING.keys())),
         custom_source_address=dict(type="str"),
-        associated_epg=dict(type="dict", options=associated_netflow_exporter_epg_spec()),
-        associated_extepg=dict(type="dict", options=associated_netflow_exporter_extepg_spec()),
+        associated_epg=dict(type="dict", aliases=["external_epg", "associated_external_epg"], options=associated_netflow_exporter_epg_spec()),
+        associated_extepg=dict(type="dict", aliases=["epg"], options=associated_netflow_exporter_extepg_spec()),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
