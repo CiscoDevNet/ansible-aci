@@ -137,7 +137,15 @@
         - cm_add_netflow_exporter_policy is changed
         - cm_add_netflow_exporter_policy.previous == []
         - cm_add_netflow_exporter_policy.current == []
+        - cm_add_netflow_exporter_policy.proposed.netflowExporterPol.attributes.name == "ansible_netflow_exporter_policy_1"
+        - cm_add_netflow_exporter_policy.proposed.netflowExporterPol.attributes.dscp == "AF12"
+        - cm_add_netflow_exporter_policy.proposed.netflowExporterPol.attributes.dstAddr == "11.11.11.1"
+        - cm_add_netflow_exporter_policy.proposed.netflowExporterPol.attributes.dstPort == "smtp"
+        - cm_add_netflow_exporter_policy.proposed.netflowExporterPol.attributes.sourceIpType == "inband-mgmt-ip"
+        - cm_add_netflow_exporter_policy.proposed.netflowExporterPol.children.0.netflowRsExporterToCtx.attributes.tDn == "uni/tn-ansible_tenant/ctx-ansible_vrf"
+        - cm_add_netflow_exporter_policy.proposed.netflowExporterPol.children.1.netflowRsExporterToEPg.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg"
         - nm_add_netflow_exporter_policy is changed
+        - nm_add_netflow_exporter_policy.previous == []
         - nm_add_netflow_exporter_policy.current.0.netflowExporterPol.attributes.name == "ansible_netflow_exporter_policy_1"
         - nm_add_netflow_exporter_policy.current.0.netflowExporterPol.attributes.dscp == "AF12"
         - nm_add_netflow_exporter_policy.current.0.netflowExporterPol.attributes.dstAddr == "11.11.11.1"
@@ -177,6 +185,7 @@
         - query_all_netflow_exporter_policy is not changed
         - query_all_netflow_exporter_policy.current|length >= 2
         - query_ansible_netflow_exporter_policy_1 is not changed
+        - query_ansible_netflow_exporter_policy_1.current|length == 1
         - query_ansible_netflow_exporter_policy_1.current.0.netflowExporterPol.attributes.name == "ansible_netflow_exporter_policy_1"
         - query_ansible_netflow_exporter_policy_1.current.0.netflowExporterPol.attributes.dscp == "AF12"
         - query_ansible_netflow_exporter_policy_1.current.0.netflowExporterPol.attributes.dstAddr == "11.11.11.1"
@@ -220,6 +229,8 @@
       that:
         - cm_remove_epg_netflow_exporter_policy is changed
         - cm_remove_epg_netflow_exporter_policy.current == cm_remove_epg_netflow_exporter_policy.previous
+        - cm_remove_epg_netflow_exporter_policy.proposed.netflowExporterPol.children.0.netflowRsExporterToCtx.attributes.status == "deleted"
+        - cm_remove_epg_netflow_exporter_policy.proposed.netflowExporterPol.children.1.netflowRsExporterToEPg.attributes.status == "deleted"
         - nm_remove_epg_netflow_exporter_policy is changed
         - nm_remove_epg_netflow_exporter_policy.proposed.netflowExporterPol.children.0.netflowRsExporterToCtx.attributes.status == "deleted"
         - nm_remove_epg_netflow_exporter_policy.proposed.netflowExporterPol.children.1.netflowRsExporterToEPg.attributes.status == "deleted"
@@ -258,6 +269,12 @@
       that:
         - cm_update_netflow_exporter_policy is changed
         - cm_update_netflow_exporter_policy.previous == cm_update_netflow_exporter_policy.current
+        - cm_update_netflow_exporter_policy.proposed.netflowExporterPol.attributes.dscp == "AF13"
+        - cm_update_netflow_exporter_policy.proposed.netflowExporterPol.attributes.dstAddr == "11.11.11.3"
+        - cm_update_netflow_exporter_policy.proposed.netflowExporterPol.attributes.dstPort == "http"
+        - cm_update_netflow_exporter_policy.proposed.netflowExporterPol.attributes.sourceIpType == "oob-mgmt-ip"
+        - cm_update_netflow_exporter_policy.proposed.netflowExporterPol.attributes.srcAddr == "0.0.0.0"
+        - cm_update_netflow_exporter_policy.proposed.netflowExporterPol.attributes.descr == "Updated description for first ansible Netflow Exporter policy"
         - nm_update_netflow_exporter_policy is changed
         - nm_update_netflow_exporter_policy.current.0.netflowExporterPol.attributes.dscp == "AF13"
         - nm_update_netflow_exporter_policy.current.0.netflowExporterPol.attributes.dstAddr == "11.11.11.3"
@@ -289,6 +306,7 @@
     ansible.builtin.assert:
       that:
         - cm_remove_netflow_exporter_policy is changed
+        - cm_remove_netflow_exporter_policy.current == cm_remove_netflow_exporter_policy.previous
         - cm_remove_netflow_exporter_policy.proposed == {}
         - nm_remove_netflow_exporter_policy is changed
         - nm_remove_netflow_exporter_policy.previous != []

@@ -77,7 +77,11 @@
         - cm_add_netflow_record_policy is changed
         - cm_add_netflow_record_policy.previous == []
         - cm_add_netflow_record_policy.current == []
+        - cm_add_netflow_record_policy.proposed.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
+        - cm_add_netflow_record_policy.proposed.netflowRecordPol.attributes.collect == "count-bytes,sampler-id"
+        - cm_add_netflow_record_policy.proposed.netflowRecordPol.attributes.match == "dst-ip,src-ip"
         - nm_add_netflow_record_policy is changed
+        - nm_add_netflow_record_policy.previous == []
         - nm_add_netflow_record_policy.current.0.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
         - nm_add_netflow_record_policy.current.0.netflowRecordPol.attributes.collect == "count-bytes,sampler-id"
         - nm_add_netflow_record_policy.current.0.netflowRecordPol.attributes.match == "dst-ip,src-ip"
@@ -107,6 +111,7 @@
         - query_all_netflow_record_policy is not changed
         - query_all_netflow_record_policy.current|length >= 2
         - query_ansible_netflow_record_policy_1 is not changed
+        - query_ansible_netflow_record_policy_1.current|length == 1
         - query_ansible_netflow_record_policy_1.current.0.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
         - query_ansible_netflow_record_policy_1.current.0.netflowRecordPol.attributes.collect == "count-bytes,sampler-id"
         - query_ansible_netflow_record_policy_1.current.0.netflowRecordPol.attributes.match == "dst-ip,src-ip"
@@ -136,6 +141,8 @@
       that:
         - cm_update_netflow_record_policy is changed
         - cm_update_netflow_record_policy.previous == cm_update_netflow_record_policy.current
+        - cm_update_netflow_record_policy.proposed.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
+        - cm_update_netflow_record_policy.proposed.netflowRecordPol.attributes.collect == "count-pkts,pkt-disp"
         - nm_update_netflow_record_policy is changed
         - nm_update_netflow_record_policy.current.0.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
         - nm_update_netflow_record_policy.current.0.netflowRecordPol.attributes.collect == "count-pkts,pkt-disp"
@@ -164,6 +171,7 @@
     ansible.builtin.assert:
       that:
         - cm_remove_netflow_record_policy is changed
+        - cm_remove_netflow_record_policy.current == cm_remove_netflow_record_policy.previous
         - cm_remove_netflow_record_policy.proposed == {}
         - nm_remove_netflow_record_policy is changed
         - nm_remove_netflow_record_policy.previous != []
