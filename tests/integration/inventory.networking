@@ -7,6 +7,7 @@ azure_cloud ansible_host=20.245.236.136 aci_hostname=20.245.236.136 cloud_type=a
 
 [aci:vars]
 aci_username=ansible_github_ci
+aci_remote_username="apic:test\\r_ansible_github_ci"
 aci_password="sJ94G92#8dq2hx*K4qh"
 ansible_network_os=cisco.aci.aci
 ansible_connection=local
