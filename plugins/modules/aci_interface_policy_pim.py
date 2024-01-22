@@ -140,7 +140,7 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     tenant: production
     pim: my_pim_policy
-    control_state: [split-horizon, nh-self]
+    control_state: [multicast_domain_boundary, strict_rfc_compliant]
     designated_router_delay: 10
     designated_router_priority: tens_of_micro
     hello_interval: 5
