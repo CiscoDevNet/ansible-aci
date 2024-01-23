@@ -168,7 +168,6 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 seealso:
-- module: cisco.aci.aci_aaa_security_default_settings
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(pki:Ep).
   link: https://developer.cisco.com/docs/apic-mim-ref/
