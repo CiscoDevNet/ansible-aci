@@ -96,10 +96,12 @@
       source_ip_type: inband_management_ip
       associated_epg:
         tenant: ansible_tenant
-        vrf: ansible_vrf
         ap: ansible_ap
         epg: ansible_epg
       state: present
+      associated_vrf:
+        tenant: ansible_tenant
+        vrf: ansible_vrf
     check_mode: true
     register: cm_add_netflow_exporter_policy
 
@@ -125,7 +127,6 @@
       custom_source_address: 12.12.12.2/12
       associated_extepg:
         tenant: ansible_tenant
-        vrf: ansible_vrf
         l3out: ansible_l3out
         extepg: ansible_extepg
       state: present
@@ -155,6 +156,14 @@
         - nm_add_netflow_exporter_policy.current.0.netflowExporterPol.children.0.netflowRsExporterToCtx.attributes.tDn == "uni/tn-ansible_tenant/ctx-ansible_vrf"
         - nm_add_netflow_exporter_policy.current.0.netflowExporterPol.children.1.netflowRsExporterToEPg.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg"
         - nm_add_netflow_exporter_policy_idempotency is not changed
+        - nm_add_netflow_exporter_policy_idempotency.current.0.netflowExporterPol.attributes.name == "ansible_netflow_exporter_policy_1"
+        - nm_add_netflow_exporter_policy_idempotency.current.0.netflowExporterPol.attributes.dscp == "AF12"
+        - nm_add_netflow_exporter_policy_idempotency.current.0.netflowExporterPol.attributes.dstAddr == "11.11.11.1"
+        - nm_add_netflow_exporter_policy_idempotency.current.0.netflowExporterPol.attributes.dstPort == "smtp"
+        - nm_add_netflow_exporter_policy_idempotency.current.0.netflowExporterPol.attributes.sourceIpType == "inband-mgmt-ip"
+        - nm_add_netflow_exporter_policy_idempotency.current.0.netflowExporterPol.attributes.srcAddr == "0.0.0.0"
+        - nm_add_netflow_exporter_policy_idempotency.current.0.netflowExporterPol.children.0.netflowRsExporterToCtx.attributes.tDn == "uni/tn-ansible_tenant/ctx-ansible_vrf"
+        - nm_add_netflow_exporter_policy_idempotency.current.0.netflowExporterPol.children.1.netflowRsExporterToEPg.attributes.tDn == "uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg"
         - nm_add_netflow_exporter_policy_2 is changed
         - nm_add_netflow_exporter_policy_2.previous == []
         - nm_add_netflow_exporter_policy_2.current.0.netflowExporterPol.attributes.name == "ansible_netflow_exporter_policy_2"
@@ -163,8 +172,7 @@
         - nm_add_netflow_exporter_policy_2.current.0.netflowExporterPol.attributes.dstPort == "https"
         - nm_add_netflow_exporter_policy_2.current.0.netflowExporterPol.attributes.sourceIpType == "custom-src-ip"
         - nm_add_netflow_exporter_policy_2.current.0.netflowExporterPol.attributes.srcAddr == "12.12.12.2/12"
-        - nm_add_netflow_exporter_policy_2.current.0.netflowExporterPol.children.0.netflowRsExporterToCtx.attributes.tDn == "uni/tn-ansible_tenant/ctx-ansible_vrf"
-        - nm_add_netflow_exporter_policy_2.current.0.netflowExporterPol.children.1.netflowRsExporterToEPg.attributes.tDn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extepg"
+        - nm_add_netflow_exporter_policy_2.current.0.netflowExporterPol.children.0.netflowRsExporterToEPg.attributes.tDn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extepg"
 
   # QUERY NETFLOW EXPORTER POLICY
   - name: Query all Netflow Exporter policies
@@ -200,6 +208,7 @@
     cisco.aci.aci_netflow_exporter_policy: &aci_netflow_exporter_policy_remove_epg
       <<: *aci_netflow_exporter_policy_present
       associated_epg: {}
+      associated_vrf: {}
     check_mode: true
     register: cm_remove_epg_netflow_exporter_policy
 
@@ -236,11 +245,12 @@
         - nm_remove_epg_netflow_exporter_policy.proposed.netflowExporterPol.children.1.netflowRsExporterToEPg.attributes.status == "deleted"
         - '"children" not in nm_remove_epg_netflow_exporter_policy.current.0.netflowExporterPol'
         - nm_remove_epg_netflow_exporter_policy_idempotency is not changed
+        - '"children" not in nm_remove_epg_netflow_exporter_policy_idempotency.current.0.netflowExporterPol'
         - nm_remove_extepg_netflow_exporter_policy_2 is changed
-        - nm_remove_extepg_netflow_exporter_policy_2.proposed.netflowExporterPol.children.0.netflowRsExporterToCtx.attributes.status == "deleted"
-        - nm_remove_extepg_netflow_exporter_policy_2.proposed.netflowExporterPol.children.1.netflowRsExporterToEPg.attributes.status == "deleted"
+        - nm_remove_extepg_netflow_exporter_policy_2.proposed.netflowExporterPol.children.0.netflowRsExporterToEPg.attributes.status == "deleted"
         - '"children" not in nm_remove_extepg_netflow_exporter_policy_2.current.0.netflowExporterPol'
         - nm_remove_extepg_netflow_exporter_policy_2_idempotency is not changed
+        - '"children" not in nm_remove_extepg_netflow_exporter_policy_2_idempotency.current.0.netflowExporterPol'
 
   #UPDATE NETFLOW EXPORTER POLICY
   - name: Update first Netflow Exporter policy (check_mode)
@@ -273,7 +283,6 @@
         - cm_update_netflow_exporter_policy.proposed.netflowExporterPol.attributes.dstAddr == "11.11.11.3"
         - cm_update_netflow_exporter_policy.proposed.netflowExporterPol.attributes.dstPort == "http"
         - cm_update_netflow_exporter_policy.proposed.netflowExporterPol.attributes.sourceIpType == "oob-mgmt-ip"
-        - cm_update_netflow_exporter_policy.proposed.netflowExporterPol.attributes.srcAddr == "0.0.0.0"
         - cm_update_netflow_exporter_policy.proposed.netflowExporterPol.attributes.descr == "Updated description for first ansible Netflow Exporter policy"
         - nm_update_netflow_exporter_policy is changed
         - nm_update_netflow_exporter_policy.current.0.netflowExporterPol.attributes.dscp == "AF13"
@@ -283,6 +292,11 @@
         - nm_update_netflow_exporter_policy.current.0.netflowExporterPol.attributes.srcAddr == "0.0.0.0"
         - nm_update_netflow_exporter_policy.current.0.netflowExporterPol.attributes.descr == "Updated description for first ansible Netflow Exporter policy"
         - nm_udpate_netflow_exporter_policy_idempotency is not changed
+        - nm_udpate_netflow_exporter_policy_idempotency.current.0.netflowExporterPol.attributes.dstAddr == "11.11.11.3"
+        - nm_udpate_netflow_exporter_policy_idempotency.current.0.netflowExporterPol.attributes.dstPort == "http"
+        - nm_udpate_netflow_exporter_policy_idempotency.current.0.netflowExporterPol.attributes.sourceIpType == "oob-mgmt-ip"
+        - nm_udpate_netflow_exporter_policy_idempotency.current.0.netflowExporterPol.attributes.srcAddr == "0.0.0.0"
+        - nm_udpate_netflow_exporter_policy_idempotency.current.0.netflowExporterPol.attributes.descr == "Updated description for first ansible Netflow Exporter policy"
 
   # DELETE NETFLOW EXPORTER POLICY
   - name: Remove Netflow Exporter policy (check_mode)
@@ -314,6 +328,7 @@
         - nm_remove_netflow_exporter_policy.current == []
         - nm_remove_netflow_exporter_policy_idempotency is not changed
         - nm_remove_netflow_exporter_policy_idempotency.previous == []
+        - nm_remove_netflow_exporter_policy_idempotency.current == []
 
   # CLEAN ENVIRONMENT BEFORE ENDING TESTS
   - name: Remove the ansible_tenant - cleanup before ending tests

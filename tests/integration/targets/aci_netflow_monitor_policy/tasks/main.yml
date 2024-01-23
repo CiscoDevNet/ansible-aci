@@ -91,6 +91,8 @@
         - nm_add_netflow_monitor_policy.current.0.netflowMonitorPol.attributes.name == "ansible_netflow_monitor_policy_1"
         - nm_add_netflow_monitor_policy.current.0.netflowMonitorPol.children.0.netflowRsMonitorToRecord.attributes.tnNetflowRecordPolName == "ansible_netflow_record_policy"
         - nm_add_netflow_monitor_policy_idempotency is not changed
+        - nm_add_netflow_monitor_policy_idempotency.current.0.netflowMonitorPol.attributes.name == "ansible_netflow_monitor_policy_1"
+        - nm_add_netflow_monitor_policy_idempotency.current.0.netflowMonitorPol.children.0.netflowRsMonitorToRecord.attributes.tnNetflowRecordPolName == "ansible_netflow_record_policy"
         - nm_add_netflow_monitor_policy_2 is changed
         - nm_add_netflow_monitor_policy_2.previous == []
         - nm_add_netflow_monitor_policy_2.current.0.netflowMonitorPol.attributes.name == "ansible_netflow_monitor_policy_2"
@@ -149,6 +151,8 @@
         - nm_update_netflow_monitor_policy.current.0.netflowMonitorPol.attributes.descr == "Updated Netflow Monitor policy 1 for ansible_tenant tenant"
         - nm_update_netflow_monitor_policy.current.0.netflowMonitorPol.children.0.netflowRsMonitorToRecord.attributes.tnNetflowRecordPolName == ""
         - nm_update_netflow_monitor_policy_idempotency is not changed
+        - nm_update_netflow_monitor_policy_idempotency.current.0.netflowMonitorPol.attributes.descr == "Updated Netflow Monitor policy 1 for ansible_tenant tenant"
+        - nm_update_netflow_monitor_policy_idempotency.current.0.netflowMonitorPol.children.0.netflowRsMonitorToRecord.attributes.tnNetflowRecordPolName == ""
 
   # DELETE NETFLOW MONITOR POLICY
   - name: Remove Netflow Monitor policy (check_mode)
@@ -180,6 +184,7 @@
         - nm_remove_netflow_monitor_policy.current == []
         - nm_remove_netflow_monitor_policy_idempotency is not changed
         - nm_remove_netflow_monitor_policy_idempotency.previous == []
+        - nm_remove_netflow_monitor_policy_idempotency.current == []
 
   # CLEAN ENVIRONMENT BEFORE ENDING TESTS
   - name: Remove the ansible_tenant - cleanup before ending tests
