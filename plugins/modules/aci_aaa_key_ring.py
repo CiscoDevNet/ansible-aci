@@ -83,8 +83,10 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 - cisco.aci.owner
 
+notes:
+- The C(cloud_tenant) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant) module can be used for this.
 seealso:
-- module: cisco.aci.aci_aaa_key_ring
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(pki:KeyRing).
   link: https://developer.cisco.com/docs/apic-mim-ref/
