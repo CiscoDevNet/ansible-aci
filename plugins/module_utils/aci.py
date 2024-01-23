@@ -340,7 +340,6 @@ def action_rule_set_dampening_spec():
 def associated_netflow_exporter_epg_spec():
     return dict(
         tenant=dict(type="str"),
-        vrf=dict(type="str"),
         ap=dict(type="str"),
         epg=dict(type="str"),
     )
@@ -349,9 +348,15 @@ def associated_netflow_exporter_epg_spec():
 def associated_netflow_exporter_extepg_spec():
     return dict(
         tenant=dict(type="str"),
-        vrf=dict(type="str"),
         l3out=dict(type="str"),
         extepg=dict(type="str"),
+    )
+
+
+def associated_netflow_exporter_vrf_spec():
+    return dict(
+        tenant=dict(type="str"),
+        vrf=dict(type="str"),
     )
 
 

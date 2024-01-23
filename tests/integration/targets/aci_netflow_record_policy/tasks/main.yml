@@ -86,6 +86,9 @@
         - nm_add_netflow_record_policy.current.0.netflowRecordPol.attributes.collect == "count-bytes,sampler-id"
         - nm_add_netflow_record_policy.current.0.netflowRecordPol.attributes.match == "dst-ip,src-ip"
         - nm_add_netflow_record_policy_idempotency is not changed
+        - nm_add_netflow_record_policy_idempotency.current.0.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
+        - nm_add_netflow_record_policy_idempotency.current.0.netflowRecordPol.attributes.collect == "count-bytes,sampler-id"
+        - nm_add_netflow_record_policy_idempotency.current.0.netflowRecordPol.attributes.match == "dst-ip,src-ip"
         - nm_add_netflow_record_policy_2 is changed
         - nm_add_netflow_record_policy_2.previous == []
         - nm_add_netflow_record_policy_2.current.0.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_2"
@@ -143,11 +146,15 @@
         - cm_update_netflow_record_policy.previous == cm_update_netflow_record_policy.current
         - cm_update_netflow_record_policy.proposed.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
         - cm_update_netflow_record_policy.proposed.netflowRecordPol.attributes.collect == "count-pkts,pkt-disp"
+        - cm_update_netflow_record_policy.proposed.netflowRecordPol.attributes.match == "dst-ipv4,src-ipv4"
         - nm_update_netflow_record_policy is changed
         - nm_update_netflow_record_policy.current.0.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
         - nm_update_netflow_record_policy.current.0.netflowRecordPol.attributes.collect == "count-pkts,pkt-disp"
         - nm_update_netflow_record_policy.current.0.netflowRecordPol.attributes.match == "dst-ipv4,src-ipv4"
         - nm_udpate_netflow_record_policy_idempotency is not changed
+        - nm_udpate_netflow_record_policy_idempotency.current.0.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
+        - nm_udpate_netflow_record_policy_idempotency.current.0.netflowRecordPol.attributes.collect == "count-pkts,pkt-disp"
+        - nm_udpate_netflow_record_policy_idempotency.current.0.netflowRecordPol.attributes.match == "dst-ipv4,src-ipv4"
 
   # DELETE NETFLOW RECORD POLICY
   - name: Remove Netflow Record policy (check_mode)
@@ -178,6 +185,7 @@
         - nm_remove_netflow_record_policy.current == []
         - nm_remove_netflow_record_policy_idempotency is not changed
         - nm_remove_netflow_record_policy_idempotency.previous == []
+        - nm_remove_netflow_record_policy_idempotency.current == []
 
   # CLEAN ENVIRONMENT BEFORE ENDING TESTS
   - name: Remove the ansible_tenant - cleanup before ending tests

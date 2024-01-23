@@ -65,11 +65,7 @@ options:
    suboptions:
       tenant:
         description:
-        - The name of the tenant to which the associated AP/EPG and VRF belong.
-        type: str
-      vrf:
-        description:
-        - The name of the associated VRF.
+        - The name of the tenant to which the associated AP/EPG  belong.
         type: str
       ap:
         description:
@@ -88,11 +84,7 @@ options:
     suboptions:
       tenant:
         description:
-        - The name of the tenant to which the associated L3Out/external EPG and VRF belong.
-        type: str
-      vrf:
-        description:
-        - The name of the associated VRF.
+        - The name of the tenant to which the associated L3Out/external EPG belong.
         type: str
       l3out:
         description:
@@ -101,6 +93,21 @@ options:
       extepg:
         description:
         - The name of the associated EPG.
+        type: str
+  associated_vrf:
+    description:
+    - The associated VRF.
+    - To remove the current associated VRF, pass an empty dictionary.
+    type: dict
+    aliases: [ vrf, context, associated_context ]
+    suboptions:
+      tenant:
+        description:
+        - The name of the tenant to which the associated VRF belongs.
+        type: str
+      vrf:
+        description:
+        - The name of the associated VRF.
         type: str
   description:
     description:
@@ -315,6 +322,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import (
     aci_contract_dscp_spec,
     associated_netflow_exporter_epg_spec,
     associated_netflow_exporter_extepg_spec,
+    associated_netflow_exporter_vrf_spec,
 )
 from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING
 
@@ -331,8 +339,9 @@ def main():
         destination_port=dict(type="str"),
         source_ip_type=dict(type="str", choices=list(MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING.keys())),
         custom_source_address=dict(type="str"),
-        associated_epg=dict(type="dict", aliases=["external_epg", "associated_external_epg"], options=associated_netflow_exporter_epg_spec()),
-        associated_extepg=dict(type="dict", aliases=["epg"], options=associated_netflow_exporter_extepg_spec()),
+        associated_epg=dict(type="dict", aliases=["epg"], options=associated_netflow_exporter_epg_spec()),
+        associated_extepg=dict(type="dict", aliases=["external_epg", "associated_external_epg"], options=associated_netflow_exporter_extepg_spec()),
+        associated_vrf=dict(type="dict", aliases=["vrf", "associated_context", "context"], options=associated_netflow_exporter_vrf_spec()),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -357,6 +366,7 @@ def main():
     custom_source_address = module.params.get("custom_source_address")
     associated_epg = module.params.get("associated_epg")
     associated_extepg = module.params.get("associated_extepg")
+    associated_vrf = module.params.get("associated_vrf")
     state = module.params.get("state")
 
     aci = ACIModule(module)
@@ -383,43 +393,43 @@ def main():
 
     if state == "present":
         child_configs = []
+        if associated_vrf is not None:
+            if all(value is None for value in associated_vrf.values()) and isinstance(aci.existing, list) and len(aci.existing) > 0:
+                for child in aci.existing[0].get("netflowExporterPol", {}).get("children", {}):
+                    if child.get("netflowRsExporterToCtx"):
+                        child_configs.extend([dict(netflowRsExporterToCtx=dict(attributes=dict(status="deleted")))])
+            elif all(value is not None for value in associated_vrf.values()):
+                child_configs.extend([
+                    dict(netflowRsExporterToCtx=dict(attributes=dict(tDn="uni/tn-{0}/ctx-{1}".format(associated_vrf.get("tenant"), associated_vrf.get("vrf"))))),
+                ])
         if associated_epg is not None:
             if all(value is None for value in associated_epg.values()) and isinstance(aci.existing, list) and len(aci.existing) > 0:
                 for child in aci.existing[0].get("netflowExporterPol", {}).get("children", {}):
-                    if child.get("netflowRsExporterToCtx"):
-                        child_configs.extend([dict(netflowRsExporterToCtx=dict(attributes=dict(status="deleted")))])
-                    elif child.get("netflowRsExporterToEPg"):
+                    if child.get("netflowRsExporterToEPg"):
                         child_configs.extend([dict(netflowRsExporterToEPg=dict(attributes=dict(status="deleted")))])
             elif all(value is not None for value in associated_epg.values()):
-                associated_tenant = associated_epg.get("tenant")
-                child_configs = [
-                    dict(netflowRsExporterToCtx=dict(attributes=dict(tDn="uni/tn-{0}/ctx-{1}".format(associated_tenant, associated_epg.get("vrf"))))),
+                child_configs.extend([
                     dict(
                         netflowRsExporterToEPg=dict(
-                            attributes=dict(tDn="uni/tn-{0}/ap-{1}/epg-{2}".format(associated_tenant, associated_epg.get("ap"), associated_epg.get("epg")))
+                            attributes=dict(tDn="uni/tn-{0}/ap-{1}/epg-{2}".format(associated_epg.get("tenant"), associated_epg.get("ap"), associated_epg.get("epg")))
                         )
                     ),
-                ]
+                ])
         elif associated_extepg is not None:
             if all(value is None for value in associated_extepg.values()) and isinstance(aci.existing, list) and len(aci.existing) > 0:
                 for child in aci.existing[0].get("netflowExporterPol", {}).get("children", {}):
-                    if child.get("netflowRsExporterToCtx"):
-                        child_configs.extend([dict(netflowRsExporterToCtx=dict(attributes=dict(status="deleted")))])
-                    elif child.get("netflowRsExporterToEPg"):
+                    if child.get("netflowRsExporterToEPg"):
                         child_configs.extend([dict(netflowRsExporterToEPg=dict(attributes=dict(status="deleted")))])
             elif all(value is not None for value in associated_extepg.values()):
-                associated_tenant = associated_extepg.get("tenant")
-                child_configs = [
-                    dict(netflowRsExporterToCtx=dict(attributes=dict(tDn="uni/tn-{0}/ctx-{1}".format(associated_tenant, associated_extepg.get("vrf"))))),
+                child_configs.extend([
                     dict(
                         netflowRsExporterToEPg=dict(
                             attributes=dict(
-                                tDn="uni/tn-{0}/out-{1}/instP-{2}".format(associated_tenant, associated_extepg.get("l3out"), associated_extepg.get("extepg"))
+                                tDn="uni/tn-{0}/out-{1}/instP-{2}".format(associated_extepg.get("tenant"), associated_extepg.get("l3out"), associated_extepg.get("extepg"))
                             )
                         )
                     ),
-                ]
-
+                ])
         aci.payload(
             aci_class="netflowExporterPol",
             class_config=dict(

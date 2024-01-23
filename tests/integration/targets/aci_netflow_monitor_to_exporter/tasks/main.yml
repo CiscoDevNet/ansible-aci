@@ -108,6 +108,7 @@
         - nm_add_netflow_monitor_to_exporter.previous == []
         - nm_add_netflow_monitor_to_exporter.current.0.netflowRsMonitorToExporter.attributes.tnNetflowExporterPolName == "ansible_netflow_exporter_policy_1"
         - nm_add_netflow_monitor_to_exporter_idempotency is not changed
+        - nm_add_netflow_monitor_to_exporter_idempotency.current.0.netflowRsMonitorToExporter.attributes.tnNetflowExporterPolName == "ansible_netflow_exporter_policy_1"
         - nm_add_netflow_monitor_to_exporter_2 is changed
         - nm_add_netflow_monitor_to_exporter_2.previous == []
         - nm_add_netflow_monitor_to_exporter_2.current.0.netflowRsMonitorToExporter.attributes.tnNetflowExporterPolName == "ansible_netflow_exporter_policy_2"
