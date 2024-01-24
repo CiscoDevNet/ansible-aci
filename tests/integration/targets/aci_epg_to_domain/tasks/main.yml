@@ -403,7 +403,7 @@
         - delimeter.results.6 is changed
         - delimeter.results.6.current.0.fvRsDomAtt.attributes.delimiter == "="
         - delimiter_not_allowed is not changed
-        - 'delimiter_not_allowed.msg == "value of delimiter must be one of: |, ~, !, @, ^, +, =, got: not_allowed"'
+        - 'delimiter_not_allowed.msg == "value of delimiter must be one of: |, ~, !, @, ^, +, =, _, got: not_allowed"'
         - delimeter_absent.results.0 is changed
         - delimeter_absent.results.0.current == []
         - delimeter_absent.results.1 is changed
@@ -733,3 +733,45 @@
       <<: *aci_tenant_present
       state: absent
     when: tenant_present is changed
+
+  # Seperate underscore delimiter tests
+  # All other tests use underscore delimiters in naming of parents whiches causes tests fail
+  # Error: 400 - Validation failed: Tenant/Application/EPG name contains _. Please use another delimiter or rename
+  - name: Ensure tenant exists for testing underscore delimiter
+    cisco.aci.aci_tenant: &underscore_tenant
+      <<: *aci_info
+      tenant: underscore
+      state: present
+    register: tenant_present
+
+  - name: Ensure ap exists for testing underscore delimiter
+    cisco.aci.aci_ap: &underscore_ap
+      <<: *underscore_tenant
+      ap: underscore
+    register: ap_present
+
+  - name: Ensure epg exists for testing underscore delimiter
+    cisco.aci.aci_epg: &underscore_epg
+      <<: *underscore_ap
+      epg: underscore
+
+  - name: Create domain with underscore delimiter delimiter
+    cisco.aci.aci_epg_to_domain:
+      <<: *underscore_epg
+      domain: anstest
+      domain_type: vmm
+      vm_provider: vmware
+      delimiter: "_"
+    register: underscore
+
+  - name: Assert underscore delimiter
+    ansible.builtin.assert:
+      that:
+        - underscore is changed
+        - underscore.current.0.fvRsDomAtt.attributes.delimiter == "_"
+
+  - name: Remove tenant used for testing underscore delimiter
+    cisco.aci.aci_tenant:
+      <<: *underscore_tenant
+      state: absent
+    register: tenant_present
