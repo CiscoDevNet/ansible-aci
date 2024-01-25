@@ -65,20 +65,53 @@ options:
     type: str
     default: ""
     aliases: [ qos_custom_policy_name ]
-  pim_v4_interface_policy:
+  pim_v4_interface_profile:
     description:
-    - The name of the PIM IPv4 interface policy.
-    type: str
-    aliases: [ pim_v4, pim, pim_interface_policy ]
-  pim_v6_interface_policy:
+    - The PIM IPv4 interface profile.
+    type: dict
+    suboptions:
+      tenant:
+        description:
+        - The name of the tenant to which the PIM IPv4 interface policy belongs.
+        type: str
+        aliases: [ tenant_name ]
+      pim:
+        description:
+        - The name of the PIM IPv4 interface policy.
+        type: str
+        aliases: [ pim_interface_policy, name ]
+    aliases: [ pim_v4 ]
+  pim_v6_interface_profile:
     description:
-    - The name of the PIM IPv6 interface policy.
-    type: str
+    - The PIM IPv6 interface profile.
+    type: dict
+    suboptions:
+      tenant:
+        description:
+        - The name of the tenant to which the PIM IPv6 interface policy belongs.
+        type: str
+        aliases: [ tenant_name ]
+      pim:
+        description:
+        - The name of the PIM IPv6 interface policy.
+        type: str
+        aliases: [ pim_interface_policy, name ]
     aliases: [ pim_v6 ]
-  igmp_interface_policy:
+  igmp_interface_profile:
     description:
-    - The name of the IGMP interface policy.
-    type: str
+    - The IGMP interface profile.
+    type: dict
+    suboptions:
+      tenant:
+        description:
+        - The name of the tenant to which the IGMP interface policy belongs.
+        type: str
+        aliases: [ tenant_name ]
+      igmp:
+        description:
+        - The name of the IGMP interface policy.
+        type: str
+        aliases: [ igmp_interface_profile, name ]
     aliases: [ igmp ]
   description:
     description:
@@ -267,7 +300,14 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+    aci_annotation_spec,
+    aci_owner_spec,
+    pim_interface_profile_spec,
+    igmp_interface_profile_spec,
+)
 
 
 def main():
@@ -284,9 +324,9 @@ def main():
         ingress_dpp_policy=dict(type="str", default=""),
         qos_priority=dict(type="str", choices=["level1", "level2", "level3", "level4", "level5", "level6", "unspecified"], aliases=["priority", "prio"]),
         qos_custom_policy=dict(type="str", default="", aliases=["qos_custom_policy_name"]),
-        pim_v4_interface_policy=dict(type="str", aliases=["pim_v4", "pim", "pim_interface_policy"]),
-        pim_v6_interface_policy=dict(type="str", aliases=["pim_v6"]),
-        igmp_interface_policy=dict(type="str", aliases=["igmp"]),
+        pim_v4_interface_profile=dict(type="dict", options=pim_interface_profile_spec(), aliases=["pim_v4"]),
+        pim_v6_interface_profile=dict(type="dict",options=pim_interface_profile_spec(), aliases=["pim_v6"]),
+        igmp_interface_profile=dict(type="dict",options=igmp_interface_profile_spec(), aliases=["igmp"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         description=dict(type="str", aliases=["descr"]),
     )
@@ -315,9 +355,9 @@ def main():
     aci = ACIModule(module)
 
     extra_child_classes = dict(
-        pimIPV6IfP=dict(rs_class="pimRsV6IfPol", attribute_input=module.params.get("pim_v6_interface_policy")),
-        pimIfP=dict(rs_class="pimRsIfPol", attribute_input=module.params.get("pim_v4_interface_policy")),
-        igmpIfP=dict(rs_class="igmpRsIfPol", attribute_input=module.params.get("igmp_interface_policy")),
+        pimIPV6IfP=dict(rs_class="pimRsV6IfPol", attribute_input=module.params.get("pim_v6_interface_profile")),
+        pimIfP=dict(rs_class="pimRsIfPol", attribute_input=module.params.get("pim_v4_interface_profile")),
+        igmpIfP=dict(rs_class="igmpRsIfPol", attribute_input=module.params.get("igmp_interface_profile")),
     )
 
     aci.construct_url(
@@ -341,11 +381,11 @@ def main():
         ),
         subclass_3=dict(
             aci_class="l3extLIfP",
-            aci_rn="lifp-[{0}]".format(interface_profile),
+            aci_rn="lifp-{0}".format(interface_profile),
             module_object=interface_profile,
             target_filter={"name": interface_profile},
         ),
-        child_classes=list(extra_child_classes.keys()) + ["l3extRsNdIfPol", "l3extRsIngressQosDppPol", "l3extRsEgressQosDppPol"],
+        child_classes=list(extra_child_classes.keys()) + ["l3extRsEgressQosDppPol", "l3extRsIngressQosDppPol", "l3extRsLIfPCustQosPol", "l3extRsNdIfPol"],
     )
 
     aci.get_existing()
@@ -361,7 +401,7 @@ def main():
             attribute_input = attribute.get("attribute_input")
             if attribute_input is not None:
                 rs_class = attribute.get("rs_class")
-                if attribute_input == "" and isinstance(aci.existing, list) and len(aci.existing) > 0:
+                if all(value is None for value in attribute_input.values()) and isinstance(aci.existing, list) and len(aci.existing) > 0:
                     for child in aci.existing[0].get("l3extLIfP", {}).get("children", {}):
                         if child.get(class_name):
                             child_configs.append(
@@ -371,17 +411,41 @@ def main():
                                     ),
                                 }
                             )
-                elif attribute_input != "":
-                    child_configs.append(
-                        {
-                            class_name: dict(
-                                attributes={},
-                                children=[
-                                    {rs_class: dict(attributes=dict(tDn=attribute_input))},
-                                ],
-                            )
-                        }
-                    )
+                elif all(value is not None for value in attribute_input.values()):
+                    if rs_class in ["pimRsV6IfPol", "pimRsIfPol"]:
+                        child_configs.append(
+                            {
+                                class_name: dict(
+                                    attributes={},
+                                    children=[
+                                        {
+                                            rs_class: dict(
+                                                attributes=dict(
+                                                    tDn="uni/tn-{0}/pimifpol-{1}".format(attribute_input.get("tenant"), attribute_input.get("pim"))
+                                                )
+                                            )
+                                        },
+                                    ],
+                                )
+                            }
+                        )
+                    elif rs_class == "igmpRsIfPol":
+                        child_configs.append(
+                            {
+                                class_name: dict(
+                                    attributes={},
+                                    children=[
+                                        {
+                                            rs_class: dict(
+                                                attributes=dict(
+                                                    tDn="uni/tn-{0}/igmpIfPol-{1}".format(attribute_input.get("tenant"), attribute_input.get("igmp"))
+                                                )
+                                            )
+                                        },
+                                    ],
+                                )
+                            }
+                        )
 
         aci.payload(
             aci_class="l3extLIfP",
