@@ -111,7 +111,7 @@ options:
         description:
         - The name of the IGMP interface policy.
         type: str
-        aliases: [ igmp_interface_profile, name ]
+        aliases: [ igmp_interface_policy, name ]
     aliases: [ igmp ]
   description:
     description:
@@ -325,8 +325,8 @@ def main():
         qos_priority=dict(type="str", choices=["level1", "level2", "level3", "level4", "level5", "level6", "unspecified"], aliases=["priority", "prio"]),
         qos_custom_policy=dict(type="str", default="", aliases=["qos_custom_policy_name"]),
         pim_v4_interface_profile=dict(type="dict", options=pim_interface_profile_spec(), aliases=["pim_v4"]),
-        pim_v6_interface_profile=dict(type="dict",options=pim_interface_profile_spec(), aliases=["pim_v6"]),
-        igmp_interface_profile=dict(type="dict",options=igmp_interface_profile_spec(), aliases=["igmp"]),
+        pim_v6_interface_profile=dict(type="dict", options=pim_interface_profile_spec(), aliases=["pim_v6"]),
+        igmp_interface_profile=dict(type="dict", options=igmp_interface_profile_spec(), aliases=["igmp"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         description=dict(type="str", aliases=["descr"]),
     )
