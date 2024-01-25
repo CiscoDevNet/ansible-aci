@@ -366,11 +366,9 @@ def pim_interface_profile_spec():
         pim=dict(type="str", aliases=["pim_interface_policy", "name"]),
     )
 
+
 def igmp_interface_profile_spec():
-    return dict(
-        tenant=dict(type="str", aliases=["tenant_name"]),
-        igmp=dict(type="str", aliases=["igmp_interface_policy", "name"])
-    )
+    return dict(tenant=dict(type="str", aliases=["tenant_name"]), igmp=dict(type="str", aliases=["igmp_interface_policy", "name"]))
 
 
 class ACIModule(object):
