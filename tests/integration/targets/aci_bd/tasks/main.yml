@@ -74,6 +74,48 @@
       l3protocol: ospf
       state: present
 
+  - name: ensure IGMP Interface Policy exists
+    cisco.aci.aci_igmp_interface_policy: &aci_igmp_policy_present
+      <<: *aci_tenant_present
+      name: ansible_igmp_pol
+      state: present
+
+  - name: ensure Monitoring Policy exists
+    cisco.aci.aci_epg_monitoring_policy: &aci_monitoring_policy_present
+      <<: *aci_tenant_present
+      name: ansible_monitoring_pol
+      state: present
+
+  - name: ensure IGMP Snoop Policy exists
+    cisco.aci.aci_rest:
+      <<: *aci_info
+      path: /api/mo/uni/tn-ansible_test.json
+      method: post
+      content:
+        igmpSnoopPol:
+          attributes:
+            name: ansible_igmp_snoop
+
+  - name: ensure MLD Snoop Policy exists
+    cisco.aci.aci_rest:
+      <<: *aci_info
+      path: /api/mo/uni/tn-ansible_test.json
+      method: post
+      content:
+        mldSnoopPol:
+          attributes:
+            name: ansible_mld_snoop
+    
+  - name: ensure FHS policy exists
+    cisco.aci.aci_rest: 
+      <<: *aci_info
+      path: /api/mo/uni/tn-ansible_test.json
+      method: post
+      content:
+        fhsBDPol:
+          attributes:
+            name: ansible_fhs
+
   - name: create bd - check mode works
     cisco.aci.aci_bd: &aci_bd_present
       <<: *aci_tenant_present
@@ -137,6 +179,13 @@
       allow_ipv6_mcast: true
       ll_addr: "fe80::1322:33ff:fe44:5566"
       vmac: "00:AA:BB:CC:DD:03"
+      optimize_wan_bandwidth: true
+      vlan: vlan-101
+      igmp_policy: ansible_igmp_pol
+      monitoring_policy: ansible_monitoring_pol
+      igmp_snoop_policy: ansible_igmp_snoop
+      mld_snoop_policy: ansible_mld_snoop
+      #first_hop_security_policy: ansible_fhs
     register: bd_present_2b
     when: version.current.0.topSystem.attributes.version is version('4.2', '>=') and
           version.current.0.topSystem.attributes.version is version('6.0', '<')
@@ -164,6 +213,13 @@
       ll_addr: "fe80::1322:33ff:fe44:5566"
       mcast_arp_drop: true
       vmac: "00:AA:BB:CC:DD:03"
+      optimize_wan_bandwidth: true
+      vlan: vlan-101
+      igmp_policy: ansible_igmp_pol
+      monitoring_policy: ansible_monitoring_pol
+      igmp_snoop_policy: ansible_igmp_snoop
+      mld_snoop_policy: ansible_mld_snoop
+      #first_hop_security_policy: ansible_fhs
     register: bd_present_2c
     when: version.current.0.topSystem.attributes.version is version('6.0', '>=')
 
@@ -238,8 +294,15 @@
         - bd_present_2b.sent.fvBD.attributes.ipv6McastAllow == 'yes'
         - bd_present_2b.sent.fvBD.attributes.llAddr == 'fe80::1322:33ff:fe44:5566'
         - bd_present_2b.sent.fvBD.attributes.vmac == '00:AA:BB:CC:DD:03'
-        - bd_present_2b.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
-        - bd_present_2b.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
+        - bd_present_2b.sent.fvBD.attributes.OptimizeWanBandwidth == 'yes'
+        - bd_present_2b.sent.fvBD.children.0.fvRsIgmpsn.attributes.tnIgmpSnoopPolName == 'ansible_igmp_snoop'
+        - bd_present_2b.sent.fvBD.children.1.fvRsMldsn.attributes.tnMldSnoopPolName == 'ansible_mld_snoop'
+        - bd_present_2b.sent.fvBD.children.2.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
+        - bd_present_2b.sent.fvBD.children.2.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
+        - bd_present_2b.sent.fvBD.children.3.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == 'uni/tn-ansible_test/igmpIfPol-ansible_igmp_pol'
+        - bd_present_2b.sent.fvBD.children.4.fvAccP.attributes.encap == 'vlan-101'
+        - bd_present_2b.sent.fvBD.children.5.fvRsABDPolMonPol.attributes.tnMonEPGPolName == 'ansible_monitoring_pol'
+        #- bd_present_2b.sent.fvBD.children.0.fvRsBDToFhs.attributes.tnFhsBDPolName == 'ansible_fhs'
         - bd_present_missing_param is failed
         - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
     when: version.current.0.topSystem.attributes.version is version('4.2', '>=') and
@@ -279,8 +342,15 @@
         - bd_present_2c.sent.fvBD.attributes.mcastARPDrop == 'yes'
         - bd_present_2c.sent.fvBD.attributes.enableRogueExceptMac == 'yes'
         - bd_present_2c.sent.fvBD.attributes.vmac == '00:AA:BB:CC:DD:03'
-        - bd_present_2c.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
-        - bd_present_2c.sent.fvBD.children.0.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
+        - bd_present_2c.sent.fvBD.attributes.OptimizeWanBandwidth == 'yes'
+        - bd_present_2c.sent.fvBD.children.0.fvRsIgmpsn.attributes.tnIgmpSnoopPolName == 'ansible_igmp_snoop'
+        - bd_present_2c.sent.fvBD.children.1.fvRsMldsn.attributes.tnMldSnoopPolName == 'ansible_mld_snoop'
+        - bd_present_2c.sent.fvBD.children.2.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
+        - bd_present_2c.sent.fvBD.children.2.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
+        - bd_present_2c.sent.fvBD.children.3.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == 'uni/tn-ansible_test/igmpIfPol-ansible_igmp_pol'
+        - bd_present_2c.sent.fvBD.children.4.fvAccP.attributes.encap == 'vlan-101'
+        - bd_present_2c.sent.fvBD.children.5.fvRsABDPolMonPol.attributes.tnMonEPGPolName == 'ansible_monitoring_pol'
+        #- bd_present_2c.sent.fvBD.children.0.fvRsBDToFhs.attributes.tnFhsBDPolName == 'ansible_fhs'
         - bd_present_missing_param is failed
         - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
     when: version.current.0.topSystem.attributes.version is version('6.0', '>=')
@@ -316,22 +386,22 @@
         - query_all is not changed
         - query_all.current | length > 1
         - query_all.current.0.fvBD is defined
-        - '"rsp-subtree-class=fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn" in query_all.filter_string'
+        - '"rsp-subtree-class=fvAccP,fvRsABDPolMonPol,fvRsBDToFhs,fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn,fvRsMldsn,igmpIfP,igmpRsIfPol" in query_all.filter_string'
         - '"class/fvBD.json" in query_all.url'
         - query_tenant is not changed
         - query_tenant.current | length == 1
         - query_tenant.current.0.fvTenant.children | length == 2
-        - '"rsp-subtree-class=fvBD,fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn" in query_tenant.filter_string'
+        - '"rsp-subtree-class=fvAccP,fvBD,fvRsABDPolMonPol,fvRsBDToFhs,fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn,fvRsMldsn,igmpIfP,igmpRsIfPol" in query_tenant.filter_string'
         - '"tn-ansible_test.json" in query_tenant.url'
         - query_bd_bd is not changed
         - query_bd_bd.current != []
         - '"query-target-filter=eq(fvBD.name,\"anstest\")" in query_bd_bd.filter_string'
-        - '"rsp-subtree-class=fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn" in query_bd_bd.filter_string'
+        - '"rsp-subtree-class=fvAccP,fvRsABDPolMonPol,fvRsBDToFhs,fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn,fvRsMldsn,igmpIfP,igmpRsIfPol" in query_bd_bd.filter_string'
         - '"class/fvBD.json" in query_bd_bd.url'
         - query_bd is not changed
         - query_bd.current | length == 1
         - query_bd.current.0.fvBD.attributes.name == "anstest"
-        - '"rsp-subtree-class=fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn" in query_bd.filter_string'
+        - '"rsp-subtree-class=fvAccP,fvRsABDPolMonPol,fvRsBDToFhs,fvRsBDToNdP,fvRsBDToProfile,fvRsBdToEpRet,fvRsCtx,fvRsIgmpsn,fvRsMldsn,igmpIfP,igmpRsIfPol" in query_bd.filter_string'
         - '"tn-ansible_test/BD-anstest.json" in query_bd.url'
 
   - name: delete bd - check mode works
@@ -374,6 +444,34 @@
         - bd_absent_idempotent.previous == []
         - bd_absent_missing_param is failed
         - 'bd_absent_missing_param.msg == "state is absent but all of the following are missing: bd"'
+
+  - name: delete FHS - cleanup before ending tests
+    cisco.aci.aci_rest: 
+      <<: *aci_info
+      path: /api/mo/uni/tn-ansible_test/bdpol-ansible_fhs.json
+      method: delete
+
+  - name: delete IGMP Snoop Policy - cleanup before ending tests
+    cisco.aci.aci_rest: 
+      <<: *aci_info
+      path: /api/mo/uni/tn-ansible_test/snPol-ansible_igmp_snoop.json
+      method: delete
+
+  - name: delete MLD Snoop Policy - cleanup before ending tests
+    cisco.aci.aci_rest: 
+      <<: *aci_info
+      path: /api/mo/uni/tn-ansible_test/mldsnoopPol-ansible_mld_snoop.json
+      method: delete
+
+  - name: delete IGMP Interface Policy - cleanup before ending tests
+    cisco.aci.aci_igmp_interface_policy:
+      <<: *aci_igmp_policy_present
+      state: absent
+  
+  - name: delete Monitoring Policy - cleanup before ending tests
+    cisco.aci.aci_epg_monitoring_policy:
+      <<: *aci_monitoring_policy_present
+      state: absent
 
   - name: delete vrf - cleanup before ending tests
     cisco.aci.aci_vrf:
