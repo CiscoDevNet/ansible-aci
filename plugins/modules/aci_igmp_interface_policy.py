@@ -294,8 +294,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "present", ["name"]],
-            ["state", "absent", ["name"]],
+            ["state", "present", ["name", "tenant"]],
+            ["state", "absent", ["name", "tenant"]],
         ],
         required_together=[
             ["allow_v3_asm", "fast_leave", "report_link_local_groups"],

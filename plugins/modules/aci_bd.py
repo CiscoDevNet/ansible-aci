@@ -195,6 +195,47 @@ options:
     description:
     - Virtual MAC address of the BD/SVI. This is used when the BD is extended to multiple sites using L2 Outside.
     type: str
+  optimize_wan_bandwidth: 
+    description:
+    - Optimize WAN Bandwidth improves the network application experience at the branch and makes better use of limited network resources.
+    - The APIC defaults to C(false) when unset during creation.
+    type: bool
+    aliases: [wan_optimization, opt_bandwidth]
+  mld_snoop_policy:
+    description:
+    - The name of the Multicast Listener Discovery (MLD) Snooping Policy the Bridge Domain should use when overriding the default MLD Snooping Policy.
+    type: str
+    aliases: [mld_snoop, mld_policy]
+  igmp_policy:
+    description:
+    - The name of the IGMP Interface Policy the Bridge Domain should use when overriding the default IGMP Interface Policy.
+    type: str
+    aliases: [igmp]
+  vlan:
+    description:
+    - The selected VLAN for bridge domain access port encapsulation.
+    type: str
+    aliases: [encap]
+  monitoring_policy:
+    description:
+    - The name of the Monitoring Policy to apply to the Bridge Domain.
+    type: str
+    aliases: [mon_pol, monitoring_pol]
+  first_hop_security_policy:
+    description:
+    - The name of the First Hop Security Policy to apply to the Bridge Domain.
+    type: str
+    aliases: [fhsp, fhs_pol, fhsp_name]
+  pim_source_filter:
+    description:
+    - The name of the PIM Source Filter to apply to the Bridge Domain.
+    type: str
+    aliases: [pim_source]
+  pim_destination_filter:
+    description:
+    - The name of the PIM Destination Filter to apply to the Bridge Domain.
+    type: str
+    aliases: [pim_dest, pim_destination]
 
 extends_documentation_fragment:
 - cisco.aci.aci
@@ -436,6 +477,14 @@ def main():
         link_local_address=dict(type="str", aliases=["ll_addr_ipv6", "ll_addr", "link_local"]),
         multicast_arp_drop=dict(type="bool", aliases=["mcast_arp_drop"]),
         vmac=dict(type="str"),
+        optimize_wan_bandwidth=dict(type="bool", aliases=["wan_optimization", "optimized_bandwidth"]),
+        mld_snoop_policy=dict(type="str", aliases=["mld_snoop", "mld_policy"]),
+        igmp_policy=dict(type="str", aliases=["igmp"]),
+        vlan=dict(type="str", aliases=["encap"]),
+        monitoring_policy=dict(type="str", aliases=["mon_pol", "monitoring_pol"]),
+        first_hop_security_policy=dict(type="str", aliases=["fhsp", "fhs_pol", "fhsp_name"]),
+        pim_source_filter=dict(type="str", aliases=["pim_source"]),
+        pim_destination_filter=dict(type="str", aliases=["pim_dest", "pim_destination"]),
     )
 
     module = AnsibleModule(
@@ -488,6 +537,14 @@ def main():
     link_local_address = module.params.get("link_local_address")
     multicast_arp_drop = aci.boolean(module.params.get("multicast_arp_drop"))
     vmac = module.params.get("vmac")
+    optimize_wan_bandwidth = aci.boolean(module.params.get("optimize_wan_bandwidth"))
+    mld_snoop_policy = module.params.get("mld_snoop_policy")
+    igmp_policy = module.params.get("igmp_policy")
+    vlan = module.params.get("vlan")
+    monitoring_policy = module.params.get("monitoring_policy")
+    first_hop_security_policy = module.params.get("first_hop_security_policy")
+    pim_source_filter = module.params.get("pim_source_filter")
+    pim_destination_filter = module.params.get("pim_destination_filter")
 
     aci.construct_url(
         root_class=dict(
@@ -502,7 +559,19 @@ def main():
             module_object=bd,
             target_filter={"name": bd},
         ),
-        child_classes=["fvRsCtx", "fvRsIgmpsn", "fvRsBDToNdP", "fvRsBdToEpRet", "fvRsBDToProfile"],
+        child_classes=[
+            "fvRsCtx",
+            "fvRsIgmpsn",
+            "fvRsBDToNdP",
+            "fvRsBdToEpRet",
+            "fvRsBDToProfile",
+            "fvRsMldsn",
+            "igmpIfP",
+            "igmpRsIfPol",
+            "fvAccP",
+            "fvRsABDPolMonPol",
+            "fvRsBDToFhs",
+        ],
     )
 
     aci.get_existing()
@@ -532,22 +601,47 @@ def main():
             llAddr=link_local_address,
             mcastARPDrop=multicast_arp_drop,
             vmac=vmac,
+            OptimizeWanBandwidth=optimize_wan_bandwidth,
         )
 
         if ipv6_l3_unknown_multicast is not None:
             class_config["v6unkMcastAct"] = ipv6_l3_unknown_multicast
 
-        aci.payload(
-            aci_class="fvBD",
-            class_config=class_config,
-            child_configs=[
-                {"fvRsCtx": {"attributes": {"tnFvCtxName": vrf}}},
-                {"fvRsIgmpsn": {"attributes": {"tnIgmpSnoopPolName": igmp_snoop_policy}}},
-                {"fvRsBDToNdP": {"attributes": {"tnNdIfPolName": ipv6_nd_policy}}},
-                {"fvRsBdToEpRet": {"attributes": {"resolveAct": endpoint_retention_action, "tnFvEpRetPolName": endpoint_retention_policy}}},
-                {"fvRsBDToProfile": {"attributes": {"tnL3extOutName": route_profile_l3out, "tnRtctrlProfileName": route_profile}}},
-            ],
-        )
+        child_configs = [
+            {"fvRsCtx": {"attributes": {"tnFvCtxName": vrf}}},
+            {"fvRsIgmpsn": {"attributes": {"tnIgmpSnoopPolName": igmp_snoop_policy}}},
+            {"fvRsMldsn": {"attributes": {"tnMldSnoopPolName": mld_snoop_policy}}},
+            {"fvRsBDToNdP": {"attributes": {"tnNdIfPolName": ipv6_nd_policy}}},
+            {"fvRsBdToEpRet": {"attributes": {"resolveAct": endpoint_retention_action, "tnFvEpRetPolName": endpoint_retention_policy}}},
+            {"fvRsBDToProfile": {"attributes": {"tnL3extOutName": route_profile_l3out, "tnRtctrlProfileName": route_profile}}},
+        ]
+
+        if igmp_policy:
+            igmp_policy_tdn = "uni/tn-{0}/igmpIfPol-{1}".format(tenant, igmp_policy)
+            child_configs.append({"igmpIfP": {"attributes": {}, "children": [{"igmpRsIfPol": {"attributes": {"tDn": igmp_policy_tdn}}}]}})
+        if vlan:
+            child_configs.append({"fvAccP": {"attributes": {"encap": vlan}}})
+        if monitoring_policy:
+            child_configs.append({"fvRsABDPolMonPol": {"attributes": {"tnMonEPGPolName": monitoring_policy}}})
+        if first_hop_security_policy:
+            child_configs.append({"fvRsBDToFhs": {"attributes": {"tnFhsBDPolName": first_hop_security_policy}}})
+        if pim_source_filter or pim_destination_filter:
+            pim_bd = {"pimBDP": {"attributes": {}, "children": []}}
+            pim_filter_pol = {"pimBDFilterPol": {"attributes": {}, "children": []}}
+            if pim_source_filter:
+                pim_source_filter_tdn = "uni/tn-{0}/rtmap-{1}".format(tenant, pim_source_filter)
+                pim_filter_pol["pimBDFilterPol"]["children"].append(
+                    {"pimBDSrcFilterPol": {"attributes": {}, "children": [{"rtdmcRsFilterToRtMapPol": {"attributes": {"tDn": pim_source_filter_tdn}}}]}}
+                )
+            if pim_destination_filter:
+                pim_destination_filter_tdn = "uni/tn-{0}/rtmap-{1}".format(tenant, pim_destination_filter)
+                pim_filter_pol["pimBDFilterPol"]["children"].append(
+                    {"pimBDDestFilterPol": {"attributes": {}, "children": [{"rtdmcRsFilterToRtMapPol": {"attributes": {"tDn": pim_destination_filter_tdn}}}]}}
+                )
+            pim_bd["pimDBP"]["children"].append(pim_filter_pol)
+            child_configs.append(pim_bd)
+
+        aci.payload(aci_class="fvBD", class_config=class_config, child_configs=child_configs)
 
         aci.get_diff(aci_class="fvBD")
 
