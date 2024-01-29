@@ -136,7 +136,7 @@ notes:
 - If the I(associated_extepg) is used, the I(extepg), the(tenant) and
   the I(l3out) must exist before using this module in your play book.
   The M(cisco.aci.aci_l3out_extepg) and the M(cisco.aci.aci_l3out) can be used for this.
-- If the I(associated_vrf) is used, the I(vrf) and the I(tenant) must exist 
+- If the I(associated_vrf) is used, the I(vrf) and the I(tenant) must exist
   before using this module in your play book.
   The M(cisco.aci.aci_vrf) can be used for this.
 seealso:
