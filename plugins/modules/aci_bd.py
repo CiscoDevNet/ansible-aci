@@ -190,12 +190,12 @@ options:
     - Only available in APIC version 6.0 or later.
     - The APIC defaults to C(true) when unset during creation.
     type: bool
-    aliases: [ mcast_arp_drop ]  
+    aliases: [ mcast_arp_drop ]
   vmac:
     description:
     - Virtual MAC address of the BD/SVI. This is used when the BD is extended to multiple sites using L2 Outside.
     type: str
-  optimize_wan_bandwidth: 
+  optimize_wan_bandwidth:
     description:
     - Optimize WAN Bandwidth improves the network application experience at the branch and makes better use of limited network resources.
     - The APIC defaults to C(false) when unset during creation.
@@ -229,11 +229,13 @@ options:
   pim_source_filter:
     description:
     - The name of the PIM Source Filter to apply to the Bridge Domain.
+    - Only available in APIC version 5.2 or later.
     type: str
     aliases: [pim_source]
   pim_destination_filter:
     description:
     - The name of the PIM Destination Filter to apply to the Bridge Domain.
+    - Only available in APIC version 5.2 or later.
     type: str
     aliases: [pim_dest, pim_destination]
 
@@ -477,7 +479,7 @@ def main():
         link_local_address=dict(type="str", aliases=["ll_addr_ipv6", "ll_addr", "link_local"]),
         multicast_arp_drop=dict(type="bool", aliases=["mcast_arp_drop"]),
         vmac=dict(type="str"),
-        optimize_wan_bandwidth=dict(type="bool", aliases=["wan_optimization", "optimized_bandwidth"]),
+        optimize_wan_bandwidth=dict(type="bool", aliases=["wan_optimization", "opt_bandwidth"]),
         mld_snoop_policy=dict(type="str", aliases=["mld_snoop", "mld_policy"]),
         igmp_policy=dict(type="str", aliases=["igmp"]),
         vlan=dict(type="str", aliases=["encap"]),
@@ -638,7 +640,7 @@ def main():
                 pim_filter_pol["pimBDFilterPol"]["children"].append(
                     {"pimBDDestFilterPol": {"attributes": {}, "children": [{"rtdmcRsFilterToRtMapPol": {"attributes": {"tDn": pim_destination_filter_tdn}}}]}}
                 )
-            pim_bd["pimDBP"]["children"].append(pim_filter_pol)
+            pim_bd["pimBDP"]["children"].append(pim_filter_pol)
             child_configs.append(pim_bd)
 
         aci.payload(aci_class="fvBD", class_config=class_config, child_configs=child_configs)
