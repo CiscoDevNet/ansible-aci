@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_switch_policy_vpc_protection_group
-short_description: Manage switch policy explicit vPC protection groups (fabric:ExplicitGEp, fabric:NodePEp).
+short_description: Manage switch policy explicit vPC protection groups (fabric:ExplicitGEp and fabric:NodePEp).
 description:
 - Manage switch policy explicit vPC protection groups on Cisco ACI fabrics.
 options:

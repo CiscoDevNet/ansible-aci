@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_hsrp_secondary_vip
-short_description: Manage HSRP Secondary Virtual IP (hsrp:SecVip) of a HSRP group (hsrp:GroupP)
+short_description: Manage HSRP Secondary Virtual IP of a HSRP group (hsrp:SecVip)
 description:
 - Manage HSRP Secondary Virtual IP of a HSRP group on Cisco ACI fabrics.
 options:
@@ -72,7 +72,7 @@ seealso:
 - module: aci_l3out_hsrp_interface_profile
 - module: aci_l3out_hsrp_group
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes
+  description: More information about the internal APIC class B(hsrp:SecVip).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Shreyas Srish (@shrsr)

@@ -15,7 +15,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l2out_extepg_to_contract
-short_description: Bind Contracts to L2 External End Point Groups (EPGs)
+short_description: Bind Contracts to L2 External End Point Groups (EPGs) (fv:RsCons and fv:RsProv)
 description:
 - Bind Contracts to L2 External End Point Groups (EPGs) on ACI fabrics.
 options:
@@ -69,7 +69,7 @@ notes:
   The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l2out) and M(cisco.aci.aci_l2out_extepg) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(fvtenant), B(l2extInstP) and B(l2extOut).
+  description: More information about the internal APIC classes B((fv:RsCons) B(fv:RsProv).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Sudhakar Shet Kudtarkar (@kudtarkar1)

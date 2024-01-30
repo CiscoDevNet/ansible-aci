@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_access_sub_port_block_to_access_port
-short_description: Manage sub port blocks of Fabric interface policy leaf profile interface selectors (infra:HPortS, infra:SubPortBlk)
+short_description: Manage sub port blocks of Fabric interface policy leaf profile interface selectors (infra:HPortS and infra:SubPortBlk)
 description:
 - Manage sub port blocks of Fabric interface policy leaf profile interface selectors on Cisco ACI fabrics.
 seealso:

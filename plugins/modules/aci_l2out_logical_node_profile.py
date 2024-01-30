@@ -49,7 +49,7 @@ seealso:
 - module: aci_l2out_logical_interface_path
 - module: aci_l2out_extepg
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes
+  description: More information about the internal APIC class B(l2ext:LNodeP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Oleksandr Kreshchenko (@alexkross)

@@ -15,7 +15,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_extepg_to_contract
-short_description: Bind Contracts to External End Point Groups (EPGs) (fv:RsCons, fv:RsProv, fv:RsProtBy, fv:RsConsIf, fv:RsIntraEpg)
+short_description: Bind Contracts to External End Point Groups (EPGs) (fv:RsCons, fv:RsProv, fv:RsProtBy, fv:RsConsIf, and fv:RsIntraEpg)
 description:
 - Bind Contracts to External End Point Groups (EPGs) on ACI fabrics.
 options:

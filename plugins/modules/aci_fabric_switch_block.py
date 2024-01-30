@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_fabric_switch_block
-short_description: Manage switch blocks (fabric:NodeBlk).
+short_description: Manage switch blocks (fabric:NodeBlk)
 description:
 - Manage fabric node blocks within switch associations (fabric:SpineS and
   fabric:LeafS) contained within fabric switch profiles (fabric:SpineP and fabric:LeafP)

@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_vrf_multicast
-short_description: Manage VRF Multicast objects (pim:CtxP).
+short_description: Manage VRF Multicast objects (pim:CtxP)
 description:
 - Manage VRF Multicast objects on Cisco ACI fabrics.
 - Creating I(state=present) enables Protocol Independent Multicast (PIM) on a VRF

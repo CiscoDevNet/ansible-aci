@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_snmp_client
-short_description: Manage SNMP clients (snmp:ClientP).
+short_description: Manage SNMP clients (snmp:ClientP)
 description:
 - Manage SNMP clients
 options:

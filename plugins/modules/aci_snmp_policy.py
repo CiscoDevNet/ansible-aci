@@ -12,9 +12,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_snmp_policy
-short_description: Manage Syslog groups (snmp:Pol).
+short_description: Manage Syslog groups (snmp:Pol)
 description:
-- Manage syslog policies
+- Manage syslog policies.
 options:
   admin_state:
     description:

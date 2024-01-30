@@ -13,9 +13,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_bfd_interface_profile
-short_description: Manage L3Out BFD Interface profiles
+short_description: Manage L3Out BFD Interface profiles (bfd:IfP)
 description:
-- Manage L3Out BFD Interface profile (bfd:IfP) configuration on Cisco ACI fabrics
+- Manage L3Out BFD Interface profile configuration on Cisco ACI fabrics
 - Only available in APIC version 5.2 or later and for non-cloud APICs
 options:
   tenant:

@@ -13,9 +13,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_bfd_multihop_interface_profile
-short_description: Manage BFD Multihop Interface profiles
+short_description: Manage BFD Multihop Interface profiles (bfd:MhIfP)
 description:
-- Manage BFD Multihop Interface profile (bfd:MhIfP) configuration on Cisco ACI fabrics
+- Manage BFD Multihop Interface profile configuration on Cisco ACI fabrics
 - Only available in APIC version 5.2 or later and for non-cloud APICs
 options:
   tenant:

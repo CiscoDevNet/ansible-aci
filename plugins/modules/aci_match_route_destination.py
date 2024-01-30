@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_match_route_destination
-short_description: Manage Match action rule term based on the Route Destination. (rtctrl:MatchRtDest)
+short_description: Manage Match action rule term based on the Route Destination (rtctrl:MatchRtDest)
 description:
 - Match action rule terms based on the Route Destination for Subject Profiles on Cisco ACI fabrics.
 options:

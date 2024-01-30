@@ -100,7 +100,7 @@ seealso:
 - module: aci_l3out_logical_interface_profile
 - module: aci_l3out_hsrp_interface_profile
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes
+  description: More information about the internal APIC class B(hsrp:IfP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Shreyas Srish (@shrsr)

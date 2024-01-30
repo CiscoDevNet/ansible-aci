@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_aaa_ssh_auth
-short_description: Manage AAA SSH auth (aaaSshAuth) objects.
+short_description: Manage AAA SSH auth objects (aaa:SshAuth)
 description:
 - Manage AAA SSH Auth key configuration on Cisco ACI fabrics.
 options:
@@ -47,7 +47,7 @@ notes:
   The M(cisco.aci.aci_aaa_user) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(aaaSshAuth).
+  description: More information about the internal APIC class B(aaa:SshAuth).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)

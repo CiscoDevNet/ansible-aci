@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_fabric_spine_profile
-short_description: Manage fabric spine profiles (fabric:SpineP).
+short_description: Manage fabric spine profiles (fabric:SpineP)
 description:
 - Manage fabric spine switch profiles in an ACI fabric.
 options:

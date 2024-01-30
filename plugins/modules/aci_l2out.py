@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l2out
-short_description: Manage Layer2 Out (L2Out) objects.
+short_description: Manage Layer2 Out (L2Out) objects (l2ext:Out)
 description:
 - Manage Layer2 Out configuration on Cisco ACI fabrics.
 options:
@@ -64,7 +64,7 @@ notes:
   The M(cisco.aci.aci_tenant) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(fvTenant).
+  description: More information about the internal APIC class B(l2ext:Out).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Sudhakar Shet Kudtarkar (@kudtarkar1)

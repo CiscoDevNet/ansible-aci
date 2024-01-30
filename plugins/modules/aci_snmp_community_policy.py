@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_snmp_community_policy
-short_description: Manage SNMP community policies (snmp:CommunityP).
+short_description: Manage SNMP community policies (snmp:CommunityP)
 description:
 - Manage SNMP community policies
 options:

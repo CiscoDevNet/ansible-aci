@@ -15,7 +15,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_access_port_block_to_access_port
-short_description: Manage port blocks of Fabric interface policy leaf profile interface selectors (infra:HPortS, infra:PortBlk)
+short_description: Manage port blocks of Fabric interface policy leaf profile interface selectors (infra:HPortS and infra:PortBlk)
 description:
 - Manage port blocks of Fabric interface policy leaf profile interface selectors on Cisco ACI fabrics.
 options:

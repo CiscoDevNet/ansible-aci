@@ -72,7 +72,7 @@ seealso:
 - module: aci_l3out
 - module: aci_l3out_logical_node_profile
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes
+  description: More information about the internal APIC class B(l3ext:LIfP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Marcel Zehnder (@maercu)

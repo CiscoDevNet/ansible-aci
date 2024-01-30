@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_fabric_interface_policy_group
-short_description: Manage Fabric Interface Policy Groups (fabric:LePortPGrp, fabric:SpPortPGrp)
+short_description: Manage Fabric Interface Policy Groups (fabric:LePortPGrp and fabric:SpPortPGrp)
 description:
 - Manage Fabric Interface Policy Groups on Cisco ACI fabrics.
 options:

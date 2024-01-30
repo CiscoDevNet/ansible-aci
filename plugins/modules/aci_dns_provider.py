@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_dns_provider
-short_description: Manage DNS Provider (dnsProv) objects.
+short_description: Manage DNS Provider objects (dns:Prov)
 description:
 - Manage DNS Provider configuration on Cisco ACI fabrics.
 options:

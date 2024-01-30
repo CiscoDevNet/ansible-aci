@@ -12,10 +12,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_syslog_remote_dest
-short_description: Manage Syslog Remote Destinations (syslog:RemoteDest).
+short_description: Manage Syslog Remote Destinations (syslog:RemoteDest)
 description:
-- Manage remote destinations for syslog messages within
-  an existing syslog group object
+- Manage remote destinations for syslog messages within an existing syslog group object.
 options:
   admin_state:
     description:
