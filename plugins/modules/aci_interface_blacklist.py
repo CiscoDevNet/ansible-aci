@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_interface_blacklist
-short_description: Enabling or Disabling physical interfaces.
+short_description: Enabling or Disabling physical interfaces (fabric:RsOosPath)
 description:
 - Enables or Disables physical interfaces on Cisco ACI fabrics.
 options:
@@ -49,6 +49,10 @@ extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
+seealso:
+- name: APIC Management Information Model reference
+  description: More information about the internal APIC class B(fabric:RsOosPath).
+  link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Akini Ross (@akinross)
 """
