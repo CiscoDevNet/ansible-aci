@@ -86,6 +86,13 @@
       name: ansible_monitoring_pol
       state: present
 
+  - name: ensure PIM Route Map Policy exists
+    cisco.aci.aci_pim_route_map_policy: &aci_route_map_policy_present
+      <<: *aci_tenant_present
+      name: ansible_route_map_pol
+      state: present
+    when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+
   - name: ensure IGMP Snoop Policy exists
     cisco.aci.aci_rest:
       <<: *aci_info
@@ -169,7 +176,7 @@
       l3_unknown_multicast: opt-flood
       ipv6_l3_unknown_multicast: opt-flood
       multi_dest: drop
-      enable_routing: "no"
+      enable_routing: "yes"
       arp_flooding: "yes"
       route_profile_l3out: ansible_l3out
       route_profile: ansible_l3out_route
@@ -185,7 +192,7 @@
       monitoring_policy: ansible_monitoring_pol
       igmp_snoop_policy: ansible_igmp_snoop
       mld_snoop_policy: ansible_mld_snoop
-      #first_hop_security_policy: ansible_fhs
+      first_hop_security_policy: ansible_fhs
     register: bd_present_2b
     when: version.current.0.topSystem.attributes.version is version('4.2', '>=') and
           version.current.0.topSystem.attributes.version is version('6.0', '<')
@@ -201,7 +208,7 @@
       l3_unknown_multicast: opt-flood
       ipv6_l3_unknown_multicast: opt-flood
       multi_dest: drop
-      enable_routing: "no"
+      enable_routing: "yes"
       arp_flooding: "yes"
       route_profile_l3out: ansible_l3out
       route_profile: ansible_l3out_route
@@ -219,7 +226,9 @@
       monitoring_policy: ansible_monitoring_pol
       igmp_snoop_policy: ansible_igmp_snoop
       mld_snoop_policy: ansible_mld_snoop
-      #first_hop_security_policy: ansible_fhs
+      pim_source_filter: ansible_route_map_pol
+      pim_destination_filter: ansible_route_map_pol
+      first_hop_security_policy: ansible_fhs
     register: bd_present_2c
     when: version.current.0.topSystem.attributes.version is version('6.0', '>=')
 
@@ -283,7 +292,7 @@
         - bd_present_2b.sent.fvBD.attributes.ipLearning == 'no'
         - bd_present_2b.sent.fvBD.attributes.multiDstPktAct == 'drop'
         - bd_present_2b.sent.fvBD.attributes.name == 'anstest2'
-        - bd_present_2b.sent.fvBD.attributes.unicastRoute == 'no'
+        - bd_present_2b.sent.fvBD.attributes.unicastRoute == 'yes'
         - bd_present_2b.sent.fvBD.attributes.unkMacUcastAct == 'flood'
         - bd_present_2b.sent.fvBD.attributes.unkMcastAct == 'opt-flood'
         - bd_present_2b.sent.fvBD.attributes.v6unkMcastAct == 'opt-flood'
@@ -302,7 +311,7 @@
         - bd_present_2b.sent.fvBD.children.3.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == 'uni/tn-ansible_test/igmpIfPol-ansible_igmp_pol'
         - bd_present_2b.sent.fvBD.children.4.fvAccP.attributes.encap == 'vlan-101'
         - bd_present_2b.sent.fvBD.children.5.fvRsABDPolMonPol.attributes.tnMonEPGPolName == 'ansible_monitoring_pol'
-        #- bd_present_2b.sent.fvBD.children.0.fvRsBDToFhs.attributes.tnFhsBDPolName == 'ansible_fhs'
+        - bd_present_2b.sent.fvBD.children.6.fvRsBDToFhs.attributes.tnFhsBDPolName == 'ansible_fhs'
         - bd_present_missing_param is failed
         - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
     when: version.current.0.topSystem.attributes.version is version('4.2', '>=') and
@@ -329,7 +338,7 @@
         - bd_present_2c.sent.fvBD.attributes.ipLearning == 'no'
         - bd_present_2c.sent.fvBD.attributes.multiDstPktAct == 'drop'
         - bd_present_2c.sent.fvBD.attributes.name == 'anstest2'
-        - bd_present_2c.sent.fvBD.attributes.unicastRoute == 'no'
+        - bd_present_2c.sent.fvBD.attributes.unicastRoute == 'yes'
         - bd_present_2c.sent.fvBD.attributes.unkMacUcastAct == 'flood'
         - bd_present_2c.sent.fvBD.attributes.unkMcastAct == 'opt-flood'
         - bd_present_2c.sent.fvBD.attributes.v6unkMcastAct == 'opt-flood'
@@ -350,7 +359,9 @@
         - bd_present_2c.sent.fvBD.children.3.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == 'uni/tn-ansible_test/igmpIfPol-ansible_igmp_pol'
         - bd_present_2c.sent.fvBD.children.4.fvAccP.attributes.encap == 'vlan-101'
         - bd_present_2c.sent.fvBD.children.5.fvRsABDPolMonPol.attributes.tnMonEPGPolName == 'ansible_monitoring_pol'
-        #- bd_present_2c.sent.fvBD.children.0.fvRsBDToFhs.attributes.tnFhsBDPolName == 'ansible_fhs'
+        - bd_present_2c.sent.fvBD.children.6.fvRsBDToFhs.attributes.tnFhsBDPolName == 'ansible_fhs'
+        - bd_present_2c.sent.fvBD.children.7.pimBDP.children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
+        - bd_present_2c.sent.fvBD.children.7.pimBDP.children.0.pimBDFilterPol.children.1.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
         - bd_present_missing_param is failed
         - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
     when: version.current.0.topSystem.attributes.version is version('6.0', '>=')
@@ -472,6 +483,12 @@
     cisco.aci.aci_epg_monitoring_policy:
       <<: *aci_monitoring_policy_present
       state: absent
+
+  - name: delete PIM Route Map Policy - cleanup before ending tests
+    cisco.aci.aci_pim_route_map_policy:
+      <<: *aci_route_map_policy_present
+      state: absent
+    when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
 
   - name: delete vrf - cleanup before ending tests
     cisco.aci.aci_vrf:
