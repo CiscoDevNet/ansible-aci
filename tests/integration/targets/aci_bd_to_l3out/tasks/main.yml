@@ -186,9 +186,19 @@
       <<: *aci_bd_present
       state: absent
 
+  - name: delete bd_2 - cleanup before ending tests
+    cisco.aci.aci_bd:
+      <<: *aci_bd_present_2
+      state: absent
+
   - name: delete l3out - cleanup before ending tests
     cisco.aci.aci_l3out:
       <<: *aci_l3_out_present
+      state: absent
+
+  - name: delete l3out_2 - cleanup before ending tests
+    cisco.aci.aci_l3out:
+      <<: *aci_l3_out_present_2
       state: absent
 
   - name: delete vrf - cleanup before ending tests
