@@ -99,7 +99,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Delete a Netflow Monitor Policy
-  cisco.aci.aci_netflow_monitor_policy:
+  cisco.aci.aci_netflow_monitor_to_exporter:
     host: apic
     username: admin
     password: SomeSecretPassword

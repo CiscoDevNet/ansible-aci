@@ -53,8 +53,11 @@ extends_documentation_fragment:
 notes:
 - The I(tenant) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) can be used for this.
+- If the I(netflow_record_policy) is used, it must exist before using this module in your playbook.
+  The M(cisco.aci.aci_netflow_record_policy) can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_netflow_record_policy
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(netflow:MonitorPol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
