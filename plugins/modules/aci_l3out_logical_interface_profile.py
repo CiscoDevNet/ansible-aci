@@ -41,17 +41,14 @@ options:
     description:
     - The name of the neighbor discovery interface policy.
     type: str
-    default: ""
   egress_dpp_policy:
     description:
     - The name of the egress data plane policing policy.
     type: str
-    default: ""
   ingress_dpp_policy:
     description:
     - The name of the ingress data plane policing policy.
     type: str
-    default: ""
   qos_priority:
     description:
     - The QoS priority class ID.
@@ -63,7 +60,6 @@ options:
     description:
     - The name of the QoS custom policy.
     type: str
-    default: ""
     aliases: [ qos_custom_policy_name ]
   pim_v4_interface_profile:
     description:
@@ -319,11 +315,11 @@ def main():
         l3out=dict(type="str", aliases=["l3out_name"]),
         node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
         interface_profile=dict(type="str", aliases=["name", "interface_profile_name", "logical_interface"]),
-        nd_policy=dict(type="str", default=""),
-        egress_dpp_policy=dict(type="str", default=""),
-        ingress_dpp_policy=dict(type="str", default=""),
+        nd_policy=dict(type="str"),
+        egress_dpp_policy=dict(type="str"),
+        ingress_dpp_policy=dict(type="str"),
         qos_priority=dict(type="str", choices=["level1", "level2", "level3", "level4", "level5", "level6", "unspecified"], aliases=["priority", "prio"]),
-        qos_custom_policy=dict(type="str", default="", aliases=["qos_custom_policy_name"]),
+        qos_custom_policy=dict(type="str", aliases=["qos_custom_policy_name"]),
         pim_v4_interface_profile=dict(type="dict", options=pim_interface_profile_spec(), aliases=["pim_v4"]),
         pim_v6_interface_profile=dict(type="dict", options=pim_interface_profile_spec(), aliases=["pim_v6"]),
         igmp_interface_profile=dict(type="dict", options=igmp_interface_profile_spec(), aliases=["igmp"]),
