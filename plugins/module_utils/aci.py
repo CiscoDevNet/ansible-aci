@@ -371,6 +371,14 @@ def igmp_interface_profile_spec():
     return dict(tenant=dict(type="str", aliases=["tenant_name"]), igmp=dict(type="str", aliases=["igmp_interface_policy", "name"]))
 
 
+def storm_control_policy_rate_spec():
+    return dict(
+        rate=dict(type="str"),
+        burst_rate=dict(type="str"),
+        rate_type=dict(type="str", choices=["percentage", "pps"]),
+    )
+
+
 class ACIModule(object):
     def __init__(self, module):
         self.module = module
