@@ -290,7 +290,13 @@ url:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec, storm_control_policy_rate_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+    aci_annotation_spec,
+    aci_owner_spec,
+    storm_control_policy_rate_spec,
+)
 from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_STORM_CONTROL_POLICY_TYPE_MAPPING
 
 
@@ -299,7 +305,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        storm_control_policy=dict(type='str', required=False, aliases=['name']),  # Not required for querying all objects
+        storm_control_policy=dict(type='str', required=False, aliases=['name', 'storm_control', 'storm_control_name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
@@ -311,7 +317,7 @@ def main():
         storm_control_action=dict(type='str', choices=['drop', 'shutdown']),
         storm_control_soak_action=dict(type='int'),
     )
-    #Add type attribute up in argument_spec()
+
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
@@ -339,10 +345,22 @@ def main():
     rates_input = {}
 
     stom_control_types_configs = [
-        dict(config_input=module.params.get('all_types_configuration'), rates=dict(rate=dict(percentage='rate', pps='ratePps'), burst_rate=dict(percentage='burstRate', pps='burstPps'))),
-        dict(config_input=module.params.get('broadcast_configuration'), rates=dict(rate=dict(percentage='bcRate', pps='bcRatePps'), burst_rate=dict(percentage='bcBurstRate', pps='bcBurstPps'))),
-        dict(config_input=module.params.get('multicast_configuration'), rates=dict(rate=dict(percentage='mcRate', pps='mcRatePps'), burst_rate=dict(percentage='mcBurstRate', pps='mcBurstPps'))),
-        dict(config_input=module.params.get('unicast_configuration'), rates=dict(rate=dict(percentage='uucRate', pps='uucRatePps'), burst_rate=dict(percentage='uucBurstRate', pps='uucBurstPps'))),
+        dict(
+            config_input=module.params.get('all_types_configuration'),
+            rates=dict(rate=dict(percentage='rate', pps='ratePps'), burst_rate=dict(percentage='burstRate', pps='burstPps'))
+        ),
+        dict(
+            config_input=module.params.get('broadcast_configuration'),
+            rates=dict(rate=dict(percentage='bcRate', pps='bcRatePps'), burst_rate=dict(percentage='bcBurstRate', pps='bcBurstPps'))
+        ),
+        dict(
+            config_input=module.params.get('multicast_configuration'),
+            rates=dict(rate=dict(percentage='mcRate', pps='mcRatePps'), burst_rate=dict(percentage='mcBurstRate', pps='mcBurstPps'))
+        ),
+        dict(
+            config_input=module.params.get('unicast_configuration'),
+            rates=dict(rate=dict(percentage='uucRate', pps='uucRatePps'), burst_rate=dict(percentage='uucBurstRate', pps='uucBurstPps'))
+        ),
     ]
 
     for config in stom_control_types_configs:
@@ -353,9 +371,14 @@ def main():
                 for rates_type, rates_attributes in rates.items():
                     input = config_input.get(rates_type)
                     if input is not None and not (0 <= float(input) <= 100):
-                        module.fail_json(msg="If argument rate_type is percentage, argument {0} needs to be a value between 0 and 100 inclusive, got {1}".format(rates_type, input))
+                        module.fail_json(
+                            msg="If argument rate_type is percentage, argument {0} needs to be a value between 0 and 100 inclusive, got {1}".format(
+                                rates_type,
+                                input,
+                            )
+                        )
                     else:
-                        rates_input[rates_attributes.get('percentage')] = '{:.6f}'.format(float(input))
+                        rates_input[rates_attributes.get('percentage')] = '{0:.6f}'.format(float(input))
                         rates_input[rates_attributes.get('pps')] = 'unspecified'
             elif config_input.get('rate_type') == 'pps':
                 for rates_type, rates_attributes in rates.items():
