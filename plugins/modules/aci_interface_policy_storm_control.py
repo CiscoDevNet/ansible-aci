@@ -1,15 +1,14 @@
 #!/usr/bin/python
 
+# Copyright: (c) 2023, Eric Girard <@netgirard>
+# Copyright: (c) 2024, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
-}
+ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
 DOCUMENTATION = r'''
 ---
@@ -18,11 +17,11 @@ short_description: Manage Storm Control interface policies (stormctrl:IfPol)
 description:
 - Manage CDP interface policies on Cisco ACI fabrics.
 options:
-  stormctrl_policy:
+  storm_control_policy:
     description:
     - The Storm Control interface policy name.
     type: str
-    aliases: [ name ]
+    aliases: [ storm_control, storm_control_name, name ]
   description:
     description:
     - The description for the Storm interface policy name.
@@ -39,84 +38,100 @@ options:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
-  rate:
-    description:
-    - The bandwidth rate for all packet types.
-    type: int
-  burstRate:
-    description:
-    - The bandwidth burst rate of all packet types.
-    type: int
-  bcRate:
-    description:
-    - The bandwidth rate for broadcast packets.
-    type: int
-  bcBurstRate:
-    description:
-    - The bandwidth burst rate for broadcast packets.
-    type: int
-  mcRate:
-    description:
-    - The bandwidth rate for multicast packets.
-    type: int
-  mcBurstRate:
-    description:
-    - The bandwidth burst rate for multicast packets.
-    type: int
-  uucRate:
-    description:
-    - The bandwidth rate for unknown unicast packets.
-    type: int
-  uucBurstRate:
-    description:
-    - The bandwidth burst rate for unknown unicast packets.
-    type: int
-  ratePps:
-    description:
-    - The packet per second rate for all packet types.
-    type: int
-  burstPps:
-    description:
-    - The packet per second burst rate for all packet types.
-    type: int
-  bcRatePps:
-    description:
-    - The packet per second rate for broadcast packets.
-    type: int
-  bcBurstPps:
-    description:
-    - The packet per second burst rate for broadcast packets.
-    type: int
-  mcRatePps:
-    description:
-    - The packet per second rate for multicast packets.
-    type: int
-  mcBurstPps:
-    description:
-    - The packet per second burst rate for multicast packets.
-    type: int
-  uucRatePps:
-    description:
-    - The packet per second rate for unknown unicast packets.
-    type: int
-  uucBurstPps:
-    description:
-    - The packet per second burst rate for unknown unicast packets.
-    type: int
-  isUcMcBcStormPktCfgValid:
+  storm_control_types:
     description:
     - Whether or not the per-packet type numbers are valid.
     type: str
-    choices: [Valid, Invalid]
-  stormCtrlAction:
-    type: str
-    choices: [drop, shutdown]
+    choices: [all_types, unicast_broadcast_multicast]
+  storm_control_action:
     description:
     - The storm control action to take when triggered.
-  stormCtrlSoakInstCount:
-    type: int
+    type: str
+    choices: [drop, shutdown]
+  storm_control_soak_action:
     description:
-    - The number of instances before triggering.
+    - The number of instances before triggering shutdown.
+    type: int
+  all_types_configuration:
+    description:
+    - The rates configuration for all packets type.
+    type: dict
+    aliases: [ all_types ]
+    suboptions:
+      rate:
+        description:
+        - The rate for all packet types.
+        type: str
+      burst_rate:
+        description:
+        - The burst rate of all packet types.
+        type: str
+      rate_type:
+        description:
+        - The type of rate of all packet types.
+        - Choice between percentage of the bandiwth C(percentage) or packet per second C(pps)
+        type: str
+        choices: [ percentage, pps ]
+  broadcast_configuration:
+    description:
+    - The rates configuration of broadcast packets.
+    type: dict
+    aliases: [ broadcast ]
+    suboptions:
+      rate:
+        description:
+        - The rate for broadcast packets.
+        type: str
+      burst_rate:
+        description:
+        - The burst rate of broadcast packets.
+        type: str
+      rate_type:
+        description:
+        - The type of rate of all packet types.
+        - Choice between percentage of the bandiwth C(percentage) or packet per second C(pps)
+        type: str
+        choices: [ percentage, pps ]
+  multicast_configuration:
+    description:
+    - The rates configuration of multicast packets.
+    type: dict
+    aliases: [ multicast ]
+    suboptions:
+      rate:
+        description:
+        - The rate for multicast packets.
+        type: str
+      burst_rate:
+        description:
+        - The burst rate of multicast packets.
+        type: str
+      rate_type:
+        description:
+        - The type of rate of all packet types.
+        - Choice between percentage of the bandiwth C(percentage) or packet per second C(pps)
+        type: str
+        choices: [ percentage, pps ]
+  unicast_configuration:
+    description:
+    - The rates configuration of unicast packets.
+    type: dict
+    aliases: [ unicast ]
+    suboptions:
+      rate:
+        description:
+        - The rate for unicast packets.
+        type: str
+      burst_rate:
+        description:
+        - The burst rate of unicast packets.
+        type: str
+      rate_type:
+        description:
+        - The type of rate of all packet types.
+        - Choice between percentage of the bandiwth C(percentage) or packet per second C(pps)
+        type: str
+        choices: [ percentage, pps ]
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -128,6 +143,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Eric Girard (@netgirard)
+- Gaspard Micol (@gmicol)
 '''
 
 EXAMPLES = r'''
@@ -272,9 +288,10 @@ url:
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 '''
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
 
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec, storm_control_policy_rate_spec
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_STORM_CONTROL_POLICY_TYPE_MAPPING
 
 
 def main():
@@ -282,88 +299,83 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        stormctrl_policy=dict(type='str', required=False, aliases=['name']),  # Not required for querying all objects
+        storm_control_policy=dict(type='str', required=False, aliases=['name']),  # Not required for querying all objects
         description=dict(type='str', aliases=['descr']),
         state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
         name_alias=dict(type='str'),
-        rate=dict(type='int'),
-        burstRate=dict(type='int'),
-        bcRate=dict(type='int'),
-        bcBurstRate=dict(type='int'),
-        mcRate=dict(type='int'),
-        mcBurstRate=dict(type='int'),
-        uucRate=dict(type='int'),
-        uucBurstRate=dict(type='int'),
-        ratePps=dict(type='int'),
-        burstPps=dict(type='int'),
-        bcRatePps=dict(type='int'),
-        bcBurstPps=dict(type='int'),
-        mcRatePps=dict(type='int'),
-        mcBurstPps=dict(type='int'),
-        uucRatePps=dict(type='int'),
-        uucBurstPps=dict(type='int'),
-        isUcMcBcStormPktCfgValid=dict(type='str', choices=['Valid', 'Invalid']),
-        stormCtrlAction=dict(type='str', choices=['drop', 'shutdown']),
-        stormCtrlSoakInstCount=dict(type='int'),
-
+        storm_control_types=dict(type='str', choices=['all_types', 'unicast_broadcast_multicast']),
+        all_types_configuration=dict(type='dict', options=storm_control_policy_rate_spec(), aliases=['all_types']),
+        broadcast_configuration=dict(type='dict', options=storm_control_policy_rate_spec(), aliases=['broadcast']),
+        multicast_configuration=dict(type='dict', options=storm_control_policy_rate_spec(), aliases=['multicast']),
+        unicast_configuration=dict(type='dict', options=storm_control_policy_rate_spec(), aliases=['unicast']),
+        storm_control_action=dict(type='str', choices=['drop', 'shutdown']),
+        storm_control_soak_action=dict(type='int'),
     )
-
+    #Add type attribute up in argument_spec()
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['stormctrl_policy']],
-            ['state', 'present', ['stormctrl_policy', 'isUcMcBcStormPktCfgValid']],
-            ['isUcMcBcStormPktCfgValid', 'Valid', ['bcRate', 'bcRatePps'], True],
-            ['isUcMcBcStormPktCfgValid', 'Invalid', ['rate', 'ratePps'], True],
-        ],
-        required_together=[
-            ('rate', 'burstRate'),
-            ('bcRate', 'bcBurstRate', 'mcRate', 'mcBurstRate', 'uucRate', 'uucBurstRate'),
-            ('ratePps', 'burstPps'),
-            ('bcRatePps', 'bcBurstPps', 'mcRatePps', 'mcBurstPps', 'uucRatePps', 'uucBurstPps'),
+            ['state', 'absent', ['storm_control_policy']],
+            ['state', 'present', ['storm_control_policy']],
         ],
         mutually_exclusive=[
-            ('rate', 'bcRate', 'ratePps', 'bcRatePps'),
+            ('all_types_configuration', 'broadcast_configuration'),
+            ('all_types_configuration', 'multicast_configuration'),
+            ('all_types_configuration', 'unicast_configuration'),
         ],
     )
 
     aci = ACIModule(module)
 
-    stormctrl_policy = module.params.get('stormctrl_policy')
+    storm_control_policy = module.params.get('storm_control_policy')
     description = module.params.get('description')
     state = module.params.get('state')
     name_alias = module.params.get('name_alias')
-    isUcMcBcStormPktCfgValid = module.params.get('isUcMcBcStormPktCfgValid')
-    stormCtrlAction = module.params.get('stormCtrlAction')
-    stormCtrlSoakInstCount = module.params.get('stormCtrlSoakInstCount')
+    storm_control_types = MATCH_STORM_CONTROL_POLICY_TYPE_MAPPING.get(module.params.get('storm_control_types'))
+    storm_control_action = module.params.get('storm_control_action')
+    storm_control_soak_action = module.params.get('storm_control_soak_action')
 
-    rate_keys = [
-        'rate', 'burstRate', 'bcRate', 'bcBurstRate', 'mcRate', 'mcBurstRate', 'uucRate', 'uucBurstRate',
-        'ratePps', 'burstPps', 'bcRatePps', 'bcBurstPps', 'mcRatePps', 'mcBurstPps', 'uucRatePps', 'uucBurstPps'
+    rates_input = {}
+
+    stom_control_types_configs = [
+        dict(config_input=module.params.get('all_types_configuration'), rates=dict(rate=dict(percentage='rate', pps='ratePps'), burst_rate=dict(percentage='burstRate', pps='burstPps'))),
+        dict(config_input=module.params.get('broadcast_configuration'), rates=dict(rate=dict(percentage='bcRate', pps='bcRatePps'), burst_rate=dict(percentage='bcBurstRate', pps='bcBurstPps'))),
+        dict(config_input=module.params.get('multicast_configuration'), rates=dict(rate=dict(percentage='mcRate', pps='mcRatePps'), burst_rate=dict(percentage='mcBurstRate', pps='mcBurstPps'))),
+        dict(config_input=module.params.get('unicast_configuration'), rates=dict(rate=dict(percentage='uucRate', pps='uucRatePps'), burst_rate=dict(percentage='uucBurstRate', pps='uucBurstPps'))),
     ]
-    rates = {}
 
-    for key in rate_keys:
-        if module.params.get(key) is not None and 'Pps' not in key:
-            value = module.params.get(key)
-            if 0 <= value <= 100:
-                rates[key] = '{0:.6f}'.format(module.params.get(key))
-            else:
-                module.fail_json(msg="Argument {0} needs to be a value between 0 and 100 inclusive, got {1}".format(key, value))
+    for config in stom_control_types_configs:
+        config_input = config.get('config_input')
+        rates = config.get('rates')
+        if config_input is not None:
+            if config_input.get('rate_type') == 'percentage':
+                for rates_type, rates_attributes in rates.items():
+                    input = config_input.get(rates_type)
+                    if input is not None and not (0 <= float(input) <= 100):
+                        module.fail_json(msg="If argument rate_type is percentage, argument {0} needs to be a value between 0 and 100 inclusive, got {1}".format(rates_type, input))
+                    else:
+                        rates_input[rates_attributes.get('percentage')] = '{:.6f}'.format(float(input))
+                        rates_input[rates_attributes.get('pps')] = 'unspecified'
+            elif config_input.get('rate_type') == 'pps':
+                for rates_type, rates_attributes in rates.items():
+                    rates_input[rates_attributes.get('percentage')] = None
+                    rates_input[rates_attributes.get('pps')] = config_input.get(rates_type)
         else:
-            rates[key] = module.params.get(key)
-
-    if any(rates[k] is not None for k in ['rate', 'burstRate', 'bcRate', 'bcBurstRate', 'mcRate', 'mcBurstRate', 'uucRate', 'uucBurstRate']):
-        for pps in ['ratePps', 'burstPps', 'bcRatePps', 'bcBurstPps', 'mcRatePps', 'mcBurstPps', 'uucRatePps', 'uucBurstPps']:
-            rates[pps] = None
+            for rates_type, rates_attributes in rates.items():
+                rates_input[rates_attributes.get('percentage')] = None
+                rates_input[rates_attributes.get('pps')] = None
 
     aci.construct_url(
         root_class=dict(
+            aci_class='infraInfra',
+            aci_rn='infra',
+        ),
+        subclass_1=dict(
             aci_class='stormctrlIfPol',
-            aci_rn='infra/stormctrlifp-{0}'.format(stormctrl_policy),
-            module_object=stormctrl_policy,
-            target_filter={'name': stormctrl_policy},
+            aci_rn='stormctrlifp-{0}'.format(storm_control_policy),
+            module_object=storm_control_policy,
+            target_filter={'name': storm_control_policy},
         ),
     )
 
@@ -373,13 +385,13 @@ def main():
         aci.payload(
             aci_class='stormctrlIfPol',
             class_config=dict(
-                name=stormctrl_policy,
+                name=storm_control_policy,
                 descr=description,
                 nameAlias=name_alias,
-                isUcMcBcStormPktCfgValid=isUcMcBcStormPktCfgValid,
-                stormCtrlAction=stormCtrlAction,
-                stormCtrlSoakInstCount=stormCtrlSoakInstCount,
-                **rates
+                isUcMcBcStormPktCfgValid=storm_control_types,
+                stormCtrlAction=storm_control_action,
+                stormCtrlSoakInstCount=storm_control_soak_action,
+                **rates_input
             ),
         )
 

@@ -282,3 +282,5 @@ USEG_ATTRIBUTE_MAPPING = dict(
 )
 
 OPERATOR_MAPPING = dict(equals="equals", contains="contains", starts_with="startsWith", ends_with="endsWith")
+
+MATCH_STORM_CONTROL_POLICY_TYPE_MAPPING = dict(all_types="Invalid", unicast_broadcast_multicast="Valid")
