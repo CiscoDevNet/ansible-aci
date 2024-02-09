@@ -305,7 +305,9 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        storm_control_policy=dict(type="str", required=False, aliases=["name", "storm_control", "storm_control_name"]),  # Not required for querying all objects
+        storm_control_policy=dict(
+            type="str", required=False, aliases=["name", "storm_control", "storm_control_name"]
+        ), # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -347,19 +349,19 @@ def main():
     stom_control_types_configs = [
         dict(
             config_input=module.params.get("all_types_configuration"),
-            rates=dict(rate=dict(percentage="rate", pps="ratePps"), burst_rate=dict(percentage="burstRate", pps="burstPps"))
+            rates=dict(rate=dict(percentage="rate", pps="ratePps"), burst_rate=dict(percentage="burstRate", pps="burstPps")),
         ),
         dict(
             config_input=module.params.get("broadcast_configuration"),
-            rates=dict(rate=dict(percentage="bcRate", pps="bcRatePps"), burst_rate=dict(percentage="bcBurstRate", pps="bcBurstPps"))
+            rates=dict(rate=dict(percentage="bcRate", pps="bcRatePps"), burst_rate=dict(percentage="bcBurstRate", pps="bcBurstPps")),
         ),
         dict(
             config_input=module.params.get("multicast_configuration"),
-            rates=dict(rate=dict(percentage="mcRate", pps="mcRatePps"), burst_rate=dict(percentage="mcBurstRate", pps="mcBurstPps"))
+            rates=dict(rate=dict(percentage="mcRate", pps="mcRatePps"), burst_rate=dict(percentage="mcBurstRate", pps="mcBurstPps")),
         ),
         dict(
             config_input=module.params.get("unicast_configuration"),
-            rates=dict(rate=dict(percentage="uucRate", pps="uucRatePps"), burst_rate=dict(percentage="uucBurstRate", pps="uucBurstPps"))
+            rates=dict(rate=dict(percentage="uucRate", pps="uucRatePps"), burst_rate=dict(percentage="uucBurstRate", pps="uucBurstPps")),
         ),
     ]
 
