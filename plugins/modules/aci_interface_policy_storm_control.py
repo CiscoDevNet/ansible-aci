@@ -10,7 +10,7 @@ __metaclass__ = type
 
 ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_storm_control
 short_description: Manage Storm Control interface policies (stormctrl:IfPol)
@@ -144,9 +144,9 @@ seealso:
 author:
 - Eric Girard (@netgirard)
 - Gaspard Micol (@gmicol)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create CDP Interface Policy to enable CDP
   cisco.aci.aci_interface_policy_cdp:
     name: Ansible_CDP_Interface_Policy
@@ -180,9 +180,9 @@ EXAMPLES = r'''
     username: admin
     password: adminpass
     state: query
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -287,7 +287,7 @@ url:
   returned: failure or debug
   type: str
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import (
@@ -305,69 +305,69 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        storm_control_policy=dict(type='str', required=False, aliases=['name', 'storm_control', 'storm_control_name']),  # Not required for querying all objects
-        description=dict(type='str', aliases=['descr']),
-        state=dict(type='str', default='present', choices=['absent', 'present', 'query']),
-        name_alias=dict(type='str'),
-        storm_control_types=dict(type='str', choices=['all_types', 'unicast_broadcast_multicast']),
-        all_types_configuration=dict(type='dict', options=storm_control_policy_rate_spec(), aliases=['all_types']),
-        broadcast_configuration=dict(type='dict', options=storm_control_policy_rate_spec(), aliases=['broadcast']),
-        multicast_configuration=dict(type='dict', options=storm_control_policy_rate_spec(), aliases=['multicast']),
-        unicast_configuration=dict(type='dict', options=storm_control_policy_rate_spec(), aliases=['unicast']),
-        storm_control_action=dict(type='str', choices=['drop', 'shutdown']),
-        storm_control_soak_action=dict(type='int'),
+        storm_control_policy=dict(type="str", required=False, aliases=["name", "storm_control", "storm_control_name"]),  # Not required for querying all objects
+        description=dict(type="str", aliases=["descr"]),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name_alias=dict(type="str"),
+        storm_control_types=dict(type="str", choices=["all_types", "unicast_broadcast_multicast"]),
+        all_types_configuration=dict(type="dict", options=storm_control_policy_rate_spec(), aliases=["all_types"]),
+        broadcast_configuration=dict(type="dict", options=storm_control_policy_rate_spec(), aliases=["broadcast"]),
+        multicast_configuration=dict(type="dict", options=storm_control_policy_rate_spec(), aliases=["multicast"]),
+        unicast_configuration=dict(type="dict", options=storm_control_policy_rate_spec(), aliases=["unicast"]),
+        storm_control_action=dict(type="str", choices=["drop", "shutdown"]),
+        storm_control_soak_action=dict(type="int"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'absent', ['storm_control_policy']],
-            ['state', 'present', ['storm_control_policy']],
+            ["state", "absent", ["storm_control_policy"]],
+            ["state", "present", ["storm_control_policy"]],
         ],
         mutually_exclusive=[
-            ('all_types_configuration', 'broadcast_configuration'),
-            ('all_types_configuration', 'multicast_configuration'),
-            ('all_types_configuration', 'unicast_configuration'),
+            ("all_types_configuration", "broadcast_configuration"),
+            ("all_types_configuration", "multicast_configuration"),
+            ("all_types_configuration", "unicast_configuration"),
         ],
     )
 
     aci = ACIModule(module)
 
-    storm_control_policy = module.params.get('storm_control_policy')
-    description = module.params.get('description')
-    state = module.params.get('state')
-    name_alias = module.params.get('name_alias')
-    storm_control_types = MATCH_STORM_CONTROL_POLICY_TYPE_MAPPING.get(module.params.get('storm_control_types'))
-    storm_control_action = module.params.get('storm_control_action')
-    storm_control_soak_action = module.params.get('storm_control_soak_action')
+    storm_control_policy = module.params.get("storm_control_policy")
+    description = module.params.get("description")
+    state = module.params.get("state")
+    name_alias = module.params.get("name_alias")
+    storm_control_types = MATCH_STORM_CONTROL_POLICY_TYPE_MAPPING.get(module.params.get("storm_control_types"))
+    storm_control_action = module.params.get("storm_control_action")
+    storm_control_soak_action = module.params.get("storm_control_soak_action")
 
     rates_input = {}
 
     stom_control_types_configs = [
         dict(
-            config_input=module.params.get('all_types_configuration'),
-            rates=dict(rate=dict(percentage='rate', pps='ratePps'), burst_rate=dict(percentage='burstRate', pps='burstPps'))
+            config_input=module.params.get("all_types_configuration"),
+            rates=dict(rate=dict(percentage="rate", pps="ratePps"), burst_rate=dict(percentage="burstRate", pps="burstPps"))
         ),
         dict(
-            config_input=module.params.get('broadcast_configuration'),
-            rates=dict(rate=dict(percentage='bcRate', pps='bcRatePps'), burst_rate=dict(percentage='bcBurstRate', pps='bcBurstPps'))
+            config_input=module.params.get("broadcast_configuration"),
+            rates=dict(rate=dict(percentage="bcRate", pps="bcRatePps"), burst_rate=dict(percentage="bcBurstRate", pps="bcBurstPps"))
         ),
         dict(
-            config_input=module.params.get('multicast_configuration'),
-            rates=dict(rate=dict(percentage='mcRate', pps='mcRatePps'), burst_rate=dict(percentage='mcBurstRate', pps='mcBurstPps'))
+            config_input=module.params.get("multicast_configuration"),
+            rates=dict(rate=dict(percentage="mcRate", pps="mcRatePps"), burst_rate=dict(percentage="mcBurstRate", pps="mcBurstPps"))
         ),
         dict(
-            config_input=module.params.get('unicast_configuration'),
-            rates=dict(rate=dict(percentage='uucRate', pps='uucRatePps'), burst_rate=dict(percentage='uucBurstRate', pps='uucBurstPps'))
+            config_input=module.params.get("unicast_configuration"),
+            rates=dict(rate=dict(percentage="uucRate", pps="uucRatePps"), burst_rate=dict(percentage="uucBurstRate", pps="uucBurstPps"))
         ),
     ]
 
     for config in stom_control_types_configs:
-        config_input = config.get('config_input')
-        rates = config.get('rates')
+        config_input = config.get("config_input")
+        rates = config.get("rates")
         if config_input is not None:
-            if config_input.get('rate_type') == 'percentage':
+            if config_input.get("rate_type") == "percentage":
                 for rates_type, rates_attributes in rates.items():
                     input = config_input.get(rates_type)
                     if input is not None and not (0 <= float(input) <= 100):
@@ -378,35 +378,35 @@ def main():
                             )
                         )
                     else:
-                        rates_input[rates_attributes.get('percentage')] = '{0:.6f}'.format(float(input))
-                        rates_input[rates_attributes.get('pps')] = 'unspecified'
-            elif config_input.get('rate_type') == 'pps':
+                        rates_input[rates_attributes.get("percentage")] = "{0:.6f}".format(float(input))
+                        rates_input[rates_attributes.get("pps")] = "unspecified"
+            elif config_input.get("rate_type") == "pps":
                 for rates_type, rates_attributes in rates.items():
-                    rates_input[rates_attributes.get('percentage')] = None
-                    rates_input[rates_attributes.get('pps')] = config_input.get(rates_type)
+                    rates_input[rates_attributes.get("percentage")] = None
+                    rates_input[rates_attributes.get("pps")] = config_input.get(rates_type)
         else:
             for rates_type, rates_attributes in rates.items():
-                rates_input[rates_attributes.get('percentage')] = None
-                rates_input[rates_attributes.get('pps')] = None
+                rates_input[rates_attributes.get("percentage")] = None
+                rates_input[rates_attributes.get("pps")] = None
 
     aci.construct_url(
         root_class=dict(
-            aci_class='infraInfra',
-            aci_rn='infra',
+            aci_class="infraInfra",
+            aci_rn="infra",
         ),
         subclass_1=dict(
-            aci_class='stormctrlIfPol',
-            aci_rn='stormctrlifp-{0}'.format(storm_control_policy),
+            aci_class="stormctrlIfPol",
+            aci_rn="stormctrlifp-{0}".format(storm_control_policy),
             module_object=storm_control_policy,
-            target_filter={'name': storm_control_policy},
+            target_filter={"name": storm_control_policy},
         ),
     )
 
     aci.get_existing()
 
-    if state == 'present':
+    if state == "present":
         aci.payload(
-            aci_class='stormctrlIfPol',
+            aci_class="stormctrlIfPol",
             class_config=dict(
                 name=storm_control_policy,
                 descr=description,
@@ -418,15 +418,15 @@ def main():
             ),
         )
 
-        aci.get_diff(aci_class='stormctrlIfPol')
+        aci.get_diff(aci_class="stormctrlIfPol")
 
         aci.post_config()
 
-    elif state == 'absent':
+    elif state == "absent":
         aci.delete_config()
 
     aci.exit_json()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
