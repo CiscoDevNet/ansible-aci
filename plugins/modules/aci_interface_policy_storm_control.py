@@ -307,7 +307,7 @@ def main():
     argument_spec.update(
         storm_control_policy=dict(
             type="str", required=False, aliases=["name", "storm_control", "storm_control_name"]
-        ), # Not required for querying all objects
+        ),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
