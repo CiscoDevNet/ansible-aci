@@ -3,6 +3,7 @@
 
 # Copyright: (c) 2020, nkatarmal-crest <nirav.katarmal@crestdatasys.com>
 # Copyright: (c) 2020, Cindy Zhao <cizhao@cisco.com>
+# Copyright: (c) 2024, Samita Bhattacharjee <samitab@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -21,6 +22,7 @@ notes:
 author:
 - Nirav (@nirav)
 - Cindy Zhao (@cizhao)
+- Samita Bhattacharjee (@samitab)
 options:
   name:
     description:
@@ -54,17 +56,24 @@ options:
     - Address of cloud cidr.
     type: str
     required: true
-  availability_zone:
+  aws_availability_zone:
     description:
     - The cloud zone which is attached to the given cloud context profile.
-    - Only used when it is an aws cloud apic.
+    - Only used when it is an AWS cloud apic.
     type: str
+    aliases: [availability_zone, av_zone, zone]
   vnet_gateway:
     description:
     - Determine if a vNet Gateway Router will be deployed or not.
-    - Only used when it is an azure cloud apic.
+    - Only used when it is an Azure cloud apic.
     type: bool
     default: false
+  azure_region:
+    description:
+    - The Azure cloud region to attach this subnet to.
+    - Only used when it is an Azure cloud apic.
+    type: str
+    aliases: [az_region]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -78,7 +87,7 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
-- name: Create aci cloud subnet
+- name: Create AWS aci cloud subnet
   cisco.aci.aci_cloud_subnet:
     host: apic
     username: userName
@@ -87,7 +96,21 @@ EXAMPLES = r"""
     tenant: anstest
     cloud_context_profile: aws_cloudCtxProfile
     cidr: '10.10.0.0/16'
-    availability_zone: us-west-1a
+    aws_availability_zone: us-west-1a
+    address: 10.10.0.1
+  delegate_to: localhost
+
+- name: Create Azure aci cloud subnet
+  cisco.aci.aci_cloud_subnet:
+    host: apic
+    username: userName
+    password: somePassword
+    validate_certs: false
+    tenant: anstest
+    cloud_context_profile: azure_cloudCtxProfile
+    cidr: '10.10.0.0/16'
+    azure_region: westus2
+    vnet_gateway: true
     address: 10.10.0.1
   delegate_to: localhost
 
@@ -239,15 +262,16 @@ def main():
         cloud_context_profile=dict(type="str", required=True),
         cidr=dict(type="str", required=True),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        availability_zone=dict(type="str"),
+        aws_availability_zone=dict(type="str", aliases=["availability_zone", "av_zone", "zone"]),
+        azure_region=dict(type="str", aliases=["az_region"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["address"]],
-            ["state", "present", ["address"]],
+            ["state", "absent", ["tenant", "cloud_context_profile", "cidr", "address"]],
+            ["state", "present", ["tenant", "cloud_context_profile", "cidr", "address"]],
         ],
     )
 
@@ -260,8 +284,12 @@ def main():
     cloud_context_profile = module.params.get("cloud_context_profile")
     cidr = module.params.get("cidr")
     state = module.params.get("state")
-    availability_zone = module.params.get("availability_zone")
+    aws_availability_zone = module.params.get("aws_availability_zone")
+    azure_region = module.params.get("azure_region")
     child_configs = []
+
+    if aws_availability_zone and azure_region:
+        module.fail_json(msg="Configuring both an AWS availability zone and an Azure region is invalid.")
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -283,11 +311,14 @@ def main():
 
     if state == "present":
         # in aws cloud apic
-        if availability_zone:
-            region = availability_zone[:-1]
-            tDn = "uni/clouddomp/provp-aws/region-{0}/zone-{1}".format(region, availability_zone)
+        if aws_availability_zone:
+            region = aws_availability_zone[:-1]
+            tDn = "uni/clouddomp/provp-aws/region-{0}/zone-{1}".format(region, aws_availability_zone)
             child_configs.append({"cloudRsZoneAttach": {"attributes": {"tDn": tDn}}})
         # in azure cloud apic
+        if azure_region:
+            tDn = "uni/clouddomp/provp-azure/region-{0}/zone-default".format(azure_region)
+            child_configs.append({"cloudRsZoneAttach": {"attributes": {"tDn": tDn}}})
         if vnet_gateway:
             usage = "gateway"
         else:
