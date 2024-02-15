@@ -384,7 +384,7 @@ def main():
                 percentage: "{0:.6f}".format(float(rate)),
                 pps: "unspecified",
                 burst_percentage: "{0:.6f}".format(float(burst_rate)),
-                burst_pps: "unspecified"
+                burst_pps: "unspecified",
             }
         elif rate_type == "pps":
             return {pps: rate, burst_pps: burst_rate}
