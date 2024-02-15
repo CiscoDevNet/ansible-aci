@@ -72,6 +72,7 @@ options:
         - Choice between percentage of the bandiwth C(percentage) or packet per second C(pps)
         type: str
         choices: [ percentage, pps ]
+        required: true
   broadcast_configuration:
     description:
     - The rates configuration of broadcast packets.
@@ -92,6 +93,7 @@ options:
         - Choice between percentage of the bandiwth C(percentage) or packet per second C(pps)
         type: str
         choices: [ percentage, pps ]
+        required: true
   multicast_configuration:
     description:
     - The rates configuration of multicast packets.
@@ -112,6 +114,7 @@ options:
         - Choice between percentage of the bandiwth C(percentage) or packet per second C(pps)
         type: str
         choices: [ percentage, pps ]
+        required: true
   unicast_configuration:
     description:
     - The rates configuration of unicast packets.
@@ -132,6 +135,7 @@ options:
         - Choice between percentage of the bandiwth C(percentage) or packet per second C(pps)
         type: str
         choices: [ percentage, pps ]
+        required: true
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -147,39 +151,49 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create CDP Interface Policy to enable CDP
-  cisco.aci.aci_interface_policy_cdp:
-    name: Ansible_CDP_Interface_Policy
-    host: apic.example.com
+- name: Add a new Storm Control Interface Policy
+  cisco.aci.aci_interface_policy_storm_control:
+    host: apic
     username: admin
-    password: adminpass
-    admin_state: true
+    password: SomeSecretPassword
+    storm_control_policy: my_storm_control_policy
+    description: My Storm Control Policy
+    storm_control_types: all_types
+    all_types_configuration:
+      rate: 80
+      burst_rate: 100
+      rate_type: percentage
+    storm_control_action: shutdown
+    storm_control_soak_action: 5
     state: present
+  delegate_to: localhost
 
-- name: Create CDP Interface Policy to disable CDP
-  cisco.aci.aci_interface_policy_cdp:
-    name: Ansible_CDP_Interface_Policy
-    host: apic.example.com
+- name: Query a Storm Control Interface Policy
+  cisco.aci.aci_interface_policy_storm_control:
+    host: apic
     username: admin
-    password: adminpass
-    admin_state: false
-    state: present
-
-- name: Remove CDP Interface Policy
-  cisco.aci.aci_interface_policy_cdp:
-    name: Ansible_CDP_Interface_Policy
-    host: apic.example.com
-    username: admin
-    password: adminpass
-    output_level: debug
-    state: absent
-
-- name: Query CDP Policy
-  cisco.aci.aci_interface_policy_cdp:
-    host: apic.example.com
-    username: admin
-    password: adminpass
+    password: SomeSecretPassword
+    storm_control_policy: my_storm_control_policy
     state: query
+  delegate_to: localhost
+
+- name: Query all Storm Control Interface Policies
+  cisco.aci.aci_interface_policy_storm_control:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+
+- name: Delete a Storm Control Interface Policy
+  cisco.aci.aci_interface_policy_storm_control:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    storm_control_policy: my_storm_control_policy
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
@@ -343,53 +357,44 @@ def main():
     storm_control_types = MATCH_STORM_CONTROL_POLICY_TYPE_MAPPING.get(module.params.get("storm_control_types"))
     storm_control_action = module.params.get("storm_control_action")
     storm_control_soak_action = module.params.get("storm_control_soak_action")
+    all_types_configuration = module.params.get("all_types_configuration")
+    broadcast_configuration = module.params.get("broadcast_configuration")
+    multicast_configuration = module.params.get("multicast_configuration")
+    unicast_configuration = module.params.get("unicast_configuration")
 
     rates_input = {}
 
-    stom_control_types_configs = [
-        dict(
-            config_input=module.params.get("all_types_configuration"),
-            rates=dict(rate=dict(percentage="rate", pps="ratePps"), burst_rate=dict(percentage="burstRate", pps="burstPps")),
-        ),
-        dict(
-            config_input=module.params.get("broadcast_configuration"),
-            rates=dict(rate=dict(percentage="bcRate", pps="bcRatePps"), burst_rate=dict(percentage="bcBurstRate", pps="bcBurstPps")),
-        ),
-        dict(
-            config_input=module.params.get("multicast_configuration"),
-            rates=dict(rate=dict(percentage="mcRate", pps="mcRatePps"), burst_rate=dict(percentage="mcBurstRate", pps="mcBurstPps")),
-        ),
-        dict(
-            config_input=module.params.get("unicast_configuration"),
-            rates=dict(rate=dict(percentage="uucRate", pps="uucRatePps"), burst_rate=dict(percentage="uucBurstRate", pps="uucBurstPps")),
-        ),
-    ]
+    def get_rates_configuration(configuration, percentage, pps, burst_percentage, burst_pps):
+        if configuration is None:
+            return {}
+        rate = configuration.get("rate")
+        burst_rate = configuration.get("burst_rate")
+        rate_type = configuration.get("rate_type")
 
-    for config in stom_control_types_configs:
-        config_input = config.get("config_input")
-        rates = config.get("rates")
-        if config_input is not None:
-            if config_input.get("rate_type") == "percentage":
-                for rates_type, rates_attributes in rates.items():
-                    input = config_input.get(rates_type)
-                    if input is not None and not (0 <= float(input) <= 100):
-                        module.fail_json(
-                            msg="If argument rate_type is percentage, argument {0} needs to be a value between 0 and 100 inclusive, got {1}".format(
-                                rates_type,
-                                input,
-                            )
+        if rate_type == "percentage":
+            for rate_name, rate_value in dict(rate=rate, burst_rate=burst_rate).items():
+                if rate_value is None or not (0 <= float(rate_value) <= 100):
+                    module.fail_json(
+                        msg="If argument rate_type is percentage, the {0} needs to be a value between 0 and 100 inclusive, got {1}".format(
+                            rate_name,
+                            rate_value,
                         )
-                    else:
-                        rates_input[rates_attributes.get("percentage")] = "{0:.6f}".format(float(input))
-                        rates_input[rates_attributes.get("pps")] = "unspecified"
-            elif config_input.get("rate_type") == "pps":
-                for rates_type, rates_attributes in rates.items():
-                    rates_input[rates_attributes.get("percentage")] = None
-                    rates_input[rates_attributes.get("pps")] = config_input.get(rates_type)
-        else:
-            for rates_type, rates_attributes in rates.items():
-                rates_input[rates_attributes.get("percentage")] = None
-                rates_input[rates_attributes.get("pps")] = None
+                    )
+            return {
+                percentage: "{0:.6f}".format(float(rate)),
+                pps: "unspecified",
+                burst_percentage: "{0:.6f}".format(float(burst_rate)),
+                burst_pps: "unspecified"
+            }
+        elif rate_type == "pps":
+            return {pps: rate, burst_pps: burst_rate}
+
+    if all_types_configuration is not None:
+        rates_input.update(get_rates_configuration(all_types_configuration, "rate", "ratePps", "burstRate", "burstPps"))
+    elif any([broadcast_configuration, multicast_configuration, unicast_configuration]):
+        rates_input.update(get_rates_configuration(broadcast_configuration, "bcRate", "bcRatePps", "bcBurstRate", "bcBurstPps"))
+        rates_input.update(get_rates_configuration(multicast_configuration, "mcRate", "mcRatePps", "mcBurstRate", "mcBurstPps"))
+        rates_input.update(get_rates_configuration(unicast_configuration, "uucRate", "uucRatePps", "uucBurstRate", "uucBurstPps"))
 
     aci.construct_url(
         root_class=dict(
@@ -407,17 +412,18 @@ def main():
     aci.get_existing()
 
     if state == "present":
+        class_config = dict(
+            name=storm_control_policy,
+            descr=description,
+            nameAlias=name_alias,
+            isUcMcBcStormPktCfgValid=storm_control_types,
+            stormCtrlAction=storm_control_action,
+            stormCtrlSoakInstCount=storm_control_soak_action,
+        )
+        class_config.update(rates_input)
         aci.payload(
             aci_class="stormctrlIfPol",
-            class_config=dict(
-                name=storm_control_policy,
-                descr=description,
-                nameAlias=name_alias,
-                isUcMcBcStormPktCfgValid=storm_control_types,
-                stormCtrlAction=storm_control_action,
-                stormCtrlSoakInstCount=storm_control_soak_action,
-                **rates_input
-            ),
+            class_config=class_config,
         )
 
         aci.get_diff(aci_class="stormctrlIfPol")

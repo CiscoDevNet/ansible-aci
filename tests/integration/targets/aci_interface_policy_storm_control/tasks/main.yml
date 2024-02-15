@@ -35,6 +35,7 @@
     - ansible_storm_control_policy_1
     - ansible_storm_control_policy_2
     - ansible_storm_control_policy_3
+    - ansible_storm_control_policy_4
   
   # CREATE STORM CONTROL POLICY
   - name: Add a Storm Control policy (check_mode)
@@ -82,10 +83,21 @@
         rate_type: pps
     register: nm_add_storm_control_policy_2
 
-  - name: Add a third Storm Control Policy with rate in percentage out of bonds - testing error message
+  - name: Add a third Storm Control Policy (normal_mode) - testing empty configuration for multicast and unicast
     cisco.aci.aci_interface_policy_storm_control:
       <<: *aci_info
       storm_control_policy: ansible_storm_control_policy_3
+      storm_control_types: unicast_broadcast_multicast
+      broadcast_configuration:
+        rate: 25
+        burst_rate: 50
+        rate_type: pps
+    register: nm_add_storm_control_policy_3
+
+  - name: Add a fourth Storm Control Policy with rate in percentage out of bonds - testing error message
+    cisco.aci.aci_interface_policy_storm_control:
+      <<: *aci_info
+      storm_control_policy: ansible_storm_control_policy_4
       storm_control_types: all_types
       all_types_configuration:
         rate: 125
@@ -137,7 +149,23 @@
         - nm_add_storm_control_policy_2.current.0.stormctrlIfPol.attributes.isUcMcBcStormPktCfgValid == "Valid"
         - nm_add_storm_control_policy_2.current.0.stormctrlIfPol.attributes.stormCtrlAction == "drop"
         - nm_add_storm_control_policy_2.current.0.stormctrlIfPol.attributes.stormCtrlSoakInstCount == "3"
-        - nm_test_error_msg_storm_control_policy.msg == "If argument rate_type is percentage, argument rate needs to be a value between 0 and 100 inclusive, got 125"
+        - nm_add_storm_control_policy_3 is changed
+        - nm_add_storm_control_policy_3.previous == []
+        - nm_add_storm_control_policy_3.current.0.stormctrlIfPol.attributes.name == "ansible_storm_control_policy_3"
+        - nm_add_storm_control_policy_3.current.0.stormctrlIfPol.attributes.bcRatePps == "25"
+        - nm_add_storm_control_policy_3.current.0.stormctrlIfPol.attributes.bcBurstPps == "50"
+        - nm_add_storm_control_policy_3.current.0.stormctrlIfPol.attributes.mcRatePps == "unspecified"
+        - nm_add_storm_control_policy_3.current.0.stormctrlIfPol.attributes.mcRate == "100.000000"
+        - nm_add_storm_control_policy_3.current.0.stormctrlIfPol.attributes.mcBurstPps == "unspecified"
+        - nm_add_storm_control_policy_3.current.0.stormctrlIfPol.attributes.mcBurstRate == "100.000000"
+        - nm_add_storm_control_policy_3.current.0.stormctrlIfPol.attributes.uucRatePps == "unspecified"
+        - nm_add_storm_control_policy_3.current.0.stormctrlIfPol.attributes.uucRate == "100.000000"
+        - nm_add_storm_control_policy_3.current.0.stormctrlIfPol.attributes.uucBurstPps == "unspecified"
+        - nm_add_storm_control_policy_3.current.0.stormctrlIfPol.attributes.uucBurstRate == "100.000000"
+        - nm_add_storm_control_policy_3.current.0.stormctrlIfPol.attributes.isUcMcBcStormPktCfgValid == "Valid"
+        - nm_add_storm_control_policy_3.current.0.stormctrlIfPol.attributes.stormCtrlAction == "drop"
+        - nm_add_storm_control_policy_3.current.0.stormctrlIfPol.attributes.stormCtrlSoakInstCount == "3"
+        - nm_test_error_msg_storm_control_policy.msg == "If argument rate_type is percentage, the rate needs to be a value between 0 and 100 inclusive, got 125"
 
   # QUERY STORM CONTROL POLICY
   - name: Query all Storm Control policies
@@ -258,3 +286,4 @@
     - ansible_storm_control_policy_1
     - ansible_storm_control_policy_2
     - ansible_storm_control_policy_3
+    - ansible_storm_control_policy_4

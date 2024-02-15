@@ -375,7 +375,7 @@ def storm_control_policy_rate_spec():
     return dict(
         rate=dict(type="str"),
         burst_rate=dict(type="str"),
-        rate_type=dict(type="str", choices=["percentage", "pps"]),
+        rate_type=dict(type="str", choices=["percentage", "pps"], required=True),
     )
 
 
