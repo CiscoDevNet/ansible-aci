@@ -204,37 +204,44 @@ options:
   mld_snoop_policy:
     description:
     - The name of the Multicast Listener Discovery (MLD) Snooping Policy the Bridge Domain should use when overriding the default MLD Snooping Policy.
+    - To delete this attribute, pass an empty string.
     type: str
     aliases: [mld_snoop, mld_policy]
   igmp_policy:
     description:
     - The name of the IGMP Interface Policy the Bridge Domain should use when overriding the default IGMP Interface Policy.
+    - To delete this attribute, pass an empty string.
     type: str
     aliases: [igmp]
   vlan:
     description:
     - The selected VLAN for bridge domain access port encapsulation.
+    - To delete this attribute, pass an empty string.
     type: str
     aliases: [encap]
   monitoring_policy:
     description:
     - The name of the Monitoring Policy to apply to the Bridge Domain.
+    - To delete this attribute, pass an empty string.
     type: str
     aliases: [mon_pol, monitoring_pol]
   first_hop_security_policy:
     description:
     - The name of the First Hop Security Policy to apply to the Bridge Domain.
+    - To delete this attribute, pass an empty string.
     type: str
     aliases: [fhsp, fhs_pol, fhsp_name]
   pim_source_filter:
     description:
     - The name of the PIM Source Filter to apply to the Bridge Domain.
+    - To delete this attribute, pass an empty string.
     - Only available in APIC version 5.2 or later.
     type: str
     aliases: [pim_source]
   pim_destination_filter:
     description:
     - The name of the PIM Destination Filter to apply to the Bridge Domain.
+    - To delete this attribute, pass an empty string.
     - Only available in APIC version 5.2 or later.
     type: str
     aliases: [pim_dest, pim_destination]
@@ -268,6 +275,19 @@ EXAMPLES = r"""
     bd: web_servers
     mac_address: 00:22:BD:F8:19:FE
     vrf: prod_vrf
+    host_based_routing: true
+    allow_intersite_bum_traffic: true
+    allow_intersite_l2_stretch: true
+    allow_ipv6_mcast: true
+    ll_addr: "fe80::1322:33ff:fe44:5566"
+    vmac: "00:AA:BB:CC:DD:03"
+    optimize_wan_bandwidth: true
+    vlan: vlan-101
+    igmp_policy: web_servers_igmp_pol
+    monitoring_policy: web_servers_monitoring_pol
+    igmp_snoop_policy: web_servers_igmp_snoop
+    mld_snoop_policy: web_servers_mld_snoop
+    first_hop_security_policy: web_servers_fhs
     state: present
   delegate_to: localhost
 
@@ -295,6 +315,21 @@ EXAMPLES = r"""
     bd: web_servers
     arp_flooding: true
     l2_unknown_unicast: flood
+    state: present
+  delegate_to: localhost
+
+- name: Modify a Bridge Domain to remove mld_snoop_policy and first_hop_security_policy
+  cisco.aci.aci_bd:
+    host: "{{ inventory_hostname }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    validate_certs: true
+    tenant: prod
+    bd: web_servers
+    arp_flooding: true
+    l2_unknown_unicast: flood
+    mld_snoop_policy: ""
+    first_hop_security_policy: ""
     state: present
   delegate_to: localhost
 
@@ -548,6 +583,30 @@ def main():
     pim_source_filter = module.params.get("pim_source_filter")
     pim_destination_filter = module.params.get("pim_destination_filter")
 
+    child_classes = [
+        "fvRsCtx",
+        "fvRsIgmpsn",
+        "fvRsBDToNdP",
+        "fvRsBdToEpRet",
+        "fvRsBDToProfile",
+        "fvRsMldsn",
+        "igmpIfP",
+        "igmpRsIfPol",
+        "fvAccP",
+        "fvRsABDPolMonPol",
+        "fvRsBDToFhs",
+    ]
+    if pim_source_filter is not None or pim_destination_filter is not None:
+        # Only valid for APIC verion 5.2+
+        child_classes.extend(
+            [
+                "pimBDP",
+                "pimBDFilterPol",
+                "pimBDSrcFilterPol",
+                "pimBDDestFilterPol",
+                "rtdmcRsFilterToRtMapPol",
+            ]
+        )
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -561,19 +620,7 @@ def main():
             module_object=bd,
             target_filter={"name": bd},
         ),
-        child_classes=[
-            "fvRsCtx",
-            "fvRsIgmpsn",
-            "fvRsBDToNdP",
-            "fvRsBdToEpRet",
-            "fvRsBDToProfile",
-            "fvRsMldsn",
-            "igmpIfP",
-            "igmpRsIfPol",
-            "fvAccP",
-            "fvRsABDPolMonPol",
-            "fvRsBDToFhs",
-        ],
+        child_classes=child_classes,
     )
 
     aci.get_existing()
@@ -616,27 +663,24 @@ def main():
             {"fvRsBDToNdP": {"attributes": {"tnNdIfPolName": ipv6_nd_policy}}},
             {"fvRsBdToEpRet": {"attributes": {"resolveAct": endpoint_retention_action, "tnFvEpRetPolName": endpoint_retention_policy}}},
             {"fvRsBDToProfile": {"attributes": {"tnL3extOutName": route_profile_l3out, "tnRtctrlProfileName": route_profile}}},
+            {"fvRsBDToFhs": {"attributes": {"tnFhsBDPolName": first_hop_security_policy}}},
+            {"fvAccP": {"attributes": {"encap": vlan}}},
+            {"fvRsABDPolMonPol": {"attributes": {"tnMonEPGPolName": monitoring_policy}}},
         ]
 
-        if igmp_policy:
-            igmp_policy_tdn = "uni/tn-{0}/igmpIfPol-{1}".format(tenant, igmp_policy)
+        if igmp_policy is not None:
+            igmp_policy_tdn = "" if igmp_policy == "" else "uni/tn-{0}/igmpIfPol-{1}".format(tenant, igmp_policy)
             child_configs.append({"igmpIfP": {"attributes": {}, "children": [{"igmpRsIfPol": {"attributes": {"tDn": igmp_policy_tdn}}}]}})
-        if vlan:
-            child_configs.append({"fvAccP": {"attributes": {"encap": vlan}}})
-        if monitoring_policy:
-            child_configs.append({"fvRsABDPolMonPol": {"attributes": {"tnMonEPGPolName": monitoring_policy}}})
-        if first_hop_security_policy:
-            child_configs.append({"fvRsBDToFhs": {"attributes": {"tnFhsBDPolName": first_hop_security_policy}}})
-        if pim_source_filter or pim_destination_filter:
+        if pim_source_filter is not None or pim_destination_filter is not None:
             pim_bd = {"pimBDP": {"attributes": {}, "children": []}}
             pim_filter_pol = {"pimBDFilterPol": {"attributes": {}, "children": []}}
-            if pim_source_filter:
-                pim_source_filter_tdn = "uni/tn-{0}/rtmap-{1}".format(tenant, pim_source_filter)
+            if pim_source_filter is not None:
+                pim_source_filter_tdn = "" if pim_source_filter == "" else "uni/tn-{0}/rtmap-{1}".format(tenant, pim_source_filter)
                 pim_filter_pol["pimBDFilterPol"]["children"].append(
                     {"pimBDSrcFilterPol": {"attributes": {}, "children": [{"rtdmcRsFilterToRtMapPol": {"attributes": {"tDn": pim_source_filter_tdn}}}]}}
                 )
-            if pim_destination_filter:
-                pim_destination_filter_tdn = "uni/tn-{0}/rtmap-{1}".format(tenant, pim_destination_filter)
+            if pim_destination_filter is not None:
+                pim_destination_filter_tdn = "" if pim_destination_filter == "" else "uni/tn-{0}/rtmap-{1}".format(tenant, pim_destination_filter)
                 pim_filter_pol["pimBDFilterPol"]["children"].append(
                     {"pimBDDestFilterPol": {"attributes": {}, "children": [{"rtdmcRsFilterToRtMapPol": {"attributes": {"tDn": pim_destination_filter_tdn}}}]}}
                 )

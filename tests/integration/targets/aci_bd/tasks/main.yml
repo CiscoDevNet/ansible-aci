@@ -128,6 +128,9 @@
       <<: *aci_tenant_present
       bd: anstest
       description: Ansible Test
+      mld_snoop_policy: ansible_mld_snoop
+      first_hop_security_policy: ansible_fhs
+      igmp_policy: ansible_igmp_pol
     check_mode: true
     register: bd_present_check_mode
 
@@ -141,12 +144,32 @@
       <<: *aci_bd_present
     register: bd_present_idempotent
 
+  # UPDATE BD
   - name: update bd - update works
     cisco.aci.aci_bd:
       <<: *aci_bd_present
       vrf: anstest
       description: Ansible Test Update
     register: bd_update
+
+  - name: Update bd to remove child config (check_mode)
+    cisco.aci.aci_bd: &aci_bd_update
+      <<: *aci_bd_present
+      mld_snoop_policy: ""
+      first_hop_security_policy: ""
+      igmp_policy: ""
+    check_mode: true
+    register: cm_update_bd_2
+
+  - name: Update bd to remove child config (normal_mode)
+    cisco.aci.aci_bd:
+      <<: *aci_bd_update  
+    register: nm_update_bd_2
+
+  - name: Update bd again to remove child config (testing idempotency)
+    cisco.aci.aci_bd:
+      <<: *aci_bd_update  
+    register: nm_update_bd_2_again
 
   - name: create another bd - check more params
     cisco.aci.aci_bd:
@@ -239,6 +262,25 @@
     ignore_errors: true
     register: bd_present_missing_param
 
+  - name: present asserts for removing children
+    ansible.builtin.assert:
+      that:
+        - cm_update_bd_2 is changed
+        - cm_update_bd_2.previous == cm_update_bd_2.current
+        - cm_update_bd_2.proposed.fvBD.children | length == 3
+        - cm_update_bd_2.proposed.fvBD.children.0.fvRsMldsn.attributes.tnMldSnoopPolName == ''
+        - cm_update_bd_2.proposed.fvBD.children.1.fvRsBDToFhs.attributes.tnFhsBDPolName == ''
+        - cm_update_bd_2.proposed.fvBD.children.2.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == ''
+        - nm_update_bd_2 is changed
+        - nm_update_bd_2.previous.0.fvBD.children.0.fvRsMldsn.attributes.tnMldSnoopPolName == 'ansible_mld_snoop'
+        - nm_update_bd_2.previous.0.fvBD.children.1.fvRsBDToFhs.attributes.tnFhsBDPolName == 'ansible_fhs'
+        - nm_update_bd_2.previous.0.fvBD.children.2.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == 'uni/tn-ansible_test/igmpIfPol-ansible_igmp_pol'
+        - nm_update_bd_2.current.0.fvBD.children.0.fvRsMldsn.attributes.tnMldSnoopPolName == ''
+        - nm_update_bd_2.current.0.fvBD.children.1.fvRsBDToFhs.attributes.tnFhsBDPolName == ''
+        - nm_update_bd_2.current.0.fvBD.children.2.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == ''
+        - nm_update_bd_2_again is not changed
+        - nm_update_bd_2_again.previous == nm_update_bd_2_again.current
+
   - name: present asserts (<v4.2)
     ansible.builtin.assert:
       that:
@@ -308,10 +350,10 @@
         - bd_present_2b.sent.fvBD.children.1.fvRsMldsn.attributes.tnMldSnoopPolName == 'ansible_mld_snoop'
         - bd_present_2b.sent.fvBD.children.2.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
         - bd_present_2b.sent.fvBD.children.2.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
-        - bd_present_2b.sent.fvBD.children.3.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == 'uni/tn-ansible_test/igmpIfPol-ansible_igmp_pol'
+        - bd_present_2b.sent.fvBD.children.3.fvRsBDToFhs.attributes.tnFhsBDPolName == 'ansible_fhs'
         - bd_present_2b.sent.fvBD.children.4.fvAccP.attributes.encap == 'vlan-101'
         - bd_present_2b.sent.fvBD.children.5.fvRsABDPolMonPol.attributes.tnMonEPGPolName == 'ansible_monitoring_pol'
-        - bd_present_2b.sent.fvBD.children.6.fvRsBDToFhs.attributes.tnFhsBDPolName == 'ansible_fhs'
+        - bd_present_2b.sent.fvBD.children.6.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == 'uni/tn-ansible_test/igmpIfPol-ansible_igmp_pol'
         - bd_present_missing_param is failed
         - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
     when: version.current.0.topSystem.attributes.version is version('4.2', '>=') and
@@ -356,15 +398,110 @@
         - bd_present_2c.sent.fvBD.children.1.fvRsMldsn.attributes.tnMldSnoopPolName == 'ansible_mld_snoop'
         - bd_present_2c.sent.fvBD.children.2.fvRsBDToProfile.attributes.tnRtctrlProfileName == 'ansible_l3out_route'
         - bd_present_2c.sent.fvBD.children.2.fvRsBDToProfile.attributes.tnL3extOutName == 'ansible_l3out'
-        - bd_present_2c.sent.fvBD.children.3.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == 'uni/tn-ansible_test/igmpIfPol-ansible_igmp_pol'
+        - bd_present_2c.sent.fvBD.children.3.fvRsBDToFhs.attributes.tnFhsBDPolName == 'ansible_fhs'
         - bd_present_2c.sent.fvBD.children.4.fvAccP.attributes.encap == 'vlan-101'
         - bd_present_2c.sent.fvBD.children.5.fvRsABDPolMonPol.attributes.tnMonEPGPolName == 'ansible_monitoring_pol'
-        - bd_present_2c.sent.fvBD.children.6.fvRsBDToFhs.attributes.tnFhsBDPolName == 'ansible_fhs'
+        - bd_present_2c.sent.fvBD.children.6.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == 'uni/tn-ansible_test/igmpIfPol-ansible_igmp_pol'
         - bd_present_2c.sent.fvBD.children.7.pimBDP.children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
         - bd_present_2c.sent.fvBD.children.7.pimBDP.children.0.pimBDFilterPol.children.1.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
         - bd_present_missing_param is failed
         - 'bd_present_missing_param.msg == "state is present but all of the following are missing: tenant"'
     when: version.current.0.topSystem.attributes.version is version('6.0', '>=')
+
+  - name: execute tasks for pim source filter & pim destination filter (>=v5.2)
+    when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+    block:
+
+    - name: create another bd - check pim source filter (check_mode)
+      cisco.aci.aci_bd: &aci_bd_pim_s
+        <<: *aci_bd_present
+        bd: anstest_pim_s
+        pim_source_filter: ansible_route_map_pol
+      check_mode: true
+      register: cm_bd_pim_s
+      
+    - name: create another bd - check pim source filter (normal_mode)
+      cisco.aci.aci_bd:
+        <<: *aci_bd_pim_s
+      register: nm_bd_pim_s
+      
+    - name: create another bd - check pim source filter (testing idempotency)
+      cisco.aci.aci_bd:
+        <<: *aci_bd_pim_s 
+      register: nm_bd_pim_s_again
+
+    - name: update bd - remove pim source filter
+      cisco.aci.aci_bd:
+        <<: *aci_bd_pim_s
+        pim_source_filter: ""
+      register: nm_bd_pim_s_remove
+
+    - name: create another bd - check pim destination filter (check_mode)
+      cisco.aci.aci_bd: &aci_bd_pim_d
+        <<: *aci_bd_present
+        bd: anstest_pim_d
+        pim_destination_filter: ansible_route_map_pol
+      check_mode: true
+      register: cm_bd_pim_d
+      
+    - name: create another bd - check pim destination filter (normal_mode)
+      cisco.aci.aci_bd:
+        <<: *aci_bd_pim_d
+      register: nm_bd_pim_d
+     
+    - name: create another bd - check pim destination filter (testing idempotency)
+      cisco.aci.aci_bd:
+        <<: *aci_bd_pim_d 
+      register: nm_bd_pim_d_again
+
+    - name: update bd - remove pim destination filter
+      cisco.aci.aci_bd:
+        <<: *aci_bd_pim_d
+        pim_destination_filter: ""
+      register: nm_bd_pim_d_remove
+
+    - name: cleanup pim_s and pim_d BDs
+      cisco.aci.aci_bd:
+        <<: *aci_bd_present
+        bd: "{{ item }}"
+        state: absent
+      loop:
+        - anstest_pim_s
+        - anstest_pim_d
+
+    - name: asserts for pim source filter and pim destination filter
+      ansible.builtin.assert:
+        that:
+          - cm_bd_pim_s is changed
+          - cm_bd_pim_s.current == []
+          - cm_bd_pim_s.previous == []
+          - cm_bd_pim_s.proposed.fvBD.children.3.pimBDP.children.0.pimBDFilterPol.children | length == 1
+          - cm_bd_pim_s.proposed.fvBD.children.3.pimBDP.children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
+          - nm_bd_pim_s is changed
+          - nm_bd_pim_s.previous == []
+          - nm_bd_pim_s.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children | length == 1
+          - nm_bd_pim_s.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
+          - nm_bd_pim_s_again.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children | length == 1
+          - nm_bd_pim_s_again.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
+          - nm_bd_pim_s_again.previous.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children | length == 1
+          - nm_bd_pim_s_again.previous.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
+          - nm_bd_pim_s_remove.previous == nm_bd_pim_s.current
+          - nm_bd_pim_s_remove.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == ''
+          - cm_bd_pim_d is changed
+          - cm_bd_pim_d.current == []
+          - cm_bd_pim_d.previous == []
+          - cm_bd_pim_d.proposed.fvBD.children.3.pimBDP.children.0.pimBDFilterPol.children | length == 1
+          - cm_bd_pim_d.proposed.fvBD.children.3.pimBDP.children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
+          - nm_bd_pim_d is changed
+          - nm_bd_pim_d.previous == []
+          - nm_bd_pim_d.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children | length == 1
+          - nm_bd_pim_d.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
+          - nm_bd_pim_d_again.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children | length == 1
+          - nm_bd_pim_d_again.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
+          - nm_bd_pim_d_again.previous.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children | length == 1
+          - nm_bd_pim_d_again.previous.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
+          - nm_bd_pim_d_remove.previous == nm_bd_pim_d.current
+          - nm_bd_pim_d_remove.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == ''
 
   - name: get all bd
     cisco.aci.aci_bd: &aci_query
