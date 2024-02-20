@@ -65,9 +65,9 @@ author:
 EXAMPLES = r"""
 - name: Bind Bridge Domain to Netflow Monitor Policy
   cisco.aci.aci_bd_to_netflow_monitor_policy:
-    host: "{{ inventory_hostname }}"
-    username: "{{ username }}"
-    password: "{{ password }}"
+    host: apic
+    username: admin
+    password: SomeSecretPassword
     validate_certs: false
     bd: web_servers
     netflow_monitor_policy: prod_netflow_monitor_policy
@@ -78,9 +78,9 @@ EXAMPLES = r"""
 
 - name: Query all Bridge Domains bound to Netflow Monitor Policy
   cisco.aci.aci_bd_to_netflow_monitor_policy:
-    host: "{{ inventory_hostname }}"
-    username: "{{ username }}"
-    password: "{{ password }}"
+    host: apic
+    username: admin
+    password: SomeSecretPassword
     validate_certs: true
     state: query
   delegate_to: localhost
@@ -88,9 +88,9 @@ EXAMPLES = r"""
 
 - name: Query specific Bridge Domain(s) bound to an Netflow Monitor Policy
   cisco.aci.aci_bd_to_netflow_monitor_policy:
-    host: "{{ inventory_hostname }}"
-    username: "{{ username }}"
-    password: "{{ password }}"
+    host: apic
+    username: admin
+    password: SomeSecretPassword
     validate_certs: true
     bd: web_servers
     netflow_monitor_policy: prod_netflow_monitor_policy
@@ -101,9 +101,9 @@ EXAMPLES = r"""
 
 - name: Unbind Bridge Domain from Netflow Monitor Policy
   cisco.aci.aci_bd_to_netflow_monitor_policy:
-    host: "{{ inventory_hostname }}"
-    username: "{{ username }}"
-    password: "{{ password }}"
+    host: apic
+    username: admin
+    password: SomeSecretPassword
     validate_certs: true
     bd: web_servers
     netflow_monitor_policy: prod_netflow_monitor_policy
@@ -220,13 +220,6 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
-
-SUBNET_CONTROL_MAPPING = dict(
-    nd_ra="nd",
-    no_gw="no-default-gateway",
-    querier_ip="querier",
-    unspecified="",
-)
 
 
 def main():

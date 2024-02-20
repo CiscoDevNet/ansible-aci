@@ -62,79 +62,56 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create a tenant
-  cisco.aci.aci_tenant:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: production
-    state: present
-  delegate_to: localhost
-
-- name: Create a bridge domain
-  cisco.aci.aci_bd:
+- name: Create a Rogue Exception MAC
+  cisco.aci.aci_bd_rogue_exception_mac:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
     bd: database
+    mac: "AA:BB:CC:DD:EE:11"
+    description: 1st MAC
     state: present
   delegate_to: localhost
 
-- name: Create a subnet
-  cisco.aci.aci_bd_subnet:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: production
-    bd: database
-    gateway: 10.1.1.1
-    mask: 24
-    state: present
-  delegate_to: localhost
-
-- name: Get all subnets
-  cisco.aci.aci_bd_subnet:
+- name: Get all Rogue Exception MACs
+  cisco.aci.aci_bd_rogue_exception_mac:
     host: apic
     username: admin
     password: SomeSecretPassword
     state: query
   delegate_to: localhost
 
-- name: Get all subnets of specific gateway in specified tenant
-  cisco.aci.aci_bd_subnet:
+- name: Get all Rogue Exception MACs in specified Tenant
+  cisco.aci.aci_bd_rogue_exception_mac:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
-    gateway: 10.1.1.1
-    mask: 24
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Get specific subnet
-  cisco.aci.aci_bd_subnet:
+- name: Get specific Rogue Exception MAC
+  cisco.aci.aci_bd_rogue_exception_mac:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
     bd: database
-    gateway: 10.1.1.1
-    mask: 24
+    mac: "AA:BB:CC:DD:EE:11"
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Delete a subnet
-  cisco.aci.aci_bd_subnet:
+- name: Remove a Rogue Exception MAC from a Bridge Domain
+  cisco.aci.aci_bd_rogue_exception_mac:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: production
     bd: database
-    gateway: 10.1.1.1
-    mask: 24
+    mac: "AA:BB:CC:DD:EE:11"
     state: absent
   delegate_to: localhost
 """
