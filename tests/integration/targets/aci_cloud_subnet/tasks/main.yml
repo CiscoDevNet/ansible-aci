@@ -126,7 +126,7 @@
       - nm_add_subnet_again.previous.0.cloudSubnet.attributes.dn == "uni/tn-ansible_test/ctxprofile-ctx_profile_1/cidr-[10.50.0.0/16]/subnet-[10.50.0.1]"
       - nm_add_subnet_again.previous.0.cloudSubnet.attributes.annotation == "orchestrator:ansible"
       - nm_add_subnet_again.previous.0.cloudSubnet.attributes.scope == "private"
-      - nm_invalid_subnet_zone.msg == "Configuring both an AWS availability zone and an Azure region is invalid."
+      - nm_invalid_subnet_zone.msg == "parameters are mutually exclusive{{":"}} aws_availability_zone|azure_region"
 
   - name: Verify create tasks for Azure
     ansible.builtin.assert:
