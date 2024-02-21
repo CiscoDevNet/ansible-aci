@@ -59,19 +59,19 @@ options:
   aws_availability_zone:
     description:
     - The cloud zone which is attached to the given cloud context profile.
-    - Only used when it is an AWS cloud apic.
+    - Only used when it is an AWS Cloud APIC.
     type: str
     aliases: [availability_zone, av_zone, zone]
   vnet_gateway:
     description:
     - Determine if a vNet Gateway Router will be deployed or not.
-    - Only used when it is an Azure cloud apic.
+    - Only used when it is an Azure Cloud APIC.
     type: bool
     default: false
   azure_region:
     description:
     - The Azure cloud region to attach this subnet to.
-    - Only used when it is an Azure cloud apic.
+    - Only used when it is an Azure Cloud APIC.
     type: str
     aliases: [az_region]
   state:
@@ -273,6 +273,7 @@ def main():
             ["state", "absent", ["tenant", "cloud_context_profile", "cidr", "address"]],
             ["state", "present", ["tenant", "cloud_context_profile", "cidr", "address"]],
         ],
+        mutually_exclusive=[("aws_availability_zone", "azure_region")],
     )
 
     name = module.params.get("name")
@@ -287,9 +288,6 @@ def main():
     aws_availability_zone = module.params.get("aws_availability_zone")
     azure_region = module.params.get("azure_region")
     child_configs = []
-
-    if aws_availability_zone and azure_region:
-        module.fail_json(msg="Configuring both an AWS availability zone and an Azure region is invalid.")
 
     aci = ACIModule(module)
     aci.construct_url(
