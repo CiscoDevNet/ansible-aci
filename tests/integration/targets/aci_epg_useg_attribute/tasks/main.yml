@@ -1,0 +1,19 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Christian Kolrep (@Christian-Kolrep)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: test fvIpAttr 
+  include_tasks: ip_attr.yml
+
+- name: test fvMacAttr
+  include_tasks: mac_attr.yml
+
+- name: test fvVmAttr type vm_custom_attr 
+  include_tasks: vm_custom_attr.yml
+
+- name: test fvVmAttr type vm_name 
+  include_tasks: vm_name.yml
+
+- name: test fvVmAttr type vm_tag 
+  include_tasks: vm_tag.yml

@@ -232,6 +232,7 @@ MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING = dict(
 )
 
 ECC_CURVE = {"P256": "prime256v1", "P384": "secp384r1", "P521": "secp521r1", "none": "none"}
+
 THROTTLE_UNIT = dict(requests_per_second="r/s", requests_per_minute="r/m")
 
 SSH_CIPHERS = dict(
@@ -261,3 +262,20 @@ KEX_ALGORITHMS = dict(
     ecdh_384="ecdh-sha2-nistp384",
     ecdh_521="ecdh-sha2-nistp521",
 )
+
+USEG_ATTRIBUTE_MAPPING = dict(
+    vm_name=dict(attr_type="vm-name", attr_class="fvVmAttr"),
+    vm_guest=dict(attr_type="guest-os", attr_class="fvVmAttr"),
+    vm_host=dict(attr_type="hv", attr_class="fvVmAttr"),
+    vm_id=dict(attr_type="vm", attr_class="fvVmAttr"),
+    vmm_domain=dict(attr_type="domain", attr_class="fvVmAttr"),
+    vm_datacenter=dict(attr_type="rootContName", attr_class="fvVmAttr"),
+    vm_custom_attr=dict(attr_type="custom-label", attr_class="fvVmAttr"),
+    vm_tag=dict(attr_type="tag", attr_class="fvVmAttr"),
+    vm_nic=dict(attr_type="vnic", attr_class="fvVmAttr"),
+    ip=dict(attr_type="ip", attr_class="fvIpAttr"),
+    mac=dict(attr_type="mac", attr_class="fvMacAttr"),
+)
+
+# useg attribute operator mapping
+OPERATOR_MAPPING = dict(equals="equals", contains="contains", starts_with="startsWith", ends_with="endsWith")
