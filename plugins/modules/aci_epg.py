@@ -78,6 +78,23 @@ options:
     - Use C(yes) to create uSeg EPG and C(no) is used to create Application EPG.
     type: str
     choices: [ 'yes', 'no' ]
+  match:
+    description:
+    - The match type of the default Criterion.
+    - The APIC defaults to C(any) when unset during creation.
+    type: str
+    choices: [ any, all ]
+  precedence:
+    description:
+    - The Criterion Precedence to resolve equal matches between micro segmented EPGs.
+    - The APIC defaults to C(0) when unset during creation.
+    type: int
+  scope:
+    description:
+    - The scope of the default Criterion.
+    - The APIC defaults to C(scope-bd) when unset during creation.
+    type: str
+    choices: [ scope-bd, scope-vrf ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -155,6 +172,24 @@ EXAMPLES = r"""
     monitoring_policy: default
     preferred_group: true
     useg: 'yes'
+    state: present
+  delegate_to: localhost
+
+- name: Add a uSeg EPG with criterion match and precedence
+  cisco.aci.aci_epg:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: production
+    ap: intranet
+    epg: web_epg
+    description: Web Intranet EPG
+    bd: prod_bd
+    monitoring_policy: default
+    preferred_group: true
+    useg: 'yes'
+    match: all
+    precedence: 1
     state: present
   delegate_to: localhost
 
@@ -342,6 +377,9 @@ def main():
         monitoring_policy=dict(type="str"),
         custom_qos_policy=dict(type="str"),
         useg=dict(type="str", choices=["yes", "no"]),
+        match=dict(type="str", choices=["all", "any"]),
+        precedence=dict(type="int"),
+        scope=dict(type="str", choices=["scope-bd", "scope-vrf"]),
     )
 
     module = AnsibleModule(
@@ -369,6 +407,9 @@ def main():
     monitoring_policy = module.params.get("monitoring_policy")
     custom_qos_policy = module.params.get("custom_qos_policy")
     useg = module.params.get("useg")
+    match = module.params.get("match")
+    precedence = module.params.get("precedence")
+    scope = module.params.get("scope")
 
     child_configs = [dict(fvRsBd=dict(attributes=dict(tnFvBDName=bd))), dict(fvRsAEPgMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy)))]
 
@@ -394,12 +435,17 @@ def main():
             module_object=epg,
             target_filter={"name": epg},
         ),
-        child_classes=["fvRsBd", "fvRsAEPgMonPol", "fvRsCustQosPol"],
+        child_classes=["fvRsBd", "fvRsAEPgMonPol", "fvRsCustQosPol", "fvCrtrn"],
     )
 
     aci.get_existing()
 
     if state == "present":
+        if useg is not None and aci.existing and aci.existing[0]["fvAEPg"]["attributes"]["isAttrBasedEPg"] != useg:
+            module.fail_json(msg="Changing attribute useg on existing EPG is not supported.")
+        if useg == "yes":
+            child_configs.append(dict(fvCrtrn=dict(attributes=dict(name="default", match=match, prec=precedence, scope=scope))))
+
         aci.payload(
             aci_class="fvAEPg",
             class_config=dict(

@@ -1,0 +1,198 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Christian Kolrep (@Christian-Kolrep)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# CLEAN ENVIRONMENT
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+- name: Query system information
+  aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: ensure tenant exists for tests to kick off
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      tenant: ansible_test_useg
+      state: present
+    register: tenant_present
+
+  - name: ensure ap exists for tests to kick off
+    cisco.aci.aci_ap: &aci_ap_present
+      <<: *aci_tenant_present
+      ap: anstest
+    register: ap_present
+
+  - name: ensure bd exists for tests to kick off
+    cisco.aci.aci_bd: &aci_bd_present
+      <<: *aci_tenant_present
+      bd: anstest
+    register: bd_present
+
+  - name: ensure useg epg exists for tests to kick off
+    cisco.aci.aci_epg: &aci_epg_present
+      <<: *aci_ap_present
+      epg: anstest
+      bd: anstest
+      useg: yes
+    register: epg_present
+
+  - name: ensure useg attribute of type vm_name not exists for tests to kick off
+    cisco.aci.aci_epg_useg_attribute:
+      <<: *aci_ap_present
+      epg: anstest
+      useg_attribute_name: anstest
+      useg_attribute_type: vm_name
+      state: absent
+
+  - name: Add a useg attribute of type vm_name ( check mode )
+    cisco.aci.aci_epg_useg_attribute: &aci_vm_name_present
+      <<: *aci_ap_present
+      epg: anstest
+      useg_attribute_name: anstest
+      useg_attribute_type: vm_name
+      operator: equals
+      value: ANSVM01
+    check_mode: true
+    register: vm_name_present_check_mode
+
+  - name: Add a useg attribute of type vm_name - creation works
+    cisco.aci.aci_epg_useg_attribute:
+      <<: *aci_vm_name_present
+    register: vm_name_present
+
+  - name: Add a 2nd useg attribute of type vm_name
+    cisco.aci.aci_epg_useg_attribute:
+      <<: *aci_ap_present
+      epg: anstest
+      useg_attribute_name: anstest2
+      useg_attribute_type: vm_name
+      operator: equals
+      value: ANSVM03
+    register: vm_name_present_2
+
+  - name: Add a useg attribute of type vm_name - idempotency works
+    cisco.aci.aci_epg_useg_attribute:
+      <<: *aci_vm_name_present 
+    register: vm_name_present_idempotent
+
+  - name: Update a useg attribute of type vm_name
+    cisco.aci.aci_epg_useg_attribute:
+      <<: *aci_vm_name_present
+      operator: contains
+      value: ANSVM02
+
+    register: vm_name_update
+
+  - name: Add a useg attribute of type vm_name - missing params
+    cisco.aci.aci_epg_useg_attribute:
+      <<: *aci_vm_name_present
+      epg: "{{ fake_var | default(omit) }}"
+    ignore_errors: true
+    register: vm_name_present_missing_params
+
+  - name: vm_name present assertions
+    assert:
+      that:
+        - vm_name_present_check_mode is changed
+        - vm_name_present is changed
+        - vm_name_present.previous == []
+        - vm_name_present.sent.fvVmAttr.attributes.name == 'anstest'
+        - vm_name_present.sent.fvVmAttr.attributes.value == 'ANSVM01'
+        - vm_name_present.sent.fvVmAttr.attributes.type == 'vm-name'
+        - vm_name_present.sent.fvVmAttr.attributes.operator == 'equals'
+        - vm_name_present.current.0.fvVmAttr.attributes.annotation == 'orchestrator:ansible'
+        - vm_name_present_idempotent is not changed
+        - vm_name_present_idempotent.sent == {}
+        - vm_name_update is changed
+        - vm_name_update.sent.fvVmAttr.attributes.operator == 'contains'
+        - vm_name_update.sent.fvVmAttr.attributes.value == 'ANSVM02'
+        - vm_name_present_missing_params is failed
+        - 'vm_name_present_missing_params.msg == "state is present but all of the following are missing: epg"'
+
+  - name: Query a useg attribute of type vm_name
+    cisco.aci.aci_epg_useg_attribute:
+      <<: *aci_vm_name_present
+      state: query
+    register: vm_name_query
+
+  - name: Query all useg attribute of type vm_name
+    cisco.aci.aci_epg_useg_attribute:
+      <<: *aci_vm_name_present
+      useg_attribute_name: "{{ fake_var | default(omit) }}"
+      state: query
+    register: vm_name_query_all
+
+  - name: vm_name query assertions
+    assert:
+      that:
+        - vm_name_query is not changed
+        - vm_name_query.current | length == 1
+        - vm_name_query_all is not changed
+        - vm_name_query_all.current.0.fvCrtrn.children | length > 1
+
+  - name: Delete a useg attribute of type vm_name ( check mode )
+    cisco.aci.aci_epg_useg_attribute: &aci_vm_name_absent
+      <<: *aci_vm_name_present
+      state: absent
+    check_mode: true
+    register: vm_name_absent_check_mode
+
+  - name: Delete a useg attribute of type vm_name - delete works
+    cisco.aci.aci_epg_useg_attribute:
+      <<: *aci_vm_name_absent
+    register: vm_name_absent
+
+  - name: Delete a useg attribute of type vm_name - idempotency works
+    cisco.aci.aci_epg_useg_attribute:
+      <<: *aci_vm_name_absent
+    register: vm_name_absent_idempotent
+
+  - name: Delete a useg attribute of type vm_name - missing params
+    cisco.aci.aci_epg_useg_attribute:
+      <<: *aci_vm_name_absent
+      epg: "{{ fake_var | default(omit) }}"
+      state: absent
+    ignore_errors: true
+    register: vm_name_absent_missing_params
+
+  - name: vm_name absent assertions
+    assert:
+      that:
+        - vm_name_absent_check_mode is changed
+        - vm_name_absent_check_mode.previous != []
+        - vm_name_absent is changed
+        - vm_name_absent.previous == vm_name_absent_check_mode.previous
+        - vm_name_absent_idempotent is not changed
+        - vm_name_absent_idempotent.previous == []
+        - vm_name_absent_missing_params is failed
+        - 'vm_name_absent_missing_params.msg == "state is absent but all of the following are missing: epg"'
+
+  - name: remove tenant - cleanup
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent
+    when: tenant_present is changed
