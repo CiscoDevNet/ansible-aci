@@ -153,7 +153,6 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     storm_control_policy: my_storm_control_policy
     description: My Storm Control Policy
-    storm_control_types: all_types
     all_types_configuration:
       rate: 80
       burst_rate: 100
