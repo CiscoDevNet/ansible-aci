@@ -43,7 +43,6 @@
       <<: *aci_info
       storm_control_policy: ansible_storm_control_policy_1
       description: Storm Control policy 1
-      storm_control_types: all_types
       all_types_configuration:
         rate: 100
         burst_rate: 125
@@ -68,7 +67,6 @@
       <<: *aci_info
       storm_control_policy: ansible_storm_control_policy_2
       description: Storm Control policy 2
-      storm_control_types: unicast_broadcast_multicast
       broadcast_configuration:
         rate: 100
         burst_rate: 125
@@ -87,7 +85,6 @@
     cisco.aci.aci_interface_policy_storm_control:
       <<: *aci_info
       storm_control_policy: ansible_storm_control_policy_3
-      storm_control_types: unicast_broadcast_multicast
       broadcast_configuration:
         rate: 25
         burst_rate: 50
@@ -98,7 +95,6 @@
     cisco.aci.aci_interface_policy_storm_control:
       <<: *aci_info
       storm_control_policy: ansible_storm_control_policy_4
-      storm_control_types: all_types
       all_types_configuration:
         rate: 125
         burst_rate: 100
