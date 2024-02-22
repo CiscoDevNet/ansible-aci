@@ -38,11 +38,6 @@ options:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
     type: str
-  storm_control_types:
-    description:
-    - Whether or not the per-packet type numbers are valid.
-    type: str
-    choices: [all_types, unicast_broadcast_multicast]
   storm_control_action:
     description:
     - The storm control action to take when triggered.
@@ -311,7 +306,6 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import (
     aci_owner_spec,
     storm_control_policy_rate_spec,
 )
-from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_STORM_CONTROL_POLICY_TYPE_MAPPING
 
 
 def main():
@@ -325,7 +319,6 @@ def main():
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
-        storm_control_types=dict(type="str", choices=["all_types", "unicast_broadcast_multicast"]),
         all_types_configuration=dict(type="dict", options=storm_control_policy_rate_spec(), aliases=["all_types"]),
         broadcast_configuration=dict(type="dict", options=storm_control_policy_rate_spec(), aliases=["broadcast"]),
         multicast_configuration=dict(type="dict", options=storm_control_policy_rate_spec(), aliases=["multicast"]),
@@ -354,7 +347,6 @@ def main():
     description = module.params.get("description")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
-    storm_control_types = MATCH_STORM_CONTROL_POLICY_TYPE_MAPPING.get(module.params.get("storm_control_types"))
     storm_control_action = module.params.get("storm_control_action")
     storm_control_soak_action = module.params.get("storm_control_soak_action")
     all_types_configuration = module.params.get("all_types_configuration")
@@ -391,10 +383,12 @@ def main():
 
     if all_types_configuration is not None:
         rates_input.update(get_rates_configuration(all_types_configuration, "rate", "ratePps", "burstRate", "burstPps"))
+        storm_control_types = "Invalid"
     elif any([broadcast_configuration, multicast_configuration, unicast_configuration]):
         rates_input.update(get_rates_configuration(broadcast_configuration, "bcRate", "bcRatePps", "bcBurstRate", "bcBurstPps"))
         rates_input.update(get_rates_configuration(multicast_configuration, "mcRate", "mcRatePps", "mcBurstRate", "mcBurstPps"))
         rates_input.update(get_rates_configuration(unicast_configuration, "uucRate", "uucRatePps", "uucBurstRate", "uucBurstPps"))
+        storm_control_types = "Valid"
 
     aci.construct_url(
         root_class=dict(
