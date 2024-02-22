@@ -3,8 +3,8 @@
 
 # Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
 # Copyright: (c) 2020, Shreyas Srish <ssrish@cisco.com>
-# Adapted from aci_interface_policy_leaf_profile
 # Copyright: (c) 2023, Eric Girard <@netgirard>
+# Copyright: (c) 2024, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -58,6 +58,7 @@ author:
 - Bruno Calogero (@brunocalogero)
 - Shreyas Srish (@shrsr)
 - Eric Girard (@netgirard)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
@@ -69,15 +70,6 @@ EXAMPLES = r"""
     interface_profile: spineintprfname
     description:  spineintprfname description
     state: present
-  delegate_to: localhost
-
-- name: Remove a spine_interface_profile
-  cisco.aci.aci_interface_policy_spine_profile:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    interface_profile: spineintprfname
-    state: absent
   delegate_to: localhost
 
 - name: Query a spine_interface_profile
@@ -96,6 +88,15 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     state: query
+  delegate_to: localhost
+
+- name: Remove a spine_interface_profile
+  cisco.aci.aci_interface_policy_spine_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    interface_profile: spineintprfname
+    state: absent
   delegate_to: localhost
 """
 
@@ -223,9 +224,7 @@ def main():
             ],
         ),
         description=dict(type="str", aliases=["descr"]),
-        state=dict(
-            type="str", default="present", choices=["absent", "present", "query"]
-        ),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
 
@@ -244,12 +243,15 @@ def main():
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
-    aci_class = "infraSpAccPortP"
-    aci_rn = "spaccportprof"
+
     aci.construct_url(
         root_class=dict(
-            aci_class=aci_class,
-            aci_rn="infra/" + aci_rn + "-{0}".format(interface_profile),
+            aci_class="infraInfra",
+            aci_rn="infra",
+        ),
+        subclass_1=dict(
+            aci_class="infraSpAccPortP",
+            aci_rn="spaccportprof-{0}".format(interface_profile),
             module_object=interface_profile,
             target_filter={"name": interface_profile},
         ),
@@ -259,7 +261,7 @@ def main():
 
     if state == "present":
         aci.payload(
-            aci_class=aci_class,
+            aci_class="infraSpAccPortP",
             class_config=dict(
                 name=interface_profile,
                 descr=description,
@@ -267,7 +269,7 @@ def main():
             ),
         )
 
-        aci.get_diff(aci_class=aci_class)
+        aci.get_diff(aci_class="infraSpAccPortP")
 
         aci.post_config()
 

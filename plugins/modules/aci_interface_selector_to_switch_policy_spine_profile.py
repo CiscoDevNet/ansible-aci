@@ -4,6 +4,7 @@
 # Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
 # Adapted from aci_interface_selector_to_switch_policy_leaf_profile
 # Copyright: (c) 2023, Eric Girard <@netgirard>
+# Copyright: (c) 2024, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -55,6 +56,7 @@ seealso:
 author:
 - Bruno Calogero (@brunocalogero)
 - Eric Girard (@netgirard)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
@@ -68,16 +70,6 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Remove an interface selector profile associated with a switch policy spine profile
-  cisco.aci.aci_interface_selector_to_switch_policy_spine_profile:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    spine_profile: sw_name
-    interface_selector: interface_profile_name
-    state: absent
-  delegate_to: localhost
-
 - name: Query an interface selector profile associated with a switch policy spine profile
   cisco.aci.aci_interface_selector_to_switch_policy_spine_profile:
     host: apic
@@ -87,7 +79,24 @@ EXAMPLES = r"""
     interface_selector: interface_profile_name
     state: query
   delegate_to: localhost
-  register: query_result
+
+- name: Query all association of interface selector profiles with a switch policy spine profile
+  cisco.aci.aci_interface_selector_to_switch_policy_spine_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+
+- name: Remove an interface selector profile associated with a switch policy spine profile
+  cisco.aci.aci_interface_selector_to_switch_policy_spine_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    spine_profile: sw_name
+    interface_selector: interface_profile_name
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
@@ -211,9 +220,7 @@ def main():
             type="str",
             aliases=["interface_profile_name", "interface_selector_name", "name"],
         ),  # Not required for querying all objects
-        state=dict(
-            type="str", default="present", choices=["absent", "present", "query"]
-        ),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
     module = AnsibleModule(
@@ -236,12 +243,16 @@ def main():
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
+            aci_class="infraInfra",
+            aci_rn="infra",
+        ),
+        subclass_1=dict(
             aci_class="infraSpineP",
-            aci_rn="infra/spprof-{0}".format(spine_profile),
+            aci_rn="spprof-{0}".format(spine_profile),
             module_object=spine_profile,
             target_filter={"name": spine_profile},
         ),
-        subclass_1=dict(
+        subclass_2=dict(
             aci_class="infraRsSpAccPortP",
             aci_rn="rsspAccPortP-[{0}]".format(interface_selector_tDn),
             module_object=interface_selector,

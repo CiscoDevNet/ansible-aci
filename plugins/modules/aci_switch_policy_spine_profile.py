@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
-# Adapted from aci_switch_policy_leaf_profile
 # Copyright: (c) 2023, Eric Girard <@netgirard>
+# Copyright: (c) 2024, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -19,7 +19,7 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = r"""
 ---
 module: aci_switch_policy_spine_profile
-short_description: Manage switch policy spine profiles (infra:SpineP)
+short_description: Manage Switch Policy Spine Profiles (infra:SpineP)
 description:
 - Manage switch policy spine profiles on Cisco ACI fabrics.
 options:
@@ -57,10 +57,11 @@ seealso:
 author:
 - Bruno Calogero (@brunocalogero)
 - Eric Girard (@netgirard)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: creating a Spine Profile with description
+- name: Add a new Spine Profile
   cisco.aci.aci_switch_policy_spine_profile:
     host: apic
     username: admin
@@ -68,15 +69,6 @@ EXAMPLES = r"""
     spine_profile: sw_name
     description: sw_description
     state: present
-  delegate_to: localhost
-
-- name: Deleting a Spine Profile
-  cisco.aci.aci_switch_policy_spine_profile:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    spine_profile: sw_name
-    state: absent
   delegate_to: localhost
 
 - name: Query a Spine Profile
@@ -87,7 +79,23 @@ EXAMPLES = r"""
     spine_profile: sw_name
     state: query
   delegate_to: localhost
-  register: query_result
+
+- name: Query all Spine Profiles
+  cisco.aci.aci_switch_policy_spine_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+
+- name: Remove a Spine Profile
+  cisco.aci.aci_switch_policy_spine_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    spine_profile: sw_name
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
@@ -204,13 +212,9 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        spine_profile=dict(
-            type="str", aliases=["name", "spine_profile_name"]
-        ),  # Not required for querying all objects
+        spine_profile=dict(type="str", aliases=["name", "spine_profile_name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
-        state=dict(
-            type="str", default="present", choices=["absent", "present", "query"]
-        ),
+        state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
 
@@ -231,8 +235,12 @@ def main():
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
+            aci_class="infraInfra",
+            aci_rn="infra",
+        ),
+        subclass_1=dict(
             aci_class="infraSpineP",
-            aci_rn="infra/spprof-{0}".format(spine_profile),
+            aci_rn="spprof-{0}".format(spine_profile),
             module_object=spine_profile,
             target_filter={"name": spine_profile},
         ),
