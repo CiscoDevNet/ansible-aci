@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2023, Christian Kolrep <christian.kolrep@dataport.de>
+# Copyright: (c) 2024, Akini Ross <akinross@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -122,6 +124,8 @@ seealso:
 author:
 - Swetha Chunduri (@schunduri)
 - Shreyas Srish (@shrsr)
+- Christian Kolrep (@Christian-Kolrep)
+- Akini Ross (@akinross)
 """
 
 EXAMPLES = r"""
@@ -140,7 +144,8 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- aci_epg:
+- Add two new EPG
+  cisco.aci.aci_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -193,19 +198,6 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Remove an EPG
-  cisco.aci.aci_epg:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    validate_certs: false
-    tenant: production
-    app_profile: intranet
-    epg: web_epg
-    monitoring_policy: default
-    state: absent
-  delegate_to: localhost
-
 - name: Query an EPG
   cisco.aci.aci_epg:
     host: apic
@@ -248,6 +240,19 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Remove an EPG
+  cisco.aci.aci_epg:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    validate_certs: false
+    tenant: production
+    app_profile: intranet
+    epg: web_epg
+    monitoring_policy: default
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
