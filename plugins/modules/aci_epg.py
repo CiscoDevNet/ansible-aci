@@ -82,18 +82,18 @@ options:
     choices: [ 'yes', 'no' ]
   match:
     description:
-    - The match type of the default Criterion.
+    - The match type of the default Block Statement (fv:Crtrn).
     - The APIC defaults to C(any) when unset during creation.
     type: str
     choices: [ any, all ]
   precedence:
     description:
-    - The Criterion Precedence to resolve equal matches between micro segmented EPGs.
+    - The Block Statement(fv:Crtrn) Precedence to resolve equal matches between micro segmented EPGs.
     - The APIC defaults to C(0) when unset during creation.
     type: int
   scope:
     description:
-    - The scope of the default Criterion.
+    - The scope of the default Block Statement (fv:Crtrn).
     - The APIC defaults to C(scope-bd) when unset during creation.
     type: str
     choices: [ scope-bd, scope-vrf ]
