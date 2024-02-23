@@ -1,0 +1,251 @@
+# Test code for the ACI modules
+# Copyright: (c) 2024, Akini Ross (@akinross)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites ( clean after )
+  when:
+  - query_cloud.current == []
+  block:
+
+    # CLEAN TEST ENVIRONMENT
+    - name: Ensure tenant removed
+      cisco.aci.aci_tenant: &aci_tenant_absent
+        <<: *aci_info
+        state: absent
+        tenant: ansible_test
+
+    # SETUP TEST ENVIRONMENT
+    - name: Create tenant
+      cisco.aci.aci_tenant: &aci_tenant_present
+        <<: *aci_tenant_absent
+        state: present
+    
+    - name: Create AP
+      cisco.aci.aci_ap: &aci_ap
+        <<: *aci_tenant_present
+        ap: ansible_test
+
+    - name: Create uSeg EPG
+      cisco.aci.aci_epg:
+        <<: *aci_ap
+        epg: ansible_test_1
+        bd: ansible_test
+        useg: yes
+    
+    # CREATE AND UPDATE TESTS
+    - name: Create block statement in default block (check mode)
+      cisco.aci.aci_epg_useg_attribute_block_statement: &block_a_parent_default_present
+        <<: *aci_ap
+        epg: ansible_test_1
+        name: block_a
+      check_mode: true
+      register: cm_create_block_a_parent_default
+
+    - name: Create block statement in default block
+      cisco.aci.aci_epg_useg_attribute_block_statement:
+        <<: *block_a_parent_default_present
+      register: nm_create_block_a_parent_default
+
+    - name: Create block statement in default block again
+      cisco.aci.aci_epg_useg_attribute_block_statement:
+        <<: *block_a_parent_default_present
+      register: nm_create_block_a_parent_default_again
+    
+    - name: Assert create block statement in default block
+      ansible.builtin.assert:
+        that:
+          - cm_create_block_a_parent_default is changed
+          - cm_create_block_a_parent_default.previous == []
+          - cm_create_block_a_parent_default.current == []
+          - cm_create_block_a_parent_default.proposed.fvSCrtrn.attributes.name == "block_a"
+          - cm_create_block_a_parent_default.proposed.fvSCrtrn.attributes.dn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test_1/crtrn/crtrn-block_a"
+          - nm_create_block_a_parent_default is changed
+          - nm_create_block_a_parent_default.previous == []
+          - nm_create_block_a_parent_default.current.0.fvSCrtrn.attributes.name == "block_a"
+          - nm_create_block_a_parent_default.current.0.fvSCrtrn.attributes.match == "any"
+          - nm_create_block_a_parent_default.current.0.fvSCrtrn.attributes.dn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test_1/crtrn/crtrn-block_a"
+          - nm_create_block_a_parent_default_again is not changed
+          - nm_create_block_a_parent_default_again.previous.0.fvSCrtrn.attributes.name == "block_a"
+          - nm_create_block_a_parent_default_again.previous.0.fvSCrtrn.attributes.match == "any"
+          - nm_create_block_a_parent_default_again.previous.0.fvSCrtrn.attributes.dn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test_1/crtrn/crtrn-block_a"
+          - nm_create_block_a_parent_default_again.current.0.fvSCrtrn.attributes.name == "block_a"
+          - nm_create_block_a_parent_default_again.current.0.fvSCrtrn.attributes.match == "any"
+          - nm_create_block_a_parent_default_again.current.0.fvSCrtrn.attributes.dn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test_1/crtrn/crtrn-block_a"
+    
+    - name: Update block statement in default block
+      cisco.aci.aci_epg_useg_attribute_block_statement:
+        <<: *block_a_parent_default_present
+        match: all
+        state: present
+      register: nm_update_block_a_parent_default
+
+    - name: Assert update block statement match
+      ansible.builtin.assert:
+        that:
+          - nm_update_block_a_parent_default is changed
+          - nm_update_block_a_parent_default.previous.0.fvSCrtrn.attributes.name == "block_a"
+          - nm_update_block_a_parent_default.previous.0.fvSCrtrn.attributes.match == "any"
+          - nm_update_block_a_parent_default.previous.0.fvSCrtrn.attributes.dn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test_1/crtrn/crtrn-block_a"
+          - nm_update_block_a_parent_default.current.0.fvSCrtrn.attributes.name == "block_a"
+          - nm_update_block_a_parent_default.current.0.fvSCrtrn.attributes.match == "all"
+          - nm_update_block_a_parent_default.current.0.fvSCrtrn.attributes.dn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test_1/crtrn/crtrn-block_a"
+
+    - name: Create block statement in block_a
+      cisco.aci.aci_epg_useg_attribute_block_statement: &block_b_parent_block_a
+        <<: *block_a_parent_default_present
+        name: block_b
+        match: all
+        parent_block_statements:
+        - block_a
+      register: nm_create_block_b_parent_block_a
+    
+    - name: Create block statement in block_b
+      cisco.aci.aci_epg_useg_attribute_block_statement: &block_c_parent_block_b
+        <<: *block_a_parent_default_present
+        name: block_c
+        match: any
+        parent_block_statements:
+        - block_a
+        - block_b
+      register: nm_create_block_c_parent_block_b
+
+    - name: Assert create block statement in default block
+      ansible.builtin.assert:
+        that:
+          - nm_create_block_b_parent_block_a is changed
+          - nm_create_block_b_parent_block_a.previous == []
+          - nm_create_block_b_parent_block_a.current.0.fvSCrtrn.attributes.name == "block_b"
+          - nm_create_block_b_parent_block_a.current.0.fvSCrtrn.attributes.match == "all"
+          - nm_create_block_b_parent_block_a.current.0.fvSCrtrn.attributes.dn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test_1/crtrn/crtrn-block_a/crtrn-block_b"
+          - nm_create_block_c_parent_block_b is changed
+          - nm_create_block_c_parent_block_b.previous == []
+          - nm_create_block_c_parent_block_b.current.0.fvSCrtrn.attributes.name == "block_c"
+          - nm_create_block_c_parent_block_b.current.0.fvSCrtrn.attributes.match == "any"
+          - nm_create_block_c_parent_block_b.current.0.fvSCrtrn.attributes.dn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test_1/crtrn/crtrn-block_a/crtrn-block_b/crtrn-block_c"
+
+    - name: Create block statement in block_c (error)
+      cisco.aci.aci_epg_useg_attribute_block_statement:
+        <<: *block_a_parent_default_present
+        name: block_d
+        match: any
+        parent_block_statements:
+        - block_a
+        - block_b
+        - block_c
+      register: err_too_many_blocks
+      ignore_errors: true
+    
+    - name: Assert create block statement in default block
+      ansible.builtin.assert:
+        that:
+          - err_too_many_blocks is failed
+          - err_too_many_blocks.msg == "3 block statements are provided but the maximum amount of parent_block_statements is 2"
+
+    # QUERY TESTS
+    - name: Query block statement in default block
+      cisco.aci.aci_epg_useg_attribute_block_statement:
+        <<: *block_a_parent_default_present
+        state: query
+      register: query_block_a_parent_default
+    
+    - name: Query all block statements
+      cisco.aci.aci_epg_useg_attribute_block_statement:
+        <<: *aci_info
+        state: query
+      register: query_all_blocks
+    
+    - name: Assert query block statements
+      ansible.builtin.assert:
+        that:
+          - query_block_a_parent_default is not changed
+          - query_block_a_parent_default.current | length == 1
+          - query_block_a_parent_default.current.0.fvSCrtrn.attributes.name == "block_a"
+          - query_block_a_parent_default.current.0.fvSCrtrn.attributes.match == "all"
+          - query_block_a_parent_default.current.0.fvSCrtrn.attributes.dn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test_1/crtrn/crtrn-block_a"
+          - query_all_blocks is not changed
+          - query_all_blocks.current | length >= 3
+
+    # REMOVE TESTS
+    - name: Remove block statement from block_b
+      cisco.aci.aci_epg_useg_attribute_block_statement:
+        <<: *block_c_parent_block_b
+        state: absent
+      register: rm_block_c_parent_block_b
+
+    - name: Remove block statement from block_a
+      cisco.aci.aci_epg_useg_attribute_block_statement:
+        <<: *block_b_parent_block_a
+        state: absent
+      register: rm_block_b_parent_block_a
+    
+    - name: Remove block statement from default (check mode)
+      cisco.aci.aci_epg_useg_attribute_block_statement: &block_a_parent_default_absent
+        <<: *block_a_parent_default_present
+        state: absent
+      register: cm_remove_block_a_parent_default
+      check_mode: true
+    
+    - name: Remove block statement from default
+      cisco.aci.aci_epg_useg_attribute_block_statement:
+        <<: *block_a_parent_default_absent
+      register: nm_remove_block_a_parent_default
+
+    - name: Remove block statement from default again
+      cisco.aci.aci_epg_useg_attribute_block_statement:
+        <<: *block_a_parent_default_absent
+      register: nm_remove_block_a_parent_default_again
+    
+    - name: Assert remove block statements
+      ansible.builtin.assert:
+        that:
+         - rm_block_c_parent_block_b is changed
+         - rm_block_c_parent_block_b.previous.0.fvSCrtrn.attributes.name == "block_c"
+         - rm_block_c_parent_block_b.previous.0.fvSCrtrn.attributes.match == "any"
+         - rm_block_c_parent_block_b.previous.0.fvSCrtrn.attributes.dn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test_1/crtrn/crtrn-block_a/crtrn-block_b/crtrn-block_c"
+         - rm_block_c_parent_block_b.current == []
+         - rm_block_b_parent_block_a is changed
+         - rm_block_b_parent_block_a.previous.0.fvSCrtrn.attributes.name == "block_b"
+         - rm_block_b_parent_block_a.previous.0.fvSCrtrn.attributes.match == "all"
+         - rm_block_b_parent_block_a.previous.0.fvSCrtrn.attributes.dn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test_1/crtrn/crtrn-block_a/crtrn-block_b"
+         - rm_block_b_parent_block_a.current == []
+         - cm_remove_block_a_parent_default is changed
+         - cm_remove_block_a_parent_default.previous.0.fvSCrtrn.attributes.name == "block_a"
+         - cm_remove_block_a_parent_default.previous.0.fvSCrtrn.attributes.match == "all"
+         - cm_remove_block_a_parent_default.previous.0.fvSCrtrn.attributes.dn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test_1/crtrn/crtrn-block_a"
+         - cm_remove_block_a_parent_default.current.0.fvSCrtrn.attributes.name == "block_a"
+         - cm_remove_block_a_parent_default.current.0.fvSCrtrn.attributes.match == "all"
+         - cm_remove_block_a_parent_default.current.0.fvSCrtrn.attributes.dn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test_1/crtrn/crtrn-block_a"
+         - cm_remove_block_a_parent_default.proposed == {}
+         - nm_remove_block_a_parent_default is changed
+         - nm_remove_block_a_parent_default.previous.0.fvSCrtrn.attributes.name == "block_a"
+         - nm_remove_block_a_parent_default.previous.0.fvSCrtrn.attributes.match == "all"
+         - nm_remove_block_a_parent_default.previous.0.fvSCrtrn.attributes.dn == "uni/tn-ansible_test/ap-ansible_test/epg-ansible_test_1/crtrn/crtrn-block_a"
+         - nm_remove_block_a_parent_default.current == []
+         - nm_remove_block_a_parent_default_again is not changed
+         - nm_remove_block_a_parent_default_again.previous == []
+         - nm_remove_block_a_parent_default_again.current == []
+
+    # CLEAN TEST ENVIRONMENT
+    - name: Remove tenant
+      cisco.aci.aci_tenant:
+        <<: *aci_tenant_absent
