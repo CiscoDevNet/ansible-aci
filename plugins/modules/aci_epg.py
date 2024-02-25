@@ -91,12 +91,6 @@ options:
     - The Block Statement(fv:Crtrn) Precedence to resolve equal matches between micro segmented EPGs.
     - The APIC defaults to C(0) when unset during creation.
     type: int
-  scope:
-    description:
-    - The scope of the default Block Statement (fv:Crtrn).
-    - The APIC defaults to C(scope-bd) when unset during creation.
-    type: str
-    choices: [ scope-bd, scope-vrf ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -384,7 +378,6 @@ def main():
         useg=dict(type="str", choices=["yes", "no"]),
         match=dict(type="str", choices=["all", "any"]),
         precedence=dict(type="int"),
-        scope=dict(type="str", choices=["scope-bd", "scope-vrf"]),
     )
 
     module = AnsibleModule(
@@ -414,7 +407,6 @@ def main():
     useg = module.params.get("useg")
     match = module.params.get("match")
     precedence = module.params.get("precedence")
-    scope = module.params.get("scope")
 
     child_configs = [dict(fvRsBd=dict(attributes=dict(tnFvBDName=bd))), dict(fvRsAEPgMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy)))]
 
@@ -449,7 +441,7 @@ def main():
         if useg is not None and aci.existing and aci.existing[0]["fvAEPg"]["attributes"]["isAttrBasedEPg"] != useg:
             module.fail_json(msg="Changing attribute useg on existing EPG is not supported.")
         if useg == "yes":
-            child_configs.append(dict(fvCrtrn=dict(attributes=dict(name="default", match=match, prec=precedence, scope=scope))))
+            child_configs.append(dict(fvCrtrn=dict(attributes=dict(name="default", match=match, prec=precedence))))
 
         aci.payload(
             aci_class="fvAEPg",
