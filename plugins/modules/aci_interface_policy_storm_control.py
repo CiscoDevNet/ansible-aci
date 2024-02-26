@@ -307,6 +307,32 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import (
 )
 
 
+def get_rates_configuration(module, configuration, percentage, pps, burst_percentage, burst_pps):
+    if configuration is None:
+        return {}
+    rate = configuration.get("rate")
+    burst_rate = configuration.get("burst_rate")
+    rate_type = configuration.get("rate_type")
+
+    if rate_type == "percentage":
+        for rate_name, rate_value in dict(rate=rate, burst_rate=burst_rate).items():
+            if rate_value is None or not (0 <= float(rate_value) <= 100):
+                module.fail_json(
+                    msg="If argument rate_type is percentage, the {0} needs to be a value between 0 and 100 inclusive, got {1}".format(
+                        rate_name,
+                        rate_value,
+                    )
+                )
+        return {
+            percentage: "{0:.6f}".format(float(rate)),
+            pps: "unspecified",
+            burst_percentage: "{0:.6f}".format(float(burst_rate)),
+            burst_pps: "unspecified",
+        }
+    elif rate_type == "pps":
+        return {pps: rate, burst_pps: burst_rate}
+
+
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
@@ -355,38 +381,13 @@ def main():
 
     rates_input = {}
 
-    def get_rates_configuration(configuration, percentage, pps, burst_percentage, burst_pps):
-        if configuration is None:
-            return {}
-        rate = configuration.get("rate")
-        burst_rate = configuration.get("burst_rate")
-        rate_type = configuration.get("rate_type")
-
-        if rate_type == "percentage":
-            for rate_name, rate_value in dict(rate=rate, burst_rate=burst_rate).items():
-                if rate_value is None or not (0 <= float(rate_value) <= 100):
-                    module.fail_json(
-                        msg="If argument rate_type is percentage, the {0} needs to be a value between 0 and 100 inclusive, got {1}".format(
-                            rate_name,
-                            rate_value,
-                        )
-                    )
-            return {
-                percentage: "{0:.6f}".format(float(rate)),
-                pps: "unspecified",
-                burst_percentage: "{0:.6f}".format(float(burst_rate)),
-                burst_pps: "unspecified",
-            }
-        elif rate_type == "pps":
-            return {pps: rate, burst_pps: burst_rate}
-
     if all_types_configuration is not None:
-        rates_input.update(get_rates_configuration(all_types_configuration, "rate", "ratePps", "burstRate", "burstPps"))
+        rates_input.update(get_rates_configuration(module, all_types_configuration, "rate", "ratePps", "burstRate", "burstPps"))
         storm_control_types = "Invalid"
     elif any([broadcast_configuration, multicast_configuration, unicast_configuration]):
-        rates_input.update(get_rates_configuration(broadcast_configuration, "bcRate", "bcRatePps", "bcBurstRate", "bcBurstPps"))
-        rates_input.update(get_rates_configuration(multicast_configuration, "mcRate", "mcRatePps", "mcBurstRate", "mcBurstPps"))
-        rates_input.update(get_rates_configuration(unicast_configuration, "uucRate", "uucRatePps", "uucBurstRate", "uucBurstPps"))
+        rates_input.update(get_rates_configuration(module, broadcast_configuration, "bcRate", "bcRatePps", "bcBurstRate", "bcBurstPps"))
+        rates_input.update(get_rates_configuration(module, multicast_configuration, "mcRate", "mcRatePps", "mcBurstRate", "mcBurstPps"))
+        rates_input.update(get_rates_configuration(module, unicast_configuration, "uucRate", "uucRatePps", "uucBurstRate", "uucBurstPps"))
         storm_control_types = "Valid"
 
     aci.construct_url(
