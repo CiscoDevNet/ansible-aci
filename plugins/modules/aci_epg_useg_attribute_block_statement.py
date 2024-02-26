@@ -13,9 +13,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_epg_useg_attribute_block_statement
-short_description: Manage EPG useg Attributes Block Statements
+short_description: Manage EPG useg Attributes Block Statements (fv:SCrtrn)
 description:
-- Manage EPG useg Attributes Block Statements (fv:SCrtrn)
+- Manage EPG useg Attributes Block Statements
 options:
   tenant:
     description:
