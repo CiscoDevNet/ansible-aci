@@ -1,0 +1,156 @@
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+    aci_epg: &aci_epg
+      tenant: ansible_test
+      ap: ansible_test
+      epg: ansible_test_1
+
+# CREATE AND UPDATE TESTS
+- name: Create simple statement in block statement (check mode)
+  cisco.aci.aci_epg_useg_attribute_simple_statement: &simple_present
+    <<: *aci_info
+    <<: *aci_epg
+    parent_block_statements: "{{ parent_block_statements }}"
+    name: ansible_test_vm_name
+    type: vm_name
+    operator: contains
+    value: ansible_test_vm_name_value
+  check_mode: true
+  register: cm_create_simple
+
+- name: Create simple statement in block statement
+  cisco.aci.aci_epg_useg_attribute_simple_statement:
+    <<: *simple_present
+  register: nm_create_simple
+
+- name: Create simple statement in block statement again
+  cisco.aci.aci_epg_useg_attribute_simple_statement:
+    <<: *simple_present
+  register: nm_create_simple_again
+
+- name: Assert create simple statement in block statement
+  ansible.builtin.assert:
+    that:
+      - cm_create_simple is changed
+      - cm_create_simple.previous == []
+      - cm_create_simple.current == []
+      - cm_create_simple.proposed.fvVmAttr.attributes.name == "ansible_test_vm_name"
+      - cm_create_simple.proposed.fvVmAttr.attributes.type == "vm-name"
+      - cm_create_simple.proposed.fvVmAttr.attributes.operator == "contains"
+      - cm_create_simple.proposed.fvVmAttr.attributes.value == "ansible_test_vm_name_value"
+      - nm_create_simple is changed
+      - nm_create_simple.previous == []
+      - nm_create_simple.current.0.fvVmAttr.attributes.name == "ansible_test_vm_name"
+      - nm_create_simple.current.0.fvVmAttr.attributes.type == "vm-name"
+      - nm_create_simple.current.0.fvVmAttr.attributes.operator == "contains"
+      - nm_create_simple.current.0.fvVmAttr.attributes.value == "ansible_test_vm_name_value"
+      - nm_create_simple_again is not changed
+      - nm_create_simple_again.previous.0.fvVmAttr.attributes.name == "ansible_test_vm_name"
+      - nm_create_simple_again.previous.0.fvVmAttr.attributes.type == "vm-name"
+      - nm_create_simple_again.previous.0.fvVmAttr.attributes.operator == "contains"
+      - nm_create_simple_again.previous.0.fvVmAttr.attributes.value == "ansible_test_vm_name_value"
+      - nm_create_simple_again.current.0.fvVmAttr.attributes.name == "ansible_test_vm_name"
+      - nm_create_simple_again.current.0.fvVmAttr.attributes.type == "vm-name"
+      - nm_create_simple_again.current.0.fvVmAttr.attributes.operator == "contains"
+      - nm_create_simple_again.current.0.fvVmAttr.attributes.value == "ansible_test_vm_name_value"
+
+# QUERY TESTS
+- name: Create another simple statement in block statement
+  cisco.aci.aci_epg_useg_attribute_simple_statement: &simple_present_update
+    <<: *simple_present
+    name: ansible_test_vm_name_2
+    type: vm_name
+    operator: contains
+    value: ansible_test_vm_name_value_2
+  register: nm_create_simple_2
+
+- name: Create another simple statement in block statement
+  cisco.aci.aci_epg_useg_attribute_simple_statement:
+    <<: *simple_present_update
+    operator: equals
+    value: ansible_test_vm_name_value_3
+  register: nm_create_simple_2_update
+
+- name: Assert updates
+  ansible.builtin.assert:
+    that:
+      - nm_create_simple_2.current.0.fvVmAttr.attributes.name == "ansible_test_vm_name_2"
+      - nm_create_simple_2.current.0.fvVmAttr.attributes.type == "vm-name"
+      - nm_create_simple_2.current.0.fvVmAttr.attributes.operator == "contains"
+      - nm_create_simple_2.current.0.fvVmAttr.attributes.value == "ansible_test_vm_name_value_2"
+      - nm_create_simple_2_update.current.0.fvVmAttr.attributes.name == "ansible_test_vm_name_2"
+      - nm_create_simple_2_update.current.0.fvVmAttr.attributes.type == "vm-name"
+      - nm_create_simple_2_update.current.0.fvVmAttr.attributes.operator == "equals"
+      - nm_create_simple_2_update.current.0.fvVmAttr.attributes.value == "ansible_test_vm_name_value_3"
+
+- name: Query simple statement in block statement
+  cisco.aci.aci_epg_useg_attribute_simple_statement:
+    <<: *simple_present
+    state: query
+  register: query_one
+
+- name: Query all simple statements of type vm_name
+  cisco.aci.aci_epg_useg_attribute_simple_statement:
+    <<: *aci_info
+    type: vm_name
+    state: query
+  register: query_all
+
+- name: Assert queries
+  ansible.builtin.assert:
+    that:
+      - query_one.current | length == 1
+      - query_one.current.0.fvVmAttr.attributes.name == "ansible_test_vm_name"
+      - query_one.current.0.fvVmAttr.attributes.type == "vm-name"
+      - query_one.current.0.fvVmAttr.attributes.operator == "contains"
+      - query_one.current.0.fvVmAttr.attributes.value == "ansible_test_vm_name_value"
+      - query_all.current | length >= 2
+
+# REMOVE TESTS
+- name: Remove simple statement from block statement (check mode)
+  cisco.aci.aci_epg_useg_attribute_simple_statement: &simple_absent
+    <<: *simple_present
+    state: absent
+  check_mode: true
+  register: cm_remove_simple
+
+- name: Remove simple statement from block statement
+  cisco.aci.aci_epg_useg_attribute_simple_statement:
+    <<: *simple_absent
+  register: nm_remove_simple
+
+- name: Remove simple statement from block statement again
+  cisco.aci.aci_epg_useg_attribute_simple_statement:
+    <<: *simple_absent
+  register: nm_remove_simple_again
+
+- name: Assert remove simple statement from block statement
+  ansible.builtin.assert:
+    that:
+      - cm_remove_simple is changed
+      - cm_remove_simple.previous.0.fvVmAttr.attributes.name == "ansible_test_vm_name"
+      - cm_remove_simple.previous.0.fvVmAttr.attributes.type == "vm-name"
+      - cm_remove_simple.previous.0.fvVmAttr.attributes.operator == "contains"
+      - cm_remove_simple.previous.0.fvVmAttr.attributes.value == "ansible_test_vm_name_value"
+      - cm_remove_simple.current.0.fvVmAttr.attributes.name == "ansible_test_vm_name"
+      - cm_remove_simple.current.0.fvVmAttr.attributes.type == "vm-name"
+      - cm_remove_simple.current.0.fvVmAttr.attributes.operator == "contains"
+      - cm_remove_simple.current.0.fvVmAttr.attributes.value == "ansible_test_vm_name_value"
+      - cm_remove_simple.proposed == {}
+      - nm_remove_simple is changed
+      - nm_remove_simple.previous.0.fvVmAttr.attributes.name == "ansible_test_vm_name"
+      - nm_remove_simple.previous.0.fvVmAttr.attributes.type == "vm-name"
+      - nm_remove_simple.previous.0.fvVmAttr.attributes.operator == "contains"
+      - nm_remove_simple.previous.0.fvVmAttr.attributes.value == "ansible_test_vm_name_value"
+      - nm_remove_simple.current == []
+      - nm_remove_simple_again is not changed
+      - nm_remove_simple_again.previous == []
+      - nm_remove_simple_again.current == []
