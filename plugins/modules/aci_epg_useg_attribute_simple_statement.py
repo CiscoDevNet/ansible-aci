@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2023, Christian Kolrep <christian.kolrep@dataport.de>
+# Copyright: (c) 2024, Akini Ross <akinross@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,12 +13,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_epg_useg_attribute
-short_description: Manage EPG useg Attributes
+module: aci_epg_useg_attribute_simple_statement
+short_description: Manage EPG useg Attributes Simple Statements (fv:DnsAttr, fv:IdGroupAttr, fv:IpAttr, fv:MacAttr, and fv:VmAttr)
 description:
-- Manage VM Attributes in a microsegment EPG (fv:VmAttr)
-- Manage IP Attributes in a microsegment EPG (fv:IpAttr)
-- Manage MAC Attributes in a microsegment EPG (fv:MacAttr)
+- Manage EPG useg Attributes Simple Statements
 options:
   tenant:
     description:
@@ -34,6 +33,16 @@ options:
     - The name of an existing end point group.
     type: str
     aliases: [ epg_name ]
+  parent_block_statements:
+    description:
+    - The list of parent block statements.
+    - The order of the provided list matters, assuming the list ["A", "B", "C"].
+    - The block statement "A" will be the parent of "B"
+    - The block statement "A" will be a child of the default block statement.
+    - The maximum amount of parent block statements is 3.
+    type: list
+    elements: str
+    aliases: [ blocks, parent_blocks ]
   name:
     description:
     - The name of the EPG useg attribute.
@@ -41,44 +50,44 @@ options:
     aliases: [ useg_attribute_name ]
   type:
     description:
-    - The type of the attribute
+    - The type of the EPG useg attribute
     type: str
-    choices: [ ip, mac, vm_name, vm_guest, vm_host, vm_id, vmm_domain, vm_datacenter, vm_custom_attr, vm_tag, vm_nic ]
+    required: true
+    choices:
+    - ip
+    - mac
+    - dns
+    - ad_group
+    - vm_custom_attr
+    - vm_vmm_domain
+    - vm_operating_system
+    - vm_hypervisor_id
+    - vm_datacenter
+    - vm_id
+    - vm_name
+    - vm_folder
+    - vm_folder_path
+    - vm_vnic
+    - vm_tag
     aliases: [ useg_attribute_type ]
   operator:
     description:
-    - The operator.
-    - Required for most vm related attribute types.
+    - The operator of the EPG useg attribute.
     type: str
     choices: [ equals, contains, starts_with, ends_with ]
   category:
     description:
-    - The name of the vmware tag category.
-    - Required for type vm_tag.
-    - The name of the vmware custom attribute.
-    - Required for type vm_custom_attr.
+    - The name of the vmware tag category or vmware custom attribute.
     type: str
     aliases: [ custom_attribute ]
   use_subnet:
     description:
-    - Use the EPG subnet definition for ip.
-    - Used for type ip.
-    - Mutualy exclusive with value
-    type: str
-    choices: [ 'yes', 'no' ]
+    - Whether to use the EPG subnet definition for ip.
+    type: bool
   value:
     description:
-    - The value of the useg attribute.
+    - The value of the EPG useg attribute.
     type: str
-  criterion:
-    description:
-    - List of existing sub criterions, representing the path to the sub criterion that will contain the useg attribute.
-    - The order of the provided list matters, assuming the list ["A", "B", "C"].
-    - Sub criterion A is chield of the default criterion, B is sub criterion of A and C is sub criterion of B.
-    - default->A->B->C, the maximum depth of sub criterions is 3.
-    - Empty list or None uses the default criterion of the EPG.
-    type: list
-    elements: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -98,14 +107,15 @@ seealso:
 - module: cisco.aci.aci_ap
 - module: cisco.aci.aci_epg
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(fv:IpAttr) B(fv:MacAttr) B(fv:VmAttr).
+  description: More information about the internal APIC class B(fv:DnsAttr), B(fv:IdGroupAttr), B(fv:IpAttr), B(fv:MacAttr), and B(fv:VmAttr).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Christian Kolrep (@Christian-Kolrep)
+- Akini Ross (@akinross)
 """
 
 EXAMPLES = r"""
-- name: Add a new vmtag useg attribute for default criterion
+- name: Add a new vmtag useg attribute in default block statement
   cisco.aci.aci_epg_useg_attribute:
     host: apic
     username: admin
@@ -121,7 +131,50 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Remove an existing vmtag useg attribute from default criterion
+- name: Add a new vmtag useg attribute in nested block statement
+  cisco.aci.aci_epg_useg_attribute:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: anstest
+    ap: anstest
+    epg: anstest
+    name: vmtagprod
+    parent_block_statements:
+      - block_a
+      - block_b
+    type: vmtag
+    category: Environment
+    operator: equals
+    value: Production
+    state: present
+  delegate_to: localhost
+
+- name: Query a specific vmtag useg attribute in default block statement
+  cisco.aci.aci_epg_useg_attribute:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: anstest
+    ap: anstest
+    epg: anstest
+    name: vmtagprod
+    type: vmtag
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query all vmtag useg attributes
+  cisco.aci.aci_epg_useg_attribute:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+    type: vmtag
+  delegate_to: localhost
+  register: query_result
+
+- name: Remove an existing vmtag useg attribute from default block statement
   cisco.aci.aci_epg_useg_attribute:
     host: apic
     username: admin
@@ -133,30 +186,6 @@ EXAMPLES = r"""
     type: vmtag
     state: absent
   delegate_to: localhost
-
-- name: Query a specific vmtag useg attribute in default criterion
-  cisco.aci.aci_epg_useg_attribute:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: anstest
-    ap: anstest
-    epg: anstest
-    name: vmtagprod
-    type: vmtag
-    state: query
-  delegate_to: localhost
-  register: query_result
-
-- name: Query all vmtag useg attributes in default criterion
-  cisco.aci.aci_epg_useg_attribute:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    state: query
-    type: vmtag
-  delegate_to: localhost
-  register: query_result
 """
 
 RETURN = r"""
@@ -277,21 +306,21 @@ def main():
         epg=dict(type="str", aliases=["epg_name"]),  # Not required for querying all objects
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        criterion=dict(type="list", elements="str"),  # Criterion list
+        parent_block_statements=dict(type="list", elements="str", aliases=["parent_blocks", "blocks"]),
         name=dict(type="str", aliases=["useg_attribute_name"]),
-        type=dict(type="str", choices=list(USEG_ATTRIBUTE_MAPPING.keys()), aliases=["useg_attribute_type"]),
+        type=dict(type="str", required=True, choices=list(USEG_ATTRIBUTE_MAPPING.keys()), aliases=["useg_attribute_type"]),
         operator=dict(type="str", choices=list(OPERATOR_MAPPING.keys())),
         category=dict(type="str", aliases=["custom_attribute"]),
         value=dict(type="str"),
-        use_subnet=dict(type="str", choices=["yes", "no"]),
+        use_subnet=dict(type="bool"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["ap", "epg", "tenant", "name", "type"]],
-            ["state", "present", ["ap", "epg", "tenant", "name", "type"]],
+            ["state", "absent", ["ap", "epg", "tenant", "name"]],
+            ["state", "present", ["ap", "epg", "tenant", "name"]],
         ],
     )
 
@@ -301,57 +330,35 @@ def main():
     epg = module.params.get("epg")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
-    criterion = module.params.get("criterion")
-    useg_attr_name = module.params.get("name")
-    useg_attr_type = module.params.get("type")
-    useg_attr_value = module.params.get("value")
-    useg_attr_operator = module.params.get("operator")
-    useg_attr_category = module.params.get("category")
-    useg_attr_use_subnet = module.params.get("use_subnet")
+    blocks = module.params.get("parent_block_statements")
+    name = module.params.get("name")
+    attribute_type = module.params.get("type")
+    value = module.params.get("value")
+    operator = module.params.get("operator")
+    category = module.params.get("category")
+    use_subnet = aci.boolean(module.params.get("use_subnet"))
 
-    #  useg attribute class and config
-    attr_class = USEG_ATTRIBUTE_MAPPING[useg_attr_type]["attr_class"]
-    attr_type = USEG_ATTRIBUTE_MAPPING[useg_attr_type]["attr_type"]
-    attr_config = dict(name=useg_attr_name)
+    # Excluding below classes from the module:
+    # fvProtoAttr:
+    #   Was used in AVS, but it is not longer in use.
+    # fvUsegBDCont:
+    #   Was part of a feature that allowed uSeg attributes to be applied at VRF (instead of BD) level.
+    #   It has been since deprecated and we no longer allow setting the scope at fvCtrn to scope-vrf.
+    #   This type of functionality has been replaced by the ESG feature.
+    attribute_class = USEG_ATTRIBUTE_MAPPING[attribute_type]["attribute_class"]
+    attribute_rn = USEG_ATTRIBUTE_MAPPING[attribute_type]["rn_format"].format(name)
+    attribute_type = USEG_ATTRIBUTE_MAPPING[attribute_type]["attribute_type"]
 
-    if attr_class == "fvVmAttr":
-        attr_rn = "vmattr-{0}".format(useg_attr_name)
-        attr_config.update(type=attr_type)
-        if useg_attr_value is not None:
-            attr_config.update(value=useg_attr_value)
-        if useg_attr_operator is not None:
-            attr_config.update(operator=OPERATOR_MAPPING[useg_attr_operator])
-
-        if useg_attr_type == "vm_custom_attr":
-            if useg_attr_category is not None:
-                attr_config.update(labelName=useg_attr_category)
-        elif useg_attr_type == "vm_tag":
-            if useg_attr_category is not None:
-                attr_config.update(category=useg_attr_category)
-
-    elif attr_class == "fvIpAttr":
-        attr_rn = "ipattr-{0}".format(useg_attr_name)
-        if useg_attr_use_subnet == "yes":
-            attr_config.update(usefvSubnet=useg_attr_use_subnet)
-        else:
-            if useg_attr_value is not None:
-                attr_config.update(ip=useg_attr_value)
-
-    elif attr_class == "fvMacAttr":
-        attr_rn = "macattr-{0}".format(useg_attr_name)
-        if useg_attr_value is not None:
-            attr_config.update(mac=useg_attr_value.upper())
-
-    #  criterion class and building relative name
-    crtrn_rn = "crtrn"
-    crtrn_class = "fvCrtrn"
-    crtrn_name = "default"
-    if criterion:
-        if len(criterion) > 3:
-            module.fail_json(msg="Depth of sub criterion exceeds maximum limit 3.")
-        crtrn_name = criterion[-1]
-        crtrn_class = "fvSCrtrn"
-        crtrn_rn = "crtrn/crtrn-" + "/crtrn-".join(criterion)
+    if blocks:
+        if len(blocks) > 3:
+            module.fail_json(msg="{0} block statements are provided but the maximum amount of parent_block_statements is 3".format(len(blocks)))
+        parent_blocks_class = "fvSCrtrn"
+        parent_blocks_rn = "crtrn/crtrn-{0}".format("/crtrn-".join(blocks))
+        parent_blocks_name = blocks[-1]
+    else:
+        parent_blocks_class = "fvCrtrn"
+        parent_blocks_rn = "crtrn"
+        parent_blocks_name = "default"
 
     aci.construct_url(
         root_class=dict(
@@ -373,25 +380,49 @@ def main():
             target_filter={"name": epg},
         ),
         subclass_3=dict(
-            aci_class=crtrn_class,
-            aci_rn=crtrn_rn,
-            module_object=crtrn_name,
-            target_filter={"name": crtrn_name},
+            aci_class=parent_blocks_class,
+            aci_rn=parent_blocks_rn,
+            module_object=parent_blocks_name,
+            target_filter={"name": parent_blocks_name},
         ),
         subclass_4=dict(
-            aci_class=attr_class,
-            aci_rn=attr_rn,
-            module_object=useg_attr_name,
-            target_filter={"name": useg_attr_name},
+            aci_class=attribute_class,
+            aci_rn=attribute_rn,
+            module_object=name,
+            target_filter={"name": name},
         ),
     )
 
     aci.get_existing()
 
     if state == "present":
-        aci.payload(aci_class=attr_class, class_config=attr_config)
+        class_config = dict(name=name)
 
-        aci.get_diff(aci_class=attr_class)
+        if attribute_class == "fvVmAttr":
+            class_config.update(type=attribute_type)
+            class_config.update(operator=OPERATOR_MAPPING.get(operator))
+            class_config.update(value=value)
+            if attribute_type == "tag":
+                class_config.update(category=category)
+            elif attribute_type == "custom-label":
+                class_config.update(labelName=category)
+
+        elif attribute_class == "fvIpAttr":
+            class_config.update(usefvSubnet=use_subnet)
+            class_config.update(ip=value)
+
+        elif attribute_class == "fvMacAttr":
+            class_config.update(mac=value.upper())
+
+        elif attribute_class == "fvDnsAttr":
+            class_config.update(filter=value)
+
+        elif attribute_class == "fvIdGroupAttr":
+            class_config.update(selector=value)
+
+        aci.payload(aci_class=attribute_class, class_config=class_config)
+
+        aci.get_diff(aci_class=attribute_class)
 
         aci.post_config()
 

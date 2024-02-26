@@ -264,18 +264,21 @@ KEX_ALGORITHMS = dict(
 )
 
 USEG_ATTRIBUTE_MAPPING = dict(
-    vm_name=dict(attr_type="vm-name", attr_class="fvVmAttr"),
-    vm_guest=dict(attr_type="guest-os", attr_class="fvVmAttr"),
-    vm_host=dict(attr_type="hv", attr_class="fvVmAttr"),
-    vm_id=dict(attr_type="vm", attr_class="fvVmAttr"),
-    vmm_domain=dict(attr_type="domain", attr_class="fvVmAttr"),
-    vm_datacenter=dict(attr_type="rootContName", attr_class="fvVmAttr"),
-    vm_custom_attr=dict(attr_type="custom-label", attr_class="fvVmAttr"),
-    vm_tag=dict(attr_type="tag", attr_class="fvVmAttr"),
-    vm_nic=dict(attr_type="vnic", attr_class="fvVmAttr"),
-    ip=dict(attr_type="ip", attr_class="fvIpAttr"),
-    mac=dict(attr_type="mac", attr_class="fvMacAttr"),
+    ip=dict(attribute_type="ip", attribute_class="fvIpAttr", rn_format="ipattr-{0}"),
+    mac=dict(attribute_type="mac", attribute_class="fvMacAttr", rn_format="macattr-{0}"),
+    dns=dict(attribute_type="dns", attribute_class="fvDnsAttr", rn_format="dnsattr-{0}"),
+    ad_group=dict(attribute_type="ad", attribute_class="fvIdGroupAttr", rn_format="idgattr-[{0}]"),
+    vm_custom_attr=dict(attribute_type="custom-label", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_vmm_domain=dict(attribute_type="domain", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_operating_system=dict(attribute_type="guest-os", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_hypervisor_id=dict(attribute_type="hv", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_datacenter=dict(attribute_type="rootContName", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_id=dict(attribute_type="vm", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_name=dict(attribute_type="vm-name", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_folder=dict(attribute_type="vm-folder", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_folder_path=dict(attribute_type="vmfolder-path", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_vnic=dict(attribute_type="vnic", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_tag=dict(attribute_type="tag", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
 )
 
-# useg attribute operator mapping
 OPERATOR_MAPPING = dict(equals="equals", contains="contains", starts_with="startsWith", ends_with="endsWith")

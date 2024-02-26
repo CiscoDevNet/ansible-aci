@@ -138,26 +138,6 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- Add two new EPG
-  cisco.aci.aci_epg:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: production
-    ap: ticketing
-    epg: "{{ item.epg }}"
-    description: Ticketing EPG
-    bd: "{{ item.bd }}"
-    priority: unspecified
-    intra_epg_isolation: unenforced
-    state: present
-  delegate_to: localhost
-  with_items:
-    - epg: web
-      bd: web_bd
-    - epg: database
-      bd: database_bd
-
 - name: Add a new uSeg EPG
   cisco.aci.aci_epg:
     host: apic
@@ -174,7 +154,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Add a uSeg EPG with criterion match and precedence
+- name: Add a uSeg EPG with block statement match and precedence
   cisco.aci.aci_epg:
     host: apic
     username: admin
