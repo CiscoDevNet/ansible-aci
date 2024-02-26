@@ -31,7 +31,7 @@ options:
     description:
     - The name of the Netflow Monitor Policy.
     type: str
-    aliases: [ name, policy, monitor_pol]
+    aliases: [ netflow_monitor, netflow_monitor_name, name ]
   filter_type:
     description:
     - Choice of filter type while setting NetFlow Monitor Policies.
@@ -227,7 +227,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         bd=dict(type="str", aliases=["bd_name", "bridge_domain"]),  # Not required for querying all objects
-        netflow_monitor_policy=dict(type="str", aliases=["name", "policy", "monitor_pol"]),  # Not required for querying all objects
+        netflow_monitor_policy=dict(type="str", aliases=["netflow_monitor", "netflow_monitor_name", "name"]),  # Not required for querying all objects
         filter_type=dict(type="str", choices=["ce", "ipv4", "ipv6", "unspecified"], aliases=["filter", "type"]),  # Not required for querying all objects
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
