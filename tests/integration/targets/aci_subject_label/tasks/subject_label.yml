@@ -1,0 +1,188 @@
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+# CREATE TESTS
+- name: Create subject label (check mode)
+  cisco.aci.aci_subject_label: &subject_label_present
+    <<: *aci_info
+    tenant: ansible_test
+    l2out: "{{ parent_class.l2out }}"
+    l3out: "{{ parent_class.l3out }}"
+    external_epg: "{{ parent_class.external_epg }}"
+    contract: "{{ parent_class.contract }}"
+    subject: "{{ parent_class.subject }}"
+    ap: "{{ parent_class.ap }}"
+    epg: "{{ parent_class.epg }}"
+    esg: "{{ parent_class.esg }}"
+    subject_label_type: consumer
+    subject_label: ansible_test_subject_label_1
+  check_mode: true
+  register: cm_create_subject_label
+
+- name: Create subject label
+  cisco.aci.aci_subject_label:
+    <<: *subject_label_present
+  register: nm_create_subject_label
+
+- name: Create subject label again
+  cisco.aci.aci_subject_label:
+    <<: *subject_label_present
+  register: nm_create_subject_label_again
+
+- name: Assert create subject label
+  ansible.builtin.assert:
+    that:
+      - cm_create_subject_label is changed
+      - cm_create_subject_label.previous == []
+      - cm_create_subject_label.current == []
+      - cm_create_subject_label.proposed.vzConsSubjLbl.attributes.name == "ansible_test_subject_label_1"
+      - nm_create_subject_label is changed
+      - nm_create_subject_label.previous == []
+      - nm_create_subject_label.current.0.vzConsSubjLbl.attributes.name == "ansible_test_subject_label_1"
+      - nm_create_subject_label.current.0.vzConsSubjLbl.attributes.descr == ""
+      - nm_create_subject_label.current.0.vzConsSubjLbl.attributes.isComplement == "no"
+      - nm_create_subject_label.current.0.vzConsSubjLbl.attributes.tag == "yellow-green"
+      - nm_create_subject_label_again is not changed
+      - nm_create_subject_label_again.previous.0.vzConsSubjLbl.attributes.name == "ansible_test_subject_label_1"
+      - nm_create_subject_label_again.previous.0.vzConsSubjLbl.attributes.descr == ""
+      - nm_create_subject_label_again.previous.0.vzConsSubjLbl.attributes.isComplement == "no"
+      - nm_create_subject_label_again.previous.0.vzConsSubjLbl.attributes.tag == "yellow-green"
+      - nm_create_subject_label_again.current.0.vzConsSubjLbl.attributes.name == "ansible_test_subject_label_1"
+      - nm_create_subject_label_again.current.0.vzConsSubjLbl.attributes.descr == ""
+      - nm_create_subject_label_again.current.0.vzConsSubjLbl.attributes.isComplement == "no"
+      - nm_create_subject_label_again.current.0.vzConsSubjLbl.attributes.tag == "yellow-green"
+
+# UPDATE TESTS
+- name: Update subject label
+  cisco.aci.aci_subject_label:
+    <<: *subject_label_present
+    description: changed_description
+    complement: true
+    tag: chartreuse
+  register: nm_update_subject_label
+
+- name: Assert update subject label
+  ansible.builtin.assert:
+    that:
+      - nm_update_subject_label is changed
+      - nm_update_subject_label.previous.0.vzConsSubjLbl.attributes.name == "ansible_test_subject_label_1"
+      - nm_update_subject_label.previous.0.vzConsSubjLbl.attributes.descr == ""
+      - nm_update_subject_label.previous.0.vzConsSubjLbl.attributes.isComplement == "no"
+      - nm_update_subject_label.previous.0.vzConsSubjLbl.attributes.tag == "yellow-green"
+      - nm_update_subject_label.current.0.vzConsSubjLbl.attributes.name == "ansible_test_subject_label_1"
+      - nm_update_subject_label.current.0.vzConsSubjLbl.attributes.descr == "changed_description"
+      - nm_update_subject_label.current.0.vzConsSubjLbl.attributes.isComplement == "yes"
+      - nm_update_subject_label.current.0.vzConsSubjLbl.attributes.tag == "chartreuse"
+
+# QUERY TESTS
+- name: Create subject label 2
+  cisco.aci.aci_subject_label:
+    <<: *subject_label_present
+    subject_label: ansible_test_subject_label_2
+    tag: cadet_blue
+
+- name: Create provider subject label 3, 4 and 5
+  cisco.aci.aci_subject_label:
+    <<: *subject_label_present
+    subject_label: "{{ item }}"
+    subject_label_type: provider
+  loop:
+    - ansible_test_subject_label_3
+    - ansible_test_subject_label_4
+    - ansible_test_subject_label_5
+  register: create_provider_subject_labels
+
+- name: Assert create of provider subject label
+  ansible.builtin.assert:
+    that:
+      - create_provider_subject_labels.results.0.current.0.vzProvSubjLbl.attributes.name == "ansible_test_subject_label_3"
+      - create_provider_subject_labels.results.1.current.0.vzProvSubjLbl.attributes.name == "ansible_test_subject_label_4"
+      - create_provider_subject_labels.results.2.current.0.vzProvSubjLbl.attributes.name == "ansible_test_subject_label_5"
+
+- name: Query subject label
+  cisco.aci.aci_subject_label:
+    <<: *subject_label_present
+  register: query_one
+
+- name: Query all consumer subject labels
+  cisco.aci.aci_subject_label:
+    <<: *aci_info
+    subject_label_type: consumer
+    state: query
+  register: query_all_consumer
+
+- name: Query all provider subject labels
+  cisco.aci.aci_subject_label:
+    <<: *aci_info
+    subject_label_type: provider
+    state: query
+  register: query_all_provider
+
+- name: Assert query subject label
+  ansible.builtin.assert:
+    that:
+      - query_one is not changed
+      - query_one.current.0.vzConsSubjLbl.attributes.name == "ansible_test_subject_label_1"
+      - query_one.current.0.vzConsSubjLbl.attributes.descr == "changed_description"
+      - query_one.current.0.vzConsSubjLbl.attributes.isComplement == "yes"
+      - query_one.current.0.vzConsSubjLbl.attributes.tag == "chartreuse"
+      - query_all_consumer is not changed
+      - query_all_consumer.current | length >= 2
+      - query_all_provider is not changed
+      - query_all_provider.current | length >= 3
+
+# DELETE TESTS
+- name: Delete subject label (check mode)
+  cisco.aci.aci_subject_label: &subject_label_absent
+    <<: *subject_label_present
+    state: absent
+  check_mode: true
+  register: cm_delete_subject_label
+
+- name: Delete subject label
+  cisco.aci.aci_subject_label:
+    <<: *subject_label_absent
+  register: nm_delete_subject_label
+
+- name: Delete subject label again
+  cisco.aci.aci_subject_label:
+    <<: *subject_label_absent
+  register: nm_delete_subject_label_again
+
+- name: Assert delete subject label
+  ansible.builtin.assert:
+    that:
+      - cm_delete_subject_label is changed
+      - cm_delete_subject_label.previous.0.vzConsSubjLbl.attributes.name == "ansible_test_subject_label_1"
+      - cm_delete_subject_label.current.0.vzConsSubjLbl.attributes.name == "ansible_test_subject_label_1"
+      - cm_delete_subject_label.proposed == {}
+      - nm_delete_subject_label is changed
+      - nm_delete_subject_label.previous.0.vzConsSubjLbl.attributes.name == "ansible_test_subject_label_1"
+      - nm_delete_subject_label.current == []
+      - nm_delete_subject_label_again is not changed
+      - nm_delete_subject_label_again.previous == []
+      - nm_delete_subject_label_again.current == []
+
+# CLEAN TEST ENVIRONMENT
+- name: Delete consumer subject label 2
+  cisco.aci.aci_subject_label:
+    <<: *subject_label_absent
+    subject_label: ansible_test_subject_label_2
+
+- name: Delete provider subject labels 3, 4 and 5
+  cisco.aci.aci_subject_label:
+    <<: *subject_label_absent
+    subject_label: "{{ item }}"
+    subject_label_type: provider
+  loop:
+    - ansible_test_subject_label_3
+    - ansible_test_subject_label_4
+    - ansible_test_subject_label_5

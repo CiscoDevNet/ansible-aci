@@ -1,0 +1,253 @@
+# Test code for the ACI modules
+
+# Copyright: (c) 2022, Mark Ciecior (@markciecior)
+# Copyright: (c) 2024, Akini Ross (akinross@cisco.com)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when:
+  - query_cloud.current == []
+  block:
+    
+    # CLEAN TEST ENVIRONMENT
+    - name: Ensure tenant removed
+      cisco.aci.aci_tenant: &aci_tenant_absent
+        <<: *aci_info
+        state: absent
+        tenant: ansible_test
+
+    # SETUP TEST ENVIRONMENT
+    - name: Create tenant
+      cisco.aci.aci_tenant: &aci_tenant_present
+        <<: *aci_tenant_absent
+        state: present
+    
+    - name: Create BD
+      cisco.aci.aci_bd:
+        <<: *aci_tenant_present
+        bd: ansible_test_bd
+    
+    - name: Create VRF
+      cisco.aci.aci_vrf:
+        <<: *aci_tenant_present
+        vrf: ansible_test_vrf
+    
+    - name: Create AP
+      cisco.aci.aci_ap: &aci_ap
+        <<: *aci_tenant_present
+        ap: ansible_test_ap
+
+    - name: Create EPG
+      cisco.aci.aci_epg:
+        <<: *aci_ap
+        epg: ansible_test_epg
+        bd: ansible_test_bd
+    
+    - name: Bind End Point Group to Provider Contract
+      cisco.aci.aci_epg_to_contract:
+        <<: *aci_tenant_present
+        ap: ansible_test_ap
+        epg: ansible_test_epg
+        contract_type: provider
+        contract: ansible_test_contract
+    
+    - name: Bind End Point Group to Consumer Contract
+      cisco.aci.aci_epg_to_contract:
+        <<: *aci_tenant_present
+        ap: ansible_test_ap
+        epg: ansible_test_epg
+        contract_type: consumer
+        contract: ansible_test_contract
+
+    - name: Create ESG
+      cisco.aci.aci_esg:
+        <<: *aci_ap
+        esg: ansible_test_esg
+        vrf: ansible_test_vrf
+      when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+    - name: Create L2Out 
+      cisco.aci.aci_l2out:
+        <<: *aci_tenant_present
+        l2out: ansible_test_l2out
+        bd: ansible_test_bd
+        domain: l2Dom
+        vlan: 3200
+    
+    - name: Create L2Out External End Point Group 
+      cisco.aci.aci_l2out_extepg:
+        <<: *aci_tenant_present 
+        l2out: ansible_test_l2out
+        extepg: ansible_test_external_epg
+
+    - name: Create L2Out 
+      cisco.aci.aci_l3out:
+        <<: *aci_tenant_present
+        l3out: ansible_test_l3out
+        vrf: ansible_test_vrf
+        domain: l3dom
+
+    - name: Create L3Out External End Point Group 
+      cisco.aci.aci_l3out_extepg:
+        <<: *aci_tenant_present 
+        l3out: ansible_test_l3out
+        extepg: ansible_test_external_epg
+    
+    - name: Bind L3out External End Point Group to Provider Contract
+      cisco.aci.aci_l3out_extepg_to_contract:
+        <<: *aci_tenant_present 
+        tenant: ansible_test
+        l3out: ansible_test_l3out
+        extepg: ansible_test_external_epg
+        contract: ansible_test_contract
+        contract_type: provider
+
+    - name: Bind L3out External End Point Group to Consumer Contract
+      cisco.aci.aci_l3out_extepg_to_contract:
+        <<: *aci_tenant_present 
+        tenant: ansible_test
+        l3out: ansible_test_l3out
+        extepg: ansible_test_external_epg
+        contract: ansible_test_contract
+        contract_type: consumer
+
+    - name: Create Contract
+      cisco.aci.aci_contract: &aci_contract_present
+        <<: *aci_tenant_present
+        contract: ansible_test_contract
+
+    - name: Create Subject
+      cisco.aci.aci_contract_subject:
+        <<: *aci_contract_present
+        subject: ansible_test_subject
+
+    # TESTS THAT ALL PARENT CLASS COMBINATIONS ARE CONFIGURABLE
+    - name: Execute tests for each parent class
+      ansible.builtin.include_tasks: subject_label.yml
+      loop:
+        - { l2out: "{{ fake_var | default(omit) }}", l3out: "{{ fake_var | default(omit) }}", external_epg: "{{ fake_var | default(omit) }}", contract: "ansible_test_contract", subject: "ansible_test_subject", ap: "{{ fake_var | default(omit) }}", epg: "{{ fake_var | default(omit) }}", esg: "{{ fake_var | default(omit) }}"}
+        - { l2out: "ansible_test_l2out", l3out: "{{ fake_var | default(omit) }}", external_epg: "ansible_test_external_epg", contract: "{{ fake_var | default(omit) }}", subject: "{{ fake_var | default(omit) }}", ap: "{{ fake_var | default(omit) }}", epg: "{{ fake_var | default(omit) }}", esg: "{{ fake_var | default(omit) }}"}
+        - { l2out: "{{ fake_var | default(omit) }}", l3out: "ansible_test_l3out", external_epg: "ansible_test_external_epg", contract: "{{ fake_var | default(omit) }}", subject: "{{ fake_var | default(omit) }}", ap: "{{ fake_var | default(omit) }}", epg: "{{ fake_var | default(omit) }}", esg: "{{ fake_var | default(omit) }}"}
+        - { l2out: "{{ fake_var | default(omit) }}", l3out: "ansible_test_l3out", external_epg: "ansible_test_external_epg", contract: "ansible_test_contract", subject: "{{ fake_var | default(omit) }}", ap: "{{ fake_var | default(omit) }}", epg: "{{ fake_var | default(omit) }}", esg: "{{ fake_var | default(omit) }}"}
+        - { l2out: "{{ fake_var | default(omit) }}", l3out: "{{ fake_var | default(omit) }}", external_epg: "{{ fake_var | default(omit) }}", contract: "{{ fake_var | default(omit) }}", subject: "{{ fake_var | default(omit) }}", ap: "ansible_test_ap", epg: "ansible_test_epg", esg: "{{ fake_var | default(omit) }}"}
+        - { l2out: "{{ fake_var | default(omit) }}", l3out: "{{ fake_var | default(omit) }}", external_epg: "{{ fake_var | default(omit) }}", contract: "ansible_test_contract", subject: "{{ fake_var | default(omit) }}", ap: "ansible_test_ap", epg: "ansible_test_epg", esg: "{{ fake_var | default(omit) }}"}
+      loop_control:
+        loop_var: parent_class
+    
+    - name: Execute tests for esg class which is only supported in 5+
+      ansible.builtin.include_tasks: subject_label.yml
+      loop:
+        - { l2out: "{{ fake_var | default(omit) }}", l3out: "{{ fake_var | default(omit) }}", external_epg: "{{ fake_var | default(omit) }}", contract: "{{ fake_var | default(omit) }}", subject: "{{ fake_var | default(omit) }}", ap: "ansible_test_ap", epg: "{{ fake_var | default(omit) }}", esg: "ansible_test_esg"}
+      loop_control:
+        loop_var: parent_class
+      when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+    # ERROR TESTS
+    - name: Mutually exclusive all provided (error)
+      cisco.aci.aci_subject_label:
+        <<: *aci_tenant_present
+        l2out: ansible_test_l2out
+        l3out: ansible_test_l3out
+        subject: ansible_test_subject
+        epg: ansible_test_epg
+        esg: ansible_test_esg
+      register: err_mutually_exclusive_all
+      ignore_errors: true
+    
+    - name: Mutually exclusive two provided (error)
+      cisco.aci.aci_subject_label:
+        <<: *aci_tenant_present
+        l2out: ansible_test_l2out
+        l3out: ansible_test_l3out
+      register: err_mutually_exclusive_two
+      ignore_errors: true
+    
+    - name: Mutually exclusive esg with contract provided (error)
+      cisco.aci.aci_subject_label:
+        <<: *aci_tenant_present
+        esg: ansible_test_esg
+        contract: ansible_test_contract
+      register: err_mutually_exclusive_esg
+      ignore_errors: true
+
+    - name: Missing required input one of L2Out, L3Out, EPG, ESG, subject (error)
+      cisco.aci.aci_subject_label:
+        <<: *aci_tenant_present
+        subject_label: ansible_test_l2out
+        subject_label_type: consumer
+      register: err_missing_required_input_missing_one_of
+      ignore_errors: true
+
+    - name: Missing required input subject_type (error)
+      cisco.aci.aci_subject_label:
+        <<: *aci_tenant_present
+        l2out: ansible_test_l2out
+      register: err_missing_required_input_subject_type
+      ignore_errors: true
+    
+    - name: Missing required input subject_label (error)
+      cisco.aci.aci_subject_label:
+        <<: *aci_tenant_present
+        l2out: ansible_test_l2out
+        subject_label_type: consumer
+      register: err_missing_required_input_subject_label
+      ignore_errors: true
+
+    - name: Missing required input external_epg (error)
+      cisco.aci.aci_subject_label:
+        <<: *aci_tenant_present
+        l2out: ansible_test_l2out
+        subject_label_type: consumer
+        subject_label: ansible_test_subject_label
+      register: err_missing_required_input_external_epg
+      ignore_errors: true
+
+    - name: Assert input errors
+      ansible.builtin.assert:
+        that:
+        - err_mutually_exclusive_all is failed
+        - err_mutually_exclusive_all.msg == "parameters are mutually exclusive{{":"}} l2out|l3out|epg|esg|subject"
+        - err_mutually_exclusive_two is failed
+        - err_mutually_exclusive_two.msg == "parameters are mutually exclusive{{":"}} l2out|l3out|epg|esg|subject"
+        - err_mutually_exclusive_esg is failed
+        - err_mutually_exclusive_esg.msg == "parameters are mutually exclusive{{":"}} esg|contract"
+        - err_missing_required_input_missing_one_of is failed
+        - err_missing_required_input_missing_one_of.msg == "state is present but any of the following are missing{{":"}} l2out, l3out, epg, esg, subject"
+        - err_missing_required_input_subject_type is failed
+        - err_missing_required_input_subject_type.msg == "missing required arguments{{":"}} subject_label_type"
+        - err_missing_required_input_subject_label is failed
+        - err_missing_required_input_subject_label.msg == "state is present but all of the following are missing{{":"}} subject_label"
+        - err_missing_required_input_external_epg is failed
+        - err_missing_required_input_external_epg.msg == "missing parameter(s) required by 'l2out'{{":"}} external_epg"
+
+    # CLEAN TEST ENVIRONMENT
+    - name: Remove tenant
+      cisco.aci.aci_tenant:
+        <<: *aci_tenant_absent
