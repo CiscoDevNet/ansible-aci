@@ -1,5 +1,6 @@
 # Test code for the ACI modules
 # Copyright: (c) 2023, Shreyas Srish (shrsr@cisco.com)
+# Copyright: (c) 2024, Akini Ross <akinross@cisco.com>
 #
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -18,7 +19,7 @@
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
-    cisco.aci.aci_model_data:
+    aci_model_data:
       tenant:
       - name: ansible_test
         description: Created using listify
@@ -55,6 +56,26 @@
             bd: web_bd2
           - name: app2
             bd: app_bd2
+        policies:
+          protocol:
+            bfd:
+            - name: BFD-ON
+              description: Enable BFD
+              admin_state: enabled
+              detection_multiplier: 3
+              min_tx_interval: 50
+              min_rx_interval: 50
+              echo_rx_interval: 50
+              echo_admin_state: enabled
+              sub_interface_optimization_state: enabled
+            ospf:
+              interface:
+              - name: OSPF-P2P-IntPol
+                network_type: p2p
+                priority: 1
+              - name: OSPF-Broadcast-IntPol
+                network_type: bcast
+                priority: 1
 
 - name: Verify Cloud and Non-Cloud Sites in use.
   ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
@@ -62,6 +83,34 @@
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
+
+  - name: Set facts for nested dictionaries
+    ansible.builtin.set_fact:
+      bfd_listify_output: '{{ aci_model_data|cisco.aci.aci_listify("tenant", "policies", "protocol", "bfd") }}'
+      ospf_listify_output: '{{ aci_model_data|cisco.aci.aci_listify("tenant", "policies", "protocol", "ospf", "interface") }}'
+
+  - name: Validate listify for nested dictionaries
+    ansible.builtin.assert:
+      that:
+        - bfd_listify_output.0.tenant_name == "ansible_test2"
+        - bfd_listify_output.0.tenant_description == "Created using listify"
+        - bfd_listify_output.0.tenant_policies_protocol_bfd_admin_state == "enabled"
+        - bfd_listify_output.0.tenant_policies_protocol_bfd_description == "Enable BFD"
+        - bfd_listify_output.0.tenant_policies_protocol_bfd_detection_multiplier == 3
+        - bfd_listify_output.0.tenant_policies_protocol_bfd_echo_admin_state == "enabled"
+        - bfd_listify_output.0.tenant_policies_protocol_bfd_echo_rx_interval == 50
+        - bfd_listify_output.0.tenant_policies_protocol_bfd_min_rx_interval == 50
+        - bfd_listify_output.0.tenant_policies_protocol_bfd_min_tx_interval == 50
+        - bfd_listify_output.0.tenant_policies_protocol_bfd_name == "BFD-ON"
+        - bfd_listify_output.0.tenant_policies_protocol_bfd_sub_interface_optimization_state == "enabled"
+        - ospf_listify_output.0.tenant_name == "ansible_test2"
+        - ospf_listify_output.0.tenant_description == "Created using listify"
+        - ospf_listify_output.0.tenant_policies_protocol_ospf_interface_name == "OSPF-P2P-IntPol"
+        - ospf_listify_output.0.tenant_policies_protocol_ospf_interface_network_type == "p2p"
+        - ospf_listify_output.0.tenant_policies_protocol_ospf_interface_priority == 1
+        - ospf_listify_output.1.tenant_policies_protocol_ospf_interface_name == "OSPF-Broadcast-IntPol"
+        - ospf_listify_output.1.tenant_policies_protocol_ospf_interface_network_type == "bcast"
+        - ospf_listify_output.1.tenant_policies_protocol_ospf_interface_priority == 1
 
   - name: Create tenants
     cisco.aci.aci_tenant:
