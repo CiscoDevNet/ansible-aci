@@ -2,6 +2,7 @@
 requires_ansible: '>=2.14.0'
 action_groups:
   all:
+    - aci_aaa_certificate_authority
     - aci_aaa_custom_privilege
     - aci_aaa_domain
     - aci_aaa_role
@@ -19,6 +20,10 @@ action_groups:
     - aci_access_span_src_group_src
     - aci_access_span_src_group_src_path
     - aci_access_sub_port_block_to_access_port
+    - aci_access_switch_policy_group
+    - aci_action_rule_additional_communities
+    - aci_action_rule_set_as_path
+    - aci_action_rule_set_as_path_asn
     - aci_aep
     - aci_aep_to_domain
     - aci_aep_to_epg
@@ -27,7 +32,11 @@ action_groups:
     - aci_bd_dhcp_label
     - aci_bd_subnet
     - aci_bd_to_l3out
+    - aci_bfd_multihop_node_policy
+    - aci_bgp_address_family_context_policy
     - aci_bgp_best_path_policy
+    - aci_bgp_peer_prefix_policy
+    - aci_bgp_route_summarization_policy
     - aci_bgp_rr_asn
     - aci_bgp_rr_node
     - aci_bgp_timers_policy
@@ -54,6 +63,8 @@ action_groups:
     - aci_contract_subject
     - aci_contract_subject_to_filter
     - aci_contract_subject_to_service_graph
+    - aci_dhcp_option
+    - aci_dhcp_option_policy
     - aci_dhcp_relay
     - aci_dhcp_relay_provider
     - aci_dns_domain
@@ -81,7 +92,11 @@ action_groups:
     - aci_fabric_leaf_switch_assoc
     - aci_fabric_node
     - aci_fabric_node_control
+    - aci_fabric_pod
+    - aci_fabric_pod_external_tep
     - aci_fabric_pod_policy_group
+    - aci_fabric_pod_profile
+    - aci_fabric_pod_remote_pool
     - aci_fabric_pod_selector
     - aci_fabric_scheduler
     - aci_fabric_span_dst_group
@@ -105,8 +120,12 @@ action_groups:
     - aci_interface_blacklist
     - aci_interface_config
     - aci_interface_description
+    - aci_interface_policy_bfd
+    - aci_interface_policy_bfd_multihop
     - aci_interface_policy_cdp
+    - aci_interface_policy_eigrp
     - aci_interface_policy_fc
+    - aci_interface_policy_hsrp
     - aci_interface_policy_l2
     - aci_interface_policy_leaf_breakout_port_group
     - aci_interface_policy_leaf_fc_policy_group
@@ -117,11 +136,14 @@ action_groups:
     - aci_interface_policy_lldp
     - aci_interface_policy_mcp
     - aci_interface_policy_ospf
+    - aci_interface_policy_pim
     - aci_interface_policy_port_channel
     - aci_interface_policy_port_security
     - aci_interface_policy_spanning_tree
     - aci_interface_policy_spine_policy_group
     - aci_interface_selector_to_switch_policy_leaf_profile
+    - aci_key_policy
+    - aci_keychain_policy
     - aci_l2out
     - aci_l2out_extepg
     - aci_l2out_extepg_to_contract
@@ -129,11 +151,22 @@ action_groups:
     - aci_l2out_logical_interface_profile
     - aci_l2out_logical_node_profile
     - aci_l3out
+    - aci_l3out_bfd_interface_profile
+    - aci_l3out_bfd_multihop_interface_profile
     - aci_l3out_bgp_peer
     - aci_l3out_bgp_protocol_profile
+    - aci_l3out_dhcp_relay_label
+    - aci_l3out_eigrp_interface_profile
     - aci_l3out_extepg
     - aci_l3out_extepg_to_contract
     - aci_l3out_extsubnet
+    - aci_l3out_floating_svi
+    - aci_l3out_floating_svi_path
+    - aci_l3out_floating_svi_path_secondary_ip
+    - aci_l3out_floating_svi_secondary_ip
+    - aci_l3out_hsrp_group
+    - aci_l3out_hsrp_interface_profile
+    - aci_l3out_hsrp_secondary_vip
     - aci_l3out_interface
     - aci_l3out_interface_secondary_ip
     - aci_l3out_logical_interface_profile
@@ -144,6 +177,7 @@ action_groups:
     - aci_l3out_route_tag_policy
     - aci_l3out_static_routes
     - aci_l3out_static_routes_nexthop
+    - aci_l3out_to_sr_mpls_infra_l3out
     - aci_maintenance_group
     - aci_maintenance_group_node
     - aci_maintenance_policy
@@ -156,6 +190,11 @@ action_groups:
     - aci_node_mgmt_epg
     - aci_ntp_policy
     - aci_ntp_server
+    - aci_pim_route_map_entry
+    - aci_pim_route_map_policy
+    - aci_qos_custom_policy
+    - aci_qos_dot1p_class
+    - aci_qos_dscp_class
     - aci_rest
     - aci_route_control_context
     - aci_route_control_profile
@@ -194,4 +233,5 @@ action_groups:
     - aci_vmm_vswitch_policy
     - aci_vrf
     - aci_vrf_leak_internal_subnet
+    - aci_vrf_multicast
     - aci_vzany_to_contract
