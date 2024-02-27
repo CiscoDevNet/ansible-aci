@@ -144,10 +144,6 @@
         - { name: ansible_test_vm_vnic, type: vm_vnic, operator: "contains", category: "{{ fake_var | default(omit) }}", use_subnet: "{{ fake_var | default(omit) }}", value: "vm_vnic_value" }
         - { name: ansible_test_vm_tag, type: vm_tag, operator: "equals", category: "vm_attribute", use_subnet: "{{ fake_var | default(omit) }}", value: "vm_attribute_value" }
       ignore_errors: true # ignore errors is set to handle the ad group configuration which is not configurable in the lab environment, so error message is expected to ensure payload is sent
-    
-    - name: Debug
-      ansible.builtin.debug:
-        msg: "{{ nm_types }}"
 
     - name: Assert create simple statement with all type input options
       ansible.builtin.assert:
