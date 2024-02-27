@@ -12,9 +12,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_syslog_group
-short_description: Manage Syslog groups (syslog:Group, syslog:Console, syslog:File and syslog:Prof).
+short_description: Manage Syslog groups (syslog:Group, syslog:Console, syslog:File and syslog:Prof)
 description:
-- Manage syslog groups
+- Manage syslog groups.
 options:
   admin_state:
     description:
@@ -72,7 +72,7 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(syslog:Group).
+  description: More information about the internal APIC classes B(syslog:Group), B(syslog:Console), B(syslog:File) and B(syslog:Prof).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)

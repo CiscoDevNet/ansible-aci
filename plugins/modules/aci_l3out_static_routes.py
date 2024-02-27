@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_l3out_static_routes
 short_description: Manage Static routes object (l3ext:ipRouteP)
 description:
-- Manage External Subnet objects (l3ext:ipRouteP)
+- Manage External Subnet objects.
 options:
   description:
     description:
@@ -86,7 +86,7 @@ seealso:
 - module: cisco.aci.aci_tenant
 - module: cisco.aci.aci_l3out
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(l3ext:Out).
+  description: More information about the internal APIC class B(l3ext:ipRouteP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Anvitha Jain(@anvitha-jain)

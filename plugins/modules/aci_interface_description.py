@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_interface_description
-short_description: Setting and removing description on physical interfaces.
+short_description: Setting and removing description on physical interfaces (infra:HPathS, infra:RsHPathAtt, infra:SHPathS, and infra:RsSHPathAtt)
 description:
 - Setting and removing description on physical interfaces on Cisco ACI fabrics.
 options:
@@ -59,6 +59,10 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 - cisco.aci.owner
 
+seealso:
+- name: APIC Management Information Model reference
+  description: More information about the internal APIC classes B(infra:HPathS), B(infra:RsHPathAtt), B(infra:SHPathS), and B(infra:RsSHPathAtt).
+  link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Akini Ross (@akinross)
 """

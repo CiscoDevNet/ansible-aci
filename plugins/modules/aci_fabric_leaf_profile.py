@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_fabric_leaf_profile
-short_description: Manage fabric leaf profiles (fabric:LeafP).
+short_description: Manage fabric leaf profiles (fabric:LeafP)
 description:
 - Manage fabric leaf switch profiles in an ACI fabric.
 options:

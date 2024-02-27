@@ -14,9 +14,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_snmp_user
-short_description: Manage SNMP v3 Users (snmp:UserP).
+short_description: Manage SNMP v3 Users (snmp:UserP)
 description:
-- Manage SNMP v3 Users
+- Manage SNMP v3 Users.
 - Note that all properties within the snmpUserP class are Create-only. To modify any property of an existing user, you must delete and re-create it.
 options:
   auth_type:

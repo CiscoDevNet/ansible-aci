@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_leaf_policy_group
-short_description: Manage fabric interface policy leaf policy groups (infra:AccBndlGrp, infra:AccPortGrp)
+short_description: Manage fabric interface policy leaf policy groups (infra:AccBndlGrp and infra:AccPortGrp)
 description:
 - Manage fabric interface policy leaf policy groups on Cisco ACI fabrics.
 options:

@@ -13,7 +13,7 @@ DOCUMENTATION = r"""
 module: aci_system
 short_description: Query the ACI system information (top:System)
 description:
--  Query the ACI system information (top:System) on Cisco ACI.
+-  Query the ACI system information on Cisco ACI.
 author:
 - Lionel Hercot (@lhercot)
 options:
@@ -30,10 +30,11 @@ options:
     type: str
 
 notes:
-- More information about the internal APIC class B(top:System) from
-  L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 - This module is used to query system information for both cloud and on-premises controllers.
-
+seealso:
+- name: APIC Management Information Model reference
+  description: More information about the internal APIC class B(top:System).
+  link: https://developer.cisco.com/docs/apic-mim-ref/
 extends_documentation_fragment:
 - cisco.aci.aci
 """

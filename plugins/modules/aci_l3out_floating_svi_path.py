@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_floating_svi_path
-short_description: Manage Layer 3 Outside (L3Out) Floating SVI Path Attributes(l3ext:RsDynPathAtt)
+short_description: Manage Layer 3 Outside (L3Out) Floating SVI Path Attributes (l3ext:RsDynPathAtt)
 description:
 - Manages L3Out Floating SVI path attributes on Cisco ACI fabrics.
 options:

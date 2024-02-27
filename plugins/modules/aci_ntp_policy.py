@@ -17,9 +17,9 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = r"""
 ---
 module: aci_ntp_policy
-short_description: Manage NTP policies.
+short_description: Manage NTP policies (datetime:Pol)
 description:
-- Manage NTP policy (datetimePol) configuration on Cisco ACI fabrics.
+- Manage NTP policy configuration on Cisco ACI fabrics.
 options:
   name:
     description:
@@ -64,7 +64,7 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(datetimePol).
+  description: More information about the internal APIC class B(datetime:Pol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)

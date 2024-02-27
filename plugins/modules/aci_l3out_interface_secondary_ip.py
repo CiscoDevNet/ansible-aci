@@ -16,9 +16,9 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_interface_secondary_ip
-short_description: Manage Layer 3 Outside (L3Out) interface secondary IP addresses (l3ext:Ip).
+short_description: Manage Layer 3 Outside (L3Out) interface secondary IP addresses (l3ext:Ip)
 description:
-- Manage Layer 3 Outside (L3Out) interface secondary IP addresses (l3ext:Ip).
+- Manage Layer 3 Outside (L3Out) interface secondary IP addresses.
 options:
   tenant:
     description:
@@ -89,7 +89,7 @@ seealso:
 - module: aci_l3out_logical_interface_profile
 - module: aci_l3out_logical_interface
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(l3ext:RsPathL3OutAtt)
+  description: More information about the internal APIC class B(l3ext:Ip)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Marcel Zehnder (@maercu)

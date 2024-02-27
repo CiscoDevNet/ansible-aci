@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_snmp_client_group
-short_description: Manage SNMP client groups (snmp:ClientGrpP).
+short_description: Manage SNMP client groups (snmp:ClientGrpP)
 description:
 - Manage SNMP client groups
 options:

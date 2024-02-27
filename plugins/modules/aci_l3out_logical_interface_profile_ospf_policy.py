@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_logical_interface_profile_ospf_policy
-short_description: Manage Layer 3 Outside (L3Out) OSPF interface profile (ospfIfP)
+short_description: Manage Layer 3 Outside (L3Out) OSPF interface profile (ospf:IfP)
 description:
 - Manage L3Out logical interface profile OSPF policies on Cisco ACI fabrics.
 options:
@@ -76,7 +76,7 @@ seealso:
 - module: cisco.aci.aci_l3out_logical_interface_profile
 - module: cisco.aci.aci_interface_policy_ospf
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes
+  description: More information about the internal APIC class B(ospf:IfP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jason Juenger (@jasonjuenger)

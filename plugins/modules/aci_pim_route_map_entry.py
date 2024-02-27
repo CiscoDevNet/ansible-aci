@@ -74,7 +74,7 @@ seealso:
 - module: cisco.aci.aci_tenant
 - module: cisco.aci.aci_pim_route_map_policy
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes
+  description: More information about the internal APIC class B(pim:RouteMapEntry).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Gaspard Micol (@gmicol)

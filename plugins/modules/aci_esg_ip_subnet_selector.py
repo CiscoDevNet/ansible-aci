@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_esg_ip_subnet_selector
-short_description: Manage ESG IP Subnet selector(fv:EPSelector)
+short_description: Manage ESG IP Subnet selector (fv:EPSelector)
 description:
 - Manage Endpoint Security Groups (ESG) IP Subnet selector on Cisco ACI fabrics.
 

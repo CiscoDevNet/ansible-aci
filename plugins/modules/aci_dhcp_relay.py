@@ -14,9 +14,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_dhcp_relay
-short_description: Manage DHCP relay policies.
+short_description: Manage DHCP relay policies (dhcp:RelayP)
 description:
-- Manage DHCP relay policy (dhcpRelayP) configuration on Cisco ACI fabrics.
+- Manage DHCP relay policy configuration on Cisco ACI fabrics.
 options:
   tenant:
     description:
@@ -48,7 +48,7 @@ notes:
   The M(cisco.aci.aci_tenant) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(dhcpRelayP).
+  description: More information about the internal APIC class B(dhcp:RelayP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)

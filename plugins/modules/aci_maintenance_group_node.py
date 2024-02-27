@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_maintenance_group_node
 short_description: Manage maintenance group nodes (fabric:NodeBlk)
 description:
-- Manage maintenance group nodes
+- Manage maintenance group nodes.
 options:
   group:
     description:

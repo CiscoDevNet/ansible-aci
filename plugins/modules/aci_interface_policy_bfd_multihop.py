@@ -13,9 +13,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_bfd_multihop
-short_description: Manage BFD Multihop Interface policies
+short_description: Manage BFD Multihop Interface policies (bfd:MhIfPol)
 description:
-- Manage BFD Multihop Interface policy (bfd:MhIfPol) configuration on Cisco ACI fabrics
+- Manage BFD Multihop Interface policy configuration on Cisco ACI fabrics
 - Only available in APIC version 5.2 or later
 options:
   tenant:

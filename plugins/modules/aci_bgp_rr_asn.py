@@ -13,9 +13,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_bgp_rr_asn
-short_description: Manage BGP Route Reflector ASN.
+short_description: Manage BGP Route Reflector ASN (bgp:AsP)
 description:
-- Manage the BGP Autonomous System Number of the fabric (bgpAsP).
+- Manage the BGP Autonomous System Number of the fabric.
 - This module is specifically for fabric BGP, for L3Out BGP use the aci_l3out_bgp_peer module
 options:
   asn:
@@ -35,7 +35,7 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bgpAsP).
+  description: More information about the internal APIC class B(bgp:AsP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
