@@ -1,0 +1,191 @@
+# Test code for the ACI modules
+# Copyright: (c) 2024, Samita Bhattacharjee (@samitab) <samitab@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info
+    state: absent
+    tenant: ansible_test
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Create tenant
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_tenant_absent
+      state: present
+
+  - name: Create first netflow monitor policy
+    cisco.aci.aci_netflow_monitor_policy:
+      <<: *aci_tenant_absent
+      netflow_monitor_policy: ansible_netflow_monitor_policy
+      state: present
+
+  - name: Create second netflow monitor policy
+    cisco.aci.aci_netflow_monitor_policy:
+      <<: *aci_tenant_absent
+      netflow_monitor_policy: ansible_netflow_monitor_policy_2
+      state: present
+
+  - name: Create first bd
+    cisco.aci.aci_bd: &aci_bd_present
+      <<: *aci_tenant_present
+      bd: anstest
+
+  - name: Create second bd
+    cisco.aci.aci_bd: &aci_bd_present_2
+      <<: *aci_tenant_present
+      bd: anstest_2
+
+  - name: Ensure first binding bd to netflow monitor policy does not exist
+    cisco.aci.aci_bd_to_netflow_monitor_policy: &aci_bd_to_netflow_monitor_policy_absent
+      <<: *aci_bd_present
+      netflow_monitor_policy: ansible_netflow_monitor_policy
+      filter_type: ipv4
+      state: absent
+
+  - name: Ensure second binding bd to netflow monitor policy does not exist
+    cisco.aci.aci_bd_to_netflow_monitor_policy: &aci_bd_to_netflow_monitor_policy_absent_2
+      <<: *aci_bd_present_2
+      netflow_monitor_policy: ansible_netflow_monitor_policy_2
+      filter_type: ipv6
+      state: absent
+
+  - name: Bind bd to netflow monitor policy - first binding (check_mode)
+    cisco.aci.aci_bd_to_netflow_monitor_policy: &aci_bd_to_netflow_monitor_policy_present
+      <<: *aci_bd_to_netflow_monitor_policy_absent
+      state: present
+    check_mode: true
+    register: cm_bd_to_netflow_monitor_policy
+
+  - name: Bind bd to netflow monitor policy - first binding (normal_mode)
+    cisco.aci.aci_bd_to_netflow_monitor_policy:
+      <<: *aci_bd_to_netflow_monitor_policy_present
+    register: nm_bd_to_netflow_monitor_policy
+
+  - name: Bind bd to netflow monitor policy again - testing idempotency
+    cisco.aci.aci_bd_to_netflow_monitor_policy:
+      <<: *aci_bd_to_netflow_monitor_policy_present
+    register: bd_to_netflow_monitor_policy_idempotency
+
+  - name: Bind bd to netflow monitor policy again - second binding
+    cisco.aci.aci_bd_to_netflow_monitor_policy: &aci_bd_to_netflow_monitor_policy_present_2
+      <<: *aci_bd_to_netflow_monitor_policy_absent_2
+      state: present
+    register: nm_bd_to_netflow_monitor_policy_2
+
+  - name: Asserts for creation tasks
+    ansible.builtin.assert:
+      that:
+        - cm_bd_to_netflow_monitor_policy is changed
+        - cm_bd_to_netflow_monitor_policy.previous == []
+        - cm_bd_to_netflow_monitor_policy.current == []
+        - cm_bd_to_netflow_monitor_policy.proposed.fvRsBDToNetflowMonitorPol.attributes.dn == "uni/tn-ansible_test/BD-anstest/rsBDToNetflowMonitorPol-[ansible_netflow_monitor_policy]-ipv4"
+        - cm_bd_to_netflow_monitor_policy.proposed.fvRsBDToNetflowMonitorPol.attributes.tnNetflowMonitorPolName == "ansible_netflow_monitor_policy"
+        - nm_bd_to_netflow_monitor_policy is changed
+        - nm_bd_to_netflow_monitor_policy.current.0.fvRsBDToNetflowMonitorPol.attributes.dn == "uni/tn-ansible_test/BD-anstest/rsBDToNetflowMonitorPol-[ansible_netflow_monitor_policy]-ipv4"
+        - nm_bd_to_netflow_monitor_policy.current.0.fvRsBDToNetflowMonitorPol.attributes.tnNetflowMonitorPolName == "ansible_netflow_monitor_policy"
+        - bd_to_netflow_monitor_policy_idempotency is not changed
+        - bd_to_netflow_monitor_policy_idempotency.current == bd_to_netflow_monitor_policy_idempotency.previous
+        - bd_to_netflow_monitor_policy_idempotency.sent == {}
+        - nm_bd_to_netflow_monitor_policy_2 is changed
+        - nm_bd_to_netflow_monitor_policy_2.current.0.fvRsBDToNetflowMonitorPol.attributes.dn == "uni/tn-ansible_test/BD-anstest_2/rsBDToNetflowMonitorPol-[ansible_netflow_monitor_policy_2]-ipv6"
+        - nm_bd_to_netflow_monitor_policy_2.current.0.fvRsBDToNetflowMonitorPol.attributes.tnNetflowMonitorPolName == "ansible_netflow_monitor_policy_2"
+
+  - name: Query all bds bound to netflow monitor policies
+    cisco.aci.aci_bd_to_netflow_monitor_policy:
+      <<: *aci_tenant_present
+      state: query
+      output_level: debug
+    register: query_all_bd_to_netflow_monitor_policy
+
+  - name: Query first bd bound to first netflow monitor policy
+    cisco.aci.aci_bd_to_netflow_monitor_policy:
+      <<: *aci_bd_to_netflow_monitor_policy_present
+      state: query
+      output_level: debug
+    register: query_first_bd_to_netflow_monitor_policy
+
+  - name: Asserts query tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_bd_to_netflow_monitor_policy is not changed
+        - '"fvRsBDToNetflowMonitorPol" in query_all_bd_to_netflow_monitor_policy.filter_string'
+        - query_all_bd_to_netflow_monitor_policy.current.0.fvTenant.children | length >= 2
+        - query_all_bd_to_netflow_monitor_policy.current.0.fvTenant.children.0.fvBD.attributes.name == "anstest_2"
+        - query_all_bd_to_netflow_monitor_policy.current.0.fvTenant.children.0.fvBD.children.0.fvRsBDToNetflowMonitorPol.attributes.tRn == "monitorpol-ansible_netflow_monitor_policy_2"
+        - query_all_bd_to_netflow_monitor_policy.current.0.fvTenant.children.1.fvBD.attributes.name == "anstest"
+        - query_all_bd_to_netflow_monitor_policy.current.0.fvTenant.children.1.fvBD.children.0.fvRsBDToNetflowMonitorPol.attributes.tRn == "monitorpol-ansible_netflow_monitor_policy"
+        - query_first_bd_to_netflow_monitor_policy is not changed
+        - '"tn-ansible_test/BD-anstest/rsBDToNetflowMonitorPol-[ansible_netflow_monitor_policy]-ipv4.json" in query_first_bd_to_netflow_monitor_policy.url'
+
+  - name: Unbind bd to netflow monitor policy - first binding (check_mode)
+    cisco.aci.aci_bd_to_netflow_monitor_policy:
+      <<: *aci_bd_to_netflow_monitor_policy_present
+      state: absent
+    check_mode: true
+    register: cm_unbind_bd_to_netflow_monitor_policy
+  
+  - name: Unbind bd to netflow_monitor_policy - first binding (normal_mode)
+    cisco.aci.aci_bd_to_netflow_monitor_policy:
+      <<: *aci_bd_to_netflow_monitor_policy_present
+      state: absent
+    register: nm_unbind_bd_to_netflow_monitor_policy
+
+  - name: Unbind bd to netflow_monitor_policy again - testing idempotency
+    cisco.aci.aci_bd_to_netflow_monitor_policy:
+      <<: *aci_bd_to_netflow_monitor_policy_present
+      state: absent
+    register: unbind_bd_to_netflow_monitor_policy_idempotency
+
+  - name: Unbind bd to netflow_monitor_policy - second binding
+    cisco.aci.aci_bd_to_netflow_monitor_policy:
+      <<: *aci_bd_to_netflow_monitor_policy_present_2
+      state: absent
+    register: nm_unbind_bd_to_netflow_monitor_policy_2
+
+  - name: Asserts for deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_unbind_bd_to_netflow_monitor_policy is changed
+        - cm_unbind_bd_to_netflow_monitor_policy.current == cm_unbind_bd_to_netflow_monitor_policy.previous
+        - cm_unbind_bd_to_netflow_monitor_policy.proposed == {}
+        - nm_unbind_bd_to_netflow_monitor_policy is changed
+        - nm_unbind_bd_to_netflow_monitor_policy.previous != []
+        - nm_unbind_bd_to_netflow_monitor_policy.proposed == {}
+        - nm_unbind_bd_to_netflow_monitor_policy.current == []
+        - nm_unbind_bd_to_netflow_monitor_policy.previous == cm_unbind_bd_to_netflow_monitor_policy.current
+        - unbind_bd_to_netflow_monitor_policy_idempotency is not changed
+        - unbind_bd_to_netflow_monitor_policy_idempotency.proposed == {}
+        - unbind_bd_to_netflow_monitor_policy_idempotency.current == []
+        - unbind_bd_to_netflow_monitor_policy_idempotency.previous == []
+        - nm_unbind_bd_to_netflow_monitor_policy_2 is changed
+        - nm_unbind_bd_to_netflow_monitor_policy_2.previous != []
+        - nm_unbind_bd_to_netflow_monitor_policy_2.current == []
+
+  - name: Delete tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent

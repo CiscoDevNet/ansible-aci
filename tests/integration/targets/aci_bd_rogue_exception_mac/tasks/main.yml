@@ -1,0 +1,186 @@
+# Test code for the ACI modules
+# Copyright: (c) 2024, Samita Bhattacharjee (@samitab) <samitab@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+# CLEAN ENVIRONMENT
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info
+    state: absent
+    tenant: ansible_test
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites and APIC version >= 5.2
+  when: query_cloud.current == [] and version.current.0.topSystem.attributes.version is version('5.2', '>=')
+  block:
+  - name: Create tenant
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_tenant_absent
+      state: present
+    register: tenant_present
+
+  - name: Ensure bd exists for tests to kick off
+    cisco.aci.aci_bd: &aci_bd_present
+      <<: *aci_tenant_present
+      bd: anstest
+    register: bd_present
+
+  - name: Ensure rogue exception mac does not exist for tests to kick off
+    cisco.aci.aci_bd_rogue_exception_mac: &aci_rogue_exception_mac_absent
+      <<: *aci_bd_present
+      state: absent
+      mac: "AA:BB:CC:DD:EE:11"
+      description: 1st MAC
+
+  - name: Ensure second rogue exception mac does not exist for tests to kick off
+    cisco.aci.aci_bd_rogue_exception_mac: &aci_rogue_exception_mac_absent_2
+      <<: *aci_rogue_exception_mac_absent
+      mac: "AA-BB-CC-DD-EE-22"
+      description: 2nd MAC
+
+
+  - name: Create first rogue exception mac in bd (check_mode)
+    cisco.aci.aci_bd_rogue_exception_mac: &aci_bd_rogue_exception_mac_present
+      <<: *aci_rogue_exception_mac_absent
+      state: present
+    check_mode: true
+    register: cm_bd_rogue_exception_mac
+
+  - name: Create first rogue exception mac in bd (normal_mode)
+    cisco.aci.aci_bd_rogue_exception_mac:
+      <<: *aci_bd_rogue_exception_mac_present
+    register: nm_bd_rogue_exception_mac
+
+  - name: Create first rogue exception mac in bd again - testing idempotency
+    cisco.aci.aci_bd_rogue_exception_mac:
+      <<: *aci_bd_rogue_exception_mac_present
+    register: bd_rogue_exception_mac_idempotency
+
+  - name: Create second rogue exception mac in bd
+    cisco.aci.aci_bd_rogue_exception_mac: &aci_bd_rogue_exception_mac_present_2
+      <<: *aci_rogue_exception_mac_absent_2
+      state: present
+    register: nm_bd_rogue_exception_mac_2
+
+  - name: Asserts for creation tasks
+    ansible.builtin.assert:
+      that:
+        - cm_bd_rogue_exception_mac is changed
+        - cm_bd_rogue_exception_mac.previous == []
+        - cm_bd_rogue_exception_mac.current == []
+        - cm_bd_rogue_exception_mac.proposed.fvRogueExceptionMac.attributes.dn == "uni/tn-ansible_test/BD-anstest/rgexpmac-AA:BB:CC:DD:EE:11"
+        - cm_bd_rogue_exception_mac.proposed.fvRogueExceptionMac.attributes.mac == "AA:BB:CC:DD:EE:11"
+        - cm_bd_rogue_exception_mac.proposed.fvRogueExceptionMac.attributes.descr == "1st MAC"
+        - nm_bd_rogue_exception_mac is changed
+        - nm_bd_rogue_exception_mac.current.0.fvRogueExceptionMac.attributes.dn == "uni/tn-ansible_test/BD-anstest/rgexpmac-AA:BB:CC:DD:EE:11"
+        - nm_bd_rogue_exception_mac.current.0.fvRogueExceptionMac.attributes.mac == "AA:BB:CC:DD:EE:11"
+        - nm_bd_rogue_exception_mac.current.0.fvRogueExceptionMac.attributes.descr == "1st MAC"
+        - bd_rogue_exception_mac_idempotency is not changed
+        - bd_rogue_exception_mac_idempotency.current == bd_rogue_exception_mac_idempotency.previous
+        - bd_rogue_exception_mac_idempotency.sent == {}
+        - nm_bd_rogue_exception_mac_2 is changed
+        - nm_bd_rogue_exception_mac_2.current.0.fvRogueExceptionMac.attributes.dn == "uni/tn-ansible_test/BD-anstest/rgexpmac-AA:BB:CC:DD:EE:22"
+        - nm_bd_rogue_exception_mac_2.current.0.fvRogueExceptionMac.attributes.mac == "AA:BB:CC:DD:EE:22"
+        - nm_bd_rogue_exception_mac_2.current.0.fvRogueExceptionMac.attributes.descr == "2nd MAC"
+
+  - name: Query all bds bound to rogue exception mac
+    cisco.aci.aci_bd_rogue_exception_mac:
+      <<: *aci_tenant_present
+      state: query
+      output_level: debug
+    register: query_all_bd_to_rogue_exception_mac
+
+  - name: Query first bd with first rogue exception mac
+    cisco.aci.aci_bd_rogue_exception_mac:
+      <<: *aci_bd_rogue_exception_mac_present
+      state: query
+      output_level: debug
+    register: query_first_bd_to_rogue_exception_mac
+
+  - name: Asserts query tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_bd_to_rogue_exception_mac is not changed
+        - '"fvRogueExceptionMac" in query_all_bd_to_rogue_exception_mac.filter_string'
+        - query_all_bd_to_rogue_exception_mac.current.0.fvTenant.children.0.fvBD.children | length == 2
+        - query_all_bd_to_rogue_exception_mac.current.0.fvTenant.children.0.fvBD.attributes.name == "anstest"
+        - query_all_bd_to_rogue_exception_mac.current.0.fvTenant.children.0.fvBD.children.0.fvRogueExceptionMac.attributes.rn == "rgexpmac-AA:BB:CC:DD:EE:22"
+        - query_all_bd_to_rogue_exception_mac.current.0.fvTenant.children.0.fvBD.children.1.fvRogueExceptionMac.attributes.rn == "rgexpmac-AA:BB:CC:DD:EE:11"
+        - query_first_bd_to_rogue_exception_mac is not changed
+        - '"tn-ansible_test/BD-anstest/rgexpmac-AA:BB:CC:DD:EE:11.json" in query_first_bd_to_rogue_exception_mac.url'
+
+  - name: Delete first rogue exception mac (check_mode)
+    cisco.aci.aci_bd_rogue_exception_mac:
+      <<: *aci_bd_rogue_exception_mac_present
+      state: absent
+    check_mode: true
+    register: cm_unbind_bd_to_rogue_exception_mac
+  
+  - name: Delete first rogue exception mac (normal_mode)
+    cisco.aci.aci_bd_rogue_exception_mac:
+      <<: *aci_bd_rogue_exception_mac_present
+      state: absent
+    register: nm_unbind_bd_to_rogue_exception_mac
+
+  - name: Delete first rogue exception mac again - testing idempotency
+    cisco.aci.aci_bd_rogue_exception_mac:
+      <<: *aci_bd_rogue_exception_mac_present
+      state: absent
+    register: unbind_bd_to_rogue_exception_mac_idempotency
+
+  - name: Delete second rogue exception mac
+    cisco.aci.aci_bd_rogue_exception_mac:
+      <<: *aci_bd_rogue_exception_mac_present_2
+      state: absent
+    register: nm_unbind_bd_to_rogue_exception_mac_2
+
+  - name: Asserts for deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_unbind_bd_to_rogue_exception_mac is changed
+        - cm_unbind_bd_to_rogue_exception_mac.current == cm_unbind_bd_to_rogue_exception_mac.previous
+        - cm_unbind_bd_to_rogue_exception_mac.proposed == {}
+        - nm_unbind_bd_to_rogue_exception_mac is changed
+        - nm_unbind_bd_to_rogue_exception_mac.previous != []
+        - nm_unbind_bd_to_rogue_exception_mac.proposed == {}
+        - nm_unbind_bd_to_rogue_exception_mac.current == []
+        - nm_unbind_bd_to_rogue_exception_mac.previous == cm_unbind_bd_to_rogue_exception_mac.current
+        - unbind_bd_to_rogue_exception_mac_idempotency is not changed
+        - unbind_bd_to_rogue_exception_mac_idempotency.previous == []
+        - unbind_bd_to_rogue_exception_mac_idempotency.current == []
+        - unbind_bd_to_rogue_exception_mac_idempotency.previous == []
+        - nm_unbind_bd_to_rogue_exception_mac_2 is changed
+        - nm_unbind_bd_to_rogue_exception_mac_2.previous != []
+        - nm_unbind_bd_to_rogue_exception_mac_2.current == []
+
+  - name: Delete tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent
+    when: tenant_present is changed
