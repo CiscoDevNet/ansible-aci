@@ -236,7 +236,7 @@ def main():
     aci_class = "commCipher"
 
     fabric_management_access_policy_name = module.params.get("fabric_management_access_policy_name")
-    id = module.params.get("id")
+    id_value = module.params.get("id")
     cipher_state = module.params.get("cipher_state")
     name_alias = module.params.get("name_alias")
     state = module.params.get("state")
@@ -250,9 +250,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class=aci_class,
-            aci_rn="https/cph-{0}".format(id),
-            module_object=id,
-            target_filter={"id": id},
+            aci_rn="https/cph-{0}".format(id_value),
+            module_object=id_value,
+            target_filter={"id": id_value},
         ),
     )
 
@@ -262,7 +262,7 @@ def main():
         aci.payload(
             aci_class=aci_class,
             class_config=dict(
-                id=id,
+                id=id_value,
                 state=cipher_state,
                 nameAlias=name_alias,
             ),
