@@ -50,7 +50,7 @@ options:
         type: int
       redirect:
         description:
-        - The state of the HTTPS redirect service.
+        - The state of the HTTP to HTTPS redirect service.
         - The APIC defaults to C(disabled) when unset during creation.
         type: str
         choices: [ enabled, disabled, tested ]
