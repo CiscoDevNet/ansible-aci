@@ -50,7 +50,7 @@ options:
         type: int
       redirect:
         description:
-        - The state of the HTTPS communication service.
+        - The state of the HTTPS redirect service.
         - The APIC defaults to C(disabled) when unset during creation.
         type: str
         choices: [ enabled, disabled, tested ]
@@ -475,7 +475,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-from ansible_collections.cisco.aci.plugins.module_utils.constants import THROTTLE_UNIT, SSH_CIPHERS, KEX_ALGORITHMS, SSH_MACS, TLS_MAPPING_NEW
+from ansible_collections.cisco.aci.plugins.module_utils.constants import THROTTLE_UNIT, SSH_CIPHERS, KEX_ALGORITHMS, SSH_MACS, HTTP_TLS_MAPPING
 
 
 def main():
@@ -509,7 +509,7 @@ def main():
                 ssl=dict(
                     type="list",
                     elements="str",
-                    choices=list(TLS_MAPPING_NEW.keys()),
+                    choices=list(HTTP_TLS_MAPPING.keys()),
                     aliases=["ssl_protocols"],
                 ),
                 dh_param=dict(type="str", choices=["1024", "2048", "4096", "none"]),
@@ -632,7 +632,7 @@ def main():
                         port=https.get("port"),
                         accessControlAllowOrigins=https.get("allow_origins"),
                         accessControlAllowCredential=https.get("allow_credentials"),
-                        sslProtocols=",".join(sorted(TLS_MAPPING_NEW.get(v) for v in set(https.get("ssl")))) if https.get("ssl") else None,
+                        sslProtocols=",".join(sorted(HTTP_TLS_MAPPING.get(v) for v in set(https.get("ssl")))) if https.get("ssl") else None,
                         dhParam=https.get("dh_param"),
                         globalThrottleSt=https.get("throttle"),
                         globalThrottleRate=https.get("throttle_rate"),
