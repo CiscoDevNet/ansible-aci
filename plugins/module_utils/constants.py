@@ -432,3 +432,5 @@ POLICY_LABEL_COLORS = [
     "yellow",
     "yellow_green",
 ]
+
+MATCH_ACCESS_POLICIES_SELECTOR_TYPE = dict(range="range", all="ALL")

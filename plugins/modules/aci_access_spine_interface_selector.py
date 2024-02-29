@@ -228,6 +228,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MATCH_ACCESS_POLICIES_SELECTOR_TYPE
 
 
 def main():
@@ -239,7 +240,7 @@ def main():
         spine_interface_selector=dict(type="str", aliases=["name", "spine_interface_selector_name", "interface_selector", "interface_selector_name", "access_port_selector", "access_port_selector_name"]),  # Not required for querying all objects
         description=dict(type="str"),
         policy_group=dict(type="str", aliases=["policy_group_name"]),
-        selector_type=dict(type="str", choices=["all", "range"], aliases=["type"]),
+        selector_type=dict(type="str", choices=list(MATCH_ACCESS_POLICIES_SELECTOR_TYPE.keys()), aliases=["type"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -256,7 +257,7 @@ def main():
     spine_interface_selector = module.params.get("spine_interface_selector")
     description = module.params.get("description")
     policy_group = module.params.get("policy_group")
-    selector_type = module.params.get("selector_type")
+    selector_type = MATCH_ACCESS_POLICIES_SELECTOR_TYPE.get(module.params.get("selector_type"))
     state = module.params.get("state")
 
     if policy_group is not None:
