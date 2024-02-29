@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_interface_policy_storm_control
 short_description: Manage Storm Control interface policies (stormctrl:IfPol)
 description:
-- Manage CDP interface policies on Cisco ACI fabrics.
+- Manage Storm Control interface policies on Cisco ACI fabrics.
 options:
   storm_control_policy:
     description:
