@@ -116,7 +116,7 @@ author:
 
 EXAMPLES = r"""
 - name: Add a new vmtag useg attribute in default block statement
-  cisco.aci.aci_epg_useg_attribute:
+  cisco.aci.aci_epg_useg_attribute_simple_statement:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -132,7 +132,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Add a new vmtag useg attribute in nested block statement
-  cisco.aci.aci_epg_useg_attribute:
+  cisco.aci.aci_epg_useg_attribute_simple_statement:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -151,7 +151,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query a specific vmtag useg attribute in default block statement
-  cisco.aci.aci_epg_useg_attribute:
+  cisco.aci.aci_epg_useg_attribute_simple_statement:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -165,7 +165,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query all vmtag useg attributes
-  cisco.aci.aci_epg_useg_attribute:
+  cisco.aci.aci_epg_useg_attribute_simple_statement:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -175,7 +175,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Remove an existing vmtag useg attribute from default block statement
-  cisco.aci.aci_epg_useg_attribute:
+  cisco.aci.aci_epg_useg_attribute_simple_statement:
     host: apic
     username: admin
     password: SomeSecretPassword
