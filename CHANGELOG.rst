@@ -4,6 +4,72 @@ Cisco ACI Ansible Collection Release Notes
 
 .. contents:: Topics
 
+v2.9.0
+======
+
+Release Summary
+---------------
+
+Release v2.9.0 of the ``ansible-aci`` collection on 2024-02-29.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.8.0.
+
+Minor Changes
+-------------
+
+- Add Authentification option for EIGRP interface profile and add aci_keychain_policy and aci_key_policy as new modules.
+- Add L3out Floating SVI modules (aci_l3out_floating_svi, aci_l3out_floating_svi_path, aci_l3out_floating_svi_path_secondary_ip and aci_l3out_floating_svi_secondary_ip) (#478)
+- Add aci_action_rule_additional_communities as a new module and Add action rules attributes to aci_tenant_action_rule_profile.
+- Add aci_action_rule_set_as_path and aci_action_rule_set_as_path_asn as new modules.
+- Add aci_bgp_peer_prefix_policy, aci_bgp_route_summarization_policy and aci_bgp_address_family_context_policy as new modules.
+- Add aci_fabric_pod, aci_fabric_pod_external_tep, aci_fabric_pod_profile, aci_fabric_pod_remote_pool modules (#558)
+- Add aci_hsrp_interface_policy, aci_l3out_hsrp_group, aci_l3out_hsrp_interface_profile and aci_l3out_hsrp_secondary_vip modules (#505)
+- Add aci_interface_policy_eigrp (class:eigrpIfPol) as a new module.
+- Add aci_interface_policy_pim as a new module.
+- Add aci_l3out_bfd_multihop_interface_profile, aci_l3out_bfd_interface_profile, aci_interface_policy_bfd_multihop, aci_interface_policy_bfd and aci_bfd_multihop_node_policy modules (#492)
+- Add aci_l3out_dhcp_relay_label, aci_dhcp_option_policy and aci_dhcp_option as new modules.
+- Add aci_l3out_eigrp_interface_profile as a new module.  Modify aci_l3out_logical_interface_profile_opsf_policy.
+- Add aci_netflow_exporter_policy as a new module.
+- Add aci_netflow_monitor_policy and aci_netflow_record_policy as new modules.
+- Add aci_netflow_monitor_to_exporter as a new module and add integration test for aci_netflow_exporter_policy.
+- Add aci_pim_route_map_policy and aci_pim_route_map_entry as new modules.
+- Add aci_qos_custom_policy and aci_qos_dscp_class as new modules.
+- Add aci_qos_dot1p_class as a new module and Modify aci_qos_dscp_class and aci_qos_custom_policy modules and test cases
+- Add additional missing action rules as children in aci_tenant_action_rule_profile.
+- Add auto to speed attribute options in aci_interface_policy_link_level module (#577)
+- Add option to set delimiter to  _  in aci_epg_to_domain module
+- Add qos_custom_policy, pim_interface_policy and igmp_interface_policy as new child_classes for aci_l3out_logical_interface_profile.
+- Add support for Cloud APIC tenant certificate authority configuration in aci_aaa_certificate_authority
+- Add support for Cloud APIC tenant key ring configuration in aci_aaa_key_ring
+- Add support for annotation in aci_rest module (#437)
+- Add support for configuration of access switch policy groups with aci_access_switch_policy_group module
+- Add support for configuration of certificate authorities in aci_aaa_certificate_authority
+- Add support for configuration of fabric management access policies in aci_fabric_management_access
+- Add support for configuration of vrf multicast with aci_vrf_multicast module
+- Add support for encap scope in aci_l3out_interface
+- Add support for https ssl cipher configuration in aci_fabric_management_access_https_cipher
+- Add support for infra l3out nodes bgp-evpn loopback, mpls transport loopback and segment id in aci_l3out_logical_node
+- Add support for infra sr mpls micro bfd in aci_l3out_interface
+- Add support for intra epg, taboo, and contract interface in aci_epg_to_contract
+- Add support for key ring configuration in aci_aaa_key_ring
+- Add support for mac and description in aci_l3out_interface
+- Add support for mpls custom qos policy for infra sr mpls l3outs node profiles in aci_l3out_logical_node_profile
+- Add support for security default settings configuration in aci_aaa_security_default_settings
+- Add support for sr-mpls bgpInfraPeerP and bgp_password in aci_l3out_bgp_peer module (#543)
+- Add support for sr-mpls in aci_l3out module
+- Add support for sr-mpls l3out to infra l3out in aci_l3out_to_sr_mpls_infra_l3out
+- Add support for taboo contract, contract interface and intra_epg contract in aci_l3out_extepg_to_contract
+- Added modules aci_ bd_to_netflow_monitor_policy and aci_bd_rogue_exception_mac and fixed missing clean-up  in bd_to_l3out tests (#600)
+- Added relevant missing options to the bd module.
+- Added support for configuring Azure cloud subnets using the aci_cloud_subnet module.
+- Addition of a filter plugin called aci_listify to the collection which flattens nested dictionaries
+- Fix early version issues with new attributes in aci_interface_policy_leaf_policy_group module by adding conditions to include attributes in the payload only when they are specified by the user (#578)
+- Removed logout function from the aci connection plugin to overcome intermittent calls to logout by the ansible task executor
+
+Bugfixes
+--------
+
+- Fix idempotency for l3out configuration when l3protocol is used in aci_l3out
+- Fix query in aci_vmm_controller
 
 v2.8.0
 ======
@@ -13,7 +79,6 @@ Release Summary
 
 Release v2.8.0 of the ``ansible-aci`` collection on 2023-11-04.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.7.0.
-
 
 Minor Changes
 -------------
@@ -57,7 +122,6 @@ Release Summary
 Release v2.7.0 of the ``ansible-aci`` collection on 2023-08-04.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.6.0.
 
-
 Minor Changes
 -------------
 
@@ -94,7 +158,6 @@ Release Summary
 Release v2.6.0 of the ``ansible-aci`` collection on 2023-04-19.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.5.0.
 
-
 Minor Changes
 -------------
 
@@ -111,7 +174,6 @@ Release Summary
 
 Release v2.5.0 of the ``ansible-aci`` collection on 2023-03-31.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.4.0.
-
 
 Minor Changes
 -------------
@@ -133,7 +195,6 @@ Release Summary
 
 Release v2.4.0 of the ``ansible-aci`` collection on 2023-02-04.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.3.0.
-
 
 Minor Changes
 -------------
@@ -163,7 +224,6 @@ Release Summary
 
 Release v2.3.0 of the ``ansible-aci`` collection on 2022-10-14.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.2.0.
-
 
 Minor Changes
 -------------
@@ -195,7 +255,6 @@ Release Summary
 
 Release v2.2.0 of the ``ansible-aci`` collection on 2022-03-15.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.1.0.
-
 
 Minor Changes
 -------------
@@ -441,7 +500,6 @@ Release Summary
 
 This is the first official release of the ``cisco.aci`` collection on 2020-08-18.
 This changelog describes all changes made to the modules and plugins included in this collection since Ansible 2.9.0.
-
 
 Minor Changes
 -------------
