@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
 # Copyright: (c) 2023, Eric Girard <@netgirard>
 # Copyright: (c) 2024, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
@@ -18,7 +17,7 @@ ANSIBLE_METADATA = {
 
 DOCUMENTATION = r"""
 ---
-module: aci_switch_spine_selector
+module: aci_access_spine_switch_selector
 short_description: Bind spine selectors to switch policy spine profiles (infra:SpineS, infra:NodeBlk, infra:RsSpineAccNodePGrep)
 description:
 - Bind spine selectors (with node block range and policy group) to switch policy spine profiles on Cisco ACI fabrics.
@@ -78,10 +77,10 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- This module is to be used with M(cisco.aci.aci_switch_policy_spine_profile).
+- This module is to be used with M(cisco.aci.aci_access_spine_switch_profile).
   One first creates a spine profile (infra:SpineP) and then creates an associated selector (infra:SpineS),
 seealso:
-- module: cisco.aci.aci_switch_policy_spine_profile
+- module: cisco.aci.aci_access_spine_switch_profile
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes B(infra:SpineS),
                B(infra:NodeBlk) and B(infra:RsAccNodePGrp).
@@ -94,7 +93,7 @@ author:
 
 EXAMPLES = r"""
 - name: Add a switch policy spine profile selector associated Node Block range (with policy group)
-  cisco.aci.aci_switch_spine_selector:
+  cisco.aci.aci_access_spine_switch_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -108,7 +107,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Add a switch policy spine profile selector associated Node Block range (without policy group)
-  cisco.aci.aci_switch_spine_selector:
+  cisco.aci.aci_access_spine_switch_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -121,7 +120,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query a switch policy spine profile selector
-  cisco.aci.aci_switch_spine_selector:
+  cisco.aci.aci_access_spine_switch_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -132,7 +131,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query all switch policy spine profile selectors
-  cisco.aci.aci_switch_spine_selector:
+  cisco.aci.aci_access_spine_switch_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -141,7 +140,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Remove a switch policy spine profile selector
-  cisco.aci.aci_switch_spine_selector:
+  cisco.aci.aci_access_spine_switch_selector:
     host: apic
     username: admin
     password: SomeSecretPassword

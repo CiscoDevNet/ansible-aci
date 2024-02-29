@@ -28,7 +28,7 @@
   block:  # block specifies execution of tasks within, based on conditions
   # CLEAN ENVIRONMENT
   - name: Remove spine profile
-    cisco.aci.aci_switch_policy_spine_profile: &aci_switch_policy_spine_profile_absent
+    cisco.aci.aci_access_spine_switch_profile: &aci_access_spine_switch_profile_absent
       <<: *aci_info
       spine_profile: ansible_test
       state: absent
@@ -36,7 +36,7 @@
 
   # ADD SPINE PROFILE
   - name: Add switch policy spine profile (check_mode)
-    cisco.aci.aci_switch_policy_spine_profile: &aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_profile: &aci_access_spine_switch_profile_present
       <<: *aci_info
       spine_profile: ansible_test
       state: present
@@ -44,16 +44,16 @@
     register: cm_add_switch_spine_profile
 
   - name: Add spine profile (normal mode)
-    cisco.aci.aci_switch_policy_spine_profile: *aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_profile: *aci_access_spine_switch_profile_present
     register: nm_add_switch_spine_profile
 
   - name: Add spine profile again (check_mode)
-    cisco.aci.aci_switch_policy_spine_profile: *aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_profile: *aci_access_spine_switch_profile_present
     check_mode: yes
     register: cm_add_switch_spine_profile_again
 
   - name: Add spine profile again (normal mode)
-    cisco.aci.aci_switch_policy_spine_profile: *aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_profile: *aci_access_spine_switch_profile_present
     register: nm_add_switch_spine_profile_again
 
   - name: Verify add_switch_spine_profile
@@ -68,28 +68,28 @@
 
   # CHANGE SWITCH SPINE PROFILE
   - name: Change description of spine profile (check_mode)
-    cisco.aci.aci_switch_policy_spine_profile:
-      <<: *aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_profile:
+      <<: *aci_access_spine_switch_profile_present
       description: Ansible test spine profile
     check_mode: yes
     register: cm_add_switch_spine_profile_descr
 
   - name: Change description of spine profile (normal mode)
-    cisco.aci.aci_switch_policy_spine_profile:
-      <<: *aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_profile:
+      <<: *aci_access_spine_switch_profile_present
       description: Ansible test spine profile
     register: nm_add_switch_spine_profile_descr
 
   - name: Change description of spine profile again (check_mode)
-    cisco.aci.aci_switch_policy_spine_profile:
-      <<: *aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_profile:
+      <<: *aci_access_spine_switch_profile_present
       description: Ansible test spine profile
     check_mode: yes
     register: cm_add_switch_spine_profile_descr_again
 
   - name: Change description of spine profile again (normal mode)
-    cisco.aci.aci_switch_policy_spine_profile:
-      <<: *aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_profile:
+      <<: *aci_access_spine_switch_profile_present
       description: Ansible test spine profile
     register: nm_add_switch_spine_profile_descr_again
 
@@ -104,12 +104,12 @@
 
   # ADD SPINE PROFILE AGAIN
   - name: Add spine profile again with no description (check_mode)
-    cisco.aci.aci_switch_policy_spine_profile: *aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_profile: *aci_access_spine_switch_profile_present
     check_mode: yes
     register: cm_add_switch_spine_profile_again_no_descr
 
   - name: Add spine profile again with no description (normal mode)
-    cisco.aci.aci_switch_policy_spine_profile: *aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_profile: *aci_access_spine_switch_profile_present
     register: nm_add_switch_spine_profile_again_no_descr
 
   - name: Verify add_switch_spine_profile_again_no_descr
@@ -121,14 +121,14 @@
 
   # QUERY ALL SPINE PROFILES
   - name: Query all profiles (check_mode)
-    cisco.aci.aci_switch_policy_spine_profile: &aci_switch_policy_spine_profile_query
+    cisco.aci.aci_access_spine_switch_profile: &aci_access_spine_switch_profile_query
       <<: *aci_info
       state: query
     check_mode: yes
     register: cm_query_all_switch_spine_profiles
 
   - name: Query all switch_spine_profiles (normal mode)
-    cisco.aci.aci_switch_policy_spine_profile: *aci_switch_policy_spine_profile_query
+    cisco.aci.aci_access_spine_switch_profile: *aci_access_spine_switch_profile_query
     register: nm_query_all_switch_spine_profiles
 
   - name: Verify query_all_switch_spine_profiles
@@ -142,15 +142,15 @@
 
   # QUERY A SPINE PROFILE
   - name: Query our switch_spine_profile
-    cisco.aci.aci_switch_policy_spine_profile:
-      <<: *aci_switch_policy_spine_profile_query
+    cisco.aci.aci_access_spine_switch_profile:
+      <<: *aci_access_spine_switch_profile_query
       spine_profile: ansible_test
     check_mode: yes
     register: cm_query_switch_spine_profile
 
   - name: Query our switch_spine_profile
-    cisco.aci.aci_switch_policy_spine_profile:
-      <<: *aci_switch_policy_spine_profile_query
+    cisco.aci.aci_access_spine_switch_profile:
+      <<: *aci_access_spine_switch_profile_query
       spine_profile: ansible_test
     register: nm_query_switch_spine_profile
 
@@ -164,21 +164,21 @@
 
   # REMOVE SPINE PROFILE
   - name: Remove switch_spine_profile (check_mode)
-    cisco.aci.aci_switch_policy_spine_profile: *aci_switch_policy_spine_profile_absent
+    cisco.aci.aci_access_spine_switch_profile: *aci_access_spine_switch_profile_absent
     check_mode: yes
     register: cm_remove_switch_spine_profile
 
   - name: Remove switch_spine_profile (normal mode)
-    cisco.aci.aci_switch_policy_spine_profile: *aci_switch_policy_spine_profile_absent
+    cisco.aci.aci_access_spine_switch_profile: *aci_access_spine_switch_profile_absent
     register: nm_remove_switch_spine_profile
 
   - name: Remove switch_spine_profile again (check_mode)
-    cisco.aci.aci_switch_policy_spine_profile: *aci_switch_policy_spine_profile_absent
+    cisco.aci.aci_access_spine_switch_profile: *aci_access_spine_switch_profile_absent
     check_mode: yes
     register: cm_remove_switch_spine_profile_again
 
   - name: Remove switch_spine_profile again (normal mode)
-    cisco.aci.aci_switch_policy_spine_profile: *aci_switch_policy_spine_profile_absent
+    cisco.aci.aci_access_spine_switch_profile: *aci_access_spine_switch_profile_absent
     register: nm_remove_switch_spine_profile_again
 
   - name: Verify remove_switch_spine_profile
@@ -192,15 +192,15 @@
 
   # QUERY NON-EXISTING SPINE PROFILE
   - name: Query non-existing switch_spine_profile (check_mode)
-    cisco.aci.aci_switch_policy_spine_profile:
-      <<: *aci_switch_policy_spine_profile_query
+    cisco.aci.aci_access_spine_switch_profile:
+      <<: *aci_access_spine_switch_profile_query
       spine_profile: ansible_test
     check_mode: yes
     register: cm_query_non_switch_spine_profile
 
   - name: Query non-existing switch_spine_profile (normal mode)
-    cisco.aci.aci_switch_policy_spine_profile:
-      <<: *aci_switch_policy_spine_profile_query
+    cisco.aci.aci_access_spine_switch_profile:
+      <<: *aci_access_spine_switch_profile_query
       spine_profile: ansible_test
     register: nm_query_non_switch_spine_profile
 

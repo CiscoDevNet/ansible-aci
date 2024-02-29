@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
-# Adapted from aci_interface_selector_to_switch_policy_leaf_profile
 # Copyright: (c) 2023, Eric Girard <@netgirard>
 # Copyright: (c) 2024, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
@@ -19,7 +17,7 @@ ANSIBLE_METADATA = {
 
 DOCUMENTATION = r"""
 ---
-module: aci_interface_selector_to_switch_policy_spine_profile
+module: aci_access_spine_interface_selector_to_spine_switch_profile
 short_description: Bind interface selector profiles to switch policy spine profiles (infra:RsSpAccPortP)
 description:
 - Bind interface selector profiles to switch policy spine profiles on Cisco ACI fabrics.
@@ -47,9 +45,9 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- This module requires an existing spine profile, the module M(cisco.aci.aci_switch_policy_spine_profile) can be used for this.
+- This module requires an existing spine profile, the module M(cisco.aci.aci_access_spine_switch_profile) can be used for this.
 seealso:
-- module: cisco.aci.aci_switch_policy_spine_profile
+- module: cisco.aci.aci_access_spine_switch_profile
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(infra:RsSpAccPortP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -61,7 +59,7 @@ author:
 
 EXAMPLES = r"""
 - name: Associating an interface selector profile to a switch policy spine profile
-  cisco.aci.aci_interface_selector_to_switch_policy_spine_profile:
+  cisco.aci.aci_access_spine_interface_selector_to_spine_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -71,7 +69,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query an interface selector profile associated with a switch policy spine profile
-  cisco.aci.aci_interface_selector_to_switch_policy_spine_profile:
+  cisco.aci.aci_access_spine_interface_selector_to_spine_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -81,7 +79,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query all association of interface selector profiles with a switch policy spine profile
-  cisco.aci.aci_interface_selector_to_switch_policy_spine_profile:
+  cisco.aci.aci_access_spine_interface_selector_to_spine_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -89,7 +87,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Remove an interface selector profile associated with a switch policy spine profile
-  cisco.aci.aci_interface_selector_to_switch_policy_spine_profile:
+  cisco.aci.aci_access_spine_interface_selector_to_spine_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword

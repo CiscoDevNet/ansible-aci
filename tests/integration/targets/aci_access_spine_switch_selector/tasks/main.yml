@@ -27,13 +27,13 @@
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
   - name: Deleting Switch Policy Spine profile exists for kick off
-    cisco.aci.aci_switch_policy_spine_profile:
+    cisco.aci.aci_access_spine_switch_profile:
       <<: *aci_info
       spine_profile: sw_name_test
       state: absent
 
   - name: Ensuring Switch Policy Spine profile exists for kick off
-    cisco.aci.aci_switch_policy_spine_profile: &aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_profile: &aci_access_spine_switch_profile_present
       <<: *aci_info
       spine_profile: sw_name_test
       state: present
@@ -42,8 +42,8 @@
   # TODO: Ensure that spine Policy Group Exists (module missing) (infra:AccPortGrp)
 
   - name: Adding a switch policy spine profile selector associated Node Block range (w/o policy group) - check mode works
-    cisco.aci.aci_switch_spine_selector: &aci_switch_spine_selector_present
-      <<: *aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_selector: &aci_access_spine_switch_selector_present
+      <<: *aci_access_spine_switch_profile_present
       spine: spine_selector_name
       spine_node_blk: node_blk_name
       from: 1011
@@ -52,18 +52,18 @@
     register: sw_spine_selec_check_mode_present
 
   - name: Adding a switch policy spine profile selector associated Node Block range (w/o policy group) - creation works
-    cisco.aci.aci_switch_spine_selector:
-      <<: *aci_switch_spine_selector_present
+    cisco.aci.aci_access_spine_switch_selector:
+      <<: *aci_access_spine_switch_selector_present
     register: sw_spine_selec_present
 
   - name: Adding a switch policy spine profile selector associated Node Block range (w/o policy group) - idempotency works
-    cisco.aci.aci_switch_spine_selector:
-      <<: *aci_switch_spine_selector_present
+    cisco.aci.aci_access_spine_switch_selector:
+      <<: *aci_access_spine_switch_selector_present
     register: sw_spine_selec_idempotent
 
   - name: Adding a switch policy spine profile selector associated Node Block range (w/ policy group) - update works
-    cisco.aci.aci_switch_spine_selector:
-      <<: *aci_switch_spine_selector_present
+    cisco.aci.aci_access_spine_switch_selector:
+      <<: *aci_access_spine_switch_selector_present
       policy_group: anstest_policygroupname
     register: sw_spine_selec_update
 
@@ -86,8 +86,8 @@
       - sw_spine_selec_update.sent.infraSpineS.children.0.infraRsSpineAccNodePGrp.attributes.tDn == 'uni/infra/funcprof/spaccnodepgrp-anstest_policygroupname'
 
   - name: Query Specific switch policy spine profile selector
-    cisco.aci.aci_switch_spine_selector:
-      <<: *aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_selector:
+      <<: *aci_access_spine_switch_profile_present
       output_level: debug
       spine: spine_selector_name
       state: query
@@ -101,7 +101,7 @@
         - '"api/mo/uni/infra/spprof-sw_name_test/spines-spine_selector_name-typ-range.json" in binding_query.url'
 
   - name: Query all switch policy spine profile selectors
-    cisco.aci.aci_switch_spine_selector:
+    cisco.aci.aci_access_spine_switch_selector:
       <<: *aci_info
       state: query
     register: query_all
@@ -113,26 +113,26 @@
         - query_all.current | length >= 1
 
   - name: Remove binding of interface access port selector and Interface Policy Spine Profile - check mode
-    cisco.aci.aci_switch_spine_selector: &aci_switch_spine_selector_absent
-      <<: *aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_selector: &aci_access_spine_switch_selector_absent
+      <<: *aci_access_spine_switch_profile_present
       spine: spine_selector_name
       state: absent
     check_mode: yes
     register: sw_spine_selec_check_mode_absent
 
   - name: Remove switch policy spine profile selector - delete works
-    cisco.aci.aci_switch_spine_selector:
-      <<: *aci_switch_spine_selector_absent
+    cisco.aci.aci_access_spine_switch_selector:
+      <<: *aci_access_spine_switch_selector_absent
     register: sw_spine_selec_absent
 
   - name: Remove switch policy spine profile selector - idempotency works
-    cisco.aci.aci_switch_spine_selector:
-      <<: *aci_switch_spine_selector_absent
+    cisco.aci.aci_access_spine_switch_selector:
+      <<: *aci_access_spine_switch_selector_absent
     register: sw_spine_selec_absent_idempotent
 
   - name: Remove switch policy spine profile selector - missing parameter
-    cisco.aci.aci_switch_spine_selector:
-      <<: *aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_selector:
+      <<: *aci_access_spine_switch_profile_present
       #access_port_selector: anstest_accessportselector
       state: absent
     ignore_errors: true
@@ -152,11 +152,11 @@
 
 
   - name: Remove switch policy spine profile selector - Clean up
-    cisco.aci.aci_switch_spine_selector:
-      <<: *aci_switch_spine_selector_absent
+    cisco.aci.aci_access_spine_switch_selector:
+      <<: *aci_access_spine_switch_selector_absent
       state: absent
 
   - name: Deleting Switch Policy Spine profile exists for kick off
-    cisco.aci.aci_switch_policy_spine_profile:
-      <<: *aci_switch_policy_spine_profile_present
+    cisco.aci.aci_access_spine_switch_profile:
+      <<: *aci_access_spine_switch_profile_present
       state: absent
