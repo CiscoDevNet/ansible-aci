@@ -30,14 +30,14 @@
   block:  # block specifies execution of tasks within, based on conditions
   # CLEAN ENVIRONMENT
   - name: Remove spine profile
-    cisco.aci.aci_interface_policy_spine_profile: &interface_policy_spine_profile_absent
+    cisco.aci.aci_access_spine_interface_profile: &interface_policy_spine_profile_absent
       <<: *aci_info
       spine_interface_profile: ansible_test
       state: absent
 
   # ADD SPINE INTERFACE PROFILE
   - name: Add spine interface profile (check_mode)
-    cisco.aci.aci_interface_policy_spine_profile: &interface_policy_spine_profile_present
+    cisco.aci.aci_access_spine_interface_profile: &interface_policy_spine_profile_present
       <<: *aci_info
       interface_profile: ansible_test
       state: present
@@ -45,16 +45,16 @@
     register: cm_add_spine_interface_profile
 
   - name: Add spine interface profile (normal mode)
-    cisco.aci.aci_interface_policy_spine_profile: *interface_policy_spine_profile_present
+    cisco.aci.aci_access_spine_interface_profile: *interface_policy_spine_profile_present
     register: nm_add_spine_interface_profile
 
   - name: Add spine interface profile again (check_mode)
-    cisco.aci.aci_interface_policy_spine_profile: *interface_policy_spine_profile_present
+    cisco.aci.aci_access_spine_interface_profile: *interface_policy_spine_profile_present
     check_mode: yes
     register: cm_add_spine_interface_profile_again
 
   - name: Add spine interface profile again (normal mode)
-    cisco.aci.aci_interface_policy_spine_profile: *interface_policy_spine_profile_present
+    cisco.aci.aci_access_spine_interface_profile: *interface_policy_spine_profile_present
     register: nm_add_spine_interface_profile_again
 
   - name: Verify add_spine_interface_profile
@@ -68,27 +68,27 @@
 
   # CHANGE SPINE INTERFACE PROFILE
   - name: Change description of spine interface profile (check_mode)
-    cisco.aci.aci_interface_policy_spine_profile:
+    cisco.aci.aci_access_spine_interface_profile:
       <<: *interface_policy_spine_profile_present
       description: Ansible test spine interface profile
     check_mode: yes
     register: cm_add_spine_interface_profile_descr
 
   - name: Change description of spine interface profile (normal mode)
-    cisco.aci.aci_interface_policy_spine_profile:
+    cisco.aci.aci_access_spine_interface_profile:
       <<: *interface_policy_spine_profile_present
       description: Ansible test spine interface profile
     register: nm_add_spine_interface_profile_descr
 
   - name: Change description of spine interface profile again (check_mode)
-    cisco.aci.aci_interface_policy_spine_profile:
+    cisco.aci.aci_access_spine_interface_profile:
       <<: *interface_policy_spine_profile_present
       description: Ansible test spine interface profile
     check_mode: yes
     register: cm_add_spine_interface_profile_descr_again
 
   - name: Change description of spine interface profile again (normal mode)
-    cisco.aci.aci_interface_policy_spine_profile:
+    cisco.aci.aci_access_spine_interface_profile:
       <<: *interface_policy_spine_profile_present
       description: Ansible test spine interface profile
     register: nm_add_spine_interface_profile_descr_again
@@ -103,12 +103,12 @@
 
   # ADD SPINE INTERFACE PROFILE AGAIN
   - name: Add spine interface profile again with no description (check_mode)
-    cisco.aci.aci_interface_policy_spine_profile: *interface_policy_spine_profile_present
+    cisco.aci.aci_access_spine_interface_profile: *interface_policy_spine_profile_present
     check_mode: yes
     register: cm_add_spine_interface_profile_again_no_descr
 
   - name: Add spine interface profile again with no description (normal mode)
-    cisco.aci.aci_interface_policy_spine_profile: *interface_policy_spine_profile_present
+    cisco.aci.aci_access_spine_interface_profile: *interface_policy_spine_profile_present
     register: nm_add_spine_interface_profile_again_no_descr
 
   - name: Verify add_spine_interface_profile_again_no_descr
@@ -119,14 +119,14 @@
 
   # QUERY ALL SPINE INTERFACE PROFILES
   - name: Query all interface profiles (check_mode)
-    cisco.aci.aci_interface_policy_spine_profile: &interface_policy_spine_profile_query
+    cisco.aci.aci_access_spine_interface_profile: &interface_policy_spine_profile_query
       <<: *aci_info
       state: query
     check_mode: yes
     register: cm_query_all_spine_interface_profiles
 
   - name: Query all spine_interface_profiles (normal mode)
-    cisco.aci.aci_interface_policy_spine_profile: *interface_policy_spine_profile_query
+    cisco.aci.aci_access_spine_interface_profile: *interface_policy_spine_profile_query
     register: nm_query_all_spine_interface_profiles
 
   - name: Verify query_all_spine_interface_profiles
@@ -137,14 +137,14 @@
 
   # QUERY A SPINE INTERFACE PROFILE
   - name: Query our spine_interface_profile
-    cisco.aci.aci_interface_policy_spine_profile:
+    cisco.aci.aci_access_spine_interface_profile:
       <<: *interface_policy_spine_profile_query
       spine_interface_profile: ansible_test
     check_mode: yes
     register: cm_query_spine_interface_profile
 
   - name: Query our spine_interface_profile
-    cisco.aci.aci_interface_policy_spine_profile:
+    cisco.aci.aci_access_spine_interface_profile:
       <<: *interface_policy_spine_profile_query
       spine_interface_profile: ansible_test
     register: nm_query_spine_interface_profile
@@ -158,21 +158,21 @@
 
   # REMOVE SPINE INTERFACE PROFILE
   - name: Remove spine_interface_profile (check_mode)
-    cisco.aci.aci_interface_policy_spine_profile: *interface_policy_spine_profile_absent
+    cisco.aci.aci_access_spine_interface_profile: *interface_policy_spine_profile_absent
     check_mode: yes
     register: cm_remove_spine_interface_profile
 
   - name: Remove spine_interface_profile (normal mode)
-    cisco.aci.aci_interface_policy_spine_profile: *interface_policy_spine_profile_absent
+    cisco.aci.aci_access_spine_interface_profile: *interface_policy_spine_profile_absent
     register: nm_remove_spine_interface_profile
 
   - name: Remove spine_interface_profile again (check_mode)
-    cisco.aci.aci_interface_policy_spine_profile: *interface_policy_spine_profile_absent
+    cisco.aci.aci_access_spine_interface_profile: *interface_policy_spine_profile_absent
     check_mode: yes
     register: cm_remove_spine_interface_profile_again
 
   - name: Remove spine_interface_profile again (normal mode)
-    cisco.aci.aci_interface_policy_spine_profile: *interface_policy_spine_profile_absent
+    cisco.aci.aci_access_spine_interface_profile: *interface_policy_spine_profile_absent
     register: nm_remove_spine_interface_profile_again
 
   - name: Verify remove_spine_interface_profile
@@ -185,14 +185,14 @@
 
   # QUERY NON-EXISTING SPINE INTERFACE PROFILE
   - name: Query non-existing spine_interface_profile (check_mode)
-    cisco.aci.aci_interface_policy_spine_profile:
+    cisco.aci.aci_access_spine_interface_profile:
       <<: *interface_policy_spine_profile_query
       spine_interface_profile: ansible_test
     check_mode: yes
     register: cm_query_non_spine_interface_profile
 
   - name: Query non-existing spine_interface_profile (normal mode)
-    cisco.aci.aci_interface_policy_spine_profile:
+    cisco.aci.aci_access_spine_interface_profile:
       <<: *interface_policy_spine_profile_query
       spine_interface_profile: ansible_test
     register: nm_query_non_spine_interface_profile

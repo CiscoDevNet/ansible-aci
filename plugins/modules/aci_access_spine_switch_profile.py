@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
-# Copyright: (c) 2020, Shreyas Srish <ssrish@cisco.com>
 # Copyright: (c) 2023, Eric Girard <@netgirard>
 # Copyright: (c) 2024, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
@@ -19,19 +17,19 @@ ANSIBLE_METADATA = {
 
 DOCUMENTATION = r"""
 ---
-module: aci_interface_policy_spine_profile
-short_description: Manage fabric interface policy spine profiles (infra:SpAccPortP)
+module: aci_access_spine_switch_profile
+short_description: Manage Switch Policy Spine Profiles (infra:SpineP)
 description:
-- Manage fabric interface policy spine profiles on Cisco ACI fabrics.
+- Manage switch policy spine profiles on Cisco ACI fabrics.
 options:
-  interface_profile:
+  spine_profile:
     description:
-    - The name of the Fabric access policy spine interface profile.
+    - The name of the Spine Profile.
     type: str
-    aliases: [ name, spine_interface_profile_name, spine_interface_profile, interface_profile_name ]
+    aliases: [ spine_profile_name, name ]
   description:
     description:
-    - The description for the Fabric access policy spine interface profile.
+    - The description for the Spine Profile.
     type: str
     aliases: [ descr ]
   state:
@@ -51,51 +49,50 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 seealso:
+- module: cisco.aci.aci_access_spine_switch_profile
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(infra:SpAccPortP).
+  description: More information about the internal APIC class B(infra:SpineP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Bruno Calogero (@brunocalogero)
-- Shreyas Srish (@shrsr)
 - Eric Girard (@netgirard)
 - Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: Add a new spine_interface_profile
-  cisco.aci.aci_interface_policy_spine_profile:
+- name: Add a new Spine Profile
+  cisco.aci.aci_access_spine_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
-    interface_profile: spineintprfname
-    description:  spineintprfname description
+    spine_profile: sw_name
+    description: sw_description
     state: present
   delegate_to: localhost
 
-- name: Query a spine_interface_profile
-  cisco.aci.aci_interface_policy_spine_profile:
+- name: Query a Spine Profile
+  cisco.aci.aci_access_spine_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
-    interface_profile: spineintprfname
-    state: query
-  delegate_to: localhost
-  register: query_result
-
-- name: Query all spine_interface_profiles
-  cisco.aci.aci_interface_policy_spine_profile:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
+    spine_profile: sw_name
     state: query
   delegate_to: localhost
 
-- name: Remove a spine_interface_profile
-  cisco.aci.aci_interface_policy_spine_profile:
+- name: Query all Spine Profiles
+  cisco.aci.aci_access_spine_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
-    interface_profile: spineintprfname
+    state: query
+  delegate_to: localhost
+
+- name: Remove a Spine Profile
+  cisco.aci.aci_access_spine_switch_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    spine_profile: sw_name
     state: absent
   delegate_to: localhost
 """
@@ -214,15 +211,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        interface_profile=dict(
-            type="str",
-            aliases=[
-                "name",
-                "spine_interface_profile_name",
-                "spine_interface_profile",
-                "interface_profile_name",
-            ],
-        ),
+        spine_profile=dict(type="str", aliases=["name", "spine_profile_name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -232,28 +221,27 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["interface_profile"]],
-            ["state", "present", ["interface_profile"]],
+            ["state", "absent", ["spine_profile"]],
+            ["state", "present", ["spine_profile"]],
         ],
     )
 
-    interface_profile = module.params.get("interface_profile")
+    spine_profile = module.params.get("spine_profile")
     description = module.params.get("description")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
-
     aci.construct_url(
         root_class=dict(
             aci_class="infraInfra",
             aci_rn="infra",
         ),
         subclass_1=dict(
-            aci_class="infraSpAccPortP",
-            aci_rn="spaccportprof-{0}".format(interface_profile),
-            module_object=interface_profile,
-            target_filter={"name": interface_profile},
+            aci_class="infraSpineP",
+            aci_rn="spprof-{0}".format(spine_profile),
+            module_object=spine_profile,
+            target_filter={"name": spine_profile},
         ),
     )
 
@@ -261,15 +249,15 @@ def main():
 
     if state == "present":
         aci.payload(
-            aci_class="infraSpAccPortP",
+            aci_class="infraSpineP",
             class_config=dict(
-                name=interface_profile,
+                name=spine_profile,
                 descr=description,
                 nameAlias=name_alias,
             ),
         )
 
-        aci.get_diff(aci_class="infraSpAccPortP")
+        aci.get_diff(aci_class="infraSpineP")
 
         aci.post_config()
 
