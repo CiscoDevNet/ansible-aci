@@ -80,7 +80,7 @@ author:
 
 EXAMPLES = r"""
 - name: Add a new block statement
-  cisco.aci.aci_epg_useg_attribute:
+  cisco.aci.aci_epg_useg_attribute_block_statement:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -92,7 +92,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Add a new nested block statement
-  cisco.aci.aci_epg_useg_attribute:
+  cisco.aci.aci_epg_useg_attribute_block_statement:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -108,7 +108,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query a block statement
-  cisco.aci.aci_epg_useg_attribute:
+  cisco.aci.aci_epg_useg_attribute_block_statement:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -121,7 +121,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query all block statements
-  cisco.aci.aci_epg_useg_attribute:
+  cisco.aci.aci_epg_useg_attribute_block_statement:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -130,7 +130,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Remove an existing block statement
-  cisco.aci.aci_epg_useg_attribute:
+  cisco.aci.aci_epg_useg_attribute_block_statement:
     host: apic
     username: admin
     password: SomeSecretPassword
