@@ -266,9 +266,7 @@ def main():
     argument_spec.update(
         {
             "description": dict(type="str"),
-            "spine_profile": dict(
-                type="str", aliases=["spine_profile_name"]
-            ),  # Not required for querying all objects
+            "spine_profile": dict(type="str", aliases=["spine_profile_name"]),  # Not required for querying all objects
             "spine": dict(
                 type="str",
                 aliases=[
@@ -278,21 +276,13 @@ def main():
                     "spine_selector_name",
                 ],
             ),  # Not required for querying all objects
-            "spine_node_blk": dict(
-                type="str", aliases=["spine_node_blk_name", "node_blk_name"]
-            ),
+            "spine_node_blk": dict(type="str", aliases=["spine_node_blk_name", "node_blk_name"]),
             "spine_node_blk_description": dict(type="str"),
             # NOTE: Keyword 'from' is a reserved word in python, so we need it as a string
-            "from": dict(
-                type="int", aliases=["node_blk_range_from", "from_range", "range_from"]
-            ),
-            "to": dict(
-                type="int", aliases=["node_blk_range_to", "to_range", "range_to"]
-            ),
+            "from": dict(type="int", aliases=["node_blk_range_from", "from_range", "range_from"]),
+            "to": dict(type="int", aliases=["node_blk_range_to", "to_range", "range_to"]),
             "policy_group": dict(type="str", aliases=["policy_group_name"]),
-            "state": dict(
-                type="str", default="present", choices=["absent", "present", "query"]
-            ),
+            "state": dict(type="str", default="present", choices=["absent", "present", "query"]),
             "name_alias": dict(type="str"),
         }
     )

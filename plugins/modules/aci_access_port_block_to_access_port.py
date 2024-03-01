@@ -371,7 +371,7 @@ def main():
                 "interface_profile_name",
                 "spine_interface_profile",
                 "spine_interface_profile_name",
-            ]
+            ],
         ),
         access_port_selector=dict(type="str", aliases=["name", "access_port_selector_name"]),  # Not required for querying all objects
         port_blk=dict(type="str", aliases=["leaf_port_blk_name", "leaf_port_blk"]),  # Not required for querying all objects
