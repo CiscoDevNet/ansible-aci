@@ -1,6 +1,7 @@
 # Test code for the ACI modules
 # Copyright: (c) 2020, Shreyas Srish <ssrish@cisco.com>
 # Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
+# Copyright: (c) 2024, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -9,31 +10,45 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
-- name: Verify Cloud and Non-Cloud Sites in use.
-  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
-
-- name: Execute tasks only for non-cloud sites
-  when: query_cloud.current == []  # This condition will execute only non-cloud sites
-  block:  # block specifies execution of tasks within, based on conditions
-  - name: Ensuring Interface Policy Leaf profile does not exist
-    cisco.aci.aci_interface_policy_leaf_profile: &aci_interface_policy_leaf_profile_absent
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
       password: "{{ aci_password }}"
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
-      state: absent
-      leaf_interface_profile: leafintprftest
-    register: leaf_profile_present
+      output_level: '{{ aci_output_level | default("info") }}'
 
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+
+  # CLEAN ENVIRONMENT
+  - name: Ensuring Interface Policy Leaf profile does not exist
+    cisco.aci.aci_interface_policy_leaf_profile: &aci_interface_policy_leaf_profile_absent
+      <<: *aci_info
+      leaf_interface_profile: leafintprftest
+      state: absent
+    register: leaf_profile_present
+  
   - name: Ensuring Interface Policy Leaf profile does not exist on fex
     cisco.aci.aci_interface_policy_leaf_profile: 
       <<: *aci_interface_policy_leaf_profile_absent
       type: fex
       leaf_interface_profile: leafintprftest_fex
 
+  - name: Ensuring Interface Policy Spine profile does not exist
+    cisco.aci.aci_access_spine_interface_profile: &aci_interface_policy_spine_profile_absent
+      <<: *aci_info
+      spine_interface_profile: spineintprftest
+      state: absent
+
+  # CREATE PARENT CLASS OBJECT 
   - name: Ensuring Interface Policy Leaf profile exists for kick off
     cisco.aci.aci_interface_policy_leaf_profile: 
       <<: *aci_interface_policy_leaf_profile_absent
@@ -45,6 +60,11 @@
       <<: *aci_interface_policy_leaf_profile_absent
       type: fex
       leaf_interface_profile: leafintprftest_fex
+      state: present
+
+  - name: Ensuring Interface Policy Spine profile exists for kick off
+    cisco.aci.aci_access_spine_interface_profile:
+      <<: *aci_interface_policy_spine_profile_absent
       state: present
 
   - name: Ensure Interface Access Port Selector exists for kick of
@@ -60,14 +80,14 @@
       leaf_interface_profile: leafintprftest_fex
       access_port_selector: anstest_accessportselector_fex
 
-  # TODO: Ensure that leaf Policy Group Exists (module missing) (infra:AccPortGrp)
-  # Ensure block does not exist.
-  - name: Bind an Access Port Block to an Interface Access Port Selector - check mode works
-    cisco.aci.aci_access_port_block_to_access_port:
-      <<: *aci_access_port_to_interface_policy_leaf_profile_present
-      leaf_port_blk: anstest_leafportblkname
-      state: absent
+  - name: Ensure Spine Interface Access Port Selector exists for kick of
+    cisco.aci.aci_access_spine_interface_selector: &aci_access_spine_interface_selector_present
+      <<: *aci_interface_policy_spine_profile_absent
+      access_port_selector: anstest_spineaccessportselector
+      state: present
 
+  # CREATION TASKS
+  # LEAF PORT BLOCK CREATION
   - name: Bind an Access Port Block to an Interface Access Port Selector - check mode works
     cisco.aci.aci_access_port_block_to_access_port: &aci_access_port_block_to_access_port_present
       <<: *aci_access_port_to_interface_policy_leaf_profile_present
@@ -103,6 +123,7 @@
       toPort: 15
     register: accessportblock_to_accessport_update
 
+  # LEAF FEX PORT BLOCK CREATION
   - name: Associate an access port block (single port) to an interface selector on a fex - creation works
     cisco.aci.aci_access_port_block_to_access_port:
       <<: *aci_access_port_block_to_access_port_present
@@ -152,6 +173,36 @@
       toPort: 24
     register: accessportblock_to_accessport_present_fex_update
 
+  # SPINE PORT BLOCK CREATION
+  - name: Bind an access port block to an access spine interface selector -check mode works
+    cisco.aci.aci_access_port_block_to_access_port: &aci_access_port_block_to_spine_access_port_present
+      <<: *aci_access_spine_interface_selector_present
+      port_blk: anstest_spineportblkname
+      port_blk_description: anstest_spineportblkdesc
+      fromPort: 10
+      toPort: 15
+      type: spine
+      state: present
+    check_mode: true
+    register: accessportblock_to_spineaccessport_check_mode_present
+
+  - name: Bind an access port block to an access spine interface selector - creation works
+    cisco.aci.aci_access_port_block_to_access_port:
+      <<: *aci_access_port_block_to_spine_access_port_present
+    register: accessportblock_to_spineaccessport_present
+
+  - name: Bind an access port block to an access spine interface selector - idempotency works
+    cisco.aci.aci_access_port_block_to_access_port:
+      <<: *aci_access_port_block_to_spine_access_port_present
+    register: accessportblock_to_spineaccessport_present_idempotent
+
+  - name: Bind an access port block to an access spine interface selector - update works
+    cisco.aci.aci_access_port_block_to_access_port:
+      <<: *aci_access_port_block_to_spine_access_port_present
+      fromPort: 11
+      toPort: 16
+    register: accessportblock_to_spineaccessport_present_update
+
   # TODO: also test for errors
   - name: present assertions - create / indempotency / update works
     ansible.builtin.assert:
@@ -174,6 +225,31 @@
       - accessportblock_to_accessport_present_fex.sent.infraPortBlk.attributes.fromPort == '14'
       - accessportblock_to_accessport_present_fex.sent.infraPortBlk.attributes.toPort == '17'
       - accessportblock_to_accessport_present_fex_update.sent.infraPortBlk.attributes.toPort == '24'
+      - accessportblock_to_spineaccessport_check_mode_present is changed
+      - accessportblock_to_spineaccessport_check_mode_present.previous == []
+      - accessportblock_to_spineaccessport_check_mode_present.current == []
+      - accessportblock_to_spineaccessport_check_mode_present.proposed.infraPortBlk.attributes.name == "anstest_spineportblkname"
+      - accessportblock_to_spineaccessport_check_mode_present.proposed.infraPortBlk.attributes.descr == "anstest_spineportblkdesc"
+      - accessportblock_to_spineaccessport_check_mode_present.proposed.infraPortBlk.attributes.fromPort == "10"
+      - accessportblock_to_spineaccessport_check_mode_present.proposed.infraPortBlk.attributes.toPort == "15"
+      - accessportblock_to_spineaccessport_present is changed
+      - accessportblock_to_spineaccessport_present.previous == []
+      - accessportblock_to_spineaccessport_present.current.0.infraPortBlk.attributes.name == "anstest_spineportblkname"
+      - accessportblock_to_spineaccessport_present.current.0.infraPortBlk.attributes.descr == "anstest_spineportblkdesc"
+      - accessportblock_to_spineaccessport_present.current.0.infraPortBlk.attributes.fromPort == "10"
+      - accessportblock_to_spineaccessport_present.current.0.infraPortBlk.attributes.toPort == "15"
+      - accessportblock_to_spineaccessport_present_idempotent is not changed
+      - accessportblock_to_spineaccessport_present_idempotent.current == accessportblock_to_spineaccessport_present.current
+      - accessportblock_to_spineaccessport_present_update is changed
+      - accessportblock_to_spineaccessport_present_update.current.0.infraPortBlk.attributes.fromPort == "11"
+      - accessportblock_to_spineaccessport_present_update.current.0.infraPortBlk.attributes.toPort == "16"
+
+  # QUEY TASKS
+  - name: Query all port block and access_port_selector bindings
+    cisco.aci.aci_access_port_block_to_access_port:
+      <<: *aci_info
+      state: query
+    register: binding_query_all
 
   - name: Query Specific port block and access_port_selector binding
     cisco.aci.aci_access_port_block_to_access_port:
@@ -191,15 +267,30 @@
       state: query
     register: binding_query_fex
 
+  - name: Query Specific port block and access_port_selector binding spine
+    cisco.aci.aci_access_port_block_to_access_port:
+      <<: *aci_access_spine_interface_selector_present
+      type: spine
+      port_blk: anstest_spineportblkname
+      state: query
+    register: binding_query_spine
+
   - name: query assertions
     ansible.builtin.assert:
       that:
+        - binding_query_all is not changed
+        - binding_query_all.current | length >= 3
         - binding_query is not changed
         - binding_query_fex is not changed
         - binding_query_fex.current | length >= 1
         - binding_query.current | length >= 1
-        - '"api/mo/uni/infra/accportprof-leafintprftest/hports-anstest_accessportselector-typ-range/portblk-anstest_leafportblkname.json" in binding_query.url'
+        - binding_query_spine is not changed
+        - binding_query_spine.current.0.infraPortBlk.attributes.name == "anstest_spineportblkname"
+        - binding_query_spine.current.0.infraPortBlk.attributes.descr == "anstest_spineportblkdesc"
+        - binding_query_spine.current.0.infraPortBlk.attributes.fromPort == "11"
+        - binding_query_spine.current.0.infraPortBlk.attributes.toPort == "16"
 
+  # DELETE TASKS
   - name: Remove binding of Access Port Block and Interface Access Port Selector - check mode
     cisco.aci.aci_access_port_block_to_access_port: &aci_access_port_block_to_access_port_absent
       <<: *aci_access_port_block_to_access_port_present
@@ -217,7 +308,7 @@
       <<: *aci_access_port_block_to_access_port_absent
     register: accessportblock_to_accessport_absent_idempotent
 
-  - name: Remove binding of Access Port Block and Interface Access Port Selector - check mode
+  - name: Remove binding of Access Port Block and Interface Access Port Selector - missing parameter
     cisco.aci.aci_access_port_block_to_access_port:
       <<: *aci_access_port_to_interface_policy_leaf_profile_present
       #leaf_port_blk: anstest_leafportblkname
@@ -235,6 +326,11 @@
       state: absent
     register: accessportblock_to_accessport_absent_fex
 
+  - name: Remove binding of Access Port Block and Spine Interface Access Port Selector - delete works
+    cisco.aci.aci_access_port_block_to_access_port:
+      <<: *aci_access_port_block_to_spine_access_port_present
+      state: absent
+    register: accessportblock_to_accessport_absent_spine
 
   - name: absent assertions
     ansible.builtin.assert:
@@ -248,6 +344,10 @@
         - accessportblock_to_accessport_absent_missing_param is failed
         - 'accessportblock_to_accessport_absent_missing_param.msg == "state is absent but all of the following are missing: port_blk"'
         - accessportblock_to_accessport_absent_fex is changed
+        - accessportblock_to_accessport_absent_spine is changed
+        - accessportblock_to_accessport_absent_spine.previous != []
+        - accessportblock_to_accessport_absent_spine.proposed == {}
+        - accessportblock_to_accessport_absent_spine.current == []
 
   - name: Ensuring Interface Policy Leaf profile does not exist
     cisco.aci.aci_interface_policy_leaf_profile: 
@@ -259,3 +359,7 @@
       <<: *aci_interface_policy_leaf_profile_absent
       type: fex
       leaf_interface_profile: leafintprftest_fex
+
+  - name: Ensuring Interface Policy Spine profile does not exist
+    cisco.aci.aci_access_spine_interface_profile:
+      <<: *aci_interface_policy_spine_profile_absent
