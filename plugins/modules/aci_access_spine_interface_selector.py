@@ -43,6 +43,7 @@ options:
     - If using a port block to specify range of interfaces, the type must be set to C(range).
     type: str
     choices: [ all, range ]
+    default: range
     aliases: [ type ]
   state:
     description:
@@ -237,10 +238,20 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         spine_interface_profile=dict(type="str", aliases=["spine_interface_profile_name", "interface_profile", "interface_profile_name"]),
-        spine_interface_selector=dict(type="str", aliases=["name", "spine_interface_selector_name", "interface_selector", "interface_selector_name", "access_port_selector", "access_port_selector_name"]),  # Not required for querying all objects
+        spine_interface_selector=dict(
+            type="str",
+            aliases=[
+                "name",
+                "spine_interface_selector_name",
+                "interface_selector",
+                "interface_selector_name",
+                "access_port_selector",
+                "access_port_selector_name",
+            ]
+        ),  # Not required for querying all objects
         description=dict(type="str"),
         policy_group=dict(type="str", aliases=["policy_group_name"]),
-        selector_type=dict(type="str", choices=list(MATCH_ACCESS_POLICIES_SELECTOR_TYPE.keys()), aliases=["type"]),
+        selector_type=dict(type="str", default="range", choices=list(MATCH_ACCESS_POLICIES_SELECTOR_TYPE.keys()), aliases=["type"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -248,8 +259,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["interface_profile", "spine_interface_selector"]],
-            ["state", "present", ["interface_profile", "spine_interface_selector"]],
+            ["state", "absent", ["spine_interface_profile", "spine_interface_selector"]],
+            ["state", "present", ["spine_interface_profile", "spine_interface_selector"]],
         ],
     )
 
@@ -260,8 +271,9 @@ def main():
     selector_type = MATCH_ACCESS_POLICIES_SELECTOR_TYPE.get(module.params.get("selector_type"))
     state = module.params.get("state")
 
+    child_configs = []
     if policy_group is not None:
-        child_configs = [dict(infraRsSpAccGrp=dict(attributes=dict(tDn="infra/funcprof/spaccportgrp-{0}".format(policy_group))))]
+        child_configs.append(dict(infraRsSpAccGrp=dict(attributes=dict(tDn="uni/infra/funcprof/spaccportgrp-{0}".format(policy_group)))))
 
     aci = ACIModule(module)
 
@@ -282,7 +294,7 @@ def main():
             module_object=spine_interface_selector,
             target_filter={"name": spine_interface_selector},
         ),
-        child_classes=["infraRsAccBaseGrp"],
+        child_classes=["infraRsSpAccGrp"],
     )
 
     aci.get_existing()
