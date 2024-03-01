@@ -211,9 +211,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        spine_profile=dict(
-            type="str", aliases=["spine_profile_name"]
-        ),  # Not required for querying all objects
+        spine_profile=dict(type="str", aliases=["spine_profile_name"]),  # Not required for querying all objects
         interface_selector=dict(
             type="str",
             aliases=["interface_profile_name", "interface_selector_name", "name"],

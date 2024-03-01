@@ -247,7 +247,7 @@ def main():
                 "interface_selector_name",
                 "access_port_selector",
                 "access_port_selector_name",
-            ]
+            ],
         ),  # Not required for querying all objects
         description=dict(type="str"),
         policy_group=dict(type="str", aliases=["policy_group_name"]),
