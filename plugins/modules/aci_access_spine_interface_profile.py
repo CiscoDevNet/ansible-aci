@@ -53,8 +53,6 @@ seealso:
   description: More information about the internal APIC class B(infra:SpAccPortP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Bruno Calogero (@brunocalogero)
-- Shreyas Srish (@shrsr)
 - Eric Girard (@netgirard)
 - Gaspard Micol (@gmicol)
 """

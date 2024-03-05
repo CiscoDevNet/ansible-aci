@@ -1,0 +1,176 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Eric Girard <@netgirard>
+# Copyright: (c) 2024, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # CLEAN ENVIRONMENT
+  - name: Remove Access Spine Switch profile
+    cisco.aci.aci_access_spine_switch_profile: &aci_access_spine_switch_profile_absent
+      <<: *aci_info
+      spine_switch_profile: ansible_access_spine_switch_profile
+      state: absent
+
+  - name: Remove all Access Spine Interface Profiles
+    cisco.aci.aci_access_spine_interface_profile: &aci_access_spine_interface_profile_all_absent
+      <<: *aci_info
+      spine_interface_profile: "{{ item }}"
+      state: absent
+    loop:
+    - ansible_access_spine_interface_profile_1
+    - ansible_access_spine_interface_profile_2
+
+  # CREATE ACCESS SPINE SWITCH AND INTERFACE PROFILES
+  - name: Add Access Spine Switch profile
+    cisco.aci.aci_access_spine_switch_profile:
+      <<: *aci_access_spine_switch_profile_absent
+      state: present
+
+  - name: Add Access Spine Interface Profiles
+    cisco.aci.aci_access_spine_interface_profile:
+      <<: *aci_access_spine_interface_profile_all_absent
+      state: present
+    loop:
+    - ansible_access_spine_interface_profile_1
+    - ansible_access_spine_interface_profile_2
+  
+  # CREATE BINDING BETWEEN SPINE INTERFACE AND SWITCH PROFILES
+  - name: Add a new Binding between Spine Interface and Switch Profiles (check_mode)
+    cisco.aci.aci_access_spine_interface_profile_to_spine_switch_profile: &aci_access_spine_interface_profile_to_spine_switch_profile_present
+      <<: *aci_info
+      spine_switch_profile: ansible_access_spine_switch_profile
+      spine_interface_profile: ansible_access_spine_interface_profile_1
+      state: present
+    check_mode: true
+    register: cm_add_binding_spine_interface_to_switch
+
+  - name: Add a new Binding between Spine Interface and Switch Profiles (normal_mode)
+    cisco.aci.aci_access_spine_interface_profile_to_spine_switch_profile:
+      <<: *aci_access_spine_interface_profile_to_spine_switch_profile_present
+    register: nm_add_binding_spine_interface_to_switch
+
+  - name: Add the first Binding between Spine Interface and Switch Profiles again - testing idempotency
+    cisco.aci.aci_access_spine_interface_profile_to_spine_switch_profile:
+      <<: *aci_access_spine_interface_profile_to_spine_switch_profile_present
+    register: nm_add_binding_spine_interface_to_switch_idempotency
+
+  - name: Add a second Binding between Spine Interface and Switch Profiles (normal_mode)
+    cisco.aci.aci_access_spine_interface_profile_to_spine_switch_profile: &aci_access_spine_interface_profile_to_spine_switch_profile_2_present
+      <<: *aci_info
+      spine_switch_profile: ansible_access_spine_switch_profile
+      spine_interface_profile: ansible_access_spine_interface_profile_2
+      state: present
+    register: nm_add_binding_spine_interface_to_switch_2
+
+  - name: Asserts for Binding between Spine Interface and Switch Profiles creation tasks
+    ansible.builtin.assert:
+      that:
+        - cm_add_binding_spine_interface_to_switch is changed
+        - cm_add_binding_spine_interface_to_switch.previous == []
+        - cm_add_binding_spine_interface_to_switch.current == []
+        - cm_add_binding_spine_interface_to_switch.proposed.infraRsSpAccPortP.attributes.dn == "uni/infra/spprof-ansible_access_spine_switch_profile/rsspAccPortP-[uni/infra/spaccportprof-ansible_access_spine_interface_profile_1]"
+        - cm_add_binding_spine_interface_to_switch.proposed.infraRsSpAccPortP.attributes.tDn == "uni/infra/spaccportprof-ansible_access_spine_interface_profile_1"
+        - nm_add_binding_spine_interface_to_switch is changed
+        - nm_add_binding_spine_interface_to_switch.previous == []
+        - nm_add_binding_spine_interface_to_switch.current.0.infraRsSpAccPortP.attributes.dn == "uni/infra/spprof-ansible_access_spine_switch_profile/rsspAccPortP-[uni/infra/spaccportprof-ansible_access_spine_interface_profile_1]"
+        - nm_add_binding_spine_interface_to_switch.current.0.infraRsSpAccPortP.attributes.tDn == "uni/infra/spaccportprof-ansible_access_spine_interface_profile_1"
+        - nm_add_binding_spine_interface_to_switch_idempotency is not changed
+        - nm_add_binding_spine_interface_to_switch_idempotency.current.0.infraRsSpAccPortP.attributes.dn == "uni/infra/spprof-ansible_access_spine_switch_profile/rsspAccPortP-[uni/infra/spaccportprof-ansible_access_spine_interface_profile_1]"
+        - nm_add_binding_spine_interface_to_switch_idempotency.current.0.infraRsSpAccPortP.attributes.tDn == "uni/infra/spaccportprof-ansible_access_spine_interface_profile_1"
+        - nm_add_binding_spine_interface_to_switch_2 is changed
+        - nm_add_binding_spine_interface_to_switch_2.previous == []
+        - nm_add_binding_spine_interface_to_switch_2.proposed.infraRsSpAccPortP.attributes.dn == "uni/infra/spprof-ansible_access_spine_switch_profile/rsspAccPortP-[uni/infra/spaccportprof-ansible_access_spine_interface_profile_2]"
+        - nm_add_binding_spine_interface_to_switch_2.proposed.infraRsSpAccPortP.attributes.tDn == "uni/infra/spaccportprof-ansible_access_spine_interface_profile_2"
+        - nm_add_binding_spine_interface_to_switch_2.current.0.infraRsSpAccPortP.attributes.dn == "uni/infra/spprof-ansible_access_spine_switch_profile/rsspAccPortP-[uni/infra/spaccportprof-ansible_access_spine_interface_profile_2]"
+        - nm_add_binding_spine_interface_to_switch_2.current.0.infraRsSpAccPortP.attributes.tDn == "uni/infra/spaccportprof-ansible_access_spine_interface_profile_2"
+
+  # QUERY BINDING BETWEEN SPINE INTERFACE AND SWITCH PROFILES
+  - name: Query all Binding between Spine Interface Profiles and ansible_access_spine_switch_profile
+    cisco.aci.aci_access_spine_interface_profile_to_spine_switch_profile:
+      <<: *aci_info
+      spine_switch_profile: ansible_access_spine_switch_profile
+      state: query
+    register: query_all_binding_spine_interface_to_switch
+
+  - name: Query Binding ansible_access_spine_interface_profile_1 to ansible_access_spine_switch_profile
+    cisco.aci.aci_access_spine_interface_profile_to_spine_switch_profile:
+      <<: *aci_access_spine_interface_profile_to_spine_switch_profile_present
+      state: query
+    register: query_binding_spine_interface_to_switch
+
+  - name: Asserts query tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_binding_spine_interface_to_switch is not changed
+        - query_all_binding_spine_interface_to_switch.current.0.infraSpineP.children|length >= 2
+        - query_binding_spine_interface_to_switch is not changed
+        - query_binding_spine_interface_to_switch.current.0.infraSpineP.children|length == 1
+        - query_binding_spine_interface_to_switch.current.0.infraSpineP.children.0.infraRsSpAccPortP.attributes.rn == "rsspAccPortP-[uni/infra/spaccportprof-ansible_access_spine_interface_profile_1]"
+        - query_binding_spine_interface_to_switch.current.0.infraSpineP.children.0.infraRsSpAccPortP.attributes.tDn == "uni/infra/spaccportprof-ansible_access_spine_interface_profile_1"
+        - query_binding_spine_interface_to_switch.current.0.infraSpineP.children.0.infraRsSpAccPortP.attributes.state == "formed"
+
+  # DELETE BINDING BETWEEN SPINE INTERFACE AND SWITCH PROFILES
+  - name: Remove Binding between Spine Interface and Switch Profiles (check_mode)
+    cisco.aci.aci_access_spine_interface_profile_to_spine_switch_profile: &aci_access_spine_interface_profile_to_spine_switch_profile_absent
+      <<: *aci_access_spine_interface_profile_to_spine_switch_profile_present
+      state: absent
+    check_mode: true
+    register: cm_remove_binding_spine_interface_to_switch
+
+  - name: Remove Binding between Spine Interface and Switch Profiles (normal_mode)
+    cisco.aci.aci_access_spine_interface_profile_to_spine_switch_profile:
+      <<: *aci_access_spine_interface_profile_to_spine_switch_profile_absent
+    register: nm_remove_binding_spine_interface_to_switch
+
+  - name: Remove Binding between Spine Interface and Switch Profiles - testing idempotency
+    cisco.aci.aci_access_spine_interface_profile_to_spine_switch_profile:
+      <<: *aci_access_spine_interface_profile_to_spine_switch_profile_absent
+    register: nm_remove_binding_spine_interface_to_switch_idempotency
+
+  - name: Asserts deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_remove_binding_spine_interface_to_switch is changed
+        - cm_remove_binding_spine_interface_to_switch.current == cm_remove_binding_spine_interface_to_switch.previous
+        - cm_remove_binding_spine_interface_to_switch.proposed == {}
+        - nm_remove_binding_spine_interface_to_switch is changed
+        - nm_remove_binding_spine_interface_to_switch.previous != []
+        - nm_remove_binding_spine_interface_to_switch.proposed == {}
+        - nm_remove_binding_spine_interface_to_switch.current == []
+        - nm_remove_binding_spine_interface_to_switch_idempotency is not changed
+        - nm_remove_binding_spine_interface_to_switch_idempotency.previous == []
+        - nm_remove_binding_spine_interface_to_switch_idempotency.current == []
+
+  # CLEAN ENVIRONMENT BEFORE ENDING TESTS
+  - name: Remove Access Spine Switch profile - cleanup before ending tests
+    cisco.aci.aci_access_spine_interface_profile:
+      <<: *aci_access_spine_interface_profile_all_absent
+    loop:
+    - ansible_access_spine_interface_profile_1
+    - ansible_access_spine_interface_profile_2
+
+  - name: Remove all Access Spine Interface Profiles - cleanup before ending tests
+    cisco.aci.aci_access_spine_switch_profile:
+      <<: *aci_access_spine_switch_profile_absent
