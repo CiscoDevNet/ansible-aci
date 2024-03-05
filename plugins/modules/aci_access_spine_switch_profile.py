@@ -18,18 +18,18 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = r"""
 ---
 module: aci_access_spine_switch_profile
-short_description: Manage Switch Policy Spine Profiles (infra:SpineP)
+short_description: Manage Fabric Access Spine Switch Profiles (infra:SpineP)
 description:
-- Manage switch policy spine profiles on Cisco ACI fabrics.
+- Manage Fabric access switch policy spine profiles on Cisco ACI fabrics.
 options:
-  spine_profile:
+  switch_profile:
     description:
-    - The name of the Spine Profile.
+    - The name of the Fabric Access Spine Switch Profile.
     type: str
-    aliases: [ spine_profile_name, name ]
+    aliases: [ switch_profile_name, name, spine_switch_profile, spine_switch_profile_name ]
   description:
     description:
-    - The description for the Spine Profile.
+    - The description for the Fabric Access Spine Switch Profile.
     type: str
     aliases: [ descr ]
   state:
@@ -54,32 +54,31 @@ seealso:
   description: More information about the internal APIC class B(infra:SpineP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Bruno Calogero (@brunocalogero)
 - Eric Girard (@netgirard)
 - Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: Add a new Spine Profile
+- name: Add a new Access Spine Switch Profile
   cisco.aci.aci_access_spine_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
-    spine_profile: sw_name
+    switch_profile: sw_name
     description: sw_description
     state: present
   delegate_to: localhost
 
-- name: Query a Spine Profile
+- name: Query an Access Spine Switch Profile
   cisco.aci.aci_access_spine_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
-    spine_profile: sw_name
+    switch_profile: sw_name
     state: query
   delegate_to: localhost
 
-- name: Query all Spine Profiles
+- name: Query all Access Spine Switch Profiles
   cisco.aci.aci_access_spine_switch_profile:
     host: apic
     username: admin
@@ -87,12 +86,12 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
 
-- name: Remove a Spine Profile
+- name: Remove an Access Spine Switch Profile
   cisco.aci.aci_access_spine_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
-    spine_profile: sw_name
+    switch_profile: sw_name
     state: absent
   delegate_to: localhost
 """
@@ -211,7 +210,15 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        spine_profile=dict(type="str", aliases=["name", "spine_profile_name"]),  # Not required for querying all objects
+        switch_profile=dict(
+            type="str",
+            aliases=[
+                "name",
+                "switch_profile_name",
+                "spine_switch_profile",
+                "spine_switch_profile_name",
+            ],
+        ),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -221,12 +228,12 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["spine_profile"]],
-            ["state", "present", ["spine_profile"]],
+            ["state", "absent", ["switch_profile"]],
+            ["state", "present", ["switch_profile"]],
         ],
     )
 
-    spine_profile = module.params.get("spine_profile")
+    switch_profile = module.params.get("switch_profile")
     description = module.params.get("description")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
@@ -239,9 +246,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="infraSpineP",
-            aci_rn="spprof-{0}".format(spine_profile),
-            module_object=spine_profile,
-            target_filter={"name": spine_profile},
+            aci_rn="spprof-{0}".format(switch_profile),
+            module_object=switch_profile,
+            target_filter={"name": switch_profile},
         ),
     )
 
@@ -251,7 +258,7 @@ def main():
         aci.payload(
             aci_class="infraSpineP",
             class_config=dict(
-                name=spine_profile,
+                name=switch_profile,
                 descr=description,
                 nameAlias=name_alias,
             ),

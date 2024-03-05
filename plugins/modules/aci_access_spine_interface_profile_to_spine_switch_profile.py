@@ -17,21 +17,21 @@ ANSIBLE_METADATA = {
 
 DOCUMENTATION = r"""
 ---
-module: aci_access_spine_interface_selector_to_spine_switch_profile
-short_description: Bind interface selector profiles to switch policy spine profiles (infra:RsSpAccPortP)
+module: aci_access_spine_interface_profile_to_spine_switch_profile
+short_description: Bind Fabric Access Spine Interface Profiles to Fabric Acces Spine Switch Profiles (infra:RsSpAccPortP)
 description:
-- Bind interface selector profiles to switch policy spine profiles on Cisco ACI fabrics.
+- Bind access spine interface selector profiles to access switch policy spine profiles on Cisco ACI fabrics.
 options:
-  spine_profile:
+  switch_profile:
     description:
-    - The name of the Spine Profile to which we add a Selector.
+    - The name of the Fabric Access Spine Switch Profile to which we add a Spine Interface Selector Profile.
     type: str
-    aliases: [ spine_profile_name ]
-  interface_selector:
+    aliases: [ name, switch_profile_name, spine_switch_profile, spine_switch_profile_name ]
+  interface_profile:
     description:
-    - The name of Interface Profile Selector to be added and associated with the Spine Profile.
+    - The name of the Fabric Access Spine Interface Profile to be added and associated with the Spine Switch Profile.
     type: str
-    aliases: [ name, interface_selector_name, interface_profile_name ]
+    aliases: [ name, interface_profile_name, spine_interface_profile, spine_interface_profile_name ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -45,41 +45,45 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- This module requires an existing spine profile, the module M(cisco.aci.aci_access_spine_switch_profile) can be used for this.
+- This module requires an existing I(switch_profile).
+  The module M(cisco.aci.aci_access_spine_switch_profile) can be used for this.
+- The I(interface_profile) accepts non existing spine interface profile names.
+  They appear on APIC GUI with a state of "missing-target".
+  The module M(cisco.aci.aci_access_spine_interface_profile) can be used to create them.
 seealso:
 - module: cisco.aci.aci_access_spine_switch_profile
+- module: cisco.aci.aci_access_spine_interface_profile
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(infra:RsSpAccPortP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Bruno Calogero (@brunocalogero)
 - Eric Girard (@netgirard)
 - Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
 - name: Associating an interface selector profile to a switch policy spine profile
-  cisco.aci.aci_access_spine_interface_selector_to_spine_switch_profile:
+  cisco.aci.aci_access_spine_interface_profile_to_spine_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
-    spine_profile: sw_name
-    interface_selector: interface_profile_name
+    switch_profile: sw_name
+    interface_profile: interface_profile_name
     state: present
   delegate_to: localhost
 
 - name: Query an interface selector profile associated with a switch policy spine profile
-  cisco.aci.aci_access_spine_interface_selector_to_spine_switch_profile:
+  cisco.aci.aci_access_spine_interface_profile_to_spine_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
-    spine_profile: sw_name
-    interface_selector: interface_profile_name
+    switch_profile: sw_name
+    interface_profile: interface_profile_name
     state: query
   delegate_to: localhost
 
 - name: Query all association of interface selector profiles with a switch policy spine profile
-  cisco.aci.aci_access_spine_interface_selector_to_spine_switch_profile:
+  cisco.aci.aci_access_spine_interface_profile_to_spine_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -87,12 +91,12 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Remove an interface selector profile associated with a switch policy spine profile
-  cisco.aci.aci_access_spine_interface_selector_to_spine_switch_profile:
+  cisco.aci.aci_access_spine_interface_profile_to_spine_switch_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
-    spine_profile: sw_name
-    interface_selector: interface_profile_name
+    switch_profile: sw_name
+    interface_profile: interface_profile_name
     state: absent
   delegate_to: localhost
 """
@@ -211,10 +215,23 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        spine_profile=dict(type="str", aliases=["spine_profile_name"]),  # Not required for querying all objects
-        interface_selector=dict(
+        switch_profile=dict(
             type="str",
-            aliases=["interface_profile_name", "interface_selector_name", "name"],
+            aliases=[
+                "name",
+                "switch_profile_name",
+                "spine_switch_profile",
+                "spine_switch_profile_name",
+            ],
+        ),  # Not required for querying all objects
+        interface_profile=dict(
+            type="str",
+            aliases=[
+                "name",
+                "interface_profile_name",
+                "spine_interface_profile",
+                "spine_interface_profile_name",
+            ],
         ),  # Not required for querying all objects
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -223,18 +240,17 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["spine_profile", "interface_selector"]],
-            ["state", "present", ["spine_profile", "interface_selector"]],
+            ["state", "absent", ["switch_profile", "interface_profile"]],
+            ["state", "present", ["switch_profile", "interface_profile"]],
         ],
     )
 
-    spine_profile = module.params.get("spine_profile")
-    # WARNING: interface_selector accepts non existing interface_profile names and they appear on APIC gui with a state of "missing-target"
-    interface_selector = module.params.get("interface_selector")
+    switch_profile = module.params.get("switch_profile")
+    interface_profile = module.params.get("interface_profile")
     state = module.params.get("state")
 
     # Defining the interface profile tDn for clarity
-    interface_selector_tDn = "uni/infra/spaccportprof-{0}".format(interface_selector)
+    interface_profile_tDn = "uni/infra/spaccportprof-{0}".format(interface_profile)
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -244,15 +260,15 @@ def main():
         ),
         subclass_1=dict(
             aci_class="infraSpineP",
-            aci_rn="spprof-{0}".format(spine_profile),
-            module_object=spine_profile,
-            target_filter={"name": spine_profile},
+            aci_rn="spprof-{0}".format(switch_profile),
+            module_object=switch_profile,
+            target_filter={"name": switch_profile},
         ),
         subclass_2=dict(
             aci_class="infraRsSpAccPortP",
-            aci_rn="rsspAccPortP-[{0}]".format(interface_selector_tDn),
-            module_object=interface_selector,
-            target_filter={"tDn": interface_selector_tDn},
+            aci_rn="rsspAccPortP-[{0}]".format(interface_profile_tDn),
+            module_object=interface_profile,
+            target_filter={"tDn": interface_profile_tDn},
         ),
     )
 
@@ -261,7 +277,7 @@ def main():
     if state == "present":
         aci.payload(
             aci_class="infraRsSpAccPortP",
-            class_config=dict(tDn=interface_selector_tDn),
+            class_config=dict(tDn=interface_profile_tDn),
         )
 
         aci.get_diff(aci_class="infraRsSpAccPortP")
