@@ -103,7 +103,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Associate an Fabric access policy interface port block (single port) to an interface selector
+- name: Associate a Fabric access policy interface port block (single port) to an interface selector
   cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
@@ -116,7 +116,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Associate an Fabric access policy interface port block (port range) to an interface selector
+- name: Associate a Fabric access policy interface port block (port range) to an interface selector
   cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
@@ -129,7 +129,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Associate an Fabric access policy interface port block (single port) to an interface selector of type fex
+- name: Associate a Fabric access policy interface port block (single port) to an interface selector of type fex
   cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
@@ -143,7 +143,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Associate an Fabric access policy interface port block (port range) to an interface selector of type fex
+- name: Associate a Fabric access policy interface port block (port range) to an interface selector of type fex
   cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
@@ -155,33 +155,6 @@ EXAMPLES = r"""
     from_port: 13
     to_port: 16
     state: present
-  delegate_to: localhost
-
-- name: Remove an Fabric access policy interface port block from an interface selector
-  cisco.aci.aci_access_port_block_to_access_port:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    interface_profile: leafintprfname
-    access_port_selector: accessportselectorname
-    port_blk: leafportblkname
-    from_port: 13
-    to_port: 13
-    state: absent
-  delegate_to: localhost
-
-- name: Remove an Fabric access policy interface port block from an interface selector of type fex
-  cisco.aci.aci_access_port_block_to_access_port:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    type: fex
-    interface_profile: leafintprfname_fex
-    access_port_selector: accessportselectorname_fex
-    port_blk: leafportblkname_fex
-    from_port: 13
-    to_port: 13
-    state: absent
   delegate_to: localhost
 
 - name: Query Specific Fabric access policy interface port block under given access port selector
@@ -248,6 +221,33 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Remove a Fabric access policy interface port block from an interface selector
+  cisco.aci.aci_access_port_block_to_access_port:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    interface_profile: leafintprfname
+    access_port_selector: accessportselectorname
+    port_blk: leafportblkname
+    from_port: 13
+    to_port: 13
+    state: absent
+  delegate_to: localhost
+
+- name: Remove a Fabric access policy interface port block from an interface selector of type fex
+  cisco.aci.aci_access_port_block_to_access_port:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    type: fex
+    interface_profile: leafintprfname_fex
+    access_port_selector: accessportselectorname_fex
+    port_blk: leafportblkname_fex
+    from_port: 13
+    to_port: 13
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
@@ -417,7 +417,6 @@ def main():
         module_object=interface_profile,
         target_filter={"name": interface_profile},
     )
-    # NOTE: normal rn: hports-{name}-typ-{type}, hence here hardcoded to range for purposes of module
     subclass_2 = dict(
         aci_class="infraHPortS",
         aci_rn="hports-{0}-typ-range".format(access_port_selector),
@@ -431,7 +430,6 @@ def main():
             module_object=interface_profile,
             target_filter={"name": interface_profile},
         )
-        # NOTE: normal rn: shports-{name}-typ-{type}, hence here hardcoded to range for purposes of module
         subclass_2 = dict(
             aci_class="infraSHPortS",
             aci_rn="shports-{0}-typ-range".format(access_port_selector),
@@ -465,7 +463,6 @@ def main():
                 toPort=to_port,
                 fromCard=from_card,
                 toCard=to_card,
-                #  type='range',
             ),
         )
 

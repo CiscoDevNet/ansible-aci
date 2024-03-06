@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_access_spine_interface_selector
-short_description: Manage Fabric Access Policy Spine Interface Port Selectors (infra:SHPortS and infra:RsSpAccGrp)
+short_description: Manage Fabric Access Policy Spine Interface Port Selectors (infra:SHPortS)
 description:
 - Manage Fabric Access Policy Spine Interface Port Selectors on Cisco ACI fabrics.
 - This selector is used for applying infrastructure policies on selected ports.
@@ -43,7 +43,6 @@ options:
     - If using a port block to specify range of interfaces, the type must be set to C(range).
     type: str
     choices: [ all, range ]
-    default: range
     aliases: [ type ]
   state:
     description:
@@ -80,6 +79,7 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     spine_interface_profile: my_access_spine_interface_profile
     spine_interface_selector: my_access_spine_interface_selector
+    selector_type: range
     policy_group: my_access_spine_interface_policy_group
     state: present
   delegate_to: localhost
@@ -91,6 +91,7 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     spine_interface_profile: my_access_spine_interface_profile
     spine_interface_selector: my_access_spine_interface_selector
+    selector_type: range
     state: query
   delegate_to: localhost
 
@@ -118,6 +119,7 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     spine_interface_profile: my_access_spine_interface_profile
     spine_interface_selector: my_access_spine_interface_selector
+    selector_type: range
     state: absent
   delegate_to: localhost
 """
@@ -251,7 +253,7 @@ def main():
         ),  # Not required for querying all objects
         description=dict(type="str"),
         policy_group=dict(type="str", aliases=["policy_group_name"]),
-        selector_type=dict(type="str", default="range", choices=list(MATCH_ACCESS_POLICIES_SELECTOR_TYPE.keys()), aliases=["type"]),
+        selector_type=dict(type="str", choices=list(MATCH_ACCESS_POLICIES_SELECTOR_TYPE.keys()), aliases=["type"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -259,8 +261,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["spine_interface_profile", "spine_interface_selector"]],
-            ["state", "present", ["spine_interface_profile", "spine_interface_selector"]],
+            ["state", "absent", ["spine_interface_profile", "spine_interface_selector", "selector_type"]],
+            ["state", "present", ["spine_interface_profile", "spine_interface_selector", "selector_type"]],
         ],
     )
 

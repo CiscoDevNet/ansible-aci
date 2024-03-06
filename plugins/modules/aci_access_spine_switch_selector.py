@@ -18,7 +18,7 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = r"""
 ---
 module: aci_access_spine_switch_selector
-short_description: Manage Fabric Access Policy Spine Switch Port Selectors (infra:SpineS and infra:RsSpineAccNodePGrp)
+short_description: Manage Fabric Access Policy Spine Switch Port Selectors (infra:SpineS)
 description:
 - Manage Fabric Access Policy Spine Switch Port Selectors on Cisco ACI fabrics.
 options:
@@ -47,7 +47,6 @@ options:
     - If using a port block to specify range of switches, the type must be set to C(range).
     type: str
     choices: [ all, range ]
-    default: range
     aliases: [ type ]
   state:
     description:
@@ -77,30 +76,15 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a switch policy spine profile selector associated Node Block range (with policy group)
+- name: Add a switch policy spine profile selector (with policy group)
   cisco.aci.aci_access_spine_switch_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
-    spine_profile: sw_name
-    spine: spine_selector_name
-    spine_node_blk: node_blk_name
-    from: 1011
-    to: 1011
+    spine_switch_profile: sw_name
+    spine_switch_selector: spine_selector_name
+    selector_type: range
     policy_group: somepolicygroupname
-    state: present
-  delegate_to: localhost
-
-- name: Add a switch policy spine profile selector associated Node Block range (without policy group)
-  cisco.aci.aci_access_spine_switch_selector:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    spine_profile: sw_name
-    spine: spine_selector_name
-    spine_node_blk: node_blk_name
-    from: 1011
-    to: 1011
     state: present
   delegate_to: localhost
 
@@ -109,11 +93,11 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    spine_profile: sw_name
-    spine: spine_selector_name
+    spine_switch_profile: sw_name
+    spine_switch_selector: spine_selector_name
+    selector_type: range
     state: query
   delegate_to: localhost
-  register: query_result
 
 - name: Query all switch policy spine profile selectors
   cisco.aci.aci_access_spine_switch_selector:
@@ -122,15 +106,15 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     state: query
   delegate_to: localhost
-  register: query_result
 
 - name: Remove a switch policy spine profile selector
   cisco.aci.aci_access_spine_switch_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
-    spine_profile: sw_name
-    spine: spine_selector_name
+    spine_switch_profile: sw_name
+    spine_switch_selector: spine_selector_name
+    selector_type: range
     state: absent
   delegate_to: localhost
 """
@@ -264,7 +248,7 @@ def main():
         ),  # Not required for querying all objects
         description=dict(type="str"),
         policy_group=dict(type="str", aliases=["policy_group_name"]),
-        selector_type=dict(type="str", default="range", choices=list(MATCH_ACCESS_POLICIES_SELECTOR_TYPE.keys()), aliases=["type"]),
+        selector_type=dict(type="str", choices=list(MATCH_ACCESS_POLICIES_SELECTOR_TYPE.keys()), aliases=["type"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -272,8 +256,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["spine_switch_profile", "spine_switch_selector"]],
-            ["state", "present", ["spine_switch_profile", "spine_switch_selector"]],
+            ["state", "absent", ["spine_switch_profile", "spine_switch_selector", "selector_type"]],
+            ["state", "present", ["spine_switch_profile", "spine_switch_selector", "selector_type"]],
         ],
     )
 
