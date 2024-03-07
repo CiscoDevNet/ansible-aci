@@ -52,44 +52,21 @@
     pool: 10.66.22.0/24
     state: absent
 
-- name: Ensure Fabric External Policy is absent before testing
-  cisco.aci.aci_rest: 
+- name: Create Fabric External Connection Profile
+  cisco.aci.aci_fabric_external_connection_profile: 
     <<: *aci_info
-    path: /api/mo/uni/tn-infra/fabricExtConnP-1.json
-    method: delete
+    fabric_id: 1
+    site_id: 1
+    community: extended:as2-nn4:5:16
+    state: present
 
-- name: Create Fabric External Policy
-  cisco.aci.aci_rest: 
+- name: Create Fabric Pod Connectivity Profile
+  cisco.aci.aci_fabric_pod_connectivity_profile: 
     <<: *aci_info
-    path: /api/mo/uni/tn-infra/fabricExtConnP-1.json
-    method: post
-    content:
-      {
-        "fvFabricExtConnP": {
-          "attributes": {
-            "rt": "extended:as2-nn4:5:16",
-            "siteId": "1"
-          },
-          "children": [
-            {
-              "fvPodConnP": {
-                "attributes": {
-                  "id": "1"
-                },
-                "children": [
-                  {
-                    "fvExtRoutableUcastConnP": {
-                      "attributes": {
-                        "addr": "10.1.1.1/32"
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      }
+    fabric_id: 1
+    pod_id: 1
+    unicast_tep: 10.1.1.1/32
+    state: present
 
 - name: Create an external tep
   cisco.aci.aci_fabric_pod_external_tep:
@@ -262,8 +239,8 @@
     pool: 10.66.22.0/24
     state: absent
 
-- name: Ensure Fabric External Policy is absent
-  cisco.aci.aci_rest: 
+- name: Ensure Fabric External Connection Profile is absent
+  cisco.aci.aci_fabric_external_connection_profile: 
     <<: *aci_info
-    path: /api/mo/uni/tn-infra/fabricExtConnP-1.json
-    method: delete
+    fabric_id: 1
+    state: absent
