@@ -64,7 +64,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     interface_profile: spineintprfname
-    description:  spineintprfname description
+    description: spineintprfname description
     state: present
   delegate_to: localhost
 
