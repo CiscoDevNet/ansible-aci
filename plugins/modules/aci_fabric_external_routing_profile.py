@@ -246,6 +246,10 @@ def main():
     subnets = module.params.get("subnets")
     state = module.params.get("state")
 
+    # Remove duplicate subnets
+    if isinstance(subnets, list):
+        subnets = list(dict.fromkeys(subnets))
+
     aci.construct_url(
         root_class=dict(
             aci_class="l3extFabricExtRoutingP",
@@ -258,12 +262,29 @@ def main():
 
     aci.get_existing()
 
-    child_configs = []
-    if subnets is not None:
-        for subnet in subnets:
-            child_configs.append({"l3extSubnet": {"attributes": {"ip": subnet}}})
-
     if state == "present":
+        child_configs = []
+
+        # Validate if existing and remove subnet objects when the config does not match the provided config.
+        if isinstance(aci.existing, list) and len(aci.existing) > 0:
+            subnets = [] if subnets is None else subnets
+            for child in aci.existing[0].get("l3extFabricExtRoutingP", {}).get("children", {}):
+                if child.get("l3extSubnet") and child.get("l3extSubnet").get("attributes").get("ip") not in subnets:
+                    child_configs.append(
+                        {
+                            "l3extSubnet": {
+                                "attributes": {
+                                    "ip": child.get("l3extSubnet").get("attributes").get("ip"),
+                                    "status": "deleted",
+                                }
+                            }
+                        }
+                    )
+
+        if subnets is not None:
+            for subnet in subnets:
+                child_configs.append({"l3extSubnet": {"attributes": {"ip": subnet}}})
+
         aci.payload(
             aci_class="l3extFabricExtRoutingP",
             class_config=dict(

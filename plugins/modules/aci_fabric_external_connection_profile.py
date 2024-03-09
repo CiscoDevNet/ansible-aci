@@ -26,7 +26,7 @@ options:
     description:
     - The fabric identifier of the Fabric External Connection Profile.
     type: int
-    aliases: [ id, fabric]
+    aliases: [ id, fabric ]
   name:
     description:
     - The name of the Fabric External Connection Profile.
@@ -42,13 +42,14 @@ options:
     description:
     - The site identifier of the Fabric External Connection Profile.
     type: int
-    aliases: [ sid, site, s_id]
+    aliases: [ sid, site, s_id ]
   peering_type:
     description:
     - The BGP EVPN Peering Type. Use either C(automatic_with_full_mesh) or C(automatic_with_rr).
-    - The APIC defaults to C(automatic_with_full_mesh) when unset during creation.
     type: str
-    aliases: [p_type, peer, peer_t]
+    default: automatic_with_full_mesh
+    choices: [ automatic_with_full_mesh, automatic_with_rr ]
+    aliases: [ p_type, peer, peer_t ]
   peering_password:
     description:
     - The BGP EVPN Peering Password. Used for setting automatic peering sessions.
@@ -238,7 +239,9 @@ def main():
         name=dict(type="str", aliases=["profile_name"]),
         community=dict(type="str", aliases=["rt", "route_target"]),
         site_id=dict(type="int", aliases=["sid", "site", "s_id"]),
-        peering_type=dict(type="str", aliases=["p_type", "peer", "peer_t"]),
+        peering_type=dict(
+            type="str", default="automatic_with_full_mesh", aliases=["p_type", "peer", "peer_t"], choices=["automatic_with_full_mesh", "automatic_with_rr"]
+        ),
         peering_password=dict(type="str", aliases=["peer_password", "peer_pwd"], no_log=True),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )

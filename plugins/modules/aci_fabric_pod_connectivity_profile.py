@@ -29,7 +29,7 @@ options:
     aliases: [ fabric, fid ]
   virtual_pod_id:
     description:
-    - ID of the pod in the main fabric to which this pod is associated. This property is valid only if this pod is a virtual pod
+    - The Pod ID in the main fabric to which this I(pod_id) is associated. This property is valid only if this pod is a virtual pod.
     type: int
     aliases: [ vpod, vpod_id ]
   description:
@@ -273,6 +273,39 @@ def main():
     aci.get_existing()
 
     if state == "present":
+        child_configs = []
+
+        # Validate if existing and remove child objects when the config does not match the provided config.
+        if isinstance(aci.existing, list) and len(aci.existing) > 0:
+            for child in aci.existing[0].get("fvPodConnP", {}).get("children", {}):
+                if child.get("fvExtRoutableUcastConnP") and child.get("fvExtRoutableUcastConnP").get("attributes").get("addr") != unicast_tep:
+                    child_configs.append(
+                        {
+                            "fvExtRoutableUcastConnP": {
+                                "attributes": {
+                                    "addr": child.get("fvExtRoutableUcastConnP").get("attributes").get("addr"),
+                                    "status": "deleted",
+                                }
+                            }
+                        }
+                    )
+                if child.get("fvIp") and child.get("fvIp").get("attributes").get("addr") != data_plane_tep:
+                    child_configs.append(
+                        {
+                            "fvIp": {
+                                "attributes": {
+                                    "addr": child.get("fvIp").get("attributes").get("addr"),
+                                    "status": "deleted",
+                                }
+                            }
+                        }
+                    )
+
+        if unicast_tep is not None:
+            child_configs.append({"fvExtRoutableUcastConnP": {"attributes": {"addr": unicast_tep}}})
+        if data_plane_tep is not None:
+            child_configs.append({"fvIp": {"attributes": {"addr": data_plane_tep}}})
+
         aci.payload(
             aci_class="fvPodConnP",
             class_config=dict(
@@ -280,10 +313,7 @@ def main():
                 assocIntersitePodId=virtual_pod_id,
                 descr=description,
             ),
-            child_configs=[
-                {"fvExtRoutableUcastConnP": {"attributes": {"addr": unicast_tep}}},
-                {"fvIp": {"attributes": {"addr": data_plane_tep}}},
-            ],
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class="fvPodConnP")
