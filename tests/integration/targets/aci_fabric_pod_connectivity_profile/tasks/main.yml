@@ -148,6 +148,42 @@
       - query_fabric_pod_connectivity_profile_all.current.0.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.2/32"
       - query_fabric_pod_connectivity_profile_all.current.0.fvPodConnP.children.1.fvIp.attributes.addr == "10.1.1.1/32"
       
+  - name: Update fabric pod connectivity profile
+    cisco.aci.aci_fabric_pod_connectivity_profile:
+      <<: *create_fabric_pod_connectivity_profile
+      unicast_tep: "10.1.1.3/32"
+      data_plane_tep: "10.1.1.4/32"
+      state: present
+    register: update_fabric_pod_connectivity_profile
+
+  - name: Update fabric pod connectivity profile - remove unicast and data plane tep
+    cisco.aci.aci_fabric_pod_connectivity_profile:
+      <<: *create_fabric_pod_connectivity_profile
+      unicast_tep: null
+      data_plane_tep: null
+      state: present
+    register: update_fabric_pod_connectivity_profile_2
+
+  - name: Verify updates
+    ansible.builtin.assert:
+      that:
+      - update_fabric_pod_connectivity_profile is changed
+      - update_fabric_pod_connectivity_profile.proposed.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.2/32"
+      - update_fabric_pod_connectivity_profile.proposed.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.status == "deleted"
+      - update_fabric_pod_connectivity_profile.proposed.fvPodConnP.children.1.fvIp.attributes.addr == "10.1.1.1/32"
+      - update_fabric_pod_connectivity_profile.proposed.fvPodConnP.children.1.fvIp.attributes.status == "deleted"
+      - update_fabric_pod_connectivity_profile.proposed.fvPodConnP.children.2.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.3/32"
+      - update_fabric_pod_connectivity_profile.proposed.fvPodConnP.children.3.fvIp.attributes.addr == "10.1.1.4/32"
+      - update_fabric_pod_connectivity_profile.current.0.fvPodConnP.children | length == 2
+      - update_fabric_pod_connectivity_profile.current.0.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.3/32"
+      - update_fabric_pod_connectivity_profile.current.0.fvPodConnP.children.1.fvIp.attributes.addr == "10.1.1.4/32"
+      - update_fabric_pod_connectivity_profile_2 is changed
+      - update_fabric_pod_connectivity_profile_2.proposed.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.3/32"
+      - update_fabric_pod_connectivity_profile_2.proposed.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.status == "deleted"
+      - update_fabric_pod_connectivity_profile_2.proposed.fvPodConnP.children.1.fvIp.attributes.addr == "10.1.1.4/32"
+      - update_fabric_pod_connectivity_profile_2.proposed.fvPodConnP.children.1.fvIp.attributes.status == "deleted"
+      - update_fabric_pod_connectivity_profile_2.current.0.fvPodConnP.children is undefined
+  
   # DELETE FABRIC POD CONNECTIVITY PROFILE
   - name: Delete fabric pod connectivity profile with check mode
     cisco.aci.aci_fabric_pod_connectivity_profile:
@@ -174,16 +210,12 @@
       - delete_fabric_pod_connectivity_profile.previous.0.fvPodConnP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/podConnP-1"
       - delete_fabric_pod_connectivity_profile.previous.0.fvPodConnP.attributes.descr == "Fabric Pod Connectivity Profile"
       - delete_fabric_pod_connectivity_profile.previous.0.fvPodConnP.attributes.id == "1"
-      - delete_fabric_pod_connectivity_profile.previous.0.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.2/32"
-      - delete_fabric_pod_connectivity_profile.previous.0.fvPodConnP.children.1.fvIp.attributes.addr == "10.1.1.1/32"
       - delete_fabric_pod_connectivity_profile_cm is changed
       - delete_fabric_pod_connectivity_profile_cm.proposed == {}
       - delete_fabric_pod_connectivity_profile_cm.current != []
       - delete_fabric_pod_connectivity_profile_cm.previous.0.fvPodConnP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/podConnP-1"
       - delete_fabric_pod_connectivity_profile_cm.previous.0.fvPodConnP.attributes.descr == "Fabric Pod Connectivity Profile"
       - delete_fabric_pod_connectivity_profile_cm.previous.0.fvPodConnP.attributes.id == "1"
-      - delete_fabric_pod_connectivity_profile_cm.previous.0.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.2/32"
-      - delete_fabric_pod_connectivity_profile_cm.previous.0.fvPodConnP.children.1.fvIp.attributes.addr == "10.1.1.1/32"
       - delete_fabric_pod_connectivity_profile_again is not changed
       - delete_fabric_pod_connectivity_profile_again.current == []
       - delete_fabric_pod_connectivity_profile_again.previous == []

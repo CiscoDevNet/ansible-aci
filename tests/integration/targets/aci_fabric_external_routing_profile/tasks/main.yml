@@ -70,6 +70,8 @@
       description: "Fabric external routing profile"
       name: "ansible_fabric_ext_routing_profile"
       subnets:
+        # Intentional duplicate subnet test
+        - 1.2.3.4/24
         - 1.2.3.4/24
         - 5.6.7.8/24
       state: present
@@ -161,7 +163,72 @@
       - query_fabric_external_routing_profile_all.current.0.l3extFabricExtRoutingP.attributes.name == "ansible_fabric_ext_routing_profile"
       - query_fabric_external_routing_profile_all.current.0.l3extFabricExtRoutingP.children.1.l3extSubnet.attributes.ip == "1.2.3.4/24"
       - query_fabric_external_routing_profile_all.current.0.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "5.6.7.8/24"
-      
+
+  # UPDATE SUBNETS
+  - name: Update fabric external routing profile - change subnets
+    cisco.aci.aci_fabric_external_routing_profile:
+      <<: *create_fabric_external_routing_profile
+      subnets:
+        - 5.6.7.8/24
+        - 9.10.11.12/24
+      state: present
+    register: update_fabric_external_routing_profile_1
+
+  - name: Sleep for 15 seconds and continue
+    ansible.builtin.wait_for:
+      timeout: 15
+    delegate_to: localhost
+
+  - name: Update fabric external routing profile - remove 1 subnet
+    cisco.aci.aci_fabric_external_routing_profile:
+      <<: *create_fabric_external_routing_profile
+      subnets:
+        - 9.10.11.12/24
+      state: present
+    register: update_fabric_external_routing_profile_2
+
+  - name: Sleep for 15 seconds and continue
+    ansible.builtin.wait_for:
+      timeout: 15
+    delegate_to: localhost
+
+  - name: Update fabric external routing profile - remove all subnets
+    cisco.aci.aci_fabric_external_routing_profile:
+      <<: *create_fabric_external_routing_profile
+      subnets: null
+      state: present
+    register: update_fabric_external_routing_profile_3
+
+  - name: Sleep for 15 seconds and continue
+    ansible.builtin.wait_for:
+      timeout: 15
+    delegate_to: localhost
+
+  - name: Verify subnet update
+    ansible.builtin.assert:
+      that: 
+      - update_fabric_external_routing_profile_1 is changed
+      - update_fabric_external_routing_profile_1.proposed.l3extFabricExtRoutingP.children | length == 3
+      - update_fabric_external_routing_profile_1.proposed.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "1.2.3.4/24"
+      - update_fabric_external_routing_profile_1.proposed.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.status == "deleted"
+      - update_fabric_external_routing_profile_1.proposed.l3extFabricExtRoutingP.children.1.l3extSubnet.attributes.ip == "5.6.7.8/24"
+      - update_fabric_external_routing_profile_1.proposed.l3extFabricExtRoutingP.children.2.l3extSubnet.attributes.ip == "9.10.11.12/24"
+      - update_fabric_external_routing_profile_1.current.0.l3extFabricExtRoutingP.children | length == 2
+      - update_fabric_external_routing_profile_1.current.0.l3extFabricExtRoutingP.children.1.l3extSubnet.attributes.ip == "5.6.7.8/24"
+      - update_fabric_external_routing_profile_1.current.0.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "9.10.11.12/24"
+      - update_fabric_external_routing_profile_2 is changed
+      - update_fabric_external_routing_profile_2.proposed.l3extFabricExtRoutingP.children | length == 2
+      - update_fabric_external_routing_profile_2.proposed.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "5.6.7.8/24"
+      - update_fabric_external_routing_profile_2.proposed.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.status == "deleted"
+      - update_fabric_external_routing_profile_2.proposed.l3extFabricExtRoutingP.children.1.l3extSubnet.attributes.ip == "9.10.11.12/24"
+      - update_fabric_external_routing_profile_2.current.0.l3extFabricExtRoutingP.children | length == 1
+      - update_fabric_external_routing_profile_2.current.0.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "9.10.11.12/24"
+      - update_fabric_external_routing_profile_3 is changed
+      - update_fabric_external_routing_profile_3.proposed.l3extFabricExtRoutingP.children | length == 1
+      - update_fabric_external_routing_profile_3.proposed.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "9.10.11.12/24"
+      - update_fabric_external_routing_profile_3.proposed.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.status == "deleted"
+      - update_fabric_external_routing_profile_3.current.0.l3extFabricExtRoutingP.children is undefined
+
   # DELETE FABRIC EXTERNAL ROUTING PROFILE
   - name: Delete ansible_fabric_ext_routing_profile with check mode
     cisco.aci.aci_fabric_external_routing_profile:
@@ -196,16 +263,12 @@
       - delete_fabric_external_routing_profile.previous.0.l3extFabricExtRoutingP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/fabricExtRoutingP-ansible_fabric_ext_routing_profile"
       - delete_fabric_external_routing_profile.previous.0.l3extFabricExtRoutingP.attributes.descr == "Fabric external routing profile"
       - delete_fabric_external_routing_profile.previous.0.l3extFabricExtRoutingP.attributes.name == "ansible_fabric_ext_routing_profile"
-      - delete_fabric_external_routing_profile.previous.0.l3extFabricExtRoutingP.children.1.l3extSubnet.attributes.ip == "1.2.3.4/24"
-      - delete_fabric_external_routing_profile.previous.0.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "5.6.7.8/24"
       - delete_fabric_external_routing_profile_cm is changed
       - delete_fabric_external_routing_profile_cm.proposed == {}
       - delete_fabric_external_routing_profile_cm.current != []
       - delete_fabric_external_routing_profile_cm.previous.0.l3extFabricExtRoutingP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/fabricExtRoutingP-ansible_fabric_ext_routing_profile"
       - delete_fabric_external_routing_profile_cm.previous.0.l3extFabricExtRoutingP.attributes.descr == "Fabric external routing profile"
       - delete_fabric_external_routing_profile_cm.previous.0.l3extFabricExtRoutingP.attributes.name == "ansible_fabric_ext_routing_profile"
-      - delete_fabric_external_routing_profile_cm.previous.0.l3extFabricExtRoutingP.children.1.l3extSubnet.attributes.ip == "1.2.3.4/24"
-      - delete_fabric_external_routing_profile_cm.previous.0.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "5.6.7.8/24"
       - delete_fabric_external_routing_profile_again is not changed
       - delete_fabric_external_routing_profile_again.current == []
       - delete_fabric_external_routing_profile_again.previous == []
