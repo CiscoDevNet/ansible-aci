@@ -58,7 +58,6 @@ options:
     - The type of Node Block to be created under respective access port.
     type: str
     choices: [ leaf, spine ]
-    default: leaf
     aliases: [ type ]
   state:
     description:
@@ -300,15 +299,15 @@ def main():
         from_port=dict(type="str", aliases=["from", "from_port_range"]),
         to_port=dict(type="str", aliases=["to", "to_port_range"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        type_node=dict(type="str", default="leaf", choices=["leaf", "spine"], aliases=["type"]),  # This parameter is not required for querying all objects
+        type_node=dict(type="str", choices=["leaf", "spine"], aliases=["type"]),  # Not required for querying all objects
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["switch_profile", "access_port_selector", "node_block"]],
-            ["state", "present", ["switch_profile", "access_port_selector", "node_block"]],
+            ["state", "absent", ["switch_profile", "access_port_selector", "node_block", "type_node"]],
+            ["state", "present", ["switch_profile", "access_port_selector", "node_block", "type_node"]],
         ],
     )
 
@@ -323,18 +322,6 @@ def main():
 
     aci = ACIModule(module)
 
-    subclass_1 = dict(
-        aci_class="infraNodeP",
-        aci_rn="nprof-{0}".format(switch_profile),
-        module_object=switch_profile,
-        target_filter={"name": switch_profile},
-    )
-    subclass_2 = dict(
-        aci_class="infraLeafS",
-        aci_rn="leaves-{0}-typ-range".format(access_port_selector),
-        module_object=access_port_selector,
-        target_filter={"name": access_port_selector},
-    )
     if type_node == "spine":
         subclass_1 = dict(
             aci_class="infraSpineP",
@@ -345,6 +332,19 @@ def main():
         subclass_2 = dict(
             aci_class="infraSpineS",
             aci_rn="spines-{0}-typ-range".format(access_port_selector),
+            module_object=access_port_selector,
+            target_filter={"name": access_port_selector},
+        )
+    else:
+        subclass_1 = dict(
+        aci_class="infraNodeP",
+        aci_rn="nprof-{0}".format(switch_profile),
+        module_object=switch_profile,
+        target_filter={"name": switch_profile},
+        )
+        subclass_2 = dict(
+            aci_class="infraLeafS",
+            aci_rn="leaves-{0}-typ-range".format(access_port_selector),
             module_object=access_port_selector,
             target_filter={"name": access_port_selector},
         )
