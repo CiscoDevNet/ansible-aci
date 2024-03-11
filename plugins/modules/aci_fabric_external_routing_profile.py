@@ -35,6 +35,7 @@ options:
   subnets:
     description:
     - The list of external subnet IP addresses.
+    - Duplicate subnet IP addresses are not valid and would be ignored.
     type: list
     elements: str
     aliases: [ ip_addresses, ips ]
