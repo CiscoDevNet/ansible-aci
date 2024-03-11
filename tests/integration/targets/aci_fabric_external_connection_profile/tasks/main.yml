@@ -146,7 +146,37 @@
       - query_fabric_external_connection_profile_all.current.0.fvFabricExtConnP.attributes.siteId == "1"
       - query_fabric_external_connection_profile_all.current.0.fvFabricExtConnP.children.0.fvPeeringP.attributes.type == "automatic_with_rr"
       - query_fabric_external_connection_profile_all.current.0.fvFabricExtConnP.children.0.fvPeeringP.attributes.password is undefined
-      
+  
+  # UPDATE PEERING PROFILE
+  - name: Update ansible_fabric_ext_conn_profile peering password
+    cisco.aci.aci_fabric_external_connection_profile:
+      <<: *aci_info
+      fabric_id: "1"
+      peering_password: "abcd"
+      state: present
+    register: update_fabric_external_connection_profile_1
+
+  - name: Update ansible_fabric_ext_conn_profile peering type
+    cisco.aci.aci_fabric_external_connection_profile:
+      <<: *aci_info
+      fabric_id: "1"
+      peering_type: "automatic_with_full_mesh"
+      state: present
+    register: update_fabric_external_connection_profile_2
+
+  - name: Verity updates
+    ansible.builtin.assert:
+      that:
+      - update_fabric_external_connection_profile_1 is changed
+      - update_fabric_external_connection_profile_1.proposed.fvFabricExtConnP.children.0.fvPeeringP.attributes.password == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+      - update_fabric_external_connection_profile_1.proposed.fvFabricExtConnP.children.0.fvPeeringP.attributes.type is undefined
+      - update_fabric_external_connection_profile_1.current.0.fvFabricExtConnP.children.0.fvPeeringP.attributes.type == "automatic_with_rr"
+      - update_fabric_external_connection_profile_2 is changed
+      - update_fabric_external_connection_profile_2.proposed.fvFabricExtConnP.children.0.fvPeeringP.attributes.password is undefined
+      - update_fabric_external_connection_profile_2.proposed.fvFabricExtConnP.children.0.fvPeeringP.attributes.type == "automatic_with_full_mesh"
+      - update_fabric_external_connection_profile_2.current.0.fvFabricExtConnP.children.0.fvPeeringP.attributes.type == "automatic_with_full_mesh"
+      - update_fabric_external_connection_profile_2.previous.0.fvFabricExtConnP.children.0.fvPeeringP.attributes.type == "automatic_with_rr"
+
   # DELETE FABRIC EXTERNAL CONNECTION PROFILE
   - name: Delete ansible_fabric_ext_conn_profile with check mode
     cisco.aci.aci_fabric_external_connection_profile:
@@ -175,7 +205,7 @@
       - delete_fabric_external_connection_profile.previous.0.fvFabricExtConnP.attributes.descr == "Fabric External Connection Profile"
       - delete_fabric_external_connection_profile.previous.0.fvFabricExtConnP.attributes.rt == "extended:as2-nn4:5:16"
       - delete_fabric_external_connection_profile.previous.0.fvFabricExtConnP.attributes.siteId == "1"
-      - delete_fabric_external_connection_profile.previous.0.fvFabricExtConnP.children.0.fvPeeringP.attributes.type == "automatic_with_rr"
+      - delete_fabric_external_connection_profile.previous.0.fvFabricExtConnP.children.0.fvPeeringP.attributes.type == "automatic_with_full_mesh"
       - delete_fabric_external_connection_profile.previous.0.fvFabricExtConnP.children.0.fvPeeringP.attributes.password is undefined
       - delete_fabric_external_connection_profile_cm is changed
       - delete_fabric_external_connection_profile_cm.proposed == {}
@@ -185,7 +215,7 @@
       - delete_fabric_external_connection_profile_cm.previous.0.fvFabricExtConnP.attributes.descr == "Fabric External Connection Profile"
       - delete_fabric_external_connection_profile_cm.previous.0.fvFabricExtConnP.attributes.rt == "extended:as2-nn4:5:16"
       - delete_fabric_external_connection_profile_cm.previous.0.fvFabricExtConnP.attributes.siteId == "1"
-      - delete_fabric_external_connection_profile_cm.previous.0.fvFabricExtConnP.children.0.fvPeeringP.attributes.type == "automatic_with_rr"
+      - delete_fabric_external_connection_profile_cm.previous.0.fvFabricExtConnP.children.0.fvPeeringP.attributes.type == "automatic_with_full_mesh"
       - delete_fabric_external_connection_profile_cm.previous.0.fvFabricExtConnP.children.0.fvPeeringP.attributes.password is undefined
       - delete_fabric_external_connection_profile_again is not changed
       - delete_fabric_external_connection_profile_again.current == []

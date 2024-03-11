@@ -47,7 +47,6 @@ options:
     description:
     - The BGP EVPN Peering Type. Use either C(automatic_with_full_mesh) or C(automatic_with_rr).
     type: str
-    default: automatic_with_full_mesh
     choices: [ automatic_with_full_mesh, automatic_with_rr ]
     aliases: [ p_type, peer, peer_t ]
   peering_password:
@@ -239,9 +238,7 @@ def main():
         name=dict(type="str", aliases=["profile_name"]),
         community=dict(type="str", aliases=["rt", "route_target"]),
         site_id=dict(type="int", aliases=["sid", "site", "s_id"]),
-        peering_type=dict(
-            type="str", default="automatic_with_full_mesh", aliases=["p_type", "peer", "peer_t"], choices=["automatic_with_full_mesh", "automatic_with_rr"]
-        ),
+        peering_type=dict(type="str", aliases=["p_type", "peer", "peer_t"], choices=["automatic_with_full_mesh", "automatic_with_rr"]),
         peering_password=dict(type="str", aliases=["peer_password", "peer_pwd"], no_log=True),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -279,6 +276,15 @@ def main():
     aci.get_existing()
 
     if state == "present":
+        child_configs = None
+        if peering_type is not None or peering_password is not None:
+            peering_p = {"fvPeeringP": {"attributes": {}}}
+            if peering_type is not None:
+                peering_p["fvPeeringP"]["attributes"]["type"] = peering_type
+            if peering_password is not None:
+                peering_p["fvPeeringP"]["attributes"]["password"] = peering_password
+            child_configs = [peering_p]
+
         aci.payload(
             aci_class="fvFabricExtConnP",
             class_config=dict(
@@ -288,7 +294,7 @@ def main():
                 rt=community,
                 siteId=site_id,
             ),
-            child_configs=[{"fvPeeringP": {"attributes": {"type": peering_type, "password": peering_password}}}],
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class="fvFabricExtConnP")
