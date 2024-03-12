@@ -318,7 +318,7 @@ def main():
     from_port = module.params.get("from_port")
     to_port = module.params.get("to_port")
     state = module.params.get("state")
-    type_node = module.params.get("type")
+    type_node = module.params.get("type_node")
 
     aci = ACIModule(module)
 
@@ -337,10 +337,10 @@ def main():
         )
     else:
         subclass_1 = dict(
-        aci_class="infraNodeP",
-        aci_rn="nprof-{0}".format(switch_profile),
-        module_object=switch_profile,
-        target_filter={"name": switch_profile},
+            aci_class="infraNodeP",
+            aci_rn="nprof-{0}".format(switch_profile),
+            module_object=switch_profile,
+            target_filter={"name": switch_profile},
         )
         subclass_2 = dict(
             aci_class="infraLeafS",
