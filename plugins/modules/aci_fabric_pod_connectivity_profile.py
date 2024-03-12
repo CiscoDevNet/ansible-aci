@@ -262,8 +262,14 @@ def main():
 
     aci.construct_url(
         root_class=dict(
+            aci_class="fvFabricExtConnP",
+            aci_rn="tn-infra/fabricExtConnP-{0}".format(fabric_id),
+            module_object=fabric_id,
+            target_filter={"id": fabric_id},
+        ),
+        subclass_1=dict(
             aci_class="fvPodConnP",
-            aci_rn="tn-infra/fabricExtConnP-{0}/podConnP-{1}".format(fabric_id, pod_id),
+            aci_rn="podConnP-{0}".format(pod_id),
             module_object=pod_id,
             target_filter={"id": pod_id},
         ),
