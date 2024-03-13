@@ -1673,7 +1673,6 @@ class ACIModule(object):
                     if self.result.get("changed") is True:
                         json.dump([mo], output_file)
 
-<<<<<<< HEAD
     def parsed_url_path(self, url):
         if not HAS_URLPARSE:
             self.fail_json(msg="urlparse is not installed")
