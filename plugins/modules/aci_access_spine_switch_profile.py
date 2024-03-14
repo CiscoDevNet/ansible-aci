@@ -49,7 +49,6 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 seealso:
-- module: cisco.aci.aci_access_spine_switch_profile
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(infra:SpineP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
