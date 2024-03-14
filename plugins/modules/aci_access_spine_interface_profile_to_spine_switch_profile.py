@@ -26,12 +26,12 @@ options:
     description:
     - The name of the Fabric Access Spine Switch Profile to which we add a Spine Interface Selector Profile.
     type: str
-    aliases: [ name, switch_profile_name, spine_switch_profile, spine_switch_profile_name ]
+    aliases: [ switch_profile_name, spine_switch_profile, spine_switch_profile_name ]
   interface_profile:
     description:
     - The name of the Fabric Access Spine Interface Profile to be added and associated with the Spine Switch Profile.
     type: str
-    aliases: [ name, interface_profile_name, spine_interface_profile, spine_interface_profile_name ]
+    aliases: [ interface_profile_name, spine_interface_profile, spine_interface_profile_name ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -218,7 +218,6 @@ def main():
         switch_profile=dict(
             type="str",
             aliases=[
-                "name",
                 "switch_profile_name",
                 "spine_switch_profile",
                 "spine_switch_profile_name",
@@ -227,7 +226,6 @@ def main():
         interface_profile=dict(
             type="str",
             aliases=[
-                "name",
                 "interface_profile_name",
                 "spine_interface_profile",
                 "spine_interface_profile_name",
