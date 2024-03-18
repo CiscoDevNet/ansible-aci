@@ -1,6 +1,6 @@
 # Test code for the ACI modules
 # Copyright: (c) 2017, Jacob McGill (@jmcgill298)
-# Copyright: (c) 2023, Samita Bhattacharjee (@samitab)
+# Copyright: (c) 2024, Samita Bhattacharjee (@samiib) <samitab@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -502,6 +502,74 @@
           - nm_bd_pim_d_again.previous.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
           - nm_bd_pim_d_remove.previous == nm_bd_pim_d.current
           - nm_bd_pim_d_remove.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == ''
+
+  # TEST NO VERIFICATION
+  - name: create bd with no verification (check mode)
+    cisco.aci.aci_bd: &aci_bd_no_verify
+      <<: *aci_bd_present
+      bd: anstest-no-verify
+      no_verification: true
+    check_mode: true
+    register: bd_present_no_verify_cm
+
+  - name: create bd with no verification
+    cisco.aci.aci_bd:
+      <<: *aci_bd_no_verify
+    register: bd_present_no_verify
+
+  - name: create bd with no verification again
+    cisco.aci.aci_bd:
+      <<: *aci_bd_no_verify
+    register: bd_present_no_verify_again
+
+  - name: update bd with no verification
+    cisco.aci.aci_bd:
+      <<: *aci_bd_no_verify
+      description: Ansible Test No Verify
+    register: update_bd_present_no_verify
+
+  - name: delete bd with no verification
+    cisco.aci.aci_bd:
+      <<: *aci_bd_no_verify
+      state: absent
+    register: delete_bd_present_no_verify
+
+  - name: delete bd with no verification again
+    cisco.aci.aci_bd:
+      <<: *aci_bd_no_verify
+      state: absent
+    register: delete_bd_present_no_verify_again
+
+  - name: no verification asserts
+    ansible.builtin.assert:
+      that:
+        - bd_present_no_verify_cm is changed
+        - bd_present_no_verify_cm.current_verified == false
+        - bd_present_no_verify_cm.current == []
+        - bd_present_no_verify is changed
+        - bd_present_no_verify.current_verified == false
+        - bd_present_no_verify.current == []
+        - bd_present_no_verify.previous == []
+        - bd_present_no_verify_again is not changed
+        - bd_present_no_verify_again.current_verified == true
+        - bd_present_no_verify_again.current.0.fvBD.attributes.name == "anstest-no-verify"
+        - bd_present_no_verify_again.current.0.fvBD.attributes.descr == "Ansible Test"
+        - bd_present_no_verify_again.previous.0.fvBD.attributes.name == "anstest-no-verify"
+        - bd_present_no_verify_again.previous.0.fvBD.attributes.descr == "Ansible Test"
+        - update_bd_present_no_verify is changed
+        - update_bd_present_no_verify.current_verified == false
+        - update_bd_present_no_verify.current == []
+        - update_bd_present_no_verify.previous.0.fvBD.attributes.name == "anstest-no-verify"
+        - update_bd_present_no_verify.previous.0.fvBD.attributes.descr == "Ansible Test"
+        - delete_bd_present_no_verify is changed
+        - delete_bd_present_no_verify.current_verified == false
+        - delete_bd_present_no_verify.current == []
+        - delete_bd_present_no_verify.previous.0.fvBD.attributes.name == "anstest-no-verify"
+        - delete_bd_present_no_verify.previous.0.fvBD.attributes.descr == "Ansible Test No Verify"
+        - delete_bd_present_no_verify_again is not changed
+        - delete_bd_present_no_verify_again.current_verified == true
+        - delete_bd_present_no_verify_again.current == []
+        - delete_bd_present_no_verify_again.previous == []
 
   - name: get all bd
     cisco.aci.aci_bd: &aci_query

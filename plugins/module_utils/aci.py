@@ -16,6 +16,7 @@
 # Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # Copyright: (c) 2023, Shreyas Srish (@shrsr) <ssrish@cisco.com>
 # Copyright: (c) 2023, Tim Cragg (@timcragg) <tcragg@cisco.com>
+# Copyright: (c) 2024, Samita Bhattacharjee (@samiib) <samitab@cisco.com>
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without modification,
@@ -135,6 +136,7 @@ def aci_argument_spec():
         use_ssl=dict(type="bool", fallback=(env_fallback, ["ACI_USE_SSL"])),
         validate_certs=dict(type="bool", fallback=(env_fallback, ["ACI_VALIDATE_CERTS"])),
         output_path=dict(type="str", fallback=(env_fallback, ["ACI_OUTPUT_PATH"])),
+        no_verification=dict(type="bool", fallback=(env_fallback, ["ACI_NO_VERIFICATION"])),
     )
 
 
@@ -414,6 +416,9 @@ class ACIModule(object):
         # aci_rest output
         self.imdata = None
         self.totalCount = None
+
+        # get no verify flag
+        self.no_verification = self.params.get("no_verification")
 
         # Ensure protocol is set
         self.define_protocol()
@@ -1592,7 +1597,14 @@ class ACIModule(object):
         if "state" in self.params:
             self.original = self.existing
             if self.params.get("state") in ("absent", "present"):
-                self.get_existing()
+                if self.no_verification:
+                    if self.result["changed"]:
+                        self.result["current_verified"] = False
+                        self.existing = []
+                    else:
+                        self.result["current_verified"] = True
+                else:
+                    self.get_existing()
 
             # if self.module._diff and self.original != self.existing:
             #     self.result['diff'] = dict(

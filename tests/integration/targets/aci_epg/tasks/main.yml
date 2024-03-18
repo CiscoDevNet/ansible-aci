@@ -3,6 +3,7 @@
 # Copyright: (c) 2020, Shreyas Srish (@shrsr)
 # Copyright: (c) 2023, Christian Kolrep (@Christian-Kolrep)
 # Copyright: (c) 2024, Akini Ross (@akinross)
+# Copyright: (c) 2024, Samita Bhattacharjee (@samiib) <samitab@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -128,6 +129,74 @@
         - epg_present_update.sent.fvAEPg.attributes.descr == 'Ansible Test Update'
         - epg_present_missing_param is failed
         - 'epg_present_missing_param.msg == "state is present but all of the following are missing: ap"'
+
+  # TEST NO VERIFICATION
+  - name: create epg with no verification (check mode)
+    cisco.aci.aci_epg: &aci_epg_no_verify
+      <<: *aci_epg_present
+      epg: anstest-no-verify
+      no_verification: true
+    check_mode: true
+    register: epg_present_no_verify_cm
+
+  - name: create epg with no verification
+    cisco.aci.aci_epg:
+      <<: *aci_epg_no_verify
+    register: epg_present_no_verify
+
+  - name: create epg with no verification again
+    cisco.aci.aci_epg:
+      <<: *aci_epg_no_verify
+    register: epg_present_no_verify_again
+
+  - name: update epg with no verification
+    cisco.aci.aci_epg:
+      <<: *aci_epg_no_verify
+      description: Ansible Test No Verify
+    register: update_epg_present_no_verify
+
+  - name: delete epg with no verification
+    cisco.aci.aci_epg:
+      <<: *aci_epg_no_verify
+      state: absent
+    register: delete_epg_present_no_verify
+
+  - name: delete epg with no verification again
+    cisco.aci.aci_epg:
+      <<: *aci_epg_no_verify
+      state: absent
+    register: delete_epg_present_no_verify_again
+
+  - name: no verification asserts
+    ansible.builtin.assert:
+      that:
+        - epg_present_no_verify_cm is changed
+        - epg_present_no_verify_cm.current_verified == false
+        - epg_present_no_verify_cm.current == []
+        - epg_present_no_verify is changed
+        - epg_present_no_verify.current_verified == false
+        - epg_present_no_verify.current == []
+        - epg_present_no_verify.previous == []
+        - epg_present_no_verify_again is not changed
+        - epg_present_no_verify_again.current_verified == true
+        - epg_present_no_verify_again.current.0.fvAEPg.attributes.name == "anstest-no-verify"
+        - epg_present_no_verify_again.current.0.fvAEPg.attributes.descr == "Ansible Test"
+        - epg_present_no_verify_again.previous.0.fvAEPg.attributes.name == "anstest-no-verify"
+        - epg_present_no_verify_again.previous.0.fvAEPg.attributes.descr == "Ansible Test"
+        - update_epg_present_no_verify is changed
+        - update_epg_present_no_verify.current_verified == false
+        - update_epg_present_no_verify.current == []
+        - update_epg_present_no_verify.previous.0.fvAEPg.attributes.name == "anstest-no-verify"
+        - update_epg_present_no_verify.previous.0.fvAEPg.attributes.descr == "Ansible Test"
+        - delete_epg_present_no_verify is changed
+        - delete_epg_present_no_verify.current_verified == false
+        - delete_epg_present_no_verify.current == []
+        - delete_epg_present_no_verify.previous.0.fvAEPg.attributes.name == "anstest-no-verify"
+        - delete_epg_present_no_verify.previous.0.fvAEPg.attributes.descr == "Ansible Test No Verify"
+        - delete_epg_present_no_verify_again is not changed
+        - delete_epg_present_no_verify_again.current_verified == true
+        - delete_epg_present_no_verify_again.current == []
+        - delete_epg_present_no_verify_again.previous == []
 
   - name: Query specific epg
     cisco.aci.aci_epg:
