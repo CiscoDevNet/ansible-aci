@@ -18,7 +18,7 @@ DOCUMENTATION = r"""
 module: aci_access_port_block_to_access_port
 short_description: Manage Port blocks of Fabric Access Leaf/Spine Interface Port Selectors (infra:PortBlk)
 description:
-- Manage Manage Port blocks of Fabric Access Interface Leaf/Spine Port Selectors on Cisco ACI fabrics.
+- Manage Port blocks of Fabric Access Interface Leaf/Spine Port Selectors on Cisco ACI fabrics.
 options:
   interface_profile:
     description:
