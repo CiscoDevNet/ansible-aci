@@ -268,10 +268,10 @@
     that:
       - tenant_present_no_verify_cm is changed
       - tenant_present_no_verify_cm.current_verified == false
-      - tenant_present_no_verify_cm.current == []
+      - tenant_present_no_verify_cm.current.0 == tenant_present_no_verify_cm.proposed
       - tenant_present_no_verify is changed
       - tenant_present_no_verify.current_verified == false
-      - tenant_present_no_verify.current == []
+      - tenant_present_no_verify.current.0 == tenant_present_no_verify.proposed
       - tenant_present_no_verify.previous == []
       - tenant_present_no_verify_again is not changed
       - tenant_present_no_verify_again.current_verified == true
@@ -281,18 +281,19 @@
       - tenant_present_no_verify_again.previous.0.fvTenant.attributes.descr == "Ansible Test"
       - update_tenant_present_no_verify is changed
       - update_tenant_present_no_verify.current_verified == false
-      - update_tenant_present_no_verify.current == []
+      - update_tenant_present_no_verify.current.0 == update_tenant_present_no_verify.proposed
       - update_tenant_present_no_verify.previous.0.fvTenant.attributes.name == "anstest-no-verify"
       - update_tenant_present_no_verify.previous.0.fvTenant.attributes.descr == "Ansible Test"
       - delete_tenant_present_no_verify is changed
       - delete_tenant_present_no_verify.current_verified == false
-      - delete_tenant_present_no_verify.current == []
+      - delete_tenant_present_no_verify.current.0 == delete_tenant_present_no_verify.proposed
       - delete_tenant_present_no_verify.previous.0.fvTenant.attributes.name == "anstest-no-verify"
       - delete_tenant_present_no_verify.previous.0.fvTenant.attributes.descr == "Ansible Test No Verify"
       - delete_tenant_present_no_verify_again is not changed
       - delete_tenant_present_no_verify_again.current_verified == true
       - delete_tenant_present_no_verify_again.current == []
       - delete_tenant_present_no_verify_again.previous == []
+      - delete_tenant_present_no_verify_again.proposed == {}
 
 # QUERY ALL TENANTS
 - name: Query all tenants (check_mode)

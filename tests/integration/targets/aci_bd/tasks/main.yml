@@ -545,10 +545,10 @@
       that:
         - bd_present_no_verify_cm is changed
         - bd_present_no_verify_cm.current_verified == false
-        - bd_present_no_verify_cm.current == []
+        - bd_present_no_verify_cm.current.0 == bd_present_no_verify_cm.proposed
         - bd_present_no_verify is changed
         - bd_present_no_verify.current_verified == false
-        - bd_present_no_verify.current == []
+        - bd_present_no_verify.current.0 == bd_present_no_verify.proposed
         - bd_present_no_verify.previous == []
         - bd_present_no_verify_again is not changed
         - bd_present_no_verify_again.current_verified == true
@@ -558,18 +558,19 @@
         - bd_present_no_verify_again.previous.0.fvBD.attributes.descr == "Ansible Test"
         - update_bd_present_no_verify is changed
         - update_bd_present_no_verify.current_verified == false
-        - update_bd_present_no_verify.current == []
+        - update_bd_present_no_verify.current.0 == update_bd_present_no_verify.proposed
         - update_bd_present_no_verify.previous.0.fvBD.attributes.name == "anstest-no-verify"
         - update_bd_present_no_verify.previous.0.fvBD.attributes.descr == "Ansible Test"
         - delete_bd_present_no_verify is changed
         - delete_bd_present_no_verify.current_verified == false
-        - delete_bd_present_no_verify.current == []
+        - delete_bd_present_no_verify.current.0 == delete_bd_present_no_verify.proposed
         - delete_bd_present_no_verify.previous.0.fvBD.attributes.name == "anstest-no-verify"
         - delete_bd_present_no_verify.previous.0.fvBD.attributes.descr == "Ansible Test No Verify"
         - delete_bd_present_no_verify_again is not changed
         - delete_bd_present_no_verify_again.current_verified == true
         - delete_bd_present_no_verify_again.current == []
         - delete_bd_present_no_verify_again.previous == []
+        - delete_bd_present_no_verify_again.proposed == {}
 
   - name: get all bd
     cisco.aci.aci_bd: &aci_query

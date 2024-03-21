@@ -149,10 +149,10 @@
       that:
         - ap_present_no_verify_cm is changed
         - ap_present_no_verify_cm.current_verified == false
-        - ap_present_no_verify_cm.current == []
+        - ap_present_no_verify_cm.current.0 == ap_present_no_verify_cm.proposed
         - ap_present_no_verify is changed
         - ap_present_no_verify.current_verified == false
-        - ap_present_no_verify.current == []
+        - ap_present_no_verify.current.0 == ap_present_no_verify.proposed
         - ap_present_no_verify.previous == []
         - ap_present_no_verify_again is not changed
         - ap_present_no_verify_again.current_verified == true
@@ -162,18 +162,19 @@
         - ap_present_no_verify_again.previous.0.fvAp.attributes.descr == "Ansible Test"
         - update_ap_present_no_verify is changed
         - update_ap_present_no_verify.current_verified == false
-        - update_ap_present_no_verify.current == []
+        - update_ap_present_no_verify.current.0 == update_ap_present_no_verify.proposed
         - update_ap_present_no_verify.previous.0.fvAp.attributes.name == "anstest-no-verify"
         - update_ap_present_no_verify.previous.0.fvAp.attributes.descr == "Ansible Test"
         - delete_ap_present_no_verify is changed
         - delete_ap_present_no_verify.current_verified == false
-        - delete_ap_present_no_verify.current == []
+        - delete_ap_present_no_verify.current.0 == delete_ap_present_no_verify.proposed
         - delete_ap_present_no_verify.previous.0.fvAp.attributes.name == "anstest-no-verify"
         - delete_ap_present_no_verify.previous.0.fvAp.attributes.descr == "Ansible Test No Verify"
         - delete_ap_present_no_verify_again is not changed
         - delete_ap_present_no_verify_again.current_verified == true
         - delete_ap_present_no_verify_again.current == []
         - delete_ap_present_no_verify_again.previous == []
+        - delete_ap_present_no_verify_again.proposed == {}
 
   - name: get ap - query specific ap
     cisco.aci.aci_ap: &aci_ap_query

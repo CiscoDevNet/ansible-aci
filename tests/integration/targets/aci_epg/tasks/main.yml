@@ -172,10 +172,10 @@
       that:
         - epg_present_no_verify_cm is changed
         - epg_present_no_verify_cm.current_verified == false
-        - epg_present_no_verify_cm.current == []
+        - epg_present_no_verify_cm.current.0 == epg_present_no_verify_cm.proposed
         - epg_present_no_verify is changed
         - epg_present_no_verify.current_verified == false
-        - epg_present_no_verify.current == []
+        - epg_present_no_verify.current.0 == epg_present_no_verify.proposed
         - epg_present_no_verify.previous == []
         - epg_present_no_verify_again is not changed
         - epg_present_no_verify_again.current_verified == true
@@ -185,18 +185,19 @@
         - epg_present_no_verify_again.previous.0.fvAEPg.attributes.descr == "Ansible Test"
         - update_epg_present_no_verify is changed
         - update_epg_present_no_verify.current_verified == false
-        - update_epg_present_no_verify.current == []
+        - update_epg_present_no_verify.current.0 == update_epg_present_no_verify.proposed
         - update_epg_present_no_verify.previous.0.fvAEPg.attributes.name == "anstest-no-verify"
         - update_epg_present_no_verify.previous.0.fvAEPg.attributes.descr == "Ansible Test"
         - delete_epg_present_no_verify is changed
         - delete_epg_present_no_verify.current_verified == false
-        - delete_epg_present_no_verify.current == []
+        - delete_epg_present_no_verify.current.0 == delete_epg_present_no_verify.proposed
         - delete_epg_present_no_verify.previous.0.fvAEPg.attributes.name == "anstest-no-verify"
         - delete_epg_present_no_verify.previous.0.fvAEPg.attributes.descr == "Ansible Test No Verify"
         - delete_epg_present_no_verify_again is not changed
         - delete_epg_present_no_verify_again.current_verified == true
         - delete_epg_present_no_verify_again.current == []
         - delete_epg_present_no_verify_again.previous == []
+        - delete_epg_present_no_verify_again.proposed == {}
 
   - name: Query specific epg
     cisco.aci.aci_epg:
