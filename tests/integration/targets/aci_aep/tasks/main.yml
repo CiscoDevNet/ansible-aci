@@ -236,10 +236,10 @@
       that:
         - aep_present_no_verify_cm is changed
         - aep_present_no_verify_cm.current_verified == false
-        - aep_present_no_verify_cm.current == []
+        - aep_present_no_verify_cm.current.0 == aep_present_no_verify_cm.proposed
         - aep_present_no_verify is changed
         - aep_present_no_verify.current_verified == false
-        - aep_present_no_verify.current == []
+        - aep_present_no_verify.current.0 == aep_present_no_verify.proposed
         - aep_present_no_verify.previous == []
         - aep_present_no_verify_again is not changed
         - aep_present_no_verify_again.current_verified == true
@@ -249,18 +249,19 @@
         - aep_present_no_verify_again.previous.0.infraAttEntityP.attributes.descr == "Ansible Test"
         - update_aep_present_no_verify is changed
         - update_aep_present_no_verify.current_verified == false
-        - update_aep_present_no_verify.current == []
+        - update_aep_present_no_verify.current.0 == update_aep_present_no_verify.proposed
         - update_aep_present_no_verify.previous.0.infraAttEntityP.attributes.name == "anstest-no-verify"
         - update_aep_present_no_verify.previous.0.infraAttEntityP.attributes.descr == "Ansible Test"
         - delete_aep_present_no_verify is changed
         - delete_aep_present_no_verify.current_verified == false
-        - delete_aep_present_no_verify.current == []
+        - delete_aep_present_no_verify.current.0 == delete_aep_present_no_verify.proposed
         - delete_aep_present_no_verify.previous.0.infraAttEntityP.attributes.name == "anstest-no-verify"
         - delete_aep_present_no_verify.previous.0.infraAttEntityP.attributes.descr == "Ansible Test No Verify"
         - delete_aep_present_no_verify_again is not changed
         - delete_aep_present_no_verify_again.current_verified == true
         - delete_aep_present_no_verify_again.current == []
         - delete_aep_present_no_verify_again.previous == []
+        - delete_aep_present_no_verify_again.proposed == {}
 
   # QUERY ALL AEPS
   - name: Query all AEPs (check_mode)
