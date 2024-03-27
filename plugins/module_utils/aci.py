@@ -137,6 +137,7 @@ def aci_argument_spec():
         validate_certs=dict(type="bool", fallback=(env_fallback, ["ACI_VALIDATE_CERTS"])),
         output_path=dict(type="str", fallback=(env_fallback, ["ACI_OUTPUT_PATH"])),
         suppress_verification=dict(type="bool", aliases=["no_verification", "no_verify", "suppress_verify"], fallback=(env_fallback, ["ACI_NO_VERIFICATION"])),
+        suppress_look_back=dict(type="bool", aliases=["no_look_back", "supp_look_b"], fallback=(env_fallback, ["ACI_SUPPRESS_LOOK_BACK"])),
     )
 
 
@@ -419,6 +420,9 @@ class ACIModule(object):
 
         # get no verify flag
         self.suppress_verification = self.params.get("suppress_verification")
+
+        # get suppress look back flag
+        self.suppress_look_back = self.params.get("suppress_look_back")
 
         # Ensure protocol is set
         self.define_protocol()
@@ -1429,9 +1433,24 @@ class ACIModule(object):
         that this method can be used to supply the existing configuration when using the get_diff method. The response, status,
         and existing configuration will be added to the self.result dictionary.
         """
+        if self.suppress_look_back:
+            self.existing = []
+            return
+        
         uri = self.url + self.filter_string
-
         self.api_call("GET", uri, data=None, return_response=False)
+
+    def __get_existing_validation(self, changed):
+        if self.suppress_verification:
+            if changed or self.suppress_look_back:
+                self.result["current_verified"] = False
+                self.existing = [self.proposed]
+            else:
+                # exisiting already equals the previous
+                self.result["current_verified"] = True
+        elif changed:
+            uri = self.url + self.filter_string
+            self.api_call("GET", uri, data=None, return_response=False)
 
     @staticmethod
     def get_nested_config(proposed_child, existing_children):
@@ -1597,15 +1616,7 @@ class ACIModule(object):
         if "state" in self.params:
             self.original = self.existing
             if self.params.get("state") in ("absent", "present"):
-                if self.suppress_verification:
-                    if self.result["changed"]:
-                        self.result["current_verified"] = False
-                        self.existing = [self.proposed]
-                    else:
-                        self.result["current_verified"] = True
-                        # exisiting already equals the previous
-                else:
-                    self.get_existing()
+                self.__get_existing_validation(self.result["changed"])
 
             # if self.module._diff and self.original != self.existing:
             #     self.result['diff'] = dict(
