@@ -5,6 +5,84 @@ Cisco ACI Ansible Collection Release Notes
 .. contents:: Topics
 
 
+v2.9.0
+======
+
+Release Summary
+---------------
+
+Release v2.9.0 of the ``ansible-aci`` collection on 2024-04-06.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.8.0.
+
+
+Minor Changes
+-------------
+
+- Add Authentification option for EIGRP interface profile.
+- Add L3out Floating SVI modules (aci_l3out_floating_svi, aci_l3out_floating_svi_path, aci_l3out_floating_svi_path_secondary_ip and aci_l3out_floating_svi_secondary_ip) (#478)
+- Add No-verification flag option to reduce the number of API calls. If true, a verifying GET will not be sent after a POST update to APIC
+- Add access spine interface selector and port block binding in aci_access_port_block_to_access_port
+- Add aci_access_spine_interface_selector module
+- Add aci_action_rule_additional_communities module
+- Add aci_action_rule_set_as_path and aci_action_rule_set_as_path_asn modules
+- Add aci_bgp_peer_prefix_policy, aci_bgp_route_summarization_policy and aci_bgp_address_family_context_policy modules
+- Add aci_fabric_pod, aci_fabric_pod_external_tep, aci_fabric_pod_profile, aci_fabric_pod_remote_pool modules (#558)
+- Add aci_hsrp_interface_policy, aci_l3out_hsrp_group, aci_l3out_hsrp_interface_profile and aci_l3out_hsrp_secondary_vip modules (#505)
+- Add aci_interface_policy_eigrp (class:eigrpIfPol) module
+- Add aci_interface_policy_pim module
+- Add aci_interface_policy_storm_control module
+- Add aci_keychain_policy and aci_key_policy modules
+- Add aci_l3out_bfd_multihop_interface_profile, aci_l3out_bfd_interface_profile, aci_interface_policy_bfd_multihop, aci_interface_policy_bfd and aci_bfd_multihop_node_policy modules (#492)
+- Add aci_l3out_dhcp_relay_label, aci_dhcp_option_policy and aci_dhcp_option modules
+- Add aci_l3out_eigrp_interface_profile module
+- Add aci_listify filter plugin to flattens nested dictionaries
+- Add aci_netflow_exporter_policy module
+- Add aci_netflow_monitor_policy and aci_netflow_record_policy modules
+- Add aci_netflow_monitor_to_exporter module
+- Add aci_node_block module
+- Add aci_pim_route_map_policy and aci_pim_route_map_entry modules
+- Add aci_qos_custom_policy and aci_qos_dscp_class modules
+- Add aci_qos_dot1p_class module
+- Add action rules attributes to aci_tenant_action_rule_profile.
+- Add auto to speed attribute options in aci_interface_policy_link_level module (#577)
+- Add missing options to aci_bd module
+- Add modules aci_bd_to_netflow_monitor_policy and aci_bd_rogue_exception_mac (#600)
+- Add modules for Fabric External Connection Policies and its childs
+- Add option to set delimiter to  _  in aci_epg_to_domain module
+- Add qos_custom_policy, pim_interface_policy and igmp_interface_policy as new child_classes for aci_l3out_logical_interface_profile.
+- Add support for annotation in aci_rest module (#437)
+- Add support for block statements in useg attributes with the aci_epg_useg_attribute_block_statement module
+- Add support for configuration of access switch policy groups with aci_access_switch_policy_group module
+- Add support for configuration of certificate authorities in aci_aaa_certificate_authority
+- Add support for configuration of fabric management access policies in aci_fabric_management_access
+- Add support for configuration of vrf multicast with aci_vrf_multicast module
+- Add support for configuring Azure cloud subnets using the aci_cloud_subnet module
+- Add support for encap scope in aci_l3out_interface
+- Add support for https ssl cipher configuration in aci_fabric_management_access_https_cipher
+- Add support for infra l3out nodes bgp-evpn loopback, mpls transport loopback and segment id in aci_l3out_logical_node
+- Add support for infra sr mpls micro bfd in aci_l3out_interface
+- Add support for intra epg, taboo, and contract interface in aci_epg_to_contract
+- Add support for key ring configuration in aci_aaa_key_ring
+- Add support for mac and description in aci_l3out_interface
+- Add support for mpls custom qos policy for infra sr mpls l3outs node profiles in aci_l3out_logical_node_profile
+- Add support for security default settings configuration in aci_aaa_security_default_settings
+- Add support for simple statements in useg attributes with the aci_epg_useg_attribute_simple_statement module
+- Add support for sr-mpls bgpInfraPeerP and bgp_password in aci_l3out_bgp_peer module (#543)
+- Add support for sr-mpls in aci_l3out module
+- Add support for sr-mpls l3out to infra l3out in aci_l3out_to_sr_mpls_infra_l3out
+- Add support for subject labels for EPG, EPG Contract, ESG, Contract Subject, L2Out External EPG, L3out External EPG, and L3out External EPG Contract with the aci_subject_label module
+- Add support for taboo contract, contract interface and intra_epg contract in aci_l3out_extepg_to_contract
+- Add support for useg default block statement configuration for useg epg in aci_epg
+- Modify child class node block conditions to be optional in aci_switch_leaf_selector
+
+Bugfixes
+--------
+
+- Fix auto logout issue in aci connection plugin to keep connection active between tasks
+- Fix idempotency for l3out configuration when l3protocol is used in aci_l3out
+- Fix issues with new attributes in aci_interface_policy_leaf_policy_group module by adding conditions to include attributes in the payload only when they are specified by the user (#578)
+- Fix query in aci_vmm_controller
+
 v2.8.0
 ======
 
