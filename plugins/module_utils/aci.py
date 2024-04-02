@@ -1306,7 +1306,7 @@ class ACIModule(object):
         """
         self.proposed = dict()
 
-        if not self.existing:
+        if not self.existing and not self.suppress_look_back:
             return
         elif not self.module.check_mode:
             # Sign and encode request as to APIC's wishes
@@ -1436,7 +1436,7 @@ class ACIModule(object):
         if self.suppress_look_back:
             self.existing = []
             return
-        
+
         uri = self.url + self.filter_string
         self.api_call("GET", uri, data=None, return_response=False)
 
@@ -1444,7 +1444,7 @@ class ACIModule(object):
         if self.suppress_verification:
             if changed or self.suppress_look_back:
                 self.result["current_verified"] = False
-                self.existing = [self.proposed]
+                self.existing = [self.proposed] if self.proposed != {} else []
             else:
                 # exisiting already equals the previous
                 self.result["current_verified"] = True

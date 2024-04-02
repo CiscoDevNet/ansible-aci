@@ -171,6 +171,149 @@
         - create_subnet2_5.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes.tnRtctrlProfileName == 'default'
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
+  # TEST NO LOOK BACK
+  - name: create bd subnet with no look back (check mode)
+    cisco.aci.aci_bd_subnet: &aci_bd_subnet_no_look_back
+      <<: *aci_subnet_present
+      subnet_name: anstest_no_look_back
+      gateway: 10.101.101.10
+      mask: 25
+      no_look_back: true
+    check_mode: true
+    register: bd_subnet_present_no_look_back_cm
+
+  - name: create bd subnet with no look back
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_look_back
+    register: bd_subnet_present_no_look_back
+
+  - name: create bd subnet with no look back again
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_look_back
+    register: bd_subnet_present_no_look_back_again
+
+  - name: update bd subnet with no look back
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_look_back
+      descr: Ansible Test no look back
+    register: update_bd_subnet_present_no_look_back
+
+  - name: delete bd subnet with no look back
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_look_back
+      state: absent
+    register: delete_bd_subnet_present_no_look_back
+
+  - name: delete bd subnet with no look back again
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_look_back
+      state: absent
+    register: delete_bd_subnet_present_no_look_back_again
+
+  - name: no look back asserts
+    ansible.builtin.assert:
+      that:
+        - bd_subnet_present_no_look_back_cm is changed
+        - bd_subnet_present_no_look_back_cm.current == []
+        - bd_subnet_present_no_look_back_cm.previous == []
+        - bd_subnet_present_no_look_back_cm.proposed.fvSubnet.attributes.dn == "uni/tn-ansible_test/BD-anstest/subnet-[10.101.101.10/25]"
+        - bd_subnet_present_no_look_back_cm.proposed.fvSubnet.attributes.descr == "Ansible Test"
+        - bd_subnet_present_no_look_back_cm.proposed.fvSubnet.attributes.annotation == "orchestrator:ansible"
+        - bd_subnet_present_no_look_back is changed
+        - bd_subnet_present_no_look_back.current.0.fvSubnet.attributes.dn == "uni/tn-ansible_test/BD-anstest/subnet-[10.101.101.10/25]"
+        - bd_subnet_present_no_look_back.current.0.fvSubnet.attributes.annotation == "orchestrator:ansible"
+        - bd_subnet_present_no_look_back.current.0.fvSubnet.attributes.descr == "Ansible Test"
+        - bd_subnet_present_no_look_back.proposed.fvSubnet.attributes.dn == "uni/tn-ansible_test/BD-anstest/subnet-[10.101.101.10/25]"
+        - bd_subnet_present_no_look_back.proposed.fvSubnet.attributes.annotation == "orchestrator:ansible"
+        - bd_subnet_present_no_look_back.proposed.fvSubnet.attributes.descr == "Ansible Test"
+        - bd_subnet_present_no_look_back.previous == []
+        - bd_subnet_present_no_look_back_again is changed
+        - bd_subnet_present_no_look_back_again.current == bd_subnet_present_no_look_back.current
+        - bd_subnet_present_no_look_back_again.proposed == bd_subnet_present_no_look_back.proposed
+        - bd_subnet_present_no_look_back_again.previous == []
+        - update_bd_subnet_present_no_look_back is changed
+        - update_bd_subnet_present_no_look_back.current.0.fvSubnet.attributes.dn == "uni/tn-ansible_test/BD-anstest/subnet-[10.101.101.10/25]"
+        - update_bd_subnet_present_no_look_back.current.0.fvSubnet.attributes.annotation == "orchestrator:ansible"
+        - update_bd_subnet_present_no_look_back.current.0.fvSubnet.attributes.descr == "Ansible Test no look back"
+        - delete_bd_subnet_present_no_look_back is changed
+        - delete_bd_subnet_present_no_look_back.current == []
+        - delete_bd_subnet_present_no_look_back.previous == []
+        - delete_bd_subnet_present_no_look_back.proposed == {}
+        - delete_bd_subnet_present_no_look_back_again is changed
+        - delete_bd_subnet_present_no_look_back_again.current == []
+        - delete_bd_subnet_present_no_look_back_again.previous == []
+        - delete_bd_subnet_present_no_look_back_again.proposed == {}
+
+  # TEST NO LOOK BACK & NO VERIFICATION
+  - name: create bd subnet with no look back & no verify (check mode)
+    cisco.aci.aci_bd_subnet: &aci_bd_subnet_no_lb_no_v
+      <<: *aci_subnet_present
+      subnet_name: anstest_no_lb_no_v
+      gateway: 10.102.101.12
+      mask: 25
+      no_look_back: true
+      no_verify: true
+    check_mode: true
+    register: bd_subnet_present_no_lb_no_v_cm
+
+  - name: create bd subnet with no look back & no verify
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_lb_no_v
+    register: bd_subnet_present_no_lb_no_v
+
+  - name: create bd subnet with no look back again & no verify
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_lb_no_v
+    register: bd_subnet_present_no_lb_no_v_again
+
+  - name: update bd subnet with no look back & no verify
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_lb_no_v
+      descr: Ansible Test no look back & no verify
+    register: update_bd_subnet_present_no_lb_no_v
+
+  - name: delete bd subnet with no look back & no verify
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_lb_no_v
+      state: absent
+    register: delete_bd_subnet_present_no_lb_no_v
+
+  - name: delete bd subnet with no look back again & no verify
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_lb_no_v
+      state: absent
+    register: delete_bd_subnet_present_no_lb_no_v_again
+
+  - name: no look back & no verify asserts
+    ansible.builtin.assert:
+      that:
+        - bd_subnet_present_no_lb_no_v_cm is changed
+        - bd_subnet_present_no_lb_no_v_cm.current.0 == bd_subnet_present_no_lb_no_v_cm.proposed
+        - bd_subnet_present_no_lb_no_v_cm.previous == []
+        - bd_subnet_present_no_lb_no_v_cm.proposed.fvSubnet.attributes.dn == "uni/tn-ansible_test/BD-anstest/subnet-[10.102.101.12/25]"
+        - bd_subnet_present_no_lb_no_v_cm.proposed.fvSubnet.attributes.descr == "Ansible Test"
+        - bd_subnet_present_no_lb_no_v_cm.proposed.fvSubnet.attributes.annotation == "orchestrator:ansible"
+        - bd_subnet_present_no_lb_no_v is changed
+        - bd_subnet_present_no_lb_no_v.current.0 == bd_subnet_present_no_lb_no_v.proposed
+        - bd_subnet_present_no_lb_no_v.previous == []
+        - bd_subnet_present_no_lb_no_v_again is changed
+        - bd_subnet_present_no_lb_no_v_again.current == bd_subnet_present_no_lb_no_v.current
+        - bd_subnet_present_no_lb_no_v_again.proposed == bd_subnet_present_no_lb_no_v.proposed
+        - bd_subnet_present_no_lb_no_v_again.previous == []
+        - update_bd_subnet_present_no_lb_no_v is changed
+        - update_bd_subnet_present_no_lb_no_v.current.0 == update_bd_subnet_present_no_lb_no_v.proposed
+        - update_bd_subnet_present_no_lb_no_v.current.0.fvSubnet.attributes.dn == "uni/tn-ansible_test/BD-anstest/subnet-[10.102.101.12/25]"
+        - update_bd_subnet_present_no_lb_no_v.current.0.fvSubnet.attributes.annotation == "orchestrator:ansible"
+        - update_bd_subnet_present_no_lb_no_v.current.0.fvSubnet.attributes.descr == "Ansible Test no look back & no verify"
+        - delete_bd_subnet_present_no_lb_no_v is changed
+        - delete_bd_subnet_present_no_lb_no_v.current == []
+        - delete_bd_subnet_present_no_lb_no_v.previous == []
+        - delete_bd_subnet_present_no_lb_no_v.proposed == {}
+        - delete_bd_subnet_present_no_lb_no_v_again is changed
+        - delete_bd_subnet_present_no_lb_no_v_again.current == []
+        - delete_bd_subnet_present_no_lb_no_v_again.previous == []
+        - delete_bd_subnet_present_no_lb_no_v_again.proposed == {}
+
   - name: get all subnets
     cisco.aci.aci_bd_subnet: &aci_query
       <<: *aci_tenant_present

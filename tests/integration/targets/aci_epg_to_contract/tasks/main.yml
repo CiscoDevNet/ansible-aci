@@ -54,7 +54,7 @@
     cisco.aci.aci_contract:
       <<: *aci_tenant_present
       contract: "{{ item }}"
-    with_items: ["anstest_http", "anstest_https", "anstest_db"]
+    with_items: ["anstest_http", "anstest_https", "anstest_db", "anstest_no_look_back", "anstest_no_lb_no_v"]
 
   - name: ensure ap exists
     cisco.aci.aci_ap: &aci_ap_present
@@ -207,6 +207,141 @@
         - err_subject_and_contract_label is failed
         - err_subject_and_contract_label.msg == "the 'contract_label' and 'subject_label' are not configurable for intra_epg contracts"
 
+  # TEST NO LOOK BACK
+  - name: create epg contract to epg with no look back (check mode)
+    cisco.aci.aci_epg_to_contract: &aci_epg_to_contract_no_look_back
+      <<: *aci_epg_consume_present
+      contract: anstest_no_look_back
+      no_look_back: true
+    check_mode: true
+    register: epg_to_contract_present_no_look_back_cm
+
+  - name: create epg contract to epg with no look back
+    cisco.aci.aci_epg_to_contract:
+      <<: *aci_epg_to_contract_no_look_back
+    register: epg_to_contract_present_no_look_back
+
+  - name: create epg contract to epg with no look back again
+    cisco.aci.aci_epg_to_contract:
+      <<: *aci_epg_to_contract_no_look_back
+    register: epg_to_contract_present_no_look_back_again
+
+  - name: update epg contract to epg with no look back
+    cisco.aci.aci_epg_to_contract:
+      <<: *aci_epg_to_contract_no_look_back
+      priority: level1
+    register: update_epg_to_contract_present_no_look_back
+
+  - name: delete epg contract to epg with no look back
+    cisco.aci.aci_epg_to_contract:
+      <<: *aci_epg_to_contract_no_look_back
+      state: absent
+    register: delete_epg_to_contract_present_no_look_back
+
+  - name: delete epg contract to epg with no look back again
+    cisco.aci.aci_epg_to_contract:
+      <<: *aci_epg_to_contract_no_look_back
+      state: absent
+    register: delete_epg_to_contract_present_no_look_back_again
+
+  - name: no look back asserts
+    ansible.builtin.assert:
+      that:
+        - epg_to_contract_present_no_look_back_cm is changed
+        - epg_to_contract_present_no_look_back_cm.current == []
+        - epg_to_contract_present_no_look_back_cm.previous == []
+        - epg_to_contract_present_no_look_back_cm.proposed.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rscons-anstest_no_look_back"
+        - epg_to_contract_present_no_look_back_cm.proposed.fvRsCons.attributes.annotation == "orchestrator:ansible"
+        - epg_to_contract_present_no_look_back is changed
+        - epg_to_contract_present_no_look_back.current.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rscons-anstest_no_look_back"
+        - epg_to_contract_present_no_look_back.current.0.fvRsCons.attributes.annotation == "orchestrator:ansible"
+        - epg_to_contract_present_no_look_back.current.0.fvRsCons.attributes.prio == "unspecified"
+        - epg_to_contract_present_no_look_back.proposed.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rscons-anstest_no_look_back"
+        - epg_to_contract_present_no_look_back.proposed.fvRsCons.attributes.annotation == "orchestrator:ansible"
+        - epg_to_contract_present_no_look_back.previous == []
+        - epg_to_contract_present_no_look_back_again is changed
+        - epg_to_contract_present_no_look_back_again.current == epg_to_contract_present_no_look_back.current
+        - epg_to_contract_present_no_look_back_again.proposed == epg_to_contract_present_no_look_back.proposed
+        - epg_to_contract_present_no_look_back_again.previous == []
+        - update_epg_to_contract_present_no_look_back is changed
+        - update_epg_to_contract_present_no_look_back.current.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rscons-anstest_no_look_back"
+        - update_epg_to_contract_present_no_look_back.current.0.fvRsCons.attributes.annotation == "orchestrator:ansible"
+        - update_epg_to_contract_present_no_look_back.current.0.fvRsCons.attributes.prio == "level1"
+        - delete_epg_to_contract_present_no_look_back is changed
+        - delete_epg_to_contract_present_no_look_back.current == []
+        - delete_epg_to_contract_present_no_look_back.previous == []
+        - delete_epg_to_contract_present_no_look_back.proposed == {}
+        - delete_epg_to_contract_present_no_look_back_again is changed
+        - delete_epg_to_contract_present_no_look_back_again.current == []
+        - delete_epg_to_contract_present_no_look_back_again.previous == []
+        - delete_epg_to_contract_present_no_look_back_again.proposed == {}
+
+  # TEST NO LOOK BACK & NO VERIFICATION
+  - name: create epg contract to epg with no look back & no verify (check mode)
+    cisco.aci.aci_epg_to_contract: &aci_epg_to_contract_no_lb_no_v
+      <<: *aci_epg_consume_present
+      contract: anstest_no_lb_no_v
+      no_look_back: true
+      no_verify: true
+    check_mode: true
+    register: epg_to_contract_present_no_lb_no_v_cm
+
+  - name: create epg contract to epg with no look bac & no verify
+    cisco.aci.aci_epg_to_contract:
+      <<: *aci_epg_to_contract_no_lb_no_v
+    register: epg_to_contract_present_no_lb_no_v
+
+  - name: create epg contract to epg with no look back again & no verify
+    cisco.aci.aci_epg_to_contract:
+      <<: *aci_epg_to_contract_no_lb_no_v
+    register: epg_to_contract_present_no_lb_no_v_again
+
+  - name: update epg contract to epg with no look back & no verify
+    cisco.aci.aci_epg_to_contract:
+      <<: *aci_epg_to_contract_no_lb_no_v
+      priority: level1
+    register: update_epg_to_contract_present_no_lb_no_v
+
+  - name: delete epg contract to epg with no look back & no verify
+    cisco.aci.aci_epg_to_contract:
+      <<: *aci_epg_to_contract_no_lb_no_v
+      state: absent
+    register: delete_epg_to_contract_present_no_lb_no_v
+
+  - name: delete epg contract to epg with no look back again & no verify
+    cisco.aci.aci_epg_to_contract:
+      <<: *aci_epg_to_contract_no_lb_no_v
+      state: absent
+    register: delete_epg_to_contract_present_no_lb_no_v_again
+
+  - name: no look back & no verify asserts
+    ansible.builtin.assert:
+      that:
+        - epg_to_contract_present_no_lb_no_v_cm is changed
+        - epg_to_contract_present_no_lb_no_v_cm.current.0 == epg_to_contract_present_no_lb_no_v_cm.proposed
+        - epg_to_contract_present_no_lb_no_v_cm.previous == []
+        - epg_to_contract_present_no_lb_no_v_cm.proposed.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rscons-anstest_no_lb_no_v"
+        - epg_to_contract_present_no_lb_no_v_cm.proposed.fvRsCons.attributes.annotation == "orchestrator:ansible"
+        - epg_to_contract_present_no_lb_no_v is changed
+        - epg_to_contract_present_no_lb_no_v.current.0 == epg_to_contract_present_no_lb_no_v.proposed
+        - epg_to_contract_present_no_lb_no_v.previous == []
+        - epg_to_contract_present_no_lb_no_v_again is changed
+        - epg_to_contract_present_no_lb_no_v_again.current == epg_to_contract_present_no_lb_no_v.current
+        - epg_to_contract_present_no_lb_no_v_again.proposed == epg_to_contract_present_no_lb_no_v.proposed
+        - epg_to_contract_present_no_lb_no_v_again.previous == []
+        - update_epg_to_contract_present_no_lb_no_v is changed
+        - update_epg_to_contract_present_no_lb_no_v.current.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rscons-anstest_no_lb_no_v"
+        - update_epg_to_contract_present_no_lb_no_v.current.0.fvRsCons.attributes.annotation == "orchestrator:ansible"
+        - update_epg_to_contract_present_no_lb_no_v.current.0.fvRsCons.attributes.prio == "level1"
+        - delete_epg_to_contract_present_no_lb_no_v is changed
+        - delete_epg_to_contract_present_no_lb_no_v.current == []
+        - delete_epg_to_contract_present_no_lb_no_v.previous == []
+        - delete_epg_to_contract_present_no_lb_no_v.proposed == {}
+        - delete_epg_to_contract_present_no_lb_no_v_again is changed
+        - delete_epg_to_contract_present_no_lb_no_v_again.current == []
+        - delete_epg_to_contract_present_no_lb_no_v_again.previous == []
+        - delete_epg_to_contract_present_no_lb_no_v_again.proposed == {}
+
   - name: get binding
     cisco.aci.aci_epg_to_contract:
       <<: *aci_epg_provide_present2
@@ -313,7 +448,7 @@
       <<: *aci_tenant_present
       state: absent
       contract: "{{ item }}"
-    with_items: ["anstest_http", "anstest_https", "anstest_db"]
+    with_items: ["anstest_http", "anstest_https", "anstest_db", "anstest_no_look_back", "anstest_no_lb_no_v"]
 
   - name: cleanup epg
     cisco.aci.aci_epg:
