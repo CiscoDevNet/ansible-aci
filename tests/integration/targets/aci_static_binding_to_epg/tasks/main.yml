@@ -185,117 +185,117 @@
         - missing_required_present is failed
         - primary_encap_id_invalid is failed
 
-  # TEST NO LOOK BACK
-  - name: create static-binding to epg with no look back (check mode)
-    cisco.aci.aci_static_binding_to_epg: &aci_static_binding_to_epg_no_look_back
+  # TEST NO PREVIOUS
+  - name: create static-binding to epg with no previous (check mode)
+    cisco.aci.aci_static_binding_to_epg: &aci_static_binding_to_epg_no_previous
       <<: *aci_static_binding_to_epg_present
       interface: '1/8'
       description: Ansible test
-      no_look_back: true
+      no_previous: true
     check_mode: true
-    register: static_route_present_no_look_back_cm
+    register: static_route_present_no_previous_cm
 
-  - name: create static-binding to epg with no look back
+  - name: create static-binding to epg with no previous
     cisco.aci.aci_static_binding_to_epg:
-      <<: *aci_static_binding_to_epg_no_look_back
-    register: static_route_present_no_look_back
+      <<: *aci_static_binding_to_epg_no_previous
+    register: static_route_present_no_previous
 
-  - name: create static-binding to epg with no look back again
+  - name: create static-binding to epg with no previous again
     cisco.aci.aci_static_binding_to_epg:
-      <<: *aci_static_binding_to_epg_no_look_back
-    register: static_route_present_no_look_back_again
+      <<: *aci_static_binding_to_epg_no_previous
+    register: static_route_present_no_previous_again
 
-  - name: update static-binding to epg with no look back
+  - name: update static-binding to epg with no previous
     cisco.aci.aci_static_binding_to_epg:
-      <<: *aci_static_binding_to_epg_no_look_back
+      <<: *aci_static_binding_to_epg_no_previous
       description: Ansible test 2
-    register: update_static_route_present_no_look_back
+    register: update_static_route_present_no_previous
 
-  - name: delete static-binding to epg with no look back
+  - name: delete static-binding to epg with no previous
     cisco.aci.aci_static_binding_to_epg:
-      <<: *aci_static_binding_to_epg_no_look_back
+      <<: *aci_static_binding_to_epg_no_previous
       state: absent
-    register: delete_static_route_present_no_look_back
+    register: delete_static_route_present_no_previous
 
-  - name: delete static-binding to epg with no look back again
+  - name: delete static-binding to epg with no previous again
     cisco.aci.aci_static_binding_to_epg:
-      <<: *aci_static_binding_to_epg_no_look_back
+      <<: *aci_static_binding_to_epg_no_previous
       state: absent
-    register: delete_static_route_present_no_look_back_again
+    register: delete_static_route_present_no_previous_again
 
-  - name: no look back asserts
+  - name: no previous asserts
     ansible.builtin.assert:
       that:
-        - static_route_present_no_look_back_cm is changed
-        - static_route_present_no_look_back_cm.current == []
-        - static_route_present_no_look_back_cm.previous == []
-        - static_route_present_no_look_back_cm.proposed.fvRsPathAtt.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rspathAtt-[topology/pod-1/paths-101/pathep-[eth1/8]]"
-        - static_route_present_no_look_back_cm.proposed.fvRsPathAtt.attributes.annotation == "orchestrator:ansible"
-        - static_route_present_no_look_back is changed
-        - static_route_present_no_look_back.current.0.fvRsPathAtt.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rspathAtt-[topology/pod-1/paths-101/pathep-[eth1/8]]"
-        - static_route_present_no_look_back.current.0.fvRsPathAtt.attributes.annotation == "orchestrator:ansible"
-        - static_route_present_no_look_back.current.0.fvRsPathAtt.attributes.descr == "Ansible test"
-        - static_route_present_no_look_back.proposed.fvRsPathAtt.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rspathAtt-[topology/pod-1/paths-101/pathep-[eth1/8]]"
-        - static_route_present_no_look_back.proposed.fvRsPathAtt.attributes.annotation == "orchestrator:ansible"
-        - static_route_present_no_look_back.proposed.fvRsPathAtt.attributes.descr == "Ansible test"
-        - static_route_present_no_look_back.previous == []
-        - static_route_present_no_look_back_again is changed
-        - static_route_present_no_look_back_again.current == static_route_present_no_look_back.current
-        - static_route_present_no_look_back_again.proposed == static_route_present_no_look_back.proposed
-        - static_route_present_no_look_back_again.previous == []
-        - update_static_route_present_no_look_back is changed
-        - update_static_route_present_no_look_back.current.0.fvRsPathAtt.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rspathAtt-[topology/pod-1/paths-101/pathep-[eth1/8]]"
-        - update_static_route_present_no_look_back.current.0.fvRsPathAtt.attributes.annotation == "orchestrator:ansible"
-        - update_static_route_present_no_look_back.current.0.fvRsPathAtt.attributes.descr == "Ansible test 2"
-        - delete_static_route_present_no_look_back is changed
-        - delete_static_route_present_no_look_back.current == []
-        - delete_static_route_present_no_look_back.previous == []
-        - delete_static_route_present_no_look_back.proposed == {}
-        - delete_static_route_present_no_look_back_again is changed
-        - delete_static_route_present_no_look_back_again.current == []
-        - delete_static_route_present_no_look_back_again.previous == []
-        - delete_static_route_present_no_look_back_again.proposed == {}
+        - static_route_present_no_previous_cm is changed
+        - static_route_present_no_previous_cm.current == []
+        - static_route_present_no_previous_cm.previous == []
+        - static_route_present_no_previous_cm.proposed.fvRsPathAtt.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rspathAtt-[topology/pod-1/paths-101/pathep-[eth1/8]]"
+        - static_route_present_no_previous_cm.proposed.fvRsPathAtt.attributes.annotation == "orchestrator:ansible"
+        - static_route_present_no_previous is changed
+        - static_route_present_no_previous.current.0.fvRsPathAtt.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rspathAtt-[topology/pod-1/paths-101/pathep-[eth1/8]]"
+        - static_route_present_no_previous.current.0.fvRsPathAtt.attributes.annotation == "orchestrator:ansible"
+        - static_route_present_no_previous.current.0.fvRsPathAtt.attributes.descr == "Ansible test"
+        - static_route_present_no_previous.proposed.fvRsPathAtt.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rspathAtt-[topology/pod-1/paths-101/pathep-[eth1/8]]"
+        - static_route_present_no_previous.proposed.fvRsPathAtt.attributes.annotation == "orchestrator:ansible"
+        - static_route_present_no_previous.proposed.fvRsPathAtt.attributes.descr == "Ansible test"
+        - static_route_present_no_previous.previous == []
+        - static_route_present_no_previous_again is changed
+        - static_route_present_no_previous_again.current == static_route_present_no_previous.current
+        - static_route_present_no_previous_again.proposed == static_route_present_no_previous.proposed
+        - static_route_present_no_previous_again.previous == []
+        - update_static_route_present_no_previous is changed
+        - update_static_route_present_no_previous.current.0.fvRsPathAtt.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rspathAtt-[topology/pod-1/paths-101/pathep-[eth1/8]]"
+        - update_static_route_present_no_previous.current.0.fvRsPathAtt.attributes.annotation == "orchestrator:ansible"
+        - update_static_route_present_no_previous.current.0.fvRsPathAtt.attributes.descr == "Ansible test 2"
+        - delete_static_route_present_no_previous is changed
+        - delete_static_route_present_no_previous.current == []
+        - delete_static_route_present_no_previous.previous == []
+        - delete_static_route_present_no_previous.proposed == {}
+        - delete_static_route_present_no_previous_again is changed
+        - delete_static_route_present_no_previous_again.current == []
+        - delete_static_route_present_no_previous_again.previous == []
+        - delete_static_route_present_no_previous_again.proposed == {}
 
-  # TEST NO LOOK BACK & NO VERIFICATION
-  - name: create static-binding to epg with no look back & no verify (check mode)
+  # TEST NO PREVIOUS & NO VERIFICATION
+  - name: create static-binding to epg with no previous & no verify (check mode)
     cisco.aci.aci_static_binding_to_epg: &aci_static_binding_to_epg_no_lb_no_v
       <<: *aci_static_binding_to_epg_present
       interface: '1/8'
       description: Ansible test
-      no_look_back: true
+      no_previous: true
       no_verify: true
     check_mode: true
     register: static_route_present_no_lb_no_v_cm
 
-  - name: create static-binding to epg with no look back & no verify
+  - name: create static-binding to epg with no previous & no verify
     cisco.aci.aci_static_binding_to_epg:
       <<: *aci_static_binding_to_epg_no_lb_no_v
     register: static_route_present_no_lb_no_v
 
-  - name: create static-binding to epg with no look back again & no verify
+  - name: create static-binding to epg with no previous again & no verify
     cisco.aci.aci_static_binding_to_epg:
       <<: *aci_static_binding_to_epg_no_lb_no_v
     register: static_route_present_no_lb_no_v_again
 
-  - name: update static-binding to epg with no look back & no verify
+  - name: update static-binding to epg with no previous & no verify
     cisco.aci.aci_static_binding_to_epg:
       <<: *aci_static_binding_to_epg_no_lb_no_v
       description: Ansible test 2
     register: update_static_route_present_no_lb_no_v
 
-  - name: delete static-binding to epg with no look back & no verify
+  - name: delete static-binding to epg with no previous & no verify
     cisco.aci.aci_static_binding_to_epg:
       <<: *aci_static_binding_to_epg_no_lb_no_v
       state: absent
     register: delete_static_route_present_no_lb_no_v
 
-  - name: delete static-binding to epg with no look back again & no verify
+  - name: delete static-binding to epg with no previous again & no verify
     cisco.aci.aci_static_binding_to_epg:
       <<: *aci_static_binding_to_epg_no_lb_no_v
       state: absent
     register: delete_static_route_present_no_lb_no_v_again
 
-  - name: no look back & no verify asserts
+  - name: no previous & no verify asserts
     ansible.builtin.assert:
       that:
         - static_route_present_no_lb_no_v_cm is changed

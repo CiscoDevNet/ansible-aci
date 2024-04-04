@@ -104,15 +104,15 @@ options:
     - The current object including default values will be unverifiable in a single task.
     type: bool
     aliases: [ no_verification, no_verify, suppress_verify ]
-  suppress_look_back:
+  suppress_previous:
     description:
-    - If C(true), a look back GET will not be sent before a POST update to APIC.
-    - If the value is not specified in the task, the value of environment variable C(ACI_SUPPRESS_LOOK_BACK) will be used instead.
+    - If C(true), a GET to check previous will not be sent before a POST update to APIC.
+    - If the value is not specified in the task, the value of environment variable C(ACI_SUPPRESS_PREVIOUS) will be used instead.
     - The default value is C(false).
     - WARNING - This causes the previous return value to be empty.
     - The previous state of the object will not be checked and the POST update will contain all properties.
     type: bool
-    aliases: [ no_look_back, supp_look_b ]
+    aliases: [ no_previous, ignore_previous ]
 seealso:
 - ref: aci_guide
   description: Detailed information on how to manage your ACI infrastructure using Ansible.
