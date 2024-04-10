@@ -1441,6 +1441,11 @@ class ACIModule(object):
         self.api_call("GET", uri, data=None, return_response=False)
 
     def __get_existing_validation(self, changed):
+        """
+        This method is used to get the existing object(s) state after a config change has been completed.
+        It will not get the object(s) state if there is no change or suppress_verification is enabled.
+        When suppress_verification is enabled, the existing will be set to proposed if there was a change or suppress_previous is enabled.
+        """
         if self.suppress_verification:
             if changed or self.suppress_previous:
                 self.result["current_verified"] = False
