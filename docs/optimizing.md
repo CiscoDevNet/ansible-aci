@@ -9,8 +9,8 @@ The Ansible ACI HTTPAPI plugin instructs Ansible how to interact with an APIC's 
 ### Benefits
 
 - The ACI login credentials and ansible variables can stay in the inventory.
-- Logs in once and executes subsequent tasks without requiring additional logins.
-- Automatically refreshes a login if the token expires during the playbook.
+- Logs in once and executes subsequent tasks without requiring additional logins when using password-based authentication.
+- Automatically refreshes password-based logins if the token expires during the playbook.
 - Assists with overcoming rate limiting on logins.
 - Leverages APIC's high availability by allowing a list of APIC hosts to be defined as a single ansible host.
 
@@ -43,7 +43,11 @@ Signature-based authentication can be specified in the inventory.
 ansible_httpapi_session_key={'admin': "{{ lookup('file', 'admin.key')}}"}
 ```
 
-Note: `ansible_httpapi_session_key` takes precedence over `ansible_password`.
+> [!NOTE]
+> `ansible_httpapi_session_key` takes precedence over `ansible_password`.
+
+> [!TIP]
+> Using signature-based authentication with or without ACI HTTPAPI enabled has the same execution time benefit.
 
 ### Full Example Inventory using ACI HTTPAPI plugin
 
@@ -105,6 +109,8 @@ If enabled, a verifying GET call to check current object state will not be sent 
 - `no_verification`
 - `no_verify`
 - `suppress_verify`
+- `ignore_verify`
+- `ignore_verification`
 
 #### `suppress_verification` Example
 
