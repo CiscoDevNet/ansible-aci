@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_vzany_to_contract
-short_description: Attach contracts to vzAny (vz:RsAnyToProv, vz:RsAnyToCons, vz:RsAnyToConsIf)
+short_description: Attach contracts to vzAny (vz:RsAnyToProv, vz:RsAnyToCons, and vz:RsAnyToConsIf)
 description:
 - Bind contracts to vzAny on Cisco ACI fabrics.
 options:
@@ -54,7 +54,7 @@ seealso:
 - module: cisco.aci.aci_vrf
 - module: cisco.aci.aci_contract
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(fv:RsCons) and B(fv:RsProv).
+  description: More information about the internal APIC classes B(vz:RsAnyToProv), B(vz:RsAnyToCons), and B(vz:RsAnyToConsIf).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Marcel Zehnder (@maercu)

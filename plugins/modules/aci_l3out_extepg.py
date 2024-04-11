@@ -14,7 +14,7 @@ DOCUMENTATION = r"""
 module: aci_l3out_extepg
 short_description: Manage External Network Instance Profile (ExtEpg) objects (l3extInstP:instP)
 description:
-- Manage External Network Instance Profile (ExtEpg) objects (l3extInstP:instP)
+- Manage External Network Instance Profile (ExtEpg) objects.
 options:
   tenant:
     description:
@@ -104,7 +104,7 @@ seealso:
 - module: cisco.aci.aci_domain
 - module: cisco.aci.aci_vrf
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(l3ext:Out).
+  description: More information about the internal APIC class B(l3extInstP:instP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Rostyslav Davydenko (@rost-d)

@@ -1,6 +1,7 @@
 # Test code for the ACI modules
 # Copyright: (c) 2017, Jacob McGill (@jmcgill298)
 # Copyright: (c) 2020, Shreyas Srish (@shrsr)
+# Copyright: (c) 2024, Samita Bhattacharjee (@samiib) <samitab@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -105,6 +106,75 @@
         - ap_present_update.sent.fvAp.attributes.descr == 'Ansible Test Update'
         - ap_present_missing_param is failed
         - 'ap_present_missing_param.msg == "state is present but all of the following are missing: ap"'
+
+  # TEST NO VERIFICATION
+  - name: create ap with no verification (check mode)
+    cisco.aci.aci_ap: &aci_ap_no_verify
+      <<: *aci_ap_present
+      ap: anstest-no-verify
+      no_verification: true
+    check_mode: true
+    register: ap_present_no_verify_cm
+
+  - name: create ap with no verification
+    cisco.aci.aci_ap:
+      <<: *aci_ap_no_verify
+    register: ap_present_no_verify
+
+  - name: create ap with no verification again
+    cisco.aci.aci_ap:
+      <<: *aci_ap_no_verify
+    register: ap_present_no_verify_again
+
+  - name: update ap with no verification
+    cisco.aci.aci_ap:
+      <<: *aci_ap_no_verify
+      description: Ansible Test No Verify
+    register: update_ap_present_no_verify
+
+  - name: delete ap with no verification
+    cisco.aci.aci_ap:
+      <<: *aci_ap_no_verify
+      state: absent
+    register: delete_ap_present_no_verify
+
+  - name: delete ap with no verification again
+    cisco.aci.aci_ap:
+      <<: *aci_ap_no_verify
+      state: absent
+    register: delete_ap_present_no_verify_again
+
+  - name: no verification asserts
+    ansible.builtin.assert:
+      that:
+        - ap_present_no_verify_cm is changed
+        - ap_present_no_verify_cm.current_verified == false
+        - ap_present_no_verify_cm.current.0 == ap_present_no_verify_cm.proposed
+        - ap_present_no_verify is changed
+        - ap_present_no_verify.current_verified == false
+        - ap_present_no_verify.current.0 == ap_present_no_verify.proposed
+        - ap_present_no_verify.previous == []
+        - ap_present_no_verify_again is not changed
+        - ap_present_no_verify_again.current_verified == true
+        - ap_present_no_verify_again.current.0.fvAp.attributes.name == "anstest-no-verify"
+        - ap_present_no_verify_again.current.0.fvAp.attributes.descr == "Ansible Test"
+        - ap_present_no_verify_again.previous.0.fvAp.attributes.name == "anstest-no-verify"
+        - ap_present_no_verify_again.previous.0.fvAp.attributes.descr == "Ansible Test"
+        - update_ap_present_no_verify is changed
+        - update_ap_present_no_verify.current_verified == false
+        - update_ap_present_no_verify.current.0 == update_ap_present_no_verify.proposed
+        - update_ap_present_no_verify.previous.0.fvAp.attributes.name == "anstest-no-verify"
+        - update_ap_present_no_verify.previous.0.fvAp.attributes.descr == "Ansible Test"
+        - delete_ap_present_no_verify is changed
+        - delete_ap_present_no_verify.current_verified == false
+        - delete_ap_present_no_verify.current.0 == delete_ap_present_no_verify.proposed
+        - delete_ap_present_no_verify.previous.0.fvAp.attributes.name == "anstest-no-verify"
+        - delete_ap_present_no_verify.previous.0.fvAp.attributes.descr == "Ansible Test No Verify"
+        - delete_ap_present_no_verify_again is not changed
+        - delete_ap_present_no_verify_again.current_verified == true
+        - delete_ap_present_no_verify_again.current == []
+        - delete_ap_present_no_verify_again.previous == []
+        - delete_ap_present_no_verify_again.proposed == {}
 
   - name: get ap - query specific ap
     cisco.aci.aci_ap: &aci_ap_query

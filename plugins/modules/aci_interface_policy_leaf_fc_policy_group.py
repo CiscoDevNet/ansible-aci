@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_leaf_fc_policy_group
-short_description: Manage Fibre Channel (FC) interface policy groups (infra:FcAccBndlGrp, infra:FcAccPortGrp)
+short_description: Manage Fibre Channel (FC) interface policy groups (infra:FcAccBndlGrp and infra:FcAccPortGrp)
 description:
 - Manage Fibre Channel (FC) interface policy groups on Cisco ACI fabrics.
 options:

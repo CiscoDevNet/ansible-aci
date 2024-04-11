@@ -1,0 +1,235 @@
+# Test code for the ACI modules
+# Copyright: (c) 2024, Akini Ross (@akinross)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: "Please define the following variables: aci_hostname, aci_username and aci_password."
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_remote_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
+      output_level: "{{ aci_output_level | default('info') }}"
+
+- name: Always set aaa_password_update_required to false and security settings back to defaults
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:
+  # CLEAN
+  - name: Set AAA Security Default Settings to Default Values
+    cisco.aci.aci_aaa_security_default_settings: &security_settings_defaults
+      <<: *aci_info
+      password_strength_check: true
+      password_strength_profile:
+        enable: false
+      password_change:
+        enable: false
+        interval: 48
+        allowed_changes: 2
+        minimum_period_between_password_changes: 24
+        history_storage_amount: 5
+      lockout:
+        enable: false
+        max_attempts: 5
+        window: 5
+        duration: 60
+      web_token:
+        timeout: 600
+        idle_timeout: 1200
+        validity_period: 24
+        refresh: false
+      state: present
+
+  # QUERY
+  - name: Query AAA security default settings
+    cisco.aci.aci_aaa_security_default_settings:
+      <<: *aci_info
+      state: query
+    register: query_security_settings
+
+  - name: Assertions for enabling a AAA security default settings
+    ansible.builtin.assert:
+      that:
+        - query_security_settings is not changed
+        - query_security_settings.current.0.aaaUserEp.attributes.pwdStrengthCheck == "yes"
+        - query_security_settings.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.blockDuration == "60"
+        - query_security_settings.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.enableLoginBlock == "disable"
+        - query_security_settings.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.maxFailedAttempts == "5"
+        - query_security_settings.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.maxFailedAttemptsWindow == "5"
+        - query_security_settings.current.0.aaaUserEp.children.1.aaaPwdProfile.attributes.changeCount == "2"
+        - query_security_settings.current.0.aaaUserEp.children.1.aaaPwdProfile.attributes.changeInterval == "48"
+        - query_security_settings.current.0.aaaUserEp.children.1.aaaPwdProfile.attributes.historyCount == "5"
+        - query_security_settings.current.0.aaaUserEp.children.1.aaaPwdProfile.attributes.noChangeInterval == "24"
+        - query_security_settings.current.0.aaaUserEp.children.2.pkiEp.children.0.pkiWebTokenData.attributes.maximumValidityPeriod == "24"
+        - query_security_settings.current.0.aaaUserEp.children.2.pkiEp.children.0.pkiWebTokenData.attributes.sessionRecordFlags == "login,logout"
+        - query_security_settings.current.0.aaaUserEp.children.2.pkiEp.children.0.pkiWebTokenData.attributes.uiIdleTimeoutSeconds == "1200"
+        - query_security_settings.current.0.aaaUserEp.children.2.pkiEp.children.0.pkiWebTokenData.attributes.webtokenTimeoutSeconds == "600"
+
+  # UPDATE
+  - name: Update AAA security default settings password_strength_check
+    cisco.aci.aci_aaa_security_default_settings:
+      <<: *aci_info
+      password_strength_check: false
+
+  - name: Update AAA security default settings (check_mode)
+    cisco.aci.aci_aaa_security_default_settings: &security_settings
+      <<: *aci_info
+      password_strength_check: true
+      password_strength_profile:
+        enable: true # do not test with true as it will for for password change and locks out the user
+        type: custom
+        min_length: 9
+        max_length: 25
+        class_flags:
+          - digits
+          - lowercase
+          - uppercase
+      password_change:
+        enable: true # do not test with true as it will for for password change and locks out the user
+        interval: 60
+        allowed_changes: 3
+        minimum_period_between_password_changes: 25
+        history_storage_amount: 6
+      lockout:
+        enable: true
+        max_attempts: 6
+        window: 6
+        duration: 30
+      web_token:
+        timeout: 601
+        idle_timeout: 1201
+        validity_period: 23
+        refresh: true
+    check_mode: true
+    register: cm_update_security_settings
+
+  - name: Update AAA security default settings
+    cisco.aci.aci_aaa_security_default_settings:
+      <<: *security_settings
+    register: nm_update_security_settings
+
+  - name: Update AAA security default settings again
+    cisco.aci.aci_aaa_security_default_settings:
+      <<: *security_settings
+    register: nm_update_security_settings_again
+
+  - name: Assertions for enabling a AAA security default settings
+    ansible.builtin.assert:
+      that:
+        - cm_update_security_settings is changed
+        - cm_update_security_settings.current.0.aaaUserEp.attributes.pwdStrengthCheck == "no"
+        - cm_update_security_settings.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.blockDuration == "60"
+        - cm_update_security_settings.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.enableLoginBlock == "disable"
+        - cm_update_security_settings.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.maxFailedAttempts == "5"
+        - cm_update_security_settings.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.maxFailedAttemptsWindow == "5"
+        - cm_update_security_settings.current.0.aaaUserEp.children.1.aaaPwdProfile.attributes.changeCount == "2"
+        - cm_update_security_settings.current.0.aaaUserEp.children.1.aaaPwdProfile.attributes.changeInterval == "48"
+        - cm_update_security_settings.current.0.aaaUserEp.children.1.aaaPwdProfile.attributes.historyCount == "5"
+        - cm_update_security_settings.current.0.aaaUserEp.children.1.aaaPwdProfile.attributes.noChangeInterval == "24"
+        - cm_update_security_settings.current.0.aaaUserEp.children.2.pkiEp.children.0.pkiWebTokenData.attributes.maximumValidityPeriod == "24"
+        - cm_update_security_settings.current.0.aaaUserEp.children.2.pkiEp.children.0.pkiWebTokenData.attributes.sessionRecordFlags == "login,logout"
+        - cm_update_security_settings.current.0.aaaUserEp.children.2.pkiEp.children.0.pkiWebTokenData.attributes.uiIdleTimeoutSeconds == "1200"
+        - cm_update_security_settings.current.0.aaaUserEp.children.2.pkiEp.children.0.pkiWebTokenData.attributes.webtokenTimeoutSeconds == "600"
+        - cm_update_security_settings.proposed.aaaUserEp.attributes.pwdStrengthCheck == "yes"
+        - cm_update_security_settings.proposed.aaaUserEp.children.0.aaaPwdStrengthProfile.attributes.pwdClassFlags == "digits,lowercase,uppercase"
+        - cm_update_security_settings.proposed.aaaUserEp.children.0.aaaPwdStrengthProfile.attributes.pwdMaxLength == "25"
+        - cm_update_security_settings.proposed.aaaUserEp.children.0.aaaPwdStrengthProfile.attributes.pwdMinLength == "9"
+        - cm_update_security_settings.proposed.aaaUserEp.children.0.aaaPwdStrengthProfile.attributes.pwdStrengthTestType == "custom"
+        - cm_update_security_settings.proposed.aaaUserEp.children.2.aaaBlockLoginProfile.attributes.blockDuration == "30"
+        - cm_update_security_settings.proposed.aaaUserEp.children.2.aaaBlockLoginProfile.attributes.enableLoginBlock == "enable"
+        - cm_update_security_settings.proposed.aaaUserEp.children.2.aaaBlockLoginProfile.attributes.maxFailedAttempts == "6"
+        - cm_update_security_settings.proposed.aaaUserEp.children.2.aaaBlockLoginProfile.attributes.maxFailedAttemptsWindow == "6"
+        - cm_update_security_settings.proposed.aaaUserEp.children.1.aaaPwdProfile.attributes.changeCount == "3"
+        - cm_update_security_settings.proposed.aaaUserEp.children.1.aaaPwdProfile.attributes.changeInterval == "60"
+        - cm_update_security_settings.proposed.aaaUserEp.children.1.aaaPwdProfile.attributes.historyCount == "6"
+        - cm_update_security_settings.proposed.aaaUserEp.children.1.aaaPwdProfile.attributes.noChangeInterval == "25"
+        - cm_update_security_settings.proposed.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.maximumValidityPeriod == "23"
+        - cm_update_security_settings.proposed.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.sessionRecordFlags == "login,logout,refresh"
+        - cm_update_security_settings.proposed.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.uiIdleTimeoutSeconds == "1201"
+        - cm_update_security_settings.proposed.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.webtokenTimeoutSeconds == "601"
+        - nm_update_security_settings is changed
+        - nm_update_security_settings.previous.0.aaaUserEp.attributes.pwdStrengthCheck == "no"
+        - nm_update_security_settings.previous.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.blockDuration == "60"
+        - nm_update_security_settings.previous.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.enableLoginBlock == "disable"
+        - nm_update_security_settings.previous.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.maxFailedAttempts == "5"
+        - nm_update_security_settings.previous.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.maxFailedAttemptsWindow == "5"
+        - nm_update_security_settings.previous.0.aaaUserEp.children.1.aaaPwdProfile.attributes.changeCount == "2"
+        - nm_update_security_settings.previous.0.aaaUserEp.children.1.aaaPwdProfile.attributes.changeInterval == "48"
+        - nm_update_security_settings.previous.0.aaaUserEp.children.1.aaaPwdProfile.attributes.historyCount == "5"
+        - nm_update_security_settings.previous.0.aaaUserEp.children.1.aaaPwdProfile.attributes.noChangeInterval == "24"
+        - nm_update_security_settings.previous.0.aaaUserEp.children.2.pkiEp.children.0.pkiWebTokenData.attributes.maximumValidityPeriod == "24"
+        - nm_update_security_settings.previous.0.aaaUserEp.children.2.pkiEp.children.0.pkiWebTokenData.attributes.sessionRecordFlags == "login,logout"
+        - nm_update_security_settings.previous.0.aaaUserEp.children.2.pkiEp.children.0.pkiWebTokenData.attributes.uiIdleTimeoutSeconds == "1200"
+        - nm_update_security_settings.previous.0.aaaUserEp.children.2.pkiEp.children.0.pkiWebTokenData.attributes.webtokenTimeoutSeconds == "600"
+        - nm_update_security_settings.current.0.aaaUserEp.attributes.pwdStrengthCheck == "yes"
+        - nm_update_security_settings.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.blockDuration == "30"
+        - nm_update_security_settings.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.enableLoginBlock == "enable"
+        - nm_update_security_settings.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.maxFailedAttempts == "6"
+        - nm_update_security_settings.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.maxFailedAttemptsWindow == "6"
+        - nm_update_security_settings.current.0.aaaUserEp.children.1.aaaPwdStrengthProfile.attributes.pwdClassFlags == "digits,lowercase,uppercase"
+        - nm_update_security_settings.current.0.aaaUserEp.children.1.aaaPwdStrengthProfile.attributes.pwdMaxLength == "25"
+        - nm_update_security_settings.current.0.aaaUserEp.children.1.aaaPwdStrengthProfile.attributes.pwdMinLength == "9"
+        - nm_update_security_settings.current.0.aaaUserEp.children.1.aaaPwdStrengthProfile.attributes.pwdStrengthTestType == "custom"
+        - nm_update_security_settings.current.0.aaaUserEp.children.2.aaaPwdProfile.attributes.changeCount == "3"
+        - nm_update_security_settings.current.0.aaaUserEp.children.2.aaaPwdProfile.attributes.changeInterval == "60"
+        - nm_update_security_settings.current.0.aaaUserEp.children.2.aaaPwdProfile.attributes.historyCount == "6"
+        - nm_update_security_settings.current.0.aaaUserEp.children.2.aaaPwdProfile.attributes.noChangeInterval == "25"
+        - nm_update_security_settings.current.0.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.maximumValidityPeriod == "23"
+        - nm_update_security_settings.current.0.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.sessionRecordFlags == "login,logout,refresh"
+        - nm_update_security_settings.current.0.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.uiIdleTimeoutSeconds == "1201"
+        - nm_update_security_settings.current.0.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.webtokenTimeoutSeconds == "601"
+        - nm_update_security_settings_again is not changed
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.blockDuration == "30"
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.enableLoginBlock == "enable"
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.maxFailedAttempts == "6"
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.maxFailedAttemptsWindow == "6"
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.1.aaaPwdStrengthProfile.attributes.pwdClassFlags == "digits,lowercase,uppercase"
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.1.aaaPwdStrengthProfile.attributes.pwdMaxLength == "25"
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.1.aaaPwdStrengthProfile.attributes.pwdMinLength == "9"
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.1.aaaPwdStrengthProfile.attributes.pwdStrengthTestType == "custom"
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.2.aaaPwdProfile.attributes.changeCount == "3"
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.2.aaaPwdProfile.attributes.changeInterval == "60"
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.2.aaaPwdProfile.attributes.historyCount == "6"
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.2.aaaPwdProfile.attributes.noChangeInterval == "25"
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.maximumValidityPeriod == "23"
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.sessionRecordFlags == "login,logout,refresh"
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.uiIdleTimeoutSeconds == "1201"
+        - nm_update_security_settings_again.previous.0.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.webtokenTimeoutSeconds == "601"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.blockDuration == "30"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.enableLoginBlock == "enable"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.maxFailedAttempts == "6"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.0.aaaBlockLoginProfile.attributes.maxFailedAttemptsWindow == "6"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.1.aaaPwdStrengthProfile.attributes.pwdClassFlags == "digits,lowercase,uppercase"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.1.aaaPwdStrengthProfile.attributes.pwdMaxLength == "25"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.1.aaaPwdStrengthProfile.attributes.pwdMinLength == "9"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.1.aaaPwdStrengthProfile.attributes.pwdStrengthTestType == "custom"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.2.aaaPwdProfile.attributes.changeCount == "3"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.2.aaaPwdProfile.attributes.changeInterval == "60"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.2.aaaPwdProfile.attributes.historyCount == "6"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.2.aaaPwdProfile.attributes.noChangeInterval == "25"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.maximumValidityPeriod == "23"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.sessionRecordFlags == "login,logout,refresh"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.uiIdleTimeoutSeconds == "1201"
+        - nm_update_security_settings_again.current.0.aaaUserEp.children.3.pkiEp.children.0.pkiWebTokenData.attributes.webtokenTimeoutSeconds == "601"
+
+  always:
+    - name: Set aaa_password_update_required back to false
+      cisco.aci.aci_aaa_user:
+        <<: *aci_info
+        aaa_user: "{{ aci_username }}"
+        aaa_password_update_required: false
+    
+    - name: Set AAA Security Default Settings to Default Values
+      cisco.aci.aci_aaa_security_default_settings:
+        <<: *security_settings_defaults

@@ -1,0 +1,278 @@
+# Test code for the ACI modules
+# Copyright: (c) 2024, Samita Bhattacharjee (@samitab)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
+      output_level: "{{ aci_output_level | default('info') }}"
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []
+  block:
+
+  # CLEAN ENVIRONMENT
+  - name: Ensure fabric external connection profile is absent before testing
+    cisco.aci.aci_fabric_external_connection_profile: &delete_fabric_external_connection_profile
+      <<: *aci_info
+      fabric_id: "1"
+      name: "ansible_fabric_ext_conn_profile"
+      community: "extended:as2-nn4:5:16"
+      state: absent
+    register: cleaned
+
+  - name: Sleep for 15 seconds and continue
+    ansible.builtin.wait_for:
+      timeout: 15
+    delegate_to: localhost
+    when: cleaned is changed
+
+  - name: Ensure ansible_fabric_ext_routing_profile is absent before testing
+    cisco.aci.aci_fabric_external_routing_profile: &delete_fabric_external_routing_profile
+      <<: *aci_info
+      fabric_id: 1
+      name: ansible_fabric_ext_routing_profile
+      state: absent
+
+  - name: Create fabric external connection profile
+    cisco.aci.aci_fabric_external_connection_profile:
+      <<: *delete_fabric_external_connection_profile
+      state: present
+
+  # CREATE FABRIC EXTERNAL ROUTING PROFILE
+  - name: Create ansible_fabric_ext_routing_profile with check mode
+    cisco.aci.aci_fabric_external_routing_profile: &create_fabric_external_routing_profile
+      <<: *aci_info
+      fabric_id: "1"
+      description: "Fabric external routing profile"
+      name: "ansible_fabric_ext_routing_profile"
+      subnets:
+        # Intentional duplicate subnet test
+        - 1.2.3.4/24
+        - 1.2.3.4/24
+        - 5.6.7.8/24
+      state: present
+    check_mode: true
+    register: add_fabric_external_routing_profile_cm
+
+  - name: Create ansible_fabric_ext_routing_profile
+    cisco.aci.aci_fabric_external_routing_profile:
+      <<: *create_fabric_external_routing_profile
+      state: present
+    register: add_fabric_external_routing_profile
+
+  - name: Sleep for 15 seconds and continue
+    ansible.builtin.wait_for:
+      timeout: 15
+    delegate_to: localhost
+    when: add_fabric_external_routing_profile is changed
+
+  # CREATE FABRIC EXTERNAL ROUTING PROFILE AGAIN TO TEST IDEMPOTENCE
+  - name: Create ansible_fabric_ext_routing_profile again
+    cisco.aci.aci_fabric_external_routing_profile:
+      <<: *create_fabric_external_routing_profile
+      state: present
+    register: add_fabric_external_routing_profile_again
+
+  - name: Verify creation
+    ansible.builtin.assert:
+      that:
+      - add_fabric_external_routing_profile is changed
+      - add_fabric_external_routing_profile.previous == []
+      - add_fabric_external_routing_profile.current.0.l3extFabricExtRoutingP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/fabricExtRoutingP-ansible_fabric_ext_routing_profile"
+      - add_fabric_external_routing_profile.current.0.l3extFabricExtRoutingP.attributes.descr == "Fabric external routing profile"
+      - add_fabric_external_routing_profile.current.0.l3extFabricExtRoutingP.attributes.annotation == 'orchestrator:ansible'
+      - add_fabric_external_routing_profile.current.0.l3extFabricExtRoutingP.attributes.name == "ansible_fabric_ext_routing_profile"
+      - add_fabric_external_routing_profile.current.0.l3extFabricExtRoutingP.children.1.l3extSubnet.attributes.ip == "1.2.3.4/24"
+      - add_fabric_external_routing_profile.current.0.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "5.6.7.8/24"
+      - add_fabric_external_routing_profile_cm is changed
+      - add_fabric_external_routing_profile_cm.previous == []
+      - add_fabric_external_routing_profile_cm.current == []
+      - add_fabric_external_routing_profile_cm.proposed.l3extFabricExtRoutingP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/fabricExtRoutingP-ansible_fabric_ext_routing_profile"
+      - add_fabric_external_routing_profile_cm.proposed.l3extFabricExtRoutingP.attributes.descr == "Fabric external routing profile"
+      - add_fabric_external_routing_profile_cm.proposed.l3extFabricExtRoutingP.attributes.annotation == 'orchestrator:ansible'
+      - add_fabric_external_routing_profile_cm.proposed.l3extFabricExtRoutingP.attributes.name == "ansible_fabric_ext_routing_profile"
+      - add_fabric_external_routing_profile_cm.proposed.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "1.2.3.4/24"
+      - add_fabric_external_routing_profile_cm.proposed.l3extFabricExtRoutingP.children.1.l3extSubnet.attributes.ip == "5.6.7.8/24"
+      - add_fabric_external_routing_profile_again is not changed
+      - add_fabric_external_routing_profile_again.current == add_fabric_external_routing_profile_again.previous
+      - add_fabric_external_routing_profile_again.current.0.l3extFabricExtRoutingP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/fabricExtRoutingP-ansible_fabric_ext_routing_profile"
+      - add_fabric_external_routing_profile_again.current.0.l3extFabricExtRoutingP.attributes.descr  == "Fabric external routing profile"
+      - add_fabric_external_routing_profile_again.current.0.l3extFabricExtRoutingP.attributes.annotation == 'orchestrator:ansible'
+      - add_fabric_external_routing_profile_again.current.0.l3extFabricExtRoutingP.attributes.name == "ansible_fabric_ext_routing_profile"
+      - add_fabric_external_routing_profile_again.current.0.l3extFabricExtRoutingP.children.1.l3extSubnet.attributes.ip == "1.2.3.4/24"
+      - add_fabric_external_routing_profile_again.current.0.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "5.6.7.8/24"
+      - add_fabric_external_routing_profile_again.previous.0.l3extFabricExtRoutingP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/fabricExtRoutingP-ansible_fabric_ext_routing_profile"
+      - add_fabric_external_routing_profile_again.previous.0.l3extFabricExtRoutingP.attributes.descr  == "Fabric external routing profile"
+      - add_fabric_external_routing_profile_again.previous.0.l3extFabricExtRoutingP.attributes.name == "ansible_fabric_ext_routing_profile"
+      - add_fabric_external_routing_profile_again.previous.0.l3extFabricExtRoutingP.children.1.l3extSubnet.attributes.ip == "1.2.3.4/24"
+      - add_fabric_external_routing_profile_again.previous.0.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "5.6.7.8/24"
+      
+  # QUERY FABRIC EXTERNAL ROUTING PROFILE
+  - name: Query fabric external routing profile
+    cisco.aci.aci_fabric_external_routing_profile:
+      <<: *aci_info
+      fabric_id: 1
+      name: ansible_fabric_ext_routing_profile
+      state: query
+    register: query_fabric_external_routing_profile
+
+  # QUERY ALL FABRIC EXTERNAL ROUTING PROFILE
+  - name: Query all fabric external routing profile
+    cisco.aci.aci_fabric_external_routing_profile:
+      <<: *aci_info
+      state: query
+    register: query_fabric_external_routing_profile_all
+
+  - name: Verify query
+    ansible.builtin.assert:
+      that:
+      - query_fabric_external_routing_profile is not changed
+      - query_fabric_external_routing_profile.current.0.l3extFabricExtRoutingP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/fabricExtRoutingP-ansible_fabric_ext_routing_profile"
+      - query_fabric_external_routing_profile.current.0.l3extFabricExtRoutingP.attributes.descr == "Fabric external routing profile"
+      - query_fabric_external_routing_profile.current.0.l3extFabricExtRoutingP.attributes.name == "ansible_fabric_ext_routing_profile"
+      - query_fabric_external_routing_profile.current.0.l3extFabricExtRoutingP.children.1.l3extSubnet.attributes.ip == "1.2.3.4/24"
+      - query_fabric_external_routing_profile.current.0.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "5.6.7.8/24"
+      - query_fabric_external_routing_profile_all is not changed
+      - query_fabric_external_routing_profile_all.current | length == 1
+      - query_fabric_external_routing_profile_all.current.0.l3extFabricExtRoutingP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/fabricExtRoutingP-ansible_fabric_ext_routing_profile"
+      - query_fabric_external_routing_profile_all.current.0.l3extFabricExtRoutingP.attributes.descr == "Fabric external routing profile"
+      - query_fabric_external_routing_profile_all.current.0.l3extFabricExtRoutingP.attributes.name == "ansible_fabric_ext_routing_profile"
+      - query_fabric_external_routing_profile_all.current.0.l3extFabricExtRoutingP.children.1.l3extSubnet.attributes.ip == "1.2.3.4/24"
+      - query_fabric_external_routing_profile_all.current.0.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "5.6.7.8/24"
+
+  # UPDATE SUBNETS
+  - name: Update fabric external routing profile - change subnets
+    cisco.aci.aci_fabric_external_routing_profile:
+      <<: *create_fabric_external_routing_profile
+      subnets:
+        - 5.6.7.8/24
+        - 9.10.11.12/24
+      state: present
+    register: update_fabric_external_routing_profile_1
+
+  - name: Sleep for 15 seconds and continue
+    ansible.builtin.wait_for:
+      timeout: 15
+    delegate_to: localhost
+
+  - name: Update fabric external routing profile - remove 1 subnet
+    cisco.aci.aci_fabric_external_routing_profile:
+      <<: *create_fabric_external_routing_profile
+      subnets:
+        - 9.10.11.12/24
+      state: present
+    register: update_fabric_external_routing_profile_2
+
+  - name: Sleep for 15 seconds and continue
+    ansible.builtin.wait_for:
+      timeout: 15
+    delegate_to: localhost
+
+  - name: Update fabric external routing profile - remove all subnets
+    cisco.aci.aci_fabric_external_routing_profile:
+      <<: *create_fabric_external_routing_profile
+      subnets: null
+      state: present
+    register: update_fabric_external_routing_profile_3
+
+  - name: Sleep for 15 seconds and continue
+    ansible.builtin.wait_for:
+      timeout: 15
+    delegate_to: localhost
+
+  - name: Verify subnet update
+    ansible.builtin.assert:
+      that: 
+      - update_fabric_external_routing_profile_1 is changed
+      - update_fabric_external_routing_profile_1.proposed.l3extFabricExtRoutingP.children | length == 3
+      - update_fabric_external_routing_profile_1.proposed.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "1.2.3.4/24"
+      - update_fabric_external_routing_profile_1.proposed.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.status == "deleted"
+      - update_fabric_external_routing_profile_1.proposed.l3extFabricExtRoutingP.children.1.l3extSubnet.attributes.ip == "5.6.7.8/24"
+      - update_fabric_external_routing_profile_1.proposed.l3extFabricExtRoutingP.children.2.l3extSubnet.attributes.ip == "9.10.11.12/24"
+      - update_fabric_external_routing_profile_1.current.0.l3extFabricExtRoutingP.children | length == 2
+      - update_fabric_external_routing_profile_1.current.0.l3extFabricExtRoutingP.children.1.l3extSubnet.attributes.ip == "5.6.7.8/24"
+      - update_fabric_external_routing_profile_1.current.0.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "9.10.11.12/24"
+      - update_fabric_external_routing_profile_2 is changed
+      - update_fabric_external_routing_profile_2.proposed.l3extFabricExtRoutingP.children | length == 2
+      - update_fabric_external_routing_profile_2.proposed.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "5.6.7.8/24"
+      - update_fabric_external_routing_profile_2.proposed.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.status == "deleted"
+      - update_fabric_external_routing_profile_2.proposed.l3extFabricExtRoutingP.children.1.l3extSubnet.attributes.ip == "9.10.11.12/24"
+      - update_fabric_external_routing_profile_2.current.0.l3extFabricExtRoutingP.children | length == 1
+      - update_fabric_external_routing_profile_2.current.0.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "9.10.11.12/24"
+      - update_fabric_external_routing_profile_3 is changed
+      - update_fabric_external_routing_profile_3.proposed.l3extFabricExtRoutingP.children | length == 1
+      - update_fabric_external_routing_profile_3.proposed.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.ip == "9.10.11.12/24"
+      - update_fabric_external_routing_profile_3.proposed.l3extFabricExtRoutingP.children.0.l3extSubnet.attributes.status == "deleted"
+      - update_fabric_external_routing_profile_3.current.0.l3extFabricExtRoutingP.children is undefined
+
+  # DELETE FABRIC EXTERNAL ROUTING PROFILE
+  - name: Delete ansible_fabric_ext_routing_profile with check mode
+    cisco.aci.aci_fabric_external_routing_profile:
+      <<: *delete_fabric_external_routing_profile
+    check_mode: true
+    register: delete_fabric_external_routing_profile_cm
+
+  - name: Delete ansible_fabric_ext_routing_profile
+    cisco.aci.aci_fabric_external_routing_profile:
+      <<: *delete_fabric_external_routing_profile
+    register: delete_fabric_external_routing_profile
+
+  - name: Sleep for 15 seconds and continue
+    ansible.builtin.wait_for:
+      timeout: 15
+    delegate_to: localhost
+    when: delete_fabric_external_routing_profile is changed
+
+  # DELETE FABRIC EXTERNAL ROUTING PROFILE AGAIN TO TEST IDEMPOTENCE
+  - name: Delete ansible_fabric_ext_routing_profile again
+    cisco.aci.aci_fabric_external_routing_profile:
+      <<: *delete_fabric_external_routing_profile
+    retries: 4
+    delay: 5
+    register: delete_fabric_external_routing_profile_again
+
+  - name: Verify deletion
+    ansible.builtin.assert:
+      that:
+      - delete_fabric_external_routing_profile is changed
+      - delete_fabric_external_routing_profile.current == []
+      - delete_fabric_external_routing_profile.previous.0.l3extFabricExtRoutingP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/fabricExtRoutingP-ansible_fabric_ext_routing_profile"
+      - delete_fabric_external_routing_profile.previous.0.l3extFabricExtRoutingP.attributes.descr == "Fabric external routing profile"
+      - delete_fabric_external_routing_profile.previous.0.l3extFabricExtRoutingP.attributes.name == "ansible_fabric_ext_routing_profile"
+      - delete_fabric_external_routing_profile_cm is changed
+      - delete_fabric_external_routing_profile_cm.proposed == {}
+      - delete_fabric_external_routing_profile_cm.current != []
+      - delete_fabric_external_routing_profile_cm.previous.0.l3extFabricExtRoutingP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/fabricExtRoutingP-ansible_fabric_ext_routing_profile"
+      - delete_fabric_external_routing_profile_cm.previous.0.l3extFabricExtRoutingP.attributes.descr == "Fabric external routing profile"
+      - delete_fabric_external_routing_profile_cm.previous.0.l3extFabricExtRoutingP.attributes.name == "ansible_fabric_ext_routing_profile"
+      - delete_fabric_external_routing_profile_again is not changed
+      - delete_fabric_external_routing_profile_again.current == []
+      - delete_fabric_external_routing_profile_again.previous == []
+  
+  - name: Clean up fabric external connection profile
+    cisco.aci.aci_fabric_external_connection_profile:
+      <<: *delete_fabric_external_connection_profile

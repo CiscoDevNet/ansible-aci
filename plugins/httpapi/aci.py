@@ -102,19 +102,6 @@ class HttpApi(HttpApiBase):
             exc_login.path = path
             raise
 
-    def logout(self):
-        method = "POST"
-        path = "/api/aaaLogout.json"
-        payload = {"aaaUser": {"attributes": {"name": self.connection.get_option("remote_user")}}}
-        data = json.dumps(payload)
-        try:
-            response, response_data = self.connection.send(path, data, method=method)
-        except Exception as exc_logout:
-            msg = "Error on attempt to logout from APIC. {0}".format(exc_logout)
-            raise ConnectionError(self._return_info("", method, path, msg))
-        self.connection._auth = None
-        self._verify_response(response, method, path, response_data)
-
     def set_parameters(self):
         connection_parameters = {}
         for key in CONNECTION_KEYS:

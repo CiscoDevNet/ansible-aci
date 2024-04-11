@@ -13,72 +13,72 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_fabric_switch_policy_group
-short_description: Manage Fabric Switch Policy Group objects.
+short_description: Manage Fabric Switch Policy Group objects (fabric:LeNodePGrp and fabric:SpNodePGrp)
 description:
-- Manage Fabric Switch Policy Group (fabricLeNodePGrp and fabricSpNodePGrp) configuration on Cisco ACI fabrics.
+- Manage Fabric Switch Policy Group configuration on Cisco ACI fabrics.
 options:
   name:
     description:
-    - The name of the Leaf Policy Group.
+    - The name of the Fabric Switch Policy Group.
     type: str
     aliases: [ 'policy_group', 'policy_group_name' ]
   description:
     description:
-    - Description for the Leaf Policy Group.
+    - Description for the Fabric Switch Policy Group.
     type: str
   switch_type:
     description:
-    - Whether this is a leaf or spine policy group
+    - Whether this is a leaf or spine Fabric Switch Policy Group.
     type: str
     choices: [ leaf, spine ]
     required: true
   monitoring_policy:
     description:
-    - Monitoring Policy to attach to this Policy Group
+    - Monitoring Policy to attach to this Fabric Switch Policy Group.
     type: str
     aliases: [ 'monitoring', 'fabricRsMonInstFabricPol' ]
   tech_support_export_policy:
     description:
-    - Tech Support Export Policy to attach to this Policy Group
+    - Tech Support Export Policy to attach to this Fabric Switch Policy Group.
     type: str
     aliases: [ 'tech_support', 'tech_support_export', 'fabricRsNodeTechSupP']
   core_export_policy:
     description:
-    - Core Export Policy to attach to this Policy Group
+    - Core Export Policy to attach to this Fabric Switch Policy Group.
     type: str
     aliases: [ 'core', 'core_export', 'fabricRsNodeCoreP' ]
   inventory_policy:
     description:
-    - Inventory Policy to attach to this Policy Group
+    - Inventory Policy to attach to this Fabric Switch Policy Group.
     type: str
     aliases: [ 'inventory', 'fabricRsCallhomeInvPol' ]
   power_redundancy_policy:
     description:
-    - Power Redundancy Policy to atttach to this Policy Group
+    - Power Redundancy Policy to atttach to this Fabric Switch Policy Group.
     type: str
     aliases: [ 'power_redundancy', 'fabricRsPsuInstPol' ]
   twamp_server_policy:
     description:
-    - TWAMP Server Policy to attach to this Policy Group
+    - TWAMP Server Policy to attach to this Fabric Switch Policy Group.
     type: str
     aliases: [ 'twamp_server', 'fabricRsTwampServerPol' ]
   twamp_responder_policy:
     description:
-    - TWAMP Responder Policy to attach to this Policy Group
+    - TWAMP Responder Policy to attach to this Fabric Switch Policy Group.
     type: str
     aliases: [ 'twamp_responder', 'fabricRsTwampResponderPol' ]
   node_control_policy:
     description:
-    - Node Control Policy to attach to this Policy Group
+    - Node Control Policy to attach to this Fabric Switch Policy Group.
     type: str
     aliases: [ 'node_control', 'fabricRsNodeCtrl' ]
   analytics_cluster:
     description:
-    - Name of the analytics cluster. Requires analytics_name to be present
+    - Name of the analytics cluster. Requires analytics_name to be present.
     type: str
   analytics_name:
     description:
-    - Name of the analytics policy. Requires analytics_cluster to be present
+    - Name of the analytics policy. Requires analytics_cluster to be present.
     type: str
   state:
     description:
@@ -93,7 +93,7 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(fabricLeNodePGrp and fabricSpNodePGrp).
+  description: More information about the internal APIC classes B(fabric:LeNodePGrp) and B(fabric:SpNodePGrp).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)

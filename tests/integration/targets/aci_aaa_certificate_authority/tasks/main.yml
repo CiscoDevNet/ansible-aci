@@ -1,0 +1,305 @@
+# Test code for the ACI modules
+# Copyright: (c) 2024, Akini Ross (@akinross) <akinross@cisco.com>
+#
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_use_proxy | default("debug") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+# CLEAN ENVIRONMENT
+- name: Clean certificate_authority_1
+  cisco.aci.aci_aaa_certificate_authority: &certificate_authority_1_absent
+    <<: *aci_info
+    name: certificate_authority_1
+    state: absent
+
+- name: Clean certificate_authority_2
+  cisco.aci.aci_aaa_certificate_authority: &certificate_authority_2_absent
+    <<: *aci_info
+    name: certificate_authority_2
+    state: absent
+  register: result
+  until: result is not failed
+  delay: 2
+  retries: 4
+
+# CREATE
+- name: Create a certificate authority (check_mode)
+  cisco.aci.aci_aaa_certificate_authority: &certificate_authority_1_present
+    <<: *certificate_authority_1_absent
+    certificate_chain: "{{ lookup('file', 'pki/admin.crt') }}"
+    state: present
+  check_mode: true
+  register: cm_create_certificate_authority_1
+
+- name: Create a certificate authority
+  cisco.aci.aci_aaa_certificate_authority:
+    <<: *certificate_authority_1_present
+  register: nm_create_certificate_authority_1
+  until: nm_create_certificate_authority_1 is not failed
+  delay: 2
+  retries: 4
+
+- name: Create a certificate authority again
+  cisco.aci.aci_aaa_certificate_authority:
+    <<: *certificate_authority_1_present
+  register: nm_create_certificate_authority_1_again
+  until: nm_create_certificate_authority_1_again is not failed
+  delay: 2
+  retries: 4
+
+- name: Assertions for creating a certificate authority
+  ansible.builtin.assert:
+    that:
+    - cm_create_certificate_authority_1 is changed
+    - cm_create_certificate_authority_1.previous == []
+    - cm_create_certificate_authority_1.current == []
+    - cm_create_certificate_authority_1.proposed.pkiTP.attributes.name == "certificate_authority_1"
+    - nm_create_certificate_authority_1 is changed
+    - nm_create_certificate_authority_1.previous == []
+    - nm_create_certificate_authority_1.current.0.pkiTP.attributes.name == "certificate_authority_1"
+    - nm_create_certificate_authority_1.current.0.pkiTP.attributes.descr == ""
+    - nm_create_certificate_authority_1_again is not changed
+    - nm_create_certificate_authority_1_again.previous.0.pkiTP.attributes.name == "certificate_authority_1"
+    - nm_create_certificate_authority_1_again.previous.0.pkiTP.attributes.descr == ""
+    - nm_create_certificate_authority_1_again.current.0.pkiTP.attributes.name == "certificate_authority_1"
+    - nm_create_certificate_authority_1_again.current.0.pkiTP.attributes.descr == ""
+
+# UPDATE
+- name: Update an existing certificate authority
+  cisco.aci.aci_aaa_certificate_authority:
+    <<: *certificate_authority_1_present
+    description: "This is a changed description."
+  register: nm_update_certificate_authority_1
+  until: nm_update_certificate_authority_1 is not failed
+  delay: 2
+  retries: 4
+
+- name: Assertions for updating a certificate authority
+  ansible.builtin.assert:
+    that:
+    - nm_update_certificate_authority_1 is changed
+    - nm_update_certificate_authority_1.previous.0.pkiTP.attributes.name == "certificate_authority_1"
+    - nm_update_certificate_authority_1.previous.0.pkiTP.attributes.descr == ""
+    - nm_update_certificate_authority_1.current.0.pkiTP.attributes.name == "certificate_authority_1"
+    - nm_update_certificate_authority_1.current.0.pkiTP.attributes.descr == "This is a changed description."
+
+- name: Execute tasks only for cloud sites
+  when: query_cloud.current != []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Delete certificate authority for cloud site tenant
+    cisco.aci.aci_aaa_certificate_authority: &certificate_authority_cloud_absent
+      <<: *certificate_authority_1_present
+      cloud_tenant: cloud_tenant
+      name: certificate_authority_cloud
+      state: absent
+    register: nm_delete_certificate_authority_1_cloud
+    until: nm_delete_certificate_authority_1_cloud is not failed
+    delay: 2
+    retries: 4
+  
+  - name: Create tenant for cloud site
+    cisco.aci.aci_tenant: &cloud_tenant
+      <<: *aci_info
+      name: cloud_tenant
+    register: cloud_tenant
+    until: cloud_tenant is not failed
+    delay: 2
+    retries: 4
+  
+  - name: Create certificate authority for cloud site tenant (check_mode)
+    cisco.aci.aci_aaa_certificate_authority: &certificate_authority_cloud_present
+      <<: *certificate_authority_cloud_absent
+      state: present
+    check_mode: true
+    register: cm_create_certificate_authority_1_cloud
+    until: cm_create_certificate_authority_1_cloud is not failed
+    delay: 2
+    retries: 4
+
+  - name: Create certificate authority for cloud site tenant
+    cisco.aci.aci_aaa_certificate_authority:
+      <<: *certificate_authority_cloud_present
+    register: nm_create_certificate_authority_1_cloud
+    until: nm_create_certificate_authority_1_cloud is not failed
+    delay: 2
+    retries: 4
+
+  - name: Create certificate authority for cloud site tenant again
+    cisco.aci.aci_aaa_certificate_authority:
+      <<: *certificate_authority_cloud_present
+    register: nm_create_certificate_authority_1_cloud_again
+    until: nm_create_certificate_authority_1_cloud is not failed
+    delay: 2
+    retries: 4
+
+  - name: Verify certificate authority is created in cloud tenant
+    ansible.builtin.assert:
+      that:
+      - cm_create_certificate_authority_1_cloud is changed
+      - cm_create_certificate_authority_1_cloud.previous == []
+      - cm_create_certificate_authority_1_cloud.current == []
+      - cm_create_certificate_authority_1_cloud.proposed.pkiTP.attributes.name == "certificate_authority_cloud"
+      - '"tn-cloud_tenant/certstore/tp-certificate_authority_cloud" in cm_create_certificate_authority_1_cloud.url'
+      - nm_create_certificate_authority_1_cloud is changed
+      - nm_create_certificate_authority_1_cloud.previous == []
+      - nm_create_certificate_authority_1_cloud.current.0.pkiTP.attributes.name == "certificate_authority_cloud"
+      - nm_create_certificate_authority_1_cloud.current.0.pkiTP.attributes.descr == ""
+      - '"tn-cloud_tenant/certstore/tp-certificate_authority_cloud" in nm_create_certificate_authority_1_cloud.url'
+      - nm_create_certificate_authority_1_cloud_again is not changed
+      - nm_create_certificate_authority_1_cloud_again.previous.0.pkiTP.attributes.name == "certificate_authority_cloud"
+      - nm_create_certificate_authority_1_cloud_again.previous.0.pkiTP.attributes.descr == ""
+      - nm_create_certificate_authority_1_cloud_again.current.0.pkiTP.attributes.name == "certificate_authority_cloud"
+      - nm_create_certificate_authority_1_cloud_again.current.0.pkiTP.attributes.descr == ""
+      - '"tn-cloud_tenant/certstore/tp-certificate_authority_cloud" in nm_create_certificate_authority_1_cloud_again.url'
+
+  - name: Delete certificate authority for cloud site tenant (check_mode)
+    cisco.aci.aci_aaa_certificate_authority:
+      <<: *certificate_authority_cloud_absent
+    check_mode: true
+    register: cm_delete_certificate_authority_1_cloud
+    until: cm_delete_certificate_authority_1_cloud is not failed
+    delay: 2
+    retries: 4
+
+  - name: Delete certificate authority for cloud site tenant
+    cisco.aci.aci_aaa_certificate_authority:
+      <<: *certificate_authority_cloud_absent
+    register: nm_delete_certificate_authority_1_cloud
+    until: nm_delete_certificate_authority_1_cloud is not failed
+    delay: 2
+    retries: 4
+
+  - name: Delete certificate authority for cloud site tenant again
+    cisco.aci.aci_aaa_certificate_authority:
+      <<: *certificate_authority_cloud_absent
+    register: nm_delete_certificate_authority_1_cloud_again
+    until: nm_delete_certificate_authority_1_cloud_again is not failed
+    delay: 2
+    retries: 4
+
+  - name: Verify certificate authority is deleted in cloud tenant
+    ansible.builtin.assert:
+      that:
+      - cm_delete_certificate_authority_1_cloud is changed
+      - cm_delete_certificate_authority_1_cloud.proposed == {}
+      - cm_delete_certificate_authority_1_cloud.previous.0.pkiTP.attributes.name == "certificate_authority_cloud"
+      - cm_delete_certificate_authority_1_cloud.previous.0.pkiTP.attributes.descr == ""
+      - cm_delete_certificate_authority_1_cloud.current.0.pkiTP.attributes.name == "certificate_authority_cloud"
+      - cm_delete_certificate_authority_1_cloud.current.0.pkiTP.attributes.descr == ""
+      - '"tn-cloud_tenant/certstore/tp-certificate_authority_cloud" in cm_delete_certificate_authority_1_cloud.url'
+      - nm_delete_certificate_authority_1_cloud is changed
+      - nm_delete_certificate_authority_1_cloud.previous.0.pkiTP.attributes.name == "certificate_authority_cloud"
+      - nm_delete_certificate_authority_1_cloud.previous.0.pkiTP.attributes.descr == ""
+      - nm_delete_certificate_authority_1_cloud.current == []
+      - '"tn-cloud_tenant/certstore/tp-certificate_authority_cloud" in nm_delete_certificate_authority_1_cloud.url'
+      - nm_delete_certificate_authority_1_cloud_again is not changed
+      - nm_delete_certificate_authority_1_cloud_again.previous == []
+      - nm_delete_certificate_authority_1_cloud_again.current == []
+      - '"tn-cloud_tenant/certstore/tp-certificate_authority_cloud" in nm_delete_certificate_authority_1_cloud_again.url'
+
+  - name: Delete tenant for cloud site
+    cisco.aci.aci_tenant:
+      <<: *cloud_tenant
+      state: absent
+    register: cloud_tenant
+    until: cloud_tenant is not failed
+    delay: 2
+    retries: 4
+
+# QUERY
+- name: Create another certificate authority
+  cisco.aci.aci_aaa_certificate_authority:
+    <<: *certificate_authority_2_absent
+    certificate_chain: "{{ lookup('file', 'pki/admin.crt') }}"
+    state: present
+  register: nm_create_certificate_authority_2
+  until: nm_create_certificate_authority_2 is not failed
+  delay: 2
+  retries: 4
+
+- name: Query a certificate authority
+  cisco.aci.aci_aaa_certificate_authority:
+    <<: *certificate_authority_1_present
+    state: query
+  register: query_certificate_authority_1
+  until: query_certificate_authority_1 is not failed
+  delay: 2
+  retries: 4
+
+- name: Query all fabric management access policies
+  cisco.aci.aci_aaa_certificate_authority:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Assertions for querying fabric management access policies
+  ansible.builtin.assert:
+    that:
+      - query_certificate_authority_1 is not changed
+      - query_certificate_authority_1.current.0.pkiTP.attributes.name == "certificate_authority_1"
+      - query_certificate_authority_1.current.0.pkiTP.attributes.descr == "This is a changed description."
+      - query_certificate_authority_1.current | length == 1
+      - query_all is not changed
+      - query_all.current | length >= 2
+
+# DELETE
+- name: Delete a certificate authority (check_mode)
+  cisco.aci.aci_aaa_certificate_authority:
+    <<: *certificate_authority_1_absent
+  check_mode: true
+  register: cm_delete_certificate_authority_1
+
+- name: Delete a certificate authority
+  cisco.aci.aci_aaa_certificate_authority:
+    <<: *certificate_authority_1_absent
+  register: nm_delete_certificate_authority_1
+  until: nm_delete_certificate_authority_1 is not failed
+  delay: 2
+  retries: 4
+
+- name: Delete a certificate authority again
+  cisco.aci.aci_aaa_certificate_authority:
+    <<: *certificate_authority_1_absent
+  register: nm_delete_certificate_authority_1_again
+  until: nm_delete_certificate_authority_1_again is not failed
+  delay: 2
+  retries: 4
+
+- name: Assertions for deleting a certificate authority
+  ansible.builtin.assert:
+    that:
+    - cm_delete_certificate_authority_1 is changed
+    - cm_delete_certificate_authority_1.proposed ==  {}
+    - cm_delete_certificate_authority_1.previous.0.pkiTP.attributes.name == "certificate_authority_1"
+    - cm_delete_certificate_authority_1.previous.0.pkiTP.attributes.descr == "This is a changed description."
+    - cm_delete_certificate_authority_1.current.0.pkiTP.attributes.name == "certificate_authority_1"
+    - cm_delete_certificate_authority_1.current.0.pkiTP.attributes.descr == "This is a changed description."
+    - nm_delete_certificate_authority_1 is changed
+    - nm_delete_certificate_authority_1.previous.0.pkiTP.attributes.name == "certificate_authority_1"
+    - nm_delete_certificate_authority_1.previous.0.pkiTP.attributes.descr == "This is a changed description."
+    - nm_delete_certificate_authority_1.current == []
+    - nm_delete_certificate_authority_1_again is not changed
+    - nm_delete_certificate_authority_1_again.previous == []
+    - nm_delete_certificate_authority_1_again.current == []
+
+# CLEAN ENVIRONMENT
+- name: Delete another certificate authority
+  cisco.aci.aci_aaa_certificate_authority:
+    <<: *certificate_authority_2_absent

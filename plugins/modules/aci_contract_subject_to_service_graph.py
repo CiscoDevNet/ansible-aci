@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_contract_subject_to_service_graph
-short_description: Bind contract subject to service graph (vz:RsSubjGraphAtt).
+short_description: Bind contract subject to service graph (vz:RsSubjGraphAtt)
 description:
 - Bind contract subject to service graph.
 options:

@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_tag
-short_description: Tagging of ACI objects
+short_description: Tagging of ACI objects (tag:Annotation, tag:Inst, and tag:Tag)
 description:
 - Tagging a object on Cisco ACI fabric.
 options:
@@ -50,7 +50,11 @@ notes:
 - CAVEAT - Due to deprecation of the 'tagInst' object, creating a tag with tag_type 'instance' automatically generates a
   'annotation' tag_type tag with an empty value. When deleting a tag_type 'instance', the 'tagAnnotation' object will
   remain present and needs to be deleted separately.
+
 seealso:
+- name: APIC Management Information Model reference
+  description: More information about the internal APIC classes B(tag:Annotation), B(tag:Inst), and B(tag:Tag).
+  link: https://developer.cisco.com/docs/apic-mim-ref/
 - name: Cisco APIC System Management Configuration Guide
   description: More information about the tagging can be found in the Cisco APIC System Management Configuration Guide.
   link: https://www.cisco.com/c/en/us/support/cloud-systems-management/application-policy-infrastructure-controller-apic/tsd-products-support-series-home.html

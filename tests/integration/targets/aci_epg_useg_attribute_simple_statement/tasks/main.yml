@@ -1,0 +1,261 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Christian Kolrep (@Christian-Kolrep)
+# Copyright: (c) 2024, Akini Ross (@akinross)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites ( clean after )
+  when:
+  - query_cloud.current == []
+  block:
+
+    # CLEAN TEST ENVIRONMENT
+    - name: Ensure tenant removed
+      cisco.aci.aci_tenant: &aci_tenant_absent
+        <<: *aci_info
+        state: absent
+        tenant: ansible_test
+
+    # SETUP TEST ENVIRONMENT
+    - name: Create tenant
+      cisco.aci.aci_tenant: &aci_tenant_present
+        <<: *aci_tenant_absent
+        state: present
+    
+    - name: Create AP
+      cisco.aci.aci_ap: &aci_ap
+        <<: *aci_tenant_present
+        ap: ansible_test
+
+    - name: Create uSeg EPG
+      cisco.aci.aci_epg:
+        <<: *aci_ap
+        epg: ansible_test_1
+        bd: ansible_test
+        useg: yes
+    
+    - name: Create block statement block_a
+      cisco.aci.aci_epg_useg_attribute_block_statement: &block
+        <<: *aci_ap
+        epg: ansible_test_1
+        name: block_a
+
+    - name: Create block statement block_b
+      cisco.aci.aci_epg_useg_attribute_block_statement:
+        <<: *block
+        name: block_b
+        parent_block_statements:
+          - block_a
+    
+    - name: Create block statement block_c
+      cisco.aci.aci_epg_useg_attribute_block_statement:
+        <<: *block
+        name: block_c
+        parent_block_statements:
+          - block_a
+          - block_b
+
+    # TEST THAT ALL LEVELS OF BLOCK STATEMENTS WORK WITH THE VM_NAME SIMPLE STATEMENT TYPE
+    - name: Execute tests for each block statement
+      ansible.builtin.include_tasks: simple_block_levels.yml
+      loop:
+        - []
+        - [block_a]
+        - [block_a, block_b]
+        - [block_a, block_b, block_c]
+      loop_control:
+        loop_var: parent_block_statements
+    
+    # INPUT TEST FOR OPERATOR INPUT
+    - name: Create simple statement with all operator input options
+      cisco.aci.aci_epg_useg_attribute_simple_statement:
+        <<: *aci_ap
+        epg: ansible_test_1
+        name: ansible_test_vm_name
+        type: vm_name
+        operator: "{{ item }}"
+        value: ansible_test_vm_name_value
+      register: nm_operators
+      loop:
+        - contains
+        - equals
+        - starts_with
+        - ends_with
+
+    - name: Assert simple statement with all operator input options
+      ansible.builtin.assert:
+        that:
+          - nm_operators.results | length == 4
+          - nm_operators.results.0.changed == true
+          - nm_operators.results.0.current.0.fvVmAttr.attributes.operator == "contains"
+          - nm_operators.results.1.changed == true
+          - nm_operators.results.1.current.0.fvVmAttr.attributes.operator == "equals"
+          - nm_operators.results.2.changed == true
+          - nm_operators.results.2.current.0.fvVmAttr.attributes.operator == "startsWith"
+          - nm_operators.results.3.changed == true
+          - nm_operators.results.3.current.0.fvVmAttr.attributes.operator == "endsWith"
+
+    # INPUT TESTS FOR TYPES
+    - name: Create simple statement with all type input options
+      cisco.aci.aci_epg_useg_attribute_simple_statement:
+        <<: *aci_ap
+        epg: ansible_test_1
+        name: "{{ item.name }}"
+        type: "{{ item.type }}"
+        operator: "{{ item.operator }}"
+        category: "{{ item.category }}"
+        value: "{{ item.value }}"
+        use_subnet: "{{ item.use_subnet | default(omit) }}"
+      register: nm_types
+      loop:
+        - { name: ansible_test_ip_1, type: ip, operator: "{{ fake_var | default(omit) }}", category: "{{ fake_var | default(omit) }}", use_subnet: "{{ fake_var | default(omit) }}", value: 10.0.0.1 }
+        - { name: ansible_test_ip_2, type: ip, operator: "{{ fake_var | default(omit) }}", category: "{{ fake_var | default(omit) }}", use_subnet: true, value: "{{ fake_var | default(omit) }}" }
+        - { name: ansible_test_mac, type: mac, operator: "{{ fake_var | default(omit) }}", category: "{{ fake_var | default(omit) }}", use_subnet: "{{ fake_var | default(omit) }}", value: "aa:bb:cc:dd:ee:ff" }
+        - { name: ansible_test_dns, type: dns, operator: "{{ fake_var | default(omit) }}", category: "{{ fake_var | default(omit) }}", use_subnet: "{{ fake_var | default(omit) }}", value: "dns_filter" }
+        - { name: ansible_test_ad_group, type: ad_group, operator: "{{ fake_var | default(omit) }}", category: "{{ fake_var | default(omit) }}", use_subnet: "{{ fake_var | default(omit) }}", value: "ad_group_selector" }
+        - { name: ansible_test_vm_custom_attr, type: vm_custom_attr, operator: "contains", category: "custom_attribute", use_subnet: "{{ fake_var | default(omit) }}", value: "custom_attribute_value" }
+        - { name: ansible_test_vm_vmm_domain, type: vm_vmm_domain, operator: "contains", category: "{{ fake_var | default(omit) }}", use_subnet: "{{ fake_var | default(omit) }}", value: "vm_vmm_domain_value" }
+        - { name: ansible_test_vm_operating_system, type: vm_operating_system, operator: "contains", category: "{{ fake_var | default(omit) }}", use_subnet: "{{ fake_var | default(omit) }}", value: "vm_operating_system_value" }
+        - { name: ansible_test_vm_hypervisor_id, type: vm_hypervisor_id, operator: "contains", category: "{{ fake_var | default(omit) }}", use_subnet: "{{ fake_var | default(omit) }}", value: "vm_hypervisor_id_value" }
+        - { name: ansible_test_vm_datacenter, type: vm_datacenter, operator: "contains", category: "{{ fake_var | default(omit) }}", use_subnet: "{{ fake_var | default(omit) }}", value: "vm_datacenter_value" }
+        - { name: ansible_test_vm_id, type: vm_id, operator: "contains", category: "{{ fake_var | default(omit) }}", use_subnet: "{{ fake_var | default(omit) }}", value: "vm_id_value" }
+        - { name: ansible_test_vm_name, type: vm_name, operator: "contains", category: "{{ fake_var | default(omit) }}", use_subnet: "{{ fake_var | default(omit) }}", value: "vm_name_value" }
+        - { name: ansible_test_vm_folder, type: vm_folder, operator: "contains", category: "{{ fake_var | default(omit) }}", use_subnet: "{{ fake_var | default(omit) }}", value: "vm_folder_value" }
+        - { name: ansible_test_vm_folder_path, type: vm_folder_path, operator: "{{ fake_var | default(omit) }}", category: "{{ fake_var | default(omit) }}", use_subnet: "{{ fake_var | default(omit) }}", value: "vm_folder_path_value" }
+        - { name: ansible_test_vm_vnic, type: vm_vnic, operator: "contains", category: "{{ fake_var | default(omit) }}", use_subnet: "{{ fake_var | default(omit) }}", value: "vm_vnic_value" }
+        - { name: ansible_test_vm_tag, type: vm_tag, operator: "equals", category: "vm_attribute", use_subnet: "{{ fake_var | default(omit) }}", value: "vm_attribute_value" }
+      ignore_errors: true # ignore errors is set to handle the ad group configuration which is not configurable in the lab environment, so error message is expected to ensure payload is sent
+
+    - name: Assert create simple statement with all type input options
+      ansible.builtin.assert:
+        that:
+          - nm_types.results | length == 16
+          - nm_types.results.0.changed == true
+          - nm_types.results.0.current.0.fvIpAttr.attributes.name == "ansible_test_ip_1"
+          - nm_types.results.0.current.0.fvIpAttr.attributes.ip == "10.0.0.1"
+          - nm_types.results.0.current.0.fvIpAttr.attributes.usefvSubnet == "no"
+          - nm_types.results.1.changed == true
+          - nm_types.results.1.current.0.fvIpAttr.attributes.name == "ansible_test_ip_2"
+          - nm_types.results.1.current.0.fvIpAttr.attributes.ip == "0.0.0.0"
+          - nm_types.results.1.current.0.fvIpAttr.attributes.usefvSubnet == "yes"
+          - nm_types.results.2.changed == true
+          - nm_types.results.2.current.0.fvMacAttr.attributes.name == "ansible_test_mac"
+          - nm_types.results.2.current.0.fvMacAttr.attributes.mac == "AA:BB:CC:DD:EE:FF"
+          - nm_types.results.3.changed == true
+          - nm_types.results.3.current.0.fvDnsAttr.attributes.name == "ansible_test_dns"
+          - nm_types.results.3.current.0.fvDnsAttr.attributes.filter == "dns_filter"
+          - nm_types.results.4.failed == true
+          - nm_types.results.4.msg == "APIC Error 400{{":"}} Invalid request. Can not contain child 'idgattr-[ad_group_selector]' under parent 'uni/tn-ansible_test/ap-ansible_test/epg-ansible_test_1/crtrn/idgattr-[ansible_test_ad_group]'"
+          - nm_types.results.5.changed == true
+          - nm_types.results.5.current.0.fvVmAttr.attributes.name == "ansible_test_vm_custom_attr"
+          - nm_types.results.5.current.0.fvVmAttr.attributes.labelName == "custom_attribute"
+          - nm_types.results.5.current.0.fvVmAttr.attributes.operator == "contains"
+          - nm_types.results.5.current.0.fvVmAttr.attributes.type == "custom-label"
+          - nm_types.results.5.current.0.fvVmAttr.attributes.value == "custom_attribute_value"
+          - nm_types.results.6.changed == true
+          - nm_types.results.6.current.0.fvVmAttr.attributes.name == "ansible_test_vm_vmm_domain"
+          - nm_types.results.6.current.0.fvVmAttr.attributes.labelName == ""
+          - nm_types.results.6.current.0.fvVmAttr.attributes.operator == "contains"
+          - nm_types.results.6.current.0.fvVmAttr.attributes.type == "domain"
+          - nm_types.results.6.current.0.fvVmAttr.attributes.value == "vm_vmm_domain_value"
+          - nm_types.results.7.changed == true
+          - nm_types.results.7.current.0.fvVmAttr.attributes.name == "ansible_test_vm_operating_system"
+          - nm_types.results.7.current.0.fvVmAttr.attributes.labelName == ""
+          - nm_types.results.7.current.0.fvVmAttr.attributes.operator == "contains"
+          - nm_types.results.7.current.0.fvVmAttr.attributes.type == "guest-os"
+          - nm_types.results.7.current.0.fvVmAttr.attributes.value == "vm_operating_system_value"
+          - nm_types.results.8.changed == true
+          - nm_types.results.8.current.0.fvVmAttr.attributes.name == "ansible_test_vm_hypervisor_id"
+          - nm_types.results.8.current.0.fvVmAttr.attributes.labelName == ""
+          - nm_types.results.8.current.0.fvVmAttr.attributes.operator == "contains"
+          - nm_types.results.8.current.0.fvVmAttr.attributes.type == "hv"
+          - nm_types.results.8.current.0.fvVmAttr.attributes.value == "vm_hypervisor_id_value"
+          - nm_types.results.9.changed == true
+          - nm_types.results.9.current.0.fvVmAttr.attributes.name == "ansible_test_vm_datacenter"
+          - nm_types.results.9.current.0.fvVmAttr.attributes.labelName == ""
+          - nm_types.results.9.current.0.fvVmAttr.attributes.operator == "contains"
+          - nm_types.results.9.current.0.fvVmAttr.attributes.type == "rootContName"
+          - nm_types.results.9.current.0.fvVmAttr.attributes.value == "vm_datacenter_value"
+          - nm_types.results.10.changed == true
+          - nm_types.results.10.current.0.fvVmAttr.attributes.name == "ansible_test_vm_id"
+          - nm_types.results.10.current.0.fvVmAttr.attributes.labelName == ""
+          - nm_types.results.10.current.0.fvVmAttr.attributes.operator == "contains"
+          - nm_types.results.10.current.0.fvVmAttr.attributes.type == "vm"
+          - nm_types.results.10.current.0.fvVmAttr.attributes.value == "vm_id_value"
+          - nm_types.results.11.changed == true
+          - nm_types.results.11.current.0.fvVmAttr.attributes.name == "ansible_test_vm_name"
+          - nm_types.results.11.current.0.fvVmAttr.attributes.labelName == ""
+          - nm_types.results.11.current.0.fvVmAttr.attributes.operator == "contains"
+          - nm_types.results.11.current.0.fvVmAttr.attributes.type == "vm-name"
+          - nm_types.results.11.current.0.fvVmAttr.attributes.value == "vm_name_value"
+          - nm_types.results.12.changed == true
+          - nm_types.results.12.current.0.fvVmAttr.attributes.name == "ansible_test_vm_folder"
+          - nm_types.results.12.current.0.fvVmAttr.attributes.labelName == ""
+          - nm_types.results.12.current.0.fvVmAttr.attributes.operator == "contains"
+          - nm_types.results.12.current.0.fvVmAttr.attributes.type == "vm-folder"
+          - nm_types.results.12.current.0.fvVmAttr.attributes.value == "vm_folder_value"
+          - nm_types.results.13.changed == true
+          - nm_types.results.13.current.0.fvVmAttr.attributes.name == "ansible_test_vm_folder_path"
+          - nm_types.results.13.current.0.fvVmAttr.attributes.labelName == ""
+          - nm_types.results.13.current.0.fvVmAttr.attributes.operator == "equals"
+          - nm_types.results.13.current.0.fvVmAttr.attributes.type == "vmfolder-path"
+          - nm_types.results.13.current.0.fvVmAttr.attributes.value == "vm_folder_path_value"
+          - nm_types.results.14.changed == true
+          - nm_types.results.14.current.0.fvVmAttr.attributes.name == "ansible_test_vm_vnic"
+          - nm_types.results.14.current.0.fvVmAttr.attributes.labelName == ""
+          - nm_types.results.14.current.0.fvVmAttr.attributes.operator == "contains"
+          - nm_types.results.14.current.0.fvVmAttr.attributes.type == "vnic"
+          - nm_types.results.14.current.0.fvVmAttr.attributes.value == "vm_vnic_value"
+          - nm_types.results.15.changed == true
+          - nm_types.results.15.current.0.fvVmAttr.attributes.name == "ansible_test_vm_tag"
+          - nm_types.results.15.current.0.fvVmAttr.attributes.labelName == ""
+          - nm_types.results.15.current.0.fvVmAttr.attributes.operator == "equals"
+          - nm_types.results.15.current.0.fvVmAttr.attributes.type == "tag"
+          - nm_types.results.15.current.0.fvVmAttr.attributes.value == "vm_attribute_value"
+
+    # ERROR TESTS
+    - name: Create simple statement with too many parents (error)
+      cisco.aci.aci_epg_useg_attribute_simple_statement:
+        <<: *aci_ap
+        epg: ansible_test_1
+        parent_block_statements:
+        - block_a
+        - block_b
+        - block_c
+        - block_d
+        name: ansible_test_vm_name
+        type: vm_name
+        operator: contains
+        value: ansible_test_vm_name_value
+      register: err_too_many_blocks
+      ignore_errors: true
+    
+    - name: Assert create block statement in default block
+      ansible.builtin.assert:
+        that:
+          - err_too_many_blocks is failed
+          - err_too_many_blocks.msg == "4 block statements are provided but the maximum amount of parent_block_statements is 3"
+
+    # CLEAN TEST ENVIRONMENT
+    - name: Remove tenant
+      cisco.aci.aci_tenant:
+        <<: *aci_tenant_absent

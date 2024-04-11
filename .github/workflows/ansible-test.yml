@@ -77,8 +77,8 @@ jobs:
     - name: Install the collection tarball
       run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
 
-    - name: Install galaxy-importer
-      run: pip install galaxy-importer
+    - name: Install galaxy-importer (v0.4.20)
+      run: pip install galaxy-importer==0.4.20
 
     - name: Create galaxy-importer directory
       run: sudo mkdir -p /etc/galaxy-importer

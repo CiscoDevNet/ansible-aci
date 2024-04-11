@@ -12,9 +12,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_extsubnet
-short_description: Manage External Subnet objects (l3extSubnet:extsubnet)
+short_description: Manage External Subnet objects (l3ext:Subnet)
 description:
-- Manage External Subnet objects (l3extSubnet:extsubnet)
+- Manage External Subnet objects.
 options:
   tenant:
     description:
@@ -99,7 +99,7 @@ seealso:
 - module: cisco.aci.aci_domain
 - module: cisco.aci.aci_vrf
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(l3ext:Out).
+  description: More information about the internal APIC class B(l3ext:Subnet).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Rostyslav Davydenko (@rost-d)

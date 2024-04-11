@@ -16,6 +16,7 @@
 # Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # Copyright: (c) 2023, Shreyas Srish (@shrsr) <ssrish@cisco.com>
 # Copyright: (c) 2023, Tim Cragg (@timcragg) <tcragg@cisco.com>
+# Copyright: (c) 2024, Samita Bhattacharjee (@samiib) <samitab@cisco.com>
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without modification,
@@ -135,6 +136,7 @@ def aci_argument_spec():
         use_ssl=dict(type="bool", fallback=(env_fallback, ["ACI_USE_SSL"])),
         validate_certs=dict(type="bool", fallback=(env_fallback, ["ACI_VALIDATE_CERTS"])),
         output_path=dict(type="str", fallback=(env_fallback, ["ACI_OUTPUT_PATH"])),
+        suppress_verification=dict(type="bool", aliases=["no_verification", "no_verify", "suppress_verify"], fallback=(env_fallback, ["ACI_NO_VERIFICATION"])),
     )
 
 
@@ -337,6 +339,48 @@ def action_rule_set_dampening_spec():
     )
 
 
+def associated_netflow_exporter_epg_spec():
+    return dict(
+        tenant=dict(type="str"),
+        ap=dict(type="str"),
+        epg=dict(type="str"),
+    )
+
+
+def associated_netflow_exporter_extepg_spec():
+    return dict(
+        tenant=dict(type="str"),
+        l3out=dict(type="str"),
+        extepg=dict(type="str"),
+    )
+
+
+def associated_netflow_exporter_vrf_spec():
+    return dict(
+        tenant=dict(type="str"),
+        vrf=dict(type="str"),
+    )
+
+
+def pim_interface_profile_spec():
+    return dict(
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        pim=dict(type="str", aliases=["pim_interface_policy", "name"]),
+    )
+
+
+def igmp_interface_profile_spec():
+    return dict(tenant=dict(type="str", aliases=["tenant_name"]), igmp=dict(type="str", aliases=["igmp_interface_policy", "name"]))
+
+
+def storm_control_policy_rate_spec():
+    return dict(
+        rate=dict(type="str"),
+        burst_rate=dict(type="str"),
+        rate_type=dict(type="str", choices=["percentage", "pps"], required=True),
+    )
+
+
 class ACIModule(object):
     def __init__(self, module):
         self.module = module
@@ -372,6 +416,9 @@ class ACIModule(object):
         # aci_rest output
         self.imdata = None
         self.totalCount = None
+
+        # get no verify flag
+        self.suppress_verification = self.params.get("suppress_verification")
 
         # Ensure protocol is set
         self.define_protocol()
@@ -1264,7 +1311,7 @@ class ACIModule(object):
             self.result["changed"] = True
             self.method = "DELETE"
 
-    def get_diff(self, aci_class):
+    def get_diff(self, aci_class, required_properties=None):
         """
         This method is used to get the difference between the proposed and existing configurations. Each module
         should call the get_existing method before this method, and add the proposed config to the module results
@@ -1286,6 +1333,8 @@ class ACIModule(object):
             # add name back to config only if the configs do not match
             if config:
                 # TODO: If URLs are built with the object's name, then we should be able to leave off adding the name back
+                if required_properties and isinstance(required_properties, dict):
+                    config.update(required_properties)
                 config = {aci_class: {"attributes": config}}
 
             # check for updates to child configs and update new config dictionary
@@ -1548,7 +1597,15 @@ class ACIModule(object):
         if "state" in self.params:
             self.original = self.existing
             if self.params.get("state") in ("absent", "present"):
-                self.get_existing()
+                if self.suppress_verification:
+                    if self.result["changed"]:
+                        self.result["current_verified"] = False
+                        self.existing = [self.proposed]
+                    else:
+                        self.result["current_verified"] = True
+                        # exisiting already equals the previous
+                else:
+                    self.get_existing()
 
             # if self.module._diff and self.original != self.existing:
             #     self.result['diff'] = dict(

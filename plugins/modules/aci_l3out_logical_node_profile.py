@@ -69,7 +69,7 @@ extends_documentation_fragment:
 seealso:
 - module: aci_l3out
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(vmm:DomP)
+  description: More information about the internal APIC classes B(l3ext:LNodeP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jason Juenger (@jasonjuenger)

@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_fabric_spine_switch_assoc
-short_description: Manage spine switch bindings to profiles and policy groups (fabric:SpineS and fabric:RsSpNodePGrp).
+short_description: Manage spine switch bindings to profiles and policy groups (fabric:SpineS and fabric:RsSpNodePGrp)
 description:
 - Manage fabric spine switch associations (fabric:SpineS) to an existing fabric
   spine profile (fabric:SpineP) in an ACI fabric, and bind them to a

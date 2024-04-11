@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_encap_pool_range
-short_description: Manage encap ranges assigned to pools (fvns:EncapBlk, fvns:VsanEncapBlk)
+short_description: Manage encap ranges assigned to pools (fvns:EncapBlk and fvns:VsanEncapBlk)
 description:
 - Manage vlan, vxlan, and vsan ranges that are assigned to pools on Cisco ACI fabrics.
 options:

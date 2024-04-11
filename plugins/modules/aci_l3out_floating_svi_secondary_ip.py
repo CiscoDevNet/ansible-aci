@@ -17,7 +17,7 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_floating_svi_secondary_ip
-short_description: Manages Layer 3 Outside (L3Out) Floating SVI Secondary IP addresses(l3ext:Ip)
+short_description: Manages Layer 3 Outside (L3Out) Floating SVI Secondary IP addresses (l3ext:Ip)
 description:
 - Manages L3Out Floating SVI secondary IP addresses on Cisco ACI fabrics.
 options:

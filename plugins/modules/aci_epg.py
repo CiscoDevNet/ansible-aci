@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2023, Christian Kolrep <christian.kolrep@dataport.de>
+# Copyright: (c) 2024, Akini Ross <akinross@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -78,6 +80,17 @@ options:
     - Use C(yes) to create uSeg EPG and C(no) is used to create Application EPG.
     type: str
     choices: [ 'yes', 'no' ]
+  match:
+    description:
+    - The match type of the default Block Statement (fv:Crtrn).
+    - The APIC defaults to C(any) when unset during creation.
+    type: str
+    choices: [ any, all ]
+  precedence:
+    description:
+    - The Block Statement(fv:Crtrn) Precedence to resolve equal matches between micro segmented EPGs.
+    - The APIC defaults to C(0) when unset during creation.
+    type: int
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -105,6 +118,8 @@ seealso:
 author:
 - Swetha Chunduri (@schunduri)
 - Shreyas Srish (@shrsr)
+- Christian Kolrep (@Christian-Kolrep)
+- Akini Ross (@akinross)
 """
 
 EXAMPLES = r"""
@@ -123,25 +138,6 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- aci_epg:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: production
-    ap: ticketing
-    epg: "{{ item.epg }}"
-    description: Ticketing EPG
-    bd: "{{ item.bd }}"
-    priority: unspecified
-    intra_epg_isolation: unenforced
-    state: present
-  delegate_to: localhost
-  with_items:
-    - epg: web
-      bd: web_bd
-    - epg: database
-      bd: database_bd
-
 - name: Add a new uSeg EPG
   cisco.aci.aci_epg:
     host: apic
@@ -158,17 +154,22 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Remove an EPG
+- name: Add a uSeg EPG with block statement match and precedence
   cisco.aci.aci_epg:
     host: apic
     username: admin
     password: SomeSecretPassword
-    validate_certs: false
     tenant: production
-    app_profile: intranet
+    ap: intranet
     epg: web_epg
+    description: Web Intranet EPG
+    bd: prod_bd
     monitoring_policy: default
-    state: absent
+    preferred_group: true
+    useg: 'yes'
+    match: all
+    precedence: 1
+    state: present
   delegate_to: localhost
 
 - name: Query an EPG
@@ -213,6 +214,19 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Remove an EPG
+  cisco.aci.aci_epg:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    validate_certs: false
+    tenant: production
+    app_profile: intranet
+    epg: web_epg
+    monitoring_policy: default
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
@@ -342,6 +356,8 @@ def main():
         monitoring_policy=dict(type="str"),
         custom_qos_policy=dict(type="str"),
         useg=dict(type="str", choices=["yes", "no"]),
+        match=dict(type="str", choices=["all", "any"]),
+        precedence=dict(type="int"),
     )
 
     module = AnsibleModule(
@@ -369,6 +385,8 @@ def main():
     monitoring_policy = module.params.get("monitoring_policy")
     custom_qos_policy = module.params.get("custom_qos_policy")
     useg = module.params.get("useg")
+    match = module.params.get("match")
+    precedence = module.params.get("precedence")
 
     child_configs = [dict(fvRsBd=dict(attributes=dict(tnFvBDName=bd))), dict(fvRsAEPgMonPol=dict(attributes=dict(tnMonEPGPolName=monitoring_policy)))]
 
@@ -394,12 +412,17 @@ def main():
             module_object=epg,
             target_filter={"name": epg},
         ),
-        child_classes=["fvRsBd", "fvRsAEPgMonPol", "fvRsCustQosPol"],
+        child_classes=["fvRsBd", "fvRsAEPgMonPol", "fvRsCustQosPol", "fvCrtrn"],
     )
 
     aci.get_existing()
 
     if state == "present":
+        if useg is not None and aci.existing and aci.existing[0]["fvAEPg"]["attributes"]["isAttrBasedEPg"] != useg:
+            module.fail_json(msg="Changing attribute useg on existing EPG is not supported.")
+        if useg == "yes":
+            child_configs.append(dict(fvCrtrn=dict(attributes=dict(name="default", match=match, prec=precedence))))
+
         aci.payload(
             aci_class="fvAEPg",
             class_config=dict(

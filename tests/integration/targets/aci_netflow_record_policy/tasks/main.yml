@@ -1,0 +1,194 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT BEFORE TESTS
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
+
+  # CREATE NETFLOW RECORD POLICY
+  - name: Add a Netflow Record policy (check_mode)
+    cisco.aci.aci_netflow_record_policy: &aci_netflow_record_policy_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      netflow_record_policy: ansible_netflow_record_policy_1
+      description: Netflow Record policy 1 for ansible_tenant tenant
+      collect: [sampler_id, bytes_counter]
+      match: [destination_ipv4_v6, source_ipv4_v6]
+      state: present
+    check_mode: true
+    register: cm_add_netflow_record_policy
+
+  - name: Add a Netflow Record policy (normal_mode)
+    cisco.aci.aci_netflow_record_policy:
+      <<: *aci_netflow_record_policy_present
+    register: nm_add_netflow_record_policy
+
+  - name: Add the first Netflow Record policy again - testing idempotency
+    cisco.aci.aci_netflow_record_policy:
+      <<: *aci_netflow_record_policy_present
+    register: nm_add_netflow_record_policy_idempotency
+
+  - name: Add a second Netflow Record policy (normal_mode)
+    cisco.aci.aci_netflow_record_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      netflow_record_policy: ansible_netflow_record_policy_2
+      description: Netflow Record policy 2 for ansible_tenant tenant
+      state: present
+    register: nm_add_netflow_record_policy_2
+
+  - name: Asserts for Netflow Record policy creation tasks
+    ansible.builtin.assert:
+      that:
+        - cm_add_netflow_record_policy is changed
+        - cm_add_netflow_record_policy.previous == []
+        - cm_add_netflow_record_policy.current == []
+        - cm_add_netflow_record_policy.proposed.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
+        - cm_add_netflow_record_policy.proposed.netflowRecordPol.attributes.collect == "count-bytes,sampler-id"
+        - cm_add_netflow_record_policy.proposed.netflowRecordPol.attributes.match == "dst-ip,src-ip"
+        - nm_add_netflow_record_policy is changed
+        - nm_add_netflow_record_policy.previous == []
+        - nm_add_netflow_record_policy.current.0.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
+        - nm_add_netflow_record_policy.current.0.netflowRecordPol.attributes.collect == "count-bytes,sampler-id"
+        - nm_add_netflow_record_policy.current.0.netflowRecordPol.attributes.match == "dst-ip,src-ip"
+        - nm_add_netflow_record_policy_idempotency is not changed
+        - nm_add_netflow_record_policy_idempotency.current.0.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
+        - nm_add_netflow_record_policy_idempotency.current.0.netflowRecordPol.attributes.collect == "count-bytes,sampler-id"
+        - nm_add_netflow_record_policy_idempotency.current.0.netflowRecordPol.attributes.match == "dst-ip,src-ip"
+        - nm_add_netflow_record_policy_2 is changed
+        - nm_add_netflow_record_policy_2.previous == []
+        - nm_add_netflow_record_policy_2.current.0.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_2"
+        - nm_add_netflow_record_policy_2.current.0.netflowRecordPol.attributes.collect == "src-intf"
+        - nm_add_netflow_record_policy_2.current.0.netflowRecordPol.attributes.match == ""
+
+  # QUERY NETFLOW RECORD POLICY
+  - name: Query all Netflow Record policies
+    cisco.aci.aci_netflow_record_policy:
+      <<: *aci_info
+      state: query
+    register: query_all_netflow_record_policy
+
+  - name: Query ansible_netflow_record_policy_1
+    cisco.aci.aci_netflow_record_policy:
+      <<: *aci_netflow_record_policy_present
+      state: query
+    register: query_ansible_netflow_record_policy_1
+
+  - name: Asserts query tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_netflow_record_policy is not changed
+        - query_all_netflow_record_policy.current|length >= 2
+        - query_ansible_netflow_record_policy_1 is not changed
+        - query_ansible_netflow_record_policy_1.current|length == 1
+        - query_ansible_netflow_record_policy_1.current.0.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
+        - query_ansible_netflow_record_policy_1.current.0.netflowRecordPol.attributes.collect == "count-bytes,sampler-id"
+        - query_ansible_netflow_record_policy_1.current.0.netflowRecordPol.attributes.match == "dst-ip,src-ip"
+
+  #UPDATE NETFLOW RECORD POLICY
+  - name: Update first Netflow Record policy (check_mode)
+    cisco.aci.aci_netflow_record_policy: &aci_netflow_record_policy_update
+      <<: *aci_netflow_record_policy_present
+      collect: [pkts_counter, pkt_disposition]
+      match: [destination_ipv4, source_ipv4]
+      state: present
+    check_mode: true
+    register: cm_update_netflow_record_policy
+
+  - name: Update first Netflow Record policy (normal_mode)
+    cisco.aci.aci_netflow_record_policy:
+      <<: *aci_netflow_record_policy_update
+    register: nm_update_netflow_record_policy
+
+  - name: Update first Netflow Record policy again - testing idempotency
+    cisco.aci.aci_netflow_record_policy:
+      <<: *aci_netflow_record_policy_update
+    register: nm_udpate_netflow_record_policy_idempotency
+
+  - name: Asserts for Netflow Record policy update tasks
+    ansible.builtin.assert:
+      that:
+        - cm_update_netflow_record_policy is changed
+        - cm_update_netflow_record_policy.previous == cm_update_netflow_record_policy.current
+        - cm_update_netflow_record_policy.proposed.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
+        - cm_update_netflow_record_policy.proposed.netflowRecordPol.attributes.collect == "count-pkts,pkt-disp"
+        - cm_update_netflow_record_policy.proposed.netflowRecordPol.attributes.match == "dst-ipv4,src-ipv4"
+        - nm_update_netflow_record_policy is changed
+        - nm_update_netflow_record_policy.current.0.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
+        - nm_update_netflow_record_policy.current.0.netflowRecordPol.attributes.collect == "count-pkts,pkt-disp"
+        - nm_update_netflow_record_policy.current.0.netflowRecordPol.attributes.match == "dst-ipv4,src-ipv4"
+        - nm_udpate_netflow_record_policy_idempotency is not changed
+        - nm_udpate_netflow_record_policy_idempotency.current.0.netflowRecordPol.attributes.name == "ansible_netflow_record_policy_1"
+        - nm_udpate_netflow_record_policy_idempotency.current.0.netflowRecordPol.attributes.collect == "count-pkts,pkt-disp"
+        - nm_udpate_netflow_record_policy_idempotency.current.0.netflowRecordPol.attributes.match == "dst-ipv4,src-ipv4"
+
+  # DELETE NETFLOW RECORD POLICY
+  - name: Remove Netflow Record policy (check_mode)
+    cisco.aci.aci_netflow_record_policy: &netflow_record_policy_absent
+      <<: *aci_netflow_record_policy_update
+      state: absent
+    check_mode: true
+    register: cm_remove_netflow_record_policy
+
+  - name: Remove Netflow Record policy (normal_mode)
+    cisco.aci.aci_netflow_record_policy:
+      <<: *netflow_record_policy_absent
+    register: nm_remove_netflow_record_policy
+
+  - name: Remove Netflow Record policy - testing idempotency
+    cisco.aci.aci_netflow_record_policy:
+      <<: *netflow_record_policy_absent
+    register: nm_remove_netflow_record_policy_idempotency
+
+  - name: Asserts deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_remove_netflow_record_policy is changed
+        - cm_remove_netflow_record_policy.current == cm_remove_netflow_record_policy.previous
+        - cm_remove_netflow_record_policy.proposed == {}
+        - nm_remove_netflow_record_policy is changed
+        - nm_remove_netflow_record_policy.previous != []
+        - nm_remove_netflow_record_policy.current == []
+        - nm_remove_netflow_record_policy_idempotency is not changed
+        - nm_remove_netflow_record_policy_idempotency.previous == []
+        - nm_remove_netflow_record_policy_idempotency.current == []
+
+  # CLEAN ENVIRONMENT BEFORE ENDING TESTS
+  - name: Remove the ansible_tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent

@@ -13,9 +13,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_bfd
-short_description: Manage BFD Interface policies
+short_description: Manage BFD Interface policies (bfd:IfPol)
 description:
-- Manage BFD Interface policy (bfd:IfPol) configuration on Cisco ACI fabrics
+- Manage BFD Interface policy configuration on Cisco ACI fabrics
 - Only available in APIC version 5.2 or later
 options:
   tenant:

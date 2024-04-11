@@ -15,9 +15,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l2out_extepg
-short_description: Manage External Network Instance (L2Out External EPG) objects (l2extInstP).
+short_description: Manage External Network Instance (L2Out External EPG) objects (l2ext:InstP).
 description:
-- Manage External Network Instance (L2Out External EPG) objects (l2extInstP) on ACI fabrics.
+- Manage External Network Instance (L2Out External EPG) objects on ACI fabrics.
 options:
   tenant:
     description:
@@ -63,7 +63,7 @@ notes:
   The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l2out) modules can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(fvtenant) and B(l2extOut).
+  description: More information about the internal APIC class B(l2ext:InstP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Sudhakar Shet Kudtarkar (@kudtarkar1)

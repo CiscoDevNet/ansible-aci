@@ -235,7 +235,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-from ansible_collections.cisco.aci.plugins.module_utils.constants import TLS_MAPPING
+from ansible_collections.cisco.aci.plugins.module_utils.constants import OPFLEX_TLS_MAPPING
 
 
 def main():
@@ -251,7 +251,7 @@ def main():
         leaf_opflex_client_auth=dict(type="bool"),
         spine_ssl_opflex=dict(type="bool"),
         leaf_ssl_opflex=dict(type="bool"),
-        opflex_ssl_versions=dict(type="list", choices=list(TLS_MAPPING.keys()), elements="str"),
+        opflex_ssl_versions=dict(type="list", choices=list(OPFLEX_TLS_MAPPING.keys()), elements="str"),
         reallocate_gipo=dict(type="bool"),
         restrict_infra_vlan_traffic=dict(type="bool"),
         state=dict(type="str", default="present", choices=["present", "query"]),
@@ -300,7 +300,7 @@ def main():
             restrictInfraVLANTraffic=restrict_infra_vlan_traffic,
         )
         if opflex_ssl_versions is not None:
-            class_config["opflexpSslProtocols"] = ",".join([TLS_MAPPING.get(tls) for tls in sorted(opflex_ssl_versions)])
+            class_config["opflexpSslProtocols"] = ",".join([OPFLEX_TLS_MAPPING.get(tls) for tls in sorted(opflex_ssl_versions)])
 
         aci.payload(
             aci_class="infraSetPol",

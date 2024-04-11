@@ -13,7 +13,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: aci_static_node_mgmt_address
-short_description: In band or Out of band management IP address
+short_description: In band or Out of band management IP address (mgmt:RsOoBStNode and mgmt:RsInBStNode)
 description:
 - Cisco ACI Fabric Node IP address
 options:
@@ -65,6 +65,10 @@ extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
+seealso:
+- name: APIC Management Information Model reference
+  description: More information about the internal APIC classes B(mgmt:RsOoBStNode) and B(mgmt:RsInBStNode).
+  link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Sudhakar Shet Kudtarkar (@kudtarkar1)
 - Lionel Hercot (@lhercot)

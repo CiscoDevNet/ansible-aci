@@ -3,6 +3,7 @@
 
 # Copyright: (c) 2017, Ramses Smeyers <rsmeyers@cisco.com>
 # Copyright: (c) 2023, Shreyas Srish <ssrish@cisco.com>
+# Copyright: (c) 2024, Akini Ross <akinross@cisco.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -58,6 +59,26 @@ EXAMPLES = r"""
           vrf: vrf_test
         vrf:
         - name: vrf_test
+        policies:
+          protocol:
+            bfd:
+            - name: BFD-ON
+              description: Enable BFD
+              admin_state: enabled
+              detection_multiplier: 3
+              min_tx_interval: 50
+              min_rx_interval: 50
+              echo_rx_interval: 50
+              echo_admin_state: enabled
+              sub_interface_optimization_state: enabled
+            ospf:
+              interface:
+              - name: OSPF-P2P-IntPol
+                network_type: p2p
+                priority: 1
+              - name: OSPF-Broadcast-IntPol
+                network_type: bcast
+                priority: 1
 
 - name: Create tenants
   cisco.aci.aci_tenant:
@@ -259,6 +280,10 @@ def listify_worker(d, keys, depth, cache, prefix):
                         if k == keys[depth + 1] and isinstance(v, (dict, list)):
                             for result in listify_worker({k: v}, keys, depth + 1, cache_work, prefix):
                                 yield result
+            # Conditional to support nested dictionaries which are detected by item is string
+            elif isinstance(item, str) and isinstance(d[keys[depth]], dict):
+                for result in listify_worker({item: d[keys[depth]][item]}, keys, depth + 1, cache_work, prefix):
+                    yield result
 
 
 class FilterModule(object):

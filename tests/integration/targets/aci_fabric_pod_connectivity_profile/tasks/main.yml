@@ -1,0 +1,225 @@
+# Test code for the ACI modules
+# Copyright: (c) 2024, Samita Bhattacharjee (@samitab)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
+      output_level: "{{ aci_output_level | default('info') }}"
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []
+  block:
+
+  # CLEAN ENVIRONMENT
+  - name: Ensure fabric external connection profile is absent before testing
+    cisco.aci.aci_fabric_external_connection_profile: &delete_fabric_external_connection_profile
+      <<: *aci_info
+      fabric_id: "1"
+      name: "ansible_fabric_ext_conn_profile"
+      community: "extended:as2-nn4:5:16"
+      state: absent
+
+  - name: Ensure fabric pod connectivity profile is absent before testing
+    cisco.aci.aci_fabric_pod_connectivity_profile: &delete_fabric_pod_connectivity_profile
+      <<: *aci_info
+      fabric_id: 1
+      pod_id: 1
+      state: absent
+
+  - name: Create fabric external connection profile
+    cisco.aci.aci_fabric_external_connection_profile:
+      <<: *delete_fabric_external_connection_profile
+      state: present
+
+  # CREATE FABRIC POD CONNECTIVITY PROFILE
+  - name: Create fabric pod connectivity profile with check mode
+    cisco.aci.aci_fabric_pod_connectivity_profile: &create_fabric_pod_connectivity_profile
+      <<: *aci_info
+      fabric_id: "1"
+      description: "Fabric Pod Connectivity Profile"
+      pod_id: "1"
+      unicast_tep: "10.1.1.2/32"
+      data_plane_tep: "10.1.1.1/32"
+      state: present
+    check_mode: true
+    register: add_fabric_pod_connectivity_profile_cm
+
+  - name: Create fabric pod connectivity profile
+    cisco.aci.aci_fabric_pod_connectivity_profile:
+      <<: *create_fabric_pod_connectivity_profile
+      state: present
+    register: add_fabric_pod_connectivity_profile
+
+  # CREATE FABRIC POD CONNECTIVITY PROFILE AGAIN TO TEST IDEMPOTENCE
+  - name: Create fabric pod connectivity profile again
+    cisco.aci.aci_fabric_pod_connectivity_profile:
+      <<: *create_fabric_pod_connectivity_profile
+      state: present
+    register: add_fabric_pod_connectivity_profile_again
+
+  - name: Verify creation
+    ansible.builtin.assert:
+      that:
+      - add_fabric_pod_connectivity_profile is changed
+      - add_fabric_pod_connectivity_profile.previous == []
+      - add_fabric_pod_connectivity_profile.current.0.fvPodConnP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/podConnP-1"
+      - add_fabric_pod_connectivity_profile.current.0.fvPodConnP.attributes.descr == "Fabric Pod Connectivity Profile"
+      - add_fabric_pod_connectivity_profile.current.0.fvPodConnP.attributes.annotation == 'orchestrator:ansible'
+      - add_fabric_pod_connectivity_profile.current.0.fvPodConnP.attributes.id == "1"
+      - add_fabric_pod_connectivity_profile.current.0.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.2/32"
+      - add_fabric_pod_connectivity_profile.current.0.fvPodConnP.children.1.fvIp.attributes.addr == "10.1.1.1/32"
+      - add_fabric_pod_connectivity_profile_cm is changed
+      - add_fabric_pod_connectivity_profile_cm.previous == []
+      - add_fabric_pod_connectivity_profile_cm.current == []
+      - add_fabric_pod_connectivity_profile_cm.proposed.fvPodConnP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/podConnP-1"
+      - add_fabric_pod_connectivity_profile_cm.proposed.fvPodConnP.attributes.descr == "Fabric Pod Connectivity Profile"
+      - add_fabric_pod_connectivity_profile_cm.proposed.fvPodConnP.attributes.annotation == 'orchestrator:ansible'
+      - add_fabric_pod_connectivity_profile_cm.proposed.fvPodConnP.attributes.id == "1"
+      - add_fabric_pod_connectivity_profile_cm.proposed.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.2/32"
+      - add_fabric_pod_connectivity_profile_cm.proposed.fvPodConnP.children.1.fvIp.attributes.addr == "10.1.1.1/32"
+      - add_fabric_pod_connectivity_profile_again is not changed
+      - add_fabric_pod_connectivity_profile_again.current == add_fabric_pod_connectivity_profile_again.previous
+      - add_fabric_pod_connectivity_profile_again.current.0.fvPodConnP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/podConnP-1"
+      - add_fabric_pod_connectivity_profile_again.current.0.fvPodConnP.attributes.descr  == "Fabric Pod Connectivity Profile"
+      - add_fabric_pod_connectivity_profile_again.current.0.fvPodConnP.attributes.annotation == 'orchestrator:ansible'
+      - add_fabric_pod_connectivity_profile_again.current.0.fvPodConnP.attributes.id == "1"
+      - add_fabric_pod_connectivity_profile_again.current.0.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.2/32"
+      - add_fabric_pod_connectivity_profile_again.current.0.fvPodConnP.children.1.fvIp.attributes.addr == "10.1.1.1/32"
+      - add_fabric_pod_connectivity_profile_again.previous.0.fvPodConnP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/podConnP-1"
+      - add_fabric_pod_connectivity_profile_again.previous.0.fvPodConnP.attributes.descr  == "Fabric Pod Connectivity Profile"
+      - add_fabric_pod_connectivity_profile_again.previous.0.fvPodConnP.attributes.id == "1"
+      - add_fabric_pod_connectivity_profile_again.previous.0.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.2/32"
+      - add_fabric_pod_connectivity_profile_again.previous.0.fvPodConnP.children.1.fvIp.attributes.addr == "10.1.1.1/32"
+      
+  # QUERY FABRIC POD CONNECTIVITY PROFILE
+  - name: Query fabric pod connectivity profile
+    cisco.aci.aci_fabric_pod_connectivity_profile:
+      <<: *aci_info
+      fabric_id: 1
+      pod_id: 1
+      state: query
+    register: query_fabric_pod_connectivity_profile
+
+  # QUERY ALL FABRIC POD CONNECTIVITY PROFILE
+  - name: Query all fabric pod connectivity profile
+    cisco.aci.aci_fabric_pod_connectivity_profile:
+      <<: *aci_info
+      state: query
+    register: query_fabric_pod_connectivity_profile_all
+
+  - name: Verify query
+    ansible.builtin.assert:
+      that:
+      - query_fabric_pod_connectivity_profile is not changed
+      - query_fabric_pod_connectivity_profile.current.0.fvPodConnP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/podConnP-1"
+      - query_fabric_pod_connectivity_profile.current.0.fvPodConnP.attributes.descr == "Fabric Pod Connectivity Profile"
+      - query_fabric_pod_connectivity_profile.current.0.fvPodConnP.attributes.id == "1"
+      - query_fabric_pod_connectivity_profile.current.0.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.2/32"
+      - query_fabric_pod_connectivity_profile.current.0.fvPodConnP.children.1.fvIp.attributes.addr == "10.1.1.1/32"
+      - query_fabric_pod_connectivity_profile_all is not changed
+      - query_fabric_pod_connectivity_profile_all.current | length == 1
+      - query_fabric_pod_connectivity_profile_all.current.0.fvPodConnP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/podConnP-1"
+      - query_fabric_pod_connectivity_profile_all.current.0.fvPodConnP.attributes.descr == "Fabric Pod Connectivity Profile"
+      - query_fabric_pod_connectivity_profile_all.current.0.fvPodConnP.attributes.id == "1"
+      - query_fabric_pod_connectivity_profile_all.current.0.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.2/32"
+      - query_fabric_pod_connectivity_profile_all.current.0.fvPodConnP.children.1.fvIp.attributes.addr == "10.1.1.1/32"
+      
+  - name: Update fabric pod connectivity profile
+    cisco.aci.aci_fabric_pod_connectivity_profile:
+      <<: *create_fabric_pod_connectivity_profile
+      unicast_tep: "10.1.1.3/32"
+      data_plane_tep: "10.1.1.4/32"
+      state: present
+    register: update_fabric_pod_connectivity_profile
+
+  - name: Update fabric pod connectivity profile - remove unicast and data plane tep
+    cisco.aci.aci_fabric_pod_connectivity_profile:
+      <<: *create_fabric_pod_connectivity_profile
+      unicast_tep: null
+      data_plane_tep: null
+      state: present
+    register: update_fabric_pod_connectivity_profile_2
+
+  - name: Verify updates
+    ansible.builtin.assert:
+      that:
+      - update_fabric_pod_connectivity_profile is changed
+      - update_fabric_pod_connectivity_profile.proposed.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.2/32"
+      - update_fabric_pod_connectivity_profile.proposed.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.status == "deleted"
+      - update_fabric_pod_connectivity_profile.proposed.fvPodConnP.children.1.fvIp.attributes.addr == "10.1.1.1/32"
+      - update_fabric_pod_connectivity_profile.proposed.fvPodConnP.children.1.fvIp.attributes.status == "deleted"
+      - update_fabric_pod_connectivity_profile.proposed.fvPodConnP.children.2.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.3/32"
+      - update_fabric_pod_connectivity_profile.proposed.fvPodConnP.children.3.fvIp.attributes.addr == "10.1.1.4/32"
+      - update_fabric_pod_connectivity_profile.current.0.fvPodConnP.children | length == 2
+      - update_fabric_pod_connectivity_profile.current.0.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.3/32"
+      - update_fabric_pod_connectivity_profile.current.0.fvPodConnP.children.1.fvIp.attributes.addr == "10.1.1.4/32"
+      - update_fabric_pod_connectivity_profile_2 is changed
+      - update_fabric_pod_connectivity_profile_2.proposed.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.addr == "10.1.1.3/32"
+      - update_fabric_pod_connectivity_profile_2.proposed.fvPodConnP.children.0.fvExtRoutableUcastConnP.attributes.status == "deleted"
+      - update_fabric_pod_connectivity_profile_2.proposed.fvPodConnP.children.1.fvIp.attributes.addr == "10.1.1.4/32"
+      - update_fabric_pod_connectivity_profile_2.proposed.fvPodConnP.children.1.fvIp.attributes.status == "deleted"
+      - update_fabric_pod_connectivity_profile_2.current.0.fvPodConnP.children is undefined
+  
+  # DELETE FABRIC POD CONNECTIVITY PROFILE
+  - name: Delete fabric pod connectivity profile with check mode
+    cisco.aci.aci_fabric_pod_connectivity_profile:
+      <<: *delete_fabric_pod_connectivity_profile
+    check_mode: true
+    register: delete_fabric_pod_connectivity_profile_cm
+
+  - name: Delete fabric pod connectivity profile
+    cisco.aci.aci_fabric_pod_connectivity_profile:
+      <<: *delete_fabric_pod_connectivity_profile
+    register: delete_fabric_pod_connectivity_profile
+
+  # DELETE FABRIC POD CONNECTIVITY PROFILE AGAIN TO TEST IDEMPOTENCE
+  - name: Delete fabric pod connectivity profile again
+    cisco.aci.aci_fabric_pod_connectivity_profile:
+      <<: *delete_fabric_pod_connectivity_profile
+    register: delete_fabric_pod_connectivity_profile_again
+
+  - name: Verify deletion
+    ansible.builtin.assert:
+      that:
+      - delete_fabric_pod_connectivity_profile is changed
+      - delete_fabric_pod_connectivity_profile.current == []
+      - delete_fabric_pod_connectivity_profile.previous.0.fvPodConnP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/podConnP-1"
+      - delete_fabric_pod_connectivity_profile.previous.0.fvPodConnP.attributes.descr == "Fabric Pod Connectivity Profile"
+      - delete_fabric_pod_connectivity_profile.previous.0.fvPodConnP.attributes.id == "1"
+      - delete_fabric_pod_connectivity_profile_cm is changed
+      - delete_fabric_pod_connectivity_profile_cm.proposed == {}
+      - delete_fabric_pod_connectivity_profile_cm.current != []
+      - delete_fabric_pod_connectivity_profile_cm.previous.0.fvPodConnP.attributes.dn == "uni/tn-infra/fabricExtConnP-1/podConnP-1"
+      - delete_fabric_pod_connectivity_profile_cm.previous.0.fvPodConnP.attributes.descr == "Fabric Pod Connectivity Profile"
+      - delete_fabric_pod_connectivity_profile_cm.previous.0.fvPodConnP.attributes.id == "1"
+      - delete_fabric_pod_connectivity_profile_again is not changed
+      - delete_fabric_pod_connectivity_profile_again.current == []
+      - delete_fabric_pod_connectivity_profile_again.previous == []
+  
+  - name: Clean up fabric external connection profile
+    cisco.aci.aci_fabric_external_connection_profile:
+      <<: *delete_fabric_external_connection_profile

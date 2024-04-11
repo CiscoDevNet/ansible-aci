@@ -4,6 +4,7 @@
 # Copyright: (c) 2018, Simon Metzger <smnmtzgr@gmail.com>
 # Copyright: (c) 2020, Shreyas Srish <ssrish@cisco.com>
 # Copyright: (c) 2020, Zak Lantz (@manofcolombia) <zakodewald@gmail.com>
+# Copyright: (c) 2024, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -15,55 +16,60 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_access_port_block_to_access_port
-short_description: Manage port blocks of Fabric interface policy leaf profile interface selectors (infra:HPortS, infra:PortBlk)
+short_description: Manage Port blocks of Fabric Access Leaf/Spine Interface Port Selectors (infra:PortBlk)
 description:
-- Manage port blocks of Fabric interface policy leaf profile interface selectors on Cisco ACI fabrics.
+- Manage Port blocks of Fabric Access Interface Leaf/Spine Port Selectors on Cisco ACI fabrics.
 options:
   interface_profile:
     description:
-    - The name of the Fabric access policy leaf interface profile.
+    - The name of the Fabric access policy leaf/spine interface profile.
     type: str
-    aliases: [ leaf_interface_profile_name, leaf_interface_profile,  interface_profile_name  ]
+    aliases:
+    - leaf_interface_profile_name
+    - leaf_interface_profile
+    - interface_profile_name
+    - spine_interface_profile
+    - spine_interface_profile_name
   access_port_selector:
     description:
-    -  The name of the Fabric access policy leaf interface profile access port selector.
+    -  The name of the Fabric access policy leaf/spine interface port selector.
     type: str
     aliases: [ name, access_port_selector_name ]
   port_blk:
     description:
-    - The name of the Fabric access policy leaf interface profile access port block.
+    - The name of the Fabric access policy interface port block.
     type: str
     aliases: [ leaf_port_blk_name, leaf_port_blk ]
   port_blk_description:
     description:
-    - The description to assign to the C(leaf_port_blk).
+    - The description for the port block.
     type: str
     aliases: [ leaf_port_blk_description ]
   from_port:
     description:
-    - The beginning (from-range) of the port range block for the leaf access port block.
+    - The beginning (from-range) of the port range block for the port block.
     type: str
     aliases: [ from, fromPort, from_port_range ]
   to_port:
     description:
-    - The end (to-range) of the port range block for the leaf access port block.
+    - The end (to-range) of the port range block for the port block.
     type: str
     aliases: [ to, toPort, to_port_range ]
   from_card:
     description:
-    - The beginning (from-range) of the card range block for the leaf access port block.
+    - The beginning (from-range) of the card range block for the port block.
     type: str
     aliases: [ from_card_range ]
   to_card:
     description:
-    - The end (to-range) of the card range block for the leaf access port block.
+    - The end (to-range) of the card range block for the port block.
     type: str
     aliases: [ to_card_range ]
   type:
     description:
-    - The type of access port block to be created under respective access port.
+    - The type of port block to be created under respective access port.
     type: str
-    choices: [ fex, leaf ]
+    choices: [ fex, leaf, spine ]
     default: leaf
   state:
     description:
@@ -77,18 +83,27 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(interface_profile) and C(access_port_selector) must exist before using this module in your playbook.
+-  If Adding a port block on an access leaf interface port selector of I(type) C(leaf),
+  The I(interface_profile) and I(access_port_selector) must exist before using this module in your playbook.
   The M(cisco.aci.aci_interface_policy_leaf_profile) and M(cisco.aci.aci_access_port_to_interface_policy_leaf_profile) modules can be used for this.
+-  If Adding a port block on an access interface port selector of C(type) C(spine),
+  The I(interface_profile) and I(access_port_selector) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_access_spine_interface_profile) and M(cisco.aci.aci_access_spine_interface_selector) modules can be used for this.
 seealso:
+- module: cisco.aci.aci_interface_policy_leaf_profile
+- module: cisco.aci.aci_access_port_to_interface_policy_leaf_profile
+- module: cisco.aci.aci_access_spine_interface_profile
+- module: cisco.aci.aci_access_spine_interface_selector
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(infra:HPortS) and B(infra:PortBlk).
+  description: More information about the internal APIC classes B(infra:PortBlk).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Simon Metzger (@smnmtzgr)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
-- name: Associate an access port block (single port) to an interface selector
+- name: Associate a Fabric access policy interface port block (single port) to an interface selector
   cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
@@ -101,7 +116,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Associate an access port block (port range) to an interface selector
+- name: Associate a Fabric access policy interface port block (port range) to an interface selector
   cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
@@ -114,7 +129,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Associate an access port block (single port) to an interface selector of type fex
+- name: Associate a Fabric access policy interface port block (single port) to an interface selector of type fex
   cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
@@ -128,7 +143,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Associate an access port block (port range) to an interface selector of type fex
+- name: Associate a Fabric access policy interface port block (port range) to an interface selector of type fex
   cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
@@ -142,34 +157,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Remove an access port block from an interface selector
-  cisco.aci.aci_access_port_block_to_access_port:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    interface_profile: leafintprfname
-    access_port_selector: accessportselectorname
-    port_blk: leafportblkname
-    from_port: 13
-    to_port: 13
-    state: absent
-  delegate_to: localhost
-
-- name: Remove an access port block from an interface selector of type fex
-  cisco.aci.aci_access_port_block_to_access_port:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    type: fex
-    interface_profile: leafintprfname_fex
-    access_port_selector: accessportselectorname_fex
-    port_blk: leafportblkname_fex
-    from_port: 13
-    to_port: 13
-    state: absent
-  delegate_to: localhost
-
-- name: Query Specific access port block under given access port selector
+- name: Query Specific Fabric access policy interface port block under given access port selector
   cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
@@ -181,7 +169,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query Specific access port block under given access port selector of type fex
+- name: Query Specific Fabric access policy interface port block under given access port selector of type fex
   cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
@@ -194,7 +182,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query all access port blocks under given leaf interface profile
+- name: Query all Fabric access policy interface port blocks under given leaf interface profile
   cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
@@ -204,7 +192,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query all access port blocks under given leaf interface profile of type fex
+- name: Query all Fabric access policy interface port blocks under given leaf interface profile of type fex
   cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
@@ -215,7 +203,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query all access port blocks in the fabric
+- name: Query all Fabric access policy interface port blocks in the fabric
   cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
@@ -224,7 +212,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query all access port blocks in the fabric of type fex
+- name: Query all Fabric access policy interface port blocks in the fabric of type fex
   cisco.aci.aci_access_port_block_to_access_port:
     host: apic
     username: admin
@@ -233,6 +221,33 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Remove a Fabric access policy interface port block from an interface selector
+  cisco.aci.aci_access_port_block_to_access_port:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    interface_profile: leafintprfname
+    access_port_selector: accessportselectorname
+    port_blk: leafportblkname
+    from_port: 13
+    to_port: 13
+    state: absent
+  delegate_to: localhost
+
+- name: Remove a Fabric access policy interface port block from an interface selector of type fex
+  cisco.aci.aci_access_port_block_to_access_port:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    type: fex
+    interface_profile: leafintprfname_fex
+    access_port_selector: accessportselectorname_fex
+    port_blk: leafportblkname_fex
+    from_port: 13
+    to_port: 13
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
@@ -348,7 +363,16 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        interface_profile=dict(type="str", aliases=["leaf_interface_profile_name", "leaf_interface_profile", "interface_profile_name"]),
+        interface_profile=dict(
+            type="str",
+            aliases=[
+                "leaf_interface_profile_name",
+                "leaf_interface_profile",
+                "interface_profile_name",
+                "spine_interface_profile",
+                "spine_interface_profile_name",
+            ],
+        ),
         access_port_selector=dict(type="str", aliases=["name", "access_port_selector_name"]),  # Not required for querying all objects
         port_blk=dict(type="str", aliases=["leaf_port_blk_name", "leaf_port_blk"]),  # Not required for querying all objects
         port_blk_description=dict(type="str", aliases=["leaf_port_blk_description"]),
@@ -357,15 +381,15 @@ def main():
         from_card=dict(type="str", aliases=["from_card_range"]),
         to_card=dict(type="str", aliases=["to_card_range"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        type=dict(type="str", default="leaf", choices=["fex", "leaf"]),  # This parameter is not required for querying all objects
+        type=dict(type="str", default="leaf", choices=["fex", "leaf", "spine"]),  # This parameter is not required for querying all objects
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["access_port_selector", "port_blk", "interface_profile"]],
-            ["state", "present", ["access_port_selector", "port_blk", "from_port", "to_port", "interface_profile"]],
+            ["state", "absent", ["interface_profile", "access_port_selector", "port_blk"]],
+            ["state", "present", ["interface_profile", "access_port_selector", "port_blk", "from_port", "to_port"]],
         ],
     )
 
@@ -381,26 +405,45 @@ def main():
     type_port = module.params.get("type")
 
     aci = ACIModule(module)
+
     aci_class = "infraAccPortP"
     aci_rn = "accportprof"
     if type_port == "fex":
         aci_class = "infraFexP"
         aci_rn = "fexprof"
-    aci.construct_url(
-        root_class=dict(
-            aci_class=aci_class,
-            aci_rn="infra/" + aci_rn + "-{0}".format(interface_profile),
+    subclass_1 = dict(
+        aci_class=aci_class,
+        aci_rn="{0}-{1}".format(aci_rn, interface_profile),
+        module_object=interface_profile,
+        target_filter={"name": interface_profile},
+    )
+    subclass_2 = dict(
+        aci_class="infraHPortS",
+        aci_rn="hports-{0}-typ-range".format(access_port_selector),
+        module_object=access_port_selector,
+        target_filter={"name": access_port_selector},
+    )
+    if type_port == "spine":
+        subclass_1 = dict(
+            aci_class="infraSpAccPortP",
+            aci_rn="spaccportprof-{0}".format(interface_profile),
             module_object=interface_profile,
             target_filter={"name": interface_profile},
-        ),
-        subclass_1=dict(
-            aci_class="infraHPortS",
-            # NOTE: normal rn: hports-{name}-typ-{type}, hence here hardcoded to range for purposes of module
-            aci_rn="hports-{0}-typ-range".format(access_port_selector),
+        )
+        subclass_2 = dict(
+            aci_class="infraSHPortS",
+            aci_rn="shports-{0}-typ-range".format(access_port_selector),
             module_object=access_port_selector,
             target_filter={"name": access_port_selector},
+        )
+    aci.construct_url(
+        root_class=dict(
+            aci_class="infraInfra",
+            aci_rn="infra",
         ),
-        subclass_2=dict(
+        subclass_1=subclass_1,
+        subclass_2=subclass_2,
+        subclass_3=dict(
             aci_class="infraPortBlk",
             aci_rn="portblk-{0}".format(port_blk),
             module_object=port_blk,
@@ -420,7 +463,6 @@ def main():
                 toPort=to_port,
                 fromCard=from_card,
                 toCard=to_card,
-                #  type='range',
             ),
         )
 

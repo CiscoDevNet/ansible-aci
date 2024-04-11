@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_syslog_source
 short_description: Manage Syslog Source objects (syslog:Src)
 description:
-- Manage Syslog Source objects
+- Manage Syslog Source objects.
 options:
   name:
     description:

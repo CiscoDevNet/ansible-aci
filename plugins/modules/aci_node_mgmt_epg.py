@@ -11,7 +11,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: aci_node_mgmt_epg
-short_description: In band or Out of band management EPGs
+short_description: In band or Out of band management EPGs (mgmt:OoB and mgmt:InB)
 description:
 - Cisco ACI Fabric Node EPGs
 options:
@@ -45,6 +45,10 @@ extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
+seealso:
+- name: APIC Management Information Model reference
+  description: More information about the internal APIC classes B(mgmt:OoB) and B(mgmt:InB).
+  link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Shreyas Srish (@shrsr)
 """

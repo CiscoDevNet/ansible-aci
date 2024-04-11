@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
+# Copyright: (c) 2024, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -13,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_switch_leaf_selector
-short_description: Bind leaf selectors to switch policy leaf profiles (infra:LeafS, infra:NodeBlk, infra:RsAccNodePGrep)
+short_description: Bind leaf selectors to switch policy leaf profiles (infra:LeafS, infra:NodeBlk, and infra:RsAccNodePGrep)
 description:
 - Bind leaf selectors (with node block range and policy group) to switch policy leaf profiles on Cisco ACI fabrics.
 options:
@@ -82,6 +83,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Bruno Calogero (@brunocalogero)
+- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
@@ -266,7 +268,7 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "absent", ["leaf_profile", "leaf"]], ["state", "present", ["leaf_profile", "leaf", "leaf_node_blk", "from", "to"]]],
+        required_if=[["state", "absent", ["leaf_profile", "leaf"]], ["state", "present", ["leaf_profile", "leaf"]]],
     )
 
     description = module.params.get("description")
@@ -280,19 +282,21 @@ def main():
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
-    # Build child_configs dynamically
-    child_configs = [
-        dict(
-            infraNodeBlk=dict(
-                attributes=dict(
-                    descr=leaf_node_blk_description,
-                    name=leaf_node_blk,
-                    from_=from_,
-                    to_=to_,
+    child_configs = []
+    # Add infraNodeBlk only when leaf_node_blk was defined
+    if leaf_node_blk is not None:
+        child_configs.append(
+            dict(
+                infraNodeBlk=dict(
+                    attributes=dict(
+                        descr=leaf_node_blk_description,
+                        name=leaf_node_blk,
+                        from_=from_,
+                        to_=to_,
+                    ),
                 ),
             ),
-        ),
-    ]
+        )
 
     # Add infraRsAccNodePGrp only when policy_group was defined
     if policy_group is not None:

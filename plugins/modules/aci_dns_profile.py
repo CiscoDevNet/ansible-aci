@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_dns_profile
-short_description: Manage DNS Profile (dnsProfile) objects.
+short_description: Manage DNS Profile objects (dns:Profile)
 description:
 - Manage DNS Profile configuration on Cisco ACI fabrics.
 options:
@@ -35,7 +35,7 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(dnsProfile).
+  description: More information about the internal APIC class B(dns:Profile).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)

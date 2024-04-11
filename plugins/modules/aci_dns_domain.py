@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_dns_domain
-short_description: Manage DNS Provider (dnsDomain) objects.
+short_description: Manage DNS Provider objects (dns:Domain)
 description:
 - Manage DNS Domain configuration on Cisco ACI fabrics.
 options:
@@ -49,7 +49,7 @@ notes:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(dnsDomain).
+  description: More information about the internal APIC class B(dns:Domain).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)

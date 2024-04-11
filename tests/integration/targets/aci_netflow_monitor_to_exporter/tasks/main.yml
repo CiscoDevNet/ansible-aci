@@ -1,0 +1,172 @@
+# Test code for the ACI modules
+# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT BEFORE TESTS
+- name: Remove the ansible_tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info 
+    tenant: ansible_tenant
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  - name: Add a new tenant
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      description: Ansible tenant
+      state: present
+
+  - name: Add a Netflow Monitor policy
+    cisco.aci.aci_netflow_monitor_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      netflow_monitor_policy: ansible_netflow_monitor_policy
+      description: Netflow Monitor policy for ansible_tenant tenant
+      state: present
+
+  - name: Add a first Netflow Exporter policy
+    cisco.aci.aci_netflow_exporter_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      netflow_exporter_policy: ansible_netflow_exporter_policy_1
+      description: Netflow Exporter policy 1 for ansible_tenant tenant
+      destination_address: 11.11.11.1
+      destination_port: https
+      state: present
+  
+  - name: Add a second Netflow Exporter policy
+    cisco.aci.aci_netflow_exporter_policy:
+      <<: *aci_info
+      tenant: ansible_tenant
+      netflow_exporter_policy: ansible_netflow_exporter_policy_2
+      description: Netflow Exporter policy 2 for ansible_tenant tenant
+      destination_address: 12.12.12.2
+      destination_port: http
+      state: present
+
+  # CREATE NETFLOW MONITOR TO EXPORTER
+  - name: Add a first Netflow Exporter policy to the Netflow Monitor policy (check_mode)
+    cisco.aci.aci_netflow_monitor_to_exporter: &aci_netflow_monitor_to_exporter_present
+      <<: *aci_info
+      tenant: ansible_tenant
+      netflow_monitor_policy: ansible_netflow_monitor_policy
+      netflow_exporter_policy: ansible_netflow_exporter_policy_1
+      state: present
+    check_mode: true
+    register: cm_add_netflow_monitor_to_exporter
+
+  - name: Add a first Netflow Exporter policy to the Netflow Monitor policy (normal_mode)
+    cisco.aci.aci_netflow_monitor_to_exporter:
+      <<: *aci_netflow_monitor_to_exporter_present
+    register: nm_add_netflow_monitor_to_exporter
+
+  - name: Add the first Netflow Monitor policy again - testing idempotency
+    cisco.aci.aci_netflow_monitor_to_exporter:
+      <<: *aci_netflow_monitor_to_exporter_present
+    register: nm_add_netflow_monitor_to_exporter_idempotency
+
+  - name: Add a second Netflow Monitor policy (normal_mode)
+    cisco.aci.aci_netflow_monitor_to_exporter:
+      <<: *aci_info
+      tenant: ansible_tenant
+      netflow_monitor_policy: ansible_netflow_monitor_policy
+      netflow_exporter_policy: ansible_netflow_exporter_policy_2
+      state: present
+    register: nm_add_netflow_monitor_to_exporter_2
+
+  - name: Asserts for Netflow Monitor policy creation tasks
+    ansible.builtin.assert:
+      that:
+        - cm_add_netflow_monitor_to_exporter is changed
+        - cm_add_netflow_monitor_to_exporter.previous == []
+        - cm_add_netflow_monitor_to_exporter.current == []
+        - cm_add_netflow_monitor_to_exporter.proposed.netflowRsMonitorToExporter.attributes.tnNetflowExporterPolName == "ansible_netflow_exporter_policy_1"
+        - nm_add_netflow_monitor_to_exporter is changed
+        - nm_add_netflow_monitor_to_exporter.previous == []
+        - nm_add_netflow_monitor_to_exporter.current.0.netflowRsMonitorToExporter.attributes.tnNetflowExporterPolName == "ansible_netflow_exporter_policy_1"
+        - nm_add_netflow_monitor_to_exporter_idempotency is not changed
+        - nm_add_netflow_monitor_to_exporter_idempotency.current.0.netflowRsMonitorToExporter.attributes.tnNetflowExporterPolName == "ansible_netflow_exporter_policy_1"
+        - nm_add_netflow_monitor_to_exporter_2 is changed
+        - nm_add_netflow_monitor_to_exporter_2.previous == []
+        - nm_add_netflow_monitor_to_exporter_2.current.0.netflowRsMonitorToExporter.attributes.tnNetflowExporterPolName == "ansible_netflow_exporter_policy_2"
+
+  # QUERY NETFLOW MONITOR TO EXPORTER
+  - name: Query all Netflow Monitor to Exporter Associations
+    cisco.aci.aci_netflow_monitor_to_exporter:
+      <<: *aci_info
+      state: query
+    register: query_all_netflow_monitor_to_exporter
+
+  - name: Query first Netflow Monitor to Exporter Association
+    cisco.aci.aci_netflow_monitor_to_exporter:
+      <<: *aci_netflow_monitor_to_exporter_present
+      state: query
+    register: query_ansible_netflow_monitor_policy_to_exporter
+
+  - name: Asserts query tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_netflow_monitor_to_exporter is not changed
+        - query_all_netflow_monitor_to_exporter.current|length >= 2
+        - query_ansible_netflow_monitor_policy_to_exporter is not changed
+        - query_ansible_netflow_monitor_policy_to_exporter.current|length == 1
+        - query_ansible_netflow_monitor_policy_to_exporter.current.0.netflowRsMonitorToExporter.attributes.tnNetflowExporterPolName == "ansible_netflow_exporter_policy_1"
+
+  # DELETE NETFLOW MONITOR TO EXPORTER
+  - name: Remove first Netflow Exporter policy from the Netflow Monitor policy (check_mode)
+    cisco.aci.aci_netflow_monitor_to_exporter: &netflow_monitor_to_exporter_absent
+      <<: *aci_netflow_monitor_to_exporter_present
+      state: absent
+    check_mode: true
+    register: cm_remove_netflow_monitor_to_exporter
+
+  - name: Remove first Netflow Exporter policy from the Netflow Monitor policy (normal_mode)
+    cisco.aci.aci_netflow_monitor_to_exporter:
+      <<: *netflow_monitor_to_exporter_absent
+    register: nm_remove_netflow_monitor_to_exporter
+
+  - name: Remove first Netflow Exporter policy from the Netflow Monitor policy - testing idempotency
+    cisco.aci.aci_netflow_monitor_to_exporter:
+      <<: *netflow_monitor_to_exporter_absent
+    register: nm_remove_netflow_monitor_to_exporter_idempotency
+
+  - name: Asserts deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_remove_netflow_monitor_to_exporter is changed
+        - cm_remove_netflow_monitor_to_exporter.current == cm_remove_netflow_monitor_to_exporter.previous
+        - cm_remove_netflow_monitor_to_exporter.proposed == {}
+        - nm_remove_netflow_monitor_to_exporter is changed
+        - nm_remove_netflow_monitor_to_exporter.previous != []
+        - nm_remove_netflow_monitor_to_exporter.current == []
+        - nm_remove_netflow_monitor_to_exporter_idempotency is not changed
+        - nm_remove_netflow_monitor_to_exporter_idempotency.previous == []
+
+  # CLEAN ENVIRONMENT BEFORE ENDING TESTS
+  - name: Remove the ansible_tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent

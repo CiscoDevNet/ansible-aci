@@ -17,7 +17,7 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = r"""
 ---
 module: aci_ntp_server
-short_description: Manage NTP servers.
+short_description: Manage NTP servers (datetime:NtpProv)
 description:
 - Manage NTP server (datetimeNtpProv) configuration on Cisco ACI fabrics.
 options:
@@ -74,7 +74,7 @@ notes:
   The M(cisco.aci.aci_ntp_policy) module can be used for this.
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(datetimeNtpProv).
+  description: More information about the internal APIC class B(datetime:NtpProv).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)

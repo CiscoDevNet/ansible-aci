@@ -1,0 +1,204 @@
+# Test code for the ACI modules
+# Copyright: (c) 2024, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # CLEAN ENVIRONMENT
+  - name: Remove the ansible_access_spine_interface_profile
+    cisco.aci.aci_access_spine_interface_profile: &aci_access_spine_interface_profile_absent
+      <<: *aci_info
+      spine_interface_profile: ansible_access_spine_interface_profile
+      description: Ansible Access Spine Interface Profile
+      state: absent
+  
+  - name: Add a new Access Spine Interface profile
+    cisco.aci.aci_access_spine_interface_profile: &aci_access_spine_interface_profile_present
+      <<: *aci_access_spine_interface_profile_absent
+      state: present
+  
+  # CREATE ACCESS SPINE INTERFACE SELECTOR
+  - name: Add a new Access Spine Interface Selector (check_mode)
+    cisco.aci.aci_access_spine_interface_selector: &aci_access_spine_interface_selector_present
+      <<: *aci_info
+      spine_interface_profile: ansible_access_spine_interface_profile
+      spine_interface_selector: ansible_access_spine_interface_selector_1
+      description: Access Spine Interface Selector 1
+      selector_type: range
+      state: present
+    check_mode: true
+    register: cm_add_spine_interface_selector
+
+  - name: Add a new Access Spine Interface Selector (normal_mode)
+    cisco.aci.aci_access_spine_interface_selector:
+      <<: *aci_access_spine_interface_selector_present
+    register: nm_add_spine_interface_selector
+
+  - name: Add the first Access Spine Interface Selector again - testing idempotency
+    cisco.aci.aci_access_spine_interface_selector:
+      <<: *aci_access_spine_interface_selector_present
+    register: nm_add_spine_interface_selector_idempotency
+
+  - name: Add a second Access Spine Interface Selector (normal_mode)
+    cisco.aci.aci_access_spine_interface_selector: &aci_access_spine_interface_selector_2_present
+      <<: *aci_info
+      spine_interface_profile: ansible_access_spine_interface_profile
+      spine_interface_selector: ansible_access_spine_interface_selector_2
+      description: Access Spine Interface Selector 2
+      selector_type: range
+      state: present
+    register: nm_add_spine_interface_selector_2
+
+  - name: Asserts for Access Spine Interface Selector creation tasks
+    ansible.builtin.assert:
+      that:
+        - cm_add_spine_interface_selector is changed
+        - cm_add_spine_interface_selector.previous == []
+        - cm_add_spine_interface_selector.current == []
+        - cm_add_spine_interface_selector.proposed.infraSHPortS.attributes.name == "ansible_access_spine_interface_selector_1"
+        - cm_add_spine_interface_selector.proposed.infraSHPortS.attributes.descr == "Access Spine Interface Selector 1"
+        - cm_add_spine_interface_selector.proposed.infraSHPortS.attributes.type == "range"
+        - nm_add_spine_interface_selector is changed
+        - nm_add_spine_interface_selector.previous == []
+        - nm_add_spine_interface_selector.current.0.infraSHPortS.attributes.name == "ansible_access_spine_interface_selector_1"
+        - nm_add_spine_interface_selector.current.0.infraSHPortS.attributes.descr == "Access Spine Interface Selector 1"
+        - nm_add_spine_interface_selector.current.0.infraSHPortS.attributes.type == "range"
+        - nm_add_spine_interface_selector_idempotency is not changed
+        - nm_add_spine_interface_selector_idempotency.current.0.infraSHPortS.attributes.name == "ansible_access_spine_interface_selector_1"
+        - nm_add_spine_interface_selector_idempotency.current.0.infraSHPortS.attributes.descr == "Access Spine Interface Selector 1"
+        - nm_add_spine_interface_selector_idempotency.current.0.infraSHPortS.attributes.type == "range"
+        - nm_add_spine_interface_selector_2 is changed
+        - nm_add_spine_interface_selector_2.previous == []
+        - nm_add_spine_interface_selector_2.current.0.infraSHPortS.attributes.name == "ansible_access_spine_interface_selector_2"
+        - nm_add_spine_interface_selector_2.current.0.infraSHPortS.attributes.descr == "Access Spine Interface Selector 2"
+        - nm_add_spine_interface_selector_2.current.0.infraSHPortS.attributes.type == "range"
+
+  # QUERY ACCESS SPINE INTERFACE SELECTOR
+  - name: Query all Access Spine Interface Selectors
+    cisco.aci.aci_access_spine_interface_selector:
+      <<: *aci_info
+      state: query
+    register: query_all_spine_interface_selector
+
+  - name: Query ansible_access_spine_interface_selector_1
+    cisco.aci.aci_access_spine_interface_selector:
+      <<: *aci_access_spine_interface_selector_present
+      state: query
+    register: query_ansible_access_spine_interface_selector_1
+
+  - name: Asserts query tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_spine_interface_selector is not changed
+        - query_all_spine_interface_selector.current|length >= 2
+        - query_ansible_access_spine_interface_selector_1 is not changed
+        - query_ansible_access_spine_interface_selector_1.current|length == 1
+        - query_ansible_access_spine_interface_selector_1.current.0.infraSpAccPortP.children.0.infraSHPortS.attributes.name == "ansible_access_spine_interface_selector_1"
+        - query_ansible_access_spine_interface_selector_1.current.0.infraSpAccPortP.children.0.infraSHPortS.attributes.descr == "Access Spine Interface Selector 1"
+        - query_ansible_access_spine_interface_selector_1.current.0.infraSpAccPortP.children.0.infraSHPortS.attributes.type == "range"
+
+  # UPDATE ACCESS SPINE INTERFACE SELECTOR
+  - name: Add a new Access Spine Interface policy Group
+    cisco.aci.aci_interface_policy_spine_policy_group: &aci_interface_policy_spine_policy_group_present
+      <<: *aci_info
+      policy_group: ansible_access_spine_interface_policy_group
+      description: Ansible Access Spine Interface Policy Group
+      state: present
+
+  - name: Update first Access Spine Interface Selector by adding a Policy Group (check_mode)
+    cisco.aci.aci_access_spine_interface_selector: &aci_access_spine_interface_selector_update
+      <<: *aci_access_spine_interface_selector_present
+      description: Updated description for first ansible Access Spine Interface Selector
+      policy_group: ansible_access_spine_interface_policy_group
+    check_mode: true
+    register: cm_update_spine_interface_selector
+
+  - name: Update first Access Spine Interface Selector by adding a Policy Group (normal_mode)
+    cisco.aci.aci_access_spine_interface_selector:
+      <<: *aci_access_spine_interface_selector_update
+    register: nm_update_spine_interface_selector
+
+  - name: Update first Access Spine Interface Selector by adding a Policy Group again - testing idempotency
+    cisco.aci.aci_access_spine_interface_selector:
+      <<: *aci_access_spine_interface_selector_update
+    register: nm_udpate_spine_interface_selector_idempotency
+
+  - name: Asserts for Access Spine Interface Selector update tasks
+    ansible.builtin.assert:
+      that:
+        - cm_update_spine_interface_selector is changed
+        - cm_update_spine_interface_selector.previous == cm_update_spine_interface_selector.current
+        - cm_update_spine_interface_selector.proposed.infraSHPortS.attributes.descr == "Updated description for first ansible Access Spine Interface Selector"
+        - cm_update_spine_interface_selector.proposed.infraSHPortS.children.0.infraRsSpAccGrp.attributes.tDn == "uni/infra/funcprof/spaccportgrp-ansible_access_spine_interface_policy_group"
+        - nm_update_spine_interface_selector is changed
+        - nm_update_spine_interface_selector.current.0.infraSHPortS.attributes.name == "ansible_access_spine_interface_selector_1"
+        - nm_update_spine_interface_selector.current.0.infraSHPortS.attributes.descr == "Updated description for first ansible Access Spine Interface Selector"
+        - nm_update_spine_interface_selector.current.0.infraSHPortS.children.0.infraRsSpAccGrp.attributes.tDn == "uni/infra/funcprof/spaccportgrp-ansible_access_spine_interface_policy_group"
+        - nm_udpate_spine_interface_selector_idempotency is not changed
+        - nm_udpate_spine_interface_selector_idempotency.current.0.infraSHPortS.attributes.name == "ansible_access_spine_interface_selector_1"
+        - nm_udpate_spine_interface_selector_idempotency.current.0.infraSHPortS.attributes.descr == "Updated description for first ansible Access Spine Interface Selector"
+        - nm_udpate_spine_interface_selector_idempotency.current.0.infraSHPortS.children.0.infraRsSpAccGrp.attributes.tDn == "uni/infra/funcprof/spaccportgrp-ansible_access_spine_interface_policy_group"
+
+  # DELETE ACCESS SPINE INTERFACE SELECTOR
+  - name: Remove Access Spine Interface Selector (check_mode)
+    cisco.aci.aci_access_spine_interface_selector: &spine_interface_selector_absent
+      <<: *aci_access_spine_interface_selector_update
+      state: absent
+    check_mode: true
+    register: cm_remove_spine_interface_selector
+
+  - name: Remove Access Spine Interface Selector (normal_mode)
+    cisco.aci.aci_access_spine_interface_selector:
+      <<: *spine_interface_selector_absent
+    register: nm_remove_spine_interface_selector
+
+  - name: Remove Access Spine Interface Selector - testing idempotency
+    cisco.aci.aci_access_spine_interface_selector:
+      <<: *spine_interface_selector_absent
+    register: nm_remove_spine_interface_selector_idempotency
+
+  - name: Asserts deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_remove_spine_interface_selector is changed
+        - cm_remove_spine_interface_selector.current == cm_remove_spine_interface_selector.previous
+        - cm_remove_spine_interface_selector.proposed == {}
+        - nm_remove_spine_interface_selector is changed
+        - nm_remove_spine_interface_selector.previous != []
+        - nm_remove_spine_interface_selector.proposed == {}
+        - nm_remove_spine_interface_selector.current == []
+        - nm_remove_spine_interface_selector_idempotency is not changed
+        - nm_remove_spine_interface_selector_idempotency.previous == []
+        - nm_remove_spine_interface_selector_idempotency.current == []
+
+  # CLEAN ENVIRONMENT BEFORE ENDING TESTS
+  - name: Remove the Access Spine Interface profile - cleanup before ending tests
+    cisco.aci.aci_access_spine_interface_profile:
+      <<: *aci_access_spine_interface_profile_present
+      state: absent
+
+  - name: Remove the Spine Interface policy Group - cleanup before ending tests
+    cisco.aci.aci_interface_policy_spine_policy_group:
+      <<: *aci_interface_policy_spine_policy_group_present
+      state: absent

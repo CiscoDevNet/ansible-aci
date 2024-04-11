@@ -13,9 +13,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_bgp_rr_node
-short_description: Manage BGP Route Reflector objects.
+short_description: Manage BGP Route Reflector objects (bgp:RRNodePEp)
 description:
-- Manage ACI BGP Route Reflector Nodes (bgpRRNodePEp).
+- Manage ACI BGP Route Reflector Nodes.
 options:
   node_id:
     description:
@@ -42,7 +42,7 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(bgpRRNodePEp).
+  description: More information about the internal APIC class B(bgp:RRNodePEp).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)

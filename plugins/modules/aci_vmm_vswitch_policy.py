@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_vmm_vswitch_policy
-short_description: Manage vSwitch policy for VMware virtual domains profiles (vmm:DomP)
+short_description: Manage vSwitch policy for VMware virtual domains profiles (vmm:VSwitchPolicyCont)
 description:
 - Manage vSwitch policy for VMware VMM domains on Cisco ACI fabrics.
 options:
@@ -139,7 +139,7 @@ extends_documentation_fragment:
 seealso:
 - module: cisco.aci.aci_domain
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(vmm:DomP)
+  description: More information about the internal APIC classes B(vmm:VSwitchPolicyCont).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Manuel Widmer (@lumean)

@@ -97,7 +97,9 @@ EP_LOOP_PROTECTION_ACTION_MAPPING = {"bd": "bd-learn-disable", "port": "port-dis
 
 FABRIC_POD_SELECTOR_TYPE_MAPPING = dict(all="ALL", range="range")
 
-TLS_MAPPING = {"tls_v1.0": "TLSv1", "tls_v1.1": "TLSv1.1", "tls_v1.2": "TLSv1.2"}
+OPFLEX_TLS_MAPPING = {"tls_v1.0": "TLSv1", "tls_v1.1": "TLSv1.1", "tls_v1.2": "TLSv1.2"}
+
+HTTP_TLS_MAPPING = {"tls_v1.0": "TLSv1", "tls_v1.1": "TLSv1.1", "tls_v1.2": "TLSv1.2", "tls_v1.3": "TLSv1.3"}
 
 ACI_ACCESS_SWITCH_POLICY_GROUP_CLASS_MAPPING = dict(
     spine=dict(
@@ -171,6 +173,11 @@ SUBJ_LABEL_MAPPING = dict(
     provider="vzProvSubjLbl",
 )
 
+SUBJ_LABEL_RN = dict(
+    consumer="conssubjlbl-",
+    provider="provsubjlbl-",
+)
+
 MATCH_ACTION_RULE_SET_METRIC_TYPE_MAPPING = {"ospf_type_1": "ospf-type1", "ospf_type_2": "ospf-type2", "": ""}
 
 MATCH_EIGRP_INTERFACE_POLICY_DELAY_UNIT_MAPPING = dict(picoseconds="pico", tens_of_microseconds="tens-of-micro")
@@ -192,3 +199,238 @@ MATCH_TARGET_COS_MAPPING = {
 MATCH_PIM_INTERFACE_POLICY_CONTROL_STATE_MAPPING = dict(multicast_domain_boundary="border", strict_rfc_compliant="strict-rfc-compliant", passive="passive")
 
 MATCH_PIM_INTERFACE_POLICY_AUTHENTICATION_TYPE_MAPPING = dict(none="none", md5_hmac="ah-md5")
+
+MATCH_COLLECT_NETFLOW_RECORD_MAPPING = dict(
+    bytes_counter="count-bytes",
+    pkts_counter="count-pkts",
+    pkt_disposition="pkt-disp",
+    sampler_id="sampler-id",
+    source_interface="src-intf",
+    tcp_flags="tcp-flags",
+    first_pkt_timestamp="ts-first",
+    recent_pkt_timestamp="ts-recent",
+)
+
+MATCH_MATCH_NETFLOW_RECORD_MAPPING = dict(
+    destination_ipv4_v6="dst-ip",
+    destination_ipv4="dst-ipv4",
+    destination_ipv6="dst-ipv6",
+    destination_mac="dst-mac",
+    destination_port="dst-port",
+    ethertype="ethertype",
+    ip_protocol="proto",
+    source_ipv4_v6="src-ip",
+    source_ipv4="src-ipv4",
+    source_ipv6="src-ipv6",
+    source_mac="src-mac",
+    source_port="src-port",
+    ip_tos="tos",
+    unspecified="unspecified",
+    vlan="vlan",
+)
+
+MATCH_SOURCE_IP_TYPE_NETFLOW_EXPORTER_MAPPING = dict(
+    custom_source_ip="custom-src-ip",
+    inband_management_ip="inband-mgmt-ip",
+    out_of_band_management_ip="oob-mgmt-ip",
+    ptep="ptep",
+)
+
+ECC_CURVE = {"P256": "prime256v1", "P384": "secp384r1", "P521": "secp521r1", "none": "none"}
+
+THROTTLE_UNIT = dict(requests_per_second="r/s", requests_per_minute="r/m")
+
+SSH_CIPHERS = dict(
+    aes128_ctr="aes128-ctr",
+    aes192_ctr="aes192-ctr",
+    aes256_ctr="aes256-ctr",
+    aes128_gcm="aes128-gcm@openssh.com",
+    aes256_gcm="aes256-gcm@openssh.com",
+    chacha20="chacha20-poly1305@openssh.com",
+)
+
+SSH_MACS = dict(
+    sha1="hmac-sha1",
+    sha2_256="hmac-sha2-256",
+    sha2_512="hmac-sha2-512",
+    sha2_256_etm="hmac-sha2-256-etm@openssh.com",
+    sha2_512_etm="hmac-sha2-512-etm@openssh.com",
+)
+
+KEX_ALGORITHMS = dict(
+    dh_sha1="diffie-hellman-group14-sha1",
+    dh_sha256="diffie-hellman-group14-sha256",
+    dh_sha512="diffie-hellman-group16-sha512",
+    curve_sha256="curve25519-sha256",
+    curve_sha256_libssh="curve25519-sha256@libssh.org",
+    ecdh_256="ecdh-sha2-nistp256",
+    ecdh_384="ecdh-sha2-nistp384",
+    ecdh_521="ecdh-sha2-nistp521",
+)
+
+USEG_ATTRIBUTE_MAPPING = dict(
+    ip=dict(attribute_type="ip", attribute_class="fvIpAttr", rn_format="ipattr-{0}"),
+    mac=dict(attribute_type="mac", attribute_class="fvMacAttr", rn_format="macattr-{0}"),
+    dns=dict(attribute_type="dns", attribute_class="fvDnsAttr", rn_format="dnsattr-{0}"),
+    ad_group=dict(attribute_type="ad", attribute_class="fvIdGroupAttr", rn_format="idgattr-[{0}]"),
+    vm_custom_attr=dict(attribute_type="custom-label", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_vmm_domain=dict(attribute_type="domain", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_operating_system=dict(attribute_type="guest-os", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_hypervisor_id=dict(attribute_type="hv", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_datacenter=dict(attribute_type="rootContName", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_id=dict(attribute_type="vm", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_name=dict(attribute_type="vm-name", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_folder=dict(attribute_type="vm-folder", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_folder_path=dict(attribute_type="vmfolder-path", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_vnic=dict(attribute_type="vnic", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+    vm_tag=dict(attribute_type="tag", attribute_class="fvVmAttr", rn_format="vmattr-{0}"),
+)
+
+OPERATOR_MAPPING = dict(equals="equals", contains="contains", starts_with="startsWith", ends_with="endsWith")
+
+MATCH_STORM_CONTROL_POLICY_TYPE_MAPPING = dict(all_types="Invalid", unicast_broadcast_multicast="Valid")
+
+POLICY_LABEL_COLORS = [
+    "alice_blue",
+    "antique_white",
+    "aqua",
+    "aquamarine",
+    "azure",
+    "beige",
+    "bisque",
+    "black",
+    "blanched_almond",
+    "blue",
+    "blue_violet",
+    "brown",
+    "burlywood",
+    "cadet_blue",
+    "chartreuse",
+    "chocolate",
+    "coral",
+    "cornflower_blue",
+    "cornsilk",
+    "crimson",
+    "cyan",
+    "dark_blue",
+    "dark_cyan",
+    "dark_goldenrod",
+    "dark_gray",
+    "dark_green",
+    "dark_khaki",
+    "dark_magenta",
+    "dark_olive_green",
+    "dark_orange",
+    "dark_orchid",
+    "dark_red",
+    "dark_salmon",
+    "dark_sea_green",
+    "dark_slate_blue",
+    "dark_slate_gray",
+    "dark_turquoise",
+    "dark_violet",
+    "deep_pink",
+    "deep_sky_blue",
+    "dim_gray",
+    "dodger_blue",
+    "fire_brick",
+    "floral_white",
+    "forest_green",
+    "fuchsia",
+    "gainsboro",
+    "ghost_white",
+    "gold",
+    "goldenrod",
+    "gray",
+    "green",
+    "green_yellow",
+    "honeydew",
+    "hot_pink",
+    "indian_red",
+    "indigo",
+    "ivory",
+    "khaki",
+    "lavender",
+    "lavender_blush",
+    "lawn_green",
+    "lemon_chiffon",
+    "light_blue",
+    "light_coral",
+    "light_cyan",
+    "light_goldenrod_yellow",
+    "light_gray",
+    "light_green",
+    "light_pink",
+    "light_salmon",
+    "light_sea_green",
+    "light_sky_blue",
+    "light_slate_gray",
+    "light_steel_blue",
+    "light_yellow",
+    "lime",
+    "lime_green",
+    "linen",
+    "magenta",
+    "maroon",
+    "medium_aquamarine",
+    "medium_blue",
+    "medium_orchid",
+    "medium_purple",
+    "medium_sea_green",
+    "medium_slate_blue",
+    "medium_spring_green",
+    "medium_turquoise",
+    "medium_violet_red",
+    "midnight_blue",
+    "mint_cream",
+    "misty_rose",
+    "moccasin",
+    "navajo_white",
+    "navy",
+    "old_lace",
+    "olive",
+    "olive_drab",
+    "orange",
+    "orange_red",
+    "orchid",
+    "pale_goldenrod",
+    "pale_green",
+    "pale_turquoise",
+    "pale_violet_red",
+    "papaya_whip",
+    "peachpuff",
+    "peru",
+    "pink",
+    "plum",
+    "powder_blue",
+    "purple",
+    "red",
+    "rosy_brown",
+    "royal_blue",
+    "saddle_brown",
+    "salmon",
+    "sandy_brown",
+    "sea_green",
+    "seashell",
+    "sienna",
+    "silver",
+    "sky_blue",
+    "slate_blue",
+    "slate_gray",
+    "snow",
+    "spring_green",
+    "steel_blue",
+    "tan",
+    "teal",
+    "thistle",
+    "tomato",
+    "turquoise",
+    "violet",
+    "wheat",
+    "white",
+    "white_smoke",
+    "yellow",
+    "yellow_green",
+]
+
+MATCH_ACCESS_POLICIES_SELECTOR_TYPE = dict(range="range", all="ALL")

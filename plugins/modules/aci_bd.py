@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2017, Jacob McGill (@jmcgill298)
+# Copyright: (c) 2024, Samita Bhattacharjee (@samitab) <samitab@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -147,6 +149,103 @@ options:
     description:
     - The L3 Out that contains the associated Route Profile.
     type: str
+  host_based_routing:
+    description:
+    - Enables advertising host routes (/32 prefixes) out of the L3OUT(s) that are associated to this BD.
+    - The APIC defaults to C(false) when unset during creation.
+    type: bool
+    aliases: [ advertise_host_routes ]
+  enable_rogue_except_mac:
+    description:
+    - Rogue exception MAC wildcard support for Bridge Domains.
+    - Only available in APIC version 6.0 or later.
+    - The APIC defaults to C(false) when unset during creation.
+    type: bool
+  allow_intersite_bum_traffic:
+    description:
+    - Control whether BUM traffic is allowed between sites.
+    - The APIC defaults to C(false) when unset during creation.
+    type: bool
+    aliases: [allow_bum_traffic]
+  allow_intersite_l2_stretch:
+    description:
+    - Allow L2 Stretch between sites.
+    - The APIC defaults to C(false) when unset during creation.
+    type: bool
+    aliases: [allow_l2_stretch]
+  allow_ipv6_multicast:
+    description:
+    - Flag to indicate if ipv6 multicast is enabled.
+    - The APIC defaults to C(false) when unset during creation.
+    type: bool
+    aliases: [ ipv6_multicast, ipv6_mcast, allow_ipv6_mcast]
+  link_local_address:
+    description:
+    - The override of the system generated IPv6 link-local address.
+    type: str
+    aliases: [ ll_addr_ipv6, ll_addr, link_local]
+  multicast_arp_drop:
+    description:
+    - Enable BD rogue multicast ARP packet drop.
+    - Only available in APIC version 6.0 or later.
+    - The APIC defaults to C(true) when unset during creation.
+    type: bool
+    aliases: [ mcast_arp_drop ]
+  vmac:
+    description:
+    - Virtual MAC address of the BD/SVI. This is used when the BD is extended to multiple sites using L2 Outside.
+    type: str
+  optimize_wan_bandwidth:
+    description:
+    - Optimize WAN Bandwidth improves the network application experience at the branch and makes better use of limited network resources.
+    - The APIC defaults to C(false) when unset during creation.
+    type: bool
+    aliases: [wan_optimization, opt_bandwidth]
+  mld_snoop_policy:
+    description:
+    - The name of the Multicast Listener Discovery (MLD) Snooping Policy the Bridge Domain should use when overriding the default MLD Snooping Policy.
+    - To delete this attribute, pass an empty string.
+    type: str
+    aliases: [mld_snoop, mld_policy]
+  igmp_policy:
+    description:
+    - The name of the IGMP Interface Policy the Bridge Domain should use when overriding the default IGMP Interface Policy.
+    - To delete this attribute, pass an empty string.
+    type: str
+    aliases: [igmp]
+  vlan:
+    description:
+    - The selected VLAN for bridge domain access port encapsulation.
+    - To delete this attribute, pass an empty string.
+    type: str
+    aliases: [encap]
+  monitoring_policy:
+    description:
+    - The name of the Monitoring Policy to apply to the Bridge Domain.
+    - To delete this attribute, pass an empty string.
+    type: str
+    aliases: [mon_pol, monitoring_pol]
+  first_hop_security_policy:
+    description:
+    - The name of the First Hop Security Policy to apply to the Bridge Domain.
+    - To delete this attribute, pass an empty string.
+    type: str
+    aliases: [fhsp, fhs_pol, fhsp_name]
+  pim_source_filter:
+    description:
+    - The name of the PIM Source Filter to apply to the Bridge Domain.
+    - To delete this attribute, pass an empty string.
+    - Only available in APIC version 5.2 or later.
+    type: str
+    aliases: [pim_source]
+  pim_destination_filter:
+    description:
+    - The name of the PIM Destination Filter to apply to the Bridge Domain.
+    - To delete this attribute, pass an empty string.
+    - Only available in APIC version 5.2 or later.
+    type: str
+    aliases: [pim_dest, pim_destination]
+
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -162,6 +261,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jacob McGill (@jmcgill298)
+- Samita Bhattacharjee (@samitab)
 """
 
 EXAMPLES = r"""
@@ -175,6 +275,19 @@ EXAMPLES = r"""
     bd: web_servers
     mac_address: 00:22:BD:F8:19:FE
     vrf: prod_vrf
+    host_based_routing: true
+    allow_intersite_bum_traffic: true
+    allow_intersite_l2_stretch: true
+    allow_ipv6_mcast: true
+    ll_addr: "fe80::1322:33ff:fe44:5566"
+    vmac: "00:AA:BB:CC:DD:03"
+    optimize_wan_bandwidth: true
+    vlan: vlan-101
+    igmp_policy: web_servers_igmp_pol
+    monitoring_policy: web_servers_monitoring_pol
+    igmp_snoop_policy: web_servers_igmp_snoop
+    mld_snoop_policy: web_servers_mld_snoop
+    first_hop_security_policy: web_servers_fhs
     state: present
   delegate_to: localhost
 
@@ -202,6 +315,21 @@ EXAMPLES = r"""
     bd: web_servers
     arp_flooding: true
     l2_unknown_unicast: flood
+    state: present
+  delegate_to: localhost
+
+- name: Modify a Bridge Domain to remove mld_snoop_policy and first_hop_security_policy
+  cisco.aci.aci_bd:
+    host: "{{ inventory_hostname }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    validate_certs: true
+    tenant: prod
+    bd: web_servers
+    arp_flooding: true
+    l2_unknown_unicast: flood
+    mld_snoop_policy: ""
+    first_hop_security_policy: ""
     state: present
   delegate_to: localhost
 
@@ -378,6 +506,22 @@ def main():
         route_profile=dict(type="str"),
         route_profile_l3out=dict(type="str"),
         name_alias=dict(type="str"),
+        host_based_routing=dict(type="bool", aliases=["advertise_host_routes"]),
+        enable_rogue_except_mac=dict(type="bool"),
+        allow_intersite_bum_traffic=dict(type="bool", aliases=["allow_bum_traffic"]),
+        allow_intersite_l2_stretch=dict(type="bool", aliases=["allow_l2_stretch"]),
+        allow_ipv6_multicast=dict(type="bool", aliases=["ipv6_multicast", "ipv6_mcast", "allow_ipv6_mcast"]),
+        link_local_address=dict(type="str", aliases=["ll_addr_ipv6", "ll_addr", "link_local"]),
+        multicast_arp_drop=dict(type="bool", aliases=["mcast_arp_drop"]),
+        vmac=dict(type="str"),
+        optimize_wan_bandwidth=dict(type="bool", aliases=["wan_optimization", "opt_bandwidth"]),
+        mld_snoop_policy=dict(type="str", aliases=["mld_snoop", "mld_policy"]),
+        igmp_policy=dict(type="str", aliases=["igmp"]),
+        vlan=dict(type="str", aliases=["encap"]),
+        monitoring_policy=dict(type="str", aliases=["mon_pol", "monitoring_pol"]),
+        first_hop_security_policy=dict(type="str", aliases=["fhsp", "fhs_pol", "fhsp_name"]),
+        pim_source_filter=dict(type="str", aliases=["pim_source"]),
+        pim_destination_filter=dict(type="str", aliases=["pim_dest", "pim_destination"]),
     )
 
     module = AnsibleModule(
@@ -422,7 +566,47 @@ def main():
     route_profile = module.params.get("route_profile")
     route_profile_l3out = module.params.get("route_profile_l3out")
     name_alias = module.params.get("name_alias")
+    host_based_routing = aci.boolean(module.params.get("host_based_routing"))
+    enable_rogue_except_mac = aci.boolean(module.params.get("enable_rogue_except_mac"))
+    allow_intersite_bum_traffic = aci.boolean(module.params.get("allow_intersite_bum_traffic"))
+    allow_intersite_l2_stretch = aci.boolean(module.params.get("allow_intersite_l2_stretch"))
+    allow_ipv6_multicast = aci.boolean(module.params.get("allow_ipv6_multicast"))
+    link_local_address = module.params.get("link_local_address")
+    multicast_arp_drop = aci.boolean(module.params.get("multicast_arp_drop"))
+    vmac = module.params.get("vmac")
+    optimize_wan_bandwidth = aci.boolean(module.params.get("optimize_wan_bandwidth"))
+    mld_snoop_policy = module.params.get("mld_snoop_policy")
+    igmp_policy = module.params.get("igmp_policy")
+    vlan = module.params.get("vlan")
+    monitoring_policy = module.params.get("monitoring_policy")
+    first_hop_security_policy = module.params.get("first_hop_security_policy")
+    pim_source_filter = module.params.get("pim_source_filter")
+    pim_destination_filter = module.params.get("pim_destination_filter")
 
+    child_classes = [
+        "fvRsCtx",
+        "fvRsIgmpsn",
+        "fvRsBDToNdP",
+        "fvRsBdToEpRet",
+        "fvRsBDToProfile",
+        "fvRsMldsn",
+        "igmpIfP",
+        "igmpRsIfPol",
+        "fvAccP",
+        "fvRsABDPolMonPol",
+        "fvRsBDToFhs",
+    ]
+    if pim_source_filter is not None or pim_destination_filter is not None:
+        # Only valid for APIC verion 5.2+
+        child_classes.extend(
+            [
+                "pimBDP",
+                "pimBDFilterPol",
+                "pimBDSrcFilterPol",
+                "pimBDDestFilterPol",
+                "rtdmcRsFilterToRtMapPol",
+            ]
+        )
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -436,7 +620,7 @@ def main():
             module_object=bd,
             target_filter={"name": bd},
         ),
-        child_classes=["fvRsCtx", "fvRsIgmpsn", "fvRsBDToNdP", "fvRsBdToEpRet", "fvRsBDToProfile"],
+        child_classes=child_classes,
     )
 
     aci.get_existing()
@@ -458,22 +642,52 @@ def main():
             unkMacUcastAct=l2_unknown_unicast,
             unkMcastAct=l3_unknown_multicast,
             nameAlias=name_alias,
+            enableRogueExceptMac=enable_rogue_except_mac,
+            hostBasedRouting=host_based_routing,
+            intersiteBumTrafficAllow=allow_intersite_bum_traffic,
+            intersiteL2Stretch=allow_intersite_l2_stretch,
+            ipv6McastAllow=allow_ipv6_multicast,
+            llAddr=link_local_address,
+            mcastARPDrop=multicast_arp_drop,
+            vmac=vmac,
+            OptimizeWanBandwidth=optimize_wan_bandwidth,
         )
 
         if ipv6_l3_unknown_multicast is not None:
             class_config["v6unkMcastAct"] = ipv6_l3_unknown_multicast
 
-        aci.payload(
-            aci_class="fvBD",
-            class_config=class_config,
-            child_configs=[
-                {"fvRsCtx": {"attributes": {"tnFvCtxName": vrf}}},
-                {"fvRsIgmpsn": {"attributes": {"tnIgmpSnoopPolName": igmp_snoop_policy}}},
-                {"fvRsBDToNdP": {"attributes": {"tnNdIfPolName": ipv6_nd_policy}}},
-                {"fvRsBdToEpRet": {"attributes": {"resolveAct": endpoint_retention_action, "tnFvEpRetPolName": endpoint_retention_policy}}},
-                {"fvRsBDToProfile": {"attributes": {"tnL3extOutName": route_profile_l3out, "tnRtctrlProfileName": route_profile}}},
-            ],
-        )
+        child_configs = [
+            {"fvRsCtx": {"attributes": {"tnFvCtxName": vrf}}},
+            {"fvRsIgmpsn": {"attributes": {"tnIgmpSnoopPolName": igmp_snoop_policy}}},
+            {"fvRsMldsn": {"attributes": {"tnMldSnoopPolName": mld_snoop_policy}}},
+            {"fvRsBDToNdP": {"attributes": {"tnNdIfPolName": ipv6_nd_policy}}},
+            {"fvRsBdToEpRet": {"attributes": {"resolveAct": endpoint_retention_action, "tnFvEpRetPolName": endpoint_retention_policy}}},
+            {"fvRsBDToProfile": {"attributes": {"tnL3extOutName": route_profile_l3out, "tnRtctrlProfileName": route_profile}}},
+            {"fvRsBDToFhs": {"attributes": {"tnFhsBDPolName": first_hop_security_policy}}},
+            {"fvAccP": {"attributes": {"encap": vlan}}},
+            {"fvRsABDPolMonPol": {"attributes": {"tnMonEPGPolName": monitoring_policy}}},
+        ]
+
+        if igmp_policy is not None:
+            igmp_policy_tdn = "" if igmp_policy == "" else "uni/tn-{0}/igmpIfPol-{1}".format(tenant, igmp_policy)
+            child_configs.append({"igmpIfP": {"attributes": {}, "children": [{"igmpRsIfPol": {"attributes": {"tDn": igmp_policy_tdn}}}]}})
+        if pim_source_filter is not None or pim_destination_filter is not None:
+            pim_bd = {"pimBDP": {"attributes": {}, "children": []}}
+            pim_filter_pol = {"pimBDFilterPol": {"attributes": {}, "children": []}}
+            if pim_source_filter is not None:
+                pim_source_filter_tdn = "" if pim_source_filter == "" else "uni/tn-{0}/rtmap-{1}".format(tenant, pim_source_filter)
+                pim_filter_pol["pimBDFilterPol"]["children"].append(
+                    {"pimBDSrcFilterPol": {"attributes": {}, "children": [{"rtdmcRsFilterToRtMapPol": {"attributes": {"tDn": pim_source_filter_tdn}}}]}}
+                )
+            if pim_destination_filter is not None:
+                pim_destination_filter_tdn = "" if pim_destination_filter == "" else "uni/tn-{0}/rtmap-{1}".format(tenant, pim_destination_filter)
+                pim_filter_pol["pimBDFilterPol"]["children"].append(
+                    {"pimBDDestFilterPol": {"attributes": {}, "children": [{"rtdmcRsFilterToRtMapPol": {"attributes": {"tDn": pim_destination_filter_tdn}}}]}}
+                )
+            pim_bd["pimBDP"]["children"].append(pim_filter_pol)
+            child_configs.append(pim_bd)
+
+        aci.payload(aci_class="fvBD", class_config=class_config, child_configs=child_configs)
 
         aci.get_diff(aci_class="fvBD")
 

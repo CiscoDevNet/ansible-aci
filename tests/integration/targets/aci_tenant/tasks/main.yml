@@ -1,6 +1,7 @@
 # Test code for the ACI modules
 # Copyright: (c) 2017, Dag Wieers (@dagwieers) <dag@wieers.com>
 # Copyright: (c) 2020, Lionel Hercot (@lhercot) <lhercot@cisco.com>
+# Copyright: (c) 2024, Samita Bhattacharjee (@samiib) <samitab@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -224,6 +225,75 @@
     - cm_add_tenant_again_no_descr is not changed
     - nm_add_tenant_again_no_descr is not changed
 
+# TEST NO VERIFICATION
+- name: Create tenant with no verification (check mode)
+  cisco.aci.aci_tenant: &aci_tenant_no_verify
+    <<: *tenant_present
+    tenant: anstest-no-verify
+    description: Ansible Test
+    no_verification: true
+  check_mode: true
+  register: tenant_present_no_verify_cm
+
+- name: Create tenant with no verification
+  cisco.aci.aci_tenant:
+    <<: *aci_tenant_no_verify
+  register: tenant_present_no_verify
+
+- name: Create tenant with no verification again
+  cisco.aci.aci_tenant:
+    <<: *aci_tenant_no_verify
+  register: tenant_present_no_verify_again
+
+- name: Update tenant with no verification
+  cisco.aci.aci_tenant:
+    <<: *aci_tenant_no_verify
+    description: Ansible Test No Verify
+  register: update_tenant_present_no_verify
+
+- name: Delete tenant with no verification
+  cisco.aci.aci_tenant:
+    <<: *aci_tenant_no_verify
+    state: absent
+  register: delete_tenant_present_no_verify
+
+- name: Delete tenant with no verification again
+  cisco.aci.aci_tenant:
+    <<: *aci_tenant_no_verify
+    state: absent
+  register: delete_tenant_present_no_verify_again
+
+- name: No verification asserts
+  ansible.builtin.assert:
+    that:
+      - tenant_present_no_verify_cm is changed
+      - tenant_present_no_verify_cm.current_verified == false
+      - tenant_present_no_verify_cm.current.0 == tenant_present_no_verify_cm.proposed
+      - tenant_present_no_verify is changed
+      - tenant_present_no_verify.current_verified == false
+      - tenant_present_no_verify.current.0 == tenant_present_no_verify.proposed
+      - tenant_present_no_verify.previous == []
+      - tenant_present_no_verify_again is not changed
+      - tenant_present_no_verify_again.current_verified == true
+      - tenant_present_no_verify_again.current.0.fvTenant.attributes.name == "anstest-no-verify"
+      - tenant_present_no_verify_again.current.0.fvTenant.attributes.descr == "Ansible Test"
+      - tenant_present_no_verify_again.previous.0.fvTenant.attributes.name == "anstest-no-verify"
+      - tenant_present_no_verify_again.previous.0.fvTenant.attributes.descr == "Ansible Test"
+      - update_tenant_present_no_verify is changed
+      - update_tenant_present_no_verify.current_verified == false
+      - update_tenant_present_no_verify.current.0 == update_tenant_present_no_verify.proposed
+      - update_tenant_present_no_verify.previous.0.fvTenant.attributes.name == "anstest-no-verify"
+      - update_tenant_present_no_verify.previous.0.fvTenant.attributes.descr == "Ansible Test"
+      - delete_tenant_present_no_verify is changed
+      - delete_tenant_present_no_verify.current_verified == false
+      - delete_tenant_present_no_verify.current.0 == delete_tenant_present_no_verify.proposed
+      - delete_tenant_present_no_verify.previous.0.fvTenant.attributes.name == "anstest-no-verify"
+      - delete_tenant_present_no_verify.previous.0.fvTenant.attributes.descr == "Ansible Test No Verify"
+      - delete_tenant_present_no_verify_again is not changed
+      - delete_tenant_present_no_verify_again.current_verified == true
+      - delete_tenant_present_no_verify_again.current == []
+      - delete_tenant_present_no_verify_again.previous == []
+      - delete_tenant_present_no_verify_again.proposed == {}
 
 # QUERY ALL TENANTS
 - name: Query all tenants (check_mode)

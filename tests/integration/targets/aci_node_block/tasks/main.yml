@@ -1,0 +1,275 @@
+# Test code for the ACI modules
+# Copyright: (c) 2024, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # CLEAN ENVIRONMENT
+  - name: Remove the ansible_access_spine_switch_profile
+    cisco.aci.aci_access_spine_switch_profile: &aci_access_spine_switch_profile_absent
+      <<: *aci_info
+      switch_profile: ansible_access_spine_switch_profile
+      state: absent
+
+  - name: Remove the ansible_access_leaf_switch_profile
+    cisco.aci.aci_switch_policy_leaf_profile: &aci_access_leaf_switch_profile_absent
+      <<: *aci_info
+      leaf_profile: ansible_access_leaf_switch_profile
+      state: absent
+  
+  # CREATE ACCESS SWITCH POLICY PROFILES
+  - name: Add a new Access Spine Switch profile
+    cisco.aci.aci_access_spine_switch_profile: &aci_access_spine_switch_profile_present
+      <<: *aci_access_spine_switch_profile_absent
+      state: present
+
+  - name: Add a new Access Leaf Switch profile
+    cisco.aci.aci_switch_policy_leaf_profile: &aci_access_leaf_switch_profile_present
+      <<: *aci_access_leaf_switch_profile_absent
+      state: present
+
+  # CREATE ACCESS SWITCH POLICY SELECTORS
+  - name: Add a new Access Spine Switch selector
+    cisco.aci.aci_access_spine_switch_selector:
+      <<: *aci_access_spine_switch_profile_present
+      switch_selector: ansible_access_spine_switch_selector
+      selector_type: range
+      state: present
+
+  - name: Add a new Access Leaf Switch selector
+    cisco.aci.aci_switch_leaf_selector:
+      <<: *aci_access_leaf_switch_profile_present
+      leaf: ansible_access_leaf_switch_selector
+      state: present
+  
+  # CREATE NODE BLOCK FOR SWITCH POLICY LEAF SELECTOR
+  - name: Add a new Node Block for Switch policy leaf selector (check_mode)
+    cisco.aci.aci_node_block: &aci_node_block_leaf_present
+      <<: *aci_info
+      switch_profile: ansible_access_leaf_switch_profile
+      port_selector: ansible_access_leaf_switch_selector
+      node_block: ansible_node_block_leaf_1
+      from: 1011
+      to: 1011
+      description: Node Block for Switch policy leaf selector 1
+      type_node: leaf
+      state: present
+    check_mode: true
+    register: cm_add_node_block_leaf
+
+  - name: Add a new Node Block for Switch policy leaf selector (normal_mode)
+    cisco.aci.aci_node_block:
+      <<: *aci_node_block_leaf_present
+    register: nm_add_node_block_leaf
+
+  - name: Add the first Node Block for Switch policy leaf selector again - testing idempotency
+    cisco.aci.aci_node_block:
+      <<: *aci_node_block_leaf_present
+    register: nm_add_node_block_leaf_idempotency
+
+  - name: Add a second Node Block for Switch policy leaf selector (normal_mode)
+    cisco.aci.aci_node_block: &aci_node_block_leaf_2_present
+      <<: *aci_info
+      switch_profile: ansible_access_leaf_switch_profile
+      port_selector: ansible_access_leaf_switch_selector
+      node_block: ansible_node_block_leaf_2
+      from: 1012
+      to: 1012
+      description: Node Block for Switch policy leaf selector 2
+      type_node: leaf
+      state: present
+    register: nm_add_node_block_leaf_2
+
+  - name: Add a Node Block for Switch policy spine selector (normal_mode)
+    cisco.aci.aci_node_block: &aci_node_block_spine_present
+      <<: *aci_info
+      switch_profile: ansible_access_spine_switch_profile
+      port_selector: ansible_access_spine_switch_selector
+      node_block: ansible_node_block_spine
+      from: 1014
+      to: 1014
+      description: Node Block for Switch policy spine selector
+      type_node: spine
+      state: present
+    register: nm_add_node_block_spine
+
+  - name: Asserts for Node Blocks creation tasks
+    ansible.builtin.assert:
+      that:
+        - cm_add_node_block_leaf is changed
+        - cm_add_node_block_leaf.previous == []
+        - cm_add_node_block_leaf.current == []
+        - cm_add_node_block_leaf.proposed.infraNodeBlk.attributes.name == "ansible_node_block_leaf_1"
+        - cm_add_node_block_leaf.proposed.infraNodeBlk.attributes.descr == "Node Block for Switch policy leaf selector 1"
+        - cm_add_node_block_leaf.proposed.infraNodeBlk.attributes.from_ == "1011"
+        - cm_add_node_block_leaf.proposed.infraNodeBlk.attributes.to_ == "1011"
+        - cm_add_node_block_leaf.proposed.infraNodeBlk.attributes.dn == "uni/infra/nprof-ansible_access_leaf_switch_profile/leaves-ansible_access_leaf_switch_selector-typ-range/nodeblk-ansible_node_block_leaf_1"
+        - nm_add_node_block_leaf is changed
+        - nm_add_node_block_leaf.previous == []
+        - nm_add_node_block_leaf.current.0.infraNodeBlk.attributes.name == "ansible_node_block_leaf_1"
+        - nm_add_node_block_leaf.current.0.infraNodeBlk.attributes.descr == "Node Block for Switch policy leaf selector 1"
+        - nm_add_node_block_leaf.current.0.infraNodeBlk.attributes.from_ == "1011"
+        - nm_add_node_block_leaf.current.0.infraNodeBlk.attributes.to_ == "1011"
+        - nm_add_node_block_leaf.current.0.infraNodeBlk.attributes.dn == "uni/infra/nprof-ansible_access_leaf_switch_profile/leaves-ansible_access_leaf_switch_selector-typ-range/nodeblk-ansible_node_block_leaf_1"
+        - nm_add_node_block_leaf_idempotency is not changed
+        - nm_add_node_block_leaf_idempotency.current.0.infraNodeBlk.attributes.name == "ansible_node_block_leaf_1"
+        - nm_add_node_block_leaf_idempotency.current.0.infraNodeBlk.attributes.descr == "Node Block for Switch policy leaf selector 1"
+        - nm_add_node_block_leaf_idempotency.current.0.infraNodeBlk.attributes.from_ == "1011"
+        - nm_add_node_block_leaf_idempotency.current.0.infraNodeBlk.attributes.to_ == "1011"
+        - nm_add_node_block_leaf_idempotency.current.0.infraNodeBlk.attributes.dn == "uni/infra/nprof-ansible_access_leaf_switch_profile/leaves-ansible_access_leaf_switch_selector-typ-range/nodeblk-ansible_node_block_leaf_1"
+        - nm_add_node_block_leaf_2 is changed
+        - nm_add_node_block_leaf_2.previous == []
+        - nm_add_node_block_leaf_2.current.0.infraNodeBlk.attributes.name == "ansible_node_block_leaf_2"
+        - nm_add_node_block_leaf_2.current.0.infraNodeBlk.attributes.descr == "Node Block for Switch policy leaf selector 2"
+        - nm_add_node_block_leaf_2.current.0.infraNodeBlk.attributes.from_ == "1012"
+        - nm_add_node_block_leaf_2.current.0.infraNodeBlk.attributes.to_ == "1012"
+        - nm_add_node_block_leaf_2.current.0.infraNodeBlk.attributes.dn == "uni/infra/nprof-ansible_access_leaf_switch_profile/leaves-ansible_access_leaf_switch_selector-typ-range/nodeblk-ansible_node_block_leaf_2"
+        - nm_add_node_block_leaf_2 is changed
+        - nm_add_node_block_leaf_2.previous == []
+        - nm_add_node_block_spine.current.0.infraNodeBlk.attributes.name == "ansible_node_block_spine"
+        - nm_add_node_block_spine.current.0.infraNodeBlk.attributes.descr == "Node Block for Switch policy spine selector"
+        - nm_add_node_block_spine.current.0.infraNodeBlk.attributes.from_ == "1014"
+        - nm_add_node_block_spine.current.0.infraNodeBlk.attributes.to_ == "1014"
+        - nm_add_node_block_spine.current.0.infraNodeBlk.attributes.dn == "uni/infra/spprof-ansible_access_spine_switch_profile/spines-ansible_access_spine_switch_selector-typ-range/nodeblk-ansible_node_block_spine"
+
+  # QUERY NODE BLOCKS
+  - name: Query all Node Block for Switch policy leaf selectors
+    cisco.aci.aci_node_block:
+      <<: *aci_info
+      state: query
+    register: query_all_node_block
+
+  - name: Query ansible_node_block_leaf_1
+    cisco.aci.aci_node_block:
+      <<: *aci_node_block_leaf_present
+      state: query
+    register: query_ansible_node_block_leaf_1
+
+  - name: Query ansible_node_block_spine
+    cisco.aci.aci_node_block:
+      <<: *aci_node_block_spine_present
+      state: query
+    register: query_ansible_node_block_spine
+
+  - name: Asserts query tasks
+    ansible.builtin.assert:
+      that:
+        - query_all_node_block is not changed
+        - query_all_node_block.current|length >= 3
+        - query_ansible_node_block_leaf_1 is not changed
+        - query_ansible_node_block_leaf_1.current|length == 1
+        - query_ansible_node_block_leaf_1.current.0.infraNodeBlk.attributes.name == "ansible_node_block_leaf_1"
+        - query_ansible_node_block_leaf_1.current.0.infraNodeBlk.attributes.descr == "Node Block for Switch policy leaf selector 1"
+        - query_ansible_node_block_leaf_1.current.0.infraNodeBlk.attributes.from_ == "1011"
+        - query_ansible_node_block_leaf_1.current.0.infraNodeBlk.attributes.to_ == "1011"
+        - query_ansible_node_block_leaf_1.current.0.infraNodeBlk.attributes.dn == "uni/infra/nprof-ansible_access_leaf_switch_profile/leaves-ansible_access_leaf_switch_selector-typ-range/nodeblk-ansible_node_block_leaf_1"
+        - query_ansible_node_block_spine is not changed
+        - query_ansible_node_block_spine.current|length == 1
+        - query_ansible_node_block_spine.current.0.infraNodeBlk.attributes.name == "ansible_node_block_spine"
+        - query_ansible_node_block_spine.current.0.infraNodeBlk.attributes.descr == "Node Block for Switch policy spine selector"
+        - query_ansible_node_block_spine.current.0.infraNodeBlk.attributes.from_ == "1014"
+        - query_ansible_node_block_spine.current.0.infraNodeBlk.attributes.to_ == "1014"
+        - query_ansible_node_block_spine.current.0.infraNodeBlk.attributes.dn == "uni/infra/spprof-ansible_access_spine_switch_profile/spines-ansible_access_spine_switch_selector-typ-range/nodeblk-ansible_node_block_spine"
+
+  # UPDATE NODE BLOCKS
+  - name: Update first Node Block for Switch policy leaf selector (check_mode)
+    cisco.aci.aci_node_block: &aci_node_block_leaf_update
+      <<: *aci_node_block_leaf_present
+      description: Updated description for first ansible Node Block for Switch policy leaf selector
+      from: 1013
+      to: 1013
+    check_mode: true
+    register: cm_update_node_block
+
+  - name: Update first Node Block for Switch policy leaf selector (normal_mode)
+    cisco.aci.aci_node_block:
+      <<: *aci_node_block_leaf_update
+    register: nm_update_node_block
+
+  - name: Update first Node Block for Switch policy leaf selector again - testing idempotency
+    cisco.aci.aci_node_block:
+      <<: *aci_node_block_leaf_update
+    register: nm_udpate_node_block_leaf_idempotency
+
+  - name: Asserts for Node Blocks update tasks
+    ansible.builtin.assert:
+      that:
+        - cm_update_node_block is changed
+        - cm_update_node_block.previous == cm_update_node_block.current
+        - cm_update_node_block.proposed.infraNodeBlk.attributes.descr == "Updated description for first ansible Node Block for Switch policy leaf selector"
+        - cm_update_node_block.proposed.infraNodeBlk.attributes.from_ == "1013"
+        - cm_update_node_block.proposed.infraNodeBlk.attributes.to_ == "1013"
+        - nm_update_node_block is changed
+        - nm_update_node_block.current.0.infraNodeBlk.attributes.name == "ansible_node_block_leaf_1"
+        - nm_update_node_block.current.0.infraNodeBlk.attributes.descr == "Updated description for first ansible Node Block for Switch policy leaf selector"
+        - nm_update_node_block.current.0.infraNodeBlk.attributes.from_ == "1013"
+        - nm_update_node_block.current.0.infraNodeBlk.attributes.to_ == "1013"
+        - nm_update_node_block.current.0.infraNodeBlk.attributes.dn == "uni/infra/nprof-ansible_access_leaf_switch_profile/leaves-ansible_access_leaf_switch_selector-typ-range/nodeblk-ansible_node_block_leaf_1"
+        - nm_udpate_node_block_leaf_idempotency is not changed
+        - nm_udpate_node_block_leaf_idempotency.current.0.infraNodeBlk.attributes.name == "ansible_node_block_leaf_1"
+        - nm_udpate_node_block_leaf_idempotency.current.0.infraNodeBlk.attributes.descr == "Updated description for first ansible Node Block for Switch policy leaf selector"
+        - nm_udpate_node_block_leaf_idempotency.current.0.infraNodeBlk.attributes.from_ == "1013"
+        - nm_udpate_node_block_leaf_idempotency.current.0.infraNodeBlk.attributes.to_ == "1013"
+        - nm_udpate_node_block_leaf_idempotency.current.0.infraNodeBlk.attributes.dn == "uni/infra/nprof-ansible_access_leaf_switch_profile/leaves-ansible_access_leaf_switch_selector-typ-range/nodeblk-ansible_node_block_leaf_1"
+
+  # DELETE NODE BLOCKS
+  - name: Remove Node Block for Switch policy leaf selector (check_mode)
+    cisco.aci.aci_node_block: &node_block_leaf_absent
+      <<: *aci_node_block_leaf_update
+      state: absent
+    check_mode: true
+    register: cm_remove_node_block_leaf
+
+  - name: Remove Node Block for Switch policy leaf selector (normal_mode)
+    cisco.aci.aci_node_block:
+      <<: *node_block_leaf_absent
+    register: nm_remove_node_block_leaf
+
+  - name: Remove Node Block for Switch policy leaf selector - testing idempotency
+    cisco.aci.aci_node_block:
+      <<: *node_block_leaf_absent
+    register: nm_remove_node_block_leaf_idempotency
+
+  - name: Asserts deletion tasks
+    ansible.builtin.assert:
+      that:
+        - cm_remove_node_block_leaf is changed
+        - cm_remove_node_block_leaf.current == cm_remove_node_block_leaf.previous
+        - cm_remove_node_block_leaf.proposed == {}
+        - nm_remove_node_block_leaf is changed
+        - nm_remove_node_block_leaf.previous != []
+        - nm_remove_node_block_leaf.proposed == {}
+        - nm_remove_node_block_leaf.current == []
+        - nm_remove_node_block_leaf_idempotency is not changed
+        - nm_remove_node_block_leaf_idempotency.previous == []
+        - nm_remove_node_block_leaf_idempotency.current == []
+
+  # CLEAN ENVIRONMENT BEFORE ENDING TESTS
+  - name: Remove the Access Spine Switch profile - cleanup before ending tests
+    cisco.aci.aci_access_spine_switch_profile:
+      <<: *aci_access_spine_switch_profile_absent
+
+  - name: Remove the Access Leaf Switch profile - cleanup before ending tests
+    cisco.aci.aci_switch_policy_leaf_profile:
+      <<: *aci_access_leaf_switch_profile_absent

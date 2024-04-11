@@ -137,7 +137,7 @@ options:
     description:
     - The delimiter.
     type: str
-    choices: [ "|", "~", "!", "@", "^", "+", "=" ]
+    choices: [ "|", "~", "!", "@", "^", "+", "=", "_" ]
   untagged_vlan:
     description:
     - The access vlan is untagged.
@@ -384,7 +384,7 @@ def main():
         vm_provider=dict(type="str", choices=["cloudfoundry", "kubernetes", "microsoft", "openshift", "openstack", "redhat", "vmware"]),
         promiscuous=dict(type="str", default="reject", choices=["accept", "reject"]),
         custom_epg_name=dict(type="str"),
-        delimiter=dict(type="str", choices=["|", "~", "!", "@", "^", "+", "="]),
+        delimiter=dict(type="str", choices=["|", "~", "!", "@", "^", "+", "=", "_"]),
         untagged_vlan=dict(type="bool"),
         port_binding=dict(type="str", choices=["dynamic", "ephemeral", "static"]),
         port_allocation=dict(type="str", choices=["elastic", "fixed"]),

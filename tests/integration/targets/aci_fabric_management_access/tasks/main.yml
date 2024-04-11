@@ -1,0 +1,328 @@
+# Test code for the ACI modules
+# Copyright: (c) 2024, Akini Ross (@akinross)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: "Please define the following variables: aci_hostname, aci_username and aci_password."
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
+      output_level: "{{ aci_output_level | default('info') }}"
+
+- name: Query system information to fetch version
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+# CLEAN ENVIRONMENT
+- name: Clean environment
+  cisco.aci.aci_fabric_management_access: &aci_fabric_management_access_1_absent
+    <<: *aci_info
+    name: fabric_management_access_policy_1
+    state: absent
+
+- name: Ensure certificate_authority_1 exists
+  cisco.aci.aci_aaa_certificate_authority: &certificate_authority_1
+    <<: *aci_info
+    name: certificate_authority_1
+    certificate_chain: "{{ lookup('file', 'pki/admin.crt') }}"
+    state: present
+
+- name: Ensure key_ring_1 exists
+  cisco.aci.aci_aaa_key_ring: &key_ring_1
+    <<: *aci_info
+    name: key_ring_1
+    certificate: "{{ lookup('file', 'pki/admin.crt') }}"
+    certificate_authority: certificate_authority_1
+    key: "{{ lookup('file', 'pki/admin.key') }}"
+    state: present
+  register: create_key_ring_1
+  until: create_key_ring_1 is not failed
+  delay: 2
+  retries: 4
+
+# CREATE
+- name: Create a new fabric management access policy (check_mode)
+  cisco.aci.aci_fabric_management_access: &aci_fabric_management_access_1_present
+    <<: *aci_fabric_management_access_1_absent
+    description: "This is a example Fabric Management Access policy."
+    state: present
+  check_mode: true
+  register: cm_create_fabric_management_access_policy_1
+
+- name: Create a new fabric management access policy
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_present
+  register: nm_create_fabric_management_access_policy_1
+
+- name: Create a new fabric management access policy again
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_present
+  register: nm_create_fabric_management_access_policy_1_again
+
+- name: Assertions for creating a fabric management access policy
+  ansible.builtin.assert:
+    that:
+      - cm_create_fabric_management_access_policy_1 is changed
+      - cm_create_fabric_management_access_policy_1.previous == []
+      - cm_create_fabric_management_access_policy_1.current == []
+      - cm_create_fabric_management_access_policy_1.proposed.commPol.attributes.name == "fabric_management_access_policy_1"
+      - cm_create_fabric_management_access_policy_1.proposed.commPol.attributes.descr == "This is a example Fabric Management Access policy."
+      - nm_create_fabric_management_access_policy_1 is changed
+      - nm_create_fabric_management_access_policy_1.previous == []
+      - nm_create_fabric_management_access_policy_1.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_create_fabric_management_access_policy_1.current.0.commPol.attributes.descr == "This is a example Fabric Management Access policy."
+      - nm_create_fabric_management_access_policy_1.current.0.commPol.children.0.commShellinabox.attributes.adminSt == "disabled"
+      - nm_create_fabric_management_access_policy_1.current.0.commPol.children.1.commSsh.attributes.adminSt == "enabled"
+      - nm_create_fabric_management_access_policy_1.current.0.commPol.children.2.commTelnet.attributes.adminSt == "disabled"
+      - nm_create_fabric_management_access_policy_1.current.0.commPol.children.3.commHttps.attributes.adminSt == "enabled"
+      - nm_create_fabric_management_access_policy_1.current.0.commPol.children.4.commHttp.attributes.adminSt == "disabled"
+      - nm_create_fabric_management_access_policy_1_again is not changed
+      - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.attributes.descr == "This is a example Fabric Management Access policy."
+      - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.children.0.commShellinabox.attributes.adminSt == "disabled"
+      - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.children.1.commSsh.attributes.adminSt == "enabled"
+      - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.children.2.commTelnet.attributes.adminSt == "disabled"
+      - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.children.3.commHttps.attributes.adminSt == "enabled"
+      - nm_create_fabric_management_access_policy_1_again.previous.0.commPol.children.4.commHttp.attributes.adminSt == "disabled"
+      - nm_create_fabric_management_access_policy_1_again.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_create_fabric_management_access_policy_1_again.current.0.commPol.attributes.descr == "This is a example Fabric Management Access policy."
+      - nm_create_fabric_management_access_policy_1_again.current.0.commPol.children.0.commShellinabox.attributes.adminSt == "disabled"
+      - nm_create_fabric_management_access_policy_1_again.current.0.commPol.children.1.commSsh.attributes.adminSt == "enabled"
+      - nm_create_fabric_management_access_policy_1_again.current.0.commPol.children.2.commTelnet.attributes.adminSt == "disabled"
+      - nm_create_fabric_management_access_policy_1_again.current.0.commPol.children.3.commHttps.attributes.adminSt == "enabled"
+      - nm_create_fabric_management_access_policy_1_again.current.0.commPol.children.4.commHttp.attributes.adminSt == "disabled"
+
+# UPDATE
+- name: Update an existing fabric management access policy description
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_present
+    description: "This is a changed description."
+  register: nm_update_fabric_management_access_policy_1_change_description
+
+- name: Assertions for updating a fabric management access policy description
+  ansible.builtin.assert:
+    that:
+      - nm_update_fabric_management_access_policy_1_change_description is changed
+      - nm_update_fabric_management_access_policy_1_change_description.previous.0.commPol.attributes.descr == "This is a example Fabric Management Access policy."
+      - nm_update_fabric_management_access_policy_1_change_description.previous.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_update_fabric_management_access_policy_1_change_description.current.0.commPol.attributes.descr == "This is a changed description."
+      - nm_update_fabric_management_access_policy_1_change_description.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
+
+- name: Update an existing fabric management access policy telnet, ssh, ssh_web, http, and https configuration
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_present
+    telnet:
+      admin_state: enabled
+      port: 25
+    ssh:
+      admin_state: enabled
+      password_auth_state: enabled
+      port: 20
+      ciphers:
+        - aes128_ctr
+        - aes192_ctr
+        - aes256_ctr
+      kex:
+        - dh_sha1
+        - ecdh_521
+      macs:
+        - sha2_256
+        - sha2_512
+    ssh_web:
+      admin_state: enabled
+    http:
+      admin_state: enabled
+      port: 85
+      allow_origins: http://127.0.0.1:8000
+      allow_credentials: enabled
+      throttle: enabled
+      throttle_rate: 7500
+      throttle_unit: requests_per_minute
+    https:
+      admin_state: enabled
+      port: 445
+      allow_origins: http://127.0.0.1:8000
+      allow_credentials: enabled
+      ssl: 
+        - tls_v1.2
+      dh_param: 4096
+      throttle: enabled
+      throttle_rate: 7500
+      throttle_unit: requests_per_minute
+      admin_key_ring: key_ring_1
+      client_certificate_trustpoint: certificate_authority_1
+      client_certificate_authentication_state: enabled
+  register: nm_update_fabric_management_access_policy_1_change_child_configuration
+
+- name: Update an existing fabric management access policy https without admin_key_ring
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_present
+    https:
+      admin_state: enabled
+      port: 443
+  register: nm_update_fabric_management_access_policy_1_change_https_no_keyring
+
+- name: Assertions for updating a fabric management access policy telnet, ssh_web, http configuration
+  ansible.builtin.assert:
+    that:
+      - nm_update_fabric_management_access_policy_1_change_child_configuration is changed
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.0.commShellinabox.attributes.adminSt == "disabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.1.commSsh.attributes.adminSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.2.commTelnet.attributes.adminSt == "disabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.2.commTelnet.attributes.port == "23"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.adminSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.port == "443"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.accessControlAllowCredential == "disabled"
+      # - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.accessControlAllowOrigins == "" Commented because the default value is different between versions.
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.clientCertAuthState == "disabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.dhParam == "none"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.sslProtocols == "TLSv1.1,TLSv1.2"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.globalThrottleRate == "10000"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.globalThrottleSt == "disabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.attributes.globalThrottleUnit == "r/s"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.3.commHttps.children.0.commRsKeyRing.attributes.tnPkiKeyRingName == "default"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.4.commHttp.attributes.adminSt == "disabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.previous.0.commPol.children.4.commHttp.attributes.port == "80"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.0.commShellinabox.attributes.adminSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.1.commSsh.attributes.adminSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.1.commSsh.attributes.passwordAuth == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.1.commSsh.attributes.port == "20"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.1.commSsh.attributes.sshCiphers == "aes128-ctr,aes192-ctr,aes256-ctr"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.1.commSsh.attributes.kexAlgos == "diffie-hellman-group14-sha1,ecdh-sha2-nistp521"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.1.commSsh.attributes.sshMacs == "hmac-sha2-256,hmac-sha2-512"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.2.commTelnet.attributes.adminSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.2.commTelnet.attributes.port == "25"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.adminSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.port == "445"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.accessControlAllowCredential == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.accessControlAllowOrigins == "http://127.0.0.1:8000"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.clientCertAuthState == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.dhParam == "4096"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.sslProtocols == "TLSv1.2"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.globalThrottleRate == "7500"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.globalThrottleSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.attributes.globalThrottleUnit == "r/m"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.children.0.commRsKeyRing.attributes.tnPkiKeyRingName == "key_ring_1"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.3.commHttps.children.1.commRsClientCertCA.attributes.tDn == "uni/userext/pkiext/tp-certificate_authority_1"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.adminSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.port == "85"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.accessControlAllowOrigins == "http://127.0.0.1:8000"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.accessControlAllowCredential == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.globalThrottleSt == "enabled"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.globalThrottleRate == "7500"
+      - nm_update_fabric_management_access_policy_1_change_child_configuration.current.0.commPol.children.4.commHttp.attributes.globalThrottleUnit == "r/m"
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring is changed
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.previous.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.previous.0.commPol.children.3.commHttps.attributes.port == "445"
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.previous.0.commPol.children.3.commHttps.children.0.commRsKeyRing.attributes.tnPkiKeyRingName == "key_ring_1"
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.current.0.commPol.children.3.commHttps.attributes.port == "443"
+      - nm_update_fabric_management_access_policy_1_change_https_no_keyring.current.0.commPol.children.3.commHttps.children.0.commRsKeyRing.attributes.tnPkiKeyRingName == "key_ring_1"
+
+# VERSION SPECIFIC TESTS
+- name: Test fabric management access policy http redirect
+  when: version.current.0.topSystem.attributes.version is version('5.2', '>=')
+  block:
+    - name: Update an existing fabric management access policy http redirect >= 5.2 
+      cisco.aci.aci_fabric_management_access:
+        <<: *aci_fabric_management_access_1_present
+        http:
+          redirect: tested
+      register: nm_update_fabric_management_access_policy_1_http_redirect
+
+    - name: Assertions for fabric management access policy http redirect
+      ansible.builtin.assert:
+        that:
+          - nm_update_fabric_management_access_policy_1_http_redirect is changed
+          - nm_update_fabric_management_access_policy_1_http_redirect.current.0.commPol.children.4.commHttp.attributes.redirectSt == "tested"
+
+# QUERY
+- name: Query an fabric management access policy
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_present
+    state: query
+  register: query_fabric_management_access_policy_1
+
+- name: Query all fabric management access policies
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Assertions for querying fabric management access policies
+  ansible.builtin.assert:
+    that:
+      - query_fabric_management_access_policy_1 is not changed
+      - query_fabric_management_access_policy_1.current.0.commPol.attributes.descr == "This is a example Fabric Management Access policy."
+      - query_fabric_management_access_policy_1.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - query_fabric_management_access_policy_1.current.0.commPol.children.0.commShellinabox.attributes.adminSt == "enabled"
+      - query_fabric_management_access_policy_1.current.0.commPol.children.1.commSsh.attributes.adminSt == "enabled"
+      - query_fabric_management_access_policy_1.current.0.commPol.children.2.commTelnet.attributes.adminSt == "enabled"
+      - query_fabric_management_access_policy_1.current.0.commPol.children.3.commHttps.attributes.adminSt == "enabled"
+      - query_fabric_management_access_policy_1.current.0.commPol.children.4.commHttp.attributes.adminSt == "enabled"
+      - query_fabric_management_access_policy_1.current.0.commPol.children | length == 5
+      - query_fabric_management_access_policy_1.current | length == 1
+      - query_all is not changed
+      - query_all.current | length >= 2
+
+# DELETE
+- name: Delete an existing fabric management access policy (check_mode)
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_absent
+  check_mode: true
+  register: cm_delete_fabric_management_access_policy_1
+
+- name: Delete an existing fabric management access policy
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_absent
+  register: nm_delete_fabric_management_access_policy_1
+
+- name: Delete an existing fabric management access policy again
+  cisco.aci.aci_fabric_management_access:
+    <<: *aci_fabric_management_access_1_absent
+  register: nm_delete_fabric_management_access_policy_1_again
+
+- name: Assertions for deleting a fabric management access policy
+  ansible.builtin.assert:
+    that:
+      - cm_delete_fabric_management_access_policy_1 is changed
+      - cm_delete_fabric_management_access_policy_1.previous.0.commPol.attributes.descr == "This is a example Fabric Management Access policy."
+      - cm_delete_fabric_management_access_policy_1.previous.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - cm_delete_fabric_management_access_policy_1.current.0.commPol.attributes.descr == "This is a example Fabric Management Access policy."
+      - cm_delete_fabric_management_access_policy_1.current.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - cm_delete_fabric_management_access_policy_1.proposed == {}
+      - nm_delete_fabric_management_access_policy_1 is changed
+      - nm_delete_fabric_management_access_policy_1.previous.0.commPol.attributes.descr == "This is a example Fabric Management Access policy."
+      - nm_delete_fabric_management_access_policy_1.previous.0.commPol.attributes.name == "fabric_management_access_policy_1"
+      - nm_delete_fabric_management_access_policy_1.current == []
+      - nm_delete_fabric_management_access_policy_1_again is not changed
+      - nm_delete_fabric_management_access_policy_1_again.previous == []
+      - nm_delete_fabric_management_access_policy_1_again.current == []
+
+# CLEAN ENVIRONMENT
+- name: Delete key_ring_1
+  cisco.aci.aci_aaa_key_ring:
+    <<: *key_ring_1
+    state: absent
+  register: delete_key_ring_1
+
+- name: Delete certificate_authority_1
+  cisco.aci.aci_aaa_certificate_authority:
+    <<: *certificate_authority_1
+    state: absent

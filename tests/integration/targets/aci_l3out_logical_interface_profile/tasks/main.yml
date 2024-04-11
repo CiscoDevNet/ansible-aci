@@ -1,4 +1,7 @@
+# Test code for the ACI modules
 # Author: Marcel Zehnder (@maercu)
+# Copyright: (c) 2024, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 # SET VARS
@@ -15,9 +18,9 @@
 
 # CLEAN ENVIRONMENT
 - name: Remove test tenant before we kickoff
-  cisco.aci.aci_tenant: &tenant_absent
+  cisco.aci.aci_tenant: &aci_tenant_absent
     <<: *aci_info
-    tenant: ansible_test
+    tenant: ansible_tenant
     state: absent
 
 - name: Verify Cloud and Non-Cloud Sites in use.
@@ -28,151 +31,274 @@
   block:  # block specifies execution of tasks within, based on conditions
   # SETUP ENVIRONMENT
   - name: Create domain
-    cisco.aci.aci_domain: &domain_present
+    cisco.aci.aci_domain: &aci_domain_present
       <<: *aci_info
-      domain: l3outintftest
+      domain: ansible_dom
       domain_type: l3dom
       state: present
 
   - name: Create tenant
-    cisco.aci.aci_tenant: &tenant_present
-      <<: *tenant_absent
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_tenant_absent
       state: present
 
   - name: Configure VRF
-    cisco.aci.aci_vrf: &vrf_present
-      <<: *tenant_present
-      vrf: l3outintftest
+    cisco.aci.aci_vrf: &aci_vrf_present
+      <<: *aci_tenant_present
+      vrf: ansible_vrf
+      state: present
 
   - name: Create L3Out
     cisco.aci.aci_l3out:
-      <<: *vrf_present
-      l3out: l3outintftest
-      domain: l3outintftest
-      route_control: export
+      <<: *aci_vrf_present
+      l3out: ansible_l3out
+      domain: ansible_dom
+      state: present
 
   - name: Crete node profile
-    cisco.aci.aci_l3out_logical_node_profile: &np_present
-      <<: *tenant_present
-      l3out: l3outintftest
-      node_profile: NODES
+    cisco.aci.aci_l3out_logical_node_profile: &aci_np_present
+      <<: *aci_tenant_present
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      state: present
 
-  # BEGIN WITH TESTS (ADD PROFILE)
-  - name: Add interface profile (check_mode)
-    cisco.aci.aci_l3out_logical_interface_profile: &intf_present
-      <<: *np_present
-      interface_profile: INTFS
-      description: test
+# CREATE Logical Interface Profile
+  - name: Add a Logical Interface Profile (check_mode)
+    cisco.aci.aci_l3out_logical_interface_profile: &aci_l3out_logical_interface_profile_present
+      <<: *aci_np_present
+      interface_profile: ansible_interface_profile_1
+      description: Logical Interface Profile 1 for ansible_node_profile
+      nd_policy: default
+      egress_dpp_policy: default
+      ingress_dpp_policy: default
+      qos_priority: level1
+      qos_custom_policy: default
+      pim_v4_interface_profile:
+        tenant: common
+        pim: default
+      pim_v6_interface_profile:
+        tenant: common
+        pim: default
+      igmp_interface_profile:
+        tenant: common
+        igmp: default
+      state: present
     check_mode: true
-    register: cm_add_intf
+    register: cm_add_interface_profile
 
-  - name: Add interface profile (normal_mode)
+  - name: Add a Logical Interface Profile (normal_mode)
     cisco.aci.aci_l3out_logical_interface_profile:
-      <<: *intf_present
-    register: nm_add_intf
+      <<: *aci_l3out_logical_interface_profile_present
+    register: nm_add_interface_profile
 
-  - name: Verify nm_add_intf
+  - name: Add the first Logical Interface Profile again - testing idempotency
+    cisco.aci.aci_l3out_logical_interface_profile:
+      <<: *aci_l3out_logical_interface_profile_present
+    register: nm_add_interface_profile_idempotency
+
+  - name: Add a second Logical Interface Profile (normal_mode)
+    cisco.aci.aci_l3out_logical_interface_profile: &aci_l3out_logical_interface_profile_2_present
+      <<: *aci_np_present
+      interface_profile: ansible_interface_profile_2
+      description: Logical Interface Profile 2 for ansible_node_profile
+      state: present
+    register: nm_add_interface_profile_2
+
+  - name: Asserts for Logical Interface Profile creation tasks
     ansible.builtin.assert:
       that:
-      - cm_add_intf is changed
-      - nm_add_intf is changed
-      - cm_add_intf.previous == nm_add_intf.previous == []
-      - cm_add_intf.sent.l3extLIfP.attributes.name == nm_add_intf.sent.l3extLIfP.attributes.name == 'INTFS'
-      - cm_add_intf.sent.l3extLIfP.attributes.descr == nm_add_intf.sent.l3extLIfP.attributes.descr == 'test'
-      - nm_add_intf.current.0.l3extLIfP.attributes.annotation == 'orchestrator:ansible'
+        - cm_add_interface_profile is changed
+        - cm_add_interface_profile.previous == []
+        - cm_add_interface_profile.current == []
+        - cm_add_interface_profile.proposed.l3extLIfP.attributes.name == "ansible_interface_profile_1"
+        - cm_add_interface_profile.proposed.l3extLIfP.attributes.prio == "level1"
+        - nm_add_interface_profile.proposed.l3extLIfP.children.0.l3extRsNdIfPol.attributes.tnNdIfPolName == "default"
+        - nm_add_interface_profile.proposed.l3extLIfP.children.1.l3extRsIngressQosDppPol.attributes.tnQosDppPolName == "default"
+        - nm_add_interface_profile.proposed.l3extLIfP.children.2.l3extRsEgressQosDppPol.attributes.tnQosDppPolName == "default"
+        - nm_add_interface_profile.proposed.l3extLIfP.children.3.l3extRsLIfPCustQosPol.attributes.tnQosCustomPolName == "default"
+        - nm_add_interface_profile.proposed.l3extLIfP.children.4.pimIPV6IfP.children.0.pimRsV6IfPol.attributes.tDn == "uni/tn-common/pimifpol-default"
+        - nm_add_interface_profile.proposed.l3extLIfP.children.5.pimIfP.children.0.pimRsIfPol.attributes.tDn == "uni/tn-common/pimifpol-default"
+        - nm_add_interface_profile.proposed.l3extLIfP.children.6.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == "uni/tn-common/igmpIfPol-default"
+        - nm_add_interface_profile is changed
+        - nm_add_interface_profile.previous == []
+        - nm_add_interface_profile.current.0.l3extLIfP.attributes.name == "ansible_interface_profile_1"
+        - nm_add_interface_profile.current.0.l3extLIfP.attributes.prio == "level1"
+        - nm_add_interface_profile.current.0.l3extLIfP.children.0.l3extRsLIfPCustQosPol.attributes.tnQosCustomPolName == "default"
+        - nm_add_interface_profile.current.0.l3extLIfP.children.1.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == "uni/tn-common/igmpIfPol-default"
+        - nm_add_interface_profile.current.0.l3extLIfP.children.2.pimIfP.children.0.pimRsIfPol.attributes.tDn == "uni/tn-common/pimifpol-default"
+        - nm_add_interface_profile.current.0.l3extLIfP.children.3.pimIPV6IfP.children.0.pimRsV6IfPol.attributes.tDn == "uni/tn-common/pimifpol-default"
+        - nm_add_interface_profile.current.0.l3extLIfP.children.4.l3extRsEgressQosDppPol.attributes.tnQosDppPolName == "default"
+        - nm_add_interface_profile.current.0.l3extLIfP.children.5.l3extRsIngressQosDppPol.attributes.tnQosDppPolName == "default"
+        - nm_add_interface_profile.current.0.l3extLIfP.children.6.l3extRsNdIfPol.attributes.tnNdIfPolName == "default"
+        - nm_add_interface_profile_idempotency is not changed
+        - nm_add_interface_profile_idempotency.current.0.l3extLIfP.attributes.name == "ansible_interface_profile_1"
+        - nm_add_interface_profile_idempotency.current.0.l3extLIfP.attributes.prio == "level1"
+        - nm_add_interface_profile_idempotency.current.0.l3extLIfP.children.0.l3extRsLIfPCustQosPol.attributes.tnQosCustomPolName == "default"
+        - nm_add_interface_profile_idempotency.current.0.l3extLIfP.children.1.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == "uni/tn-common/igmpIfPol-default"
+        - nm_add_interface_profile_idempotency.current.0.l3extLIfP.children.2.pimIfP.children.0.pimRsIfPol.attributes.tDn == "uni/tn-common/pimifpol-default"
+        - nm_add_interface_profile_idempotency.current.0.l3extLIfP.children.3.pimIPV6IfP.children.0.pimRsV6IfPol.attributes.tDn == "uni/tn-common/pimifpol-default"
+        - nm_add_interface_profile_idempotency.current.0.l3extLIfP.children.4.l3extRsEgressQosDppPol.attributes.tnQosDppPolName == "default"
+        - nm_add_interface_profile_idempotency.current.0.l3extLIfP.children.5.l3extRsIngressQosDppPol.attributes.tnQosDppPolName == "default"
+        - nm_add_interface_profile_idempotency.current.0.l3extLIfP.children.6.l3extRsNdIfPol.attributes.tnNdIfPolName == "default"
+        - nm_add_interface_profile_2 is changed
+        - nm_add_interface_profile_2.previous == []
+        - nm_add_interface_profile_2.current.0.l3extLIfP.attributes.name == "ansible_interface_profile_2"
+        - nm_add_interface_profile_2.current.0.l3extLIfP.attributes.prio == "unspecified"
 
-  - name: Add profile  again, check if idempotency works
-    cisco.aci.aci_l3out_logical_interface_profile:
-      <<: *intf_present
-    register: add_intf_again
-
-  - name: Verify add_intf_again
-    ansible.builtin.assert:
-      that:
-      - add_intf_again is not changed
-
-  # UPDATE INTERFACE PROFILE
-  - name: Update profile
-    cisco.aci.aci_l3out_logical_interface_profile: &intf_update
-      <<: *intf_present
-      nd_policy: NDTEST
-      description: new test
-    register: update_intf
-
-  - name: Verify update_intf
-    ansible.builtin.assert:
-      that:
-      - update_intf.sent.l3extLIfP.attributes.descr == 'new test'
-      - update_intf is changed
-      - update_intf.previous != []
-
-  # ADD ANOTHER PROFILE
-  - name: Add another profile
-    cisco.aci.aci_l3out_logical_interface_profile:
-      <<: *intf_present
-      interface_profile: INTF2
-
-  # QUERY ALL PROFILES
-  - name: Query all profiles
+  # QUERY Logical Interface Profile
+  - name: Query all Logical Interface Profiles
     cisco.aci.aci_l3out_logical_interface_profile:
       <<: *aci_info
       state: query
-    register: query_all_profiles
+    register: query_all_interface_profile
 
-  - name: Verify query_all_profiles
-    ansible.builtin.assert:
-      that:
-      - query_all_profiles is not changed
-      - query_all_profiles.current|length >= 1
-
-  # QUERY A SPECIFIC PROFILE
-  - name: Query a specific profile
+  - name: Query ansible_interface_profile_1
     cisco.aci.aci_l3out_logical_interface_profile:
-      <<: *intf_update
+      <<: *aci_l3out_logical_interface_profile_present
       state: query
-    register: query_spec_profile
+    register: query_ansible_interface_profile_1
 
-  - name: Verify query_spec_profile
+  - name: Asserts query tasks
     ansible.builtin.assert:
       that:
-      - query_spec_profile is not changed
-      - query_spec_profile.current|length == 1
+        - query_all_interface_profile is not changed
+        - query_all_interface_profile.current|length >= 2
+        - query_ansible_interface_profile_1 is not changed
+        - query_ansible_interface_profile_1.current|length == 1
+        - query_ansible_interface_profile_1.current.0.l3extLIfP.attributes.name == "ansible_interface_profile_1"
+        - query_ansible_interface_profile_1.current.0.l3extLIfP.attributes.prio == "level1"
+        - query_ansible_interface_profile_1.current.0.l3extLIfP.children.0.l3extRsLIfPCustQosPol.attributes.tDn == "uni/tn-common/qoscustom-default"
+        - query_ansible_interface_profile_1.current.0.l3extLIfP.children.1.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == "uni/tn-common/igmpIfPol-default"
+        - query_ansible_interface_profile_1.current.0.l3extLIfP.children.2.pimIfP.children.0.pimRsIfPol.attributes.tDn == "uni/tn-common/pimifpol-default"
+        - query_ansible_interface_profile_1.current.0.l3extLIfP.children.3.pimIPV6IfP.children.0.pimRsV6IfPol.attributes.tDn == "uni/tn-common/pimifpol-default"
+        - query_ansible_interface_profile_1.current.0.l3extLIfP.children.4.l3extRsEgressQosDppPol.attributes.tDn == "uni/tn-common/qosdpppol-default"
+        - query_ansible_interface_profile_1.current.0.l3extLIfP.children.5.l3extRsIngressQosDppPol.attributes.tDn == "uni/tn-common/qosdpppol-default"
+        - query_ansible_interface_profile_1.current.0.l3extLIfP.children.6.l3extRsNdIfPol.attributes.tDn == "uni/tn-common/ndifpol-default"
 
-  # QUERY A NON EXISTING PROFILE
-  - name: Query a nonexisting profile
+  #REMOVE ASSOCIATED EPG/EXTERNAL EPG FROM NETFLOW EXPORTER POLICIES
+  - name: Remove all child classes from first Logical Interface Profile (check_mode)
+    cisco.aci.aci_l3out_logical_interface_profile: &aci_l3out_logical_interface_profile_remove_child_classes
+      <<: *aci_l3out_logical_interface_profile_present
+      nd_policy: ""
+      egress_dpp_policy: ""
+      ingress_dpp_policy: ""
+      qos_custom_policy: ""
+      pim_v4_interface_profile: {}
+      pim_v6_interface_profile: {}
+      igmp_interface_profile: {}
+    check_mode: true
+    register: cm_remove_child_classes_interface_profile
+
+  - name: Remove all child classes from first Logical Interface Profile (normal_mode)
     cisco.aci.aci_l3out_logical_interface_profile:
-      <<: *np_present
-      interface_profile: nonexist
-      state: query
-    register: query_nonexist_profile
+      <<: *aci_l3out_logical_interface_profile_remove_child_classes
+    register: nm_remove_child_classes_interface_profile
 
-  - name: Verify query_nonexist_profile
+  - name: Remove all child classes from first Logical Interface Profile again - testing idempotency
+    cisco.aci.aci_l3out_logical_interface_profile:
+      <<: *aci_l3out_logical_interface_profile_remove_child_classes
+    register: nm_remove_child_classes_interface_profile_idempotency
+
+  - name: Asserts for child classes removal tasks
     ansible.builtin.assert:
       that:
-      - query_nonexist_profile is not changed
-      - query_nonexist_profile.current == []
+        - cm_remove_child_classes_interface_profile is changed
+        - cm_remove_child_classes_interface_profile.current == cm_remove_child_classes_interface_profile.previous
+        - cm_remove_child_classes_interface_profile.proposed.l3extLIfP.children.0.l3extRsNdIfPol.attributes.tnNdIfPolName == ""
+        - cm_remove_child_classes_interface_profile.proposed.l3extLIfP.children.1.l3extRsIngressQosDppPol.attributes.tnQosDppPolName == ""
+        - cm_remove_child_classes_interface_profile.proposed.l3extLIfP.children.2.l3extRsEgressQosDppPol.attributes.tnQosDppPolName == ""
+        - cm_remove_child_classes_interface_profile.proposed.l3extLIfP.children.3.l3extRsLIfPCustQosPol.attributes.tnQosCustomPolName == ""
+        - cm_remove_child_classes_interface_profile.proposed.l3extLIfP.children.4.pimIPV6IfP.attributes.status == "deleted"
+        - cm_remove_child_classes_interface_profile.proposed.l3extLIfP.children.5.pimIfP.attributes.status == "deleted"
+        - cm_remove_child_classes_interface_profile.proposed.l3extLIfP.children.6.igmpIfP.attributes.status == "deleted"
+        - nm_remove_child_classes_interface_profile is changed
+        - nm_remove_child_classes_interface_profile.current.0.l3extLIfP.children.0.l3extRsLIfPCustQosPol.attributes.tnQosCustomPolName == ""
+        - nm_remove_child_classes_interface_profile.current.0.l3extLIfP.children.1.l3extRsEgressQosDppPol.attributes.tnQosDppPolName == ""
+        - nm_remove_child_classes_interface_profile.current.0.l3extLIfP.children.2.l3extRsIngressQosDppPol.attributes.tnQosDppPolName == ""
+        - nm_remove_child_classes_interface_profile.current.0.l3extLIfP.children.3.l3extRsNdIfPol.attributes.tnNdIfPolName == ""
+        - nm_remove_child_classes_interface_profile.proposed.l3extLIfP.children.4.pimIPV6IfP.attributes.status == "deleted"
+        - nm_remove_child_classes_interface_profile.proposed.l3extLIfP.children.5.pimIfP.attributes.status == "deleted"
+        - nm_remove_child_classes_interface_profile.proposed.l3extLIfP.children.6.igmpIfP.attributes.status == "deleted"
+        - nm_remove_child_classes_interface_profile.current.0.l3extLIfP.children|length == 4
+        - nm_remove_child_classes_interface_profile_idempotency is not changed
+        - nm_remove_child_classes_interface_profile_idempotency.current.0.l3extLIfP.children.0.l3extRsLIfPCustQosPol.attributes.tnQosCustomPolName == ""
+        - nm_remove_child_classes_interface_profile_idempotency.current.0.l3extLIfP.children.1.l3extRsEgressQosDppPol.attributes.tnQosDppPolName == ""
+        - nm_remove_child_classes_interface_profile_idempotency.current.0.l3extLIfP.children.2.l3extRsIngressQosDppPol.attributes.tnQosDppPolName == ""
+        - nm_remove_child_classes_interface_profile_idempotency.current.0.l3extLIfP.children.3.l3extRsNdIfPol.attributes.tnNdIfPolName == ""
+        - nm_remove_child_classes_interface_profile_idempotency.current.0.l3extLIfP.children|length == 4
 
-  # REMOVE PROFILE
-  - name: Remove interface profile
-    cisco.aci.aci_l3out_logical_interface_profile: &intf_absent
-      <<: *intf_update
+  #UPDATE Logical Interface Profile
+  - name: Update first Logical Interface Profile (check_mode)
+    cisco.aci.aci_l3out_logical_interface_profile: &aci_l3out_logical_interface_profile_update
+      <<: *aci_l3out_logical_interface_profile_remove_child_classes
+      prio: level2
+      description: Updated description for first ansible Logical Interface Profile
+    check_mode: true
+    register: cm_update_interface_profile
+
+  - name: Update first Logical Interface Profile (normal_mode)
+    cisco.aci.aci_l3out_logical_interface_profile:
+      <<: *aci_l3out_logical_interface_profile_update
+    register: nm_update_interface_profile
+
+  - name: Update first Logical Interface Profile again - testing idempotency
+    cisco.aci.aci_l3out_logical_interface_profile:
+      <<: *aci_l3out_logical_interface_profile_update
+    register: nm_udpate_interface_profile_idempotency
+
+  - name: Asserts for Logical Interface Profile update tasks
+    ansible.builtin.assert:
+      that:
+        - cm_update_interface_profile is changed
+        - cm_update_interface_profile.previous == cm_update_interface_profile.current
+        - cm_update_interface_profile.proposed.l3extLIfP.attributes.prio == "level2"
+        - cm_update_interface_profile.proposed.l3extLIfP.attributes.descr == "Updated description for first ansible Logical Interface Profile"
+        - nm_update_interface_profile is changed
+        - nm_update_interface_profile.current.0.l3extLIfP.attributes.prio == "level2"
+        - nm_update_interface_profile.current.0.l3extLIfP.attributes.descr == "Updated description for first ansible Logical Interface Profile"
+        - nm_udpate_interface_profile_idempotency is not changed
+        - nm_udpate_interface_profile_idempotency.current.0.l3extLIfP.attributes.prio == "level2"
+        - nm_udpate_interface_profile_idempotency.current.0.l3extLIfP.attributes.descr == "Updated description for first ansible Logical Interface Profile"
+
+  # DELETE Logical Interface Profile
+  - name: Remove Logical Interface Profile (check_mode)
+    cisco.aci.aci_l3out_logical_interface_profile: &interface_profile_absent
+      <<: *aci_l3out_logical_interface_profile_update
       state: absent
-    register: remove_profile
+    check_mode: true
+    register: cm_remove_interface_profile
 
-  - name: Verify remove_profile
-    ansible.builtin.assert:
-      that:
-      - remove_profile is changed
-      - remove_profile.current == []
-
-  # REMOVE NONEXISTING PROFILE
-  - name: Remove interface profile again (nonexisting)
+  - name: Remove Logical Interface Profile (normal_mode)
     cisco.aci.aci_l3out_logical_interface_profile:
-      <<: *intf_absent
-    register: remove_nonexist_profile
+      <<: *interface_profile_absent
+    register: nm_remove_interface_profile
 
-  - name: Verify remove_nonexist_profile
+  - name: Remove Logical Interface Profile - testing idempotency
+    cisco.aci.aci_l3out_logical_interface_profile:
+      <<: *interface_profile_absent
+    register: nm_remove_interface_profile_idempotency
+
+  - name: Asserts deletion tasks
     ansible.builtin.assert:
       that:
-      - remove_nonexist_profile is not changed
-      - remove_nonexist_profile.current == []
+        - cm_remove_interface_profile is changed
+        - cm_remove_interface_profile.current == cm_remove_interface_profile.previous
+        - cm_remove_interface_profile.proposed == {}
+        - nm_remove_interface_profile is changed
+        - nm_remove_interface_profile.previous != []
+        - nm_remove_interface_profile.proposed == {}
+        - nm_remove_interface_profile.current == []
+        - nm_remove_interface_profile_idempotency is not changed
+        - nm_remove_interface_profile_idempotency.previous == []
+        - nm_remove_interface_profile_idempotency.current == []
+
+  # CLEAN ENVIRONMENT BEFORE ENDING TESTS
+  - name: Remove the ansible_tenant - cleanup before ending tests
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_present
+      state: absent
+
+  - name: Remove the ansible_dom - cleanup before ending tests
+    cisco.aci.aci_domain:
+      <<: *aci_domain_present
+      state: absent

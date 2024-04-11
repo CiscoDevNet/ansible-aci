@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l2out_logical_interface_path
-short_description: Manage Layer 2 Outside (L2Out) logical interface path (l2extRsPathL2OutAtt)
+short_description: Manage Layer 2 Outside (L2Out) logical interface path (l2ext:RsPathL2OutAtt)
 description:
 - Manage interface path entry of L2 outside node (BD extension) on Cisco ACI fabrics.
 options:
@@ -79,7 +79,7 @@ seealso:
 - module: aci_l2out_logical_interface_profile
 - module: aci_l2out_extepg
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes
+  description: More information about the internal APIC class B(l2ext:RsPathL2OutAtt).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Oleksandr Kreshchenko (@alexkross)

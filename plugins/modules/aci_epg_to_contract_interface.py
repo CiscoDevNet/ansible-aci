@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_epg_to_contract_interface
-short_description: Bind EPGs to Consumed Contracts Interface (fv:RsConsIf).
+short_description: Bind EPGs to Consumed Contracts Interface (fv:RsConsIf)
 
 description:
 - Bind EPGs to Consumed Contracts Interface on Cisco ACI fabrics.
