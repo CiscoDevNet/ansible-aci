@@ -82,7 +82,7 @@ current:
   returned: success
   type: list
   sample:
-  [
+    [
         {
             "mgmtConnectivityPrefs": {
                 "attributes": {
