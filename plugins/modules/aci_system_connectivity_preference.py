@@ -16,12 +16,12 @@ ANSIBLE_METADATA = {
 
 DOCUMENTATION = r"""
 ---
-module: aci_system_connectivity_prefs
+module: aci_system_connectivity_preference
 short_description: APIC Connectivity Preferences (mgmt:ConnectivityPrefs)
 description:
 - Manages Alias and Banners on Cisco ACI fabrics.
 options:
-  interface_pref:
+  interface_preference:
     description:
     - Interface to use for external connection.
     type: str
@@ -51,23 +51,23 @@ author:
 
 EXAMPLES = r"""
 - name: Configure Management Connectivity Preference
-  cisco.aci.aci_system_connectivity_prefs:
+  cisco.aci.aci_system_connectivity_preference:
     host: apic
     username: admin
-    interface_pref: ooband
+    interface_preference: ooband
     state: present
   delegate_to: localhost
 
 - name: Configure Management Connectivity Preference
-  cisco.aci.aci_system_connectivity_prefs:
+  cisco.aci.aci_system_connectivity_preference:
     host: apic
     username: admin
-    interface_pref: inband
+    interface_preference: inband
     state: present
   delegate_to: localhost
 
 - name: Query Management Connectivity Preference
-  cisco.aci.aci_system_connectivity_prefs:
+  cisco.aci.aci_system_connectivity_preference:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -216,7 +216,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        interface_pref=dict(type="str"),
+        interface_preference=dict(type="str"),
         state=dict(type="str", default="present", choices=["present", "query"]),
     )
 
@@ -226,7 +226,7 @@ def main():
     )
     aci = ACIModule(module)
 
-    interface_pref = module.params.get("interface_pref")
+    interface_preference = module.params.get("interface_preference")
     state = module.params.get("state")
 
     aci.construct_url(
@@ -240,7 +240,7 @@ def main():
     if state == "present":
         aci.payload(
             aci_class="mgmtConnectivityPrefs",
-            class_config=dict(interfacePref=interface_pref),
+            class_config=dict(interfacePref=interface_preference),
         )
 
         aci.get_diff(aci_class="mgmtConnectivityPrefs")
