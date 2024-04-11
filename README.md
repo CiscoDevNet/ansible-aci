@@ -49,7 +49,7 @@ Once the collection is installed, you can use it in a playbook by specifying the
 
 ## Optimizing Playbooks
 
-To find out more about a number options available to optimize the execution of playbooks, please refer to this documentation, [Optimizing Playbooks](docs/optimizing.md).
+To find out more about optimizing playbook execution, please refer to the [Optimizing Playbooks](docs/optimizing.md) documentation.
 
 ## Update
 
