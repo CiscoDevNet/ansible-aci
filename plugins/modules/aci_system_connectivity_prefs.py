@@ -8,7 +8,11 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "certified",
+}
 
 DOCUMENTATION = r"""
 ---
@@ -30,8 +34,7 @@ options:
     type: str
     choices: [ present, query ]
     default: present
-    
-    
+
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -54,7 +57,7 @@ EXAMPLES = r"""
     interface_pref: ooband
     state: present
   delegate_to: localhost
-  
+
 - name: Configure Management Connectivity Preference
   cisco.aci.aci_system_connectivity_prefs:
     host: apic
@@ -113,7 +116,7 @@ raw:
   description: The raw output returned by the APIC REST API (xml or json)
   returned: parse error
   type: str
-  sample: 
+  sample:
     {
       "totalCount": "1",
       "imdata": [
@@ -133,7 +136,7 @@ sent:
   type: list
   sample:
     {
-        "mgmtConnectivityPrefs": { 
+        "mgmtConnectivityPrefs": {
             "attributes": {
                 "interfacePref": "inband"
             }
@@ -166,7 +169,7 @@ proposed:
   type: dict
   sample:
     {
-        "mgmtConnectivityPrefs": { 
+        "mgmtConnectivityPrefs": {
             "attributes": {
                 "interfacePref": "inband"
             }
@@ -199,10 +202,13 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
 
-
-import re
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+    aci_annotation_spec,
+    aci_owner_spec,
+)
 
 
 def main():
@@ -234,9 +240,7 @@ def main():
     if state == "present":
         aci.payload(
             aci_class="mgmtConnectivityPrefs",
-            class_config=dict(
-                interfacePref=interface_pref
-            ),
+            class_config=dict(interfacePref=interface_pref),
         )
 
         aci.get_diff(aci_class="mgmtConnectivityPrefs")
