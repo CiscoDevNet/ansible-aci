@@ -51,7 +51,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Configure Management Connectivity Preference
+- name: Configure Out-of-band Connectivity Preference
   cisco.aci.aci_system_connectivity_preference:
     host: apic
     username: admin
@@ -59,7 +59,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Configure Management Connectivity Preference
+- name: Configure In-band Connectivity Preference
   cisco.aci.aci_system_connectivity_preference:
     host: apic
     username: admin
