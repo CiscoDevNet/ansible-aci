@@ -81,7 +81,9 @@
   ansible.builtin.assert:
     that:
       - err_update_system_connectivity_preference is failed
-      - err_update_system_connectivity_preference.msg == "APIC Error 120: unknown property value foo, name interfacePref, class mgmtConnectivityPrefs [(Dn0)] Dn0=, "
+      - err_update_system_connectivity_preference.msg == expected_failure_message
+  vars:
+    expected_failure_message: "value of interface_preference must be one of: ooband, inband, got: foo"
 
 # CLEANUP ENVIRONMENT
 - name: Revert system connectivity preference

@@ -26,6 +26,7 @@ options:
     - Interface to use for external connection.
     type: str
     choices: [ inband, ooband ]
+    aliases: [ interface_pref, int_pref, external_connection ]
 
   state:
     description:
@@ -216,7 +217,11 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        interface_preference=dict(type="str"),
+        interface_preference=dict(
+            type="str",
+            choices=["ooband", "inband"],
+            aliases=["interface_pref", "int_pref", "external_connection"],
+        ),
         state=dict(type="str", default="present", choices=["present", "query"]),
     )
 
