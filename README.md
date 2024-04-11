@@ -8,22 +8,28 @@ Modules supporting new features introduced in ACI API in specific ACI versions m
 *Note: This collection is not compatible with versions of Ansible before v2.8.*
 
 ## Requirements
+
 Ansible v2.14 or newer
 
 ## Install
+
 Ansible must be installed
-```
+
+```sh
 sudo pip install ansible
 ```
 
 Install the collection
-```
+
+```sh
 ansible-galaxy collection install cisco.aci
 ```
+
 ## Use
+
 Once the collection is installed, you can use it in a playbook by specifying the full namespace path to the module, plugin and/or role.
 
-```
+```yml
 - hosts: aci
   gather_facts: no
 
@@ -41,33 +47,44 @@ Once the collection is installed, you can use it in a playbook by specifying the
     delegate_to: localhost
 ```
 
+## Optimizing Playbooks
+
+To find out more about a number options available to optimize the execution of playbooks, please refer to this documentation, [Optimizing Playbooks](docs/optimizing.md).
+
 ## Update
+
 Getting the latest/nightly collection build
 
 ### First Approach
+
 Clone the ansible-aci repository.
-```
+
+```sh
 git clone https://github.com/CiscoDevNet/ansible-aci.git
 ```
 
 Go to the ansible-aci directory
-```
+
+```sh
 cd ansible-aci
 ```
 
 Pull the latest master on your aci
-```
+
+```sh
 git pull origin master
 ```
 
 Build and Install a collection from source
-```
+
+```sh
 ansible-galaxy collection build --force
 ansible-galaxy collection install cisco-aci-* --force
 ```
 
 ### Second Approach
-Go to: https://github.com/CiscoDevNet/ansible-aci/actions
+
+Go to [ansible-aci Actions](https://github.com/CiscoDevNet/ansible-aci/actions)
 
 Select the latest CI build
 
@@ -76,13 +93,14 @@ Under Artifacts download collection and unzip it using Terminal or Console.
 *Note: The collection file is a zip file containing a tar.gz file. We recommend using CLI because some GUI-based unarchiver might unarchive both nested archives in one go.*
 
 Install the unarchived tar.gz file
-```
+
+```sh
 ansible-galaxy collection install cisco-aci-1.0.0.tar.gz —-force
 ```
 
-### See Also:
+### See Also
 
-* [Ansible Using collections](https://docs.ansible.com/ansible/latest/user_guide/collections_using.html) for more details.
+- [Ansible Using collections](https://docs.ansible.com/ansible/latest/user_guide/collections_using.html) for more details.
 
 ## Contributing to this collection
 
