@@ -136,7 +136,11 @@ def aci_argument_spec():
         use_ssl=dict(type="bool", fallback=(env_fallback, ["ACI_USE_SSL"])),
         validate_certs=dict(type="bool", fallback=(env_fallback, ["ACI_VALIDATE_CERTS"])),
         output_path=dict(type="str", fallback=(env_fallback, ["ACI_OUTPUT_PATH"])),
-        suppress_verification=dict(type="bool", aliases=["no_verification", "no_verify", "suppress_verify"], fallback=(env_fallback, ["ACI_NO_VERIFICATION"])),
+        suppress_verification=dict(
+            type="bool",
+            aliases=["no_verification", "no_verify", "suppress_verify", "ignore_verify", "ignore_verification"],
+            fallback=(env_fallback, ["ACI_NO_VERIFICATION"]),
+        ),
         suppress_previous=dict(type="bool", aliases=["no_previous", "ignore_previous"], fallback=(env_fallback, ["ACI_SUPPRESS_PREVIOUS"])),
     )
 

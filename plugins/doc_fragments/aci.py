@@ -103,7 +103,7 @@ options:
     - WARNING - This causes the current return value to be set to the proposed value.
     - The current object including default values will be unverifiable in a single task.
     type: bool
-    aliases: [ no_verification, no_verify, suppress_verify ]
+    aliases: [ no_verification, no_verify, suppress_verify, ignore_verify, ignore_verification ]
   suppress_previous:
     description:
     - If C(true), a GET to check previous will not be sent before a POST update to APIC.
