@@ -228,6 +228,9 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
+        required_if=[
+            ["state", "present", ["interface_preference"]],
+        ],
     )
     aci = ACIModule(module)
 
