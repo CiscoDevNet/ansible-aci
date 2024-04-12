@@ -19,7 +19,7 @@ DOCUMENTATION = r"""
 module: aci_system_connectivity_preference
 short_description: APIC Connectivity Preferences (mgmt:ConnectivityPrefs)
 description:
-- Manages Management Connectivity Preference on Cisco ACI fabrics.
+- Manages APIC Connectivity Preferences on Cisco ACI fabrics.
 options:
   interface_preference:
     description:
