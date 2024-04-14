@@ -26,7 +26,7 @@ ansible_network_os=cisco.aci.aci
 Instead of using `hostname`, `username` & `password` in the playbook, the following variables can be used in the inventory.
 
 ```ini
-ansible_user=admin
+ansible_user=apicUser
 ansible_password="SomeSecretPassword"
 ```
 
@@ -94,7 +94,6 @@ If enabled, a GET call to check previous object state will not be sent before a 
       description: Web Intranet EPG
       bd: prod_bd
       suppress_previous: true
-    delegate_to: localhost
 ```
 
 ### `suppress_verification`
@@ -127,5 +126,4 @@ If enabled, a verifying GET call to check current object state will not be sent 
       description: Web Intranet EPG
       bd: prod_bd
       suppress_verification: true
-    delegate_to: localhost
 ```
