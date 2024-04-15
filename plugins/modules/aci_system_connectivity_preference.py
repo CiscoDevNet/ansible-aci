@@ -55,6 +55,7 @@ EXAMPLES = r"""
   cisco.aci.aci_system_connectivity_preference:
     host: apic
     username: admin
+    password: SomeSecretPassword
     interface_preference: ooband
     state: present
   delegate_to: localhost
@@ -63,6 +64,7 @@ EXAMPLES = r"""
   cisco.aci.aci_system_connectivity_preference:
     host: apic
     username: admin
+    password: SomeSecretPassword
     interface_preference: inband
     state: present
   delegate_to: localhost
