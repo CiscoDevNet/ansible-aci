@@ -139,7 +139,7 @@ def aci_argument_spec():
         suppress_verification=dict(
             type="bool",
             aliases=["no_verification", "no_verify", "suppress_verify", "ignore_verify", "ignore_verification"],
-            fallback=(env_fallback, ["ACI_NO_VERIFICATION"]),
+            fallback=(env_fallback, ["ACI_SUPPRESS_VERIFICATION"]),
         ),
         suppress_previous=dict(type="bool", aliases=["no_previous", "ignore_previous"], fallback=(env_fallback, ["ACI_SUPPRESS_PREVIOUS"])),
     )

@@ -98,7 +98,7 @@ options:
   suppress_verification:
     description:
     - If C(true), a verifying GET will not be sent after a POST update to APIC.
-    - If the value is not specified in the task, the value of environment variable C(ACI_NO_VERIFICATION) will be used instead.
+    - If the value is not specified in the task, the value of environment variable C(ACI_SUPPRESS_VERIFICATION) will be used instead.
     - The default value is C(false).
     - WARNING - This causes the current return value to be set to the proposed value.
     - The current object including default values will be unverifiable in a single task.
