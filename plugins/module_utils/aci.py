@@ -1455,7 +1455,7 @@ class ACIModule(object):
                 self.result["current_verified"] = False
                 self.existing = [self.proposed] if self.proposed != {} else []
             else:
-                # exisiting already equals the previous
+                # existing already equals the previous
                 self.result["current_verified"] = True
         elif changed:
             uri = self.url + self.filter_string
