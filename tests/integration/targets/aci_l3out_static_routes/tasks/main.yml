@@ -129,6 +129,146 @@
       - cm_add_route_again.proposed.ipRouteP.attributes.ip == "10.1.0.1/24"
       - nm_add_route_again.current[0].ipRouteP.attributes.ip == "10.1.0.1/24"
 
+  # TEST NO PREVIOUS
+  - name: create static route with no previous (check mode)
+    cisco.aci.aci_l3out_static_routes: &aci_l3out_static_routes_no_previous
+      <<: *route_present
+      prefix: 10.1.0.2/24
+      preference: 10
+      no_previous: true
+    check_mode: true
+    register: static_route_present_no_previous_cm
+
+  - name: create static route with no previous
+    cisco.aci.aci_l3out_static_routes:
+      <<: *aci_l3out_static_routes_no_previous
+    register: static_route_present_no_previous
+
+  - name: create static route with no previous again
+    cisco.aci.aci_l3out_static_routes:
+      <<: *aci_l3out_static_routes_no_previous
+    register: static_route_present_no_previous_again
+
+  - name: update static route with no previous
+    cisco.aci.aci_l3out_static_routes:
+      <<: *aci_l3out_static_routes_no_previous
+      preference: 20
+    register: update_static_route_present_no_previous
+
+  - name: delete static route with no previous
+    cisco.aci.aci_l3out_static_routes:
+      <<: *aci_l3out_static_routes_no_previous
+      state: absent
+    register: delete_static_route_present_no_previous
+
+  - name: delete static route with no previous again
+    cisco.aci.aci_l3out_static_routes:
+      <<: *aci_l3out_static_routes_no_previous
+      state: absent
+    register: delete_static_route_present_no_previous_again
+
+  - name: no previous asserts
+    ansible.builtin.assert:
+      that:
+        - static_route_present_no_previous_cm is changed
+        - static_route_present_no_previous_cm.current == []
+        - static_route_present_no_previous_cm.previous == []
+        - static_route_present_no_previous_cm.proposed.ipRouteP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-lNode/rsnodeL3OutAtt-[topology/pod-1/node-101]/rt-[10.1.0.2/24]"
+        - static_route_present_no_previous_cm.proposed.ipRouteP.attributes.annotation == "orchestrator:ansible"
+        - static_route_present_no_previous is changed
+        - static_route_present_no_previous.current.0.ipRouteP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-lNode/rsnodeL3OutAtt-[topology/pod-1/node-101]/rt-[10.1.0.2/24]"
+        - static_route_present_no_previous.current.0.ipRouteP.attributes.annotation == "orchestrator:ansible"
+        - static_route_present_no_previous.current.0.ipRouteP.attributes.pref == "10"
+        - static_route_present_no_previous.proposed.ipRouteP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-lNode/rsnodeL3OutAtt-[topology/pod-1/node-101]/rt-[10.1.0.2/24]"
+        - static_route_present_no_previous.proposed.ipRouteP.attributes.annotation == "orchestrator:ansible"
+        - static_route_present_no_previous.proposed.ipRouteP.attributes.pref == "10"
+        - static_route_present_no_previous.previous == []
+        - static_route_present_no_previous_again is changed
+        - static_route_present_no_previous_again.current == static_route_present_no_previous.current
+        - static_route_present_no_previous_again.proposed == static_route_present_no_previous.proposed
+        - static_route_present_no_previous_again.previous == []
+        - update_static_route_present_no_previous is changed
+        - update_static_route_present_no_previous.current.0.ipRouteP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-lNode/rsnodeL3OutAtt-[topology/pod-1/node-101]/rt-[10.1.0.2/24]"
+        - update_static_route_present_no_previous.current.0.ipRouteP.attributes.annotation == "orchestrator:ansible"
+        - update_static_route_present_no_previous.current.0.ipRouteP.attributes.pref == "20"
+        - delete_static_route_present_no_previous is changed
+        - delete_static_route_present_no_previous.current == []
+        - delete_static_route_present_no_previous.previous == []
+        - delete_static_route_present_no_previous.proposed == {}
+        - delete_static_route_present_no_previous_again is changed
+        - delete_static_route_present_no_previous_again.current == []
+        - delete_static_route_present_no_previous_again.previous == []
+        - delete_static_route_present_no_previous_again.proposed == {}
+
+  # TEST NO PREVIOUS & NO VERIFICATION
+  - name: create static route with no previous & no verify (check mode)
+    cisco.aci.aci_l3out_static_routes: &aci_l3out_static_routes_no_lb_no_v
+      <<: *route_present
+      prefix: 10.1.0.2/24
+      preference: 10
+      no_previous: true
+      no_verify: true
+    check_mode: true
+    register: static_route_present_no_lb_no_v_cm
+
+  - name: create static route with no previous & no verify
+    cisco.aci.aci_l3out_static_routes:
+      <<: *aci_l3out_static_routes_no_lb_no_v
+    register: static_route_present_no_lb_no_v
+
+  - name: create static route with no previous again & no verify
+    cisco.aci.aci_l3out_static_routes:
+      <<: *aci_l3out_static_routes_no_lb_no_v
+    register: static_route_present_no_lb_no_v_again
+
+  - name: update static route with no previous & no verify
+    cisco.aci.aci_l3out_static_routes:
+      <<: *aci_l3out_static_routes_no_lb_no_v
+      preference: 20
+    register: update_static_route_present_no_lb_no_v
+
+  - name: delete static route with no previous & no verify
+    cisco.aci.aci_l3out_static_routes:
+      <<: *aci_l3out_static_routes_no_lb_no_v
+      state: absent
+    register: delete_static_route_present_no_lb_no_v
+
+  - name: delete static route with no previous again & no verify
+    cisco.aci.aci_l3out_static_routes:
+      <<: *aci_l3out_static_routes_no_lb_no_v
+      state: absent
+    register: delete_static_route_present_no_lb_no_v_again
+
+  - name: no previous & no verify asserts
+    ansible.builtin.assert:
+      that:
+        - static_route_present_no_lb_no_v_cm is changed
+        - static_route_present_no_lb_no_v_cm.current.0 == static_route_present_no_lb_no_v_cm.proposed
+        - static_route_present_no_lb_no_v_cm.previous == []
+        - static_route_present_no_lb_no_v_cm.proposed.ipRouteP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-lNode/rsnodeL3OutAtt-[topology/pod-1/node-101]/rt-[10.1.0.2/24]"
+        - static_route_present_no_lb_no_v_cm.proposed.ipRouteP.attributes.pref == "10"
+        - static_route_present_no_lb_no_v_cm.proposed.ipRouteP.attributes.annotation == "orchestrator:ansible"
+        - static_route_present_no_lb_no_v is changed
+        - static_route_present_no_lb_no_v.current.0 == static_route_present_no_lb_no_v.proposed
+        - static_route_present_no_lb_no_v.previous == []
+        - static_route_present_no_lb_no_v_again is changed
+        - static_route_present_no_lb_no_v_again.current == static_route_present_no_lb_no_v.current
+        - static_route_present_no_lb_no_v_again.proposed == static_route_present_no_lb_no_v.proposed
+        - static_route_present_no_lb_no_v_again.previous == []
+        - update_static_route_present_no_lb_no_v is changed
+        - update_static_route_present_no_lb_no_v.current.0 == update_static_route_present_no_lb_no_v.proposed
+        - update_static_route_present_no_lb_no_v.current.0.ipRouteP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-lNode/rsnodeL3OutAtt-[topology/pod-1/node-101]/rt-[10.1.0.2/24]"
+        - update_static_route_present_no_lb_no_v.current.0.ipRouteP.attributes.annotation == "orchestrator:ansible"
+        - update_static_route_present_no_lb_no_v.current.0.ipRouteP.attributes.pref == "20"
+        - delete_static_route_present_no_lb_no_v is changed
+        - delete_static_route_present_no_lb_no_v.current == []
+        - delete_static_route_present_no_lb_no_v.previous == []
+        - delete_static_route_present_no_lb_no_v.proposed == {}
+        - delete_static_route_present_no_lb_no_v_again is changed
+        - delete_static_route_present_no_lb_no_v_again.current == []
+        - delete_static_route_present_no_lb_no_v_again.previous == []
+        - delete_static_route_present_no_lb_no_v_again.proposed == {}
+
   - name: Query system information
     cisco.aci.aci_system:
       <<: *aci_info

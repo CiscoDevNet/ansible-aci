@@ -136,7 +136,12 @@ def aci_argument_spec():
         use_ssl=dict(type="bool", fallback=(env_fallback, ["ACI_USE_SSL"])),
         validate_certs=dict(type="bool", fallback=(env_fallback, ["ACI_VALIDATE_CERTS"])),
         output_path=dict(type="str", fallback=(env_fallback, ["ACI_OUTPUT_PATH"])),
-        suppress_verification=dict(type="bool", aliases=["no_verification", "no_verify", "suppress_verify"], fallback=(env_fallback, ["ACI_NO_VERIFICATION"])),
+        suppress_verification=dict(
+            type="bool",
+            aliases=["no_verification", "no_verify", "suppress_verify", "ignore_verify", "ignore_verification"],
+            fallback=(env_fallback, ["ACI_SUPPRESS_VERIFICATION"]),
+        ),
+        suppress_previous=dict(type="bool", aliases=["no_previous", "ignore_previous"], fallback=(env_fallback, ["ACI_SUPPRESS_PREVIOUS"])),
     )
 
 
@@ -419,6 +424,9 @@ class ACIModule(object):
 
         # get no verify flag
         self.suppress_verification = self.params.get("suppress_verification")
+
+        # get suppress previous flag
+        self.suppress_previous = self.params.get("suppress_previous")
 
         # Ensure protocol is set
         self.define_protocol()
@@ -1302,7 +1310,7 @@ class ACIModule(object):
         """
         self.proposed = dict()
 
-        if not self.existing:
+        if not self.existing and not self.suppress_previous:
             return
         elif not self.module.check_mode:
             # Sign and encode request as to APIC's wishes
@@ -1429,9 +1437,29 @@ class ACIModule(object):
         that this method can be used to supply the existing configuration when using the get_diff method. The response, status,
         and existing configuration will be added to the self.result dictionary.
         """
-        uri = self.url + self.filter_string
+        if self.suppress_previous:
+            self.existing = []
+            return
 
+        uri = self.url + self.filter_string
         self.api_call("GET", uri, data=None, return_response=False)
+
+    def __get_existing_validation(self, changed):
+        """
+        This method is used to get the existing object(s) state after a config change has been completed.
+        It will not get the object(s) state if there is no change or suppress_verification is enabled.
+        When suppress_verification is enabled, the existing will be set to proposed if there was a change or suppress_previous is enabled.
+        """
+        if self.suppress_verification:
+            if changed or self.suppress_previous:
+                self.result["current_verified"] = False
+                self.existing = [self.proposed] if self.proposed != {} else []
+            else:
+                # existing already equals the previous
+                self.result["current_verified"] = True
+        elif changed:
+            uri = self.url + self.filter_string
+            self.api_call("GET", uri, data=None, return_response=False)
 
     @staticmethod
     def get_nested_config(proposed_child, existing_children):
@@ -1597,15 +1625,7 @@ class ACIModule(object):
         if "state" in self.params:
             self.original = self.existing
             if self.params.get("state") in ("absent", "present"):
-                if self.suppress_verification:
-                    if self.result["changed"]:
-                        self.result["current_verified"] = False
-                        self.existing = [self.proposed]
-                    else:
-                        self.result["current_verified"] = True
-                        # exisiting already equals the previous
-                else:
-                    self.get_existing()
+                self.__get_existing_validation(self.result["changed"])
 
             # if self.module._diff and self.original != self.existing:
             #     self.result['diff'] = dict(

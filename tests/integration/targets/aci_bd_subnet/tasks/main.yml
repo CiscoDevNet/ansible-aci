@@ -171,6 +171,149 @@
         - create_subnet2_5.sent.fvSubnet.children.0.fvRsBDSubnetToProfile.attributes.tnRtctrlProfileName == 'default'
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
+  # TEST NO PREVIOUS
+  - name: create bd subnet with no previous (check mode)
+    cisco.aci.aci_bd_subnet: &aci_bd_subnet_no_previous
+      <<: *aci_subnet_present
+      subnet_name: anstest_no_previous
+      gateway: 10.101.101.10
+      mask: 25
+      no_previous: true
+    check_mode: true
+    register: bd_subnet_present_no_previous_cm
+
+  - name: create bd subnet with no previous
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_previous
+    register: bd_subnet_present_no_previous
+
+  - name: create bd subnet with no previous again
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_previous
+    register: bd_subnet_present_no_previous_again
+
+  - name: update bd subnet with no previous
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_previous
+      descr: Ansible Test no previous
+    register: update_bd_subnet_present_no_previous
+
+  - name: delete bd subnet with no previous
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_previous
+      state: absent
+    register: delete_bd_subnet_present_no_previous
+
+  - name: delete bd subnet with no previous again
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_previous
+      state: absent
+    register: delete_bd_subnet_present_no_previous_again
+
+  - name: no previous asserts
+    ansible.builtin.assert:
+      that:
+        - bd_subnet_present_no_previous_cm is changed
+        - bd_subnet_present_no_previous_cm.current == []
+        - bd_subnet_present_no_previous_cm.previous == []
+        - bd_subnet_present_no_previous_cm.proposed.fvSubnet.attributes.dn == "uni/tn-ansible_test/BD-anstest/subnet-[10.101.101.10/25]"
+        - bd_subnet_present_no_previous_cm.proposed.fvSubnet.attributes.descr == "Ansible Test"
+        - bd_subnet_present_no_previous_cm.proposed.fvSubnet.attributes.annotation == "orchestrator:ansible"
+        - bd_subnet_present_no_previous is changed
+        - bd_subnet_present_no_previous.current.0.fvSubnet.attributes.dn == "uni/tn-ansible_test/BD-anstest/subnet-[10.101.101.10/25]"
+        - bd_subnet_present_no_previous.current.0.fvSubnet.attributes.annotation == "orchestrator:ansible"
+        - bd_subnet_present_no_previous.current.0.fvSubnet.attributes.descr == "Ansible Test"
+        - bd_subnet_present_no_previous.proposed.fvSubnet.attributes.dn == "uni/tn-ansible_test/BD-anstest/subnet-[10.101.101.10/25]"
+        - bd_subnet_present_no_previous.proposed.fvSubnet.attributes.annotation == "orchestrator:ansible"
+        - bd_subnet_present_no_previous.proposed.fvSubnet.attributes.descr == "Ansible Test"
+        - bd_subnet_present_no_previous.previous == []
+        - bd_subnet_present_no_previous_again is changed
+        - bd_subnet_present_no_previous_again.current == bd_subnet_present_no_previous.current
+        - bd_subnet_present_no_previous_again.proposed == bd_subnet_present_no_previous.proposed
+        - bd_subnet_present_no_previous_again.previous == []
+        - update_bd_subnet_present_no_previous is changed
+        - update_bd_subnet_present_no_previous.current.0.fvSubnet.attributes.dn == "uni/tn-ansible_test/BD-anstest/subnet-[10.101.101.10/25]"
+        - update_bd_subnet_present_no_previous.current.0.fvSubnet.attributes.annotation == "orchestrator:ansible"
+        - update_bd_subnet_present_no_previous.current.0.fvSubnet.attributes.descr == "Ansible Test no previous"
+        - delete_bd_subnet_present_no_previous is changed
+        - delete_bd_subnet_present_no_previous.current == []
+        - delete_bd_subnet_present_no_previous.previous == []
+        - delete_bd_subnet_present_no_previous.proposed == {}
+        - delete_bd_subnet_present_no_previous_again is changed
+        - delete_bd_subnet_present_no_previous_again.current == []
+        - delete_bd_subnet_present_no_previous_again.previous == []
+        - delete_bd_subnet_present_no_previous_again.proposed == {}
+
+  # TEST NO PREVIOUS & NO VERIFICATION
+  - name: create bd subnet with no previous & no verify (check mode)
+    cisco.aci.aci_bd_subnet: &aci_bd_subnet_no_lb_no_v
+      <<: *aci_subnet_present
+      subnet_name: anstest_no_lb_no_v
+      gateway: 10.102.101.12
+      mask: 25
+      no_previous: true
+      no_verify: true
+    check_mode: true
+    register: bd_subnet_present_no_lb_no_v_cm
+
+  - name: create bd subnet with no previous & no verify
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_lb_no_v
+    register: bd_subnet_present_no_lb_no_v
+
+  - name: create bd subnet with no previous again & no verify
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_lb_no_v
+    register: bd_subnet_present_no_lb_no_v_again
+
+  - name: update bd subnet with no previous & no verify
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_lb_no_v
+      descr: Ansible Test no previous & no verify
+    register: update_bd_subnet_present_no_lb_no_v
+
+  - name: delete bd subnet with no previous & no verify
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_lb_no_v
+      state: absent
+    register: delete_bd_subnet_present_no_lb_no_v
+
+  - name: delete bd subnet with no previous again & no verify
+    cisco.aci.aci_bd_subnet:
+      <<: *aci_bd_subnet_no_lb_no_v
+      state: absent
+    register: delete_bd_subnet_present_no_lb_no_v_again
+
+  - name: no previous & no verify asserts
+    ansible.builtin.assert:
+      that:
+        - bd_subnet_present_no_lb_no_v_cm is changed
+        - bd_subnet_present_no_lb_no_v_cm.current.0 == bd_subnet_present_no_lb_no_v_cm.proposed
+        - bd_subnet_present_no_lb_no_v_cm.previous == []
+        - bd_subnet_present_no_lb_no_v_cm.proposed.fvSubnet.attributes.dn == "uni/tn-ansible_test/BD-anstest/subnet-[10.102.101.12/25]"
+        - bd_subnet_present_no_lb_no_v_cm.proposed.fvSubnet.attributes.descr == "Ansible Test"
+        - bd_subnet_present_no_lb_no_v_cm.proposed.fvSubnet.attributes.annotation == "orchestrator:ansible"
+        - bd_subnet_present_no_lb_no_v is changed
+        - bd_subnet_present_no_lb_no_v.current.0 == bd_subnet_present_no_lb_no_v.proposed
+        - bd_subnet_present_no_lb_no_v.previous == []
+        - bd_subnet_present_no_lb_no_v_again is changed
+        - bd_subnet_present_no_lb_no_v_again.current == bd_subnet_present_no_lb_no_v.current
+        - bd_subnet_present_no_lb_no_v_again.proposed == bd_subnet_present_no_lb_no_v.proposed
+        - bd_subnet_present_no_lb_no_v_again.previous == []
+        - update_bd_subnet_present_no_lb_no_v is changed
+        - update_bd_subnet_present_no_lb_no_v.current.0 == update_bd_subnet_present_no_lb_no_v.proposed
+        - update_bd_subnet_present_no_lb_no_v.current.0.fvSubnet.attributes.dn == "uni/tn-ansible_test/BD-anstest/subnet-[10.102.101.12/25]"
+        - update_bd_subnet_present_no_lb_no_v.current.0.fvSubnet.attributes.annotation == "orchestrator:ansible"
+        - update_bd_subnet_present_no_lb_no_v.current.0.fvSubnet.attributes.descr == "Ansible Test no previous & no verify"
+        - delete_bd_subnet_present_no_lb_no_v is changed
+        - delete_bd_subnet_present_no_lb_no_v.current == []
+        - delete_bd_subnet_present_no_lb_no_v.previous == []
+        - delete_bd_subnet_present_no_lb_no_v.proposed == {}
+        - delete_bd_subnet_present_no_lb_no_v_again is changed
+        - delete_bd_subnet_present_no_lb_no_v_again.current == []
+        - delete_bd_subnet_present_no_lb_no_v_again.previous == []
+        - delete_bd_subnet_present_no_lb_no_v_again.proposed == {}
+
   - name: get all subnets
     cisco.aci.aci_bd_subnet: &aci_query
       <<: *aci_tenant_present
