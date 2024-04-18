@@ -1,0 +1,91 @@
+# Test code for the ACI modules
+# Copyright: (c) 2024, David Neilan (@dneilan-intel) <david.neilan@intel.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEANUP ENVIRONMENT
+- name: Initialize system connectivity preference
+  cisco.aci.aci_system_connectivity_preference: &aci_system_connectivity_preference_initial
+    <<: *aci_info
+    interface_preference: inband
+
+# UPDATE SYSTEM CONNECTIVITY PREFERENCE
+- name: Update system connectivity preference (check mode)
+  cisco.aci.aci_system_connectivity_preference: &aci_connectivity_preference
+    <<: *aci_info
+    interface_preference: ooband
+  check_mode: true
+  register: cm_update_connectivity_preference
+
+- name: Update system connectivity preference
+  cisco.aci.aci_system_connectivity_preference:
+    <<: *aci_connectivity_preference
+  register: nm_update_connectivity_preference
+
+- name: Update system connectivity preference again
+  cisco.aci.aci_system_connectivity_preference:
+    <<: *aci_connectivity_preference
+  register: nm_update_connectivity_preference_again
+
+- name: Verify system connectivity preference
+  ansible.builtin.assert:
+    that:
+      - cm_update_connectivity_preference is changed
+      - cm_update_connectivity_preference.proposed.mgmtConnectivityPrefs.attributes.interfacePref == "ooband"
+      - cm_update_connectivity_preference.current.0.mgmtConnectivityPrefs.attributes.interfacePref == "inband"
+      - nm_update_connectivity_preference is changed
+      - nm_update_connectivity_preference.current.0.mgmtConnectivityPrefs.attributes.interfacePref == "ooband"
+      - nm_update_connectivity_preference.previous.0.mgmtConnectivityPrefs.attributes.interfacePref == "inband"
+      - nm_update_connectivity_preference_again is not changed
+      - nm_update_connectivity_preference_again.current.0.mgmtConnectivityPrefs.attributes.interfacePref == "ooband"
+      - nm_update_connectivity_preference_again.previous.0.mgmtConnectivityPrefs.attributes.interfacePref == "ooband"
+
+# QUERY SYSTEM CONNECTIVITY PREFERENCE
+- name: Query system connectivity preference
+  cisco.aci.aci_system_connectivity_preference:
+    <<: *aci_connectivity_preference
+    state: query
+  register: query
+
+- name: Verify system connectivity preference query
+  ansible.builtin.assert:
+    that:
+      - query is not changed
+      - query.current.0.mgmtConnectivityPrefs.attributes.interfacePref == "ooband"
+
+# ERROR SYSTEM CONNECTIVITY PREFERENCE
+- name: Update system connectivity preference (error)
+  cisco.aci.aci_system_connectivity_preference:
+    <<: *aci_info
+    interface_preference: foo
+  ignore_errors: true
+  register: err_update_system_connectivity_preference
+
+- name: Verify system connectivity preference error
+  ansible.builtin.assert:
+    that:
+      - err_update_system_connectivity_preference is failed
+      - err_update_system_connectivity_preference.msg == expected_failure_message
+  vars:
+    expected_failure_message: "value of interface_preference must be one of: ooband, inband, got: foo"
+
+# CLEANUP ENVIRONMENT
+- name: Revert system connectivity preference
+  cisco.aci.aci_system_connectivity_preference:
+    <<: *aci_system_connectivity_preference_initial
