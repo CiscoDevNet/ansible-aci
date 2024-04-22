@@ -146,6 +146,7 @@ options:
   bgp_password:
     description:
     - Password for the BGP Peer.
+    - Providing the password will always result in a change because the set password cannot be retrieved from APIC.
     type: str
   description:
     description:
