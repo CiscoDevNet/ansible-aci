@@ -278,12 +278,10 @@ def listify_worker(d, keys, depth, cache, prefix):
                 else:
                     for k, v in item.items():
                         if k == keys[depth + 1] and isinstance(v, (dict, list)):
-                            for result in listify_worker({k: v}, keys, depth + 1, cache_work, prefix):
-                                yield result
+                            yield from listify_worker({k: v}, keys, depth + 1, cache_work, prefix)
             # Conditional to support nested dictionaries which are detected by item is string
             elif isinstance(item, str) and isinstance(d[keys[depth]], dict):
-                for result in listify_worker({item: d[keys[depth]][item]}, keys, depth + 1, cache_work, prefix):
-                    yield result
+                yield from listify_worker({item: d[keys[depth]][item]}, keys, depth + 1, cache_work, prefix)
 
 
 class FilterModule(object):
