@@ -18,10 +18,10 @@ jobs:
         ansible: [v2.14.13, v2.15.8, v2.16.2, stable-2.16]
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python ${{ env.python_version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.python_version }}
 
@@ -32,9 +32,9 @@ jobs:
         run: ansible-galaxy collection build --output-path "${GITHUB_WORKSPACE}/.cache/collection-tarballs"
 
       - name: Store migrated collection artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: collection
+          name: collection-${{ matrix.ansible }}
           path: .cache/collection-tarballs
 
   black-formating:
@@ -47,7 +47,7 @@ jobs:
         experimental: [true]
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Run black against code
         uses: psf/black@stable
@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python ${{ env.python_version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.python_version }}
 
@@ -69,9 +69,9 @@ jobs:
         run: pip install https://github.com/ansible/ansible/archive/v2.15.8.tar.gz --disable-pip-version-check
 
       - name: Download migrated collection artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: collection
+          name: collection-stable-2.16
           path: .cache/collection-tarballs
 
       - name: Install the collection tarball
@@ -99,7 +99,7 @@ jobs:
         run: if grep -E 'WARNING|ERROR' .cache/collection-tarballs/log.txt; then exit 1; else exit 0; fi
 
       - name: Store galaxy_importer check log file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: galaxy-importer-log
           path: .cache/collection-tarballs/importer_result.json
@@ -116,7 +116,7 @@ jobs:
         ansible: [v2.14.13, v2.15.8, v2.16.2, stable-2.16]
     steps:
       - name: Set up Python ${{ env.python_version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.python_version }}
 
@@ -127,9 +127,9 @@ jobs:
         run: pip install coverage==4.5.4
 
       - name: Download migrated collection artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: collection
+          name: collection-${{ matrix.ansible }}
           path: .cache/collection-tarballs
 
       - name: Install the collection tarball
@@ -159,7 +159,7 @@ jobs:
         python-version: ['3.10']
     steps:
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -170,9 +170,9 @@ jobs:
         run: pip install coverage==4.5.4
 
       - name: Download migrated collection artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: collection
+          name: collection-${{ matrix.ansible }}
           path: .cache/collection-tarballs
 
       - name: Install the collection tarball
@@ -199,7 +199,7 @@ jobs:
       MUTEX_URL: https://8v7s765ibh.execute-api.us-west-1.amazonaws.com
     steps:
       - name: Set up Python ${{ env.python_version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.python_version }}
 
@@ -210,9 +210,9 @@ jobs:
         run: pip install coverage==4.5.4
 
       - name: Download migrated collection artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: collection
+          name: collection-stable-2.16
           path: .cache/collection-tarballs
 
       - name: Install the collection tarball
