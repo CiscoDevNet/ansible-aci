@@ -80,7 +80,7 @@ EXAMPLES = r"""
     l2out: l2out
     extepg: NewExt
     description: external epg
-    preferred_group: False
+    preferred_group: false
     state: present
     delegate_to: localhost
 

@@ -59,7 +59,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     passphrase: ansible_passphrase
-    enable: yes
+    enable: 'yes'
     state: present
   delegate_to: localhost
 

@@ -127,10 +127,10 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
   with_items:
-  - name: anstest1
-    privilege: site-admin
-  - name: anstest2
-    privilege: site-policy
+    - name: anstest1
+      privilege: site-admin
+    - name: anstest2
+      privilege: site-policy
 
 - name: Query a aaa role with name
   cisco.aci.aci_aaa_role:

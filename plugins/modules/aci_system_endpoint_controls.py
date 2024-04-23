@@ -107,7 +107,7 @@ EXAMPLES = r"""
       admin_state: true
       interval: 70
       multiplication_factor: 15
-      action: [ bd, port ]
+      action: [bd, port]
   delegate_to: localhost
 
 - name: Query system endpoint controls settings
@@ -118,7 +118,6 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
-
 """
 
 RETURN = r"""

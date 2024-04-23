@@ -114,7 +114,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    opflex_ssl_versions: [ tls_v1.2 ]
+    opflex_ssl_versions: [tls_v1.2]
     state: present
   delegate_to: localhost
 

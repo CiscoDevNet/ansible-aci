@@ -81,7 +81,7 @@ EXAMPLES = r"""
     source: my_source
     pod: 1
     nodes:
-    - 101
+      - 101
     path_ep: eth1/1
     state: present
   delegate_to: localhost
@@ -95,7 +95,7 @@ EXAMPLES = r"""
     source: my_source
     pod: 1
     nodes:
-    - 101
+      - 101
     path_ep: test_PolGrp
     state: present
   delegate_to: localhost
@@ -109,7 +109,7 @@ EXAMPLES = r"""
     source: my_source
     pod: 1
     nodes:
-    - 101
+      - 101
     path_ep: test_vPC_PolGrp
     state: present
   delegate_to: localhost
@@ -123,8 +123,8 @@ EXAMPLES = r"""
     source: my_source
     pod: 1
     nodes:
-    - 101
-    - 102
+      - 101
+      - 102
     path_ep: test_vPC_PolGrp
     state: present
   delegate_to: localhost
@@ -138,7 +138,7 @@ EXAMPLES = r"""
     source: my_source
     pod: 1
     nodes:
-    - 101
+      - 101
     path_ep: test_vPC_PolGrp
     state: absent
   delegate_to: localhost
@@ -161,7 +161,7 @@ EXAMPLES = r"""
     source: my_source
     pod: 1
     nodes:
-    - 101
+      - 101
     path_ep: test_vPC_PolGrp
     state: query
   delegate_to: localhost

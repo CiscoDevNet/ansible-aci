@@ -66,7 +66,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     interface_profile: leafintprfname
-    description:  leafintprfname description
+    description: leafintprfname description
     state: present
   delegate_to: localhost
 

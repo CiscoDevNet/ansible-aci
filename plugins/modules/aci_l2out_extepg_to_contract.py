@@ -85,7 +85,7 @@ EXAMPLES = r"""
     password: SomeSecretePassword
     tenant: Auto-Demo
     l2out: l2out
-    extepg : testEpg
+    extepg: testEpg
     contract: contract1
     contract_type: provider
     state: present
@@ -98,7 +98,7 @@ EXAMPLES = r"""
     password: SomeSecretePassword
     tenant: Auto-Demo
     l2out: l2out
-    extepg : testEpg
+    extepg: testEpg
     contract: contract1
     contract_type: provider
     state: absent

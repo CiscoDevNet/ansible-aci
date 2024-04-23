@@ -95,7 +95,7 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     name: my_firmware_policy
     version: n9000-13.2(1m)
-    ignore_compat: False
+    ignore_compat: false
     state: present
   delegate_to: localhost
 
