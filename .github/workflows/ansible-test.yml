@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [v2.14.13, v2.15.8, v2.16.2, stable-2.16]
+        ansible: [v2.14.16, v2.15.11, v2.16.6, stable-2.16, stable-2.17]
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -60,19 +60,22 @@ jobs:
       - build
       - black-formating
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ansible: [stable-2.17]
     steps:
       - name: Set up Python ${{ env.python_version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.python_version }}
 
-      - name: Install ansible-base (v2.15.8)
-        run: pip install https://github.com/ansible/ansible/archive/v2.15.8.tar.gz --disable-pip-version-check
+      - name: Install ansible-base (${{ matrix.ansible }})
+        run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible }}.tar.gz --disable-pip-version-check
 
       - name: Download migrated collection artifacts
         uses: actions/download-artifact@v4
         with:
-          name: collection-stable-2.16
+          name: collection-${{ matrix.ansible }}
           path: .cache/collection-tarballs
 
       - name: Install the collection tarball
@@ -105,7 +108,6 @@ jobs:
           name: galaxy-importer-log
           path: .cache/collection-tarballs/importer_result.json
 
-
   sanity:
     name: Sanity in ubuntu-latest
     needs:
@@ -114,7 +116,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [v2.14.13, v2.15.8, v2.16.2, stable-2.16]
+        ansible: [v2.14.16, v2.15.11, v2.16.6, stable-2.16, stable-2.17]
     steps:
       - name: Set up Python ${{ env.python_version }}
         uses: actions/setup-python@v5
@@ -158,13 +160,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [v2.14.13, v2.15.8, v2.16.2, stable-2.16]
-        python-version: ['3.10']
+        ansible: [v2.14.16, v2.15.11, v2.16.6, stable-2.16, stable-2.17]
     steps:
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python ${{ env.python_version }}
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ env.python_version }}
 
       - name: Install ansible-base (${{ matrix.ansible }})
         run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible }}.tar.gz --disable-pip-version-check
@@ -182,7 +183,7 @@ jobs:
         run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
 
     # - name: Run unit tests
-    #   run: ansible-test units --docker -v --color --truncate 0 --python ${{ matrix.python-version }} --coverage
+    #   run: ansible-test units --docker -v --color --truncate 0 --python ${{ env.python_version }} --coverage
     #   working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
     # - name: Generate coverage report.
@@ -199,6 +200,9 @@ jobs:
       # - units
       - sanity
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ansible: [stable-2.17]
     env:
       MUTEX_URL: https://8v7s765ibh.execute-api.us-west-1.amazonaws.com
     steps:
@@ -207,8 +211,8 @@ jobs:
         with:
           python-version: ${{ env.python_version }}
 
-      - name: Install ansible-base (v2.15.8)
-        run: pip install https://github.com/ansible/ansible/archive/v2.15.8.tar.gz --disable-pip-version-check
+      - name: Install ansible-base (${{ matrix.ansible }})
+        run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible }}.tar.gz --disable-pip-version-check
 
       - name: Install coverage (v4.5.4)
         run: pip install coverage==4.5.4
@@ -216,7 +220,7 @@ jobs:
       - name: Download migrated collection artifacts
         uses: actions/download-artifact@v4
         with:
-          name: collection-stable-2.16
+          name: collection-${{ matrix.ansible }}
           path: .cache/collection-tarballs
 
       - name: Install the collection tarball
