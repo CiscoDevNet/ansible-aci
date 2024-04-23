@@ -152,8 +152,6 @@ jobs:
 
   units:
     name: Units in ubuntu-latest
-    # Skip step because Unit tests are currently not running or working.
-    if: false
     needs:
       - importer
     runs-on: ubuntu-latest
@@ -182,22 +180,22 @@ jobs:
       - name: Install the collection tarball
         run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
 
-    # - name: Run unit tests
-    #   run: ansible-test units --docker -v --color --truncate 0 --python ${{ env.python_version }} --coverage
-    #   working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+      - name: Run unit tests
+        run: ansible-test units --docker -v --color --truncate 0 --python ${{ env.python_version }} --coverage
+        working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
-    # - name: Generate coverage report.
-    #   run: ansible-test coverage xml -v --requirements --group-by command --group-by version
-    #   working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+      - name: Generate coverage report.
+        run: ansible-test coverage xml -v --requirements --group-by command --group-by version
+        working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
-    # - name: Push coverate report to codecov.io
-    #   run: bash <(curl -s https://codecov.io/bash) -s 'tests/output/reports/' -F unit
-    #   working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+      - name: Push coverate report to codecov.io
+        run: bash <(curl -s https://codecov.io/bash) -s 'tests/output/reports/' -F unit
+        working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
   integration:
     name: Integration in ubuntu-latest
     needs:
-      # - units
+      - units
       - sanity
     runs-on: ubuntu-latest
     strategy:
