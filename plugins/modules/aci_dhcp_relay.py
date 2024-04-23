@@ -135,7 +135,6 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
-
 """
 
 RETURN = r"""

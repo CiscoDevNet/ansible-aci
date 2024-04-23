@@ -116,7 +116,7 @@ EXAMPLES = r"""
     node_profile: ansible_infra_sr_mpls_l3out_node_profile
     pod_id: 1
     node_id: 113
-    router_id_as_loopback: no
+    router_id_as_loopback: 'no'
     loopback_address: 50.0.0.1
     mpls_transport_loopback_address: 51.0.0.1
     sid: 500

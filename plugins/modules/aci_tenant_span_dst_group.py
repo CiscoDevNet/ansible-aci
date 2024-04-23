@@ -120,9 +120,9 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     tenant: Tenant1
     destination_epg:
-        tenant: Test1
-        ap: ap1
-        epg: ep1
+      tenant: Test1
+      ap: ap1
+      epg: ep1
     destination_group: group1
     description: Test span
     destination_ip: 10.0.0.1

@@ -82,7 +82,7 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     link_level_policy: link_level_policy_test
     description: via Ansible
-    auto_negotiation: on
+    auto_negotiation: 'on'
     speed: 100M
     link_debounce_interval: 100
     forwarding_error_correction: cl91-rs-fec

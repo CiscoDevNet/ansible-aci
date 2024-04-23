@@ -200,7 +200,7 @@ EXAMPLES = r"""
     vrf: ansible_vrf
     pim_setting:
       mtu: 2000
-      control_state: [ fast, strict ]
+      control_state: [fast, strict]
     state: present
   delegate_to: localhost
 
@@ -267,7 +267,7 @@ EXAMPLES = r"""
     vrf: ansible_vrf
     bootstrap_router:
       bsr_filter: uni/tn-ansible_test/rtmap-ansible_test
-      rp_updates: [ forward, listen ]
+      rp_updates: [forward, listen]
     state: present
   delegate_to: localhost
 
@@ -280,7 +280,7 @@ EXAMPLES = r"""
     vrf: ansible_vrf
     auto_rp:
       ma_filter: uni/tn-ansible_test/rtmap-ansible_test
-      rp_updates: [ forward, listen ]
+      rp_updates: [forward, listen]
     state: present
   delegate_to: localhost
 

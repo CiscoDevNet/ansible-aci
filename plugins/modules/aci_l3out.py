@@ -187,10 +187,10 @@ EXAMPLES = r"""
     l3protocol: ospf
     ospf:
       area_cost: 1
-      area_ctrl: [ summary, redistribute ]
+      area_ctrl: [summary, redistribute]
       area_id: 0.0.0.1
       area_type: regular
-      multipod_internal: no
+      multipod_internal: 'no'
     state: present
   delegate_to: localhost
 

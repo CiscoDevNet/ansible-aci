@@ -33,52 +33,52 @@ EXAMPLES = r"""
   ansible.builtin.set_fact:
     data:
       tenant:
-      - name: ansible_test
-        description: Created using listify
-        app:
-        - name: app_test
-          epg:
-          - name: web
-            bd: web_bd
-          - name: app
-            bd: app_bd
-        bd:
-        - name: bd_test
-          subnet:
-          - name: 10.10.10.1
-            mask: 24
-            scope:
-            - public
-            - shared
-          vrf: vrf_test
-        - name: bd_test2
-          subnet:
-          - name: 20.20.20.1
-            mask: 24
-            scope: public
-          vrf: vrf_test
-        vrf:
-        - name: vrf_test
-        policies:
-          protocol:
-            bfd:
-            - name: BFD-ON
-              description: Enable BFD
-              admin_state: enabled
-              detection_multiplier: 3
-              min_tx_interval: 50
-              min_rx_interval: 50
-              echo_rx_interval: 50
-              echo_admin_state: enabled
-              sub_interface_optimization_state: enabled
-            ospf:
-              interface:
-              - name: OSPF-P2P-IntPol
-                network_type: p2p
-                priority: 1
-              - name: OSPF-Broadcast-IntPol
-                network_type: bcast
-                priority: 1
+        - name: ansible_test
+          description: Created using listify
+          app:
+            - name: app_test
+              epg:
+                - name: web
+                  bd: web_bd
+                - name: app
+                  bd: app_bd
+          bd:
+            - name: bd_test
+              subnet:
+                - name: 10.10.10.1
+                  mask: 24
+                  scope:
+                    - public
+                    - shared
+              vrf: vrf_test
+            - name: bd_test2
+              subnet:
+                - name: 20.20.20.1
+                  mask: 24
+                  scope: public
+              vrf: vrf_test
+          vrf:
+            - name: vrf_test
+          policies:
+            protocol:
+              bfd:
+                - name: BFD-ON
+                  description: Enable BFD
+                  admin_state: enabled
+                  detection_multiplier: 3
+                  min_tx_interval: 50
+                  min_rx_interval: 50
+                  echo_rx_interval: 50
+                  echo_admin_state: enabled
+                  sub_interface_optimization_state: enabled
+              ospf:
+                interface:
+                  - name: OSPF-P2P-IntPol
+                    network_type: p2p
+                    priority: 1
+                  - name: OSPF-Broadcast-IntPol
+                    network_type: bcast
+                    priority: 1
 
 - name: Create tenants
   cisco.aci.aci_tenant:
@@ -106,7 +106,7 @@ EXAMPLES = r"""
     tenant: '{{ item.tenant_name }}'
     vrf: '{{ item.tenant_bd_vrf }}'
     bd: '{{ item.tenant_bd_name }}'
-    enable_routing: yes
+    enable_routing: 'yes'
   with_items: '{{ data|cisco.aci.aci_listify("tenant","bd") }}'
 
 - name: Create BD subnets

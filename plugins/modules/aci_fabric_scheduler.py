@@ -113,7 +113,7 @@ EXAMPLES = r"""
     validate_certs: false
     name: OneTime
     windowname: OneTime
-    recurring: False
+    recurring: false
     concurCap: 20
     date: "2018-11-20T24:00:00"
     state: present
@@ -126,7 +126,7 @@ EXAMPLES = r"""
     validate_certs: false
     name: Recurring
     windowname: Recurring
-    recurring: True
+    recurring: true
     concurCap: 20
     hour: 13
     minute: 30
