@@ -1,6 +1,6 @@
 # Optimizing Playbooks
 
-By using all of the following optimizations together its estimated that playbook execution time can be reduced by up to 60% compared to default behavior.
+It is predicted that the combined use of these optimizations can reduce playbook execution time when compared to default behavior. This reduction can be significant in some circumstances.
 
 ## Using the ACI HTTPAPI plugin
 
@@ -65,7 +65,7 @@ ansible_network_os=cisco.aci.aci
 
 ## Using the `suppress_` options
 
-Two options are available to users on all ACI modules to assist with optimizing playbook performance by reducing API calls. These options can increase playbook performance at the expense of suppressing some features of the modules.
+Users of all ACI modules have two options for optimizing playbook performance by decreasing API calls. These parameters can improve playbook performance while disabling some module functionality. The goal of these suppress options is to limit the number of GET API calls to APIC, hence reducing APIC's workload and increasing playbook execution speed.
 
 ### `suppress_previous`
 
