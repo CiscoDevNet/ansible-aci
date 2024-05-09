@@ -1,6 +1,6 @@
 # Optimizing Playbooks
 
-It is predicted that the combined use of these optimizations can reduce playbook execution time when compared to default behavior. This reduction can be significant in some circumstances.
+The combined use of the following optimizations can reduce playbook execution time when compared to default behavior. This reduction can be significant in some circumstances.
 
 ## Using the ACI HTTPAPI plugin
 
