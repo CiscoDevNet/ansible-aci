@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_match_rule
-short_description: Manage Match Rule (rtcrtl:SubjP)
+short_description: Manage Match Rule (rtctrl:SubjP)
 description:
 - Manage Match Rule Profiles for the Tenants on Cisco ACI fabrics.
 options:

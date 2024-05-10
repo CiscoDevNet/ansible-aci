@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_vrf_leak_internal_subnet
-short_description: Manage VRF leaking of subnets (fv:leakInternalSubnet)
+short_description: Manage VRF leaking of subnets (leak:InternalSubnet)
 description:
 - Manage the leaking of internal subnets under the VRF.
 options:

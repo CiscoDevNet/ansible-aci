@@ -61,6 +61,7 @@ options:
   key:
     description:
     - Authentication Key of the L3Out BFD Interface profile object
+    - Providing this option will always result in a change because it is a secure property that cannot be retrieved from APIC.
     type: str
   key_id:
     description:

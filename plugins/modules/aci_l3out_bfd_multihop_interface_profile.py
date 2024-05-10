@@ -60,7 +60,8 @@ options:
     choices: [ none, sha1 ]
   key:
     description:
-    - Authentication Key of the BFD Multihop Interface Profile object
+    - Authentication Key of the BFD Multihop Interface Profile object.
+    - Providing this option will always result in a change because it is a secure property that cannot be retrieved from APIC.
     type: str
   key_id:
     description:

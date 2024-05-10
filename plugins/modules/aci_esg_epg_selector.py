@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_esg_epg_selector
-short_description: Manage ESG - EPG Selectors (fv:fvEPgSelector)
+short_description: Manage ESG - EPG Selectors (fv:EPgSelector)
 description:
 - Manage Endpoint Security Groups - EPG Selectors on Cisco ACI fabrics.
 

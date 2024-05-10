@@ -52,6 +52,7 @@ options:
   key:
     description:
     - The private key for the certificate.
+    - Providing this option will always result in a change because it is a secure property that cannot be retrieved from APIC.
     type: str
   key_type:
     description:

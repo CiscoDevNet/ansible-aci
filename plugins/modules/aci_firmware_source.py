@@ -40,7 +40,8 @@ options:
     type: str
   url_password:
     description:
-      The Firmware password or key string.
+    - The Firmware password or key string.
+    - Providing this option will always result in a change because it is a secure property that cannot be retrieved from APIC.
     type: str
   url_username:
     description:

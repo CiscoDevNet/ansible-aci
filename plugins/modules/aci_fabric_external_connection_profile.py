@@ -52,6 +52,7 @@ options:
   peering_password:
     description:
     - The BGP EVPN Peering Password. Used for setting automatic peering sessions.
+    - Providing this option will always result in a change because it is a secure property that cannot be retrieved from APIC.
     type: str
     aliases: [ peer_password, peer_pwd ]
   state:

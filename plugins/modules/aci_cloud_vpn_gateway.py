@@ -11,11 +11,11 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: aci_cloud_vpn_gateway
-short_description:  Manage cloudRouterP in Cloud Context Profile (cloud:cloudRouterP)
+short_description:  Manage cloudRouterP in Cloud Context Profile (cloud:RouterP)
 description:
 - Manage cloudRouterP objects on Cisco Cloud ACI.
 notes:
-- More information about the internal APIC class B(cloud:cloudRouterP) from
+- More information about the internal APIC class B(cloud:RouterP) from
   L(the APIC Management Information Model reference,https://developer.cisco.com/docs/apic-mim-ref/).
 author:
 - Cindy Zhao (@cizhao)

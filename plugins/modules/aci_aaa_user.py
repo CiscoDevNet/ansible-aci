@@ -22,6 +22,7 @@ options:
   aaa_password:
     description:
     - The password of the locally-authenticated user.
+    - Providing this option will always result in a change because it is a secure property that cannot be retrieved from APIC.
     type: str
   aaa_password_lifetime:
     description:

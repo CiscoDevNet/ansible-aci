@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_route_control_profile
-short_description: Manage Route Control Profile (rtcrtl:Profile)
+short_description: Manage Route Control Profile (rtctrl:Profile)
 description:
 - Manage Route Control Profiles on Cisco ACI fabrics.
 options:
