@@ -24,6 +24,7 @@ options:
   credential_password:
     description:
     - VMM controller password.
+    - Providing this option will always result in a change because it is a secure property that cannot be retrieved from APIC.
     type: str
     aliases: []
   credential_username:

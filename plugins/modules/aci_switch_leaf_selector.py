@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_switch_leaf_selector
-short_description: Bind leaf selectors to switch policy leaf profiles (infra:LeafS, infra:NodeBlk, and infra:RsAccNodePGrep)
+short_description: Bind leaf selectors to switch policy leaf profiles (infra:LeafS, infra:NodeBlk, and infra:RsAccNodePGrp)
 description:
 - Bind leaf selectors (with node block range and policy group) to switch policy leaf profiles on Cisco ACI fabrics.
 options:

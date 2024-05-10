@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_static_routes
-short_description: Manage Static routes object (l3ext:ipRouteP)
+short_description: Manage Static routes object (ip:RouteP)
 description:
 - Manage External Subnet objects.
 options:

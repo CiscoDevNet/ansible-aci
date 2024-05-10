@@ -52,17 +52,20 @@ options:
     description:
     - The password to access the remote host.
     - Only used if auth_type is password.
+    - Providing this option will always result in a change because it is a secure property that cannot be retrieved from APIC.
     type: str
   remote_ssh_key:
     description:
     - The private SSH key used to access the remote host.
     - Only used if auth_type is ssh_key.
+    - Providing this option will always result in a change because it is a secure property that cannot be retrieved from APIC.
     type: str
     aliases: [ remote_key ]
   remote_ssh_passphrase:
     description:
     - The Pass phrase used to decode private_key.
     - Only used if auth_type is ssh_key.
+    - Providing this option will always result in a change because it is a secure property that cannot be retrieved from APIC.
     type: str
     aliases: [ passphrase ]
   remote_path:

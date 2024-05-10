@@ -14,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_route_control_context
-short_description: Manage Route Control Context (rtcrtl:CtxP)
+short_description: Manage Route Control Context (rtctrl:CtxP)
 description:
 - Manage Route Control Context Policies for the Route Control Profiles on Cisco ACI fabrics.
 options:

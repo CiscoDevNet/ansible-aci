@@ -27,6 +27,7 @@ options:
   auth_key:
     description:
     - SNMP authentication key
+    - Providing this option will always result in a change because it is a secure property that cannot be retrieved from APIC.
     type: str
   name:
     description:
@@ -51,6 +52,7 @@ options:
   privacy_key:
     description:
     - SNMP privacy key
+    - Providing this option will always result in a change because it is a secure property that cannot be retrieved from APIC.
     type: str
   state:
     description:

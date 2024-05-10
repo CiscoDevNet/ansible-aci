@@ -12,9 +12,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l3out_extepg
-short_description: Manage External Network Instance Profile (ExtEpg) objects (l3extInstP:instP)
+short_description: Manage External Network Instance Profile (ExtEpg) objects (l3ext:InstP)
 description:
-- Manage External Network Instance Profile (ExtEpg) objects.
+- Manage External Network Instance Profile (ExtEpg) objects on Cisco ACI fabrics.
 options:
   tenant:
     description:
