@@ -236,6 +236,7 @@ action_groups:
     - aci_syslog_source
     - aci_system
     - aci_system_banner
+    - aci_system_connectivity_preference
     - aci_system_endpoint_controls
     - aci_system_global_aes_passphrase_encryption
     - aci_taboo_contract
