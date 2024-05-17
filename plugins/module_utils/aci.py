@@ -434,6 +434,9 @@ class ACIModule(object):
         # Set Connection plugin
         self.set_connection()
 
+        # Get the current working directory
+        self.params["working_directory"] = os.getcwd()
+
         if self.module._debug:
             self.module.warn("Enable debug output because ANSIBLE_DEBUG was set.")
             self.params["output_level"] = "debug"
