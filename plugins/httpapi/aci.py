@@ -286,15 +286,16 @@ class HttpApi(HttpApiBase):
             else:
                 sig_key = load_privatekey(FILETYPE_PEM, self.connection_parameters.get("private_key"))
         except Exception:
-            if os.path.exists(self.connection_parameters.get("private_key")):
+            private_key_file_path = os.path.abspath(os.path.join(self.params.get("working_directory"), self.connection_parameters.get("private_key")))
+            if os.path.exists(private_key_file_path):
                 try:
                     permission = "r"
                     if HAS_CRYPTOGRAPHY:
                         permission = "rb"
-                    with open(self.connection_parameters.get("private_key"), permission) as fh:
+                    with open(private_key_file_path, permission) as fh:
                         private_key_content = fh.read()
                 except Exception:
-                    raise ConnectionError("Cannot open private key file {0}".format(self.connection_parameters.get("private_key")))
+                    raise ConnectionError("Cannot open private key file {0}".format(private_key_file_path))
                 try:
                     if HAS_CRYPTOGRAPHY:
                         sig_key = serialization.load_pem_private_key(private_key_content, password=None, backend=default_backend())
@@ -303,10 +304,10 @@ class HttpApi(HttpApiBase):
                 except Exception:
                     raise ConnectionError("Cannot load private key file {0}".format(self.connection_parameters.get("private_key")))
                 if self.connection_parameters.get("certificate_name") is None:
-                    self.connection_parameters["certificate_name"] = os.path.basename(os.path.splitext(self.connection_parameters.get("private_key"))[0])
+                    self.connection_parameters["certificate_name"] = os.path.basename(os.path.splitext(self.connection_parameters.get("private_key"))[-2])
             else:
                 raise ConnectionError(
-                    "Provided private key {0} does not appear to be a private key or provided file does not exist.".format(
+                    "Provided private key {0} does not appear to be a private key or provided file does not exist in the working directory.".format(
                         self.connection_parameters.get("private_key")
                     )
                 )
