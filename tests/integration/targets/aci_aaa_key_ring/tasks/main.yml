@@ -93,7 +93,7 @@
 
 # UPDATE
 - name: Update an existing key ring
-  cisco.aci.aci_aaa_key_ring:
+  cisco.aci.aci_aaa_key_ring: &key_ring_1_update
     <<: *key_ring_1_present
     description: "This is a changed description."
     modulus: 2048
@@ -101,6 +101,12 @@
     certificate_authority: certificate_authority_1
     key: "{{ lookup('file', 'pki/admin.key') }}"
   register: nm_update_key_ring_1
+
+# UPDATE IDEMPOTENCY
+- name: Update an existing key ring again
+  cisco.aci.aci_aaa_key_ring:
+    <<: *key_ring_1_update
+  register: nm_update_key_ring_1_again
 
 - name: Assertions for updating a key ring
   ansible.builtin.assert:
@@ -113,6 +119,12 @@
     - nm_update_key_ring_1.current.0.pkiKeyRing.attributes.descr == "This is a changed description."
     - nm_update_key_ring_1.current.0.pkiKeyRing.attributes.modulus == "mod2048"
     - nm_update_key_ring_1.current.0.pkiKeyRing.attributes.tp == "certificate_authority_1"
+    - nm_update_key_ring_1.proposed.pkiKeyRing.attributes.key == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+    # Idempotency is not supported when key is set
+    - nm_update_key_ring_1_again is changed
+    - nm_update_key_ring_1_again.proposed.pkiKeyRing.attributes.key == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+    - nm_update_key_ring_1_again.previous.0.pkiKeyRing.attributes.key is undefined
+    - nm_update_key_ring_1_again.current.0.pkiKeyRing.attributes.key is undefined
 
 # VERSION SPECIFIC TESTS
 - name: Test updating a key ring with key_type

@@ -14,16 +14,28 @@
     state: absent
   ignore_errors: true # ignore errors to because of multiple executions for hosts at the same time
 
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_use_proxy | default("info") }}'
+
+- name: Query system information to fetch version
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 # ADD USER
 - name: Add user without dateutil installed (error)
   cisco.aci.aci_aaa_user: &user_present
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     aaa_user: ansible
     description: Ansible test user
     email: ansible@ansible.lan
@@ -50,13 +62,7 @@
 # CLEAN ENVIRONMENT
 - name: Remove any pre-existing user
   cisco.aci.aci_aaa_user: &user_absent
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     aaa_user: ansible
     state: absent
 
@@ -68,7 +74,7 @@
 
 # NOTE: Setting password is not idempotent, see #35544
 - name: Add user (normal mode)
-  cisco.aci.aci_aaa_user:
+  cisco.aci.aci_aaa_user: &user_present_pass
     <<: *user_present
     # changed password because password strength check is triggered on the 6.0(2h) version, thus failing testcase
     aaa_password: khsaubf@3ijsdn!!2#%nbsh
@@ -90,20 +96,42 @@
     - nm_add_user is changed
     - nm_add_user.current.0.aaaUser.attributes.annotation == 'orchestrator:ansible'
     - nm_add_user.current.0.aaaUser.attributes.descr == 'Ansible test user'
+    - nm_add_user.proposed.aaaUser.attributes.pwd == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
     - cm_add_user_again is not changed
     - nm_add_user_again is not changed
     - nm_add_user_again.current.0.aaaUser.attributes.descr == 'Ansible test user'
 
+# VERSION SPECIFIC TESTS
+- name: Test updating a password
+  when: version.current.0.topSystem.attributes.version is version('6.0', '>=')
+  block:
+    # Can't use previous 5 passwords
+    - name: Update user with no password change
+      cisco.aci.aci_aaa_user:
+        <<: *user_present_pass
+      ignore_errors: true
+      register: nm_add_user_no_password_change
+
+    - name: Update user with password change
+      cisco.aci.aci_aaa_user:
+        <<: *user_present
+        aaa_password: khsaubf@3ijsdn!!2#%nbsh1
+      register: nm_add_user_password_change
+
+    - name: Verify add user
+      ansible.builtin.assert:
+        that:
+        # Idempotency is not supported when password is set
+        - nm_add_user_password_change is changed
+        - nm_add_user_password_change.proposed.aaaUser.attributes.pwd == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+        - nm_add_user_password_change.previous.0.aaaUser.attributes.pwd is undefined
+        - nm_add_user_password_change.current.0.aaaUser.attributes.pwd is undefined
+        - nm_add_user_no_password_change.msg == "APIC Error 1{{":"}} Password history check{{":"}} user ansible should not use previous 5 passwords"
+
 # MODIFY USER
 - name: Modify user (check_mode)
   cisco.aci.aci_aaa_user: &user_changed
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     aaa_user: ansible
     description: Ansible test user for integration tests
     email: aci-ansible@ansible.lan
@@ -148,13 +176,7 @@
 # CLEAR PASSWORD HISTORY
 - name: Clear password history (check_mode)
   cisco.aci.aci_aaa_user: &clear_password_history
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     aaa_user: ansible
     clear_password_history: true
   check_mode: true
@@ -186,13 +208,7 @@
 # QUERY ALL USERS
 - name: Query all users (check_mode)
   cisco.aci.aci_aaa_user: &user_query
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     aaa_user: ansible
     state: query
   check_mode: true

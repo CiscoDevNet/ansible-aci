@@ -1522,6 +1522,11 @@
       state: present
     register: create_with_password
 
+  - name: Create BGP Peer with password again
+    aci_l3out_bgp_peer: 
+      <<: *bgp_peer_with_password
+    register: create_with_password_again
+
   - name: Update BGP Peer to remove remote as and local as number
     aci_l3out_bgp_peer: 
       <<: *bgp_peer_with_password
@@ -1538,6 +1543,13 @@
         - create_with_password.current.0.bgpPeerP.attributes.password is not defined
         - create_with_password.current.0.bgpPeerP.children.0.bgpLocalAsnP.attributes.localAsn == "65460"
         - create_with_password.current.0.bgpPeerP.children.2.bgpAsP.attributes.asn == "65450"
+        - create_with_password.proposed.bgpPeerP.attributes.password == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+        # Idempotency is not supported when bgp_password is set
+        - create_with_password_again is changed
+        - create_with_password_again.current == create_with_password_again.previous
+        - create_with_password_again.current.0.bgpPeerP.attributes.password is undefined
+        - create_with_password_again.previous.0.bgpPeerP.attributes.password is undefined
+        - create_with_password_again.proposed.bgpPeerP.attributes.password == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
         - update_remove_remote_local_as is changed
         - update_remove_remote_local_as.previous != []
         - update_remove_remote_local_as.current.0.bgpPeerP.children | length == 1

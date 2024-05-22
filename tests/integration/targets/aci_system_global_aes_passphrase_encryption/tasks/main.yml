@@ -38,6 +38,14 @@
       <<: *aci_info
       passphrase: ansible_passphrase
       state: present
+    register: set_passphrase
+
+  - name: Set passphrase again
+    cisco.aci.aci_system_global_aes_passphrase_encryption:
+      <<: *aci_info
+      passphrase: ansible_passphrase
+      state: present
+    register: set_passphrase_again
   
   - name: Query key configured
     cisco.aci.aci_system_global_aes_passphrase_encryption:
@@ -60,6 +68,14 @@
   - name: Verify passphrase and encryption settings
     ansible.builtin.assert:
       that:
+      - set_passphrase.current.0.pkiExportEncryptionKey.attributes.passphrase is undefined
+      - set_passphrase.proposed.pkiExportEncryptionKey.attributes.passphrase == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+      # Idempotency is not supported when setting passphrase
+      - set_passphrase_again is changed
+      - set_passphrase_again.current == set_passphrase_again.previous
+      - set_passphrase_again.current.0.pkiExportEncryptionKey.attributes.passphrase is undefined
+      - set_passphrase_again.previous.0.pkiExportEncryptionKey.attributes.passphrase is undefined
+      - set_passphrase_again.proposed.pkiExportEncryptionKey.attributes.passphrase == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
       - query_passphrase.current.0.pkiExportEncryptionKey.attributes.keyConfigured == "yes"
       - query_passphrase.current.0.pkiExportEncryptionKey.attributes.strongEncryptionEnabled == "no"
       - query_encryption.current.0.pkiExportEncryptionKey.attributes.keyConfigured == "yes"
