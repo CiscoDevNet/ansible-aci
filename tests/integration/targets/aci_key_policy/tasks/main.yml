@@ -91,7 +91,14 @@
         - nm_add_key_policy.current.0.fvKeyPol.attributes.id == "1"
         - nm_add_key_policy.current.0.fvKeyPol.attributes.startTime == "2024-01-01T00:00:00.000+00:00"
         - nm_add_key_policy.current.0.fvKeyPol.attributes.endTime == "2026-01-01T00:00:00.000+00:00"
+        - nm_add_key_policy.current.0.fvKeyPol.attributes.preSharedKey is undefined
+        - nm_add_key_policy.proposed.fvKeyPol.attributes.preSharedKey == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+        # Idempotency is not supported when pre_shared_key is set
         - nm_add_key_policy_idempotency is changed
+        - nm_add_key_policy_idempotency.current == nm_add_key_policy_idempotency.previous
+        - nm_add_key_policy_idempotency.current.0.fvKeyPol.attributes.preSharedKey is undefined
+        - nm_add_key_policy_idempotency.previous.0.fvKeyPol.attributes.preSharedKey is undefined
+        - nm_add_key_policy_idempotency.proposed.fvKeyPol.attributes.preSharedKey == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
         - nm_add_key_policy_2 is changed
         - nm_add_key_policy_2.previous == []
         - nm_add_key_policy_2.current.0.fvKeyPol.attributes.id == "2"

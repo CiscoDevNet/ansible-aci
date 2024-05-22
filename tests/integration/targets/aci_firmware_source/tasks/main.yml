@@ -74,6 +74,31 @@
     that:
     - cm_add_source_again is not changed
 
+- name: Add password source 
+  cisco.aci.aci_firmware_source: &source_pass
+    <<: *source_present
+    source: ansible_test_pass
+    url_password: test
+  register: password_source
+
+- name: Add password source again
+  cisco.aci.aci_firmware_source:
+    <<: *source_pass
+  register: password_source_again
+
+- name: Verify add password source
+  ansible.builtin.assert:
+    that:
+    - password_source is changed
+    - password_source.previous == []
+    - password_source.current.0.firmwareOSource.attributes.password is undefined
+    - password_source.proposed.firmwareOSource.attributes.password == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+    # Idempotency is not supported when url_password is set
+    - password_source_again is changed
+    - password_source_again.previous == password_source.current
+    - password_source_again.current.0.firmwareOSource.attributes.password is undefined
+    - password_source_again.proposed.firmwareOSource.attributes.password == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+
 - name: Add another source (normal mode)
   cisco.aci.aci_firmware_source:
     <<: *source_present

@@ -53,6 +53,11 @@
     <<: *snmp_user
   register: nm_create_snmp_user
 
+- name: Create a snmp user again
+  cisco.aci.aci_snmp_user:
+    <<: *snmp_user
+  register: nm_create_snmp_user_again_with_secrets
+
 - name: Create a snmp user again without secrets
   cisco.aci.aci_snmp_user:
     <<: *snmp_user
@@ -78,6 +83,17 @@
     - nm_create_snmp_user.current.0.snmpUserP.attributes.annotation == 'orchestrator:ansible'
     - nm_create_snmp_user.current.0.snmpUserP.attributes.descr == ""
     - nm_create_snmp_user.previous == []
+    - nm_create_snmp_user.proposed.snmpUserP.attributes.authKey == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+    - nm_create_snmp_user.proposed.snmpUserP.attributes.privKey == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+    # Idempotency is not supported when auth_key or privacy_key is set
+    - nm_create_snmp_user_again_with_secrets is changed
+    - nm_create_snmp_user_again_with_secrets.current == nm_create_snmp_user_again_with_secrets.previous
+    - nm_create_snmp_user_again_with_secrets.current.0.snmpUserP.attributes.authKey is undefined
+    - nm_create_snmp_user_again_with_secrets.previous.0.snmpUserP.attributes.authKey is undefined
+    - nm_create_snmp_user_again_with_secrets.proposed.snmpUserP.attributes.authKey == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+    - nm_create_snmp_user_again_with_secrets.current.0.snmpUserP.attributes.privKey is undefined
+    - nm_create_snmp_user_again_with_secrets.previous.0.snmpUserP.attributes.privKey is undefined
+    - nm_create_snmp_user_again_with_secrets.proposed.snmpUserP.attributes.privKey == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
     - nm_create_snmp_user_again is not changed
     - nm_create_snmp_user_again.previous.0.snmpUserP.attributes.dn == "uni/fabric/snmppol-ansible_snmp_policy/user-ansible_snmp_user"
     - nm_create_snmp_user_again.previous.0.snmpUserP.attributes.name == "ansible_snmp_user"

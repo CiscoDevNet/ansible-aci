@@ -100,7 +100,7 @@
 
 # UPDATE FILE REMOTE PATH
 - name: Update File Remote Path
-  cisco.aci.aci_file_remote_path:
+  cisco.aci.aci_file_remote_path: &update_path
     <<: *aci_path
     remote_protocol: sftp
     remote_user: new_user
@@ -108,16 +108,30 @@
     remote_path: /tmp/dummy
   register: update_path
 
+- name: Update File Remote Path again
+  cisco.aci.aci_file_remote_path:
+    <<: *update_path
+  register: update_path_again
+
 - name: Verify update of File Remote Path
   ansible.builtin.assert:
     that:
     - update_path is changed
+    - update_path.previous == nm_create_path.current
     - update_path.current.0.fileRemotePath.attributes.name == "ansible_file_path"
     - update_path.current.0.fileRemotePath.attributes.descr == "Test File Path"
     - update_path.current.0.fileRemotePath.attributes.protocol == "sftp"
     - update_path.current.0.fileRemotePath.attributes.authType == "usePassword"
     - update_path.current.0.fileRemotePath.attributes.userName == "new_user"
     - update_path.current.0.fileRemotePath.attributes.remotePath == "/tmp/dummy"
+    - update_path.current.0.fileRemotePath.attributes.userPasswd is undefined
+    - update_path.proposed.fileRemotePath.attributes.userPasswd == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+    # Idempotency is not supported when remote_password is set
+    - update_path_again is changed
+    - update_path_again.current == update_path.current
+    - update_path_again.current.0.fileRemotePath.attributes.userPasswd is undefined
+    - update_path_again.previous.0.fileRemotePath.attributes.userPasswd is undefined
+    - update_path_again.proposed.fileRemotePath.attributes.userPasswd == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
 
 # QUERY FILE REMOTE PATH
 - name: Query a File Remote Path

@@ -100,6 +100,11 @@
       ospf_auth_key: my_key
     register: update_ospfIfP
 
+  - name: Update interface profile ospf policy again
+    cisco.aci.aci_l3out_logical_interface_profile_ospf_policy:
+      <<: *ospfIfP_update
+    register: update_ospfIfP_again
+
   - name: Verify update_ospfIfP
     ansible.builtin.assert:
       that:
@@ -107,6 +112,14 @@
       - update_ospfIfP.previous != []
       - update_ospfIfP.current[0].ospfIfP.children[0].ospfRsIfPol.attributes.tnOspfIfPolName == 'default'
       - update_ospfIfP.current[0].ospfIfP.attributes.authType == 'simple'
+      - update_ospfIfP.current[0].ospfIfP.attributes.authKey is undefined
+      - update_ospfIfP.proposed.ospfIfP.attributes.authKey == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+      # Idempotency is not supported when ospf_auth_key is set
+      - update_ospfIfP_again is changed
+      - update_ospfIfP_again.current == update_ospfIfP_again.previous
+      - update_ospfIfP_again.current.0.ospfIfP.attributes.authKey is undefined
+      - update_ospfIfP_again.previous.0.ospfIfP.attributes.authKey is undefined
+      - update_ospfIfP_again.proposed.ospfIfP.attributes.authKey == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
 
   # QUERY INTERFACE PROFILE OSPF POLICY
   - name: Query interface profile ospf policy
