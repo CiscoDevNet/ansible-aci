@@ -286,7 +286,7 @@ class HttpApi(HttpApiBase):
             else:
                 sig_key = load_privatekey(FILETYPE_PEM, self.connection_parameters.get("private_key"))
         except Exception:
-            private_key_file_path = os.path.abspath(os.path.join(self.params.get("working_directory"), self.connection_parameters.get("private_key")))
+            private_key_file_path = self.find_file_backward(self.params.get("working_directory"), os.path.basename(self.connection_parameters.get("private_key")))
             if os.path.exists(private_key_file_path):
                 try:
                     permission = "r"
@@ -326,3 +326,15 @@ class HttpApi(HttpApiBase):
             + "APIC-Request-Signature={0}".format(to_native(base64.b64encode(sig_signature)))
         )
         return headers
+    
+    def find_file_backward(self, working_dir, filename):
+        parent_dir = os.path.dirname(working_dir)
+
+        if parent_dir == working_dir:
+            return None
+        
+        for subdir, dirs, files in os.walk(working_dir):
+            if filename in files:
+                return os.path.abspath(os.path.join(subdir, filename))
+        
+        return self.find_file_backward(parent_dir, filename)
