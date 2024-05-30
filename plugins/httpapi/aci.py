@@ -328,15 +328,15 @@ class HttpApi(HttpApiBase):
             + "APIC-Request-Signature={0}".format(to_native(base64.b64encode(sig_signature)))
         )
         return headers
-    
+
     def find_file_backward(self, working_dir, filename):
         parent_dir = os.path.dirname(working_dir)
 
         if parent_dir == working_dir:
             return None
-        
+
         for subdir, dirs, files in os.walk(working_dir):
             if filename in files:
                 return os.path.abspath(os.path.join(subdir, filename))
-        
+
         return self.find_file_backward(parent_dir, filename)
