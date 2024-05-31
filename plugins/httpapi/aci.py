@@ -306,11 +306,11 @@ class HttpApi(HttpApiBase):
                 except Exception:
                     raise ConnectionError("Cannot load private key file {0}".format(self.connection_parameters.get("private_key")))
                 if self.connection_parameters.get("certificate_name") is None:
-                    self.connection_parameters["certificate_name"] = os.path.basename(os.path.splitext(self.connection_parameters.get("private_key"))[-2])
+                    self.connection_parameters["certificate_name"] = os.path.basename(os.path.splitext(self.connection_parameters.get("private_key"))[0])
             else:
                 raise ConnectionError(
                     "Provided private key {0} does not appear to be a private key or provided file does not exist in the working directory.".format(
-                        self.connection_parameters.get("private_key")
+                        self.connection_parameters.get(self.connection_parameters.get("private_key"))
                     )
                 )
         if self.connection_parameters.get("certificate_name") is None:

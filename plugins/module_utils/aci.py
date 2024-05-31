@@ -552,12 +552,15 @@ class ACIModule(object):
             else:
                 sig_key = load_privatekey(FILETYPE_PEM, self.params.get("private_key"))
         except Exception:
-            if os.path.exists(self.params.get("private_key")):
+            private_key_file_path = self.find_file_backward(
+                self.params.get("working_directory"), os.path.basename(self.params.get("private_key"))
+            )
+            if os.path.exists(private_key_file_path):
                 try:
                     permission = "r"
                     if HAS_CRYPTOGRAPHY:
                         permission = "rb"
-                    with open(self.params.get("private_key"), permission) as fh:
+                    with open(private_key_file_path, permission) as fh:
                         private_key_content = fh.read()
                 except Exception:
                     self.module.fail_json(msg="Cannot open private key file '{private_key}'.".format_map(self.params))
@@ -594,6 +597,18 @@ class ACIModule(object):
             + "APIC-Certificate-Fingerprint=fingerprint; "
             + "APIC-Request-Signature={0}".format(to_native(base64.b64encode(sig_signature)))
         )
+
+    def find_file_backward(self, working_dir, filename):
+        parent_dir = os.path.dirname(working_dir)
+
+        if parent_dir == working_dir:
+            return None
+
+        for subdir, dirs, files in os.walk(working_dir):
+            if filename in files:
+                return os.path.abspath(os.path.join(subdir, filename))
+
+        return self.find_file_backward(parent_dir, filename)
 
     def response_json(self, rawoutput):
         """Handle APIC JSON response output"""
