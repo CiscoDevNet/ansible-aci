@@ -552,9 +552,7 @@ class ACIModule(object):
             else:
                 sig_key = load_privatekey(FILETYPE_PEM, self.params.get("private_key"))
         except Exception:
-            private_key_file_path = self.find_file_backward(
-                self.params.get("working_directory"), os.path.basename(self.params.get("private_key"))
-            )
+            private_key_file_path = self.find_file_backward(self.params.get("working_directory"), os.path.basename(self.params.get("private_key")))
             if os.path.exists(private_key_file_path):
                 try:
                     permission = "r"
