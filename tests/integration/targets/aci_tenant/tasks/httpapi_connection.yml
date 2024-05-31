@@ -1,4 +1,4 @@
-## Tests HTTTP Connection when a list of host are provided
+# Tests HTTTP Connection when a list of host are provided
 
 - name: Set vars
   ansible.builtin.set_fact:
@@ -188,6 +188,22 @@
     state: present
   register: op1_task_private_key_add_tenant
 
+- name: Delete Tenant with password and private key filename in the task (private_key takes precedence)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    private_key: admin.key
+    tenant: ansible_test
+    state: absent
+  register: op1_task_private_key_filename_delete_tenant
+
+- name: Create Tenant with password and private key filename in the task (Check for execution on the provided aci_hostname with no attempts at re-connection)
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    private_key: admin.key
+    tenant: ansible_test
+    state: present
+  register: op1_task_private_key_filename_add_tenant
+
 - name: Delete Tenant with only password in the task (password in the task takes precedence)
   cisco.aci.aci_tenant:
     <<: *aci_info
@@ -238,6 +254,8 @@
   ansible.builtin.set_fact:
     op1_flattened_task_private_key_delete_tenant: "{{ op1_task_private_key_delete_tenant.httpapi_logs | flatten }}"
     op1_flattened_task_private_key_add_tenant: "{{ op1_task_private_key_add_tenant.httpapi_logs | flatten }}"
+    op1_flattened_task_private_key_filename_delete_tenant: "{{ op1_task_private_key_filename_delete_tenant.httpapi_logs | flatten }}"
+    op1_flattened_task_private_key_filename_add_tenant: "{{ op1_task_private_key_filename_add_tenant.httpapi_logs | flatten }}"
     op2_flattened_task_pwd_delete_tenant: "{{ op2_task_pwd_delete_tenant.httpapi_logs | flatten }}"
     op2_flattened_task_pwd_add_tenant: "{{ op2_task_pwd_add_tenant.httpapi_logs | flatten }}"
     op3_flattened_inventory_session_key_delete_tenant: "{{ op3_inventory_session_key_delete_tenant.httpapi_logs | flatten }}"
@@ -252,6 +270,10 @@
       - '"Initializing operation on {{ aci_hostname }}" in op1_flattened_task_private_key_delete_tenant'
       - op1_task_private_key_add_tenant is changed
       - '"Connection to {{ aci_hostname }} was successful" not in op1_flattened_task_private_key_add_tenant'
+      - op1_task_private_key_filename_delete_tenant is changed
+      - '"Provided Hosts: [''{{ aci_hostname }}'']" in op1_flattened_task_private_key_filename_delete_tenant'
+      - op1_task_private_key_filename_add_tenant is changed
+      - '"Connection to {{ aci_hostname }} was successful" not in op1_flattened_task_private_key_filename_add_tenant'
       - op2_task_pwd_delete_tenant is changed
       - '"Re-setting connection due to change from private/session key authentication to password authentication" in op2_flattened_task_pwd_delete_tenant'
       - '"Establishing login for {{ aci_username }} to {{ aci_hostname }}" in op2_flattened_task_pwd_delete_tenant'
