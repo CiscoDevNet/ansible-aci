@@ -154,6 +154,11 @@ ACI_CLASS_MAPPING = dict(
         "rn": "rsintraEpg-",
         "name": "tnVzBrCPName",
     },
+    intra_esg={
+        "class": "fvRsIntraEpg",
+        "rn": "rsintraEpg-",
+        "name": "tnVzBrCPName",
+    },
 )
 
 PROVIDER_MATCH_MAPPING = dict(

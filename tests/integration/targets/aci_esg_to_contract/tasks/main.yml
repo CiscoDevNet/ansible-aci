@@ -1,0 +1,275 @@
+# Test code for the ACI modules
+# Copyright: (c) 2024, Akini Ross (@akinross) <akinross@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for ACI v5+ and non-cloud sites
+  when:
+  - version.current.0.topSystem.attributes.version is version('5', '>=')
+  - query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+
+  # CLEAN ENVIRONMENT
+  - name: Cleanup tenant
+    cisco.aci.aci_tenant: &aci_tenant_absent
+      <<: *aci_info
+      tenant: ansible_test
+      state: absent
+
+  - name: Create tenant
+    cisco.aci.aci_tenant: &aci_tenant_present
+      <<: *aci_tenant_absent
+      state: present
+  
+  - name: Create application profile
+    cisco.aci.aci_ap: &aci_ap_present
+      <<: *aci_tenant_present
+      ap: ansible_test_ap
+      state: present
+
+  - name: Create endpoint security group
+    cisco.aci.aci_esg:
+      <<: *aci_ap_present
+      esg: ansible_test_esg
+      vrf: default
+
+  # CREATE
+
+  - name: Create ESG to Contract (check_mode)
+    cisco.aci.aci_esg_to_contract: &create_aci_esg_to_contract
+      <<: *aci_ap_present
+      esg: ansible_test_esg
+      contract: ansible_test_contract
+      contract_type: consumer
+    check_mode: true
+    register: cm_create_esg_to_contract
+
+  - name: Create ESG to Contract
+    cisco.aci.aci_esg_to_contract:
+      <<: *create_aci_esg_to_contract
+    register: nm_create_esg_to_contract
+  
+  - name: Create ESG to Contract again
+    cisco.aci.aci_esg_to_contract:
+      <<: *create_aci_esg_to_contract
+    register: nm_create_esg_to_contract_again
+  
+  - name: Assert that the ESG to Contract was created
+    ansible.builtin.assert:
+      that:
+        - cm_create_esg_to_contract is changed
+        - cm_create_esg_to_contract.previous == []
+        - cm_create_esg_to_contract.current == []
+        - cm_create_esg_to_contract.proposed.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract"
+        - cm_create_esg_to_contract.proposed.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract"
+        - nm_create_esg_to_contract is changed
+        - nm_create_esg_to_contract.previous == []
+        - nm_create_esg_to_contract.current.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract"
+        - nm_create_esg_to_contract.current.0.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract"
+        - nm_create_esg_to_contract.current.0.fvRsCons.attributes.prio == "unspecified"
+        - nm_create_esg_to_contract_again is not changed
+        - nm_create_esg_to_contract_again.previous.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract"
+        - nm_create_esg_to_contract_again.previous.0.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract"
+        - nm_create_esg_to_contract_again.previous.0.fvRsCons.attributes.prio == "unspecified"
+        - nm_create_esg_to_contract_again.current.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract"
+        - nm_create_esg_to_contract_again.current.0.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract"
+        - nm_create_esg_to_contract_again.current.0.fvRsCons.attributes.prio == "unspecified"
+
+  - name: Create another ESG to Contract of type consumer
+    cisco.aci.aci_esg_to_contract:
+      <<: *create_aci_esg_to_contract
+      contract: ansible_test_contract_2
+      contract_type: consumer
+    register: nm_create_esg_to_contract_consumer_2
+
+  - name: Create another ESG to Contract of type provider
+    cisco.aci.aci_esg_to_contract:
+      <<: *create_aci_esg_to_contract
+      contract_type: provider
+    register: nm_create_esg_to_contract_provider
+
+  - name: Create another ESG to Contract of type interface
+    cisco.aci.aci_esg_to_contract:
+      <<: *create_aci_esg_to_contract
+      contract_type: interface
+    register: nm_create_esg_to_contract_interface
+
+  - name: Create another ESG to Contract of type intra_esg (error)
+    cisco.aci.aci_esg_to_contract:
+      <<: *create_aci_esg_to_contract
+      contract_type: intra_esg
+      priority: level6
+    register: err_create_esg_to_contract_intra_esg
+    ignore_errors: true
+
+  - name: Create another ESG to Contract of type intra_esg
+    cisco.aci.aci_esg_to_contract:
+      <<: *create_aci_esg_to_contract
+      contract_type: intra_esg
+    register: nm_create_esg_to_contract_intra_esg
+
+  - name: Assert that the ESG to Contract are created for all types
+    ansible.builtin.assert:
+      that:
+        - nm_create_esg_to_contract_consumer_2 is changed
+        - nm_create_esg_to_contract_consumer_2.current.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract_2"
+        - nm_create_esg_to_contract_consumer_2.current.0.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract_2"
+        - nm_create_esg_to_contract_consumer_2.current.0.fvRsCons.attributes.prio == "unspecified"
+        - nm_create_esg_to_contract_provider is changed
+        - nm_create_esg_to_contract_provider.current.0.fvRsProv.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rsprov-ansible_test_contract"
+        - nm_create_esg_to_contract_provider.current.0.fvRsProv.attributes.tnVzBrCPName == "ansible_test_contract"
+        - nm_create_esg_to_contract_provider.current.0.fvRsProv.attributes.prio == "unspecified"
+        - nm_create_esg_to_contract_interface is changed
+        - nm_create_esg_to_contract_interface.current.0.fvRsConsIf.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rsconsIf-ansible_test_contract"
+        - nm_create_esg_to_contract_interface.current.0.fvRsConsIf.attributes.tnVzCPIfName == "ansible_test_contract"
+        - nm_create_esg_to_contract_interface.current.0.fvRsConsIf.attributes.prio == "unspecified"
+        - err_create_esg_to_contract_intra_esg is failed
+        - err_create_esg_to_contract_intra_esg.msg == "The 'priority' argument is not supported for the 'intra_esg' contract type."
+        - nm_create_esg_to_contract_intra_esg is changed
+        - nm_create_esg_to_contract_intra_esg.current.0.fvRsIntraEpg.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rsintraEpg-ansible_test_contract"
+        - nm_create_esg_to_contract_intra_esg.current.0.fvRsIntraEpg.attributes.tnVzBrCPName == "ansible_test_contract"
+
+  # UPDATE
+
+  - name: Update ESG to Contract (check_mode)
+    cisco.aci.aci_esg_to_contract: &update_aci_esg_to_contract
+      <<: *create_aci_esg_to_contract
+      priority: level6
+    check_mode: true
+    register: cm_update_esg_to_contract
+  
+  - name: Update ESG to Contract
+    cisco.aci.aci_esg_to_contract:
+      <<: *update_aci_esg_to_contract
+    register: nm_update_esg_to_contract
+  
+  - name: Update ESG to Contract again
+    cisco.aci.aci_esg_to_contract:
+      <<: *update_aci_esg_to_contract
+    register: nm_update_esg_to_contract_again
+  
+  - name: Assert that the ESG to Contract was updated
+    ansible.builtin.assert:
+      that:
+        - cm_update_esg_to_contract is changed
+        - cm_update_esg_to_contract.previous.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract"
+        - cm_update_esg_to_contract.previous.0.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract"
+        - cm_update_esg_to_contract.previous.0.fvRsCons.attributes.prio == "unspecified"
+        - cm_update_esg_to_contract.current.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract"
+        - cm_update_esg_to_contract.current.0.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract"
+        - cm_update_esg_to_contract.current.0.fvRsCons.attributes.prio == "unspecified"
+        - cm_update_esg_to_contract.proposed.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract"
+        - cm_update_esg_to_contract.proposed.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract"
+        - cm_update_esg_to_contract.proposed.fvRsCons.attributes.prio == "level6"
+        - nm_update_esg_to_contract is changed
+        - nm_update_esg_to_contract.previous.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract"
+        - nm_update_esg_to_contract.previous.0.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract"
+        - nm_update_esg_to_contract.previous.0.fvRsCons.attributes.prio == "unspecified"
+        - nm_update_esg_to_contract.current.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract"
+        - nm_update_esg_to_contract.current.0.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract"
+        - nm_update_esg_to_contract.current.0.fvRsCons.attributes.prio == "level6"
+        - nm_update_esg_to_contract_again is not changed
+        - nm_update_esg_to_contract_again.previous.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract"
+        - nm_update_esg_to_contract_again.previous.0.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract"
+        - nm_update_esg_to_contract_again.previous.0.fvRsCons.attributes.prio == "level6"
+        - nm_update_esg_to_contract_again.current.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract"
+        - nm_update_esg_to_contract_again.current.0.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract"
+        - nm_update_esg_to_contract_again.current.0.fvRsCons.attributes.prio == "level6"
+
+  # QUERY
+
+  - name: Query ESG to Contract
+    cisco.aci.aci_esg_to_contract:
+      <<: *create_aci_esg_to_contract
+      state: query
+    register: query_one
+
+  - name: Query all ESG to Contract type consumer
+    cisco.aci.aci_esg_to_contract:
+      <<: *aci_info
+      contract_type: consumer
+      state: query
+    register: query_all
+
+  - name: Assert that the ESG to Contract was queried
+    ansible.builtin.assert:
+      that:
+        - query_one is not changed
+        - query_one.current.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract"
+        - query_one.current.0.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract"
+        - query_one.current.0.fvRsCons.attributes.prio == "level6"
+        - query_all is not changed
+        - query_all.current | length >= 2
+
+  # DELETE
+
+  - name: Delete ESG to Contract (check_mode)
+    cisco.aci.aci_esg_to_contract: &delete_aci_esg_to_contract
+      <<: *create_aci_esg_to_contract
+      state: absent
+    check_mode: true
+    register: cm_delete_esg_to_contract
+  
+  - name: Delete ESG to Contract
+    cisco.aci.aci_esg_to_contract:
+      <<: *delete_aci_esg_to_contract
+    register: nm_delete_esg_to_contract
+  
+  - name: Delete ESG to Contract again
+    cisco.aci.aci_esg_to_contract:
+      <<: *delete_aci_esg_to_contract
+    register: nm_delete_esg_to_contract_again
+  
+  - name: Assert that the ESG to Contract was deleted
+    ansible.builtin.assert:
+      that:
+        - cm_delete_esg_to_contract is changed
+        - cm_delete_esg_to_contract.previous.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract"
+        - cm_delete_esg_to_contract.previous.0.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract"
+        - cm_delete_esg_to_contract.previous.0.fvRsCons.attributes.prio == "level6"
+        - cm_delete_esg_to_contract.current.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract"
+        - cm_delete_esg_to_contract.current.0.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract"
+        - cm_delete_esg_to_contract.current.0.fvRsCons.attributes.prio == "level6"
+        - cm_delete_esg_to_contract.proposed == {}
+        - nm_delete_esg_to_contract is changed
+        - nm_delete_esg_to_contract.previous.0.fvRsCons.attributes.dn == "uni/tn-ansible_test/ap-ansible_test_ap/esg-ansible_test_esg/rscons-ansible_test_contract"
+        - nm_delete_esg_to_contract.previous.0.fvRsCons.attributes.tnVzBrCPName == "ansible_test_contract"
+        - nm_delete_esg_to_contract.previous.0.fvRsCons.attributes.prio == "level6"
+        - nm_delete_esg_to_contract.current == []
+        - nm_delete_esg_to_contract_again is not changed
+        - nm_delete_esg_to_contract_again.previous == []
+        - nm_delete_esg_to_contract_again.current == []
+
+  # CLEAN ENVIRONMENT
+
+  - name: Cleanup tenant
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_absent
+      state: absent
