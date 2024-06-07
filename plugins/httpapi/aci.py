@@ -286,7 +286,7 @@ class HttpApi(HttpApiBase):
             else:
                 sig_key = load_privatekey(FILETYPE_PEM, self.connection_parameters.get("private_key"))
         except Exception:
-            private_key_file_path = self.create_abspath(self.params.get("working_directory"), self.connection_parameters.get("private_key"))
+            private_key_file_path = os.path.abspath(os.path.join(self.params.get("working_directory"), self.connection_parameters.get("private_key")))
             if os.path.exists(private_key_file_path):
                 try:
                     permission = "r"
@@ -324,15 +324,3 @@ class HttpApi(HttpApiBase):
             + "APIC-Request-Signature={0}".format(to_native(base64.b64encode(sig_signature)))
         )
         return headers
-
-    def create_abspath(self, working_dir, file):
-        """
-        Works if variable 'file' is:
-        - a filename which is in the same working directory as the ansible playbook,
-        - a relative path of the file that is either in the same folder or an adjacent folder as the ansible playbook,
-        - an absolute path of the file.
-        Doesn't work for more complex folder structures.
-        """
-        l = len(file.split("/"))
-        s = ("/").join(".." for i in range(l - 1))
-        return os.path.abspath(os.path.join(working_dir, s, file))
