@@ -286,9 +286,7 @@ class HttpApi(HttpApiBase):
             else:
                 sig_key = load_privatekey(FILETYPE_PEM, self.connection_parameters.get("private_key"))
         except Exception:
-            private_key_file_path = self.find_file_backward(
-                self.params.get("working_directory"), os.path.basename(self.connection_parameters.get("private_key"))
-            )
+            private_key_file_path = self.create_abspath(self.params.get("working_directory"), self.connection_parameters.get("private_key"))
             if os.path.exists(private_key_file_path):
                 try:
                     permission = "r"
@@ -309,9 +307,7 @@ class HttpApi(HttpApiBase):
                     self.connection_parameters["certificate_name"] = os.path.basename(os.path.splitext(self.connection_parameters.get("private_key"))[0])
             else:
                 raise ConnectionError(
-                    "Provided private key {0} does not appear to be a private key or provided file does not exist in the working directory.".format(
-                        self.connection_parameters.get(self.connection_parameters.get("private_key"))
-                    )
+                    "Provided private key {0} does not appear to be a private key or provided file does not exist.".format(private_key_file_path)
                 )
         if self.connection_parameters.get("certificate_name") is None:
             self.connection_parameters["certificate_name"] = self.connection.get_option("remote_user")
@@ -329,14 +325,14 @@ class HttpApi(HttpApiBase):
         )
         return headers
 
-    def find_file_backward(self, working_dir, filename):
-        parent_dir = os.path.dirname(working_dir)
-
-        if parent_dir == working_dir:
-            return None
-
-        for subdir, dirs, files in os.walk(working_dir):
-            if filename in files:
-                return os.path.abspath(os.path.join(subdir, filename))
-
-        return self.find_file_backward(parent_dir, filename)
+    def create_abspath(self, working_dir, file):
+        """
+        Works if variable 'file' is:
+        - a filename which is in the same working directory as the ansible playbook,
+        - a relative path of the file that is either in the same folder or an adjacent folder as the ansible playbook,
+        - an absolute path of the file.
+        Doesn't work for more complex folder structures.
+        """
+        l = len(file.split("/"))
+        s = ("/").join(".." for i in range(l - 1))
+        return os.path.abspath(os.path.join(working_dir, s, file))
