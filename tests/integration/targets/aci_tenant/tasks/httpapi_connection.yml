@@ -188,7 +188,7 @@
     state: present
   register: op1_task_private_key_add_tenant
 
-- name: Delete Tenant with password and private key relative path in the task (private_key takes precedence)
+- name: Delete Tenant with password and private key absolute path in the task (private_key takes precedence)
   cisco.aci.aci_tenant:
     <<: *aci_info
     private_key: '{{ role_path }}/pki/admin.key'
@@ -196,10 +196,10 @@
     state: absent
   register: op1_task_private_key_filename_delete_tenant
 
-- name: Create Tenant with password and private key relative in the task (Check for execution on the provided aci_hostname with no attempts at re-connection)
+- name: Create Tenant with password and private key relative path in the task (Check for execution on the provided aci_hostname with no attempts at re-connection)
   cisco.aci.aci_tenant:
     <<: *aci_info
-    private_key: '{{ role_path }}/pki/admin.key'
+    private_key: targets/aci_tenant/pki/admin.key
     tenant: ansible_test
     state: present
   register: op1_task_private_key_filename_add_tenant
