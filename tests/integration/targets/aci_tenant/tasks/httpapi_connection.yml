@@ -271,7 +271,7 @@
       - op1_task_private_key_add_tenant is changed
       - '"Connection to {{ aci_hostname }} was successful" not in op1_flattened_task_private_key_add_tenant'
       - op1_task_private_key_filename_delete_tenant is changed
-      - '"Provided Hosts: [''{{ aci_hostname }}'']" in op1_flattened_task_private_key_filename_delete_tenant'
+      - '"Connection to {{ aci_hostname }} was successful" not in op1_flattened_task_private_key_filename_delete_tenant'
       - op1_task_private_key_filename_add_tenant is changed
       - '"Connection to {{ aci_hostname }} was successful" not in op1_flattened_task_private_key_filename_add_tenant'
       - op2_task_pwd_delete_tenant is changed
