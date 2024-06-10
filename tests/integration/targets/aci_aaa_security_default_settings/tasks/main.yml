@@ -8,6 +8,12 @@
     msg: "Please define the following variables: aci_hostname, aci_username and aci_password."
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
+- name: Ensure python-dateutil is installed
+  ansible.builtin.pip:
+    name: python-dateutil
+    state: present
+  ignore_errors: true # ignore errors to because of multiple executions for hosts at the same time
+
 - name: Verify Cloud and Non-Cloud Sites in use.
   ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
