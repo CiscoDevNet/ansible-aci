@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [v2.14.16, v2.15.11, v2.16.6, stable-2.16, stable-2.17]
+        ansible: [v2.15.11, v2.16.6, stable-2.16, stable-2.17]
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -116,7 +116,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [v2.14.16, v2.15.11, v2.16.6, stable-2.16, stable-2.17]
+        ansible: [v2.15.11, v2.16.6, stable-2.16, stable-2.17]
     steps:
       - name: Set up Python ${{ env.python_version }}
         uses: actions/setup-python@v5
@@ -158,7 +158,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [v2.14.16, v2.15.11, v2.16.6, stable-2.16, stable-2.17]
+        ansible: [v2.15.11, v2.16.6, stable-2.16, stable-2.17]
     steps:
       - name: Set up Python ${{ env.python_version }}
         uses: actions/setup-python@v5
