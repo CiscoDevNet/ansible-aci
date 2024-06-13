@@ -98,6 +98,7 @@ action_groups:
     - aci_esg_epg_selector
     - aci_esg_ip_subnet_selector
     - aci_esg_tag_selector
+    - aci_esg_to_contract
     - aci_fabric_external_connection_profile
     - aci_fabric_external_routing_profile
     - aci_fabric_interface_policy_group
@@ -236,6 +237,7 @@ action_groups:
     - aci_syslog_source
     - aci_system
     - aci_system_banner
+    - aci_system_connectivity_preference
     - aci_system_endpoint_controls
     - aci_system_global_aes_passphrase_encryption
     - aci_taboo_contract
