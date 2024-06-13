@@ -232,6 +232,23 @@ releases:
         This changelog describes all changes made to the modules and plugins included
         in this collection since v2.0.0. "
     release_date: "2021-10-06"
+  2.10.0:
+    changes:
+      minor_changes:
+        - Add aci_esg_to_contract module for esg contract relationship objects fvRsCons
+          (consumer), fvRsConsIf (consumer interface), fvRsProv (provider) and fvRsIntraEpg
+          (intra_esg)
+        - Add aci_system_connectivity_preference module (#601)
+        - Added suppress-previous flag option to reduce the number of API calls. (#636)
+        - Enable relative path and/or filename of private key for the aci httpapi plugin.
+      release_summary:
+        "Release v2.10.0 of the ``ansible-aci`` collection on 2024-06-13.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.9.0.
+
+        "
+    release_date: "2024-06-13"
   2.2.0:
     changes:
       bugfixes:
