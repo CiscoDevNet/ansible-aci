@@ -4,6 +4,27 @@ Cisco ACI Ansible Collection Release Notes
 
 .. contents:: Topics
 
+v2.10.0
+=======
+
+Release Summary
+---------------
+
+Release v2.10.0 of the ``ansible-aci`` collection on 2024-06-13.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.9.0.
+
+Minor Changes
+-------------
+
+- Add aci_system_connectivity_preference module (#601)
+- Add the find_file_backward method to the private key in the classic aci-ansible plugin module. Add a few tasks to test that just providing filename for private key works.
+- Added Playbook Optimizing documentation - Added ACI HTTPAPI documentation - Added suppress_previous and suppress_verification documentation
+- Added Suppress Previous option to reduce the number of API calls. (#636) [minor_change] Added suppress-previous flag option and removed unnecessary GET when object is not changed to reduce the number of API calls.
+- Added missing warnings to any secure options that will not be returned by APIC. - Also fixed some class name typos
+- Enable relative path and/or filename of private key for httpapi plugin.
+- Implement function to find absolute path of filename in siblings working directory.
+- Revert to first commit s solution which enables relative path for private key. Modify integration test for ansible-aci httpapi plugin.
+- Revert to previous commit. Implement a function to also create absolute path from relative path file in adjacent folder. Modify integration test file.
 
 v2.9.0
 ======
@@ -13,7 +34,6 @@ Release Summary
 
 Release v2.9.0 of the ``ansible-aci`` collection on 2024-04-06.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.8.0.
-
 
 Minor Changes
 -------------
@@ -92,7 +112,6 @@ Release Summary
 Release v2.8.0 of the ``ansible-aci`` collection on 2023-11-04.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.7.0.
 
-
 Minor Changes
 -------------
 
@@ -135,7 +154,6 @@ Release Summary
 Release v2.7.0 of the ``ansible-aci`` collection on 2023-08-04.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.6.0.
 
-
 Minor Changes
 -------------
 
@@ -172,7 +190,6 @@ Release Summary
 Release v2.6.0 of the ``ansible-aci`` collection on 2023-04-19.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.5.0.
 
-
 Minor Changes
 -------------
 
@@ -189,7 +206,6 @@ Release Summary
 
 Release v2.5.0 of the ``ansible-aci`` collection on 2023-03-31.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.4.0.
-
 
 Minor Changes
 -------------
@@ -211,7 +227,6 @@ Release Summary
 
 Release v2.4.0 of the ``ansible-aci`` collection on 2023-02-04.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.3.0.
-
 
 Minor Changes
 -------------
@@ -241,7 +256,6 @@ Release Summary
 
 Release v2.3.0 of the ``ansible-aci`` collection on 2022-10-14.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.2.0.
-
 
 Minor Changes
 -------------
@@ -273,7 +287,6 @@ Release Summary
 
 Release v2.2.0 of the ``ansible-aci`` collection on 2022-03-15.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.1.0.
-
 
 Minor Changes
 -------------
@@ -519,7 +532,6 @@ Release Summary
 
 This is the first official release of the ``cisco.aci`` collection on 2020-08-18.
 This changelog describes all changes made to the modules and plugins included in this collection since Ansible 2.9.0.
-
 
 Minor Changes
 -------------
