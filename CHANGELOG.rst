@@ -10,16 +10,22 @@ v2.10.0
 Release Summary
 ---------------
 
-Release v2.10.0 of the ``ansible-aci`` collection on 2024-06-13.
+Release v2.10.0 of the ``ansible-aci`` collection on 2024-07-02.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.9.0.
 
 Minor Changes
 -------------
 
-- Add aci_esg_to_contract module for esg contract relationship objects fvRsCons (consumer), fvRsConsIf (consumer interface), fvRsProv (provider) and fvRsIntraEpg (intra_esg)
 - Add aci_system_connectivity_preference module (#601)
-- Added suppress-previous flag option to reduce the number of API calls. (#636)
-- Enable relative path and/or filename of private key for the aci httpapi plugin.
+- Add module for esg contract relationship objects fvRsCons (consumer), fvRsConsIf (consumer interface), fvRsProv (provider) and fvRsIntraEpg (intra_esg)
+- Add the find_file_backward method to the private key in the classic aci-ansible plugin module. Add a few tasks to test that just providing filename for private key works.
+- Added Playbook Optimizing documentation - Added ACI HTTPAPI documentation - Added suppress_previous and suppress_verification documentation
+- Added Suppress Previous option to reduce the number of API calls. (#636) [minor_change] Added suppress-previous flag option and removed unnecessary GET when object is not changed to reduce the number of API calls.
+- Added missing warnings to any secure options that will not be returned by APIC. - Also fixed some class name typos
+- Enable relative path and/or filename of private key for httpapi plugin.
+- Implement function to find absolute path of filename in siblings working directory.
+- Revert to first commit s solution which enables relative path for private key. Modify integration test for ansible-aci httpapi plugin.
+- Revert to previous commit. Implement a function to also create absolute path from relative path file in adjacent folder. Modify integration test file.
 
 v2.9.0
 ======
