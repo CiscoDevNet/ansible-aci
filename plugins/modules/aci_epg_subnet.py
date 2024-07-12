@@ -32,7 +32,7 @@ options:
     description:
     - Name of the end point group.
     type: str
-    aliases: [ epg_name, name ]
+    aliases: [ epg_name ]
   description:
     description:
     - The description for the Subnet.
@@ -345,7 +345,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        epg=dict(type="str", aliases=["epg_name", "name"]),  # Not required for querying all objects
+        epg=dict(type="str", aliases=["epg_name"]),  # Not required for querying all objects
         ap=dict(type="str", aliases=["app_profile", "app_profile_name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
         enable_vip=dict(type="bool"),
