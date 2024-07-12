@@ -36,7 +36,7 @@ options:
     description:
     - The name of the locally-authenticated user user to add.
     type: str
-    aliases: [ name, user ]
+    aliases: [ name ]
   clear_password_history:
     description:
     - Whether to clear the password history of a locally-authenticated user.

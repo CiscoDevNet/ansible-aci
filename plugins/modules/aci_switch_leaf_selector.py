@@ -55,7 +55,7 @@ options:
     description:
     - Name of the Policy Group to be added to Leaf Selector of given Leaf Profile.
     type: str
-    aliases: [ name, policy_group_name ]
+    aliases: [ policy_group_name ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.

@@ -37,7 +37,6 @@ options:
     description:
     - The name of the user certificate entry in ACI.
     type: str
-    aliases: [ cert_name ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
