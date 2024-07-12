@@ -41,7 +41,7 @@ options:
     description:
     - Name of the virtual domain profile.
     type: str
-    aliases: [ domain_name, domain_profile, name ]
+    aliases: [ domain_name, domain_profile ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.

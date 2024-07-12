@@ -37,7 +37,7 @@ options:
     description:
     - Name of an existing interface profile.
     type: str
-    aliases: [ name, interface_profile_name, logical_interface ]
+    aliases: [ interface_profile_name, logical_interface ]
   ospf_policy:
     description:
     - Name of an existing OSPF interface policy.
