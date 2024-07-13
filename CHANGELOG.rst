@@ -4,6 +4,20 @@ Cisco ACI Ansible Collection Release Notes
 
 .. contents:: Topics
 
+v2.10.1
+=======
+
+Release Summary
+---------------
+
+Release v2.10.1 of the ``ansible-aci`` collection on 2024-07-12.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.10.0.
+
+Bugfixes
+--------
+
+- Remove duplicate alias name for attribute epg in aci_epg_subnet module
+
 v2.10.0
 =======
 
