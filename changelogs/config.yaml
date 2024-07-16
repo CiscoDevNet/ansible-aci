@@ -9,6 +9,7 @@ new_plugins_after_name: removed_features
 notesdir: fragments
 prelude_section_name: release_summary
 prelude_section_title: Release Summary
+changelog_nice_yaml: true
 sections:
   - - major_changes
     - Major Changes
