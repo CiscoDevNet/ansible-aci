@@ -257,6 +257,15 @@ releases:
 
         '
     release_date: '2024-07-12'
+  2.10.2:
+    changes:
+      release_summary: 'Release v2.10.2 of the ``ansible-aci`` collection on 2024-07-16.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.10.1.
+
+        '
+    release_date: '2024-07-16'
   2.2.0:
     changes:
       bugfixes:
