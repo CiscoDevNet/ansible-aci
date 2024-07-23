@@ -279,7 +279,7 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "absent", ["node_id", "epg"]], ["state", "present", ["node_id", "epg", "ipv4_address", "ipv4_gw"]]],
+        required_if=[["state", "absent", ["node_id", "epg"]], ["state", "present", ["node_id", "epg", "ipv4_address", "ipv4_gw", "pod_id"]]],
     )
 
     pod_id = module.params.get("pod_id")
