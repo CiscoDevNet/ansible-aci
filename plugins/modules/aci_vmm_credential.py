@@ -260,8 +260,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["domain"]],
-            ["state", "present", ["domain"]],
+            ["state", "absent", ["domain", "vm_provider"]],
+            ["state", "present", ["domain", "vm_provider"]],
         ],
     )
 
