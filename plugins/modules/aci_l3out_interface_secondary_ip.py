@@ -304,6 +304,7 @@ def main():
                     "pod_id",
                     "node_id",
                     "path_ep",
+                    "address"
                 ],
             ],
             [
@@ -317,6 +318,7 @@ def main():
                     "pod_id",
                     "node_id",
                     "path_ep",
+                    "address"
                 ],
             ],
         ],
