@@ -229,8 +229,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["pool"]],
-            ["state", "present", ["pool"]],
+            ["state", "absent", ["pool", "pool_allocation_mode"]],
+            ["state", "present", ["pool", "pool_allocation_mode"]],
         ],
     )
 
@@ -243,11 +243,8 @@ def main():
     pool_name = pool
 
     # ACI Pool URL requires the allocation mode for vlan and vsan pools (ex: uni/infra/vlanns-[poolname]-static)
-    if pool is not None:
-        if pool_allocation_mode is not None:
-            pool_name = "[{0}]-{1}".format(pool, pool_allocation_mode)
-        else:
-            module.fail_json(msg="ACI requires the 'pool_allocation_mode' when 'pool' is provided")
+    if pool is not None and pool_allocation_mode is not None:
+      pool_name = "[{0}]-{1}".format(pool, pool_allocation_mode)
 
     aci = ACIModule(module)
     aci.construct_url(
