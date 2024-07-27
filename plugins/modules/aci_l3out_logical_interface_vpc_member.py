@@ -377,7 +377,7 @@ def main():
             aci_class="l3extMember",
             aci_rn="mem-{0}".format(side),
             module_object=side,
-            target_filter={"name": side},
+            target_filter={"side": side},
         ),
     )
 
@@ -387,7 +387,7 @@ def main():
         aci.payload(
             aci_class="l3extMember",
             class_config=dict(
-                name=side,
+                side=side,
                 addr=address,
                 ipv6Dad=ipv6_dad,
                 descr=description,
