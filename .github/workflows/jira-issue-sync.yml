@@ -1,0 +1,25 @@
+name: Sync GitHub Issues & Pull Requests to Jira
+
+on: [issues, issue_comment, pull_request]
+concurrency: jira_issues
+
+jobs:
+  sync_issues_to_jira:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync GitHub Issues & Pull Requests to Jira
+        uses: ciscoecosystem/sync-jira-actions@v1.1
+        with:
+          sync_label: jira-sync
+          status_field_id: 10740
+          find_jira_retries: 0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JIRA_PASS: ${{ secrets.JIRA_PASS }}
+          JIRA_USER: ${{ secrets.JIRA_USER }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_PROJECT: DCNE
+          JIRA_COMPONENT: ansible-aci
+          JIRA_ISSUE_TYPE: GitHub Issue
