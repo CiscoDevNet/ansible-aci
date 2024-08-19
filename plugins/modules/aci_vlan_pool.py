@@ -229,8 +229,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["pool","pool_allocation_mode"]],
-            ["state", "present", ["pool","pool_allocation_mode"]],
+            ["state", "absent", ["pool", "pool_allocation_mode"]],
+            ["state", "present", ["pool", "pool_allocation_mode"]],
         ],
     )
 
@@ -241,9 +241,9 @@ def main():
     name_alias = module.params.get("name_alias")
 
     if pool is not None and pool_allocation_mode is not None:
-      pool_name = "[{0}]-{1}".format(pool, pool_allocation_mode)
+        pool_name = "[{0}]-{1}".format(pool, pool_allocation_mode)
     else:
-      pool_name = pool
+        pool_name = pool
 
     aci = ACIModule(module)
     aci.construct_url(
