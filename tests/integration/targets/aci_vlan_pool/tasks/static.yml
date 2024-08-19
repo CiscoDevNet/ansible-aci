@@ -280,7 +280,7 @@
   ansible.builtin.assert:
     that:
     - error_on_missing_required_param is failed
-    - 'error_on_missing_required_param.msg == "state is present but all of the following are missing: pool"'
+    - 'error_on_missing_required_param.msg == "state is present but all of the following are missing: pool, pool_allocation_mode"'
 
 - name: Error when together parameter is missing
   cisco.aci.aci_vlan_pool:
@@ -300,4 +300,4 @@
   ansible.builtin.assert:
     that:
     - error_on_missing_together_param is failed
-    - error_on_missing_together_param.msg == "ACI requires the 'pool_allocation_mode' when 'pool' is provided"
+    - 'error_on_missing_together_param.msg == "state is present but all of the following are missing: pool_allocation_mode"'
