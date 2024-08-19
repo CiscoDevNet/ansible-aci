@@ -351,6 +351,9 @@ def main():
             ["epg_type", "epg", ["anp", "epg"]],
             ["epg_type", "l2_external", ["l2out_name", "external_epg"]],
             ["epg_type", "l3_external", ["l3out_name", "external_epg"]],
+            ["epg_type", "l3_external", ["provider_tenant", "tenant"], True],
+            ["epg_type", "l2_external", ["provider_tenant", "tenant"], True],
+            ["epg_type", "epg", ["provider_tenant", "tenant"], True],
             ["epg_type", "dn", ["dn"]],
         ],
         mutually_exclusive=[
@@ -384,9 +387,6 @@ def main():
 
     if provider_tenant is None:
         provider_tenant = tenant
-
-    if epg_type is not None and epg_type != "dn" and provider_tenant is None:
-        module.fail_json(msg="provider_tenant is required when epg_type is {0}".format(epg_type))
 
     if epg_type == "epg":
         tdn = "uni/tn-{0}/ap-{1}/epg-{2}".format(provider_tenant, anp, epg)

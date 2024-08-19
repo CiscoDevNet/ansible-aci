@@ -513,7 +513,7 @@
     ansible.builtin.assert:
       that:
       - err_global_epg_relay_provider is failed
-      - err_global_epg_relay_provider.msg == "provider_tenant is required when epg_type is epg"
+      - err_global_epg_relay_provider.msg == "epg_type is epg but any of the following are missing{{":"}} provider_tenant, tenant"
       - add_global_epg_relay_provider is changed
       - add_global_epg_relay_provider.current.0.dhcpRsProv.attributes.annotation == 'orchestrator:ansible'
       - add_global_epg_relay_provider.current.0.dhcpRsProv.attributes.dn == "uni/infra/relayp-ansible_global_dhcp_relay/rsprov-[uni/tn-ansible_tenant/ap-ansible_ap/epg-ansible_epg]"
