@@ -271,12 +271,12 @@ def main():
 
         if gui_banner is not None:
             if re.fullmatch(regex_url, gui_banner):
-              is_gui_message_text = "no"
+                is_gui_message_text = "no"
             else:
-              is_gui_message_text = "yes"
+                is_gui_message_text = "yes"
         else:
             is_gui_message_text = "yes"
-        
+
         aci.payload(
             aci_class="aaaPreLoginBanner",
             class_config=dict(
