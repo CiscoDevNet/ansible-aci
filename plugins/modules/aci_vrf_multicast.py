@@ -506,7 +506,7 @@ def main():
     state = module.params.get("state")
 
     if resource_policy and resource_policy.get("reserved_multicast_entries") and resource_policy.get("reserved_route_map") is None:
-        aci.fail_json(msg="parameters are mutually exclusive: reserved_route_map|reserved_multicast_entries")
+        aci.fail_json(msg="C(reserved_route_map) must be provided when C(reserved_multicast_entries) are provided")
     elif resource_policy and resource_policy.get("reserved_route_map") and not resource_policy.get("reserved_multicast_entries"):
         aci.fail_json(msg="C(reserved_multicast_entries) must be provided and greater than 0 when C(reserved_route_map) is provided")
 
