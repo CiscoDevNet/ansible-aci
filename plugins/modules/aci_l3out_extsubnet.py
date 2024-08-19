@@ -263,7 +263,7 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", required=True, aliases=["tenant_name"]),
         l3out=dict(type="str", required=True, aliases=["l3out_name"]),
-        extepg=dict(type="str", required=True, aliases=["extepg_name", "name"]),
+        extepg=dict(type="str", required=True, aliases=["extepg_name"]),
         network=dict(type="str", aliases=["address", "ip"]),
         description=dict(type="str", aliases=["descr"]),
         subnet_name=dict(type="str", aliases=["name"]),
