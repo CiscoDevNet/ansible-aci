@@ -269,6 +269,14 @@ def main():
     if state == "present":
         regex_url = "^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$"
 
+        if gui_banner is not None:
+            if re.fullmatch(regex_url, gui_banner):
+              is_gui_message_text = "no"
+            else:
+              is_gui_message_text = "yes"
+        else:
+            is_gui_message_text = "yes"
+        
         aci.payload(
             aci_class="aaaPreLoginBanner",
             class_config=dict(
@@ -277,7 +285,7 @@ def main():
                 bannerMessageSeverity=severity,
                 guiMessage=gui_banner,
                 guiTextMessage=gui_alias,
-                isGuiMessageText="no" if re.fullmatch(regex_url, gui_banner) else "yes",
+                isGuiMessageText=is_gui_message_text,
                 message=controller_banner,
                 showBannerMessage="yes" if application_banner else "no",
                 switchMessage=switch_banner,
