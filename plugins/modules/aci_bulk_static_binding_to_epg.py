@@ -456,8 +456,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["ap", "epg", "tenant"]],
-            ["state", "present", ["ap", "epg", "tenant"]],
+            ["state", "absent", ["ap", "epg", "tenant", "interface_configs"]],
+            ["state", "present", ["ap", "epg", "tenant", "interface_configs"]],
         ],
     )
 
