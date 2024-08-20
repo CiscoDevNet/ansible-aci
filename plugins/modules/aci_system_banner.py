@@ -269,11 +269,8 @@ def main():
     if state == "present":
         regex_url = "^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$"
 
-        if gui_banner is not None:
-            if re.fullmatch(regex_url, gui_banner):
-                is_gui_message_text = "no"
-            else:
-                is_gui_message_text = "yes"
+        if gui_banner is not None and re.fullmatch(regex_url, gui_banner):
+            is_gui_message_text = "no"
         else:
             is_gui_message_text = "yes"
 
