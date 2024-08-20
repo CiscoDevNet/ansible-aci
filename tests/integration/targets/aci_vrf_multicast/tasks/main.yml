@@ -1122,7 +1122,7 @@
   ansible.builtin.assert:
     that:
     - err_mutually_exclusive_resource_policy is failed
-    - err_mutually_exclusive_resource_policy.msg == "parameters are mutually exclusive{{':'}} reserved_route_map|reserved_multicast_entries"
+    - err_mutually_exclusive_resource_policy.msg == "C(reserved_route_map) must be provided when C(reserved_multicast_entries) are provided"
     - err_reserved_multicast_entries_is_0 is failed
     - err_reserved_multicast_entries_is_0.msg == "C(reserved_multicast_entries) must be provided and greater than 0 when C(reserved_route_map) is provided"
 
