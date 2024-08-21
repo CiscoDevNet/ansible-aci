@@ -201,6 +201,38 @@
     - query.current.0.aaaPreLoginBanner.attributes.message == "Ansible Test Controller Banner"
     - query.current.0.aaaPreLoginBanner.attributes.showBannerMessage == "yes"
 
+# CLEANUP ENVIRONMENT
+- name: Clear the current alias and banner configuration
+  cisco.aci.aci_system_banner:
+    <<: *aci_banner_clear
+
+# VERIFY THAT WHEN GUI_BANNER IS NULL THAT THE MODULE DOES NOT FAIL
+- name: Setting gui_banner is null
+  cisco.aci.aci_system_banner:
+    <<: *aci_info
+    gui_banner: null
+  register: nm_update_alias_without_banner
+
+- name: Verify that when gui_banner is null that the module does not fail 
+  ansible.builtin.assert:
+    that:
+    - nm_update_alias_without_banner is changed
+    - nm_update_alias_without_banner.current.0.aaaPreLoginBanner.attributes.annotation == "orchestrator:ansible"
+    - nm_update_alias_without_banner.current.0.aaaPreLoginBanner.attributes.dn == "uni/userext/preloginbanner"
+    - nm_update_alias_without_banner.current.0.aaaPreLoginBanner.attributes.isGuiMessageText == "yes"
+    - nm_update_alias_without_banner.current.0.aaaPreLoginBanner.attributes.guiTextMessage == ""
+    - nm_update_alias_without_banner.current.0.aaaPreLoginBanner.attributes.showBannerMessage == "no"
+    - nm_update_alias_without_banner.previous.0.aaaPreLoginBanner.attributes.annotation == ""
+    - nm_update_alias_without_banner.previous.0.aaaPreLoginBanner.attributes.bannerMessage == ""
+    - nm_update_alias_without_banner.previous.0.aaaPreLoginBanner.attributes.bannerMessageSeverity == "info"
+    - nm_update_alias_without_banner.previous.0.aaaPreLoginBanner.attributes.dn == "uni/userext/preloginbanner"
+    - nm_update_alias_without_banner.previous.0.aaaPreLoginBanner.attributes.guiMessage == ""
+    - nm_update_alias_without_banner.previous.0.aaaPreLoginBanner.attributes.isGuiMessageText == "yes"
+    - nm_update_alias_without_banner.previous.0.aaaPreLoginBanner.attributes.guiTextMessage == ""
+    - nm_update_alias_without_banner.previous.0.aaaPreLoginBanner.attributes.message == ""
+    - nm_update_alias_without_banner.previous.0.aaaPreLoginBanner.attributes.showBannerMessage == "no"
+    - nm_update_alias_without_banner.previous.0.aaaPreLoginBanner.attributes.switchMessage == ""
+  
 # ERROR ALIAS AND BANNER CONFIGURATION INPUT
 - name: Update alias and banner configuration (error)
   cisco.aci.aci_system_banner: 
