@@ -257,6 +257,18 @@ releases:
 
         '
     release_date: '2024-07-12'
+  2.10.2:
+    changes:
+      bugfixes:
+        - Modify interface_configs requirement using required_if dependency for aci_bulk_static_binding_to_epg
+        - Remove duplicate alias name for extepg in aci_l3out_extsubnet
+      release_summary: 'Release v2.10.2 of the ``ansible-aci`` collection on 2024-08-22.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.10.1.
+
+        '
+    release_date: '2024-08-22'
   2.2.0:
     changes:
       bugfixes:

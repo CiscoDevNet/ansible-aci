@@ -4,6 +4,21 @@ Cisco ACI Ansible Collection Release Notes
 
 .. contents:: Topics
 
+v2.10.2
+=======
+
+Release Summary
+---------------
+
+Release v2.10.2 of the ``ansible-aci`` collection on 2024-08-22.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.10.1.
+
+Bugfixes
+--------
+
+- Modify interface_configs requirement using required_if dependency for aci_bulk_static_binding_to_epg
+- Remove duplicate alias name for extepg in aci_l3out_extsubnet
+
 v2.10.1
 =======
 
