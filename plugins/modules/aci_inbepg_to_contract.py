@@ -258,29 +258,25 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        type=dict(type="str", choices=["in_band", "out_of_band"], required=True)      #>>>> really required, both are under the same class
+        # type=dict(type="str", choices=["in_band", "out_of_band"], required=True)      #>>>> really required? both are under the same class ----> yes, inb class and oob class difference in building URL
         contract_type=dict(type="str", required=True, choices=["consumer", "provider", "taboo", "interface"]),
-        # ap=dict(type="str", aliases=["app_profile", "app_profile_name"]),  # Not required for querying all objects
         epg=dict(type="str", aliases=["epg_name"]),  # Not required for querying all objects
         contract=dict(type="str", aliases=["contract_name", "contract_interface"]),  # Not required for querying all objects
         priority=dict(type="str", choices=["level1", "level2", "level3", "level4", "level5", "level6", "unspecified"]),
         provider_match=dict(type="str", choices=["all", "at_least_one", "at_most_one", "none"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        # tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects      >>>>>> HARDCODE mgmt TENANT ???
-        # contract_label=dict(type="str"),
-        # subject_label=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["contract", "epg"]],
-            ["state", "present", ["contract", "epg"]],
+            ["state", "absent", ["contract_type", "epg", "contract"]],
+            ["state", "present", ["contract_type", "epg","contract"]],
         ],
     )
 
-    # ap = module.params.get("ap")
+    # epg_type = module.params.get("type")
     contract = module.params.get("contract")
     contract_type = module.params.get("contract_type")
     epg = module.params.get("epg")
@@ -289,10 +285,6 @@ def main():
     if provider_match is not None:
         provider_match = PROVIDER_MATCH_MAPPING[provider_match]
     state = module.params.get("state")
-    # tenant = module.params.get("tenant")
-    # contract_label = module.params.get("contract_label")
-    # subject_label = module.params.get("subject_label")
-
     aci_class = ACI_CLASS_MAPPING[contract_type]["class"]
     aci_rn = ACI_CLASS_MAPPING[contract_type]["rn"]
     aci_name = ACI_CLASS_MAPPING[contract_type]["name"]
@@ -300,14 +292,6 @@ def main():
 
     if contract_type != "provider" and provider_match is not None:
         module.fail_json(msg="the 'provider_match' is only configurable for Provided Contracts")
-
-    # if contract_type in ["taboo", "interface"] and (contract_label is not None or subject_label is not None):
-    #     module.fail_json(msg="the 'contract_label' and 'subject_label' are not configurable for {0} contracts".format(contract_type))
-
-    if contract_type not in ["taboo", "interface"]:
-        contract_label_class = CONTRACT_LABEL_MAPPING.get(contract_type)
-        subject_label_class = SUBJ_LABEL_MAPPING.get(contract_type)
-        child_classes = [subject_label_class, contract_label_class]
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -324,8 +308,8 @@ def main():
             target_filter={"name": "default"},
         ),
         subclass_2=dict(
-            aci_class="fvAEPg",
-            aci_rn="epg-{0}".format(epg),
+            aci_class="mgmtInB",
+            aci_rn="inb-{0}".format(epg),
             module_object=epg,
             target_filter={"name": epg},
         ),
@@ -342,10 +326,6 @@ def main():
 
     if state == "present":
         child_configs = []
-        # if contract_label is not None:
-        #     child_configs.append({contract_label_class: {"attributes": {"name": contract_label}}})
-        # if subject_label is not None:
-        #     child_configs.append({subject_label_class: {"attributes": {"name": subject_label}}})
         aci.payload(
             aci_class=aci_class,
             class_config={"matchT": provider_match, "prio": priority, aci_name: contract},
