@@ -1,5 +1,6 @@
 # Test code for the ACI modules
-# Copyright: (c) 2022, Tim Cragg (timcragg)
+# Copyright: (c) 2022, Tim Cragg (@timcragg)
+# Copyright: (c) 2024, Akini Ross (@akinross)
 #
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -66,6 +67,7 @@
     - nm_add_policy.current.0.datetimePol.attributes.adminSt == 'enabled'
     - nm_add_policy.current.0.datetimePol.attributes.serverState == 'disabled'
     - nm_add_policy.current.0.datetimePol.attributes.authSt == 'disabled'
+    - nm_add_policy.current.0.datetimePol.attributes.StratumValue == '8'
     - cm_add_policy_again is not changed
     - nm_add_policy_again is not changed
     - nm_add_policy_again.current.0.datetimePol.attributes.dn == 'uni/fabric/time-ansible_ntp_policy'
@@ -74,6 +76,7 @@
     - nm_add_policy_again.current.0.datetimePol.attributes.adminSt == 'enabled'
     - nm_add_policy_again.current.0.datetimePol.attributes.serverState == 'disabled'
     - nm_add_policy_again.current.0.datetimePol.attributes.authSt == 'disabled'
+    - nm_add_policy_again.current.0.datetimePol.attributes.StratumValue == '8'
 
 # MODIFY POLICY
 - name: Modify policy (check_mode)
@@ -84,6 +87,7 @@
     admin_state: enabled
     server_state: enabled
     auth_state: disabled
+    stratum: 9
     state: present
   check_mode: true
   register: cm_modify_policy
@@ -115,6 +119,7 @@
     - nm_modify_policy.current.0.datetimePol.attributes.adminSt == 'enabled'
     - nm_modify_policy.current.0.datetimePol.attributes.serverState == 'enabled'
     - nm_modify_policy.current.0.datetimePol.attributes.authSt == 'disabled'
+    - nm_modify_policy.current.0.datetimePol.attributes.StratumValue == '9'
     - cm_modify_policy_again is not changed
     - nm_modify_policy_again is not changed
     - nm_modify_policy_again.current.0.datetimePol.attributes.dn == 'uni/fabric/time-ansible_ntp_policy'
@@ -123,6 +128,7 @@
     - nm_modify_policy_again.current.0.datetimePol.attributes.adminSt == 'enabled'
     - nm_modify_policy_again.current.0.datetimePol.attributes.serverState == 'enabled'
     - nm_modify_policy_again.current.0.datetimePol.attributes.authSt == 'disabled'
+    - nm_modify_policy_again.current.0.datetimePol.attributes.StratumValue == '9'
 
 # QUERY ALL POLICIES
 - name: Query all policies (check_mode)
@@ -169,6 +175,7 @@
     - nm_query_policy.current.0.datetimePol.attributes.adminSt == 'enabled'
     - nm_query_policy.current.0.datetimePol.attributes.serverState == 'enabled'
     - nm_query_policy.current.0.datetimePol.attributes.authSt == 'disabled'
+    - nm_query_policy.current.0.datetimePol.attributes.StratumValue == '9'
 
 # REMOVE POLICY
 - name: Remove policy (check_mode)
@@ -205,5 +212,6 @@
     - nm_remove_policy.previous.0.datetimePol.attributes.adminSt == 'enabled'
     - nm_remove_policy.previous.0.datetimePol.attributes.serverState == 'enabled'
     - nm_remove_policy.previous.0.datetimePol.attributes.authSt == 'disabled'
+    - nm_remove_policy.previous.0.datetimePol.attributes.StratumValue == '9'
     - cm_remove_policy_again is not changed
     - nm_remove_policy_again is not changed

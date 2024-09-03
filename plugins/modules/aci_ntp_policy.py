@@ -50,6 +50,12 @@ options:
     - Enable master mode. Only applicable if server_state is enabled
     type: str
     choices: [ disabled, enabled ]
+  stratum:
+    description:
+    - The NTP stratum value.
+    - The APIC defaults to C(8) when not provided.
+    - The value must be minimal C(1) and maximum C(15).
+    type: int
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -68,6 +74,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
+- Akini Ross (@akinross)
 """
 
 EXAMPLES = r"""
@@ -231,6 +238,7 @@ def main():
         server_state=dict(type="str", choices=["disabled", "enabled"]),
         auth_state=dict(type="str", choices=["disabled", "enabled"]),
         master_mode=dict(type="str", choices=["disabled", "enabled"]),
+        stratum=dict(type="int"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -249,6 +257,7 @@ def main():
     server_state = module.params.get("server_state")
     auth_state = module.params.get("auth_state")
     master_mode = module.params.get("master_mode")
+    stratum = module.params.get("stratum")
     state = module.params.get("state")
     child_classes = ["datetimeNtpProv"]
 
@@ -275,6 +284,7 @@ def main():
                 serverState=server_state,
                 authSt=auth_state,
                 masterMode=master_mode,
+                StratumValue=stratum,
             ),
         )
 
