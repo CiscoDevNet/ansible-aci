@@ -301,18 +301,9 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        child_configs = [
-            dict(eigrpRsIfPol=dict(attributes=dict(tnEigrpIfPolName=eigrp_policy))),
-            dict(eigrpAuthIfP=dict(attributes=dict()))
-        ]
+        child_configs = [dict(eigrpRsIfPol=dict(attributes=dict(tnEigrpIfPolName=eigrp_policy))), dict(eigrpAuthIfP=dict(attributes=dict()))]
 
-        aci.payload(
-            aci_class="eigrpIfP", 
-            class_config=dict(
-                name=eigrp_profile
-            ), 
-            child_configs=child_configs
-        )
+        aci.payload(aci_class="eigrpIfP", class_config=dict(name=eigrp_profile), child_configs=child_configs)
 
         aci.get_diff(aci_class="eigrpIfP")
 
