@@ -241,7 +241,7 @@ def main():
         node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
         interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
         eigrp_profile=dict(type="str", aliases=["name", "eigrp_profile_name"]),
-        eigrp_policy=dict(type="str", aliases=["eigrp_policy", "eigrp_policy_name"]),
+        eigrp_policy=dict(type="str", aliases=["eigrp_policy_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
