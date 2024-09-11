@@ -54,7 +54,7 @@ options:
     description:
     - The NTP stratum value.
     - The APIC defaults to C(8) when not provided.
-    - The value must be minimal C(1) and maximum C(15).
+    - The allowed minimum is C(1) and the allowed maximum is C(15).
     type: int
   state:
     description:
