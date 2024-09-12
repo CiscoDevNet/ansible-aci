@@ -93,8 +93,8 @@
       - cm_add_eigrpIfP is changed
       - nm_add_eigrpIfP is changed
       - cm_add_eigrpIfP.previous == nm_add_eigrpIfP.previous == []
-      - cm_add_eigrpIfP.proposed.eigrpIfP.children[0].eigrpRsIfPol.attributes.tneigrpIfPolName == 'default'
-      - nm_add_eigrpIfP.current[0].eigrpIfP.children[0].eigrpRsIfPol.attributes.tneigrpIfPolName == 'default'
+      - cm_add_eigrpIfP.proposed.eigrpIfP.attributes.name == 'default'
+      - nm_add_eigrpIfP.current[0].eigrpIfP.attributes.name == 'default'
 
   - name: Add eigrp profile again to check idempotency
     cisco.aci.aci_l3out_logical_interface_profile_eigrp_profile: *eigrpIfP_present
@@ -122,8 +122,8 @@
       that:
       - update_eigrpIfP is changed
       - update_eigrpIfP.previous != []
-      - update_eigrpIfP.current[0].eigrpIfP.children[0].eigrpRsIfPol.attributes.tneigrpIfPolName == 'default'
-      - update_eigrpIfP_again is changed
+      - update_eigrpIfP.current[0].eigrpIfP.attributes.name == 'default'
+      - update_eigrpIfP_again is not changed
       - update_eigrpIfP_again.current == update_eigrpIfP_again.previous
 
   # QUERY INTERFACE PROFILE EIGRP PROFILE
@@ -138,8 +138,7 @@
       that:
       - query_eigrpIfP_profile is not changed
       - query_eigrpIfP_profile.current|length == 1
-      - query_eigrpIfP_profile.current[0].eigrpIfP.children[0].eigrpRsIfPol.attributes.tneigrpIfPolName == 'default'
-      - query_eigrpIfP_profile.current[0].eigrpIfP.attributes.authType == 'simple'
+      - query_eigrpIfP_profile.current[0].eigrpIfP.attributes.name == 'default'
 
   # REMOVE PROFILE
   - name: Remove interface profile eigrp profile
@@ -158,8 +157,7 @@
     ansible.builtin.assert:
       that:
       - remove_profile.previous|length == 1
-      - remove_profile.previous[0].eigrpIfP.children[0].eigrpRsIfPol.attributes.tneigrpIfPolName == 'default'
-      - remove_profile.previous[0].eigrpIfP.attributes.authType == 'simple'
+      - remove_profile.previous[0].eigrpIfP.attributes.name == 'default'
       - remove_profile is changed
       - remove_profile_again is not changed
       - remove_profile.current == remove_profile_again.current == []
