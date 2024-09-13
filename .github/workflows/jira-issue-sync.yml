@@ -1,6 +1,10 @@
 name: Sync GitHub Issues & Pull Requests to Jira
 
-on: [issues, issue_comment, pull_request]
+on: 
+  pull_request_target:
+    types: [opened, synchronize, reopened, labeled, unlabeled, edited, closed]
+  issues:
+  issue_comment:
 concurrency: jira_issues
 
 jobs:
@@ -10,11 +14,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Sync GitHub Issues & Pull Requests to Jira
-        uses: ciscoecosystem/sync-jira-actions@v1.1
+        uses: ciscoecosystem/sync-jira-actions@v1
         with:
           sync_label: jira-sync
           status_field_id: 10740
           find_jira_retries: 0
+          link_closing_issues: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JIRA_PASS: ${{ secrets.JIRA_PASS }}
