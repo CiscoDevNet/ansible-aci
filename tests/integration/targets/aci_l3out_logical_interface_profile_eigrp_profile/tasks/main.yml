@@ -63,7 +63,7 @@
       interface_profile: INTFS
 
   - name: Create eigrp interface policy
-    cisco.aci.aci_interface_policy_eigrp: &interface_policy_eigrp_present
+    cisco.aci.aci_interface_policy_eigrp: &eigrpIfPol_present
       <<: *tenant_present
       eigrp_interface: ansible_eigrp_interface
       description: eigrp interface policy for ansible_tenant tenant
@@ -75,11 +75,11 @@
       hold_interval: 30
       state: present
 
-  # BEGIN WITH TESTS (ADD EIGRP profile TO INTERFACE PROFILE)
+  # BEGIN WITH TESTS (ADD EIGRP PROFILE TO INTERFACE PROFILE)
   - name: Add eigrp profile to interface profile (check mode)
     cisco.aci.aci_l3out_logical_interface_profile_eigrp_profile: &eigrpIfP_present
       <<: *intf_present
-      eigrp_profile: default
+      eigrp_policy: default
     check_mode: true
     register: cm_add_eigrpIfP
 
@@ -93,8 +93,12 @@
       - cm_add_eigrpIfP is changed
       - nm_add_eigrpIfP is changed
       - cm_add_eigrpIfP.previous == nm_add_eigrpIfP.previous == []
-      - cm_add_eigrpIfP.proposed.eigrpIfP.attributes.name == 'default'
-      - nm_add_eigrpIfP.current[0].eigrpIfP.attributes.name == 'default'
+      - cm_add_eigrpIfP.proposed.eigrpIfP.attributes.name == 'INTFS'
+      - cm_add_eigrpIfP.proposed.eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'default'
+      - nm_add_eigrpIfP.current[0].eigrpIfP.attributes.name == 'INTFS'
+      - nm_add_eigrpIfP.current[0].eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'default'
+      - nm_add_eigrpIfP.proposed.eigrpIfP.attributes.name == 'INTFS'
+      - nm_add_eigrpIfP.proposed.eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'default'
 
   - name: Add eigrp profile again to check idempotency
     cisco.aci.aci_l3out_logical_interface_profile_eigrp_profile: *eigrpIfP_present
@@ -104,6 +108,11 @@
     ansible.builtin.assert:
       that:
       - nm_add_eigrpIfP_again is not changed
+      - nm_add_eigrpIfP_again.previous == nm_add_eigrpIfP_again.current
+      - nm_add_eigrpIfP_again.proposed.eigrpIfP.attributes.name == 'INTFS'
+      - nm_add_eigrpIfP_again.proposed.eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'default'
+      - nm_add_eigrpIfP_again.current[0].eigrpIfP.attributes.name == 'INTFS'
+      - nm_add_eigrpIfP_again.current[0].eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'default'
 
   # UPDATE INTERFACE PROFILE EIGRP PROFILE
   - name: Update interface profile eigrp profile
@@ -122,9 +131,12 @@
       that:
       - update_eigrpIfP is changed
       - update_eigrpIfP.previous != []
-      - update_eigrpIfP.current[0].eigrpIfP.attributes.name == 'default'
+      - update_eigrpIfP.current[0].eigrpIfP.attributes.name == 'INTFS'
+      - update_eigrpIfP.current[0].eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'ansible_eigrp_interface'
+      - update_eigrpIfP.proposed.eigrpIfP.attributes.name == 'INTFS'
+      - update_eigrpIfP.proposed.eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'ansible_eigrp_interface'
       - update_eigrpIfP_again is not changed
-      - update_eigrpIfP_again.current == update_eigrpIfP_again.previous
+      - update_eigrpIfP_again.previous == update_eigrpIfP_again.current
 
   # QUERY INTERFACE PROFILE EIGRP PROFILE
   - name: Query interface profile eigrp profile
@@ -138,7 +150,8 @@
       that:
       - query_eigrpIfP_profile is not changed
       - query_eigrpIfP_profile.current|length == 1
-      - query_eigrpIfP_profile.current[0].eigrpIfP.attributes.name == 'default'
+      - query_eigrpIfP_profile.current[0].eigrpIfP.attributes.name == 'INTFS'
+      - query_eigrpIfP_profile.current[0].eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'ansible_eigrp_interface'
 
   # REMOVE PROFILE
   - name: Remove interface profile eigrp profile
@@ -157,7 +170,8 @@
     ansible.builtin.assert:
       that:
       - remove_profile.previous|length == 1
-      - remove_profile.previous[0].eigrpIfP.attributes.name == 'default'
+      - remove_profile.previous[0].eigrpIfP.attributes.name == 'INTFS'
+      - remove_profile.previous[0].eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'ansible_eigrp_interface'
       - remove_profile is changed
       - remove_profile_again is not changed
       - remove_profile.current == remove_profile_again.current == []
