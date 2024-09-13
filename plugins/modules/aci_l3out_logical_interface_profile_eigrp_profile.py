@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2024, Jason Juenger (@jasonjuenger) <jasonjuenger@gmail.com>
-# Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -38,11 +37,6 @@ options:
     - Name of an existing interface profile.
     type: str
     aliases: [ interface_profile_name, logical_interface ]
-  eigrp_profile:
-    description:
-    - Name of the EIGRP interface profile to create.
-    type: str
-    aliases: [ name, eigrp_profile_name ]
   eigrp_policy:
     description:
     - Name of an existing EIGRP interface policy.
@@ -75,7 +69,6 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jason Juenger (@jasonjuenger)
-- Gaspard Micol (@gmicol)
 """
 
 EXAMPLES = r"""
@@ -88,7 +81,6 @@ EXAMPLES = r"""
     l3out: my_l3out
     node_profile: my_node_profile
     interface_profile: my_interface_profile
-    eigrp_profile: my_eigrp_interface_profile
     eigrp_policy: my_eigrp_interface_policy
     state: present
   delegate_to: localhost
@@ -102,7 +94,6 @@ EXAMPLES = r"""
     l3out: my_l3out
     node_profile: my_node_profile
     interface_profile: my_interface_profile
-    eigrp_profile: my_eigrp_interface_profile
     state: absent
   delegate_to: localhost
 
@@ -115,7 +106,6 @@ EXAMPLES = r"""
     l3out: my_l3out
     node_profile: my_node_profile
     interface_profile: my_interface_profile
-    eigrp_profile: my_eigrp_interface_profile
     state: query
   delegate_to: localhost
   register: query_result
@@ -240,7 +230,6 @@ def main():
         l3out=dict(type="str", aliases=["l3out_name"]),
         node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
         interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
-        eigrp_profile=dict(type="str", aliases=["name", "eigrp_profile_name"]),
         eigrp_policy=dict(type="str", aliases=["eigrp_policy_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -250,7 +239,7 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["tenant", "l3out", "node_profile", "interface_profile"]],
-            ["state", "present", ["tenant", "l3out", "node_profile", "interface_profile", "eigrp_profile"]],
+            ["state", "present", ["tenant", "l3out", "node_profile", "interface_profile", "eigrp_policy"]],
         ],
     )
 
@@ -258,7 +247,6 @@ def main():
     l3out = module.params.get("l3out")
     node_profile = module.params.get("node_profile")
     interface_profile = module.params.get("interface_profile")
-    eigrp_profile = module.params.get("eigrp_profile")
     eigrp_policy = module.params.get("eigrp_policy")
     state = module.params.get("state")
 
@@ -295,15 +283,15 @@ def main():
             module_object=interface_profile,
             target_filter={"name": interface_profile},
         ),
-        child_classes=["eigrpRsIfPol", "eigrpAuthIfP"],
+        child_classes=["eigrpRsIfPol"],
     )
 
     aci.get_existing()
 
     if state == "present":
-        child_configs = [dict(eigrpRsIfPol=dict(attributes=dict(tnEigrpIfPolName=eigrp_policy))), dict(eigrpAuthIfP=dict(attributes=dict()))]
+        child_configs = [dict(eigrpRsIfPol=dict(attributes=dict(tnEigrpIfPolName=eigrp_policy)))]
 
-        aci.payload(aci_class="eigrpIfP", class_config=dict(name=eigrp_profile), child_configs=child_configs)
+        aci.payload(aci_class="eigrpIfP", class_config=dict(name=interface_profile), child_configs=child_configs)
 
         aci.get_diff(aci_class="eigrpIfP")
 
