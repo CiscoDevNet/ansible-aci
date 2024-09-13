@@ -1,6 +1,6 @@
 name: Sync GitHub Issues & Pull Requests to Jira
 
-on: 
+on:
   pull_request_target:
     types: [opened, synchronize, reopened, labeled, unlabeled, edited, closed]
   issues:
