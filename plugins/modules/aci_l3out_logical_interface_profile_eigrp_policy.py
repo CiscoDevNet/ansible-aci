@@ -281,7 +281,6 @@ def main():
             aci_class="eigrpIfP",
             aci_rn="eigrpIfP",
             module_object=interface_profile,
-            target_filter={"name": interface_profile},
         ),
         child_classes=["eigrpRsIfPol"],
     )
