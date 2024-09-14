@@ -1,0 +1,202 @@
+# Author: Jason Juenger (@jasonjuenger)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove test tenant before we kickoff
+  cisco.aci.aci_tenant: &tenant_absent
+    <<: *aci_info
+    tenant: ansible_test
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # SETUP ENVIRONMENT
+  - name: Create domain
+    cisco.aci.aci_domain: &domain_present
+      <<: *aci_info
+      domain: l3outintftest
+      domain_type: l3dom
+      state: present
+
+  - name: Create tenant
+    cisco.aci.aci_tenant: &tenant_present
+      <<: *tenant_absent
+      state: present
+
+  - name: Configure VRF
+    cisco.aci.aci_vrf: &vrf_present
+      <<: *tenant_present
+      vrf: l3outintftest
+
+  - name: Create L3Out
+    cisco.aci.aci_l3out:
+      <<: *vrf_present
+      l3out: l3outintftest
+      domain: l3outintftest
+      route_control: export
+
+  - name: Create node profile
+    cisco.aci.aci_l3out_logical_node_profile: &np_present
+      <<: *tenant_present
+      l3out: l3outintftest
+      node_profile: NODES
+
+  - name: Create interface profile
+    cisco.aci.aci_l3out_logical_interface_profile: &intf_present
+      <<: *np_present
+      interface_profile: INTFS
+
+  - name: Create eigrp interface policy
+    cisco.aci.aci_interface_policy_eigrp: &eigrpIfPol_present
+      <<: *tenant_present
+      eigrp_interface: ansible_eigrp_interface
+      description: eigrp interface policy for ansible_tenant tenant
+      bandwidth: 100000
+      control_state: [bfd, nexthop_self, passive, split_horizon]
+      delay: 10
+      delay_unit: picoseconds
+      hello_interval: 10
+      hold_interval: 30
+      state: present
+
+  # BEGIN WITH TESTS (ADD EIGRP PROFILE TO INTERFACE PROFILE)
+  - name: Add eigrp policy to interface profile (check mode)
+    cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy: &eigrpIfP_present
+      <<: *intf_present
+      eigrp_policy: default
+    check_mode: true
+    register: cm_add_eigrpIfP
+
+  - name: Add eigrp policy to interface profile (normal mode)
+    cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy: *eigrpIfP_present
+    register: nm_add_eigrpIfP
+
+  - name: Verify add_eigrpIfP
+    ansible.builtin.assert:
+      that:
+      - cm_add_eigrpIfP is changed
+      - nm_add_eigrpIfP is changed
+      - cm_add_eigrpIfP.previous == nm_add_eigrpIfP.previous == []
+      - cm_add_eigrpIfP.proposed.eigrpIfP.attributes.name == 'INTFS'
+      - cm_add_eigrpIfP.proposed.eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'default'
+      - nm_add_eigrpIfP.current[0].eigrpIfP.attributes.name == 'INTFS'
+      - nm_add_eigrpIfP.current[0].eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'default'
+      - nm_add_eigrpIfP.proposed.eigrpIfP.attributes.name == 'INTFS'
+      - nm_add_eigrpIfP.proposed.eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'default'
+
+  - name: Add eigrp policy again to check idempotency
+    cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy: *eigrpIfP_present
+    register: nm_add_eigrpIfP_again
+
+  - name: Verify add_eigrpIfP_again
+    ansible.builtin.assert:
+      that:
+      - nm_add_eigrpIfP_again is not changed
+      - nm_add_eigrpIfP_again.previous == nm_add_eigrpIfP_again.current
+      - nm_add_eigrpIfP_again.proposed.eigrpIfP.attributes.name == 'INTFS'
+      - nm_add_eigrpIfP_again.proposed.eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'default'
+      - nm_add_eigrpIfP_again.current[0].eigrpIfP.attributes.name == 'INTFS'
+      - nm_add_eigrpIfP_again.current[0].eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'default'
+
+  # UPDATE INTERFACE PROFILE EIGRP PROFILE
+  - name: Update interface profile eigrp policy
+    cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy: &eigrpIfP_update
+      <<: *eigrpIfP_present
+      eigrp_policy: ansible_eigrp_interface
+    register: update_eigrpIfP
+
+  - name: Update interface profile eigrp policy again
+    cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
+      <<: *eigrpIfP_update
+    register: update_eigrpIfP_again
+
+  - name: Verify update_eigrpIfP
+    ansible.builtin.assert:
+      that:
+      - update_eigrpIfP is changed
+      - update_eigrpIfP.previous != []
+      - update_eigrpIfP.current[0].eigrpIfP.attributes.name == 'INTFS'
+      - update_eigrpIfP.current[0].eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'ansible_eigrp_interface'
+      - update_eigrpIfP.proposed.eigrpIfP.attributes.name == 'INTFS'
+      - update_eigrpIfP.proposed.eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'ansible_eigrp_interface'
+      - update_eigrpIfP_again is not changed
+      - update_eigrpIfP_again.previous == update_eigrpIfP_again.current
+
+  # QUERY INTERFACE PROFILE EIGRP PROFILE
+  - name: Query interface profile eigrp policy
+    cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
+      <<: *eigrpIfP_update
+      state: query
+    register: query_eigrpIfP_policy
+
+  - name: Verify query_eigrpIfP_policy
+    ansible.builtin.assert:
+      that:
+      - query_eigrpIfP_policy is not changed
+      - query_eigrpIfP_policy.current|length == 1
+      - query_eigrpIfP_policy.current[0].eigrpIfP.attributes.name == 'INTFS'
+      - query_eigrpIfP_policy.current[0].eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'ansible_eigrp_interface'
+
+  # REMOVE PROFILE
+  - name: Remove interface profile eigrp policy
+    cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy: &eigrpIfP_absent
+      <<: *intf_present
+      state: absent
+    register: remove_policy
+
+  - name: Remove interface profile eigrp policy again for idempotency
+    cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
+      <<: *eigrpIfP_absent
+      state: absent
+    register: remove_policy_again
+
+  - name: Verify remove_policy and remove_policy_again
+    ansible.builtin.assert:
+      that:
+      - remove_policy.previous|length == 1
+      - remove_policy.previous[0].eigrpIfP.attributes.name == 'INTFS'
+      - remove_policy.previous[0].eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'ansible_eigrp_interface'
+      - remove_policy is changed
+      - remove_policy_again is not changed
+      - remove_policy.current == remove_policy_again.current == []
+
+  # QUERY NON-EXISTING PROFILE
+  - name: Query a nonexisting policy
+    cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
+      <<: *eigrpIfP_absent
+      state: query
+    register: query_nonexist_policy
+
+  - name: Verify query_nonexist_policy
+    ansible.builtin.assert:
+      that:
+      - query_nonexist_policy is not changed
+      - query_nonexist_policy.current == []
+
+  # REMOVE NON-EXISTING PROFILE
+  - name: Remove interface profile eigrp policy again (nonexisting)
+    cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
+      <<: *eigrpIfP_absent
+    register: remove_nonexist_policy
+
+  - name: Verify remove_nonexist_policy
+    ansible.builtin.assert:
+      that:
+      - remove_nonexist_policy is not changed
+      - remove_nonexist_policy.current == []

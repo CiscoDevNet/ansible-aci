@@ -188,7 +188,7 @@ action_groups:
     - aci_l3out_interface
     - aci_l3out_interface_secondary_ip
     - aci_l3out_logical_interface_profile
-    - aci_l3out_logical_interface_profile_eigrp_profile
+    - aci_l3out_logical_interface_profile_eigrp_policy
     - aci_l3out_logical_interface_profile_ospf_policy
     - aci_l3out_logical_interface_vpc_member
     - aci_l3out_logical_node
