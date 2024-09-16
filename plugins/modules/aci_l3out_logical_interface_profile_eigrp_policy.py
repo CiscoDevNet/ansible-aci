@@ -109,6 +109,15 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Query all interface profile EIGRP policies
+  cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_all_result
 """
 
 RETURN = r"""
@@ -281,6 +290,7 @@ def main():
             aci_class="eigrpIfP",
             aci_rn="eigrpIfP",
             module_object=interface_profile,
+            target_filter={"name": interface_profile},
         ),
         child_classes=["eigrpRsIfPol"],
     )
