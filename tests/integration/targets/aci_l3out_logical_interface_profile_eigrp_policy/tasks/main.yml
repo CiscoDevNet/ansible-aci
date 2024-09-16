@@ -153,6 +153,43 @@
       - query_eigrpIfP_policy.current[0].eigrpIfP.attributes.name == 'INTFS'
       - query_eigrpIfP_policy.current[0].eigrpIfP.children[0].eigrpRsIfPol.attributes.tnEigrpIfPolName == 'ansible_eigrp_interface'
 
+  # SETUP SECOND L3OUT AND QUERY ALL
+  - name: Create second L3Out
+    cisco.aci.aci_l3out:
+      <<: *vrf_present
+      l3out: l3outintftestagain
+      domain: l3outintftestagain
+      route_control: export
+
+  - name: Create second node profile
+    cisco.aci.aci_l3out_logical_node_profile: &np_present_again
+      <<: *tenant_present
+      l3out: l3outintftestagain
+      node_profile: NODES_AGAIN
+
+  - name: Create second interface profile
+    cisco.aci.aci_l3out_logical_interface_profile: &intf_present_again
+      <<: *np_present_again
+      interface_profile: INTFS_AGAIN
+
+  - name: Add eigrp policy to second interface profile (normal mode)
+    cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy: &eigrpIfP_present_again
+      <<: *intf_present_again
+      eigrp_policy: default
+    register: nm_add_second_eigrpIfP
+
+  - name: Query all interface profile eigrp policy
+    cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy:
+      <<: *aci_info
+      state: query
+    register: query_all_eigrpIfP_policy
+
+  - name: Verify query_eigrpIfP_policy
+    ansible.builtin.assert:
+      that:
+      - query_all_eigrpIfP_policy is not changed
+      - query_all_eigrpIfP_policy.current|length >= 2
+
   # REMOVE PROFILE
   - name: Remove interface profile eigrp policy
     cisco.aci.aci_l3out_logical_interface_profile_eigrp_policy: &eigrpIfP_absent
