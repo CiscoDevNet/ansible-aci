@@ -1,61 +1,53 @@
 # ansible-aci
 
+## Description
+
 The ansible-aci project provides an Ansible collection for managing and automating your Cisco ACI environment. It consists of a set of modules and roles for performing tasks related to ACI.
 
-This collection has been tested and supports ACI 3.2+.
-Modules supporting new features introduced in ACI API in specific ACI versions might not be supported in earlier ACI releases.
-
-*Note: This collection is not compatible with versions of Ansible before v2.8.*
+See the [Cisco.Aci collection index](https://galaxy.ansible.com/ui/repo/published/cisco/aci/content/) for a full list of modules and plugins.
 
 ## Requirements
 
-Ansible v2.14 or newer
+- Ansible v2.15 or newer
+- Python v3.10 or newer
 
-## Install
+*Note: This collection is not compatible with versions of Ansible before v2.8.*
 
-Ansible must be installed
+Follow the [Installing Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) guide for detailed instructions.
 
-```sh
-sudo pip install ansible
-```
+## Installation
 
-Install the collection
+Before using this collection, you need to install it with the Ansible Galaxy command-line tool:
 
 ```sh
 ansible-galaxy collection install cisco.aci
 ```
 
-## Use
+You can also include it in a requirements.yml file and install it with ansible-galaxy collection install -r requirements.yml, using the format:
 
-Once the collection is installed, you can use it in a playbook by specifying the full namespace path to the module, plugin and/or role.
-
-```yml
-- hosts: aci
-  gather_facts: no
-
-  tasks:
-  - name: Add a new EPG
-    cisco.aci.aci_epg:
-      hostname: apic
-      username: admin
-      password: SomeSecretPassword
-      tenant: production
-      ap: intranet
-      epg: web_epg
-      description: Web Intranet EPG
-      bd: prod_bd
-    delegate_to: localhost
+```yaml
+collections:
+  - name: cisco.aci
 ```
 
-## Optimizing Playbooks
+Note that if you install any collections from Ansible Galaxy, they will not be upgraded automatically when you upgrade the Ansible package.
+To upgrade the collection to the latest available version, run the following command:
 
-To find out more about optimizing playbook execution, please refer to the [Optimizing Playbooks](docs/optimizing.md) documentation.
+```sh
+ansible-galaxy collection install cisco.aci --upgrade
+```
 
-## Update
+You can also install a specific version of the collection, for example, if you need to downgrade when something is broken in the latest version (please report an issue in this repository). Use the following syntax to install version 1.0.0:
 
-Getting the latest/nightly collection build
+```sh
+ansible-galaxy collection install cisco.aci:==1.0.0
+```
 
-### First Approach
+See [using Ansible collections](https://docs.ansible.com/ansible/devel/user_guide/collections_using.html) for more details.
+
+### Latest Build
+
+Follow these instructions to get the latest collection build.
 
 Clone the ansible-aci repository.
 
@@ -82,28 +74,69 @@ ansible-galaxy collection build --force
 ansible-galaxy collection install cisco-aci-* --force
 ```
 
-### Second Approach
+## Use Cases
 
-Go to [ansible-aci Actions](https://github.com/CiscoDevNet/ansible-aci/actions)
+Once the collection is installed, you can use it in a playbook by specifying the full namespace path to the module, plugin and/or role.
 
-Select the latest CI build
+### Adding a new EPG
 
-Under Artifacts download collection and unzip it using Terminal or Console.
+```yml
+- hosts: aci
+  gather_facts: no
 
-*Note: The collection file is a zip file containing a tar.gz file. We recommend using CLI because some GUI-based unarchiver might unarchive both nested archives in one go.*
-
-Install the unarchived tar.gz file
-
-```sh
-ansible-galaxy collection install cisco-aci-1.0.0.tar.gz —-force
+  tasks:
+  - name: Add a new EPG
+    cisco.aci.aci_epg:
+      hostname: apic
+      username: admin
+      password: SomeSecretPassword
+      tenant: production
+      ap: intranet
+      epg: web_epg
+      description: Web Intranet EPG
+      bd: prod_bd
+    delegate_to: localhost
 ```
 
-### See Also
+## Optimizing Playbooks
 
-- [Ansible Using collections](https://docs.ansible.com/ansible/latest/user_guide/collections_using.html) for more details.
+There are two main methods to optimize the execution of ACI modules in your playbooks.
 
-## Contributing to this collection
+1. Using the ACI HTTPAPI plugin
+1. Using the `suppress_` options
+
+To find out more about optimizing playbook execution, please refer to the [Optimizing Playbooks](docs/optimizing.md) documentation.
+
+## Testing
+
+Integration tests for each module in the cisco.aci collections are executed against the following ACI versions:
+
+- 4.2(7s)
+- 5.2(7g)
+- 6.0(2h)
+
+## Contributing
 
 Ongoing development efforts and contributions to this collection are tracked as issues in this repository.
 
 We welcome community contributions to this collection. If you find problems, need an enhancement or need a new module, please open an issue or create a PR against the [Cisco ACI collection repository](https://github.com/CiscoDevNet/ansible-aci/issues).
+
+## Support
+
+This collection supports any ACI version within the Last Day of Support (LDOS) date.
+
+Some modules and options within the collection are only available from specific versions of ACI. The versions a module or option supports are documented within the individual module documentation.
+
+To find EOL announcements for ACI versions, refer to the [End-of-Life and End-of-Sale Notices](https://www.cisco.com/c/en/us/products/cloud-systems-management/application-policy-infrastructure-controller-apic/eos-eol-notice-listing.html) page.
+
+## Release Notes
+
+See the [Changelog](CHANGELOG.rst) for full release notes.
+
+## Related Information
+
+For additional information and guides see the [Cisco ACI DevNet documentation](https://developer.cisco.com/docs/aci/ansible/#cisco-aci-ansible-modules).
+
+## License Information
+
+This collection is licensed under the [GNU General Public License v3.0](LICENSE)
