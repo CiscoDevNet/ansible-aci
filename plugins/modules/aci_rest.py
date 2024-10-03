@@ -316,14 +316,15 @@ def add_annotation(annotation, payload):
         for key, val in payload.items():
             if key in ANNOTATION_UNSUPPORTED:
                 continue
-            att = val.get("attributes", {})
-            if "annotation" not in att.keys():
-                att["annotation"] = annotation
-            # Recursively add annotation to children
-            children = val.get("children", None)
-            if children:
-                for child in children:
-                    add_annotation(annotation, child)
+            if isinstance(val, dict):
+                att = val.get("attributes", {})
+                if "annotation" not in att.keys():
+                    att["annotation"] = annotation
+                # Recursively add annotation to children
+                children = val.get("children", None)
+                if children:
+                    for child in children:
+                        add_annotation(annotation, child)
 
 
 def add_annotation_xml(annotation, tree):

@@ -338,3 +338,27 @@
     - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.0.fvAp.attributes.annotation == "test:inoption"
     - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.annotation == "test:inchild"
     - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.2.fvCtx.attributes.annotation == "test:inoption"
+
+# Test to check the fix for disabling intersight connectivity issue: https://github.com/CiscoDevNet/ansible-aci/issues/685
+- name: Disable Intersight Connectivity
+  cisco.aci.aci_rest:
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    path: /connector/Systems.json
+    method: post
+    rsp_subtree_preserve: true
+    content:
+      {
+        "AdminState": false
+      }
+  register: disable_intersight_connectivity
+
+- name: Verify Intersight Connectivity is disabled
+  assert:
+    that:
+    - disable_intersight_connectivity.imdata.0.AdminState == false
