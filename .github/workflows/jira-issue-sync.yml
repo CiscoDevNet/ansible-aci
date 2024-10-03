@@ -20,6 +20,10 @@ on:
       - review_request_removed
       - auto_merge_enabled
       - auto_merge_disabled
+  workflow_run:
+    workflows: [jira-issue-sync-pr-review]
+    types:
+      - completed
   issues:
   issue_comment:
 concurrency: jira_issues
