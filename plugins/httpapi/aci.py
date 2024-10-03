@@ -92,10 +92,7 @@ class HttpApi(HttpApiBase):
         self.connection._connected = True
         try:
             response, response_data = self.connection.send(path, data, method=method)
-            response_value = self._get_response_value(response_data)
-            self.connection._auth = {
-                "Cookie": "APIC-Cookie={0}".format(self._response_to_json(response_value).get("imdata")[0]["aaaLogin"]["attributes"]["token"])
-            }
+            self.connection._auth = {"Cookie": response.headers.get("Set-Cookie")}
             self.connection.queue_message("debug", "Connection to {0} was successful".format(self.connection.get_option("host")))
         except Exception as exc_login:
             self.connection._connected = False
