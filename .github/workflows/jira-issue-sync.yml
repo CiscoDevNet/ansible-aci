@@ -32,8 +32,6 @@ jobs:
   sync_issues_to_jira:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
       - name: Sync GitHub Issues & Pull Requests to Jira
         uses: ciscoecosystem/sync-jira-actions@v1
         with:
