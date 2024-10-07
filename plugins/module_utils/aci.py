@@ -606,10 +606,14 @@ class ACIModule(object):
             return
 
         # Extract JSON API output
-        self.imdata = jsondata.get("imdata")
-        if self.imdata is None:
-            self.imdata = dict()
-        self.totalCount = int(jsondata.get("totalCount"))
+        if isinstance(jsondata, list):
+            self.imdata = jsondata
+            self.totalCount = len(jsondata)
+        else:
+            self.imdata = jsondata.get("imdata", {})
+            total_count = jsondata.get("totalCount")
+            if total_count is not None:
+                self.totalCount = int(total_count)
 
         # Handle possible APIC error information
         self.response_error()
