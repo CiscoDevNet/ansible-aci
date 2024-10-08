@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2022, Tim Cragg (@timcragg)
+# Copyright: (c) 2024, Akini Ross (@akinross)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -22,6 +23,19 @@ options:
     - Name of the DNS profile.
     type: str
     aliases: [ name, profile_name ]
+  management_epg:
+    description:
+    - Name of the management EPG.
+    - Specify C("") to remove the management EPG configuration.
+    type: str
+    aliases: [ epg ]
+  management_epg_type:
+    description:
+    - The type of the management EPG.
+    type: str
+    choices: [ inband, ooband ]
+    aliases: [ type ]
+    default: ooband
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -39,6 +53,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
+- Akini Ross (@akinross)
 """
 
 EXAMPLES = r"""
@@ -51,13 +66,35 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Remove a DNS profile
+- name: Add a new DNS profile with a inband management EPG
   cisco.aci.aci_dns_profile:
     host: apic
     username: admin
     password: SomeSecretPassword
     dns_profile: my_dns_prof
-    state: absent
+    management_epg: ansible_mgmt_epg_inband
+    management_epg_type: inband
+    state: present
+  delegate_to: localhost
+
+- name: Add a new DNS profile with a out-of-band management EPG
+  cisco.aci.aci_dns_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    dns_profile: my_dns_prof
+    management_epg: ansible_mgmt_epg_ooband
+    state: present
+  delegate_to: localhost
+
+- name: Remove a management EPG from a DNS profile
+  cisco.aci.aci_dns_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    dns_profile: my_dns_prof
+    management_epg: ""
+    state: present
   delegate_to: localhost
 
 - name: Query a DNS profile
@@ -78,6 +115,15 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Remove a DNS profile
+  cisco.aci.aci_dns_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    dns_profile: my_dns_prof
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
@@ -187,6 +233,7 @@ RETURN = r"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+from ansible_collections.cisco.aci.plugins.module_utils.constants import MANAGEMENT_EPG_TYPE
 
 
 def main():
@@ -194,6 +241,8 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         dns_profile=dict(type="str", aliases=["name", "profile_name"]),
+        management_epg=dict(type="str", aliases=["epg"]),
+        management_epg_type=dict(type="str", default="ooband", choices=["inband", "ooband"], aliases=["type"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -207,8 +256,10 @@ def main():
     )
 
     dns_profile = module.params.get("dns_profile")
+    management_epg = module.params.get("management_epg")
+    management_epg_type = MANAGEMENT_EPG_TYPE.get(module.params.get("management_epg_type"))
     state = module.params.get("state")
-    child_classes = ["dnsProv", "dnsDomain"]
+    child_classes = ["dnsProv", "dnsDomain", "dnsRsProfileToEpg"]
 
     aci = ACIModule(module)
     aci.construct_url(
@@ -224,9 +275,35 @@ def main():
     aci.get_existing()
 
     if state == "present":
+
+        child_configs = []
+        if management_epg is not None:
+            if management_epg == "":
+                child_configs.append(
+                    dict(
+                        dnsRsProfileToEpg=dict(
+                            attributes=dict(
+                                tDn="",
+                                status="deleted",
+                            )
+                        )
+                    )
+                )
+            else:
+                child_configs.append(
+                    dict(
+                        dnsRsProfileToEpg=dict(
+                            attributes=dict(
+                                tDn="uni/tn-mgmt/mgmtp-default/{0}-{1}".format(management_epg_type, management_epg),
+                            )
+                        )
+                    )
+                )
+
         aci.payload(
             aci_class="dnsProfile",
             class_config=dict(name=dns_profile),
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class="dnsProfile")

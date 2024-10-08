@@ -439,3 +439,5 @@ POLICY_LABEL_COLORS = [
 ]
 
 MATCH_ACCESS_POLICIES_SELECTOR_TYPE = dict(range="range", all="ALL")
+
+MANAGEMENT_EPG_TYPE = dict(ooband="oob", inband="inb")
