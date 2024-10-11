@@ -4,6 +4,27 @@ Cisco ACI Ansible Collection Release Notes
 
 .. contents:: Topics
 
+v2.11.0
+=======
+
+Release Summary
+---------------
+
+Release v2.11.0 of the ``ansible-aci`` collection on 2024-10-11.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.10.1.
+
+Minor Changes
+-------------
+
+- Add stratum attribute to aci_ntp_policy module
+
+Bugfixes
+--------
+
+- Fix wrong payload attribute used to define the correct vPC member side  in aci_l3out_logical_interface_vpc_member (#663) Co-authored-by: akinross <akinross@cisco.com>
+- Modify interface_configs requirement using required_if dependency for aci_bulk_static_binding_to_epg
+- Remove duplicate alias name for extepg in aci_l3out_extsubnet
+
 v2.10.1
 =======
 
