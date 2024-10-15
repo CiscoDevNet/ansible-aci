@@ -333,7 +333,8 @@ def main():
         subclass_1=dict(
             aci_class="infraRsVlanNs",
             aci_rn="rsvlanNs",
-            target_filter={"dn": "{0}/rsvlanNs".format(domain_mo)},
+            module_object="rsvlanNs",
+            target_filter={"tDn": aci_mo},
         ),
     )
 
