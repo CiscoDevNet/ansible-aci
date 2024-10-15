@@ -334,7 +334,7 @@ def main():
             aci_class="infraRsVlanNs",
             aci_rn="rsvlanNs",
             target_filter={"dn": "{0}/rsvlanNs".format(domain_mo)},
-        )
+        ),
     )
 
     aci.get_existing()
