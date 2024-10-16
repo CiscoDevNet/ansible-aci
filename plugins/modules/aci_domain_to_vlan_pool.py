@@ -334,7 +334,7 @@ def main():
             aci_class="infraRsVlanNs",
             aci_rn="rsvlanNs",
             module_object="rsvlanNs",
-            target_filter={"tDn": aci_mo},
+            target_filter={"name": domain},
         ),
     )
 

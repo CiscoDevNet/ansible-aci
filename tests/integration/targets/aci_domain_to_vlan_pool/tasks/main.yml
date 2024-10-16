@@ -63,6 +63,25 @@
       description: Test VLAN pool
       state: present
 
+  - name: Create domains
+    cisco.aci.aci_domain:
+      <<: *aci_info
+      domain: "{{ item.domain }}"
+      domain_type: "{{ item.domain_type }}"
+      state: present
+    loop:
+    - {domain: phys_dom, domain_type: phys}
+    - {domain: fc_dom, domain_type: fc}
+    - {domain: l2dom_dom, domain_type: l2dom}
+    - {domain: l3dom_dom, domain_type: l3dom}
+
+  - name: Add VMM domain
+    cisco.aci.aci_domain:
+      <<: *aci_info
+      domain: anstest
+      domain_type: vmm
+      vm_provider: vmware
+      state: present
 
   # ADD BINDING
   - name: Add domain to VLAN pool binding (check_mode)
