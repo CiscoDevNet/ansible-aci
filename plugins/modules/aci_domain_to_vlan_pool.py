@@ -333,8 +333,8 @@ def main():
         subclass_1=dict(
             aci_class="infraRsVlanNs",
             aci_rn="rsvlanNs",
-            module_object="rsvlanNs",
-            target_filter={"name": domain},
+            module_object=aci_mo if pool_name else None,
+            target_filter={"tDn": aci_mo} if pool_name else {},
         ),
     )
 
