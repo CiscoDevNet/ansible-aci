@@ -29,16 +29,16 @@
   - name: Remove oob epg to contract association
     cisco.aci.aci_oob_epg_to_contract: &contract_absent
       <<: *aci_info
-      epg: module-testing-epg
-      contract: testing-contract
+      epg: default
+      contract: default
       state: absent
 
   # ADD CONTRACT TO OOB EPG
   - name: Add provided contract to mgmt:OoB (check_mode)
     cisco.aci.aci_oob_epg_to_contract: &contract_present
       <<: *aci_info
-      epg: module-testing-epg
-      contract: testing-contract
+      epg: default
+      contract: default
       state: present
     check_mode: true
     register: cm_add_contract
@@ -52,11 +52,11 @@
       that:
       - cm_add_contract is changed
       - nm_add_contract is changed
-      - cm_add_contract.proposed.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == nm_add_contract.proposed.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == 'testing-contract'
+      - cm_add_contract.proposed.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == nm_add_contract.proposed.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == 'default'
       - cm_add_contract.current == cm_add_contract.previous == nm_add_contract.previous == []
       - nm_add_contract.current.0.mgmtRsOoBProv.attributes.annotation == 'orchestrator:ansible'
-      - nm_add_contract.current.0.mgmtRsOoBProv.attributes.dn == 'uni/tn-mgmt/mgmtp-default/oob-module-testing-epg/rsooBProv-testing-contract'
-      - nm_add_contract.current.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == 'testing-contract'
+      - nm_add_contract.current.0.mgmtRsOoBProv.attributes.dn == 'uni/tn-mgmt/mgmtp-default/oob-default/rsooBProv-default'
+      - nm_add_contract.current.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == 'default'
 
   - name: Add provided contract to mgmt:OoB again (check_mode) 
     cisco.aci.aci_oob_epg_to_contract: *contract_present
@@ -77,7 +77,7 @@
   - name: Query all provided mgmt:OoB contracts (check_mode)
     cisco.aci.aci_oob_epg_to_contract: &contract_query
       <<: *aci_info
-      epg: module-testing-epg
+      epg: default
       state: query
     check_mode: true
     register: cm_query_all_contracts
@@ -94,21 +94,20 @@
       - cm_query_all_contracts == nm_query_all_contracts
       - nm_query_all_contracts.current|length >= 1
 
-
   # QUERY A CONTRACT
   - name: Query a specific provided mgmt:OoB contract (check_mode)
     cisco.aci.aci_oob_epg_to_contract:
       <<: *contract_query
-      epg: module-testing-epg
-      contract: testing-contract
+      epg: default
+      contract: default
     check_mode: true
     register: cm_query_contract
 
   - name: Query a specific provided mgmt:OoB contract (normal mode)
     cisco.aci.aci_oob_epg_to_contract:
       <<: *contract_query
-      epg: module-testing-epg
-      contract: testing-contract
+      epg: default
+      contract: default
     register: nm_query_contract
 
   - name: Verify query_contract
@@ -117,7 +116,7 @@
       - cm_query_contract is not changed
       - nm_query_contract is not changed
       - cm_query_contract == nm_query_contract
-      - nm_query_contract.current.0.mgmtRsOoBProv.attributes.dn == 'uni/tn-mgmt/mgmtp-default/oob-module-testing-epg/rsooBProv-testing-contract'
+      - nm_query_contract.current.0.mgmtRsOoBProv.attributes.dn == 'uni/tn-mgmt/mgmtp-default/oob-default/rsooBProv-default'
       - nm_query_contract.current.0.mgmtRsOoBProv.attributes.tCl == 'vzOOBBrCP'
       # - nm_query_contract.current.0.mgmtRsOoBProv.attributes.tDn == 'uni/tn-common/oobbrc-default'
 
@@ -137,8 +136,8 @@
       that:
       - cm_remove_contract is changed
       - nm_remove_contract is changed
-      - cm_remove_contract.current.0.mgmtRsOoBProv.attributes.dn == cm_remove_contract.previous.0.mgmtRsOoBProv.attributes.dn == nm_remove_contract.previous.0.mgmtRsOoBProv.attributes.dn == 'uni/tn-mgmt/mgmtp-default/oob-module-testing-epg/rsooBProv-testing-contract'
-      - cm_remove_contract.current.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == cm_remove_contract.previous.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == nm_remove_contract.previous.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == 'testing-contract'
+      - cm_remove_contract.current.0.mgmtRsOoBProv.attributes.dn == cm_remove_contract.previous.0.mgmtRsOoBProv.attributes.dn == nm_remove_contract.previous.0.mgmtRsOoBProv.attributes.dn == 'uni/tn-mgmt/mgmtp-default/oob-default/rsooBProv-default'
+      - cm_remove_contract.current.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == cm_remove_contract.previous.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == nm_remove_contract.previous.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == 'default'
       - nm_remove_contract.current == []
 
   - name: Remove provided contract to mgmt:OoB again (check_mode)
@@ -160,16 +159,16 @@
   - name: Query non-existing provided contract to mgmt:OoB (check_mode)
     cisco.aci.aci_oob_epg_to_contract:
       <<: *contract_query
-      epg: module-testing-epg
-      contract: testing-contract
+      epg: default
+      contract: default
     check_mode: true
     register: cm_query_non_contract
 
   - name: Query non-existing provided contract to mgmt:OoB (normal mode)
     cisco.aci.aci_oob_epg_to_contract:
       <<: *contract_query
-      epg: module-testing-epg
-      contract: testing-contract
+      epg: default
+      contract: default
     register: nm_query_non_contract
 
   - name: Verify query_non_contract
