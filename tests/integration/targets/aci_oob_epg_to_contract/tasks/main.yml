@@ -118,8 +118,6 @@
       - cm_query_contract == nm_query_contract
       - nm_query_contract.current.0.mgmtRsOoBProv.attributes.dn == 'uni/tn-mgmt/mgmtp-default/oob-default/rsooBProv-default'
       - nm_query_contract.current.0.mgmtRsOoBProv.attributes.tCl == 'vzOOBBrCP'
-      # - nm_query_contract.current.0.mgmtRsOoBProv.attributes.tDn == 'uni/tn-common/oobbrc-default'
-
 
   # REMOVE CONTRACT
   - name: Remove provided contract to mgmt:OoB (check_mode)

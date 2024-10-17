@@ -187,8 +187,8 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        epg=dict(type='str', required=True),
-        contract=dict(type='str'),
+        epg=dict(type="str", required=True),
+        contract=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -201,9 +201,9 @@ def main():
         ],
     )
 
-    epg = module.params['epg']
-    contract = module.params['contract']
-    state = module.params['state']
+    epg = module.params["epg"]
+    contract = module.params["contract"]
+    state = module.params["state"]
 
     ctProv_mo = "uni/tn-mgmt/oobbrc-{0}".format(contract)
 
@@ -238,10 +238,8 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        aci.payload(
-            aci_class="mgmtRsOoBProv",
-            class_config=dict(tnVzOOBBrCPName=contract)
-        )
+        aci.payload(aci_class="mgmtRsOoBProv", class_config=dict(tnVzOOBBrCPName=contract))
+
         aci.get_diff(aci_class="mgmtRsOoBProv")
 
         aci.post_config()
