@@ -1,0 +1,181 @@
+# Test code for the ACI module aci_oob_epg_to_contract
+# Copyright: (c) 2024, Eduardo Pozo (@edudppaz) <ep@devkom.no>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # CLEAN ENVIRONMENT
+  - name: Remove oob epg to contract association
+    cisco.aci.aci_oob_epg_to_contract: &contract_absent
+      <<: *aci_info
+      epg: module-testing-epg
+      contract: testing-contract
+      state: absent
+
+  # ADD CONTRACT TO OOB EPG
+  - name: Add provided contract to mgmt:OoB (check_mode)
+    cisco.aci.aci_oob_epg_to_contract: &contract_present
+      <<: *aci_info
+      epg: module-testing-epg
+      contract: testing-contract
+      state: present
+    check_mode: true
+    register: cm_add_contract
+
+  - name: Add provided contract to mgmt:OoB (normal mode)
+    cisco.aci.aci_oob_epg_to_contract: *contract_present
+    register: nm_add_contract
+
+  - name: Verify add_contract
+    ansible.builtin.assert:
+      that:
+      - cm_add_contract is changed
+      - nm_add_contract is changed
+      - cm_add_contract.proposed.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == nm_add_contract.proposed.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == 'testing-contract'
+      - cm_add_contract.current == cm_add_contract.previous == nm_add_contract.previous == []
+      - nm_add_contract.current.0.mgmtRsOoBProv.attributes.annotation == 'orchestrator:ansible'
+      - nm_add_contract.current.0.mgmtRsOoBProv.attributes.dn == 'uni/tn-mgmt/mgmtp-default/oob-module-testing-epg/rsooBProv-testing-contract'
+      - nm_add_contract.current.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == 'testing-contract'
+
+  - name: Add provided contract to mgmt:OoB again (check_mode) 
+    cisco.aci.aci_oob_epg_to_contract: *contract_present
+    check_mode: true
+    register: cm_add_contract_again
+
+  - name: Add provided contract to mgmt:OoB again (normal mode)
+    cisco.aci.aci_oob_epg_to_contract: *contract_present
+    register: nm_add_contract_again
+
+  - name: Verify add_contract_again
+    ansible.builtin.assert:
+      that:
+      - cm_add_contract_again is not changed
+      - nm_add_contract_again is not changed
+
+  # QUERY ALL CONTRACT
+  - name: Query all provided mgmt:OoB contracts (check_mode)
+    cisco.aci.aci_oob_epg_to_contract: &contract_query
+      <<: *aci_info
+      epg: module-testing-epg
+      state: query
+    check_mode: true
+    register: cm_query_all_contracts
+
+  - name: Query all provided mgmt:OoB contracts (normal mode)
+    cisco.aci.aci_oob_epg_to_contract: *contract_query
+    register: nm_query_all_contracts
+
+  - name: Verify query_all_contracts
+    ansible.builtin.assert:
+      that:
+      - cm_query_all_contracts is not changed
+      - nm_query_all_contracts is not changed
+      - cm_query_all_contracts == nm_query_all_contracts
+      - nm_query_all_contracts.current|length >= 1
+
+
+  # QUERY A CONTRACT
+  - name: Query a specific provided mgmt:OoB contract (check_mode)
+    cisco.aci.aci_oob_epg_to_contract:
+      <<: *contract_query
+      epg: module-testing-epg
+      contract: testing-contract
+    check_mode: true
+    register: cm_query_contract
+
+  - name: Query a specific provided mgmt:OoB contract (normal mode)
+    cisco.aci.aci_oob_epg_to_contract:
+      <<: *contract_query
+      epg: module-testing-epg
+      contract: testing-contract
+    register: nm_query_contract
+
+  - name: Verify query_contract
+    ansible.builtin.assert:
+      that:
+      - cm_query_contract is not changed
+      - nm_query_contract is not changed
+      - cm_query_contract == nm_query_contract
+      - nm_query_contract.current.0.mgmtRsOoBProv.attributes.dn == 'uni/tn-mgmt/mgmtp-default/oob-module-testing-epg/rsooBProv-testing-contract'
+      - nm_query_contract.current.0.mgmtRsOoBProv.attributes.tCl == 'vzOOBBrCP'
+      # - nm_query_contract.current.0.mgmtRsOoBProv.attributes.tDn == 'uni/tn-common/oobbrc-default'
+
+
+  # REMOVE CONTRACT
+  - name: Remove provided contract to mgmt:OoB (check_mode)
+    cisco.aci.aci_oob_epg_to_contract: *contract_absent
+    check_mode: true
+    register: cm_remove_contract
+
+  - name: Remove provided contract to mgmt:OoB (normal mode)
+    cisco.aci.aci_oob_epg_to_contract: *contract_absent
+    register: nm_remove_contract
+
+  - name: Verify remove_contract
+    ansible.builtin.assert:
+      that:
+      - cm_remove_contract is changed
+      - nm_remove_contract is changed
+      - cm_remove_contract.current.0.mgmtRsOoBProv.attributes.dn == cm_remove_contract.previous.0.mgmtRsOoBProv.attributes.dn == nm_remove_contract.previous.0.mgmtRsOoBProv.attributes.dn == 'uni/tn-mgmt/mgmtp-default/oob-module-testing-epg/rsooBProv-testing-contract'
+      - cm_remove_contract.current.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == cm_remove_contract.previous.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == nm_remove_contract.previous.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == 'testing-contract'
+      - nm_remove_contract.current == []
+
+  - name: Remove provided contract to mgmt:OoB again (check_mode)
+    cisco.aci.aci_oob_epg_to_contract: *contract_absent
+    check_mode: true
+    register: cm_remove_contract_again
+
+  - name: Remove provided contract to mgmt:OoB again (normal mode)
+    cisco.aci.aci_oob_epg_to_contract: *contract_absent
+    register: nm_remove_contract_again
+
+  - name: Verify remove_contract_again
+    ansible.builtin.assert:
+      that:
+      - cm_remove_contract_again is not changed
+      - nm_remove_contract_again is not changed
+
+  # QUERY NON-EXISTING contract
+  - name: Query non-existing provided contract to mgmt:OoB (check_mode)
+    cisco.aci.aci_oob_epg_to_contract:
+      <<: *contract_query
+      epg: module-testing-epg
+      contract: testing-contract
+    check_mode: true
+    register: cm_query_non_contract
+
+  - name: Query non-existing provided contract to mgmt:OoB (normal mode)
+    cisco.aci.aci_oob_epg_to_contract:
+      <<: *contract_query
+      epg: module-testing-epg
+      contract: testing-contract
+    register: nm_query_non_contract
+
+  - name: Verify query_non_contract
+    ansible.builtin.assert:
+      that:
+      - cm_query_non_contract is not changed
+      - nm_query_non_contract is not changed
+      - cm_query_non_contract == nm_query_non_contract
+      - nm_query_non_contract.current == []
