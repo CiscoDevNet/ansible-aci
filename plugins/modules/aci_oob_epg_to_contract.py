@@ -230,8 +230,8 @@ def main():
         subclass_3=dict(
             aci_class="mgmtRsOoBProv",
             aci_rn="rsooBProv-{0}".format(contract),
-            module_object=contract,
-            target_filter={"tDn": ctProv_mo},
+            module_object=ctProv_mo if contract else None,
+            target_filter={"tDn": ctProv_mo} if contract else {},
         ),
     )
 
