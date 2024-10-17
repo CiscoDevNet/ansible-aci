@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: aci_oob_epg_to_contract
 short_description: Manage out-of-band contract association with an out-of-band management EPG.
@@ -43,9 +43,9 @@ seealso:
 
 author:
 - Eduardo Pozo (@edudppaz)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Associate contract to an out-of-band EPG
   cisco.aci.aci_oob_epg_to_contract:
     epg: default
@@ -72,9 +72,9 @@ EXAMPLES = r'''
     contract: default
     state: absent
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
    current:
      description: The existing configuration from the APIC after the module has finished
      returned: success
@@ -177,7 +177,7 @@ RETURN = r'''
      returned: failure or debug
      type: str
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
