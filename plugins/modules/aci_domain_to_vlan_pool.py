@@ -330,21 +330,23 @@ def main():
             module_object=domain_mo,
             target_filter={"name": domain},
         ),
-        child_classes=["infraRsVlanNs"],
+        subclass_1=dict(
+            aci_class="infraRsVlanNs",
+            aci_rn="rsvlanNs",
+            module_object=aci_mo if pool_name else None,
+            target_filter={"tDn": aci_mo} if pool_name else {},
+        ),
     )
 
     aci.get_existing()
 
     if state == "present":
         aci.payload(
-            aci_class=domain_class,
-            class_config=dict(name=domain),
-            child_configs=[
-                {"infraRsVlanNs": {"attributes": {"tDn": aci_mo}}},
-            ],
+            aci_class="infraRsVlanNs",
+            class_config=dict(tDn=aci_mo),
         )
 
-        aci.get_diff(aci_class=domain_class)
+        aci.get_diff(aci_class="infraRsVlanNs")
 
         aci.post_config()
 
