@@ -213,6 +213,7 @@ action_groups:
     - aci_node_mgmt_epg
     - aci_ntp_policy
     - aci_ntp_server
+    - aci_oob_epg_to_contract
     - aci_pim_route_map_entry
     - aci_pim_route_map_policy
     - aci_qos_custom_policy
