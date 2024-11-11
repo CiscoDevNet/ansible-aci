@@ -49,6 +49,7 @@ options:
   encap:
     description:
     - The VLAN encapsulation for the EPG when binding a VMM Domain in static VLAN mode.
+    - The VLAN mode in UI is set to static when O(encap) is not set.
     - This acts as the secondary encap when using useg.
     - Accepted values range between C(1) and C(4096).
     type: int
