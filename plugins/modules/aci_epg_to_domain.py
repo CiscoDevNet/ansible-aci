@@ -48,7 +48,7 @@ options:
     aliases: [ type ]
   encap:
     description:
-    - The VLAN encapsulation for the EPG when binding a VMM Domain with static C(encap_mode).
+    - The VLAN encapsulation for the EPG when binding a VMM Domain in static VLAN mode.
     - This acts as the secondary encap when using useg.
     - Accepted values range between C(1) and C(4096).
     type: int
