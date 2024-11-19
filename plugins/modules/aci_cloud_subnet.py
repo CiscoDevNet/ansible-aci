@@ -28,6 +28,7 @@ options:
     description:
     - The name of the Cloud Subnet.
     type: str
+    aliases: [subnet]
   description:
     description:
     - Description of the Cloud Subnet.
@@ -36,7 +37,7 @@ options:
     description:
     - Ip address of the Cloud Subnet.
     type: str
-    aliases: [subnet]
+    aliases: [ip]
   name_alias:
     description:
     - An alias for the name of the current object. This relates to the nameAlias field in ACI and is used to rename object without changing the DN.
@@ -255,7 +256,7 @@ def main():
     argument_spec.update(
         name=dict(type="str", aliases=["subnet"]),
         description=dict(type="str"),
-        address=dict(type="str"),
+        address=dict(type="str", aliases=["ip"]),
         name_alias=dict(type="str"),
         vnet_gateway=dict(type="bool", default=False),
         tenant=dict(type="str", required=True),
