@@ -64,7 +64,7 @@ notes:
 - The C(tenant) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) can be used for this.
 seealso:
-- module: aci_tenant
+- module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(hsrp:IfPol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
