@@ -81,13 +81,11 @@ extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
-notes:
-- This is a test
 seealso:
-- module: aci_l3out
-- module: aci_l3out_logical_node_profile
-- module: aci_l3out_logical_interface_profile
-- module: aci_l3out_logical_interface
+- module: cisco.aci.aci_l3out
+- module: cisco.aci.aci_l3out_logical_node_profile
+- module: cisco.aci.aci_l3out_logical_interface_profile
+- module: cisco.aci.aci_l3out_logical_interface
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(l3ext:Ip)
   link: https://developer.cisco.com/docs/apic-mim-ref/
