@@ -254,7 +254,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         contract_type=dict(type="str", choices=["consumer", "provider", "taboo", "interface"], required=True),
-        epg_type=dict(type="str", aliases=["type"], choices=["in_band","out_of_band"], required=True)
+        epg_type=dict(type="str", aliases=["type"], choices=["in_band","out_of_band"], required=True),
         epg=dict(type="str", aliases=["epg_name"]),  # Not required for querying all objects
         contract=dict(type="str", aliases=["contract_name", "contract_interface"]),  # Not required for querying all objects
         priority=dict(type="str", default="unspecified", choices=["level1", "level2", "level3", "level4", "level5", "level6", "unspecified"]),
