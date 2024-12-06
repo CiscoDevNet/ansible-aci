@@ -248,6 +248,7 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 from ansible_collections.cisco.aci.plugins.module_utils.constants import ACI_CLASS_MAPPING, CONTRACT_LABEL_MAPPING, PROVIDER_MATCH_MAPPING, SUBJ_LABEL_MAPPING
 
+provider_match_map = 
 
 def main():
     argument_spec = aci_argument_spec()
@@ -277,6 +278,8 @@ def main():
     epg = module.params.get("epg")
     priority = module.params.get("priority")  
     provider_match = module.params.get("provider_match")  
+    if provider_match is not None:
+        provider_match = PROVIDER_MATCH_MAPPING[provider_match]
     state = module.params.get("state")
 
     if epg_type=="in_band":
