@@ -35,11 +35,19 @@
   - version.current.0.topSystem.attributes.version is version('5', '>=')
   - query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
+    - name: Ensure Contract doesn't exist
+      cisco.aci.aci_oob_contract:
+        <<: *aci_info
+        contract: anstest
+        state: absent
+        description: Ansible Test
+    
     - name: create contract - check mode works
       cisco.aci.aci_oob_contract: &aci_oob_contract_present
         <<: *aci_info
         contract: anstest
         description: Ansible Test
+        state: present
       check_mode: true
       register: present_check_mode
 
