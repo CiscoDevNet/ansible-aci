@@ -74,10 +74,10 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 seealso:
-- module: aci_l2out
-- module: aci_l2out_logical_node_profile
-- module: aci_l2out_logical_interface_profile
-- module: aci_l2out_extepg
+- module: cisco.aci.aci_l2out
+- module: cisco.aci.aci_l2out_logical_node_profile
+- module: cisco.aci.aci_l2out_logical_interface_profile
+- module: cisco.aci.aci_l2out_extepg
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(l2ext:RsPathL2OutAtt).
   link: https://developer.cisco.com/docs/apic-mim-ref/

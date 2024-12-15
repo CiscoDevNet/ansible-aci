@@ -7,7 +7,7 @@ on:
     # * is a special character in YAML so you have to quote this string
     - cron: '0 8 * * *'
 env:
-  python_version: '3.10'
+  python_version: '3.11'
 jobs:
   build:
     name: Build collection
@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [v2.15.11, v2.16.6, stable-2.16, stable-2.17]
+        ansible: [v2.16.6, stable-2.16, stable-2.17, stable-2.18]
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ansible: [stable-2.17]
+        ansible: [stable-2.18]
     steps:
       - name: Set up Python ${{ env.python_version }}
         uses: actions/setup-python@v5
@@ -116,7 +116,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [v2.15.11, v2.16.6, stable-2.16, stable-2.17]
+        ansible: [v2.16.6, stable-2.16, stable-2.17, stable-2.18]
     steps:
       - name: Set up Python ${{ env.python_version }}
         uses: actions/setup-python@v5
@@ -158,7 +158,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [v2.15.11, v2.16.6, stable-2.16, stable-2.17]
+        ansible: [v2.16.6, stable-2.16, stable-2.17, stable-2.18]
     steps:
       - name: Set up Python ${{ env.python_version }}
         uses: actions/setup-python@v5
@@ -200,7 +200,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ansible: [stable-2.17]
+        ansible: [stable-2.18]
     env:
       MUTEX_URL: https://8v7s765ibh.execute-api.us-west-1.amazonaws.com
     steps:

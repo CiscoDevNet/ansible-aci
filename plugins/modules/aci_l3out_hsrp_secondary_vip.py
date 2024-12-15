@@ -65,12 +65,12 @@ notes:
   M(cisco.aci.aci_l3out_logical_interface_profile), M(cisco.aci.aci_l3out_hsrp_interface_profile) and M(cisco.aci.aci_l3out_hsrp_group) can be used for
   this.
 seealso:
-- module: aci_tenant
-- module: aci_l3out
-- module: aci_l3out_logical_node_profile
-- module: aci_l3out_logical_interface_profile
-- module: aci_l3out_hsrp_interface_profile
-- module: aci_l3out_hsrp_group
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_l3out
+- module: cisco.aci.aci_l3out_logical_node_profile
+- module: cisco.aci.aci_l3out_logical_interface_profile
+- module: cisco.aci.aci_l3out_hsrp_interface_profile
+- module: cisco.aci.aci_l3out_hsrp_group
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(hsrp:SecVip).
   link: https://developer.cisco.com/docs/apic-mim-ref/

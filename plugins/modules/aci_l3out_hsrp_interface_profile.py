@@ -66,11 +66,11 @@ notes:
 - If C(hsrp_policy) is used, it must exist before using this module in your playbook.
   The M(cisco.aci.aci_interface_policy_hsrp) can be used for this.
 seealso:
-- module: aci_tenant
-- module: aci_l3out
-- module: aci_l3out_logical_node_profile
-- module: aci_l3out_logical_interface_profile
-- module: aci_interface_policy_hsrp
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_l3out
+- module: cisco.aci.aci_l3out_logical_node_profile
+- module: cisco.aci.aci_l3out_logical_interface_profile
+- module: cisco.aci.aci_interface_policy_hsrp
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(hsrp:IfP).
   link: https://developer.cisco.com/docs/apic-mim-ref/

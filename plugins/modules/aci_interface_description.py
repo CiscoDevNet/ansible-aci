@@ -289,6 +289,7 @@ def main():
         class_name = "infraSHPathS"
         children = ["infraRsSHPathAtt"]
     rn = None
+    child_configs = None
 
     if node_id and interface:
         if fex_id:
