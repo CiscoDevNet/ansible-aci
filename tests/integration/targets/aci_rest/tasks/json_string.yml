@@ -17,6 +17,11 @@
     path: /api/mo/uni/tn-[ansible_test].json
     method: delete
 
+- name: Remove tenant 2
+  cisco.aci.aci_rest: 
+    <<: *tenant_absent
+    path: /api/mo/uni/tn-[ansible_test_2].json
+
 # ADD TENANT
 - name: Add tenant (check mode)
   cisco.aci.aci_rest: &tenant_present
@@ -138,6 +143,76 @@
   ansible.builtin.assert:
     that:
     - nm_query_all_tenants is not changed
+
+
+# ADD TENANT 2
+- name: Add tenant 2 (normal mode)
+  cisco.aci.aci_rest:
+    <<: *tenant_present
+    content: |
+      {
+          "fvTenant": {
+              "attributes": {
+                  "descr": "Ansible test tenant",
+                  "name": "ansible_test_2"
+              }
+          }
+      }
+
+# QUERY ALL TENANTS WITH PAGINATION
+- name: Query all tenants with pagination (normal mode)
+  cisco.aci.aci_rest: &tenant_query_all_paginated
+    host: '{{ aci_hostname }}'
+    username: '{{ aci_username }}'
+    password: '{{ aci_password }}'
+    validate_certs: '{{ aci_validate_certs | default(false) }}'
+    use_ssl: '{{ aci_use_ssl | default(true) }}'
+    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    output_level: '{{ aci_output_level | default("info") }}'
+    path: /api/class/uni/fvTenant.json
+    page_size: 10
+    page: 0
+    method: get
+  register: nm_query_all_tenants_paginated
+
+- name: Query all tenant with pagination - Size 1 / Page 0 (normal mode)
+  cisco.aci.aci_rest:
+    <<: *tenant_query_all_paginated
+    page_size: 1
+    page: 0
+  register: nm_query_all_tenants_paginated_1_0
+
+- name: Query all tenant with pagination - Size 1 / Page 1 (normal mode)
+  cisco.aci.aci_rest:
+    <<: *tenant_query_all_paginated
+    page_size: 1
+    page: 1
+  register: nm_query_all_tenants_paginated_1_1
+
+- name: Query all tenant with pagination - Size 2 / Page 0 (normal mode)
+  cisco.aci.aci_rest:
+    <<: *tenant_query_all_paginated
+    page_size: 2
+    page: 0
+  register: nm_query_all_tenants_paginated_2_0
+
+- name: Verify query_all_tenants_paginated
+  ansible.builtin.assert:
+    that:
+    - nm_query_all_tenants_paginated is not changed
+    - nm_query_all_tenants_paginated_1_0 is not changed
+    - nm_query_all_tenants_paginated_1_1 is not changed
+    - nm_query_all_tenants_paginated_2_0 is not changed
+
+- name: Verify pagination works as expected
+  ansible.builtin.assert:
+    that:
+    - nm_query_all_tenants_paginated is not changed
+    - nm_query_all_tenants_paginated_1_0.imdata | length == 1
+    - nm_query_all_tenants_paginated_1_1.imdata | length == 1
+    - nm_query_all_tenants_paginated_2_0.imdata | length == 2
+    - nm_query_all_tenants_paginated_1_0.imdata.0.fvTenant.attributes.name == nm_query_all_tenants_paginated_2_0.imdata.0.fvTenant.attributes.name
+    - nm_query_all_tenants_paginated_1_1.imdata.0.fvTenant.attributes.name == nm_query_all_tenants_paginated_2_0.imdata.1.fvTenant.attributes.name
 
 # QUERY A TENANT
 - name: Query our tenant
