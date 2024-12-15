@@ -61,6 +61,17 @@ options:
     - Preserve the response for the provided path.
     type: bool
     default: false
+  page_size:
+    description:
+    - The number of items to return in a single page.
+    type: int
+    required: false
+  page:
+    description:
+    - The page number to return.
+    type: int
+    required: false
+    default: 0
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -377,6 +388,8 @@ def main():
         src=dict(type="path", aliases=["config_file"]),
         content=dict(type="raw"),
         rsp_subtree_preserve=dict(type="bool", default=False),
+        page_size=dict(type="int", required=False),
+        page=dict(type="int", required=False, default=0),
     )
 
     module = AnsibleModule(
@@ -390,6 +403,10 @@ def main():
     src = module.params.get("src")
     rsp_subtree_preserve = module.params.get("rsp_subtree_preserve")
     annotation = module.params.get("annotation")
+    page_size = module.params.get("page_size")
+    page = module.params.get("page")
+    if module.params.get("method") != "get" and page_size:
+        module.fail_json(msg="Pagination parameters (page and page_size) are only valid for GET method")
 
     # Report missing file
     file_exists = False
@@ -453,6 +470,10 @@ def main():
     # NOTE By setting aci.path we ensure that Ansible displays accurate URL info when the plugin and the aci_rest module are used.
     aci.path = path.lstrip("/")
     aci.url = "{0}/{1}".format(aci.base_url, aci.path)
+
+    if aci.params.get("method") == "get" and page_size:
+        aci.path = "{0}?page={1}&page-size={2}".format(aci.path, page, page_size)
+        aci.url = update_qsl(aci.url, {"page": page, "page-size": page_size})
     if aci.params.get("method") != "get" and not rsp_subtree_preserve:
         aci.path = "{0}?rsp-subtree=modified".format(aci.path)
         aci.url = update_qsl(aci.url, {"rsp-subtree": "modified"})
