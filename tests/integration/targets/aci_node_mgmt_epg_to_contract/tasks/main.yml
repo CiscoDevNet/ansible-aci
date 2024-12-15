@@ -18,7 +18,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
 
 - name: Query system information
   cisco.aci.aci_system:
@@ -66,7 +66,7 @@
       contract_type: provider
       contract: aci_inb_http
       epg: anstest_inb
-      type: in_band
+      epg_type: in_band
       state: present
     check_mode: true
     register: inb_provide_present_check_mode
@@ -220,36 +220,31 @@
       state: query
     register: query_oob_provide_contract
 
-  - name: Get all inband bindings
+  - name: Get all inband provider bindings
     cisco.aci.aci_node_mgmt_epg_to_contract:
       <<: *aci_info
       epg_type: in_band
+      tenant: "{{ fakevar | default(omit) }}"
       state: query
       contract_type: provider
     register: query_inb_all
     ignore_errors: yes
 
-  - name: Debug query_inb_all
-    debug:
-      var: query_inb_all
-
   - name: get all out_of_band bindings
     cisco.aci.aci_node_mgmt_epg_to_contract:
       <<: *aci_info
       epg_type: out_of_band
+      tenant: "{{ fakevar | default(omit) }}"
       state: query
       contract_type: provider
     register: query_oob_all
     ignore_errors: yes
 
-  - name: Debug query_oob_all
-    debug:
-      var: query_oob_all
-
   - name: missing required param - failure message works
     cisco.aci.aci_node_mgmt_epg_to_contract:
       <<: *aci_info
       state: query
+      contract_type: provider
       epg_type: "{{ fakevar | default(omit) }}"
     ignore_errors: true
     register: missing_required_query
@@ -267,9 +262,9 @@
       - query_oob_provide_contract.current != []
       - '"uni/tn-mgmt/mgmtp-default/oob-anstest_oob/rsooBProv-aci_oob_https.json" in query_oob_provide_contract.url'
       - query_inb_all is not changed
-      - '"class/fvRsProv.json" in query_all.url'
+      - query_inb_all.filter_string == "?rsp-subtree=full&rsp-subtree-class=fvRsProv"
       - query_oob_all is not changed
-      - '"class/mgmtRsOoBProv.json" in query_all.url'
+      - query_oob_all.filter_string == "?rsp-subtree=full&rsp-subtree-class=mgmtRsOoBProv"
       - missing_required_query is failed
       - 'missing_required_query.msg == "missing required arguments: epg_type"'
 
@@ -291,7 +286,7 @@
       state: absent
     register: inb_provide_absent
 
-  - name: delete inb provide binding - deletion works
+  - name: delete inb provide binding 2 - deletion works
     cisco.aci.aci_node_mgmt_epg_to_contract:
       <<: *aci_inb_epg_provide_present2
       state: absent
@@ -306,9 +301,9 @@
     cisco.aci.aci_node_mgmt_epg_to_contract:
       <<: *aci_oob_epg_provide_present
       state: absent
-    register: oob_provide_absent_check_mode
+    register: oob_provide_absent
 
-  - name: delete provide binding - deletion works
+  - name: delete oob provide binding 2 - deletion works
     cisco.aci.aci_node_mgmt_epg_to_contract:
       <<: *aci_oob_epg_provide_present2
       state: absent
