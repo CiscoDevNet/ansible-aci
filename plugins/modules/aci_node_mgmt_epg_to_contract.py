@@ -248,17 +248,15 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 from ansible_collections.cisco.aci.plugins.module_utils.constants import ACI_CLASS_MAPPING, CONTRACT_LABEL_MAPPING, PROVIDER_MATCH_MAPPING, SUBJ_LABEL_MAPPING
 
-provider_match_map = 
-
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         contract_type=dict(type="str", choices=["consumer", "provider", "taboo", "interface"], required=True),
-        epg_type=dict(type="str", aliases=["type"], choices=["in_band","out_of_band"], required=True),
+        epg_type=dict(type="str", aliases=["type"], choices=["in_band","out_of_band"], required=True), # required for querying as provider class for INB and OOB are different
         epg=dict(type="str", aliases=["epg_name"]),  # Not required for querying all objects
         contract=dict(type="str", aliases=["contract_name", "contract_interface"]),  # Not required for querying all objects
-        priority=dict(type="str", default="unspecified", choices=["level1", "level2", "level3", "level4", "level5", "level6", "unspecified"]),
+        priority=dict(type="str", choices=["level1", "level2", "level3", "level4", "level5", "level6", "unspecified"]),
         provider_match=dict(type="str", choices=["all", "at_least_one", "at_most_one", "none"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -268,11 +266,11 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["epg", "contract"]],
-            ["state", "present", ["epg","contract"]],
+            ["state", "present", ["epg", "contract"]],
         ]
     )
 
-    epg_type = module.params.get("type")
+    epg_type = module.params.get("epg_type")
     contract = module.params.get("contract")
     contract_type = module.params.get("contract_type")
     epg = module.params.get("epg")
@@ -288,24 +286,20 @@ def main():
         aci_name = ACI_CLASS_MAPPING[contract_type]["name"]
         class_config={"matchT": provider_match, "prio": priority, aci_name: contract}
 
-        if provider_match is not None:
-            provider_match = PROVIDER_MATCH_MAPPING[provider_match]
-
         if contract_type != "provider" and provider_match is not None:
             module.fail_json(msg="the 'provider_match' is only configurable for Provided Contracts")
 
     elif epg_type=="out_of_band":
             aci_class = "mgmtRsOoBProv" 
-            aci_rn = "rsooBProv"  
+            aci_rn = "rsooBProv-"  
             aci_name = "tnVzOOBBrCPName"
             class_config={"prio": priority, aci_name: contract}
 
             if contract_type != "provider":
                  module.fail_json(msg="out_of_band EPG only supports Provider contract attachment.")
 
-
     else:
-         module.fail_json(msg="epg_type can either be \"in_band\" or \"out_of_band\" only.")
+      module.fail_json("epg_type is {0}".format(epg_type))
 
 
     class_Map = {
