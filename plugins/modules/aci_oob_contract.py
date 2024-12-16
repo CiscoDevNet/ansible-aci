@@ -227,7 +227,7 @@ def main():
         required_if=[
             ["state", "absent", ["contract"]],
             ["state", "present", ["contract"]],
-        ]
+        ],
     )
 
     contract = module.params.get("contract")
@@ -235,7 +235,7 @@ def main():
     scope = module.params.get("scope")
     priority = module.params.get("priority")
     state = module.params.get("state")
-    tenant = "mgmt"     # hard coding tenant to 'mgmt'
+    tenant = "mgmt"  # hard coding tenant to 'mgmt'
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
