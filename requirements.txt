@@ -3,3 +3,5 @@ cryptography
 pyOpenSSL
 python_dateutil
 xmljson
+requests
+websockets
