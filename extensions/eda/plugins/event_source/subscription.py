@@ -20,6 +20,7 @@ Examples:
     refresh_timeout: 60
 
 """
+
 import asyncio
 import json
 import os
@@ -30,6 +31,7 @@ from typing import Any, Dict, NoReturn
 import requests
 import websockets
 import urllib3
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
@@ -53,7 +55,9 @@ def login(hostname: str, username: str, password: str) -> str:
     return token
 
 
-def subscribe(hostname: str, token: str, rf_timeout: int, sub_urls: list[str]) -> list[str]:
+def subscribe(
+    hostname: str, token: str, rf_timeout: int, sub_urls: list[str]
+) -> list[str]:
     """
     subscribe to a websocket
 
@@ -77,7 +81,9 @@ def subscribe(hostname: str, token: str, rf_timeout: int, sub_urls: list[str]) -
     return sub_ids
 
 
-async def refresh(hostname: str, token: str, refresh_timeout: int, sub_ids: list[str]) -> NoReturn:
+async def refresh(
+    hostname: str, token: str, refresh_timeout: int, sub_ids: list[str]
+) -> NoReturn:
     """
     refresh subscriptions
 
