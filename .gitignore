@@ -390,5 +390,8 @@ $RECYCLE.BIN/
 # vsCode
 .vscode
 
+# Python venv
+venv/
+
 # Ansible Collection tarball
 cisco-aci-*.tar.gz
