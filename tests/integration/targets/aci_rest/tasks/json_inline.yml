@@ -169,7 +169,6 @@
     output_level: '{{ aci_output_level | default("info") }}'
     path: /api/class/uni/fvTenant.json
     page_size: 10
-    page: 0
     method: get
   register: nm_query_all_tenants_paginated
 
@@ -177,7 +176,6 @@
   cisco.aci.aci_rest:
     <<: *tenant_query_all_paginated
     page_size: 1
-    page: 0
   register: nm_query_all_tenants_paginated_1_0
 
 - name: Query all tenant with pagination - Size 1 / Page 1 (normal mode)
@@ -191,7 +189,6 @@
   cisco.aci.aci_rest:
     <<: *tenant_query_all_paginated
     page_size: 2
-    page: 0
   register: nm_query_all_tenants_paginated_2_0
 
 - name: Verify query_all_tenants_paginated
