@@ -55,9 +55,7 @@ def login(hostname: str, username: str, password: str) -> str:
     return token
 
 
-def subscribe(
-    hostname: str, token: str, rf_timeout: int, sub_urls: list[str]
-) -> list[str]:
+def subscribe(hostname: str, token: str, rf_timeout: int, sub_urls: list[str]) -> list[str]:
     """
     subscribe to a websocket
 
@@ -70,9 +68,7 @@ def subscribe(
     sub_ids = []
 
     for sub in sub_urls:
-        sub_url = (
-            f"https://{hostname}{sub}&subscription=yes&refresh-timeout={rf_timeout}"
-        )
+        sub_url = f"https://{hostname}{sub}&subscription=yes&refresh-timeout={rf_timeout}"
         cookie = {"APIC-cookie": token}
         sub_response = requests.get(sub_url, verify=False, cookies=cookie, timeout=60)
         if sub_response.ok:
@@ -81,9 +77,7 @@ def subscribe(
     return sub_ids
 
 
-async def refresh(
-    hostname: str, token: str, refresh_timeout: int, sub_ids: list[str]
-) -> NoReturn:
+async def refresh(hostname: str, token: str, refresh_timeout: int, sub_ids: list[str]) -> NoReturn:
     """
     refresh subscriptions
 
@@ -109,16 +103,10 @@ async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     subscriptions = args.get("subscriptions")
 
     if "" in [hostname, username, password]:
-        print(
-            f"hostname, username and password can't be empty:{hostname}, {username}, *****"
-        )
+        print(f"hostname, username and password can't be empty:{hostname}, {username}, *****")
         sys.exit(1)
 
-    if (
-        not isinstance(subscriptions, list)
-        or subscriptions == []
-        or subscriptions is None
-    ):
+    if not isinstance(subscriptions, list) or subscriptions == [] or subscriptions is None:
         print(f"subscriptions is empty or not a list: {subscriptions}")
         sys.exit(1)
 
