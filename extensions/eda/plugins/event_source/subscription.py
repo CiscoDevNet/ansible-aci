@@ -116,7 +116,7 @@ async def main(queue: asyncio.Queue, args: Dict[str, Any]):
 
     async with websockets.connect(websocket_uri, ssl=ctx) as ws:
         loop = asyncio.get_running_loop()
-        loop.add_signal_handler(signal.SIGTERM, loop.create_task, ws.close())
+        loop.add_signal_handler(signal.SIGTERM, lambda: loop.create_task(ws.close()))
         sub_ids = subscribe(hostname, token, refresh_timeout, subscriptions)
 
         # task to refresh subscription token
