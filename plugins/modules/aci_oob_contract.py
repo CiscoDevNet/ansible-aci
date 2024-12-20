@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# Copyright: (c) 2024, Faiz Mohammad (@Ziaf007) <faizmoh@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -12,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_oob_contract
-short_description: Manage out-of-band contract resources (vz:OOBBrCP)
+short_description: Manage Out-of-Band contract resources (vz:OOBBrCP)
 description:
 - Manage out-of-band Contract resources on Cisco ACI fabrics.
 options:
@@ -23,18 +24,18 @@ options:
     aliases: [ contract_name, name ]
   description:
     description:
-    - Description for the contract.
+    - Description for the OOB contract.
     type: str
     aliases: [ descr ]
   scope:
     description:
-    - The scope of a service contract.
+    - The scope of a the OOB contract.
     - The APIC defaults to C(context) when unset during creation.
     type: str
     choices: [ application-profile, context, global, tenant ]
   priority:
     description:
-    - The desired QoS class to be used.
+    - The desired Quality of Service (QoS) class to be used.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
     choices: [ level1, level2, level3, unspecified ]
@@ -52,7 +53,7 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(vz:BrCP).
+  description: More information about the internal APIC class B(vz:OOBBrCP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Faiz Mohammad (@faizmoh)
@@ -66,21 +67,13 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     contract: web_to_db
     description: Communication between web-servers and database
+    priority: unspecified
     scope: global
     state: present
   delegate_to: localhost
 
-- name: Remove an existing contract
-  cisco.aci.aci_contract:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    contract: web_to_db
-    state: absent
-  delegate_to: localhost
-
 - name: Query a specific contract
-  cisco.aci.aci_contract:
+  cisco.aci.aci_oob_contract:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -90,13 +83,22 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query all contracts
-  cisco.aci.aci_contract:
+  cisco.aci.aci_oob_contract:
     host: apic
     username: admin
     password: SomeSecretPassword
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Remove an existing contract
+  cisco.aci.aci_oob_contract:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    contract: web_to_db
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""

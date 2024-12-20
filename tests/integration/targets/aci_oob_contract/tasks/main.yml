@@ -1,5 +1,5 @@
 # Test code for the ACI modules
-# Copyright: (c) 2017, Jacob McGill (@jmcgill298)
+# Copyright: (c) 2024, Faiz Mohammad (@Ziaf007) <faizmoh@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -35,25 +35,29 @@
   - version.current.0.topSystem.attributes.version is version('5', '>=')
   - query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
+
+  # CLEAN ENVIRONMENT
     - name: Ensure Contract doesn't exist
       cisco.aci.aci_oob_contract:
         <<: *aci_info
         contract: anstest
         state: absent
         description: Ansible Test
-    
+
+  # CREATE  
     - name: create contract - check mode works
-      cisco.aci.aci_oob_contract: &aci_oob_contract_present
+      cisco.aci.aci_oob_contract: &aci_oob_contract_present_CM
         <<: *aci_info
         contract: anstest
         description: Ansible Test
-        state: present
+        #state: present           >>>> DEFAULTS TO 'PRESENT" ASSERTATION
       check_mode: true
       register: present_check_mode
 
     - name: create contract - creation works
-      cisco.aci.aci_oob_contract:
-        <<: *aci_oob_contract_present
+      cisco.aci.aci_oob_contract: &aci_oob_contract_present
+        <<: *aci_oob_contract_present_CM
+        state: present
       register: contract_present
 
     - name: create contract - idempotency works
@@ -61,22 +65,10 @@
         <<: *aci_oob_contract_present
       register: present_idempotent
 
-    - name: update contract - update works
-      cisco.aci.aci_oob_contract:
-        <<: *aci_oob_contract_present
-        scope: application-profile
-      register: present_update
-
     - name: create contract - used for query
       cisco.aci.aci_oob_contract:
         <<: *aci_oob_contract_present
         contract: anstest2
-
-    - name: missing param - failure message works
-      cisco.aci.aci_oob_contract:
-        <<: *aci_info
-      ignore_errors: true
-      register: present_missing_param
 
     - name: present assertions
       ansible.builtin.assert:
@@ -85,16 +77,35 @@
           - present_check_mode.previous == []
           - present_check_mode.sent.vzOOBBrCP.attributes.name == 'anstest'
           - present_check_mode.sent.vzOOBBrCP.attributes.descr == 'Ansible Test'
+          - present_check_mode.invocation.module_args.state == 'present'
           - contract_present is changed
           - contract_present.current.0.vzOOBBrCP.attributes.annotation == 'orchestrator:ansible'
           - contract_present.sent == present_check_mode.sent
           - present_idempotent is not changed
+
+  # UPDATE
+    - name: update contract - update works
+      cisco.aci.aci_oob_contract:
+        <<: *aci_oob_contract_present
+        scope: application-profile
+      register: present_update
+
+    - name: missing param - failure message works
+      cisco.aci.aci_oob_contract:
+        <<: *aci_info
+      ignore_errors: true
+      register: present_missing_param
+
+    - name: update assertions
+      ansible.builtin.assert:
+        that:
           - present_update is changed
           - present_update.sent != present_update.proposed
           - present_update.sent.vzOOBBrCP.attributes.scope == "application-profile"
           - present_missing_param is failed
           - 'present_missing_param.msg == "state is present but all of the following are missing: contract"'
 
+  # QUERY
     - name: query contract
       cisco.aci.aci_oob_contract: &aci_oob_contract_query
         <<: *aci_oob_contract_present
@@ -119,7 +130,7 @@
           - '"rsp-subtree-class=vzOOBBrCP" in query_tenant.filter_string'
           - '"tn-mgmt.json" in query_tenant.url'
 
-
+  # DELETE
     - name: delete contract - check mode works
       cisco.aci.aci_oob_contract: &aci_oob_contract_absent
         <<: *aci_oob_contract_present
