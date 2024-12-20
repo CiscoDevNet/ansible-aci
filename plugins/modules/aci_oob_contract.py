@@ -19,7 +19,7 @@ description:
 options:
   contract:
     description:
-    - The name of the contract.
+    - The name of the OOB contract.
     type: str
     aliases: [ contract_name, name ]
   description:
@@ -29,7 +29,7 @@ options:
     aliases: [ descr ]
   scope:
     description:
-    - The scope of a the OOB contract.
+    - The scope of the OOB contract.
     - The APIC defaults to C(context) when unset during creation.
     type: str
     choices: [ application-profile, context, global, tenant ]
