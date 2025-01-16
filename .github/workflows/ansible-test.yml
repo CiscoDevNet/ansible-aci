@@ -84,8 +84,11 @@ jobs:
       - name: Install galaxy-importer
         run: pip install galaxy-importer
 
-      - name: Create galaxy-importer directory
-        run: sudo mkdir -p /etc/galaxy-importer
+      - name: Create galaxy-importer directories
+        run: |
+          sudo mkdir -p /etc/galaxy-importer \
+           && sudo mkdir -p /.ansible/roles \
+           && sudo mkdir -p /.ansible/collections
 
       - name: Create galaxy-importer.cfg
         run: |
