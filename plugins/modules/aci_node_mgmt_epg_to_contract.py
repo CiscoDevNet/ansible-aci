@@ -1,8 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2017, Jacob McGill (@jmcgill298)
-# Copyright: (c) 2023, Akini Ross (@akinross) <akinross@cisco.com>
+# Copyright: (c) 2025, Faiz Mohammad (@Ziaf007) <faizmoh@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -13,19 +12,14 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_epg_to_contract
-short_description: Bind EPGs to Contracts (fv:RsCons, fv:RsProv, fv:RsProtBy, fv:RsConsIf, and fv:RsIntraEpg)
+module: aci_node_mgmt_epg_to_contract
+short_description: Bind Node Mgmt EPGs to Contracts (fv:RsCons, fv:RsProv, fv:RsProtBy, fv:RsConsIf, and mgmt:RsOoBProv)
 description:
-- Bind EPGs to Contracts on Cisco ACI fabrics.
+- Bind Node mgmt EPGs to Contracts on Cisco ACI fabrics.
 notes:
-- The C(tenant), C(app_profile), C(EPG), and C(Contract) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_ap), M(cisco.aci.aci_epg), and M(cisco.aci.aci_contract) modules can be used for this.
+- The C(Node Mgmt EPG), and C(Contract) used must exist before using this module in your playbook.
+  The M(cisco.aci.aci_node_mgmt_epg), M(cisco.aci.aci_oob_contract) and M(cisco.aci.aci_contract) modules can be used for this.
 options:
-  ap:
-    description:
-    - Name of an existing application network profile, that will contain the EPGs.
-    type: str
-    aliases: [ app_profile, app_profile_name ]
   contract:
     description:
     - The name of the contract or contract interface.
@@ -36,15 +30,15 @@ options:
     - Determines the type of the Contract.
     type: str
     required: true
-    choices: [ consumer, provider, taboo, interface, intra_epg ]
+    choices: [ consumer, provider, taboo, interface ]
   epg:
     description:
-    - The name of the end point group.
+    - The name of the Node Mgmt end point group.
     type: str
     aliases: [ epg_name ]
   priority:
     description:
-    - QoS class.
+    - Quality of Service (QoS) class.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
     choices: [ level1, level2, level3, level4, level5, level6, unspecified ]
@@ -54,14 +48,6 @@ options:
     - The APIC defaults to C(at_least_one) when unset during creation.
     type: str
     choices: [ all, at_least_one, at_most_one, none ]
-  contract_label:
-    description:
-    - Contract label to match
-    type: str
-  subject_label:
-    description:
-    - Subject label to match
-    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -69,50 +55,47 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
-  tenant:
-    description:
-    - Name of an existing tenant.
-    type: str
-    aliases: [ tenant_name ]
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 
 seealso:
-- module: cisco.aci.aci_ap
-- module: cisco.aci.aci_epg
+- module: cisco.aci.aci_node_mgmt_epg
 - module: cisco.aci.aci_contract
+- module: cisco.aci.aci_oob_contract
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC classes B(fv:RsCons), B(fv:RsProv), B(fv:RsProtBy), B(fv:RsConsIf), and B(fv:RsIntraEpg).
+  description: More information about the internal APIC classes B(fv:RsCons), B(fv:RsProv), B(fv:RsProtBy), B(fv:RsConsIf), and B(mgmt:RsOoBProv).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
-- Jacob McGill (@jmcgill298)
-- Akini Ross (@akinross)
+- Faiz Mohammad (@Ziaf007)
 """
 
 EXAMPLES = r"""
-- name: Add a new contract to EPG binding
-  cisco.aci.aci_inbepg_to_contract:
+- name: Add a new contract to Inband EPG binding
+  cisco.aci.aci_node_mgmt_epg_to_contract:
     host: apic
     username: admin
     password: SomeSecretPassword
-    tenant: mgmt
     epg: anstest
+    epg_type: in_band
     contract: anstest_http
-    contract_type: provider
+    contract_type: consumer
+    priority: level2
     state: present
   delegate_to: localhost
 
-- name: Remove an existing contract to EPG binding
-  cisco.aci.aci_inbepg_to_contract:
+- name: Add a new contract to Out-of-Band EPG binding
+  cisco.aci.aci_node_mgmt_epg_to_contract:
     host: apic
     username: admin
     password: SomeSecretPassword
-    tenant: mgmt
     epg: anstest
+    epg_type: out_of_band
     contract: anstest_http
     contract_type: provider
-    state: absent
+    priority: level3
+    provider_match: at_least_one
+    state: present
   delegate_to: localhost
 
 - name: Query a specific contract to EPG binding
@@ -120,10 +103,10 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    tenant: anstest
     epg: anstest
+    epg_type: in_band
     contract: anstest_http
-    contract_type: provider
+    contract_type: consumer
     state: query
   delegate_to: localhost
   register: query_result
@@ -137,6 +120,18 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Remove an existing contract to Inband EPG binding
+  cisco.aci.aci_inbepg_to_contract:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    epg: anstest
+    epg_type: in_band
+    contract: anstest_http
+    contract_type: consumer
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
@@ -284,25 +279,27 @@ def main():
     state = module.params.get("state")
 
     if epg_type == "in_band":
+
+        if contract_type != "provider" and provider_match is not None:
+            module.fail_json(msg="the provider_match is only configurable for Provider Contracts")
+
         aci_class = ACI_CLASS_MAPPING[contract_type]["class"]
         aci_rn = ACI_CLASS_MAPPING[contract_type]["rn"]
         aci_name = ACI_CLASS_MAPPING[contract_type]["name"]
         class_config = {"matchT": provider_match, "prio": priority, aci_name: contract}
 
-        if contract_type != "provider" and provider_match is not None:
-            module.fail_json(msg="the 'provider_match' is only configurable for Provided Contracts")
-
     elif epg_type == "out_of_band":
+
+        if contract_type != "provider":
+            module.fail_json(msg="only provider contract_type is supported for out_of_band epg_type.")
+        
+        if provider_match is not None:
+          module.fail_json(msg="The provider_match argument is not supported for out_of_band Provider contracts")
+
         aci_class = "mgmtRsOoBProv"
         aci_rn = "rsooBProv-"
         aci_name = "tnVzOOBBrCPName"
         class_config = {"prio": priority, aci_name: contract}
-
-        if contract_type != "provider":
-            module.fail_json(msg="out_of_band EPG only supports Provider contract attachment.")
-
-    else:
-        module.fail_json("epg_type is {0}".format(epg_type))
 
     class_Map = {"in_band": [dict(epg_class="mgmtInB", epg_rn="inb-{0}")], "out_of_band": [dict(epg_class="mgmtOoB", epg_rn="oob-{0}")]}
 
@@ -337,11 +334,9 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        child_configs = []
         aci.payload(
             aci_class=aci_class,
             class_config=class_config,
-            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class=aci_class)
