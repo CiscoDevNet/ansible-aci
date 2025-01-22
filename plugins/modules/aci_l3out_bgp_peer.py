@@ -500,9 +500,10 @@ def main():
                 "dis-peer-as-check",
                 "nh-self",
                 "send-domain-path",
+                "",
             ],
         ),
-        peer_controls=dict(type="list", elements="str", choices=["bfd", "dis-conn-check"]),
+        peer_controls=dict(type="list", elements="str", choices=["bfd", "dis-conn-check", ""]),
         address_type_controls=dict(type="list", elements="str", choices=["af-ucast", "af-mcast"]),
         private_asn_controls=dict(
             type="list",
