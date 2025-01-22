@@ -618,7 +618,7 @@ def main():
 
     bgp_peer_profile_dict = dict(
         aci_class=aci_class,
-        aci_rn="infraPeerP-[{0}]".format(peer_ip) if bgp_infra_peer else "peerP-{0}".format(peer_ip),
+        aci_rn="infraPeerP-[{0}]".format(peer_ip) if bgp_infra_peer else "peerP-[{0}]".format(peer_ip),
         module_object=peer_ip,
         target_filter={"addr": peer_ip},
     )
