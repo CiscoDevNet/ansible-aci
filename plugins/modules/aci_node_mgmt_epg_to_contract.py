@@ -305,30 +305,47 @@ def main():
 
     aci = ACIModule(module)
     aci.construct_url(
+        # root_class=dict(
+        #     aci_class="fvTenant",
+        #     aci_rn="tn-mgmt",
+        #     module_object="mgmt",
+        #     target_filter={"name": "mgmt"}
+        # ),
+        # subclass_1=dict(
+        #     aci_class="mgmtMgmtP",
+        #     aci_rn="mgmtp-default",
+        #     module_object="default",
+        #     target_filter={"name": "default"}
+        # ),
+        # subclass_2=dict(
+        #     aci_class=class_Map[epg_type][0]["epg_class"],
+        #     aci_rn=class_Map[epg_type][0]["epg_rn"].format(epg),
+        #     module_object=epg,
+        #     target_filter={"name": epg}
+        # ),
+        # subclass_3=dict(
+        #     aci_class=aci_class,
+        #     aci_rn="{0}{1}".format(aci_rn, contract),
+        #     module_object=contract,
+        #     target_filter={aci_name: contract}
+        # )
         root_class=dict(
-            aci_class="fvTenant",
-            aci_rn="tn-mgmt",
-            module_object="mgmt",
-            target_filter={"name": "mgmt"},
+            # aci_class="fvTenant",
+            aci_rn="tn-mgmt/mgmtp-default",
+            module_object=None
         ),
         subclass_1=dict(
-            aci_class="mgmtMgmtP",
-            aci_rn="mgmtp-default",
-            module_object="default",
-            target_filter={"name": "default"},
-        ),
-        subclass_2=dict(
             aci_class=class_Map[epg_type][0]["epg_class"],
             aci_rn=class_Map[epg_type][0]["epg_rn"].format(epg),
             module_object=epg,
-            target_filter={"name": epg},
+            target_filter={"name": epg}
         ),
-        subclass_3=dict(
+        subclass_2=dict(
             aci_class=aci_class,
             aci_rn="{0}{1}".format(aci_rn, contract),
             module_object=contract,
-            target_filter={aci_name: contract},
-        ),
+            target_filter={aci_name: contract}
+        )
     )
 
     aci.get_existing()
