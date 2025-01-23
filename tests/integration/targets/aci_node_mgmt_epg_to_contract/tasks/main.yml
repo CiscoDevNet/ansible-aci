@@ -62,7 +62,7 @@
       <<: *aci_inb_epg_absent
       state: present
 
-  # CREATE INB
+  # CREATE - INB
   - name: bind inb provider contract to inband epg - Check Mode works
     cisco.aci.aci_node_mgmt_epg_to_contract: &aci_inb_epg_provide_present
       <<: *aci_info
@@ -163,7 +163,7 @@
       - interface_present.current.0.fvRsConsIf.attributes.dn == "uni/tn-mgmt/mgmtp-default/inb-anstest_inb/rsconsIf-aci_inb_https"
 
 
-  # CREATE OOB
+  # CREATE - OOB
   - name: bind oob provider contract to out-of-band epg - Check Mode works
     cisco.aci.aci_node_mgmt_epg_to_contract: &aci_oob_epg_provide_present
       <<: *aci_info
@@ -378,17 +378,20 @@
       that:
       - query_inb_provide_contract is not changed
       - query_inb_provide_contract.current != []
-      - '"uni/tn-mgmt/mgmtp-default/inb-anstest_inb/rsprov-aci_inb_https.json" in query_inb_provide_contract.url'
+      - '"/api/class/mgmtInB.json" in query_inb_provide_contract.url'
+      - query_inb_provide_contract.filter_string is search('query-target-filter=eq\(mgmtInB.name,"anstest_inb"\)')
+      - query_inb_provide_contract.filter_string is search('rsp-subtree-filter=eq\(fvRsProv.tnVzBrCPName,"aci_inb_https"\)')
       - query_inb_consume_contract is not changed
       - query_inb_consume_contract.current != []
-      - '"uni/tn-mgmt/mgmtp-default/inb-anstest_inb/rscons-anstest_inb_db.json" in query_inb_consume_contract.url'
+      - query_inb_consume_contract.filter_string is search('query-target-filter=eq\\(mgmtInB.name,"anstest_inb"\\)')
+      - query_inb_consume_contract.filter_string is search('rsp-subtree-filter=eq\\(fvRsCons.tnVzBrCPName,"anstest_inb_db"\\)')
       - query_oob_provide_contract is not changed
       - query_oob_provide_contract.current != []
-      - '"uni/tn-mgmt/mgmtp-default/oob-anstest_oob/rsooBProv-aci_oob_https.json" in query_oob_provide_contract.url'
+      - '"/api/class/mgmtOoB.json" in query_oob_provide_contract.url'
       - query_inb_all is not changed
-      - query_inb_all.filter_string == "?rsp-subtree=full&rsp-subtree-class=fvRsProv"
+      - query_inb_all.filter_string == ""
       - query_oob_all is not changed
-      - query_oob_all.filter_string == "?rsp-subtree=full&rsp-subtree-class=mgmtRsOoBProv"
+      - query_oob_all.filter_string == ""
       - missing_required_query is failed
       - 'missing_required_query.msg == "missing required arguments: epg_type"'
 
