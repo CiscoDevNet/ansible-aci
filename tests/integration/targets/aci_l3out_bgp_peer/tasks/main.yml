@@ -1675,7 +1675,7 @@
 
   # MODIFY dynamic BGP peer (prefix)
   - name: update dynamic BGP peer (prefix) (version >= 4)
-    cisco.aci.aci_l3out_bgp_peer:cd 
+    cisco.aci.aci_l3out_bgp_peer:
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
