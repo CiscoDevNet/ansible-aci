@@ -1500,9 +1500,10 @@
         - remove_vpc_bgp_peer.current == []
         - remove_vpc_bgp_peer.previous.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/protpaths-201-202/pathep-[ansible_vpc_ipg]]/peerP-[192.168.50.2]"
         - remove_vpc_bgp_peer.previous.0.bgpPeerP.attributes.addr == "192.168.50.2"
+
   # ADD dynamic BGP peer (prefix) to ethernet port
-  - name: add dynamic BGP peer (prefix) to ethernet port (version >= 4)
-    cisco.aci.aci_l3out_bgp_peer:
+  - name: add dynamic BGP peer (prefix) to ethernet port
+    cisco.aci.aci_l3out_bgp_peer: &dyn_bgp_peer
       <<: *aci_info
       tenant: ansible_tenant
       l3out: ansible_l3out
@@ -1525,32 +1526,8 @@
       local_as_number_config: "replace-as"
       state: present
     register: add_dyn_bgp_peer
-    when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
-  - name: add dynamic BGP peer (prefix) to ethernet port (version < 4)
-    cisco.aci.aci_l3out_bgp_peer:
-      <<: *aci_info
-      tenant: ansible_tenant
-      l3out: ansible_l3out
-      node_profile: ansible_node_profile
-      interface_profile: ansible_interface_profile
-      pod_id: 1
-      node_id: 201
-      path_ep: eth1/15
-      peer_ip: 192.168.50.0/24
-      remote_asn: 65456
-      bgp_controls:
-        - nh-self
-        - send-com
-        - send-ext-com
-      peer_controls:
-        - bfd
-      ttl: 2
-      state: present
-    register: add_dyn_bgp_peer_32
-    when: version.current.0.topSystem.attributes.version is version('4', '<')
-
-  - name: verify dynamic BGP peer (prefix) has been created with correct attributes (version >= 4)
+  - name: verify dynamic BGP peer (prefix) has been created with correct attributes
     ansible.builtin.assert:
       that:
         - add_dyn_bgp_peer.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/peerP-[192.168.50.0/24]"
@@ -1563,81 +1540,19 @@
         - add_dyn_bgp_peer.current.0.bgpPeerP.attributes.annotation == 'orchestrator:ansible'
         - add_dyn_bgp_peer.current.0.bgpPeerP.children.0.bgpLocalAsnP.attributes.asnPropagate == "replace-as"
         - add_dyn_bgp_peer.current.0.bgpPeerP.children.0.bgpLocalAsnP.attributes.localAsn == "0"
-    when: version.current.0.topSystem.attributes.version is version('4', '>=')
-
-  - name: verify dynamic BGP peer (prefix) has been created with correct attributes (version < 4)
-    ansible.builtin.assert:
-      that:
-        - add_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/peerP-[192.168.50.0/24]"
-        - add_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.addr == "192.168.50.0/24"
-        - add_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.ctrl == "nh-self,send-com,send-ext-com"
-        - add_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.peerCtrl == "bfd"
-        - add_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.ttl == "2"
-        - add_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.annotation == 'orchestrator:ansible'
-    when: version.current.0.topSystem.attributes.version is version('4', '<')
 
   - name: verify remote AS object has been created correctly
     ansible.builtin.assert:
       that:
         - add_dyn_bgp_peer.current.0.bgpPeerP.children.2.bgpAsP.attributes.asn == "65456"
-    when: version.current.0.topSystem.attributes.version is version('4', '>=')
-
-  - name: verify remote AS object has been created correctly
-    ansible.builtin.assert:
-      that:
-        - add_dyn_bgp_peer_32.current.0.bgpPeerP.children.1.bgpAsP.attributes.asn == "65456"
-    when: version.current.0.topSystem.attributes.version is version('4', '<')
 
   # ADD dynamic BGP peer (prefix) again to check idempotence
-  - name: add dynamic BGP peer (prefix) to ethernet port again (version >= 4)
+  - name: add dynamic BGP peer (prefix) to ethernet port again
     cisco.aci.aci_l3out_bgp_peer:
-      <<: *aci_info
-      tenant: ansible_tenant
-      l3out: ansible_l3out
-      node_profile: ansible_node_profile
-      interface_profile: ansible_interface_profile
-      pod_id: 1
-      node_id: 201
-      path_ep: eth1/15
-      peer_ip: 192.168.50.0/24
-      remote_asn: 65456
-      bgp_controls:
-        - nh-self
-        - send-com
-        - send-ext-com
-      peer_controls:
-        - bfd
-      address_type_controls:
-        - af-ucast
-      ttl: 2
-      state: present
+      <<: *dyn_bgp_peer
     register: add_dyn_bgp_peer_again
-    when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
-  - name: add dynamic BGP peer (prefix) to ethernet port again (version < 4)
-    cisco.aci.aci_l3out_bgp_peer:
-      <<: *aci_info
-      tenant: ansible_tenant
-      l3out: ansible_l3out
-      node_profile: ansible_node_profile
-      interface_profile: ansible_interface_profile
-      pod_id: 1
-      node_id: 201
-      path_ep: eth1/15
-      peer_ip: 192.168.50.0/24
-      remote_asn: 65456
-      bgp_controls:
-        - nh-self
-        - send-com
-        - send-ext-com
-      peer_controls:
-        - bfd
-      ttl: 2
-      state: present
-    register: add_dyn_bgp_peer_again_32
-    when: version.current.0.topSystem.attributes.version is version('4', '<')
-
-  - name: verify dynamic BGP peer (prefix) has been created with correct attributes (version >= 4)
+  - name: verify dynamic BGP peer (prefix) has been created with correct attributes
     ansible.builtin.assert:
       that:
         - add_dyn_bgp_peer_again is not changed
@@ -1648,43 +1563,16 @@
         - add_dyn_bgp_peer_again.current.0.bgpPeerP.attributes.ctrl == "nh-self,send-com,send-ext-com"
         - add_dyn_bgp_peer_again.current.0.bgpPeerP.attributes.peerCtrl == "bfd"
         - add_dyn_bgp_peer_again.current.0.bgpPeerP.attributes.ttl == "2"
-    when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
-  - name: verify dynamic BGP peer (prefix) has been created with correct attributes (version < 4)
-    ansible.builtin.assert:
-      that:
-        - add_dyn_bgp_peer_again_32 is not changed
-        - add_dyn_bgp_peer_again_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/peerP-[192.168.50.0/24]"
-        - add_dyn_bgp_peer_again_32.current.0.bgpPeerP.attributes.addr == "192.168.50.0/24"
-        - add_dyn_bgp_peer_again_32.current.0.bgpPeerP.attributes.ctrl == "nh-self,send-com,send-ext-com"
-        - add_dyn_bgp_peer_again_32.current.0.bgpPeerP.attributes.peerCtrl == "bfd"
-        - add_dyn_bgp_peer_again_32.current.0.bgpPeerP.attributes.ttl == "2"
-    when: version.current.0.topSystem.attributes.version is version('4', '<')
-
-  - name: verify remote AS object is still correct (version >= 4)
+  - name: verify remote AS object is still correct
     ansible.builtin.assert:
       that:
         - add_dyn_bgp_peer_again.current.0.bgpPeerP.children.2.bgpAsP.attributes.asn == "65456"
-    when: version.current.0.topSystem.attributes.version is version('4', '>=')
-
-  - name: verify remote AS object his still correct (version < 4)
-    ansible.builtin.assert:
-      that:
-        - add_dyn_bgp_peer_again_32.current.0.bgpPeerP.children.1.bgpAsP.attributes.asn == "65456"
-    when: version.current.0.topSystem.attributes.version is version('4', '<')
 
   # MODIFY dynamic BGP peer (prefix)
-  - name: update dynamic BGP peer (prefix) (version >= 4)
+  - name: update dynamic BGP peer (prefix)
     cisco.aci.aci_l3out_bgp_peer:
-      <<: *aci_info
-      tenant: ansible_tenant
-      l3out: ansible_l3out
-      node_profile: ansible_node_profile
-      interface_profile: ansible_interface_profile
-      pod_id: 1
-      node_id: 201
-      path_ep: eth1/15
-      peer_ip: 192.168.50.0/24
+      <<: *dyn_bgp_peer
       remote_asn: 65457
       bgp_controls:
         - allow-self-as
@@ -1702,37 +1590,9 @@
       admin_state: disabled
       local_as_number: 101
       local_as_number_config: "dual-as"
-      state: present
     register: update_dyn_bgp_peer
-    when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
-  - name: update dynamic BGP peer (prefix) (version < 4)
-    cisco.aci.aci_l3out_bgp_peer:
-      <<: *aci_info
-      tenant: ansible_tenant
-      l3out: ansible_l3out
-      node_profile: ansible_node_profile
-      interface_profile: ansible_interface_profile
-      pod_id: 1
-      node_id: 201
-      path_ep: eth1/15
-      peer_ip: 192.168.50.0/24
-      remote_asn: 65457
-      bgp_controls:
-        - allow-self-as
-        - as-override
-      peer_controls:
-        - dis-conn-check
-      private_asn_controls:
-        - remove-exclusive
-      weight: 50
-      allow_self_as_count: 3
-      ttl: 4
-      state: present
-    register: update_dyn_bgp_peer_32
-    when: version.current.0.topSystem.attributes.version is version('4', '<')
-
-  - name: verify dynamic BGP peer (prefix) has been updated with correct attributes (version >= 4)
+  - name: verify dynamic BGP peer (prefix) has been updated with correct attributes
     ansible.builtin.assert:
       that:
         - update_dyn_bgp_peer is changed
@@ -1747,65 +1607,20 @@
         - update_dyn_bgp_peer.current.0.bgpPeerP.attributes.privateASctrl == "remove-exclusive"
         - update_dyn_bgp_peer.current.0.bgpPeerP.children.0.bgpLocalAsnP.attributes.asnPropagate == "dual-as"
         - update_dyn_bgp_peer.current.0.bgpPeerP.children.0.bgpLocalAsnP.attributes.localAsn == "101"
-    when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
-  - name: verify dynamic BGP peer (prefix) has been updated with correct attributes (version < 4)
-    ansible.builtin.assert:
-      that:
-        - update_dyn_bgp_peer_32 is changed
-        - update_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/peerP-[192.168.50.0/24]"
-        - update_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.addr == "192.168.50.0/24"
-        - update_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.ctrl == "allow-self-as,as-override"
-        - update_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.peerCtrl == "dis-conn-check"
-        - update_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.ttl == "4"
-        - update_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.allowedSelfAsCnt == "3"
-        - update_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.privateASctrl == "remove-exclusive"
-    when: version.current.0.topSystem.attributes.version is version('4', '<')
-
-  - name: verify remote AS object has been updated correctly (version >= 4)
+  - name: verify remote AS object has been updated correctly
     ansible.builtin.assert:
       that:
         - update_dyn_bgp_peer.current.0.bgpPeerP.children.2.bgpAsP.attributes.asn == "65457"
-    when: version.current.0.topSystem.attributes.version is version('4', '>=')
-
-  - name: verify remote AS object has been updated correctly (version < 4)
-    ansible.builtin.assert:
-      that:
-        - update_dyn_bgp_peer_32.current.0.bgpPeerP.children.1.bgpAsP.attributes.asn == "65457"
-    when: version.current.0.topSystem.attributes.version is version('4', '<')
 
   # QUERY dynamic BGP peer (prefix)
-  - name: query dynamic BGP peer (prefix) (version >= 4)
+  - name: query dynamic BGP peer (prefix)
     cisco.aci.aci_l3out_bgp_peer:
-      <<: *aci_info
-      tenant: ansible_tenant
-      l3out: ansible_l3out
-      node_profile: ansible_node_profile
-      interface_profile: ansible_interface_profile
-      pod_id: 1
-      node_id: 201
-      path_ep: eth1/15
-      peer_ip: 192.168.50.0/24
+      <<: *dyn_bgp_peer
       state: query
     register: query_dyn_bgp_peer
-    when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
-  - name: query dynamic BGP peer (prefix) (version < 4)
-    cisco.aci.aci_l3out_bgp_peer:
-      <<: *aci_info
-      tenant: ansible_tenant
-      l3out: ansible_l3out
-      node_profile: ansible_node_profile
-      interface_profile: ansible_interface_profile
-      pod_id: 1
-      node_id: 201
-      path_ep: eth1/15
-      peer_ip: 192.168.50.0/24
-      state: query
-    register: query_dyn_bgp_peer_32
-    when: version.current.0.topSystem.attributes.version is version('4', '<')
-
-  - name: verify dynamic BGP peer (prefix) attributes (version >= 4)
+  - name: verify dynamic BGP peer (prefix) attributes
     ansible.builtin.assert:
       that:
         - query_dyn_bgp_peer is not changed
@@ -1818,45 +1633,16 @@
         - query_dyn_bgp_peer.current.0.bgpPeerP.attributes.ttl == "4"
         - query_dyn_bgp_peer.current.0.bgpPeerP.attributes.allowedSelfAsCnt == "3"
         - query_dyn_bgp_peer.current.0.bgpPeerP.attributes.privateASctrl == "remove-exclusive"
-    when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
-  - name: verify dynamic BGP peer (prefix) attributes (version < 4)
-    ansible.builtin.assert:
-      that:
-        - query_dyn_bgp_peer_32 is not changed
-        - query_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/peerP-[192.168.50.0/24]"
-        - query_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.addr == "192.168.50.0/24"
-        - query_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.ctrl == "allow-self-as,as-override"
-        - query_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.peerCtrl == "dis-conn-check"
-        - query_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.ttl == "4"
-        - query_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.allowedSelfAsCnt == "3"
-        - query_dyn_bgp_peer_32.current.0.bgpPeerP.attributes.privateASctrl == "remove-exclusive"
-    when: version.current.0.topSystem.attributes.version is version('4', '<')
-
-  - name: verify BGP remote AS (version >= 4)
+  - name: verify BGP remote AS
     ansible.builtin.assert:
       that:
         - query_dyn_bgp_peer.current.0.bgpPeerP.children.2.bgpAsP.attributes.asn == "65457"
-    when: version.current.0.topSystem.attributes.version is version('4', '>=')
-
-  - name: verify BGP remote AS (version < 4)
-    ansible.builtin.assert:
-      that:
-        - query_dyn_bgp_peer_32.current.0.bgpPeerP.children.1.bgpAsP.attributes.asn == "65457"
-    when: version.current.0.topSystem.attributes.version is version('4', '<')
 
   # DELETE dynamic BGP peer (prefix)
   - name: delete dynamic BGP peer (prefix)
     cisco.aci.aci_l3out_bgp_peer:
-      <<: *aci_info
-      tenant: ansible_tenant
-      l3out: ansible_l3out
-      node_profile: ansible_node_profile
-      interface_profile: ansible_interface_profile
-      pod_id: 1
-      node_id: 201
-      path_ep: eth1/15
-      peer_ip: 192.168.50.0/24
+      <<: *dyn_bgp_peer
       state: absent
     register: remove_dyn_bgp_peer
 
@@ -1867,6 +1653,7 @@
         - remove_dyn_bgp_peer.current == []
         - remove_dyn_bgp_peer.previous.0.bgpPeerP.attributes.dn == "uni/tn-ansible_tenant/out-ansible_l3out/lnodep-ansible_node_profile/lifp-ansible_interface_profile/rspathL3OutAtt-[topology/pod-1/paths-201/pathep-[eth1/15]]/peerP-[192.168.50.0/24]"
         - remove_dyn_bgp_peer.previous.0.bgpPeerP.attributes.addr == "192.168.50.0/24"
+
   # Create BGP Peer with password
   - name: Create BGP Peer with password
     aci_l3out_bgp_peer: &bgp_peer_with_password
