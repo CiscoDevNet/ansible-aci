@@ -37,137 +37,155 @@
   block:  # block specifies execution of tasks within, based on conditions
 
   # CLEAN ENVIRONMENT
-    - name: Ensure Contract doesn't exist
-      cisco.aci.aci_oob_contract:
-        <<: *aci_info
-        contract: anstest
-        state: absent
-        description: Ansible Test
+  - name: Ensure Contract doesn't exist
+    cisco.aci.aci_oob_contract:
+      <<: *aci_info
+      contract: anstest
+      state: absent
+      description: Ansible Test
+  
+  - name: Ensure Contract doesn't exist
+    cisco.aci.aci_oob_contract:
+      <<: *aci_info
+      contract: anstest2
+      state: absent
+      description: Ansible Test
 
-  # CREATE  
-    - name: create contract - check mode works
-      cisco.aci.aci_oob_contract: &aci_oob_contract_present_CM
-        <<: *aci_info
-        contract: anstest
-        description: Ansible Test
-        #state: present           >>>> DEFAULTS TO 'PRESENT" ASSERTATION
-      check_mode: true
-      register: present_check_mode
+# CREATE  
+  - name: create contract - check mode works
+    cisco.aci.aci_oob_contract: &aci_oob_contract_present_CM
+      <<: *aci_info
+      contract: anstest
+      description: Ansible Test
+      state: present
+    check_mode: true
+    register: present_check_mode
 
-    - name: create contract - creation works
-      cisco.aci.aci_oob_contract: &aci_oob_contract_present
-        <<: *aci_oob_contract_present_CM
-        state: present
-      register: contract_present
+  - name: create contract - creation works
+    cisco.aci.aci_oob_contract: &aci_oob_contract_present
+      <<: *aci_oob_contract_present_CM
+      state: "{{ fakevar | default(omit) }}"    # >>>> DEFAULTS TO 'PRESENT'
+    register: contract_present
 
-    - name: create contract - idempotency works
-      cisco.aci.aci_oob_contract:
-        <<: *aci_oob_contract_present
-      register: present_idempotent
+  - name: create contract - idempotency works
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_present
+    register: present_idempotent
 
-    - name: create contract - used for query
-      cisco.aci.aci_oob_contract:
-        <<: *aci_oob_contract_present
-        contract: anstest2
+  - name: create contract - used for query
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_present
+      contract: anstest2
 
-    - name: present assertions
-      ansible.builtin.assert:
-        that:
-          - present_check_mode is changed
-          - present_check_mode.previous == []
-          - present_check_mode.sent.vzOOBBrCP.attributes.name == 'anstest'
-          - present_check_mode.sent.vzOOBBrCP.attributes.descr == 'Ansible Test'
-          - present_check_mode.invocation.module_args.state == 'present'
-          - contract_present is changed
-          - contract_present.current.0.vzOOBBrCP.attributes.annotation == 'orchestrator:ansible'
-          - contract_present.sent == present_check_mode.sent
-          - present_idempotent is not changed
+  - name: present assertions
+    ansible.builtin.assert:
+      that:
+        - present_check_mode is changed
+        - present_check_mode.previous == []
+        - present_check_mode.previous == present_check_mode.current
+        - present_check_mode.sent.vzOOBBrCP.attributes.name == 'anstest'
+        - present_check_mode.sent.vzOOBBrCP.attributes.descr == 'Ansible Test'
+        - contract_present is changed
+        - contract_present.previous == []
+        - contract_present.current.0.vzOOBBrCP.attributes.annotation == 'orchestrator:ansible'
+        - contract_present.current.0.vzOOBBrCP.attributes.prio == 'unspecified'
+        - contract_present.current.0.vzOOBBrCP.attributes.scope == 'context'
+        - '"uni/tn-mgmt/oobbrc-anstest.json" in contract_present.url'
+        - contract_present.sent == present_check_mode.sent
+        - present_idempotent is not changed
 
   # UPDATE
-    - name: update contract - update works
-      cisco.aci.aci_oob_contract:
-        <<: *aci_oob_contract_present
-        scope: application-profile
-      register: present_update
+  - name: update contract - update works
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_present
+      scope: application-profile
+      description: "Description altered"
+      priority: "level1"
+    register: present_update
 
-    - name: missing param - failure message works
-      cisco.aci.aci_oob_contract:
-        <<: *aci_info
-      ignore_errors: true
-      register: present_missing_param
+  - name: missing param - failure message works
+    cisco.aci.aci_oob_contract:
+      <<: *aci_info
+    ignore_errors: true
+    register: present_missing_param
 
-    - name: update assertions
-      ansible.builtin.assert:
-        that:
-          - present_update is changed
-          - present_update.sent != present_update.proposed
-          - present_update.sent.vzOOBBrCP.attributes.scope == "application-profile"
-          - present_missing_param is failed
-          - 'present_missing_param.msg == "state is present but all of the following are missing: contract"'
+  - name: update assertions
+    ansible.builtin.assert:
+      that:
+        - present_update is changed
+        - present_update.sent != present_update.proposed
+        - present_update.previous.0.vzOOBBrCP.attributes.scope == "context"
+        - present_update.sent.vzOOBBrCP.attributes.scope == "application-profile"
+        - present_update.previous.0.vzOOBBrCP.attributes.descr == "Ansible Test"
+        - present_update.sent.vzOOBBrCP.attributes.descr == "Description altered"
+        - present_update.previous.0.vzOOBBrCP.attributes.prio == "unspecified"
+        - present_update.sent.vzOOBBrCP.attributes.prio == "level1"
+        - present_missing_param is failed
+        - 'present_missing_param.msg == "state is present but all of the following are missing: contract"'
 
   # QUERY
-    - name: query contract
-      cisco.aci.aci_oob_contract: &aci_oob_contract_query
-        <<: *aci_oob_contract_present
-        state: query
-      register: query_contract
+  - name: query contract
+    cisco.aci.aci_oob_contract: &aci_oob_contract_query
+      <<: *aci_oob_contract_present
+      state: query
+    register: query_contract
 
-    - name: query all
-      cisco.aci.aci_oob_contract:
-        <<: *aci_oob_contract_query
-        contract: "{{ fakevar | default(omit) }}"
-      register: query_tenant
+  - name: query all
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_query
+      contract: "{{ fakevar | default(omit) }}"
+    register: query_tenant
 
-    - name: query assertions
-      ansible.builtin.assert:
-        that:
-          - query_contract is not changed
-          - query_contract.current | length == 1
-          - '"tn-mgmt/oobbrc-anstest.json" in query_contract.url'
-          - query_tenant is not changed
-          - query_tenant.current | length == 1
-          - query_tenant.current.0.fvTenant.children | length > 1
-          - '"rsp-subtree-class=vzOOBBrCP" in query_tenant.filter_string'
-          - '"tn-mgmt.json" in query_tenant.url'
+  - name: query assertions
+    ansible.builtin.assert:
+      that:
+        - query_contract is not changed
+        - query_contract.current | length == 1
+        - '"tn-mgmt/oobbrc-anstest.json" in query_contract.url'
+        - query_tenant is not changed
+        - query_tenant.current | length == 1
+        - query_tenant.current.0.fvTenant.children | length > 1
+        - '"rsp-subtree-class=vzOOBBrCP" in query_tenant.filter_string'
+        - '"tn-mgmt.json" in query_tenant.url'
 
   # DELETE
-    - name: delete contract - check mode works
-      cisco.aci.aci_oob_contract: &aci_oob_contract_absent
-        <<: *aci_oob_contract_present
-        state: absent
-      check_mode: true
-      register: absent_check_mode
+  - name: delete contract - check mode works
+    cisco.aci.aci_oob_contract: &aci_oob_contract_absent
+      <<: *aci_oob_contract_present
+      state: absent
+    check_mode: true
+    register: absent_check_mode
 
-    - name: delete contract - deletion works
-      cisco.aci.aci_oob_contract:
-        <<: *aci_oob_contract_absent
-      register: contract_absent
+  - name: delete contract - deletion works
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_absent
+    register: contract_absent
 
-    - name: delete contract - idempotency works
-      cisco.aci.aci_oob_contract:
-        <<: *aci_oob_contract_absent
-      register: absent_idempotent
+  - name: delete contract - idempotency works
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_absent
+    register: absent_idempotent
 
-    - name: delete contract - cleanup second contract
-      cisco.aci.aci_oob_contract:
-        <<: *aci_oob_contract_absent
-        contract: anstest2
+  - name: delete contract - cleanup second contract
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_absent
+      contract: anstest2
 
-    - name: missing param - fail message works
-      cisco.aci.aci_oob_contract:
-        <<: *aci_oob_contract_absent
-        contract: "{{ fakevar | default(omit) }}"
-      ignore_errors: true
-      register: absent_missing_param
+  - name: missing param - fail message works
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_absent
+      contract: "{{ fakevar | default(omit) }}"
+    ignore_errors: true
+    register: absent_missing_param
 
-    - name: absent assertions
-      ansible.builtin.assert:
-        that:
-          - absent_check_mode is changed
-          - absent_check_mode.previous != []
-          - contract_absent is changed
-          - contract_absent.previous == absent_check_mode.previous
-          - absent_idempotent is not changed
-          - absent_idempotent.previous == []
-          - absent_missing_param is failed
-          - 'absent_missing_param.msg == "state is absent but all of the following are missing: contract"'
+  - name: absent assertions
+    ansible.builtin.assert:
+      that:
+        - absent_check_mode is changed
+        - absent_check_mode.previous != []
+        - contract_absent is changed
+        - contract_absent.previous == absent_check_mode.previous
+        - absent_idempotent is not changed
+        - absent_idempotent.previous == []
+        - absent_missing_param is failed
+        - 'absent_missing_param.msg == "state is absent but all of the following are missing: contract"'

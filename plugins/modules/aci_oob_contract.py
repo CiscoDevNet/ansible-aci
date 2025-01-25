@@ -24,7 +24,7 @@ options:
     aliases: [ contract_name, name ]
   description:
     description:
-    - Description for the OOB contract.
+    - The description of the OOB Contract.
     type: str
     aliases: [ descr ]
   scope:
