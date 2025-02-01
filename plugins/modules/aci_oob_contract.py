@@ -243,17 +243,11 @@ def main():
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class="fvTenant",
-            aci_rn="tn-{0}".format(tenant),
-            module_object=tenant,
-            target_filter={"name": tenant},
-        ),
-        subclass_1=dict(
             aci_class="vzOOBBrCP",
-            aci_rn="oobbrc-{0}".format(contract),
+            aci_rn="tn-{0}/oobbrc-{1}".format(tenant, contract),
             module_object=contract,
-            target_filter={"name": contract},
-        ),
+            target_filter={"name": contract} if contract else None
+        )
     )
 
     aci.get_existing()

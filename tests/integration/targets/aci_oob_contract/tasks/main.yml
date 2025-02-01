@@ -116,10 +116,12 @@
         - present_update.sent != present_update.proposed
         - present_update.previous.0.vzOOBBrCP.attributes.scope == "context"
         - present_update.sent.vzOOBBrCP.attributes.scope == "application-profile"
+        - present_update.current.0.vzOOBBrCP.attributes.scope == "application-profile"
         - present_update.previous.0.vzOOBBrCP.attributes.descr == "Ansible Test"
         - present_update.sent.vzOOBBrCP.attributes.descr == "Description altered"
         - present_update.previous.0.vzOOBBrCP.attributes.prio == "unspecified"
         - present_update.sent.vzOOBBrCP.attributes.prio == "level1"
+        - present_update.current.0.vzOOBBrCP.attributes.prio == "level1"
         - present_missing_param is failed
         - 'present_missing_param.msg == "state is present but all of the following are missing: contract"'
 
@@ -143,10 +145,9 @@
         - query_contract.current | length == 1
         - '"tn-mgmt/oobbrc-anstest.json" in query_contract.url'
         - query_tenant is not changed
-        - query_tenant.current | length == 1
-        - query_tenant.current.0.fvTenant.children | length > 1
-        - '"rsp-subtree-class=vzOOBBrCP" in query_tenant.filter_string'
-        - '"tn-mgmt.json" in query_tenant.url'
+        - query_tenant.current | length > 2    # 2 contracts we created, one 'default' oob-contract
+        - 'query_tenant.filter_string == ""'
+        - '"vzOOBBrCP.json" in query_tenant.url'
 
   # DELETE
   - name: delete contract - check mode works
