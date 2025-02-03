@@ -69,9 +69,7 @@ class MockAnsibleModule(object):
         result = validator.validate(parameters)
 
         if result.error_messages:
-            display.vvv(
-                "Validation failed: {0}".format(", ".join(result.error_messages))
-            )
+            display.vvv("Validation failed: {0}".format(", ".join(result.error_messages)))
 
         self.params = result.validated_parameters
 
@@ -87,10 +85,7 @@ class MockAnsibleModule(object):
                 try:
                     os.makedirs(basedir, mode=0o700)
                 except (OSError, IOError) as e:
-                    self.warn(
-                        "Unable to use %s as temporary directory, "
-                        "failing back to system: %s" % (basedir, to_native(e))
-                    )
+                    self.warn("Unable to use %s as temporary directory, " "failing back to system: %s" % (basedir, to_native(e)))
                     basedir = None
                 else:
                     self.warn(
@@ -105,10 +100,7 @@ class MockAnsibleModule(object):
             try:
                 tmpdir = tempfile.mkdtemp(prefix=basefile, dir=basedir)
             except (OSError, IOError) as e:
-                self.fail_json(
-                    msg="Failed to create remote module tmp path at dir %s "
-                    "with prefix %s: %s" % (basedir, basefile, to_native(e))
-                )
+                self.fail_json(msg="Failed to create remote module tmp path at dir %s " "with prefix %s: %s" % (basedir, basefile, to_native(e)))
             atexit.register(shutil.rmtree, tmpdir)
             self._tmpdir = tmpdir
 
@@ -159,9 +151,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         id = module.params.get("id")
 
         aci = ACIModule(module)
-        aci.construct_url(
-            root_class=dict(aci_class="topSystem", target_filter={"id": id})
-        )
+        aci.construct_url(root_class=dict(aci_class="topSystem", target_filter={"id": id}))
 
         aci.get_existing()
 
@@ -174,13 +164,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.inventory.add_host(hostname, group="all")
 
         if host_vars["oobMgmtAddr"] != "0.0.0.0":
-            self.inventory.set_variable(
-                hostname, "ansible_host", host_vars["oobMgmtAddr"]
-            )
+            self.inventory.set_variable(hostname, "ansible_host", host_vars["oobMgmtAddr"])
         elif host_vars["inbMgmtAddr"] != "0.0.0.0":
-            self.inventory.set_variable(
-                hostname, "ansible_host", host_vars["inbMgmtAddr"]
-            )
+            self.inventory.set_variable(hostname, "ansible_host", host_vars["inbMgmtAddr"])
         else:
             self.inventory.set_variable(hostname, "ansible_host", host_vars["address"])
 
@@ -190,14 +176,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         strict = self.get_option("strict")
 
         # Add variables created by the user's Jinja2 expressions to the host
-        self._set_composite_vars(
-            self.get_option("compose"), host_vars, hostname, strict=True
-        )
+        self._set_composite_vars(self.get_option("compose"), host_vars, hostname, strict=True)
 
         # Create user-defined groups using variables and Jinja2 conditionals
-        self._add_host_to_composed_groups(
-            self.get_option("groups"), host_vars, hostname, strict=strict
-        )
-        self._add_host_to_keyed_groups(
-            self.get_option("keyed_groups"), host_vars, hostname, strict=strict
-        )
+        self._add_host_to_composed_groups(self.get_option("groups"), host_vars, hostname, strict=strict)
+        self._add_host_to_keyed_groups(self.get_option("keyed_groups"), host_vars, hostname, strict=strict)
