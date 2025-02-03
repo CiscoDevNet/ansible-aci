@@ -132,10 +132,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             parameters=config,
         )
 
-        id = module.params.get("id")
-
         aci = ACIModule(module)
-        aci.construct_url(root_class=dict(aci_class="topSystem", target_filter={"id": id}))
+        aci.construct_url(root_class=dict(aci_class="topSystem"))
 
         aci.get_existing()
 
