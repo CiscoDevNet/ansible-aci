@@ -13,9 +13,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_oob_contract
-short_description: Manage Out-of-Band contract resources (vz:OOBBrCP)
+short_description: Manage Out-of-Band (OOB) Contract resources (vz:OOBBrCP)
 description:
-- Manage out-of-band Contract resources on Cisco ACI fabrics.
+- Manage Out-of-Band (OOB) Contract resources on Cisco ACI fabrics.
 options:
   contract:
     description:
@@ -67,7 +67,7 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     contract: web_to_db
     description: Communication between web-servers and database
-    priority: unspecified
+    priority: level2
     scope: global
     state: present
   delegate_to: localhost
