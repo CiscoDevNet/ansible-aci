@@ -22,7 +22,7 @@ plugin: cisco.aci.aci
 host: 192.168.1.90
 username: admin
 # You can also use env var ACI_PASSWORD
-#password: *******
+# password: *******
 validate_certs: false
 state: query
 
