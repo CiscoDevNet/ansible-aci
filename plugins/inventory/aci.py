@@ -13,6 +13,7 @@ DOCUMENTATION = r"""
       - constructed
     description:
         - Query details from APIC
+        - Gets details on all spines and leafs behind the controller.
         - Requires a YAML configuration file whose name ends with 'cisco_aci.(yml|yaml)'
 """
 
@@ -21,17 +22,14 @@ EXAMPLES = """
 plugin: cisco.aci.aci
 host: 192.168.1.90
 username: admin
-# You can also use env var ACI_PASSWORD
-# password: *******
+password: PASSWORD
 validate_certs: false
-state: query
 
 keyed_groups:
   - prefix: role
     key: role
 """
 
-import os
 import atexit
 import time
 import tempfile
@@ -81,21 +79,6 @@ class MockAnsibleModule(object):
         if self._tmpdir is None:
             basedir = None
 
-            if basedir is not None and not os.path.exists(basedir):
-                try:
-                    os.makedirs(basedir, mode=0o700)
-                except (OSError, IOError) as e:
-                    self.warn("Unable to use %s as temporary directory, " "failing back to system: %s" % (basedir, to_native(e)))
-                    basedir = None
-                else:
-                    self.warn(
-                        "Module remote_tmp %s did not exist and was "
-                        "created with a mode of 0700, this may cause"
-                        " issues when running as another user. To "
-                        "avoid this, create the remote_tmp dir with "
-                        "the correct permissions manually" % basedir
-                    )
-
             basefile = "ansible-moduletmp-%s-" % time.time()
             try:
                 tmpdir = tempfile.mkdtemp(prefix=basefile, dir=basedir)
@@ -134,6 +117,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # this method will parse 'common format' inventory sources and
         # update any options declared in DOCUMENTATION as needed
         config = self._read_config_data(path)
+        config.update(state="query")
 
         argument_spec = aci_argument_spec()
         argument_spec.update(
@@ -157,18 +141,19 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         # parse data and create inventory objects:
         for device in aci.existing:
-            attributes = device.get("topSystem").get("attributes")
-            self.add_host(attributes["name"], attributes)
+            attributes = device.get("topSystem", {}).get("attributes")
+            if attributes.get("name"):
+                self.add_host(attributes.get("name"), attributes)
 
     def add_host(self, hostname, host_vars):
         self.inventory.add_host(hostname, group="all")
 
-        if host_vars["oobMgmtAddr"] != "0.0.0.0":
-            self.inventory.set_variable(hostname, "ansible_host", host_vars["oobMgmtAddr"])
-        elif host_vars["inbMgmtAddr"] != "0.0.0.0":
-            self.inventory.set_variable(hostname, "ansible_host", host_vars["inbMgmtAddr"])
+        if host_vars.get("oobMgmtAddr", "0.0.0.0") != "0.0.0.0":
+            self.inventory.set_variable(hostname, "ansible_host", host_vars.get("oobMgmtAddr"))
+        elif host_vars.get("inbMgmtAddr", "0.0.0.0") != "0.0.0.0":
+            self.inventory.set_variable(hostname, "ansible_host", host_vars.get("inbMgmtAddr"))
         else:
-            self.inventory.set_variable(hostname, "ansible_host", host_vars["address"])
+            self.inventory.set_variable(hostname, "ansible_host", host_vars.get("address"))
 
         for var_name, var_value in host_vars.items():
             self.inventory.set_variable(hostname, var_name, var_value)
