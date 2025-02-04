@@ -31,7 +31,6 @@ keyed_groups:
   - prefix: role
     key: role
 
----
 # Generate inventory and use the compose variables to define how we want to connect
 
 plugin: cisco.aci.aci_inventory
