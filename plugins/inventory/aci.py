@@ -115,12 +115,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # this method will parse 'common format' inventory sources and
         # update any options declared in DOCUMENTATION as needed
         config = self._read_config_data(path)
-        config.update(state="query")
 
         argument_spec = aci_argument_spec()
         argument_spec.update(
-            id=dict(type="int", aliases=["controller", "node"]),
-            state=dict(type="str", default="query", choices=["query"]),
             keyed_groups=dict(type="list"),
             plugin=dict(type="str"),
         )
@@ -137,7 +134,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         # parse data and create inventory objects:
         for device in aci.existing:
-            attributes = device.get("topSystem", {}).get("attributes")
+            attributes = device.get("topSystem", {}).get("attributes", {})
             if attributes.get("name"):
                 self.add_host(attributes.get("name"), attributes)
 
