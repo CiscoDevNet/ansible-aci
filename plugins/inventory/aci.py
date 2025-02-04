@@ -77,13 +77,11 @@ class MockAnsibleModule(object):
         # the module needs to create it and clean it up once finished.
         # otherwise we create our own module tmp dir from the system defaults
         if self._tmpdir is None:
-            basedir = None
-
             basefile = "ansible-moduletmp-%s-" % time.time()
             try:
-                tmpdir = tempfile.mkdtemp(prefix=basefile, dir=basedir)
+                tmpdir = tempfile.mkdtemp(prefix=basefile)
             except (OSError, IOError) as e:
-                self.fail_json(msg="Failed to create remote module tmp path at dir %s " "with prefix %s: %s" % (basedir, basefile, to_native(e)))
+                self.fail_json(msg="Failed to create remote module tmp path with prefix %s: %s" % (basefile, to_native(e)))
             atexit.register(shutil.rmtree, tmpdir)
             self._tmpdir = tmpdir
 
