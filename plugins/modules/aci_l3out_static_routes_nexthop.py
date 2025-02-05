@@ -48,6 +48,10 @@ options:
     description:
     - The nexthop for the prefix
     type: str
+  preference:
+    description:
+    - The administrative preference value for the nexthop
+    type: int
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -84,6 +88,7 @@ EXAMPLES = r"""
     node_id: 111
     prefix: 10.84.90.0/24
     nexthop: 10.1.1.1
+    preference: 1
     state: present
   delegate_to: localhost
 
@@ -249,6 +254,7 @@ def main():
         node_id=dict(type="int"),
         prefix=dict(type="str", aliases=["route"]),
         nexthop=dict(type="str"),
+        preference=dict(type="int"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -268,6 +274,7 @@ def main():
     node_id = module.params.get("node_id")
     prefix = module.params.get("prefix")
     nexthop = module.params.get("nexthop")
+    preference = module.params.get("preference")
     state = module.params.get("state")
 
     node_tdn = None
@@ -290,7 +297,7 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        aci.payload(aci_class="ipNexthopP", class_config=dict(nhAddr=nexthop))
+        aci.payload(aci_class="ipNexthopP", class_config=dict(nhAddr=nexthop, pref=preference))
 
         aci.get_diff(aci_class="ipNexthopP")
 

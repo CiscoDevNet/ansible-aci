@@ -76,6 +76,7 @@
     cisco.aci.aci_l3out_static_routes_nexthop:  &nh_present
       <<: *prefix_present
       nexthop: 1.1.1.1
+      preference: 1
     check_mode: true
     register: cm_add_nh
 
@@ -91,6 +92,7 @@
       - nm_add_nh is changed
       - cm_add_nh.previous == nm_add_nh.previous == []
       - cm_add_nh.sent.ipNexthopP.attributes.nhAddr == nm_add_nh.sent.ipNexthopP.attributes.nhAddr == '1.1.1.1'
+      - cm_add_nh.sent.ipNexthopP.attributes.pref == nm_add_nh.sent.ipNexthopP.attributes.pref == '1'
       - nm_add_nh.current.0.ipNexthopP.attributes.annotation == 'orchestrator:ansible'
 
   - name: Add nexthop  again, check if idempotency works
@@ -108,6 +110,18 @@
     cisco.aci.aci_l3out_static_routes_nexthop: 
       <<: *nh_present
       nexthop: 1.1.1.2
+
+  - name: Add another nexthop without preference
+    cisco.aci.aci_l3out_static_routes_nexthop: 
+      <<: *prefix_present
+      nexthop: 2.2.2.2
+    register: add_nh_no_pref
+
+  - name: Verify default preference
+    ansible.builtin.assert:
+      that:
+      - add_nh_no_pref.is_changed
+      - add_nh_no_pref.current.0.ipNexthopP.attributes.pref == '0'
 
   # QUERY ALL NHs
   - name: Query all nodes
