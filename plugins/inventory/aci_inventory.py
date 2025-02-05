@@ -19,34 +19,23 @@ DOCUMENTATION = r"""
 
 EXAMPLES = """
 ---
-# Generate inventory and put devices into groups based on role: spine, leaf, controller
-
+# Generate dynamic inventory of every device
 plugin: cisco.aci.aci_inventory
 host: 192.168.1.90
 username: admin
 password: PASSWORD
 validate_certs: false
 
+# (Optional) Generate inventory and put devices into groups based on role: spine, leaf, controller
 keyed_groups:
   - prefix: role
     key: role
 
-# Generate inventory and use the compose variables to define how we want to connect
-
-plugin: cisco.aci.aci_inventory
-host: 192.168.1.90
-username: admin
-password: PASSWORD
-validate_certs: false
-
+# (Optional) Generate inventory and use the compose variables to define how we want to connect
 compose:
   ansible_connection: "'ansible.netcommon.httpapi'"
   ansible_network_os: "'cisco.aci.aci'"
   ansible_host: "'192.168.1.90'"
-
-keyed_groups:
-  - prefix: role
-    key: role
 """
 
 import atexit
