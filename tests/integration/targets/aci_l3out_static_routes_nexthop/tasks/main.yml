@@ -120,7 +120,7 @@
   - name: Verify default preference
     ansible.builtin.assert:
       that:
-      - add_nh_no_pref.is_changed
+      - add_nh_no_pref is changed
       - add_nh_no_pref.current.0.ipNexthopP.attributes.pref == '0'
 
   # QUERY ALL NHs
