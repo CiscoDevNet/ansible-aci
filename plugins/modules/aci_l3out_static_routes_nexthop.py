@@ -50,7 +50,9 @@ options:
     type: str
   preference:
     description:
-    - The administrative preference value for the nexthop
+    - The administrative preference value for the nexthop.
+    - The APIC defaults to 0 when unset during creation.
+    - The value must be between 0 and 255.
     type: int
   state:
     description:
