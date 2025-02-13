@@ -7,7 +7,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
     name: aci_inventory
-    short_description: Cisco aci inventory plugin
+    short_description: Cisco ACI inventory plugin
     extends_documentation_fragment:
       - cisco.aci.aci
       - constructed
