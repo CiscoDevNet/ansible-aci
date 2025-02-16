@@ -37,14 +37,14 @@
   block:  # block specifies execution of tasks within, based on conditions
 
   # CLEAN ENVIRONMENT
-  - name: Ensure Contract doesn't exist
+  - name: Ensure Contract1 doesn't exist
     cisco.aci.aci_oob_contract:
       <<: *aci_info
       contract: anstest
       state: absent
       description: Ansible Test
   
-  - name: Ensure Contract doesn't exist
+  - name: Ensure Contract2 doesn't exist
     cisco.aci.aci_oob_contract:
       <<: *aci_info
       contract: anstest2
@@ -52,7 +52,7 @@
       description: Ansible Test
 
 # CREATE  
-  - name: create contract - check mode works
+  - name: Create OOB Contract (check_mode)
     cisco.aci.aci_oob_contract: &aci_oob_contract_present_CM
       <<: *aci_info
       contract: anstest
@@ -61,23 +61,23 @@
     check_mode: true
     register: present_check_mode
 
-  - name: create contract - creation works
+  - name: Create OOB Contract
     cisco.aci.aci_oob_contract: &aci_oob_contract_present
       <<: *aci_oob_contract_present_CM
       state: "{{ fakevar | default(omit) }}"    # >>>> DEFAULTS TO 'PRESENT'
     register: contract_present
 
-  - name: create contract - idempotency works
+  - name: Create OOB Contract again
     cisco.aci.aci_oob_contract:
       <<: *aci_oob_contract_present
     register: present_idempotent
 
-  - name: create contract - used for query
+  - name: Create another OOB Contract
     cisco.aci.aci_oob_contract:
       <<: *aci_oob_contract_present
       contract: anstest2
 
-  - name: present assertions
+  - name: Assert OOB Contracts were Created
     ansible.builtin.assert:
       that:
         - present_check_mode is changed
@@ -95,7 +95,7 @@
         - present_idempotent is not changed
 
   # UPDATE
-  - name: update contract - update works
+  - name: Update OOB Contract
     cisco.aci.aci_oob_contract:
       <<: *aci_oob_contract_present
       scope: application-profile
@@ -103,13 +103,13 @@
       priority: "level1"
     register: present_update
 
-  - name: missing param - failure message works
+  - name: Missing Parameter contract_name - Failure Test
     cisco.aci.aci_oob_contract:
       <<: *aci_info
     ignore_errors: true
     register: present_missing_param
 
-  - name: update assertions
+  - name: Assert OOB Contracts were updated
     ansible.builtin.assert:
       that:
         - present_update is changed
@@ -126,19 +126,19 @@
         - 'present_missing_param.msg == "state is present but all of the following are missing: contract"'
 
   # QUERY
-  - name: query contract
+  - name: Query OOB Contract
     cisco.aci.aci_oob_contract: &aci_oob_contract_query
       <<: *aci_oob_contract_present
       state: query
     register: query_contract
 
-  - name: query all
+  - name: Query all OOB Contracts
     cisco.aci.aci_oob_contract:
       <<: *aci_oob_contract_query
       contract: "{{ fakevar | default(omit) }}"
     register: query_tenant
 
-  - name: query assertions
+  - name: Assert OOB Contracts were queried
     ansible.builtin.assert:
       that:
         - query_contract is not changed
@@ -150,36 +150,36 @@
         - '"vzOOBBrCP.json" in query_tenant.url'
 
   # DELETE
-  - name: delete contract - check mode works
+  - name: Delete OOB Contract (check_mode)
     cisco.aci.aci_oob_contract: &aci_oob_contract_absent
       <<: *aci_oob_contract_present
       state: absent
     check_mode: true
     register: absent_check_mode
 
-  - name: delete contract - deletion works
+  - name: Delete OOB Contract
     cisco.aci.aci_oob_contract:
       <<: *aci_oob_contract_absent
     register: contract_absent
 
-  - name: delete contract - idempotency works
+  - name: Delete OOB Contract again
     cisco.aci.aci_oob_contract:
       <<: *aci_oob_contract_absent
     register: absent_idempotent
 
-  - name: delete contract - cleanup second contract
+  - name: Delete other OOB Contract
     cisco.aci.aci_oob_contract:
       <<: *aci_oob_contract_absent
       contract: anstest2
 
-  - name: missing param - fail message works
+  - name: Missing Param contract_name - Failure Test
     cisco.aci.aci_oob_contract:
       <<: *aci_oob_contract_absent
       contract: "{{ fakevar | default(omit) }}"
     ignore_errors: true
     register: absent_missing_param
 
-  - name: absent assertions
+  - name: Assert all OOB Contracts were delete
     ansible.builtin.assert:
       that:
         - absent_check_mode is changed

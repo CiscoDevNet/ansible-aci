@@ -72,6 +72,18 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
+- name: Update a specific contract
+  cisco.aci.aci_oob_contract:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    contract: web_to_db
+    state: present
+    scope: tenant
+    description: Communication between web-servers and database on port 6744
+  delegate_to: localhost
+  register: query_result
+  
 - name: Query a specific contract
   cisco.aci.aci_oob_contract:
     host: apic
@@ -237,14 +249,13 @@ def main():
     scope = module.params.get("scope")
     priority = module.params.get("priority")
     state = module.params.get("state")
-    tenant = "mgmt"  # hard coding tenant to 'mgmt'
     name_alias = module.params.get("name_alias")
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
             aci_class="vzOOBBrCP",
-            aci_rn="tn-{0}/oobbrc-{1}".format(tenant, contract),
+            aci_rn="tn-mgmt/oobbrc-{0}".format(contract),
             module_object=contract,
             target_filter={"name": contract} if contract else None
         )
