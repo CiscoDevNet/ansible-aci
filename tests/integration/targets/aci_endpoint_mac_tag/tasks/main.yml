@@ -1,0 +1,428 @@
+# Test code for the ACI modules
+# Copyright: (c) 2025, Sabari Jaganathan (@sajagana)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: "Please define the following variables: aci_hostname, aci_username and aci_password."
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Ensure ansible_test tenant exists
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    tenant: ansible_test
+    state: present
+
+- name: Ensure ansible_test_bd bridge domain exists
+  cisco.aci.aci_bd:
+    <<: *aci_info
+    tenant: ansible_test
+    bd: ansible_test_bd
+    state: present
+
+- name: Query all existing Endpoint MAC Tags
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    state: query
+  register: query_all_mac_tags
+
+- name: Assertion check for query all existing Endpoint MAC Tags
+  ansible.builtin.assert:
+    that:
+      - query_all_mac_tags is not changed
+
+- name: Clear existing Endpoint MAC Tags from ansible_test tenant
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    tenant: ansible_test
+    endpoint_mac_address: "{{ item.fvEpMacTag.attributes.mac }}"
+    bd: "{{ item.fvEpMacTag.attributes.bdName }}"
+    state: absent
+  when: "{{ item.fvEpMacTag.attributes.dn is match('uni/tn-ansible_test/.+?')  }}"
+  loop: "{{ query_all_mac_tags.current | list }}"
+
+- name: Add MAC Tag Object - 1 with check_mode
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    tenant: ansible_test
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+    bd: ansible_test_bd
+    name: TestObject_1
+    name_alias: TestMacTag
+    state: present
+  check_mode: true
+  register: cm_add_mac_tag_1
+
+- name: Assertion check for add MAC Tag Object - 1 with check_mode
+  ansible.builtin.assert:
+    that:
+      - cm_add_mac_tag_1 is changed
+      - cm_add_mac_tag_1.current == []
+      - cm_add_mac_tag_1.previous == []
+      - cm_add_mac_tag_1.proposed.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
+      - cm_add_mac_tag_1.proposed.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - cm_add_mac_tag_1.proposed.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
+      - cm_add_mac_tag_1.proposed.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
+      - cm_add_mac_tag_1.proposed.fvEpMacTag.attributes.name == "TestObject_1"
+      - cm_add_mac_tag_1.proposed.fvEpMacTag.attributes.nameAlias == "TestMacTag"
+
+- name: Add MAC Tag Object - 1 with normal mode
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    tenant: ansible_test
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+    bd: ansible_test_bd
+    name: TestObject_1
+    name_alias: TestMacTag
+    state: present
+  register: nm_add_mac_tag_1
+
+- name: Assertion check for add MAC Tag Object - 1 with normal mode
+  ansible.builtin.assert:
+    that:
+      - nm_add_mac_tag_1 is changed
+      - nm_add_mac_tag_1.current.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
+      - nm_add_mac_tag_1.current.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - nm_add_mac_tag_1.current.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
+      - nm_add_mac_tag_1.current.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
+      - nm_add_mac_tag_1.current.0.fvEpMacTag.attributes.name == "TestObject_1"
+      - nm_add_mac_tag_1.current.0.fvEpMacTag.attributes.nameAlias == "TestMacTag"
+      - nm_add_mac_tag_1.previous == []
+
+- name: Add MAC Tag Object - 1 with normal mode again
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    tenant: ansible_test
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+    bd: ansible_test_bd
+    name: TestObject_1
+    name_alias: TestMacTag
+    state: present
+  register: nm_add_mac_tag_1_again
+
+- name: Assertion check for add MAC Tag Object - 1 with normal mode again
+  ansible.builtin.assert:
+    that:
+      - nm_add_mac_tag_1_again is not changed
+      - nm_add_mac_tag_1_again.current.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
+      - nm_add_mac_tag_1_again.current.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - nm_add_mac_tag_1_again.current.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
+      - nm_add_mac_tag_1_again.current.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
+      - nm_add_mac_tag_1_again.current.0.fvEpMacTag.attributes.name == "TestObject_1"
+      - nm_add_mac_tag_1_again.current.0.fvEpMacTag.attributes.nameAlias == "TestMacTag"
+      - nm_add_mac_tag_1_again.previous.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
+      - nm_add_mac_tag_1_again.previous.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - nm_add_mac_tag_1_again.previous.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
+      - nm_add_mac_tag_1_again.previous.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
+      - nm_add_mac_tag_1_again.previous.0.fvEpMacTag.attributes.name == "TestObject_1"
+      - nm_add_mac_tag_1_again.previous.0.fvEpMacTag.attributes.nameAlias == "TestMacTag"
+
+- name: Update MAC Tag Object - 1 annotation, name_alias with check_mode
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    tenant: ansible_test
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+    bd: ansible_test_bd
+    name_alias: Updated_TestMacTag
+    annotation: annotation
+    state: present
+  check_mode: true
+  register: cm_update_mac_tag_1
+
+- name: Assertion check for update MAC Tag Object - 1 annotation, name_alias with check_mode
+  ansible.builtin.assert:
+    that:
+      - cm_update_mac_tag_1 is changed
+      - cm_update_mac_tag_1.current.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
+      - cm_update_mac_tag_1.current.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - cm_update_mac_tag_1.current.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
+      - cm_update_mac_tag_1.current.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
+      - cm_update_mac_tag_1.current.0.fvEpMacTag.attributes.name == "TestObject_1"
+      - cm_update_mac_tag_1.current.0.fvEpMacTag.attributes.nameAlias == "TestMacTag"
+      - cm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
+      - cm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - cm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
+      - cm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
+      - cm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.name == "TestObject_1"
+      - cm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.nameAlias == "TestMacTag"
+      - cm_update_mac_tag_1.proposed.fvEpMacTag.attributes.annotation == "annotation"
+      - cm_update_mac_tag_1.proposed.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - cm_update_mac_tag_1.proposed.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
+      - cm_update_mac_tag_1.proposed.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
+      - cm_update_mac_tag_1.proposed.fvEpMacTag.attributes.nameAlias == "Updated_TestMacTag"
+
+- name: Update MAC Tag Object - 1 annotation, name_alias with normal mode
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    tenant: ansible_test
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+    bd: ansible_test_bd
+    name_alias: Updated_TestMacTag
+    annotation: annotation
+    state: present
+  register: nm_update_mac_tag_1
+
+- name: Assertion check for update MAC Tag Object - 1 annotation, name_alias with normal mode
+  ansible.builtin.assert:
+    that:
+      - nm_update_mac_tag_1 is changed
+      - nm_update_mac_tag_1.current.0.fvEpMacTag.attributes.annotation == "annotation"
+      - nm_update_mac_tag_1.current.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - nm_update_mac_tag_1.current.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
+      - nm_update_mac_tag_1.current.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
+      - nm_update_mac_tag_1.current.0.fvEpMacTag.attributes.name == "TestObject_1"
+      - nm_update_mac_tag_1.current.0.fvEpMacTag.attributes.nameAlias == "Updated_TestMacTag"
+      - nm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
+      - nm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - nm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
+      - nm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
+      - nm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.name == "TestObject_1"
+      - nm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.nameAlias == "TestMacTag"
+
+- name: Update MAC Tag Object - 1 annotation, name_alias with normal mode again
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    tenant: ansible_test
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+    bd: ansible_test_bd
+    name_alias: Updated_TestMacTag
+    annotation: annotation
+    state: present
+  register: nm_update_mac_tag_1_again
+
+- name: Assertion check for update MAC Tag Object - 1 annotation, name_alias with normal mode again
+  ansible.builtin.assert:
+    that:
+      - nm_update_mac_tag_1_again is not changed
+      - nm_update_mac_tag_1_again.current.0.fvEpMacTag.attributes.annotation == "annotation"
+      - nm_update_mac_tag_1_again.current.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - nm_update_mac_tag_1_again.current.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
+      - nm_update_mac_tag_1_again.current.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
+      - nm_update_mac_tag_1_again.current.0.fvEpMacTag.attributes.name == "TestObject_1"
+      - nm_update_mac_tag_1_again.current.0.fvEpMacTag.attributes.nameAlias == "Updated_TestMacTag"
+      - nm_update_mac_tag_1_again.previous.0.fvEpMacTag.attributes.annotation == "annotation"
+      - nm_update_mac_tag_1_again.previous.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - nm_update_mac_tag_1_again.previous.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
+      - nm_update_mac_tag_1_again.previous.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
+      - nm_update_mac_tag_1_again.previous.0.fvEpMacTag.attributes.name == "TestObject_1"
+      - nm_update_mac_tag_1_again.previous.0.fvEpMacTag.attributes.nameAlias == "Updated_TestMacTag"
+
+- name: Add MAC Tag Object - 2 with same bd and different mac address
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    tenant: ansible_test
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
+    bd: ansible_test_bd
+    state: present
+  register: add_mac_tag_2
+
+- name: Assertion check for add MAC Tag Object - 2 with same bd and different mac address
+  ansible.builtin.assert:
+    that:
+      - add_mac_tag_2 is changed
+      - add_mac_tag_2.current.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
+      - add_mac_tag_2.current.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - add_mac_tag_2.current.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AB-[ansible_test_bd]"
+      - add_mac_tag_2.current.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AB"
+
+- name: Add MAC Tag Object -3 with same mac address and different bd
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    tenant: ansible_test
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+    bd: default
+    state: present
+  register: add_mac_tag_3
+
+- name: Assertion check for add MAC Tag Object -3 with same mac address and different bd
+  ansible.builtin.assert:
+    that:
+      - add_mac_tag_3 is changed
+      - add_mac_tag_3.current.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
+      - add_mac_tag_3.current.0.fvEpMacTag.attributes.bdName == "default"
+      - add_mac_tag_3.current.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[default]"
+      - add_mac_tag_3.current.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
+
+- name: Query MAC Tag Object with mac and bd
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
+    bd: ansible_test_bd
+    state: query
+  register: query_with_mac_and_bd
+
+- name: Assertion check for query MAC Tag Object with mac and bd
+  ansible.builtin.assert:
+    that:
+      - query_with_mac_and_bd is not changed
+      - query_with_mac_and_bd.current.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
+      - query_with_mac_and_bd.current.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - query_with_mac_and_bd.current.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AB-[ansible_test_bd]"
+      - query_with_mac_and_bd.current.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AB"
+
+- name: Query MAC Tag Object with only bd
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    bd: default
+    state: query
+  register: query_with_bd
+
+- name: Assertion check for query MAC Tag Object with only bd
+  ansible.builtin.assert:
+    that:
+      - query_with_bd is not changed
+      - query_with_bd.current | length >= 1
+
+- name: Query MAC Tag Object with only mac
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+    state: query
+  register: query_with_mac
+
+- name: Assertion check for query MAC Tag Object with only mac
+  ansible.builtin.assert:
+    that:
+      - query_with_mac is not changed
+      - query_with_mac.current | length >= 2
+
+- name: Negative test - query MAC Tag Object with mac and bd
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
+    bd: default
+    state: query
+  register: nt_query_mac_tag
+
+- name: Assertion check for negative test - query MAC Tag Object with mac and bd
+  ansible.builtin.assert:
+    that:
+      - nt_query_mac_tag is not changed
+      - nt_query_mac_tag.current == []
+
+- name: Negative test - remove MAC Tag Object with mac and bd
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    tenant: ansible_test
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
+    bd: default
+    state: absent
+  register: nt_rm_mac_tag
+
+- name: Assertion check for negative test - remove MAC Tag Object with mac and bd
+  ansible.builtin.assert:
+    that:
+      - nt_rm_mac_tag is not changed
+      - nt_rm_mac_tag.current == []
+
+- name: Remove MAC Tag Object with mac and bd - check_mode
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    tenant: ansible_test
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
+    bd: ansible_test_bd
+    state: absent
+  check_mode: true
+  register: cm_rm_with_mac_and_bd
+
+- name: Assertion check for remove MAC Tag Object with mac and bd - check_mode
+  ansible.builtin.assert:
+    that:
+      - cm_rm_with_mac_and_bd is changed
+      - cm_rm_with_mac_and_bd.current.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
+      - cm_rm_with_mac_and_bd.current.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - cm_rm_with_mac_and_bd.current.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AB-[ansible_test_bd]"
+      - cm_rm_with_mac_and_bd.current.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AB"
+      - cm_rm_with_mac_and_bd.previous.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
+      - cm_rm_with_mac_and_bd.previous.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - cm_rm_with_mac_and_bd.previous.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AB-[ansible_test_bd]"
+      - cm_rm_with_mac_and_bd.previous.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AB"
+
+- name: Remove MAC Tag Object with mac and bd - normal mode
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    tenant: ansible_test
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
+    bd: ansible_test_bd
+    state: absent
+  register: nm_rm_with_mac_and_bd
+
+- name: Assertion check for remove MAC Tag Object with mac and bd - normal mode
+  ansible.builtin.assert:
+    that:
+      - nm_rm_with_mac_and_bd is changed
+      - nm_rm_with_mac_and_bd.current == []
+      - nm_rm_with_mac_and_bd.previous.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
+      - nm_rm_with_mac_and_bd.previous.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
+      - nm_rm_with_mac_and_bd.previous.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AB-[ansible_test_bd]"
+      - nm_rm_with_mac_and_bd.previous.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AB"
+
+- name: Remove MAC Tag Object with mac and bd - normal mode again
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    tenant: ansible_test
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
+    bd: ansible_test_bd
+    state: absent
+  register: nm_rm_with_mac_and_bd_again
+
+- name: Assertion check for remove MAC Tag Object with mac and bd - normal mode again
+  ansible.builtin.assert:
+    that:
+      - nm_rm_with_mac_and_bd_again is not changed
+      - nm_rm_with_mac_and_bd_again.current == nm_rm_with_mac_and_bd_again.previous == []
+
+- name: Query all existing Endpoint MAC Tags after the test
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    state: query
+  register: query_all_mac_tags_1
+
+- name: Assertion check for query all existing Endpoint MAC Tags after the test
+  ansible.builtin.assert:
+    that:
+      - query_all_mac_tags_1 is not changed
+      - query_all_mac_tags_1.current | length >= 2
+
+- name: Clear existing Endpoint MAC Tags from ansible_test tenant after the test
+  cisco.aci.aci_endpoint_mac_tag:
+    <<: *aci_info
+    tenant: ansible_test
+    endpoint_mac_address: "{{ item.fvEpMacTag.attributes.mac }}"
+    bd: "{{ item.fvEpMacTag.attributes.bdName }}"
+    state: absent
+  when: "{{ item.fvEpMacTag.attributes.dn is match('uni/tn-ansible_test/.+?')  }}"
+  loop: "{{ query_all_mac_tags_1.current | list }}"
+
+- name: Ensure ansible_test_bd bridge domain not exists
+  cisco.aci.aci_bd:
+    <<: *aci_info
+    tenant: ansible_test
+    bd: ansible_test_bd
+    state: absent
+
+- name: Ensure ansible_test tenant not exists
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    tenant: ansible_test
+    state: absent
