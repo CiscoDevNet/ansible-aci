@@ -236,6 +236,7 @@
     - name: Query IP Tag Object with ip and vrf
       cisco.aci.aci_endpoint_ip_tag:
         <<: *aci_info
+        tenant: ansible_test
         endpoint_ip_address: "2.2.2.2"
         vrf: ansible_test_vrf
         state: query
@@ -264,6 +265,7 @@
     - name: Negative test - query IP Tag Object with ip and vrf
       cisco.aci.aci_endpoint_ip_tag:
         <<: *aci_info
+        tenant: ansible_test
         endpoint_ip_address: "2.2.2.2"
         vrf: default
         state: query

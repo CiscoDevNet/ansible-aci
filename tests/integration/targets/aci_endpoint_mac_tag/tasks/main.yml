@@ -243,6 +243,7 @@
     - name: Query MAC Tag Object with mac and bd
       cisco.aci.aci_endpoint_mac_tag:
         <<: *aci_info
+        tenant: ansible_test
         endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
         bd: ansible_test_bd
         state: query
@@ -265,6 +266,7 @@
     - name: Negative test - query MAC Tag Object with mac and bd
       cisco.aci.aci_endpoint_mac_tag:
         <<: *aci_info
+        tenant: ansible_test
         endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
         bd: default
         state: query
