@@ -29,7 +29,7 @@ options:
     description:
     - The IPv4 or IPv6 address of the Endpoint IP Tag.
     type: str
-    aliases: [ ip_addr ]
+    aliases: [ ip_addr, ip ]
   vrf:
     description:
     - The name of the VRF.
@@ -51,7 +51,12 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 - cisco.aci.owner
 
+notes:
+- The O(tenant) and O(vrf) used must exist before using this module in your playbook.
+- The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_vrf) modules can be used for this.
 seealso:
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_vrf
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(fv:EpIpTag).
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -229,7 +234,7 @@ def main():
     argument_spec.update(
         tenant=dict(type="str"),
         name=dict(type="str"),
-        endpoint_ip_address=dict(type="str", aliases=["ip_addr"]),
+        endpoint_ip_address=dict(type="str", aliases=["ip_addr", "ip"]),
         vrf=dict(type="str", aliases=["vrf_name"]),
         name_alias=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),

@@ -27,392 +27,326 @@
     state: query
   register: version
 
-- name: Ensure ansible_test tenant exists
-  cisco.aci.aci_tenant:
-    <<: *aci_info
-    tenant: ansible_test
-    state: present
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
-- name: Ensure ansible_test_vrf VRF exists
-  cisco.aci.aci_vrf:
-    <<: *aci_info
-    tenant: ansible_test
-    vrf: ansible_test_vrf
-    state: present
+- name: Execute tasks only for ACI v5.2+ and non-cloud sites
+  when:
+    - version.current.0.topSystem.attributes.version is version('5.2', '>=')
+    - query_cloud.current == [] # This condition will execute only non-cloud sites
+  block: # block specifies execution of tasks within, based on conditions
+    # CLEAN TEST ENVIRONMENT
+    - name: Ensure ansible_test tenant not exists
+      cisco.aci.aci_tenant:
+        <<: *aci_info
+        tenant: ansible_test
+        state: absent
 
-- name: Query all existing Endpoint IP Tags
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    state: query
-  register: query_all_ip_tags
+    - name: Ensure ansible_test tenant exists
+      cisco.aci.aci_tenant:
+        <<: *aci_info
+        tenant: ansible_test
+        state: present
 
-- name: Assertion check for query all existing Endpoint IP Tags
-  ansible.builtin.assert:
-    that:
-      - query_all_ip_tags is not changed
+    - name: Ensure ansible_test_vrf VRF exists
+      cisco.aci.aci_vrf:
+        <<: *aci_info
+        tenant: ansible_test
+        vrf: ansible_test_vrf
+        state: present
 
-- name: Clear existing Endpoint IP Tags from ansible_test tenant
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    tenant: ansible_test
-    endpoint_ip_address: "{{ item.fvEpIpTag.attributes.ip }}"
-    vrf: "{{ item.fvEpIpTag.attributes.ctxName }}"
-    state: absent
-  when: "{{ item.fvEpIpTag.attributes.dn is match('uni/tn-ansible_test/.+?')  }}"
-  loop: "{{ query_all_ip_tags.current | list }}"
+    # CREATE
+    - name: Add IP Tag Object - 1 (check_mode)
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        tenant: ansible_test
+        endpoint_ip_address: "1.1.1.1"
+        vrf: ansible_test_vrf
+        name: TestObject_1
+        name_alias: TestIPTag
+        state: present
+        output_level: debug
+      check_mode: true
+      register: cm_add_ip_tag_1
 
-- name: Add IP Tag Object - 1 with check_mode
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    tenant: ansible_test
-    endpoint_ip_address: "1.1.1.1"
-    vrf: ansible_test_vrf
-    name: TestObject_1
-    name_alias: TestIPTag
-    state: present
-    output_level: debug
-  check_mode: true
-  register: cm_add_ip_tag_1
+    - name: Add IP Tag Object - 1
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        tenant: ansible_test
+        endpoint_ip_address: "1.1.1.1"
+        vrf: ansible_test_vrf
+        name: TestObject_1
+        name_alias: TestIPTag
+        state: present
+      register: nm_add_ip_tag_1
 
-- name: Assertion check for add IP Tag Object - 1 with check_mode
-  ansible.builtin.assert:
-    that:
-      - cm_add_ip_tag_1 is changed
-      - cm_add_ip_tag_1.current == []
-      - cm_add_ip_tag_1.previous == []
-      - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
-      - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
-      - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
-      - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.ip == "1.1.1.1"
-      - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.name == "TestObject_1"
-      - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.nameAlias == "TestIPTag"
+    - name: Add IP Tag Object - 1 again
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        tenant: ansible_test
+        endpoint_ip_address: "1.1.1.1"
+        vrf: ansible_test_vrf
+        name: TestObject_1
+        name_alias: TestIPTag
+        state: present
+      register: nm_add_ip_tag_1_again
 
-- name: Add IP Tag Object - 1 with normal mode
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    tenant: ansible_test
-    endpoint_ip_address: "1.1.1.1"
-    vrf: ansible_test_vrf
-    name: TestObject_1
-    name_alias: TestIPTag
-    state: present
-  register: nm_add_ip_tag_1
+    - name: Assertion check for add IP Tag Object
+      ansible.builtin.assert:
+        that:
+          - cm_add_ip_tag_1 is changed
+          - cm_add_ip_tag_1.current == []
+          - cm_add_ip_tag_1.previous == []
+          - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
+          - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
+          - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
+          - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.ip == "1.1.1.1"
+          - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.name == "TestObject_1"
+          - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.nameAlias == "TestIPTag"
+          - nm_add_ip_tag_1 is changed
+          - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
+          - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
+          - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
+          - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.ip == "1.1.1.1"
+          - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.name == "TestObject_1"
+          - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
+          - nm_add_ip_tag_1.previous == []
+          - nm_add_ip_tag_1_again is not changed
+          - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
+          - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
+          - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
+          - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.ip == "1.1.1.1"
+          - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.name == "TestObject_1"
+          - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
+          - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
+          - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
+          - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
+          - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.ip == "1.1.1.1"
+          - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.name == "TestObject_1"
+          - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
 
-- name: Assertion check for add IP Tag Object - 1 with normal mode
-  ansible.builtin.assert:
-    that:
-      - nm_add_ip_tag_1 is changed
-      - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
-      - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
-      - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
-      - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.ip == "1.1.1.1"
-      - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.name == "TestObject_1"
-      - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
-      - nm_add_ip_tag_1.previous == []
+    - name: Add IP Tag Object - 2 with same vrf and different ip address
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        tenant: ansible_test
+        endpoint_ip_address: "2.2.2.2"
+        vrf: ansible_test_vrf
+        state: present
+      register: add_ip_tag_2
 
-- name: Add IP Tag Object - 1 with normal mode again
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    tenant: ansible_test
-    endpoint_ip_address: "1.1.1.1"
-    vrf: ansible_test_vrf
-    name: TestObject_1
-    name_alias: TestIPTag
-    state: present
-  register: nm_add_ip_tag_1_again
+    - name: Add IP Tag Object -3 with same ip address and different vrf
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        tenant: ansible_test
+        endpoint_ip_address: "1.1.1.1"
+        vrf: default
+        state: present
+      register: add_ip_tag_3
 
-- name: Assertion check for add IP Tag Object - 1 with normal mode again
-  ansible.builtin.assert:
-    that:
-      - nm_add_ip_tag_1_again is not changed
-      - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
-      - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
-      - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
-      - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.ip == "1.1.1.1"
-      - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.name == "TestObject_1"
-      - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
-      - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
-      - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
-      - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
-      - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.ip == "1.1.1.1"
-      - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.name == "TestObject_1"
-      - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
+    - name: Assertion check for add IP Tag Objects with different combinations
+      ansible.builtin.assert:
+        that:
+          - add_ip_tag_2 is changed
+          - add_ip_tag_2.current.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
+          - add_ip_tag_2.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
+          - add_ip_tag_2.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[2.2.2.2]-ansible_test_vrf"
+          - add_ip_tag_2.current.0.fvEpIpTag.attributes.ip == "2.2.2.2"
+          - add_ip_tag_2.previous == []
+          - add_ip_tag_3 is changed
+          - add_ip_tag_3.current.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
+          - add_ip_tag_3.current.0.fvEpIpTag.attributes.ctxName == "default"
+          - add_ip_tag_3.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-default"
+          - add_ip_tag_3.current.0.fvEpIpTag.attributes.ip == "1.1.1.1"
+          - add_ip_tag_3.previous == []
 
-- name: Update IP Tag Object - 1 annotation, name_alias with check_mode
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    tenant: ansible_test
-    endpoint_ip_address: "1.1.1.1"
-    vrf: ansible_test_vrf
-    name_alias: Updated_TestIPTag
-    annotation: annotation
-    state: present
-    output_level: debug
-  check_mode: true
-  register: cm_update_ip_tag_1
+    # UPDATE
+    - name: Update IP Tag Object - 1 annotation, name_alias (check_mode)
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        tenant: ansible_test
+        endpoint_ip_address: "1.1.1.1"
+        vrf: ansible_test_vrf
+        name_alias: Updated_TestIPTag
+        annotation: annotation
+        state: present
+        output_level: debug
+      check_mode: true
+      register: cm_update_ip_tag_1
 
-- name: Assertion check for update IP Tag Object - 1 annotation, name_alias with check_mode
-  ansible.builtin.assert:
-    that:
-      - cm_update_ip_tag_1 is changed
-      - cm_update_ip_tag_1.current.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
-      - cm_update_ip_tag_1.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
-      - cm_update_ip_tag_1.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
-      - cm_update_ip_tag_1.current.0.fvEpIpTag.attributes.ip == "1.1.1.1"
-      - cm_update_ip_tag_1.current.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
-      - cm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
-      - cm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
-      - cm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
-      - cm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.ip == "1.1.1.1"
-      - cm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
+    - name: Update IP Tag Object - 1 annotation, name_alias
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        tenant: ansible_test
+        endpoint_ip_address: "1.1.1.1"
+        vrf: ansible_test_vrf
+        name_alias: Updated_TestIPTag
+        annotation: annotation
+        state: present
+      register: nm_update_ip_tag_1
 
-- name: Update IP Tag Object - 1 annotation, name_alias with normal mode
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    tenant: ansible_test
-    endpoint_ip_address: "1.1.1.1"
-    vrf: ansible_test_vrf
-    name_alias: Updated_TestIPTag
-    annotation: annotation
-    state: present
-  register: nm_update_ip_tag_1
+    - name: Update IP Tag Object - 1 annotation, name_alias again
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        tenant: ansible_test
+        endpoint_ip_address: "1.1.1.1"
+        vrf: ansible_test_vrf
+        name_alias: Updated_TestIPTag
+        annotation: annotation
+        state: present
+      register: nm_update_ip_tag_1_again
 
-- name: Assertion check for update IP Tag Object - 1 annotation, name_alias with normal mode
-  ansible.builtin.assert:
-    that:
-      - nm_update_ip_tag_1 is changed
-      - nm_update_ip_tag_1.current.0.fvEpIpTag.attributes.annotation == "annotation"
-      - nm_update_ip_tag_1.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
-      - nm_update_ip_tag_1.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
-      - nm_update_ip_tag_1.current.0.fvEpIpTag.attributes.ip == "1.1.1.1"
-      - nm_update_ip_tag_1.current.0.fvEpIpTag.attributes.nameAlias == "Updated_TestIPTag"
-      - nm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
-      - nm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
-      - nm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
-      - nm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.ip == "1.1.1.1"
-      - nm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
+    - name: Assertion check for update IP Tag Object - 1 annotation, name_alias
+      ansible.builtin.assert:
+        that:
+          - cm_update_ip_tag_1 is changed
+          - cm_update_ip_tag_1.current.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
+          - cm_update_ip_tag_1.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
+          - cm_update_ip_tag_1.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
+          - cm_update_ip_tag_1.current.0.fvEpIpTag.attributes.ip == "1.1.1.1"
+          - cm_update_ip_tag_1.current.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
+          - cm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
+          - cm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
+          - cm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
+          - cm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.ip == "1.1.1.1"
+          - cm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
+          - nm_update_ip_tag_1 is changed
+          - nm_update_ip_tag_1.current.0.fvEpIpTag.attributes.annotation == "annotation"
+          - nm_update_ip_tag_1.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
+          - nm_update_ip_tag_1.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
+          - nm_update_ip_tag_1.current.0.fvEpIpTag.attributes.ip == "1.1.1.1"
+          - nm_update_ip_tag_1.current.0.fvEpIpTag.attributes.nameAlias == "Updated_TestIPTag"
+          - nm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
+          - nm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
+          - nm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
+          - nm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.ip == "1.1.1.1"
+          - nm_update_ip_tag_1.previous.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
+          - nm_update_ip_tag_1_again is not changed
+          - nm_update_ip_tag_1_again.current.0.fvEpIpTag.attributes.annotation == "annotation"
+          - nm_update_ip_tag_1_again.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
+          - nm_update_ip_tag_1_again.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
+          - nm_update_ip_tag_1_again.current.0.fvEpIpTag.attributes.ip == "1.1.1.1"
+          - nm_update_ip_tag_1_again.current.0.fvEpIpTag.attributes.nameAlias == "Updated_TestIPTag"
+          - nm_update_ip_tag_1_again.previous.0.fvEpIpTag.attributes.annotation == "annotation"
+          - nm_update_ip_tag_1_again.previous.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
+          - nm_update_ip_tag_1_again.previous.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
+          - nm_update_ip_tag_1_again.previous.0.fvEpIpTag.attributes.ip == "1.1.1.1"
+          - nm_update_ip_tag_1_again.previous.0.fvEpIpTag.attributes.nameAlias == "Updated_TestIPTag"
 
-- name: Update IP Tag Object - 1 annotation, name_alias with normal mode again
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    tenant: ansible_test
-    endpoint_ip_address: "1.1.1.1"
-    vrf: ansible_test_vrf
-    name_alias: Updated_TestIPTag
-    annotation: annotation
-    state: present
-  register: nm_update_ip_tag_1_again
+    # QUERY
+    - name: Query IP Tag Object with ip and vrf
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        endpoint_ip_address: "2.2.2.2"
+        vrf: ansible_test_vrf
+        state: query
+      register: query_with_ip_and_vrf
 
-- name: Assertion check for update IP Tag Object - 1 annotation, name_alias with normal mode again
-  ansible.builtin.assert:
-    that:
-      - nm_update_ip_tag_1_again is not changed
-      - nm_update_ip_tag_1_again.current.0.fvEpIpTag.attributes.annotation == "annotation"
-      - nm_update_ip_tag_1_again.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
-      - nm_update_ip_tag_1_again.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
-      - nm_update_ip_tag_1_again.current.0.fvEpIpTag.attributes.ip == "1.1.1.1"
-      - nm_update_ip_tag_1_again.current.0.fvEpIpTag.attributes.nameAlias == "Updated_TestIPTag"
-      - nm_update_ip_tag_1_again.previous.0.fvEpIpTag.attributes.annotation == "annotation"
-      - nm_update_ip_tag_1_again.previous.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
-      - nm_update_ip_tag_1_again.previous.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
-      - nm_update_ip_tag_1_again.previous.0.fvEpIpTag.attributes.ip == "1.1.1.1"
-      - nm_update_ip_tag_1_again.previous.0.fvEpIpTag.attributes.nameAlias == "Updated_TestIPTag"
+    - name: Query IP Tag Object with only vrf
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        vrf: default
+        state: query
+      register: query_with_vrf
 
-- name: Add IP Tag Object - 2 with same vrf and different ip address
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    tenant: ansible_test
-    endpoint_ip_address: "2.2.2.2"
-    vrf: ansible_test_vrf
-    state: present
-  register: add_ip_tag_2
+    - name: Query IP Tag Object with only ip
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        endpoint_ip_address: "1.1.1.1"
+        state: query
+      register: query_with_ip
 
-- name: Assertion check for add IP Tag Object - 2 with same vrf and different ip address
-  ansible.builtin.assert:
-    that:
-      - add_ip_tag_2 is changed
-      - add_ip_tag_2.current.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
-      - add_ip_tag_2.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
-      - add_ip_tag_2.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[2.2.2.2]-ansible_test_vrf"
-      - add_ip_tag_2.current.0.fvEpIpTag.attributes.ip == "2.2.2.2"
-      - add_ip_tag_2.previous == []
+    - name: Query all existing Endpoint IP Tags after the test
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        state: query
+      register: query_all_ip_tags_1
 
-- name: Add IP Tag Object -3 with same ip address and different vrf
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    tenant: ansible_test
-    endpoint_ip_address: "1.1.1.1"
-    vrf: default
-    state: present
-  register: add_ip_tag_3
+    - name: Negative test - query IP Tag Object with ip and vrf
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        endpoint_ip_address: "2.2.2.2"
+        vrf: default
+        state: query
+      register: nt_query_ip_tag
 
-- name: Assertion check for add IP Tag Object -3 with same ip address and different vrf
-  ansible.builtin.assert:
-    that:
-      - add_ip_tag_3 is changed
-      - add_ip_tag_3.current.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
-      - add_ip_tag_3.current.0.fvEpIpTag.attributes.ctxName == "default"
-      - add_ip_tag_3.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-default"
-      - add_ip_tag_3.current.0.fvEpIpTag.attributes.ip == "1.1.1.1"
-      - add_ip_tag_3.previous == []
+    - name: Assertion check for query an Endpoint IP Tag Objects
+      ansible.builtin.assert:
+        that:
+          - query_with_ip_and_vrf is not changed
+          - query_with_ip_and_vrf.current.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
+          - query_with_ip_and_vrf.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
+          - query_with_ip_and_vrf.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[2.2.2.2]-ansible_test_vrf"
+          - query_with_ip_and_vrf.current.0.fvEpIpTag.attributes.ip == "2.2.2.2"
+          - query_with_vrf is not changed
+          - query_with_vrf.current | length >= 1
+          - query_with_ip is not changed
+          - query_with_ip.current | length >= 2
+          - query_all_ip_tags_1 is not changed
+          - query_all_ip_tags_1.current != []
+          - query_all_ip_tags_1.current | length >= 3
+          - nt_query_ip_tag is not changed
+          - nt_query_ip_tag.current == []
 
-- name: Query IP Tag Object with ip and vrf
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    endpoint_ip_address: "2.2.2.2"
-    vrf: ansible_test_vrf
-    state: query
-  register: query_with_ip_and_vrf
+    # DELETE
+    - name: Remove IP Tag Object with ip and vrf (check_mode)
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        tenant: ansible_test
+        endpoint_ip_address: "2.2.2.2"
+        vrf: ansible_test_vrf
+        state: absent
+      check_mode: true
+      register: cm_rm_with_ip_and_vrf
 
-- name: Assertion check for query IP Tag Object with ip and vrf
-  ansible.builtin.assert:
-    that:
-      - query_with_ip_and_vrf is not changed
-      - query_with_ip_and_vrf.current.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
-      - query_with_ip_and_vrf.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
-      - query_with_ip_and_vrf.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[2.2.2.2]-ansible_test_vrf"
-      - query_with_ip_and_vrf.current.0.fvEpIpTag.attributes.ip == "2.2.2.2"
+    - name: Remove IP Tag Object with ip and vrf
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        tenant: ansible_test
+        endpoint_ip_address: "2.2.2.2"
+        vrf: ansible_test_vrf
+        state: absent
+      register: nm_rm_with_ip_and_vrf
 
-- name: Query IP Tag Object with only vrf
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    vrf: default
-    state: query
-  register: query_with_vrf
+    - name: Remove IP Tag Object with ip and vrf again
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        tenant: ansible_test
+        endpoint_ip_address: "2.2.2.2"
+        vrf: ansible_test_vrf
+        state: absent
+      register: nm_rm_with_ip_and_vrf_again
 
-- name: Assertion check for query IP Tag Object with only vrf
-  ansible.builtin.assert:
-    that:
-      - query_with_vrf is not changed
-      - query_with_vrf.current | length >= 1
+    - name: Negative test - remove IP Tag Object with ip and vrf
+      cisco.aci.aci_endpoint_ip_tag:
+        <<: *aci_info
+        tenant: ansible_test
+        endpoint_ip_address: "2.2.2.2"
+        vrf: default
+        state: absent
+      register: nt_rm_ip_tag
 
-- name: Query IP Tag Object with only ip
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    endpoint_ip_address: "1.1.1.1"
-    state: query
-  register: query_with_ip
+    - name: Assertion check for remove an Endpoint IP Tag Object
+      ansible.builtin.assert:
+        that:
+          - cm_rm_with_ip_and_vrf is changed
+          - cm_rm_with_ip_and_vrf.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[2.2.2.2]-ansible_test_vrf"
+          - cm_rm_with_ip_and_vrf.previous.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[2.2.2.2]-ansible_test_vrf"
+          - nm_rm_with_ip_and_vrf is changed
+          - nm_rm_with_ip_and_vrf.previous.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
+          - nm_rm_with_ip_and_vrf.previous.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
+          - nm_rm_with_ip_and_vrf.previous.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[2.2.2.2]-ansible_test_vrf"
+          - nm_rm_with_ip_and_vrf.previous.0.fvEpIpTag.attributes.ip == "2.2.2.2"
+          - nm_rm_with_ip_and_vrf.previous.0.fvEpIpTag.attributes.name == ""
+          - nm_rm_with_ip_and_vrf.previous.0.fvEpIpTag.attributes.nameAlias == ""
+          - nm_rm_with_ip_and_vrf_again is not changed
+          - nm_rm_with_ip_and_vrf_again.current == []
+          - nm_rm_with_ip_and_vrf_again.previous == []
+          - nt_rm_ip_tag is not changed
+          - nt_rm_ip_tag.current == []
 
-- name: Assertion check for query IP Tag Object with only ip
-  ansible.builtin.assert:
-    that:
-      - query_with_ip is not changed
-      - query_with_ip.current | length >= 2
-
-- name: Negative test - query IP Tag Object with ip and vrf
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    endpoint_ip_address: "2.2.2.2"
-    vrf: default
-    state: query
-  register: nt_query_ip_tag
-
-- name: Assertion check for negative test - query IP Tag Object with ip and vrf
-  ansible.builtin.assert:
-    that:
-      - nt_query_ip_tag is not changed
-      - nt_query_ip_tag.current == []
-
-- name: Negative test - remove IP Tag Object with ip and vrf
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    tenant: ansible_test
-    endpoint_ip_address: "2.2.2.2"
-    vrf: default
-    state: absent
-  register: nt_rm_ip_tag
-
-- name: Assertion check for negative test - remove IP Tag Object with ip and vrf
-  ansible.builtin.assert:
-    that:
-      - nt_rm_ip_tag is not changed
-      - nt_rm_ip_tag.current == []
-
-- name: Remove IP Tag Object with ip and vrf - check_mode
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    tenant: ansible_test
-    endpoint_ip_address: "2.2.2.2"
-    vrf: ansible_test_vrf
-    state: absent
-  check_mode: true
-  register: cm_rm_with_ip_and_vrf
-
-- name: Assertion check for remove IP Tag Object with ip and vrf - check_mode
-  ansible.builtin.assert:
-    that:
-      - cm_rm_with_ip_and_vrf is changed
-      - cm_rm_with_ip_and_vrf.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[2.2.2.2]-ansible_test_vrf"
-      - cm_rm_with_ip_and_vrf.previous.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[2.2.2.2]-ansible_test_vrf"
-
-- name: Remove IP Tag Object with ip and vrf - normal mode
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    tenant: ansible_test
-    endpoint_ip_address: "2.2.2.2"
-    vrf: ansible_test_vrf
-    state: absent
-  register: nm_rm_with_ip_and_vrf
-
-- name: Assertion check for remove IP Tag Object with ip and vrf - normal mode
-  ansible.builtin.assert:
-    that:
-      - nm_rm_with_ip_and_vrf is changed
-      - nm_rm_with_ip_and_vrf.previous.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
-      - nm_rm_with_ip_and_vrf.previous.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
-      - nm_rm_with_ip_and_vrf.previous.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[2.2.2.2]-ansible_test_vrf"
-      - nm_rm_with_ip_and_vrf.previous.0.fvEpIpTag.attributes.ip == "2.2.2.2"
-      - nm_rm_with_ip_and_vrf.previous.0.fvEpIpTag.attributes.name == ""
-      - nm_rm_with_ip_and_vrf.previous.0.fvEpIpTag.attributes.nameAlias == ""
-
-- name: Remove IP Tag Object with ip and vrf - normal mode again
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    tenant: ansible_test
-    endpoint_ip_address: "2.2.2.2"
-    vrf: ansible_test_vrf
-    state: absent
-  register: nm_rm_with_ip_and_vrf_again
-
-- name: Assertion check for remove IP Tag Object with ip and vrf - normal mode again
-  ansible.builtin.assert:
-    that:
-      - nm_rm_with_ip_and_vrf_again is not changed
-      - nm_rm_with_ip_and_vrf_again.current == []
-      - nm_rm_with_ip_and_vrf_again.previous == []
-
-- name: Query all existing Endpoint IP Tags after the test
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    state: query
-  register: query_all_ip_tags_1
-
-- name: Assertion check for query all existing Endpoint IP Tags after the test
-  ansible.builtin.assert:
-    that:
-      - query_all_ip_tags_1 is not changed
-      - query_all_ip_tags_1.current != []
-      - query_all_ip_tags_1.current | length >= 2
-
-- name: Clear existing Endpoint IP Tags from ansible_test tenant after the test
-  cisco.aci.aci_endpoint_ip_tag:
-    <<: *aci_info
-    tenant: ansible_test
-    endpoint_ip_address: "{{ item.fvEpIpTag.attributes.ip }}"
-    vrf: "{{ item.fvEpIpTag.attributes.ctxName }}"
-    state: absent
-  when: "{{ item.fvEpIpTag.attributes.dn is match('uni/tn-ansible_test/.+?')  }}"
-  loop: "{{ query_all_ip_tags_1.current | list }}"
-
-- name: Ensure ansible_test_vrf VRF not exists
-  cisco.aci.aci_vrf:
-    <<: *aci_info
-    tenant: ansible_test
-    vrf: ansible_test_vrf
-    state: absent
-
-- name: Ensure ansible_test tenant not exists
-  cisco.aci.aci_tenant:
-    <<: *aci_info
-    tenant: ansible_test
-    state: absent
+    # CLEAN ENVIRONMENT
+    - name: Ensure ansible_test tenant not exists
+      cisco.aci.aci_tenant:
+        <<: *aci_info
+        tenant: ansible_test
+        state: absent
