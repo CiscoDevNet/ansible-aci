@@ -29,7 +29,7 @@ options:
     description:
     - The MAC address of the Endpoint MAC Tag.
     type: str
-    aliases: [ mac_addr ]
+    aliases: [ mac_addr, mac ]
   bd:
     description:
     - The name of the Bridge Domain.
@@ -51,9 +51,14 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 - cisco.aci.owner
 
+notes:
+- The C(tenant) and C(bd) used must exist before using this module in your playbook.
+- The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_bd) modules can be used for this.
 seealso:
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_bd
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(fabric:LePortPGrp, fabric:SpPortPGrp).
+  description: More information about the internal APIC class B(fv:EpMacTag).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Sabari Jaganathan (@sajagana)
@@ -240,7 +245,7 @@ def main():
     argument_spec.update(
         tenant=dict(type="str"),
         name=dict(type="str"),
-        endpoint_mac_address=dict(type="str", aliases=["mac_addr"]),
+        endpoint_mac_address=dict(type="str", aliases=["mac_addr", "mac"]),
         bd=dict(type="str", aliases=["bd_name"]),
         name_alias=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -250,8 +255,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["bd", "endpoint_mac_address"]],
-            ["state", "present", ["bd", "endpoint_mac_address"]],
+            ["state", "absent", ["tenant", "bd", "endpoint_mac_address"]],
+            ["state", "present", ["tenant", "bd", "endpoint_mac_address"]],
         ],
     )
 
