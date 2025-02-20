@@ -110,6 +110,24 @@ EXAMPLES = r"""
     state: query
   register: query_one
 
+- name: Query all MAC Tag Objects with only BD
+  cisco.aci.aci_endpoint_mac_tag:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    bd: default
+    state: query
+  register: query_with_bd
+
+- name: Query all MAC Tag Objects with only MAC
+  cisco.aci.aci_endpoint_mac_tag:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+    state: query
+  register: query_with_mac
+
 - name: Query all MAC Tags
   cisco.aci.aci_endpoint_mac_tag:
     host: apic
@@ -272,18 +290,23 @@ def main():
 
     aci = ACIModule(module)
 
+    endpoint_mac_tag_rn = None
+    endpoint_mac_tag_module_object = None
+    if endpoint_mac_address and bd:
+        endpoint_mac_tag_rn = "eptags/epmactag-{0}-[{1}]".format(endpoint_mac_address, bd)
+        endpoint_mac_tag_module_object = "{0}-[{1}]".format(endpoint_mac_address, bd)
+
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
             aci_rn="tn-{0}".format(tenant),
+            module_object=tenant,
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="fvEpTags",
-            aci_rn="eptags",
-        ),
-        subclass_2=dict(
             aci_class="fvEpMacTag",
-            aci_rn="epmactag-{0}-[{1}]".format(endpoint_mac_address, bd),
+            aci_rn=endpoint_mac_tag_rn,
+            module_object=endpoint_mac_tag_module_object,
             target_filter=dict(mac=endpoint_mac_address, bdName=bd),
         ),
     )
