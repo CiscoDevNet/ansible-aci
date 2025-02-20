@@ -94,10 +94,29 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
+    tenant: endpoint_tenant
     endpoint_ip_address: "1.1.1.1"
     vrf: endpoint_vrf
     state: query
   register: query_one
+
+- name: Query all IP Tag Objects with only VRF
+  cisco.aci.aci_endpoint_ip_tag:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    vrf: default
+    state: query
+  register: query_with_vrf
+
+- name: Query all IP Tag Objects with only IP
+  cisco.aci.aci_endpoint_ip_tag:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    endpoint_ip_address: "1.1.1.1"
+    state: query
+  register: query_with_ip
 
 - name: Query all IP Tags
   cisco.aci.aci_endpoint_ip_tag:
@@ -261,22 +280,26 @@ def main():
 
     aci = ACIModule(module)
 
+    endpoint_ip_tag_rn = None
+    endpoint_ip_tag_module_object = None
+    if endpoint_ip_address and vrf:
+        endpoint_ip_tag_rn = "eptags/epiptag-[{0}]-{1}".format(endpoint_ip_address, vrf)
+        endpoint_ip_tag_module_object = "[{0}]-{1}".format(endpoint_ip_address, vrf)
+
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
             aci_rn="tn-{0}".format(tenant),
+            module_object=tenant,
+            target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="fvEpTags",
-            aci_rn="eptags",
-        ),
-        subclass_2=dict(
             aci_class="fvEpIpTag",
-            aci_rn="epiptag-[{0}]-{1}".format(endpoint_ip_address, vrf),
+            aci_rn=endpoint_ip_tag_rn,
+            module_object=endpoint_ip_tag_module_object,
             target_filter=dict(ip=endpoint_ip_address, ctxName=vrf),
         ),
     )
-
     aci.get_existing()
 
     if state == "present":
