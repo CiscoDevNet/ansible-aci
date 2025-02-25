@@ -71,7 +71,7 @@ author:
 
 EXAMPLES = r"""
 - name: Add an IP subnet selector
-  cisco.aci.aci_esg_tag_selector:
+  cisco.aci.aci_esg_ip_subnet_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -83,8 +83,20 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
+- name: Query one IP subnet selector
+  cisco.aci.aci_esg_ip_subnet_selector:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: production
+    ap: production_ap
+    esg: web_esg
+    ip: "10.0.0.0"
+    state: query
+  delegate_to: localhost
+
 - name: Query all IP subnet selector
-  cisco.aci.aci_esg_tag_selector:
+  cisco.aci.aci_esg_ip_subnet_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -92,7 +104,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Remove an IP subnet selector
-  cisco.aci.aci_esg_tag_selector:
+  cisco.aci.aci_esg_ip_subnet_selector:
     host: apic
     username: admin
     password: SomeSecretPassword
