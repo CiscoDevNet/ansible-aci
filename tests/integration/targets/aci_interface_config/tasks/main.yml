@@ -194,7 +194,8 @@
         interface_type: pc_or_vpc
         policy_group: ans_test_pc_or_vpc
         node: 502
-        interface: "2/2/2"
+        interface: "2/2"
+        pc_member: ans_test_pc_member_policy
         description: "Interface - 502 added by Ansible"
         state: absent
       register: interface_502_absent
@@ -224,11 +225,12 @@
           - nm_interface_502_present.current.0.infraPortConfig.attributes.brkoutMap == "none"
           - nm_interface_502_present.current.0.infraPortConfig.attributes.card == "2"
           - nm_interface_502_present.current.0.infraPortConfig.attributes.description == "Interface - 502 added by Ansible"
-          - nm_interface_502_present.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-502-card-2-port-2-sub-2"
+          - nm_interface_502_present.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-502-card-2-port-2-sub-0"
           - nm_interface_502_present.current.0.infraPortConfig.attributes.node == "502"
           - nm_interface_502_present.current.0.infraPortConfig.attributes.port == "2"
           - nm_interface_502_present.current.0.infraPortConfig.attributes.role == "leaf"
           - nm_interface_502_present.current.0.infraPortConfig.attributes.shutdown == "no"
+          - nm_interface_502_present.current.0.infraPortConfig.attributes.pcMember == "ans_test_pc_member_policy"
 
     - name: Ensure Interface 505 with leaf access with policy_group - fc absent
       cisco.aci.aci_interface_config: &interface_505_absent
@@ -557,7 +559,7 @@
           - query_access_interface_502.current|length == 1
           - query_access_interface_502.current.0.infraPortConfig.attributes.brkoutMap == "none"
           - query_access_interface_502.current.0.infraPortConfig.attributes.description == "Interface - 502 added by Ansible"
-          - query_access_interface_502.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-502-card-2-port-2-sub-2"
+          - query_access_interface_502.current.0.infraPortConfig.attributes.dn == "uni/infra/portconfnode-502-card-2-port-2-sub-0"
           - query_access_interface_502.current.0.infraPortConfig.attributes.role == "leaf"
           - query_access_interface_502.current.0.infraPortConfig.attributes.shutdown == "no"
 
