@@ -43,7 +43,7 @@ options:
     aliases: [ node_id ]
   pc_member:
     description:
-    - The name of the Port Channel Member.
+    - The name of the Port Channel Member Policy (lacp:IfPol).
     type: str
     aliases: [ port_channel_member ]
   port_type:
@@ -106,10 +106,11 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     role: leaf
     port_type: access
-    interface_type: port_channel
+    interface_type: pc_or_vpc
     policy_group: ans_test_port_channel
+    pc_member: ans_test_pc_member_policy
     node: 502
-    interface: "2/2/2"
+    interface: "2/2"
     state: present
   delegate_to: localhost
 
