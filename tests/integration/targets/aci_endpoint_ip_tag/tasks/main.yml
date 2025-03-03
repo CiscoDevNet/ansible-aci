@@ -286,6 +286,9 @@
           - query_all_ip_tags_1 is not changed
           - query_all_ip_tags_1.current != []
           - query_all_ip_tags_1.current | length >= 3
+          - "'uni/tn-ansible_test/eptags/epiptag-[2.2.2.2]-ansible_test_vrf' in query_all_ip_tags_1.current | map(attribute='fvEpIpTag.attributes.dn') | list"
+          - "'uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf' in query_all_ip_tags_1.current | map(attribute='fvEpIpTag.attributes.dn') | list"
+          - "'uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-default' in query_all_ip_tags_1.current | map(attribute='fvEpIpTag.attributes.dn') | list"
           - nt_query_ip_tag is not changed
           - nt_query_ip_tag.current == []
 

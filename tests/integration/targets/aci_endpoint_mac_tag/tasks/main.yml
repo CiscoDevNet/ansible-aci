@@ -294,6 +294,9 @@
           - nt_query_mac_tag.current == []
           - query_all_mac_tags_1 is not changed
           - query_all_mac_tags_1.current | length >= 3
+          - "'uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AB-[ansible_test_bd]' in query_all_mac_tags_1.current | map(attribute='fvEpMacTag.attributes.dn') | list"
+          - "'uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]' in query_all_mac_tags_1.current | map(attribute='fvEpMacTag.attributes.dn') | list"
+          - "'uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[default]' in query_all_mac_tags_1.current | map(attribute='fvEpMacTag.attributes.dn') | list"
 
     # DELETE
     - name: Remove MAC Tag Object with mac and bd - check_mode
