@@ -62,7 +62,6 @@
         tenant: ansible_test
         endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
         bd: ansible_test_bd
-        name: TestObject_1
         name_alias: TestMacTag
         state: present
       check_mode: true
@@ -74,7 +73,6 @@
         tenant: ansible_test
         endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
         bd: ansible_test_bd
-        name: TestObject_1
         name_alias: TestMacTag
         state: present
       register: nm_add_mac_tag_1
@@ -85,7 +83,6 @@
         tenant: ansible_test
         endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
         bd: ansible_test_bd
-        name: TestObject_1
         name_alias: TestMacTag
         state: present
       register: nm_add_mac_tag_1_again
@@ -100,14 +97,13 @@
           - cm_add_mac_tag_1.proposed.fvEpMacTag.attributes.bdName == "ansible_test_bd"
           - cm_add_mac_tag_1.proposed.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
           - cm_add_mac_tag_1.proposed.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
-          - cm_add_mac_tag_1.proposed.fvEpMacTag.attributes.name == "TestObject_1"
           - cm_add_mac_tag_1.proposed.fvEpMacTag.attributes.nameAlias == "TestMacTag"
           - nm_add_mac_tag_1 is changed
           - nm_add_mac_tag_1.current.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
           - nm_add_mac_tag_1.current.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
           - nm_add_mac_tag_1.current.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
           - nm_add_mac_tag_1.current.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
-          - nm_add_mac_tag_1.current.0.fvEpMacTag.attributes.name == "TestObject_1"
+          - nm_add_mac_tag_1.current.0.fvEpMacTag.attributes.name == ""
           - nm_add_mac_tag_1.current.0.fvEpMacTag.attributes.nameAlias == "TestMacTag"
           - nm_add_mac_tag_1.previous == []
           - nm_add_mac_tag_1_again is not changed
@@ -115,13 +111,13 @@
           - nm_add_mac_tag_1_again.current.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
           - nm_add_mac_tag_1_again.current.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
           - nm_add_mac_tag_1_again.current.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
-          - nm_add_mac_tag_1_again.current.0.fvEpMacTag.attributes.name == "TestObject_1"
+          - nm_add_mac_tag_1_again.current.0.fvEpMacTag.attributes.name == ""
           - nm_add_mac_tag_1_again.current.0.fvEpMacTag.attributes.nameAlias == "TestMacTag"
           - nm_add_mac_tag_1_again.previous.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
           - nm_add_mac_tag_1_again.previous.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
           - nm_add_mac_tag_1_again.previous.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
           - nm_add_mac_tag_1_again.previous.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
-          - nm_add_mac_tag_1_again.previous.0.fvEpMacTag.attributes.name == "TestObject_1"
+          - nm_add_mac_tag_1_again.previous.0.fvEpMacTag.attributes.name == ""
           - nm_add_mac_tag_1_again.previous.0.fvEpMacTag.attributes.nameAlias == "TestMacTag"
 
     - name: Add MAC Tag Object - 2 with same bd and different mac address
@@ -199,13 +195,13 @@
           - cm_update_mac_tag_1.current.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
           - cm_update_mac_tag_1.current.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
           - cm_update_mac_tag_1.current.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
-          - cm_update_mac_tag_1.current.0.fvEpMacTag.attributes.name == "TestObject_1"
+          - cm_update_mac_tag_1.current.0.fvEpMacTag.attributes.name == ""
           - cm_update_mac_tag_1.current.0.fvEpMacTag.attributes.nameAlias == "TestMacTag"
           - cm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
           - cm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
           - cm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
           - cm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
-          - cm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.name == "TestObject_1"
+          - cm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.name == ""
           - cm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.nameAlias == "TestMacTag"
           - cm_update_mac_tag_1.proposed.fvEpMacTag.attributes.annotation == "annotation"
           - cm_update_mac_tag_1.proposed.fvEpMacTag.attributes.bdName == "ansible_test_bd"
@@ -217,26 +213,26 @@
           - nm_update_mac_tag_1.current.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
           - nm_update_mac_tag_1.current.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
           - nm_update_mac_tag_1.current.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
-          - nm_update_mac_tag_1.current.0.fvEpMacTag.attributes.name == "TestObject_1"
+          - nm_update_mac_tag_1.current.0.fvEpMacTag.attributes.name == ""
           - nm_update_mac_tag_1.current.0.fvEpMacTag.attributes.nameAlias == "Updated_TestMacTag"
           - nm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.annotation == "orchestrator:ansible"
           - nm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
           - nm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
           - nm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
-          - nm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.name == "TestObject_1"
+          - nm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.name == ""
           - nm_update_mac_tag_1.previous.0.fvEpMacTag.attributes.nameAlias == "TestMacTag"
           - nm_update_mac_tag_1_again is not changed
           - nm_update_mac_tag_1_again.current.0.fvEpMacTag.attributes.annotation == "annotation"
           - nm_update_mac_tag_1_again.current.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
           - nm_update_mac_tag_1_again.current.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
           - nm_update_mac_tag_1_again.current.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
-          - nm_update_mac_tag_1_again.current.0.fvEpMacTag.attributes.name == "TestObject_1"
+          - nm_update_mac_tag_1_again.current.0.fvEpMacTag.attributes.name == ""
           - nm_update_mac_tag_1_again.current.0.fvEpMacTag.attributes.nameAlias == "Updated_TestMacTag"
           - nm_update_mac_tag_1_again.previous.0.fvEpMacTag.attributes.annotation == "annotation"
           - nm_update_mac_tag_1_again.previous.0.fvEpMacTag.attributes.bdName == "ansible_test_bd"
           - nm_update_mac_tag_1_again.previous.0.fvEpMacTag.attributes.dn == "uni/tn-ansible_test/eptags/epmactag-AE:ED:EE:EE:AA:AA-[ansible_test_bd]"
           - nm_update_mac_tag_1_again.previous.0.fvEpMacTag.attributes.mac == "AE:ED:EE:EE:AA:AA"
-          - nm_update_mac_tag_1_again.previous.0.fvEpMacTag.attributes.name == "TestObject_1"
+          - nm_update_mac_tag_1_again.previous.0.fvEpMacTag.attributes.name == ""
           - nm_update_mac_tag_1_again.previous.0.fvEpMacTag.attributes.nameAlias == "Updated_TestMacTag"
 
     # QUERY

@@ -21,10 +21,6 @@ options:
     description:
     - The name of the Tenant.
     type: str
-  name:
-    description:
-    - The name of the Endpoint MAC Tag.
-    type: str
   endpoint_mac_address:
     description:
     - The MAC address of the Endpoint MAC Tag.
@@ -65,25 +61,14 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a Fabric Leaf Policy Group
-  cisco.aci.aci_endpoint_mac_tag:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    name: leaf_policy_group
-    type: leaf
-    state: present
-  delegate_to: localhost
-
 - name: Add a MAC Tag
   cisco.aci.aci_endpoint_mac_tag:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: endpoint_tenant
-    endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+    endpoint_mac_address: AE:ED:EE:EE:AA:AA
     bd: endpoint_bd
-    name: "AE:ED:EE:EE:AA:AA"
     name_alias: endpoint_mac_tag
     state: present
 
@@ -93,9 +78,8 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: endpoint_tenant
-    endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+    endpoint_mac_address: AE:ED:EE:EE:AA:AA
     bd: endpoint_bd
-    name: "AE:ED:EE:EE:AA:AA"
     name_alias: endpoint_mac_tag_updated
     state: present
 
@@ -105,7 +89,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: endpoint_tenant
-    endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+    endpoint_mac_address: AE:ED:EE:EE:AA:AA
     bd: endpoint_bd
     state: query
   register: query_one
@@ -124,7 +108,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+    endpoint_mac_address: AE:ED:EE:EE:AA:AA
     state: query
   register: query_with_mac
 
@@ -142,7 +126,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: endpoint_tenant
-    endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+    endpoint_mac_address: AE:ED:EE:EE:AA:AA
     bd: endpoint_bd
     state: absent
 """
@@ -262,7 +246,6 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str"),
-        name=dict(type="str"),
         endpoint_mac_address=dict(type="str", aliases=["mac_addr", "mac"]),
         bd=dict(type="str", aliases=["bd_name"]),
         name_alias=dict(type="str"),
@@ -283,18 +266,18 @@ def main():
     tenant = module.params.get("tenant")
     endpoint_mac_address = module.params.get("endpoint_mac_address")
     bd = module.params.get("bd")
-    name = module.params.get("name")
     name_alias = module.params.get("name_alias")
     annotation = module.params.get("annotation")
     state = module.params.get("state")
 
     aci = ACIModule(module)
 
-    endpoint_mac_tag_rn = None
-    endpoint_mac_tag_module_object = None
     if endpoint_mac_address and bd:
-        endpoint_mac_tag_rn = "eptags/epmactag-{0}-[{1}]".format(endpoint_mac_address, bd)
         endpoint_mac_tag_module_object = "{0}-[{1}]".format(endpoint_mac_address, bd)
+        endpoint_mac_tag_rn = "eptags/epmactag-{0}".format(endpoint_mac_tag_module_object)
+    else:
+        endpoint_mac_tag_rn = None
+        endpoint_mac_tag_module_object = None
 
     aci.construct_url(
         root_class=dict(
@@ -320,7 +303,6 @@ def main():
                 annotation=annotation,
                 bdName=bd,
                 mac=endpoint_mac_address,
-                name=name,
                 nameAlias=name_alias,
             ),
         )
