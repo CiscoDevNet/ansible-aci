@@ -62,7 +62,6 @@
         tenant: ansible_test
         endpoint_ip_address: "1.1.1.1"
         vrf: ansible_test_vrf
-        name: TestObject_1
         name_alias: TestIPTag
         state: present
         output_level: debug
@@ -75,7 +74,6 @@
         tenant: ansible_test
         endpoint_ip_address: "1.1.1.1"
         vrf: ansible_test_vrf
-        name: TestObject_1
         name_alias: TestIPTag
         state: present
       register: nm_add_ip_tag_1
@@ -86,7 +84,6 @@
         tenant: ansible_test
         endpoint_ip_address: "1.1.1.1"
         vrf: ansible_test_vrf
-        name: TestObject_1
         name_alias: TestIPTag
         state: present
       register: nm_add_ip_tag_1_again
@@ -101,14 +98,13 @@
           - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
           - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
           - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.ip == "1.1.1.1"
-          - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.name == "TestObject_1"
           - cm_add_ip_tag_1.proposed.fvEpIpTag.attributes.nameAlias == "TestIPTag"
           - nm_add_ip_tag_1 is changed
           - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
           - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
           - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
           - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.ip == "1.1.1.1"
-          - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.name == "TestObject_1"
+          - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.name == ""
           - nm_add_ip_tag_1.current.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
           - nm_add_ip_tag_1.previous == []
           - nm_add_ip_tag_1_again is not changed
@@ -116,13 +112,13 @@
           - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
           - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
           - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.ip == "1.1.1.1"
-          - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.name == "TestObject_1"
+          - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.name == ""
           - nm_add_ip_tag_1_again.current.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
           - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.annotation == "orchestrator:ansible"
           - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.ctxName == "ansible_test_vrf"
           - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.dn == "uni/tn-ansible_test/eptags/epiptag-[1.1.1.1]-ansible_test_vrf"
           - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.ip == "1.1.1.1"
-          - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.name == "TestObject_1"
+          - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.name == ""
           - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
 
     - name: Add IP Tag Object - 2 with same vrf and different ip address
