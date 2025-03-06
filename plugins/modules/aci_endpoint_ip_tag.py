@@ -21,10 +21,6 @@ options:
     description:
     - The name of the Tenant.
     type: str
-  name:
-    description:
-    - The name of the Endpoint IP Tag.
-    type: str
   endpoint_ip_address:
     description:
     - The IPv4 or IPv6 address of the Endpoint IP Tag.
@@ -71,9 +67,8 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: endpoint_tenant
-    endpoint_ip_address: "1.1.1.1"
+    endpoint_ip_address: 1.1.1.1
     vrf: endpoint_vrf
-    name: "1.1.1.1"
     name_alias: endpoint_ip_tag
     state: present
 
@@ -83,9 +78,8 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: endpoint_tenant
-    endpoint_ip_address: "1.1.1.1"
+    endpoint_ip_address: 1.1.1.1
     vrf: endpoint_vrf
-    name: "1.1.1.1"
     name_alias: endpoint_ip_tag_updated
     state: present
 
@@ -95,7 +89,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: endpoint_tenant
-    endpoint_ip_address: "1.1.1.1"
+    endpoint_ip_address: 1.1.1.1
     vrf: endpoint_vrf
     state: query
   register: query_one
@@ -114,7 +108,7 @@ EXAMPLES = r"""
     host: apic
     username: admin
     password: SomeSecretPassword
-    endpoint_ip_address: "1.1.1.1"
+    endpoint_ip_address: 1.1.1.1
     state: query
   register: query_with_ip
 
@@ -132,7 +126,7 @@ EXAMPLES = r"""
     username: admin
     password: SomeSecretPassword
     tenant: endpoint_tenant
-    endpoint_ip_address: "1.1.1.1"
+    endpoint_ip_address: 1.1.1.1
     vrf: endpoint_vrf
     state: present
 """
@@ -252,7 +246,6 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str"),
-        name=dict(type="str"),
         endpoint_ip_address=dict(type="str", aliases=["ip_addr", "ip"]),
         vrf=dict(type="str", aliases=["vrf_name"]),
         name_alias=dict(type="str"),
@@ -273,18 +266,18 @@ def main():
     tenant = module.params.get("tenant")
     endpoint_ip_address = module.params.get("endpoint_ip_address")
     vrf = module.params.get("vrf")
-    name = module.params.get("name")
     name_alias = module.params.get("name_alias")
     annotation = module.params.get("annotation")
     state = module.params.get("state")
 
     aci = ACIModule(module)
 
-    endpoint_ip_tag_rn = None
-    endpoint_ip_tag_module_object = None
     if endpoint_ip_address and vrf:
-        endpoint_ip_tag_rn = "eptags/epiptag-[{0}]-{1}".format(endpoint_ip_address, vrf)
         endpoint_ip_tag_module_object = "[{0}]-{1}".format(endpoint_ip_address, vrf)
+        endpoint_ip_tag_rn = "eptags/epiptag-{0}".format(endpoint_ip_tag_module_object)
+    else:
+        endpoint_ip_tag_rn = None
+        endpoint_ip_tag_module_object = None
 
     aci.construct_url(
         root_class=dict(
@@ -309,7 +302,6 @@ def main():
                 annotation=annotation,
                 ctxName=vrf,
                 ip=endpoint_ip_address,
-                name=name,
                 nameAlias=name_alias,
             ),
         )
