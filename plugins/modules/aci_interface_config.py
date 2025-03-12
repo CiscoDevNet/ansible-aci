@@ -44,7 +44,7 @@ options:
   pc_member:
     description:
     - The name of the Port Channel Member Policy (lacp:IfPol).
-    - A Port Channel Member Policy is used to overwrite LACP port priority and transmit rate of LACP packets.
+    - A Port Channel Member Policy is used to override LACP port priority and transmit rate of LACP packets.
     type: str
     aliases: [ port_channel_member ]
   port_type:
@@ -114,7 +114,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Add an interface with port channel(PC) policy group with a PC member policy overwrite
+- name: Add an interface with port channel(PC) policy group with a PC member policy override
   cisco.aci.aci_interface_config:
     host: apic
     username: admin
