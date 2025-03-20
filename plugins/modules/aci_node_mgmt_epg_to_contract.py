@@ -13,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_node_mgmt_epg_to_contract
-short_description: Bind Node Mgmt EPGs to Contracts (fv:RsCons, fv:RsProv, fv:RsProtBy, fv:RsConsIf, and mgmt:RsOoBProv)
+short_description: Bind Node Mgmt EPGs to Contracts (fv:RsCons, fv:RsProv, fv:RsProtBy, fv:RsConsIf and mgmt:RsOoBProv)
 description:
 - Bind Node mgmt EPGs to Contracts on Cisco ACI fabrics.
 notes:
@@ -36,6 +36,13 @@ options:
     - The name of the Node Mgmt end point group.
     type: str
     aliases: [ epg_name ]
+  epg_type:
+    description:
+    - The type of the Node Mgmt end point group.
+    type: str
+    required: true
+    aliases: [ type ]
+    choices: [ in_band, out_of_band ]
   priority:
     description:
     - Quality of Service (QoS) class.
@@ -79,8 +86,9 @@ EXAMPLES = r"""
     epg: anstest
     epg_type: in_band
     contract: anstest_http
-    contract_type: consumer
+    contract_type: provider
     priority: level2
+    provider_match: at_least_one
     state: present
   delegate_to: localhost
 
@@ -94,7 +102,20 @@ EXAMPLES = r"""
     contract: anstest_http
     contract_type: provider
     priority: level3
-    provider_match: at_least_one
+    state: present
+  delegate_to: localhost
+
+- name: Update a contract of Inband EPG binding
+  cisco.aci.aci_node_mgmt_epg_to_contract:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    epg: anstest
+    epg_type: in_band
+    contract: anstest_http
+    contract_type: provider
+    priority: level5
+    provider_match: all
     state: present
   delegate_to: localhost
 
@@ -241,7 +262,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
-from ansible_collections.cisco.aci.plugins.module_utils.constants import ACI_CLASS_MAPPING, CONTRACT_LABEL_MAPPING, PROVIDER_MATCH_MAPPING, SUBJ_LABEL_MAPPING
+from ansible_collections.cisco.aci.plugins.module_utils.constants import ACI_CLASS_MAPPING, MANAGEMENT_EPG_CLASS_MAPPING, PROVIDER_MATCH_MAPPING
 
 
 def main():
@@ -292,61 +313,31 @@ def main():
 
         if contract_type != "provider":
             module.fail_json(msg="only provider contract_type is supported for out_of_band epg_type.")
-        
+
         if provider_match is not None:
-          module.fail_json(msg="The provider_match argument is not supported for out_of_band Provider contracts")
+            module.fail_json(msg="The provider_match argument is not supported for out_of_band Provider contracts")
 
-        aci_class = "mgmtRsOoBProv"
-        aci_rn = "rsooBProv-"
-        aci_name = "tnVzOOBBrCPName"
+        aci_class = ACI_CLASS_MAPPING["oob_provider"]["class"]
+        aci_rn = ACI_CLASS_MAPPING["oob_provider"]["rn"]
+        aci_name = ACI_CLASS_MAPPING["oob_provider"]["name"]
         class_config = {"prio": priority, aci_name: contract}
-
-    class_Map = {"in_band": [dict(epg_class="mgmtInB", epg_rn="inb-{0}")], "out_of_band": [dict(epg_class="mgmtOoB", epg_rn="oob-{0}")]}
 
     aci = ACIModule(module)
     aci.construct_url(
-        # root_class=dict(
-        #     aci_class="fvTenant",
-        #     aci_rn="tn-mgmt",
-        #     module_object="mgmt",
-        #     target_filter={"name": "mgmt"}
-        # ),
-        # subclass_1=dict(
-        #     aci_class="mgmtMgmtP",
-        #     aci_rn="mgmtp-default",
-        #     module_object="default",
-        #     target_filter={"name": "default"}
-        # ),
-        # subclass_2=dict(
-        #     aci_class=class_Map[epg_type][0]["epg_class"],
-        #     aci_rn=class_Map[epg_type][0]["epg_rn"].format(epg),
-        #     module_object=epg,
-        #     target_filter={"name": epg}
-        # ),
-        # subclass_3=dict(
-        #     aci_class=aci_class,
-        #     aci_rn="{0}{1}".format(aci_rn, contract),
-        #     module_object=contract,
-        #     target_filter={aci_name: contract}
-        # )
         root_class=dict(
-            # aci_class="fvTenant",
             aci_rn="tn-mgmt/mgmtp-default",
-            module_object=None
-        ),
+            module_object=None,
+                      ),
         subclass_1=dict(
-            aci_class=class_Map[epg_type][0]["epg_class"],
-            aci_rn=class_Map[epg_type][0]["epg_rn"].format(epg),
-            module_object=epg,
-            target_filter={"name": epg}
-        ),
-        subclass_2=dict(
-            aci_class=aci_class,
-            aci_rn="{0}{1}".format(aci_rn, contract),
-            module_object=contract,
-            target_filter={aci_name: contract}
-        )
-    )
+                      aci_class=MANAGEMENT_EPG_CLASS_MAPPING[epg_type]["epg_class"], 
+                      aci_rn="{0}{1}".format(MANAGEMENT_EPG_CLASS_MAPPING[epg_type]["epg_rn"],epg), 
+                      module_object=epg, target_filter={"name": epg}
+                      ),
+        subclass_2=dict(aci_class=aci_class, 
+                        aci_rn="{0}{1}".format(aci_rn, contract), 
+                        module_object=contract, 
+                        target_filter={aci_name: contract})
+                      )
 
     aci.get_existing()
 
