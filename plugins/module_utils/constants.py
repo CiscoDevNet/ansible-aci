@@ -463,11 +463,11 @@ MANAGEMENT_EPG_TYPE = dict(ooband="oob", inband="inb")
 
 MANAGEMENT_EPG_CLASS_MAPPING = dict(
     in_band=
-        {"epg_class":"mgmtInB", 
-         "epg_rn":"inb-"},
+        {"epg_class": "mgmtInB", 
+         "epg_rn": "inb-"},
     out_of_band=
-        {"epg_class":"mgmtOoB",
-         "epg_rn":"oob-"}
+        {"epg_class": "mgmtOoB",
+         "epg_rn": "oob-"}
     )
 
 NODE_TYPE_MAPPING = {"tier_2": "tier-2-leaf", "remote": "remote-leaf-wan", "virtual": "virtual", "unspecified": "unspecified"}

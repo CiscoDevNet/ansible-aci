@@ -13,11 +13,11 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_node_mgmt_epg_to_contract
-short_description: Bind Node Mgmt EPGs to Contracts (fv:RsCons, fv:RsProv, fv:RsProtBy, fv:RsConsIf and mgmt:RsOoBProv)
+short_description: Bind Node Management EPGs to Contracts (fv:RsCons, fv:RsProv, fv:RsProtBy, fv:RsConsIf and mgmt:RsOoBProv)
 description:
-- Bind Node mgmt EPGs to Contracts on Cisco ACI fabrics.
+- Bind Node Management EPGs to Contracts on Cisco ACI fabrics.
 notes:
-- The C(Node Mgmt EPG), and C(Contract) used must exist before using this module in your playbook.
+- The C(epg) and C(contract) used must exist before using this module in your playbook.
   The M(cisco.aci.aci_node_mgmt_epg), M(cisco.aci.aci_oob_contract) and M(cisco.aci.aci_contract) modules can be used for this.
 options:
   contract:
@@ -33,12 +33,12 @@ options:
     choices: [ consumer, provider, taboo, interface ]
   epg:
     description:
-    - The name of the Node Mgmt end point group.
+    - The name of the Node Management end point group.
     type: str
     aliases: [ epg_name ]
   epg_type:
     description:
-    - The type of the Node Mgmt end point group.
+    - The type of the Node Management end point group.
     type: str
     required: true
     aliases: [ type ]
@@ -120,7 +120,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query a specific contract to EPG binding
-  cisco.aci.aci_inbepg_to_contract:
+  cisco.aci.aci_node_mgmt_epg_to_contract:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -133,7 +133,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query all provider contract to EPG bindings
-  cisco.aci.aci_inbepg_to_contract:
+  cisco.aci.aci_node_mgmt_epg_to_contract:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -143,7 +143,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Remove an existing contract to Inband EPG binding
-  cisco.aci.aci_inbepg_to_contract:
+  cisco.aci.aci_node_mgmt_epg_to_contract:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -299,14 +299,13 @@ def main():
         provider_match = PROVIDER_MATCH_MAPPING[provider_match]
     state = module.params.get("state")
 
+    identifier = None
     if epg_type == "in_band":
 
         if contract_type != "provider" and provider_match is not None:
             module.fail_json(msg="the provider_match is only configurable for Provider Contracts")
 
-        aci_class = ACI_CLASS_MAPPING[contract_type]["class"]
-        aci_rn = ACI_CLASS_MAPPING[contract_type]["rn"]
-        aci_name = ACI_CLASS_MAPPING[contract_type]["name"]
+        identifier = contract_type
         class_config = {"matchT": provider_match, "prio": priority, aci_name: contract}
 
     elif epg_type == "out_of_band":
@@ -317,27 +316,33 @@ def main():
         if provider_match is not None:
             module.fail_json(msg="The provider_match argument is not supported for out_of_band Provider contracts")
 
-        aci_class = ACI_CLASS_MAPPING["oob_provider"]["class"]
-        aci_rn = ACI_CLASS_MAPPING["oob_provider"]["rn"]
-        aci_name = ACI_CLASS_MAPPING["oob_provider"]["name"]
+        identifier = "oob_provider"
         class_config = {"prio": priority, aci_name: contract}
+
+    aci_class = ACI_CLASS_MAPPING[identifier]["class"]
+    aci_rn = ACI_CLASS_MAPPING[identifier]["rn"]
+    aci_name = ACI_CLASS_MAPPING[identifier]["name"]
 
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
+            aci_class="mgmtp",
             aci_rn="tn-mgmt/mgmtp-default",
             module_object=None,
-                      ),
+        ),
         subclass_1=dict(
-                      aci_class=MANAGEMENT_EPG_CLASS_MAPPING[epg_type]["epg_class"], 
-                      aci_rn="{0}{1}".format(MANAGEMENT_EPG_CLASS_MAPPING[epg_type]["epg_rn"],epg), 
-                      module_object=epg, target_filter={"name": epg}
-                      ),
-        subclass_2=dict(aci_class=aci_class, 
-                        aci_rn="{0}{1}".format(aci_rn, contract), 
-                        module_object=contract, 
-                        target_filter={aci_name: contract})
-                      )
+            aci_class=MANAGEMENT_EPG_CLASS_MAPPING[epg_type]["epg_class"],
+            aci_rn="{0}{1}".format(MANAGEMENT_EPG_CLASS_MAPPING[epg_type]["epg_rn"], epg),
+            module_object=epg,
+            target_filter={"name": epg},
+        ),
+        subclass_2=dict(
+            aci_class=aci_class,
+            aci_rn="{0}{1}".format(aci_rn, contract),
+            module_object=contract,
+            target_filter={aci_name: contract},
+        ),
+    )
 
     aci.get_existing()
 
