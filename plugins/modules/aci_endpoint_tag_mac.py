@@ -12,25 +12,25 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_endpoint_ip_tag
-short_description: Manage Endpoint IP Tag (fv:EpIpTag)
+module: aci_endpoint_tag_mac
+short_description: Manage Endpoint Tag MAC (fv:EpMacTag)
 description:
-- Manage Endpoint IP Tag on Cisco ACI fabrics.
+- Manage Endpoint Tag MAC on Cisco ACI fabrics.
 options:
   tenant:
     description:
     - The name of the Tenant.
     type: str
-  endpoint_ip_address:
+  mac:
     description:
-    - The IPv4 or IPv6 address of the Endpoint IP Tag.
+    - The MAC address of the Endpoint Tag MAC.
     type: str
-    aliases: [ ip_addr, ip ]
-  vrf:
+    aliases: [ mac_address, endpoint_mac_address ]
+  bd:
     description:
-    - The name of the VRF.
+    - The name of the Bridge Domain.
     type: str
-    aliases: [ vrf_name ]
+    aliases: [ bd_name ]
   name_alias:
     description:
     - The alias for the current object. This relates to the nameAlias field in ACI.
@@ -48,87 +48,87 @@ extends_documentation_fragment:
 - cisco.aci.owner
 
 notes:
-- The O(tenant) and O(vrf) used must exist before using this module in your playbook.
-- The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_vrf) modules can be used for this.
+- The C(tenant) and C(bd) used must exist before using this module in your playbook.
+- The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_bd) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
-- module: cisco.aci.aci_vrf
+- module: cisco.aci.aci_bd
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(fv:EpIpTag).
+  description: More information about the internal APIC class B(fv:EpMacTag).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Sabari Jaganathan (@sajagana)
 """
 
 EXAMPLES = r"""
-- name: Add an IP Tag
-  cisco.aci.aci_endpoint_ip_tag:
+- name: Add a MAC Tag
+  cisco.aci.aci_endpoint_tag_mac:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: endpoint_tenant
-    endpoint_ip_address: 1.1.1.1
-    vrf: endpoint_vrf
-    name_alias: endpoint_ip_tag
+    mac: AE:ED:EE:EE:AA:AA
+    bd: endpoint_bd
+    name_alias: endpoint_mac_tag
     state: present
 
-- name: Update an IP Tag
-  cisco.aci.aci_endpoint_ip_tag:
+- name: Update a MAC Tag
+  cisco.aci.aci_endpoint_tag_mac:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: endpoint_tenant
-    endpoint_ip_address: 1.1.1.1
-    vrf: endpoint_vrf
-    name_alias: endpoint_ip_tag_updated
+    mac: AE:ED:EE:EE:AA:AA
+    bd: endpoint_bd
+    name_alias: endpoint_mac_tag_updated
     state: present
 
-- name: Query an IP Tag with specific IP and VRF
-  cisco.aci.aci_endpoint_ip_tag:
+- name: Query a MAC Tag with specific MAC and BD
+  cisco.aci.aci_endpoint_tag_mac:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: endpoint_tenant
-    endpoint_ip_address: 1.1.1.1
-    vrf: endpoint_vrf
+    mac: AE:ED:EE:EE:AA:AA
+    bd: endpoint_bd
     state: query
   register: query_one
 
-- name: Query all IP Tag Objects with only VRF
-  cisco.aci.aci_endpoint_ip_tag:
+- name: Query all MAC Tag Objects with only BD
+  cisco.aci.aci_endpoint_tag_mac:
     host: apic
     username: admin
     password: SomeSecretPassword
-    vrf: default
+    bd: default
     state: query
-  register: query_with_vrf
+  register: query_with_bd
 
-- name: Query all IP Tag Objects with only IP
-  cisco.aci.aci_endpoint_ip_tag:
+- name: Query all MAC Tag Objects with only MAC
+  cisco.aci.aci_endpoint_tag_mac:
     host: apic
     username: admin
     password: SomeSecretPassword
-    endpoint_ip_address: 1.1.1.1
+    mac: AE:ED:EE:EE:AA:AA
     state: query
-  register: query_with_ip
+  register: query_with_mac
 
-- name: Query all IP Tags
-  cisco.aci.aci_endpoint_ip_tag:
+- name: Query all MAC Tags
+  cisco.aci.aci_endpoint_tag_mac:
     host: apic
     username: admin
     password: SomeSecretPassword
     state: query
   register: query_all
 
-- name: Delete an IP Tag
-  cisco.aci.aci_endpoint_ip_tag:
+- name: Delete a MAC Tag
+  cisco.aci.aci_endpoint_tag_mac:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: endpoint_tenant
-    endpoint_ip_address: 1.1.1.1
-    vrf: endpoint_vrf
-    state: present
+    mac: AE:ED:EE:EE:AA:AA
+    bd: endpoint_bd
+    state: absent
 """
 
 RETURN = r"""
@@ -246,8 +246,8 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str"),
-        endpoint_ip_address=dict(type="str", aliases=["ip_addr", "ip"]),
-        vrf=dict(type="str", aliases=["vrf_name"]),
+        mac=dict(type="str", aliases=["mac_address", "endpoint_mac_address"]),
+        bd=dict(type="str", aliases=["bd_name"]),
         name_alias=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -256,28 +256,28 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "vrf", "endpoint_ip_address"]],
-            ["state", "present", ["tenant", "vrf", "endpoint_ip_address"]],
+            ["state", "absent", ["tenant", "bd", "mac"]],
+            ["state", "present", ["tenant", "bd", "mac"]],
         ],
     )
 
     aci = ACIModule(module)
 
     tenant = module.params.get("tenant")
-    endpoint_ip_address = module.params.get("endpoint_ip_address")
-    vrf = module.params.get("vrf")
+    mac = module.params.get("mac")
+    bd = module.params.get("bd")
     name_alias = module.params.get("name_alias")
     annotation = module.params.get("annotation")
     state = module.params.get("state")
 
     aci = ACIModule(module)
 
-    if endpoint_ip_address and vrf:
-        endpoint_ip_tag_module_object = "[{0}]-{1}".format(endpoint_ip_address, vrf)
-        endpoint_ip_tag_rn = "eptags/epiptag-{0}".format(endpoint_ip_tag_module_object)
+    if mac and bd:
+        endpoint_mac_tag_module_object = "{0}-[{1}]".format(mac, bd)
+        endpoint_mac_tag_rn = "eptags/epmactag-{0}".format(endpoint_mac_tag_module_object)
     else:
-        endpoint_ip_tag_rn = None
-        endpoint_ip_tag_module_object = None
+        endpoint_mac_tag_rn = None
+        endpoint_mac_tag_module_object = None
 
     aci.construct_url(
         root_class=dict(
@@ -287,26 +287,27 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="fvEpIpTag",
-            aci_rn=endpoint_ip_tag_rn,
-            module_object=endpoint_ip_tag_module_object,
-            target_filter=dict(ip=endpoint_ip_address, ctxName=vrf),
+            aci_class="fvEpMacTag",
+            aci_rn=endpoint_mac_tag_rn,
+            module_object=endpoint_mac_tag_module_object,
+            target_filter=dict(mac=mac, bdName=bd),
         ),
     )
+
     aci.get_existing()
 
     if state == "present":
         aci.payload(
-            aci_class="fvEpIpTag",
+            aci_class="fvEpMacTag",
             class_config=dict(
                 annotation=annotation,
-                ctxName=vrf,
-                ip=endpoint_ip_address,
+                bdName=bd,
+                mac=mac,
                 nameAlias=name_alias,
             ),
         )
 
-        aci.get_diff(aci_class="fvEpIpTag")
+        aci.get_diff(aci_class="fvEpMacTag")
 
         aci.post_config()
 

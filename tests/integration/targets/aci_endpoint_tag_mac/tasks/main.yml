@@ -57,10 +57,10 @@
 
     # CREATE
     - name: Add MAC Tag Object - 1 (check_mode)
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+        mac: "AE:ED:EE:EE:AA:AA"
         bd: ansible_test_bd
         name_alias: TestMacTag
         state: present
@@ -68,20 +68,20 @@
       register: cm_add_mac_tag_1
 
     - name: Add MAC Tag Object - 1
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+        mac: "AE:ED:EE:EE:AA:AA"
         bd: ansible_test_bd
         name_alias: TestMacTag
         state: present
       register: nm_add_mac_tag_1
 
     - name: Add MAC Tag Object - 1 again
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+        mac: "AE:ED:EE:EE:AA:AA"
         bd: ansible_test_bd
         name_alias: TestMacTag
         state: present
@@ -121,19 +121,19 @@
           - nm_add_mac_tag_1_again.previous.0.fvEpMacTag.attributes.nameAlias == "TestMacTag"
 
     - name: Add MAC Tag Object - 2 with same bd and different mac address
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
+        mac: "AE:ED:EE:EE:AA:AB"
         bd: ansible_test_bd
         state: present
       register: add_mac_tag_2
 
     - name: Add MAC Tag Object -3 with same mac address and different bd
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+        mac: "AE:ED:EE:EE:AA:AA"
         bd: default
         state: present
       register: add_mac_tag_3
@@ -154,10 +154,10 @@
 
     # UPDATE
     - name: Update MAC Tag Object - 1 annotation, name_alias (check_mode)
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+        mac: "AE:ED:EE:EE:AA:AA"
         bd: ansible_test_bd
         name_alias: Updated_TestMacTag
         annotation: annotation
@@ -166,10 +166,10 @@
       register: cm_update_mac_tag_1
 
     - name: Update MAC Tag Object - 1 annotation, name_alias
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+        mac: "AE:ED:EE:EE:AA:AA"
         bd: ansible_test_bd
         name_alias: Updated_TestMacTag
         annotation: annotation
@@ -177,10 +177,10 @@
       register: nm_update_mac_tag_1
 
     - name: Update MAC Tag Object - 1 annotation, name_alias again
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+        mac: "AE:ED:EE:EE:AA:AA"
         bd: ansible_test_bd
         name_alias: Updated_TestMacTag
         annotation: annotation
@@ -237,39 +237,39 @@
 
     # QUERY
     - name: Query MAC Tag Object with mac and bd
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
+        mac: "AE:ED:EE:EE:AA:AB"
         bd: ansible_test_bd
         state: query
       register: query_with_mac_and_bd
 
     - name: Query MAC Tag Object with only bd
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         bd: default
         state: query
       register: query_with_bd
 
     - name: Query MAC Tag Object with only mac
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
-        endpoint_mac_address: "AE:ED:EE:EE:AA:AA"
+        mac: "AE:ED:EE:EE:AA:AA"
         state: query
       register: query_with_mac
 
     - name: Negative test - query MAC Tag Object with mac and bd
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
+        mac: "AE:ED:EE:EE:AA:AB"
         bd: default
         state: query
       register: nt_query_mac_tag
 
     - name: Query all existing Endpoint MAC Tags after the test
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         state: query
       register: query_all_mac_tags_1
@@ -296,38 +296,38 @@
 
     # DELETE
     - name: Remove MAC Tag Object with mac and bd - check_mode
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
+        mac: "AE:ED:EE:EE:AA:AB"
         bd: ansible_test_bd
         state: absent
       check_mode: true
       register: cm_rm_with_mac_and_bd
 
     - name: Remove MAC Tag Object with mac and bd - normal mode
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
+        mac: "AE:ED:EE:EE:AA:AB"
         bd: ansible_test_bd
         state: absent
       register: nm_rm_with_mac_and_bd
 
     - name: Remove MAC Tag Object with mac and bd - normal mode again
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
+        mac: "AE:ED:EE:EE:AA:AB"
         bd: ansible_test_bd
         state: absent
       register: nm_rm_with_mac_and_bd_again
 
     - name: Negative test - remove MAC Tag Object with mac and bd
-      cisco.aci.aci_endpoint_mac_tag:
+      cisco.aci.aci_endpoint_tag_mac:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_mac_address: "AE:ED:EE:EE:AA:AB"
+        mac: "AE:ED:EE:EE:AA:AB"
         bd: default
         state: absent
       register: nt_rm_mac_tag
