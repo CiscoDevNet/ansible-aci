@@ -57,10 +57,10 @@
 
     # CREATE
     - name: Add IP Tag Object - 1 (check_mode)
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_ip_address: "1.1.1.1"
+        ip: "1.1.1.1"
         vrf: ansible_test_vrf
         name_alias: TestIPTag
         state: present
@@ -69,20 +69,20 @@
       register: cm_add_ip_tag_1
 
     - name: Add IP Tag Object - 1
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_ip_address: "1.1.1.1"
+        ip: "1.1.1.1"
         vrf: ansible_test_vrf
         name_alias: TestIPTag
         state: present
       register: nm_add_ip_tag_1
 
     - name: Add IP Tag Object - 1 again
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_ip_address: "1.1.1.1"
+        ip: "1.1.1.1"
         vrf: ansible_test_vrf
         name_alias: TestIPTag
         state: present
@@ -122,19 +122,19 @@
           - nm_add_ip_tag_1_again.previous.0.fvEpIpTag.attributes.nameAlias == "TestIPTag"
 
     - name: Add IP Tag Object - 2 with same vrf and different ip address
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_ip_address: "2.2.2.2"
+        ip: "2.2.2.2"
         vrf: ansible_test_vrf
         state: present
       register: add_ip_tag_2
 
     - name: Add IP Tag Object -3 with same ip address and different vrf
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_ip_address: "1.1.1.1"
+        ip: "1.1.1.1"
         vrf: default
         state: present
       register: add_ip_tag_3
@@ -157,10 +157,10 @@
 
     # UPDATE
     - name: Update IP Tag Object - 1 annotation, name_alias (check_mode)
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_ip_address: "1.1.1.1"
+        ip: "1.1.1.1"
         vrf: ansible_test_vrf
         name_alias: Updated_TestIPTag
         annotation: annotation
@@ -170,10 +170,10 @@
       register: cm_update_ip_tag_1
 
     - name: Update IP Tag Object - 1 annotation, name_alias
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_ip_address: "1.1.1.1"
+        ip: "1.1.1.1"
         vrf: ansible_test_vrf
         name_alias: Updated_TestIPTag
         annotation: annotation
@@ -181,10 +181,10 @@
       register: nm_update_ip_tag_1
 
     - name: Update IP Tag Object - 1 annotation, name_alias again
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_ip_address: "1.1.1.1"
+        ip: "1.1.1.1"
         vrf: ansible_test_vrf
         name_alias: Updated_TestIPTag
         annotation: annotation
@@ -230,39 +230,39 @@
 
     # QUERY
     - name: Query IP Tag Object with ip and vrf
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_ip_address: "2.2.2.2"
+        ip: "2.2.2.2"
         vrf: ansible_test_vrf
         state: query
       register: query_with_ip_and_vrf
 
     - name: Query IP Tag Object with only vrf
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         vrf: default
         state: query
       register: query_with_vrf
 
     - name: Query IP Tag Object with only ip
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
-        endpoint_ip_address: "1.1.1.1"
+        ip: "1.1.1.1"
         state: query
       register: query_with_ip
 
     - name: Query all existing Endpoint IP Tags after the test
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         state: query
       register: query_all_ip_tags_1
 
     - name: Negative test - query IP Tag Object with ip and vrf
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_ip_address: "2.2.2.2"
+        ip: "2.2.2.2"
         vrf: default
         state: query
       register: nt_query_ip_tag
@@ -290,38 +290,38 @@
 
     # DELETE
     - name: Remove IP Tag Object with ip and vrf (check_mode)
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_ip_address: "2.2.2.2"
+        ip: "2.2.2.2"
         vrf: ansible_test_vrf
         state: absent
       check_mode: true
       register: cm_rm_with_ip_and_vrf
 
     - name: Remove IP Tag Object with ip and vrf
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_ip_address: "2.2.2.2"
+        ip: "2.2.2.2"
         vrf: ansible_test_vrf
         state: absent
       register: nm_rm_with_ip_and_vrf
 
     - name: Remove IP Tag Object with ip and vrf again
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_ip_address: "2.2.2.2"
+        ip: "2.2.2.2"
         vrf: ansible_test_vrf
         state: absent
       register: nm_rm_with_ip_and_vrf_again
 
     - name: Negative test - remove IP Tag Object with ip and vrf
-      cisco.aci.aci_endpoint_ip_tag:
+      cisco.aci.aci_endpoint_tag_ip:
         <<: *aci_info
         tenant: ansible_test
-        endpoint_ip_address: "2.2.2.2"
+        ip: "2.2.2.2"
         vrf: default
         state: absent
       register: nt_rm_ip_tag
