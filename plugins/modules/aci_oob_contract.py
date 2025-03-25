@@ -83,7 +83,7 @@ EXAMPLES = r"""
     description: Communication between web-servers and database on port 6744
   delegate_to: localhost
   register: query_result
-  
+
 - name: Query a specific contract
   cisco.aci.aci_oob_contract:
     host: apic
@@ -254,10 +254,7 @@ def main():
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class="vzOOBBrCP",
-            aci_rn="tn-mgmt/oobbrc-{0}".format(contract),
-            module_object=contract,
-            target_filter={"name": contract} if contract else None
+            aci_class="vzOOBBrCP", aci_rn="tn-mgmt/oobbrc-{0}".format(contract), module_object=contract, target_filter={"name": contract} if contract else None
         )
     )
 

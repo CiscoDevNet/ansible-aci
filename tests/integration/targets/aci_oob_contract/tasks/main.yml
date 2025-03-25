@@ -101,7 +101,7 @@
       scope: application-profile
       description: "Description altered"
       priority: "level1"
-    register: present_update
+    register: update_contract
 
   - name: Missing Parameter contract_name - Failure Test
     cisco.aci.aci_oob_contract:
@@ -112,16 +112,16 @@
   - name: Assert OOB Contracts were updated
     ansible.builtin.assert:
       that:
-        - present_update is changed
-        - present_update.sent != present_update.proposed
-        - present_update.previous.0.vzOOBBrCP.attributes.scope == "context"
-        - present_update.sent.vzOOBBrCP.attributes.scope == "application-profile"
-        - present_update.current.0.vzOOBBrCP.attributes.scope == "application-profile"
-        - present_update.previous.0.vzOOBBrCP.attributes.descr == "Ansible Test"
-        - present_update.sent.vzOOBBrCP.attributes.descr == "Description altered"
-        - present_update.previous.0.vzOOBBrCP.attributes.prio == "unspecified"
-        - present_update.sent.vzOOBBrCP.attributes.prio == "level1"
-        - present_update.current.0.vzOOBBrCP.attributes.prio == "level1"
+        - update_contract is changed
+        - update_contract.sent != update_contract.proposed
+        - update_contract.previous.0.vzOOBBrCP.attributes.scope == "context"
+        - update_contract.sent.vzOOBBrCP.attributes.scope == "application-profile"
+        - update_contract.current.0.vzOOBBrCP.attributes.scope == "application-profile"
+        - update_contract.previous.0.vzOOBBrCP.attributes.descr == "Ansible Test"
+        - update_contract.sent.vzOOBBrCP.attributes.descr == "Description altered"
+        - update_contract.previous.0.vzOOBBrCP.attributes.prio == "unspecified"
+        - update_contract.sent.vzOOBBrCP.attributes.prio == "level1"
+        - update_contract.current.0.vzOOBBrCP.attributes.prio == "level1"
         - present_missing_param is failed
         - 'present_missing_param.msg == "state is present but all of the following are missing: contract"'
 
