@@ -306,7 +306,7 @@ def main():
             module.fail_json(msg="the provider_match is only configurable for Provider Contracts")
 
         identifier = contract_type
-        class_config = {"matchT": provider_match, "prio": priority, aci_name: contract}
+        class_config = {"matchT": provider_match, "prio": priority, "tnVzBrCPName": contract}
 
     elif epg_type == "out_of_band":
 
@@ -317,7 +317,7 @@ def main():
             module.fail_json(msg="The provider_match argument is not supported for out_of_band Provider contracts")
 
         identifier = "oob_provider"
-        class_config = {"prio": priority, aci_name: contract}
+        class_config = {"prio": priority, "tnVzOOBBrCPName": contract}
 
     aci_class = ACI_CLASS_MAPPING[identifier]["class"]
     aci_rn = ACI_CLASS_MAPPING[identifier]["rn"]
