@@ -35,6 +35,7 @@ options:
     description:
     - The type of monitoring.
     - The APIC defaults to C(icmp) when unset during creation.
+    - I(sla_type=http) is only supported in APIC v5.0 and above.
     type: str
     choices: [ icmp, tcp, l2ping, http ]
   sla_port:
@@ -46,51 +47,66 @@ options:
     description:
     - Defines the interval at which probes are conducted.
     - The APIC defaults to C(60) when unset during creation.
+    - Permitted values are in the range of [1, 300].
     type: int
   multiplier:
     description:
     - Specifies the number of consecutive probe failures required to determine the SLA as down.
     - The APIC defaults to C(3) when unset during creation.
+    - Permitted values are in the range of [1, 100].
     type: int
     aliases: [ detect_multiplier ]
   request_data_size:
     description:
     - The number of bytes to send in the request.
-    - Only used if I(sla_type) is set to C(http).
+    - Only used if I(sla_type=http).
     - The APIC defaults to C(28) when unset during creation.
+    - Permitted values are in the range of [0, 17512]
+    - This is only supported in APIC v5.1 and above.
     type: int
   type_of_service:
     description:
     - The Type of Service (ToS) value to set in the IPv4 header.
     - The APIC defaults to C(0) when unset during creation.
+    - Permitted values are in the range of [0, 255].
+    - This is only supported in APIC v5.1 and above.
     type: int
     aliases: [ tos ]
   operation_timeout:
     description:
     - The amount of time in milliseconds that the IP SLA operation waits for a response from its request packet.
     - The APIC defaults to C(900) when unset during creation.
+    - Permitted values are in the range of [0, 604800000].
+    - This is only supported in APIC v5.1 and above.
     type: int
   threshold:
     description:
     - The upper threshold value in milliseconds for calculating network monitoring statistics created by the IP SLA operation.
-    - The value specified for this property must not exceed the value specified for operation_timeout.
+    - The value specified for this property must not exceed the value specified for I(operation_timeout).
     - The APIC defaults to C(900) when unset during creation.
+    - Permitted values are in the range of [0, 604800000].
+    - This is only supported in APIC v5.1 and above.
     type: int
   traffic_class:
     description:
     - Sets the Traffic Class value in the IPv6 header.
     - The APIC defaults to C(0) when unset during creation.
+    - Permitted values are in the range of [0, 255].
+    - This is only supported in APIC v5.1 and above.
     type: int
+    aliases: ["traffic_class_value"]
   http_version:
     description:
     - The HTTP version to use.
     - The APIC defaults to C(1.0) when unset during creation.
+    - This is only supported in APIC v5.0 and above.
     type: str
     choices: [ "1.0", "1.1" ]
   http_uri:
     description:
     - The HTTP URI to use as the SLA destination.
     - The APIC defaults to C(/) when unset during creation.
+    - This is only supported in APIC v5.0 and above.
     type: str
   state:
     description:
@@ -129,7 +145,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Add a new TCP SLA monitoring policy
+- name: Update to TCP SLA monitoring policy
   cisco.aci.aci_ip_sla_monitoring_policy:
     host: apic
     username: admin
@@ -141,16 +157,6 @@ EXAMPLES = r"""
     frequency: 45
     multiplier: 5
     state: present
-  delegate_to: localhost
-
-- name: Delete an SLA monitoring policy
-  cisco.aci.aci_ip_sla_monitoring_policy:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: my_tenant
-    name: my_policy
-    state: absent
   delegate_to: localhost
 
 - name: Query an SLA monitoring policy
@@ -172,6 +178,16 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Delete an SLA monitoring policy
+  cisco.aci.aci_ip_sla_monitoring_policy:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    name: my_policy
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
@@ -302,8 +318,8 @@ def main():
         type_of_service=dict(type="int", aliases=["tos"]),
         operation_timeout=dict(type="int"),
         threshold=dict(type="int"),
-        traffic_class=dict(type="int"),
-        http_version=dict(type="str", choices=["1.0", "1.1"]),
+        traffic_class=dict(type="int", aliases=["traffic_class_value"]),
+        http_version=dict(type="str", choices=list(HTTP_VERSIONS_MAPPING)),
         http_uri=dict(type="str"),
     )
 
@@ -341,15 +357,20 @@ def main():
             module_object=tenant,
             target_filter={"name": tenant},
         ),
-        subclass_1=dict(aci_class="fvIPSLAMonitoringPol", aci_rn="ipslaMonitoringPol-{0}".format(name), module_object=name, target_filter={"name": name}),
+        subclass_1=dict(
+            aci_class="fvIPSLAMonitoringPol",
+            aci_rn="ipslaMonitoringPol-{0}".format(name),
+            module_object=name,
+            target_filter={"name": name},
+        ),
     )
     aci.get_existing()
 
     if state == "present":
         if sla_port is not None and sla_type != "tcp":
             aci.fail_json("Setting 'sla_port' is not allowed when 'sla_type' is not set to 'tcp'.")
-        if sla_type != "http" and request_data_size is not None:
-            aci.fail_json("Setting 'request_data_size' is not allowed when 'sla_type' is not set to 'http.")
+        if sla_type == "tcp" and request_data_size is not None:
+            aci.fail_json("Setting 'request_data_size' is not allowed when 'sla_type' is set to 'tcp'.")
 
         if sla_type == "http":
             sla_port = 80
