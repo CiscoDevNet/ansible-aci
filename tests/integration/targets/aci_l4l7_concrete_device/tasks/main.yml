@@ -1,5 +1,5 @@
 # Test code for the ACI modules
-# Copyright: (c) 2021, Tim Cragg (@timcragg)
+# Copyright: (c) 2025, Tim Cragg (@timcragg)
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -103,8 +103,6 @@
     that:
     - add_l4l7_concrete_device_again.previous == add_l4l7_concrete_device_again.current == add_l4l7_concrete_device.current
     - add_l4l7_concrete_device_again is not changed
-    - add_l4l7_concrete_device_again.current.0.vnsCDev.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device"
-    - add_l4l7_concrete_device_again.current.0.vnsCDev.attributes.name == "ansible_concrete_device"
 
 - name: Create another L4-L7 Concrete Device
   cisco.aci.aci_l4l7_concrete_device:

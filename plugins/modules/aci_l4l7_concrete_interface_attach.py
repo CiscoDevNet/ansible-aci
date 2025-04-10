@@ -12,10 +12,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_l4l7_concrete_device
-short_description: Manage L4-L7 Concrete Devices (vns:CDev)
+module: aci_l4l7_concrete_interface_attach
+short_description: Manage L4-L7 Concrete Interface Attach (vns:RsCIfAttN)
 description:
-- Manage Layer 4-7 (L4-L7) Concrete Devices.
+- Manage Layer 4-7 (L4-L7) Concrete Interface Attachment to Logical Interfaces.
 options:
   tenant:
     description:
@@ -24,21 +24,19 @@ options:
     aliases: [ tenant_name ]
   device:
     description:
-    - The name of the logical device (vns:lDevVip) the concrete device is attached to.
+    - The name of an existing Logical Device.
     type: str
-    aliases: [ device_name, logical_device_name ]
-  name:
+  logical_interface:
     description:
-    - The name of the concrete device.
+    - The name of an existing Logical Interface.
     type: str
-    aliases: [ concrete_device, concrete_device_name ]
-  vcenter_name:
+  concrete_device:
     description:
-    - The virtual center name on which the device is hosted in the L4-L7 device cluster.
+    - The name of an existing Concrete Device.
     type: str
-  vm_name:
+  concrete_interface:
     description:
-    - The virtual center VM name on which the device is hosted in the L4-L7 device cluster.
+    - The name of an existing Concrete Interface.
     type: str
   state:
     description:
@@ -50,60 +48,69 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
-
 notes:
-- The I(tenant) and I(device) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l4l7_device) modules can be used for this.
+- The I(tenant), I(device), I(logical_interface) and I(concrete_device) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l4l7_device), M(cisco.aci.aci_l4l7_logical_interface)
+  and M(cisco.aci.aci_l4l7_concrete_device) modules can be used for this.
 seealso:
+- module: aci_tenant
 - module: aci_l4l7_device
+- module: aci_l4l7_logical_interface
+- module: aci_l4l7_concrete_device
+- module: aci_l4l7_concrete_interface
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(vns:CDev)
+  description: More information about the internal APIC class B(vns:RsCIfAttN)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
 """
 
 EXAMPLES = r"""
-- name: Add a new concrete device
-  cisco.aci.aci_l4l7_concrete_device:
+- name: Add a new concrete interface attachment
+  cisco.aci.aci_l4l7_concrete_interface_attach:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
-    device: my_device
-    concrete_device: my_concrete_device
+    device: my_log_device
+    logical_interface: my_log_intf
+    concrete_device: my_conc_device
+    concrete_interface: my_conc_intf
     state: present
   delegate_to: localhost
 
-- name: Query a concrete device
-  cisco.aci.aci_l4l7_concrete_device:
+- name: Query a concrete interface attachment
+  cisco.aci.aci_l4l7_concrete_interface_attach:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
-    device: my_device
-    concrete_device: my_concrete_device
+    device: my_log_device
+    logical_interface: my_log_intf
+    concrete_device: my_conc_device
+    concrete_interface: my_conc_intf
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Query all concrete devices
-  cisco.aci.aci_l4l7_concrete_device:
+- name: Query all concrete interface attachments
+  cisco.aci.aci_l4l7_concrete_interface_attach:
     host: apic
     username: admin
     password: SomeSecretPassword
-    state: query
   delegate_to: localhost
   register: query_result
 
-- name: Delete a concrete device
-  cisco.aci.aci_l4l7_concrete_device:
+- name: Delete a concrete interface attachment
+  cisco.aci.aci_l4l7_concrete_interface_attach:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
-    device: my_device
-    concrete_device: my_concrete_device
+    device: my_log_device
+    logical_interface: my_log_intf
+    concrete_device: my_conc_device
+    concrete_interface: my_conc_intf
     state: absent
   delegate_to: localhost
 """
@@ -223,30 +230,35 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
-        device=dict(type="str", aliases=["device_name", "logical_device_name"]),
-        name=dict(type="str", aliases=["concrete_device", "concrete_device_name"]),
-        vcenter_name=dict(type="str"),
-        vm_name=dict(type="str"),
+        device=dict(type="str"),
+        logical_interface=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        concrete_device=dict(type="str"),
+        concrete_interface=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "device", "name"]],
-            ["state", "present", ["tenant", "device", "name"]],
+            ["state", "absent", ["tenant", "device", "logical_interface", "concrete_device", "concrete_interface"]],
+            ["state", "present", ["tenant", "device", "logical_interface", "concrete_device", "concrete_interface"]],
+        ],
+        required_together=[
+            ["tenant", "device", "concrete_device", "concrete_interface"],
         ],
     )
 
     tenant = module.params.get("tenant")
     state = module.params.get("state")
     device = module.params.get("device")
-    name = module.params.get("name")
-    vcenter_name = module.params.get("vcenter_name")
-    vm_name = module.params.get("vm_name")
+    logical_interface = module.params.get("logical_interface")
+    concrete_device = module.params.get("concrete_device")
+    concrete_interface = module.params.get("concrete_interface")
 
     aci = ACIModule(module)
+
+    tdn = "uni/tn-{0}/lDevVip-{1}/cDev-{2}/cIf-[{3}]".format(tenant, device, concrete_device, concrete_interface) if concrete_interface is not None else None
 
     aci.construct_url(
         root_class=dict(
@@ -262,10 +274,16 @@ def main():
             target_filter={"name": device},
         ),
         subclass_2=dict(
-            aci_class="vnsCDev",
-            aci_rn="cDev-{0}".format(name),
-            module_object=name,
-            target_filter={"name": name},
+            aci_class="vnsLIf",
+            aci_rn="lIf-{0}".format(logical_interface),
+            module_object=logical_interface,
+            target_filter={"name": logical_interface},
+        ),
+        subclass_3=dict(
+            aci_class="vnsRsCIfAttN",
+            aci_rn="rscIfAttN-[{0}]".format(tdn),
+            module_object=tdn,
+            target_filter={"tDn": tdn},
         ),
     )
 
@@ -273,14 +291,10 @@ def main():
 
     if state == "present":
         aci.payload(
-            aci_class="vnsCDev",
-            class_config=dict(
-                name=name,
-                vcenterName=vcenter_name,
-                vmName=vm_name,
-            ),
+            aci_class="vnsRsCIfAttN",
+            class_config=dict(tDn=tdn),
         )
-        aci.get_diff(aci_class="vnsCDev")
+        aci.get_diff(aci_class="vnsRsCIfAttN")
 
         aci.post_config()
 

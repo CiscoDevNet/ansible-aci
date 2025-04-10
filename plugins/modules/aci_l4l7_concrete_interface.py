@@ -12,10 +12,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_l4l7_concrete_device
-short_description: Manage L4-L7 Concrete Devices (vns:CDev)
+module: aci_l4l7_concrete_interface
+short_description: Manage L4-L7 Concrete Interfaces (vns:CIf)
 description:
-- Manage Layer 4-7 (L4-L7) Concrete Devices.
+- Manage Layer 4-7 (L4-L7) Concrete Interfaces.
 options:
   tenant:
     description:
@@ -24,21 +24,36 @@ options:
     aliases: [ tenant_name ]
   device:
     description:
-    - The name of the logical device (vns:lDevVip) the concrete device is attached to.
+    - The name of an existing logical device.
     type: str
-    aliases: [ device_name, logical_device_name ]
+  concrete_device:
+    description:
+    - The name of an existing concrete device.
+    type: str
   name:
     description:
-    - The name of the concrete device.
+    - The name of the concrete interface.
     type: str
-    aliases: [ concrete_device, concrete_device_name ]
-  vcenter_name:
+    aliases: [ concrete_interface ]
+  pod_id:
     description:
-    - The virtual center name on which the device is hosted in the L4-L7 device cluster.
+      - The unique identifier for the pod where the concrete interface is located.
+    type: int
+  node_id:
+    description:
+      - The unique identifier for the node where the concrete interface is located.
+      - For Ports and Port-channels, this is represented as a single node ID.
+      - For virtual Port Channels (vPCs), this is represented as a hyphen-separated pair of node IDs, such as "201-202".
     type: str
-  vm_name:
+  path_ep:
     description:
-    - The virtual center VM name on which the device is hosted in the L4-L7 device cluster.
+    - The path to the physical interface.
+    - For single ports, this is the port name, e.g. "eth1/15".
+    - For Port-channels and vPCs, this is the Interface Policy Group name.
+    type: str
+  vnic_name:
+    description:
+    - The concrete interface vNIC name.
     type: str
   state:
     description:
@@ -50,60 +65,84 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
-
 notes:
-- The I(tenant) and I(device) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l4l7_device) modules can be used for this.
+- The I(tenant), I(device) and I(concrete_device) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l4l7_device) and M(cisco.aci.aci_l4l7_concrete_device) modules can be used for this.
 seealso:
 - module: aci_l4l7_device
+- module: aci_l4l7_concrete_device
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(vns:CDev)
+  description: More information about the internal APIC class B(vns:CIf)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
 """
 
 EXAMPLES = r"""
-- name: Add a new concrete device
-  cisco.aci.aci_l4l7_concrete_device:
+- name: Add a new concrete interface on a single port
+  cisco.aci.aci_l4l7_concrete_interface:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
     device: my_device
     concrete_device: my_concrete_device
+    name: my_concrete_interface
+    pod_id: 1
+    node_id: 201
+    path_ep: eth1/16
     state: present
   delegate_to: localhost
 
-- name: Query a concrete device
-  cisco.aci.aci_l4l7_concrete_device:
+- name: Add a new concrete interface on a vPC
+  cisco.aci.aci_l4l7_concrete_interface:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
     device: my_device
     concrete_device: my_concrete_device
-    state: query
+    name: my_concrete_interface
+    pod_id: 1
+    node_id: 201-202
+    path_ep: my_vpc_ipg
+    state: present
   delegate_to: localhost
-  register: query_result
 
-- name: Query all concrete devices
-  cisco.aci.aci_l4l7_concrete_device:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    state: query
-  delegate_to: localhost
-  register: query_result
-
-- name: Delete a concrete device
-  cisco.aci.aci_l4l7_concrete_device:
+- name: Query a concrete interface
+  cisco.aci.aci_l4l7_service_graph_template:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
     device: my_device
     concrete_device: my_concrete_device
+    name: my_concrete_interface
+    pod_id: 1
+    node_id: 201-202
+    path_ep: my_vpc_ipg
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query all concrete interfaces
+  cisco.aci.aci_l4l7_service_graph_template:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Delete a concrete interface
+  cisco.aci.aci_l4l7_concrete_interface:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    device: my_device
+    concrete_device: my_concrete_device
+    name: my_concrete_interface
     state: absent
   delegate_to: localhost
 """
@@ -223,28 +262,34 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
-        device=dict(type="str", aliases=["device_name", "logical_device_name"]),
-        name=dict(type="str", aliases=["concrete_device", "concrete_device_name"]),
-        vcenter_name=dict(type="str"),
-        vm_name=dict(type="str"),
+        device=dict(type="str"),
+        concrete_device=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        name=dict(type="str", aliases=["concrete_interface"]),
+        pod_id=dict(type="int"),
+        node_id=dict(type="str"),
+        path_ep=dict(type="str"),
+        vnic_name=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "device", "name"]],
-            ["state", "present", ["tenant", "device", "name"]],
+            ["state", "absent", ["tenant", "device", "concrete_device", "name"]],
+            ["state", "present", ["tenant", "device", "concrete_device", "name", "pod_id", "node_id", "path_ep"]],
         ],
     )
 
     tenant = module.params.get("tenant")
     state = module.params.get("state")
     device = module.params.get("device")
+    concrete_device = module.params.get("concrete_device")
     name = module.params.get("name")
-    vcenter_name = module.params.get("vcenter_name")
-    vm_name = module.params.get("vm_name")
+    pod_id = module.params.get("pod_id")
+    node_id = module.params.get("node_id")
+    path_ep = module.params.get("path_ep")
+    vnic_name = module.params.get("vnic_name")
 
     aci = ACIModule(module)
 
@@ -263,24 +308,38 @@ def main():
         ),
         subclass_2=dict(
             aci_class="vnsCDev",
-            aci_rn="cDev-{0}".format(name),
+            aci_rn="cDev-{0}".format(concrete_device),
+            module_object=concrete_device,
+            target_filter={"name": concrete_device},
+        ),
+        subclass_3=dict(
+            aci_class="vnsCIf",
+            aci_rn="cIf-[{0}]".format(name),
             module_object=name,
             target_filter={"name": name},
         ),
+        child_classes=["vnsRsCIfPathAtt"],
     )
 
     aci.get_existing()
 
     if state == "present":
+        path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, "protpaths" if "-" in node_id else "paths", node_id, path_ep)
         aci.payload(
-            aci_class="vnsCDev",
+            aci_class="vnsCIf",
             class_config=dict(
                 name=name,
-                vcenterName=vcenter_name,
-                vmName=vm_name,
+                vnicName=vnic_name,
             ),
+            child_configs=[
+                dict(
+                    vnsRsCIfPathAtt=dict(
+                        attributes=dict(tDn=path_dn),
+                    ),
+                ),
+            ],
         )
-        aci.get_diff(aci_class="vnsCDev")
+        aci.get_diff(aci_class="vnsCIf")
 
         aci.post_config()
 
