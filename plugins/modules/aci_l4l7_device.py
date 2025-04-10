@@ -109,11 +109,11 @@ EXAMPLES = r"""
     domain: phys
     func_type: go_to
     context_aware: single
-    managed: no
+    managed: false
     dev_type: physical
     svc_type: adc
-    trunking: no
-    prom_mode: yes
+    trunking: false
+    prom_mode: true
   delegate_to: localhost
 
 - name: Query an L4-L7 device
