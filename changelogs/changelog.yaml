@@ -257,6 +257,49 @@ releases:
 
         '
     release_date: '2024-07-12'
+  2.11.0:
+    changes:
+      bugfixes:
+        - Add subclass to `aci_domain_to_vlan_pool` to fix deletion of binding (#695)
+        - Fix examples in aci_esg_ip_subnet_selector module
+        - 'Fix wrong payload attribute used to define the correct vPC member side  in
+          aci_l3out_logical_interface_vpc_member (#663) Co-authored-by: akinross <akinross@cisco.com>'
+        - Fixed seealso module references to include FQCN.
+        - Made changes to aci_rest module to only add annotation when the value is
+          a dictionary and changed the way the cookie is retrieved in the httpapi
+          plugin
+        - Modify interface_configs requirement using required_if dependency for aci_bulk_static_binding_to_epg
+        - Remove duplicate alias name for extepg in aci_l3out_extsubnet
+        - Updated README to match RedHat s ansible collection template.
+      minor_changes:
+        - Add stratum attribute to aci_ntp_policy module
+        - Add support for management epg configuration in aci_dns_profile module
+        - Added modules to manage Endpoint IP and MAC Tags
+        - Added support for Ansible 2.18 and dropped support for 2.15. - Also changed
+          supported Python version from 3.10 to 3.11
+      release_summary: 'Release v2.11.0 of the ``ansible-aci`` collection on 2025-04-11.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.10.1.
+
+        '
+      trivial:
+        - '#722'
+        - ', checks, idempotency, cleanup old tests, remove <v4'
+        - ', filtering and test'
+        - ', remove v under 4 fra new tests'
+        - '/integration/targets/aci_rest/tasks/xml_string.yml Co-authored-by: Sabari
+          Jaganathan <sajagana@cisco.com>'
+        - Add comment to describe UI behaviour of VLAN mode when encap is set in aci_epg_to_domain
+          module
+        - E
+        - O
+        - P
+        - Remove reference in documentation to encap_mode in the encap variable description
+          of aci_epg_to_domain module
+        - S
+        - '[] on rn'
+    release_date: '2025-04-11'
   2.2.0:
     changes:
       bugfixes:

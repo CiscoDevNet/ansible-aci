@@ -84,6 +84,8 @@ action_groups:
     - aci_domain_to_vlan_pool
     - aci_encap_pool
     - aci_encap_pool_range
+    - aci_endpoint_tag_ip
+    - aci_endpoint_tag_mac
     - aci_epg
     - aci_epg_monitoring_policy
     - aci_epg_subnet
