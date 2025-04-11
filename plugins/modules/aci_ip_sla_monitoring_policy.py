@@ -41,6 +41,7 @@ options:
   sla_port:
     description:
     - The Port to monitor for TCP SLAs.
+    - Permitted values are in the range of [1, 65535].
     type: int
     aliases: [ destination_port ]
   frequency:
