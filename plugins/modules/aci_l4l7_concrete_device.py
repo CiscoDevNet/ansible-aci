@@ -34,11 +34,11 @@ options:
     aliases: [ concrete_device, concrete_device_name ]
   vcenter_name:
     description:
-    - The virtual center name on which the device is hosted in the L4-L7 device cluster.
+    - The name of the vCenter hosting the L4-L7 device.
     type: str
   vm_name:
     description:
-    - The virtual center VM name on which the device is hosted in the L4-L7 device cluster.
+    - The VM name within the vCenter for the L4-L7 device.
     type: str
   state:
     description:

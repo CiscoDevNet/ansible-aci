@@ -33,6 +33,7 @@ options:
   encap:
     description:
     - The encapsulation of the Logical Interface.
+    - It requires the VLAN to be prepended, for example, 'vlan-987'.
     type: str
   state:
     description:
