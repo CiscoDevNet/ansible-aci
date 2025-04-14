@@ -46,6 +46,10 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
+  name_alias:
+    description:
+    - The alias for the current object. This relates to the nameAlias field in ACI.
+    type: str
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
