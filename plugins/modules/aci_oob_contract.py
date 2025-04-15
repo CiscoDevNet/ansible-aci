@@ -258,7 +258,10 @@ def main():
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class="vzOOBBrCP", aci_rn="tn-mgmt/oobbrc-{0}".format(contract), module_object=contract, target_filter={"name": contract} if contract else None
+            aci_class="vzOOBBrCP",
+            aci_rn="tn-mgmt/oobbrc-{0}".format(contract),
+            module_object=contract,
+            target_filter={"name": contract} if contract else None,
         )
     )
 
