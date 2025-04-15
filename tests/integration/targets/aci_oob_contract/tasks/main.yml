@@ -83,8 +83,8 @@
         - present_check_mode is changed
         - present_check_mode.previous == []
         - present_check_mode.previous == present_check_mode.current
-        - present_check_mode.sent.vzOOBBrCP.attributes.name == 'anstest'
-        - present_check_mode.sent.vzOOBBrCP.attributes.descr == 'Ansible Test'
+        - present_check_mode.proposed.vzOOBBrCP.attributes.name == 'anstest'
+        - present_check_mode.proposed.vzOOBBrCP.attributes.descr == 'Ansible Test'
         - contract_present is changed
         - contract_present.previous == []
         - contract_present.current.0.vzOOBBrCP.attributes.annotation == 'orchestrator:ansible'
