@@ -100,8 +100,8 @@
       - inb_provide_present_check_mode is changed
       - inb_provide_present_check_mode.previous == []
       - inb_provide_present_check_mode.current == []
-      - inb_provide_present_check_mode.sent.fvRsProv.attributes.dn == "uni/tn-mgmt/mgmtp-default/inb-anstest_inb/rsprov-aci_inb_http"
-      - inb_provide_present_check_mode.sent.fvRsProv.attributes.tnVzBrCPName == 'aci_inb_http'
+      - inb_provide_present_check_mode.proposed.fvRsProv.attributes.dn == "uni/tn-mgmt/mgmtp-default/inb-anstest_inb/rsprov-aci_inb_http"
+      - inb_provide_present_check_mode.proposed.fvRsProv.attributes.tnVzBrCPName == 'aci_inb_http'
       - inb_provide_present is changed
       - inb_provide_present.previous == []
       - inb_provide_present.sent == inb_provide_present_check_mode.sent
@@ -202,8 +202,8 @@
       - oob_provide_present_check_mode is changed
       - oob_provide_present_check_mode.previous == []
       - oob_provide_present_check_mode.current == []
-      - oob_provide_present_check_mode.sent.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == 'aci_oob_http'
-      - oob_provide_present_check_mode.sent.mgmtRsOoBProv.attributes.dn == "uni/tn-mgmt/mgmtp-default/oob-anstest_oob/rsooBProv-aci_oob_http"
+      - oob_provide_present_check_mode.proposed.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == 'aci_oob_http'
+      - oob_provide_present_check_mode.proposed.mgmtRsOoBProv.attributes.dn == "uni/tn-mgmt/mgmtp-default/oob-anstest_oob/rsooBProv-aci_oob_http"
       - oob_provide_present is changed
       - oob_provide_present.previous == []
       - oob_provide_present.sent == oob_provide_present_check_mode.sent
