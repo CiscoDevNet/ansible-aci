@@ -84,6 +84,8 @@ action_groups:
     - aci_domain_to_vlan_pool
     - aci_encap_pool
     - aci_encap_pool_range
+    - aci_endpoint_tag_ip
+    - aci_endpoint_tag_mac
     - aci_epg
     - aci_epg_monitoring_policy
     - aci_epg_subnet
@@ -160,6 +162,7 @@ action_groups:
     - aci_interface_policy_spine_policy_group
     - aci_interface_policy_storm_control
     - aci_interface_selector_to_switch_policy_leaf_profile
+    - aci_ip_sla_monitoring_policy
     - aci_key_policy
     - aci_keychain_policy
     - aci_l2out
