@@ -280,7 +280,7 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["tenant", "name"]],
-            ["state", "present", ["tenant", "name", "dev_type", "domain"]],
+            ["state", "present", ["tenant", "name", "device_type", "domain"]],
         ],
     )
 
