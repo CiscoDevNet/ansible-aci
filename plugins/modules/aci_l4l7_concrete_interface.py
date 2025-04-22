@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_l4l7_concrete_interface
 short_description: Manage L4-L7 Concrete Interfaces (vns:CIf)
 description:
-- Manage Layer 4-7 (L4-L7) Concrete Interfaces.
+- Manage Layer 4 to Layer 7 (L4-L7) Concrete Interfaces.
 options:
   tenant:
     description:
@@ -45,12 +45,13 @@ options:
       - For Ports and Port-channels, this is represented as a single node ID.
       - For virtual Port Channels (vPCs), this is represented as a hyphen-separated pair of node IDs, such as "201-202".
     type: str
-  path_ep:
+  interface:
     description:
     - The path to the physical interface.
     - For single ports, this is the port name, e.g. "eth1/15".
     - For Port-channels and vPCs, this is the Interface Policy Group name.
     type: str
+    aliases: [ path_ep, interface_name, interface_policy_group, interface_policy_group_name ]
   vnic_name:
     description:
     - The concrete interface vNIC name.
@@ -90,7 +91,7 @@ EXAMPLES = r"""
     name: my_concrete_interface
     pod_id: 1
     node_id: 201
-    path_ep: eth1/16
+    interface: eth1/16
     state: present
   delegate_to: localhost
 
@@ -105,7 +106,7 @@ EXAMPLES = r"""
     name: my_concrete_interface
     pod_id: 1
     node_id: 201-202
-    path_ep: my_vpc_ipg
+    interface: my_vpc_ipg
     state: present
   delegate_to: localhost
 
@@ -120,7 +121,7 @@ EXAMPLES = r"""
     name: my_concrete_interface
     pod_id: 1
     node_id: 201-202
-    path_ep: my_vpc_ipg
+    interface: my_vpc_ipg
     state: query
   delegate_to: localhost
   register: query_result
@@ -268,7 +269,7 @@ def main():
         name=dict(type="str", aliases=["concrete_interface"]),
         pod_id=dict(type="int"),
         node_id=dict(type="str"),
-        path_ep=dict(type="str"),
+        interface=dict(type="str", aliases=["path_ep", "interface_name", "interface_policy_group", "interface_policy_group_name"]),
         vnic_name=dict(type="str"),
     )
 
@@ -277,7 +278,7 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["tenant", "device", "concrete_device", "name"]],
-            ["state", "present", ["tenant", "device", "concrete_device", "name", "pod_id", "node_id", "path_ep"]],
+            ["state", "present", ["tenant", "device", "concrete_device", "name", "pod_id", "node_id", "interface"]],
         ],
     )
 
@@ -288,7 +289,7 @@ def main():
     name = module.params.get("name")
     pod_id = module.params.get("pod_id")
     node_id = module.params.get("node_id")
-    path_ep = module.params.get("path_ep")
+    interface = module.params.get("interface")
     vnic_name = module.params.get("vnic_name")
 
     aci = ACIModule(module)
@@ -324,7 +325,7 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, "protpaths" if "-" in node_id else "paths", node_id, path_ep)
+        path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, "protpaths" if "-" in node_id else "paths", node_id, interface)
         aci.payload(
             aci_class="vnsCIf",
             class_config=dict(

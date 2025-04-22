@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_l4l7_device
 short_description: Manage L4-L7 Devices (vns:LDevVip)
 description:
-- Manage Layer 4-7 (L4-L7) Devices.
+- Manage Layer 4 to Layer 7 (L4-L7) Devices.
 options:
   tenant:
     description:
@@ -33,38 +33,38 @@ options:
     - The APIC defaults to C(single) when unset during creation.
     type: str
     choices: [ multi, single ]
-  dev_type:
+  device_type:
     description:
     - The type of the device.
     - The APIC defaults to C(physical) when unset during creation.
     type: str
     choices: [ physical, virtual ]
-    aliases: [ device_type ]
-  func_type:
+    aliases: [ dev_type ]
+  function_type:
     description:
     - The function type of the device.
     - The APIC defaults to C(go_to) when unset during creation.
     type: str
     choices: [ go_to, go_through, l1, l2 ]
-    aliases: [ function_type ]
+    aliases: [ func_type ]
   managed:
     description:
     - Is the device a managed device.
     - The APIC defaults to C(true) when unset during creation.
     type: bool
-  prom_mode:
+  promiscuous_mode:
     description:
     - Enable promiscuous mode.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
-    aliases: [ promiscuous_mode ]
-  svc_type:
+    aliases: [ prom_mode ]
+  service_type:
     description:
     - The service type running on the device.
     - The APIC defaults to C(others) when unset during creation.
     type: str
     choices: [ adc, fw, others ]
-    aliases: [ service_type ]
+    aliases: [ svc_type ]
   trunking:
     description:
     - Enable trunking.
@@ -73,7 +73,7 @@ options:
   domain:
     description:
     - The domain to bind to the device.
-    - The type of domain is controlled by the dev_type setting.
+    - The type of domain is controlled by the device_type setting.
     type: str
   state:
     description:
@@ -107,13 +107,13 @@ EXAMPLES = r"""
     name: my_device
     state: present
     domain: phys
-    func_type: go_to
+    function_type: go_to
     context_aware: single
     managed: false
-    dev_type: physical
-    svc_type: adc
+    device_type: physical
+    service_type: adc
     trunking: false
-    prom_mode: true
+    promiscuous_mode: true
   delegate_to: localhost
 
 - name: Query an L4-L7 device
@@ -266,11 +266,11 @@ def main():
         name=dict(type="str", aliases=["device", "device_name", "logical_device_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         context_aware=dict(type="str", choices=["single", "multi"]),
-        dev_type=dict(type="str", aliases=["device_type"], choices=["physical", "virtual"]),
-        func_type=dict(type="str", aliases=["function_type"], choices=list(L4L7_FUNC_TYPES_MAPPING)),
+        device_type=dict(type="str", aliases=["dev_type"], choices=["physical", "virtual"]),
+        function_type=dict(type="str", aliases=["func_type"], choices=list(L4L7_FUNC_TYPES_MAPPING)),
         managed=dict(type="bool"),
-        prom_mode=dict(type="bool", aliases=["promiscuous_mode"]),
-        svc_type=dict(type="str", aliases=["service_type"], choices=["adc", "fw", "others"]),
+        promiscuous_mode=dict(type="bool", aliases=["prom_mode"]),
+        service_type=dict(type="str", aliases=["svc_type"], choices=["adc", "fw", "others"]),
         trunking=dict(type="bool"),
         domain=dict(type="str"),
     )
@@ -290,11 +290,11 @@ def main():
     state = module.params.get("state")
     name = module.params.get("name")
     context_aware = module.params.get("context_aware")
-    dev_type = module.params.get("dev_type")
-    func_type = L4L7_FUNC_TYPES_MAPPING.get(module.params.get("func_type"))
+    device_type = module.params.get("device_type")
+    function_type = L4L7_FUNC_TYPES_MAPPING.get(module.params.get("function_type"))
     managed = aci.boolean(module.params.get("managed"))
-    prom_mode = aci.boolean(module.params.get("prom_mode"))
-    svc_type = module.params.get("svc_type")
+    promiscuous_mode = aci.boolean(module.params.get("promiscuous_mode"))
+    service_type = module.params.get("service_type")
     trunking = aci.boolean(module.params.get("trunking"))
     domain = module.params.get("domain")
 
@@ -318,7 +318,7 @@ def main():
 
     if state == "present":
         child_configs = []
-        if dev_type == "virtual":
+        if device_type == "virtual":
             dom_class = "vnsRsALDevToDomP"
             tdn = "uni/vmmp-VMware/dom-{0}".format(domain)
         else:
@@ -331,11 +331,11 @@ def main():
             class_config=dict(
                 name=name,
                 contextAware="{0}-Context".format(context_aware),
-                devtype=dev_type.upper(),
-                funcType=func_type,
+                devtype=device_type.upper(),
+                funcType=function_type,
                 managed=managed,
-                promMode=prom_mode,
-                svcType=svc_type.upper(),
+                promMode=promiscuous_mode,
+                svcType=service_type.upper(),
                 trunking=trunking,
             ),
             child_configs=child_configs,
