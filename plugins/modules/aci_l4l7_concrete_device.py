@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_l4l7_concrete_device
 short_description: Manage L4-L7 Concrete Devices (vns:CDev)
 description:
-- Manage Layer 4-7 (L4-L7) Concrete Devices.
+- Manage Layer 4 to Layer 7 (L4-L7) Concrete Devices.
 options:
   tenant:
     description:

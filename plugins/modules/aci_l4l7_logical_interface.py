@@ -15,7 +15,7 @@ DOCUMENTATION = r"""
 module: aci_l4l7_logical_interface
 short_description: Manage L4-L7 Logical Interface (vns:LIf)
 description:
-- Manage Layer 4-7 (L4-L7) Logical Interfaces.
+- Manage Layer 4 to Layer 7 (L4-L7) Logical Interfaces.
 options:
   tenant:
     description:
