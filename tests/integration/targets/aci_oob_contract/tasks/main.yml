@@ -64,18 +64,13 @@
   - name: Create OOB Contract
     cisco.aci.aci_oob_contract: &aci_oob_contract_present
       <<: *aci_oob_contract_present_CM
-      state: "{{ fakevar | default(omit) }}"    # >>>> DEFAULTS TO 'PRESENT'
+      state: "{{ fakevar | default(omit) }}"    # >>>> testing for default value when omitted
     register: contract_present
 
   - name: Create OOB Contract again
     cisco.aci.aci_oob_contract:
       <<: *aci_oob_contract_present
     register: present_idempotent
-
-  - name: Create another OOB Contract
-    cisco.aci.aci_oob_contract:
-      <<: *aci_oob_contract_present
-      contract: anstest2
 
   - name: Assert OOB Contracts were Created
     ansible.builtin.assert:
@@ -90,9 +85,15 @@
         - contract_present.current.0.vzOOBBrCP.attributes.annotation == 'orchestrator:ansible'
         - contract_present.current.0.vzOOBBrCP.attributes.prio == 'unspecified'
         - contract_present.current.0.vzOOBBrCP.attributes.scope == 'context'
-        - '"uni/tn-mgmt/oobbrc-anstest.json" in contract_present.url'
-        - contract_present.sent == present_check_mode.sent
         - present_idempotent is not changed
+        - present_idempotent.previous.0.vzOOBBrCP.attributes.descr == "Ansible Test"
+        - present_idempotent.current.0.vzOOBBrCP.attributes.descr == "Ansible Test"
+        - present_idempotent.previous.0.vzOOBBrCP.attributes.name == "anstest"
+        - present_idempotent.current.0.vzOOBBrCP.attributes.name == "anstest"
+        - present_idempotent.previous.0.vzOOBBrCP.attributes.prio == "unspecified"
+        - present_idempotent.current.0.vzOOBBrCP.attributes.prio == "unspecified"
+        - present_idempotent.previous.0.vzOOBBrCP.attributes.scope == "context"
+        - present_idempotent.current.0.vzOOBBrCP.attributes.scope == "context"
 
   # UPDATE
   - name: Update OOB Contract
@@ -113,19 +114,21 @@
     ansible.builtin.assert:
       that:
         - update_contract is changed
-        - update_contract.sent != update_contract.proposed
         - update_contract.previous.0.vzOOBBrCP.attributes.scope == "context"
-        - update_contract.sent.vzOOBBrCP.attributes.scope == "application-profile"
         - update_contract.current.0.vzOOBBrCP.attributes.scope == "application-profile"
         - update_contract.previous.0.vzOOBBrCP.attributes.descr == "Ansible Test"
-        - update_contract.sent.vzOOBBrCP.attributes.descr == "Description altered"
+        - update_contract.current.0.vzOOBBrCP.attributes.descr == "Description altered"
         - update_contract.previous.0.vzOOBBrCP.attributes.prio == "unspecified"
-        - update_contract.sent.vzOOBBrCP.attributes.prio == "level1"
         - update_contract.current.0.vzOOBBrCP.attributes.prio == "level1"
         - present_missing_param is failed
         - 'present_missing_param.msg == "state is present but all of the following are missing: contract"'
 
   # QUERY
+  - name: Create another OOB Contract
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_present
+      contract: anstest2
+
   - name: Query OOB Contract
     cisco.aci.aci_oob_contract: &aci_oob_contract_query
       <<: *aci_oob_contract_present
@@ -143,11 +146,15 @@
       that:
         - query_contract is not changed
         - query_contract.current | length == 1
-        - '"tn-mgmt/oobbrc-anstest.json" in query_contract.url'
+        - query_contract.current.0.vzOOBBrCP.attributes.descr == "Description altered"
+        - query_contract.current.0.vzOOBBrCP.attributes.dn == "uni/tn-mgmt/oobbrc-anstest"
+        - query_contract.current.0.vzOOBBrCP.attributes.name == "anstest"
+        - query_contract.current.0.vzOOBBrCP.attributes.prio == "level1"
+        - query_contract.current.0.vzOOBBrCP.attributes.scope == "application-profile"
         - query_tenant is not changed
         - query_tenant.current | length > 2    # 2 contracts we created, one 'default' oob-contract
-        - 'query_tenant.filter_string == ""'
-        - '"vzOOBBrCP.json" in query_tenant.url'
+        # add all attributes
+        #- query_tenant.current.0.vzOOBBrCP.attributes.dn == "uni/tn-mgmt/oobbrc-anstest"
 
   # DELETE
   - name: Delete OOB Contract (check_mode)
@@ -184,9 +191,20 @@
       that:
         - absent_check_mode is changed
         - absent_check_mode.previous != []
+        - absent_check_mode.current.0.vzOOBBrCP.attributes.descr == "Description altered"
+        - absent_check_mode.current.0.vzOOBBrCP.attributes.name == "anstest"
+        - absent_check_mode.current.0.vzOOBBrCP.attributes.prio == "level1"
+        - absent_check_mode.current.0.vzOOBBrCP.attributes.scope == "application-profile"
+        - absent_check_mode.proposed == {}
         - contract_absent is changed
         - contract_absent.previous == absent_check_mode.previous
+        - contract_absent.previous.0.vzOOBBrCP.attributes.descr == "Description altered"
+        - contract_absent.previous.0.vzOOBBrCP.attributes.name == "anstest"
+        - contract_absent.previous.0.vzOOBBrCP.attributes.prio == "level1"
+        - contract_absent.previous.0.vzOOBBrCP.attributes.scope == "application-profile"
+        - contract_absent.current == []
         - absent_idempotent is not changed
         - absent_idempotent.previous == []
+        - absent_idempotent.current == []
         - absent_missing_param is failed
         - 'absent_missing_param.msg == "state is absent but all of the following are missing: contract"'
