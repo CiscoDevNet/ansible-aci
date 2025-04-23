@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2017, Jacob McGill (@jmcgill298)
+# Copyright: (c) 2025, Akini Ross (@akinross) <akinross@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -84,7 +86,8 @@ options:
     - The C(nd_ra) option is used to treat the gateway_ip address as a Neighbor Discovery Router Advertisement Prefix.
     - The C(no_gw) option is used to remove default gateway functionality from the gateway address.
     - The APIC defaults to C(nd_ra) when unset during creation.
-    type: str
+    type: list
+    elements: str
     choices: [ nd_ra, no_gw, querier_ip, unspecified ]
   subnet_name:
     description:
@@ -131,6 +134,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Jacob McGill (@jmcgill298)
+- Akini Ross (@akinross)
 """
 
 EXAMPLES = r"""
@@ -179,6 +183,9 @@ EXAMPLES = r"""
     scope: public
     route_profile_l3_out: corp
     route_profile: corp_route_profile
+    subnet_control:
+      - no_gw
+      - querier_ip
     state: present
   delegate_to: localhost
 
@@ -367,7 +374,7 @@ def main():
         route_profile=dict(type="str"),
         route_profile_l3_out=dict(type="str"),
         scope=dict(type="list", elements="str", choices=["private", "public", "shared"]),
-        subnet_control=dict(type="str", choices=list(SUBNET_CONTROL_MAPPING_BD_SUBNET.keys())),
+        subnet_control=dict(type="list", elements="str", choices=list(SUBNET_CONTROL_MAPPING_BD_SUBNET.keys())),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         name_alias=dict(type="str"),
@@ -416,7 +423,9 @@ def main():
     state = module.params.get("state")
     subnet_control = module.params.get("subnet_control")
     if subnet_control:
-        subnet_control = SUBNET_CONTROL_MAPPING_BD_SUBNET[subnet_control]
+        if len(subnet_control) > 1 and "unspecified" in subnet_control:
+            module.fail_json(msg="Parameter 'subnet_control' cannot contain 'unspecified' in combination with other values, got: %s" % subnet_control)
+        subnet_control = ",".join(sorted([SUBNET_CONTROL_MAPPING_BD_SUBNET[ctrl] for ctrl in subnet_control]))
     name_alias = module.params.get("name_alias")
     ip_data_plane_learning = module.params.get("ip_data_plane_learning")
     aci.construct_url(
