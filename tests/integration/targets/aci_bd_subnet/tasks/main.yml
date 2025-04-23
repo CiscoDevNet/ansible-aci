@@ -447,6 +447,90 @@
         - delete_idempotency is not changed
         - delete_idempotency.previous == []
 
+  # TEST SUBNET CONTROLS AS LIST OF STRINGS
+
+  - name: Create subnet with all subnet_control
+    cisco.aci.aci_bd_subnet: &subnet_control
+      <<: *aci_subnet_present
+      subnet_control:
+        - querier_ip
+        - no_gw
+        - nd_ra
+    register: create_with_all_subnet_control
+
+  - name: Create subnet with all subnet_control again - idempotency works
+    cisco.aci.aci_bd_subnet:
+      <<: *subnet_control
+    register: create_with_all_subnet_control_again
+  
+  - name: Update subnet with unspecified subnet_control
+    cisco.aci.aci_bd_subnet: &create_with_removed_subnet_control
+      <<: *subnet_control
+      subnet_control:
+        - unspecified
+    register: update_subnet_control_unspecified
+  
+  - name: Update subnet with unspecified subnet_control again - idempotency works
+    cisco.aci.aci_bd_subnet:
+      <<: *create_with_removed_subnet_control
+    register: update_subnet_control_unspecified_again
+  
+  - name: Update subnet with unspecified subnet_control and other subnet_controls
+    cisco.aci.aci_bd_subnet:
+      <<: *subnet_control
+      subnet_control:
+        - unspecified
+        - querier_ip
+        - no_gw
+    ignore_errors: true
+    register: err_update_subnet_control_unspecified_other
+
+  - name: Update subnet with subnet_controls
+    cisco.aci.aci_bd_subnet:
+      <<: *subnet_control
+      subnet_control:
+        - querier_ip
+        - no_gw
+    register: update_subnet_controls
+
+  - name: Update subnet with subnet_controls in reversed order - idempotency works
+    cisco.aci.aci_bd_subnet:
+      <<: *subnet_control
+      subnet_control:
+        - no_gw
+        - querier_ip
+    register: update_subnet_controls_reversed_order
+
+  - name: Asserts for subnet control as list tasks
+    ansible.builtin.assert:
+      that:
+        - create_with_all_subnet_control is changed
+        - create_with_all_subnet_control.previous == []
+        - create_with_all_subnet_control.current.0.fvSubnet.attributes.name == "anstest"
+        - create_with_all_subnet_control.current.0.fvSubnet.attributes.ctrl == "nd,no-default-gateway,querier"
+        - create_with_all_subnet_control_again is not changed
+        - create_with_all_subnet_control_again.previous == create_with_all_subnet_control_again.current
+        - create_with_all_subnet_control_again.current.0.fvSubnet.attributes.name == "anstest"
+        - create_with_all_subnet_control_again.current.0.fvSubnet.attributes.ctrl == "nd,no-default-gateway,querier"
+        - update_subnet_control_unspecified is changed
+        - update_subnet_control_unspecified.previous == create_with_all_subnet_control_again.current
+        - update_subnet_control_unspecified.current.0.fvSubnet.attributes.name == "anstest"
+        - update_subnet_control_unspecified.current.0.fvSubnet.attributes.ctrl == ""
+        - update_subnet_control_unspecified_again is not changed
+        - update_subnet_control_unspecified_again.previous == update_subnet_control_unspecified_again.current
+        - update_subnet_control_unspecified_again.current.0.fvSubnet.attributes.name == "anstest"
+        - update_subnet_control_unspecified_again.current.0.fvSubnet.attributes.ctrl == ""
+        - err_update_subnet_control_unspecified_other is failed
+        - err_update_subnet_control_unspecified_other.msg == "Parameter 'subnet_control' cannot contain 'unspecified' in combination with other values, got{{":"}} ['unspecified', 'querier_ip', 'no_gw']"
+        - update_subnet_controls is changed
+        - update_subnet_controls.previous == update_subnet_control_unspecified_again.current
+        - update_subnet_controls.current.0.fvSubnet.attributes.name == "anstest"
+        - update_subnet_controls.current.0.fvSubnet.attributes.ctrl == "no-default-gateway,querier"
+        - update_subnet_controls_reversed_order is not changed
+        - update_subnet_controls_reversed_order.previous == update_subnet_controls_reversed_order.current
+        - update_subnet_controls_reversed_order.current.0.fvSubnet.attributes.name == "anstest"
+        - update_subnet_controls_reversed_order.current.0.fvSubnet.attributes.ctrl == "no-default-gateway,querier"
+
   - name: delete bd - cleanup before ending tests
     cisco.aci.aci_bd:
       <<: *aci_bd_present
