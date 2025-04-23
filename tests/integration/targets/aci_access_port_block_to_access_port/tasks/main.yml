@@ -84,6 +84,7 @@
     cisco.aci.aci_access_spine_interface_selector: &aci_access_spine_interface_selector_present
       <<: *aci_interface_policy_spine_profile_absent
       access_port_selector: anstest_spineaccessportselector
+      selector_type: range
       state: present
 
   # CREATION TASKS
@@ -176,7 +177,9 @@
   # SPINE PORT BLOCK CREATION
   - name: Bind an access port block to an access spine interface selector -check mode works
     cisco.aci.aci_access_port_block_to_access_port: &aci_access_port_block_to_spine_access_port_present
-      <<: *aci_access_spine_interface_selector_present
+      <<: *aci_info
+      interface_profile: spineintprftest
+      access_port_selector: anstest_spineaccessportselector
       port_blk: anstest_spineportblkname
       port_blk_description: anstest_spineportblkdesc
       fromPort: 10
@@ -244,6 +247,64 @@
       - accessportblock_to_spineaccessport_present_update.current.0.infraPortBlk.attributes.fromPort == "11"
       - accessportblock_to_spineaccessport_present_update.current.0.infraPortBlk.attributes.toPort == "16"
 
+  - name: Add anstest_common_port_blk with spine
+    cisco.aci.aci_access_port_block_to_access_port:
+      <<: *aci_info
+      type: spine
+      interface_profile: spineintprftest
+      access_port_selector: anstest_spineaccessportselector
+      port_blk: anstest_common_port_blk
+      fromPort: 20
+      toPort: 21
+    register: add_common_port_blk_spine
+
+  - name: Add anstest_common_port_blk with fex
+    cisco.aci.aci_access_port_block_to_access_port:
+      <<: *aci_info
+      type: fex
+      leaf_interface_profile: leafintprftest_fex
+      access_port_selector: anstest_accessportselector_fex
+      port_blk: anstest_common_port_blk
+      fromPort: 13
+      toPort: 14
+    register: add_common_port_blk_fex
+
+  - name: Add anstest_common_port_blk with leaf
+    cisco.aci.aci_access_port_block_to_access_port:
+      <<: *aci_info
+      type: leaf
+      interface_profile: leafintprftest
+      access_port_selector: anstest_accessportselector
+      port_blk: anstest_common_port_blk
+      fromPort: 23
+      toPort: 24
+    register: add_common_port_blk_leaf
+
+  - name: Assertion check for add anstest_common_port_blk objects
+    ansible.builtin.assert:
+      that:
+        - add_common_port_blk_spine is changed
+        - add_common_port_blk_spine.current.0.infraPortBlk.attributes.dn == "uni/infra/spaccportprof-spineintprftest/shports-anstest_spineaccessportselector-typ-range/portblk-anstest_common_port_blk"
+        - add_common_port_blk_spine.current.0.infraPortBlk.attributes.fromCard == "1"
+        - add_common_port_blk_spine.current.0.infraPortBlk.attributes.fromPort == "20"
+        - add_common_port_blk_spine.current.0.infraPortBlk.attributes.name == "anstest_common_port_blk"
+        - add_common_port_blk_spine.current.0.infraPortBlk.attributes.toCard == "1"
+        - add_common_port_blk_spine.current.0.infraPortBlk.attributes.toPort == "21"
+        - add_common_port_blk_fex is changed
+        - add_common_port_blk_fex.current.0.infraPortBlk.attributes.dn == "uni/infra/fexprof-leafintprftest_fex/hports-anstest_accessportselector_fex-typ-range/portblk-anstest_common_port_blk"
+        - add_common_port_blk_fex.current.0.infraPortBlk.attributes.fromCard == "1"
+        - add_common_port_blk_fex.current.0.infraPortBlk.attributes.fromPort == "13"
+        - add_common_port_blk_fex.current.0.infraPortBlk.attributes.name == "anstest_common_port_blk"
+        - add_common_port_blk_fex.current.0.infraPortBlk.attributes.toCard == "1"
+        - add_common_port_blk_fex.current.0.infraPortBlk.attributes.toPort == "14"
+        - add_common_port_blk_leaf is changed
+        - add_common_port_blk_leaf.current.0.infraPortBlk.attributes.dn == "uni/infra/accportprof-leafintprftest/hports-anstest_accessportselector-typ-range/portblk-anstest_common_port_blk"
+        - add_common_port_blk_leaf.current.0.infraPortBlk.attributes.fromCard == "1"
+        - add_common_port_blk_leaf.current.0.infraPortBlk.attributes.fromPort == "23"
+        - add_common_port_blk_leaf.current.0.infraPortBlk.attributes.name == "anstest_common_port_blk"
+        - add_common_port_blk_leaf.current.0.infraPortBlk.attributes.toCard == "1"
+        - add_common_port_blk_leaf.current.0.infraPortBlk.attributes.toPort == "24"
+
   # QUEY TASKS
   - name: Query all port block and access_port_selector bindings
     cisco.aci.aci_access_port_block_to_access_port:
@@ -269,7 +330,9 @@
 
   - name: Query Specific port block and access_port_selector binding spine
     cisco.aci.aci_access_port_block_to_access_port:
-      <<: *aci_access_spine_interface_selector_present
+      <<: *aci_info
+      interface_profile: spineintprftest
+      access_port_selector: anstest_spineaccessportselector
       type: spine
       port_blk: anstest_spineportblkname
       state: query
@@ -289,6 +352,88 @@
         - binding_query_spine.current.0.infraPortBlk.attributes.descr == "anstest_spineportblkdesc"
         - binding_query_spine.current.0.infraPortBlk.attributes.fromPort == "11"
         - binding_query_spine.current.0.infraPortBlk.attributes.toPort == "16"
+
+  - name: Query spine anstest_common_port_blk with interface_profile, port_selector and port_blk
+    cisco.aci.aci_access_port_block_to_access_port:
+      <<: *aci_info
+      type: spine
+      interface_profile: spineintprftest
+      access_port_selector: anstest_spineaccessportselector
+      port_blk: anstest_common_port_blk
+      state: query
+    register: query_common_port_blk_spine
+
+  - name: Query fex anstest_common_port_blk with interface_profile, port_selector and port_blk
+    cisco.aci.aci_access_port_block_to_access_port:
+      <<: *aci_info
+      type: fex
+      leaf_interface_profile: leafintprftest_fex
+      access_port_selector: anstest_accessportselector_fex
+      port_blk: anstest_common_port_blk
+      state: query
+    register: query_common_port_blk_fex
+
+  - name: Query leaf anstest_common_port_blk with interface_profile, port_selector and port_blk
+    cisco.aci.aci_access_port_block_to_access_port:
+      <<: *aci_info
+      type: leaf
+      interface_profile: leafintprftest
+      access_port_selector: anstest_accessportselector
+      port_blk: anstest_common_port_blk
+      state: query
+    register: query_common_port_blk_leaf
+
+  - name: Query all anstest_common_port_blk without interface_profile, port_selector and port_blk
+    cisco.aci.aci_access_port_block_to_access_port:
+      <<: *aci_info
+      port_blk: anstest_common_port_blk
+      state: query
+    register: query_all_common_port_blk
+
+  - name: Assertion check for query anstest_common_port_blk object
+    ansible.builtin.assert:
+      that:
+        - query_common_port_blk_spine is not changed
+        - query_common_port_blk_spine.current.0.infraPortBlk.attributes.dn == "uni/infra/spaccportprof-spineintprftest/shports-anstest_spineaccessportselector-typ-range/portblk-anstest_common_port_blk"
+        - query_common_port_blk_spine.current.0.infraPortBlk.attributes.fromCard == "1"
+        - query_common_port_blk_spine.current.0.infraPortBlk.attributes.fromPort == "20"
+        - query_common_port_blk_spine.current.0.infraPortBlk.attributes.name == "anstest_common_port_blk"
+        - query_common_port_blk_spine.current.0.infraPortBlk.attributes.toCard == "1"
+        - query_common_port_blk_spine.current.0.infraPortBlk.attributes.toPort == "21"
+        - query_common_port_blk_fex is not changed
+        - query_common_port_blk_fex.current.0.infraPortBlk.attributes.dn == "uni/infra/fexprof-leafintprftest_fex/hports-anstest_accessportselector_fex-typ-range/portblk-anstest_common_port_blk"
+        - query_common_port_blk_fex.current.0.infraPortBlk.attributes.fromCard == "1"
+        - query_common_port_blk_fex.current.0.infraPortBlk.attributes.fromPort == "13"
+        - query_common_port_blk_fex.current.0.infraPortBlk.attributes.name == "anstest_common_port_blk"
+        - query_common_port_blk_fex.current.0.infraPortBlk.attributes.toCard == "1"
+        - query_common_port_blk_fex.current.0.infraPortBlk.attributes.toPort == "14"
+        - query_common_port_blk_leaf is not changed
+        - query_common_port_blk_leaf.current.0.infraPortBlk.attributes.dn == "uni/infra/accportprof-leafintprftest/hports-anstest_accessportselector-typ-range/portblk-anstest_common_port_blk"
+        - query_common_port_blk_leaf.current.0.infraPortBlk.attributes.fromCard == "1"
+        - query_common_port_blk_leaf.current.0.infraPortBlk.attributes.fromPort == "23"
+        - query_common_port_blk_leaf.current.0.infraPortBlk.attributes.name == "anstest_common_port_blk"
+        - query_common_port_blk_leaf.current.0.infraPortBlk.attributes.toCard == "1"
+        - query_common_port_blk_leaf.current.0.infraPortBlk.attributes.toPort == "24"
+        - query_all_common_port_blk is not changed
+        - query_all_common_port_blk.current | length >= 3
+        - query_all_common_port_blk.current.0.infraPortBlk.attributes.dn == "uni/infra/spaccportprof-spineintprftest/shports-anstest_spineaccessportselector-typ-range/portblk-anstest_common_port_blk"
+        - query_all_common_port_blk.current.0.infraPortBlk.attributes.fromCard == "1"
+        - query_all_common_port_blk.current.0.infraPortBlk.attributes.fromPort == "20"
+        - query_all_common_port_blk.current.0.infraPortBlk.attributes.name == "anstest_common_port_blk"
+        - query_all_common_port_blk.current.0.infraPortBlk.attributes.toCard == "1"
+        - query_all_common_port_blk.current.0.infraPortBlk.attributes.toPort == "21"
+        - query_all_common_port_blk.current.1.infraPortBlk.attributes.dn == "uni/infra/fexprof-leafintprftest_fex/hports-anstest_accessportselector_fex-typ-range/portblk-anstest_common_port_blk"
+        - query_all_common_port_blk.current.1.infraPortBlk.attributes.fromCard == "1"
+        - query_all_common_port_blk.current.1.infraPortBlk.attributes.fromPort == "13"
+        - query_all_common_port_blk.current.1.infraPortBlk.attributes.name == "anstest_common_port_blk"
+        - query_all_common_port_blk.current.1.infraPortBlk.attributes.toCard == "1"
+        - query_all_common_port_blk.current.1.infraPortBlk.attributes.toPort == "14"
+        - query_all_common_port_blk.current.2.infraPortBlk.attributes.dn == "uni/infra/accportprof-leafintprftest/hports-anstest_accessportselector-typ-range/portblk-anstest_common_port_blk"
+        - query_all_common_port_blk.current.2.infraPortBlk.attributes.fromCard == "1"
+        - query_all_common_port_blk.current.2.infraPortBlk.attributes.fromPort == "23"
+        - query_all_common_port_blk.current.2.infraPortBlk.attributes.name == "anstest_common_port_blk"
+        - query_all_common_port_blk.current.2.infraPortBlk.attributes.toCard == "1"
+        - query_all_common_port_blk.current.2.infraPortBlk.attributes.toPort == "24"
 
   # DELETE TASKS
   - name: Remove binding of Access Port Block and Interface Access Port Selector - check mode

@@ -440,6 +440,7 @@ def main():
         root_class=dict(
             aci_class="infraInfra",
             aci_rn="infra",
+            module_object="" if interface_profile or access_port_selector else None,
         ),
         subclass_1=subclass_1,
         subclass_2=subclass_2,
