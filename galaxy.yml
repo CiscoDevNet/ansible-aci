@@ -2,7 +2,7 @@
 namespace: cisco
 name: aci
 # The version of the collection. Must be compatible with semantic versioning
-version: 2.11.0
+version: 2.11.1
 readme: README.md
 authors:
 - Dag Wieers (@dagwieers) <dag@wieers.com>
