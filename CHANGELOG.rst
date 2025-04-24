@@ -4,6 +4,21 @@ Cisco ACI Ansible Collection Release Notes
 
 .. contents:: Topics
 
+v2.11.1
+=======
+
+Release Summary
+---------------
+
+Release v2.11.1 of the ``ansible-aci`` collection on 2025-04-24.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.11.0.
+
+Bugfixes
+--------
+
+- Fix type of subnet_control in aci_bd_subnet from string to list of strings
+- Fixed the aci_access_port_block_to_access_port module to query a specific object with the object name
+
 v2.11.0
 =======
 
