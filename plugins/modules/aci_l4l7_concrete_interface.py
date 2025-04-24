@@ -111,7 +111,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query a concrete interface
-  cisco.aci.aci_l4l7_service_graph_template:
+  cisco.aci.aci_l4l7_concrete_interface:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -127,7 +127,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query all concrete interfaces
-  cisco.aci.aci_l4l7_service_graph_template:
+  cisco.aci.aci_l4l7_concrete_interface:
     host: apic
     username: admin
     password: SomeSecretPassword
