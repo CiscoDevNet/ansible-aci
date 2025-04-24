@@ -374,7 +374,7 @@ def main():
         route_profile=dict(type="str"),
         route_profile_l3_out=dict(type="str"),
         scope=dict(type="list", elements="str", choices=["private", "public", "shared"]),
-        subnet_control=dict(type="list", elements="str", choices=list(SUBNET_CONTROL_MAPPING_BD_SUBNET.keys())),
+        subnet_control=dict(type="list", elements="str", choices=list(SUBNET_CONTROL_MAPPING_BD_SUBNET)),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         name_alias=dict(type="str"),
