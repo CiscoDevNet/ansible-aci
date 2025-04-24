@@ -123,7 +123,7 @@ EXAMPLES = r"""
     policy_name: my_pbr_policy
     destination_type: l3
     hash_algorithm: destination_ip
-    resilient_hash: yes
+    resilient_hash: true
     state: present
   delegate_to: localhost
 
