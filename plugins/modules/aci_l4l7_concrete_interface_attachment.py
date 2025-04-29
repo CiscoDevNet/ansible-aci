@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2025, Tim Cragg (@timcragg)
+# Copyright: (c) 2025, Shreyas Srish (@shrsr)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_l4l7_concrete_interface_attach
+module: aci_l4l7_concrete_interface_attachment
 short_description: Manage L4-L7 Concrete Interface Attachment (vns:RsCIfAttN)
 description:
 - Manage Layer 4 to Layer 7 (L4-L7) Concrete Interface Attachment to Logical Interfaces.
@@ -63,11 +64,12 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
+- Shreyas Srish (@shrsr)
 """
 
 EXAMPLES = r"""
 - name: Add a new concrete interface attachment
-  cisco.aci.aci_l4l7_concrete_interface_attach:
+  cisco.aci.aci_l4l7_concrete_interface_attachment:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -80,7 +82,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query a concrete interface attachment
-  cisco.aci.aci_l4l7_concrete_interface_attach:
+  cisco.aci.aci_l4l7_concrete_interface_attachment:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -94,7 +96,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query all concrete interface attachments
-  cisco.aci.aci_l4l7_concrete_interface_attach:
+  cisco.aci.aci_l4l7_concrete_interface_attachment:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -102,7 +104,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Delete a concrete interface attachment
-  cisco.aci.aci_l4l7_concrete_interface_attach:
+  cisco.aci.aci_l4l7_concrete_interface_attachment:
     host: apic
     username: admin
     password: SomeSecretPassword
