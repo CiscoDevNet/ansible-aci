@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2025, Tim Cragg (@timcragg)
+# Copyright: (c) 2025, Shreyas Srish (@shrsr)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -13,7 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l4l7_policy_based_redirect
-short_description: Manage L4-L7 Policy Based Redirection (vns:SvcRedirectPol)
+short_description: Manage L4-L7 Policy Based Redirection Policies (vns:SvcRedirectPol)
 description:
 - Manage Layer 4 to Layer 7 (L4-L7) Policy Based Redirection
 options:
@@ -83,7 +84,7 @@ options:
   monitor_policy:
     description:
     - The name of the IP SLA Monitoring Policy to bind to the L4-L7 Redirect Policy.
-    - To remove an existing binding to an IP SLA Monitoring Policy, submit a request with I(state=present) and no I(monitor_policy) value.
+    - To remove an existing binding to an IP SLA Monitoring Policy, submit a request with I(state=present) and I(monitor_policy="") value.
     type: str
     aliases: [ sla, sla_policy ]
   rewrite_source_mac:
@@ -111,6 +112,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
+- Shreyas Srish (@shrsr)
 """
 
 EXAMPLES = r"""
@@ -278,7 +280,7 @@ def main():
         policy_name=dict(type="str"),
         description=dict(type="str"),
         destination_type=dict(type="str", aliases=["dest_type"], choices=["l1", "l2", "l3"]),
-        hash_algorithm=dict(type="str", choices=["source_ip", "destination_ip", "ip_and_protocol"]),
+        hash_algorithm=dict(type="str", choices=list(L4L7_HASH_ALGORITHMS_MAPPING)),
         threshold_enable=dict(type="bool"),
         max_threshold=dict(type="int"),
         min_threshold=dict(type="int"),
@@ -337,7 +339,7 @@ def main():
 
     if state == "present":
         child_configs = []
-        if monitor_policy is not None:
+        if monitor_policy:
             monitor_tdn = "uni/tn-{0}/ipslaMonitoringPol-{1}".format(tenant, monitor_policy)
             child_configs.append({"vnsRsIPSLAMonitoringPol": {"attributes": {"tDn": monitor_tdn}}})
         else:

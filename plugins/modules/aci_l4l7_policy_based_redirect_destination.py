@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2025, Tim Cragg (@timcragg)
+# Copyright: (c) 2025, Shreyas Srish (@shrsr)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -72,6 +73,7 @@ options:
     type: str
     choices: [ l1/l2, l3 ]
     aliases: [ dest_type ]
+    default: l3
   pod_id:
     description:
     - The Pod ID to deploy Policy Based Redirect destination on.
@@ -80,7 +82,7 @@ options:
   health_group:
     description:
     - The Health Group to bind the Policy Based Redirection Destination to.
-    - To remove an existing binding from a Health Group, submit a request with I(state=present) and no I(health_group) value.
+    - To remove an existing binding from a Health Group, submit a request with I(state=present) and I(health_group="") value.
     type: str
   state:
     description:
@@ -107,6 +109,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
+- Shreyas Srish (@shrsr)
 """
 
 EXAMPLES = r"""
@@ -279,7 +282,7 @@ def main():
         concrete_device=dict(type="str", aliases=["concrete_dev"]),
         concrete_interface=dict(type="str", aliases=["concrete_intf"]),
         destination_name=dict(type="str", aliases=["dest_name"]),
-        destination_type=dict(type="str", aliases=["dest_type"], choices=["l1/l2", "l3"]),
+        destination_type=dict(type="str", aliases=["dest_type"], choices=["l1/l2", "l3"], default="l3"),
         health_group=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         pod_id=dict(type="int"),
@@ -288,7 +291,10 @@ def main():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[["state", "absent", ["tenant", "policy"]], ["state", "present", ["tenant", "policy"]]],
+        required_if=[
+            ["state", "absent", ["tenant", "policy"]],
+            ["state", "present", ["tenant", "policy"]],
+        ],
     )
 
     aci = ACIModule(module)
@@ -308,23 +314,20 @@ def main():
     state = module.params.get("state")
     pod_id = module.params.get("pod_id")
 
-    if not destination_type:
-        destination_type = "l3"
-
-    if destination_type == "l3":
-        aci_class = "vnsRedirectDest"
-        aci_rn = "RedirectDest_ip-[{0}]".format(ip)
-        module_object = ip
-        target_filter = {"ip": ip}
-        child_classes = ["vnsRsRedirectHealthGroup"]
-        redirect_hg_class = "vnsRsRedirectHealthGroup"
-    elif destination_type == "l1/l2":
+    if destination_type == "l1/l2":
         aci_class = "vnsL1L2RedirectDest"
         aci_rn = "L1L2RedirectDest-[{0}]".format(destination_name)
         module_object = destination_name
         target_filter = {"destName": destination_name}
         child_classes = ["vnsRsL1L2RedirectHealthGroup", "vnsRsToCIf"]
         redirect_hg_class = "vnsRsL1L2RedirectHealthGroup"
+    else:
+        aci_class = "vnsRedirectDest"
+        aci_rn = "RedirectDest_ip-[{0}]".format(ip)
+        module_object = ip
+        target_filter = {"ip": ip}
+        child_classes = ["vnsRsRedirectHealthGroup"]
+        redirect_hg_class = "vnsRsRedirectHealthGroup"
 
     aci.construct_url(
         root_class=dict(
@@ -367,7 +370,7 @@ def main():
                     }
                 }
             ]
-        if health_group is not None:
+        if health_group:
             health_group_tdn = "uni/tn-{0}/svcCont/redirectHealthGroup-{1}".format(tenant, health_group)
             child_configs.append({redirect_hg_class: {"attributes": {"tDn": health_group_tdn}}})
         else:
@@ -387,7 +390,13 @@ def main():
                     )
         aci.payload(
             aci_class=aci_class,
-            class_config=dict(ip=ip, mac=mac, destName=destination_name, podId=pod_id, ip2=additional_ip),
+            class_config=dict(
+                ip=ip,
+                mac=mac,
+                destName=destination_name,
+                podId=pod_id,
+                ip2=additional_ip,
+            ),
             child_configs=child_configs,
         )
         aci.get_diff(aci_class=aci_class)
