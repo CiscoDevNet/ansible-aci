@@ -37,19 +37,21 @@
   block:  # block specifies execution of tasks within, based on conditions
 
   # CLEAN ENVIRONMENT
-  - name: Ensure Contract1 doesn't exist
-    cisco.aci.aci_oob_contract:
-      <<: *aci_info
-      contract: anstest
-      state: absent
-      description: Ansible Test
   
-  - name: Ensure Contract2 doesn't exist
+  # Clean all existing contracts except 'default'
+  - name: Gather existing Contracts
     cisco.aci.aci_oob_contract:
       <<: *aci_info
-      contract: anstest2
+      state: query
+    register: all_oob_contracts
+  
+  - name: Delete all contracts except common-default
+    cisco.aci.aci_oob_contract:
+      <<: *aci_info
+      contract: "{{item.vzOOBBrCP.attributes.name}}"
       state: absent
-      description: Ansible Test
+    loop: "{{all_oob_contracts.current}}"
+    when: item.vzOOBBrCP.attributes.dn != "uni/tn-common/oobbrc-default"
 
 # CREATE  
   - name: Create OOB Contract (check_mode)
@@ -64,7 +66,7 @@
   - name: Create OOB Contract
     cisco.aci.aci_oob_contract: &aci_oob_contract_present
       <<: *aci_oob_contract_present_CM
-      state: "{{ fakevar | default(omit) }}"    # >>>> testing for default value when omitted
+      state: "{{ fakevar | default(omit) }}"    # >>>> Omitted for testing default behaviour
     register: contract_present
 
   - name: Create OOB Contract again
@@ -153,8 +155,10 @@
         - query_contract.current.0.vzOOBBrCP.attributes.scope == "application-profile"
         - query_tenant is not changed
         - query_tenant.current | length > 2    # 2 contracts we created, one 'default' oob-contract
-        # add all attributes
-        #- query_tenant.current.0.vzOOBBrCP.attributes.dn == "uni/tn-mgmt/oobbrc-anstest"
+        - query_tenant.current.1.vzOOBBrCP.attributes.name == "anstest"
+        - query_tenant.current.1.vzOOBBrCP.attributes.prio == "level1"
+        - query_tenant.current.2.vzOOBBrCP.attributes.name == "anstest2"
+        - query_tenant.current.2.vzOOBBrCP.attributes.prio == "unspecified"
 
   # DELETE
   - name: Delete OOB Contract (check_mode)
