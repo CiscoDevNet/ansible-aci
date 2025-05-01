@@ -268,5 +268,11 @@ plugin_routing:
   modules:
     aci_l4l7_concrete_interface_attach:
       redirect: cisco.aci.aci_l4l7_concrete_interface_attachment
+      deprecation:
+        removal_version: 3.0.0
+        warning_text: Use cisco.aci.aci_l4l7_concrete_interface_attachment instead.
     aci_l4l7_policy_based_redirect_dest:
       redirect: cisco.aci.aci_l4l7_policy_based_redirect_destination
+      deprecation:
+        removal_version: 3.0.0
+        warning_text: Use cisco.aci.aci_l4l7_policy_based_redirect_destination instead.
