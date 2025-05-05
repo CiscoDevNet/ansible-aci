@@ -27,6 +27,7 @@ options:
     description:
     - The name of the Policy Based Redirection Policy.
     type: str
+    aliases: [ policy ]
   description:
     description:
     - The description of the Policy Based Redirection Policy.
@@ -107,6 +108,7 @@ notes:
 - The I(tenant) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) module can be used for this.
 seealso:
+module: aci_tenant
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class, B(vns:SvcRedirectPol)
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -277,7 +279,7 @@ def main():
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
-        policy_name=dict(type="str"),
+        policy_name=dict(type="str", aliases=["policy"]),
         description=dict(type="str"),
         destination_type=dict(type="str", aliases=["dest_type"], choices=["l1", "l2", "l3"]),
         hash_algorithm=dict(type="str", choices=list(L4L7_HASH_ALGORITHMS_MAPPING)),
