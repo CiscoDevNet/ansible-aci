@@ -54,6 +54,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
+- Shreyas Srish (@shrsr)
 """
 
 EXAMPLES = r"""
