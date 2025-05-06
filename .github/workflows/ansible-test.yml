@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [v2.16.6, stable-2.16, stable-2.17, stable-2.18]
+        ansible: [stable-2.16, stable-2.17, stable-2.18, stable-2.19]
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -41,10 +41,6 @@ jobs:
     name: Using Black to check formating
     runs-on: ubuntu-latest
     continue-on-error: true
-    strategy:
-      fail-fast: false
-      matrix:
-        experimental: [true]
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -116,7 +112,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [v2.16.6, stable-2.16, stable-2.17, stable-2.18]
+        ansible: [stable-2.16, stable-2.17, stable-2.18, stable-2.19]
     steps:
       - name: Set up Python ${{ env.python_version }}
         uses: actions/setup-python@v5
@@ -158,7 +154,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: [v2.16.6, stable-2.16, stable-2.17, stable-2.18]
+        ansible: [stable-2.16, stable-2.17, stable-2.18, stable-2.19]
     steps:
       - name: Set up Python ${{ env.python_version }}
         uses: actions/setup-python@v5
@@ -200,7 +196,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ansible: [stable-2.18]
+        ansible: [stable-2.19]
     env:
       MUTEX_URL: https://8v7s765ibh.execute-api.us-west-1.amazonaws.com
     steps:
