@@ -1775,13 +1775,7 @@ class ACIModule(object):
 
     def delete_child(self, path):
         if self.params.get("port") is not None:
-            url = "{protocol}://{host}:{port}/{path}".format(
-                path=path,
-                **self.module.params
-            )
+            url = "{protocol}://{host}:{port}/{path}".format(path=path, **self.module.params)
         else:
-            url = "{protocol}://{host}/{path}".format(
-                path=path,
-                **self.module.params
-            )
+            url = "{protocol}://{host}/{path}".format(path=path, **self.module.params)
         self.api_call("DELETE", url)

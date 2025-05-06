@@ -104,7 +104,7 @@ EXAMPLES = r"""
     func_template_type: adc_one_arm
     func_type: GoTo
     device: test-device
-    managed: no
+    managed: false
     routing_mode: Redirect
     state: present
   delegate_to: localhost
