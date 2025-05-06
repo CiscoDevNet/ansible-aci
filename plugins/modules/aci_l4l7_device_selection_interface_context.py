@@ -370,7 +370,9 @@ def main():
                     #         }
                     #     }
                     # )
-                    aci.delete_child("/api/mo/uni/tn-{0}/ldevCtx-c-{1}-g-{2}-n-{3}/lIfCtx-c-{4}/rsLIfCtxToBD.json".format(tenant, contract, graph, node, context))
+                    aci.delete_child(
+                        "/api/mo/uni/tn-{0}/ldevCtx-c-{1}-g-{2}-n-{3}/lIfCtx-c-{4}/rsLIfCtxToBD.json".format(tenant, contract, graph, node, context)
+                    )
                 elif child.get("vnsRsLIfCtxToLIf") and child.get("vnsRsLIfCtxToLIf").get("attributes").get("tDn") != log_intf_tdn:
                     child_configs.append(
                         {
