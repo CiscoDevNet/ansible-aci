@@ -1,0 +1,233 @@
+# Test code for the ACI modules
+# Copyright: (c) 2025, Tim Cragg (@timcragg)
+# Copyright: (c) 2025, Shreyas Srish (@shrsr)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+# ADD SERVICE GRAPH TEMPLATE
+- name: Create L4-L7 Service Graph Template
+  cisco.aci.aci_l4l7_service_graph_template:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    state: present
+
+# ADD SERVICE GRAPH TERM NODE
+- name: Create L4-L7 T1 Service Graph Node in check mode
+  cisco.aci.aci_l4l7_service_graph_template_term_node: &add_l4l7_term_node
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node_name: T1
+    state: present
+  check_mode: true
+  register: add_l4l7_term_node_cm
+
+- name: Create L4-L7 T1 Service Graph Node in check mode
+  cisco.aci.aci_l4l7_service_graph_template_term_node: 
+    <<: *add_l4l7_term_node
+  register: add_l4l7_term_node
+
+# VERIFY TERM NODE CREATION
+- name: Verify Term Node Creation
+  ansible.builtin.assert:
+    that:
+    - add_l4l7_term_node_cm is changed
+    - add_l4l7_term_node is changed
+    - add_l4l7_term_node_cm.proposed.vnsAbsTermNodeCon.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeCon-T1"
+    - add_l4l7_term_node_cm.proposed.vnsAbsTermNodeCon.attributes.name == "T1"
+    - add_l4l7_term_node.current.0.vnsAbsTermNodeCon.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeCon-T1"
+    - add_l4l7_term_node.current.0.vnsAbsTermNodeCon.attributes.name == "T1"
+
+# ADD SERVICE GRAPH TERM NODE AGAIN TO CHECK IDEMPOTENCE
+- name: Create L4-L7 T1 Service Graph Node again
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
+    <<: *add_l4l7_term_node
+  register: add_l4l7_term_node_again
+
+# VERIFY TERM NODE UNCHANGED
+- name: Verify Term Node is not changed
+  ansible.builtin.assert:
+    that:
+    - add_l4l7_term_node_again is not changed
+    - add_l4l7_term_node_again.current.0.vnsAbsTermNodeCon.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeCon-T1"
+    - add_l4l7_term_node_again.current.0.vnsAbsTermNodeCon.attributes.name == "T1"
+
+# QUERY TERM NODE
+- name: Query L4-L7 T1 Service Graph Node
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node_name: T1
+    state: query
+  register: query_l4l7_term_node
+
+# VERIFY TERM NODE QUERY
+- name: Verify Term Node attributes
+  ansible.builtin.assert:
+    that:
+    - query_l4l7_term_node is not changed
+    - query_l4l7_term_node.current.0.vnsAbsTermNodeCon.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeCon-T1"
+    - query_l4l7_term_node.current.0.vnsAbsTermNodeCon.attributes.name == "T1"
+
+# DELETE TERM NODE T1
+- name: Remove L4-L7 T1 Service Graph Node in check mode
+  cisco.aci.aci_l4l7_service_graph_template_term_node: &remove_l4l7_term_node
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node_name: T1
+    state: absent
+  check_mode: true
+  register: delete_l4l7_term_node_cm
+
+- name: Remove L4-L7 T1 Service Graph Node
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
+    <<: *remove_l4l7_term_node
+  register: delete_l4l7_term_node
+
+- name: Remove L4-L7 T1 Service Graph Node again
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
+    <<: *remove_l4l7_term_node
+  register: delete_l4l7_term_node_again
+
+# VERIFY DELETION
+- name: Verify Term Node attributes
+  ansible.builtin.assert:
+    that:
+    - delete_l4l7_term_node_cm is changed
+    - delete_l4l7_term_node is changed
+    - delete_l4l7_term_node.current == []
+    - delete_l4l7_term_node_cm.previous == delete_l4l7_term_node.previous
+    - delete_l4l7_term_node.previous.0.vnsAbsTermNodeCon.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeCon-T1"
+    - delete_l4l7_term_node.previous.0.vnsAbsTermNodeCon.attributes.name == "T1"
+    - delete_l4l7_term_node_again is not changed
+    - delete_l4l7_term_node_again.current == []
+
+# ADD SERVICE GRAPH TERM NODE
+- name: Create L4-L7 T2 Service Graph Node
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node_name: T2
+    state: present
+  register: add_l4l7_term_node2
+
+# VERIFY TERM NODE CREATION
+- name: Verify Term Node Creation
+  ansible.builtin.assert:
+    that:
+    - add_l4l7_term_node2.current.0.vnsAbsTermNodeProv.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeProv-T2"
+    - add_l4l7_term_node2.current.0.vnsAbsTermNodeProv.attributes.name == "T2"
+
+# ADD SERVICE GRAPH TERM NODE AGAIN TO CHECK IDEMPOTENCE
+- name: Create L4-L7 T2 Service Graph Node again
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node_name: T2
+    state: present
+  register: add_l4l7_term_node2_again
+
+# VERIFY TERM NODE UNCHANGED
+- name: Verify Term Node is not changed
+  ansible.builtin.assert:
+    that:
+    - add_l4l7_term_node2_again is not changed
+    - add_l4l7_term_node2_again.current.0.vnsAbsTermNodeProv.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeProv-T2"
+    - add_l4l7_term_node2_again.current.0.vnsAbsTermNodeProv.attributes.name == "T2"
+
+# QUERY TERM NODE
+- name: Query L4-L7 T2 Service Graph Node
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node_name: T2
+    state: query
+  register: query_l4l7_term_node2
+
+# VERIFY TERM NODE QUERY
+- name: Verify Term Node attributes
+  ansible.builtin.assert:
+    that:
+    - query_l4l7_term_node2 is not changed
+    - query_l4l7_term_node2.current.0.vnsAbsTermNodeProv.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeProv-T2"
+    - query_l4l7_term_node2.current.0.vnsAbsTermNodeProv.attributes.name == "T2"
+
+# DELETE TERM NODE T2
+- name: Remove L4-L7 T2 Service Graph Node
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node_name: T2
+    state: absent
+  register: delete_l4l7_term_node2
+
+# VERIFY DELETION
+- name: Verify Term Node T2 deletion
+  ansible.builtin.assert:
+    that:
+    - delete_l4l7_term_node2 is changed
+    - delete_l4l7_term_node2.current == []
+    - delete_l4l7_term_node2.previous.0.vnsAbsTermNodeProv.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsTermNodeProv-T2"
+    - delete_l4l7_term_node2.previous.0.vnsAbsTermNodeProv.attributes.name == "T2"
+
+# DELETE TERM NODE T2 AGAIN TO TEST IDEMPOTENCE
+- name: Remove L4-L7 T2 Service Graph Node
+  cisco.aci.aci_l4l7_service_graph_template_term_node:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node_name: T2
+    state: absent
+  register: delete_l4l7_term_node2_again
+
+# VERIFY DELETION IDEMPOTENCE
+- name: Verify Term Node T2 deletion idempotence
+  ansible.builtin.assert:
+    that:
+    - delete_l4l7_term_node2_again is not changed
+    - delete_l4l7_term_node2_again.current == []
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
