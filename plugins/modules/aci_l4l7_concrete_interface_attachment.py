@@ -262,7 +262,11 @@ def main():
 
     aci = ACIModule(module)
 
-    tdn = "uni/tn-{0}/lDevVip-{1}/cDev-{2}/cIf-[{3}]".format(tenant, logical_device, concrete_device, concrete_interface) if concrete_interface is not None else None
+    tdn = (
+        "uni/tn-{0}/lDevVip-{1}/cDev-{2}/cIf-[{3}]".format(tenant, logical_device, concrete_device, concrete_interface)
+        if concrete_interface is not None
+        else None
+    )
 
     aci.construct_url(
         root_class=dict(
