@@ -31,14 +31,15 @@ options:
     description:
     - The scope of the OOB contract.
     - The APIC defaults to C(context) when unset during creation.
+    - The choice C(vrf) is equal to C(context).
     type: str
-    choices: [ application-profile, context, global, tenant ]
+    choices: [ application-profile, context, global, tenant, vrf ]
   priority:
     description:
     - The desired Quality of Service (QoS) class to be used.
     - The APIC defaults to C(unspecified) when unset during creation.
     type: str
-    choices: [ level1, level2, level3, unspecified ]
+    choices: [ level1, level2, level3, level4, level5, level6, unspecified ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -233,8 +234,8 @@ def main():
     argument_spec.update(
         contract=dict(type="str", aliases=["contract_name", "name"]),  # Not required for querying all objects
         description=dict(type="str", aliases=["descr"]),
-        scope=dict(type="str", choices=["application-profile", "context", "global", "tenant"]),
-        priority=dict(type="str", choices=["level1", "level2", "level3", "unspecified"]),  # No default provided on purpose
+        scope=dict(type="str", choices=["application-profile", "context", "global", "tenant", "vrf"]),
+        priority=dict(type="str", choices=["level1", "level2", "level3", "level4", "level5", "level6", "unspecified"]),  # No default provided on purpose
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
@@ -273,7 +274,7 @@ def main():
             class_config=dict(
                 name=contract,
                 descr=description,
-                scope=scope,
+                scope=scope if scope != "vrf" else "context",
                 prio=priority,
                 nameAlias=name_alias,
             ),

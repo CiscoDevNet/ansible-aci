@@ -130,6 +130,8 @@
     cisco.aci.aci_oob_contract:
       <<: *aci_oob_contract_present
       contract: anstest2
+      scope: vrf
+      priority: level4
 
   - name: Query OOB Contract
     cisco.aci.aci_oob_contract: &aci_oob_contract_query
@@ -158,7 +160,8 @@
         - query_tenant.current.1.vzOOBBrCP.attributes.name == "anstest"
         - query_tenant.current.1.vzOOBBrCP.attributes.prio == "level1"
         - query_tenant.current.2.vzOOBBrCP.attributes.name == "anstest2"
-        - query_tenant.current.2.vzOOBBrCP.attributes.prio == "unspecified"
+        - query_tenant.current.2.vzOOBBrCP.attributes.scope == "context"
+        - query_tenant.current.2.vzOOBBrCP.attributes.prio == "level4"
 
   # DELETE
   - name: Delete OOB Contract (check_mode)
