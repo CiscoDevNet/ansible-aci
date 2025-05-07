@@ -23,14 +23,16 @@ options:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  device:
+  logical_device:
     description:
     - The name of an existing logical device.
     type: str
+    aliases: [ device_name, device, logical_device_name ]
   concrete_device:
     description:
     - The name of an existing concrete device.
     type: str
+    aliases: [ concrete_device_name ]
   name:
     description:
     - The name of the concrete interface.
@@ -265,8 +267,8 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
-        device=dict(type="str"),
-        concrete_device=dict(type="str"),
+        logical_device=dict(type="str", aliases=["device_name", "device", "logical_device_name"]),
+        concrete_device=dict(type="str", aliases=["concrete_device_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name=dict(type="str", aliases=["concrete_interface"]),
         pod_id=dict(type="int"),
@@ -279,14 +281,14 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "device", "concrete_device", "name"]],
-            ["state", "present", ["tenant", "device", "concrete_device", "name", "pod_id", "node_id", "interface"]],
+            ["state", "absent", ["tenant", "logical_device", "concrete_device", "name"]],
+            ["state", "present", ["tenant", "logical_device", "concrete_device", "name", "pod_id", "node_id", "interface"]],
         ],
     )
 
     tenant = module.params.get("tenant")
     state = module.params.get("state")
-    device = module.params.get("device")
+    logical_device = module.params.get("logical_device")
     concrete_device = module.params.get("concrete_device")
     name = module.params.get("name")
     pod_id = module.params.get("pod_id")
@@ -305,9 +307,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="vnsLDevVip",
-            aci_rn="lDevVip-{0}".format(device),
-            module_object=device,
-            target_filter={"name": device},
+            aci_rn="lDevVip-{0}".format(logical_device),
+            module_object=logical_device,
+            target_filter={"name": logical_device},
         ),
         subclass_2=dict(
             aci_class="vnsCDev",

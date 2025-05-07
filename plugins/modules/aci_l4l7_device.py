@@ -27,7 +27,7 @@ options:
     description:
     - The name of the L4-L7 device.
     type: str
-    aliases: [ device, device_name, logical_device_name ]
+    aliases: [ device, logical_device, device_name, logical_device_name ]
   context_aware:
     description:
     - Is device Single or Multi context aware.
@@ -86,11 +86,11 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
-
 notes:
 - The I(tenant) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) modules can be used for this.
 seealso:
+- module: aci_tenant
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(vns:LDevVip)
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -265,7 +265,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
-        name=dict(type="str", aliases=["device", "device_name", "logical_device_name"]),
+        name=dict(type="str", aliases=["device", "device_name", "logical_device", "logical_device_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         context_aware=dict(type="str", choices=["single", "multi"]),
         device_type=dict(type="str", aliases=["dev_type"], choices=["physical", "virtual"]),
