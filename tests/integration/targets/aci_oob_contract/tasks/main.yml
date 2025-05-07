@@ -1,0 +1,214 @@
+# Test code for the ACI modules
+# Copyright: (c) 2024, Faiz Mohammad (@Ziaf007) <faizmoh@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for ACI v5+ and non-cloud sites
+  when:
+  - version.current.0.topSystem.attributes.version is version('5', '>=')
+  - query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+
+  # CLEAN ENVIRONMENT
+  
+  # Clean all existing contracts except 'default'
+  - name: Gather existing Contracts
+    cisco.aci.aci_oob_contract:
+      <<: *aci_info
+      state: query
+    register: all_oob_contracts
+  
+  - name: Delete all contracts except common-default
+    cisco.aci.aci_oob_contract:
+      <<: *aci_info
+      contract: "{{item.vzOOBBrCP.attributes.name}}"
+      state: absent
+    loop: "{{all_oob_contracts.current}}"
+    when: item.vzOOBBrCP.attributes.dn != "uni/tn-common/oobbrc-default"
+
+# CREATE  
+  - name: Create OOB Contract (check_mode)
+    cisco.aci.aci_oob_contract: &aci_oob_contract_present_CM
+      <<: *aci_info
+      contract: anstest
+      description: Ansible Test
+      state: present
+    check_mode: true
+    register: present_check_mode
+
+  - name: Create OOB Contract
+    cisco.aci.aci_oob_contract: &aci_oob_contract_present
+      <<: *aci_oob_contract_present_CM
+      state: "{{ fakevar | default(omit) }}"    # >>>> Omitted for testing default behaviour
+    register: contract_present
+
+  - name: Create OOB Contract again
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_present
+    register: present_idempotent
+
+  - name: Assert OOB Contracts were Created
+    ansible.builtin.assert:
+      that:
+        - present_check_mode is changed
+        - present_check_mode.previous == []
+        - present_check_mode.previous == present_check_mode.current
+        - present_check_mode.proposed.vzOOBBrCP.attributes.name == 'anstest'
+        - present_check_mode.proposed.vzOOBBrCP.attributes.descr == 'Ansible Test'
+        - contract_present is changed
+        - contract_present.previous == []
+        - contract_present.current.0.vzOOBBrCP.attributes.annotation == 'orchestrator:ansible'
+        - contract_present.current.0.vzOOBBrCP.attributes.prio == 'unspecified'
+        - contract_present.current.0.vzOOBBrCP.attributes.scope == 'context'
+        - present_idempotent is not changed
+        - present_idempotent.previous.0.vzOOBBrCP.attributes.descr == "Ansible Test"
+        - present_idempotent.current.0.vzOOBBrCP.attributes.descr == "Ansible Test"
+        - present_idempotent.previous.0.vzOOBBrCP.attributes.name == "anstest"
+        - present_idempotent.current.0.vzOOBBrCP.attributes.name == "anstest"
+        - present_idempotent.previous.0.vzOOBBrCP.attributes.prio == "unspecified"
+        - present_idempotent.current.0.vzOOBBrCP.attributes.prio == "unspecified"
+        - present_idempotent.previous.0.vzOOBBrCP.attributes.scope == "context"
+        - present_idempotent.current.0.vzOOBBrCP.attributes.scope == "context"
+
+  # UPDATE
+  - name: Update OOB Contract
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_present
+      scope: application-profile
+      description: "Description altered"
+      priority: "level1"
+    register: update_contract
+
+  - name: Missing Parameter contract_name - Failure Test
+    cisco.aci.aci_oob_contract:
+      <<: *aci_info
+    ignore_errors: true
+    register: present_missing_param
+
+  - name: Assert OOB Contracts were updated
+    ansible.builtin.assert:
+      that:
+        - update_contract is changed
+        - update_contract.previous.0.vzOOBBrCP.attributes.scope == "context"
+        - update_contract.current.0.vzOOBBrCP.attributes.scope == "application-profile"
+        - update_contract.previous.0.vzOOBBrCP.attributes.descr == "Ansible Test"
+        - update_contract.current.0.vzOOBBrCP.attributes.descr == "Description altered"
+        - update_contract.previous.0.vzOOBBrCP.attributes.prio == "unspecified"
+        - update_contract.current.0.vzOOBBrCP.attributes.prio == "level1"
+        - present_missing_param is failed
+        - 'present_missing_param.msg == "state is present but all of the following are missing: contract"'
+
+  # QUERY
+  - name: Create another OOB Contract
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_present
+      contract: anstest2
+
+  - name: Query OOB Contract
+    cisco.aci.aci_oob_contract: &aci_oob_contract_query
+      <<: *aci_oob_contract_present
+      state: query
+    register: query_contract
+
+  - name: Query all OOB Contracts
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_query
+      contract: "{{ fakevar | default(omit) }}"
+    register: query_tenant
+
+  - name: Assert OOB Contracts were queried
+    ansible.builtin.assert:
+      that:
+        - query_contract is not changed
+        - query_contract.current | length == 1
+        - query_contract.current.0.vzOOBBrCP.attributes.descr == "Description altered"
+        - query_contract.current.0.vzOOBBrCP.attributes.dn == "uni/tn-mgmt/oobbrc-anstest"
+        - query_contract.current.0.vzOOBBrCP.attributes.name == "anstest"
+        - query_contract.current.0.vzOOBBrCP.attributes.prio == "level1"
+        - query_contract.current.0.vzOOBBrCP.attributes.scope == "application-profile"
+        - query_tenant is not changed
+        - query_tenant.current | length > 2    # 2 contracts we created, one 'default' oob-contract
+        - query_tenant.current.1.vzOOBBrCP.attributes.name == "anstest"
+        - query_tenant.current.1.vzOOBBrCP.attributes.prio == "level1"
+        - query_tenant.current.2.vzOOBBrCP.attributes.name == "anstest2"
+        - query_tenant.current.2.vzOOBBrCP.attributes.prio == "unspecified"
+
+  # DELETE
+  - name: Delete OOB Contract (check_mode)
+    cisco.aci.aci_oob_contract: &aci_oob_contract_absent
+      <<: *aci_oob_contract_present
+      state: absent
+    check_mode: true
+    register: absent_check_mode
+
+  - name: Delete OOB Contract
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_absent
+    register: contract_absent
+
+  - name: Delete OOB Contract again
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_absent
+    register: absent_idempotent
+
+  - name: Delete other OOB Contract
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_absent
+      contract: anstest2
+
+  - name: Missing Param contract_name - Failure Test
+    cisco.aci.aci_oob_contract:
+      <<: *aci_oob_contract_absent
+      contract: "{{ fakevar | default(omit) }}"
+    ignore_errors: true
+    register: absent_missing_param
+
+  - name: Assert all OOB Contracts were delete
+    ansible.builtin.assert:
+      that:
+        - absent_check_mode is changed
+        - absent_check_mode.previous != []
+        - absent_check_mode.current.0.vzOOBBrCP.attributes.descr == "Description altered"
+        - absent_check_mode.current.0.vzOOBBrCP.attributes.name == "anstest"
+        - absent_check_mode.current.0.vzOOBBrCP.attributes.prio == "level1"
+        - absent_check_mode.current.0.vzOOBBrCP.attributes.scope == "application-profile"
+        - absent_check_mode.proposed == {}
+        - contract_absent is changed
+        - contract_absent.previous == absent_check_mode.previous
+        - contract_absent.previous.0.vzOOBBrCP.attributes.descr == "Description altered"
+        - contract_absent.previous.0.vzOOBBrCP.attributes.name == "anstest"
+        - contract_absent.previous.0.vzOOBBrCP.attributes.prio == "level1"
+        - contract_absent.previous.0.vzOOBBrCP.attributes.scope == "application-profile"
+        - contract_absent.current == []
+        - absent_idempotent is not changed
+        - absent_idempotent.previous == []
+        - absent_idempotent.current == []
+        - absent_missing_param is failed
+        - 'absent_missing_param.msg == "state is absent but all of the following are missing: contract"'
