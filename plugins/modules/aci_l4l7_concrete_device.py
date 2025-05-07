@@ -23,11 +23,11 @@ options:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  device:
+  logical_device:
     description:
     - The name of the logical device (vns:lDevVip) the concrete device is attached to.
     type: str
-    aliases: [ device_name, logical_device_name ]
+    aliases: [ device_name, device, logical_device_name ]
   name:
     description:
     - The name of the concrete device.
@@ -51,11 +51,11 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
-
 notes:
 - The I(tenant) and I(device) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l4l7_device) modules can be used for this.
 seealso:
+- module: aci_tenant
 - module: aci_l4l7_device
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(vns:CDev)
@@ -225,7 +225,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
-        device=dict(type="str", aliases=["device_name", "logical_device_name"]),
+        logical_device=dict(type="str", aliases=["device_name", "device", "logical_device_name"]),
         name=dict(type="str", aliases=["concrete_device", "concrete_device_name"]),
         vcenter_name=dict(type="str"),
         vm_name=dict(type="str"),
@@ -236,14 +236,14 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "device", "name"]],
-            ["state", "present", ["tenant", "device", "name"]],
+            ["state", "absent", ["tenant", "logical_device", "name"]],
+            ["state", "present", ["tenant", "logical_device", "name"]],
         ],
     )
 
     tenant = module.params.get("tenant")
     state = module.params.get("state")
-    device = module.params.get("device")
+    logical_device = module.params.get("logical_device")
     name = module.params.get("name")
     vcenter_name = module.params.get("vcenter_name")
     vm_name = module.params.get("vm_name")
@@ -259,9 +259,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="vnsLDevVip",
-            aci_rn="lDevVip-{0}".format(device),
-            module_object=device,
-            target_filter={"name": device},
+            aci_rn="lDevVip-{0}".format(logical_device),
+            module_object=logical_device,
+            target_filter={"name": logical_device},
         ),
         subclass_2=dict(
             aci_class="vnsCDev",

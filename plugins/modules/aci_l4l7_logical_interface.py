@@ -23,14 +23,16 @@ options:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  device:
+  logical_device:
     description:
     - The name of an existing Logical Device.
     type: str
+    aliases: [ device_name, device, logical_device_name ]
   logical_interface:
     description:
     - The name of an existing Logical Interface.
     type: str
+    aliases: [ name ]
   encap:
     description:
     - The encapsulation of the Logical Interface.
@@ -220,8 +222,8 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
-        device=dict(type="str"),
-        logical_interface=dict(type="str"),
+        logical_device=dict(type="str", aliases=["device_name", "device", "logical_device_name"]),
+        logical_interface=dict(type="str", aliases=["name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         encap=dict(type="str"),
     )
@@ -230,14 +232,14 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "device", "logical_interface"]],
-            ["state", "present", ["tenant", "device", "logical_interface"]],
+            ["state", "absent", ["tenant", "logical_device", "logical_interface"]],
+            ["state", "present", ["tenant", "logical_device", "logical_interface"]],
         ],
     )
 
     tenant = module.params.get("tenant")
     state = module.params.get("state")
-    device = module.params.get("device")
+    logical_device = module.params.get("logical_device")
     logical_interface = module.params.get("logical_interface")
     encap = module.params.get("encap")
 
@@ -252,9 +254,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="vnsLDevVip",
-            aci_rn="lDevVip-{0}".format(device),
-            module_object=device,
-            target_filter={"name": device},
+            aci_rn="lDevVip-{0}".format(logical_device),
+            module_object=logical_device,
+            target_filter={"name": logical_device},
         ),
         subclass_2=dict(
             aci_class="vnsLIf",

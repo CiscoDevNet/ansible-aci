@@ -23,10 +23,11 @@ options:
     - The name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-  device:
+  logical_device:
     description:
     - The name of an existing Logical Device.
     type: str
+    aliases: [ device_name, device, logical_device_name ]
   logical_interface:
     description:
     - The name of an existing Logical Interface.
@@ -35,6 +36,7 @@ options:
     description:
     - The name of an existing Concrete Device.
     type: str
+    aliases: [ concrete_device_name ]
   concrete_interface:
     description:
     - The name of an existing Concrete Interface.
@@ -232,10 +234,10 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
-        device=dict(type="str"),
+        logical_device=dict(type="str", aliases=["device_name", "device", "logical_device_name"]),
         logical_interface=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        concrete_device=dict(type="str"),
+        concrete_device=dict(type="str", aliases=["concrete_device_name"]),
         concrete_interface=dict(type="str"),
     )
 
@@ -243,24 +245,24 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "device", "logical_interface", "concrete_device", "concrete_interface"]],
-            ["state", "present", ["tenant", "device", "logical_interface", "concrete_device", "concrete_interface"]],
+            ["state", "absent", ["tenant", "logical_device", "logical_interface", "concrete_device", "concrete_interface"]],
+            ["state", "present", ["tenant", "logical_device", "logical_interface", "concrete_device", "concrete_interface"]],
         ],
         required_together=[
-            ["tenant", "device", "concrete_device", "concrete_interface"],
+            ["tenant", "logical_device", "concrete_device", "concrete_interface"],
         ],
     )
 
     tenant = module.params.get("tenant")
     state = module.params.get("state")
-    device = module.params.get("device")
+    logical_device = module.params.get("logical_device")
     logical_interface = module.params.get("logical_interface")
     concrete_device = module.params.get("concrete_device")
     concrete_interface = module.params.get("concrete_interface")
 
     aci = ACIModule(module)
 
-    tdn = "uni/tn-{0}/lDevVip-{1}/cDev-{2}/cIf-[{3}]".format(tenant, device, concrete_device, concrete_interface) if concrete_interface is not None else None
+    tdn = "uni/tn-{0}/lDevVip-{1}/cDev-{2}/cIf-[{3}]".format(tenant, logical_device, concrete_device, concrete_interface) if concrete_interface is not None else None
 
     aci.construct_url(
         root_class=dict(
@@ -271,9 +273,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="vnsLDevVip",
-            aci_rn="lDevVip-{0}".format(device),
-            module_object=device,
-            target_filter={"name": device},
+            aci_rn="lDevVip-{0}".format(logical_device),
+            module_object=logical_device,
+            target_filter={"name": logical_device},
         ),
         subclass_2=dict(
             aci_class="vnsLIf",
