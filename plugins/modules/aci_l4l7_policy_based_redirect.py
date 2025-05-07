@@ -82,12 +82,12 @@ options:
     - The APIC defaults to C(false) when unset during creation.
     - Only available when I(destination_type=l3)
     type: bool
-  monitor_policy:
+  ip_sla_monitor_policy:
     description:
     - The name of the IP SLA Monitoring Policy to bind to the L4-L7 Redirect Policy.
-    - To remove an existing binding to an IP SLA Monitoring Policy, submit a request with I(state=present) and I(monitor_policy="") value.
+    - To remove an existing binding to an IP SLA Monitoring Policy, submit a request with I(state=present) and I(ip_sla_monitor_policy="") value.
     type: str
-    aliases: [ sla, sla_policy ]
+    aliases: [ monitor_policy, sla, sla_policy ]
   rewrite_source_mac:
     description:
     - Whether to rewrite the source MAC address of forwarded traffic.
@@ -108,7 +108,7 @@ notes:
 - The I(tenant) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) module can be used for this.
 seealso:
-module: aci_tenant
+- module: aci_tenant
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class, B(vns:SvcRedirectPol)
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -290,7 +290,7 @@ def main():
         resilient_hash=dict(type="bool"),
         pod_aware=dict(type="bool"),
         anycast_enabled=dict(type="bool"),
-        monitor_policy=dict(type="str", aliases=["sla", "sla_policy"]),
+        ip_sla_monitor_policy=dict(type="str", aliases=["monitor_policy", "sla", "sla_policy"]),
         rewrite_source_mac=dict(type="bool"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
@@ -318,7 +318,7 @@ def main():
     resilient_hash = aci.boolean(module.params.get("resilient_hash"))
     pod_aware = aci.boolean(module.params.get("pod_aware"))
     anycast_enabled = aci.boolean(module.params.get("anycast_enabled"))
-    monitor_policy = module.params.get("monitor_policy")
+    ip_sla_monitor_policy = module.params.get("ip_sla_monitor_policy")
     rewrite_source_mac = aci.boolean(module.params.get("rewrite_source_mac"))
 
     aci.construct_url(
@@ -341,8 +341,8 @@ def main():
 
     if state == "present":
         child_configs = []
-        if monitor_policy:
-            monitor_tdn = "uni/tn-{0}/ipslaMonitoringPol-{1}".format(tenant, monitor_policy)
+        if ip_sla_monitor_policy:
+            monitor_tdn = "uni/tn-{0}/ipslaMonitoringPol-{1}".format(tenant, ip_sla_monitor_policy)
             child_configs.append({"vnsRsIPSLAMonitoringPol": {"attributes": {"tDn": monitor_tdn}}})
         else:
             monitor_tdn = None
