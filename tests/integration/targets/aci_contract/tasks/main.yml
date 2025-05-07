@@ -8,16 +8,26 @@
     msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+- name: cleanup tenant
+  cisco.aci.aci_tenant: &aci_tenant_absent
+    <<: *aci_info
+    tenant: ansible_test
+    state: absent
+
 - name: ensure tenant exists for tests to kick off
   cisco.aci.aci_tenant: &aci_tenant_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
-    output_level: debug
-    tenant: ansible_test
+    <<: *aci_tenant_absent
     state: present
   register: tenant_present
 
@@ -72,6 +82,25 @@
       - present_update.sent.vzBrCP.attributes.scope == "application-profile"
       - present_missing_param is failed
       - 'present_missing_param.msg == "state is present but all of the following are missing: contract"'
+
+- name: create another contract with scope vrf
+  cisco.aci.aci_contract:
+    <<: *aci_contract_present
+    contract: anstest3
+    scope: vrf
+    priority: level4
+    dscp: AF12
+  register: contract_vrf
+
+- name: present assertions
+  ansible.builtin.assert:
+    that:
+      - contract_vrf is changed
+      - contract_vrf.previous == []
+      - contract_vrf.current.0.vzBrCP.attributes.scope == 'context'
+      - contract_vrf.current.0.vzBrCP.attributes.name == 'anstest3'
+      - contract_vrf.current.0.vzBrCP.attributes.prio == 'level4'
+      - contract_vrf.current.0.vzBrCP.attributes.targetDscp == 'AF12'
 
 - name: query contract
   cisco.aci.aci_contract: &aci_contract_query
@@ -160,6 +189,4 @@
 
 - name: cleanup tenant
   cisco.aci.aci_tenant:
-    <<: *aci_tenant_present
-    state: absent
-  when: tenant_present is changed
+    <<: *aci_tenant_absent
