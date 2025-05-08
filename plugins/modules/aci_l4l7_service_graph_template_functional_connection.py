@@ -34,6 +34,23 @@ options:
     - Whether this Functional Connection is the consumer or provider.
     type: str
     choices: [ consumer, provider ]
+  attachment_notify:
+    description:
+    - Indicates whether attachment notifications are enabled for this connection.
+    type: bool
+  description:
+    description:
+    - The description for the Service Graph connection.
+    type: str
+  connection_type:
+    description:
+    - Specifies the type of connection for the node.
+    type: str
+    choices: [ dnat, none, redir, snat, snat_dnat ]
+  device_interface_name:
+    description:
+    - The name of the device interface associated with this connection.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -227,6 +244,10 @@ def main():
         node=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         connection_name=dict(type="str", choices=["consumer", "provider"]),
+        attachment_notify=dict(type="bool"),
+        connection_type=dict(type="str", choices=["dnat", "none", "redir", "snat", "snat_dnat"]),
+        description=dict(type="str"),
+        device_interface_name=dict(type="str"),
     )
 
     module = AnsibleModule(
@@ -238,13 +259,17 @@ def main():
         ],
     )
 
+    aci = ACIModule(module)
+
     tenant = module.params.get("tenant")
     service_graph = module.params.get("service_graph")
     node = module.params.get("node")
     state = module.params.get("state")
     connection_name = module.params.get("connection_name")
-
-    aci = ACIModule(module)
+    attachment_notify = aci.boolean(module.params.get("attachment_notification"))
+    description = module.params.get("description")
+    connection_type = module.params.get("connection_type")
+    device_interface_name = module.params.get("device_interface_name")
 
     aci.construct_url(
         root_class=dict(
@@ -278,7 +303,9 @@ def main():
     if state == "present":
         aci.payload(
             aci_class="vnsAbsFuncConn",
-            class_config=dict(name=connection_name),
+            class_config=dict(
+                name=connection_name, attNotify=attachment_notify, connType=connection_type, descr=description, deviceLIfName=device_interface_name
+            ),
         )
         aci.get_diff(aci_class="vnsAbsFuncConn")
 

@@ -99,7 +99,7 @@
     func_type: go_to
     device: ansible_device1
     managed: false
-    routing_mode: Redirect
+    routing_mode: redirect
     state: present
 
 - name: Add Service Graph Template Node 2
@@ -112,7 +112,7 @@
     func_type: go_to
     device: ansible_device2
     managed: false
-    routing_mode: Redirect
+    routing_mode: redirect
     state: present
 
 # ADD SERVICE GRAPH ABS CONNECTIONS

@@ -20,6 +20,13 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
 
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
   cisco.aci.aci_tenant:
@@ -93,7 +100,7 @@
     func_type: go_to
     device: ansible_device
     managed: false
-    routing_mode: Redirect
+    routing_mode: redirect
     state: present
 
 # CREATE L4-L7 DEVICE SELECTION POLICY
@@ -164,6 +171,10 @@
     <<: *add_context
   register: add_context
 
+- name: Sort children by tDn attribute
+  set_fact:
+    sorted_children: "{{ add_context.current[0].vnsLIfCtx.children | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}"
+
 - name: Verify context creation
   ansible.builtin.assert:
     that:
@@ -173,9 +184,10 @@
     - add_context_cm.proposed.vnsLIfCtx.attributes.connNameOrLbl == "provider"
     - add_context.current.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
     - add_context.current.0.vnsLIfCtx.attributes.connNameOrLbl == "provider"
-    - add_context.current.0.vnsLIfCtx.children.1.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-ansible_tenant/BD-ansible_bd"
-    - add_context.current.0.vnsLIfCtx.children.2.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
-    - add_context.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToSvcRedirectPol.attributes.tDn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - sorted_children.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-ansible_tenant/BD-ansible_bd"
+    - sorted_children.1.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
+    - sorted_children.2.vnsRsLIfCtxToSvcRedirectPol.attributes.tDn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+
 
 # CREATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT AGAIN TO TEST IDEMPOTENCE
 - name: Create L4-L7 Device Selection Logical Interface Context again
@@ -183,15 +195,49 @@
     <<: *add_context
   register: add_context_again
 
+- name: Sort children by tDn attribute again
+  set_fact:
+    sorted_children_again: "{{ add_context_again.current[0].vnsLIfCtx.children | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}"
+
 - name: Verify context creation idempotence
   ansible.builtin.assert:
     that:
     - add_context_again is not changed
     - add_context_again.current.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
     - add_context_again.current.0.vnsLIfCtx.attributes.connNameOrLbl == "provider"
-    - add_context_again.current.0.vnsLIfCtx.children.1.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-ansible_tenant/BD-ansible_bd"
-    - add_context_again.current.0.vnsLIfCtx.children.2.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
-    - add_context_again.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToSvcRedirectPol.attributes.tDn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - sorted_children_again.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-ansible_tenant/BD-ansible_bd"
+    - sorted_children_again.1.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
+    - sorted_children_again.2.vnsRsLIfCtxToSvcRedirectPol.attributes.tDn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+
+- name: Execute tasks only for ACI v6+
+  when:
+  - version.current.0.topSystem.attributes.version is version('6', '>=')
+  block:
+  - name: Create L4-L7 Device Selection Logical Interface Context with new attributes
+    cisco.aci.aci_l4l7_device_selection_if_context:
+      <<: *aci_info
+      tenant: ansible_tenant
+      contract: ansible_contract
+      graph: ansible_graph
+      node: ansible_node
+      context: provider
+      bridge_domain: ansible_bd
+      logical_device: ansible_device
+      logical_interface: ansible_log_intf
+      redirect_policy: ansible_pbr_policy
+      acl: true
+      permit_handoff: true
+      rule_type: true
+      state: present
+    register: add_context_new
+
+  - name: Verify L4-L7 Device Selection Logical Interface Context with new attributes
+    ansible.builtin.assert:
+      that:
+      - add_context_new is changed
+      - add_context_new.current.0.vnsLIfCtx.attributes.acl == "yes"
+      - add_context_new.current.0.vnsLIfCtx.attributes.ruleType == "yes"
+      - add_context_new.current.0.vnsLIfCtx.attributes.permitHandoff == "yes"
 
 # UPDATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT
 - name: Modify L4-L7 Device Selection Logical Interface Context

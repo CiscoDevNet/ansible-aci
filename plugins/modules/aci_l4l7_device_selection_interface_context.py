@@ -77,6 +77,22 @@ options:
     description:
     - The Redirect Policy to bind the context to.
     type: str
+  permit_handoff:
+    description:
+    - Indicates whether to allow handoff of traffic to the associated logical interface.
+    type: bool
+  acl:
+    description:
+    - Specifies whether an Access Control List (ACL) is applied to the logical interface.
+    type: bool
+  description:
+    description:
+    - A brief description for the Logical Interface Context.
+    type: str
+  rule_type:
+    description:
+    - Indicates whether the context uses a specific rule type for traffic handling.
+    type: bool
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -283,6 +299,10 @@ def main():
         logical_device=dict(type="str"),
         logical_interface=dict(type="str"),
         redirect_policy=dict(type="str"),
+        permit_handoff=dict(type="bool"),
+        acl=dict(type="bool"),
+        description=dict(type="str"),
+        rule_type=dict(type="bool"),
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
@@ -308,6 +328,10 @@ def main():
     logical_device = module.params.get("logical_device")
     logical_interface = module.params.get("logical_interface")
     redirect_policy = module.params.get("redirect_policy")
+    permit_handoff = aci.boolean(module.params.get("permit_handoff"))
+    acl = aci.boolean(module.params.get("acl"))
+    description = module.params.get("description")
+    rule_type = aci.boolean(module.params.get("rule_type"))
 
     ldev_ctx_rn = "ldevCtx-c-{0}-g-{1}-n-{2}".format(contract, graph, node) if (contract, graph, node) != (None, None, None) else None
 
@@ -370,8 +394,11 @@ def main():
                     #         }
                     #     }
                     # )
-                    aci.delete_child(
-                        "/api/mo/uni/tn-{0}/ldevCtx-c-{1}-g-{2}-n-{3}/lIfCtx-c-{4}/rsLIfCtxToBD.json".format(tenant, contract, graph, node, context)
+                    aci.api_call(
+                        "DELETE",
+                        "{0}/api/mo/uni/tn-{1}/ldevCtx-c-{2}-g-{3}-n-{4}/lIfCtx-c-{5}/rsLIfCtxToBD.json".format(
+                            aci.base_url, tenant, contract, graph, node, context
+                        ),
                     )
                 elif child.get("vnsRsLIfCtxToLIf") and child.get("vnsRsLIfCtxToLIf").get("attributes").get("tDn") != log_intf_tdn:
                     child_configs.append(
@@ -397,7 +424,15 @@ def main():
                     )
         aci.payload(
             aci_class="vnsLIfCtx",
-            class_config=dict(connNameOrLbl=context, l3Dest=l3_destination, permitLog=permit_log),
+            class_config=dict(
+                connNameOrLbl=context,
+                l3Dest=l3_destination,
+                permitLog=permit_log,
+                permitHandoff=permit_handoff,
+                acl=acl,
+                descr=description,
+                ruleType=rule_type,
+            ),
             child_configs=child_configs,
         )
         aci.get_diff(aci_class="vnsLIfCtx")

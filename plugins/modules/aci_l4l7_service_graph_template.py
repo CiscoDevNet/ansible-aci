@@ -25,11 +25,45 @@ options:
     aliases: [ tenant_name ]
   service_graph:
     description:
-    - The name of Service Graph Template.
+      - The name of Service Graph Template.
     type: str
   ui_template_type:
     description:
-    - The UI Template Type.
+      - The UI Template Type.
+    type: str
+    choices: [
+      ndo_implicit_template,
+      one_node_adc_one_arm,
+      one_node_adc_one_arm_l3ext,
+      one_node_adc_two_arm,
+      one_node_fw_routed,
+      one_node_fw_trans,
+      two_node_fw_routed_adc_one_arm,
+      two_node_fw_routed_adc_one_arm_l3ext,
+      two_node_fw_routed_adc_two_arm,
+      two_node_fw_trans_adc_one_arm,
+      two_node_fw_trans_adc_one_arm_l3ext,
+      two_node_fw_trans_adc_two_arm,
+      unspecified
+    ]
+  type:
+    description:
+    - Specifies the type of Service Graph Template.
+    type: str
+    choices: [ cloud, legacy ]
+  service_rule_type:
+    description:
+    - Defines the type of service rule applied within the Service Graph Template.
+    type: str
+    choices: [ epg, subnet, vrf ]
+  filter_between_nodes:
+    description:
+    - Determines how traffic is filtered between nodes in the Service Graph Template.
+    type: str
+    choices: [ allow-all, filters-from-contract ]
+  description:
+    description:
+    - A description of the Service Graph Template.
     type: str
   state:
     description:
@@ -205,6 +239,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.constants import UI_TEMPLATE_TYPE
 
 
 def main():
@@ -215,7 +250,11 @@ def main():
         tenant=dict(type="str", aliases=["tenant_name"]),
         service_graph=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        ui_template_type=dict(type="str"),
+        ui_template_type=dict(type="str", choices=list(UI_TEMPLATE_TYPE)),
+        type=dict(type="str", choices=["cloud", "legacy"]),
+        service_rule_type=dict(type="str", choices=["epg", "subnet", "vrf"]),
+        filter_between_nodes=dict(type="str", choices=["allow-all", "filters-from-contract"]),
+        description=dict(type="str"),
     )
 
     module = AnsibleModule(
@@ -230,7 +269,11 @@ def main():
     tenant = module.params.get("tenant")
     service_graph = module.params.get("service_graph")
     state = module.params.get("state")
-    ui_template_type = module.params.get("ui_template_type")
+    ui_template_type = UI_TEMPLATE_TYPE.get(module.params.get("ui_template_type"))
+    type = module.params.get("type")
+    service_rule_type = module.params.get("service_rule_type")
+    filter_between_nodes = module.params.get("filter_between_nodes")
+    description = (module.params.get("description"),)
 
     aci = ACIModule(module)
 
@@ -255,7 +298,14 @@ def main():
     if state == "present":
         aci.payload(
             aci_class="vnsAbsGraph",
-            class_config=dict(name=service_graph, uiTemplateType=ui_template_type),
+            class_config=dict(
+                name=service_graph,
+                uiTemplateType=ui_template_type,
+                type=type,
+                svcRuleType=service_rule_type,
+                filterBetweenNodes=filter_between_nodes,
+                descr=description,
+            ),
         )
         aci.get_diff(aci_class="vnsAbsGraph")
 
