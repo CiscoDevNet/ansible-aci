@@ -93,7 +93,7 @@
     func_type: go_to
     device: ansible_device
     managed: false
-    routing_mode: Redirect
+    routing_mode: redirect
     state: present
 
 # CREATE L4-L7 DEVICE SELECTION POLICY

@@ -451,3 +451,31 @@ HTTP_VERSIONS_MAPPING = {"1.0": "HTTP10", "1.1": "HTTP11"}
 L4L7_FUNC_TYPES_MAPPING = {"go_to": "GoTo", "go_through": "GoThrough", "l1": "L1", "l2": "L2"}
 
 L4L7_HASH_ALGORITHMS_MAPPING = {"source_ip": "sip", "destination_ip": "dip", "ip_and_protocol": "sip-dip-prototype"}
+
+L4L7_FUNCTIONAL_TEMPLATE_TYPES_MAPPING = {
+    "adc_one_arm": "ADC_ONE_ARM",
+    "adc_two_arm": "ADC_TWO_ARM",
+    "cloud_native_fw": "CLOUD_NATIVE_FW",
+    "cloud_native_lb": "CLOUD_NATIVE_LB",
+    "cloud_vendor_fw": "CLOUD_VENDOR_FW",
+    "cloud_vendor_lb": "CLOUD_VENDOR_LB",
+    "fw_routed": "FW_ROUTED",
+    "fw_trans": "FW_TRANS",
+    "other": "OTHER",
+}
+
+UI_TEMPLATE_TYPE = {
+    "ndo_implicit_template": "NDO_IMPLICIT_TEMPLATE",
+    "one_node_adc_one_arm": "ONE_NODE_ADC_ONE_ARM",
+    "one_node_adc_one_arm_l3ext": "ONE_NODE_ADC_ONE_ARM_L3EXT",
+    "one_node_adc_two_arm": "ONE_NODE_ADC_TWO_ARM",
+    "one_node_fw_routed": "ONE_NODE_FW_ROUTED",
+    "one_node_fw_trans": "ONE_NODE_FW_TRANS",
+    "two_node_fw_routed_adc_one_arm": "TWO_NODE_FW_ROUTED_ADC_ONE_ARM",
+    "two_node_fw_routed_adc_one_arm_l3ext": "TWO_NODE_FW_ROUTED_ADC_ONE_ARM_L3EXT",
+    "two_node_fw_routed_adc_two_arm": "TWO_NODE_FW_ROUTED_ADC_TWO_ARM",
+    "two_node_fw_trans_adc_one_arm": "TWO_NODE_FW_TRANS_ADC_ONE_ARM",
+    "two_node_fw_trans_adc_one_arm_l3ext": "TWO_NODE_FW_TRANS_ADC_ONE_ARM_L3EXT",
+    "two_node_fw_trans_adc_two_arm": "TWO_NODE_FW_TRANS_ADC_TWO_ARM",
+    "unspecified": "UNSPECIFIED",
+}

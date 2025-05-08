@@ -20,6 +20,13 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
 
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
   cisco.aci.aci_tenant:
@@ -77,7 +84,7 @@
     func_type: go_to
     device: ansible_device
     managed: false
-    routing_mode: Redirect
+    routing_mode: redirect
     state: present
 
 # ADD FUNCTIONAL CONNECTIONS
@@ -158,6 +165,27 @@
     - add_prov_func_conn_again is not changed
     - add_prov_func_conn_again.current.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-provider"
     - add_prov_func_conn_again.current.0.vnsAbsFuncConn.attributes.name == "provider"
+
+- name: Execute tasks only for ACI v5+
+  when:
+  - version.current.0.topSystem.attributes.version is version('5', '>=')
+  block:
+  - name: Modify Provider Func Conn with new attributes
+    cisco.aci.aci_l4l7_service_graph_template_func_conn:
+      <<: *aci_info
+      tenant: ansible_tenant
+      service_graph: ansible_graph
+      node: ansible_node
+      connection_name: provider
+      connection_type: redir
+      state: present
+    register: add_prov_func_conn_new
+
+  - name: Verify L4-L7 Device Selection Logical Interface Context with new attributes
+    ansible.builtin.assert:
+      that:
+      - add_prov_func_conn_new is changed
+      - add_prov_func_conn_new.current.0.vnsAbsFuncConn.attributes.connType == "redir"
 
 # QUERY FUNC CONNS
 - name: Query Consumer Func Conn
