@@ -68,11 +68,11 @@ notes:
   The M(cisco.aci.aci_tenant), M(cisco.aci.aci_contract), M(cisco.aci.aci_l4l7_service_graph), M(cisco.aci.aci_l4l7_device) and
   M(cisco.aci.aci_l4l7_service_graph_template_node) modules can be used for this.
 seealso:
-- module: aci_tenant
-- module: aci_contract
-- module: aci_l4l7_service_graph
-- module: aci_l4l7_device
-- module: aci_l4l7_service_graph_template_node
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_contract
+- module: cisco.aci.aci_l4l7_service_graph
+- module: cisco.aci.aci_l4l7_device
+- module: cisco.aci.aci_l4l7_service_graph_template_node
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(vns:LDevCtx)
   link: https://developer.cisco.com/docs/apic-mim-ref/
