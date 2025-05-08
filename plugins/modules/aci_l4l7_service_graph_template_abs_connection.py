@@ -78,8 +78,8 @@ notes:
 - The I(tenant) and I(service_graph) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l4l7_service_graph_template) modules can be used for this.
 seealso:
-- module: aci_tenant
-- module: aci_l4l7_service_graph_template
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_l4l7_service_graph_template
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class, B(vns:AbsConnection)
   link: https://developer.cisco.com/docs/apic-mim-ref/
