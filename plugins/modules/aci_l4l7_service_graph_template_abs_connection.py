@@ -16,7 +16,7 @@ DOCUMENTATION = r"""
 module: aci_l4l7_service_graph_template_abs_connection
 short_description: Manage L4-L7 Service Graph Template Abs Connections (vns:AbsConnection)
 description:
-- Manage Layer 4 to Layer 7 (L4-L7) Service Graph Template  Connections.
+- Manage Layer 4 to Layer 7 (L4-L7) Service Graph Template Connections.
 options:
   tenant:
     description:
@@ -50,13 +50,19 @@ options:
   connector_direction:
     description:
     - The connector direction.
+    - The APIC defaults to C(uknown) when unset during creation.
     type: str
-    choices: [ provider, consumer ]
+    choices: [ provider, consumer, unknown ]
   connection_type:
     description:
     - The connection type.
+    - The APIC defaults to C(external) when unset during creation.
     type: str
     choices: [ internal, external ]
+  description:
+    description:
+    - The description for the Service Graph Template connection.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -249,8 +255,9 @@ def main():
         direct_connect=dict(type="bool"),
         unicast_route=dict(type="bool"),
         adjacency_type=dict(type="str", choices=["l2", "l3"]),
-        connector_direction=dict(type="str", choices=["provider", "consumer"]),
+        connector_direction=dict(type="str", choices=["provider", "consumer", "unknown"]),
         connection_type=dict(type="str", choices=["internal", "external"]),
+        description=dict(type="str"),
     )
 
     module = AnsibleModule(
@@ -273,6 +280,7 @@ def main():
     direct_connect = aci.boolean(module.params.get("direct_connect"))
     connector_direction = module.params.get("connector_direction")
     connection_type = module.params.get("connection_type")
+    description = module.params.get("description")
 
     aci.construct_url(
         root_class=dict(
@@ -307,6 +315,7 @@ def main():
                 unicastRoute=unicast_route,
                 connType=connection_type,
                 connDir=connector_direction,
+                descr=description,
             ),
         )
         aci.get_diff(aci_class="vnsAbsConnection")

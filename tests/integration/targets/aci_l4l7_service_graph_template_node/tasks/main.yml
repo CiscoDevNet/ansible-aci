@@ -77,7 +77,8 @@
     func_type: go_to
     device: ansible_device
     managed: false
-    routing_mode: Redirect
+    routing_mode: redirect
+    share_encap: true
     state: present
   check_mode: true
   register: add_l4l7_node_cm
@@ -98,6 +99,7 @@
     - add_l4l7_node_cm.proposed.vnsAbsNode.attributes.funcTemplateType == "ADC_ONE_ARM"
     - add_l4l7_node_cm.proposed.vnsAbsNode.attributes.managed == "no"
     - add_l4l7_node_cm.proposed.vnsAbsNode.attributes.routingMode == "Redirect"
+    - add_l4l7_node_cm.proposed.vnsAbsNode.attributes.shareEncap == "yes"
     - add_l4l7_node is changed
     - add_l4l7_node.current.0.vnsAbsNode.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node"
     - add_l4l7_node.current.0.vnsAbsNode.attributes.name == "ansible_node"
@@ -105,6 +107,7 @@
     - add_l4l7_node.current.0.vnsAbsNode.attributes.funcTemplateType == "ADC_ONE_ARM"
     - add_l4l7_node.current.0.vnsAbsNode.attributes.managed == "no"
     - add_l4l7_node.current.0.vnsAbsNode.attributes.routingMode == "Redirect"
+    - add_l4l7_node.current.0.vnsAbsNode.attributes.shareEncap == "yes"
 
 # VERIFY NODE BINDING TO LOGICAL DEVICE
 - name: Verify Node Binding to Logical Device
@@ -148,7 +151,7 @@
     func_type: go_through
     device: ansible_device
     managed: true
-    routing_mode: Redirect
+    routing_mode: redirect
     state: present
   register: update_l4l7_node
 

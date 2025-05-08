@@ -27,22 +27,38 @@ options:
     description:
     - The name of an existing Service Graph.
     type: str
+  description:
+    description:
+    - The description of the Service Graph Template Node.
+    type: str
   node:
     description:
     - The name of the Service Graph Template Node.
     type: str
-  func_template_type:
+  functional_template_type:
     description:
     - The functional template type for the node.
     - The APIC defaults to C(other) when unset during creation.
     type: str
-    choices: [ fw_trans, fw_routed, adc_one_arm, adc_two_arm, other ]
-  func_type:
+    choices: [
+      adc_one_arm,
+      adc_two_arm,
+      cloud_native_fw,
+      cloud_native_lb,
+      cloud_vendor_fw,
+      cloud_vendor_lb,
+      fw_routed,
+      fw_trans,
+      other
+    ]
+    aliases: [ func_template_type ]
+  function_type:
     description:
-    - The type of connection.
+    - The type of function.
     - The APIC defaults to C(go_to) when unset during creation.
     type: str
     choices: [ go_to, go_through, l1, l2 ]
+    aliases: [ func_type ]
   device:
     description:
     - The name of an existing logical device.
@@ -62,9 +78,14 @@ options:
     description:
     - The routing mode for the node.
     type: str
+    choices: [ redirect, unspecified ]
   is_copy:
     description:
     - Whether the device is a copy device.
+    type: bool
+  share_encap:
+    description:
+    - Whether to share encapsulation across the service graph.
     type: bool
   state:
     description:
@@ -101,11 +122,11 @@ EXAMPLES = r"""
     tenant: my_tenant
     service_graph: test-graph
     node: test-node
-    func_template_type: adc_one_arm
-    func_type: GoTo
+    functional_template_type: adc_one_arm
+    function_type: GoTo
     device: test-device
     managed: false
-    routing_mode: Redirect
+    routing_mode: redirect
     state: present
   delegate_to: localhost
 
@@ -250,7 +271,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-from ansible_collections.cisco.aci.plugins.module_utils.constants import L4L7_FUNC_TYPES_MAPPING
+from ansible_collections.cisco.aci.plugins.module_utils.constants import L4L7_FUNC_TYPES_MAPPING, L4L7_FUNCTIONAL_TEMPLATE_TYPES_MAPPING
 
 
 def main():
@@ -262,13 +283,15 @@ def main():
         service_graph=dict(type="str"),
         node=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        func_template_type=dict(type="str", choices=["fw_trans", "fw_routed", "adc_one_arm", "adc_two_arm", "other"]),
-        func_type=dict(type="str", choices=["go_to", "go_through", "l1", "l2"]),
+        functional_template_type=dict(type="str", aliases=["func_template_type"], choices=list(L4L7_FUNCTIONAL_TEMPLATE_TYPES_MAPPING)),
+        function_type=dict(type="str", aliases=["func_type"], choices=list(L4L7_FUNC_TYPES_MAPPING)),
         device=dict(type="str"),
         device_tenant=dict(type="str"),
         managed=dict(type="bool"),
-        routing_mode=dict(type="str"),
+        routing_mode=dict(type="str", choices=["redirect", "unspecified"]),
         is_copy=dict(type="bool"),
+        description=dict(type="str"),
+        share_encap=dict(type="bool"),
     )
 
     module = AnsibleModule(
@@ -286,18 +309,15 @@ def main():
     service_graph = module.params.get("service_graph")
     node = module.params.get("node")
     state = module.params.get("state")
-    func_template_type = module.params.get("func_template_type")
-    func_type = L4L7_FUNC_TYPES_MAPPING.get(module.params.get("func_type"))
+    functional_template_type = L4L7_FUNCTIONAL_TEMPLATE_TYPES_MAPPING.get(module.params.get("functional_template_type"))
+    function_type = L4L7_FUNC_TYPES_MAPPING.get(module.params.get("function_type"))
     device = module.params.get("device")
     device_tenant = module.params.get("device_tenant")
     managed = aci.boolean(module.params.get("managed"))
-    routing_mode = module.params.get("routing_mode")
+    routing_mode = "Redirect" if module.params.get("routing_mode") == "redirect" else module.params.get("routing_mode")
     is_copy = aci.boolean(module.params.get("is_copy"))
-
-    if func_template_type:
-        func_template_upper = func_template_type.upper()
-    else:
-        func_template_upper = None
+    description = module.params.get("description")
+    share_encap = aci.boolean(module.params.get("share_encap"))
 
     aci.construct_url(
         root_class=dict(
@@ -331,11 +351,13 @@ def main():
             aci_class="vnsAbsNode",
             class_config=dict(
                 name=node,
-                funcTemplateType=func_template_upper,
-                funcType=func_type,
+                funcTemplateType=functional_template_type,
+                funcType=function_type,
                 managed=managed,
                 routingMode=routing_mode,
                 isCopy=is_copy,
+                descr=description,
+                shareEncap=share_encap,
             ),
             child_configs=[
                 dict(

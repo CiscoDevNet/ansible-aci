@@ -49,6 +49,10 @@ options:
     description:
     - The context name.
     type: str
+  description:
+    description:
+    - A brief description for the Device Selection Policy.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -245,6 +249,7 @@ def main():
         node=dict(type="str", aliases=["node_name"]),
         device=dict(type="str"),
         context=dict(type="str"),
+        description=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -264,8 +269,9 @@ def main():
     node = module.params.get("node")
     device = module.params.get("device")
     context = module.params.get("context")
+    description = module.params.get("description")
 
-    policy_dn = "ldevCtx-c-{0}-g-{1}-n-{2}".format(contract, graph, node) if (contract, graph, node) != (None, None, None) else None
+    ldev_ctx_rn = "ldevCtx-c-{0}-g-{1}-n-{2}".format(contract, graph, node) if (contract, graph, node) != (None, None, None) else None
 
     aci = ACIModule(module)
 
@@ -278,9 +284,9 @@ def main():
         ),
         subclass_1=dict(
             aci_class="vnsLDevCtx",
-            aci_rn=policy_dn,
-            module_object=policy_dn,
-            target_filter={"dn": policy_dn},
+            aci_rn=ldev_ctx_rn,
+            module_object=ldev_ctx_rn,
+            target_filter={"dn": ldev_ctx_rn},
         ),
         child_classes=["vnsRsLDevCtxToLDev"],
     )
@@ -315,6 +321,7 @@ def main():
                 graphNameOrLbl=graph,
                 nodeNameOrLbl=node,
                 context=context,
+                descr=description,
             ),
             child_configs=child_configs,
         )

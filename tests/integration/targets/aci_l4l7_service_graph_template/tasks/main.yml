@@ -21,6 +21,13 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
 
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
   cisco.aci.aci_tenant:
@@ -41,6 +48,7 @@
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_service_graph
+    ui_template_type: one_node_fw_routed
     state: present
   check_mode: true
   register: create_sgt_cm
@@ -57,9 +65,11 @@
     - create_sgt is changed
     - create_sgt_cm.proposed.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph"
     - create_sgt_cm.proposed.vnsAbsGraph.attributes.name == "ansible_service_graph"
+    - create_sgt_cm.proposed.vnsAbsGraph.attributes.uiTemplateType == "ONE_NODE_FW_ROUTED"
     - create_sgt.previous == []
     - create_sgt.current.0.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph"
     - create_sgt.current.0.vnsAbsGraph.attributes.name == "ansible_service_graph"
+    - create_sgt.current.0.vnsAbsGraph.attributes.uiTemplateType == "ONE_NODE_FW_ROUTED"
 
 # ADD service graph template again to check idempotence
 - name: Create L4-L7 Service Graph Template again
@@ -74,6 +84,27 @@
     - create_sgt.current == create_sgt_again.previous
     - create_sgt_again.current.0.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph"
     - create_sgt_again.current.0.vnsAbsGraph.attributes.name == "ansible_service_graph"
+
+- name: Execute tasks only for ACI v5+
+  when:
+  - version.current.0.topSystem.attributes.version is version('5', '>=')
+  block:
+  - name: Create L4-L7 Service Graph Template with new attributes
+    cisco.aci.aci_l4l7_service_graph_template:
+      <<: *aci_info
+      tenant: ansible_tenant
+      service_graph: ansible_service_graph_new
+      service_rule_type: epg
+      state: present
+    register: create_sgt_new
+
+  - name: Verify L4-L7 Service Graph Template attributes
+    ansible.builtin.assert:
+      that:
+      - create_sgt_new is changed
+      - create_sgt_new.current.0.vnsAbsGraph.attributes.svcRuleType == "epg"
+      - create_sgt_new.current.0.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph_new"
+      - create_sgt_new.current.0.vnsAbsGraph.attributes.name == "ansible_service_graph_new"
 
 # QUERY service graph template
 - name: Create another L4-L7 Service Graph Template
