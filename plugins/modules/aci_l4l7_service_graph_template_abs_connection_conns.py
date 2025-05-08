@@ -56,10 +56,10 @@ notes:
   The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l4l7_service_graph_template)
   and M(cisco.aci.aci_l4l7_service_graph_template_abs_conn) modules can be used for this.
 seealso:
-- module: aci_tenant
-- module: aci_l4l7_service_graph_template
-- module: aci_l4l7_service_graph_template_abs_connection
-- module: aci_l4l7_service_graph_template_node
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_l4l7_service_graph_template
+- module: cisco.aci.aci_l4l7_service_graph_template_abs_connection
+- module: cisco.aci.aci_l4l7_service_graph_template_node
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class, B(vns:RsAbsConnectionConns)
   link: https://developer.cisco.com/docs/apic-mim-ref/
