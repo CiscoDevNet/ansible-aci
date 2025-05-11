@@ -30,6 +30,7 @@ options:
   ui_template_type:
     description:
       - The UI Template Type.
+      - The APIC defaults to C(unspecified) when unset during creation.
     type: str
     choices: [
       ndo_implicit_template,
@@ -49,16 +50,19 @@ options:
   type:
     description:
     - Specifies the type of Service Graph Template.
+    - The APIC defaults to C(legacy) when unset during creation.
     type: str
     choices: [ cloud, legacy ]
   service_rule_type:
     description:
     - Defines the type of service rule applied within the Service Graph Template.
+    - The APIC defaults to C(vrf) when unset during creation.
     type: str
     choices: [ epg, subnet, vrf ]
   filter_between_nodes:
     description:
     - Determines how traffic is filtered between nodes in the Service Graph Template.
+    - The APIC defaults to C(allow-all) when unset during creation.
     type: str
     choices: [ allow-all, filters-from-contract ]
   description:

@@ -37,6 +37,7 @@ options:
   attachment_notify:
     description:
     - Indicates whether attachment notifications are enabled for this connection.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   description:
     description:
@@ -45,6 +46,7 @@ options:
   connection_type:
     description:
     - Specifies the type of connection for the node.
+    - The APIC defaults to C(none) when unset during creation.
     type: str
     choices: [ dnat, none, redir, snat, snat_dnat ]
   device_interface_name:
@@ -74,6 +76,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
+- Shreyas Srish (@shrsr)
 """
 
 EXAMPLES = r"""
