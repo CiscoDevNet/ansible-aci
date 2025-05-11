@@ -77,15 +77,18 @@ options:
   routing_mode:
     description:
     - The routing mode for the node.
+    - The APIC defaults to C(unspecified) when unset during creation.
     type: str
     choices: [ redirect, unspecified ]
   is_copy:
     description:
     - Whether the device is a copy device.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   share_encap:
     description:
     - Whether to share encapsulation across the service graph.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   state:
     description:
