@@ -80,10 +80,12 @@ options:
   permit_handoff:
     description:
     - Indicates whether to allow handoff of traffic to the associated logical interface.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   acl:
     description:
     - Specifies whether an Access Control List (ACL) is applied to the logical interface.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   description:
     description:
@@ -92,6 +94,7 @@ options:
   rule_type:
     description:
     - Indicates whether the context uses a specific rule type for traffic handling.
+    - The APIC defaults to C(false) when unset during creation.
     type: bool
   state:
     description:
