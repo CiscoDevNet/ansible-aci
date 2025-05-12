@@ -45,7 +45,7 @@
   check_mode: true
   register: add_health_group_cm
 
-- name: Add a new Redirect Health Group in check mode
+- name: Add a new Redirect Health Group
   cisco.aci.aci_l4l7_redirect_health_group: 
     <<: *health_group
   register: add_health_group
@@ -105,7 +105,7 @@
     - "'uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group_2' in query_all.current | map(attribute='vnsRedirectHealthGroup.attributes.dn') | list"
 
 # REMOVE L4-L7 HEALTH GROUP
-- name: Remove Redirect Health Group
+- name: Remove Redirect Health Group in check mode
   cisco.aci.aci_l4l7_redirect_health_group: &remove_group
     <<: *aci_info
     tenant: ansible_tenant

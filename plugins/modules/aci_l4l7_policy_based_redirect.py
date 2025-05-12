@@ -54,11 +54,13 @@ options:
     description:
     - The maximum percent when threshold is enabled.
     - The APIC defaults to C(0) when unset during creation.
+    - Permitted values are in the range of [0, 100].
     type: int
   min_threshold:
     description:
     - The minimum percent when threshold is enabled.
     - The APIC defaults to C(0) when unset during creation.
+    - Permitted values are in the range of [0, 100].
     type: int
   threshold_down_action:
     description:
