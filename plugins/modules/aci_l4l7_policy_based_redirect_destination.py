@@ -99,11 +99,11 @@ notes:
   The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l4l7_device), M(cisco.aci.aci_l4l7_concrete_device), M(cisco.aci.aci_l4l7_concrete_interface)
   and M(cisco.aci.aci_l4l7_policy_based_redirect) modules can be used for this.
 seealso:
-- module: aci_tenant
-- module: aci_l4l7_device
-- module: aci_l4l7_concrete_device
-- module: aci_l4l7_concrete_interface
-- module: aci_l4l7_policy_based_redirect
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_l4l7_device
+- module: cisco.aci.aci_l4l7_concrete_device
+- module: cisco.aci.aci_l4l7_concrete_interface
+- module: cisco.aci.aci_l4l7_policy_based_redirect
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(vns:RedirectDest)
   link: https://developer.cisco.com/docs/apic-mim-ref/
