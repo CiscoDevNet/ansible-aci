@@ -43,14 +43,14 @@ options:
     type: bool
   adjacency_type:
     description:
-    - Whether the adjacecncy is Layer2 or Layer3.
+    - Whether the adjacency is Layer2 or Layer3.
     - The APIC defaults to C(l2) when unset during creation.
     type: str
     choices: [ l2, l3 ]
   connector_direction:
     description:
     - The connector direction.
-    - The APIC defaults to C(uknown) when unset during creation.
+    - The APIC defaults to C(unknown) when unset during creation.
     type: str
     choices: [ provider, consumer, unknown ]
   connection_type:
