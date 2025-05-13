@@ -1,0 +1,319 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+# CREATE DOMAIN
+- name: Create ansible_phys_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: present
+
+# ADD DEVICE
+- name: Create L4-L7 Device
+  cisco.aci.aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    domain: ansible_phys_dom
+    func_type: go_to
+    context_aware: single
+    managed: false
+    dev_type: physical
+    svc_type: adc
+    trunking: false
+    prom_mode: true
+    state: present
+
+# ADD SERVICE GRAPH TEMPLATE
+- name: Create L4-L7 Service Graph Template
+  cisco.aci.aci_l4l7_service_graph_template:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    state: present
+
+# ADD SERVICE GRAPH NODE
+- name: Create L4-L7 Service Graph Node
+  cisco.aci.aci_l4l7_service_graph_template_node:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node: ansible_node
+    func_template_type: adc_one_arm
+    func_type: go_to
+    device: ansible_device
+    managed: false
+    routing_mode: redirect
+    state: present
+
+# ADD FUNCTIONAL CONNECTIONS
+- name: Create Consumer Func Conn in check mode
+  cisco.aci.aci_l4l7_service_graph_template_func_conn: &add_cons_func_conn
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node: ansible_node
+    connection_name: consumer
+    state: present
+  check_mode: true
+  register: add_cons_func_conn_cm
+
+- name: Create Provider Func Conn in check mode
+  cisco.aci.aci_l4l7_service_graph_template_func_conn: &add_prov_func_conn
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node: ansible_node
+    connection_name: provider
+    state: present
+  check_mode: true
+  register: add_prov_func_conn_cm
+
+- name: Create Consumer Func Conn 
+  cisco.aci.aci_l4l7_service_graph_template_func_conn: 
+    <<: *add_cons_func_conn
+  register: add_cons_func_conn
+
+- name: Create Provider Func Conn 
+  cisco.aci.aci_l4l7_service_graph_template_func_conn: 
+    <<: *add_prov_func_conn
+  register: add_prov_func_conn
+
+# VERIFY ATTRIBUTES
+- name: Verify Consumer Func Conn Creation
+  ansible.builtin.assert:
+    that:
+    - add_cons_func_conn_cm is changed
+    - add_cons_func_conn is changed
+    - add_cons_func_conn_cm.proposed.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-consumer"
+    - add_cons_func_conn_cm.proposed.vnsAbsFuncConn.attributes.name == "consumer"
+    - add_cons_func_conn.current.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-consumer"
+    - add_cons_func_conn.current.0.vnsAbsFuncConn.attributes.name == "consumer"
+
+- name: Verify Provider Func Conn Creation
+  ansible.builtin.assert:
+    that:
+    - add_prov_func_conn_cm is changed
+    - add_prov_func_conn_cm.proposed.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-provider"
+    - add_prov_func_conn_cm.proposed.vnsAbsFuncConn.attributes.name == "provider"
+    - add_prov_func_conn is changed
+    - add_prov_func_conn.current.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-provider"
+    - add_prov_func_conn.current.0.vnsAbsFuncConn.attributes.name == "provider"
+
+# ADD FUNC CONNS AGAIN TO TEST IDEMPOTENCE
+- name: Add Consumer Func Conn again
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
+    <<: *add_cons_func_conn
+  register: add_cons_func_conn_again
+
+- name: Add Provider Func Conn again
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
+    <<: *add_prov_func_conn
+  register: add_prov_func_conn_again
+
+- name: Verify Consumer Func Conn is not changed
+  ansible.builtin.assert:
+    that:
+    - add_cons_func_conn_again is not changed
+    - add_cons_func_conn_again.current.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-consumer"
+    - add_cons_func_conn_again.current.0.vnsAbsFuncConn.attributes.name == "consumer"
+
+- name: Verify Provider Func Conn is not changed
+  ansible.builtin.assert:
+    that:
+    - add_prov_func_conn_again is not changed
+    - add_prov_func_conn_again.current.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-provider"
+    - add_prov_func_conn_again.current.0.vnsAbsFuncConn.attributes.name == "provider"
+
+- name: Execute tasks only for ACI v5+
+  when:
+  - version.current.0.topSystem.attributes.version is version('5', '>=')
+  block:
+  - name: Modify Provider Func Conn with new attributes
+    cisco.aci.aci_l4l7_service_graph_template_func_conn:
+      <<: *aci_info
+      tenant: ansible_tenant
+      service_graph: ansible_graph
+      node: ansible_node
+      connection_name: provider
+      connection_type: redir
+      state: present
+    register: add_prov_func_conn_new
+
+  - name: Verify L4-L7 Device Selection Logical Interface Context with new attributes
+    ansible.builtin.assert:
+      that:
+      - add_prov_func_conn_new is changed
+      - add_prov_func_conn_new.current.0.vnsAbsFuncConn.attributes.connType == "redir"
+
+# QUERY FUNC CONNS
+- name: Query Consumer Func Conn
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node: ansible_node
+    connection_name: consumer
+    state: query
+  register: query_cons_func_conn
+
+- name: Query Provider Func Conn
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node: ansible_node
+    connection_name: provider
+    state: query
+  register: query_prov_func_conn
+
+# VERIFY ATTRIBUTES
+- name: Verify Consumer Func Conn Attributes
+  ansible.builtin.assert:
+    that:
+    - query_cons_func_conn is not changed
+    - query_cons_func_conn.current.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-consumer"
+    - query_cons_func_conn.current.0.vnsAbsFuncConn.attributes.name == "consumer"
+
+- name: Verify Provider Func Conn Attributes
+  ansible.builtin.assert:
+    that:
+    - query_prov_func_conn is not changed
+    - query_prov_func_conn.current.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-provider"
+    - query_prov_func_conn.current.0.vnsAbsFuncConn.attributes.name == "provider"
+
+# QUERY ALL FUNC CONNS
+- name: Query All Func Conns
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
+    <<: *aci_info
+    state: query
+  register: query_func_conn_all
+
+- name: Verify query all
+  ansible.builtin.assert:
+    that:
+    - query_func_conn_all is not changed
+    - query_func_conn_all | length >=2
+
+# DELETE FUNC CONNS
+- name: Delete Consumer Func Conn in check mode
+  cisco.aci.aci_l4l7_service_graph_template_func_conn: &delete_cons_func_conn
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node: ansible_node
+    connection_name: consumer
+    state: absent
+  check_mode: true
+  register: delete_cons_func_conn_cm
+
+- name: Delete Provider Func Conn in check mode
+  cisco.aci.aci_l4l7_service_graph_template_func_conn: &delete_prov_func_conn
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node: ansible_node
+    connection_name: provider
+    state: absent
+  check_mode: true
+  register: delete_prov_func_conn_cm
+
+- name: Delete Consumer Func Conn
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
+    <<: *delete_cons_func_conn
+  register: delete_cons_func_conn
+
+- name: Delete Provider Func Conn
+  cisco.aci.aci_l4l7_service_graph_template_func_conn: 
+    <<: *delete_prov_func_conn
+  register: delete_prov_func_conn
+
+# VERIFY ATTRIBUTES
+- name: Verify Consumer Func Conn Removal
+  ansible.builtin.assert:
+    that:
+    - delete_cons_func_conn_cm is changed
+    - delete_cons_func_conn_cm.proposed == {}
+    - delete_cons_func_conn_cm.previous == delete_cons_func_conn.previous
+    - delete_cons_func_conn is changed
+    - delete_cons_func_conn.current == []
+    - delete_cons_func_conn.previous.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-consumer"
+    - delete_cons_func_conn.previous.0.vnsAbsFuncConn.attributes.name == "consumer"
+
+- name: Verify Provider Func Conn Removal
+  ansible.builtin.assert:
+    that:
+    - delete_prov_func_conn_cm is changed
+    - delete_prov_func_conn_cm.proposed == {}
+    - delete_prov_func_conn_cm.previous == delete_prov_func_conn.previous
+    - delete_prov_func_conn is changed
+    - delete_prov_func_conn.current == []
+    - delete_prov_func_conn.previous.0.vnsAbsFuncConn.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node/AbsFConn-provider"
+    - delete_prov_func_conn.previous.0.vnsAbsFuncConn.attributes.name == "provider"
+
+# DELETE FUNC CONN AGAIN TO TEST IDEMPOTENCE
+- name: Delete Consumer Func Conn again
+  cisco.aci.aci_l4l7_service_graph_template_func_conn:
+    <<: *delete_cons_func_conn
+  register: delete_cons_func_conn_again
+
+- name: Verify Consumer Func Conn Removal idempotence
+  ansible.builtin.assert:
+    that:
+    - delete_cons_func_conn_again is not changed
+    - delete_cons_func_conn_again.current == []
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_dom
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent

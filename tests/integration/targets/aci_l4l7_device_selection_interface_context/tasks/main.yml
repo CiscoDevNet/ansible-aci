@@ -1,0 +1,388 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+  # GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain if it already exists
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+# CREATE DOMAIN
+- name: Create ansible_phys_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: present
+
+# CREATE CONTRACT
+- name: Create contract
+  cisco.aci.aci_contract:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    scope: application-profile
+    state: present
+
+# CREATE L4-L7 DEVICE
+- name: Create L4-L7 Device
+  cisco.aci.aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    domain: ansible_phys_dom
+    func_type: go_to
+    context_aware: single
+    managed: false
+    dev_type: physical
+    svc_type: adc
+    trunking: false
+    prom_mode: true
+    state: present
+
+# CREATE L4-L7 SERVICE GRAPH
+- name: Create L4-L7 Service Graph
+  cisco.aci.aci_l4l7_service_graph_template:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    state: present
+
+# CREATE L4-L7 SERVICE GRAPH NODE
+- name: Add a new Service Graph Template Node
+  cisco.aci.aci_l4l7_service_graph_template_node:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node: ansible_node
+    func_template_type: adc_one_arm
+    func_type: go_to
+    device: ansible_device
+    managed: false
+    routing_mode: redirect
+    state: present
+
+# CREATE L4-L7 DEVICE SELECTION POLICY
+- name: Add a new device selection policy
+  cisco.aci.aci_l4l7_device_selection_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    state: present
+
+# CREATE BRIDGE DOMAINS
+- name: Add a Bridge Domain in ansible_tenant
+  cisco.aci.aci_bd:
+    <<: *aci_info
+    tenant: ansible_tenant
+    bd: ansible_bd
+    state: present
+
+- name: Add a Bridge Domain in the common tenant
+  cisco.aci.aci_bd:
+    <<: *aci_info
+    tenant: common
+    bd: ansible_if_context_bd
+    state: present
+
+# CREATE LOGICAL INTERFACE
+- name: Add a new logical interface
+  cisco.aci.aci_l4l7_logical_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ansible_log_intf
+    encap: vlan-987
+    state: present
+
+# CREATE L4-L7 REDIRECT POLICY
+- name: Add a new Policy Based Redirect
+  cisco.aci.aci_l4l7_policy_based_redirect:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy_name: ansible_pbr_policy
+    dest_type: l3
+    hash_algorithm: destination_ip
+    resilient_hash: yes
+    state: present
+
+# CREATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT
+- name: Create L4-L7 Device Selection Logical Interface Context in check mode
+  cisco.aci.aci_l4l7_device_selection_if_context: &add_context
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    bridge_domain: ansible_bd
+    logical_device: ansible_device
+    logical_interface: ansible_log_intf
+    redirect_policy: ansible_pbr_policy
+    state: present
+  check_mode: true
+  register: add_context_cm
+
+- name: Create L4-L7 Device Selection Logical Interface Context
+  cisco.aci.aci_l4l7_device_selection_if_context: 
+    <<: *add_context
+  register: add_context
+
+- name: Sort children by tDn attribute
+  set_fact:
+    sorted_children: "{{ add_context.current[0].vnsLIfCtx.children | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}"
+
+- name: Verify context creation
+  ansible.builtin.assert:
+    that:
+    - add_context_cm is changed
+    - add_context is changed
+    - add_context_cm.proposed.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
+    - add_context_cm.proposed.vnsLIfCtx.attributes.connNameOrLbl == "provider"
+    - add_context.current.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
+    - add_context.current.0.vnsLIfCtx.attributes.connNameOrLbl == "provider"
+    - sorted_children.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-ansible_tenant/BD-ansible_bd"
+    - sorted_children.1.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
+    - sorted_children.2.vnsRsLIfCtxToSvcRedirectPol.attributes.tDn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+
+
+# CREATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT AGAIN TO TEST IDEMPOTENCE
+- name: Create L4-L7 Device Selection Logical Interface Context again
+  cisco.aci.aci_l4l7_device_selection_if_context:
+    <<: *add_context
+  register: add_context_again
+
+- name: Sort children by tDn attribute again
+  set_fact:
+    sorted_children_again: "{{ add_context_again.current[0].vnsLIfCtx.children | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}"
+
+- name: Verify context creation idempotence
+  ansible.builtin.assert:
+    that:
+    - add_context_again is not changed
+    - add_context_again.current.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
+    - add_context_again.current.0.vnsLIfCtx.attributes.connNameOrLbl == "provider"
+    - sorted_children_again.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-ansible_tenant/BD-ansible_bd"
+    - sorted_children_again.1.vnsRsLIfCtxToLIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
+    - sorted_children_again.2.vnsRsLIfCtxToSvcRedirectPol.attributes.tDn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+
+- name: Execute tasks only for ACI v6+
+  when:
+  - version.current.0.topSystem.attributes.version is version('6', '>=')
+  block:
+  - name: Create L4-L7 Device Selection Logical Interface Context with new attributes
+    cisco.aci.aci_l4l7_device_selection_if_context:
+      <<: *aci_info
+      tenant: ansible_tenant
+      contract: ansible_contract
+      graph: ansible_graph
+      node: ansible_node
+      context: provider
+      bridge_domain: ansible_bd
+      logical_device: ansible_device
+      logical_interface: ansible_log_intf
+      redirect_policy: ansible_pbr_policy
+      acl: true
+      permit_handoff: true
+      rule_type: true
+      state: present
+    register: add_context_new
+
+  - name: Verify L4-L7 Device Selection Logical Interface Context with new attributes
+    ansible.builtin.assert:
+      that:
+      - add_context_new is changed
+      - add_context_new.current.0.vnsLIfCtx.attributes.acl == "yes"
+      - add_context_new.current.0.vnsLIfCtx.attributes.ruleType == "yes"
+      - add_context_new.current.0.vnsLIfCtx.attributes.permitHandoff == "yes"
+
+# UPDATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT
+- name: Modify L4-L7 Device Selection Logical Interface Context
+  cisco.aci.aci_l4l7_device_selection_if_context:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    bridge_domain: ansible_if_context_bd
+    bridge_domain_tenant: common
+    state: present
+  register: update_context
+
+- name: Verify context update
+  ansible.builtin.assert:
+    that:
+    - update_context is changed
+    - update_context.current.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
+    - update_context.current.0.vnsLIfCtx.attributes.connNameOrLbl == "provider"
+    - update_context.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-common/BD-ansible_if_context_bd"
+    - update_context.current.0.vnsLIfCtx.children | length == 1
+
+- name: Remove L4-L7 Device Selection Logical Interface Context BD
+  cisco.aci.aci_l4l7_device_selection_if_context:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    state: present
+  register: update_context
+
+- name: Verify BD binding removal
+  ansible.builtin.assert:
+    that:
+    - update_context is changed
+    - update_context.current.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
+    - update_context.current.0.vnsLIfCtx.attributes.connNameOrLbl == "provider"
+    - update_context.current.0.vnsLIfCtx.children is not defined
+
+- name: Re-add L4-L7 Device Selection Logical Interface Context BD binding
+  cisco.aci.aci_l4l7_device_selection_if_context:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    bridge_domain: ansible_if_context_bd
+    bridge_domain_tenant: common
+    state: present
+
+# QUERY L4-L7 DEVICE SELECTION INTERFACE CONTEXT
+- name: Query L4-L7 Device Selection Logical Interface Context
+  cisco.aci.aci_l4l7_device_selection_if_context:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    state: query
+  register: query_context
+
+- name: Verify context query
+  ansible.builtin.assert:
+    that:
+    - query_context is not changed
+    - query_context.current.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
+    - query_context.current.0.vnsLIfCtx.attributes.connNameOrLbl == "provider"
+    - query_context.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-common/BD-ansible_if_context_bd"
+
+# QUERY ALL L4-L7 DEVICE SELECTION INTERFACE CONTEXTS
+- name: Query all L4-L7 Device Selection Logical Interface Contexts
+  cisco.aci.aci_l4l7_device_selection_if_context:
+    <<: *aci_info
+    state: query
+  register: query_all_contexts
+
+- name: Verify Query All
+  ansible.builtin.assert:
+    that:
+    - query_all_contexts is not changed
+
+# DELETE L4-L7 DEVICE SELECTION INTERFACE CONTEXT
+- name: Delete L4-L7 Device Selection Logical Interface Context in check mode
+  cisco.aci.aci_l4l7_device_selection_if_context: &delete_context
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    state: absent
+  check_mode: true
+  register: delete_context_cm
+
+- name: Delete L4-L7 Device Selection Logical Interface Context
+  cisco.aci.aci_l4l7_device_selection_if_context:
+    <<: *delete_context
+  register: delete_context
+
+- name: Verify context deletion
+  ansible.builtin.assert:
+    that:
+    - delete_context_cm is changed
+    - delete_context_cm.proposed == {}
+    - delete_context_cm.previous == delete_context.previous
+    - delete_context is changed
+    - delete_context.current == []
+    - delete_context.previous.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
+    - delete_context.previous.0.vnsLIfCtx.attributes.connNameOrLbl == "provider"
+
+# DELETE L4-L7 DEVICE SELECTION INTERFACE CONTEXT AGAIN TO TEST IDEMPOTENCE
+- name: Delete L4-L7 Device Selection Logical Interface Context again
+  cisco.aci.aci_l4l7_device_selection_if_context:
+    <<: *delete_context
+  register: delete_context_again
+
+- name: Verify context deletion idempotence
+  ansible.builtin.assert:
+    that:
+    - delete_context_again is not changed
+    - delete_context_again.current == []
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
+
+- name: Remove ansible_if_context_bd
+  cisco.aci.aci_bd:
+    <<: *aci_info
+    tenant: common
+    bd: ansible_if_context_bd
+    state: absent

@@ -1,0 +1,189 @@
+# Test code for the ACI modules
+# Copyright: (c) 2025, Tim Cragg (@timcragg)
+# Copyright: (c) 2025, Shreyas Srish (@shrsr)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+# ADD service graph template
+- name: Create L4-L7 Service Graph Template in check mode
+  cisco.aci.aci_l4l7_service_graph_template: &sgt_add
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_service_graph
+    ui_template_type: one_node_fw_routed
+    state: present
+  check_mode: true
+  register: create_sgt_cm
+
+- name: Create L4-L7 Service Graph Template again
+  cisco.aci.aci_l4l7_service_graph_template:
+    <<: *sgt_add
+  register: create_sgt
+
+- name: Verify L4-L7 Service Graph Template has been created
+  ansible.builtin.assert:
+    that:
+    - create_sgt_cm is changed
+    - create_sgt is changed
+    - create_sgt_cm.proposed.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph"
+    - create_sgt_cm.proposed.vnsAbsGraph.attributes.name == "ansible_service_graph"
+    - create_sgt_cm.proposed.vnsAbsGraph.attributes.uiTemplateType == "ONE_NODE_FW_ROUTED"
+    - create_sgt.previous == []
+    - create_sgt.current.0.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph"
+    - create_sgt.current.0.vnsAbsGraph.attributes.name == "ansible_service_graph"
+    - create_sgt.current.0.vnsAbsGraph.attributes.uiTemplateType == "ONE_NODE_FW_ROUTED"
+
+# ADD service graph template again to check idempotence
+- name: Create L4-L7 Service Graph Template again
+  cisco.aci.aci_l4l7_service_graph_template:
+    <<: *sgt_add
+  register: create_sgt_again
+
+- name: Verify L4-L7 Service Graph Template attributes
+  ansible.builtin.assert:
+    that:
+    - create_sgt_again is not changed
+    - create_sgt.current == create_sgt_again.previous
+    - create_sgt_again.current.0.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph"
+    - create_sgt_again.current.0.vnsAbsGraph.attributes.name == "ansible_service_graph"
+
+- name: Execute tasks only for ACI v5+
+  when:
+  - version.current.0.topSystem.attributes.version is version('5', '>=')
+  block:
+  - name: Create L4-L7 Service Graph Template with new attributes
+    cisco.aci.aci_l4l7_service_graph_template:
+      <<: *aci_info
+      tenant: ansible_tenant
+      service_graph: ansible_service_graph_new
+      service_rule_type: epg
+      state: present
+    register: create_sgt_new
+
+  - name: Verify L4-L7 Service Graph Template attributes
+    ansible.builtin.assert:
+      that:
+      - create_sgt_new is changed
+      - create_sgt_new.current.0.vnsAbsGraph.attributes.svcRuleType == "epg"
+      - create_sgt_new.current.0.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph_new"
+      - create_sgt_new.current.0.vnsAbsGraph.attributes.name == "ansible_service_graph_new"
+
+# QUERY service graph template
+- name: Create another L4-L7 Service Graph Template
+  cisco.aci.aci_l4l7_service_graph_template:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_service_graph_another
+    state: present
+
+- name: Query L4-L7 Service Graph Template
+  cisco.aci.aci_l4l7_service_graph_template:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_service_graph
+    state: query
+  register: query_sgt
+
+- name: Verify L4-L7 Service Graph Template attributes
+  ansible.builtin.assert:
+    that:
+    - query_sgt is not changed
+    - query_sgt.current.0.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph"
+    - query_sgt.current.0.vnsAbsGraph.attributes.name == "ansible_service_graph"
+
+- name: Query all L4-L7 Service Graph Templates
+  cisco.aci.aci_l4l7_service_graph_template:
+    <<: *aci_info
+    state: query
+  register: query_sgt_all
+
+- name: Verify L4-L7 Service Graph Template attributes
+  ansible.builtin.assert:
+    that:
+      - query_sgt_all is not changed
+      - query_sgt_all.current | length >= 2
+      - "'uni/tn-ansible_tenant/AbsGraph-ansible_service_graph' in query_sgt_all.current | map(attribute='vnsAbsGraph.attributes.dn') | list"
+      - "'uni/tn-ansible_tenant/AbsGraph-ansible_service_graph_another' in query_sgt_all.current | map(attribute='vnsAbsGraph.attributes.dn') | list"
+
+# DELETE service graph template
+- name: Remove L4-L7 Service Graph Template in check mode
+  cisco.aci.aci_l4l7_service_graph_template: &remove_sgt
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_service_graph
+    state: absent
+  check_mode: true
+  register: remove_sgt_cm
+
+- name: Remove L4-L7 Service Graph Template in check mode
+  cisco.aci.aci_l4l7_service_graph_template:
+    <<: *remove_sgt
+  register: remove_sgt
+
+- name: Verify L4-L7 Service Graph Template deletion
+  ansible.builtin.assert:
+    that:
+    - remove_sgt_cm is changed
+    - remove_sgt_cm.proposed == {}
+    - remove_sgt_cm.previous == remove_sgt.previous
+    - remove_sgt is changed
+    - remove_sgt.current == []
+    - remove_sgt.previous.0.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph"
+    - remove_sgt.previous.0.vnsAbsGraph.attributes.name == "ansible_service_graph"
+
+# DELETE SERVICE GRAPH TEMPLATE AGAIN TO TEST IDEMPOTENCE
+- name: Remove L4-L7 Service Graph Template
+  cisco.aci.aci_l4l7_service_graph_template:
+    <<: *remove_sgt
+  register: remove_sgt_again
+
+- name: Verify L4-L7 Service Graph Template deletion idempotence
+  ansible.builtin.assert:
+    that:
+    - remove_sgt_again is not changed
+    - remove_sgt_again.current == []
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent

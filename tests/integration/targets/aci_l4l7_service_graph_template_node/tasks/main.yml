@@ -1,0 +1,267 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+  # GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+# CREATE DOMAIN
+- name: Create ansible_phys_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: present
+
+# ADD DEVICE
+- name: Create L4-L7 Device
+  cisco.aci.aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    domain: ansible_phys_dom
+    func_type: go_to
+    context_aware: single
+    managed: false
+    dev_type: physical
+    svc_type: adc
+    trunking: false
+    prom_mode: true
+    state: present
+
+# ADD SERVICE GRAPH TEMPLATE
+- name: Create L4-L7 Service Graph Template
+  cisco.aci.aci_l4l7_service_graph_template:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    state: present
+
+# ADD SERVICE GRAPH NODE
+- name: Create L4-L7 Service Graph Node in check mode
+  cisco.aci.aci_l4l7_service_graph_template_node: &l4l7node
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node: ansible_node
+    func_template_type: adc_one_arm
+    func_type: go_to
+    device: ansible_device
+    managed: false
+    routing_mode: redirect
+    share_encap: true
+    state: present
+  check_mode: true
+  register: add_l4l7_node_cm
+
+- name: Create L4-L7 Service Graph Node
+  cisco.aci.aci_l4l7_service_graph_template_node:
+    <<: *l4l7node
+  register: add_l4l7_node
+
+# VERIFY NODE CREATION
+- name: Verify Node has been created correctly
+  ansible.builtin.assert:
+    that:
+    - add_l4l7_node_cm is changed
+    - add_l4l7_node_cm.proposed.vnsAbsNode.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node"
+    - add_l4l7_node_cm.proposed.vnsAbsNode.attributes.name == "ansible_node"
+    - add_l4l7_node_cm.proposed.vnsAbsNode.attributes.funcType == "GoTo"
+    - add_l4l7_node_cm.proposed.vnsAbsNode.attributes.funcTemplateType == "ADC_ONE_ARM"
+    - add_l4l7_node_cm.proposed.vnsAbsNode.attributes.managed == "no"
+    - add_l4l7_node_cm.proposed.vnsAbsNode.attributes.routingMode == "Redirect"
+    - add_l4l7_node_cm.proposed.vnsAbsNode.attributes.shareEncap == "yes"
+    - add_l4l7_node is changed
+    - add_l4l7_node.current.0.vnsAbsNode.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node"
+    - add_l4l7_node.current.0.vnsAbsNode.attributes.name == "ansible_node"
+    - add_l4l7_node.current.0.vnsAbsNode.attributes.funcType == "GoTo"
+    - add_l4l7_node.current.0.vnsAbsNode.attributes.funcTemplateType == "ADC_ONE_ARM"
+    - add_l4l7_node.current.0.vnsAbsNode.attributes.managed == "no"
+    - add_l4l7_node.current.0.vnsAbsNode.attributes.routingMode == "Redirect"
+    - add_l4l7_node.current.0.vnsAbsNode.attributes.shareEncap == "yes"
+
+# VERIFY NODE BINDING TO LOGICAL DEVICE
+- name: Verify Node Binding to Logical Device
+  ansible.builtin.assert:
+    that:
+    - add_l4l7_node.current.0.vnsAbsNode.children.0.vnsRsNodeToLDev.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+
+# ADD NODE AGAIN TO TEST IDEMPOTENCE
+- name: Create L4-L7 Service Graph Node again
+  cisco.aci.aci_l4l7_service_graph_template_node:
+    <<: *l4l7node
+  register: add_l4l7_node_again
+
+# VERIFY NODE IS NOT MODIFIED
+- name: Verify Node has not changed
+  ansible.builtin.assert:
+    that:
+    - add_l4l7_node_again is not changed
+    - add_l4l7_node_again.previous == add_l4l7_node_again.current
+    - add_l4l7_node_again.current.0.vnsAbsNode.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node"
+    - add_l4l7_node_again.current.0.vnsAbsNode.attributes.name == "ansible_node"
+    - add_l4l7_node_again.current.0.vnsAbsNode.attributes.funcType == "GoTo"
+    - add_l4l7_node_again.current.0.vnsAbsNode.attributes.funcTemplateType == "ADC_ONE_ARM"
+    - add_l4l7_node_again.current.0.vnsAbsNode.attributes.managed == "no"
+    - add_l4l7_node_again.current.0.vnsAbsNode.attributes.routingMode == "Redirect"
+
+# VERIFY NODE BINDING TO LOGICAL DEVICE
+- name: Verify Node Binding to Logical Device is not changed
+  ansible.builtin.assert:
+    that:
+    - add_l4l7_node_again.current.0.vnsAbsNode.children.0.vnsRsNodeToLDev.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+
+# MODIFY L4-L7 NODE
+- name: Update L4-L7 Service Graph Node
+  cisco.aci.aci_l4l7_service_graph_template_node:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node: ansible_node
+    func_template_type: adc_two_arm
+    func_type: go_through
+    device: ansible_device
+    managed: true
+    routing_mode: redirect
+    state: present
+  register: update_l4l7_node
+
+# VERIFY NODE ATTRIBUTES
+- name: Verify Node has not changed
+  ansible.builtin.assert:
+    that:
+    - update_l4l7_node is changed
+    - update_l4l7_node.previous == add_l4l7_node_again.current
+    - update_l4l7_node.current.0.vnsAbsNode.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node"
+    - update_l4l7_node.current.0.vnsAbsNode.attributes.name == "ansible_node"
+    - update_l4l7_node.current.0.vnsAbsNode.attributes.funcType == "GoThrough"
+    - update_l4l7_node.current.0.vnsAbsNode.attributes.funcTemplateType == "ADC_TWO_ARM"
+    - update_l4l7_node.current.0.vnsAbsNode.attributes.managed == "yes"
+    - update_l4l7_node.current.0.vnsAbsNode.attributes.routingMode == "Redirect"
+
+# VERIFY NODE BINDING TO LOGICAL DEVICE
+- name: Verify Node Binding to Logical Device
+  ansible.builtin.assert:
+    that:
+    - update_l4l7_node.current.0.vnsAbsNode.children.0.vnsRsNodeToLDev.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+
+# QUERY L4-L7 NODE
+- name: Query L4-L7 Service Graph Node
+  cisco.aci.aci_l4l7_service_graph_template_node:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node: ansible_node
+    state: query
+  register: query_l4l7_node
+
+# VERIFY NODE ATTRIBUTES
+- name: Verify Node has not changed
+  ansible.builtin.assert:
+    that:
+    - query_l4l7_node is not changed
+    - query_l4l7_node.current.0.vnsAbsNode.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node"
+    - query_l4l7_node.current.0.vnsAbsNode.attributes.name == "ansible_node"
+    - query_l4l7_node.current.0.vnsAbsNode.attributes.funcType == "GoThrough"
+    - query_l4l7_node.current.0.vnsAbsNode.attributes.funcTemplateType == "ADC_TWO_ARM"
+    - query_l4l7_node.current.0.vnsAbsNode.attributes.managed == "yes"
+    - query_l4l7_node.current.0.vnsAbsNode.attributes.routingMode == "Redirect"
+
+# VERIFY NODE BINDING TO LOGICAL DEVICE
+- name: Verify Node Binding to Logical Device
+  ansible.builtin.assert:
+    that:
+    - query_l4l7_node is not changed
+    - query_l4l7_node.current.0.vnsAbsNode.children.0.vnsRsNodeToLDev.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+
+# DELETE L4-L7 NODE
+- name: Remove L4-L7 Service Graph Node in check mode
+  cisco.aci.aci_l4l7_service_graph_template_node: &removel4l7
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node: ansible_node
+    state: absent
+  check_mode: true
+  register: delete_l4l7_node_cm
+
+- name: Remove L4-L7 Service Graph Node
+  cisco.aci.aci_l4l7_service_graph_template_node: 
+    <<: *removel4l7
+  register: delete_l4l7_node
+
+# VERIFY NODE REMOVAL
+- name: Verify Node removal
+  ansible.builtin.assert:
+    that:
+    - delete_l4l7_node_cm is changed
+    - delete_l4l7_node_cm.proposed == {}
+    - delete_l4l7_node_cm.previous == delete_l4l7_node.previous
+    - delete_l4l7_node is changed
+    - delete_l4l7_node.current == []
+    - delete_l4l7_node.previous.0.vnsAbsNode.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsNode-ansible_node"
+    - delete_l4l7_node.previous.0.vnsAbsNode.attributes.name == "ansible_node"
+    - delete_l4l7_node.previous.0.vnsAbsNode.attributes.funcType == "GoThrough"
+    - delete_l4l7_node.previous.0.vnsAbsNode.attributes.funcTemplateType == "ADC_TWO_ARM"
+    - delete_l4l7_node.previous.0.vnsAbsNode.attributes.managed == "yes"
+    - delete_l4l7_node.previous.0.vnsAbsNode.attributes.routingMode == "Redirect"
+
+# DELETE L4-L7 NODE AGAIN TO TEST IDEMPOTENCE
+- name: Remove L4-L7 Service Graph Node again
+  cisco.aci.aci_l4l7_service_graph_template_node:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    node: ansible_node
+    state: absent
+  register: delete_l4l7_node_again
+
+# VERIFY NODE REMOVAL IDEMPOTENCE
+- name: Verify Node removal idempotence
+  ansible.builtin.assert:
+    that:
+    - delete_l4l7_node_again is not changed
+    - delete_l4l7_node_again.current == []
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_dom
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent

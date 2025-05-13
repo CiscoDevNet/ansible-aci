@@ -1,0 +1,244 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain if it already exists
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+# CREATE DOMAIN
+- name: Create ansible_phys_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: present
+
+# CREATE L4-L7 LOGICAL DEVICE
+- name: Create L4-L7 Device
+  cisco.aci.aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    domain: ansible_phys_dom
+    func_type: go_to
+    context_aware: single
+    managed: false
+    dev_type: physical
+    svc_type: adc
+    trunking: false
+    prom_mode: true
+    state: present
+
+# CREATE CONTRACT
+- name: Create contract
+  cisco.aci.aci_contract:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    scope: application-profile
+    state: present
+
+# CREATE L4-L7 SERVICE GRAPH
+- name: Create L4-L7 Service Graph
+  cisco.aci.aci_l4l7_service_graph_template:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_service_graph
+    state: present
+
+# CREATE L4-L7 SERVICE GRAPH NODE
+- name: Create Service Graph Template Node
+  cisco.aci.aci_l4l7_service_graph_template_node:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_service_graph
+    node: ansible_node
+    func_template_type: adc_one_arm
+    func_type: go_to
+    device: ansible_device
+    managed: false
+    routing_mode: redirect
+    state: present
+
+# CREATE L4-L7 DEVICE SELECTION POLICY
+- name: Create L4-L7 Device Selection Policy in check mode
+  cisco.aci.aci_l4l7_device_selection_policy: &add_l4l7_device_selection_policy
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    device: ansible_device
+    state: present
+  check_mode: true
+  register: add_l4l7_device_selection_policy_cm
+
+- name: Create L4-L7 Device Selection Policy
+  cisco.aci.aci_l4l7_device_selection_policy:
+    <<: *add_l4l7_device_selection_policy
+  register: add_l4l7_device_selection_policy
+
+- name: Verify L4-L7 Device Selection Policy attributes
+  ansible.builtin.assert:
+    that:
+    - add_l4l7_device_selection_policy_cm is changed
+    - add_l4l7_device_selection_policy is changed
+    - add_l4l7_device_selection_policy_cm.proposed.vnsLDevCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node"
+    - add_l4l7_device_selection_policy_cm.proposed.vnsLDevCtx.attributes.ctrctNameOrLbl == "ansible_contract"
+    - add_l4l7_device_selection_policy_cm.proposed.vnsLDevCtx.attributes.graphNameOrLbl == "ansible_graph"
+    - add_l4l7_device_selection_policy_cm.proposed.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_node"
+    - add_l4l7_device_selection_policy_cm.proposed.vnsLDevCtx.children.0.vnsRsLDevCtxToLDev.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+    - add_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node"
+    - add_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.ctrctNameOrLbl == "ansible_contract"
+    - add_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.graphNameOrLbl == "ansible_graph"
+    - add_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_node"
+    - add_l4l7_device_selection_policy.current.0.vnsLDevCtx.children.0.vnsRsLDevCtxToLDev.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+
+# ADD L4-L7 DEVICE SELECTION POLICY AGAIN TO CHECK IDEMPOTENCE
+- name: Add L4-L7 Device Selection Policy again
+  cisco.aci.aci_l4l7_device_selection_policy:
+    <<: *add_l4l7_device_selection_policy
+  register: add_l4l7_device_selection_policy_again
+
+- name: Verify L4-L7 Device Selection Policy attributes are unchanged
+  ansible.builtin.assert:
+    that:
+    - add_l4l7_device_selection_policy_again is not changed
+    - add_l4l7_device_selection_policy_again.current.0.vnsLDevCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node"
+    - add_l4l7_device_selection_policy_again.current.0.vnsLDevCtx.attributes.ctrctNameOrLbl == "ansible_contract"
+    - add_l4l7_device_selection_policy_again.current.0.vnsLDevCtx.attributes.graphNameOrLbl == "ansible_graph"
+    - add_l4l7_device_selection_policy_again.current.0.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_node"
+    - add_l4l7_device_selection_policy_again.current.0.vnsLDevCtx.children.0.vnsRsLDevCtxToLDev.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+
+# REMOVE LOGICAL DEVICE BINDING
+- name: Remove L4-L7 Device Selection Policy Device Binding
+  cisco.aci.aci_l4l7_device_selection_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    state: present
+  register: remove_l4l7_device_selection_policy_device_binding
+
+- name: Verify L4-L7 Device Selection Policy Device Binding removal
+  ansible.builtin.assert:
+    that:
+    - remove_l4l7_device_selection_policy_device_binding is changed
+    - remove_l4l7_device_selection_policy_device_binding.current.0.vnsLDevCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node"
+    - remove_l4l7_device_selection_policy_device_binding.current.0.vnsLDevCtx.attributes.ctrctNameOrLbl == "ansible_contract"
+    - remove_l4l7_device_selection_policy_device_binding.current.0.vnsLDevCtx.attributes.graphNameOrLbl == "ansible_graph"
+    - remove_l4l7_device_selection_policy_device_binding.current.0.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_node"
+    - remove_l4l7_device_selection_policy_device_binding.current.0.vnsLDevCtx.children is not defined
+
+# QUERY L4-L7 DEVICE SELECTION POLICY
+- name: Query L4-L7 Device Selection Policy
+  cisco.aci.aci_l4l7_device_selection_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    state: query
+  register: query_l4l7_device_selection_policy
+
+- name: Verify L4-L7 Device Selection Policy attributes
+  ansible.builtin.assert:
+    that:
+    - query_l4l7_device_selection_policy is not changed
+    - query_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node"
+    - query_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.ctrctNameOrLbl == "ansible_contract"
+    - query_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.graphNameOrLbl == "ansible_graph"
+    - query_l4l7_device_selection_policy.current.0.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_node"
+
+# DELETE L4-L7 DEVICE SELECTION POLICY
+- name: Delete L4-L7 Device Selection Policy in check mode
+  cisco.aci.aci_l4l7_device_selection_policy: &delete_l4l7_device_selection_policy
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    state: absent
+  check_mode: true
+  register: delete_l4l7_device_selection_policy_cm
+
+- name: Delete L4-L7 Device Selection Policy
+  cisco.aci.aci_l4l7_device_selection_policy: 
+    <<: *delete_l4l7_device_selection_policy
+  register: delete_l4l7_device_selection_policy
+
+- name: Verify L4-L7 Device Selection Policy removal
+  ansible.builtin.assert:
+    that:
+    - delete_l4l7_device_selection_policy_cm is changed
+    - delete_l4l7_device_selection_policy_cm.proposed == {}
+    - delete_l4l7_device_selection_policy_cm.previous == delete_l4l7_device_selection_policy.previous
+    - delete_l4l7_device_selection_policy is changed
+    - delete_l4l7_device_selection_policy.current == []
+    - delete_l4l7_device_selection_policy.previous.0.vnsLDevCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node"
+    - delete_l4l7_device_selection_policy.previous.0.vnsLDevCtx.attributes.ctrctNameOrLbl == "ansible_contract"
+    - delete_l4l7_device_selection_policy.previous.0.vnsLDevCtx.attributes.graphNameOrLbl == "ansible_graph"
+    - delete_l4l7_device_selection_policy.previous.0.vnsLDevCtx.attributes.nodeNameOrLbl == "ansible_node"
+
+# DELETE L4-L7 DEVICE SELECTION POLICY AGAIN TO TEST IDEMPOTENCE
+- name: Delete L4-L7 Device Selection Policy
+  cisco.aci.aci_l4l7_device_selection_policy:
+    <<: *delete_l4l7_device_selection_policy
+  register: delete_l4l7_device_selection_policy_again
+
+- name: Verify L4-L7 Device Selection Policy removal
+  ansible.builtin.assert:
+    that:
+    - delete_l4l7_device_selection_policy_again is not changed
+    - delete_l4l7_device_selection_policy_again.current == []
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
