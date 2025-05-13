@@ -38,6 +38,11 @@ options:
     - The encapsulation of the Logical Interface.
     - It requires the VLAN to be prepended, for example, 'vlan-987'.
     type: str
+  enhanced_lag_policy:
+    description:
+    - Name of the VMM Domain Enhanced Lag Policy.
+    type: str
+    aliases: [ lag_policy ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -49,10 +54,11 @@ extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 notes:
-- The I(tenant) and I(device) must exist before using this module in your playbook.
+- The I(tenant) and I(logical_device) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l4l7_device) modules can be used for this.
 seealso:
-- module: aci_l4l7_device
+- module: cisco.aci.aci_tenant
+- module: cisco.aci.aci_l4l7_device
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(vns:LIf)
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -226,6 +232,7 @@ def main():
         logical_interface=dict(type="str", aliases=["name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         encap=dict(type="str"),
+        enhanced_lag_policy=dict(type="str", aliases=["lag_policy"]),
     )
 
     module = AnsibleModule(
@@ -242,6 +249,7 @@ def main():
     logical_device = module.params.get("logical_device")
     logical_interface = module.params.get("logical_interface")
     encap = module.params.get("encap")
+    enhanced_lag_policy = module.params.get("enhanced_lag_policy")
 
     aci = ACIModule(module)
 
@@ -271,7 +279,7 @@ def main():
     if state == "present":
         aci.payload(
             aci_class="vnsLIf",
-            class_config=dict(name=logical_interface, encap=encap),
+            class_config=dict(name=logical_interface, encap=encap, lagPolicyName=enhanced_lag_policy),
         )
         aci.get_diff(aci_class="vnsLIf")
 

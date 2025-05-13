@@ -70,11 +70,11 @@ extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 notes:
-- The I(tenant), I(device) and I(concrete_device) must exist before using this module in your playbook.
+- The I(tenant), I(logical_device) and I(concrete_device) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l4l7_device) and M(cisco.aci.aci_l4l7_concrete_device) modules can be used for this.
 seealso:
-- module: aci_l4l7_device
-- module: aci_l4l7_concrete_device
+- module: cisco.aci.aci_l4l7_device
+- module: cisco.aci.aci_l4l7_concrete_device
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(vns:CIf)
   link: https://developer.cisco.com/docs/apic-mim-ref/
