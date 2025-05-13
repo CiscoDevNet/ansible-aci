@@ -370,8 +370,18 @@
       - query_oob_provide_contract.current.0.mgmtOoB.children.0.mgmtRsOoBProv.attributes.prio == "level4"
       - query_inb_all is not changed
       - query_inb_all.current | length > 1
+      - query_inb_all.current.0.fvRsProv.attributes.tnVzBrCPName == "aci_inb_http"
+      - query_inb_all.current.0.fvRsProv.attributes.prio == "level4"
+      - query_inb_all.current.0.fvRsProv.attributes.matchT == "AtleastOne"
+      - query_inb_all.current.1.fvRsProv.attributes.tnVzBrCPName == "aci_inb_https"
+      - query_inb_all.current.1.fvRsProv.attributes.prio == "unspecified"
+      - query_inb_all.current.1.fvRsProv.attributes.matchT == "AtleastOne"
       - query_oob_all is not changed
       - query_oob_all.current | length > 1
+      - query_oob_all.current.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == "aci_oob_http"
+      - query_oob_all.current.0.mgmtRsOoBProv.attributes.prio == "level4"
+      - query_oob_all.current.1.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == "aci_oob_https"
+      - query_oob_all.current.1.mgmtRsOoBProv.attributes.prio == "unspecified"
       - missing_required_query is failed
       - 'missing_required_query.msg == "missing required arguments: epg_type"'
 
