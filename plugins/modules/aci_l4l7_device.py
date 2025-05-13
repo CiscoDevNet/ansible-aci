@@ -76,6 +76,12 @@ options:
     - The domain to bind to the device.
     - The type of domain is controlled by the device_type setting.
     type: str
+  active_active_mode:
+    description:
+    - The active active mode on the device.
+    - This is only applicable when C(function_type="l1") or C(function_type="l2").
+    - The APIC defaults to C(false) when unset during creation.
+    type: bool
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -90,7 +96,7 @@ notes:
 - The I(tenant) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) modules can be used for this.
 seealso:
-- module: aci_tenant
+- module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(vns:LDevVip)
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -275,6 +281,7 @@ def main():
         service_type=dict(type="str", aliases=["svc_type"], choices=["adc", "fw", "others"]),
         trunking=dict(type="bool"),
         domain=dict(type="str"),
+        active_active_mode=dict(type="bool"),
     )
 
     module = AnsibleModule(
@@ -299,6 +306,7 @@ def main():
     service_type = module.params.get("service_type")
     trunking = aci.boolean(module.params.get("trunking"))
     domain = module.params.get("domain")
+    active_active_mode = aci.boolean(module.params.get("active_active_mode"))
 
     aci.construct_url(
         root_class=dict(
@@ -339,6 +347,7 @@ def main():
                 promMode=promiscuous_mode,
                 svcType=service_type.upper(),
                 trunking=trunking,
+                activeActive=active_active_mode,
             ),
             child_configs=child_configs,
         )

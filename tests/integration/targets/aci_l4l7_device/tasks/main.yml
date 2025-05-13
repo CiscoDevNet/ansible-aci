@@ -206,6 +206,30 @@
     that:
     - update_l4l7_device.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/phys-ansible_phys_dom"
 
+- name: Create another L4-L7 device to test active active mode
+  cisco.aci.aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device2
+    domain: ansible_phys_dom
+    func_type: l1
+    context_aware: multi
+    managed: false
+    dev_type: physical
+    svc_type: others
+    trunking: true
+    prom_mode: false
+    active_active_mode: true
+    state: present
+  register: another_l4l7_device_active
+
+- name: Verify domain binding object
+  ansible.builtin.assert:
+    that:
+    - another_l4l7_device_active is changed
+    - another_l4l7_device_active.current.0.vnsLDevVip.attributes.funcType == "L1"
+    - another_l4l7_device_active.current.0.vnsLDevVip.attributes.activeActive == "yes"
+
 # QUERY DEVICE
 - name: Query L4-L7 Device
   cisco.aci.aci_l4l7_device:
@@ -240,7 +264,7 @@
   ansible.builtin.assert:
     that:
       - query_l4l7_device_all is not changed
-      - query_l4l7_device_all.current | length >= 2
+      - query_l4l7_device_all.current | length >= 3
       - "'uni/tn-ansible_tenant/lDevVip-ansible_device' in query_l4l7_device_all.current | map(attribute='vnsLDevVip.attributes.dn') | list"
       - "'uni/tn-ansible_tenant/lDevVip-ansible_virt_device' in query_l4l7_device_all.current | map(attribute='vnsLDevVip.attributes.dn') | list"
 
