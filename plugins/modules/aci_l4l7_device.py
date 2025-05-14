@@ -51,12 +51,12 @@ options:
   managed:
     description:
     - Is the device a managed device.
-    - The APIC defaults to C(true) when unset during creation.
+    - The APIC defaults to true when unset during creation.
     type: bool
   promiscuous_mode:
     description:
     - Enable promiscuous mode.
-    - The APIC defaults to C(false) when unset during creation.
+    - The APIC defaults to false when unset during creation.
     type: bool
     aliases: [ prom_mode ]
   service_type:
@@ -69,7 +69,7 @@ options:
   trunking:
     description:
     - Enable trunking.
-    - The APIC defaults to C(false) when unset during creation.
+    - The APIC defaults to false when unset during creation.
     type: bool
   domain:
     description:
@@ -80,7 +80,7 @@ options:
     description:
     - The active active mode on the device.
     - This is only applicable when C(function_type="l1") or C(function_type="l2").
-    - The APIC defaults to C(false) when unset during creation.
+    - The APIC defaults to false when unset during creation.
     type: bool
   state:
     description:
