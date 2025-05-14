@@ -28,6 +28,10 @@ options:
     - The name of an existing Policy Based Redirect Policy.
     type: str
     aliases: [ policy_name ]
+  description:
+    description:
+    - The description for redirection.
+    type: str
   ip:
     description:
     - The destination IP for redirection.
@@ -77,13 +81,19 @@ options:
   pod_id:
     description:
     - The Pod ID to deploy Policy Based Redirect destination on.
-    - The APIC defaults to C(1) when unset during creation.
+    - The APIC defaults to 1 when unset during creation.
     type: int
   health_group:
     description:
     - The Health Group to bind the Policy Based Redirection Destination to.
     - To remove an existing binding from a Health Group, submit a request with I(state=present) and I(health_group="") value.
     type: str
+  weight:
+    description:
+    - The weight of the fault in calculating the health score of an object.
+    - The APIC defaults to 1 when unset during creation.
+    - Permitted values are in the range of [1, 10].
+    type: int
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -286,6 +296,8 @@ def main():
         health_group=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         pod_id=dict(type="int"),
+        weight=dict(type="int"),
+        description=dict(type="str"),
     )
 
     module = AnsibleModule(
@@ -313,6 +325,8 @@ def main():
     health_group = module.params.get("health_group")
     state = module.params.get("state")
     pod_id = module.params.get("pod_id")
+    weight = module.params.get("weight")
+    description = module.params.get("description")
 
     if destination_type == "l1/l2":
         aci_class = "vnsL1L2RedirectDest"
@@ -396,6 +410,8 @@ def main():
                 destName=destination_name,
                 podId=pod_id,
                 ip2=additional_ip,
+                weight=weight,
+                descr=description,
             ),
             child_configs=child_configs,
         )

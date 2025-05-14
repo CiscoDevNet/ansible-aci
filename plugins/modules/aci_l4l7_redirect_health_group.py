@@ -27,6 +27,11 @@ options:
     description:
     - The name of the Health Group.
     type: str
+    aliases: [ name ]
+  description:
+    description:
+    - The description of the Health Group.
+    type: str
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -210,7 +215,8 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        health_group=dict(type="str"),
+        health_group=dict(type="str", aliases=["name"]),
+        description=dict(type="str"),
     )
 
     module = AnsibleModule(
@@ -225,6 +231,7 @@ def main():
     tenant = module.params.get("tenant")
     state = module.params.get("state")
     health_group = module.params.get("health_group")
+    description = module.params.get("description")
 
     aci = ACIModule(module)
 
@@ -247,7 +254,10 @@ def main():
     if state == "present":
         aci.payload(
             aci_class="vnsRedirectHealthGroup",
-            class_config=dict(name=health_group),
+            class_config=dict(
+                name=health_group,
+                descr=description,
+            ),
         )
         aci.get_diff(aci_class="vnsRedirectHealthGroup")
 
