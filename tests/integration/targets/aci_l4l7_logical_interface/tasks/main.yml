@@ -1,0 +1,288 @@
+# Test code for the ACI modules
+# Copyright: (c) 2025, Tim Cragg (@timcragg)
+# Copyright: (c) 2025, Shreyas Srish (@shrsr)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain if it already exists
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
+
+- name: Remove ansible_vmm_domain if it already exists
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_vmm_dom
+    domain_type: vmm
+    vm_provider: vmware
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+# CREATE DOMAIN
+- name: Create ansible_phys_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: present
+
+- name: Create ansible_vmm_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_vmm_dom
+    domain_type: vmm
+    vm_provider: vmware
+    state: present
+
+# CREATE L4-L7 LOGICAL DEVICE
+- name: Create L4-L7 Device
+  cisco.aci.aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    domain: ansible_phys_dom
+    func_type: go_to
+    context_aware: single
+    managed: false
+    dev_type: physical
+    svc_type: adc
+    trunking: false
+    prom_mode: true
+    state: present
+
+- name: Create L4-L7 Virtual Device
+  cisco.aci.aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_virt_device
+    domain: ansible_vmm_dom
+    func_type: go_to
+    context_aware: single
+    managed: false
+    dev_type: virtual
+    svc_type: adc
+    trunking: false
+    prom_mode: true
+    state: present
+
+# CREATE L4-L7 LOGICAL INTERFACE
+- name: Add Logical Interface in check mode
+  cisco.aci.aci_l4l7_logical_interface: &l4l7_logical_interface
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ansible_log_intf
+    encap: vlan-987
+    state: present
+  check_mode: true
+  register: add_logical_interface_cm
+
+- name: Add Logical Interface
+  cisco.aci.aci_l4l7_logical_interface:
+    <<: *l4l7_logical_interface
+  register: add_logical_interface
+
+- name: Add Logical Interface again
+  cisco.aci.aci_l4l7_logical_interface:
+    <<: *l4l7_logical_interface
+  register: add_logical_interface_again
+
+- name: Verify Logical Interface Attributes
+  ansible.builtin.assert:
+    that:
+    - add_logical_interface_cm is changed
+    - add_logical_interface is changed
+    - add_logical_interface.previous == []
+    - add_logical_interface_cm.proposed.vnsLIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
+    - add_logical_interface_cm.proposed.vnsLIf.attributes.name == "ansible_log_intf"
+    - add_logical_interface_cm.proposed.vnsLIf.attributes.encap == "vlan-987"
+    - add_logical_interface.current.0.vnsLIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
+    - add_logical_interface.current.0.vnsLIf.attributes.name == "ansible_log_intf"
+    - add_logical_interface.current.0.vnsLIf.attributes.encap == "vlan-987"
+    - add_logical_interface_again is not changed
+    - add_logical_interface_again.current == add_logical_interface_again.previous == add_logical_interface.current
+
+# MODIFY L4-L7 LOGICAL INTERFACE
+- name: Update L4-L7 Logical Interface
+  cisco.aci.aci_l4l7_logical_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ansible_log_intf
+    encap: vlan-988
+    state: present
+  register: update_logical_interface
+
+- name: Verify Logical Interface update
+  ansible.builtin.assert:
+    that:
+    - update_logical_interface is changed
+    - update_logical_interface.current.0.vnsLIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
+    - update_logical_interface.current.0.vnsLIf.attributes.name == "ansible_log_intf"
+    - update_logical_interface.current.0.vnsLIf.attributes.encap == "vlan-988"
+
+# Test to verify enhanced_lag_policy
+- name: Create enhanced lag policy
+  cisco.aci.aci_rest:
+    <<: *aci_info
+    path: api/node/mo/uni/vmmp-VMware/dom-ansible_vmm_dom/vswitchpolcont.json
+    method: post
+    content: |
+      {
+        "vmmVSwitchPolicyCont": {
+          "attributes": {
+            "dn": "uni/vmmp-VMware/dom-ansible_vmm_dom/vswitchpolcont",
+            "status": "created,modified"
+          },
+          "children": [{
+                "lacpEnhancedLagPol": {
+                    "attributes": {
+                        "lbmode": "src-dst-ip",
+                        "mode": "active",
+                        "name": "enhanced",
+                        "numLinks": "2"
+                    }
+                }
+          }]
+        }
+      }
+
+- name: Add Logical Interface for virtual device
+  cisco.aci.aci_l4l7_logical_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_virt_device
+    logical_interface: ansible_virt
+    lag_policy: enhanced
+    state: present
+  register: add_logical_interface_virtual
+
+- name: Verify Logical Interface Virtual
+  ansible.builtin.assert:
+    that:
+    - add_logical_interface_virtual is changed
+    - add_logical_interface_virtual.current.0.vnsLIf.attributes.lagPolicyName == "enhanced"
+
+# QUERY L4-L7 LOGICAL INTERFACE
+- name: Create a second L4-L7 Logical Interface for query all
+  cisco.aci.aci_l4l7_logical_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ansible_log_int2
+    encap: vlan-989
+    state: present
+
+- name: Query L4-L7 Logical Interface
+  cisco.aci.aci_l4l7_logical_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ansible_log_intf
+    state: query
+  register: query_logical_interface
+
+- name: Query All L4-L7 Logical Interfaces
+  cisco.aci.aci_l4l7_logical_interface:
+    <<: *aci_info
+    state: query
+  register: query_all
+
+- name: Verify Logical Interface Attributes have not changed
+  ansible.builtin.assert:
+    that:
+    - query_logical_interface is not changed
+    - query_logical_interface.current.0.vnsLIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf"
+    - query_logical_interface.current.0.vnsLIf.attributes.name == "ansible_log_intf"
+    - query_all.current | length >= 3
+    - "'uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf' in query_all.current | map(attribute='vnsLIf.attributes.dn') | list"
+    - "'uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_int2' in query_all.current | map(attribute='vnsLIf.attributes.dn') | list"
+    - query_logical_interface.current.0.vnsLIf.attributes.encap == "vlan-988"
+
+# DELETE L4-L7 LOGICAL INTERFACE
+- name: Remove L4-L7 Logical Interface
+  cisco.aci.aci_l4l7_logical_interface: &remove_l4l7_logical_interface
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    logical_interface: ansible_log_intf
+    state: absent
+  check_mode: true
+  register: delete_logical_interface_cm
+
+- name: Remove L4-L7 Logical Interface
+  cisco.aci.aci_l4l7_logical_interface: 
+    <<: *remove_l4l7_logical_interface
+  register: delete_logical_interface
+
+- name: Remove L4-L7 Logical Interface
+  cisco.aci.aci_l4l7_logical_interface:
+    <<: *remove_l4l7_logical_interface
+  register: delete_logical_interface_again
+
+- name: Verify Logical Interface Deletion
+  ansible.builtin.assert:
+    that:
+    - delete_logical_interface_cm is changed
+    - delete_logical_interface_cm.proposed == {}
+    - delete_logical_interface is changed
+    - delete_logical_interface.current == []
+    - delete_logical_interface.previous == update_logical_interface.current
+    - delete_logical_interface.previous.0.vnsLIf.attributes.name == "ansible_log_intf"
+    - delete_logical_interface.previous.0.vnsLIf.attributes.encap == "vlan-988"
+    - delete_logical_interface_again is not changed
+    - delete_logical_interface_again.current == [] == delete_logical_interface_again.previous
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
+
+- name: Remove ansible_vmm_domain if it already exists
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_vmm_dom
+    domain_type: vmm
+    vm_provider: vmware
+    state: absent

@@ -1,0 +1,327 @@
+# Test code for the ACI modules
+# Copyright: (c) 2025, Tim Cragg (@timcragg)
+# Copyright: (c) 2025, Shreyas Srish (@shrsr)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain if it already exists
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
+
+- name: Remove ansible_vmm_domain if it already exists
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_vmm_dom
+    domain_type: vmm
+    vm_provider: vmware
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+# CREATE DOMAINS
+- name: Create ansible_phys_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: present
+
+- name: Create ansible_vmm_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_vmm_dom
+    domain_type: vmm
+    vm_provider: vmware
+    state: present
+
+# ADD L4-L7 DEVICE
+- name: Create L4-L7 Physical Device in check mode
+  cisco.aci.aci_l4l7_device: &l4_l7_physical
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    domain: ansible_phys_dom
+    func_type: go_to
+    context_aware: single
+    managed: false
+    dev_type: physical
+    svc_type: adc
+    trunking: false
+    prom_mode: true
+    state: present
+  check_mode: true
+  register: create_l4l7_device_cm
+
+- name: Create L4-L7 Physical Device
+  cisco.aci.aci_l4l7_device:
+    <<: *l4_l7_physical
+  register: create_l4l7_device
+
+- name: Create L4-L7 Physical Device again
+  cisco.aci.aci_l4l7_device:
+    <<: *l4_l7_physical
+  register: create_l4l7_device_again
+
+- name: Create L4-L7 Virtual Device
+  cisco.aci.aci_l4l7_device: &l4_l7_virtual
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_virt_device
+    domain: ansible_vmm_dom
+    func_type: go_to
+    context_aware: single
+    managed: false
+    dev_type: virtual
+    svc_type: adc
+    trunking: false
+    prom_mode: true
+    state: present
+  register: create_virt_l4l7_device
+
+- name: Create L4-L7 Virtual Device again
+  cisco.aci.aci_l4l7_device:
+    <<: *l4_l7_virtual
+  register: create_virt_l4l7_device_again
+
+- name: Verify L4-L7 device has been created
+  ansible.builtin.assert:
+    that:
+    - create_l4l7_device_cm is changed
+    - create_l4l7_device is changed
+    - create_l4l7_device_again is not changed
+    - create_virt_l4l7_device is changed
+    - create_virt_l4l7_device_again is not changed
+    - create_l4l7_device_cm.proposed.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+    - create_l4l7_device_cm.proposed.vnsLDevVip.attributes.name == "ansible_device"
+    - create_l4l7_device_cm.proposed.vnsLDevVip.attributes.contextAware == "single-Context"
+    - create_l4l7_device_cm.proposed.vnsLDevVip.attributes.devtype == "PHYSICAL"
+    - create_l4l7_device_cm.proposed.vnsLDevVip.attributes.funcType == "GoTo"
+    - create_l4l7_device_cm.proposed.vnsLDevVip.attributes.managed == "no"
+    - create_l4l7_device_cm.proposed.vnsLDevVip.attributes.promMode == "yes"
+    - create_l4l7_device_cm.proposed.vnsLDevVip.attributes.svcType == "ADC"
+    - create_l4l7_device_cm.proposed.vnsLDevVip.attributes.trunking == "no"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.name == "ansible_device"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.contextAware == "single-Context"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.devtype == "PHYSICAL"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.funcType == "GoTo"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.isCopy == "no"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.managed == "no"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.promMode == "yes"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.svcType == "ADC"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "no"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_virt_device"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.name == "ansible_virt_device"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.contextAware == "single-Context"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.devtype == "VIRTUAL"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.funcType == "GoTo"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.isCopy == "no"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.managed == "no"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.promMode == "yes"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.svcType == "ADC"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "no"
+    - create_l4l7_device.previous == []
+    - create_virt_l4l7_device.previous == []
+    - create_l4l7_device_again.previous == create_l4l7_device_again.current == create_l4l7_device.current
+    - create_virt_l4l7_device_again.previous == create_virt_l4l7_device_again.current == create_virt_l4l7_device.current
+
+- name: Verify domain binding object has been created
+  ansible.builtin.assert:
+    that:
+    - create_l4l7_device.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/phys-ansible_phys_dom"
+    - create_virt_l4l7_device.current.0.vnsLDevVip.children.0.vnsRsALDevToDomP.attributes.tDn == "uni/vmmp-VMware/dom-ansible_vmm_dom"
+
+- name: Verify domain binding object is still correct
+  ansible.builtin.assert:
+    that:
+    - create_l4l7_device_again.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/phys-ansible_phys_dom"
+    - create_virt_l4l7_device_again.current.0.vnsLDevVip.children.0.vnsRsALDevToDomP.attributes.tDn == "uni/vmmp-VMware/dom-ansible_vmm_dom"
+
+# MODIFY L4-L7 Device
+- name: Update L4-L7 device
+  cisco.aci.aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    domain: ansible_phys_dom
+    func_type: go_through
+    context_aware: multi
+    managed: false
+    dev_type: physical
+    svc_type: fw
+    trunking: true
+    prom_mode: false
+    state: present
+  register: update_l4l7_device
+
+- name: Verify L4-L7 device has been updated
+  ansible.builtin.assert:
+    that:
+    - update_l4l7_device is changed
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.name == "ansible_device"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.contextAware == "multi-Context"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.devtype == "PHYSICAL"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.funcType == "GoThrough"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.isCopy == "no"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.managed == "no"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.promMode == "no"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.svcType == "FW"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "yes"
+
+- name: Verify domain binding object
+  ansible.builtin.assert:
+    that:
+    - update_l4l7_device.current.0.vnsLDevVip.children.0.vnsRsALDevToPhysDomP.attributes.tDn == "uni/phys-ansible_phys_dom"
+
+- name: Create another L4-L7 device to test active active mode
+  cisco.aci.aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device2
+    domain: ansible_phys_dom
+    func_type: l1
+    context_aware: multi
+    managed: false
+    dev_type: physical
+    svc_type: others
+    trunking: true
+    prom_mode: false
+    active_active_mode: true
+    state: present
+  register: another_l4l7_device_active
+
+- name: Verify domain binding object
+  ansible.builtin.assert:
+    that:
+    - another_l4l7_device_active is changed
+    - another_l4l7_device_active.current.0.vnsLDevVip.attributes.funcType == "L1"
+    - another_l4l7_device_active.current.0.vnsLDevVip.attributes.activeActive == "yes"
+
+# QUERY DEVICE
+- name: Query L4-L7 Device
+  cisco.aci.aci_l4l7_device:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    state: query
+  register: query_l4l7_device
+
+- name: Verify L4-L7 Device attributes
+  ansible.builtin.assert:
+    that:
+    - query_l4l7_device is not changed
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.name == "ansible_device"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.contextAware == "multi-Context"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.devtype == "PHYSICAL"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.funcType == "GoThrough"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.isCopy == "no"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.managed == "no"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.promMode == "no"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.svcType == "FW"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "yes"
+
+- name: Query all L4-L7 Devices
+  cisco.aci.aci_l4l7_device:
+    <<: *aci_info
+    state: query
+  register: query_l4l7_device_all
+
+- name: Verify L4-L7 Device query idempotence
+  ansible.builtin.assert:
+    that:
+      - query_l4l7_device_all is not changed
+      - query_l4l7_device_all.current | length >= 3
+      - "'uni/tn-ansible_tenant/lDevVip-ansible_device' in query_l4l7_device_all.current | map(attribute='vnsLDevVip.attributes.dn') | list"
+      - "'uni/tn-ansible_tenant/lDevVip-ansible_virt_device' in query_l4l7_device_all.current | map(attribute='vnsLDevVip.attributes.dn') | list"
+
+# DELETE DEVICE
+- name: Delete L4-L7 Device
+  cisco.aci.aci_l4l7_device: &remove_l4l7_device
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    state: absent
+  check_mode: true
+  register: remove_l4l7_device_cm
+
+- name: Delete L4-L7 Device
+  cisco.aci.aci_l4l7_device: 
+    <<: *remove_l4l7_device
+  register: remove_l4l7_device
+
+- name: Verify L4-L7 Device deletion
+  ansible.builtin.assert:
+    that:
+    - remove_l4l7_device_cm is changed
+    - remove_l4l7_device is changed
+    - remove_l4l7_device_cm.proposed == {}
+    - remove_l4l7_device_cm.previous == remove_l4l7_device.previous == update_l4l7_device.current
+    - remove_l4l7_device.current == []
+
+# DELETE DEVICE AGAIN TO TEST IDEMPOTENCE
+- name: Delete L4-L7 Device again
+  cisco.aci.aci_l4l7_device:
+    <<: *remove_l4l7_device
+  register: remove_l4l7_device_again
+
+- name: Verify L4-L7 Device deletion idempotence
+  ansible.builtin.assert:
+    that:
+    - remove_l4l7_device_again is not changed
+    - remove_l4l7_device_again.current == [] == remove_l4l7_device_again.previous
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+- name: Remove ansible_phys_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_phys_dom
+    domain_type: phys
+    state: absent
+
+- name: Remove ansible_vmm_domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_vmm_dom
+    domain_type: vmm
+    vm_provider: vmware
+    state: absent
