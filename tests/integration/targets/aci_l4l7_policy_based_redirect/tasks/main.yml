@@ -1,0 +1,433 @@
+# Test code for the ACI modules
+# Copyright: (c) 2025, Tim Cragg (@timcragg)
+# Copyright: (c) 2025, Shreyas Srish (@shrsr)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Create IP SLA Monitoring Policy
+  cisco.aci.aci_ip_sla_monitoring_policy:
+    <<: *aci_info
+    tenant: ansible_tenant
+    name: ansible_ip_sla_mon_policy
+    sla_type: icmp
+    state: present
+
+# CREATE L4-L7 POLICY BASED REDIRECT
+- name: Create L4-L7 Policy Based Redirect (v3) in check mode
+  cisco.aci.aci_l4l7_policy_based_redirect: &l4_l7_policy_v3
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy_name: ansible_pbr_policy
+    hash_algorithm: destination_ip
+    resilient_hash: true
+    min_threshold: 60
+    max_threshold: 90
+    threshold_enable: true
+    threshold_down_action: permit
+    pod_aware: true
+    anycast_enabled: false
+    state: present
+  check_mode: true
+  register: add_pbr_policy_v3_cm
+  when: version.current.0.topSystem.attributes.version is version('4.2', '<')
+
+- name: Create L4-L7 Policy Based Redirect (v4) in check mode
+  cisco.aci.aci_l4l7_policy_based_redirect: &l4_l7_policy_v4
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy_name: ansible_pbr_policy
+    dest_type: l3
+    hash_algorithm: destination_ip
+    resilient_hash: true
+    min_threshold: 60
+    max_threshold: 90
+    threshold_enable: true
+    threshold_down_action: permit
+    pod_aware: true
+    anycast_enabled: false
+    state: present
+  check_mode: true
+  register: add_pbr_policy_v4_cm
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+
+- name: Create L4-L7 Policy Based Redirect (v3)
+  cisco.aci.aci_l4l7_policy_based_redirect: 
+    <<: *l4_l7_policy_v3
+  register: add_pbr_policy_v3
+  when: version.current.0.topSystem.attributes.version is version('4.2', '<')
+
+- name: Create L4-L7 Policy Based Redirect (v4)
+  cisco.aci.aci_l4l7_policy_based_redirect: 
+    <<: *l4_l7_policy_v4
+  register: add_pbr_policy_v4
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+
+- name: Verify PBR Attributes v4
+  ansible.builtin.assert:
+    that:
+    - add_pbr_policy_v4 is changed
+    - add_pbr_policy_v4_cm is changed
+    - add_pbr_policy_v4.previous == [] == add_pbr_policy_v4_cm.previous
+    - add_pbr_policy_v4_cm.proposed.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - add_pbr_policy_v4_cm.proposed.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
+    - add_pbr_policy_v4_cm.proposed.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
+    - add_pbr_policy_v4_cm.proposed.vnsSvcRedirectPol.attributes.destType == "L3"
+    - add_pbr_policy_v4_cm.proposed.vnsSvcRedirectPol.attributes.hashingAlgorithm == "dip"
+    - add_pbr_policy_v4_cm.proposed.vnsSvcRedirectPol.attributes.maxThresholdPercent == "90"
+    - add_pbr_policy_v4_cm.proposed.vnsSvcRedirectPol.attributes.minThresholdPercent == "60"
+    - add_pbr_policy_v4_cm.proposed.vnsSvcRedirectPol.attributes.programLocalPodOnly == "yes"
+    - add_pbr_policy_v4_cm.proposed.vnsSvcRedirectPol.attributes.resilientHashEnabled == "yes"
+    - add_pbr_policy_v4_cm.proposed.vnsSvcRedirectPol.attributes.thresholdDownAction == "permit"
+    - add_pbr_policy_v4_cm.proposed.vnsSvcRedirectPol.attributes.thresholdEnable == "yes"
+    - add_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - add_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
+    - add_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
+    - add_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.destType == "L3"
+    - add_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.hashingAlgorithm == "dip"
+    - add_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.maxThresholdPercent == "90"
+    - add_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.minThresholdPercent == "60"
+    - add_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.programLocalPodOnly == "yes"
+    - add_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.resilientHashEnabled == "yes"
+    - add_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "permit"
+    - add_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "yes"
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+
+- name: Verify PBR Attributes v3
+  ansible.builtin.assert:
+    that:
+    - add_pbr_policy_v3_cm is changed
+    - add_pbr_policy_v3 is changed
+    - add_pbr_policy_v3.previous == [] == add_pbr_policy_v3_cm.previous
+    - add_pbr_policy_v3_cm.proposed.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - add_pbr_policy_v3_cm.proposed.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
+    - add_pbr_policy_v3_cm.proposed.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
+    - add_pbr_policy_v3_cm.proposed.vnsSvcRedirectPol.attributes.hashingAlgorithm == "dip"
+    - add_pbr_policy_v3_cm.proposed.vnsSvcRedirectPol.attributes.maxThresholdPercent == "90"
+    - add_pbr_policy_v3_cm.proposed.vnsSvcRedirectPol.attributes.minThresholdPercent == "60"
+    - add_pbr_policy_v3_cm.proposed.vnsSvcRedirectPol.attributes.programLocalPodOnly == "yes"
+    - add_pbr_policy_v3_cm.proposed.vnsSvcRedirectPol.attributes.resilientHashEnabled == "yes"
+    - add_pbr_policy_v3_cm.proposed.vnsSvcRedirectPol.attributes.thresholdDownAction == "permit"
+    - add_pbr_policy_v3_cm.proposed.vnsSvcRedirectPol.attributes.thresholdEnable == "yes"
+    - add_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - add_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
+    - add_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
+    - add_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.hashingAlgorithm == "dip"
+    - add_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.maxThresholdPercent == "90"
+    - add_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.minThresholdPercent == "60"
+    - add_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.programLocalPodOnly == "yes"
+    - add_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.resilientHashEnabled == "yes"
+    - add_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "permit"
+    - add_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "yes"
+  when: version.current.0.topSystem.attributes.version is version('4.2', '<')
+
+# ADD L4-L7 PBR AGAIN TO CHECK IDEMPOTENCY
+- name: Add L4-L7 Policy Based Redirect again (v4)
+  cisco.aci.aci_l4l7_policy_based_redirect:
+    <<: *l4_l7_policy_v4
+  register: add_pbr_policy_v4_again
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+
+- name: Add L4-L7 Policy Based Redirect again (v3)
+  cisco.aci.aci_l4l7_policy_based_redirect:
+    <<: *l4_l7_policy_v3
+  register: add_pbr_policy_v3_again
+  when: version.current.0.topSystem.attributes.version is version('4.2', '<')
+
+- name: Verify PBR Attributes (v4)
+  ansible.builtin.assert:
+    that:
+    - add_pbr_policy_v4_again is not changed
+    - add_pbr_policy_v4_again.previous == add_pbr_policy_v4_again.current
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.destType == "L3"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.hashingAlgorithm == "dip"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.maxThresholdPercent == "90"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.minThresholdPercent == "60"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.programLocalPodOnly == "yes"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.resilientHashEnabled == "yes"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "permit"
+    - add_pbr_policy_v4_again.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "yes"
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+
+- name: Verify PBR Attributes (v3)
+  ansible.builtin.assert:
+    that:
+    - add_pbr_policy_v3_again is not changed
+    - add_pbr_policy_v3_again.previous == add_pbr_policy_v3_again.current
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.hashingAlgorithm == "dip"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.maxThresholdPercent == "90"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.minThresholdPercent == "60"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.programLocalPodOnly == "yes"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.resilientHashEnabled == "yes"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "permit"
+    - add_pbr_policy_v3_again.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "yes"
+  when: version.current.0.topSystem.attributes.version is version('4.2', '<')
+
+# MODIFY L4-L7 PBR POLICY
+- name: Update L4-L7 Policy Based Redirect (v4)
+  cisco.aci.aci_l4l7_policy_based_redirect:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy_name: ansible_pbr_policy
+    dest_type: l2
+    hash_algorithm: ip_and_protocol
+    resilient_hash: false
+    min_threshold: 50
+    max_threshold: 80
+    threshold_enable: false
+    threshold_down_action: deny
+    pod_aware: false
+    monitor_policy: ansible_ip_sla_mon_policy
+    anycast_enabled: false
+    state: present
+  register: update_pbr_policy_v4
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+
+- name: Update L4-L7 Policy Based Redirect (v3)
+  cisco.aci.aci_l4l7_policy_based_redirect:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy_name: ansible_pbr_policy
+    hash_algorithm: ip_and_protocol
+    resilient_hash: false
+    min_threshold: 50
+    max_threshold: 80
+    threshold_enable: false
+    threshold_down_action: deny
+    pod_aware: false
+    anycast_enabled: false
+    state: present
+  register: update_pbr_policy_v3
+  when: version.current.0.topSystem.attributes.version is version('4.2', '<')
+
+- name: Verify PBR Attributes (v4)
+  ansible.builtin.assert:
+    that:
+    - update_pbr_policy_v4 is changed
+    - update_pbr_policy_v4.previous == add_pbr_policy_v4_again.current
+    - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
+    - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
+    - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.destType == "L2"
+    - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.hashingAlgorithm == "sip-dip-prototype"
+    - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.maxThresholdPercent == "80"
+    - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.minThresholdPercent == "50"
+    - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.programLocalPodOnly == "no"
+    - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.resilientHashEnabled == "no"
+    - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "deny"
+    - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "no"
+    - update_pbr_policy_v4.current.0.vnsSvcRedirectPol.children.0.vnsRsIPSLAMonitoringPol.attributes.tDn == "uni/tn-ansible_tenant/ipslaMonitoringPol-ansible_ip_sla_mon_policy"
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+
+- name: Verify PBR Attributes (v3)
+  ansible.builtin.assert:
+    that:
+    - update_pbr_policy_v3 is changed
+    - update_pbr_policy_v3.previous == add_pbr_policy_v3_again.current
+    - update_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - update_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
+    - update_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
+    - update_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.hashingAlgorithm == "sip-dip-prototype"
+    - update_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.maxThresholdPercent == "80"
+    - update_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.minThresholdPercent == "50"
+    - update_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.programLocalPodOnly == "no"
+    - update_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.resilientHashEnabled == "no"
+    - update_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "deny"
+    - update_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "no"
+  when: version.current.0.topSystem.attributes.version is version('4.2', '<')
+
+- name: Remove Monitoring Policy
+  cisco.aci.aci_l4l7_policy_based_redirect:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy_name: ansible_pbr_policy
+    dest_type: l2
+    state: present
+  register: remove_monitoring_policy
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+
+- name: Verify Monitoring Policy Removal
+  ansible.builtin.assert:
+    that:
+    - remove_monitoring_policy.current.0.children is not defined
+
+# QUERY L4-L7 PBR POLICY
+- name: Query L4-L7 Policy Based Redirect (v4)
+  cisco.aci.aci_l4l7_policy_based_redirect:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy_name: ansible_pbr_policy
+    state: query
+  register: query_pbr_policy_v4
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+
+- name: Query L4-L7 Policy Based Redirect (v3)
+  cisco.aci.aci_l4l7_policy_based_redirect:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy_name: ansible_pbr_policy
+    state: query
+  register: query_pbr_policy_v3
+  when: version.current.0.topSystem.attributes.version is version('4.2', '<')
+
+- name: Verify PBR Attributes (v4)
+  ansible.builtin.assert:
+    that:
+    - query_pbr_policy_v4 is not changed
+    - query_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - query_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
+    - query_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
+    - query_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.destType == "L2"
+    - query_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.hashingAlgorithm == "sip-dip-prototype"
+    - query_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.maxThresholdPercent == "80"
+    - query_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.minThresholdPercent == "50"
+    - query_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.programLocalPodOnly == "no"
+    - query_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.resilientHashEnabled == "no"
+    - query_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "deny"
+    - query_pbr_policy_v4.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "no"
+  when: version.current.0.topSystem.attributes.version is version('4.2', '>=')
+
+- name: Verify PBR Attributes (v3)
+  ansible.builtin.assert:
+    that:
+    - query_pbr_policy_v3 is not changed
+    - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
+    - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
+    - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.hashingAlgorithm == "sip-dip-prototype"
+    - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.maxThresholdPercent == "80"
+    - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.minThresholdPercent == "50"
+    - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.programLocalPodOnly == "no"
+    - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.resilientHashEnabled == "no"
+    - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "deny"
+    - query_pbr_policy_v3.current.0.vnsSvcRedirectPol.attributes.thresholdEnable == "no"
+  when: version.current.0.topSystem.attributes.version is version('4.2', '<')
+
+- name: Create another L4-L7 Policy Based Redirect 
+  cisco.aci.aci_l4l7_policy_based_redirect:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy_name: ansible_pbr_policy_another
+    hash_algorithm: ip_and_protocol
+    resilient_hash: false
+    min_threshold: 50
+    max_threshold: 80
+    threshold_enable: false
+    threshold_down_action: deny
+    pod_aware: false
+    anycast_enabled: false
+    state: present
+  register: another_pbr_policy
+
+- name: Query all L4-L7 Policy Based Redirect Policies
+  cisco.aci.aci_l4l7_policy_based_redirect:
+    <<: *aci_info
+    state: query
+  register: query_pbr_policy_all
+
+- name: Verify PBR Attributes are unchanged
+  ansible.builtin.assert:
+    that:
+    - query_pbr_policy_all is not changed
+    - query_pbr_policy_all.current | length >= 2
+    - "'uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy' in query_pbr_policy_all.current | map(attribute='vnsSvcRedirectPol.attributes.dn') | list"
+    - "'uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy_another' in query_pbr_policy_all.current | map(attribute='vnsSvcRedirectPol.attributes.dn') | list"
+
+# DELETE L4-L7 POLICY BASED REDIRECT POLICY
+- name: Delete L4-L7 Policy Based Redirect
+  cisco.aci.aci_l4l7_policy_based_redirect: &delete_pbr
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy_name: ansible_pbr_policy
+    state: absent
+  check_mode: true
+  register: delete_pbr_policy_cm
+
+- name: Delete L4-L7 Policy Based Redirect
+  cisco.aci.aci_l4l7_policy_based_redirect: 
+    <<: *delete_pbr
+  register: delete_pbr_policy
+
+- name: Confirm PBR Policy Removal
+  ansible.builtin.assert:
+    that:
+    - delete_pbr_policy is changed
+    - delete_pbr_policy_cm is changed
+    - delete_pbr_policy.current == []
+    - delete_pbr_policy_cm.proposed == {}
+    - delete_pbr_policy_cm.previous == delete_pbr_policy.previous
+    - delete_pbr_policy.previous.0.vnsSvcRedirectPol.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy"
+    - delete_pbr_policy.previous.0.vnsSvcRedirectPol.attributes.name == "ansible_pbr_policy"
+    - delete_pbr_policy.previous.0.vnsSvcRedirectPol.attributes.AnycastEnabled == "no"
+    - delete_pbr_policy.previous.0.vnsSvcRedirectPol.attributes.hashingAlgorithm == "sip-dip-prototype"
+    - delete_pbr_policy.previous.0.vnsSvcRedirectPol.attributes.maxThresholdPercent == "80"
+    - delete_pbr_policy.previous.0.vnsSvcRedirectPol.attributes.minThresholdPercent == "50"
+    - delete_pbr_policy.previous.0.vnsSvcRedirectPol.attributes.programLocalPodOnly == "no"
+    - delete_pbr_policy.previous.0.vnsSvcRedirectPol.attributes.resilientHashEnabled == "no"
+    - delete_pbr_policy.previous.0.vnsSvcRedirectPol.attributes.thresholdDownAction == "deny"
+    - delete_pbr_policy.previous.0.vnsSvcRedirectPol.attributes.thresholdEnable == "no"
+
+# DELETE L4-L7 POLICY BASED REDIRECT POLICY AGAIN TO TEST IDEMPOTENCE
+- name: Delete L4-L7 Policy Based Redirect again
+  cisco.aci.aci_l4l7_policy_based_redirect:
+    <<: *aci_info
+    tenant: ansible_tenant
+    policy_name: ansible_pbr_policy
+    state: absent
+  register: delete_pbr_policy_again
+
+- name: Confirm PBR Policy Removal idempotence
+  ansible.builtin.assert:
+    that:
+    - delete_pbr_policy_again is not changed
+    - delete_pbr_policy_again.current == []
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
