@@ -21,6 +21,13 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: '{{ aci_output_level | default("info") }}'
 
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
   cisco.aci.aci_tenant:
@@ -423,6 +430,31 @@
     - update_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.attributes.podId == "1"
     - update_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.children.0.vnsRsToCIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
     - update_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.children | length == 1
+
+- name: Execute tasks only for ACI v6+
+  when:
+  - version.current.0.topSystem.attributes.version is version('6', '>=')
+  block:
+  - name: Create another L4-L7 Policy Based Redirect Destination to check weight
+    cisco.aci.aci_l4l7_policy_based_redirect_destination:
+      <<: *aci_info
+      tenant: ansible_tenant
+      policy: ansible_pbr_policy
+      redirect_ip: 192.168.10.5
+      additional_ip: 192.168.50.5
+      redirect_mac: AB:CD:EF:12:34:61
+      dest_name: redirect_dest
+      health_group: ansible_health_group
+      pod_id: 1
+      weight: 5
+      state: present
+    register: add_weight
+
+  - name: Verify another L4-L7 Policy Based Redirect Destination to check weight
+    ansible.builtin.assert:
+      that:
+      - add_weight is changed
+      - add_weight.current.0.vnsRedirectDest.attributes.weight == "5"
 
 # QUERY L4-L7 PBR DESTINATION
 - name: Query L4-L7 Policy Based Redirect Destination
