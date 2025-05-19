@@ -170,6 +170,8 @@
         - query_one.current.0.lacpIfPol.attributes.txRate == 'fast'
         - query_all is not changed
         - query_all.current | length >= 2
+        - "'ansible_port_channel_member_policy_1' in query_all.current | map(attribute='lacpIfPol.attributes.name') | list"
+        - "'ansible_port_channel_member_policy_2' in query_all.current | map(attribute='lacpIfPol.attributes.name') | list"
 
   # DELETE
 
