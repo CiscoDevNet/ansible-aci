@@ -34,7 +34,7 @@ options:
     description:
     - The priority of the Port Channel Member policy.
     - The APIC defaults to C(32768) when not provided.
-    - The allowed minimum is C(1) and the allowed maximum is C(65535).
+    - Accepted values range between C(1) and C(65535).
     type: int
   transmit_rate:
     description:
