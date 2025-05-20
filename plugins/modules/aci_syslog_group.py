@@ -59,6 +59,11 @@ options:
     - Name of the syslog group
     type: str
     aliases: [ syslog_group, syslog_group_name ]
+  description:
+    description:
+    - Description for the syslog group.
+    type: str
+    aliases: [ descr ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -257,6 +262,7 @@ def main():
         include_ms=dict(type="bool"),
         include_time_zone=dict(type="bool"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
+        description=dict(type="str", aliases=["descr"]),
     )
 
     module = AnsibleModule(
@@ -280,6 +286,7 @@ def main():
     include_ms = aci.boolean(module.params.get("include_ms"))
     include_time_zone = aci.boolean(module.params.get("include_time_zone"))
     state = module.params.get("state")
+    description = module.params.get("description")
 
     aci.construct_url(
         root_class=dict(
@@ -297,6 +304,7 @@ def main():
         class_config = dict(
             name=name,
             format=format,
+            descr=description,
             includeMilliSeconds=include_ms,
         )
         if include_time_zone is not None:
