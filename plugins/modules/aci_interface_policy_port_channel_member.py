@@ -16,29 +16,29 @@ ANSIBLE_METADATA = {
 
 DOCUMENTATION = r"""
 ---
-module: aci_port_channel_member_policy
-short_description: Manage Port Channel Member policies (lacp:IfPol)
+module: aci_interface_policy_port_channel_member
+short_description: Manage Port Channel Member interface policies (lacp:IfPol)
 description:
-- Manage Port Channel Member policy configuration on Cisco ACI fabrics.
+- Manage Port Channel Member interface policy configuration on Cisco ACI fabrics.
 options:
   name:
     description:
-    - The name of the Port Channel Member policy.
+    - The name of the Port Channel Member interface policy.
     type: str
-    aliases: [ port_channel_member_policy ]
+    aliases: [ port_channel_member_interface_policy ]
   description:
     description:
-    - The description of the Port Channel Member policy.
+    - The description of the Port Channel Member interface policy.
     type: str
   priority:
     description:
-    - The priority of the Port Channel Member policy.
+    - The priority of the Port Channel Member interface policy.
     - The APIC defaults to C(32768) when not provided.
     - Accepted values range between C(1) and C(65535).
     type: int
   transmit_rate:
     description:
-    - The transmit rate of the Port Channel Member policy.
+    - The transmit rate of the Port Channel Member interface policy.
     - The APIC defaults to C(normal) when not provided.
     type: str
     choices: [ normal, fast ]
@@ -68,20 +68,20 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a new Port Channel Member policy
-  cisco.aci.aci_port_channel_member_policy:
+- name: Add a new Port Channel Member interface policy
+  cisco.aci.aci_interface_policy_port_channel_member:
     host: apic
     username: admin
     password: SomeSecretPassword
     name: ansible_port_channel_member_policy
-    description: Ansible Port Channel Member policy
+    description: Ansible Port Channel Member interface policy
     priority: 32700
     transmit_rate: fast
     state: present
   delegate_to: localhost
 
-- name: Query a Port Channel Member policy
-  cisco.aci.aci_port_channel_member_policy:
+- name: Query a Port Channel Member interface policy
+  cisco.aci.aci_interface_policy_port_channel_member:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -90,8 +90,8 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query all Port Channel Member policies
-  cisco.aci.aci_port_channel_member_policy:
+- name: Query all Port Channel Member interface policies
+  cisco.aci.aci_interface_policy_port_channel_member:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -99,8 +99,8 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Remove a Port Channel Member policy
-  cisco.aci.aci_port_channel_member_policy:
+- name: Remove a Port Channel Member interface policy
+  cisco.aci.aci_interface_policy_port_channel_member:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -223,7 +223,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
     argument_spec.update(
-        name=dict(type="str", aliases=["port_channel_member_policy"]),
+        name=dict(type="str", aliases=["port_channel_member_interface_policy"]),
         description=dict(type="str"),
         priority=dict(type="int"),
         transmit_rate=dict(type="str", choices=["normal", "fast"]),
