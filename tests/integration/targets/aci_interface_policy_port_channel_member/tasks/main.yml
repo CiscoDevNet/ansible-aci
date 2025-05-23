@@ -1,0 +1,225 @@
+# Test code for the ACI modules
+# Copyright: (c) 2025, Akini Ross (@akinross) <akinross@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for ACI v5+ and non-cloud sites
+  when:
+  - version.current.0.topSystem.attributes.version is version('5', '>=')
+  - query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+
+  # CLEAN ENVIRONMENT
+  
+  - name: Clean existing Port Channel Member interface policies
+    cisco.aci.aci_interface_policy_port_channel_member:
+      <<: *aci_info
+      name: "{{ item }}"
+      state: absent
+    loop:
+      - ansible_port_channel_member_interface_policy_1
+      - ansible_port_channel_member_interface_policy_2
+
+  # CREATE
+
+  - name: Create Port Channel Member interface policy (check_mode)
+    cisco.aci.aci_interface_policy_port_channel_member: &create_port_channel_member_interface_policy
+      <<: *aci_info
+      name: ansible_port_channel_member_interface_policy_1
+    check_mode: true
+    register: cm_create_port_channel_member_interface_policy
+
+  - name: Create Port Channel Member interface policy
+    cisco.aci.aci_interface_policy_port_channel_member:
+      <<: *create_port_channel_member_interface_policy
+    register: nm_create_port_channel_member_interface_policy
+
+  - name: Create Port Channel Member interface policy again
+    cisco.aci.aci_interface_policy_port_channel_member:
+      <<: *create_port_channel_member_interface_policy
+    register: nm_create_port_channel_member_interface_policy_again
+
+  - name: Assert Port Channel Member interface policy creation
+    ansible.builtin.assert:
+      that:
+        - cm_create_port_channel_member_interface_policy is changed
+        - cm_create_port_channel_member_interface_policy.previous == []
+        - cm_create_port_channel_member_interface_policy.current == []
+        - cm_create_port_channel_member_interface_policy.proposed.lacpIfPol.attributes.name == 'ansible_port_channel_member_interface_policy_1'
+        - nm_create_port_channel_member_interface_policy is changed
+        - nm_create_port_channel_member_interface_policy.previous == []
+        - nm_create_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.name == 'ansible_port_channel_member_interface_policy_1'
+        - nm_create_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.descr == ''
+        - nm_create_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.prio == '32768'
+        - nm_create_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.txRate == 'normal'
+        - nm_create_port_channel_member_interface_policy_again is not changed
+        - nm_create_port_channel_member_interface_policy_again.previous == nm_create_port_channel_member_interface_policy_again.current
+        - nm_create_port_channel_member_interface_policy_again.current.0.lacpIfPol.attributes.name == 'ansible_port_channel_member_interface_policy_1'
+        - nm_create_port_channel_member_interface_policy_again.current.0.lacpIfPol.attributes.descr == ''
+        - nm_create_port_channel_member_interface_policy_again.current.0.lacpIfPol.attributes.prio == '32768'
+        - nm_create_port_channel_member_interface_policy_again.current.0.lacpIfPol.attributes.txRate == 'normal'   
+
+  # UPDATE  
+
+  - name: Update Port Channel Member interface policy (check_mode)
+    cisco.aci.aci_interface_policy_port_channel_member: &update_port_channel_member_interface_policy
+      <<: *aci_info
+      name: ansible_port_channel_member_interface_policy_1
+      description: description_changed
+      priority: 32700
+      transmit_rate: fast
+    check_mode: true
+    register: cm_update_port_channel_member_interface_policy
+
+  - name: Update Port Channel Member interface policy
+    cisco.aci.aci_interface_policy_port_channel_member:
+      <<: *update_port_channel_member_interface_policy
+    register: nm_update_port_channel_member_interface_policy
+
+  - name: Update Port Channel Member interface policy again
+    cisco.aci.aci_interface_policy_port_channel_member:
+      <<: *update_port_channel_member_interface_policy
+    register: nm_update_port_channel_member_interface_policy_again
+
+  - name: Assert Port Channel Member interface policy update
+    ansible.builtin.assert:
+      that:
+        - cm_update_port_channel_member_interface_policy is changed
+        - cm_update_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.name == 'ansible_port_channel_member_interface_policy_1'
+        - cm_update_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.descr == ''
+        - cm_update_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.prio == '32768'
+        - cm_update_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.txRate == 'normal'
+        - cm_update_port_channel_member_interface_policy.proposed.lacpIfPol.attributes.name == 'ansible_port_channel_member_interface_policy_1'
+        - cm_update_port_channel_member_interface_policy.proposed.lacpIfPol.attributes.descr == 'description_changed'
+        - cm_update_port_channel_member_interface_policy.proposed.lacpIfPol.attributes.prio == '32700'
+        - cm_update_port_channel_member_interface_policy.proposed.lacpIfPol.attributes.txRate == 'fast'
+        - cm_update_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.name == 'ansible_port_channel_member_interface_policy_1'
+        - cm_update_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.descr == ''
+        - cm_update_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.prio == '32768'
+        - cm_update_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.txRate == 'normal'
+        - nm_update_port_channel_member_interface_policy is changed
+        - cm_update_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.name == 'ansible_port_channel_member_interface_policy_1'
+        - cm_update_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.descr == ''
+        - cm_update_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.prio == '32768'
+        - cm_update_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.txRate == 'normal' 
+        - nm_update_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.name == 'ansible_port_channel_member_interface_policy_1'
+        - nm_update_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.descr == 'description_changed'
+        - nm_update_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.prio == '32700'
+        - nm_update_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.txRate == 'fast'
+        - nm_update_port_channel_member_interface_policy_again is not changed
+        - nm_update_port_channel_member_interface_policy_again.previous == nm_update_port_channel_member_interface_policy_again.current
+        - nm_update_port_channel_member_interface_policy_again.current.0.lacpIfPol.attributes.name == 'ansible_port_channel_member_interface_policy_1'
+        - nm_update_port_channel_member_interface_policy_again.current.0.lacpIfPol.attributes.descr == 'description_changed'
+        - nm_update_port_channel_member_interface_policy_again.current.0.lacpIfPol.attributes.prio == '32700'
+        - nm_update_port_channel_member_interface_policy_again.current.0.lacpIfPol.attributes.txRate == 'fast'
+
+  # QUERY
+
+  - name: Create another Port Channel Member interface policy
+    cisco.aci.aci_interface_policy_port_channel_member:
+      <<: *create_port_channel_member_interface_policy
+      name: ansible_port_channel_member_interface_policy_2
+  
+  - name: Query Port Channel Member interface policy
+    cisco.aci.aci_interface_policy_port_channel_member:
+      <<: *create_port_channel_member_interface_policy
+      state: query
+    register: query_one
+
+  - name: Query all Port Channel Member interface policies
+    cisco.aci.aci_interface_policy_port_channel_member:
+      <<: *aci_info
+      state: query
+    register: query_all
+
+  - name: Assert Port Channel Member interface policy query
+    ansible.builtin.assert:
+      that:
+        - query_one is not changed
+        - query_one.current | length == 1
+        - query_one.current.0.lacpIfPol.attributes.name == 'ansible_port_channel_member_interface_policy_1'
+        - query_one.current.0.lacpIfPol.attributes.descr == 'description_changed'
+        - query_one.current.0.lacpIfPol.attributes.prio == '32700'
+        - query_one.current.0.lacpIfPol.attributes.txRate == 'fast'
+        - query_all is not changed
+        - query_all.current | length >= 2
+        - "'ansible_port_channel_member_interface_policy_1' in query_all.current | map(attribute='lacpIfPol.attributes.name') | list"
+        - "'ansible_port_channel_member_interface_policy_2' in query_all.current | map(attribute='lacpIfPol.attributes.name') | list"
+
+  # DELETE
+
+  - name: Delete Port Channel Member interface policy (check_mode)
+    cisco.aci.aci_interface_policy_port_channel_member: &delete_port_channel_member_interface_policy
+      <<: *update_port_channel_member_interface_policy
+      state: absent
+    register: cm_delete_port_channel_member_interface_policy
+    check_mode: true
+
+  - name: Delete Port Channel Member interface policy
+    cisco.aci.aci_interface_policy_port_channel_member:
+      <<: *delete_port_channel_member_interface_policy
+    register: nm_delete_port_channel_member_interface_policy
+
+  - name: Delete Port Channel Member interface policy again
+    cisco.aci.aci_interface_policy_port_channel_member:
+      <<: *delete_port_channel_member_interface_policy
+    register: nm_delete_port_channel_member_interface_policy_again
+  
+  - name: Assert Port Channel Member interface policy deletion
+    ansible.builtin.assert:
+      that:
+        - cm_delete_port_channel_member_interface_policy is changed
+        - cm_delete_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.name == 'ansible_port_channel_member_interface_policy_1'
+        - cm_delete_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.descr == 'description_changed'
+        - cm_delete_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.prio == '32700'
+        - cm_delete_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.txRate == 'fast'
+        - cm_delete_port_channel_member_interface_policy.proposed == {}
+        - cm_delete_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.name == 'ansible_port_channel_member_interface_policy_1'
+        - cm_delete_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.descr == 'description_changed'
+        - cm_delete_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.prio == '32700'
+        - cm_delete_port_channel_member_interface_policy.current.0.lacpIfPol.attributes.txRate == 'fast'
+        - nm_delete_port_channel_member_interface_policy is changed
+        - nm_delete_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.name == 'ansible_port_channel_member_interface_policy_1'
+        - nm_delete_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.descr == 'description_changed'
+        - nm_delete_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.prio == '32700'
+        - nm_delete_port_channel_member_interface_policy.previous.0.lacpIfPol.attributes.txRate == 'fast'
+        - nm_delete_port_channel_member_interface_policy.current == []
+        - nm_delete_port_channel_member_interface_policy_again is not changed
+        - nm_delete_port_channel_member_interface_policy_again.previous == []
+        - nm_delete_port_channel_member_interface_policy_again.current == []
+
+  # CLEAN ENVIRONMENT
+  
+  - name: Clean remaining Port Channel Member interface policies
+    cisco.aci.aci_interface_policy_port_channel_member:
+      <<: *aci_info
+      name: ansible_port_channel_member_interface_policy_2
+      state: absent
+      
