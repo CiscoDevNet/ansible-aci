@@ -115,7 +115,7 @@ seealso:
 - module: cisco.aci.aci_l4l7_concrete_interface
 - module: cisco.aci.aci_l4l7_policy_based_redirect
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(vns:RedirectDest)
+  description: More information about the internal APIC class B(vns:RedirectDest), B(vns:L1L2RedirectDest)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
