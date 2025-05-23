@@ -1,0 +1,218 @@
+# Test code for the ACI modules
+# Copyright: (c) 2021, Tim Cragg (@timcragg)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# GET Credentials from the inventory
+- name: Set vars
+  set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Remove ansible_tenant if it already exists
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent
+
+# CREATE TENANT
+- name: Create ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: present
+
+# ADD SERVICE GRAPH TEMPLATE
+- name: Create L4-L7 Service Graph Template
+  cisco.aci.aci_l4l7_service_graph_template:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    state: present
+
+# ADD SERVICE GRAPH ABS CONNECTION
+- name: Create L4-L7 Service Graph Abs Connection in check mode
+  cisco.aci.aci_l4l7_service_graph_template_abs_conn: &add_l4l7_abs_conn
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    connection_name: C1
+    connector_direction: provider
+    connection_type: external
+    direct_connect: true
+    unicast_route: true
+    adjacency_type: l3
+    state: present
+  check_mode: true
+  register: add_l4l7_abs_conn_cm
+
+- name: Create L4-L7 Service Graph Abs Connection
+  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+    <<: *add_l4l7_abs_conn
+  register: add_l4l7_abs_conn
+
+# VERIFY SERVICE GRAPH ABS CONNECTION
+- name: Verify Connection Attributes
+  ansible.builtin.assert:
+    that:
+    - add_l4l7_abs_conn_cm is changed
+    - add_l4l7_abs_conn_cm.proposed.vnsAbsConnection.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C1"
+    - add_l4l7_abs_conn_cm.proposed.vnsAbsConnection.attributes.name == "C1"
+    - add_l4l7_abs_conn_cm.proposed.vnsAbsConnection.attributes.adjType == "L3"
+    - add_l4l7_abs_conn_cm.proposed.vnsAbsConnection.attributes.connDir == "provider"
+    - add_l4l7_abs_conn_cm.proposed.vnsAbsConnection.attributes.connType == "external"
+    - add_l4l7_abs_conn_cm.proposed.vnsAbsConnection.attributes.directConnect == "yes"
+    - add_l4l7_abs_conn_cm.proposed.vnsAbsConnection.attributes.unicastRoute == "yes"
+    - add_l4l7_abs_conn is changed
+    - add_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C1"
+    - add_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.name == "C1"
+    - add_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.adjType == "L3"
+    - add_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.connDir == "provider"
+    - add_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.connType == "external"
+    - add_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.directConnect == "yes"
+    - add_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.unicastRoute == "yes"
+
+# ADD SERVICE GRAPH ABS CONNECTION AGAIN TO TEST IDEMPOTENCE
+- name: Create L4-L7 Service Graph Abs Connection again
+  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+    <<: *add_l4l7_abs_conn
+  register: add_l4l7_abs_conn_again
+
+# VERIFY SERVICE GRAPH ABS CONNECTION ARE UNCHANGED
+- name: Verify Connection Attributes are unchanged
+  ansible.builtin.assert:
+    that:
+    - add_l4l7_abs_conn_again is not changed
+    - add_l4l7_abs_conn_again.current.0.vnsAbsConnection.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C1"
+    - add_l4l7_abs_conn_again.current.0.vnsAbsConnection.attributes.name == "C1"
+    - add_l4l7_abs_conn_again.current.0.vnsAbsConnection.attributes.adjType == "L3"
+    - add_l4l7_abs_conn_again.current.0.vnsAbsConnection.attributes.connDir == "provider"
+    - add_l4l7_abs_conn_again.current.0.vnsAbsConnection.attributes.connType == "external"
+    - add_l4l7_abs_conn_again.current.0.vnsAbsConnection.attributes.directConnect == "yes"
+    - add_l4l7_abs_conn_again.current.0.vnsAbsConnection.attributes.unicastRoute == "yes"
+
+# MODIFY SERVICE GRAPH ABS CONNECTION
+- name: Modify L4-L7 Service Graph Abs Connection
+  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    connection_name: C1
+    direct_connect: false
+    unicast_route: false
+    adjacency_type: l2
+    state: present
+  register: update_l4l7_abs_conn
+
+# VERIFY SERVICE GRAPH ABS CONNECTION
+- name: Verify Connection Attributes
+  ansible.builtin.assert:
+    that:
+    - update_l4l7_abs_conn is changed
+    - update_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C1"
+    - update_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.name == "C1"
+    - update_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.adjType == "L2"
+    - update_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.connDir == "provider"
+    - update_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.connType == "external"
+    - update_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.directConnect == "no"
+    - update_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.unicastRoute == "no"
+
+# QUERY SERVICE GRAPH ABS CONNECTION
+- name: Query L4-L7 Service Graph Abs Connection
+  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    connection_name: C1
+    state: query
+  register: query_l4l7_abs_conn
+
+# VERIFY SERVICE GRAPH ABS CONNECTION
+- name: Verify Connection Attributes
+  ansible.builtin.assert:
+    that:
+    - query_l4l7_abs_conn is not changed
+    - query_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C1"
+    - query_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.name == "C1"
+    - query_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.adjType == "L2"
+    - query_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.connDir == "provider"
+    - query_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.connType == "external"
+    - query_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.directConnect == "no"
+    - query_l4l7_abs_conn.current.0.vnsAbsConnection.attributes.unicastRoute == "no"
+
+# QUERY ALL SERVICE GRAPH ABS CONNECTIONS
+- name: Query all L4-L7 Service Graph Abs Connections
+  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+    <<: *aci_info
+    state: query
+  register: query_l4l7_abs_conn_all
+
+# VERIFY SERVICE GRAPH ABS CONNECTION
+- name: Verify Connection Attributes
+  ansible.builtin.assert:
+    that:
+    - query_l4l7_abs_conn_all is not changed
+
+# DELETE SERVICE GRAPH ABS CONNECTION
+- name: Delete L4-L7 Service Graph Abs Connection in check mode
+  cisco.aci.aci_l4l7_service_graph_template_abs_conn: &delete_l4l7_abs_conn
+    <<: *aci_info
+    tenant: ansible_tenant
+    service_graph: ansible_graph
+    connection_name: C1
+    state: absent
+  check_mode: true
+  register: delete_l4l7_abs_conn_cm
+
+- name: Delete L4-L7 Service Graph Abs Connection
+  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+    <<: *delete_l4l7_abs_conn
+  register: delete_l4l7_abs_conn
+
+# VERIFY SERVICE GRAPH ABS CONNECTION DELETION
+- name: Verify Connection Deletion
+  ansible.builtin.assert:
+    that:
+    - delete_l4l7_abs_conn_cm is changed
+    - delete_l4l7_abs_conn_cm.proposed == {}
+    - delete_l4l7_abs_conn_cm.previous == delete_l4l7_abs_conn.previous
+    - delete_l4l7_abs_conn is changed
+    - delete_l4l7_abs_conn.current == []
+    - delete_l4l7_abs_conn.previous.0.vnsAbsConnection.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_graph/AbsConnection-C1"
+    - delete_l4l7_abs_conn.previous.0.vnsAbsConnection.attributes.name == "C1"
+    - delete_l4l7_abs_conn.previous.0.vnsAbsConnection.attributes.adjType == "L2"
+    - delete_l4l7_abs_conn.previous.0.vnsAbsConnection.attributes.connDir == "provider"
+    - delete_l4l7_abs_conn.previous.0.vnsAbsConnection.attributes.connType == "external"
+    - delete_l4l7_abs_conn.previous.0.vnsAbsConnection.attributes.directConnect == "no"
+    - delete_l4l7_abs_conn.previous.0.vnsAbsConnection.attributes.unicastRoute == "no"
+
+# DELETE ABS CONN AGAIN TO TEST IDEMPOTENCE
+- name: Delete L4-L7 Service Graph Abs Connection again
+  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+    <<: *delete_l4l7_abs_conn
+  register: delete_l4l7_abs_conn_again
+
+- name: Verify Connection Deletion idempotence
+  ansible.builtin.assert:
+    that:
+    - delete_l4l7_abs_conn_again is not changed
+    - delete_l4l7_abs_conn_again.current == []
+
+# CLEAN UP
+- name: Remove ansible_tenant
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    name: ansible_tenant
+    state: absent

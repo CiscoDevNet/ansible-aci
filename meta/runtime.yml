@@ -276,3 +276,18 @@ plugin_routing:
       deprecation:
         removal_version: 3.0.0
         warning_text: Use cisco.aci.aci_l4l7_policy_based_redirect_destination instead.
+    aci_l4l7_service_graph_template_func_conn:
+      redirect: cisco.aci.aci_l4l7_service_graph_template_functional_connection
+      deprecation:
+        removal_version: 3.0.0
+        warning_text: Use aci_l4l7_service_graph_template_functional_connection instead.
+    aci_l4l7_service_graph_template_abs_conn:
+      redirect: cisco.aci.aci_l4l7_service_graph_template_abs_connection
+      deprecation:
+        removal_version: 3.0.0
+        warning_text: Use cisco.aci.aci_l4l7_service_graph_template_abs_connection instead.
+    aci_l4l7_device_selection_if_context:
+      redirect: cisco.aci.aci_l4l7_device_selection_interface_context
+      deprecation:
+        removal_version: 3.0.0
+        warning_text: Use cisco.aci.aci_l4l7_device_selection_interface_context instead.
