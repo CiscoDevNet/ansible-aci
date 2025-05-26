@@ -464,7 +464,7 @@ L4L7_FUNCTIONAL_TEMPLATE_TYPES_MAPPING = {
     "other": "OTHER",
 }
 
-UI_TEMPLATE_TYPE = {
+L4L7_UI_TEMPLATE_TYPE = {
     "ndo_implicit_template": "NDO_IMPLICIT_TEMPLATE",
     "one_node_adc_one_arm": "ONE_NODE_ADC_ONE_ARM",
     "one_node_adc_one_arm_l3ext": "ONE_NODE_ADC_ONE_ARM_L3EXT",
