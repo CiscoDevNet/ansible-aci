@@ -243,7 +243,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-from ansible_collections.cisco.aci.plugins.module_utils.constants import UI_TEMPLATE_TYPE
+from ansible_collections.cisco.aci.plugins.module_utils.constants import L4L7_UI_TEMPLATE_TYPE
 
 
 def main():
@@ -254,7 +254,7 @@ def main():
         tenant=dict(type="str", aliases=["tenant_name"]),
         service_graph=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        ui_template_type=dict(type="str", choices=list(UI_TEMPLATE_TYPE)),
+        ui_template_type=dict(type="str", choices=list(L4L7_UI_TEMPLATE_TYPE)),
         type=dict(type="str", choices=["cloud", "legacy"]),
         service_rule_type=dict(type="str", choices=["epg", "subnet", "vrf"]),
         filter_between_nodes=dict(type="str", choices=["allow-all", "filters-from-contract"]),
@@ -273,7 +273,7 @@ def main():
     tenant = module.params.get("tenant")
     service_graph = module.params.get("service_graph")
     state = module.params.get("state")
-    ui_template_type = UI_TEMPLATE_TYPE.get(module.params.get("ui_template_type"))
+    ui_template_type = L4L7_UI_TEMPLATE_TYPE.get(module.params.get("ui_template_type"))
     type = module.params.get("type")
     service_rule_type = module.params.get("service_rule_type")
     filter_between_nodes = module.params.get("filter_between_nodes")
