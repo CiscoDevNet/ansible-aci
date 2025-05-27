@@ -162,9 +162,9 @@ def aci_owner_spec():
     )
 
 
-def enhanced_lag_spec():
+def enhanced_lag_spec(name_is_required=True):
     return dict(
-        name=dict(type="str", required=True),
+        name=dict(type="str", required=name_is_required),
         lacp_mode=dict(type="str", choices=["active", "passive"]),
         load_balancing_mode=dict(
             type="str",

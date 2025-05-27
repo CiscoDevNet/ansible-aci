@@ -1,0 +1,238 @@
+# Test code for the ACI modules
+# Copyright: (c) 2025, Dev Sinha (@DevSinha13) <devsinh@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# CLEAN ENVIRONMENT
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+# Remove VMM domain
+- name: Remove VMM domain (normal mode)
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: test_vmm_dom
+    domain_type: vmm
+    vm_provider: vmware
+    state: absent
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for non-cloud sites
+  when: query_cloud.current == []  # This condition will skip execution for cloud sites
+  block:
+  # ADD DOMAIN
+  - name: Add VMM domain
+    cisco.aci.aci_domain:
+      <<: *aci_info
+      domain: test_vmm_dom
+      domain_type: vmm
+      vm_provider: vmware
+      state: present
+
+  - name: Add a vSwitch policy to vmware domain
+    cisco.aci.aci_vmm_vswitch_policy: &add_vmware_policies
+      <<: *aci_info
+      domain: test_vmm_dom
+      vm_provider: vmware
+      lldp_policy: LLDP_policy
+      cdp_policy: CDP_policy
+      port_channel_policy: PORT_Channel_policy
+      state: present
+
+  - name: Create Enhanced LAG policy in check mode
+    cisco.aci.aci_vmm_enhanced_lag_policy: &enhanced_lag_policy_info
+      <<: *aci_info
+      name: test_lag
+      domain: test_vmm_dom
+      vm_provider: vmware
+      lacp_mode: active
+      load_balancing_mode: src-dst-ip
+      number_uplinks: 2
+      state: present
+    check_mode: true
+    register: create_enhanced_lag_policy_cm
+
+  - name: Verify Enhanced LAG policy creation in check mode
+    ansible.builtin.assert:
+      that:
+      - create_enhanced_lag_policy_cm is changed
+      - create_enhanced_lag_policy_cm.previous == []
+      - create_enhanced_lag_policy_cm.proposed.lacpEnhancedLagPol.attributes.name == "test_lag"
+      - create_enhanced_lag_policy_cm.proposed.lacpEnhancedLagPol.attributes.mode == "active"
+      - create_enhanced_lag_policy_cm.proposed.lacpEnhancedLagPol.attributes.lbmode == "src-dst-ip"
+      - create_enhanced_lag_policy_cm.proposed.lacpEnhancedLagPol.attributes.numLinks == "2"
+      - create_enhanced_lag_policy_cm.proposed.lacpEnhancedLagPol.attributes.dn == "uni/vmmp-VMware/dom-test_vmm_dom/vswitchpolcont/enlacplagp-test_lag"
+
+  - name: Create enhanced lag policy without check mode
+    cisco.aci.aci_vmm_enhanced_lag_policy:
+      <<: *enhanced_lag_policy_info
+    register: create_enhanced_lag_policy
+
+  - name: Verify Enhanced LAG policy creation
+    ansible.builtin.assert:
+      that:
+      - create_enhanced_lag_policy is changed
+      - create_enhanced_lag_policy.previous == []
+      - create_enhanced_lag_policy.current.0.lacpEnhancedLagPol.attributes.name == 'test_lag'
+      - create_enhanced_lag_policy.current.0.lacpEnhancedLagPol.attributes.mode == 'active'
+      - create_enhanced_lag_policy.current.0.lacpEnhancedLagPol.attributes.lbmode == 'src-dst-ip'
+      - create_enhanced_lag_policy.current.0.lacpEnhancedLagPol.attributes.numLinks == '2'
+      - create_enhanced_lag_policy.current.0.lacpEnhancedLagPol.attributes.dn == 'uni/vmmp-VMware/dom-test_vmm_dom/vswitchpolcont/enlacplagp-test_lag'
+
+  - name: Create Enhanced LAG policy again (idempotency)
+    cisco.aci.aci_vmm_enhanced_lag_policy:
+      <<: *enhanced_lag_policy_info
+    register: create_enhanced_lag_policy_again
+
+  - name: Verify Enhanced LAG policy idempotency
+    ansible.builtin.assert:
+      that:
+      - create_enhanced_lag_policy_again is not changed
+      - create_enhanced_lag_policy_again.current == create_enhanced_lag_policy.current == create_enhanced_lag_policy_again.previous
+
+  - name: Update Enhanced LAG policy with different options
+    cisco.aci.aci_vmm_enhanced_lag_policy:
+      <<: *aci_info
+      name: test_lag
+      domain: test_vmm_dom
+      vm_provider: vmware
+      lacp_mode: passive
+      load_balancing_mode: src-dst-ip-l4port
+      number_uplinks: 4
+      state: present
+    register: update_enhanced_lag
+  
+  - name: Assert Enhanced LAG policy update
+    ansible.builtin.assert:
+      that:
+      - update_enhanced_lag is changed
+      - update_enhanced_lag.previous.0.lacpEnhancedLagPol.attributes.name == 'test_lag'
+      - update_enhanced_lag.previous.0.lacpEnhancedLagPol.attributes.mode == 'active'
+      - update_enhanced_lag.previous.0.lacpEnhancedLagPol.attributes.lbmode == 'src-dst-ip'
+      - update_enhanced_lag.previous.0.lacpEnhancedLagPol.attributes.numLinks == '2'
+      - update_enhanced_lag.current.0.lacpEnhancedLagPol.attributes.name == 'test_lag'
+      - update_enhanced_lag.current.0.lacpEnhancedLagPol.attributes.mode == 'passive'
+      - update_enhanced_lag.current.0.lacpEnhancedLagPol.attributes.lbmode == 'src-dst-ip-l4port'
+      - update_enhanced_lag.current.0.lacpEnhancedLagPol.attributes.numLinks == '4'
+
+  - name: Create second Enhanced LAG policy
+    cisco.aci.aci_vmm_enhanced_lag_policy:
+      <<: *aci_info
+      name: test_lag2
+      domain: test_vmm_dom
+      vm_provider: vmware
+      lacp_mode: active
+      load_balancing_mode: src-ip
+      number_uplinks: 3
+      state: present
+    register: create_second_enhanced_lag
+  
+  - name: Assert second Enhanced LAG policy creation
+    ansible.builtin.assert:
+      that:
+      - create_second_enhanced_lag is changed
+      - create_second_enhanced_lag.previous == []
+      - create_second_enhanced_lag.current.0.lacpEnhancedLagPol.attributes.name == 'test_lag2'
+      - create_second_enhanced_lag.current.0.lacpEnhancedLagPol.attributes.mode == 'active'
+      - create_second_enhanced_lag.current.0.lacpEnhancedLagPol.attributes.lbmode == 'src-ip'
+      - create_second_enhanced_lag.current.0.lacpEnhancedLagPol.attributes.numLinks == '3'
+
+  - name: Query first Enhanced LAG policy
+    cisco.aci.aci_vmm_enhanced_lag_policy:
+      <<: *aci_info
+      name: test_lag
+      domain: test_vmm_dom
+      vm_provider: vmware
+      state: query
+    register: query_first_enhanced_lag
+
+  - name: Verify first Enhanced LAG policy query
+    ansible.builtin.assert:
+      that:
+      - query_first_enhanced_lag is not changed
+      - query_first_enhanced_lag.current.0.lacpEnhancedLagPol.attributes.name == 'test_lag'
+      - query_first_enhanced_lag.current.0.lacpEnhancedLagPol.attributes.mode == 'passive'
+      - query_first_enhanced_lag.current.0.lacpEnhancedLagPol.attributes.lbmode == 'src-dst-ip-l4port'
+      - query_first_enhanced_lag.current.0.lacpEnhancedLagPol.attributes.numLinks == '4'
+
+  - name: Query all Enhanced LAG policies
+    cisco.aci.aci_vmm_enhanced_lag_policy:
+      <<: *aci_info
+      state: query
+    register: query_all_enhanced_lag
+  
+  - name: Verify Query all Lag policy
+    ansible.builtin.assert:
+      that: 
+      - query_all_enhanced_lag.current | length >= 2
+      - query_all_enhanced_lag is not changed 
+      - "'uni/vmmp-VMware/dom-test_vmm_dom/vswitchpolcont/enlacplagp-test_lag' in query_all_enhanced_lag.current | map(attribute='lacpEnhancedLagPol.attributes.dn') | list"
+      - "'uni/vmmp-VMware/dom-test_vmm_dom/vswitchpolcont/enlacplagp-test_lag2' in query_all_enhanced_lag.current | map(attribute='lacpEnhancedLagPol.attributes.dn') | list"
+
+  - name: Remove first Enhanced LAG policy in check mode
+    cisco.aci.aci_vmm_enhanced_lag_policy: &delete_enhanced_lag_policy
+      <<: *aci_info
+      name: test_lag
+      domain: test_vmm_dom
+      vm_provider: vmware
+      state: absent
+    check_mode: true
+    register: remove_first_enhanced_lag_check
+
+  - name: Verify first Enhanced LAG policy removal in check mode
+    ansible.builtin.assert:
+      that:
+      - remove_first_enhanced_lag_check is changed
+      - remove_first_enhanced_lag_check.previous.0.lacpEnhancedLagPol.attributes.name == 'test_lag'
+      - remove_first_enhanced_lag_check.previous.0.lacpEnhancedLagPol.attributes.mode == 'passive'
+      - remove_first_enhanced_lag_check.previous.0.lacpEnhancedLagPol.attributes.lbmode == 'src-dst-ip-l4port'
+      - remove_first_enhanced_lag_check.previous.0.lacpEnhancedLagPol.attributes.numLinks == '4'
+      - remove_first_enhanced_lag_check.proposed == {}
+  
+  - name: Remove first Enhanced LAG policy
+    cisco.aci.aci_vmm_enhanced_lag_policy:
+      <<: *delete_enhanced_lag_policy
+    register: remove_first_enhanced_lag
+  
+  - name: Verify first Enhanced LAG policy removal
+    ansible.builtin.assert:
+      that:
+      - remove_first_enhanced_lag is changed
+      - remove_first_enhanced_lag.previous == remove_first_enhanced_lag_check.previous
+      - remove_first_enhanced_lag.current == []
+
+  - name: Remove first Enhanced LAG policy again (idempotency)
+    cisco.aci.aci_vmm_enhanced_lag_policy:
+      <<: *delete_enhanced_lag_policy
+    register: remove_first_enhanced_lag_again
+  
+  - name: Verify first Enhanced LAG policy removal idempotency
+    ansible.builtin.assert:
+      that:
+      - remove_first_enhanced_lag_again is not changed
+      - remove_first_enhanced_lag_again.current == remove_first_enhanced_lag_again.previous == []
+
+  - name: Remove VMM domain again (clean slate)
+    cisco.aci.aci_domain:
+      <<: *aci_info
+      domain: test_vmm_dom
+      domain_type: vmm
+      vm_provider: vmware
+      state: absent
