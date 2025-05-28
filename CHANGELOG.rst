@@ -4,6 +4,33 @@ Cisco ACI Ansible Collection Release Notes
 
 .. contents:: Topics
 
+v2.12.0
+=======
+
+Release Summary
+---------------
+
+Release v2.12.0 of the ``ansible-aci`` collection on 2025-05-28.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.11.0.
+
+Minor Changes
+-------------
+
+- Add aci_oob_contract module
+- Add missing options to priority and vrf to scope in aci_contract module
+- Add missing options to priority and vrf to scope in aci_oob_contract module
+- Add module aci_port_channel_member_policy to manage port channel member policies
+- Added testing support for Ansible Core 2.19
+- Addition of aci_l4l7_policy_based_redirect and related modules
+- Addition of module aci_l4l7_concrete_device and its test file
+- Addition of module aci_l4l7_device and its test file
+
+Bugfixes
+--------
+
+- Fix type of subnet_control in aci_bd_subnet from string to list of strings
+- Fixed the aci_access_port_block_to_access_port module to query a specific object with the object name
+
 v2.11.0
 =======
 
