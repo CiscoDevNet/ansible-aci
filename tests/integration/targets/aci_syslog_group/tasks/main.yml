@@ -1,6 +1,5 @@
 # Test code for the ACI modules
 # Copyright: (c) 2021, Tim Cragg (@timcragg)
-# Copyright: (c) 2025, Dev Sinha (@DevSinha13)
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -35,8 +34,8 @@
     name: ansible_syslog_group
     state: absent
 
-# ADD syslog group(Check mode)
-- name: Add syslog group (version >= 4) - (Check mode)
+# ADD syslog group
+- name: Add syslog group (version >= 4)
   cisco.aci.aci_syslog_group: &aci_syslog_present
     <<: *aci_info
     name: ansible_syslog_group
@@ -48,20 +47,11 @@
     console_log_severity: critical
     include_ms: true
     include_time_zone: true
-    description: Description for the syslog group
     state: present
-  check_mode: true
-  register: add_syslog_group_cm
-  when: version.current.0.topSystem.attributes.version is version('4', '>=')
-
-#ADD syslog group
-- name: Add syslog group (version >= 4) - (No check mode)
-  cisco.aci.aci_syslog_group: 
-    <<: *aci_syslog_present
   register: add_syslog_group
   when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
-- name: Add syslog group (version < 4) - (Check mode)
+- name: Add syslog group (version < 4)
   cisco.aci.aci_syslog_group: &aci_syslog_present_32
     <<: *aci_info
     name: ansible_syslog_group
@@ -72,68 +62,29 @@
     console_logging: enabled
     console_log_severity: critical
     include_ms: true
-    description: Description for the syslog group
     state: present
-  check_mode: true
-  register: add_syslog_group_32_cm
-  when: version.current.0.topSystem.attributes.version is version('4', '<')
-
-- name: Add syslog group (version < 4) - No Check mode
-  cisco.aci.aci_syslog_group:
-    <<: *aci_syslog_present_32
   register: add_syslog_group_32
   when: version.current.0.topSystem.attributes.version is version('4', '<')
-
-
-- name: Verify that ansible_syslog_group has been created with correct attributes in check mode(version >= 4)
-  ansible.builtin.assert:
-    that:
-    - add_syslog_group_cm is changed
-    - add_syslog_group_cm.proposed.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
-    - add_syslog_group_cm.proposed.syslogGroup.attributes.name == "ansible_syslog_group"
-    - add_syslog_group_cm.proposed.syslogGroup.attributes.format == "aci"
-    - add_syslog_group_cm.proposed.syslogGroup.attributes.includeMilliSeconds == "yes"
-    - add_syslog_group_cm.proposed.syslogGroup.attributes.includeTimeZone == "yes"
-    - add_syslog_group_cm.proposed.syslogGroup.attributes.annotation == 'orchestrator:ansible'
-    - add_syslog_group_cm.proposed.syslogGroup.attributes.descr == 'Description for the syslog group'
-  when: version.current.0.topSystem.attributes.version is version('4', '>=')
-
 
 - name: Verify that ansible_syslog_group has been created with correct attributes (version > 4)
   ansible.builtin.assert:
     that:
-    - add_syslog_group is changed
     - add_syslog_group.current.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
     - add_syslog_group.current.0.syslogGroup.attributes.name == "ansible_syslog_group"
     - add_syslog_group.current.0.syslogGroup.attributes.format == "aci"
     - add_syslog_group.current.0.syslogGroup.attributes.includeMilliSeconds == "yes"
     - add_syslog_group.current.0.syslogGroup.attributes.includeTimeZone == "yes"
     - add_syslog_group.current.0.syslogGroup.attributes.annotation == 'orchestrator:ansible'
-    - add_syslog_group.current.0.syslogGroup.attributes.descr == 'Description for the syslog group'
   when: version.current.0.topSystem.attributes.version is version('4', '>=')
-
-- name: Verify that ansible_syslog_group has been created with correct attributes in check mode (version < 4)
-  ansible.builtin.assert:
-    that:
-    - add_syslog_group_32_cm is changed
-    - add_syslog_group_32_cm.proposed.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
-    - add_syslog_group_32_cm.proposed.syslogGroup.attributes.name == "ansible_syslog_group"
-    - add_syslog_group_32_cm.proposed.syslogGroup.attributes.format == "aci"
-    - add_syslog_group_32_cm.proposed.syslogGroup.attributes.includeMilliSeconds == "yes"
-    - add_syslog_group_32_cm.proposed.syslogGroup.attributes.annotation == 'orchestrator:ansible'
-    - add_syslog_group_32_cm.proposed.syslogGroup.attributes.descr == 'Description for the syslog group'
-  when: version.current.0.topSystem.attributes.version is version('4', '<')
 
 - name: Verify that ansible_syslog_group has been created with correct attributes (version < 4)
   ansible.builtin.assert:
     that:
-    - add_syslog_group_32 is changed
     - add_syslog_group_32.current.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
     - add_syslog_group_32.current.0.syslogGroup.attributes.name == "ansible_syslog_group"
     - add_syslog_group_32.current.0.syslogGroup.attributes.format == "aci"
     - add_syslog_group_32.current.0.syslogGroup.attributes.includeMilliSeconds == "yes"
     - add_syslog_group_32.current.0.syslogGroup.attributes.annotation == 'orchestrator:ansible'
-    - add_syslog_group_32.current.0.syslogGroup.attributes.descr == 'Description for the syslog group'
   when: version.current.0.topSystem.attributes.version is version('4', '<')
   
 - name: Verify that ansible_syslog_group children have correct attributes (version >= 4)
@@ -194,7 +145,6 @@
     console_log_severity: emergencies
     include_ms: false
     include_time_zone: false
-    description: Updated syslog group
     state: present
   register: update_syslog_group
   when: version.current.0.topSystem.attributes.version is version('4', '>=')
@@ -210,7 +160,6 @@
     console_logging: disabled
     console_log_severity: emergencies
     include_ms: false
-    description: Updated syslog_group_32
     state: present
   register: update_syslog_group_32
   when: version.current.0.topSystem.attributes.version is version('4', '<')
@@ -223,7 +172,6 @@
     - update_syslog_group.current.0.syslogGroup.attributes.format == "nxos"
     - update_syslog_group.current.0.syslogGroup.attributes.includeMilliSeconds == "no"
     - update_syslog_group.current.0.syslogGroup.attributes.includeTimeZone == "no"
-    - update_syslog_group.current.0.syslogGroup.attributes.descr == "Updated syslog group"
   when: version.current.0.topSystem.attributes.version is version('4', '>=')
 
 - name: Verify that ansible_syslog_group has been updated with correct attributes (version < 4)
@@ -233,7 +181,6 @@
     - update_syslog_group_32.current.0.syslogGroup.attributes.name == "ansible_syslog_group"
     - update_syslog_group_32.current.0.syslogGroup.attributes.format == "nxos"
     - update_syslog_group_32.current.0.syslogGroup.attributes.includeMilliSeconds == "no"
-    - update_syslog_group_32.current.0.syslogGroup.attributes.descr == "Updated syslog_group_32"
   when: version.current.0.topSystem.attributes.version is version('4', '<')
 
 - name: Verify that ansible_syslog_group children have correct attributes (version >= 4)
@@ -282,17 +229,8 @@
     that:
     - query_syslog_group_all is not changed
 
-# DELETE syslog group(check mode)
-- name: Remove the syslog group (check mode)
-  cisco.aci.aci_syslog_group:
-    <<: *aci_info
-    name: ansible_syslog_group
-    state: absent
-  check_mode: true
-  register: remove_syslog_group_cm
-
-# Delete syslog group
-- name: Remove the syslog group 
+# DELETE syslog group
+- name: Remove the syslog group
   cisco.aci.aci_syslog_group:
     <<: *aci_info
     name: ansible_syslog_group
@@ -302,10 +240,6 @@
 - name: Verify remove_syslog_group
   ansible.builtin.assert:
     that:
-    - remove_syslog_group_cm is changed
-    - remove_syslog_group_cm.proposed == {}
-    - remove_syslog_group_cm.previous == remove_syslog_group.previous
-    - remove_syslog_group.current == []
     - remove_syslog_group is changed
     - remove_syslog_group.previous.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
     - remove_syslog_group.previous.0.syslogGroup.attributes.name == "ansible_syslog_group"

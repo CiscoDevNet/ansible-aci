@@ -1,11 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2025, Dev Sinha (@DevSinha13) <devsinh@cisco.com>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-# TODO in the documentation section mention the default values for lacp_mode, load_balancing_mode, number_uplinks
 ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
 
 DOCUMENTATION = r"""
@@ -22,25 +23,22 @@ options:
     description:
     - The name of the Enhanced LACP Policy.
     type: str
-    required: true
   domain:
     description:
     - The name of the virtual domain profile where the Enhanced LACP Policy is applied.
     type: str
-    required: true
     aliases: [ domain_name, domain_profile ]
   vm_provider:
     description:
     - The virtualization platform provider for the VMM domain.
     type: str
-    required: true
+    choices: [ cloudfoundry, kubernetes, microsoft, openshift, openstack, redhat, vmware ]
   lacp_mode:
     description:
     - The LACP mode for the policy.
     - Determines whether the policy initiates or responds to LACP negotiations.
     type: str
     choices: [ active, passive ]
-    default: active
   load_balancing_mode:
     description:
     - The load balancing algorithm for distributing traffic across links in the port channel.
@@ -67,13 +65,11 @@ options:
     - src-dst-l4port
     - src-port-id
     - vlan
-    default: src-dst-ip
   number_uplinks:
     description:
     - The minimum number of uplinks required for the port channel.
     - Must be a value between 2 and 8.
     type: int
-    default: 2
   state:
     description:
     - The desired state of the Enhanced LACP Policy.
@@ -83,7 +79,6 @@ options:
     type: str
     choices: [ absent, present, query ]
     default: present
-
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -98,12 +93,152 @@ author:
 - Dev Sinha (@DevSinha13)
 """
 
+EXAMPLES = r"""
+- name: Create an Enhanced LACP Policy
+  cisco.aci.aci_vmm_enhanced_lag_policy:
+    host: apic.example.com
+    username: admin
+    password: SomeSecretPassword
+    name: my_enhanced_lag_policy
+    domain: my_vmm_domain
+    vm_provider: vmware
+    lacp_mode: active
+    load_balancing_mode: src-dst-ip
+    number_uplinks: 4
+    state: present
+
+- name: Simulate creation of an Enhanced LACP Policy (Check Mode)
+  cisco.aci.aci_vmm_enhanced_lag_policy:
+    host: apic.example.com
+    username: admin
+    password: SomeSecretPassword
+    name: my_enhanced_lag_policy
+    domain: my_vmm_domain
+    vm_provider: vmware
+    lacp_mode: active
+    load_balancing_mode: src-dst-ip
+    number_uplinks: 4
+    state: present
+  check_mode: true
+
+- name: Update an existing Enhanced LACP Policy
+  cisco.aci.aci_vmm_enhanced_lag_policy:
+    host: apic.example.com
+    username: admin
+    password: SomeSecretPassword
+    name: my_enhanced_lag_policy
+    domain: my_vmm_domain
+    vm_provider: vmware
+    lacp_mode: passive
+    load_balancing_mode: src-dst-ip-l4port
+    number_uplinks: 6
+    state: present
+
+- name: Query a specific Enhanced LACP Policy
+  cisco.aci.aci_vmm_enhanced_lag_policy:
+    host: apic.example.com
+    username: admin
+    password: SomeSecretPassword
+    name: my_enhanced_lag_policy
+    domain: my_vmm_domain
+    vm_provider: vmware
+    state: query
+  register: query_result
+
+- name: Query all Enhanced LACP Policies in a VMM domain
+  cisco.aci.aci_vmm_enhanced_lag_policy:
+    host: apic.example.com
+    username: admin
+    password: SomeSecretPassword
+    domain: my_vmm_domain
+    vm_provider: vmware
+    state: query
+  register: query_all_result
+
+- name: Ensure idempotency when creating an Enhanced LACP Policy
+  cisco.aci.aci_vmm_enhanced_lag_policy:
+    host: apic.example.com
+    username: admin
+    password: SomeSecretPassword
+    name: my_enhanced_lag_policy
+    domain: my_vmm_domain
+    vm_provider: vmware
+    lacp_mode: active
+    load_balancing_mode: src-dst-ip
+    number_uplinks: 4
+    state: present
+
+- name: Delete an Enhanced LACP Policy
+  cisco.aci.aci_vmm_enhanced_lag_policy:
+    host: apic.example.com
+    username: admin
+    password: SomeSecretPassword
+    name: my_enhanced_lag_policy
+    domain: my_vmm_domain
+    vm_provider: vmware
+    state: absent
+
+- name: Simulate deletion of an Enhanced LACP Policy (Check Mode)
+  cisco.aci.aci_vmm_enhanced_lag_policy:
+    host: apic.example.com
+    username: admin
+    password: SomeSecretPassword
+    name: my_enhanced_lag_policy
+    domain: my_vmm_domain
+    vm_provider: vmware
+    state: absent
+  check_mode: true
+"""
+RETURN = r"""
+current:
+  description: The existing configuration of the Enhanced LACP Policy from the APIC after the module has finished.
+  returned: success
+  type: list
+  sample:
+    [
+        {
+            "lacpEnhancedLagPol": {
+                "attributes": {
+                    "name": "test_enhanced_lag_policy",
+                    "mode": "active",
+                    "lbmode": "src-dst-ip",
+                    "numLinks": "4",
+                    "dn": "uni/vmmp-VMware/dom-test_vmm_dom/vswitchpolcont/enlacplagp-test_enhanced_lag_policy"
+                }
+            }
+        }
+    ]
+error:
+  description: The error information as returned from the APIC.
+  returned: failure
+  type: dict
+  sample:
+    {
+        "code": "801",
+        "text": "property name of enlacplagp-test_enhanced_lag_policy failed validation"
+    }
+proposed:
+  description: The configuration sent to the APIC.
+  returned: info
+  type: dict
+  sample:
+    {
+        "lacpEnhancedLagPol": {
+            "attributes": {
+                "name": "test_enhanced_lag_policy",
+                "mode": "active",
+                "lbmode": "src-dst-ip",
+                "numLinks": "4"
+            }
+        }
+    }
+"""
+
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import (
     ACIModule,
     aci_argument_spec,
     enhanced_lag_spec,
-    netflow_spec,
 )
 from ansible_collections.cisco.aci.plugins.module_utils.aci import (
     aci_annotation_spec,
@@ -125,16 +260,11 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
+    argument_spec.update(enhanced_lag_spec(name_is_required=False))
     argument_spec.update(
-        # FIXME The problem could be that the argument is not recognized but if that is the case then how is the function not throwing an error.
-        # 1.)Try keeping the original function and changing the value here to false
-        # 2.)Dont unpack the dictionary
-        # 3.)Do what was done in vmm_vswitch_policy
-        **enhanced_lag_spec(name_is_required=False),
         domain=dict(type="str", aliases=["domain_name", "domain_profile"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING.keys())),
-        # TODO Ensure that number of uplinks is added adequately
     )
 
     module = AnsibleModule(
