@@ -32,7 +32,7 @@ options:
     description:
     - Severity of events to log to console
     type: str
-    choices: [ alerts, critical, debugging, emergencies, error, information, notifications, warnings ]
+    choices: [ alerts, critical, emergencies]
   local_file_logging:
     description:
     - Log to local file
@@ -46,8 +46,21 @@ options:
   format:
     description:
     - Format of the syslog messages. If omitted when creating a group, ACI defaults to using aci format.
+    - C(rfc5424-ts) is only availible starting from version ACI 5.2(8).
     type: str
-    choices: [ aci, nxos ]
+    choices: [ aci, nxos, rfc5424-ts ]
+  local_file_log_format:
+    description:
+    - The format of the local file log messages. If ommitted then uses same format as the format set for syslog messages.
+    - C(rfc5424-ts) is only availible starting from version ACI 5.2(8).
+    type: str
+    choices: [ aci, nxos, rfc5424-ts ]
+  console_log_format:
+    description:
+    - Format of the console log messages. If ommitted then uses the same format as the format set for syslog messages.
+    - C(rfc5424-ts) is only availible starting from version ACI 5.2(8).
+    type: str
+    choices: [ aci, nxos, rfc5424-ts ]
   include_ms:
     description:
     - Include milliseconds in log timestamps
@@ -97,8 +110,26 @@ EXAMPLES = r"""
     local_file_log_severity: warnings
     console_logging: enabled
     console_log_severity: critical
+    description: syslog group
     state: present
   delegate_to: localhost
+
+- name: Create a syslog group with local_file_log_format and console_log_format
+  cisco.aci.aci_syslog_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    format: aci
+    name: my_syslog_group
+    local_file_logging: enabled
+    local_file_log_severity: warnings
+    console_logging: enabled
+    console_log_severity: critical
+    local_file_log_format: rfc5424-ts
+    console_log_format: rfc5424-ts
+    description: syslog group
+    state: present
+
 
 - name: Disable logging to local file
   cisco.aci.aci_syslog_group:
@@ -254,10 +285,12 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         name=dict(type="str", aliases=["syslog_group", "syslog_group_name"]),
-        format=dict(type="str", choices=["aci", "nxos"]),
+        format=dict(type="str", choices=["aci", "nxos", "rfc5424-ts"]),
+        local_file_log_format=dict(type="str", choices=["aci", "nxos", "rfc5424-ts"]),
+        console_log_format=dict(type="str", choices=["aci", "nxos", "rfc5424-ts"]),
         admin_state=dict(type="str", choices=["enabled", "disabled"]),
         console_logging=dict(type="str", choices=["enabled", "disabled"]),
-        console_log_severity=dict(type="str", choices=["alerts", "critical", "debugging", "emergencies", "error", "information", "notifications", "warnings"]),
+        console_log_severity=dict(type="str", choices=["alerts", "critical", "emergencies"]),
         local_file_logging=dict(type="str", choices=["enabled", "disabled"]),
         local_file_log_severity=dict(
             type="str", choices=["alerts", "critical", "debugging", "emergencies", "error", "information", "notifications", "warnings"]
@@ -284,12 +317,20 @@ def main():
     admin_state = module.params.get("admin_state")
     console_logging = module.params.get("console_logging")
     console_log_severity = module.params.get("console_log_severity")
+    console_log_format = module.params.get("console_log_format")
+    local_file_log_format = module.params.get("local_file_log_format")
     local_file_logging = module.params.get("local_file_logging")
     local_file_log_severity = module.params.get("local_file_log_severity")
     include_ms = aci.boolean(module.params.get("include_ms"))
     include_time_zone = aci.boolean(module.params.get("include_time_zone"))
     state = module.params.get("state")
     description = module.params.get("description")
+
+    if console_log_format is None:
+        console_log_format = format
+
+    if local_file_log_format is None:
+        local_file_log_format = format
 
     aci.construct_url(
         root_class=dict(
@@ -323,12 +364,12 @@ def main():
                 ),
                 dict(
                     syslogFile=dict(
-                        attributes=dict(adminState=local_file_logging, format=format, severity=local_file_log_severity),
+                        attributes=dict(adminState=local_file_logging, format=local_file_log_format, severity=local_file_log_severity),
                     ),
                 ),
                 dict(
                     syslogConsole=dict(
-                        attributes=dict(adminState=console_logging, format=format, severity=console_log_severity),
+                        attributes=dict(adminState=console_logging, format=console_log_format, severity=console_log_severity),
                     ),
                 ),
             ],
