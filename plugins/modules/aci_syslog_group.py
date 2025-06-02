@@ -20,27 +20,29 @@ description:
 options:
   admin_state:
     description:
-    - Administrative state of the syslog group
+    - Administrative state of the syslog group.
     type: str
     choices: [ enabled, disabled ]
   console_logging:
     description:
-    - Log events to console
+    - Log events to console.
     type: str
     choices: [ enabled, disabled ]
   console_log_severity:
     description:
-    - Severity of events to log to console
+    - Severity of events to log to console.
+    - If unset during creation, value defaults to C(alerts).
     type: str
     choices: [ alerts, critical, emergencies]
   local_file_logging:
     description:
-    - Log to local file
+    - Log to local file.
     type: str
     choices: [ enabled, disabled ]
   local_file_log_severity:
     description:
-    - Severity of events to log to local file
+    - Severity of events to log to local file.
+    - If unset during creation, value defaults to C(alerts).
     type: str
     choices: [ alerts, critical, debugging, emergencies, error, information, notifications, warnings ]
   format:
@@ -51,27 +53,29 @@ options:
     choices: [ aci, nxos, rfc5424-ts ]
   local_file_log_format:
     description:
-    - The format of the local file log messages. If ommitted then uses same format as the format set for syslog messages.
+    - The format of the local file log messages.
+    - If unset during creation and O(format) is provided then it is set to the same value as format. If O(format) is not provided it is set to aci.
     - C(rfc5424-ts) is only availible starting from version ACI 5.2(8).
     type: str
     choices: [ aci, nxos, rfc5424-ts ]
   console_log_format:
     description:
-    - Format of the console log messages. If ommitted then uses the same format as the format set for syslog messages.
+    - Format of the console log messages.
+    - If unset during creation and O(format) is provided then it is set to the same value as format. If O(format) is not provided it is set to aci.
     - C(rfc5424-ts) is only availible starting from version ACI 5.2(8).
     type: str
     choices: [ aci, nxos, rfc5424-ts ]
   include_ms:
     description:
-    - Include milliseconds in log timestamps
+    - Include milliseconds in log timestamps.
     type: bool
   include_time_zone:
     description:
-    - Include timezone in log timestamps
+    - Include timezone in log timestamps.
     type: bool
   name:
     description:
-    - Name of the syslog group
+    - Name of the syslog group.
     type: str
     aliases: [ syslog_group, syslog_group_name ]
   description:
