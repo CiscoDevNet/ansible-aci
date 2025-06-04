@@ -44,6 +44,7 @@ options:
     description:
     - The load balancing algorithm for distributing traffic across links in the port channel.
     - See the APIC Management Information Model reference for more details.
+    - The APIC defaults to C(src-dst-ip) when unset during creation
     type: str
     choices:
     - dst-ip
@@ -66,13 +67,12 @@ options:
     - src-dst-l4port
     - src-port-id
     - vlan
-    default: src-dst-ip
   number_uplinks:
     description:
     - The minimum number of uplinks required for the port channel.
     - Must be a value between 2 and 8.
+    - The APIC defaults to 2 when unset during creation
     type: int
-    default: 2
   state:
     description:
     - The desired state of the Enhanced LACP Policy.
