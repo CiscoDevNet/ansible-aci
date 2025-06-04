@@ -39,6 +39,7 @@ options:
     - Determines whether the policy initiates or responds to LACP negotiations.
     type: str
     choices: [ active, passive ]
+    default: active
   load_balancing_mode:
     description:
     - The load balancing algorithm for distributing traffic across links in the port channel.
@@ -65,11 +66,13 @@ options:
     - src-dst-l4port
     - src-port-id
     - vlan
+    default: src-dst-ip
   number_uplinks:
     description:
     - The minimum number of uplinks required for the port channel.
     - Must be a value between 2 and 8.
     type: int
+    default: 2
   state:
     description:
     - The desired state of the Enhanced LACP Policy.
@@ -155,19 +158,6 @@ EXAMPLES = r"""
     state: query
   register: query_all_result
 
-- name: Ensure idempotency when creating an Enhanced LACP Policy
-  cisco.aci.aci_vmm_enhanced_lag_policy:
-    host: apic.example.com
-    username: admin
-    password: SomeSecretPassword
-    name: my_enhanced_lag_policy
-    domain: my_vmm_domain
-    vm_provider: vmware
-    lacp_mode: active
-    load_balancing_mode: src-dst-ip
-    number_uplinks: 4
-    state: present
-
 - name: Delete an Enhanced LACP Policy
   cisco.aci.aci_vmm_enhanced_lag_policy:
     host: apic.example.com
@@ -177,17 +167,6 @@ EXAMPLES = r"""
     domain: my_vmm_domain
     vm_provider: vmware
     state: absent
-
-- name: Simulate deletion of an Enhanced LACP Policy (Check Mode)
-  cisco.aci.aci_vmm_enhanced_lag_policy:
-    host: apic.example.com
-    username: admin
-    password: SomeSecretPassword
-    name: my_enhanced_lag_policy
-    domain: my_vmm_domain
-    vm_provider: vmware
-    state: absent
-  check_mode: true
 """
 RETURN = r"""
 current:
@@ -245,14 +224,8 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import (
     aci_owner_spec,
 )
 
-VM_PROVIDER_MAPPING = dict(
-    cloudfoundry="CloudFoundry",
-    kubernetes="Kubernetes",
-    microsoft="Microsoft",
-    openshift="OpenShift",
-    openstack="OpenStack",
-    redhat="Redhat",
-    vmware="VMware",
+from ansible_collections.cisco.aci.plugins.module_utils.constants import (
+    VM_PROVIDER_MAPPING,
 )
 
 
@@ -291,7 +264,7 @@ def main():
             aci_class="vmmProvP",
             aci_rn="vmmp-{0}".format(VM_PROVIDER_MAPPING.get(vm_provider)),
             module_object=vm_provider,
-            target_filter={"name": vm_provider},
+            target_filter={"vendor": vm_provider},
         ),
         subclass_1=dict(
             aci_class="vmmDomP",
