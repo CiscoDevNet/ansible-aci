@@ -59,6 +59,13 @@ options:
     - I(remote_leaf_pool_id) is required if I(node_type) is C(remote).
     type: str
     aliases: [ pool_id ]
+  commission:
+    description:
+    - Commission adds a new node to the ACI fabric, which allows the node to participate in the fabric's operations and management.
+    - When commission is set to false, the node will only be decommissioned and not removed from the ACI fabric.
+    - This node can be recommissioned and does not need to be created as a new object.
+    type: bool
+    default: true
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -223,6 +230,7 @@ url:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.constants import NODE_TYPE_MAPPING
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+import json
 
 
 # NOTE: (This problem is also present on the APIC GUI)
@@ -237,10 +245,11 @@ def main():
         node_id=dict(type="int"),  # Not required for querying all objects
         pod_id=dict(type="int"),
         role=dict(type="str", choices=["leaf", "spine", "unspecified"], aliases=["role_name"]),
-        node_type=dict(type="str", choices=list(NODE_TYPE_MAPPING.keys())),
+        node_type=dict(type="str", choices=list(NODE_TYPE_MAPPING)),
         remote_leaf_pool_id=dict(type="str", aliases=["pool_id"]),
         serial=dict(type="str", aliases=["serial_number"]),  # Not required for querying all objects
         switch=dict(type="str", aliases=["name", "switch_name"]),
+        commission=dict(type="bool", default=True),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
@@ -252,6 +261,7 @@ def main():
             ["state", "absent", ["node_id", "serial"]],
             ["state", "present", ["node_id", "serial"]],
             ["node_type", "remote", ["remote_leaf_pool_id"]],
+            ["commission", False, ["pod_id", "node_id"]],
         ],
     )
 
@@ -265,6 +275,7 @@ def main():
     remote_leaf_pool_id = module.params.get("remote_leaf_pool_id")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
+    commission = module.params.get("commission")
 
     aci = ACIModule(module)
 
@@ -304,12 +315,75 @@ def main():
 
         aci.get_diff(aci_class="fabricNodeIdentP")
 
+        if commission is False:  # Trigger the decommission process when commission is set to false without removing the node from controller
+            decommission_fabric_node_member_from_controller(aci, False, "decommission", pod_id, node_id)
+        else:
+            # Trigger the commission process when commission is set to true and when the node associated with dhcp client (leaf/spine switches)
+            if verify_node_attached_to_switch(aci, serial):
+                decommission_fabric_node_member_from_controller(aci, False, "commission", pod_id, node_id)
+
         aci.post_config()
 
     elif state == "absent":
-        aci.delete_config()
+
+        if verify_node_attached_to_switch(aci, serial):
+            # After the decommission, the fabric node will be removed automatically when remove_from_controller is set to true
+            decommission_fabric_node_member_from_controller(aci, True, "decommission", pod_id, node_id)
+            aci.post_config()
+        else:
+            aci.delete_config()
 
     aci.exit_json(**aci.result)
+
+
+def decommission_fabric_node_member_from_controller(aci, remove_from_controller, action, pod_id, node_id):
+    aci.construct_url(
+        root_class=dict(
+            aci_class="fabricRsDecommissionNode",
+            aci_rn="topology/pod-{0}/node-{1}".format(pod_id, node_id),
+        )
+    )
+
+    if action == "commission":
+        return aci.payload(
+            aci_class="fabricRsDecommissionNode",
+            class_config=dict(
+                tDn="topology/pod-{0}/node-{1}".format(pod_id, node_id),
+                status="deleted",
+            ),
+        )
+    else:
+        # Decommission the node from the controller
+        # If remove_from_controller is true, the node will be removed from the controller/ACI fabric after decommissioning
+        # If remove_from_controller is false, the node will only be decommissioned
+        return aci.payload(
+            aci_class="fabricRsDecommissionNode",
+            class_config=dict(
+                tDn="topology/pod-{0}/node-{1}".format(pod_id, node_id),
+                status="created,modified",
+                removeFromController=remove_from_controller,
+            ),
+        )
+
+
+def verify_node_attached_to_switch(aci, serial):
+    # Identify DHCP clients using the fabric node's serial number.
+    dhcp_client_cont = aci.api_call("GET", "{0}/api/node/mo/client-[{1}].json".format(aci.base_url, serial), return_response=True)
+    response_data = json.loads(dhcp_client_cont[0].read())
+
+    if response_data and response_data.get("imdata"):
+        data = response_data.get("imdata")[0]
+        ip = data.get("dhcpClient", {}).get("attributes", {}).get("ip", "0.0.0.0")
+        node_id = data.get("dhcpClient", {}).get("attributes", {}).get("nodeId", "0")
+        node_role = data.get("dhcpClient", {}).get("attributes", {}).get("nodeRole", "")
+
+        if (ip != "0.0.0.0" and node_id != "0") and (node_role == "leaf" or node_role == "spine"):
+
+            # If true, initiate the decommission process to remove the switches attached to the node
+            return True  # When the node is attached to the switch
+
+    # If false, ignore the decommission process
+    return False  # When the node is not attached to the switch
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
   ansible.builtin.fail:
-    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+    msg: "Please define the following variables: aci_hostname, aci_username and aci_password."
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - name: Set vars
@@ -15,10 +15,10 @@
       host: "{{ aci_hostname }}"
       username: "{{ aci_username }}"
       password: "{{ aci_password }}"
-      validate_certs: '{{ aci_validate_certs | default(false) }}'
-      use_ssl: '{{ aci_use_ssl | default(true) }}'
-      use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: '{{ aci_output_level | default("info") }}'
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
+      output_level: "{{ aci_output_level | default('info') }}"
 
 # CLEAN ENVIRONMENT
 - name: Remove fabric node
@@ -33,6 +33,13 @@
     <<: *aci_info
     serial: ansible_test_2
     node_id: 106
+    state: absent
+
+- name: Remove fabric node 107
+  cisco.aci.aci_fabric_node: &rm_node_107
+    <<: *aci_info
+    serial: ansible_test_107
+    node_id: 107
     state: absent
 
 # ADD FABRIC NODE
@@ -93,21 +100,20 @@
 - name: Verify add_fabric_node
   ansible.builtin.assert:
     that:
-    - cm_add_fabric_node_tier_2 is changed
-    - nm_add_fabric_node is changed
-    - nm_add_fabric_node.current.0.fabricNodeIdentP.attributes.annotation == 'orchestrator:ansible'
-    - nm_add_fabric_node.current.0.fabricNodeIdentP.attributes.role == 'leaf'
-    - nm_add_fabric_node.current.0.fabricNodeIdentP.attributes.nodeType == 'tier-2-leaf'
-    - nm_add_fabric_node_remote is changed
-    - nm_add_fabric_node_remote.current.0.fabricNodeIdentP.attributes.nodeType == 'remote-leaf-wan'
-    - nm_add_fabric_node_remote.current.0.fabricNodeIdentP.attributes.extPoolId == '2'
-    # FIXME: Module is not idempotent
-    - cm_add_fabric_node_again is not changed
-    - nm_add_fabric_node_again is not changed
-    - test_error_mutually_exclusive.msg == "External Pool Id is not compatible with a node type other than 'remote'."
-    - test_error_change__node_type.error.text == "Create-only and naming props cannot be modified after creation, class=fabricNodeIdentP, prop=nodeType"
-    - test_error_change_Pool_Id.error.text == "Create-only and naming props cannot be modified after creation, class=fabricNodeIdentP, prop=extPoolId"
-
+      - cm_add_fabric_node_tier_2 is changed
+      - nm_add_fabric_node is changed
+      - nm_add_fabric_node.current.0.fabricNodeIdentP.attributes.annotation == 'orchestrator:ansible'
+      - nm_add_fabric_node.current.0.fabricNodeIdentP.attributes.role == 'leaf'
+      - nm_add_fabric_node.current.0.fabricNodeIdentP.attributes.nodeType == 'tier-2-leaf'
+      - nm_add_fabric_node_remote is changed
+      - nm_add_fabric_node_remote.current.0.fabricNodeIdentP.attributes.nodeType == 'remote-leaf-wan'
+      - nm_add_fabric_node_remote.current.0.fabricNodeIdentP.attributes.extPoolId == '2'
+      # FIXME: Module is not idempotent
+      - cm_add_fabric_node_again is not changed
+      - nm_add_fabric_node_again is not changed
+      - test_error_mutually_exclusive.msg == "External Pool Id is not compatible with a node type other than 'remote'."
+      - test_error_change__node_type.error.text == "Create-only and naming props cannot be modified after creation, class=fabricNodeIdentP, prop=nodeType"
+      - test_error_change_Pool_Id.error.text == "Create-only and naming props cannot be modified after creation, class=fabricNodeIdentP, prop=extPoolId"
 
 # CHANGE FABRIC NODE
 - name: Change description of fabric node (check_mode)
@@ -139,12 +145,11 @@
 - name: Verify add_fabric_node_descr
   ansible.builtin.assert:
     that:
-    - cm_add_fabric_node_descr is changed
-    - nm_add_fabric_node_descr is changed
-    # FIXME: Module is not idempotent
-    - cm_add_fabric_node_descr_again is not changed
-    - nm_add_fabric_node_descr_again is not changed
-
+      - cm_add_fabric_node_descr is changed
+      - nm_add_fabric_node_descr is changed
+      # FIXME: Module is not idempotent
+      - cm_add_fabric_node_descr_again is not changed
+      - nm_add_fabric_node_descr_again is not changed
 
 # ADD FABRIC NODE AGAIN
 - name: Add fabric node again with no description (check_mode)
@@ -159,20 +164,98 @@
 - name: Verify add_fabric_node_again_no_descr
   ansible.builtin.assert:
     that:
-    # FIXME: Module is not idempotent
-    - cm_add_fabric_node_again_no_descr is not changed
-    - nm_add_fabric_node_again_no_descr is not changed
+      # FIXME: Module is not idempotent
+      - cm_add_fabric_node_again_no_descr is not changed
+      - nm_add_fabric_node_again_no_descr is not changed
 
+- name: Add fabric node 107
+  cisco.aci.aci_fabric_node:
+    <<: *aci_info
+    serial: ansible_test_107
+    node_id: 107
+    switch: anstest_107
+    role: leaf
+    node_type: remote
+    remote_leaf_pool_id: 2
+    state: present
+  register: add_node_107
+
+- name: Assertion check for add fabric node 107
+  ansible.builtin.assert:
+    that:
+      - add_node_107 is changed
+      - add_node_107.current.0.fabricNodeIdentP.attributes.dn == "uni/controller/nodeidentpol/nodep-ansible_test_107"
+      - add_node_107.current.0.fabricNodeIdentP.attributes.extPoolId == "2"
+      - add_node_107.current.0.fabricNodeIdentP.attributes.fabricId == "1"
+      - add_node_107.current.0.fabricNodeIdentP.attributes.name == "anstest_107"
+      - add_node_107.current.0.fabricNodeIdentP.attributes.nodeId == "107"
+      - add_node_107.current.0.fabricNodeIdentP.attributes.nodeType == "remote-leaf-wan"
+      - add_node_107.current.0.fabricNodeIdentP.attributes.podId == "1"
+      - add_node_107.current.0.fabricNodeIdentP.attributes.role == "leaf"
+      - add_node_107.current.0.fabricNodeIdentP.attributes.serial == "ansible_test_107"
+
+- name: Decommission fabric node 107 without pod_id
+  cisco.aci.aci_fabric_node:
+    <<: *aci_info
+    serial: ansible_test_107
+    node_id: 107
+    switch: anstest_107
+    role: leaf
+    node_type: remote
+    remote_leaf_pool_id: 2
+    commission: false
+    state: present
+  register: nt_decommission_node_107
+  ignore_errors: true
+
+- name: Decommission fabric node 107
+  cisco.aci.aci_fabric_node:
+    <<: *aci_info
+    serial: ansible_test_107
+    node_id: 107
+    switch: anstest_107
+    role: leaf
+    node_type: remote
+    remote_leaf_pool_id: 2
+    pod_id: 1
+    commission: false
+    state: present
+  register: decommission_node_107
+
+- name: Assertion check for decommission fabric node 107
+  ansible.builtin.assert:
+    that:
+      - nt_decommission_node_107 is not changed
+      - nt_decommission_node_107.msg == "commission is False but all of the following are missing{{':'}} pod_id"
+      - decommission_node_107 is not changed
+      - decommission_node_107.current.0.fabricNodeIdentP.attributes.dn == "uni/controller/nodeidentpol/nodep-ansible_test_107"
+      - decommission_node_107.current.0.fabricNodeIdentP.attributes.extPoolId == "2"
+      - decommission_node_107.current.0.fabricNodeIdentP.attributes.fabricId == "1"
+      - decommission_node_107.current.0.fabricNodeIdentP.attributes.name == "anstest_107"
+      - decommission_node_107.current.0.fabricNodeIdentP.attributes.nodeId == "107"
+      - decommission_node_107.current.0.fabricNodeIdentP.attributes.nodeType == "remote-leaf-wan"
+      - decommission_node_107.current.0.fabricNodeIdentP.attributes.podId == "1"
+      - decommission_node_107.current.0.fabricNodeIdentP.attributes.role == "leaf"
+      - decommission_node_107.current.0.fabricNodeIdentP.attributes.serial == "ansible_test_107"
+      - decommission_node_107.previous.0.fabricNodeIdentP.attributes.dn == "uni/controller/nodeidentpol/nodep-ansible_test_107"
+      - decommission_node_107.previous.0.fabricNodeIdentP.attributes.extPoolId == "2"
+      - decommission_node_107.previous.0.fabricNodeIdentP.attributes.fabricId == "1"
+      - decommission_node_107.previous.0.fabricNodeIdentP.attributes.name == "anstest_107"
+      - decommission_node_107.previous.0.fabricNodeIdentP.attributes.nodeId == "107"
+      - decommission_node_107.previous.0.fabricNodeIdentP.attributes.nodeType == "remote-leaf-wan"
+      - decommission_node_107.previous.0.fabricNodeIdentP.attributes.podId == "1"
+      - decommission_node_107.previous.0.fabricNodeIdentP.attributes.role == "leaf"
+      - decommission_node_107.previous.0.fabricNodeIdentP.attributes.serial == "ansible_test_107"
 
 # QUERY ALL FABRIC NODES
 - name: Query fabric nodes (check_mode)
   cisco.aci.aci_fabric_node: &aci_fabric_node_query
-    host: '{{ aci_hostname }}'
-    username: '{{ aci_username }}'
-    password: '{{ aci_password }}'
-    validate_certs: '{{ aci_validate_certs | default(false) }}'
-    use_ssl: '{{ aci_use_ssl | default(true) }}'
-    use_proxy: '{{ aci_use_proxy | default(true) }}'
+    host: "{{ aci_hostname }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: "{{ aci_validate_certs | default(false) }}"
+    use_ssl: "{{ aci_use_ssl | default(true) }}"
+    use_proxy: "{{ aci_use_proxy | default(true) }}"
     output_level: '{{ aci_output_level | default("info") }}'
     state: query
   check_mode: true
@@ -185,10 +268,9 @@
 - name: Verify query_all_fabric_nodes
   ansible.builtin.assert:
     that:
-    - cm_query_all_fabric_nodes is not changed
-    - nm_query_all_fabric_nodes is not changed
-    - cm_query_all_fabric_nodes == nm_query_all_fabric_nodes
-
+      - cm_query_all_fabric_nodes is not changed
+      - nm_query_all_fabric_nodes is not changed
+      - cm_query_all_fabric_nodes == nm_query_all_fabric_nodes
 
 # QUERY A FABRIC NODE
 - name: Query our fabric_node
@@ -207,10 +289,9 @@
 - name: Verify query_fabric_node
   ansible.builtin.assert:
     that:
-    - cm_query_fabric_node is not changed
-    - nm_query_fabric_node is not changed
-    - cm_query_fabric_node == nm_query_fabric_node
-
+      - cm_query_fabric_node is not changed
+      - nm_query_fabric_node is not changed
+      - cm_query_fabric_node == nm_query_fabric_node
 
 # REMOVE FABRIC NODE
 - name: Remove fabric_node (check_mode)
@@ -234,11 +315,30 @@
 - name: Verify remove_fabric_node
   ansible.builtin.assert:
     that:
-    - cm_remove_fabric_node is changed
-    - nm_remove_fabric_node is changed
-    - cm_remove_fabric_node_again is not changed
-    - nm_remove_fabric_node_again is not changed
+      - cm_remove_fabric_node is changed
+      - nm_remove_fabric_node is changed
+      - cm_remove_fabric_node_again is not changed
+      - nm_remove_fabric_node_again is not changed
 
+- name: Remove fabric node 107
+  cisco.aci.aci_fabric_node:
+    <<: *rm_node_107
+  register: rm_node_107
+
+- name: Assertion check for remove fabric node 107
+  ansible.builtin.assert:
+    that:
+      - rm_node_107 is changed
+      - rm_node_107.current == []
+      - rm_node_107.previous.0.fabricNodeIdentP.attributes.dn == "uni/controller/nodeidentpol/nodep-ansible_test_107"
+      - rm_node_107.previous.0.fabricNodeIdentP.attributes.extPoolId == "2"
+      - rm_node_107.previous.0.fabricNodeIdentP.attributes.fabricId == "1"
+      - rm_node_107.previous.0.fabricNodeIdentP.attributes.name == "anstest_107"
+      - rm_node_107.previous.0.fabricNodeIdentP.attributes.nodeId == "107"
+      - rm_node_107.previous.0.fabricNodeIdentP.attributes.nodeType == "remote-leaf-wan"
+      - rm_node_107.previous.0.fabricNodeIdentP.attributes.podId == "1"
+      - rm_node_107.previous.0.fabricNodeIdentP.attributes.role == "leaf"
+      - rm_node_107.previous.0.fabricNodeIdentP.attributes.serial == "ansible_test_107"
 
 # QUERY NON-EXISTING LEAF PROFILE
 - name: Query non-existing fabric_node (check_mode)
@@ -257,6 +357,6 @@
 - name: Verify query_non_fabric_node
   ansible.builtin.assert:
     that:
-    - cm_query_non_fabric_node is not changed
-    - nm_query_non_fabric_node is not changed
-    - cm_query_non_fabric_node == nm_query_non_fabric_node
+      - cm_query_non_fabric_node is not changed
+      - nm_query_non_fabric_node is not changed
+      - cm_query_non_fabric_node == nm_query_non_fabric_node
