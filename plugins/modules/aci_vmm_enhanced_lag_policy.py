@@ -12,9 +12,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_vmm_enhanced_lag_policy
-short_description: Manage Enhanced LACP Policy for Virtual Machine Manager (VMM) in Cisco ACI
+short_description: Manage Enhanced LACP Policy for Virtual Machine Manager (VMM) in Cisco ACI (lacp:EnhancedLagPol)
 description:
-- Manage Enhanced LACP Policy (lacpEnhancedLagPol) for VMM domains on Cisco ACI fabrics.
+- Manage Enhanced LACP Policy for VMM domains on Cisco ACI fabrics.
 - The Enhanced LACP Policy allows you to configure advanced Link Aggregation Control Protocol (LACP) settings for virtual switches in VMM domains.
 - This policy is a child of the C(vmmVSwitchPolicyCont) class.
 
@@ -237,7 +237,7 @@ def main():
     argument_spec.update(
         domain=dict(type="str", aliases=["domain_name", "domain_profile"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING.keys())),
+        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING)),
     )
 
     module = AnsibleModule(
