@@ -47,22 +47,23 @@ options:
     choices: [ alerts, critical, debugging, emergencies, error, information, notifications, warnings ]
   format:
     description:
-    - Format of the syslog messages. If omitted when creating a group, ACI defaults to using aci format.
-    - C(rfc5424-ts) is only availible starting from version ACI 5.2(8).
+    - Format of the syslog messages.
+    - If unset during creation the value defaults to C(aci).
+    - C(rfc5424-ts) is only available starting from ACI version 5.2(8).
     type: str
     choices: [ aci, nxos, rfc5424-ts ]
   local_file_log_format:
     description:
     - The format of the local file log messages.
-    - If unset during creation and O(format) is provided then it is set to the same value as format. If O(format) is not provided it is set to aci.
-    - C(rfc5424-ts) is only availible starting from version ACI 5.2(8).
+    - If unset during creation and O(format) is provided then it is set to the same value as format. If O(format) is not provided it is set to C(aci).
+    - C(rfc5424-ts) is only available starting from ACI version 5.2(8).
     type: str
     choices: [ aci, nxos, rfc5424-ts ]
   console_log_format:
     description:
     - Format of the console log messages.
-    - If unset during creation and O(format) is provided then it is set to the same value as format. If O(format) is not provided it is set to aci.
-    - C(rfc5424-ts) is only availible starting from version ACI 5.2(8).
+    - If unset during creation and O(format) is provided then it is set to the same value as format. If O(format) is not provided it is set to C(aci).
+    - C(rfc5424-ts) is only available starting from ACI version 5.2(8).
     type: str
     choices: [ aci, nxos, rfc5424-ts ]
   include_ms:
