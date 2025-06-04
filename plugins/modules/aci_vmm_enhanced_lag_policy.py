@@ -37,9 +37,9 @@ options:
     description:
     - The LACP mode for the policy.
     - Determines whether the policy initiates or responds to LACP negotiations.
+    - The APIC defaults to C(active) when unset during creation.
     type: str
     choices: [ active, passive ]
-    default: active
   load_balancing_mode:
     description:
     - The load balancing algorithm for distributing traffic across links in the port channel.
