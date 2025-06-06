@@ -358,6 +358,7 @@ VM_PROVIDER_MAPPING = dict(
     openstack="OpenStack",
     redhat="Redhat",
     vmware="VMware",
+    nutanix="Nutanix",
 )
 
 
@@ -382,7 +383,7 @@ def main():
         resolution_immediacy=dict(type="str", choices=["immediate", "lazy", "pre-provision"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        vm_provider=dict(type="str", choices=["cloudfoundry", "kubernetes", "microsoft", "openshift", "openstack", "redhat", "vmware"]),
+        vm_provider=dict(type="str", choices=["cloudfoundry", "kubernetes", "microsoft", "openshift", "openstack", "redhat", "vmware","nutanix"]),
         promiscuous=dict(type="str", default="reject", choices=["accept", "reject"]),
         custom_epg_name=dict(type="str"),
         delimiter=dict(type="str", choices=["|", "~", "!", "@", "^", "+", "=", "_"]),
