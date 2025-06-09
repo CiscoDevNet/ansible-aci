@@ -71,7 +71,7 @@ options:
     description:
     - The minimum number of uplinks required for the port channel.
     - Must be a value between 2 and 8.
-    - The APIC defaults to 2 when unset during creation
+    - The APIC defaults to 2 when unset during creation 
     type: int
   state:
     description:
@@ -87,6 +87,8 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 - cisco.aci.owner
 
+notes:
+- The I(vmm_domain) and I(vSwitch_policy) must exist before using this module in a playbook.
 seealso:
 - module: cisco.aci.aci_domain
 - name: APIC Management Information Model reference
