@@ -71,7 +71,7 @@ options:
     description:
     - The minimum number of uplinks required for the port channel.
     - Must be a value between 2 and 8.
-    - The APIC defaults to 2 when unset during creation 
+    - The APIC defaults to 2 when unset during creation
     type: int
   state:
     description:
