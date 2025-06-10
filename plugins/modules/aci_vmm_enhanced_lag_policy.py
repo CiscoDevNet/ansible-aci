@@ -15,8 +15,7 @@ module: aci_vmm_enhanced_lag_policy
 short_description: Manage Enhanced LACP Policy for Virtual Machine Manager (VMM) in Cisco ACI (lacp:EnhancedLagPol)
 description:
 - Manage Enhanced LACP Policy for VMM domains on Cisco ACI fabrics.
-- The Enhanced LACP Policy allows you to configure advanced Link Aggregation Control Protocol (LACP) settings for virtual switches in VMM domains.
-- This policy is a child of the C(vmmVSwitchPolicyCont) class.
+- The Enhanced LACP Policy allows you to configure advanced Link Aggregation Control Protocol settings for virtual switches in VMM domains.
 
 options:
   name:
@@ -71,7 +70,7 @@ options:
     description:
     - The minimum number of uplinks required for the port channel.
     - Must be a value between 2 and 8.
-    - The APIC defaults to 2 when unset during creation
+    - The APIC defaults to 2 when unset during creation 
     type: int
   state:
     description:
@@ -111,20 +110,6 @@ EXAMPLES = r"""
     load_balancing_mode: src-dst-ip
     number_uplinks: 4
     state: present
-
-- name: Simulate creation of an Enhanced LACP Policy (Check Mode)
-  cisco.aci.aci_vmm_enhanced_lag_policy:
-    host: apic.example.com
-    username: admin
-    password: SomeSecretPassword
-    name: my_enhanced_lag_policy
-    domain: my_vmm_domain
-    vm_provider: vmware
-    lacp_mode: active
-    load_balancing_mode: src-dst-ip
-    number_uplinks: 4
-    state: present
-  check_mode: true
 
 - name: Update an existing Enhanced LACP Policy
   cisco.aci.aci_vmm_enhanced_lag_policy:
