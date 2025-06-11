@@ -91,6 +91,7 @@ notes:
 - The modules M(cisco.aci.aci_domain) and M(cisco.aci.aci_vmm_vswitch_policy) can be used for this.
 seealso:
 - module: cisco.aci.aci_domain
+- module: cisco.aci.aci_vmm_vswitch_policy
 - name: APIC Management Information Model reference
   description: More information about the internal APIC classes B(lacp:EnhancedLagPol).
   link: https://developer.cisco.com/docs/apic-mim-ref/
@@ -264,7 +265,6 @@ def main():
             aci_class="vmmVSwitchPolicyCont",
             aci_rn="vswitchpolcont",
             module_object="vswitchpolcont",
-            target_filter={"name": "vswitchpolcont"},
         ),
         subclass_3=dict(
             aci_class="lacpEnhancedLagPol",
