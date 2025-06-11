@@ -50,22 +50,25 @@ options:
     - Format of the syslog messages.
     - If unset during creation the value defaults to C(aci).
     - C(rfc5424-ts) is only available starting from ACI version 5.2(8).
+    - C(enhanced_log) is only available starting from ACI version 6.0(9d) and is an alias to C(rfc5424-ts).
     type: str
-    choices: [ aci, nxos, rfc5424-ts ]
+    choices: [ aci, nxos, rfc5424-ts, enhanced_log ]
   local_file_log_format:
     description:
     - The format of the local file log messages.
     - If unset during creation and O(format) is provided then it is set to the same value as format. If O(format) is not provided it is set to C(aci).
     - C(rfc5424-ts) is only available starting from ACI version 5.2(8).
+    - C(enhanced_log) is only available starting from ACI version 6.0(9d) and is an alias to C(rfc5424-ts).
     type: str
-    choices: [ aci, nxos, rfc5424-ts ]
+    choices: [ aci, nxos, rfc5424-ts, enhanced_log ]
   console_log_format:
     description:
     - Format of the console log messages.
     - If unset during creation and O(format) is provided then it is set to the same value as format. If O(format) is not provided it is set to C(aci).
     - C(rfc5424-ts) is only available starting from ACI version 5.2(8).
+    - C(enhanced_log) is only available starting from ACI version 6.0(9d) and is an alias to C(rfc5424-ts).
     type: str
-    choices: [ aci, nxos, rfc5424-ts ]
+    choices: [ aci, nxos, rfc5424-ts, enhanced_log ]
   include_ms:
     description:
     - Include milliseconds in log timestamps.
@@ -290,9 +293,9 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         name=dict(type="str", aliases=["syslog_group", "syslog_group_name"]),
-        format=dict(type="str", choices=["aci", "nxos", "rfc5424-ts"]),
-        local_file_log_format=dict(type="str", choices=["aci", "nxos", "rfc5424-ts"]),
-        console_log_format=dict(type="str", choices=["aci", "nxos", "rfc5424-ts"]),
+        format=dict(type="str", choices=["aci", "nxos", "rfc5424-ts", "enhanced_log"]),
+        local_file_log_format=dict(type="str", choices=["aci", "nxos", "rfc5424-ts", "enhanced_log"]),
+        console_log_format=dict(type="str", choices=["aci", "nxos", "rfc5424-ts", "enhanced_log"]),
         admin_state=dict(type="str", choices=["enabled", "disabled"]),
         console_logging=dict(type="str", choices=["enabled", "disabled"]),
         console_log_severity=dict(type="str", choices=["alerts", "critical", "emergencies"]),
@@ -318,12 +321,15 @@ def main():
     aci = ACIModule(module)
 
     name = module.params.get("name")
-    format = module.params.get("format")
+    main_format = module.params.get("format")
+    format = "rfc5424-ts" if main_format == "enhanced_log" else main_format
     admin_state = module.params.get("admin_state")
     console_logging = module.params.get("console_logging")
     console_log_severity = module.params.get("console_log_severity")
-    console_log_format = module.params.get("console_log_format")
-    local_file_log_format = module.params.get("local_file_log_format")
+    console_format = module.params.get("console_log_format")
+    console_log_format = "rfc5424-ts" if console_format == "enhanced_log" else console_format
+    local_format = module.params.get("local_file_log_format")
+    local_file_log_format = "rfc5424-ts" if local_format == "enhanced_log" else local_format
     local_file_logging = module.params.get("local_file_logging")
     local_file_log_severity = module.params.get("local_file_log_severity")
     include_ms = aci.boolean(module.params.get("include_ms"))

@@ -41,6 +41,12 @@
     name: ansible_syslog_new
     state: absent
 
+- name: Remove enhanced_log_test if it already exists
+  cisco.aci.aci_syslog_group:
+    <<: *aci_info
+    name: syslog_enhanced_log
+    state: absent
+
 # ADD syslog group(Check mode)
 - name: Add syslog group (version >= 4) - (Check mode)
   cisco.aci.aci_syslog_group: &aci_syslog_present
@@ -306,7 +312,6 @@
       ansible.builtin.set_fact:
         sorted_new: "{{ add_syslog_new_format.current[0].syslogGroup.children | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}" 
 
-
     - name: Verify that the format rfc5424-ts is valid for syslog group and children
       ansible.builtin.assert:
         that:
@@ -318,6 +323,41 @@
         - add_syslog_new_format.current.0.syslogGroup.attributes.descr == 'Description for the syslog group'
         - sorted_new.0.syslogConsole.attributes.format == "rfc5424-ts" 
         - sorted_new.1.syslogFile.attributes.format == "rfc5424-ts"
+
+- name: Test enhanced_log format
+  when: version.current.0.topSystem.attributes.version is version('6', '>=')
+  block:
+    - name: Added new syslog group with format as enhanced_log (version >= 6) 
+      cisco.aci.aci_syslog_group:
+        <<: *aci_info
+        name: syslog_enhanced_log
+        admin_state: enabled
+        format: enhanced_log
+        local_file_logging: enabled
+        local_file_log_severity: warnings
+        console_log_severity: critical
+        console_logging: enabled
+        local_file_log_format: enhanced_log
+        console_log_format: enhanced_log
+        description: Description for the syslog group
+        state: present
+      register: enhanced_log_test
+    
+    - name: Sort updated children by name for enhanced_log
+      ansible.builtin.set_fact:
+        sorted_enhanced_log: "{{ enhanced_log_test.current[0].syslogGroup.children | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}" 
+    
+    - name: Verify that the format enhanced_log is valid for syslog group and children
+      ansible.builtin.assert:
+        that:
+        - enhanced_log_test is changed
+        - enhanced_log_test.current.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-syslog_enhanced_log"
+        - enhanced_log_test.current.0.syslogGroup.attributes.name == "syslog_enhanced_log"
+        - enhanced_log_test.current.0.syslogGroup.attributes.format == "rfc5424-ts"
+        - enhanced_log_test.current.0.syslogGroup.attributes.annotation == 'orchestrator:ansible'
+        - enhanced_log_test.current.0.syslogGroup.attributes.descr == 'Description for the syslog group'
+        - sorted_enhanced_log.0.syslogConsole.attributes.format == "rfc5424-ts" 
+        - sorted_enhanced_log.1.syslogFile.attributes.format == "rfc5424-ts"
 
 # QUERY syslog group
 - name: Query the syslog group
@@ -377,4 +417,10 @@
   cisco.aci.aci_syslog_group:
     <<: *aci_info
     name: ansible_syslog_new
+    state: absent
+
+- name: Remove enhanced_log_test
+  cisco.aci.aci_syslog_group:
+    <<: *aci_info
+    name: syslog_enhanced_log
     state: absent
