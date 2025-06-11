@@ -1,0 +1,73 @@
+# Test code for the ACI modules
+# Copyright: (c) 2017, Jacob McGill (@jmcgill298)
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+    
+# GET Credentials from the inventory
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: debug
+      
+- name: Clear existing setup
+  cisco.aci.aci_tenant:
+    <<: *aci_info
+    tenant: ansible_test
+    state: absent
+
+- name: ensure tenant exists for tests to kick off
+  cisco.aci.aci_tenant: &aci_tenant_present
+    <<: *aci_info
+    state: present
+    tenant: ansible_test
+  register: tenant_present
+
+- name: create vrf
+  cisco.aci.aci_vrf:
+    <<: *aci_tenant_present
+    vrf: vrf_test
+
+- name: create vrf fallback route - check mode
+  cisco.aci.aci_vrf_fallback_route: &fbrg_info
+    <<: *aci_info
+    tenant: ansible_test
+    vrf: vrf_test
+    name: test_fallback_route_group
+    fallback_route: 1.1.1.1/2
+    fallback_members: 
+      - 1.1.1.1
+      - 2.2.2.2
+      - 4.4.4.4
+    description: Test for fallback route group
+    state: present
+  check_mode: true
+  register: vrf_fbrg_cm
+
+- name: create vrf fallback route - no check mode
+  cisco.aci.aci_vrf_fallback_route:
+    <<: *fbrg_info
+  register: vrf_fbrg
+
+- name: verify that vrf_fbrg has been created with correct attributes
+  ansible.builtin.assert:
+    that:
+    - vrf_fbrg.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group"
+    - vrf_fbrg.current.0.fvFBRGroup.children.3.fvFBRoute.attributes.fbrPrefix == "1.1.1.1/2"
+    # - vrf_fbrg.current.0.fvFBRGroup.attributes.fallback_members[0] == "1.1.1.1"
+
+  
+  
+
+
+
