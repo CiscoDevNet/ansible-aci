@@ -47,6 +47,8 @@ VM_PROVIDER_MAPPING = dict(
     vmware="VMware",
 )
 
+SYSLOG_FORMATS = {"enhanced_log": "rfc5424-ts", "nxos": "nxos", "aci": "aci", "rfc5424-ts": "rfc5424-ts"}
+
 MATCH_TYPE_GROUP_MAPPING = {"all": "ALL", "all_in_pod": "ALL_IN_POD", "range": "range"}
 
 MATCH_FC_FILL_PATTERN_MAPPING = {"arbff": "ARBFF", "idle": "IDLE"}
