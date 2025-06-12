@@ -286,6 +286,7 @@ url:
 
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.cisco.aci.plugins.module_utils.constants import SYSLOG_FORMATS
 
 
 def main():
@@ -321,15 +322,12 @@ def main():
     aci = ACIModule(module)
 
     name = module.params.get("name")
-    main_format = module.params.get("format")
-    format = "rfc5424-ts" if main_format == "enhanced_log" else main_format
+    format = SYSLOG_FORMATS.get(module.params.get("format"))
     admin_state = module.params.get("admin_state")
     console_logging = module.params.get("console_logging")
     console_log_severity = module.params.get("console_log_severity")
-    console_format = module.params.get("console_log_format")
-    console_log_format = "rfc5424-ts" if console_format == "enhanced_log" else console_format
-    local_format = module.params.get("local_file_log_format")
-    local_file_log_format = "rfc5424-ts" if local_format == "enhanced_log" else local_format
+    console_log_format = SYSLOG_FORMATS.get(module.params.get("console_log_format"))
+    local_file_log_format = SYSLOG_FORMATS.get(module.params.get("local_file_log_format"))
     local_file_logging = module.params.get("local_file_logging")
     local_file_log_severity = module.params.get("local_file_log_severity")
     include_ms = aci.boolean(module.params.get("include_ms"))
