@@ -294,9 +294,9 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         name=dict(type="str", aliases=["syslog_group", "syslog_group_name"]),
-        format=dict(type="str", choices=["aci", "nxos", "rfc5424-ts", "enhanced_log"]),
-        local_file_log_format=dict(type="str", choices=["aci", "nxos", "rfc5424-ts", "enhanced_log"]),
-        console_log_format=dict(type="str", choices=["aci", "nxos", "rfc5424-ts", "enhanced_log"]),
+        format=dict(type="str", choices=list(SYSLOG_FORMATS)),
+        local_file_log_format=dict(type="str", choices=list(SYSLOG_FORMATS)),
+        console_log_format=dict(type="str", choices=list(SYSLOG_FORMATS)),
         admin_state=dict(type="str", choices=["enabled", "disabled"]),
         console_logging=dict(type="str", choices=["enabled", "disabled"]),
         console_log_severity=dict(type="str", choices=["alerts", "critical", "emergencies"]),
