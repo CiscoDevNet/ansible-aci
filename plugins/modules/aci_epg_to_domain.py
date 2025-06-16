@@ -129,7 +129,7 @@ options:
     - Support for Kubernetes was added in ACI v3.0.
     - Support for CloudFoundry, OpenShift and Red Hat was added in ACI v3.1.
     type: str
-    choices: [ cloudfoundry, kubernetes, microsoft, openshift, openstack, redhat, vmware ]
+    choices: [ cloudfoundry, kubernetes, microsoft, openshift, openstack, redhat, vmware, nutanix ]
   custom_epg_name:
     description:
     - The custom epg name in VMM domain association.
@@ -383,7 +383,7 @@ def main():
         resolution_immediacy=dict(type="str", choices=["immediate", "lazy", "pre-provision"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
-        vm_provider=dict(type="str", choices=["cloudfoundry", "kubernetes", "microsoft", "openshift", "openstack", "redhat", "vmware","nutanix"]),
+        vm_provider=dict(type="str", choices=["cloudfoundry", "kubernetes", "microsoft", "openshift", "openstack", "redhat", "vmware", "nutanix"]),
         promiscuous=dict(type="str", default="reject", choices=["accept", "reject"]),
         custom_epg_name=dict(type="str"),
         delimiter=dict(type="str", choices=["|", "~", "!", "@", "^", "+", "=", "_"]),
