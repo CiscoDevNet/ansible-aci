@@ -236,22 +236,42 @@
           vmm_uplink_active: [ 3, 4 ]
         register: vmm_uplink_change_active
 
+      - name: Sort vmm_uplink children by name
+        ansible.builtin.set_fact:   
+          vmm_uplink_sorted_children: "{{ vmm_uplink.current[0].fvRsDomAtt.children | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}"
+
+      - name: Sort vmm_uplink_change_standby previous children by name
+        ansible.builtin.set_fact:   
+          vmm_uplink_change_standby_sorted_children_previous: "{{ vmm_uplink_change_standby.previous[0].fvRsDomAtt.children | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}"
+
+      - name: Sort vmm_uplink_change_standby current children by name
+        ansible.builtin.set_fact:   
+          vmm_uplink_change_standby_sorted_children_current: "{{ vmm_uplink_change_standby.current[0].fvRsDomAtt.children | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}"
+
+      - name: Sort vmm_uplink_change_active previous children by name
+        ansible.builtin.set_fact:   
+          vmm_uplink_change_active_sorted_children_previous: "{{ vmm_uplink_change_active.previous[0].fvRsDomAtt.children | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}"
+
+      - name: Sort vmm_uplink_change_active current children by name
+        ansible.builtin.set_fact:   
+          vmm_uplink_change_active_sorted_children_current: "{{ vmm_uplink_change_active.current[0].fvRsDomAtt.children | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}"
+
       - name: vmm_uplink assertions
         ansible.builtin.assert:
           that:
             - vmm_uplink is changed
-            - vmm_uplink.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "1,2"
-            - vmm_uplink.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == "3,4"
+            - vmm_uplink_sorted_children.0.fvUplinkOrderCont.attributes.active == "1,2"
+            - vmm_uplink_sorted_children.0.fvUplinkOrderCont.attributes.standby == "3,4"
             - vmm_uplink_change_standby is changed
-            - vmm_uplink_change_standby.previous.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "1,2"
-            - vmm_uplink_change_standby.previous.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == "3,4"
-            - vmm_uplink_change_standby.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "1,2"
-            - vmm_uplink_change_standby.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == "5,6"
+            - vmm_uplink_change_standby_sorted_children_previous.0.fvUplinkOrderCont.attributes.active == "1,2"
+            - vmm_uplink_change_standby_sorted_children_previous.0.fvUplinkOrderCont.attributes.standby == "3,4"
+            - vmm_uplink_change_standby_sorted_children_current.0.fvUplinkOrderCont.attributes.active == "1,2"
+            - vmm_uplink_change_standby_sorted_children_current.0.fvUplinkOrderCont.attributes.standby == "5,6"
             - vmm_uplink_change_active is changed
-            - vmm_uplink_change_active.previous.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "1,2"
-            - vmm_uplink_change_active.previous.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == "5,6"
-            - vmm_uplink_change_active.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "3,4"
-            - vmm_uplink_change_active.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == "5,6"
+            - vmm_uplink_change_active_sorted_children_previous.0.fvUplinkOrderCont.attributes.active == "1,2"
+            - vmm_uplink_change_active_sorted_children_previous.0.fvUplinkOrderCont.attributes.standby == "5,6"
+            - vmm_uplink_change_active_sorted_children_current.0.fvUplinkOrderCont.attributes.active == "3,4"
+            - vmm_uplink_change_active_sorted_children_current.0.fvUplinkOrderCont.attributes.standby == "5,6"
 
       - name: bind vmm domain to epg - vmm_uplink change standby to same as active
         cisco.aci.aci_epg_to_domain:
@@ -262,6 +282,8 @@
         register: vmm_uplink_change_active_same_as_standby
         ignore_errors: true
 
+      # ACI 6+ gives validation error
+      # Active Uplink configuration cannot be empty when standby uplink configuration exists OR Active uplink can not be 0 as no uplink get assigned in the vCenter." 
       - name: bind vmm domain to epg - vmm_uplink change 0 value
         cisco.aci.aci_epg_to_domain:
           <<: *aci_epg_to_domain_present
@@ -269,6 +291,7 @@
           vm_provider: vmware
           vmm_uplink_active: [ 0 ]
         register: vmm_uplink_0_value
+        when: version.current.0.topSystem.attributes.version is version('6.0', '<')
 
       - name: bind vmm domain to epg - vmm_uplink change 32 value
         cisco.aci.aci_epg_to_domain:
@@ -285,16 +308,29 @@
           vm_provider: vmware
           vmm_uplink_standby: []
         register: vmm_uplink_empty_value_standby
+      
+      - name: Sort vmm_uplink_32_value children by name
+        ansible.builtin.set_fact:   
+          vmm_uplink_32_value_sorted_children: "{{ vmm_uplink_32_value.current[0].fvRsDomAtt.children | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}"
 
-      - name: vmm_uplink assertions
+      - name: Sort vmm_uplink_empty_value_standby children by name
+        ansible.builtin.set_fact:   
+          vmm_uplink_empty_value_standby_sorted_children: "{{ vmm_uplink_empty_value_standby.current[0].fvRsDomAtt.children | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}"
+
+      - name: vmm_uplink assertions version < 6
         ansible.builtin.assert:
           that:
             - vmm_uplink_0_value is changed
             - vmm_uplink_0_value.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "0"
+        when: version.current.0.topSystem.attributes.version is version('6.0', '<')
+      
+      - name: vmm_uplink assertions 
+        ansible.builtin.assert:
+          that:
             - vmm_uplink_32_value is changed
-            - vmm_uplink_32_value.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.active == "32"
+            - vmm_uplink_32_value_sorted_children.0.fvUplinkOrderCont.attributes.active == "32"
             - vmm_uplink_empty_value_standby is changed
-            - vmm_uplink_empty_value_standby.current.0.fvRsDomAtt.children.0.fvUplinkOrderCont.attributes.standby == ""
+            - vmm_uplink_empty_value_standby_sorted_children.0.fvUplinkOrderCont.attributes.standby == ""
 
       - name: bind vmm domain to epg - vmm_uplink change empty value active
         cisco.aci.aci_epg_to_domain:
@@ -609,6 +645,10 @@
         - forged_transmits_and_mac_changes_absent is changed
         - forged_transmits_and_mac_changes_absent.current == []
 
+  - name: Sort enhanced_lag_policy children by name
+    ansible.builtin.set_fact:   
+      enhanced_lag_policy_sorted_children: "{{ enhanced_lag_policy.current[0].fvRsDomAtt.children | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}" 
+
   - name: present assertions
     ansible.builtin.assert:
       that:
@@ -638,8 +678,8 @@
         - invalid_vlan_primary_encap.msg == "Valid VLAN assignments are from 1 to 4096"
         - '"[uni/l2dom-anstest].json" in l2_present.url'
         - valid_vlan_primary_encap.current.0.fvRsDomAtt.attributes.dn == "uni/tn-ansible_test/ap-anstest/epg-anstest/rsdomAtt-[uni/phys-anstest]"
-        - enhanced_lag_policy.current.0.fvRsDomAtt.children | length == 2
-        - enhanced_lag_policy.current.0.fvRsDomAtt.children.0.fvAEPgLagPolAtt.children.0.fvRsVmmVSwitchEnhancedLagPol.attributes.tDn == "uni/vmmp-VMware/dom-anstest/vswitchpolcont/enlacplagp-enhanced"
+        - enhanced_lag_policy_sorted_children | length == 2
+        - enhanced_lag_policy_sorted_children.0.fvAEPgLagPolAtt.children.0.fvRsVmmVSwitchEnhancedLagPol.attributes.tDn == "uni/vmmp-VMware/dom-anstest/vswitchpolcont/enlacplagp-enhanced"
 
   - name: get domain epg binding
     cisco.aci.aci_epg_to_domain: &aci_epg_domain_query
@@ -775,3 +815,137 @@
       <<: *underscore_tenant
       state: absent
     register: tenant_present
+
+  # ADDITIONAL ADDED ATTRIBUTES
+
+  - name: Ensure tenant does not exist for testing additional attributes
+    cisco.aci.aci_tenant: &additional_attributes_tenant
+      <<: *aci_info
+      tenant: additional_attributes
+      state: absent
+
+  - name: Ensure tenant exists for testing additional attributes
+    cisco.aci.aci_tenant:
+      <<: *additional_attributes_tenant
+      tenant: additional_attributes
+      state: present
+  
+  - name: Ensure ap exists for testing additional attributes
+    cisco.aci.aci_ap: &additional_attributes_ap
+      <<: *additional_attributes_tenant
+      ap: additional_attributes
+      state: present
+  
+  - name: Ensure epg exists for testing additional attributes
+    cisco.aci.aci_epg: &additional_attributes_epg
+      <<: *additional_attributes_ap
+      epg: additional_attributes
+  
+  - name: Create domain with additional attributes as defaults
+    cisco.aci.aci_epg_to_domain: &additional_attributes_domain
+      <<: *additional_attributes_epg
+      domain: additional_attributes_test
+      domain_type: vmm
+      vm_provider: vmware
+    register: create_additional_attributes_domain
+  
+  - name: Update domain with additional attributes
+    cisco.aci.aci_epg_to_domain:
+      <<: *additional_attributes_domain
+      epg_cos: cos_4
+      epg_cos_preference: enabled
+      lag_policy_name: lag_policy_test
+      netflow_direction: ingress
+      primary_encap_inner: 600
+      secondary_encap_inner: 700
+    register: update_additional_attributes_domain
+  
+  - name: Assert additional attributes
+    ansible.builtin.assert:
+      that:
+        - create_additional_attributes_domain is changed
+        - create_additional_attributes_domain.current.0.fvRsDomAtt.attributes.tDn == "uni/vmmp-VMware/dom-additional_attributes_test"
+        - create_additional_attributes_domain.current.0.fvRsDomAtt.attributes.epgCos == "Cos0"
+        - create_additional_attributes_domain.current.0.fvRsDomAtt.attributes.epgCosPref == "disabled"
+        - create_additional_attributes_domain.current.0.fvRsDomAtt.attributes.lagPolicyName == ""
+        - create_additional_attributes_domain.current.0.fvRsDomAtt.attributes.netflowDir == "both"
+        - create_additional_attributes_domain.current.0.fvRsDomAtt.attributes.primaryEncapInner == "unknown"
+        - create_additional_attributes_domain.current.0.fvRsDomAtt.attributes.secondaryEncapInner == "unknown"
+        - update_additional_attributes_domain is changed
+        - update_additional_attributes_domain.current.0.fvRsDomAtt.attributes.tDn == "uni/vmmp-VMware/dom-additional_attributes_test"
+        - update_additional_attributes_domain.current.0.fvRsDomAtt.attributes.epgCos == "Cos4"
+        - update_additional_attributes_domain.current.0.fvRsDomAtt.attributes.epgCosPref == "enabled"
+        - update_additional_attributes_domain.current.0.fvRsDomAtt.attributes.lagPolicyName == "lag_policy_test"
+        - update_additional_attributes_domain.current.0.fvRsDomAtt.attributes.netflowDir == "ingress"
+        - update_additional_attributes_domain.current.0.fvRsDomAtt.attributes.primaryEncapInner == "vlan-600"
+        - update_additional_attributes_domain.current.0.fvRsDomAtt.attributes.secondaryEncapInner == "vlan-700"
+
+  - name: Remove tenant used for testing additional attributes
+    cisco.aci.aci_tenant:
+      <<: *additional_attributes_tenant
+      state: absent
+    register: additional_attributes_tenant_removed
+  
+  # NUTANIX SPECIFIC
+  - name: Execute tasks only for ACI v6+
+    when: version.current.0.topSystem.attributes.version is version('6', '>=')
+    block:  # block specifies execution of tasks within, based on conditions
+
+      - name: Ensure tenant does not exists for testing nutanix specifc values
+        cisco.aci.aci_tenant: &nutanix_tenant
+          <<: *aci_info
+          tenant: nutanix
+          state: absent
+
+      - name: Ensure tenant exists for testing nutanix specifc values
+        cisco.aci.aci_tenant:
+          <<: *nutanix_tenant
+          state: present
+
+      - name: Ensure ap exists for testing nutanix specific values
+        cisco.aci.aci_ap: &nutanix_ap
+          <<: *nutanix_tenant
+          ap: nutanix
+          state: present
+
+      - name: Ensure epg exists for testing nutanix specific values
+        cisco.aci.aci_epg: &nutanix_epg
+          <<: *nutanix_ap
+          epg: nutanix
+
+      - name: Create domain with nutanix specific values
+        cisco.aci.aci_epg_to_domain: &nutanix_domain
+          <<: *nutanix_epg
+          domain: nutanix_test
+          domain_type: vmm
+          vm_provider: nutanix
+          resolution_immediacy: pre-provision
+        register: create_nutanix_domain
+      
+      - name: Update domain with nutanix specific values
+        cisco.aci.aci_epg_to_domain:
+          <<: *nutanix_domain
+          ipam_dhcp_override: "2.2.2.2"
+          ipam_gateway: "2.2.2.1/24"
+          ipam_enabled: yes
+        register: update_nutanix_domain
+
+      - name: Assert nutanix specific values
+        ansible.builtin.assert:
+          that:
+            - create_nutanix_domain is changed
+            - create_nutanix_domain.current.0.fvRsDomAtt.attributes.tDn == "uni/vmmp-Nutanix/dom-nutanix_test"
+            - create_nutanix_domain.current.0.fvRsDomAtt.attributes.resImedcy == "pre-provision"
+            - create_nutanix_domain.current.0.fvRsDomAtt.attributes.ipamDhcpOverride == "0.0.0.0"
+            - create_nutanix_domain.current.0.fvRsDomAtt.attributes.ipamEnabled == "no"
+            - create_nutanix_domain.current.0.fvRsDomAtt.attributes.ipamGateway == "0.0.0.0"
+            - update_nutanix_domain is changed
+            - update_nutanix_domain.current.0.fvRsDomAtt.attributes.tDn == "uni/vmmp-Nutanix/dom-nutanix_test"
+            - update_nutanix_domain.current.0.fvRsDomAtt.attributes.resImedcy == "pre-provision"
+            - update_nutanix_domain.current.0.fvRsDomAtt.attributes.ipamDhcpOverride == "2.2.2.2"
+            - update_nutanix_domain.current.0.fvRsDomAtt.attributes.ipamEnabled == "yes"
+            - update_nutanix_domain.current.0.fvRsDomAtt.attributes.ipamGateway == "2.2.2.1/24"
+
+      - name: Remove tenant used for testing nutanix specific values
+        cisco.aci.aci_tenant:
+          <<: *nutanix_tenant
