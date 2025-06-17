@@ -75,7 +75,7 @@ options:
     - Support for Kubernetes was added in ACI v3.0.
     - Support for CloudFoundry, OpenShift and Red Hat was added in ACI v3.1.
     type: str
-    choices: [ cloudfoundry, kubernetes, microsoft, openshift, openstack, redhat, vmware ]
+    choices: [ cloudfoundry, kubernetes, microsoft, openshift, openstack, redhat, vmware, nutanix ]
   vswitch:
     description:
     - The virtual switch to use for vmm domains.
@@ -279,16 +279,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
-
-VM_PROVIDER_MAPPING = dict(
-    cloudfoundry="CloudFoundry",
-    kubernetes="Kubernetes",
-    microsoft="Microsoft",
-    openshift="OpenShift",
-    openstack="OpenStack",
-    redhat="Redhat",
-    vmware="VMware",
-)
+from ansible_collections.cisco.aci.plugins.module_utils.constants import VM_PROVIDER_MAPPING
 
 VSWITCH_MAPPING = dict(
     avs="n1kv",
@@ -341,7 +332,7 @@ def main():
         tag_collection=dict(type="bool"),
         multicast_address=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        vm_provider=dict(type="str", choices=["cloudfoundry", "kubernetes", "microsoft", "openshift", "openstack", "redhat", "vmware"]),
+        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING)),
         vswitch=dict(type="str", choices=["avs", "default", "dvs", "unknown"]),
         name_alias=dict(type="str"),
         access_mode=dict(type="str", choices=["read-write", "read-only"]),

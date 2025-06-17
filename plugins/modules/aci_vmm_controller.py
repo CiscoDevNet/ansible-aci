@@ -76,7 +76,7 @@ options:
     - Support for Kubernetes was added in ACI v3.0.
     - Support for CloudFoundry, OpenShift and Red Hat was added in ACI v3.1.
     type: str
-    choices: [ cloudfoundry, kubernetes, microsoft, openshift, openstack, redhat, vmware ]
+    choices: [ cloudfoundry, kubernetes, microsoft, openshift, openstack, redhat, vmware, nutanix ]
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -248,16 +248,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
-
-VM_PROVIDER_MAPPING = dict(
-    cloudfoundry="CloudFoundry",
-    kubernetes="Kubernetes",
-    microsoft="Microsoft",
-    openshift="OpenShift",
-    openstack="OpenStack",
-    redhat="Redhat",
-    vmware="VMware",
-)
+from ansible_collections.cisco.aci.plugins.module_utils.constants import VM_PROVIDER_MAPPING
 
 VM_SCOPE_MAPPING = dict(
     cloudfoundry="cloudfoundry",
@@ -284,7 +275,7 @@ def main():
         inband_management_epg=dict(type="str"),
         name_alias=dict(type="str"),
         datacenter=dict(type="str"),
-        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING.keys())),
+        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING)),
     )
 
     module = AnsibleModule(
