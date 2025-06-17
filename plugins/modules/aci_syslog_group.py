@@ -65,8 +65,8 @@ options:
     description:
     - Format of the console log messages.
     - If unset during creation and O(format) is provided then it is set to the same value as format. If O(format) is not provided it is set to C(aci).
-    - C(rfc5424-ts) is only available starting from ACI version 5.2(8).
-    - C(enhanced_log) is only available starting from ACI version 6.0(9d) and is an alias to C(rfc5424-ts).
+    - The option C(rfc5424-ts) is only available in ACI version 5.2(8) or later.
+    - The option C(enhanced_log) is only available in ACI version 6.0(9d) or later and is an alias to C(rfc5424-ts).
     type: str
     choices: [ aci, nxos, rfc5424-ts, enhanced_log ]
   include_ms:
