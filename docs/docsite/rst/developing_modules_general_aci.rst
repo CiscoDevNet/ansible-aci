@@ -19,7 +19,7 @@ Introduction
 ============
 The `cisco.aci collection <https://galaxy.ansible.com/cisco/aci>`_ already includes a large number of Cisco ACI modules; however, the ACI object model is huge, and covering all possible functionality would easily require more than 1,500 individual modules. Therefore, Cisco develops modules requested by people on a just-in-time basis.
 
-If you need a specific functionality, you have three options:
+If you need a specific functionality, you have 3 options:
 
 - Open an issue using https://github.com/CiscoDevNet/ansible-aci/issues/new/choose so that Cisco developers can build, enhance, or fix the modules for you.
 - Learn the ACI object model and use the low-level APIC REST API using the :ref:`aci_rest <aci_rest_module>` module.
@@ -158,21 +158,21 @@ Let's briefly go through each file and its context.
 
    The **module_utils** directory has the aci.py file, which serves as a library for the modules. Most modules in the collection borrow functions from this library. These functions help a module to access APIC, make requests to modify the configuration of an object in ACI, etc. This is where one would add any function to use across multiple modules.
 
-   The **doc_fragments** directory has the aci.py file, which serves as a plugin and is used in each module's documentation. Every module has its own documentation section, but all the modules also share some common documentation elements, such as authentication details, notes: or seealso: entries. To avoid duplication of that information in each module's documentation block, it can be saved once in doc_fragment and used by all modules.
+   The **doc_fragments** directory has the aci.py file, which serves as a plugin and is used in each module's documentation. Every module has its own documentation section, but all the modules also share some common documentation elements, such as authentication details, notes: or seealso: entries. To avoid duplication of that information in each module's documentation block, it can be saved once in doc_fragments and used by all modules.
 
 **tests** 
    This is where the different tests are defined. We run all sanity, unit, and integration tests on every code submission to the repository.
 
-   The **integration** directory in **tests** consists of the **targets** directory, which has test directories for most of the modules present in our collection. Each module has its own test directory, and each directory is similar to an ansible role and contains a tasks directory, which contains a main.yml file. The main.yml file consists of tasks covering every functionality that a module provides. If the main.yml becomes too big, it can be split into multiple .yml files, and each of those can be imported into the main.yml file. Integration tests are run on every code submission to the repository. Every new module submission or bug fix or enhancement requires a test file or a change to an existing test file. This ensures that the code in our module is robust and foolproof.
+   The **integration** directory in **tests** consists of the **targets** directory, which has test directories for most of the modules present in our collection. Each module has its own test directory, and each directory is similar to an ansible role and contains a tasks directory, which contains a main.yml file. The main.yml file consists of tasks covering every functionality that a module provides. If the main.yml becomes too big, it can be split into multiple .yml files, and each of those can be imported into the main.yml file. Integration tests are run on every code submission to the repository. Every new module submission, bug fix or enhancement requires a test file or a change to an existing test file. This ensures that the code in our module is usable and robust.
 
    The **integration** directory also consists of the **inventory.networking** file, which defines the hosts, groups of hosts, and variables used by the integration tests role defined in the integration's targets directory.
 
 **changelogs**
    This directory consists of a record of all the changes made to the project.
 
-   The **changelog.yml** file contains a chronologically ordered list of the versions of the collection and the changes included in those versions. This file is used to generate the changelog.rst file. The changes usually include: major_changes, minor_changes, bugfixes, etc.
+   The **changelog.yml** file contains a chronologically ordered list of collection versions and the changes included in those versions. This file is used to generate the changelog.rst file. The changes are categorized into major changes, minor changes and bugfixes.
 
-   The **config.yml** file contains variable names used by the **changelog.yml** file.
+   The **config.yml** file contains configuration options used by the ansible-changelog tool to generate the **changelog.rst** file.
 
 **galaxy.yml** 
    The **galaxy.yml** file is placed in the root directory of the collection. This file contains the metadata of the collection that is used to generate an ansible-aci collection object. It is also used for information in Ansible Galaxy.
@@ -265,7 +265,7 @@ The ACIModule class handles most of the logic for the ACI modules. The ACIModule
 
     aci = ACIModule(module)
 
-The ACIModule has six main methods that are used by most modules in the collection:
+The ACIModule has 6 main methods that are used by most modules in the collection:
 
 * construct_url
 * get_existing
@@ -274,7 +274,7 @@ The ACIModule has six main methods that are used by most modules in the collecti
 * post_config
 * delete_config
 
-The first two methods are used regardless of what value is passed to the ``state`` parameter.
+The first 2methods are used regardless of what value is passed to the ``state`` parameter.
 
 
 Constructing URLs
@@ -284,9 +284,9 @@ The ``construct_url()`` method is used to dynamically build the appropriate URL 
 * When the ``state`` is not ``query``, the URL is the base URL to access the APIC plus the distinguished name to access the object. The filter string will restrict the returned data to just the configuration data.
 * When ``state`` is ``query``, the URL and filter string used depend on which parameters are passed to the object. This method handles the complexity so that it is easier to add new modules and ensures that all modules are consistent in the type of data returned.
 
-.. note:: Our design goal is to take all ID parameters that have values and return the most specific data possible. If you do not supply any ID parameters to the task, then all objects of the class will be returned. If your task does consist of ID parameters used, then the data for the specific object is returned. If a partial set of ID parameters is passed, then the module will use the IDs that are passed to build the URL and filter strings appropriately.
+.. note:: Our design goal is to take all ID parameters that have values and return the most specific data possible. If you do not supply any ID parameters to the task, then all objects of the class will be returned. If your task does consist of ID parameters, then the data for the specific object is returned. If a partial set of ID parameters is passed, then the module will use the IDs that are passed to build the URL and filter strings appropriately.
 
-The ``construct_url()`` method takes two required arguments:
+The ``construct_url()`` method takes 2required arguments:
 
 * **self** - passed automatically with the class instance
 * **root_class** - A dictionary consisting of ``aci_class``, ``aci_rn``, ``target_filter``, and ``module_object`` keys
@@ -314,7 +314,7 @@ Example:
 
 Some modules, like ``aci_tenant``, are the root class and so would not need to pass any additional arguments to the method.
 
-The ``construct_url()`` method takes six optional arguments; the first five imitate the root class as described above and the rest are for child objects:
+The ``construct_url()`` method takes 6 optional arguments; the first 5 imitate the root class as described above and the rest are for child objects:
 
 * subclass_1 - A dictionary consisting of ``aci_class``, ``aci_rn``, ``target_filter``, and ``module_object`` keys
 
@@ -412,7 +412,7 @@ We remove the values of parameters that are empty. If there is a previous config
 
 If parameters of the payload have been added in a recent version, we recommend adding the new parameters to the payload when the parameter is assigned a value. This is done to maintain backward compatibility.
 
-The ``aci.payload()`` method takes two required arguments and one optional argument, depending on whether the module manages child objects.
+The ``aci.payload()`` method takes 2required arguments and one optional argument, depending on whether the module manages child objects.
 
 * ``aci_class`` is the APIC name for the object's class, for example ``aci_class='fvBD'``
 * ``class_config`` is the set of attributes of the aci class objects to be used as the payload for the POST request
@@ -514,24 +514,24 @@ All the parameters defined in the argument_spec, like the object_id, configurabl
    DOCUMENTATION = r'''
    ---
    module: aci_<name_of_module>
-   short_description: Short description of the module being created (config:<name_of_class>)
+   short_description: Short description of the module being created (config:<name_of_class>).
    description:
-   - Functionality one
-   - Functionality two
+   - Functionality one.
+   - Functionality two.
    options:
      object_id:
        description:
-       - Description of object
+       - Description of the object.
        type: Data type of object eg. 'str'
        aliases: [ Alternate name of the object ]
      object_prop1:
        description:
-       - Description of property one
+       - Description of property one.
        type: Property's data type eg. 'int'
        choices: [ choice one, choice two ]
      object_prop2:
        description:
-       - Description of property two
+       - Description of property two.
        type: Property's data type eg. 'bool'
      state:
        description:
@@ -1345,7 +1345,7 @@ The changes made are shown below:
            name_alias=dict(type='str'),
     )
 
-9. The required_if variable has the following arguments. We do not set the arguments below for all states because we need to use "Query All," which doesn't need those arguments. However, we still need the user to fill in the arguments when they want to create or delete something. That's why we put them in required_if, which allows us to specify what attributes are required when state is present or absent. If any of the attributes below —'prefix', 'node_id', 'pod_id', 'logical_node', 'l3out', and 'tenant' are missing in the task that adds or deletes the object in the playbook, Ansible will immediately complain that the attributes are missing.
+9. The required_if variable has the following arguments. We do not set the arguments below for all states because we need to use "Query All," which doesn't need those arguments. However, we still need the user to fill in the arguments when they want to create or delete something. That's why we put them in required_if, which allows us to specify what attributes are required when state is present or absent. If any of the attributes below —'prefix', 'node_id', 'pod_id', 'logical_node', 'l3out', and 'tenant' are missing in the task that adds or deletes the object in the playbook, Ansible will immediately warn the user that the attributes are missing.
 
 .. code-block:: python
 
