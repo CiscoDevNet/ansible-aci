@@ -300,20 +300,20 @@ url:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, enhanced_lag_spec, netflow_spec
-from ansible_collections.cisco.aci.plugins.module_utils.aci import aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+    enhanced_lag_spec,
+    netflow_spec,
+    aci_annotation_spec,
+    aci_owner_spec,
+)
+from ansible_collections.cisco.aci.plugins.module_utils.constants import (
+    VM_PROVIDER_MAPPING,
+)
 
 # via UI vSwitch Policy can only be added for VMware and Microsoft vmm domains
 # behavior for other domains is currently untested.
-VM_PROVIDER_MAPPING = dict(
-    cloudfoundry="CloudFoundry",
-    kubernetes="Kubernetes",
-    microsoft="Microsoft",
-    openshift="OpenShift",
-    openstack="OpenStack",
-    redhat="Redhat",
-    vmware="VMware",
-)
 
 # enhanced_lag_spec = dict(
 #     name=dict(type='str', required=True),
@@ -326,7 +326,6 @@ VM_PROVIDER_MAPPING = dict(
 #                  'src-dst-l4port', 'src-port-id', 'vlan']),
 #     number_uplinks=dict(type='int'),
 # )
-
 # netflow_spec = dict(
 #     name=dict(type='str', required=True),
 #     active_flow_timeout=dict(type='int'),
@@ -336,6 +335,11 @@ VM_PROVIDER_MAPPING = dict(
 
 
 def main():
+
+    # Remove nutanix from VM_PROVIDER_MAPPING as it is not supported
+    CLEAN_VM_PROVIDER_MAPPING = VM_PROVIDER_MAPPING.copy()
+    CLEAN_VM_PROVIDER_MAPPING.pop("nutanix")
+
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
@@ -349,7 +353,7 @@ def main():
         netflow_exporter=dict(type="dict", options=netflow_spec()),
         domain=dict(type="str", aliases=["domain_name", "domain_profile"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING.keys())),
+        vm_provider=dict(type="str", choices=list(CLEAN_VM_PROVIDER_MAPPING)),
     )
 
     module = AnsibleModule(
@@ -388,7 +392,7 @@ def main():
     aci.construct_url(
         root_class=dict(
             aci_class="vmmProvP",
-            aci_rn="vmmp-{0}".format(VM_PROVIDER_MAPPING.get(vm_provider)),
+            aci_rn="vmmp-{0}".format(CLEAN_VM_PROVIDER_MAPPING.get(vm_provider)),
             module_object=vm_provider,
             target_filter={"name": vm_provider},
         ),
