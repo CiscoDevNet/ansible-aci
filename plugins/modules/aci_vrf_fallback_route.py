@@ -9,8 +9,272 @@ __metaclass__ = type
 
 ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "certified"}
 
+DOCUMENTATION = r"""
+---
+module: aci_vrf_fallback_route
+short_description: Manage VRF fallback route groups (fv:FBRGroup)
+description:
+- Manage VRF fallback route groups on Cisco ACI fabrics.
+- Fallback route groups are used to specify routes and next-hop addresses for VRFs.
+options:
+  tenant:
+    description:
+    - The name of the Tenant to which the VRF fallback route group belongs.
+    type: str
+    aliases: [ tenant_name ]
+  vrf:
+    description:
+    - The name of the VRF associated with the fallback route group.
+    type: str
+    aliases: [ context, vrf_name ]
+  vrf_fallback_route_group:
+    description:
+    - The name of the VRF fallback route group to configure.
+    type: str
+    aliases: [ name ]
+  fallback_route:
+    description:
+    - The fallback route (prefix address) for the VRF fallback route group.
+    - If not specified, the existing fallback route will remain unchanged.
+    type: str
+    aliases: [ prefix_address ]
+  fallback_members:
+    description:
+    - A list of fallback member IP addresses (next-hop addresses) for the VRF fallback route group.
+    - Members not in the list will be removed from the configuration.
+    type: list
+    elements: str
+    aliases: [ next_hop_address ]
+  description:
+    description:
+    - The description for the VRF fallback route group.
+    type: str
+    aliases: [ descr ]
+  state:
+    description:
+    - Use C(present) to create or update the fallback route group.
+    - Use C(absent) to delete the fallback route group.
+    - Use C(query) to retrieve information about the fallback route group.
+    type: str
+    choices: [ absent, present, query ]
+    default: present
+extends_documentation_fragment:
+- cisco.aci.aci
+- cisco.aci.annotation
+- cisco.aci.owner
+
+notes:
+- The C(tenant) and C(vrf) must exist before using this module.
+  Use the M(cisco.aci.aci_tenant) and M(cisco.aci.aci_vrf) modules to create them if needed.
+seealso:
+- module: cisco.aci.aci_vrf
+- module: cisco.aci.aci_tenant
+- name: APIC Management Information Model reference
+  description: More information about the internal APIC class B(fv:FBRGroup).
+  link: https://developer.cisco.com/docs/apic-mim-ref/
+author:
+- Dev Sinha (@devsinha13)
+"""
+
+EXAMPLES = r"""
+- name: Create a new VRF fallback route group
+  cisco.aci.aci_vrf_fallback_route:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: ansible_test
+    vrf: vrf_test
+    vrf_fallback_route_group: test_fallback_route_group
+    fallback_route: 1.1.1.1/24
+    fallback_members:
+      - 192.168.1.1
+      - 192.168.1.2
+    description: Test fallback route group
+    state: present
+  delegate_to: localhost
+
+- name: Update fallback members in an existing VRF fallback route group
+  cisco.aci.aci_vrf_fallback_route:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: ansible_test
+    vrf: vrf_test
+    vrf_fallback_route_group: test_fallback_route_group
+    fallback_members:
+      - 192.168.1.1
+      - 192.168.1.3
+    state: present
+  delegate_to: localhost
+
+- name: Delete a VRF fallback route group
+  cisco.aci.aci_vrf_fallback_route:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: ansible_test
+    vrf: vrf_test
+    vrf_fallback_route_group: test_fallback_route_group
+    state: absent
+  delegate_to: localhost
+
+- name: Delete children for VRF fallback route group
+  cisco.aci.aci_vrf_fallback_route:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: ansible_test
+    vrf: vrf_test
+    vrf_fallback_route_group: test_fallback_route_group
+    fallback_route: ""
+    fallback_members: []
+    state: present
+  delegate_to: localhost
+
+- name: Query a VRF fallback route group
+  cisco.aci.aci_vrf_fallback_route:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: ansible_test
+    vrf: vrf_test
+    vrf_fallback_route_group: test_fallback_route_group
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- name: Query all VRF fallback route groups
+  cisco.aci.aci_vrf_fallback_route:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    state: query
+  delegate_to: localhost
+  register: query_result
+"""
+
+RETURN = r"""
+current:
+  description: The existing configuration from the APIC after the module has finished.
+  returned: success
+  type: list
+  sample:
+    [
+        {
+            "fvFBRGroup": {
+                "attributes": {
+                    "name": "test_fallback_route_group",
+                    "descr": "Test fallback route group",
+                    "dn": "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
+                },
+                "children": [
+                    {
+                        "fvFBRMember": {
+                            "attributes": {
+                                "rnhAddr": "192.168.1.1"
+                            }
+                        }
+                    },
+                    {
+                        "fvFBRoute": {
+                            "attributes": {
+                                "fbrPrefix": "1.1.1.1/24"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+error:
+  description: The error information as returned from the APIC.
+  returned: failure
+  type: dict
+  sample:
+    {
+        "code": "122",
+        "text": "unknown managed object class foo"
+    }
+sent:
+  description: The actual/minimal configuration pushed to the APIC.
+  returned: info
+  type: list
+  sample:
+    {
+        "fvFBRGroup": {
+            "attributes": {
+                "name": "test_fallback_route_group",
+                "descr": "Test fallback route group"
+            },
+            "children": [
+                {
+                    "fvFBRMember": {
+                        "attributes": {
+                            "rnhAddr": "192.168.1.1"
+                        }
+                    }
+                },
+                {
+                    "fvFBRoute": {
+                        "attributes": {
+                            "fbrPrefix": "1.1.1.1/24"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+previous:
+  description: The original configuration from the APIC before the module has started.
+  returned: info
+  type: list
+  sample:
+    [
+        {
+            "fvFBRGroup": {
+                "attributes": {
+                    "name": "test_fallback_route_group",
+                    "descr": "Old description"
+                },
+                "children": [
+                    {
+                        "fvFBRMember": {
+                            "attributes": {
+                                "rnhAddr": "192.168.1.1"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+proposed:
+  description: The assembled configuration from the user-provided parameters.
+  returned: info
+  type: dict
+  sample:
+    {
+        "fvFBRGroup": {
+            "attributes": {
+                "name": "test_fallback_route_group",
+                "descr": "Updated description"
+            },
+            "children": [
+                {
+                    "fvFBRMember": {
+                        "attributes": {
+                            "rnhAddr": "192.168.1.1"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+"""
+
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+
 
 def main():
     argument_spec = aci_argument_spec()
@@ -19,10 +283,10 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         vrf=dict(type="str", aliases=["context", "vrf_name"]),
-        vrf_fallback_route_group=dict(type="str", aliases = ["name"]),
-        fallback_route=dict(type="str", aliases = ["prefix_address"]),
-        fallback_members=dict(type="list", aliases = ["next_hop_address"]),
-        description=dict(type="str", aliases=["descr"]), 
+        vrf_fallback_route_group=dict(type="str", aliases=["name"]),
+        fallback_route=dict(type="str", aliases=["prefix_address"]),
+        fallback_members=dict(type="list", elements="str", aliases=["next_hop_address"]),
+        description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -35,15 +299,15 @@ def main():
         ],
     )
 
-    tenant=module.params.get("tenant")
-    vrf=module.params.get("vrf")
-    vrf_fallback_route_group=module.params.get("vrf_fallback_route_group")
-    fallback_route=module.params.get("fallback_route")
-    fallback_members=module.params.get("fallback_members")
-    description=module.params.get("description")
-    state=module.params.get("state")
+    tenant = module.params.get("tenant")
+    vrf = module.params.get("vrf")
+    vrf_fallback_route_group = module.params.get("vrf_fallback_route_group")
+    fallback_route = module.params.get("fallback_route")
+    fallback_members = module.params.get("fallback_members")
+    description = module.params.get("description")
+    state = module.params.get("state")
 
-    aci=ACIModule(module)
+    aci = ACIModule(module)
 
     aci.construct_url(
         root_class=dict(
@@ -59,10 +323,10 @@ def main():
             target_filter={"name": vrf},
         ),
         subclass_2=dict(
-            aci_class="fvFBRGroup", #TODO Check if this is correct
+            aci_class="fvFBRGroup",
             aci_rn="fbrg-{0}".format(vrf_fallback_route_group),
             module_object=vrf_fallback_route_group,
-            target_filter={"name"},
+            target_filter={"name": vrf_fallback_route_group},
         ),
         child_classes=["fvFBRMember", "fvFBRoute"],
     )
@@ -71,58 +335,39 @@ def main():
 
     if state == "present":
 
-        child_configs=[]
+        child_configs = []
 
-        existing_members=[]
-        existing_route=None
-        
+        existing_members = []
+        existing_route = None
+
         if isinstance(aci.existing, list) and len(aci.existing) > 0:
-            for child in aci.existing[0].get("fvFBRGroup",{}).get("children", {}):
-                existing_member = child.get("fvFBRMember", {}).get("attributes",{}).get("rnhAddr")
+            for child in aci.existing[0].get("fvFBRGroup", {}).get("children", {}):
+                existing_member = child.get("fvFBRMember", {}).get("attributes", {}).get("rnhAddr")
                 if existing_member:
                     existing_members.append(existing_member)
-                existing_route = child.get("fvFBRoute", {}).get("attributes",{}).get("fbrPrefix")
-    
+                route = child.get("fvFBRoute", {}).get("attributes", {}).get("fbrPrefix")
+                if route:
+                    existing_route = route
 
-        for member in fallback_members:
-            if member not in existing_members:
-                child_configs.append(
-                        dict(
-                            fvFBRMember=dict(attributes=dict(rnhAddr=member))
-                        )
-                    )
-        
-        for existing_member in existing_members:
-             if existing_member not in fallback_members:
-                  child_configs.append(
-                       dict(
-                            fvFBRMember=dict(attributes=dict(rnhAddr=member, status="deleted"))
-                       )
-                  )
-      
-        if fallback_route != existing_route:
+        if fallback_members is not None and fallback_members != existing_members:
+            for member in fallback_members:
+                if member not in existing_members:
+                    child_configs.append(dict(fvFBRMember=dict(attributes=dict(rnhAddr=member))))
+
+            for existing_member in existing_members:
+                if existing_member not in fallback_members:
+                    child_configs.append(dict(fvFBRMember=dict(attributes=dict(rnhAddr=existing_member, status="deleted"))))
+
+        if fallback_route is not None and fallback_route != existing_route:
             if existing_route:
-                child_configs.append(
-                    dict(
-                        fvFBRoute=dict(
-                            attributes=dict(
-                                fbrPrefix=existing_route,
-                                status="deleted",
-                            )
-                        )
-                        )
-
+                aci.api_call(
+                    "DELETE",
+                    "{0}/api/mo/uni/tn-{1}/ctx-{2}/fbrg-{3}/pfx-[{4}].json".format(aci.base_url, tenant, vrf, vrf_fallback_route_group, existing_route),
                 )
-            child_configs.append(
-                dict(
-                    fvFBRoute=dict(
-                        attributes=dict(
-                            fbrPrefix=fallback_route
-                        )
-                    )
-                    ),
-            )
-
+            if fallback_route:
+                child_configs.append(
+                    dict(fvFBRoute=dict(attributes=dict(fbrPrefix=fallback_route))),
+                )
 
         aci.payload(
             aci_class="fvFBRGroup",
@@ -130,7 +375,7 @@ def main():
                 descr=description,
                 name=vrf_fallback_route_group,
             ),
-            child_configs=child_configs
+            child_configs=child_configs,
         )
 
         aci.get_diff(aci_class="fvFBRGroup")
@@ -140,9 +385,6 @@ def main():
         aci.delete_config()
 
     aci.exit_json()
-
-
-
 
 
 if __name__ == "__main__":
