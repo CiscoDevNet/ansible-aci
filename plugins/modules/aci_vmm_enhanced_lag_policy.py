@@ -207,18 +207,20 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import (
     ACIModule,
     aci_argument_spec,
     enhanced_lag_spec,
-)
-from ansible_collections.cisco.aci.plugins.module_utils.aci import (
     aci_annotation_spec,
     aci_owner_spec,
 )
-
 from ansible_collections.cisco.aci.plugins.module_utils.constants import (
     VM_PROVIDER_MAPPING,
 )
 
 
 def main():
+
+    # Remove nutanix from VM_PROVIDER_MAPPING as it is not supported
+    CLEAN_VM_PROVIDER_MAPPING = VM_PROVIDER_MAPPING.copy()
+    CLEAN_VM_PROVIDER_MAPPING.pop("nutanix")
+
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(aci_owner_spec())
@@ -226,7 +228,7 @@ def main():
     argument_spec.update(
         domain=dict(type="str", aliases=["domain_name", "domain_profile"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING)),
+        vm_provider=dict(type="str", choices=list(CLEAN_VM_PROVIDER_MAPPING)),
     )
 
     module = AnsibleModule(
@@ -251,7 +253,7 @@ def main():
     aci.construct_url(
         root_class=dict(
             aci_class="vmmProvP",
-            aci_rn="vmmp-{0}".format(VM_PROVIDER_MAPPING.get(vm_provider)),
+            aci_rn="vmmp-{0}".format(CLEAN_VM_PROVIDER_MAPPING.get(vm_provider)),
             module_object=vm_provider,
             target_filter={"vendor": vm_provider},
         ),
