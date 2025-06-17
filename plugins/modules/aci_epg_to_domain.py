@@ -199,7 +199,7 @@ options:
     type: str
   lag_policy_name:
     description:
-    - The link aggregation group (LAG) policy name. 
+    - The link aggregation group (LAG) policy name.
     type: str
   netflow_direction:
     description:
