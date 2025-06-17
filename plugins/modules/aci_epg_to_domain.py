@@ -183,18 +183,18 @@ options:
     choices: [ enabled, disabled ]
   ipam_dhcp_override:
     description:
-    - The IP address management (IPAM) Dynamic Host Configuration Protocol (DHCP) override.
+    - The IP Address Management (IPAM) Dynamic Host Configuration Protocol (DHCP) override.
     - Only applicable for Nutanix domains.
     type: str
   ipam_enabled:
     description:
-    - The IP address management (IPAM) enabled state.
+    - The IP Address Management (IPAM) enabled state.
     - Only applicable for Nutanix domains.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
   ipam_gateway:
     description:
-    - The IP address management (IPAM) gateway.
+    - The IP Address Management (IPAM) gateway.
     - Only applicable for Nutanix domains.
     type: str
   lag_policy_name:
