@@ -265,7 +265,7 @@ def main():
         pool=dict(type="str", aliases=["pool_name", "vlan_pool"]),  # Not required for querying all objects
         pool_allocation_mode=dict(type="str", required=True, aliases=["allocation_mode", "mode"], choices=["dynamic", "static"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING.keys())),
+        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING)),
     )
 
     module = AnsibleModule(
