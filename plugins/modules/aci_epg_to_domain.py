@@ -190,9 +190,8 @@ options:
     description:
     - The IP address management (IPAM) enabled state.
     - Only applicable for Nutanix domains.
-    - The APIC defaults to C(no) when unset during creation.
-    type: str 
-    choices: [ no, yes ]
+    - The APIC defaults to C(false) when unset during creation.
+    type: bool
   ipam_gateway:
     description:
     - The IP address management (IPAM) gateway.
@@ -210,9 +209,9 @@ options:
     choices: [ both, ingress, egress ]
   primary_encap_inner:
     description:
-    - The primary inner encapsulation. 
+    - The primary inner encapsulation.
     - This is used for the portgroup at the VMWare Distributed Virtual Switch (DVS).
-    - This VLAN is internal to the DVS and is used for communication between the other VMs and the AVE VM at a host. 
+    - This VLAN is internal to the DVS and is used for communication between the other VMs and the AVE VM at a host.
     - Traffic is not forwarded to the fabric over the VLAN.
     - Only applicable for Cisco ACI Virtual Edge (AVE) domains.
     - Accepted values range between C(1) and C(4096).
@@ -223,7 +222,7 @@ options:
     - This is used for the portgroup at the VMWare Distributed Virtual Switch (DVS).
     - This VLAN is internal to the DVS and is used for communication between the other VMs and the AVE VM at a host.
     - Traffic is not forwarded to the fabric over the VLAN.
-    - Only applicable for Cisco ACI Virtual Edge (AVE) domains. 
+    - Only applicable for Cisco ACI Virtual Edge (AVE) domains.
     - Accepted values range between C(1) and C(4096).
     type: int
 extends_documentation_fragment:
@@ -443,7 +442,7 @@ def main():
         epg_cos=dict(type="str", choices=list(COS_MAPPING)),
         epg_cos_preference=dict(type="str", choices=["enabled", "disabled"]),
         ipam_dhcp_override=dict(type="str"),
-        ipam_enabled=dict(type="str", choices=["no", "yes"]),
+        ipam_enabled=dict(type="bool"),
         ipam_gateway=dict(type="str"),
         lag_policy_name=dict(type="str"),
         netflow_direction=dict(type="str", choices=["both", "ingress", "egress"]),
@@ -499,7 +498,7 @@ def main():
     epg_cos = COS_MAPPING.get(module.params.get("epg_cos"))
     epg_cos_pref = module.params.get("epg_cos_preference")
     ipam_dhcp_override = module.params.get("ipam_dhcp_override")
-    ipam_enabled = module.params.get("ipam_enabled")
+    ipam_enabled = aci.boolean(module.params.get("ipam_enabled"))
     ipam_gateway = module.params.get("ipam_gateway")
     lag_policy_name = module.params.get("lag_policy_name")
     netflow_direction = module.params.get("netflow_direction")
