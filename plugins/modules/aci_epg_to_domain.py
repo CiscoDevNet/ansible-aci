@@ -169,6 +169,63 @@ options:
     type: str
     choices: [ accept, reject ]
     default: reject
+  epg_cos:
+    description:
+    - The class of service (CoS).
+    - The APIC defaults to C(cos_0) when unset during creation.
+    type: str
+    choices: [ cos_0, cos_1, cos_2, cos_3, cos_4, cos_5, cos_6, cos_7 ]
+  epg_cos_preference:
+    description:
+    - The class of service (CoS) preference.
+    - The APIC defaults to C(disabled) when unset during creation.
+    type: str
+    choices: [ enabled, disabled ]
+  ipam_dhcp_override:
+    description:
+    - The IP address management (IPAM) Dynamic Host Configuration Protocol (DHCP) override.
+    - Only applicable for Nutanix domains.
+    type: str
+  ipam_enabled:
+    description:
+    - The IP address management (IPAM) enabled state.
+    - Only applicable for Nutanix domains.
+    - The APIC defaults to C(no) when unset during creation.
+    type: str 
+    choices: [ no, yes ]
+  ipam_gateway:
+    description:
+    - The IP address management (IPAM) gateway.
+    - Only applicable for Nutanix domains.
+    type: str
+  lag_policy_name:
+    description:
+    - The link aggregation group (LAG) policy name. 
+    type: str
+  netflow_direction:
+    description:
+    - The NetFlow monitoring direction.
+    - The APIC defaults to C(both) when unset during creation.
+    type: str
+    choices: [ both, ingress, egress ]
+  primary_encap_inner:
+    description:
+    - The primary inner encapsulation. 
+    - This is used for the portgroup at the VMWare Distributed Virtual Switch (DVS).
+    - This VLAN is internal to the DVS and is used for communication between the other VMs and the AVE VM at a host. 
+    - Traffic is not forwarded to the fabric over the VLAN.
+    - Only applicable for Cisco ACI Virtual Edge (AVE) domains.
+    - Accepted values range between C(1) and C(4096).
+    type: int
+  secondary_encap_inner:
+    description:
+    - The secondary inner encapsulation.
+    - This is used for the portgroup at the VMWare Distributed Virtual Switch (DVS).
+    - This VLAN is internal to the DVS and is used for communication between the other VMs and the AVE VM at a host.
+    - Traffic is not forwarded to the fabric over the VLAN.
+    - Only applicable for Cisco ACI Virtual Edge (AVE) domains. 
+    - Accepted values range between C(1) and C(4096).
+    type: int
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -349,17 +406,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
-
-VM_PROVIDER_MAPPING = dict(
-    cloudfoundry="CloudFoundry",
-    kubernetes="Kubernetes",
-    microsoft="Microsoft",
-    openshift="OpenShift",
-    openstack="OpenStack",
-    redhat="Redhat",
-    vmware="VMware",
-    nutanix="Nutanix",
-)
+from ansible_collections.cisco.aci.plugins.module_utils.constants import COS_MAPPING, VM_PROVIDER_MAPPING
 
 
 def main():
@@ -393,6 +440,15 @@ def main():
         number_of_ports=dict(type="int"),
         forged_transmits=dict(type="str", default="reject", choices=["accept", "reject"]),
         mac_changes=dict(type="str", default="reject", choices=["accept", "reject"]),
+        epg_cos=dict(type="str", choices=list(COS_MAPPING)),
+        epg_cos_preference=dict(type="str", choices=["enabled", "disabled"]),
+        ipam_dhcp_override=dict(type="str"),
+        ipam_enabled=dict(type="str", choices=["no", "yes"]),
+        ipam_gateway=dict(type="str"),
+        lag_policy_name=dict(type="str"),
+        netflow_direction=dict(type="str", choices=["both", "ingress", "egress"]),
+        primary_encap_inner=dict(type="int"),
+        secondary_encap_inner=dict(type="int"),
     )
 
     module = AnsibleModule(
@@ -415,12 +471,7 @@ def main():
     vm_provider = module.params.get("vm_provider")
     promiscuous = module.params.get("promiscuous")
     custom_epg_name = module.params.get("custom_epg_name")
-    encap = module.params.get("encap")
-    if encap is not None:
-        if encap in range(1, 4097):
-            encap = "vlan-{0}".format(encap)
-        else:
-            module.fail_json(msg="Valid VLAN assignments are from 1 to 4096")
+    encap = format_vlan(aci, module.params.get("encap"))
     encap_mode = module.params.get("encap_mode")
     switching_mode = module.params.get("switching_mode")
     epg = module.params.get("epg")
@@ -428,12 +479,7 @@ def main():
     vmm_uplink_active = module.params.get("vmm_uplink_active")
     vmm_uplink_standby = module.params.get("vmm_uplink_standby")
     netflow = aci.boolean(module.params.get("netflow"), "enabled", "disabled")
-    primary_encap = module.params.get("primary_encap")
-    if primary_encap is not None:
-        if primary_encap in range(1, 4097):
-            primary_encap = "vlan-{0}".format(primary_encap)
-        else:
-            module.fail_json(msg="Valid VLAN assignments are from 1 to 4096")
+    primary_encap = format_vlan(aci, module.params.get("primary_encap"))
     resolution_immediacy = module.params.get("resolution_immediacy")
     state = module.params.get("state")
     tenant = module.params.get("tenant")
@@ -450,6 +496,15 @@ def main():
     number_of_ports = module.params.get("number_of_ports")
     forged_transmits = module.params.get("forged_transmits")
     mac_changes = module.params.get("mac_changes")
+    epg_cos = COS_MAPPING.get(module.params.get("epg_cos"))
+    epg_cos_pref = module.params.get("epg_cos_preference")
+    ipam_dhcp_override = module.params.get("ipam_dhcp_override")
+    ipam_enabled = module.params.get("ipam_enabled")
+    ipam_gateway = module.params.get("ipam_gateway")
+    lag_policy_name = module.params.get("lag_policy_name")
+    netflow_direction = module.params.get("netflow_direction")
+    primary_encap_inner = format_vlan(aci, module.params.get("primary_encap_inner"))
+    secondary_encap_inner = format_vlan(aci, module.params.get("secondary_encap_inner"))
 
     child_classes = None
     child_configs = None
@@ -536,6 +591,15 @@ def main():
                 bindingType=port_binding,
                 portAllocation=port_allocation,
                 numPorts=number_of_ports,
+                epgCos=epg_cos,
+                epgCosPref=epg_cos_pref,
+                ipamDhcpOverride=ipam_dhcp_override,
+                ipamEnabled=ipam_enabled,
+                ipamGateway=ipam_gateway,
+                lagPolicyName=lag_policy_name,
+                netflowDir=netflow_direction,
+                primaryEncapInner=primary_encap_inner,
+                secondaryEncapInner=secondary_encap_inner,
             ),
             child_configs=child_configs,
         )
@@ -548,6 +612,14 @@ def main():
         aci.delete_config()
 
     aci.exit_json()
+
+
+def format_vlan(aci, vlan):
+    if vlan in range(1, 4097):
+        return "vlan-{0}".format(vlan)
+    if vlan is not None:
+        aci.fail_json(msg="Valid VLAN assignments are from 1 to 4096")
+    return vlan
 
 
 if __name__ == "__main__":

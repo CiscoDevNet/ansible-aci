@@ -45,6 +45,7 @@ VM_PROVIDER_MAPPING = dict(
     openstack="OpenStack",
     redhat="Redhat",
     vmware="VMware",
+    nutanix="Nutanix",
 )
 
 MATCH_TYPE_GROUP_MAPPING = {"all": "ALL", "all_in_pod": "ALL_IN_POD", "range": "range"}
@@ -451,3 +452,5 @@ HTTP_VERSIONS_MAPPING = {"1.0": "HTTP10", "1.1": "HTTP11"}
 L4L7_FUNC_TYPES_MAPPING = {"go_to": "GoTo", "go_through": "GoThrough", "l1": "L1", "l2": "L2"}
 
 L4L7_HASH_ALGORITHMS_MAPPING = {"source_ip": "sip", "destination_ip": "dip", "ip_and_protocol": "sip-dip-prototype"}
+
+COS_MAPPING = {"cos_0": "Cos0", "cos_1": "Cos1", "cos_2": "Cos2", "cos_3": "Cos3", "cos_4": "Cos4", "cos_5": "Cos5", "cos_6": "Cos6", "cos_7": "Cos7"}
