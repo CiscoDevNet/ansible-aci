@@ -45,6 +45,7 @@ VM_PROVIDER_MAPPING = dict(
     openstack="OpenStack",
     redhat="Redhat",
     vmware="VMware",
+    nutanix="Nutanix",
 )
 
 SYSLOG_FORMATS = {"enhanced_log": "rfc5424-ts", "nxos": "nxos", "aci": "aci", "rfc5424_ts": "rfc5424-ts"}
@@ -481,3 +482,5 @@ L4L7_UI_TEMPLATE_TYPE = {
     "two_node_fw_trans_adc_two_arm": "TWO_NODE_FW_TRANS_ADC_TWO_ARM",
     "unspecified": "UNSPECIFIED",
 }
+
+COS_MAPPING = {"cos_0": "Cos0", "cos_1": "Cos1", "cos_2": "Cos2", "cos_3": "Cos3", "cos_4": "Cos4", "cos_5": "Cos5", "cos_6": "Cos6", "cos_7": "Cos7"}
