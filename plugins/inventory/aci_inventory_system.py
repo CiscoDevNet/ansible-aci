@@ -6,7 +6,7 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
-    name: aci_inventory
+    name: aci_inventory_system
     short_description: Cisco ACI inventory plugin
     extends_documentation_fragment:
       - cisco.aci.aci
@@ -20,7 +20,7 @@ DOCUMENTATION = r"""
 EXAMPLES = """
 ---
 # Generate dynamic inventory of every device
-plugin: cisco.aci.aci_inventory
+plugin: cisco.aci.aci_inventory_system
 host: 192.168.1.90
 username: admin
 password: PASSWORD
@@ -101,7 +101,7 @@ class MockAnsibleModule(object):
 
 class InventoryModule(BaseInventoryPlugin, Constructable):
 
-    NAME = "cisco.aci.aci_inventory"
+    NAME = "cisco.aci.aci_inventory_system"
 
     def verify_file(self, path):
         """return true/false if this is possibly a valid file for this plugin to consume"""
