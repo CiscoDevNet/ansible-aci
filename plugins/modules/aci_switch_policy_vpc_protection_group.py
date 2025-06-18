@@ -40,6 +40,11 @@ options:
     description:
     - The ID of the Second Leaf Switch for the Explicit vPC Protection Group.
     type: int
+  pod_id:
+    description:
+    - The pod id of the VPC member nodes.
+    type: int
+    default: 1
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -62,6 +67,7 @@ seealso:
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Bruno Calogero (@brunocalogero)
+- Eric Girard (@netgirard)
 """
 
 EXAMPLES = r"""
@@ -224,6 +230,7 @@ def main():
         vpc_domain_policy=dict(type="str", aliases=["vpc_domain_policy_name"]),
         switch_1_id=dict(type="int"),
         switch_2_id=dict(type="int"),
+        pod_id=dict(type="int", default=1),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
@@ -242,6 +249,7 @@ def main():
     vpc_domain_policy = module.params.get("vpc_domain_policy")
     switch_1_id = module.params.get("switch_1_id")
     switch_2_id = module.params.get("switch_2_id")
+    pod_id = module.params.get("pod_id")
     state = module.params.get("state")
     name_alias = module.params.get("name_alias")
 
@@ -271,6 +279,7 @@ def main():
                     fabricNodePEp=dict(
                         attributes=dict(
                             id="{0}".format(switch_1_id),
+                            podId=pod_id,
                         ),
                     ),
                 ),
@@ -278,6 +287,7 @@ def main():
                     fabricNodePEp=dict(
                         attributes=dict(
                             id="{0}".format(switch_2_id),
+                            podId=pod_id,
                         ),
                     ),
                 ),
