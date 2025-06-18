@@ -94,6 +94,7 @@
               - vrf_fbrg_cm.proposed.fvFBRGroup.children.2.fvFBRMember.attributes.rnhAddr == "4.4.4.4"
               - vrf_fbrg_cm.proposed.fvFBRGroup.children.3.fvFBRoute.attributes.fbrPrefix == "1.1.1.1/2"
               - vrf_fbrg is changed
+              - vrf_fbrg.previous == []
               - vrf_fbrg.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group"
               - sorted_children.3.fvFBRoute.attributes.fbrPrefix == "1.1.1.1/2"
               - sorted_child_members.0.rnhAddr == "1.1.1.1"
@@ -127,7 +128,7 @@
           check_mode: true
           register: vrf_fbrg_cm2
 
-        - name: Update vrf_fallback_route - No Check mode
+        - name: Update vrf_fallback_route - Normal mode
           cisco.aci.aci_vrf_fallback_route_group:
             <<: *aci_info
             tenant: ansible_test
@@ -162,6 +163,7 @@
         - name: Verify that vrf_fbrg has been updated correctly in Check modules
           ansible.builtin.assert:
             that:
+              - vrf_fbrg.current == vrf_fbrg2.previous
               - vrf_fbrg_cm2.proposed.fvFBRGroup.attributes.name == "test_fallback_route_group"
               - sorted_child_members_cm2.0.rnhAddr == "1.1.1.1"
               - sorted_child_members_cm2.1.rnhAddr == "2.2.2.2"
@@ -222,6 +224,7 @@
           ansible.builtin.assert:
             that:
               - vrf_fbrg_delete is changed
+              - vrf_fbrg_delete.previous == vrf_fbrg2.current
               - sorted_child_members3.0.rnhAddr == "1.1.1.1"
               - sorted_child_members3.1.rnhAddr == "2.2.2.2"
               - sorted_child_members3.2.rnhAddr == "4.4.4.4"
@@ -261,6 +264,7 @@
           ansible.builtin.assert:
             that:
               - vrf_fbrg_0c is changed
+              - vrf_fbrg_0c.previous == []
               - vrf_fbrg_0c.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group_0c"
               - vrf_fbrg_0c.current.0.fvFBRGroup.children is not defined
 
@@ -302,6 +306,7 @@
           ansible.builtin.assert:
             that:
               - query_all_vrf_fbrg is not changed
+              - query_all_vrf_fbrg.current | length >= 2
         
         - name: Delete all children of vrf_fbrg
           cisco.aci.aci_vrf_fallback_route_group:
