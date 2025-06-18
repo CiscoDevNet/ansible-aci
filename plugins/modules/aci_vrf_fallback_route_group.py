@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2025, Dev Sinha (@DevSinha13) <devsinh@cisco.com>Add commentMore actions
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
-
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -11,37 +11,39 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_vrf_fallback_route
-short_description: Manage VRF fallback route groups (fv:FBRGroup)
+module: aci_vrf_fallback_route_group
+short_description: Manage VRF Fallback Route Groups (fv:FBRGroup)
 description:
 - Manage VRF fallback route groups on Cisco ACI fabrics.
 - Fallback route groups are used to specify routes and next-hop addresses for VRFs.
 options:
   tenant:
     description:
-    - The name of the Tenant to which the VRF fallback route group belongs.
+    - The name of the Tenant associated with the VRF fallback route group.
     type: str
     aliases: [ tenant_name ]
   vrf:
     description:
-    - The name of the VRF associated with the fallback route group.
+    - The name of the VRF associated with the VRF fallback route group.
     type: str
     aliases: [ context, vrf_name ]
-  vrf_fallback_route_group:
+  name:
     description:
-    - The name of the VRF fallback route group to configure.
+    - The name of the VRF fallback route group.
     type: str
-    aliases: [ name ]
-  fallback_route:
+    aliases: [ vrf_fallback_route_group ]
+  prefix_address:
     description:
     - The fallback route (prefix address) for the VRF fallback route group.
     - If not specified, the existing fallback route will remain unchanged.
+    - To delete the fallback route, pass an empty string as the attribute value.
     type: str
-    aliases: [ prefix_address ]
+    aliases: [ fallback_route ]
   fallback_members:
     description:
     - A list of fallback member IP addresses (next-hop addresses) for the VRF fallback route group.
     - Members not in the list will be removed from the configuration.
+    - To delete all the fallback members, pass an empty list.
     type: list
     elements: str
     aliases: [ next_hop_address ]
@@ -52,9 +54,8 @@ options:
     aliases: [ descr ]
   state:
     description:
-    - Use C(present) to create or update the fallback route group.
-    - Use C(absent) to delete the fallback route group.
-    - Use C(query) to retrieve information about the fallback route group.
+    - Use C(present) or C(absent) for adding or removing.
+    - Use C(query) for listing an object or multiple objects.
     type: str
     choices: [ absent, present, query ]
     default: present
@@ -78,7 +79,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create a new VRF fallback route group
-  cisco.aci.aci_vrf_fallback_route:
+  cisco.aci.aci_vrf_fallback_route_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -94,7 +95,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Update fallback members in an existing VRF fallback route group
-  cisco.aci.aci_vrf_fallback_route:
+  cisco.aci.aci_vrf_fallback_route_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -107,19 +108,8 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete a VRF fallback route group
-  cisco.aci.aci_vrf_fallback_route:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    tenant: ansible_test
-    vrf: vrf_test
-    vrf_fallback_route_group: test_fallback_route_group
-    state: absent
-  delegate_to: localhost
-
 - name: Delete children for VRF fallback route group
-  cisco.aci.aci_vrf_fallback_route:
+  cisco.aci.aci_vrf_fallback_route_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -132,7 +122,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query a VRF fallback route group
-  cisco.aci.aci_vrf_fallback_route:
+  cisco.aci.aci_vrf_fallback_route_group:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -144,13 +134,24 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query all VRF fallback route groups
-  cisco.aci.aci_vrf_fallback_route:
+  cisco.aci.aci_vrf_fallback_route_group:
     host: apic
     username: admin
     password: SomeSecretPassword
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Delete a VRF fallback route group
+  cisco.aci.aci_vrf_fallback_route_group:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: ansible_test
+    vrf: vrf_test
+    vrf_fallback_route_group: test_fallback_route_group
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
@@ -294,8 +295,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant"]],
-            ["state", "present", ["tenant"]],
+            ["state", "absent", ["tenant", "vrf"]],
+            ["state", "present", ["tenant", "vrf"]],
         ],
     )
 
@@ -360,6 +361,12 @@ def main():
 
         if fallback_route is not None and fallback_route != existing_route:
             if existing_route:
+                # Appending to child_config list not possible because of APIC Error 182: Multiple fallback routes not allowed in one group.
+                # A seperate delete request to dn of the fvFBRoute is needed to remove the object prior to adding to child_configs.
+                # Failed child_config is displayed in below:
+                # child_configs.append(
+                #     dict(fvFBRoute=dict(attributes=dict(fbrPrefix=existing_route, status="deleted"))),
+                # )
                 aci.api_call(
                     "DELETE",
                     "{0}/api/mo/uni/tn-{1}/ctx-{2}/fbrg-{3}/pfx-[{4}].json".format(aci.base_url, tenant, vrf, vrf_fallback_route_group, existing_route),
