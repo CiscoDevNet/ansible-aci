@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2025, Tim Cragg (@timcragg)
-# Copyright: (c) 2025, Shreyas Srish (@shrsr)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -13,10 +11,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_l4l7_service_graph_template_abs_connection
-short_description: Manage L4-L7 Service Graph Template Abs Connections (vns:AbsConnection)
+module: aci_l4l7_service_graph_template_connection_to_connector
+short_description: Manage L4-L7 Service Graph Template Connections (vns:RsAbsConnectionConns)
 description:
-- Manage Layer 4 to Layer 7 (L4-L7) Service Graph Template Connections.
+- Manage Manage L4-L7 Service Graph Template Connections.
 options:
   tenant:
     description:
@@ -29,39 +27,19 @@ options:
     type: str
   connection_name:
     description:
-    - The name of the connection.
+    - The name of an existing vns:AbsConnection object.
     type: str
-  direct_connect:
+  direction:
     description:
-    - Whether to enable direct connections.
-    - The APIC defaults to C(false) when unset during creation.
-    type: bool
-  unicast_route:
-    description:
-    - Whether to enable unicast routing.
-    - The APIC defaults to C(true) when unset during creation.
-    type: bool
-  adjacency_type:
-    description:
-    - Whether the adjacency is Layer2 or Layer3.
-    - The APIC defaults to C(l2) when unset during creation.
+    - The direction of the connection.
+    - If this links to a terminal node, both vns:RsAbsConnectionConns will use the same direction.
+    - Otherwise one vns:RsAbsConnectionConns will be consumer, and the other will be provider.
     type: str
-    choices: [ l2, l3 ]
-  connector_direction:
+    choices: [ consumer, provider ]
+  connected_node:
     description:
-    - The connector direction.
-    - The APIC defaults to C(unknown) when unset during creation.
-    type: str
-    choices: [ provider, consumer, unknown ]
-  connection_type:
-    description:
-    - The connection type.
-    - The APIC defaults to C(external) when unset during creation.
-    type: str
-    choices: [ internal, external ]
-  description:
-    description:
-    - The description for the Service Graph Template connection.
+    - The name of an existing node.
+    - Omit this variable for connections to terminal nodes.
     type: str
   state:
     description:
@@ -73,15 +51,17 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
-- cisco.aci.owner
 notes:
-- The I(tenant) and I(service_graph) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l4l7_service_graph_template) modules can be used for this.
+- The I(tenant), I(service_graph) and I(connection_name) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l4l7_service_graph_template)
+  and M(cisco.aci.aci_l4l7_service_graph_template_abs_conn) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
 - module: cisco.aci.aci_l4l7_service_graph_template
+- module: cisco.aci.aci_l4l7_service_graph_template_abs_connection
+- module: cisco.aci.aci_l4l7_service_graph_template_node
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class, B(vns:AbsConnection)
+  description: More information about the internal APIC class, B(vns:RsAbsConnectionConns)
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -90,44 +70,38 @@ author:
 
 EXAMPLES = r"""
 - name: Add a new connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
-    service_graph: my_graph
+    service_graph: test-graph
+    direction: provider
     connection_name: C1
     state: present
   delegate_to: localhost
 
 - name: Query a connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
-    service_graph: my_graph
+    service_graph: test-graph
+    direction: provider
     connection_name: C1
     state: query
   delegate_to: localhost
   register: query_result
 
-- name: Query all connections
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    state: query
-  delegate_to: localhost
-  register: query_result
-
 - name: Delete a connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     host: apic
     username: admin
     password: SomeSecretPassword
     tenant: my_tenant
-    service_graph: my_graph
+    service_graph: test-graph
+    direction: provider
     connection_name: C1
     state: absent
   delegate_to: localhost
@@ -240,47 +214,44 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
-    argument_spec.update(aci_owner_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         service_graph=dict(type="str"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         connection_name=dict(type="str"),
-        direct_connect=dict(type="bool"),
-        unicast_route=dict(type="bool"),
-        adjacency_type=dict(type="str", choices=["l2", "l3"]),
-        connector_direction=dict(type="str", choices=["provider", "consumer", "unknown"]),
-        connection_type=dict(type="str", choices=["internal", "external"]),
-        description=dict(type="str"),
+        direction=dict(type="str", choices=["consumer", "provider"]),
+        connected_node=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "service_graph", "connection_name"]],
-            ["state", "present", ["tenant", "service_graph", "connection_name"]],
+            ["state", "absent", ["tenant", "service_graph", "connection_name", "direction"]],
+            ["state", "present", ["tenant", "service_graph", "connection_name", "direction"]],
         ],
     )
-
-    aci = ACIModule(module)
 
     tenant = module.params.get("tenant")
     service_graph = module.params.get("service_graph")
     state = module.params.get("state")
     connection_name = module.params.get("connection_name")
-    unicast_route = aci.boolean(module.params.get("unicast_route"))
-    adjacency_type = module.params.get("adjacency_type").upper() if module.params.get("adjacency_type") is not None else None
-    direct_connect = aci.boolean(module.params.get("direct_connect"))
-    connector_direction = module.params.get("connector_direction")
-    connection_type = module.params.get("connection_type")
-    description = module.params.get("description")
+    direction = module.params.get("direction")
+    connected_node = module.params.get("connected_node")
+
+    aci = ACIModule(module)
+    if connected_node:
+        tdn = "uni/tn-{0}/AbsGraph-{1}/AbsNode-{2}/AbsFConn-{3}".format(tenant, service_graph, connected_node, direction)
+    elif direction == "consumer":
+        tdn = "uni/tn-{0}/AbsGraph-{1}/AbsTermNodeCon-T1/AbsTConn".format(tenant, service_graph)
+    elif direction == "provider":
+        tdn = "uni/tn-{0}/AbsGraph-{1}/AbsTermNodeProv-T2/AbsTConn".format(tenant, service_graph)
 
     aci.construct_url(
         root_class=dict(
@@ -301,24 +272,22 @@ def main():
             module_object=connection_name,
             target_filter={"name": connection_name},
         ),
+        subclass_3=dict(
+            aci_class="vnsRsAbsConnectionConns",
+            aci_rn="rsabsConnectionConns-[{0}]".format(tdn),
+            module_object=tdn,
+            target_filter={"tDn": tdn},
+        ),
     )
 
     aci.get_existing()
 
     if state == "present":
         aci.payload(
-            aci_class="vnsAbsConnection",
-            class_config=dict(
-                name=connection_name,
-                adjType=adjacency_type,
-                directConnect=direct_connect,
-                unicastRoute=unicast_route,
-                connType=connection_type,
-                connDir=connector_direction,
-                descr=description,
-            ),
+            aci_class="vnsRsAbsConnectionConns",
+            class_config=dict(tDn=tdn),
         )
-        aci.get_diff(aci_class="vnsAbsConnection")
+        aci.get_diff(aci_class="vnsRsAbsConnectionConns")
 
         aci.post_config()
 
