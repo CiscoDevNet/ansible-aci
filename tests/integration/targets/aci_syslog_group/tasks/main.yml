@@ -413,6 +413,19 @@
     - remove_syslog_group.previous.0.syslogGroup.attributes.dn == "uni/fabric/slgroup-ansible_syslog_group"
     - remove_syslog_group.previous.0.syslogGroup.attributes.name == "ansible_syslog_group"
 
+- name: Remove syslog group again(idempotency)
+  cisco.aci.aci_syslog_group:
+    <<: *aci_info
+    name: ansible_syslog_group
+    state: absent
+  register: remove_syslog_group_again
+
+- name: Verify idempotency for remove_syslog_group
+  ansible.builtin.assert:
+    that:
+      - remove_syslog_group_again is not changed
+      - remove_syslog_group_again.current == remove_syslog_group_again.previous
+
 - name: Remove ansible_syslog_new if it already exists
   cisco.aci.aci_syslog_group:
     <<: *aci_info
