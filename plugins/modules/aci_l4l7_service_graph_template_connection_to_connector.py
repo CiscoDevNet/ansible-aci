@@ -12,9 +12,9 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l4l7_service_graph_template_connection_to_connector
-short_description: Manage L4-L7 Service Graph Template Connections (vns:RsAbsConnectionConns)
+short_description: Manage L4-L7 Service Graph Template Connections between function nodes and terminal nodes (vns:RsAbsConnectionConns)
 description:
-- Manage Manage L4-L7 Service Graph Template Connections.
+- Manage L4-L7 Service Graph Template Connections to define traffic flows between function nodes and terminal nodes.
 options:
   tenant:
     description:
