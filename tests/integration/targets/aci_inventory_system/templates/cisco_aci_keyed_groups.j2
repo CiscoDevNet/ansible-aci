@@ -1,0 +1,19 @@
+---
+plugin: cisco.aci.aci_inventory_system
+host: {{ aci_host }}
+username: {{ aci_username }}
+password: {{ aci_password }}
+validate_certs: false
+
+compose:
+  ansible_connection: "'ansible.netcommon.httpapi'"
+  ansible_network_os: "'cisco.aci.aci'"
+  ansible_user: "'{{ aci_username }}'"
+  ansible_password: "'{{ aci_password }}'"
+  ansible_httpapi_validate_certs: "'false'"
+  ansible_httpapi_use_ssl: "'true'"
+  ansible_httpapi_use_proxy: "'true'"
+
+keyed_groups:
+  - prefix: role
+    key: role
