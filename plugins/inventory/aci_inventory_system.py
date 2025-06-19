@@ -48,7 +48,10 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import (
     ACIModule,
     aci_argument_spec,
 )
-from ansible_collections.cisco.aci.plugins.module_utils.constants import RESERVED_ANSIBLE_INVENTORY_KEYS
+from ansible_collections.cisco.aci.plugins.module_utils.constants import (
+    RESERVED_ANSIBLE_INVENTORY_KEYS,
+    MOCKED_CONSTRUCTED_INVENTORY_ARGUMENT_SPEC,
+)
 from ansible.module_utils.common.arg_spec import ArgumentSpecValidator
 from ansible.module_utils.common.text.converters import to_native
 from ansible.errors import AnsibleError
@@ -77,7 +80,7 @@ class MockAnsibleModule(object):
         result = validator.validate(parameters)
 
         if result.error_messages:
-            display.vvv("Validation failed: {0}".format(", ".join(result.error_messages)))
+            self.warn("Validation failed: {0}".format(", ".join(result.error_messages)))
 
         self.params = result.validated_parameters
 
@@ -125,6 +128,12 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         argument_spec = aci_argument_spec()
 
+        # Avoid argument spec validation warnings for plugin options
+        # Options are retrieved from the constructed plugin docs, see below links for more information:
+        #   - https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/inventory/constructed.py
+        #   - https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/doc_fragments/constructed.py
+        argument_spec.update(MOCKED_CONSTRUCTED_INVENTORY_ARGUMENT_SPEC)
+
         module = MockAnsibleModule(
             argument_spec=argument_spec,
             parameters=config,
@@ -141,7 +150,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             if attributes.get("name"):
                 self.add_host(
                     attributes.get("name"),
-                    # replace the reserved Ansible inventory keys from host topSystem attributes 
+                    # replace the reserved Ansible inventory keys from host topSystem attributes
                     {RESERVED_ANSIBLE_INVENTORY_KEYS.get(key, key): value for key, value in attributes.items()},
                 )
 
