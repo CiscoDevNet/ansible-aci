@@ -496,4 +496,29 @@ L4L7_UI_TEMPLATE_TYPE = {
 
 COS_MAPPING = {"cos_0": "Cos0", "cos_1": "Cos1", "cos_2": "Cos2", "cos_3": "Cos3", "cos_4": "Cos4", "cos_5": "Cos5", "cos_6": "Cos6", "cos_7": "Cos7"}
 
-RESERVED_ANSIBLE_INVENTORY_KEYS = {"serial": "_serial", "name": "_name"}
+RESERVED_ANSIBLE_INVENTORY_KEYS = {
+    "serial": "_serial",
+    "name": "_name",
+}
+
+MOCKED_CONSTRUCTED_INVENTORY_ARGUMENT_SPEC = dict(
+    plugin=dict(type="str"),
+    use_vars_plugins=dict(type="bool"),
+    strict=dict(type="bool"),
+    compose=dict(type="dict"),
+    groups=dict(type="dict"),
+    keyed_groups=dict(
+        type="list",
+        elements="dict",
+        options=dict(
+            parent_group=dict(type="str"),
+            prefix=dict(type="str"),
+            separator=dict(type="str"),
+            key=dict(type="str"),
+            default_value=dict(type="str"),
+            trailing_separator=dict(type="bool"),
+        ),
+    ),
+    use_extra_vars=dict(type="bool"),
+    leading_separator=dict(type="bool"),
+)
