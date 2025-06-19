@@ -479,3 +479,5 @@ L4L7_UI_TEMPLATE_TYPE = {
     "two_node_fw_trans_adc_two_arm": "TWO_NODE_FW_TRANS_ADC_TWO_ARM",
     "unspecified": "UNSPECIFIED",
 }
+
+RESERVED_ANSIBLE_INVENTORY_KEYS = {"serial": "_serial", "name": "_name"}
