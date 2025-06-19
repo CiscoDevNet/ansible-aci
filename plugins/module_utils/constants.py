@@ -495,3 +495,5 @@ L4L7_UI_TEMPLATE_TYPE = {
 }
 
 COS_MAPPING = {"cos_0": "Cos0", "cos_1": "Cos1", "cos_2": "Cos2", "cos_3": "Cos3", "cos_4": "Cos4", "cos_5": "Cos5", "cos_6": "Cos6", "cos_7": "Cos7"}
+
+RESERVED_ANSIBLE_INVENTORY_KEYS = {"serial": "_serial", "name": "_name"}
