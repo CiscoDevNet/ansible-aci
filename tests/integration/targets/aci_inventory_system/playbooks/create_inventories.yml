@@ -1,0 +1,16 @@
+---
+- name: Create inventory configuration file
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+
+    - name: Lookup ACI username and password for CI instances
+      ansible.builtin.set_fact:
+        aci_password: "{{ lookup('ansible.builtin.ini', 'aci_password', file='../../../inventory.networking', section='aci:vars') | from_json }}"
+        aci_username: "{{ lookup('ansible.builtin.ini', 'aci_username', file='../../../inventory.networking', section='aci:vars') }}"
+
+    - name: Create inventory configuration files for each apic defined in inventory
+      ansible.builtin.template:
+        src: ../templates/{{ template_name }}.j2
+        dest: ../{{file_name}}.yml

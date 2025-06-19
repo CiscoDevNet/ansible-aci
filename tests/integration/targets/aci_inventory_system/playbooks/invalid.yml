@@ -1,0 +1,14 @@
+---
+- name: My playbook
+  hosts: all
+  gather_facts: false
+  module_defaults:
+    group/cisco.aci.all:
+      output_level: debug
+
+  tasks:
+    - name: Assert host present in hostvars
+      ansible.builtin.assert:
+        that:
+          - "'localhost' in hostvars"
+          - hostvars | length == 1
