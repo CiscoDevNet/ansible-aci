@@ -48,10 +48,12 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import (
     ACIModule,
     aci_argument_spec,
 )
+from ansible_collections.cisco.aci.plugins.module_utils.constants import RESERVED_ANSIBLE_INVENTORY_KEYS
 from ansible.module_utils.common.arg_spec import ArgumentSpecValidator
 from ansible.module_utils.common.text.converters import to_native
 from ansible.errors import AnsibleError
 from ansible.utils.display import Display
+
 
 display = Display()
 
@@ -137,7 +139,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         for device in aci.existing:
             attributes = device.get("topSystem", {}).get("attributes", {})
             if attributes.get("name"):
-                self.add_host(attributes.get("name"), attributes)
+                self.add_host(
+                    attributes.get("name"),
+                    # replace the reserved Ansible inventory keys from host topSystem attributes 
+                    {RESERVED_ANSIBLE_INVENTORY_KEYS.get(key, key): value for key, value in attributes.items()},
+                )
 
     def add_host(self, hostname, host_vars):
         self.inventory.add_host(hostname, group="all")
