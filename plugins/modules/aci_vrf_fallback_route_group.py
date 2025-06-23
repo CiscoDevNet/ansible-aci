@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2025, Dev Sinha (@DevSinha13) <devsinh@cisco.com>Add commentMore actions
+# Copyright: (c) 2025, Dev Sinha (@DevSinha13) <devsinh@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
@@ -350,14 +350,40 @@ def main():
                 if route:
                     existing_route = route
 
-        if fallback_members is not None and fallback_members != existing_members:
-            for member in fallback_members:
-                if member not in existing_members:
-                    child_configs.append(dict(fvFBRMember=dict(attributes=dict(rnhAddr=member))))
+        if fallback_members is not None:
+            if fallback_members:
+                fallback_members_set = set(fallback_members)
+            else:
+                fallback_members_set = set()
 
-            for existing_member in existing_members:
-                if existing_member not in fallback_members:
-                    child_configs.append(dict(fvFBRMember=dict(attributes=dict(rnhAddr=existing_member, status="deleted"))))
+            existing_members_set = set(existing_members)
+
+            if fallback_members_set != existing_members_set:
+                members_to_add = list(fallback_members_set - existing_members_set)
+                members_to_remove = list(existing_members_set - fallback_members_set)
+
+                for member in members_to_add:
+                    child_configs.append(
+                        dict(
+                            fvFBRMember=dict(
+                                attributes=dict(
+                                    rnhAddr=member
+                                )
+                            )
+                        )
+                    )
+
+                for existing_member in members_to_remove:
+                    child_configs.append(
+                        dict(
+                            fvFBRMember=dict(
+                                attributes=dict(
+                                    rnhAddr=existing_member,
+                                    status="deleted"
+                                )
+                            )
+                        )
+                    )
 
         if fallback_route is not None and fallback_route != existing_route:
             if existing_route:
