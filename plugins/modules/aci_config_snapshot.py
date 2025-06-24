@@ -227,6 +227,8 @@ url:
   sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
 
+import json
+
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
@@ -302,8 +304,14 @@ def main():
 
         # Query for job information and add to results
         path = "api/node/mo/uni/backupst/jobs-[uni/fabric/configexp-{0}].json".format(export_policy)
-        aci.api_call("GET", url="{0}/{1}".format(aci.base_url, path))
-        aci.result["job_details"] = aci.existing[0].get("configJobCont", {})
+        resp, info = aci.api_call("GET", "{0}/{1}".format(aci.base_url, path), return_response=True)
+        try:
+            aci.imdata = json.loads(resp.read()).get("imdata")
+        except AttributeError:
+            aci.imdata = json.loads(info.get("body")).get("imdata")
+        aci.result["job_details"] = {}
+        if aci.imdata and isinstance(aci.imdata, list) and isinstance(aci.imdata[0], dict):
+            aci.result["job_details"] = aci.imdata[0].get("configJobCont", {})
 
     else:
         # Prefix the proper url to export_policy
