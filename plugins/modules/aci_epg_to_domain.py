@@ -177,7 +177,7 @@ options:
     choices: [ cos_0, cos_1, cos_2, cos_3, cos_4, cos_5, cos_6, cos_7 ]
   epg_cos_preference:
     description:
-    - The class of service (CoS) preference.
+    - The CoS preference.
     - The APIC defaults to C(disabled) when unset during creation.
     type: str
     choices: [ enabled, disabled ]
@@ -188,13 +188,13 @@ options:
     type: str
   ipam_enabled:
     description:
-    - The IP Address Management (IPAM) enabled state.
+    - The IPAM enabled state.
     - Only applicable for Nutanix domains.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
   ipam_gateway:
     description:
-    - The IP Address Management (IPAM) gateway.
+    - The IPAM gateway.
     - Only applicable for Nutanix domains.
     type: str
   lag_policy_name:
@@ -219,10 +219,10 @@ options:
   secondary_encap_inner:
     description:
     - The secondary inner encapsulation.
-    - This is used for the portgroup at the VMWare Distributed Virtual Switch (DVS).
+    - This is used for the portgroup at the VMWare DVS.
     - This VLAN is internal to the DVS and is used for communication between the other VMs and the AVE VM at a host.
     - Traffic is not forwarded to the fabric over the VLAN.
-    - Only applicable for Cisco ACI Virtual Edge (AVE) domains.
+    - Only applicable for AVE domains.
     - Accepted values range between C(1) and C(4096).
     type: int
 extends_documentation_fragment:
