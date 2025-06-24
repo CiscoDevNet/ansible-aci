@@ -363,27 +363,10 @@ def main():
                 members_to_remove = list(existing_members_set - fallback_members_set)
 
                 for member in members_to_add:
-                    child_configs.append(
-                        dict(
-                            fvFBRMember=dict(
-                                attributes=dict(
-                                    rnhAddr=member
-                                )
-                            )
-                        )
-                    )
+                    child_configs.append(dict(fvFBRMember=dict(attributes=dict(rnhAddr=member))))
 
                 for existing_member in members_to_remove:
-                    child_configs.append(
-                        dict(
-                            fvFBRMember=dict(
-                                attributes=dict(
-                                    rnhAddr=existing_member,
-                                    status="deleted"
-                                )
-                            )
-                        )
-                    )
+                    child_configs.append(dict(fvFBRMember=dict(attributes=dict(rnhAddr=existing_member, status="deleted"))))
 
         if fallback_route is not None and fallback_route != existing_route:
             if existing_route:
