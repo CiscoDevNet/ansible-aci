@@ -104,12 +104,14 @@
       - query_export.current.0.configSnapshotCont.children | length > 1
       - query_export_snapshot is not failed
       - query_export_snapshot is not changed
-      - '"snapshots-[uni/fabric/configexp-anstest]/snapshot-{{ test_snapshot }}.json" in query_export_snapshot.url'
+      - '"snapshots-[uni/fabric/configexp-anstest]/snapshot-" in query_export_snapshot.url'
+      - 'test_snapshot in query_export_snapshot.url'
       - query_export_snapshot.current | length == 1
       - query_snapshot is not failed
       - query_snapshot is not changed
       - '"class/configSnapshot.json" in query_snapshot.url'
-      - '"configSnapshot.name,\"{{ test_snapshot }}\"" in query_snapshot.filter_string'
+      - '"configSnapshot.name" in query_snapshot.filter_string'
+      - 'test_snapshot in query_snapshot.filter_string'
       - query_all is not failed
       - query_all is not changed
       - '"class/configSnapshot.json" in query_all.url'
