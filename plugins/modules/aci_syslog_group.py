@@ -49,26 +49,26 @@ options:
     description:
     - Format of the syslog messages.
     - If unset during creation the value defaults to C(aci).
-    - C(rfc5424-ts) is only available starting from ACI version 5.2(8).
-    - C(enhanced_log) is only available starting from ACI version 6.0(9d) and is an alias to C(rfc5424-ts).
+    - C(rfc5424_ts) is only available starting from ACI version 5.2(8).
+    - C(enhanced_log) is only available starting from ACI version 6.0(9d) and is an alias to C(rfc5424_ts).
     type: str
-    choices: [ aci, nxos, rfc5424-ts, enhanced_log ]
+    choices: [ aci, nxos, rfc5424_ts, enhanced_log ]
   local_file_log_format:
     description:
     - The format of the local file log messages.
     - If unset during creation and O(format) is provided then it is set to the same value as format. If O(format) is not provided it is set to C(aci).
-    - C(rfc5424-ts) is only available starting from ACI version 5.2(8).
-    - C(enhanced_log) is only available starting from ACI version 6.0(9d) and is an alias to C(rfc5424-ts).
+    - C(rfc5424_ts) is only available starting from ACI version 5.2(8).
+    - C(enhanced_log) is only available starting from ACI version 6.0(9d) and is an alias to C(rfc5424_ts).
     type: str
-    choices: [ aci, nxos, rfc5424-ts, enhanced_log ]
+    choices: [ aci, nxos, rfc5424_ts, enhanced_log ]
   console_log_format:
     description:
     - Format of the console log messages.
     - If unset during creation and O(format) is provided then it is set to the same value as format. If O(format) is not provided it is set to C(aci).
-    - The option C(rfc5424-ts) is only available in ACI version 5.2(8) or later.
-    - The option C(enhanced_log) is only available in ACI version 6.0(9d) or later and is an alias to C(rfc5424-ts).
+    - The option C(rfc5424_ts) is only available in ACI version 5.2(8) or later.
+    - The option C(enhanced_log) is only available in ACI version 6.0(9d) or later and is an alias to C(rfc5424_ts).
     type: str
-    choices: [ aci, nxos, rfc5424-ts, enhanced_log ]
+    choices: [ aci, nxos, rfc5424_ts, enhanced_log ]
   include_ms:
     description:
     - Include milliseconds in log timestamps.
@@ -133,8 +133,8 @@ EXAMPLES = r"""
     local_file_log_severity: warnings
     console_logging: enabled
     console_log_severity: critical
-    local_file_log_format: rfc5424-ts
-    console_log_format: rfc5424-ts
+    local_file_log_format: rfc5424_ts
+    console_log_format: rfc5424_ts
     description: syslog group
     state: present
 

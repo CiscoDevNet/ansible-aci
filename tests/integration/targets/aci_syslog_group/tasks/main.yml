@@ -291,19 +291,19 @@
 - name: Execute tasks only for non-cloud sites
   when: version.current.0.topSystem.attributes.version is version('6', '>=')
   block:
-    # ADD syslog group with rfc5424-ts as format  
+    # ADD syslog group with rfc5424_ts as format  
     - name: Add syslog new (version >= 6) 
       cisco.aci.aci_syslog_group: 
         <<: *aci_info
         name: ansible_syslog_new
         admin_state: enabled
-        format: rfc5424-ts
+        format: rfc5424_ts
         local_file_logging: enabled
         local_file_log_severity: warnings
         console_log_severity: critical
         console_logging: enabled
-        local_file_log_format: rfc5424-ts
-        console_log_format: rfc5424-ts
+        local_file_log_format: rfc5424_ts
+        console_log_format: rfc5424_ts
         description: Description for the syslog group
         state: present
       register: add_syslog_new_format
@@ -312,7 +312,7 @@
       ansible.builtin.set_fact:
         sorted_new: "{{ add_syslog_new_format.current[0].syslogGroup.children | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}" 
 
-    - name: Verify that the format rfc5424-ts is valid for syslog group and children
+    - name: Verify that the format rfc5424_ts is valid for syslog group and children
       ansible.builtin.assert:
         that:
         - add_syslog_new_format is changed
