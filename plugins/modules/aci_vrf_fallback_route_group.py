@@ -14,34 +14,34 @@ DOCUMENTATION = r"""
 module: aci_vrf_fallback_route_group
 short_description: Manage VRF Fallback Route Groups (fv:FBRGroup)
 description:
-- Manage VRF fallback route groups on Cisco ACI fabrics.
+- Manage VRF Fallback Route Groups on Cisco ACI fabrics.
 - Fallback route groups are used to specify routes and next-hop addresses for VRFs.
 options:
   tenant:
     description:
-    - The name of the Tenant associated with the VRF fallback route group.
+    - The name of the Tenant associated with the VRF Fallback Route Group.
     type: str
     aliases: [ tenant_name ]
   vrf:
     description:
-    - The name of the VRF associated with the VRF fallback route group.
+    - The name of the VRF associated with the VRF Fallback Route Group.
     type: str
     aliases: [ context, vrf_name ]
   name:
     description:
-    - The name of the VRF fallback route group.
+    - The name of the VRF Fallback Route Group.
     type: str
     aliases: [ vrf_fallback_route_group ]
   prefix_address:
     description:
-    - The fallback route (prefix address) for the VRF fallback route group.
+    - The fallback route (prefix address) for the VRF Fallback Route Group.
     - If not specified, the existing fallback route will remain unchanged.
     - To delete the fallback route, pass an empty string as the attribute value.
     type: str
     aliases: [ fallback_route ]
   fallback_members:
     description:
-    - A list of fallback member IP addresses (next-hop addresses) for the VRF fallback route group.
+    - A list of fallback member IP addresses (next-hop addresses) for the VRF Fallback Route Group.
     - Members not in the list will be removed from the configuration.
     - To delete all the fallback members, pass an empty list.
     type: list
@@ -49,7 +49,7 @@ options:
     aliases: [ next_hop_address ]
   description:
     description:
-    - The description for the VRF fallback route group.
+    - The description for the VRF Fallback Route Group.
     type: str
     aliases: [ descr ]
   state:
@@ -78,7 +78,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create a new VRF fallback route group
+- name: Create a new VRF Fallback Route Group
   cisco.aci.aci_vrf_fallback_route_group:
     host: apic
     username: admin
@@ -90,11 +90,11 @@ EXAMPLES = r"""
     fallback_members:
       - 192.168.1.1
       - 192.168.1.2
-    description: Test fallback route group
+    description: Test Fallback Route Group
     state: present
   delegate_to: localhost
 
-- name: Update fallback members in an existing VRF fallback route group
+- name: Update fallback members in an existing VRF Fallback Route Group
   cisco.aci.aci_vrf_fallback_route_group:
     host: apic
     username: admin
@@ -108,7 +108,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete children for VRF fallback route group
+- name: Delete children for VRF Fallback Route Group
   cisco.aci.aci_vrf_fallback_route_group:
     host: apic
     username: admin
@@ -121,7 +121,7 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Query a VRF fallback route group
+- name: Query a VRF Fallback Route Group
   cisco.aci.aci_vrf_fallback_route_group:
     host: apic
     username: admin
@@ -133,7 +133,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Query all VRF fallback route groups
+- name: Query all VRF Fallback Route Groups
   cisco.aci.aci_vrf_fallback_route_group:
     host: apic
     username: admin
@@ -142,7 +142,7 @@ EXAMPLES = r"""
   delegate_to: localhost
   register: query_result
 
-- name: Delete a VRF fallback route group
+- name: Delete a VRF Fallback Route Group
   cisco.aci.aci_vrf_fallback_route_group:
     host: apic
     username: admin
@@ -165,7 +165,7 @@ current:
             "fvFBRGroup": {
                 "attributes": {
                     "name": "test_fallback_route_group",
-                    "descr": "Test fallback route group",
+                    "descr": "Test Fallback Route Group",
                     "dn": "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
                 },
                 "children": [
@@ -205,7 +205,7 @@ sent:
         "fvFBRGroup": {
             "attributes": {
                 "name": "test_fallback_route_group",
-                "descr": "Test fallback route group"
+                "descr": "Test Fallback Route Group"
             },
             "children": [
                 {
@@ -374,7 +374,7 @@ def main():
                 # A seperate delete request to dn of the fvFBRoute is needed to remove the object prior to adding to child_configs.
                 # Failed child_config is displayed in below:
                 # child_configs.append(
-                #     dict(fvFBRoute=dict(attributes=dict(fbrPrefix=existing_route, status="deleted"))),
+                #     dict(fvFBRoute=dit(attributes=dict(fbrPrefix=existing_route, status="deleted"))),
                 # )
                 aci.api_call(
                     "DELETE",
