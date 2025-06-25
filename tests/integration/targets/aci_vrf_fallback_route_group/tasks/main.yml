@@ -64,7 +64,7 @@
           - 1.1.1.1
           - 2.2.2.2
           - 4.4.4.4
-        description: Test for fallback route group
+        description: Test for Fallback Route Group
         state: present
       check_mode: true
       register: cm_create_vrf_fbrg
@@ -131,7 +131,7 @@
           - 2.2.2.2
           - 4.4.4.4
           - 5.5.5.5
-        description: Test for fallback route group
+        description: Test for Fallback Route Group
         state: present
       check_mode: true
       register: cm_update_vrf_fbrg
@@ -148,7 +148,7 @@
           - 2.2.2.2
           - 4.4.4.4
           - 5.5.5.5
-        description: Test for fallback route group
+        description: Test for Fallback Route Group
         state: present
       register: nm_update_vrf_fbrg
 
@@ -196,7 +196,7 @@
           - 2.2.2.2
           - 1.1.1.1
           - 4.4.4.4
-        description: Test for fallback route group
+        description: Test for Fallback Route Group
         state: present
       register: nm_update_vrf_fbrg_again
       
@@ -217,7 +217,7 @@
           - 1.1.1.1
           - 2.2.2.2
           - 4.4.4.4
-        description: Test for fallback route group
+        description: Test for Fallback Route Group
         state: present
       register: nm_delete_vrf_fbrg_children
 
@@ -250,7 +250,7 @@
           - 1.1.1.1
           - 2.2.2.2
           - 4.4.4.4
-        description: Test for fallback route group
+        description: Test for Fallback Route Group
         state: present
       register: nm_delete_vrf_fbrg_children_again
     
@@ -260,13 +260,13 @@
           - nm_delete_vrf_fbrg_children_again is not changed
           - nm_delete_vrf_fbrg_children_again.current ==  nm_delete_vrf_fbrg_children.current 
     
-    - name: Create a new vrf fallback route group without children      
+    - name: Create a new vrf Fallback Route Group without children      
       cisco.aci.aci_vrf_fallback_route_group:
         <<: *aci_info
         tenant: ansible_test
         vrf: vrf_test
         name: test_fallback_route_group_2 
-        description: Test for fallback route group
+        description: Test for Fallback Route Group
         state: present
       register: nm_create_vrf_fbrg_2
 
@@ -326,7 +326,7 @@
         name: test_fallback_route_group
         fallback_route: ""
         fallback_members: []
-        description: Test for fallback route group
+        description: Test for Fallback Route Group
         state: present
       register: delete_all_vrf_fbrg_children
 
@@ -344,7 +344,7 @@
         name: test_fallback_route_group
         fallback_route: ""
         fallback_members: []
-        description: Test for fallback route group
+        description: Test for Fallback Route Group
         state: absent
       register: vrf_fbrg_removed
 
@@ -356,10 +356,10 @@
         name: test_fallback_route_group
         fallback_route: ""
         fallback_members: []
-        description: Test for fallback route group
+        description: Test for Fallback Route Group
         state: absent
       check_mode: true
-      register: vrf_fbrg_removed_cm
+      register: cm_vrf_fbrg_removed
 
     - name: Verify that vrf_fbrg is deleted
       ansible.builtin.assert:
@@ -368,9 +368,8 @@
           - vrf_fbrg_removed.current == []
           - vrf_fbrg_removed.previous.0.fvFBRGroup.attributes.name == "test_fallback_route_group"
           - vrf_fbrg_removed.previous.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
-          - vrf_fbrg_removed_cm.proposed == {}
-          - vrf_fbrg_removed_cm.previous == nm_create_vrf_fbrg.previous
-
+          - cm_vrf_fbrg_removed.proposed == {}
+          
     - name: Delete vrf_fbrg again (idempotency)
       cisco.aci.aci_vrf_fallback_route_group:
         <<: *aci_info
@@ -379,7 +378,7 @@
         name: test_fallback_route_group
         fallback_route: ""
         fallback_members: []
-        description: Test for fallback route group
+        description: Test for Fallback Route Group
         state: absent
       register: nm_delete_vrf_fbrg_again
 
