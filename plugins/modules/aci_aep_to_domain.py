@@ -46,7 +46,7 @@ options:
     - Support for Kubernetes was added in ACI v3.0.
     - Support for CloudFoundry, OpenShift and Red Hat was added in ACI v3.1.
     type: str
-    choices: [ cloudfoundry, kubernetes, microsoft, openshift, openstack, redhat, vmware ]
+    choices: [ cloudfoundry, kubernetes, microsoft, openshift, openstack, redhat, vmware, nutanix ]
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -227,7 +227,7 @@ def main():
         domain=dict(type="str", aliases=["domain_name", "domain_profile"]),  # Not required for querying all objects
         domain_type=dict(type="str", choices=["fc", "l2dom", "l3dom", "phys", "vmm"], aliases=["type"]),  # Not required for querying all objects
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING.keys())),
+        vm_provider=dict(type="str", choices=list(VM_PROVIDER_MAPPING)),
     )
 
     module = AnsibleModule(
