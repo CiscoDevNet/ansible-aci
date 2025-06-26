@@ -12,10 +12,10 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_vrf_fallback_route_group
-short_description: Manage VRF Fallback Route Groups (fv:FBRGroup)
+short_description: Manage VRF Fallback Route Groups (fv:FBRGroup and fv:FBRMember)
 description:
 - Manage VRF Fallback Route Groups on Cisco ACI fabrics.
-- Fallback route groups are used to specify routes and next-hop addresses for VRFs.
+- Fallback Route Groups are used to specify routes and next-hop addresses for VRFs.
 options:
   tenant:
     description:
@@ -43,6 +43,7 @@ options:
     description:
     - A list of fallback member IP addresses (next-hop addresses) for the VRF Fallback Route Group.
     - Members not in the list will be removed from the configuration.
+    - If not specified, the existing fallback members will remain unchanged.
     - To delete all the fallback members, pass an empty list.
     type: list
     elements: str
@@ -71,7 +72,7 @@ seealso:
 - module: cisco.aci.aci_vrf
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(fv:FBRGroup).
+  description: More information about the internal APIC class B(fv:FBRGroup) and B(fv:FBRMember).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dev Sinha (@devsinha13)
@@ -351,22 +352,14 @@ def main():
                     existing_route = route
 
         if fallback_members is not None:
-            if fallback_members:
-                fallback_members_set = set(fallback_members)
-            else:
-                fallback_members_set = set()
+            fallback_members_set = set(fallback_members)
 
             existing_members_set = set(existing_members)
 
-            if fallback_members_set != existing_members_set:
-                members_to_add = list(fallback_members_set - existing_members_set)
-                members_to_remove = list(existing_members_set - fallback_members_set)
-
-                for member in members_to_add:
-                    child_configs.append(dict(fvFBRMember=dict(attributes=dict(rnhAddr=member))))
-
-                for existing_member in members_to_remove:
-                    child_configs.append(dict(fvFBRMember=dict(attributes=dict(rnhAddr=existing_member, status="deleted"))))
+            for member in (fallback_members_set - existing_members_set):
+                child_configs.append(dict(fvFBRMember=dict(attributes=dict(rnhAddr=member))))
+            for existing_member in (existing_members_set - fallback_members_set):
+                child_configs.append(dict(fvFBRMember=dict(attributes=dict(rnhAddr=existing_member, status="deleted"))))
 
         if fallback_route is not None and fallback_route != existing_route:
             if existing_route:
