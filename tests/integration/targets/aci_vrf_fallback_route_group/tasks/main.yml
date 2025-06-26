@@ -122,27 +122,8 @@
           - nm_create_vrf_fbrg_again is not changed
           - nm_create_vrf_fbrg_again.previous == nm_create_vrf_fbrg_again.current == nm_create_vrf_fbrg.current
 
-    - name: Create a new vrf Fallback Route Group with minimum required config - Normal mode   
-      cisco.aci.aci_vrf_fallback_route_group:
-        <<: *aci_info
-        tenant: ansible_test
-        vrf: vrf_test
-        name: test_fallback_route_group_2 
-        state: present
-      register: nm_create_vrf_fbrg_2
-
-    - name: Verify that nm_create_vrf_fbrg_2 is created with correct attributes
-      ansible.builtin.assert:
-        that:
-          - nm_create_vrf_fbrg_2 is changed
-          - nm_create_vrf_fbrg_2.previous == []
-          - nm_create_vrf_fbrg_2.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group_2"
-          - nm_create_vrf_fbrg_2.current.0.fvFBRGroup.children is not defined
-          - nm_create_vrf_fbrg_2.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group_2"
-          - nm_create_vrf_fbrg_2.current.0.fvFBRGroup.attributes.descr == ""
-
     - name: Create a new vrf Fallback Route Group with minimum required config - Check mode  
-      cisco.aci.aci_vrf_fallback_route_group:
+      cisco.aci.aci_vrf_fallback_route_group: &aci_vrf_fbrg_min
         <<: *aci_info
         tenant: ansible_test
         vrf: vrf_test
@@ -151,11 +132,24 @@
       check_mode: true
       register: cm_create_vrf_fbrg_2
 
-    - name: Verify that nm_create_vrf_fbrg_2 is created with correct attributes
+    - name: Create a new vrf Fallback Route Group with minimum required config - Normal mode   
+      cisco.aci.aci_vrf_fallback_route_group:
+        <<: *aci_vrf_fbrg_min
+      register: nm_create_vrf_fbrg_2
+
+    - name: Verify that minimum config fallback route group is created correctly
       ansible.builtin.assert:
         that:
-          - cm_create_vrf_fbrg_2.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group_2"
-          - cm_create_vrf_fbrg_2.current.0.fvFBRGroup.children is not defined
+          - cm_create_vrf_fbrg_2 is changed
+          - cm_create_vrf_fbrg_2.previous == []
+          - cm_create_vrf_fbrg_2.proposed.fvFBRGroup.attributes.name == "test_fallback_route_group_2"
+          - cm_create_vrf_fbrg_2.proposed.fvFBRGroup.children is not defined
+          - nm_create_vrf_fbrg_2 is changed
+          - nm_create_vrf_fbrg_2.previous == []
+          - nm_create_vrf_fbrg_2.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group_2"
+          - nm_create_vrf_fbrg_2.current.0.fvFBRGroup.children is not defined
+          - nm_create_vrf_fbrg_2.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group_2"
+          - nm_create_vrf_fbrg_2.current.0.fvFBRGroup.attributes.descr == ""
     
     - name: Update vrf_fallback_route - Check mode
       cisco.aci.aci_vrf_fallback_route_group: &update_fallback_route_group
@@ -166,6 +160,7 @@
           - 4.4.4.4
           - 5.5.5.5
         state: present
+        description: Test updating description
       check_mode: true
       register: cm_update_vrf_fbrg
 
@@ -201,7 +196,7 @@
           - sorted_children_cm2.3.fvFBRoute.attributes.fbrPrefix == "1.1.1.1/2"
           - nm_update_vrf_fbrg.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group"
           - nm_update_vrf_fbrg.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
-          - nm_update_vrf_fbrg.current.0.fvFBRGroup.attributes.descr == "Test for Fallback Route Group"
+          - nm_update_vrf_fbrg.current.0.fvFBRGroup.attributes.descr == "Test updating description"
           - sorted_child_members2.0.rnhAddr == "1.1.1.1"
           - sorted_child_members2.1.rnhAddr == "2.2.2.2"
           - sorted_child_members2.2.rnhAddr == "4.4.4.4"
@@ -220,7 +215,7 @@
           - 2.2.2.2
           - 1.1.1.1
           - 4.4.4.4
-        description: Test for Fallback Route Group
+        description: Test updating description
         state: present
       register: nm_update_vrf_fbrg_again
       
@@ -230,7 +225,7 @@
           - nm_update_vrf_fbrg_again is not changed
           - nm_update_vrf_fbrg_again.current == nm_update_vrf_fbrg.current
     
-    - name: Delete child from vrf_fallback_route 
+    - name: Delete and replace child from vrf_fallback_route 
       cisco.aci.aci_vrf_fallback_route_group:
         <<: *aci_info
         tenant: ansible_test
@@ -258,6 +253,8 @@
         that:
           - nm_delete_vrf_fbrg_children is changed
           - nm_delete_vrf_fbrg_children.previous == nm_update_vrf_fbrg.current
+          - nm_delete_vrf_fbrg_children.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
+          - nm_delete_vrf_fbrg_children.current.0.fvFBRGroup.attributes.descr == "Test for Fallback Route Group"
           - sorted_child_members3.0.rnhAddr == "1.1.1.1"
           - sorted_child_members3.1.rnhAddr == "2.2.2.2"
           - sorted_child_members3.2.rnhAddr == "4.4.4.4"
@@ -318,11 +315,36 @@
         state: query
       register: query_all_vrf_fbrg
 
-    - name: Verify query_all_vrf_fbrg
+    - name: Extract our test fallback route groups from query_all results
+      ansible.builtin.set_fact:
+        test_fbrg_1: "{{ query_all_vrf_fbrg.current | selectattr('fvFBRGroup.attributes.name', 'equalto', 'test_fallback_route_group') | first | default({}) }}"
+        test_fbrg_2: "{{ query_all_vrf_fbrg.current | selectattr('fvFBRGroup.attributes.name', 'equalto', 'test_fallback_route_group_2') | first | default({}) }}"
+
+    - name: Sort children for test_fbrg_1 from query_all
+      ansible.builtin.set_fact:
+        query_all_sorted_children: "{{ test_fbrg_1.fvFBRGroup.children | default([]) | map('dict2items') | sort(attribute='0.key') | map('items2dict') | list }}"
+    
+    - name: Sort fallback members for test_fbrg_1 from query_all
+      ansible.builtin.set_fact:
+        query_all_sorted_members: "{{ test_fbrg_1.fvFBRGroup.children | default([]) | selectattr('fvFBRMember', 'defined') | map(attribute='fvFBRMember.attributes') | list | sort(attribute='rnhAddr') }}"
+
+    - name: Verify query_all_vrf_fbrg returns correct attributes
       ansible.builtin.assert:
         that:
           - query_all_vrf_fbrg is not changed
           - query_all_vrf_fbrg.current | length >= 2
+          - test_fbrg_1.fvFBRGroup.attributes.name == "test_fallback_route_group"
+          - test_fbrg_1.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
+          - test_fbrg_1.fvFBRGroup.attributes.descr == "Test for Fallback Route Group"
+          - query_all_sorted_children.3.fvFBRoute.attributes.fbrPrefix == "2.2.2.2/3"
+          - query_all_sorted_members.0.rnhAddr == "1.1.1.1"
+          - query_all_sorted_members.1.rnhAddr == "2.2.2.2"
+          - query_all_sorted_members.2.rnhAddr == "4.4.4.4"
+          - query_all_sorted_members | length == 3
+          - test_fbrg_2.fvFBRGroup.attributes.name == "test_fallback_route_group_2"
+          - test_fbrg_2.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group_2"
+          - test_fbrg_2.fvFBRGroup.attributes.descr == ""
+          - test_fbrg_2.fvFBRGroup.children is not defined
     
     - name: Delete all children of vrf_fbrg
       cisco.aci.aci_vrf_fallback_route_group:
