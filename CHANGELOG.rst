@@ -4,6 +4,39 @@ Cisco ACI Ansible Collection Release Notes
 
 .. contents:: Topics
 
+v2.12.0
+=======
+
+Release Summary
+---------------
+
+Release v2.12.0 of the ``ansible-aci`` collection on 2025-06-27.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.11.0.
+
+Minor Changes
+-------------
+
+- Add aci_l4l7_device_selection_interface_context, aci_l4l7_device_selection_policy, aci_l4l7_service_graph_template, aci_l4l7_service_graph_template_connection, aci_l4l7_service_graph_template_connection_to_connector, aci_l4l7_service_graph_template_functional_connection, aci_l4l7_service_graph_template_node and aci_l4l7_service_graph_template_term_node modules
+- Add aci_oob_contract module
+- Add aci_vmm_enhanced_lag_policy module
+- Add missing options to priority and vrf to scope in aci_contract module
+- Add missing options to priority and vrf to scope in aci_oob_contract module
+- Add module aci_port_channel_member_policy to manage port channel member policies
+- Added enhanced_log option as an alias to rfc
+- Added support for description to aci_syslog_group module.
+- Added testing support for Ansible Core 2.19
+- Added two new attributes to aci_syslog_group and option for rfc5424-ts for format
+- Addition of aci_l4l7_policy_based_redirect and related modules
+- Addition of module aci_l4l7_concrete_device and its test file
+- Addition of module aci_l4l7_device and its test file
+
+Bugfixes
+--------
+
+- Fix api call and index error for non-existing configExportP in aci_config_snapshot
+- Fix type of subnet_control in aci_bd_subnet from string to list of strings
+- Fixed the aci_access_port_block_to_access_port module to query a specific object with the object name
+
 v2.11.0
 =======
 
