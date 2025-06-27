@@ -4,6 +4,8 @@
 source ../../inventory.networking
 
 # Ensure test_inventory_ips is defined and is an array
+# Disabling the SC2154 warning to avoid sanity failures for ubuntu-latest (stable-2.16)
+# shellcheck disable=SC2154
 if [[ -z "${test_inventory_ips[*]}" ]]; then
   echo "Error: test_inventory_ips is not set or empty."
   exit 1
