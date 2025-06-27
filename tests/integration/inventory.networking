@@ -1,4 +1,5 @@
 [aci]
+# Update test_inventory_ips in [aci:vars] whenever hosts are added, removed, or their IP addresses change.
 cn-dmz-apic-m1-02-v42 ansible_host=173.36.219.68 aci_hostname=173.36.219.68
 cn-dmz-apic-m1-03-v52 ansible_host=173.36.219.69 aci_hostname=173.36.219.69
 cn-dmz-apic-m1-04-v602h ansible_host=173.36.219.70 aci_hostname=173.36.219.70
@@ -12,3 +13,5 @@ aci_password="sJ94G92#8dq2hx*K4qh"
 ansible_network_os=cisco.aci.aci
 ansible_connection=local
 ansible_python_interpreter=/usr/bin/python3.9
+# The IP addresses of the APICs that we currently test in aci_inventory_system.
+test_inventory_ips=("173.36.219.68" "173.36.219.69" "173.36.219.70")

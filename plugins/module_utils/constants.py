@@ -481,3 +481,30 @@ L4L7_UI_TEMPLATE_TYPE = {
     "two_node_fw_trans_adc_two_arm": "TWO_NODE_FW_TRANS_ADC_TWO_ARM",
     "unspecified": "UNSPECIFIED",
 }
+
+RESERVED_ANSIBLE_INVENTORY_KEYS = {
+    "serial": "_serial",
+    "name": "_name",
+}
+
+MOCKED_CONSTRUCTED_INVENTORY_ARGUMENT_SPEC = dict(
+    plugin=dict(type="str"),
+    use_vars_plugins=dict(type="bool"),
+    strict=dict(type="bool"),
+    compose=dict(type="dict"),
+    groups=dict(type="dict"),
+    keyed_groups=dict(
+        type="list",
+        elements="dict",
+        options=dict(
+            parent_group=dict(type="str"),
+            prefix=dict(type="str"),
+            separator=dict(type="str"),
+            key=dict(type="str"),
+            default_value=dict(type="str"),
+            trailing_separator=dict(type="bool"),
+        ),
+    ),
+    use_extra_vars=dict(type="bool"),
+    leading_separator=dict(type="bool"),
+)

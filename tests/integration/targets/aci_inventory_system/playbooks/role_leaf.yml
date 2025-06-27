@@ -1,0 +1,13 @@
+---
+- name: My playbook
+  hosts: role_leaf
+  gather_facts: false
+  module_defaults:
+    group/cisco.aci.all:
+      output_level: debug
+
+  tasks:
+    - name: Query all interface_policy_leaf_profile
+      cisco.aci.aci_interface_policy_leaf_profile:
+        state: query
+      register: query_interface_policy_leaf_profile

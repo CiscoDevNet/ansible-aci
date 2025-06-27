@@ -1,0 +1,27 @@
+---
+- name: My playbook
+  hosts: all
+  gather_facts: false
+  module_defaults:
+    group/cisco.aci.all:
+      output_level: debug
+
+  tasks:
+    - name: Assert host present in hostvars
+      ansible.builtin.assert:
+        that:
+          - "'localhost' in hostvars"
+          - hostvars | length >= 2
+
+    - name: Assert that the host is a controller
+      ansible.builtin.assert:
+        that:
+          - "'controller' in hostvars[inventory_hostname].role"
+
+    - name: Assert that reserved ansible keywords are replaced
+      ansible.builtin.assert:
+        that:
+          - "'name' not in hostvars[inventory_hostname]"
+          - "'_name' in hostvars[inventory_hostname]"
+          - "'serial' not in hostvars[inventory_hostname]"
+          - "'_serial' in hostvars[inventory_hostname]"
