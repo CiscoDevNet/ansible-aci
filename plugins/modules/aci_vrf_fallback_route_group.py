@@ -356,9 +356,9 @@ def main():
 
             existing_members_set = set(existing_members)
 
-            for member in (fallback_members_set - existing_members_set):
+            for member in fallback_members_set - existing_members_set:
                 child_configs.append(dict(fvFBRMember=dict(attributes=dict(rnhAddr=member))))
-            for existing_member in (existing_members_set - fallback_members_set):
+            for existing_member in existing_members_set - fallback_members_set:
                 child_configs.append(dict(fvFBRMember=dict(attributes=dict(rnhAddr=existing_member, status="deleted"))))
 
         if fallback_route is not None and fallback_route != existing_route:
