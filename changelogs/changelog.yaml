@@ -260,16 +260,21 @@ releases:
   2.11.0:
     changes:
       bugfixes:
-        - Fix subclass issue in aci_domain_to_vlan_pool to fix deletion of binding (#695)
-        - Fix payload to define the correct vPC member side in aci_l3out_logical_interface_vpc_member (#663)
         - Fix aci_rest module to only add annotation when the value is a dictionary
+        - Fix payload to define the correct vPC member side in aci_l3out_logical_interface_vpc_member
+          (#663)
+        - Fix subclass issue in aci_domain_to_vlan_pool to fix deletion of binding
+          (#695)
         - Modify interface_configs requirement using required_if dependency for aci_bulk_static_binding_to_epg
       minor_changes:
+        - Add aci_endpoint_tag_ip and aci_endpoint_tag_mac modules to manage Endpoint
+          IP and MAC Tags.
         - Add aci_ip_sla_monitoring_policy module.
-        - Add aci_endpoint_tag_ip and aci_endpoint_tag_mac modules to manage Endpoint IP and MAC Tags.
+        - Add management_epg and management_epg_type attributes in aci_dns_profile
+          module.
         - Add stratum attribute to aci_ntp_policy module.
-        - Add management_epg and management_epg_type attributes in aci_dns_profile module.
-        - Add support for Ansible 2.18 and dropped support for Ansible 2.15 as required by Ansible Galaxy.
+        - Add support for Ansible 2.18 and dropped support for Ansible 2.15 as required
+          by Ansible Galaxy.
       release_summary: 'Release v2.11.0 of the ``ansible-aci`` collection on 2025-04-18.
 
         This changelog describes all changes made to the modules and plugins included
@@ -277,6 +282,40 @@ releases:
 
         '
     release_date: '2025-04-18'
+  2.12.0:
+    changes:
+      bugfixes:
+        - Fix api call and index error for non-existing configExportP in aci_config_snapshot
+        - Fix type of subnet_control in aci_bd_subnet from string to list of strings
+        - Fixed the aci_access_port_block_to_access_port module to query a specific
+          object with the object name
+      minor_changes:
+        - Add aci_l4l7_device_selection_interface_context, aci_l4l7_device_selection_policy,
+          aci_l4l7_service_graph_template, aci_l4l7_service_graph_template_connection,
+          aci_l4l7_service_graph_template_connection_to_connector, aci_l4l7_service_graph_template_functional_connection,
+          aci_l4l7_service_graph_template_node and aci_l4l7_service_graph_template_term_node
+          modules
+        - Add aci_oob_contract module
+        - Add aci_vmm_enhanced_lag_policy module
+        - Add missing options to priority and vrf to scope in aci_contract module
+        - Add missing options to priority and vrf to scope in aci_oob_contract module
+        - Add module aci_port_channel_member_policy to manage port channel member
+          policies
+        - Added enhanced_log option as an alias to rfc
+        - Added support for description to aci_syslog_group module.
+        - Added testing support for Ansible Core 2.19
+        - Added two new attributes to aci_syslog_group and option for rfc5424-ts for
+          format
+        - Addition of aci_l4l7_policy_based_redirect and related modules
+        - Addition of module aci_l4l7_concrete_device and its test file
+        - Addition of module aci_l4l7_device and its test file
+      release_summary: 'Release v2.12.0 of the ``ansible-aci`` collection on 2025-06-27.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.11.0.
+
+        '
+    release_date: '2025-06-27'
   2.2.0:
     changes:
       bugfixes:
