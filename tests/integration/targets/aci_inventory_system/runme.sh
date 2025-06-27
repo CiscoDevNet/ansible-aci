@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-for host in 173.36.219.68 173.36.219.69 173.36.219.70 ;
+source <(grep = ../../inventory.networking)
+
+for host in ${test_inventory_ips[@]} ;
   do
     echo $host
     echo "" > test.cisco_aci.yml # Create an empty inventory file
