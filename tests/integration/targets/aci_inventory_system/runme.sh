@@ -25,7 +25,10 @@ for host in "${HOSTS[@]}"; do
   ansible-inventory --graph
   ansible-inventory --list
   ansible-playbook playbooks/role_controller.yml -vvvv
-  # Uncomment to run the leaf role else will fail when the hosts are not defined in the inventory
+  # Current tests are executed against ACI fabrics that only consist of controllers.
+  # The tests can also be executed against ACI fabrics that consist of leaf switches.
+  # Test will fail when the hosts types ( like leaf role ) are not defined in the dynamic inventory.
+  # Uncomment the line below to execute test specific for the leaf role.
   # ansible-playbook playbooks/role_leaf.yml -vvvv
 
   ansible-playbook playbooks/create_inventories.yml -e "template_name=cisco_aci" -e "file_name=test.cisco_aci" -e "aci_host=${host}" -vvvv
