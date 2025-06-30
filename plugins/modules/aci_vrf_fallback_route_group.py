@@ -12,7 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_vrf_fallback_route_group
-short_description: Manage VRF Fallback Route Groups (fv:FBRGroup and fv:FBRMember)
+short_description: Manage VRF Fallback Route Groups (fv:FBRGroup, fv:FBRoute, and fv:FBRMember)
 description:
 - Manage VRF Fallback Route Groups on Cisco ACI fabrics.
 - Fallback Route Groups are used to specify routes and next-hop addresses for VRFs.
@@ -72,7 +72,7 @@ seealso:
 - module: cisco.aci.aci_vrf
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(fv:FBRGroup) and B(fv:FBRMember).
+  description: More information about the internal APIC class B(fv:FBRGroup), B(fv:FBRoute), and B(fv:FBRMember).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Dev Sinha (@devsinha13)
@@ -356,9 +356,9 @@ def main():
 
             existing_members_set = set(existing_members)
 
-            for member in fallback_members_set - existing_members_set:
+            for member in (fallback_members_set - existing_members_set):
                 child_configs.append(dict(fvFBRMember=dict(attributes=dict(rnhAddr=member))))
-            for existing_member in existing_members_set - fallback_members_set:
+            for existing_member in (existing_members_set - fallback_members_set):
                 child_configs.append(dict(fvFBRMember=dict(attributes=dict(rnhAddr=existing_member, status="deleted"))))
 
         if fallback_route is not None and fallback_route != existing_route:
