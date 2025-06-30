@@ -155,41 +155,28 @@ EXAMPLES = r"""
   delegate_to: localhost
 """
 
-RETURN = r"""
+RETURN =r"""
 current:
-  description: The existing configuration from the APIC after the module has finished.
+  description: The existing configuration from the APIC after the module has finished
   returned: success
   type: list
   sample:
     [
         {
-            "fvFBRGroup": {
+            "fvTenant": {
                 "attributes": {
-                    "name": "test_fallback_route_group",
-                    "descr": "Test Fallback Route Group",
-                    "dn": "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
-                },
-                "children": [
-                    {
-                        "fvFBRMember": {
-                            "attributes": {
-                                "rnhAddr": "192.168.1.1"
-                            }
-                        }
-                    },
-                    {
-                        "fvFBRoute": {
-                            "attributes": {
-                                "fbrPrefix": "1.1.1.1/24"
-                            }
-                        }
-                    }
-                ]
+                    "descr": "Production environment",
+                    "dn": "uni/tn-production",
+                    "name": "production",
+                    "nameAlias": "",
+                    "ownerKey": "",
+                    "ownerTag": ""
+                }
             }
         }
     ]
 error:
-  description: The error information as returned from the APIC.
+  description: The error information as returned from the APIC
   returned: failure
   type: dict
   sample:
@@ -197,82 +184,82 @@ error:
         "code": "122",
         "text": "unknown managed object class foo"
     }
+raw:
+  description: The raw output returned by the APIC REST API (xml or json)
+  returned: parse error
+  type: str
+  sample: '<?xml version="1.0" encoding="UTF-8"?><imdata totalCount="1"><error code="122" text="unknown managed object class foo"/></imdata>'
 sent:
-  description: The actual/minimal configuration pushed to the APIC.
+  description: The actual/minimal configuration pushed to the APIC
   returned: info
   type: list
   sample:
     {
-        "fvFBRGroup": {
+        "fvTenant": {
             "attributes": {
-                "name": "test_fallback_route_group",
-                "descr": "Test Fallback Route Group"
-            },
-            "children": [
-                {
-                    "fvFBRMember": {
-                        "attributes": {
-                            "rnhAddr": "192.168.1.1"
-                        }
-                    }
-                },
-                {
-                    "fvFBRoute": {
-                        "attributes": {
-                            "fbrPrefix": "1.1.1.1/24"
-                        }
-                    }
-                }
-            ]
+                "descr": "Production environment"
+            }
         }
     }
 previous:
-  description: The original configuration from the APIC before the module has started.
+  description: The original configuration from the APIC before the module has started
   returned: info
   type: list
   sample:
     [
         {
-            "fvFBRGroup": {
+            "fvTenant": {
                 "attributes": {
-                    "name": "test_fallback_route_group",
-                    "descr": "Old description"
-                },
-                "children": [
-                    {
-                        "fvFBRMember": {
-                            "attributes": {
-                                "rnhAddr": "192.168.1.1"
-                            }
-                        }
-                    }
-                ]
+                    "descr": "Production",
+                    "dn": "uni/tn-production",
+                    "name": "production",
+                    "nameAlias": "",
+                    "ownerKey": "",
+                    "ownerTag": ""
+                }
             }
         }
     ]
 proposed:
-  description: The assembled configuration from the user-provided parameters.
+  description: The assembled configuration from the user-provided parameters
   returned: info
   type: dict
   sample:
     {
-        "fvFBRGroup": {
+        "fvTenant": {
             "attributes": {
-                "name": "test_fallback_route_group",
-                "descr": "Updated description"
-            },
-            "children": [
-                {
-                    "fvFBRMember": {
-                        "attributes": {
-                            "rnhAddr": "192.168.1.1"
-                        }
-                    }
-                }
-            ]
+                "descr": "Production environment",
+                "name": "production"
+            }
         }
     }
+filter_string:
+  description: The filter string used for the request
+  returned: failure or debug
+  type: str
+  sample: ?rsp-prop-include=config-only
+method:
+  description: The HTTP method used for the request to the APIC
+  returned: failure or debug
+  type: str
+  sample: POST
+response:
+  description: The HTTP response from the APIC
+  returned: failure or debug
+  type: str
+  sample: OK (30 bytes)
+status:
+  description: The HTTP status from the APIC
+  returned: failure or debug
+  type: int
+  sample: 200
+url:
+  description: The HTTP url used for the request to the APIC
+  returned: failure or debug
+  type: str
+  sample: https://10.11.12.13/api/mo/uni/tn-production.json
 """
+
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_owner_spec
@@ -377,6 +364,7 @@ def main():
                 child_configs.append(
                     dict(fvFBRoute=dict(attributes=dict(fbrPrefix=fallback_route))),
                 )
+
 
         aci.payload(
             aci_class="fvFBRGroup",
