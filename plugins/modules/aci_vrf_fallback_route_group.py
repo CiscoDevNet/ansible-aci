@@ -155,7 +155,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 """
 
-RETURN =r"""
+RETURN = r"""
 current:
   description: The existing configuration from the APIC after the module has finished
   returned: success
@@ -364,7 +364,6 @@ def main():
                 child_configs.append(
                     dict(fvFBRoute=dict(attributes=dict(fbrPrefix=fallback_route))),
                 )
-
 
         aci.payload(
             aci_class="fvFBRGroup",
