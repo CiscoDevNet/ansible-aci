@@ -85,6 +85,7 @@
           - cm_create_vrf_fbrg.proposed.fvFBRGroup.children | to_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
           - cm_create_vrf_fbrg.proposed.fvFBRGroup.children | to_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
           - cm_create_vrf_fbrg.proposed.fvFBRGroup.children | to_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
+          - cm_create_vrf_fbrg.proposed.fvFBRGroup.children | length == 4
           - nm_create_vrf_fbrg is changed
           - nm_create_vrf_fbrg.previous == []
           - nm_create_vrf_fbrg.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group"
@@ -94,6 +95,7 @@
           - nm_create_vrf_fbrg.current.0.fvFBRGroup.children | to_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
           - nm_create_vrf_fbrg.current.0.fvFBRGroup.children | to_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
           - nm_create_vrf_fbrg.current.0.fvFBRGroup.children | to_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
+          - nm_create_vrf_fbrg.current.0.fvFBRGroup.children | length == 4
 
     - name: Create vrf Fallback Route again (idempotency)
       cisco.aci.aci_vrf_fallback_route_group:
@@ -164,6 +166,7 @@
           - cm_update_vrf_fbrg.current.0.fvFBRGroup.children | to_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
           - cm_update_vrf_fbrg.proposed.fvFBRGroup.children | to_json | regex_search('"rnhAddr":\s*"5\.5\.5\.5"') is not none
           - cm_update_vrf_fbrg.current.0.fvFBRGroup.children | to_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
+          - cm_update_vrf_fbrg.proposed.fvFBRGroup.children | length == 1
           - nm_update_vrf_fbrg.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group"
           - nm_update_vrf_fbrg.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
           - nm_update_vrf_fbrg.current.0.fvFBRGroup.attributes.descr == "Test updating description"
@@ -172,6 +175,7 @@
           - nm_update_vrf_fbrg.current.0.fvFBRGroup.children | to_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
           - nm_update_vrf_fbrg.current.0.fvFBRGroup.children | to_json | regex_search('"rnhAddr":\s*"5\.5\.5\.5"') is not none
           - nm_update_vrf_fbrg.current.0.fvFBRGroup.children | to_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
+          - nm_update_vrf_fbrg.current.0.fvFBRGroup.children | length == 5
     
     - name: Update vrf_fallback_route again
       cisco.aci.aci_vrf_fallback_route_group:
@@ -221,6 +225,7 @@
           - nm_delete_vrf_fbrg_children.current.0.fvFBRGroup.children | to_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
           - nm_delete_vrf_fbrg_children.current.0.fvFBRGroup.children | to_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
           - nm_delete_vrf_fbrg_children.current.0.fvFBRGroup.children | to_json | regex_search('"fbrPrefix":\s*"2\.2\.2\.2/3"') is not none
+          - nm_delete_vrf_fbrg_children.current.0.fvFBRGroup.children | length == 4
 
     - name: Delete child from vrf_fallback_route again (idempotency)
       cisco.aci.aci_vrf_fallback_route_group:
@@ -262,8 +267,8 @@
           - query_vrf_fbrg.current.0.fvFBRGroup.children | to_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
           - query_vrf_fbrg.current.0.fvFBRGroup.children | to_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
           - query_vrf_fbrg.current.0.fvFBRGroup.children | to_json | regex_search('"fbrPrefix":\s*"2\.2\.2\.2/3"') is not none
+          - query_vrf_fbrg.current.0.fvFBRGroup.children | length == 4
 
-    
     - name: Query all on vrf_fallback_route
       cisco.aci.aci_vrf_fallback_route_group:
         <<: *aci_info
