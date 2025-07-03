@@ -35,6 +35,7 @@
   - query_cloud.current == [] # This condition will execute only non-cloud sites
   - version.current.0.topSystem.attributes.version is version('5', '>=')
   block:  # block specifies execution of tasks within, based on conditions
+    # SETUP
     - name: Clear existing setup
       cisco.aci.aci_tenant:
         <<: *aci_info
@@ -53,8 +54,9 @@
         <<: *aci_tenant_present
         vrf: vrf_test
 
+    # CREATE
     - name: Create vrf Fallback Route - check mode
-      cisco.aci.aci_vrf_fallback_route_group: &fbrg_info
+      cisco.aci.aci_vrf_fallback_route_group: &create_vrf_fallback_route_group
         <<: *aci_info
         tenant: ansible_test
         vrf: vrf_test
@@ -67,87 +69,78 @@
         description: Test for Fallback Route Group
         state: present
       check_mode: true
-      register: cm_create_vrf_fbrg
+      register: cm_create_vrf_fallback_route_group
 
     - name: Create vrf Fallback Route - Normal mode
       cisco.aci.aci_vrf_fallback_route_group:
-        <<: *fbrg_info
-      register: nm_create_vrf_fbrg
-
-    - name: Convert to json - Check mode
-      ansible.builtin.set_fact:
-        cm_create_vrf_fbrg_json: "{{ cm_create_vrf_fbrg.proposed.fvFBRGroup.children | to_json }}"
-
-    - name: Convert to json - Normal mode
-      ansible.builtin.set_fact:
-        nm_create_vrf_fbrg_json: "{{ nm_create_vrf_fbrg.current[0].fvFBRGroup.children | to_json }}"
-            
-    - name: Verify that vrf_fbrg has been created correctly with the correct attribute values
-      ansible.builtin.assert:
-        that:
-          - cm_create_vrf_fbrg is changed
-          - cm_create_vrf_fbrg.previous == []
-          - cm_create_vrf_fbrg.proposed.fvFBRGroup.attributes.name == "test_fallback_route_group"
-          - cm_create_vrf_fbrg.proposed.fvFBRGroup.attributes.descr == "Test for Fallback Route Group"
-          - cm_create_vrf_fbrg_json | regex_search('"rnhAddr":\s*"1\.1\.1\.1"') is not none
-          - cm_create_vrf_fbrg_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
-          - cm_create_vrf_fbrg_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
-          - cm_create_vrf_fbrg_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
-          - cm_create_vrf_fbrg.proposed.fvFBRGroup.children | length == 4
-          - nm_create_vrf_fbrg is changed
-          - nm_create_vrf_fbrg.previous == []
-          - nm_create_vrf_fbrg.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group"
-          - nm_create_vrf_fbrg.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
-          - nm_create_vrf_fbrg.current.0.fvFBRGroup.attributes.descr == "Test for Fallback Route Group"
-          - nm_create_vrf_fbrg_json | regex_search('"rnhAddr":\s*"1\.1\.1\.1"') is not none
-          - nm_create_vrf_fbrg_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
-          - nm_create_vrf_fbrg_json |  regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
-          - nm_create_vrf_fbrg_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
-          - nm_create_vrf_fbrg.current.0.fvFBRGroup.children | length == 4
+        <<: *create_vrf_fallback_route_group
+      register: nm_create_vrf_fallback_route_group
 
     - name: Create vrf Fallback Route again (idempotency)
       cisco.aci.aci_vrf_fallback_route_group:
-        <<: *fbrg_info
-      register: nm_create_vrf_fbrg_again
-    
-    - name: Verify that nm_create_vrf_fbrg_again is not changed (idempotency)
-      ansible.builtin.assert:
-        that:
-          - nm_create_vrf_fbrg_again is not changed
-          - nm_create_vrf_fbrg_again.previous == nm_create_vrf_fbrg_again.current == nm_create_vrf_fbrg.current
+        <<: *create_vrf_fallback_route_group
+      register: nm_create_vrf_fallback_route_group_again
 
     - name: Create a new vrf Fallback Route Group with minimum required config - Check mode  
-      cisco.aci.aci_vrf_fallback_route_group: &aci_vrf_fbrg_min
+      cisco.aci.aci_vrf_fallback_route_group: &create_vrf_fallback_route_group_min
         <<: *aci_info
         tenant: ansible_test
         vrf: vrf_test
         name: test_fallback_route_group_2 
         state: present
       check_mode: true
-      register: cm_create_vrf_fbrg_2
+      register: cm_create_vrf_fallback_route_group_2
 
     - name: Create a new vrf Fallback Route Group with minimum required config - Normal mode   
       cisco.aci.aci_vrf_fallback_route_group:
-        <<: *aci_vrf_fbrg_min
-      register: nm_create_vrf_fbrg_2
+        <<: *create_vrf_fallback_route_group_min
+      register: nm_create_vrf_fallback_route_group_2
 
-    - name: Verify that minimum config fallback route group is created correctly
+    - name: Convert to json - Check mode
+      ansible.builtin.set_fact:
+        cm_create_vrf_fallback_route_group_json: "{{ cm_create_vrf_fallback_route_group.proposed.fvFBRGroup.children | to_json }}"
+        nm_create_vrf_fallback_route_group_json: "{{ nm_create_vrf_fallback_route_group.current[0].fvFBRGroup.children | to_json }}"
+
+    - name: Verify VRF Fallback Route Group creation tasks
       ansible.builtin.assert:
         that:
-          - cm_create_vrf_fbrg_2 is changed
-          - cm_create_vrf_fbrg_2.previous == []
-          - cm_create_vrf_fbrg_2.proposed.fvFBRGroup.attributes.name == "test_fallback_route_group_2"
-          - cm_create_vrf_fbrg_2.proposed.fvFBRGroup.children is not defined
-          - nm_create_vrf_fbrg_2 is changed
-          - nm_create_vrf_fbrg_2.previous == []
-          - nm_create_vrf_fbrg_2.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group_2"
-          - nm_create_vrf_fbrg_2.current.0.fvFBRGroup.children is not defined
-          - nm_create_vrf_fbrg_2.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group_2"
-          - nm_create_vrf_fbrg_2.current.0.fvFBRGroup.attributes.descr == ""
-    
+          - cm_create_vrf_fallback_route_group is changed
+          - cm_create_vrf_fallback_route_group.previous == []
+          - cm_create_vrf_fallback_route_group.current == []
+          - cm_create_vrf_fallback_route_group.proposed.fvFBRGroup.attributes.name == "test_fallback_route_group"
+          - cm_create_vrf_fallback_route_group.proposed.fvFBRGroup.attributes.descr == "Test for Fallback Route Group"
+          - cm_create_vrf_fallback_route_group_json | regex_search('"rnhAddr":\s*"1\.1\.1\.1"') is not none
+          - cm_create_vrf_fallback_route_group_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
+          - cm_create_vrf_fallback_route_group_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
+          - cm_create_vrf_fallback_route_group_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
+          - cm_create_vrf_fallback_route_group.proposed.fvFBRGroup.children | length == 4
+          - nm_create_vrf_fallback_route_group is changed
+          - nm_create_vrf_fallback_route_group.previous == []
+          - nm_create_vrf_fallback_route_group.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group"
+          - nm_create_vrf_fallback_route_group.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
+          - nm_create_vrf_fallback_route_group.current.0.fvFBRGroup.attributes.descr == "Test for Fallback Route Group"
+          - nm_create_vrf_fallback_route_group_json | regex_search('"rnhAddr":\s*"1\.1\.1\.1"') is not none
+          - nm_create_vrf_fallback_route_group_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
+          - nm_create_vrf_fallback_route_group_json |  regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
+          - nm_create_vrf_fallback_route_group_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
+          - nm_create_vrf_fallback_route_group.current.0.fvFBRGroup.children | length == 4
+          - nm_create_vrf_fallback_route_group_again is not changed
+          - nm_create_vrf_fallback_route_group_again.previous == nm_create_vrf_fallback_route_group_again.current == nm_create_vrf_fallback_route_group.current
+          - cm_create_vrf_fallback_route_group_2 is changed
+          - cm_create_vrf_fallback_route_group_2.previous == []
+          - cm_create_vrf_fallback_route_group_2.current == []
+          - cm_create_vrf_fallback_route_group_2.proposed.fvFBRGroup.attributes.name == "test_fallback_route_group_2"
+          - cm_create_vrf_fallback_route_group_2.proposed.fvFBRGroup.children is not defined
+          - nm_create_vrf_fallback_route_group_2 is changed
+          - nm_create_vrf_fallback_route_group_2.previous == []
+          - nm_create_vrf_fallback_route_group_2.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group_2"
+          - nm_create_vrf_fallback_route_group_2.current.0.fvFBRGroup.children is not defined
+          - nm_create_vrf_fallback_route_group_2.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group_2"
+          - nm_create_vrf_fallback_route_group_2.current.0.fvFBRGroup.attributes.descr == ""
+
     - name: Update vrf_fallback_route - Check mode
-      cisco.aci.aci_vrf_fallback_route_group: &update_fallback_route_group
-        <<: *fbrg_info
+      cisco.aci.aci_vrf_fallback_route_group: &update_vrf_fallback_route_group
+        <<: *create_vrf_fallback_route_group
         fallback_members: 
           - 1.1.1.1
           - 2.2.2.2
@@ -160,21 +153,108 @@
 
     - name: Update vrf_fallback_route - Normal mode
       cisco.aci.aci_vrf_fallback_route_group:
-        <<: *update_fallback_route_group
+        <<: *update_vrf_fallback_route_group
       register: nm_update_vrf_fbrg
 
-    - name: Convert to json for update- Check mode
+    - name: Update vrf_fallback_route again (idempotency)
+      cisco.aci.aci_vrf_fallback_route_group:
+        <<: *update_vrf_fallback_route_group
+      register: nm_update_vrf_fbrg_again
+
+    - name: Replace all fallback members - Check mode
+      cisco.aci.aci_vrf_fallback_route_group: &replace_all_fallback_members
+        <<: *aci_info
+        tenant: ansible_test
+        vrf: vrf_test
+        name: test_fallback_route_group
+        fallback_members: 
+          - 6.6.6.6
+          - 7.7.7.7
+          - 8.8.8.8
+          - 9.9.9.9
+        state: present
+      check_mode: true
+      register: cm_replace_all_fallback_members
+
+    - name: Replace all fallback members - Normal mode
+      cisco.aci.aci_vrf_fallback_route_group:
+        <<: *replace_all_fallback_members
+      register: nm_replace_all_fallback_members
+    - name: Delete and replace children from vrf_fallback_route 
+      cisco.aci.aci_vrf_fallback_route_group: &delete_replace_vrf_fallback_route_group_children
+        <<: *update_vrf_fallback_route_group
+        fallback_route: 2.2.2.2/3
+        fallback_members:
+          - 1.1.1.1
+          - 2.2.2.2
+          - 4.4.4.4
+        state: present
+      register: nm_delete_replace_vrf_fbrg_children
+
+    - name: Delete and replace children from vrf_fallback_route again (idempotency)
+      cisco.aci.aci_vrf_fallback_route_group:
+        <<: *delete_replace_vrf_fallback_route_group_children
+      register: nm_delete_replace_vrf_fbrg_children_again
+
+    - name: Delete and replace children from vrf_fallback_route (Check mode)
+      cisco.aci.aci_vrf_fallback_route_group:
+        <<: *delete_replace_vrf_fallback_route_group_children
+        state: present
+      check_mode: true
+      register: cm_delete_replace_vrf_fbrg_children
+
+    - name: Delete all children of vrf_fbrg (Normal mode)
+      cisco.aci.aci_vrf_fallback_route_group: &delete_all_vrf_fallback_route_group_children
+        <<: *delete_replace_vrf_fallback_route_group_children
+        fallback_route: ""
+        fallback_members: []
+      register: nm_delete_all_vrf_fbrg_children
+    
+    - name: Add multiple fallback members to vrf_fallback_route (Normal mode)
+      cisco.aci.aci_vrf_fallback_route_group: &add_multiple_vrf_fallback_route
+        <<: *update_vrf_fallback_route_group
+      register: nm_add_multiple_vrf_fbrg
+
+    - name: Add multiple fallback members to vrf_fallback_route (Check mode)
+      cisco.aci.aci_vrf_fallback_route_group:
+        <<: *add_multiple_vrf_fallback_route
+        state: present
+      check_mode: true
+      register: cm_add_multiple_vrf_fbrg
+
+    - name: Remove one vrf fallback member from vrf_fallback_route (Normal mode)
+      cisco.aci.aci_vrf_fallback_route_group: &remove_one_vrf_fallback_member
+        <<: *update_vrf_fallback_route_group
+        fallback_members: 
+          - 1.1.1.1
+          - 2.2.2.2
+          - 4.4.4.4
+      register: nm_remove_one_vrf_fbrg
+
+    - name: Remove one vrf fallback member from vrf_fallback_route (Check mode)
+      cisco.aci.aci_vrf_fallback_route_group:
+        <<: *remove_one_vrf_fallback_member
+        state: present
+      check_mode: true
+      register: cm_remove_one_vrf_fbrg
+
+    - name: Convert to json for update tasks
       ansible.builtin.set_fact:
         cm_update_vrf_fbrg_json: "{{ cm_update_vrf_fbrg.current[0].fvFBRGroup.children | to_json }}"
-
-    - name: Convert to json for update - Normal mode
-      ansible.builtin.set_fact:
         nm_update_vrf_fbrg_json: "{{ nm_update_vrf_fbrg.current[0].fvFBRGroup.children | to_json }}"
-            
-    - name: Verify that vrf_fbrg has been updated correctly in Check modules
+        nm_delete_replace_vrf_fbrg_children_json: "{{ nm_delete_replace_vrf_fbrg_children.current[0].fvFBRGroup.children | to_json }}"
+        cm_delete_replace_vrf_fbrg_children_json: "{{ cm_delete_replace_vrf_fbrg_children.current[0].fvFBRGroup.children | to_json }}"
+        nm_add_multiple_vrf_fbrg_json: "{{ nm_add_multiple_vrf_fbrg.current[0].fvFBRGroup.children | to_json }}"
+        nm_remove_one_vrf_fbrg_json: "{{ nm_remove_one_vrf_fbrg.current[0].fvFBRGroup.children | to_json }}"
+        cm_remove_one_vrf_fbrg_json: "{{ cm_remove_one_vrf_fbrg.current[0].fvFBRGroup.children | to_json }}"
+        cm_add_multiple_vrf_fbrg_json: "{{ cm_add_multiple_vrf_fbrg.current[0].fvFBRGroup.children | to_json }}" 
+        nm_replace_all_fallback_members_json: "{{ nm_replace_all_fallback_members.current[0].fvFBRGroup.children | to_json }}"
+        cm_replace_all_fallback_members_json: "{{ cm_replace_all_fallback_members.proposed.fvFBRGroup.children | to_json }}"
+
+    - name: Verify VRF Fallback Route Group update tasks
       ansible.builtin.assert:
         that:
-          - nm_create_vrf_fbrg.current == nm_update_vrf_fbrg.previous
+          - cm_update_vrf_fbrg is changed
           - cm_update_vrf_fbrg.proposed.fvFBRGroup.attributes.name == "test_fallback_route_group"
           - cm_update_vrf_fbrg.proposed.fvFBRGroup.attributes.descr == "Test updating description"
           - cm_update_vrf_fbrg_json | regex_search('"rnhAddr":\s*"1\.1\.1\.1"') is not none
@@ -183,6 +263,8 @@
           - cm_update_vrf_fbrg.proposed.fvFBRGroup.children | to_json | regex_search('"rnhAddr":\s*"5\.5\.5\.5"') is not none
           - cm_update_vrf_fbrg_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
           - cm_update_vrf_fbrg.proposed.fvFBRGroup.children | length == 1
+          - nm_update_vrf_fbrg is changed
+          - nm_update_vrf_fbrg.previous == nm_create_vrf_fallback_route_group.current
           - nm_update_vrf_fbrg.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group"
           - nm_update_vrf_fbrg.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
           - nm_update_vrf_fbrg.current.0.fvFBRGroup.attributes.descr == "Test updating description"
@@ -191,83 +273,63 @@
           - nm_update_vrf_fbrg_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
           - nm_update_vrf_fbrg_json | regex_search('"rnhAddr":\s*"5\.5\.5\.5"') is not none
           - nm_update_vrf_fbrg_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
-          - nm_update_vrf_fbrg.current.0.fvFBRGroup.children | length == 5
-    
-    - name: Update vrf_fallback_route again
-      cisco.aci.aci_vrf_fallback_route_group:
-        <<: *aci_info
-        tenant: ansible_test
-        vrf: vrf_test
-        name: test_fallback_route_group
-        fallback_route: 1.1.1.1/2
-        fallback_members: 
-          - 5.5.5.5
-          - 2.2.2.2
-          - 1.1.1.1
-          - 4.4.4.4
-        description: Test updating description
-        state: present
-      register: nm_update_vrf_fbrg_again
-      
-    - name: Verify that vrf_fbrg has been updated correctly in Check modules
-      ansible.builtin.assert:
-        that:
+          - cm_replace_all_fallback_members.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group"
+          - cm_replace_all_fallback_members_json | regex_search('"rnhAddr":\s*"6\.6\.6\.6"') is not none
+          - cm_replace_all_fallback_members_json | regex_search('"rnhAddr":\s*"7\.7\.7\.7"') is not none
+          - cm_replace_all_fallback_members_json | regex_search('"rnhAddr":\s*"8\.8\.8\.8"') is not none
+          - cm_replace_all_fallback_members_json | regex_search('"rnhAddr":\s*"9\.9\.9\.9"') is not none
+          - cm_replace_all_fallback_members.current.0.fvFBRGroup.children | length == 5
+          - nm_replace_all_fallback_members.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group"
+          - nm_replace_all_fallback_members_json | regex_search('"rnhAddr":\s*"6\.6\.6\.6"') is not none
+          - nm_replace_all_fallback_members_json | regex_search('"rnhAddr":\s*"7\.7\.7\.7"') is not none
+          - nm_replace_all_fallback_members_json | regex_search('"rnhAddr":\s*"8\.8\.8\.8"') is not none
+          - nm_replace_all_fallback_members_json | regex_search('"rnhAddr":\s*"9\.9\.9\.9"') is not none
+          - nm_replace_all_fallback_members.current.0.fvFBRGroup.children | length == 5
           - nm_update_vrf_fbrg_again is not changed
           - nm_update_vrf_fbrg_again.current == nm_update_vrf_fbrg.current
-    
-    - name: Delete and replace child from vrf_fallback_route 
-      cisco.aci.aci_vrf_fallback_route_group:
-        <<: *aci_info
-        tenant: ansible_test
-        vrf: vrf_test
-        name: test_fallback_route_group
-        fallback_route: 2.2.2.2/3
-        fallback_members:
-          - 1.1.1.1
-          - 2.2.2.2
-          - 4.4.4.4
-        description: Test for Fallback Route Group
-        state: present
-      register: nm_delete_vrf_fbrg_children
+          - nm_delete_replace_vrf_fbrg_children is changed
+          - nm_delete_replace_vrf_fbrg_children.previous == nm_replace_all_fallback_members.current
+          - nm_delete_replace_vrf_fbrg_children.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
+          - nm_delete_replace_vrf_fbrg_children.current.0.fvFBRGroup.attributes.descr == "Test updating description"
+          - nm_delete_replace_vrf_fbrg_children_json | regex_search('"rnhAddr":\s*"1\.1\.1\.1"') is not none
+          - nm_delete_replace_vrf_fbrg_children_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
+          - nm_delete_replace_vrf_fbrg_children_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
+          - nm_delete_replace_vrf_fbrg_children_json | regex_search('"fbrPrefix":\s*"2\.2\.2\.2/3"') is not none
+          - nm_delete_replace_vrf_fbrg_children.current.0.fvFBRGroup.children | length == 4
+          - nm_delete_replace_vrf_fbrg_children_again is not changed
+          - nm_delete_replace_vrf_fbrg_children_again.current ==  nm_delete_replace_vrf_fbrg_children.current
+          - nm_delete_all_vrf_fbrg_children is changed
+          - nm_delete_all_vrf_fbrg_children.current.0.fvFBRGroup.children is not defined
+          - nm_add_multiple_vrf_fbrg is changed
+          - nm_add_multiple_vrf_fbrg.previous == nm_delete_all_vrf_fbrg_children.current
+          - nm_add_multiple_vrf_fbrg.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
+          - nm_add_multiple_vrf_fbrg.current.0.fvFBRGroup.attributes.descr == "Test updating description"
+          - nm_add_multiple_vrf_fbrg_json | regex_search('"rnhAddr":\s*"1\.1\.1\.1"') is not none
+          - nm_add_multiple_vrf_fbrg_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
+          - nm_add_multiple_vrf_fbrg_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
+          - nm_add_multiple_vrf_fbrg_json | regex_search('"rnhAddr":\s*"5\.5\.5\.5"') is not none
+          - nm_add_multiple_vrf_fbrg_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
+          - nm_add_multiple_vrf_fbrg.current.0.fvFBRGroup.children | length == 5
+          - cm_add_multiple_vrf_fbrg.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
+          - cm_add_multiple_vrf_fbrg.current.0.fvFBRGroup.attributes.descr == "Test updating description"
+          - cm_add_multiple_vrf_fbrg_json | regex_search('"rnhAddr":\s*"1\.1\.1\.1"') is not none
+          - cm_add_multiple_vrf_fbrg_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
+          - cm_add_multiple_vrf_fbrg_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
+          - cm_add_multiple_vrf_fbrg_json | regex_search('"rnhAddr":\s*"5\.5\.5\.5"') is not none
+          - cm_add_multiple_vrf_fbrg_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
+          - cm_add_multiple_vrf_fbrg.current.0.fvFBRGroup.children | length == 5
+          - cm_remove_one_vrf_fbrg_json | regex_search('"rnhAddr":\s*"1\.1\.1\.1"') is not none
+          - cm_remove_one_vrf_fbrg_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
+          - cm_remove_one_vrf_fbrg_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
+          - cm_remove_one_vrf_fbrg_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
+          - cm_remove_one_vrf_fbrg.current.0.fvFBRGroup.children | length == 4
+          - nm_remove_one_vrf_fbrg_json | regex_search('"rnhAddr":\s*"1\.1\.1\.1"') is not none
+          - nm_remove_one_vrf_fbrg_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
+          - nm_remove_one_vrf_fbrg_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
+          - nm_remove_one_vrf_fbrg_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
+          - nm_remove_one_vrf_fbrg.current.0.fvFBRGroup.children | length == 4
 
-    - name: Convert to json for delete - Normal mode
-      ansible.builtin.set_fact:
-        nm_delete_vrf_fbrg_children_json: "{{ nm_delete_vrf_fbrg_children.current[0].fvFBRGroup.children | to_json }}"
-
-    - name: Verify that nm_delete_vrf_fbrg_childrend has the correct attributes
-      ansible.builtin.assert:
-        that:
-          - nm_delete_vrf_fbrg_children is changed
-          - nm_delete_vrf_fbrg_children.previous == nm_update_vrf_fbrg.current
-          - nm_delete_vrf_fbrg_children.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
-          - nm_delete_vrf_fbrg_children.current.0.fvFBRGroup.attributes.descr == "Test for Fallback Route Group"
-          - nm_delete_vrf_fbrg_children_json | regex_search('"rnhAddr":\s*"1\.1\.1\.1"') is not none
-          - nm_delete_vrf_fbrg_children_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
-          - nm_delete_vrf_fbrg_children_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
-          - nm_delete_vrf_fbrg_children_json | regex_search('"fbrPrefix":\s*"2\.2\.2\.2/3"') is not none
-          - nm_delete_vrf_fbrg_children.current.0.fvFBRGroup.children | length == 4
-
-    - name: Delete child from vrf_fallback_route again (idempotency)
-      cisco.aci.aci_vrf_fallback_route_group:
-        <<: *aci_info
-        tenant: ansible_test
-        vrf: vrf_test
-        name: test_fallback_route_group
-        fallback_route: 2.2.2.2/3
-        fallback_members:
-          - 1.1.1.1
-          - 2.2.2.2
-          - 4.4.4.4
-        description: Test for Fallback Route Group
-        state: present
-      register: nm_delete_vrf_fbrg_children_again
-    
-    - name: Verify idempotency for delete
-      ansible.builtin.assert:
-        that:
-          - nm_delete_vrf_fbrg_children_again is not changed
-          - nm_delete_vrf_fbrg_children_again.current ==  nm_delete_vrf_fbrg_children.current 
-
+    # QUERY
     - name: Query vrf_fallback_route
       cisco.aci.aci_vrf_fallback_route_group:
         <<: *aci_info
@@ -276,22 +338,6 @@
         name: test_fallback_route_group
         state: query
       register: query_vrf_fbrg
-
-    - name: Convert to json for query - Normal mode
-      ansible.builtin.set_fact:
-        query_vrf_fbrg_json: "{{ query_vrf_fbrg.current[0].fvFBRGroup.children | to_json }}"
-
-    - name: Verify that query returns the correct attributes
-      ansible.builtin.assert:
-        that:
-          - query_vrf_fbrg is not changed
-          - query_vrf_fbrg.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group"
-          - query_vrf_fbrg.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
-          - query_vrf_fbrg_json | regex_search('"rnhAddr":\s*"1\.1\.1\.1"') is not none
-          - query_vrf_fbrg_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
-          - query_vrf_fbrg_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
-          - query_vrf_fbrg_json | regex_search('"fbrPrefix":\s*"2\.2\.2\.2/3"') is not none
-          - query_vrf_fbrg.current.0.fvFBRGroup.children | length == 4
 
     - name: Query all on vrf_fallback_route
       cisco.aci.aci_vrf_fallback_route_group:
@@ -304,101 +350,70 @@
         test_fbrg_1: "{{ query_all_vrf_fbrg.current | selectattr('fvFBRGroup.attributes.name', 'equalto', 'test_fallback_route_group') | first | default({}) }}"
         test_fbrg_2: "{{ query_all_vrf_fbrg.current | selectattr('fvFBRGroup.attributes.name', 'equalto', 'test_fallback_route_group_2') | first | default({}) }}"
 
-    - name: Convert to json for query all - Normal mode
+    - name: Convert to json for query tasks
       ansible.builtin.set_fact:
+        query_vrf_fbrg_json: "{{ query_vrf_fbrg.current[0].fvFBRGroup.children | to_json }}"
         test_fbrg_1_json: "{{ test_fbrg_1.fvFBRGroup.children | to_json }}"
 
-    - name: Verify query_all_vrf_fbrg returns correct attributes
+    - name: Verify VRF Fallback Route Group query tasks
       ansible.builtin.assert:
         that:
+          - query_vrf_fbrg is not changed
+          - query_vrf_fbrg.current.0.fvFBRGroup.attributes.name == "test_fallback_route_group"
+          - query_vrf_fbrg.current.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
+          - query_vrf_fbrg_json | regex_search('"rnhAddr":\s*"1\.1\.1\.1"') is not none
+          - query_vrf_fbrg_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
+          - query_vrf_fbrg_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
+          - query_vrf_fbrg_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
+          - query_vrf_fbrg.current.0.fvFBRGroup.children | length == 4
           - query_all_vrf_fbrg is not changed
           - query_all_vrf_fbrg.current | length >= 2
           - test_fbrg_1.fvFBRGroup.attributes.name == "test_fallback_route_group"
           - test_fbrg_1.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
-          - test_fbrg_1.fvFBRGroup.attributes.descr == "Test for Fallback Route Group"
+          - test_fbrg_1.fvFBRGroup.attributes.descr == "Test updating description"
           - test_fbrg_1_json | regex_search('"rnhAddr":\s*"1\.1\.1\.1"') is not none
           - test_fbrg_1_json | regex_search('"rnhAddr":\s*"2\.2\.2\.2"') is not none
           - test_fbrg_1_json | regex_search('"rnhAddr":\s*"4\.4\.4\.4"') is not none
-          - test_fbrg_1_json | regex_search('"fbrPrefix":\s*"2\.2\.2\.2/3"') is not none
+          - test_fbrg_1_json | regex_search('"fbrPrefix":\s*"1\.1\.1\.1/2"') is not none
           - test_fbrg_1.fvFBRGroup.children | length == 4
           - test_fbrg_2.fvFBRGroup.attributes.name == "test_fallback_route_group_2"
           - test_fbrg_2.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group_2"
           - test_fbrg_2.fvFBRGroup.attributes.descr == ""
           - test_fbrg_2.fvFBRGroup.children is not defined
     
-    - name: Delete all children of vrf_fbrg
-      cisco.aci.aci_vrf_fallback_route_group:
-        <<: *aci_info
-        tenant: ansible_test
-        vrf: vrf_test
-        name: test_fallback_route_group
-        fallback_route: ""
-        fallback_members: []
-        description: Test for Fallback Route Group
-        state: present
-      register: delete_all_vrf_fbrg_children
-
-    - name: Verify that all children have been deleted
-      ansible.builtin.assert:
-        that:
-          - delete_all_vrf_fbrg_children is changed
-          - delete_all_vrf_fbrg_children.current.0.fvFBRGroup.children is not defined
-
-    - name: Delete vrf_fbrg
-      cisco.aci.aci_vrf_fallback_route_group:
-        <<: *aci_info
-        tenant: ansible_test
-        vrf: vrf_test
-        name: test_fallback_route_group
-        fallback_route: ""
-        fallback_members: []
-        description: Test for Fallback Route Group
-        state: absent
-      register: vrf_fbrg_removed
-
+    # DELETE
     - name: Delete vrf_fbrg - Check mode
-      cisco.aci.aci_vrf_fallback_route_group:
-        <<: *aci_info
-        tenant: ansible_test
-        vrf: vrf_test
-        name: test_fallback_route_group
-        fallback_route: ""
-        fallback_members: []
-        description: Test for Fallback Route Group
+      cisco.aci.aci_vrf_fallback_route_group: &delete_vrf_fallback_route_group
+        <<: *delete_all_vrf_fallback_route_group_children
         state: absent
       check_mode: true
-      register: cm_vrf_fbrg_removed
+      register: cm_delete_vrf_fbrg
 
-    - name: Verify that vrf_fbrg is deleted
-      ansible.builtin.assert:
-        that:
-          - vrf_fbrg_removed is changed
-          - vrf_fbrg_removed.current == []
-          - vrf_fbrg_removed.previous.0.fvFBRGroup.attributes.name == "test_fallback_route_group"
-          - vrf_fbrg_removed.previous.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
-          - cm_vrf_fbrg_removed.proposed == {}
+    - name: Delete vrf_fbrg - Normal mode
+      cisco.aci.aci_vrf_fallback_route_group:
+        <<: *delete_vrf_fallback_route_group
+      register: nm_delete_vrf_fbrg
 
     - name: Delete vrf_fbrg again (idempotency)
       cisco.aci.aci_vrf_fallback_route_group:
-        <<: *aci_info
-        tenant: ansible_test
-        vrf: vrf_test
-        name: test_fallback_route_group
-        fallback_route: ""
-        fallback_members: []
-        description: Test for Fallback Route Group
-        state: absent
+        <<: *delete_vrf_fallback_route_group
       register: nm_delete_vrf_fbrg_again
 
-    - name: Verify idempotency for vrf_fbrg_removed
+    - name: Verify VRF Fallback Route Group deletion tasks
       ansible.builtin.assert:
         that:
+          - cm_delete_vrf_fbrg is changed
+          - cm_delete_vrf_fbrg.proposed == {}
+          - nm_delete_vrf_fbrg is changed
+          - nm_delete_vrf_fbrg.current == []
+          - nm_delete_vrf_fbrg.previous.0.fvFBRGroup.attributes.name == "test_fallback_route_group"
+          - nm_delete_vrf_fbrg.previous.0.fvFBRGroup.attributes.dn == "uni/tn-ansible_test/ctx-vrf_test/fbrg-test_fallback_route_group"
           - nm_delete_vrf_fbrg_again is not changed
-          - nm_delete_vrf_fbrg_again.current == vrf_fbrg_removed.current
+          - nm_delete_vrf_fbrg_again.current == nm_delete_vrf_fbrg.current
 
+    # CLEANUP
     - name: Clear setup
       cisco.aci.aci_tenant:
         <<: *aci_info
         tenant: ansible_test
         state: absent
-        
