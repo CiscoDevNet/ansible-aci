@@ -247,7 +247,7 @@ def main():
         ],
     )
 
-    last_as = module.params.get("last_as_number")
+    last_as = module.params.get("last_as")
     criteria = module.params.get("criteria")
     description = module.params.get("description")
     state = module.params.get("state")
