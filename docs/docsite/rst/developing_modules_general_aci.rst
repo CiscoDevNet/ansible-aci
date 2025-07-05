@@ -271,7 +271,7 @@ The ACIModule class handles most of the logic for the ACI modules. The ACIModule
 
     aci = ACIModule(module)
 
-The ACIModule has 6 main methods that are used by most modules in the collection:
+The ACIModule has 7 main methods that are used by most modules in the collection:
 
 * construct_url
 * get_existing
@@ -279,16 +279,20 @@ The ACIModule has 6 main methods that are used by most modules in the collection
 * get_diff
 * post_config
 * delete_config
+* exit_json
 
 The first 2 methods are used regardless of what value is passed to the ``state`` parameter.
 
 
 Constructing URLs
 ^^^^^^^^^^^^^^^^^
-The ``construct_url()`` method is used to dynamically build the appropriate URL to interact with the object, as well as the appropriate filter string that should be appended to the URL to filter the results.
+The ``construct_url()`` method is used to dynamically build the REST API URL and query parameters to retrieve or configure ACI objects at various levels of the object hierarchy, supporting flexible depth and child class filtering for APIC requests.
 
-* When the ``state`` is not ``query``, the URL is the base URL to access the APIC plus the distinguished name to access the object. The filter string will restrict the returned data to just the configuration data.
+* When the ``state`` is not ``query``, the URL consists of the base URL (to access the APIC) combined with the distinguished name of the object (to access the object). The filter string limits the returned data to configuration information only.
 * When ``state`` is ``query``, the URL and filter string used depend on which parameters are passed to the object. This method handles the complexity so that it is easier to add new modules and ensures that all modules are consistent in the type of data returned.
+  * In query specific object, the URL is constructed to target a specific object within the module's class using its distinguished name. The filter string is typically not applied, allowing retrieval of the full object data. This approach simplifies module development by handling the URL construction dynamically and ensures consistent data retrieval for individual objects.
+  * In query all objects, the URL is built to query all objects of the specified class. If a target filter is provided, it is applied as a query parameter to restrict the returned data to matching objects. This method manages the complexity of querying collections, making it easier to add new modules and maintain uniformity in the data returned across modules.
+* `https://www.cisco.com/c/en/us/td/docs/dcn/aci/apic/all/apic-rest-api-configuration-guide/cisco-apic-rest-api-configuration-guide-42x-and-later/m_using_the_rest_api.html`_ provides more information about the APIC REST API and how to construct URLs.
 
 .. note:: Our design goal is to take all ID parameters that have values and return the most specific data possible. If you do not supply any ID parameters to the task, then all objects of the class will be returned. If your task does consist of ID parameters, then the data for the specific object is returned. If a partial set of ID parameters is passed, then the module will use the IDs that are passed to build the URL and filter strings appropriately.
 
@@ -324,34 +328,40 @@ The ``construct_url()`` method takes 6 optional arguments; the first 5 imitate t
 
 * subclass_1 - A dictionary consisting of ``aci_class``, ``aci_rn``, ``target_filter``, and ``module_object`` keys
 
-  + Example: Application Profile Class (AP)
+  + Example: Layer3 Out (L3Out) (l3ext:Out).
 
 * subclass_2 - A dictionary consisting of ``aci_class``, ``aci_rn``, ``target_filter``, and ``module_object`` keys
 
-  + Example: End Point Group (EPG)
+  + Example: Manage L3Out Logical Node Profiles on Cisco ACI fabrics (l3ext:LNodeP).
 
 * subclass_3 - A dictionary consisting of ``aci_class``, ``aci_rn``, ``target_filter``, and ``module_object`` keys
 
-  + Example: Binding a Contract to an EPG
+  + Example: Bind nodes to node profiles on Cisco ACI fabrics (l3ext:RsNodeL3OutAtt) or an existing Interface Profile (l3ext:LIfP).
 
 * subclass_4 - A dictionary consisting of ``aci_class``, ``aci_rn``, ``target_filter``, and ``module_object`` keys
 
-  + Example: Managing External Subnet objects (l3ext:ipRouteP)
+  + Example: Managing External Subnet objects (ip:RouteP) or an existing HSRP group (hsrp:IfP).
 
 * subclass_5 - A dictionary consisting of ``aci_class``, ``aci_rn``, ``target_filter``, and ``module_object`` keys
 
-  + Example: Managing nexthops for static routes.
+  + Example: Managing nexthops for static routes (ip:NexthopP) or (hsrp:GroupP).
+
+* subclass_6 - A dictionary consisting of ``aci_class``, ``aci_rn``, ``target_filter``, and ``module_object`` keys
+
+  + Example: The version of the compatibility catalog (hsrp:SecVip).
 
 * child_classes - The list of APIC names for the child classes supported by the modules.
 
-  + This is a list, even if it contains only one item
-  + These are the unfriendly names used by the APIC
-  + These are used to limit the returned child_classes when possible
+  + This is a list, even if it contains only one item.
+  + These are the child class object names used by the APIC.
+  + These are used to limit the returned child_classes when possible.
   + Example: ``child_classes=['fvRsBDSubnetToProfile', 'fvRsNdPfxPol']``
 
 Example:
 
 .. code-block:: python
+
+  # Example for nexthops for static routes in Layer3 Out.
 
   aci.construct_url(
       root_class=dict(
@@ -392,7 +402,7 @@ Example:
       )
   )
 
-.. note:: rn is one section of dn, with the ID of the specific argument. Do not put the entire dn in the **aci_rn** of each argument. The method automatically constructs the dn using the rn of all the arguments above.
+.. note:: RN is one section of dn, with the ID of the specific argument. Do not put the entire DN in the **aci_rn** of each argument. The method automatically constructs the DN using the RN of all the arguments above.
 
 Getting the existing configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -414,7 +424,7 @@ Building the ACI payload
 """"""""""""""""""""""""
 The ``aci.payload()`` method is used to build a dictionary of the proposed object configuration. All parameters that were not provided a value in the task will be removed from the dictionary (both for the object and its children). Any parameter that does have a value will be converted to a string and added to the final dictionary object that will be used for comparison against the existing configuration.
 
-We remove the values of parameters that are empty. If there is a previous configuration for the value that is non-default, then the parameter will not be modified if we do not reset it. For example, if the description is set to something and then we run it again with no description, it will not change it to the default.
+We remove the values of parameters that are set to "None". If there is a previous configuration for the value that is non-default, then the parameter will not be modified if we do not reset it. For example, if the description is set to something and then we run it again with no description, it will not change it to the default, but by setting it to None, it will remove the description from the payload.
 
 If parameters of the payload have been added in a recent version, we recommend adding the new parameters to the payload when the parameter is assigned a value. This is done to maintain backward compatibility.
 
@@ -429,7 +439,10 @@ The ``aci.payload()`` method takes 2 required arguments and one optional argumen
 * ``child_configs`` is optional and is a list of child config dictionaries.
 
   + The child configs include the full child object dictionary, not just the attributes configuration portion.
-  + The configuration portion is built the same way as the object.
+  + The configuration portion is built the same way as the parent object.
+
+* ``annotation`` is an optional string that can be used to add additional information to the object.
+  + If annotation is a supported attribute for a module it will be populated in the payload of that respective module.
 
 .. code-block:: python
 
@@ -451,12 +464,13 @@ The ``aci.payload()`` method takes 2 required arguments and one optional argumen
         ],
     )
 
-Sometimes the class config or child config depends on the parameter itself. If this is the case, we recommend creating them before building the aci payload.
+When the class configuration or child configuration depends on specific parameters, it is recommended to create these configurations beforehand. This approach ensures that the payload passed to the aci.payload() function is accurately constructed based on the parameter values, allowing for precise and flexible management of both class and child objects before the final payload is built and applied.
 
 Performing the request
 """"""""""""""""""""""
 The ``get_diff()`` method is used to perform the diff and takes only one required argument, ``aci_class``. In other words, it is used to make a comparison between the ACI payload and the existing configuration, and only create what's actually needed between the two.
 Example: ``aci.get_diff(aci_class='fvBD')``
+  + ``required_properties`` parameter in the ``get_diff()``function is used to ensure that certain essential properties are always included in the configuration difference output, even if they are not part of the changed attributes. When there is a difference between the proposed and existing configurations, and if required_properties is provided as a dictionary, its key-value pairs are added to the configuration dictionary before it is finalized. This guarantees that these required properties are present in the resulting configuration update sent to the APIC, supporting consistent and complete configuration management.
 
 The ``post_config()`` method is used to make the POST request to the APIC by taking the result from ``get_diff()``. This method doesn't take any arguments and handles check mode. Example: ``aci.post_config()``.
 
@@ -513,7 +527,14 @@ To have the module exit, call the ACIModule method ``exit_json()``. This method 
 
 Documentation Section
 ---------------------
-All the parameters defined in the argument_spec, like the object_id, configurable properties of the object, parent object_id, state, etc., need to be documented in the same file as the module. The format of documentation is shown below:
+All the parameters defined in the argument_spec, like the object_id, configurable properties of the object, parent object_id, state, etc., need to be documented in the same file as the module.
++ Description must be clear and concise, providing enough detail for users to understand the purpose and usage of the object.
++ Description must include specific details about the object, such as its purpose, how it is used, and any important considerations.
+  + For example,
+    + The APIC defaults to C(default_value) when unset during creation (when an object value is not explicitly provided in a task, the APIC automatically assigns a default value to that object).
+    + The object_prop1 must be in the range 1 to 100. The default value is 50.
+    + The object_prop2 is only applicable when using 'object_prop3' is set to <specific_value>.
+The format of documentation is shown below:
 
 .. code-block:: yaml
 
@@ -551,7 +572,9 @@ All the parameters defined in the argument_spec, like the object_id, configurabl
 
 Examples Section
 ----------------
-The examples section must consist of Ansible tasks which can be used as a reference to build playbooks. The format of this section is shown below:
+The examples section must consist of Ansible tasks which can be used as a reference to build playbooks.
+The example section must include CRUD operations that can be performed using the module. It should include examples for adding, updating, querying, and removing an object. Each example should include the required parameters and the expected state of the object.
+The format of this section is shown below:
 
 .. code-block:: yaml
 
@@ -569,7 +592,8 @@ The examples section must consist of Ansible tasks which can be used as a refere
 
   - name: Update an object
     cisco.aci.aci_<name_of_module>:
-      host: apic       username: admin
+      host: apic
+      username: admin
       password: SomeSecretePassword
       object_id: id
       object_prop1: new_prop1
@@ -592,6 +616,15 @@ The examples section must consist of Ansible tasks which can be used as a refere
       username: admin
       password: SomeSecretePassword
       state: query
+    delegate_to: localhost
+
+  - name: Remove an object
+    cisco.aci.aci_<name_of_module>:
+      host: apic
+      username: admin
+      password: SomeSecretePassword
+      object_id: id
+      state: absent
     delegate_to: localhost
   '''
 
@@ -793,21 +826,25 @@ The following example consists of Documentation, Examples and Module Sections di
           password: SomeSecretePassword
           tenant: Auto-Demo
           l2out: l2out
-          description: via Ansible
+          description: L2Out via Ansible
           bd: bd1
           domain: l2Dom
           vlan: 3200
           state: present
           delegate_to: localhost
 
-      - name: Remove an L2Out
+      - name: Update an L2Out
         cisco.aci.aci_l2out:
           host: apic
           username: admin
           password: SomeSecretePassword
           tenant: Auto-Demo
           l2out: l2out
-          state: absent
+          description: updated L2Out via Ansible
+          bd: bd1
+          domain: l2Dom
+          vlan: 3200
+          state: present
           delegate_to: localhost
 
       - name: Query an L2Out
@@ -830,6 +867,16 @@ The following example consists of Documentation, Examples and Module Sections di
           state: query
           delegate_to: localhost
           register: query_result
+
+      - name: Remove an L2Out
+        cisco.aci.aci_l2out:
+          host: apic
+          username: admin
+          password: SomeSecretePassword
+          tenant: Auto-Demo
+          l2out: l2out
+          state: absent
+          delegate_to: localhost
       '''
 
       RETURN = r'''
@@ -1065,7 +1112,11 @@ aci_l3out_logical_node -> aci_l3out_static_routes
       'supported_by': 'community'
   }
 
-3. In the documentation section, we begin by changing the name of the module, its short description and the description of the functions being performed on the object. The description of the module must be followed by the options which is a list of attributes and each attribute should include the name, description, data type, aliases(if applicable), choices(if applicable) and default(if applicable) of all the parameters that will be consumed by the object. For our aci_l3out_static_routes module this would include additon of new options to aci_l3out_logical_node module that include description, prefix, track_policy, preference, bfd and removal of router_id and router_id_as_loopback from aci_l3out_logical_node module. 
+3. In the documentation section, we begin by changing the name of the module, its short description and the description of the functions being performed on the object. The description of the module must be followed by the options which is a list of attributes and each attribute should include the name, description, data type, aliases(if applicable), choices(if applicable) and default(if applicable) of all the parameters that will be consumed by the object. For our aci_l3out_static_routes module this would include addition of new options to aci_l3out_logical_node module that include description, prefix, track_policy, preference, bfd and removal of router_id and router_id_as_loopback from aci_l3out_logical_node module.
+ * The options section must be followed by the extends_documentation_fragment section, which is used to include the common reusable documentation fragments for all ACI modules.
+    + This includes the cisco.aci.aci fragment, which contains the common parameters used in all ACI modules.
+    + This includes cisco.aci.annotation, if the module supports the annotation parameter.
+    + **plugins/doc_fragments** directory of the collection contain the common documentation fragments.
 
 The changes made are shown below:
 
@@ -1076,11 +1127,11 @@ The changes made are shown below:
       # module: aci_l3out_logical_node
       module: aci_l3out_static_routes
       # short_description: Manage Layer 3 Outside (L3Out) logical node profile nodes (l3ext:RsNodeL3OutAtt) 
-      short_description: Manage Static routes object (l3ext:ipRouteP)
+      short_description: Manage Static routes object (ip:RouteP)
       # description:
-      # - Bind nodes to node profiles on Cisco ACI fabrics.
+      # - Bind nodes to node profiles on Cisco ACI fabrics (l3ext:RsNodeL3OutAtt).
       description:
-      - Manage External Subnet objects (l3ext:ipRouteP).
+      - Manage External Subnet objects (ip:RouteP).
       options:
         description:
           description:
@@ -1148,7 +1199,7 @@ The changes made are shown below:
 .. code-block:: yaml
 
       notes:
-      - The C(tenant), C(l3out), C(logical_node), C(fabric_node) and C(prefix) used must exist before using this module in your playbook.
+      - The C(tenant), C(l3out), C(logical_node), C(prefix), C(node_id) and C(pod_id) used must exist before using this module in your playbook.
         The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l3out) modules can be used for this.
       seealso:
       - module: cisco.aci.aci_tenant
@@ -1331,6 +1382,17 @@ The changes made are shown below:
   from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec
   from ansible.module_utils.basic import AnsibleModule
 
+.. code-block:: python
+
+  # Importing constants for ACI modules when needed.
+  # This import is used to access predefined constants and mappings for ACI objects.
+  from ansible_collections.cisco.aci.plugins.module_utils.constants import *
+
+- the '*' can be replaced with the specific constants you need, such as:
+  from ansible_collections.cisco.aci.plugins.module_utils.constants import FILTER_PORT_MAPPING, IPV4_REGEX
+
+The imported constants from plugins/module_utils/constants.py file defines the collection of fixed values and mapping dictionaries used to standardize and normalize for ACI-specific parameters.
+
 8. In the main function, the argument_spec variable defines all the arguments necessary for this module and is based on aci_argument_spec. We add all the arguments we defined previously in the documentation section to this variable. In our case, we would add description, prefix, track_policy, preference, and bfd to the section below and remove router_id and router_id_as_loopback.
 
 .. code-block:: python
@@ -1369,7 +1431,7 @@ The changes made are shown below:
 
   aci = ACIModule(module)
 
-10. The above instantiation (required for all modules) is followed by code that is used to get attributes from the playbook that correspond to all the properties of objects defined in the main() function above. This is also where validations and string concatenations are done. We have assigned fabric_node with a part of rn using string concatenation. This is done to make certain operations easier, which are used later in the code. The child class 'ipNexthopP', which is in a 1-to-1 relationship with the class 'ipRouteP', is in a list. Child classes that are dependent on an attribute are only required when the attribute is defined, as seen below with track_policy. The child class 'ipRsRouteTrack' is appended to the list, which already has 'ipNexthopP'.
+10. The above instantiation (required for all modules) is followed by code that is used to get attributes from the playbook that correspond to all the properties of objects defined in the main() function above. This is also where validations and string concatenations are done. We have assigned fabric_node with a part of RN using string concatenation. This is done to make certain operations easier, which are used later in the code. The child class 'ipNexthopP', which is in a 1-to-1 relationship with the class 'ipRouteP', is in a list. Child classes that are dependent on an attribute are only required when the attribute is defined, as seen below with track_policy. The child class 'ipRsRouteTrack' is appended to the list, which already has 'ipNexthopP'.
 
 .. code-block:: python
 
@@ -1538,6 +1600,21 @@ aci_l3out_logical_node -> aci_l3out_static_routes
       <<: *aci_info 
       tenant: ansible_tenant
       state: absent
+
+.. note::
+
+  - A cleanup section is included before we start testing to remove any existing objects, ensuring a clean state. 
+  - Another cleanup section is added after testing to delete created objects, since not all objects are explicitly defined within the tenant.
+
+The test cases for the ACI modules follow a consistent pattern across operations such as Create, Update, Query, Query all, and Delete. For Create, Update, and Delete operations, each test includes:
+
+  + The check mode task to simulate the operation without making changes.
+  + The normal_mode task to perform the actual operation.
+  + The normal mode tasks to verify idempotency, ensuring that running the operation again does not cause changes.
+  + After the operations, the test verifies the output files and asserts that the changes occurred as expected or not changed when re-run in check_mode, confirming the module's correct behavior and idempotency.  
+
+This structured approach ensures thorough testing of the modules' functionality and stability in different modes and repeated executions.
+
 
 5. We begin by adding tasks to post configuration to the APIC. This includes creation of all the classes such as tenant and l3out that were used in the construct_url function in our module.
 
@@ -1739,6 +1816,22 @@ Steps required to perform tests:
     2. ansible-test coverage html
     3. open ~/.ansible/collections/ansible_collections/cisco/aci/tests/output/reports/coverage/index.html
 
+    + In the Ansible test coverage report generated by commands like ansible-test coverage report and ansible-test coverage html, the colors green, yellow, and red indicate the extent of code coverage for your modules:
+
+        + Green: Represents well-covered code sections where tests have executed the code paths. This indicates good test coverage and confidence in the tested code.
+        + Yellow: Indicates partial coverage or code that is executed but not fully tested. This suggests areas where tests could be improved or expanded.
+        + Red: Marks code that is not covered by any tests. These are gaps in testing that could lead to undetected bugs or issues.
+
+    .. note:: A common best practice is to aim for 100% coverage to ensure sufficient testing. While high coverage is desirable, 100% coverage is often not achievable due to untestable corner cases or environment constraints. It is important to still strive for coverage higher than 95% and to document any known gaps in testing.
+
+* The sanity task runs on Ubuntu with multiple Ansible versions in parallel, installing Python, Ansible base, coverage tool, and the Cisco ACI collection. It then executes the sanity tests with coverage enabled inside a Docker environment, generates a coverage XML report grouped by command and version, and finally uploads the coverage report to codecov.io.
+  + The sanity report verifies that the core functionalities of the Cisco ACI Ansible collection work correctly across multiple supported Ansible versions in a consistent environment.
+  + On any test failures or coverage regressions, the root cause should be investigated promptly by reviewing logs and error messages.
+  + Issues should be fixed or escalated as appropriate, and the sanity tests re-run to confirm resolution before further development or deployment.
+
+  This approach ensures that the collection remains stable and reliable across supported Ansible versions, with visibility into test completeness and quality.
+
+
 * Additional tests added to verify the formatting of the code, such as checking for trailing spaces, tabs, and other formatting issues. These tests can be found in the **workflows** -> **ansible-test.yml** file.
   + galaxy-importer: a tool used within Ansible Galaxy to import and validate collections of Ansible content.
   + black: a Python code formatter that enforces a consistent style. It automatically formats Python code to conform to the PEP 8 style guide.
@@ -1747,14 +1840,6 @@ Steps required to perform tests:
     .. code-block:: text
 
       black <path_to_file/file_name.py> -l 159
-
-  + Flake8: a Python code linter that identifies potential errors, style violations, and code complexity issues.
-    + run the below flake8 command before testing sanity.
-
-      .. code-block:: text
-
-        flake8 --max-line-length=159 <path_to_file/file_name.py>
-
 
 .. note::
 
