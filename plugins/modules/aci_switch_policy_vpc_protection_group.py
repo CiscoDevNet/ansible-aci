@@ -43,8 +43,9 @@ options:
   pod_id:
     description:
     - The pod id of the VPC member nodes.
+    - Accepted values range between C(0) and C(255).
+    - The APIC defaults to C(1) when unset during creation.
     type: int
-    default: 1
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
