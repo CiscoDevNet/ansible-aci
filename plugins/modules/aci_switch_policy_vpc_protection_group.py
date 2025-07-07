@@ -232,7 +232,7 @@ def main():
         vpc_domain_policy=dict(type="str", aliases=["vpc_domain_policy_name"]),
         switch_1_id=dict(type="int"),
         switch_2_id=dict(type="int"),
-        pod_id=dict(type="int", default=1),
+        pod_id=dict(type="int"),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
     )
