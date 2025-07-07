@@ -19,46 +19,46 @@
       use_proxy: '{{ aci_use_proxy | default(true) }}'
       output_level: debug
 
-# CLEAN ENVIRONMENT
-- name: Remove the ansible_tenant
-  cisco.aci.aci_tenant: &aci_tenant_absent
-    <<: *aci_info 
-    tenant: ansible_tenant
-    state: absent
-
 - name: Verify Cloud and Non-Cloud Sites in use.
   ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
 
 - name: Execute tasks only for non-cloud sites
   when: query_cloud.current == []  # This condition will execute only non-cloud sites
   block:  # block specifies execution of tasks within, based on conditions
-  - name: Add a new tenant
-    cisco.aci.aci_tenant: &aci_tenant_present
+
+  - name: Remove the ansible_tenant
+    cisco.aci.aci_tenant: &aci_tenant_absent
       <<: *aci_info
       tenant: ansible_tenant
-      description: Ansible tenant
+      state: absent
+
+  - name: Add a new tenant
+    cisco.aci.aci_tenant:
+      <<: *aci_tenant_absent
       state: present
 
-  - name: Add a new action rule profile
-    cisco.aci.aci_tenant_action_rule_profile: &aci_action_rule_present
+  - name: Add a two action rule profiles
+    cisco.aci.aci_tenant_action_rule_profile:
       <<: *aci_info
       tenant: ansible_tenant
-      action_rule: ansible_action_rule
-      description: Ansible action rule profile for ansible_tenant tenant
+      action_rule: "{{ item }}"
+      description: description_on_create
       state: present
+    loop:
+      - ansible_action_rule
+      - ansible_action_rule_2
 
   - name: Add a set AS path action rule (check_mode)
     cisco.aci.aci_action_rule_set_as_path: &aci_action_rule_set_as_path_present
       <<: *aci_info
       tenant: ansible_tenant
       action_rule: ansible_action_rule
-      last_as_number: 0
       criteria: prepend
       state: present
     check_mode: true
     register: cm_add_action_rule_set_as_path
 
-  - name: Add a set AS path action rule again (normal_mode)
+  - name: Add a set AS path action rule again
     cisco.aci.aci_action_rule_set_as_path:
       <<: *aci_action_rule_set_as_path_present
     register: nm_add_action_rule_set_as_path
@@ -66,17 +66,7 @@
   - name: Add a set AS path action rule again - testing idempotency
     cisco.aci.aci_action_rule_set_as_path:
       <<: *aci_action_rule_set_as_path_present
-    register: nm_add_action_rule_set_as_path_idempotency
-
-  - name: Add a set AS path action rule
-    cisco.aci.aci_action_rule_set_as_path:
-      <<: *aci_info
-      tenant: ansible_tenant
-      action_rule: ansible_action_rule
-      last_as_number: 2
-      criteria: prepend-last-as
-      state: present
-    register: nm_add_action_rule_set_as_path_2
+    register: nm_add_action_rule_set_as_path_again
 
   - name: Asserts for set AS path action rule creation tasks
     ansible.builtin.assert:
@@ -84,35 +74,95 @@
         - cm_add_action_rule_set_as_path is changed
         - cm_add_action_rule_set_as_path.previous == []
         - cm_add_action_rule_set_as_path.current == []
+        - cm_add_action_rule_set_as_path.proposed.rtctrlSetASPath.attributes.lastnum is not defined
+        - cm_add_action_rule_set_as_path.proposed.rtctrlSetASPath.attributes.criteria == "prepend"
+        - cm_add_action_rule_set_as_path.proposed.rtctrlSetASPath.attributes.descr is not defined
         - nm_add_action_rule_set_as_path is changed
         - nm_add_action_rule_set_as_path.current.0.rtctrlSetASPath.attributes.lastnum == "0"
         - nm_add_action_rule_set_as_path.current.0.rtctrlSetASPath.attributes.criteria == "prepend"
-        - nm_add_action_rule_set_as_path_idempotency is not changed
-        - nm_add_action_rule_set_as_path_2 is changed
-        - nm_add_action_rule_set_as_path_2.previous == []
-        - nm_add_action_rule_set_as_path_2.current.0.rtctrlSetASPath.attributes.lastnum == "2"
-        - nm_add_action_rule_set_as_path_2.current.0.rtctrlSetASPath.attributes.criteria == "prepend-last-as"
+        - nm_add_action_rule_set_as_path.current.0.rtctrlSetASPath.attributes.descr == ""
+        - nm_add_action_rule_set_as_path_again is not changed
+        - nm_add_action_rule_set_as_path_again.previous == nm_add_action_rule_set_as_path_again.current == nm_add_action_rule_set_as_path.current
+
+  - name: Update a set AS path action rule (check_mode)
+    cisco.aci.aci_action_rule_set_as_path: &update_action_rule_set_as_path
+      <<: *aci_action_rule_set_as_path_present
+      description: description_on_update
+    check_mode: true
+    register: cm_update_action_rule_set_as_path
+
+  - name: Update a set AS path action rule
+    cisco.aci.aci_action_rule_set_as_path:
+      <<: *update_action_rule_set_as_path
+    register: nm_update_action_rule_set_as_path
+
+  - name: Update a set AS path action rule again
+    cisco.aci.aci_action_rule_set_as_path:
+      <<: *update_action_rule_set_as_path
+    register: nm_update_action_rule_set_as_path_again
+
+  - name: Asserts for set AS path action rule update tasks
+    ansible.builtin.assert:
+      that:
+        - cm_update_action_rule_set_as_path is changed
+        - cm_update_action_rule_set_as_path.previous == nm_add_action_rule_set_as_path.current
+        - cm_update_action_rule_set_as_path.proposed.rtctrlSetASPath.attributes.lastnum is not defined
+        - cm_update_action_rule_set_as_path.proposed.rtctrlSetASPath.attributes.criteria == "prepend"
+        - cm_update_action_rule_set_as_path.proposed.rtctrlSetASPath.attributes.descr == "description_on_update"
+        - nm_update_action_rule_set_as_path is changed
+        - nm_update_action_rule_set_as_path.previous == nm_add_action_rule_set_as_path.current
+        - nm_update_action_rule_set_as_path.current.0.rtctrlSetASPath.attributes.lastnum == "0"
+        - nm_update_action_rule_set_as_path.current.0.rtctrlSetASPath.attributes.criteria == "prepend"
+        - nm_update_action_rule_set_as_path.current.0.rtctrlSetASPath.attributes.descr == "description_on_update"
+        - nm_update_action_rule_set_as_path_again is not changed
+        - nm_update_action_rule_set_as_path_again.previous == nm_update_action_rule_set_as_path_again.current == nm_update_action_rule_set_as_path.current
+
+  - name: Create another set AS path action rule with prepend-last-as criteria
+    cisco.aci.aci_action_rule_set_as_path: &aci_action_rule_set_as_path_2_present
+      <<: *aci_action_rule_set_as_path_present
+      action_rule: ansible_action_rule_2
+      last_as: 2
+      criteria: prepend-last-as
+    register: nm_create_another_action_rule_set_as_path
+
+  - name: Update another set AS path action rule with prepend-last-as criteria
+    cisco.aci.aci_action_rule_set_as_path:
+      <<: *aci_action_rule_set_as_path_2_present
+      last_as: 4
+    register: nm_update_another_action_rule_set_as_path
+
+  - name: Asserts for set AS path action rule update tasks
+    ansible.builtin.assert:
+      that:
+        - nm_create_another_action_rule_set_as_path is changed
+        - nm_create_another_action_rule_set_as_path.previous == []
+        - nm_create_another_action_rule_set_as_path.current.0.rtctrlSetASPath.attributes.lastnum == "2"
+        - nm_create_another_action_rule_set_as_path.current.0.rtctrlSetASPath.attributes.criteria == "prepend-last-as"
+        - nm_update_another_action_rule_set_as_path is changed
+        - nm_update_another_action_rule_set_as_path.previous == nm_create_another_action_rule_set_as_path.current
+        - nm_update_another_action_rule_set_as_path.current.0.rtctrlSetASPath.attributes.lastnum == "4"
+        - nm_update_another_action_rule_set_as_path.current.0.rtctrlSetASPath.attributes.criteria == "prepend-last-as"
 
   - name: Query all set AS path action rules
     cisco.aci.aci_action_rule_set_as_path:
       <<: *aci_info
       state: query
-    register: query_all_action_rule_set_as_path
+    register: query_all
 
   - name: Query ansible_action_rule_set_as_path set AS path action rule
     cisco.aci.aci_action_rule_set_as_path:
       <<: *aci_action_rule_set_as_path_present
       state: query
-    register: query_action_rule_set_as_path
+    register: query_one
 
   - name: Asserts query tasks
     ansible.builtin.assert:
       that:
-        - query_all_action_rule_set_as_path is not changed
-        - query_all_action_rule_set_as_path.current|length >= 2
-        - query_action_rule_set_as_path is not changed
-        - query_action_rule_set_as_path.current.0.rtctrlSetASPath.attributes.lastnum == "0"
-        - query_action_rule_set_as_path.current.0.rtctrlSetASPath.attributes.criteria == "prepend"
+        - query_all is not changed
+        - query_all.current | length >= 2
+        - query_one is not changed
+        - query_one.current.0.rtctrlSetASPath.attributes.lastnum == "0"
+        - query_one.current.0.rtctrlSetASPath.attributes.criteria == "prepend"
 
   - name: Remove set AS path action rule (check_mode)
     cisco.aci.aci_action_rule_set_as_path: &aci_action_rule_set_as_path_absent
@@ -121,28 +171,28 @@
     check_mode: true
     register: cm_remove_action_rule_set_as_path
 
-  - name: Remove set AS path action rule (normal_mode)
+  - name: Remove set AS path action rule
     cisco.aci.aci_action_rule_set_as_path:
       <<: *aci_action_rule_set_as_path_absent
-    register: nm_remove_remove_action_rule_set_as_path
+    register: nm_remove_action_rule_set_as_path
 
-  - name: Remove set AS path action rule again - testing previous Removal
+  - name: Remove set AS path action rule again
     cisco.aci.aci_action_rule_set_as_path:
       <<: *aci_action_rule_set_as_path_absent
-    register: nm_remove_action_rule_set_as_path_idempotency
+    register: nm_remove_action_rule_set_as_path_again
 
   - name: Asserts deletion tasks
     ansible.builtin.assert:
       that:
         - cm_remove_action_rule_set_as_path is changed
         - cm_remove_action_rule_set_as_path.proposed == {}
-        - nm_remove_remove_action_rule_set_as_path is changed
-        - nm_remove_remove_action_rule_set_as_path.previous != []
-        - nm_remove_remove_action_rule_set_as_path.method == "DELETE"
-        - nm_remove_action_rule_set_as_path_idempotency is not changed
-        - nm_remove_action_rule_set_as_path_idempotency.previous == []
+        - cm_remove_action_rule_set_as_path.previous == nm_update_action_rule_set_as_path.current
+        - nm_remove_action_rule_set_as_path is changed
+        - nm_remove_action_rule_set_as_path.previous == nm_update_action_rule_set_as_path.current
+        - nm_remove_action_rule_set_as_path.current == []
+        - nm_remove_action_rule_set_as_path_again is not changed
+        - nm_remove_action_rule_set_as_path_again.previous == nm_remove_action_rule_set_as_path_again.current == nm_remove_action_rule_set_as_path.current
 
   - name: Remove the ansible_tenant - cleanup before ending tests
     cisco.aci.aci_tenant:
-      <<: *aci_tenant_present
-      state: absent
+      <<: *aci_tenant_absent
