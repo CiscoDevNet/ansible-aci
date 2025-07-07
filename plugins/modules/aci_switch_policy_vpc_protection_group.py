@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
+# Copyright: (c) 2025, Eric Girard @netgirard
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -43,7 +44,7 @@ options:
   pod_id:
     description:
     - The pod id of the VPC member nodes.
-    - Accepted values range between C(0) and C(255).
+    - Accepted values range between C(1) and C(255).
     - The APIC defaults to C(1) when unset during creation.
     type: int
   state:
