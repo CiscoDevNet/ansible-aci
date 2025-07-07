@@ -83,17 +83,6 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete a Set AS path action rule
-  cisco.aci.aci_action_rule_set_as_path:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    action_rule: my_action_rule
-    tenant: prod
-    criteria: prepend
-    state: absent
-  delegate_to: localhost
-
 - name: Query all Set AS path action rules
   cisco.aci.aci_action_rule_set_as_path:
     host: apic
@@ -114,6 +103,17 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Delete a Set AS path action rule
+  cisco.aci.aci_action_rule_set_as_path:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    action_rule: my_action_rule
+    tenant: prod
+    criteria: prepend
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
