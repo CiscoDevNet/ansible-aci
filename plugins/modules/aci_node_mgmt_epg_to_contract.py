@@ -17,7 +17,7 @@ short_description: Bind Node Management EPGs to Contracts (fv:RsCons, fv:RsProv,
 description:
 - Bind Node Management EPGs to Contracts on Cisco ACI fabrics.
 notes:
-- The C(epg) and C(contract) used must exist before using this module in your playbook.
+- The O(epg) and O(contract) used must exist before using this module in your playbook.
   The M(cisco.aci.aci_node_mgmt_epg), M(cisco.aci.aci_oob_contract) and M(cisco.aci.aci_contract) modules can be used for this.
 options:
   contract:
