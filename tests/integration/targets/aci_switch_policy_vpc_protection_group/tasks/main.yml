@@ -245,7 +245,12 @@
   ansible.builtin.assert:
     that:
     - cm_add_vpc_prot_grp_pod is changed
+    - cm_add_vpc_prot_grp_pod.previous == []
+    - cm_add_vpc_prot_grp_pod.proposed.0.fabricExplicitGEp.children.0.fabricNodePEp.attributes.podId == '2'
+    - cm_add_vpc_prot_grp_pod.proposed.0.fabricExplicitGEp.children.1.fabricNodePEp.attributes.podId == '2'
     - nm_add_vpc_prot_grp_pod is changed
+    - nm_add_vpc_prot_grp_pod.current.0.fabricExplicitGEp.children.0.fabricNodePEp.attributes.podId == '2'
+    - nm_add_vpc_prot_grp_pod.current.0.fabricExplicitGEp.children.1.fabricNodePEp.attributes.podId == '2'
     - nm_add_vpc_prot_grp_pod.current.0.fabricExplicitGEp.attributes.annotation == 'orchestrator:ansible'
     - cm_add_vpc_prot_grp_pod_again is not changed
     - nm_add_vpc_prot_grp_pod_again is not changed
