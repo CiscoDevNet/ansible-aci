@@ -1,5 +1,6 @@
 # Test code for the ACI modules
 # Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
+# Copyright: (c) 2025, Eric Girard <@netgirard>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -212,3 +213,44 @@
     - cm_query_non_vpc_prot_grp is not changed
     - nm_query_non_vpc_prot_grp is not changed
     - cm_query_non_vpc_prot_grp == nm_query_non_vpc_prot_grp
+
+# ADD VPC PROTECTION GROUP WITH POD
+- name: Add vpc protection group with pod ID (check_mode)
+  cisco.aci.aci_switch_policy_vpc_protection_group:
+    <<: *aci_switch_policy_vpc_protection_group_present
+    pod_id: 2
+  check_mode: true
+  register: cm_add_vpc_prot_grp_pod
+
+- name: Add vpc protection group with pod ID (normal mode)
+  cisco.aci.aci_switch_policy_vpc_protection_group: 
+    <<: *aci_switch_policy_vpc_protection_group_present
+    pod_id: 2
+  register: nm_add_vpc_prot_grp_pod
+
+- name: Add vpc protection group with pod ID again (check_mode)
+  cisco.aci.aci_switch_policy_vpc_protection_group: 
+    <<: *aci_switch_policy_vpc_protection_group_present
+    pod_id: 2
+  check_mode: true
+  register: cm_add_vpc_prot_grp_pod_again
+
+- name: Add vpc protection group with pod ID again (normal mode)
+  cisco.aci.aci_switch_policy_vpc_protection_group: 
+    <<: *aci_switch_policy_vpc_protection_group_present
+    pod_id: 2
+  register: nm_add_vpc_prot_grp_pod_again
+
+- name: Verify addvpc protection group with pod ID tasks
+  ansible.builtin.assert:
+    that:
+    - cm_add_vpc_prot_grp_pod is changed
+    - cm_add_vpc_prot_grp_pod.previous == []
+    - cm_add_vpc_prot_grp_pod.proposed.0.fabricExplicitGEp.children.0.fabricNodePEp.attributes.podId == '2'
+    - cm_add_vpc_prot_grp_pod.proposed.0.fabricExplicitGEp.children.1.fabricNodePEp.attributes.podId == '2'
+    - nm_add_vpc_prot_grp_pod is changed
+    - nm_add_vpc_prot_grp_pod.current.0.fabricExplicitGEp.children.0.fabricNodePEp.attributes.podId == '2'
+    - nm_add_vpc_prot_grp_pod.current.0.fabricExplicitGEp.children.1.fabricNodePEp.attributes.podId == '2'
+    - nm_add_vpc_prot_grp_pod.current.0.fabricExplicitGEp.attributes.annotation == 'orchestrator:ansible'
+    - cm_add_vpc_prot_grp_pod_again is not changed
+    - nm_add_vpc_prot_grp_pod_again is not changed
