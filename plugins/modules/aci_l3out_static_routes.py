@@ -80,7 +80,7 @@ extends_documentation_fragment:
 - cisco.aci.annotation
 
 notes:
-- The C(tenant), C(l3out), C(logical_node), C(fabric_node) and C(prefix) used must exist before using this module in your playbook.
+- The C(tenant), C(l3out), C(logical_node), C(prefix), C(node_id) and C(pod_id) used must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_l3out) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
