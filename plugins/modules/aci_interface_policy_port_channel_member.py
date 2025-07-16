@@ -17,6 +17,7 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = r"""
 ---
 module: aci_interface_policy_port_channel_member
+version_added: "2.12.0"
 short_description: Manage Port Channel Member interface policies (lacp:IfPol)
 description:
 - Manage Port Channel Member interface policy configuration on Cisco ACI fabrics.

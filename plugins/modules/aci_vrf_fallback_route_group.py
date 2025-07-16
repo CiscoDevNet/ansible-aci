@@ -12,6 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_vrf_fallback_route_group
+version_added: "2.12.0"
 short_description: Manage VRF Fallback Route Groups (fv:FBRGroup, fv:FBRoute, and fv:FBRMember)
 description:
 - Manage VRF Fallback Route Groups on Cisco ACI fabrics.

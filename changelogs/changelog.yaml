@@ -260,16 +260,21 @@ releases:
   2.11.0:
     changes:
       bugfixes:
-        - Fix subclass issue in aci_domain_to_vlan_pool to fix deletion of binding (#695)
-        - Fix payload to define the correct vPC member side in aci_l3out_logical_interface_vpc_member (#663)
         - Fix aci_rest module to only add annotation when the value is a dictionary
+        - Fix payload to define the correct vPC member side in aci_l3out_logical_interface_vpc_member
+          (#663)
+        - Fix subclass issue in aci_domain_to_vlan_pool to fix deletion of binding
+          (#695)
         - Modify interface_configs requirement using required_if dependency for aci_bulk_static_binding_to_epg
       minor_changes:
+        - Add aci_endpoint_tag_ip and aci_endpoint_tag_mac modules to manage Endpoint
+          IP and MAC Tags.
         - Add aci_ip_sla_monitoring_policy module.
-        - Add aci_endpoint_tag_ip and aci_endpoint_tag_mac modules to manage Endpoint IP and MAC Tags.
+        - Add management_epg and management_epg_type attributes in aci_dns_profile
+          module.
         - Add stratum attribute to aci_ntp_policy module.
-        - Add management_epg and management_epg_type attributes in aci_dns_profile module.
-        - Add support for Ansible 2.18 and dropped support for Ansible 2.15 as required by Ansible Galaxy.
+        - Add support for Ansible 2.18 and dropped support for Ansible 2.15 as required
+          by Ansible Galaxy.
       release_summary: 'Release v2.11.0 of the ``ansible-aci`` collection on 2025-04-18.
 
         This changelog describes all changes made to the modules and plugins included
@@ -277,6 +282,105 @@ releases:
 
         '
     release_date: '2025-04-18'
+  2.12.0:
+    changes:
+      bugfixes:
+        - Fix API call and index error for non-existing configExportP in aci_config_snapshot.
+        - Fix the aci_access_port_block_to_access_port module to query a specific
+          object with the object name.
+        - Fix to read the last_as from the module params in aci_action_rule_set_as_path.
+        - Fix type of subnet_control in aci_bd_subnet from string to list of strings.
+      minor_changes:
+        - Add description, console_log_severity, local_file_log_format, and console_log_format
+          to aci_syslog_group module.
+        - Add enhanced_log and rfc5424-ts options to attribute format of aci_syslog_group
+          module.
+        - Add epg_cos, epg_cos_preference, ipam_dhcp_override, ipam_enabled, ipam_gateway,
+          lag_policy_name, netflow_direction, primary_encap_inner, and secondary_encap_inner
+          atributes to aci_epg_to_domain module.
+        - Add missing options to priority attribute and vrf to scope attribute in
+          aci_contract module.
+        - Add nutanix support for aci_aep_to_domain, aci_domain, aci_domain_to_encap_pool,
+          aci_domain_to_vlan_pool, aci_vmm_controller, aci_vmm_credential modules.
+        - Add pod_id attribute to aci_switch_policy_vpc_protection_group module.
+      release_summary: 'Release v2.12.0 of the ``ansible-aci`` collection on 2025-07-17.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.11.0.
+
+        '
+    modules:
+      - description: Manage Port Channel Member interface policies (lacp:IfPol)
+        name: aci_interface_policy_port_channel_member
+        namespace: ''
+      - description: Manage L4-L7 Concrete Devices (vns:CDev)
+        name: aci_l4l7_concrete_device
+        namespace: ''
+      - description: Manage L4-L7 Concrete Interfaces (vns:CIf)
+        name: aci_l4l7_concrete_interface
+        namespace: ''
+      - description: Manage L4-L7 Concrete Interface Attachment (vns:RsCIfAttN)
+        name: aci_l4l7_concrete_interface_attachment
+        namespace: ''
+      - description: Manage L4-L7 Devices (vns:LDevVip)
+        name: aci_l4l7_device
+        namespace: ''
+      - description: Manage L4-L7 Device Selection Policy Logical Interface Contexts
+          (vns:LIfCtx)
+        name: aci_l4l7_device_selection_interface_context
+        namespace: ''
+      - description: Manage L4-L7 Device Selection Policies (vns:LDevCtx)
+        name: aci_l4l7_device_selection_policy
+        namespace: ''
+      - description: Manage L4-L7 Logical Interface (vns:LIf)
+        name: aci_l4l7_logical_interface
+        namespace: ''
+      - description: Manage L4-L7 Policy Based Redirection Policies (vns:SvcRedirectPol)
+        name: aci_l4l7_policy_based_redirect
+        namespace: ''
+      - description: Manage L4-L7 Policy Based Redirect Destinations (vns:RedirectDest
+          and vns:L1L2RedirectDest)
+        name: aci_l4l7_policy_based_redirect_destination
+        namespace: ''
+      - description: Manage L4-L7 Redirect Health Groups (vns:RedirectHealthGroup)
+        name: aci_l4l7_redirect_health_group
+        namespace: ''
+      - description: Manage L4-L7 Service Graph Templates (vns:AbsGraph)
+        name: aci_l4l7_service_graph_template
+        namespace: ''
+      - description: Manage L4-L7 Service Graph Template Abs Connections (vns:AbsConnection)
+        name: aci_l4l7_service_graph_template_connection
+        namespace: ''
+      - description: Manage L4-L7 Service Graph Template Connections between function
+          nodes and terminal nodes (vns:RsAbsConnectionConns)
+        name: aci_l4l7_service_graph_template_connection_to_connector
+        namespace: ''
+      - description: Manage L4-L7 Service Graph Templates Functional Connections (vns:AbsFuncConn)
+        name: aci_l4l7_service_graph_template_functional_connection
+        namespace: ''
+      - description: Manage L4-L7 Service Graph Templates Nodes (vns:AbsNode)
+        name: aci_l4l7_service_graph_template_node
+        namespace: ''
+      - description: Manage L4-L7 SGT Term Nodes (vns:AbsTermNodeCon, vns:AbsTermNodeProv
+          and vns:AbsTermConn)
+        name: aci_l4l7_service_graph_template_term_node
+        namespace: ''
+      - description: Bind Node Management EPGs to Contracts (fv:RsCons, fv:RsProv,
+          fv:RsProtBy, fv:RsConsIf and mgmt:RsOoBProv)
+        name: aci_node_mgmt_epg_to_contract
+        namespace: ''
+      - description: Manage Out-of-Band (OOB) Contract resources (vz:OOBBrCP)
+        name: aci_oob_contract
+        namespace: ''
+      - description: Manage Enhanced LACP Policy for Virtual Machine Manager (VMM)
+          in Cisco ACI (lacp:EnhancedLagPol)
+        name: aci_vmm_enhanced_lag_policy
+        namespace: ''
+      - description: Manage VRF Fallback Route Groups (fv:FBRGroup, fv:FBRoute, and
+          fv:FBRMember)
+        name: aci_vrf_fallback_route_group
+        namespace: ''
+    release_date: '2025-07-17'
   2.2.0:
     changes:
       bugfixes:

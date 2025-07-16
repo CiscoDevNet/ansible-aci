@@ -14,6 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l4l7_device_selection_policy
+version_added: "2.12.0"
 short_description: Manage L4-L7 Device Selection Policies (vns:LDevCtx)
 description:
 - Manage L4-L7 Device Selection Policies

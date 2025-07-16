@@ -157,6 +157,7 @@ action_groups:
     - aci_interface_policy_ospf
     - aci_interface_policy_pim
     - aci_interface_policy_port_channel
+    - aci_interface_policy_port_channel_member
     - aci_interface_policy_port_security
     - aci_interface_policy_spanning_tree
     - aci_interface_policy_spine_policy_group
@@ -199,6 +200,22 @@ action_groups:
     - aci_l3out_static_routes
     - aci_l3out_static_routes_nexthop
     - aci_l3out_to_sr_mpls_infra_l3out
+    - aci_l4l7_concrete_device
+    - aci_l4l7_concrete_interface
+    - aci_l4l7_concrete_interface_attachment
+    - aci_l4l7_device
+    - aci_l4l7_device_selection_interface_context
+    - aci_l4l7_device_selection_policy
+    - aci_l4l7_logical_interface
+    - aci_l4l7_policy_based_redirect
+    - aci_l4l7_policy_based_redirect_destination
+    - aci_l4l7_redirect_health_group
+    - aci_l4l7_service_graph_template
+    - aci_l4l7_service_graph_template_connection
+    - aci_l4l7_service_graph_template_connection_to_connector
+    - aci_l4l7_service_graph_template_functional_connection
+    - aci_l4l7_service_graph_template_node
+    - aci_l4l7_service_graph_template_term_node
     - aci_maintenance_group
     - aci_maintenance_group_node
     - aci_maintenance_policy
@@ -214,8 +231,10 @@ action_groups:
     - aci_netflow_record_policy
     - aci_node_block
     - aci_node_mgmt_epg
+    - aci_node_mgmt_epg_to_contract
     - aci_ntp_policy
     - aci_ntp_server
+    - aci_oob_contract
     - aci_pim_route_map_entry
     - aci_pim_route_map_policy
     - aci_qos_custom_policy
@@ -256,14 +275,15 @@ action_groups:
     - aci_vlan_pool_encap_block
     - aci_vmm_controller
     - aci_vmm_credential
+    - aci_vmm_enhanced_lag_policy
     - aci_vmm_uplink
     - aci_vmm_uplink_container
     - aci_vmm_vswitch_policy
     - aci_vrf
+    - aci_vrf_fallback_route_group
     - aci_vrf_leak_internal_subnet
     - aci_vrf_multicast
     - aci_vzany_to_contract
-
 plugin_routing:
   modules:
     aci_l4l7_concrete_interface_attach:
@@ -295,4 +315,5 @@ plugin_routing:
       redirect: cisco.aci.aci_l4l7_service_graph_template_connection_to_connector
       deprecation:
         removal_version: 3.0.0
-        warning_text: Use cisco.aci.aci_l4l7_service_graph_template_connection_to_connector instead.
+        warning_text: Use cisco.aci.aci_l4l7_service_graph_template_connection_to_connector
+          instead.

@@ -13,6 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_node_mgmt_epg_to_contract
+version_added: "2.12.0"
 short_description: Bind Node Management EPGs to Contracts (fv:RsCons, fv:RsProv, fv:RsProtBy, fv:RsConsIf and mgmt:RsOoBProv)
 description:
 - Bind Node Management EPGs to Contracts on Cisco ACI fabrics.

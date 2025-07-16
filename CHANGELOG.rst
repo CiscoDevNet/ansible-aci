@@ -4,6 +4,58 @@ Cisco ACI Ansible Collection Release Notes
 
 .. contents:: Topics
 
+v2.12.0
+=======
+
+Release Summary
+---------------
+
+Release v2.12.0 of the ``ansible-aci`` collection on 2025-07-17.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.11.0.
+
+Minor Changes
+-------------
+
+- Add description, console_log_severity, local_file_log_format, and console_log_format to aci_syslog_group module.
+- Add enhanced_log and rfc5424-ts options to attribute format of aci_syslog_group module.
+- Add epg_cos, epg_cos_preference, ipam_dhcp_override, ipam_enabled, ipam_gateway, lag_policy_name, netflow_direction, primary_encap_inner, and secondary_encap_inner atributes to aci_epg_to_domain module.
+- Add missing options to priority attribute and vrf to scope attribute in aci_contract module.
+- Add nutanix support for aci_aep_to_domain, aci_domain, aci_domain_to_encap_pool, aci_domain_to_vlan_pool, aci_vmm_controller, aci_vmm_credential modules.
+- Add pod_id attribute to aci_switch_policy_vpc_protection_group module.
+
+Bugfixes
+--------
+
+- Fix API call and index error for non-existing configExportP in aci_config_snapshot.
+- Fix the aci_access_port_block_to_access_port module to query a specific object with the object name.
+- Fix to read the last_as from the module params in aci_action_rule_set_as_path.
+- Fix type of subnet_control in aci_bd_subnet from string to list of strings.
+
+New Modules
+-----------
+
+- cisco.aci.aci_interface_policy_port_channel_member - Manage Port Channel Member interface policies (lacp:IfPol)
+- cisco.aci.aci_l4l7_concrete_device - Manage L4-L7 Concrete Devices (vns:CDev)
+- cisco.aci.aci_l4l7_concrete_interface - Manage L4-L7 Concrete Interfaces (vns:CIf)
+- cisco.aci.aci_l4l7_concrete_interface_attachment - Manage L4-L7 Concrete Interface Attachment (vns:RsCIfAttN)
+- cisco.aci.aci_l4l7_device - Manage L4-L7 Devices (vns:LDevVip)
+- cisco.aci.aci_l4l7_device_selection_interface_context - Manage L4-L7 Device Selection Policy Logical Interface Contexts (vns:LIfCtx)
+- cisco.aci.aci_l4l7_device_selection_policy - Manage L4-L7 Device Selection Policies (vns:LDevCtx)
+- cisco.aci.aci_l4l7_logical_interface - Manage L4-L7 Logical Interface (vns:LIf)
+- cisco.aci.aci_l4l7_policy_based_redirect - Manage L4-L7 Policy Based Redirection Policies (vns:SvcRedirectPol)
+- cisco.aci.aci_l4l7_policy_based_redirect_destination - Manage L4-L7 Policy Based Redirect Destinations (vns:RedirectDest and vns:L1L2RedirectDest)
+- cisco.aci.aci_l4l7_redirect_health_group - Manage L4-L7 Redirect Health Groups (vns:RedirectHealthGroup)
+- cisco.aci.aci_l4l7_service_graph_template - Manage L4-L7 Service Graph Templates (vns:AbsGraph)
+- cisco.aci.aci_l4l7_service_graph_template_connection - Manage L4-L7 Service Graph Template Abs Connections (vns:AbsConnection)
+- cisco.aci.aci_l4l7_service_graph_template_connection_to_connector - Manage L4-L7 Service Graph Template Connections between function nodes and terminal nodes (vns:RsAbsConnectionConns)
+- cisco.aci.aci_l4l7_service_graph_template_functional_connection - Manage L4-L7 Service Graph Templates Functional Connections (vns:AbsFuncConn)
+- cisco.aci.aci_l4l7_service_graph_template_node - Manage L4-L7 Service Graph Templates Nodes (vns:AbsNode)
+- cisco.aci.aci_l4l7_service_graph_template_term_node - Manage L4-L7 SGT Term Nodes (vns:AbsTermNodeCon, vns:AbsTermNodeProv and vns:AbsTermConn)
+- cisco.aci.aci_node_mgmt_epg_to_contract - Bind Node Management EPGs to Contracts (fv:RsCons, fv:RsProv, fv:RsProtBy, fv:RsConsIf and mgmt:RsOoBProv)
+- cisco.aci.aci_oob_contract - Manage Out-of-Band (OOB) Contract resources (vz:OOBBrCP)
+- cisco.aci.aci_vmm_enhanced_lag_policy - Manage Enhanced LACP Policy for Virtual Machine Manager (VMM) in Cisco ACI (lacp:EnhancedLagPol)
+- cisco.aci.aci_vrf_fallback_route_group - Manage VRF Fallback Route Groups (fv:FBRGroup, fv:FBRoute, and fv:FBRMember)
+
 v2.11.0
 =======
 
